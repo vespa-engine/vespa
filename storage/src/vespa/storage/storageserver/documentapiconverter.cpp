@@ -44,6 +44,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
         document::Bucket bucket = bucketResolver()->bucketFromId(from.getDocument().getId());
         auto to = std::make_unique<api::PutCommand>(bucket, from.stealDocument(), from.getTimestamp());
         to->setCondition(from.getCondition());
+        to->set_create_if_non_existent(from.get_create_if_non_existent());
         toMsg = std::move(to);
         break;
     }
@@ -205,6 +206,8 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
         auto & from(static_cast<api::PutCommand&>(fromMsg));
         auto to = std::make_unique<documentapi::PutDocumentMessage>(from.getDocument());
         to->setTimestamp(from.getTimestamp());
+        to->setCondition(from.getCondition());
+        to->set_create_if_non_existent(from.get_create_if_non_existent());
         toMsg = std::move(to);
         break;
     }
@@ -214,13 +217,16 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
         auto to = std::make_unique<documentapi::UpdateDocumentMessage>(from.getUpdate());
         to->setOldTimestamp(from.getOldTimestamp());
         to->setNewTimestamp(from.getTimestamp());
+        to->setCondition(from.getCondition());
         toMsg = std::move(to);
         break;
     }
     case api::MessageType::REMOVE_ID:
     {
         auto & from(static_cast<api::RemoveCommand&>(fromMsg));
-        toMsg = std::make_unique<documentapi::RemoveDocumentMessage>(from.getDocumentId());
+        auto to = std::make_unique<documentapi::RemoveDocumentMessage>(from.getDocumentId());
+        to->setCondition(from.getCondition());
+        toMsg = std::move(to);
         break;
     }
     case api::MessageType::VISITOR_INFO_ID:

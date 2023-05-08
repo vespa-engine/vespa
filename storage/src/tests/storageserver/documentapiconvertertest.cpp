@@ -19,6 +19,7 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 
 using document::Bucket;
 using document::BucketId;
@@ -29,6 +30,7 @@ using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::readDocumenttypesConfig;
 using document::test::makeDocumentBucket;
+using documentapi::TestAndSetCondition;
 using namespace ::testing;
 using namespace std::chrono_literals;
 
@@ -38,6 +40,7 @@ const DocumentId defaultDocId("id:test:text/html::0");
 const BucketSpace defaultBucketSpace(5);
 const vespalib::string defaultSpaceName("myspace");
 const Bucket defaultBucket(defaultBucketSpace, BucketId(0));
+const TestAndSetCondition my_condition("my condition");
 
 struct MockBucketResolver : public BucketResolver {
     virtual Bucket bucketFromId(const DocumentId &documentId) const override {
@@ -110,10 +113,13 @@ TEST_F(DocumentApiConverterTest, put) {
 
     documentapi::PutDocumentMessage putmsg(doc);
     putmsg.setTimestamp(1234);
+    putmsg.setCondition(my_condition);
 
     auto cmd = toStorageAPI<api::PutCommand>(putmsg);
     EXPECT_EQ(defaultBucket, cmd->getBucket());
     ASSERT_EQ(cmd->getDocument().get(), doc.get());
+    EXPECT_EQ(cmd->getCondition(), my_condition);
+    EXPECT_FALSE(cmd->get_create_if_non_existent());
 
     std::unique_ptr<mbus::Reply> reply = putmsg.createReply();
     ASSERT_TRUE(reply.get());
@@ -123,6 +129,18 @@ TEST_F(DocumentApiConverterTest, put) {
     auto mbusPut = toDocumentAPI<documentapi::PutDocumentMessage>(*cmd);
     ASSERT_EQ(mbusPut->getDocumentSP().get(), doc.get());
     EXPECT_EQ(mbusPut->getTimestamp(), 1234);
+    EXPECT_EQ(mbusPut->getCondition(), my_condition);
+    EXPECT_FALSE(mbusPut->get_create_if_non_existent());
+}
+
+TEST_F(DocumentApiConverterTest, put_with_create) {
+    documentapi::PutDocumentMessage putmsg(std::make_shared<Document>(*_repo, _html_type, defaultDocId));
+    putmsg.setCondition(my_condition);
+    putmsg.set_create_if_non_existent(true);
+    auto cmd = toStorageAPI<api::PutCommand>(putmsg);
+    EXPECT_TRUE(cmd->get_create_if_non_existent());
+    auto mbusPut = toDocumentAPI<documentapi::PutDocumentMessage>(*cmd);
+    EXPECT_TRUE(mbusPut->get_create_if_non_existent());
 }
 
 TEST_F(DocumentApiConverterTest, forwarded_put) {
@@ -145,12 +163,14 @@ TEST_F(DocumentApiConverterTest, update) {
     documentapi::UpdateDocumentMessage updateMsg(update);
     updateMsg.setOldTimestamp(1234);
     updateMsg.setNewTimestamp(5678);
+    updateMsg.setCondition(my_condition);
 
     auto updateCmd = toStorageAPI<api::UpdateCommand>(updateMsg);
     EXPECT_EQ(defaultBucket, updateCmd->getBucket());
     ASSERT_EQ(update.get(), updateCmd->getUpdate().get());
     EXPECT_EQ(api::Timestamp(1234), updateCmd->getOldTimestamp());
     EXPECT_EQ(api::Timestamp(5678), updateCmd->getTimestamp());
+    EXPECT_EQ(my_condition, updateCmd->getCondition());
 
     auto mbusReply = updateMsg.createReply();
     ASSERT_TRUE(mbusReply.get());
@@ -160,13 +180,16 @@ TEST_F(DocumentApiConverterTest, update) {
     ASSERT_EQ((&mbusUpdate->getDocumentUpdate()), update.get());
     EXPECT_EQ(api::Timestamp(1234), mbusUpdate->getOldTimestamp());
     EXPECT_EQ(api::Timestamp(5678), mbusUpdate->getNewTimestamp());
+    EXPECT_EQ(my_condition, mbusUpdate->getCondition());
 }
 
 TEST_F(DocumentApiConverterTest, remove) {
     documentapi::RemoveDocumentMessage removemsg(defaultDocId);
+    removemsg.setCondition(my_condition);
     auto cmd = toStorageAPI<api::RemoveCommand>(removemsg);
     EXPECT_EQ(defaultBucket, cmd->getBucket());
     EXPECT_EQ(defaultDocId, cmd->getDocumentId());
+    EXPECT_EQ(my_condition, cmd->getCondition());
 
     std::unique_ptr<mbus::Reply> reply = removemsg.createReply();
     ASSERT_TRUE(reply.get());
@@ -175,6 +198,7 @@ TEST_F(DocumentApiConverterTest, remove) {
 
     auto mbusRemove = toDocumentAPI<documentapi::RemoveDocumentMessage>(*cmd);
     EXPECT_EQ(defaultDocId, mbusRemove->getDocumentId());
+    EXPECT_EQ(my_condition, mbusRemove->getCondition());
 }
 
 TEST_F(DocumentApiConverterTest, get) {
