@@ -101,6 +101,15 @@ func writeQueryParam(sb *strings.Builder, start int, k, v string) {
 	sb.WriteString(url.QueryEscape(v))
 }
 
+func writeRequestBody(w io.Writer, body []byte) error {
+	for _, b := range [][]byte{fieldsPrefix, body, fieldsSuffix} {
+		if _, err := w.Write(b); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *Client) methodAndURL(d Document) (string, string) {
 	httpMethod := ""
 	switch d.Operation {
@@ -184,34 +193,21 @@ func (c *Client) buffer() *bytes.Buffer {
 }
 
 func (c *Client) createRequest(method, url string, body []byte) (*http.Request, error) {
+	var buf *bytes.Buffer
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
-	var (
-		r             io.Reader
-		contentLength int64
-	)
 	if useGzip {
-		buf := bytes.NewBuffer(make([]byte, 0, 1024))
+		buf = bytes.NewBuffer(make([]byte, 0, 1024))
 		w := c.gzipWriter(buf)
-		for _, b := range [][]byte{fieldsPrefix, body, fieldsSuffix} {
-			if _, err := w.Write(b); err != nil {
-				return nil, err
-			}
-		}
+		writeRequestBody(w, body)
 		if err := w.Close(); err != nil {
 			return nil, err
 		}
 		c.gzippers.Put(w)
-		r = buf
-		contentLength = int64(buf.Len())
 	} else {
-		r = io.MultiReader(
-			bytes.NewReader(fieldsPrefix),
-			bytes.NewReader(body),
-			bytes.NewReader(fieldsSuffix),
-		)
-		contentLength = int64(len(fieldsPrefix) + len(body) + len(fieldsSuffix))
+		buf = bytes.NewBuffer(make([]byte, 0, len(fieldsPrefix)+len(body)+len(fieldsSuffix)))
+		writeRequestBody(buf, body)
 	}
-	req, err := http.NewRequest(method, url, r)
+	req, err := http.NewRequest(method, url, buf)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +215,7 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 		req.Header.Set("Content-Encoding", "gzip")
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	req.ContentLength = contentLength
+	req.ContentLength = int64(buf.Len())
 	return req, nil
 }
 
