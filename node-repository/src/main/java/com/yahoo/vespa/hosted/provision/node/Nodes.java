@@ -5,6 +5,8 @@ import com.yahoo.collections.ListMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
+import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
@@ -81,8 +83,10 @@ public class Nodes {
         Instant start = clock.instant();
         int nodesWritten = performOn(list(), (node, mutex) -> {
             // TODO (valerijf): Remove after 8.162
-            if (node.cloudAccount().isUnspecified() && !zone.getCloud().account().isUnspecified())
-                node = node.with(zone.getCloud().account());
+//            if (node.cloudAccount().isUnspecified() && !zone.getCloud().account().isUnspecified())
+//                node = node.with(zone.getCloud().account());
+            if (zone.getCloud().name().equals(CloudName.GCP))
+                node = node.with(CloudAccount.empty);
             return write(node, mutex);
         }).size();
         Instant end = clock.instant();
