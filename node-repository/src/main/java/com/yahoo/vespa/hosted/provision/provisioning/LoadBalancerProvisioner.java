@@ -324,8 +324,8 @@ public class LoadBalancerProvisioner {
     }
 
     /** Returns whether load balancer is provisioned in given account */
-    private static boolean inAccount(CloudAccount cloudAccount, LoadBalancer loadBalancer) {
-        return loadBalancer.instance().isEmpty() || loadBalancer.instance().get().cloudAccount().equals(cloudAccount);
+    private boolean inAccount(CloudAccount cloudAccount, LoadBalancer loadBalancer) {
+        return !nodeRepository.zone().cloud().name().equals(CloudName.AWS) || loadBalancer.instance().isEmpty() || loadBalancer.instance().get().cloudAccount().equals(cloudAccount);
     }
 
     /** Find IP addresses reachable by the load balancer service */
@@ -339,7 +339,7 @@ public class LoadBalancerProvisioner {
         return reachable;
     }
 
-    private static void requireInstance(LoadBalancerId id, LoadBalancer loadBalancer, CloudAccount cloudAccount, ZoneEndpoint zoneEndpoint) {
+    private void requireInstance(LoadBalancerId id, LoadBalancer loadBalancer, CloudAccount cloudAccount, ZoneEndpoint zoneEndpoint) {
         if (loadBalancer.instance().isEmpty()) {
             // Signal that load balancer is not ready yet
             throw new LoadBalancerServiceException("Could not provision " + id + ". The operation will be retried on next deployment");

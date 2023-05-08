@@ -5,14 +5,20 @@ import ai.vespa.http.DomainName;
 import com.google.common.collect.Iterators;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
@@ -60,7 +66,8 @@ public class LoadBalancerProvisionerTest {
     private final NodeResources nodeResources = new NodeResources(2, 4, 10, 0.3);
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
-    private final ProvisioningTester tester = new ProvisioningTester.Builder().flagSource(flagSource).build();
+    private final ProvisioningTester tester = new ProvisioningTester.Builder().flagSource(flagSource)
+            .zone(new Zone(Cloud.builder().name(CloudName.AWS).account(CloudAccount.from("001122334455")).build(), SystemName.main, Environment.prod, RegionName.defaultName())).build();
 
     @Test
     public void provision_load_balancer() {

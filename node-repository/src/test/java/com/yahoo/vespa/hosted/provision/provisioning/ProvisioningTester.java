@@ -447,7 +447,8 @@ public class ProvisioningTester {
                     nameResolver.addRecord(nodeHostname, ipv4Addr);
                 }
             }
-            Node.Builder builder = Node.create(hostname, IP.Config.of(hostIps, ipAddressPool), hostname, flavor, type);
+            Node.Builder builder = Node.create(hostname, IP.Config.of(hostIps, ipAddressPool), hostname, flavor, type)
+                    .cloudAccount(nodeRepository.zone().cloud().account());
             reservedTo.ifPresent(builder::reservedTo);
             nodes.add(builder.build());
         }
