@@ -2,16 +2,17 @@
 package com.yahoo.vespa.model.container.component;
 
 import com.yahoo.container.core.AccessLogConfig;
-import com.yahoo.container.core.AccessLogConfig.FileHandler.CompressionFormat;
 import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.container.logging.VespaAccessLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.vespa.model.VespaVersion;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
 import java.util.Objects;
 import java.util.Optional;
+
+import static com.yahoo.container.core.AccessLogConfig.FileHandler.CompressionFormat.Enum.GZIP;
+import static com.yahoo.container.core.AccessLogConfig.FileHandler.CompressionFormat.Enum.ZSTD;
 
 /**
  * @author Tony Vaagenes
@@ -20,7 +21,7 @@ import java.util.Optional;
 public final class AccessLogComponent extends SimpleComponent implements AccessLogConfig.Producer {
 
 
-    public enum AccessLogType { queryAccessLog, yApacheAccessLog, jsonAccessLog }
+    public enum AccessLogType { queryAccessLog, jsonAccessLog }
     public enum CompressionType { GZIP, ZSTD }
 
     private final String fileNamePattern;
@@ -32,26 +33,23 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     private final int queueSize;
     private final Integer bufferSize;
 
-    public AccessLogComponent(ContainerCluster<?> cluster, AccessLogType logType, String compressionType, Optional<String> clusterName, boolean isHostedVespa)
-    {
+    public AccessLogComponent(ContainerCluster<?> cluster,
+                              AccessLogType logType,
+                              String compressionType,
+                              Optional<String> clusterName,
+                              boolean isHostedVespa) {
         // In hosted Vespa we do not use the clusterName when setting up application ContainerCluster logging
         this(logType,
                 compressionType,
-                clusterName.isEmpty() ? String.format("logs/vespa/access/%s.%s", capitalize(logType.name()), "%Y%m%d%H%M%S") :
-                                        // TODO: Vespa > 8: Clean up
-                                        VespaVersion.major == 7 ? String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName.get(), "%Y%m%d%H%M%S") :
-                                                                  String.format("logs/vespa/access/%s.%s.%s", capitalize(logType.name()), clusterName.get(), "%Y%m%d%H%M%S"),
+             String.format("logs/vespa/access/%s.%s",
+                           capitalize(logTypeAndClusterName(logType, clusterName)),
+                           "%Y%m%d%H%M%S"),
                 null,
                 null,
                 isHostedVespa,
-                clusterName.isEmpty() ? capitalize(logType.name()) :
-                                        capitalize(logType.name()) + "." + clusterName.get(),
+                capitalize(logTypeAndClusterName(logType, clusterName)),
                 -1,
                 ((cluster instanceof ApplicationContainerCluster) ? 4 << 20 : null));
-    }
-
-    private static String capitalize(String name) {
-        return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
     public AccessLogComponent(AccessLogType logType,
@@ -62,8 +60,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
                               boolean isHostedVespa,
                               String symlinkName,
                               Integer queueSize,
-                              Integer bufferSize)
-    {
+                              Integer bufferSize) {
         super(new ComponentModel(accessLogClass(logType), null, null, null));
         this.fileNamePattern = Objects.requireNonNull(fileNamePattern, "File name pattern required when configuring access log");
         this.rotationInterval = rotationInterval;
@@ -75,15 +72,21 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         this.bufferSize = bufferSize;
     }
 
+    private static String capitalize(String name) {
+        return name.substring(0, 1).toUpperCase() + name.substring(1);
+    }
+
+    private static String logTypeAndClusterName(AccessLogType logType, Optional<String> clusterName) {
+        return clusterName.isEmpty()
+                ? logType.name()
+                : logType.name() + "." + clusterName.get();
+    }
+
     private static String accessLogClass(AccessLogType logType) {
-        switch (logType) {
-            case queryAccessLog:
-                return VespaAccessLog.class.getName();
-            case jsonAccessLog:
-                return JSONAccessLog.class.getName();
-            default:
-                throw new AssertionError();
-        }
+        return switch (logType) {
+            case queryAccessLog -> VespaAccessLog.class.getName();
+            case jsonAccessLog -> JSONAccessLog.class.getName();
+        };
     }
 
     @Override
@@ -108,21 +111,10 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         if (bufferSize != null) {
             builder.bufferSize(bufferSize);
         }
-        switch (compressionType) {
-            case GZIP:
-                builder.compressionFormat(CompressionFormat.GZIP);
-                break;
-            case ZSTD:
-                builder.compressionFormat(CompressionFormat.ZSTD);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown compression type: " + compressionType);
-        }
-        return builder;
-    }
-
-    public String getFileNamePattern() {
-        return fileNamePattern;
+        return switch (compressionType) {
+            case GZIP -> builder.compressionFormat(GZIP);
+            case ZSTD -> builder.compressionFormat(ZSTD);
+        };
     }
 
 }
