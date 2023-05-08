@@ -158,6 +158,9 @@ TEST_F(PutOperationTest, simple) {
               "id:test:testdoctype1::, timestamp 100, size 45) => 0",
               _sender.getCommands(true, true));
 
+    auto put_n1 = sent_put_command(0);
+    EXPECT_FALSE(put_n1->get_create_if_non_existent()); // False by default
+
     sendReply();
 
     ASSERT_EQ("PutReply(id:test:testdoctype1::, BucketId(0x0000000000000000), "
@@ -754,6 +757,26 @@ TEST_F(PutOperationTest, failed_condition_probe_fails_op_with_returned_error) {
               "ReturnCode(ABORTED, Failed during write repair condition probe step. Reason: "
               "One or more replicas failed during test-and-set condition evaluation)",
               _sender.getLastReply());
+}
+
+TEST_F(PutOperationTest, create_flag_in_parent_put_is_propagated_to_sent_puts) {
+    setup_stripe(Redundancy(2), NodeCount(2), "version:1 storage:2 distributor:1");
+    auto doc = createDummyDocument("test", "test");
+    auto bucket = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
+    addNodesToBucketDB(bucket, "1=10/20/30,0=20/30/40");
+
+    auto put = createPut(doc);
+    // Toggling the create-flag only makes sense in the presence of a TaS-condition
+    put->setCondition(TestAndSetCondition("test.foo"));
+    put->set_create_if_non_existent(true);
+
+    sendPut(std::move(put));
+    ASSERT_EQ("Put => 1,Put => 0", _sender.getCommands(true));
+
+    auto put_n1 = sent_put_command(0);
+    EXPECT_TRUE(put_n1->get_create_if_non_existent());
+    auto put_n0 = sent_put_command(1);
+    EXPECT_TRUE(put_n0->get_create_if_non_existent());
 }
 
 }
