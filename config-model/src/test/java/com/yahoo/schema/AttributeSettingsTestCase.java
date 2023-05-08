@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.Optional;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -333,5 +334,37 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         assertSame(single.getSorting(), array.getSorting());
         assertSame(single.getAliases(), array.getAliases());
     }
+
+    @Test
+    void distance_metric_is_propagated_to_attributes_config() throws ParseException {
+        assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.ANGULAR, "angular");
+        assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.EUCLIDEAN, "euclidean");
+        assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.HAMMING, "hamming");
+        assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.GEODEGREES, "geodegrees");
+        // TODO Vespa 9: Remove 'innerproduct' as alias for 'prenormalized-angular'.
+        assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.INNERPRODUCT, "innerproduct");
+        assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.PRENORMALIZED_ANGULAR, "prenormalized-angular");
+    }
+
+    private void assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.Enum expDistanceMetric,
+                                             String schemaDistanceMetric) throws ParseException {
+        var attrs = new AttributeFields(getSchemaWithDistanceMetric(schemaDistanceMetric));
+        var builder = new AttributesConfig.Builder();
+        attrs.getConfig(builder, AttributeFields.FieldSet.ALL, 100);
+        var cfg = builder.build();
+        assertEquals(expDistanceMetric, cfg.attribute(0).distancemetric());
+    }
+
+    private Schema getSchemaWithDistanceMetric(String distanceMetric) throws ParseException {
+        return getSchema(joinLines("search test {",
+                        "  document test {",
+                        "    field t type tensor(x[2]) {",
+                        "      indexing: attribute",
+                        "      attribute { distance-metric: " + distanceMetric + "}",
+                        "    }",
+                        "  }",
+                        "}"));
+    }
+
 
 }

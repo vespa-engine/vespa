@@ -39,7 +39,7 @@ make_distance_function_factory(search::attribute::DistanceMetric variant,
                 case CellType::DOUBLE: return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<double>>();
                 default:               return std::make_unique<PrenormalizedAngularDistanceFunctionFactory<float>>();
             }
-        case DistanceMetric::TransformedMips:
+        case DistanceMetric::Dotproduct:
             switch (cell_type) {
                 case CellType::DOUBLE: return std::make_unique<MipsDistanceFunctionFactory<double>>();
                 case CellType::INT8:   return std::make_unique<MipsDistanceFunctionFactory<vespalib::eval::Int8Float>>();

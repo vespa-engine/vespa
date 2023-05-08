@@ -136,10 +136,9 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
             break;
         case CfgDm::PRENORMALIZED_ANGULAR:
             dm = DistanceMetric::PrenormalizedAngular;
-            /*
-        case CfgDm::TRANSFORMED_MIPS:
-            dm = DistanceMetric::TransformedMips;
-            */
+            break;
+        case CfgDm::DOTPRODUCT:
+            dm = DistanceMetric::Dotproduct;
             break;
     }
     retval.set_distance_metric(dm);

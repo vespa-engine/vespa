@@ -180,6 +180,16 @@ assertCollectionType(CollectionType exp, AttributesConfig::Attribute::Collection
         EXPECT_EQUAL(exp.createIfNonExistant(), out.collectionType().createIfNonExistant());
 }
 
+void
+expect_distance_metric(AttributesConfig::Attribute::Distancemetric in_metric,
+                       DistanceMetric out_metric)
+{
+    AttributesConfig::Attribute a;
+    a.distancemetric = in_metric;
+    auto out = ConfigConverter::convert(a);
+    EXPECT_TRUE(out.distance_metric() == out_metric);
+}
+
 
 TEST("require that config can be converted")
 {
@@ -254,16 +264,13 @@ TEST("require that config can be converted")
         EXPECT_TRUE(out.distance_metric() == DistanceMetric::Euclidean);
     }
     { // distance metric (explicit)
-        CACA a;
-        a.distancemetric = AttributesConfig::Attribute::Distancemetric::GEODEGREES;
-        auto out = ConfigConverter::convert(a);
-        EXPECT_TRUE(out.distance_metric() == DistanceMetric::GeoDegrees);
-    }
-    { // distance metric (explicit)
-        CACA a;
-        a.distancemetric = AttributesConfig::Attribute::Distancemetric::INNERPRODUCT;
-        auto out = ConfigConverter::convert(a);
-        EXPECT_TRUE(out.distance_metric() == DistanceMetric::InnerProduct);
+        expect_distance_metric(AttributesConfig::Attribute::Distancemetric::EUCLIDEAN, DistanceMetric::Euclidean);
+        expect_distance_metric(AttributesConfig::Attribute::Distancemetric::ANGULAR, DistanceMetric::Angular);
+        expect_distance_metric(AttributesConfig::Attribute::Distancemetric::GEODEGREES, DistanceMetric::GeoDegrees);
+        expect_distance_metric(AttributesConfig::Attribute::Distancemetric::HAMMING, DistanceMetric::Hamming);
+        expect_distance_metric(AttributesConfig::Attribute::Distancemetric::INNERPRODUCT, DistanceMetric::InnerProduct);
+        expect_distance_metric(AttributesConfig::Attribute::Distancemetric::PRENORMALIZED_ANGULAR, DistanceMetric::PrenormalizedAngular);
+        expect_distance_metric(AttributesConfig::Attribute::Distancemetric::DOTPRODUCT, DistanceMetric::Dotproduct);
     }
     { // hnsw index default params (enabled)
         CACA a;

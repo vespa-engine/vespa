@@ -37,7 +37,7 @@ attribute[].maxuncommittedmemory long default=130000
 
 # The distance metric to use for nearest neighbor search.
 # Is only used when the attribute is a 1-dimensional indexed tensor.
-attribute[].distancemetric enum { EUCLIDEAN, ANGULAR, GEODEGREES, INNERPRODUCT, HAMMING, PRENORMALIZED_ANGULAR } default=EUCLIDEAN
+attribute[].distancemetric enum { EUCLIDEAN, ANGULAR, GEODEGREES, INNERPRODUCT, HAMMING, PRENORMALIZED_ANGULAR, DOTPRODUCT } default=EUCLIDEAN
 
 # Configuration parameters for a hnsw index used together with a 1-dimensional indexed tensor for approximate nearest neighbor search.
 attribute[].index.hnsw.enabled bool default=false
