@@ -104,6 +104,7 @@ PutOperation::sendPutToBucketOnNode(document::BucketSpace bucketSpace, const doc
     copyMessageSettings(*_msg, *command);
     command->setUpdateTimestamp(_msg->getUpdateTimestamp());
     command->setCondition(_msg->getCondition());
+    command->set_create_if_non_existent(_msg->get_create_if_non_existent());
     putBatch.emplace_back(std::move(command), node);
 
 }
