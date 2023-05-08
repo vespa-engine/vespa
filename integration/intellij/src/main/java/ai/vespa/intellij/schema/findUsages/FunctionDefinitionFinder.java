@@ -51,7 +51,7 @@ public class FunctionDefinitionFinder extends UsageFinder {
     private boolean findDefinitionIn(RankProfile profile) {
         for (var entry : profile.definedFunctions().entrySet()) {
             // TODO: Resolve the right function in the list by parameter count
-            if (entry.key().equals(functionNameToFind) && entry.getValue().size() > 0)
+            if (entry.getKey().equals(functionNameToFind) && entry.getValue().size() > 0)
                 processor().process(new UsageInfo(entry.getValue().get(0).definition()));
         }
         return true;
