@@ -197,6 +197,12 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         configure_stripe(builder);
     }
 
+    void configure_enable_condition_probing(bool enable_probing) {
+        ConfigBuilder builder;
+        builder.enableConditionProbing = enable_probing;
+        configure_stripe(builder);
+    }
+
     bool scheduler_has_implicitly_clear_priority_on_schedule_set() const noexcept {
         return _stripe->_scheduler->implicitly_clear_priority_on_schedule();
     }
@@ -1029,6 +1035,19 @@ TEST_F(DistributorStripeTest, enable_two_phase_gc_config_is_propagated_to_intern
 
     configure_enable_two_phase_garbage_collection(false);
     EXPECT_FALSE(getConfig().enable_two_phase_garbage_collection());
+}
+
+TEST_F(DistributorStripeTest, enable_condition_probing_config_is_propagated_to_internal_config)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    EXPECT_FALSE(getConfig().enable_condition_probing());
+
+    configure_enable_condition_probing(true);
+    EXPECT_TRUE(getConfig().enable_condition_probing());
+
+    configure_enable_condition_probing(false);
+    EXPECT_FALSE(getConfig().enable_condition_probing());
 }
 
 }
