@@ -9,7 +9,7 @@ namespace proton {
 /**
  * This class implements the IFlushTarget interface to proxy a summary manager.
  */
-class SummaryFlushTarget : public searchcorespi::IFlushTarget {
+class SummaryFlushTarget : public searchcorespi::LeafFlushTarget {
 private:
     using FlushStats = searchcorespi::FlushStats;
     search::IDocumentStore & _docStore;

@@ -19,7 +19,7 @@ class TransientResourceUsage;
 /**
  * Implementation of IFlushTarget interface for attribute vectors.
  */
-class FlushableAttribute : public searchcorespi::IFlushTarget
+class FlushableAttribute : public searchcorespi::LeafFlushTarget
 {
 private:
     /**
@@ -29,15 +29,15 @@ private:
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     using FlushStats = searchcorespi::FlushStats;
 
-    AttributeVectorSP           _attr;
-    bool                        _cleanUpAfterFlush;
-    FlushStats                  _lastStats;
-    const search::TuneFileAttributes _tuneFileAttributes;
+    AttributeVectorSP                        _attr;
+    bool                                     _cleanUpAfterFlush;
+    FlushStats                               _lastStats;
+    const search::TuneFileAttributes         _tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
-    vespalib::ISequencedTaskExecutor &_attributeFieldWriter;
-    HwInfo                       _hwInfo;
-    std::shared_ptr<AttributeDirectory> _attrDir;
-    double                       _replay_operation_cost;
+    vespalib::ISequencedTaskExecutor        &_attributeFieldWriter;
+    HwInfo                                   _hwInfo;
+    std::shared_ptr<AttributeDirectory>      _attrDir;
+    double                                   _replay_operation_cost;
 
     Task::UP internalInitFlush(SerialNum currentSerial);
 

@@ -50,7 +50,7 @@ private:
     };
     using FlushMap = std::map<uint32_t, FlushInfo>;
     using FlushHandlerMap = HandlerMap<IFlushHandler>;
-    bool                           _closed;
+    std::atomic<bool>              _closed;
     const uint32_t                 _maxConcurrent;
     const vespalib::duration       _idleInterval;
     uint32_t                       _taskId;    
@@ -75,15 +75,20 @@ private:
     std::pair<FlushContext::List,bool> getSortedTargetList();
     std::shared_ptr<search::IFlushToken> get_flush_token(const FlushContext& ctx);
     FlushContext::SP initNextFlush(const FlushContext::List &lst);
-    vespalib::string flushNextTarget(const vespalib::string & name);
+    vespalib::string flushNextTarget(const vespalib::string & name, const FlushContext::List & contexts);
     void flushAll(const FlushContext::List &lst);
     bool prune();
     uint32_t initFlush(const FlushContext &ctx);
     uint32_t initFlush(const IFlushHandler::SP &handler, const IFlushTarget::SP &target);
     void flushDone(const FlushContext &ctx, uint32_t taskId);
     bool canFlushMore(const std::unique_lock<std::mutex> &guard) const;
+    void wait_for_slot_or_pending_prune(IFlushTarget::Priority priority);
     bool wait(vespalib::duration minimumWaitTimeIfReady, bool ignorePendingPrune);
+    void wait(vespalib::duration minimumWaitTimeIfReady) {
+        wait(minimumWaitTimeIfReady, false);
+    }
     bool isFlushing(const std::lock_guard<std::mutex> &guard, const vespalib::string & name) const;
+    vespalib::string checkAndFlush(vespalib::string prev);
 
     friend class FlushTask;
     friend class FlushEngineExplorer;

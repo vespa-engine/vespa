@@ -11,7 +11,7 @@ namespace proton {
 /**
  * Implements a flush target that shrinks lid space in target.
  */
-class ShrinkLidSpaceFlushTarget : public searchcorespi::IFlushTarget
+class ShrinkLidSpaceFlushTarget : public searchcorespi::LeafFlushTarget
 {
     /**
      * Task representing that shrinking has been performed.
@@ -46,7 +46,6 @@ public:
     DiskGain getApproxDiskGain() const override;
     SerialNum getFlushedSerialNum() const override;
     Time getLastFlushTime() const override;
-    bool needUrgentFlush() const override;
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
     searchcorespi::FlushStats getLastFlushStats() const override;
     uint64_t getApproxBytesToWriteToDisk() const override;

@@ -43,7 +43,7 @@ public:
 
 SummaryFlushTarget::SummaryFlushTarget(IDocumentStore & docStore,
                                        vespalib::Executor & summaryService)
-    : IFlushTarget("summary.flush", Type::SYNC, Component::DOCUMENT_STORE),
+    : LeafFlushTarget("summary.flush", Type::SYNC, Component::DOCUMENT_STORE),
       _docStore(docStore),
       _summaryService(summaryService),
       _lastStats()
