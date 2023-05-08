@@ -159,9 +159,7 @@ FlushEngine::canFlushMore(const std::unique_lock<std::mutex> &, IFlushTarget::Pr
 void
 FlushEngine::idle_wait(vespalib::duration minimumWaitTimeIfReady) {
     std::unique_lock<std::mutex> guard(_lock);
-    if (canFlushMore(guard, IFlushTarget::Priority::HIGH) && _pendingPrune.empty()) {
-        _cond.wait_for(guard, minimumWaitTimeIfReady);
-    }
+    _cond.wait_for(guard, minimumWaitTimeIfReady);
 }
 
 bool
