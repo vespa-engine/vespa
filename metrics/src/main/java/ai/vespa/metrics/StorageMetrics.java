@@ -1,7 +1,4 @@
-package com.yahoo.metrics;
-
-import java.util.EnumSet;
-import java.util.List;
+package ai.vespa.metrics;
 
 /**
  * @author yngveaasheim

@@ -1,7 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.ComponentId;
+import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.docproc.impl.DocumentOperationWrapper;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.docproc.proxy.ProxyDocument;
@@ -11,8 +13,6 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.metrics.ContainerMetrics;
 
 import java.util.List;
 import java.util.Map;

@@ -1,6 +1,4 @@
-package com.yahoo.metrics;
-
-import java.util.EnumSet;
+package ai.vespa.metrics;
 
 public enum Suffix {
     ninety_five_percentile("95percentile"),

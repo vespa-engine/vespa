@@ -1,9 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
-import com.yahoo.metrics.ContainerMetrics;
-import com.yahoo.metrics.SearchNodeMetrics;
-
+import ai.vespa.metrics.ContainerMetrics;
+import ai.vespa.metrics.SearchNodeMetrics;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Set;

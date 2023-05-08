@@ -2,6 +2,7 @@
 package com.yahoo.search.handler;
 
 import ai.vespa.cloud.ZoneInfo;
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Vtag;
@@ -21,7 +22,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
-import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.query.parser.ParseException;

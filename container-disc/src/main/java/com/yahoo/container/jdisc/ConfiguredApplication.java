@@ -63,11 +63,11 @@ import java.util.concurrent.Phaser;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ai.vespa.metrics.ContainerMetrics.APPLICATION_GENERATION;
+import static ai.vespa.metrics.ContainerMetrics.JDISC_APPLICATION_COMPONENT_GRAPH_CREATION_TIME_MILLIS;
+import static ai.vespa.metrics.ContainerMetrics.JDISC_APPLICATION_COMPONENT_GRAPH_RECONFIGURATIONS;
+import static ai.vespa.metrics.ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS;
 import static com.yahoo.collections.CollectionUtil.first;
-import static com.yahoo.metrics.ContainerMetrics.APPLICATION_GENERATION;
-import static com.yahoo.metrics.ContainerMetrics.JDISC_APPLICATION_COMPONENT_GRAPH_CREATION_TIME_MILLIS;
-import static com.yahoo.metrics.ContainerMetrics.JDISC_APPLICATION_COMPONENT_GRAPH_RECONFIGURATIONS;
-import static com.yahoo.metrics.ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS;
 
 /**
  * @author Tony Vaagenes

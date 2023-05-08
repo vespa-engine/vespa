@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -10,7 +11,6 @@ import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.MutableX509KeyManager;
 import com.yahoo.security.Pkcs10Csr;

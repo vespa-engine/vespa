@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import ai.vespa.metrics.ContainerMetrics;
+import ai.vespa.metrics.HostedNodeAdminMetrics;
+import ai.vespa.metrics.SearchNodeMetrics;
+import ai.vespa.metrics.StorageMetrics;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.metrics.ContainerMetrics;
-import com.yahoo.metrics.HostedNodeAdminMetrics;
-import com.yahoo.metrics.SearchNodeMetrics;
-import com.yahoo.metrics.StorageMetrics;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.yahoo.metrics.ContainerMetrics.APPLICATION_GENERATION;
-import static com.yahoo.metrics.ContainerMetrics.IN_SERVICE;
+import static ai.vespa.metrics.ContainerMetrics.APPLICATION_GENERATION;
+import static ai.vespa.metrics.ContainerMetrics.IN_SERVICE;
 
 /**
  * A response containing metrics for a collection of nodes.

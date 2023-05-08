@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.threadpool;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.concurrent.Receiver;
 import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.container.test.MetricMock;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.metrics.ContainerMetrics;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

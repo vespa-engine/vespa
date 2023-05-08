@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.metrics.ContainerMetrics;
 
 import java.util.Map;
 import java.util.stream.Collectors;

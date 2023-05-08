@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.statistics;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.MetricSettings;
-import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
