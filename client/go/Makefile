@@ -15,6 +15,7 @@ DIST ?= $(CURDIR)/dist
 
 GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/internal/build.Version=$(VERSION)"
 GIT_ROOT := $(shell git rev-parse --show-toplevel)
+GO_TMPDIR := $(GIT_ROOT)/build/go
 DIST_TARGETS := dist-mac dist-mac-arm64 dist-linux dist-linux-arm64 dist-win32 dist-win64
 
 all: test checkfmt install
@@ -131,7 +132,7 @@ clean:
 	rmdir -p $(BIN) $(SHARE)/man/man1 > /dev/null 2>&1 || true
 
 test: ci
-	mkdir -p $(CURDIR)/tmp && TMPDIR=$(CURDIR)/tmp go test ./...
+	mkdir -p $(GO_TMPDIR) && GOTMPDIR=$(GO_TMPDIR) go test ./...
 
 checkfmt:
 	@sh -c "test -z $$(gofmt -l .)" || { echo "one or more files need to be formatted: try make fmt to fix this automatically"; exit 1; }
