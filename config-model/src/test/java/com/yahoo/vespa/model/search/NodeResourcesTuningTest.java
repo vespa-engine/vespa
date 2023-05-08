@@ -38,7 +38,7 @@ public class NodeResourcesTuningTest {
     }
 
     @Test
-    void reserved_memory_on_content_node_is_0_5_gb() {
+    void reserved_memory_on_content_node() {
         assertEquals(0.7, reservedMemoryGb, delta);
     }
 
