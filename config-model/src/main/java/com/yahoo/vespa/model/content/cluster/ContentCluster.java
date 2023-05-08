@@ -245,7 +245,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             }
         }
 
-        /** Returns of memory reserved on a host. Memory is reserved for the jvm if th ecluster is combined */
+        /** Returns of memory reserved on a host. Memory is reserved for the jvm if the cluster is combined */
         private double fractionOfMemoryReserved(String clusterId, Collection<ContainerModel> containers) {
             for (ContainerModel containerModel : containers) {
                 Optional<String> hostClusterId = containerModel.getCluster().getHostClusterId();

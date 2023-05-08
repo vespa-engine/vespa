@@ -38,8 +38,8 @@ public class NodeResourcesTuningTest {
     }
 
     @Test
-    void reserved_memory_on_content_node_is_0_5_gb() {
-        assertEquals(0.5, reservedMemoryGb, delta);
+    void reserved_memory_on_content_node() {
+        assertEquals(0.7, reservedMemoryGb, delta);
     }
 
     private ProtonConfig getProtonMemoryConfig(List<Pair<String, String>> sdAndMode, double gb) {
