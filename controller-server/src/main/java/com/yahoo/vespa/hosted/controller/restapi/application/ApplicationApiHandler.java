@@ -2425,7 +2425,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse jobDeploy(ApplicationId id, JobType type, HttpRequest request) {
-        if ( ! type.environment().isManuallyDeployed() && ! isOperator(request))
+        if ( ! type.environment().isManuallyDeployed() && ! (isOperator(request) || controller.system().isCd()))
             throw new IllegalArgumentException("Direct deployments are only allowed to manually deployed environments.");
 
         Map<String, byte[]> dataParts = parseDataParts(request);
