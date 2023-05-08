@@ -175,8 +175,8 @@
                                         <include>com.yahoo.vespa:vsm:*:test</include>
 
                                         <!-- 3rd party test dependencies -->
-                                        <include>ai.djl:api:jar:0.20.0:test</include>
-                                        <include>ai.djl.huggingface:tokenizers:jar:0.20.0:test</include>
+                                        <include>ai.djl:api:jar:0.22.1:test</include>
+                                        <include>ai.djl.huggingface:tokenizers:jar:0.22.1:test</include>
                                         <include>com.google.code.findbugs:jsr305:3.0.2:test</include>
                                         <include>com.google.protobuf:protobuf-java:3.21.7:test</include>
                                         <include>com.ibm.icu:icu4j:70.1:test</include>
