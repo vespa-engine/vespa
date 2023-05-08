@@ -119,6 +119,10 @@ public class LoadBalancerInstance {
                                         cloudAccount);
     }
 
+    public LoadBalancerInstance with(CloudAccount cloudAccount) {
+        return new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, serviceIds, cloudAccount);
+    }
+
     /** Prepends the given service IDs, possibly changing the order of those we have in this. */
     public LoadBalancerInstance withServiceIds(List<PrivateServiceId> serviceIds) {
         List<PrivateServiceId> ids = new ArrayList<>(serviceIds);
