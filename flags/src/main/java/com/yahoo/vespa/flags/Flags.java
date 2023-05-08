@@ -390,12 +390,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag FAIL_DEPLOYMENT_ON_MISSING_CERTIFICATE_FILE = defineFeatureFlag(
-            "fail-on-missing-certificate-file", true, List.of("hmusum"), "2023-04-21", "2023-05-21",
-            "Whether to fail in controller when a submitted application package has no certificate files",
-            "Takes effect at redeployment",
-            ZONE_ID);
-
     public static final UnboundBooleanFlag NEW_IDDOC_LAYOUT = defineFeatureFlag(
             "new_iddoc_layout", false, List.of("tokle", "bjorncs", "olaa"), "2023-04-24", "2023-05-31",
             "Whether to use new identity document layout",
