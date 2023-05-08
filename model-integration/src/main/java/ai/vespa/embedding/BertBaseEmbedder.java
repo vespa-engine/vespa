@@ -57,8 +57,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
 
         OnnxEvaluatorOptions options = new OnnxEvaluatorOptions();
         options.setExecutionMode(config.onnxExecutionMode().toString());
-        options.setInterOpThreads(modifyThreadCount(config.onnxInterOpThreads()));
-        options.setIntraOpThreads(modifyThreadCount(config.onnxIntraOpThreads()));
+        options.setThreads(config.onnxInterOpThreads(), config.onnxIntraOpThreads());
 
         tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().toString()).build();
         this.evaluator = onnx.evaluatorOf(config.transformerModel().toString(), options);
@@ -168,12 +167,6 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
 
     private static Tensor createTokenTypeIds(Tensor d)  {
         return d.map((x) -> 0);  // Assume only one token type
-    }
-
-    private int modifyThreadCount(int numThreads) {
-        if (numThreads >= 0)
-            return numThreads;
-        return Math.max(1, (int) Math.ceil(((double) Runtime.getRuntime().availableProcessors()) / (-1 * numThreads)));
     }
 
 }
