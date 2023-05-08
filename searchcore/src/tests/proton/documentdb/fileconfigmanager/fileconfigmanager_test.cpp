@@ -30,9 +30,9 @@ using namespace vespa::config::search::core;
 using namespace vespa::config::search;
 using namespace std::chrono_literals;
 using vespa::config::content::core::BucketspacesConfig;
-using search::fef::OnnxModels;
-using search::fef::RankingConstants;
-using search::fef::RankingExpressions;
+using proton::matching::RankingConstants;
+using proton::matching::RankingExpressions;
+using proton::matching::OnnxModels;
 
 using DBCM = DocumentDBConfigHelper;
 using DocumenttypesConfigSP = DocumentDBConfig::DocumenttypesConfigSP;

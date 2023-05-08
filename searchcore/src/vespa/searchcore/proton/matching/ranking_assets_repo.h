@@ -8,7 +8,7 @@
 #include "ranking_expressions.h"
 #include <vespa/eval/eval/value_cache/constant_value.h>
 
-namespace search::fef {
+namespace proton::matching {
 
 /**
  * Class that provides access to a configured set of rank constant values.
@@ -33,7 +33,7 @@ public:
     ~RankingAssetsRepo() override;
     vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const override;
     vespalib::string getExpression(const vespalib::string &name) const override;
-    const OnnxModel *getOnnxModel(const vespalib::string &name) const override;
+    const search::fef::OnnxModel *getOnnxModel(const vespalib::string &name) const override;
 };
 
 }

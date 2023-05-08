@@ -6,9 +6,9 @@
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".fef.ranking_expressions");
+LOG_SETUP(".proton.matching.ranking_expressions");
 
-namespace search::fef {
+namespace proton::matching {
 
 namespace {
 

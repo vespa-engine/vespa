@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/i_ranking_assets_repo.h>
+#include "i_ranking_assets_repo.h"
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -19,13 +19,13 @@ class IndexEnvironment : public search::fef::IIndexEnvironment
 {
 private:
     using FieldNameMap = vespalib::hash_map<string, uint32_t>;
-    search::fef::TableManager              _tableManager;
-    search::fef::Properties                _properties;
-    FieldNameMap                           _fieldNames;
-    std::vector<search::fef::FieldInfo>    _fields;
-    mutable FeatureMotivation              _motivation;
-    const search::fef::IRankingAssetsRepo& _rankingAssetsRepo;
-    uint32_t                               _distributionKey;
+    search::fef::TableManager           _tableManager;
+    search::fef::Properties             _properties;
+    FieldNameMap                        _fieldNames;
+    std::vector<search::fef::FieldInfo> _fields;
+    mutable FeatureMotivation           _motivation;
+    const IRankingAssetsRepo           &_rankingAssetsRepo;
+    uint32_t                            _distributionKey;
 
 
     /**
@@ -50,7 +50,7 @@ public:
     IndexEnvironment(uint32_t distributionKey,
                      const search::index::Schema &schema,
                      search::fef::Properties props,
-                     const search::fef::IRankingAssetsRepo& constantValueRepo);
+                     const IRankingAssetsRepo &constantValueRepo);
     ~IndexEnvironment() override;
 
 

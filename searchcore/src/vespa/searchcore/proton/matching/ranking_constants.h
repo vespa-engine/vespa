@@ -7,11 +7,10 @@
 #include <vector>
 #include <memory>
 
-namespace search::fef {
+namespace proton::matching {
 
 /**
- * Class representing a set of configured ranking constants, with
- * name, type and file path (where constant is stored).
+ * Class representing a set of configured ranking constants, with name, type and file path (where constant is stored).
  */
 class RankingConstants {
 public:
