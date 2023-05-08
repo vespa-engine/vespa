@@ -96,7 +96,7 @@ type Document struct {
 	Operation Operation
 	Condition string
 	Create    bool
-	Body      []byte
+	Fields    []byte
 }
 
 type jsonDocument struct {
@@ -235,20 +235,12 @@ func parseDocument(d *jsonDocument) (Document, error) {
 	if err != nil {
 		return Document{}, err
 	}
-	var body []byte
-	if d.Fields != nil {
-		jsonObject := `{"fields":`
-		body = make([]byte, 0, len(jsonObject)+len(d.Fields)+1)
-		body = append(body, []byte(jsonObject)...)
-		body = append(body, d.Fields...)
-		body = append(body, byte('}'))
-	}
 	return Document{
 		Id:        docId,
 		Operation: op,
 		Condition: d.Condition,
 		Create:    d.Create,
-		Body:      body,
+		Fields:    d.Fields,
 	}, nil
 }
 

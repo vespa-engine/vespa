@@ -59,9 +59,9 @@ func assertLeastBusy(t *testing.T, id int, client *Client) {
 
 func TestClientSend(t *testing.T) {
 	docs := []Document{
-		{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "123"}}`)},
-		{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "456"}}`)},
-		{Create: true, Id: mustParseId("id:ns:type::doc3"), Operation: OperationUpdate, Body: []byte(`{"fields":{"baz": "789"}}`)},
+		{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(`{"foo": "123"}`)},
+		{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Fields: []byte(`{"foo": "456"}`)},
+		{Create: true, Id: mustParseId("id:ns:type::doc3"), Operation: OperationUpdate, Fields: []byte(`{"baz": "789"}`)},
 	}
 	httpClient := mock.HTTPClient{}
 	client, _ := NewClient(ClientOptions{
@@ -116,9 +116,15 @@ func TestClientSend(t *testing.T) {
 		if err != nil {
 			t.Fatalf("got unexpected error %q", err)
 		}
-		wantBody := doc.Body
-		if !bytes.Equal(body, wantBody) {
-			t.Errorf("got r.Body = %q, want %q", string(body), string(wantBody))
+		var wantBody bytes.Buffer
+		wantBody.WriteString(`{"fields":`)
+		wantBody.Write(doc.Fields)
+		wantBody.WriteString("}")
+		if !bytes.Equal(body, wantBody.Bytes()) {
+			t.Errorf("got r.Body = %q, want %q", string(body), wantBody.String())
+		}
+		if r.ContentLength != int64(len(body)) {
+			t.Errorf("got r.ContentLength=%d, want %d", r.ContentLength, len(body))
 		}
 	}
 	want := Stats{
@@ -148,9 +154,9 @@ func TestClientSendCompressed(t *testing.T) {
 		Timeout: time.Duration(5 * time.Second),
 	}, []util.HTTPClient{&httpClient})
 
-	bigBody := fmt.Sprintf(`{"fields":{"foo": "%s"}}`, strings.Repeat("s", 512+1))
-	bigDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(bigBody)}
-	smallDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "s"}}`)}
+	bigBody := fmt.Sprintf(`{"foo": "%s"}`, strings.Repeat("s", 512+1))
+	bigDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(bigBody)}
+	smallDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Fields: []byte(`{"foo": "s"}`)}
 
 	client.options.Compression = CompressionNone
 	_ = client.Send(bigDoc)
@@ -183,6 +189,9 @@ func assertCompressedRequest(t *testing.T, want bool, request *http.Request) {
 	body, err := io.ReadAll(request.Body)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if request.ContentLength != int64(len(body)) {
+		t.Errorf("got ContentLength=%d, want %d", request.ContentLength, len(body))
 	}
 	compressed := bytes.HasPrefix(body, []byte{0x1f, 0x8b})
 	if compressed != want {
@@ -289,12 +298,12 @@ func benchmarkClientSend(b *testing.B, compression Compression, document Documen
 }
 
 func BenchmarkClientSend(b *testing.B) {
-	doc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "my document"}}`)}
+	doc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(`{"foo": "my document"}`)}
 	benchmarkClientSend(b, CompressionNone, doc)
 }
 
 func BenchmarkClientSendCompressed(b *testing.B) {
-	body := fmt.Sprintf(`{"fields":{"foo": "%s"}}`, strings.Repeat("my document", 100))
-	doc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(body)}
+	body := fmt.Sprintf(`{"foo": "%s"}`, strings.Repeat("my document", 100))
+	doc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(body)}
 	benchmarkClientSend(b, CompressionGzip, doc)
 }

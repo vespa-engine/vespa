@@ -134,8 +134,8 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 	t.Helper()
 	r := NewDecoder(strings.NewReader(jsonLike))
 	want := []Document{
-		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields":{"foo": "123"}}`)},
-		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Body: []byte(`{"fields":{"bar": "456"}}`)},
+		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Fields: []byte(`{"foo": "123"}`)},
+		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Fields: []byte(`{"bar": "456"}`)},
 		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationRemove},
 	}
 	got := []Document{}

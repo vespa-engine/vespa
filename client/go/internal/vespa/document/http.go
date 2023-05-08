@@ -25,6 +25,9 @@ const (
 	CompressionAuto Compression = iota
 	CompressionNone
 	CompressionGzip
+
+	fieldsPrefix = `{"fields":`
+	fieldsSuffix = "}"
 )
 
 // Client represents a HTTP client for the /document/v1/ API.
@@ -179,13 +182,19 @@ func (c *Client) buffer() *bytes.Buffer {
 }
 
 func (c *Client) createRequest(method, url string, body []byte) (*http.Request, error) {
-	var r io.Reader
+	// include the outer object expected by /document/v1/ without copying the body
+	r := io.MultiReader(
+		strings.NewReader(fieldsPrefix),
+		bytes.NewReader(body),
+		strings.NewReader(fieldsSuffix),
+	)
+	contentLength := int64(len(fieldsPrefix) + len(body) + len(fieldsSuffix))
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
 	if useGzip {
 		var buf bytes.Buffer
 		buf.Grow(1024)
 		w := c.gzipWriter(&buf)
-		if _, err := w.Write(body); err != nil {
+		if _, err := io.Copy(w, r); err != nil {
 			return nil, err
 		}
 		if err := w.Close(); err != nil {
@@ -193,8 +202,7 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 		}
 		c.gzippers.Put(w)
 		r = &buf
-	} else {
-		r = bytes.NewReader(body)
+		contentLength = int64(buf.Len())
 	}
 	req, err := http.NewRequest(method, url, r)
 	if err != nil {
@@ -204,6 +212,7 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 		req.Header.Set("Content-Encoding", "gzip")
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	req.ContentLength = contentLength
 	return req, nil
 }
 
@@ -219,7 +228,7 @@ func (c *Client) Send(document Document) Result {
 	start := c.now()
 	result := Result{Id: document.Id, Stats: Stats{Requests: 1}}
 	method, url := c.methodAndURL(document)
-	req, err := c.createRequest(method, url, document.Body)
+	req, err := c.createRequest(method, url, document.Fields)
 	if err != nil {
 		return resultWithErr(result, err)
 	}
@@ -229,7 +238,7 @@ func (c *Client) Send(document Document) Result {
 	}
 	defer resp.Body.Close()
 	elapsed := c.now().Sub(start)
-	return c.resultWithResponse(resp, result, document, elapsed)
+	return c.resultWithResponse(resp, req.ContentLength, result, document, elapsed)
 }
 
 func resultWithErr(result Result, err error) Result {
@@ -239,7 +248,7 @@ func resultWithErr(result Result, err error) Result {
 	return result
 }
 
-func (c *Client) resultWithResponse(resp *http.Response, result Result, document Document, elapsed time.Duration) Result {
+func (c *Client) resultWithResponse(resp *http.Response, sentBytes int64, result Result, document Document, elapsed time.Duration) Result {
 	result.HTTPStatus = resp.StatusCode
 	result.Stats.Responses++
 	result.Stats.ResponsesByCode = map[int]int64{resp.StatusCode: 1}
@@ -271,7 +280,7 @@ func (c *Client) resultWithResponse(resp *http.Response, result Result, document
 	}
 	result.Message = body.Message
 	result.Trace = string(body.Trace)
-	result.Stats.BytesSent = int64(len(document.Body))
+	result.Stats.BytesSent = sentBytes
 	result.Stats.BytesRecv = int64(written)
 	if !result.Success() {
 		result.Stats.Errors++
