@@ -184,19 +184,18 @@ func (c *Client) buffer() *bytes.Buffer {
 }
 
 func (c *Client) createRequest(method, url string, body []byte) (*http.Request, error) {
-	// include the outer object expected by /document/v1/ without copying the body
-	r := io.MultiReader(
-		bytes.NewReader(fieldsPrefix),
-		bytes.NewReader(body),
-		bytes.NewReader(fieldsSuffix),
-	)
-	contentLength := int64(len(fieldsPrefix) + len(body) + len(fieldsSuffix))
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
+	var (
+		r             io.Reader
+		contentLength int64
+	)
 	if useGzip {
 		buf := bytes.NewBuffer(make([]byte, 0, 1024))
 		w := c.gzipWriter(buf)
-		if _, err := io.Copy(w, r); err != nil {
-			return nil, err
+		for _, b := range [][]byte{fieldsPrefix, body, fieldsSuffix} {
+			if _, err := w.Write(b); err != nil {
+				return nil, err
+			}
 		}
 		if err := w.Close(); err != nil {
 			return nil, err
@@ -204,6 +203,13 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 		c.gzippers.Put(w)
 		r = buf
 		contentLength = int64(buf.Len())
+	} else {
+		r = io.MultiReader(
+			bytes.NewReader(fieldsPrefix),
+			bytes.NewReader(body),
+			bytes.NewReader(fieldsSuffix),
+		)
+		contentLength = int64(len(fieldsPrefix) + len(body) + len(fieldsSuffix))
 	}
 	req, err := http.NewRequest(method, url, r)
 	if err != nil {
