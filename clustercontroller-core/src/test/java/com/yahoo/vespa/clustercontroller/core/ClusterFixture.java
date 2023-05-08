@@ -19,14 +19,12 @@ import static org.mockito.Mockito.mock;
 public class ClusterFixture {
 
     public final ContentCluster cluster;
-    public final Distribution distribution;
     public final FakeTimer timer;
     final StateChangeHandler nodeStateChangeHandler;
     private final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
 
-    public ClusterFixture(ContentCluster cluster, Distribution distribution) {
+    public ClusterFixture(ContentCluster cluster) {
         this.cluster = cluster;
-        this.distribution = distribution;
         this.timer = new FakeTimer();
         var context = new FleetControllerContextImpl(new FleetControllerId(cluster.getName(), 0));
         this.nodeStateChangeHandler = new StateChangeHandler(context, timer, mock(EventLogInterface.class));
@@ -184,7 +182,7 @@ public class ClusterFixture {
         Distribution distribution = DistributionBuilder.forFlatCluster(nodeCount);
         ContentCluster cluster = new ContentCluster("foo", nodes, distribution);
 
-        return new ClusterFixture(cluster, distribution);
+        return new ClusterFixture(cluster);
     }
 
     static ClusterFixture forHierarchicCluster(DistributionBuilder.GroupBuilder root) {
@@ -192,7 +190,7 @@ public class ClusterFixture {
         Distribution distribution = DistributionBuilder.forHierarchicCluster(root);
         ContentCluster cluster = new ContentCluster("foo", nodes, distribution);
 
-        return new ClusterFixture(cluster, distribution);
+        return new ClusterFixture(cluster);
     }
 
     ClusterStateGenerator.Params generatorParams() {

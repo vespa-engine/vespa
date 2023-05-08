@@ -6,7 +6,6 @@ import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequest;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequestHandler;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpResult;
-import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -35,8 +34,7 @@ public class StatusHandler implements HttpRequestHandler {
         private final Object answerMonitor = new Object();
 
         public int getPort() { return 0; }
-        public void shutdown() throws InterruptedException, IOException {}
-        public void setPort(int port) {}
+        public void shutdown() {}
         public StatusPageServer.HttpRequest getCurrentHttpRequest() {
             synchronized (answerMonitor) {
                 StatusPageServer.HttpRequest r = request;

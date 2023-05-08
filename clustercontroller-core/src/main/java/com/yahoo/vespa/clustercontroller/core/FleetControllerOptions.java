@@ -469,10 +469,6 @@ public class FleetControllerOptions {
             return this;
         }
 
-        public String[] slobrokConnectionSpecs() {
-            return slobrokConnectionSpecs;
-        }
-
         public Builder setSlobrokConnectionSpecs(String[] slobrokConnectionSpecs) {
             Objects.requireNonNull(slobrokConnectionSpecs, "slobrokConnectionSpecs cannot be null");
             this.slobrokConnectionSpecs = slobrokConnectionSpecs;
@@ -662,10 +658,6 @@ public class FleetControllerOptions {
         public Builder enableTwoPhaseClusterStateActivation(boolean enableTwoPhaseClusterStateActivation) {
             this.enableTwoPhaseClusterStateActivation = enableTwoPhaseClusterStateActivation;
             return this;
-        }
-
-        public double minMergeCompletionRatio() {
-            return minMergeCompletionRatio;
         }
 
         public Builder setMinMergeCompletionRatio(double minMergeCompletionRatio) {

@@ -13,7 +13,7 @@ import java.util.Optional;
  */
 public class ContentNode {
     @JsonProperty("resource-usage")
-    private Map<String, ResourceUsage> resourceUsage = new HashMap<>();
+    private final Map<String, ResourceUsage> resourceUsage = new HashMap<>();
 
     public Map<String, ResourceUsage> getResourceUsage() {
         return Collections.unmodifiableMap(resourceUsage);

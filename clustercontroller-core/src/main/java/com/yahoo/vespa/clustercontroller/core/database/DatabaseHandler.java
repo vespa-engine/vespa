@@ -91,8 +91,11 @@ public class DatabaseHandler {
     private boolean lostZooKeeperConnectionEvent = false;
     private Map<Integer, Integer> masterDataEvent = null;
 
-    public DatabaseHandler(FleetControllerContext fleetControllerContext, DatabaseFactory databaseFactory, Timer timer, String zooKeeperAddress, Object monitor) throws InterruptedException
-    {
+    public DatabaseHandler(FleetControllerContext fleetControllerContext,
+                           DatabaseFactory databaseFactory,
+                           Timer timer,
+                           String zooKeeperAddress,
+                           Object monitor) {
         this.fleetControllerContext = fleetControllerContext;
         this.databaseFactory = databaseFactory;
         this.timer = timer;
@@ -356,7 +359,7 @@ public class DatabaseHandler {
         }
     }
 
-    public void saveLatestSystemStateVersion(DatabaseContext databaseContext, int version) throws InterruptedException {
+    public void saveLatestSystemStateVersion(DatabaseContext databaseContext, int version) {
         fleetControllerContext.log(logger, Level.FINE, () -> "Checking if latest system state version has been updated and need to be stored.");
         // Schedule a write if one of the following is true:
         //   - There is already a pending vote to be written, that may have been written already without our knowledge

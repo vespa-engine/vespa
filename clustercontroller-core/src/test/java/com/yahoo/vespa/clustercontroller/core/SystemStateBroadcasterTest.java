@@ -319,7 +319,6 @@ public class SystemStateBroadcasterTest {
 
     // Type erasure of Waiter in mocked argument capture
     @Test
-    @SuppressWarnings("unchecked")
     void activation_not_sent_if_deferred_activation_is_disabled_in_state_bundle() {
         var f = StateActivationFixture.withTwoPhaseDisabled();
         var cf = f.cf;

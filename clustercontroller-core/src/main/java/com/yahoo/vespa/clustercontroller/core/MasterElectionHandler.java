@@ -120,8 +120,7 @@ public class MasterElectionHandler implements MasterInterface {
 
     public boolean isAmongNthFirst(int first) { return (nextInLineCount < first); }
 
-    public boolean watchMasterElection(DatabaseHandler database,
-                                       DatabaseHandler.DatabaseContext dbContext) throws InterruptedException {
+    public boolean watchMasterElection(DatabaseHandler database, DatabaseHandler.DatabaseContext dbContext) {
         if (totalCount == 1 && !usingZooKeeper) {
             return false; // Allow single configured node to become master implicitly if no ZK configured
         }

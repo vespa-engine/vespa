@@ -3,7 +3,14 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -190,12 +197,6 @@ public class ClusterStateBundle {
 
     public static ClusterStateBundle of(AnnotatedClusterState baselineState, Map<String, AnnotatedClusterState> derivedBucketSpaceStates) {
         return new ClusterStateBundle(baselineState, derivedBucketSpaceStates);
-    }
-
-    public static ClusterStateBundle of(AnnotatedClusterState baselineState,
-                                        Map<String, AnnotatedClusterState> derivedBucketSpaceStates,
-                                        boolean deferredActivation) {
-        return new ClusterStateBundle(baselineState, derivedBucketSpaceStates, null, deferredActivation);
     }
 
     public static ClusterStateBundle of(AnnotatedClusterState baselineState,

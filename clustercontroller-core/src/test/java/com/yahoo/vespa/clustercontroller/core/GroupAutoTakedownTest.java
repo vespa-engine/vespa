@@ -295,7 +295,7 @@ public class GroupAutoTakedownTest {
     }
 
     @Test
-    void previously_cleared_start_timestamps_are_not_reintroduced_on_up_edge() throws Exception {
+    void previously_cleared_start_timestamps_are_not_reintroduced_on_up_edge() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 

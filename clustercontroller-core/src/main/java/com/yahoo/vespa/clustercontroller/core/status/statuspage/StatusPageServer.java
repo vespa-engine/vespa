@@ -24,7 +24,7 @@ public class StatusPageServer {
         private final String request;
         private String pathPrefix = "";
         private final Map<String, String> params = new HashMap<String, String>();
-        private String path;
+        private final String path;
 
         static Pattern pathPattern;
         static {
@@ -112,7 +112,7 @@ public class StatusPageServer {
             }
         }
 
-        private List<PatternRouting> patterns = new ArrayList<>();
+        private final List<PatternRouting> patterns = new ArrayList<>();
 
         public void addHandler(Pattern pattern, RequestHandler handler) {
             patterns.add(new PatternRouting(pattern, handler));

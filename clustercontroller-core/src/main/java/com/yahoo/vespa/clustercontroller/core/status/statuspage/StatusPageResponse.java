@@ -10,10 +10,9 @@ import java.io.OutputStreamWriter;
 
 public class StatusPageResponse {
 
-    private ByteArrayOutputStream output = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream output = new ByteArrayOutputStream();
     private String contentType;
     private ResponseCode responseCode = ResponseCode.OK;
-    private boolean clientCachingEnabled = false;
 
     public enum ResponseCode {
         OK(200, "OK"),
@@ -59,14 +58,6 @@ public class StatusPageResponse {
     public void setContentType(String type) { contentType = type; }
     public void setResponseCode(ResponseCode responseCode) {
         this.responseCode = responseCode;
-    }
-
-    public boolean isClientCachingEnabled() {
-        return clientCachingEnabled;
-    }
-
-    public void setClientCachingEnabled(boolean clientCachingEnabled) {
-        this.clientCachingEnabled = clientCachingEnabled;
     }
 
     public void writeHtmlHeader(StringBuilder content, String title) {

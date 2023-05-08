@@ -71,7 +71,7 @@ public class ZooKeeperDatabaseTest {
     }
 
     @Test
-    void storing_cluster_state_bundle_with_mismatching_expected_znode_version_throws_exception() throws Exception {
+    void storing_cluster_state_bundle_with_mismatching_expected_znode_version_throws_exception() {
         Throwable exception = assertThrows(CasWriteFailed.class, () -> {
             try (Fixture f = new Fixture()) {
                 f.createDatabase();
@@ -82,7 +82,7 @@ public class ZooKeeperDatabaseTest {
     }
 
     @Test
-    void storing_cluster_state_version_with_mismatching_expected_znode_version_throws_exception() throws Exception {
+    void storing_cluster_state_version_with_mismatching_expected_znode_version_throws_exception() {
         Throwable exception = assertThrows(CasWriteFailed.class, () -> {
             try (Fixture f = new Fixture()) {
                 f.createDatabase();

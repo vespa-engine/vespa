@@ -58,7 +58,7 @@ public class VdsClusterHtmlRenderer {
         public void addTable(final StringBuilder destination, final long stableStateTimePeriode) {
             destination.append(contentBuilder);
 
-            destination.append(table.toString())
+            destination.append(table)
                     .append("<p>")
                     .append("<p>");
             addFooter(destination, stableStateTimePeriode);

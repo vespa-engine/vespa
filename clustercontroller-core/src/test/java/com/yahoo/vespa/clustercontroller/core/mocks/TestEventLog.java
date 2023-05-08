@@ -10,28 +10,23 @@ import java.util.logging.Level;
 
 public class TestEventLog implements EventLogInterface {
     private StringBuilder events = new StringBuilder();
-    private int eventCount = 0;
 
-    public void clear() { events = new StringBuilder(); eventCount = 0; }
+    public void clear() { events = new StringBuilder(); }
     public String toString() { return events.toString(); }
-    public int getEventCount() { return eventCount; }
 
     @Override
     public void add(Event e) {
         events.append("add(" + e.getDescription() + ")\n");
-        ++eventCount;
     }
 
     @Override
     public void add(Event e, boolean logInfo) {
         events.append("add(" + e + ", log ? " + logInfo + ")\n");
-        ++eventCount;
     }
 
     @Override
     public void addNodeOnlyEvent(NodeEvent e, Level level) {
         events.append("add(" + e + ", " + level + ")\n");
-        ++eventCount;
     }
 
     @Override

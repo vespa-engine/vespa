@@ -45,7 +45,7 @@ public class DatabaseHandlerTest {
         final Object monitor = new Object();
         final ClusterStateBundle dummyBundle;
 
-        Fixture() throws Exception {
+        Fixture() {
             dummyBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2",
                     StateMapping.of("default", "distributor:2 storage:2 .0.s:d"),
                     StateMapping.of("upsidedown", "distributor:2 .0.s:d storage:2"));

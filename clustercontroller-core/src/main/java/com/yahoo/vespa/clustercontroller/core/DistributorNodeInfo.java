@@ -4,8 +4,6 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeType;
-import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
-import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNodeStatsBridge;
 
 /**
  * Class encapsulating what the Cluster Controller knows about a distributor node. Most of the information is
