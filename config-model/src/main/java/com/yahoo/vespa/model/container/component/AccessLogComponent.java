@@ -117,4 +117,6 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         };
     }
 
+    public String getFileNamePattern() { return fileNamePattern; }
+
 }
