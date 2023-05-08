@@ -25,6 +25,9 @@ const (
 	CompressionAuto Compression = iota
 	CompressionNone
 	CompressionGzip
+
+	fieldsPrefix = `{"fields":`
+	fieldsSuffix = "}"
 )
 
 // Client represents a HTTP client for the /document/v1/ API.
@@ -179,13 +182,18 @@ func (c *Client) buffer() *bytes.Buffer {
 }
 
 func (c *Client) createRequest(method, url string, body []byte) (*http.Request, error) {
-	var r io.Reader
+	// include the outer object expected by /document/v1/ without copying the body
+	r := io.MultiReader(
+		strings.NewReader(fieldsPrefix),
+		bytes.NewReader(body),
+		strings.NewReader(fieldsSuffix),
+	)
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
 	if useGzip {
 		var buf bytes.Buffer
 		buf.Grow(1024)
 		w := c.gzipWriter(&buf)
-		if _, err := w.Write(body); err != nil {
+		if _, err := io.Copy(w, r); err != nil {
 			return nil, err
 		}
 		if err := w.Close(); err != nil {
@@ -193,8 +201,6 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 		}
 		c.gzippers.Put(w)
 		r = &buf
-	} else {
-		r = bytes.NewReader(body)
 	}
 	req, err := http.NewRequest(method, url, r)
 	if err != nil {
@@ -219,7 +225,7 @@ func (c *Client) Send(document Document) Result {
 	start := c.now()
 	result := Result{Id: document.Id, Stats: Stats{Requests: 1}}
 	method, url := c.methodAndURL(document)
-	req, err := c.createRequest(method, url, document.Body)
+	req, err := c.createRequest(method, url, document.Fields)
 	if err != nil {
 		return resultWithErr(result, err)
 	}
@@ -271,7 +277,7 @@ func (c *Client) resultWithResponse(resp *http.Response, result Result, document
 	}
 	result.Message = body.Message
 	result.Trace = string(body.Trace)
-	result.Stats.BytesSent = int64(len(document.Body))
+	result.Stats.BytesSent = int64(len(document.Fields) + len(fieldsPrefix) + len(fieldsSuffix))
 	result.Stats.BytesRecv = int64(written)
 	if !result.Success() {
 		result.Stats.Errors++
