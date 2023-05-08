@@ -25,9 +25,11 @@ const (
 	CompressionAuto Compression = iota
 	CompressionNone
 	CompressionGzip
+)
 
-	fieldsPrefix = `{"fields":`
-	fieldsSuffix = "}"
+var (
+	fieldsPrefix = []byte(`{"fields":`)
+	fieldsSuffix = []byte("}")
 )
 
 // Client represents a HTTP client for the /document/v1/ API.
@@ -184,9 +186,9 @@ func (c *Client) buffer() *bytes.Buffer {
 func (c *Client) createRequest(method, url string, body []byte) (*http.Request, error) {
 	// include the outer object expected by /document/v1/ without copying the body
 	r := io.MultiReader(
-		strings.NewReader(fieldsPrefix),
+		bytes.NewReader(fieldsPrefix),
 		bytes.NewReader(body),
-		strings.NewReader(fieldsSuffix),
+		bytes.NewReader(fieldsSuffix),
 	)
 	contentLength := int64(len(fieldsPrefix) + len(body) + len(fieldsSuffix))
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
