@@ -188,6 +188,7 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 		bytes.NewReader(body),
 		strings.NewReader(fieldsSuffix),
 	)
+	contentLength := int64(len(fieldsPrefix) + len(body) + len(fieldsSuffix))
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
 	if useGzip {
 		var buf bytes.Buffer
@@ -201,6 +202,7 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 		}
 		c.gzippers.Put(w)
 		r = &buf
+		contentLength = int64(buf.Len())
 	}
 	req, err := http.NewRequest(method, url, r)
 	if err != nil {
@@ -210,6 +212,7 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 		req.Header.Set("Content-Encoding", "gzip")
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	req.ContentLength = contentLength
 	return req, nil
 }
 
@@ -235,7 +238,7 @@ func (c *Client) Send(document Document) Result {
 	}
 	defer resp.Body.Close()
 	elapsed := c.now().Sub(start)
-	return c.resultWithResponse(resp, result, document, elapsed)
+	return c.resultWithResponse(resp, req.ContentLength, result, document, elapsed)
 }
 
 func resultWithErr(result Result, err error) Result {
@@ -245,7 +248,7 @@ func resultWithErr(result Result, err error) Result {
 	return result
 }
 
-func (c *Client) resultWithResponse(resp *http.Response, result Result, document Document, elapsed time.Duration) Result {
+func (c *Client) resultWithResponse(resp *http.Response, sentBytes int64, result Result, document Document, elapsed time.Duration) Result {
 	result.HTTPStatus = resp.StatusCode
 	result.Stats.Responses++
 	result.Stats.ResponsesByCode = map[int]int64{resp.StatusCode: 1}
@@ -277,7 +280,7 @@ func (c *Client) resultWithResponse(resp *http.Response, result Result, document
 	}
 	result.Message = body.Message
 	result.Trace = string(body.Trace)
-	result.Stats.BytesSent = int64(len(document.Fields) + len(fieldsPrefix) + len(fieldsSuffix))
+	result.Stats.BytesSent = sentBytes
 	result.Stats.BytesRecv = int64(written)
 	if !result.Success() {
 		result.Stats.Errors++

@@ -123,6 +123,9 @@ func TestClientSend(t *testing.T) {
 		if !bytes.Equal(body, wantBody.Bytes()) {
 			t.Errorf("got r.Body = %q, want %q", string(body), wantBody.String())
 		}
+		if r.ContentLength != int64(len(body)) {
+			t.Errorf("got r.ContentLength=%d, want %d", r.ContentLength, len(body))
+		}
 	}
 	want := Stats{
 		Requests:  3,
@@ -186,6 +189,9 @@ func assertCompressedRequest(t *testing.T, want bool, request *http.Request) {
 	body, err := io.ReadAll(request.Body)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if request.ContentLength != int64(len(body)) {
+		t.Errorf("got ContentLength=%d, want %d", request.ContentLength, len(body))
 	}
 	compressed := bytes.HasPrefix(body, []byte{0x1f, 0x8b})
 	if compressed != want {
