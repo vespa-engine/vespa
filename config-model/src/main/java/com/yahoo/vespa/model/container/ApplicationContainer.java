@@ -9,7 +9,6 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.search.config.QrStartConfig;
-import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import java.time.Duration;
 import java.util.Optional;
@@ -21,7 +20,6 @@ import java.util.Optional;
  */
 public final class ApplicationContainer extends Container implements
         QrStartConfig.Producer,
-        OnnxModelsConfig.Producer,
         ZookeeperServerConfig.Producer {
 
     private final boolean isHostedVespa;
@@ -44,15 +42,12 @@ public final class ApplicationContainer extends Container implements
 
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
-        realResources().ifPresent(r -> builder.jvm.availableProcessors(Math.max(2, (int) Math.ceil(r.vcpu()))));
-    }
-
-    @Override
-    public void getConfig(OnnxModelsConfig.Builder builder) {
-        realResources().ifPresent(r -> {
-            int count = r.gpuResources().count();
-            if (count >= 0) builder.gpu.count(count);
-        });
+        if (getHostResource() != null) {
+            NodeResources nodeResources = getHostResource().realResources();
+            if ( ! nodeResources.isUnspecified()) {
+                builder.jvm.availableProcessors(Math.max(2, (int)Math.ceil(nodeResources.vcpu())));
+            }
+        }
     }
 
     @Override
@@ -88,15 +83,5 @@ public final class ApplicationContainer extends Container implements
     }
 
     @Override public Optional<String> getPreShutdownCommand() { return Optional.of(prepareStopCommand(Duration.ofMinutes(6))); }
-
-    private Optional<NodeResources> realResources() {
-        if (getHostResource() != null) {
-            NodeResources nodeResources = getHostResource().realResources();
-            if ( ! nodeResources.isUnspecified()) {
-                return Optional.of(nodeResources);
-            }
-        }
-        return Optional.empty();
-    }
 
 }
