@@ -193,9 +193,8 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 	contentLength := int64(len(fieldsPrefix) + len(body) + len(fieldsSuffix))
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
 	if useGzip {
-		var buf bytes.Buffer
-		buf.Grow(1024)
-		w := c.gzipWriter(&buf)
+		buf := bytes.NewBuffer(make([]byte, 0, 1024))
+		w := c.gzipWriter(buf)
 		if _, err := io.Copy(w, r); err != nil {
 			return nil, err
 		}
@@ -203,7 +202,7 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 			return nil, err
 		}
 		c.gzippers.Put(w)
-		r = &buf
+		r = buf
 		contentLength = int64(buf.Len())
 	}
 	req, err := http.NewRequest(method, url, r)
