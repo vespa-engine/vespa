@@ -865,6 +865,8 @@ TEST_F(DistributorStripeTest, fast_path_on_consistent_gets_config_is_propagated_
 {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
+    EXPECT_TRUE(getConfig().update_fast_path_restart_enabled()); // Enabled by default
+
     configure_update_fast_path_restart_enabled(true);
     EXPECT_TRUE(getConfig().update_fast_path_restart_enabled());
 
