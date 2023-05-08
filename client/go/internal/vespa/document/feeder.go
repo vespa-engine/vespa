@@ -21,13 +21,13 @@ const (
 
 // Result represents the result of a feeding operation.
 type Result struct {
+	Err        error
 	Id         Id
-	Status     Status
-	HTTPStatus int
 	Message    string
 	Trace      string
-	Err        error
 	Stats      Stats
+	Status     Status
+	HTTPStatus int
 }
 
 func (r Result) Success() bool {
@@ -36,9 +36,9 @@ func (r Result) Success() bool {
 
 // Stats represents feeding operation statistics.
 type Stats struct {
+	ResponsesByCode map[int]int64
 	Requests        int64
 	Responses       int64
-	ResponsesByCode map[int]int64
 	Errors          int64
 	Inflight        int64
 	TotalLatency    time.Duration

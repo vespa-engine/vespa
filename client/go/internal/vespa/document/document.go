@@ -93,10 +93,10 @@ func ParseId(serialized string) (Id, error) {
 // Document represents a Vespa document operation.
 type Document struct {
 	Id        Id
-	Operation Operation
 	Condition string
-	Create    bool
 	Fields    []byte
+	Operation Operation
+	Create    bool
 }
 
 type jsonDocument struct {
@@ -105,8 +105,8 @@ type jsonDocument struct {
 	UpdateId  string          `json:"update"`
 	RemoveId  string          `json:"remove"`
 	Condition string          `json:"condition"`
-	Create    bool            `json:"create"`
 	Fields    json.RawMessage `json:"fields"`
+	Create    bool            `json:"create"`
 }
 
 // Decoder decodes documents from a JSON structure which is either an array of objects, or objects separated by newline.
