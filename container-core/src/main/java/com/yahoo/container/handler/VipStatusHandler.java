@@ -1,6 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
+import ai.vespa.metrics.ContainerMetrics;
+import com.yahoo.component.annotation.Inject;
+import com.yahoo.container.core.VipStatusConfig;
+import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.jdisc.Metric;
+import com.yahoo.text.Utf8;
+import com.yahoo.vespa.defaults.Defaults;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -10,19 +20,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-
-import com.yahoo.component.annotation.Inject;
-import com.yahoo.container.core.VipStatusConfig;
-import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
-import com.yahoo.jdisc.Metric;
-import java.util.logging.Level;
-
-import com.yahoo.metrics.ContainerMetrics;
-import com.yahoo.text.Utf8;
-import com.yahoo.vespa.defaults.Defaults;
 
 /**
  * Transmit status to VIP from file or memory. Bind this to

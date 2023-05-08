@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric;
@@ -11,7 +12,6 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.handler.UnsafeContentInputStream;
 import com.yahoo.jdisc.http.server.jetty.AccessLoggingRequestHandler;
-import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;

@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.metric;
 
-import com.yahoo.component.annotation.Inject;
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
-import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.nativec.NativeHeap;
 import com.yahoo.security.tls.TlsMetrics;
 

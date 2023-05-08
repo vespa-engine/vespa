@@ -1,6 +1,4 @@
-package com.yahoo.metrics;
-
-import java.util.List;
+package ai.vespa.metrics;
 
 /**
  * @author gjoranv

@@ -134,9 +134,10 @@
                                         <include>com.yahoo.vespa:jdisc_core:*:provided</include>
                                         <include>com.yahoo.vespa:jrt:*:provided</include>
                                         <include>com.yahoo.vespa:linguistics:*:provided</include>
-                                        <include>com.yahoo.vespa:opennlp-linguistics:*:provided</include>
                                         <include>com.yahoo.vespa:messagebus:*:provided</include>
+                                        <include>com.yahoo.vespa:metrics:*:provided</include>
                                         <include>com.yahoo.vespa:model-evaluation:*:provided</include>
+                                        <include>com.yahoo.vespa:opennlp-linguistics:*:provided</include>
                                         <include>com.yahoo.vespa:predicate-search-core:*:provided</include>
                                         <include>com.yahoo.vespa:provided-dependencies:*:provided</include>
                                         <include>com.yahoo.vespa:searchcore:*:provided</include>
@@ -162,7 +163,6 @@
                                         <include>com.yahoo.vespa:indexinglanguage:*:test</include>
                                         <include>com.yahoo.vespa:logd:*:test</include>
                                         <include>com.yahoo.vespa:metrics-proxy:*:test</include>
-                                        <include>com.yahoo.vespa:metrics:*:test</include>
                                         <include>com.yahoo.vespa:model-integration:*:test</include>
                                         <include>com.yahoo.vespa:searchsummary:*:test</include>
                                         <include>com.yahoo.vespa:standalone-container:*:test</include>

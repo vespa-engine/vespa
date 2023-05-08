@@ -2,22 +2,22 @@
 
 package com.yahoo.vespa.model.admin.monitoring;
 
-import com.yahoo.metrics.ContainerMetrics;
-import com.yahoo.metrics.SearchNodeMetrics;
-import com.yahoo.metrics.Suffix;
-import com.yahoo.metrics.VespaMetrics;
+import ai.vespa.metrics.ContainerMetrics;
+import ai.vespa.metrics.SearchNodeMetrics;
+import ai.vespa.metrics.Suffix;
+import ai.vespa.metrics.VespaMetrics;
 
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static com.yahoo.metrics.Suffix.average;
-import static com.yahoo.metrics.Suffix.count;
-import static com.yahoo.metrics.Suffix.max;
-import static com.yahoo.metrics.Suffix.ninety_five_percentile;
-import static com.yahoo.metrics.Suffix.ninety_nine_percentile;
-import static com.yahoo.metrics.Suffix.sum;
+import static ai.vespa.metrics.Suffix.average;
+import static ai.vespa.metrics.Suffix.count;
+import static ai.vespa.metrics.Suffix.max;
+import static ai.vespa.metrics.Suffix.ninety_five_percentile;
+import static ai.vespa.metrics.Suffix.ninety_nine_percentile;
+import static ai.vespa.metrics.Suffix.sum;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 
 /**

@@ -1,4 +1,4 @@
-package com.yahoo.metrics;
+package ai.vespa.metrics;
 
 /**
  * @author gjoranv

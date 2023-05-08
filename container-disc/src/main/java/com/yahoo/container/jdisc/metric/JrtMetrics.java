@@ -2,9 +2,10 @@
 package com.yahoo.container.jdisc.metric;
 
 // import com.yahoo.jdisc.Container;
+
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jrt.TransportMetrics;
-import com.yahoo.metrics.ContainerMetrics;
 
 import static com.yahoo.jrt.TransportMetrics.Snapshot;
 

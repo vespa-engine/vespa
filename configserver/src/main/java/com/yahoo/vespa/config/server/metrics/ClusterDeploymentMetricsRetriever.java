@@ -1,10 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.metrics;
 
+import ai.vespa.metrics.ClusterControllerMetrics;
 import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.concurrent.DaemonThreadFactory;
-import com.yahoo.metrics.ClusterControllerMetrics;
-import com.yahoo.metrics.ContainerMetrics;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;

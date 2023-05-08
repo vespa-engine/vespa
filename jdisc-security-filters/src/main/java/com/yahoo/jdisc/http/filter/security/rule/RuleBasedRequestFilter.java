@@ -1,15 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter.security.rule;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
-import com.yahoo.metrics.ContainerMetrics;
+import com.yahoo.restapi.Path;
 import com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig;
 import com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig.Rule.Action;
-import com.yahoo.restapi.Path;
 
 import java.net.URI;
 import java.util.List;
