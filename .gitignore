@@ -34,12 +34,14 @@ CTestTestfile.cmake
 cmake_install.cmake
 Makefile
 Testing
+/.cmake/
 /.mvn/
 /.ninja_deps
 /.ninja_log
 /build.ninja
 /rules.ninja
 *_test_app
+/cmake-build-debug/
 /mvnw
 /mvnw.cmd
 /mvnwDebug
