@@ -26,6 +26,7 @@ import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -73,6 +74,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType.jsonAccessLog;
 import static com.yahoo.vespa.model.container.component.chain.ProcessingHandler.PROCESSING_HANDLER_CLASS;
 
 /**
@@ -148,7 +150,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private final Set<Path> platformBundles = new TreeSet<>(); // Ensure stable ordering
 
     private final ComponentGroup<Component<?, ?>> componentGroup;
-    private final boolean isHostedVespa;
+    protected final boolean isHostedVespa;
     private final boolean zooKeeperLocalhostAffinity;
     private final String compressionType;
 
@@ -169,6 +171,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public ContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
         this(parent, configSubId, clusterId, deployState, zooKeeperLocalhostAffinity, 1);
     }
+
     public ContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity, int defaultPoolNumThreads) {
         super(parent, configSubId);
         this.name = clusterId;
@@ -180,7 +183,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         componentGroup = new ComponentGroup<>(this, "component");
 
         addCommonVespaBundles();
-        addSimpleComponent(AccessLog.class);
+        addSimpleComponent(VoidRequestLog.class);
         addComponent(new DefaultThreadpoolProvider(this, defaultPoolNumThreads));
         addComponent(defaultHandlerThreadpool);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
@@ -287,7 +290,11 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         return componentGroup.removeComponent(componentId);
     }
 
-    private void addSimpleComponent(Class<?> clazz) {
+    public void removeSimpleComponent(Class<?> clazz) {
+        removeComponent(new SimpleComponent(clazz.getName()).getComponentId());
+    }
+
+    public void addSimpleComponent(Class<?> clazz) {
         addSimpleComponent(clazz.getName());
     }
 
@@ -593,11 +600,22 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         if (containerSearch != null) containerSearch.connectSearchClusters(clusterMap);
     }
 
-    public void addDefaultSearchAccessLog() {
-        // In hosted Vespa with one application container per node we do not use the container name to distinguish log files
-        Optional<String> clusterName = isHostedVespa ? Optional.empty() : Optional.of(getName());
-        addComponent(new AccessLogComponent(this, AccessLogComponent.AccessLogType.jsonAccessLog, compressionType, clusterName, isHostedVespa));
+    public void addAccessLog(String clusterName) {
+        addAccessLog(Optional.ofNullable(clusterName));
     }
+
+    public void addAccessLog(String fileNamePattern, String symlinkName) {
+        removeSimpleComponent(VoidRequestLog.class);
+        addSimpleComponent(AccessLog.class);
+        addComponent(new AccessLogComponent(jsonAccessLog, compressionType, fileNamePattern, null, true, true, symlinkName, 1024, 256 * 1024));
+    }
+
+    protected void addAccessLog(Optional<String> clusterName) {
+        removeSimpleComponent(VoidRequestLog.class);
+        addSimpleComponent(AccessLog.class);
+        addComponent(new AccessLogComponent(this, jsonAccessLog, compressionType, clusterName, isHostedVespa));
+    }
+
 
     @Override
     public void getConfig(IlscriptsConfig.Builder builder) {

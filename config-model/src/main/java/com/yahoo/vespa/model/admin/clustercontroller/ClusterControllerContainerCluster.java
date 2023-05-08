@@ -8,7 +8,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.PlatformBundles;
-import com.yahoo.vespa.model.container.component.AccessLogComponent;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -34,11 +33,7 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
         this.reindexingContext = createReindexingContext(deployState);
         setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
         if (isHostedVespa())
-            addComponent(new AccessLogComponent(this,
-                                                AccessLogComponent.AccessLogType.jsonAccessLog,
-                                                deployState.featureFlags().logFileCompressionAlgorithm("zstd"),
-                                                Optional.of("controller"),
-                                                isHostedVespa()));
+            addAccessLog("controller");
     }
 
     @Override
