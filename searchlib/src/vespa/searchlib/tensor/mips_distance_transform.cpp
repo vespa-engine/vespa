@@ -62,11 +62,10 @@ public:
         return threshold;
     }
     double to_rawscore(double distance) const override {
-        double dp = -distance;
-        double t1 = dp / _max_sq_norm;
-        double t2 = t1 / (1.0 + std::fabs(t1));
-        double r = (t2 + 1.0) * 0.5;
-        return r;
+        return -distance;
+    }
+    double to_distance(double rawscore) const override {
+        return -rawscore;
     }
     double calc_with_limit(const vespalib::eval::TypedCells& rhs, double) const override {
         return calc(rhs);

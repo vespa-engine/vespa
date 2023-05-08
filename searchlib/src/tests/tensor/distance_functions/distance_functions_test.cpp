@@ -528,8 +528,10 @@ double computeTransformedMipsChecked(TypedCells a, TypedCells b, bool check_inse
     double closeness_r = d_r->to_rawscore(result);
     EXPECT_DOUBLE_EQ(closeness_n, closeness_f);
     EXPECT_DOUBLE_EQ(closeness_n, closeness_r);
-    EXPECT_GT(closeness_n, 0.0);
-    EXPECT_LE(closeness_n, 1.0);
+    EXPECT_DOUBLE_EQ(closeness_n, -result);
+    EXPECT_DOUBLE_EQ(result, d_n->to_distance(closeness_n));
+    EXPECT_DOUBLE_EQ(result, d_f->to_distance(closeness_f));
+    EXPECT_DOUBLE_EQ(result, d_r->to_distance(closeness_r));
     if (check_insert) {
         auto d_i = dbl_dff.for_insertion_vector(a);
         EXPECT_DOUBLE_EQ(d_i->calc(b), result);
@@ -601,11 +603,6 @@ TEST(DistanceFunctionsTest, transformed_mips_growing_norm)
     EXPECT_DOUBLE_EQ(4.0, f->calc(t(p7)));
     EXPECT_DOUBLE_EQ(-4.0, f->calc(t(p8)));
 
-    // closeness
-    EXPECT_DOUBLE_EQ(0.25, f->to_rawscore(1.0));
-    EXPECT_DOUBLE_EQ(0.50, f->to_rawscore(0.0));
-    EXPECT_DOUBLE_EQ(0.75, f->to_rawscore(-1.0));
-
     // now "insert" a bigger vector
     f = dff.for_insertion_vector(t(p6));
     EXPECT_DOUBLE_EQ(0.0, f->calc(t(p1)));
@@ -618,12 +615,6 @@ TEST(DistanceFunctionsTest, transformed_mips_growing_norm)
     // now max squared norm is 32, so p1 is "closer" to itself
     f = dff.for_insertion_vector(t(p1));
     EXPECT_DOUBLE_EQ(-32.0, f->calc(t(p1)));
-    // closeness (rawscore) is also different:
-    EXPECT_DOUBLE_EQ(0.25, f->to_rawscore(32.0));
-    EXPECT_DOUBLE_EQ(1/3., f->to_rawscore(16.0));
-    EXPECT_DOUBLE_EQ(0.50, f->to_rawscore(0.0));
-    EXPECT_DOUBLE_EQ(2/3., f->to_rawscore(-16.0));
-    EXPECT_DOUBLE_EQ(0.75, f->to_rawscore(-32.0));
 
     // also closer to other small vectors
     EXPECT_DOUBLE_EQ(-31.0, f->calc(t(p2)));
