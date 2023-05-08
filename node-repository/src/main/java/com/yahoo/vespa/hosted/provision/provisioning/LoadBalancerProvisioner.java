@@ -69,10 +69,16 @@ public class LoadBalancerProvisioner {
         this.service = service;
         this.deactivateRouting = PermanentFlags.DEACTIVATE_ROUTING.bindTo(nodeRepository.flagSource());
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
+
+        CloudAccount zoneAccount = nodeRepository.zone().cloud().account();
         for (var id : db.readLoadBalancerIds()) {
             try (var lock = db.lock(id.application())) {
                 var loadBalancer = db.readLoadBalancer(id);
-                loadBalancer.ifPresent(lb -> db.writeLoadBalancer(lb, lb.state()));
+                loadBalancer.ifPresent(lb -> {
+                    if (!zoneAccount.isUnspecified() && lb.instance().isPresent() && lb.instance().get().cloudAccount().isUnspecified())
+                        lb = lb.with(Optional.of(lb.instance().get().with(zoneAccount)));
+                    db.writeLoadBalancer(lb, lb.state());
+                });
             }
         }
     }
