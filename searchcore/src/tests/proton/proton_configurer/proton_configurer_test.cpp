@@ -40,9 +40,9 @@ using document::DocumentTypeRepo;
 using search::TuneFileDocumentDB;
 using std::map;
 using search::index::Schema;
-using search::fef::OnnxModels;
-using search::fef::RankingConstants;
-using search::fef::RankingExpressions;
+using proton::matching::RankingConstants;
+using proton::matching::RankingExpressions;
+using proton::matching::OnnxModels;
 
 struct DBConfigFixture {
     using UP = std::unique_ptr<DBConfigFixture>;

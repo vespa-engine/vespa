@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include "onnx_model.h"
-#include <vespa/config-onnx-models.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/searchlib/fef/onnx_model.h>
+#include <vespa/searchcore/config/config-onnx-models.h>
 #include <map>
 #include <vector>
 
-namespace search::fef {
+namespace proton::matching {
 
 /**
  * Class representing a set of configured onnx models, with full path
@@ -17,7 +17,7 @@ namespace search::fef {
 class OnnxModels {
 public:
     using ModelConfig = vespa::config::search::core::OnnxModelsConfig::Model;
-    using Model = OnnxModel;
+    using Model = search::fef::OnnxModel;
     using Vector = std::vector<Model>;
 
 private:

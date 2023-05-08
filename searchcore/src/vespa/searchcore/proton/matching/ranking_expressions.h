@@ -6,7 +6,7 @@
 #include <memory>
 #include <map>
 
-namespace search::fef {
+namespace proton::matching {
 
 /**
  * Class representing a collection of named ranking expressions

@@ -3,22 +3,22 @@
 #include "documentdbconfigmanager.h"
 #include "bootstrapconfig.h"
 #include "threading_service_config.h"
-#include <vespa/config-attributes.h>
-#include <vespa/config-imported-fields.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-onnx-models.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-ranking-constants.h>
-#include <vespa/config-ranking-expressions.h>
-#include <vespa/config-summary.h>
+#include <vespa/searchcore/proton/common/alloc_config.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/config/config-ranking-constants.h>
+#include <vespa/searchcore/config/config-ranking-expressions.h>
+#include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-rank-profiles.h>
 #include <vespa/config/file_acquirer/file_acquirer.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/retriever/configretriever.h>
 #include <vespa/config/helper/legacy.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-summary.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
-#include <vespa/searchcore/proton/common/alloc_config.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/time/time_box.h>
@@ -38,11 +38,11 @@ using namespace vespa::config::search;
 
 using document::DocumentTypeRepo;
 using search::TuneFileDocumentDB;
-using search::fef::OnnxModels;
-using search::fef::RankingConstants;
-using search::fef::RankingExpressions;
 using search::index::Schema;
 using search::index::SchemaBuilder;
+using proton::matching::RankingConstants;
+using proton::matching::RankingExpressions;
+using proton::matching::OnnxModels;
 using vespalib::compression::CompressionConfig;
 using search::LogDocumentStore;
 using search::LogDataStore;
@@ -275,9 +275,9 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
 
     DocumentDBConfig::SP current = _pendingConfigSnapshot;
     RankProfilesConfigSP newRankProfilesConfig;
-    search::fef::RankingConstants::SP newRankingConstants;
-    search::fef::RankingExpressions::SP newRankingExpressions;
-    search::fef::OnnxModels::SP newOnnxModels;
+    matching::RankingConstants::SP newRankingConstants;
+    matching::RankingExpressions::SP newRankingExpressions;
+    matching::OnnxModels::SP newOnnxModels;
     IndexschemaConfigSP newIndexschemaConfig;
     MaintenanceConfigSP oldMaintenanceConfig;
     MaintenanceConfigSP newMaintenanceConfig;

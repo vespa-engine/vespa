@@ -3,7 +3,7 @@
 #include "onnx_models.h"
 #include <cassert>
 
-namespace search::fef {
+namespace proton::matching {
 
 OnnxModels::OnnxModels() = default;
 OnnxModels::OnnxModels(OnnxModels &&) noexcept = default;
