@@ -176,7 +176,7 @@ FlushEngine::wait_for_slot_or_pending_prune(IFlushTarget::Priority priority)
     }
 }
 
-std::pair<bool, vespalib::string>
+vespalib::string
 FlushEngine::checkAndFlush(vespalib::string prev) {
     std::pair<FlushContext::List, bool> lst = getSortedTargetList();
     if (lst.second) {
@@ -189,10 +189,10 @@ FlushEngine::checkAndFlush(vespalib::string prev) {
             // Sleep 1 ms after a successful flush in order to avoid busy loop in case
             // of strategy or target error.
             std::this_thread::sleep_for(1ms);
-            return {false, prev};
+            return prev;
         }
     }
-    return {true, ""};
+    return "";
 }
 
 void
@@ -206,9 +206,8 @@ FlushEngine::run()
         if (prune()) {
             // Prune attempted on one or more handlers
         } else {
-            auto [needWait, name] = checkAndFlush(prevFlushName);
-            prevFlushName = name;
-            if (needWait) {
+            prevFlushName = checkAndFlush(prevFlushName);
+            if (prevFlushName.empty()) {
                 wait(idleInterval);
             }
         }

@@ -88,7 +88,7 @@ private:
         wait(minimumWaitTimeIfReady, false);
     }
     bool isFlushing(const std::lock_guard<std::mutex> &guard, const vespalib::string & name) const;
-    std::pair<bool, vespalib::string> checkAndFlush(vespalib::string prev);
+    vespalib::string checkAndFlush(vespalib::string prev);
 
     friend class FlushTask;
     friend class FlushEngineExplorer;
