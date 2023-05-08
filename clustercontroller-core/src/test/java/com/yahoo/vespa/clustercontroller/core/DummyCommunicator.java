@@ -25,18 +25,15 @@ public class DummyCommunicator implements Communicator, NodeLookup {
     }
 
     static class DummyGetNodeStateRequest extends GetNodeStateRequest {
-        Waiter<GetNodeStateRequest> waiter;
+        final Waiter<GetNodeStateRequest> waiter;
 
         DummyGetNodeStateRequest(NodeInfo nodeInfo, Waiter<GetNodeStateRequest> waiter) {
             super(nodeInfo);
-
             this.waiter = waiter;
         }
 
         @Override
-        public void abort() {
-
-        }
+        public void abort() {}
     }
 
     public static class DummySetClusterStateRequest extends SetClusterStateRequest {

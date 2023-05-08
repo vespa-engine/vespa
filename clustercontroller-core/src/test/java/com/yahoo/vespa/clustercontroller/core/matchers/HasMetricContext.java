@@ -29,7 +29,7 @@ public class HasMetricContext extends BaseMatcher<MetricReporter.Context> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendText(String.format("Context with dimensions %s", dimensions.toString()));
+        description.appendText(String.format("Context with dimensions %s", dimensions));
     }
 
     @Override

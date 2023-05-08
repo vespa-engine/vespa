@@ -244,7 +244,6 @@ public class ClusterStateBundleTest {
     @Test
     void cloning_preserves_feed_block_state() {
         var bundle = createTestBundleWithFeedBlock("foo");
-        ;
         var derived = bundle.cloneWithMapper(Function.identity());
         assertEquals(bundle, derived);
     }

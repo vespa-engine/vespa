@@ -24,7 +24,6 @@ import com.yahoo.vespa.clustercontroller.core.testutils.WaitTask;
 import com.yahoo.vespa.clustercontroller.core.testutils.Waiter;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 import org.junit.jupiter.api.AfterEach;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,7 +55,7 @@ public abstract class FleetControllerTest implements Waiter {
     protected Slobrok slobrok;
     protected FleetControllerOptions options;
     ZooKeeperTestServer zooKeeperServer;
-    protected List<FleetController> fleetControllers = new ArrayList<>();
+    protected final List<FleetController> fleetControllers = new ArrayList<>();
     protected List<DummyVdsNode> nodes = new ArrayList<>();
     private String testName;
 
@@ -154,7 +153,7 @@ public abstract class FleetControllerTest implements Waiter {
         fleetControllers.forEach(f -> {
             try {
                 f.shutdown();
-            } catch (InterruptedException | IOException e) {
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -257,7 +256,7 @@ public abstract class FleetControllerTest implements Waiter {
         fleetControllers.forEach(f -> {
             try {
                 f.shutdown();
-            } catch (InterruptedException | IOException e) {
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         });

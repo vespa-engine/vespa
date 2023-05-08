@@ -49,7 +49,7 @@ public abstract class StateRestApiTest {
         public String[] getUnitPath() { return path; }
     }
 
-    protected void setUp(boolean dontInitializeNode2) throws Exception {
+    protected void setUp(boolean dontInitializeNode2) {
         Distribution distribution = new Distribution(getSimpleGroupConfig(2, 10));
         jsonWriter.setDefaultPathPrefix("/cluster/v2");
         {

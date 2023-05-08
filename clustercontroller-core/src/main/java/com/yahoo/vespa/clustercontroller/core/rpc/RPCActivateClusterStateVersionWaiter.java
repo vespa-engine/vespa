@@ -7,7 +7,6 @@ import com.yahoo.jrt.RequestWaiter;
 import com.yahoo.vespa.clustercontroller.core.ActivateClusterStateVersionRequest;
 import com.yahoo.vespa.clustercontroller.core.Communicator;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
-import com.yahoo.vespa.clustercontroller.core.Timer;
 
 /**
  * Binds together the reply received for a particular cluster state activation RPC and

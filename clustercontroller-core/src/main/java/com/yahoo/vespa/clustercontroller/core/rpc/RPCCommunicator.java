@@ -135,7 +135,7 @@ public class RPCCommunicator implements Communicator {
 
     @Override
     public void setSystemState(ClusterStateBundle stateBundle, NodeInfo node, Waiter<SetClusterStateRequest> externalWaiter) {
-        RPCSetClusterStateWaiter waiter = new RPCSetClusterStateWaiter(externalWaiter, timer);
+        RPCSetClusterStateWaiter waiter = new RPCSetClusterStateWaiter(externalWaiter);
         ClusterState baselineState = stateBundle.getBaselineClusterState();
 
         Target connection = getConnection(node);

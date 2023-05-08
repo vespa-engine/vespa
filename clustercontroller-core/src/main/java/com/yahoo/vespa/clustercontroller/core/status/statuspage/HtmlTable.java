@@ -10,7 +10,8 @@ public class HtmlTable {
 
     int border = 1;
     int cellSpacing = 0;
-    enum Orientation { LEFT, CENTER, RIGHT };
+    enum Orientation { LEFT, CENTER, RIGHT }
+
     public static class CellProperties {
         Integer backgroundColor;
         Integer colSpan; // Colspan 0 indicate rest of table
@@ -59,7 +60,7 @@ public class HtmlTable {
         Row addProperties(CellProperties p) { rowProperties.add(p); return this; }
     }
 
-    private ArrayList<Row> cells = new ArrayList<Row>();
+    private final ArrayList<Row> cells = new ArrayList<Row>();
 
     public HtmlTable() {
     }

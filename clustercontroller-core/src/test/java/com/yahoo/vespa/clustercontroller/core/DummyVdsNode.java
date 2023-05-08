@@ -61,14 +61,15 @@ public class DummyVdsNode {
     private boolean registeredInSlobrok = false;
 
     static class Req {
-        Request request;
-        long timeToReply;
+        final Request request;
+        final long timeToReply;
 
         Req(Request r, long timeToReply) {
             request = r;
             this.timeToReply = timeToReply;
         }
     }
+
     static class BackOff implements BackOffPolicy {
         public void reset() {}
         public double get() { return 0.01; }
@@ -118,7 +119,7 @@ public class DummyVdsNode {
     };
 
     public DummyVdsNode(Timer timer, String[] slobrokConnectionSpecs, String clusterName,
-                        NodeType nodeType, int index) throws Exception {
+                        NodeType nodeType, int index) {
         this.timer = timer;
         this.slobrokConnectionSpecs = slobrokConnectionSpecs;
         this.clusterName = clusterName;
@@ -247,12 +248,6 @@ public class DummyVdsNode {
 
     public void setNodeState(State state) {
         setNodeState(new NodeState(type, state));
-    }
-
-    public NodeState getNodeState() {
-        synchronized(timer) {
-            return nodeState;
-        }
     }
 
     List<ClusterState> getSystemStatesReceived() {

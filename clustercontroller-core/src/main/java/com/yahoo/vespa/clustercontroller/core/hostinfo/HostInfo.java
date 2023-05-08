@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  */
 public class HostInfo {
 
-    private static Logger log = Logger.getLogger(HostInfo.class.getName());
+    private static final Logger log = Logger.getLogger(HostInfo.class.getName());
     private static final ObjectMapper mapper = new ObjectMapper();
     private String rawCreationString = "NOT SET";
     static {

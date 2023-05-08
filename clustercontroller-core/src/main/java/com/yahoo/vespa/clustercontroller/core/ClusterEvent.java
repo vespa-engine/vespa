@@ -28,10 +28,6 @@ public class ClusterEvent implements Event{
         return description;
     }
 
-    public Type getType() {
-        return type;
-    }
-
     @Override
     public String toString() {
         return "Cluster event type " + type + " @" + timeMs + ": " + description;

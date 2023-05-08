@@ -3,8 +3,6 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.Node;
 
-import java.util.List;
-
 public interface EventLogInterface {
 
     void add(Event e);

@@ -29,7 +29,7 @@ public class FleetControllerContextImplTest {
     }
 
     private static class MockLogger extends Logger {
-        public List<LogRecord> records = new ArrayList<>();
+        public final List<LogRecord> records = new ArrayList<>();
 
         public MockLogger() {
             super(MockLogger.class.getName(), null);

@@ -245,7 +245,7 @@ public class ZooKeeperDatabase extends Database {
                 if (!toStore.equals(nodeState)) {
                     log.warning("Attempted to store wanted state with more than just a main state. Extra data stripped. Original data '" + nodeState.serialize(true));
                 }
-                sb.append(node.toString()).append(':').append(toStore.serialize(true)).append('\n');
+                sb.append(node).append(':').append(toStore.serialize(true)).append('\n');
             }
         }
         byte[] val = sb.toString().getBytes(utf8);
@@ -299,7 +299,7 @@ public class ZooKeeperDatabase extends Database {
             Long timestamp = timestamps.get(n);
             sb.append(n.toString()).append(':').append(timestamp).append('\n');
         }
-        byte val[] = sb.toString().getBytes(utf8);
+        byte[] val = sb.toString().getBytes(utf8);
         try{
             context.log(log, Level.FINE, () -> "Storing start timestamps at '" + paths.startTimestamps() + "'");
             session.setData(paths.startTimestamps(), val, -1);

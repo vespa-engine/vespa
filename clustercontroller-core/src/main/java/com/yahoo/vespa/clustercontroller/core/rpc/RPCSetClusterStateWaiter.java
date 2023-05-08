@@ -7,7 +7,6 @@ import com.yahoo.jrt.RequestWaiter;
 import com.yahoo.vespa.clustercontroller.core.Communicator;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.SetClusterStateRequest;
-import com.yahoo.vespa.clustercontroller.core.Timer;
 
 /**
  * Waiter class for set cluster state RPC commands.
@@ -15,11 +14,9 @@ import com.yahoo.vespa.clustercontroller.core.Timer;
 public class RPCSetClusterStateWaiter implements RequestWaiter {
 
     SetClusterStateRequest request;
-    Timer timer;
     Communicator.Waiter<SetClusterStateRequest> waiter;
 
-    public RPCSetClusterStateWaiter(Communicator.Waiter<SetClusterStateRequest> waiter, Timer timer) {
-        this.timer = timer;
+    public RPCSetClusterStateWaiter(Communicator.Waiter<SetClusterStateRequest> waiter) {
         this.waiter = waiter;
     }
 

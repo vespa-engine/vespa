@@ -14,11 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class SystemStateBroadcaster {
 
-    private static Logger log = Logger.getLogger(SystemStateBroadcaster.class.getName());
+    private static final Logger log = Logger.getLogger(SystemStateBroadcaster.class.getName());
 
     private final FleetControllerContext context;
     private final Timer timer;
@@ -261,7 +260,7 @@ public class SystemStateBroadcaster {
         lastStateVersionBundleAcked = clusterStateBundle.getVersion();
     }
 
-    private void markCurrentClusterStateAsConverged(DatabaseHandler database, DatabaseHandler.DatabaseContext dbContext, FleetController fleetController) throws InterruptedException {
+    private void markCurrentClusterStateAsConverged(DatabaseHandler database, DatabaseHandler.DatabaseContext dbContext, FleetController fleetController) {
         context.log(log, Level.FINE, "All distributors have newest clusterstate, updating start timestamps in zookeeper and clearing them from cluster state");
         lastClusterStateVersionConverged = clusterStateBundle.getVersion();
         lastClusterStateBundleConverged = clusterStateBundle;

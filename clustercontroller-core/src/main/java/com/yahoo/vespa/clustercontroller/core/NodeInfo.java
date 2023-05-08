@@ -241,8 +241,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         return node.getIndex();
     }
 
-    public ContentCluster getCluster() { return cluster; }
-
     /** Returns true if the node is registered in slobrok */
     public boolean isInSlobrok() { return lastSeenInSlobrok == null; }
 

@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 
 public class EventLog implements EventLogInterface {
 
-    public static Logger log = Logger.getLogger(EventLog.class.getName());
+    public static final Logger log = Logger.getLogger(EventLog.class.getName());
 
     private final Timer timer;
     private final LinkedList<Event> eventLog = new LinkedList<>();
