@@ -1,9 +1,6 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.config.search.core
 
-# Number of GPUs available for ONNX evaluation, or -1 if unknown.
-gpu.count                           int default=-1
-
 model[].name                        string
 model[].fileref                     file
 model[].input[].name                string

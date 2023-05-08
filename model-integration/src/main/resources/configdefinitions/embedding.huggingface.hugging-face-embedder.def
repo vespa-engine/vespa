@@ -17,6 +17,9 @@ transformerAttentionMask string default=attention_mask
 # Output name
 transformerOutput string default=last_hidden_state
 
+# GPU configuration
+transformerGpuDevice int default=-1
+transformerGpuRequired bool default=false
 
 # Normalize tensors from tokenizer
 normalize bool default=false
@@ -25,4 +28,3 @@ normalize bool default=false
 transformerExecutionMode enum { parallel, sequential } default=sequential
 transformerInterOpThreads int default=1
 transformerIntraOpThreads int default=-4
-transformerGpuDevice      int default=-1

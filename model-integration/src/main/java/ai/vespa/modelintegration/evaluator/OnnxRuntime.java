@@ -10,7 +10,6 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.refcount.DebugReferencesWithStack;
 import com.yahoo.jdisc.refcount.References;
-import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.IOException;
@@ -53,24 +52,17 @@ public class OnnxRuntime extends AbstractComponent {
     private final Object monitor = new Object();
     private final Map<OrtSessionId, SharedOrtSession> sessions = new HashMap<>();
     private final OrtSessionFactory factory;
-    private final int gpusAvailable;
 
-    // For test use only
-    public OnnxRuntime() { this(defaultFactory, new OnnxModelsConfig.Builder().build()); }
+    @Inject public OnnxRuntime() { this(defaultFactory); }
 
-    @Inject public OnnxRuntime(OnnxModelsConfig cfg) { this(defaultFactory, cfg); }
-
-    OnnxRuntime(OrtSessionFactory factory, OnnxModelsConfig cfg) {
-        this.factory = factory;
-        this.gpusAvailable = cfg.gpu().count();
-    }
+    OnnxRuntime(OrtSessionFactory factory) { this.factory = factory; }
 
     public OnnxEvaluator evaluatorOf(byte[] model) {
         return new OnnxEvaluator(model, null, this);
     }
 
     public OnnxEvaluator evaluatorOf(byte[] model, OnnxEvaluatorOptions options) {
-        return new OnnxEvaluator(model, overrideOptions(options), this);
+        return new OnnxEvaluator(model, options, this);
     }
 
     public OnnxEvaluator evaluatorOf(String modelPath) {
@@ -78,7 +70,7 @@ public class OnnxRuntime extends AbstractComponent {
     }
 
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        return new OnnxEvaluator(modelPath, overrideOptions(options), this);
+        return new OnnxEvaluator(modelPath, options, this);
     }
 
     public static OrtEnvironment ortEnvironment() {
@@ -173,16 +165,6 @@ public class OnnxRuntime extends AbstractComponent {
             var data = model.data().get();
             return XXHashFactory.fastestInstance().hash64().hash(data, 0, data.length, 0);
         }
-    }
-
-    private OnnxEvaluatorOptions overrideOptions(OnnxEvaluatorOptions opts) {
-        // Set GPU device required if GPU requested and GPUs are available on system
-        if (gpusAvailable > 0 && opts.requestingGpu() && !opts.gpuDeviceRequired()) {
-            var copy = opts.copy();
-            copy.setGpuDevice(opts.gpuDeviceNumber(), true);
-            return copy;
-        }
-        return opts;
     }
 
     int sessionsCached() { synchronized(monitor) { return sessions.size(); } }

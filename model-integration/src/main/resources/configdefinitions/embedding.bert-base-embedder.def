@@ -28,4 +28,4 @@ transformerOutput string default=output_0
 onnxExecutionMode enum { parallel, sequential } default=sequential
 onnxInterOpThreads int default=1
 onnxIntraOpThreads int default=-4  # n=number of threads -> n<0: CPUs/(-n), n==0: CPUs, n>0: n
-onnxGpuDevice      int default=-1
+
