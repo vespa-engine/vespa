@@ -58,11 +58,11 @@ ConvertRawscoreToDistance::execute(uint32_t docId)
         const TermFieldMatchData *tfmd = _md->resolveTermField(elem.handle);
         if (tfmd->getDocId() == docId) {
             feature_t invdist = tfmd->getRawScore();
-            feature_t converted = (1.0 / invdist) - 1.0;
+            feature_t converted = elem.calc ? elem.calc->function().to_distance(invdist) : ((1.0 / invdist) - 1.0);
             min_distance = std::min(min_distance, converted);
         } else if (elem.calc) {
             feature_t invdist = elem.calc->calc_raw_score(docId);
-            feature_t converted = (1.0 / invdist) - 1.0;
+            feature_t converted = elem.calc->function().to_distance(invdist);
             min_distance = std::min(min_distance, converted);
         }
     }
