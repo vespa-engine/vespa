@@ -336,12 +336,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     protected boolean messageBusEnabled() { return messageBusEnabled; }
 
-    public void addAccessLog() {
-        // In hosted there is one application container per node, so we do not use the container name to distinguish log files
-        Optional<String> clusterName = isHostedVespa ? Optional.empty() : Optional.of(getName());
-        addAccessLog(clusterName);
-    }
-
     public void addMbusServer(ComponentId chainId) {
         ComponentId serviceId = chainId.nestInNamespace(ComponentId.fromString("MbusServer"));
 

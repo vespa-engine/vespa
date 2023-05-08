@@ -6,6 +6,7 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
@@ -23,7 +24,11 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
         addLogHandler();
         setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
         if (isHostedVespa())
-            addAccessLog(getName());
+            addComponent(new AccessLogComponent(this,
+                                                AccessLogComponent.AccessLogType.jsonAccessLog,
+                                                deployState.featureFlags().logFileCompressionAlgorithm("zstd"),
+                                                Optional.of(getName()),
+                                                isHostedVespa()));
     }
 
     @Override
