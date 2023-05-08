@@ -8,8 +8,7 @@ namespace storage::distributor {
 
 class Operation;
 
-class SentMessageMap
-{
+class SentMessageMap {
 public:
     SentMessageMap();
     ~SentMessageMap();

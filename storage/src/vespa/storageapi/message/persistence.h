@@ -27,6 +27,7 @@ public:
     ~TestAndSetCommand() override;
 
     void setCondition(const TestAndSetCondition & condition) { _condition = condition; }
+    void clear_condition() { _condition = TestAndSetCondition(); }
     const TestAndSetCondition & getCondition() const { return _condition; }
     bool hasTestAndSetCondition() const noexcept override { return _condition.isPresent(); }
 

@@ -8,14 +8,12 @@
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/vdslib/state/clusterstate.h>
 
-
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.callback.doc.removelocation");
+LOG_SETUP(".distributor.operations.external.remove_location");
 
-
-using namespace storage::distributor;
-using namespace storage;
 using document::BucketSpace;
+
+namespace storage::distributor {
 
 RemoveLocationOperation::RemoveLocationOperation(
         const DistributorNodeContext& node_ctx,
@@ -119,4 +117,6 @@ RemoveLocationOperation::onClose(DistributorStripeMessageSender& sender)
 {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED,
                                           "Process is shutting down"));
+}
+
 }

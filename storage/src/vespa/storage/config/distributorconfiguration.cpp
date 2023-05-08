@@ -53,6 +53,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _use_unordered_merge_chaining(false),
       _inhibit_default_merges_when_global_merges_pending(false),
       _enable_two_phase_garbage_collection(false),
+      _enable_condition_probing(false),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 {
 }

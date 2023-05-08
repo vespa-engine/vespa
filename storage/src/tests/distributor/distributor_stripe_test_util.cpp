@@ -568,4 +568,18 @@ DistributorStripeTestUtil::setSystemState(const lib::ClusterState& systemState) 
     _stripe->enableClusterStateBundle(lib::ClusterStateBundle(systemState));
 }
 
+void
+DistributorStripeTestUtil::config_enable_condition_probing(bool enable) {
+    auto cfg = make_config();
+    cfg->set_enable_condition_probing(enable);
+    configure_stripe(cfg);
+}
+
+void
+DistributorStripeTestUtil::tag_content_node_supports_condition_probing(uint16_t index, bool supported) {
+    NodeSupportedFeatures features;
+    features.document_condition_probe = supported;
+    set_node_supported_features(index, features);
+}
+
 }
