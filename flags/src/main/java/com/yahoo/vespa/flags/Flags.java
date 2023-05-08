@@ -412,7 +412,7 @@ public class Flags {
             "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-06-01",
             "Whether to enable the one program that should not be named",
             "Takes effect at next host-admin tick",
-            APPLICATION_ID);
+            ZONE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
