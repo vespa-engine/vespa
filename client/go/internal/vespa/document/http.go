@@ -90,7 +90,7 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, e
 	return c, nil
 }
 
-func writeQueryParam(sb *strings.Builder, start int, k, v string) {
+func writeQueryParam(sb *strings.Builder, start int, escape bool, k, v string) {
 	if sb.Len() == start {
 		sb.WriteString("?")
 	} else {
@@ -98,7 +98,20 @@ func writeQueryParam(sb *strings.Builder, start int, k, v string) {
 	}
 	sb.WriteString(k)
 	sb.WriteString("=")
-	sb.WriteString(url.QueryEscape(v))
+	if escape {
+		sb.WriteString(url.QueryEscape(v))
+	} else {
+		sb.WriteString(v)
+	}
+}
+
+func writeRequestBody(w io.Writer, body []byte) error {
+	for _, b := range [][]byte{fieldsPrefix, body, fieldsSuffix} {
+		if _, err := w.Write(b); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *Client) methodAndURL(d Document) (string, string) {
@@ -136,19 +149,19 @@ func (c *Client) methodAndURL(d Document) (string, string) {
 	// Query part
 	queryStart := sb.Len()
 	if c.options.Timeout > 0 {
-		writeQueryParam(&sb, queryStart, "timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
+		writeQueryParam(&sb, queryStart, false, "timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
 	}
 	if c.options.Route != "" {
-		writeQueryParam(&sb, queryStart, "route", c.options.Route)
+		writeQueryParam(&sb, queryStart, true, "route", c.options.Route)
 	}
 	if c.options.TraceLevel > 0 {
-		writeQueryParam(&sb, queryStart, "tracelevel", strconv.Itoa(c.options.TraceLevel))
+		writeQueryParam(&sb, queryStart, false, "tracelevel", strconv.Itoa(c.options.TraceLevel))
 	}
 	if d.Condition != "" {
-		writeQueryParam(&sb, queryStart, "condition", d.Condition)
+		writeQueryParam(&sb, queryStart, true, "condition", d.Condition)
 	}
 	if d.Create {
-		writeQueryParam(&sb, queryStart, "create", "true")
+		writeQueryParam(&sb, queryStart, false, "create", "true")
 	}
 	return httpMethod, sb.String()
 }
@@ -184,29 +197,21 @@ func (c *Client) buffer() *bytes.Buffer {
 }
 
 func (c *Client) createRequest(method, url string, body []byte) (*http.Request, error) {
-	// include the outer object expected by /document/v1/ without copying the body
-	r := io.MultiReader(
-		bytes.NewReader(fieldsPrefix),
-		bytes.NewReader(body),
-		bytes.NewReader(fieldsSuffix),
-	)
-	contentLength := int64(len(fieldsPrefix) + len(body) + len(fieldsSuffix))
+	var buf *bytes.Buffer
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
 	if useGzip {
-		var buf bytes.Buffer
-		buf.Grow(1024)
-		w := c.gzipWriter(&buf)
-		if _, err := io.Copy(w, r); err != nil {
-			return nil, err
-		}
+		buf = bytes.NewBuffer(make([]byte, 0, 1024))
+		w := c.gzipWriter(buf)
+		writeRequestBody(w, body)
 		if err := w.Close(); err != nil {
 			return nil, err
 		}
 		c.gzippers.Put(w)
-		r = &buf
-		contentLength = int64(buf.Len())
+	} else {
+		buf = bytes.NewBuffer(make([]byte, 0, len(fieldsPrefix)+len(body)+len(fieldsSuffix)))
+		writeRequestBody(buf, body)
 	}
-	req, err := http.NewRequest(method, url, r)
+	req, err := http.NewRequest(method, url, buf)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +219,7 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 		req.Header.Set("Content-Encoding", "gzip")
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	req.ContentLength = contentLength
+	req.ContentLength = int64(buf.Len())
 	return req, nil
 }
 
