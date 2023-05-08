@@ -14,9 +14,12 @@ public record Encoding(
         List<Long> specialTokenMask, List<CharSpan> charTokenSpans, List<Encoding> overflowing) {
 
     public record CharSpan(int start, int end) {
+        public static final CharSpan NONE = new CharSpan(-1, -1);
         static CharSpan from(ai.djl.huggingface.tokenizers.jni.CharSpan s) {
+            if (s == null) return NONE;
             return new CharSpan(s.getStart(), s.getEnd());
         }
+        public boolean isNone() { return this.equals(NONE); }
     }
 
     public Encoding {
@@ -43,6 +46,7 @@ public record Encoding(
     }
 
     private static List<Long> toList(long[] array) {
+        if (array == null) return List.of();
         var list = new ArrayList<Long>(array.length);
         for (long e : array) list.add(e);
         return list;
