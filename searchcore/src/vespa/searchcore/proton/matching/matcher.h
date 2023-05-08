@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "i_ranking_assets_repo.h"
 #include "docsum_matcher.h"
 #include "indexenvironment.h"
 #include "matching_stats.h"
@@ -10,10 +9,11 @@
 #include "search_session.h"
 #include "viewresolver.h"
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
-#include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/resultset.h>
+#include <vespa/searchlib/fef/blueprintfactory.h>
+#include <vespa/searchlib/fef/i_ranking_assets_repo.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/clock.h>
@@ -86,7 +86,7 @@ public:
      **/
     Matcher(const search::index::Schema &schema, Properties props,
             const vespalib::Clock &clock, QueryLimiter &queryLimiter,
-            const IRankingAssetsRepo &rankingAssetsRepo, uint32_t distributionKey);
+            const search::fef::IRankingAssetsRepo &rankingAssetsRepo, uint32_t distributionKey);
 
     const search::fef::IIndexEnvironment &get_index_env() const { return _indexEnv; }
 

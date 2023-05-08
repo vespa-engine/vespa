@@ -2,10 +2,10 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 
-#include <vespa/searchcore/proton/matching/ranking_assets_repo.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
+#include <vespa/searchlib/fef/ranking_assets_repo.h>
 
-using namespace proton::matching;
+using namespace search::fef;
 using namespace vespalib::eval;
 
 class DoubleConstantValue : public ConstantValue {

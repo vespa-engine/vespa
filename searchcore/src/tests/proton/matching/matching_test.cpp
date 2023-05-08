@@ -3,7 +3,6 @@
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
-#include <vespa/searchcore/proton/matching/i_ranking_assets_repo.h>
 #include <vespa/searchcore/proton/matching/match_context.h>
 #include <vespa/searchcore/proton/matching/match_params.h>
 #include <vespa/searchcore/proton/matching/match_tools.h>
@@ -20,6 +19,7 @@
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/engine/searchrequest.h>
+#include <vespa/searchlib/fef/i_ranking_assets_repo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
@@ -110,7 +110,7 @@ vespalib::string make_same_element_stack_dump(const vespalib::string &a1_term, c
 
 const uint32_t NUM_DOCS = 1000;
 
-struct EmptyRankingAssetsRepo : public proton::matching::IRankingAssetsRepo {
+struct EmptyRankingAssetsRepo : public search::fef::IRankingAssetsRepo {
     vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &) const override {
         return {};
     }

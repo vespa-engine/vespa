@@ -180,9 +180,9 @@ std::shared_ptr<DocumentDBConfig> make_document_db_config(std::shared_ptr<Docume
     return std::make_shared<DocumentDBConfig>(
             1,
             std::make_shared<RankProfilesConfig>(),
-            std::make_shared<proton::matching::RankingConstants>(),
-            std::make_shared<proton::matching::RankingExpressions>(),
-            std::make_shared<proton::matching::OnnxModels>(),
+            std::make_shared<search::fef::RankingConstants>(),
+            std::make_shared<search::fef::RankingExpressions>(),
+            std::make_shared<search::fef::OnnxModels>(),
             indexschema,
             attributes,
             summary,

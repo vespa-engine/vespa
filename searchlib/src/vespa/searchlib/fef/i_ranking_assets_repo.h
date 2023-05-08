@@ -4,8 +4,9 @@
 
 #include <vespa/eval/eval/value_cache/constant_value.h>
 
-namespace search::fef { class OnnxModel; }
-namespace proton::matching {
+namespace search::fef {
+
+class OnnxModel;
 
 /**
  * Interface for retrieving named constants, expressions and models from ranking.

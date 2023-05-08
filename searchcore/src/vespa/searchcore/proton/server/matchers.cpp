@@ -2,23 +2,23 @@
 
 #include "matchers.h"
 #include <vespa/searchcore/proton/matching/matcher.h>
-#include <vespa/searchcore/proton/matching/ranking_expressions.h>
-#include <vespa/searchcore/proton/matching/onnx_models.h>
+#include <vespa/searchlib/fef/onnx_models.h>
+#include <vespa/searchlib/fef/ranking_expressions.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace proton {
 
-using matching::RankingExpressions;
-using matching::OnnxModels;
+using search::fef::OnnxModels;
+using search::fef::RankingExpressions;
 using matching::Matcher;
 using matching::MatchingStats;
 using namespace vespalib::make_string_short;
 
 Matchers::Matchers(const vespalib::Clock &clock,
                    matching::QueryLimiter &queryLimiter,
-                   const matching::RankingAssetsRepo &rankingAssetsRepo)
+                   const search::fef::RankingAssetsRepo &rankingAssetsRepo)
     : _rpmap(),
       _ranking_assets_repo(rankingAssetsRepo),
       _fallback(std::make_shared<Matcher>(search::index::Schema(), search::fef::Properties(), clock, queryLimiter,
