@@ -219,7 +219,7 @@ use_btree_database bool default=true restart
 ## content nodes, the two-phase update path reverts back to the regular fast path.
 ## Since all replicas of the document were in sync, applying the update in-place
 ## shall be considered safe.
-restart_with_fast_update_path_if_all_get_timestamps_are_consistent bool default=false
+restart_with_fast_update_path_if_all_get_timestamps_are_consistent bool default=true
 
 ## If set, no merge operations may be generated for any reason by a distributor.
 ## This is ONLY intended for system testing of certain transient edge cases and
