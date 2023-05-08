@@ -90,7 +90,7 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, e
 	return c, nil
 }
 
-func writeQueryParam(sb *strings.Builder, start int, k, v string) {
+func writeQueryParam(sb *strings.Builder, start int, escape bool, k, v string) {
 	if sb.Len() == start {
 		sb.WriteString("?")
 	} else {
@@ -98,7 +98,11 @@ func writeQueryParam(sb *strings.Builder, start int, k, v string) {
 	}
 	sb.WriteString(k)
 	sb.WriteString("=")
-	sb.WriteString(url.QueryEscape(v))
+	if escape {
+		sb.WriteString(url.QueryEscape(v))
+	} else {
+		sb.WriteString(v)
+	}
 }
 
 func writeRequestBody(w io.Writer, body []byte) error {
@@ -145,19 +149,19 @@ func (c *Client) methodAndURL(d Document) (string, string) {
 	// Query part
 	queryStart := sb.Len()
 	if c.options.Timeout > 0 {
-		writeQueryParam(&sb, queryStart, "timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
+		writeQueryParam(&sb, queryStart, false, "timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
 	}
 	if c.options.Route != "" {
-		writeQueryParam(&sb, queryStart, "route", c.options.Route)
+		writeQueryParam(&sb, queryStart, true, "route", c.options.Route)
 	}
 	if c.options.TraceLevel > 0 {
-		writeQueryParam(&sb, queryStart, "tracelevel", strconv.Itoa(c.options.TraceLevel))
+		writeQueryParam(&sb, queryStart, false, "tracelevel", strconv.Itoa(c.options.TraceLevel))
 	}
 	if d.Condition != "" {
-		writeQueryParam(&sb, queryStart, "condition", d.Condition)
+		writeQueryParam(&sb, queryStart, true, "condition", d.Condition)
 	}
 	if d.Create {
-		writeQueryParam(&sb, queryStart, "create", "true")
+		writeQueryParam(&sb, queryStart, false, "create", "true")
 	}
 	return httpMethod, sb.String()
 }
