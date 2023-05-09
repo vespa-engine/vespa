@@ -386,9 +386,8 @@ struct MyWorld {
         Matcher::SP matcher = createMatcher();
         SearchRequest::SP request = createSimpleRequest("f1", "spread");
         search::fef::Properties overrides;
-        MatchToolsFactory::UP match_tools_factory = matcher->create_match_tools_factory(
-            *request, searchContext, attributeContext, metaStore, overrides, ttb(), nullptr, true);
-        MatchTools::UP match_tools = match_tools_factory->createMatchTools();
+        auto mtf = matcher->create_match_tools_factory(*request, searchContext, attributeContext, metaStore, overrides, ttb(), nullptr, true);
+        MatchTools::UP match_tools = mtf->createMatchTools();
         match_tools->setup_first_phase(nullptr);
         return match_tools->match_data().get_termwise_limit();
     }

@@ -21,7 +21,7 @@ struct IDocumentMetaStoreContext {
 
         using SP = std::shared_ptr<IReadGuard>;
 
-        virtual ~IReadGuard() {}
+        virtual ~IReadGuard() = default;
 
         /**
          * Access to read interface.
@@ -29,7 +29,7 @@ struct IDocumentMetaStoreContext {
         virtual const search::IDocumentMetaStore &get() const = 0;
     };
 
-    virtual ~IDocumentMetaStoreContext() {}
+    virtual ~IDocumentMetaStoreContext() = default;
 
     /**
      * Access to read interface.
