@@ -107,6 +107,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         validateZones(new HashSet<>(), new HashSet<>(), this);
         validateEndpoints(globalServiceId, this.endpoints);
         validateChangeBlockers(changeBlockers, now);
+        validateBcp(bcp);
     }
 
     public InstanceName name() { return name; }
@@ -180,7 +181,6 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                       .flatMap(z -> z.region().stream())
                       .collect(Collectors.toSet());
      }
-
 
     private void validateChangeBlockers(List<DeploymentSpec.ChangeBlocker> changeBlockers, Instant now) {
         // Find all possible dates an upgrade block window can start
@@ -275,7 +275,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     /** Returns the rotations configuration of these instances */
     public List<Endpoint> endpoints() { return endpoints; }
 
-    /** Returns the BCP spec declared in this specified instance, or BcpSpec.empty() if none. */
+    /** Returns the BCP spec of this instance, or BcpSpec.empty() if none. */
     public Bcp bcp() { return bcp; }
 
     /** Returns whether this instance deploys to the given zone, either implicitly or explicitly */

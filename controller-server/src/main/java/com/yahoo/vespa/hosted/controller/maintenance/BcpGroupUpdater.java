@@ -204,8 +204,8 @@ public class BcpGroupUpdater extends ControllerMaintainer {
 
         private static Bcp bcpOf(InstanceName instanceName, DeploymentSpec deploymentSpec) {
             var instanceSpec = deploymentSpec.instance(instanceName);
-            if (instanceSpec.isEmpty()) return deploymentSpec.bcp();
-            return instanceSpec.get().bcp().orElse(deploymentSpec.bcp());
+            if (instanceSpec.isEmpty()) return Bcp.empty();
+            return instanceSpec.get().bcp();
         }
 
         private static Map<RegionName, Double> regionsFrom(Instance instance) {

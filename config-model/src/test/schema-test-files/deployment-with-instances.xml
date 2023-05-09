@@ -30,7 +30,7 @@
           </endpoint>
           <endpoint container-id="bar" />
       </endpoints>
-      <bcp>
+      <bcp deadline="1d">
           <group deadline="60m">
               <endpoint id="foo" container-id="baz"/>
               <region>us-west-1</region>
