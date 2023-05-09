@@ -3,9 +3,7 @@ package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.FileConnectionLog;
-import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
@@ -13,8 +11,6 @@ import com.yahoo.vespa.model.container.component.ConnectionLogComponent;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
 import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
 import org.w3c.dom.Element;
-
-import static com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType.jsonAccessLog;
 
 /**
  * Builds the config model for the standalone config server.
@@ -49,7 +45,10 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
     @Override
     protected void addAccessLogs(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
         if (isHosted()){
-            cluster.addAccessLog("logs/vespa/configserver/access-json.log.%Y%m%d%H%M%S", "access-json.log");
+            cluster.addComponent(
+                    new AccessLogComponent(
+                            AccessLogComponent.AccessLogType.jsonAccessLog, "zstd",
+                            "logs/vespa/configserver/access-json.log.%Y%m%d%H%M%S", null, true, true, "access-json.log", 1024,256*1024));
             cluster.addComponent(new ConnectionLogComponent(cluster, FileConnectionLog.class, "configserver"));
         } else {
             super.addAccessLogs(deployState, cluster, spec);
