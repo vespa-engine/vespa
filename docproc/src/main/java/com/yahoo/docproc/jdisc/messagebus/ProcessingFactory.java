@@ -47,6 +47,7 @@ class ProcessingFactory {
                 PutDocumentMessage putMessage = (PutDocumentMessage) message;
                 DocumentPut putOperation = new DocumentPut(createPutDocument(putMessage));
                 putOperation.setCondition(putMessage.getCondition());
+                putOperation.setCreateIfNonExistent(putMessage.getCreateIfNonExistent());
                 processings.add(createProcessing(putOperation, message));
                 break;
             }
