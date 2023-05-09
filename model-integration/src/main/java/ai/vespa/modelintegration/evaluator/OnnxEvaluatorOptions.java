@@ -17,7 +17,7 @@ import static ai.onnxruntime.OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL;
  */
 public class OnnxEvaluatorOptions {
 
-    private final OrtSession.SessionOptions.OptLevel optimizationLevel;
+    private OrtSession.SessionOptions.OptLevel optimizationLevel;
     private OrtSession.SessionOptions.ExecutionMode executionMode;
     private int interOpThreads;
     private int intraOpThreads;
@@ -86,12 +86,27 @@ public class OnnxEvaluatorOptions {
         this.gpuDeviceRequired = required;
     }
 
+    public void setGpuDevice(int deviceNumber) { gpuDeviceNumber = deviceNumber; }
+
     public boolean requestingGpu() {
         return gpuDeviceNumber > -1;
     }
 
     public boolean gpuDeviceRequired() {
         return gpuDeviceRequired;
+    }
+
+    public int gpuDeviceNumber() { return gpuDeviceNumber; }
+
+    public OnnxEvaluatorOptions copy() {
+        var copy = new OnnxEvaluatorOptions();
+        copy.gpuDeviceNumber = gpuDeviceNumber;
+        copy.gpuDeviceRequired = gpuDeviceRequired;
+        copy.executionMode = executionMode;
+        copy.interOpThreads = interOpThreads;
+        copy.intraOpThreads = intraOpThreads;
+        copy.optimizationLevel = optimizationLevel;
+        return copy;
     }
 
     @Override
