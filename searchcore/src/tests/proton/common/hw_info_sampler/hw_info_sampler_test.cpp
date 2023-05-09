@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config-hwinfo.h>
 #include <vespa/config/print/fileconfigwriter.h>
-#include <vespa/searchcore/config/config-hwinfo.h>
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/util/size_literals.h>

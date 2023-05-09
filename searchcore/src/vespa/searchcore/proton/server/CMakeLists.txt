@@ -124,7 +124,6 @@ vespa_add_library(searchcore_server STATIC
     searchcore_persistenceengine
     searchcore_reprocessing
     searchcore_summaryengine
-    searchcore_fconfig
     searchcore_reference
     configdefinitions
     EXTERNAL_DEPENDS

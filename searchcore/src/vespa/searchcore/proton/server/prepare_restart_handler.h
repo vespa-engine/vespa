@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchcore/config/config-proton.h>
+#include <vespa/config-proton.h>
 #include <condition_variable>
 #include <memory>
 #include <mutex>

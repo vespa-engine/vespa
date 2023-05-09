@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcore/config/config-proton.h>
+#include <vespa/config-proton.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/time.h>

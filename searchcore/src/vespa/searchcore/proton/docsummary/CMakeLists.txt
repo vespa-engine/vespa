@@ -8,6 +8,4 @@ vespa_add_library(searchcore_docsummary STATIC
     summaryflushtarget.cpp
     summarymanager.cpp
     summarymanagerinitializer.cpp
-    DEPENDS
-    searchcore_fconfig
 )

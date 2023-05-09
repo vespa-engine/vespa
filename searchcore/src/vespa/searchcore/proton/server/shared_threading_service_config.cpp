@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "shared_threading_service_config.h"
-#include <vespa/searchcore/config/config-proton.h>
+#include <vespa/config-proton.h>
 #include <cmath>
 
 namespace proton {

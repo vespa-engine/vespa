@@ -5,7 +5,6 @@ vespa_add_executable(searchcore_matching_test_app TEST
     DEPENDS
     searchcore_test
     searchcore_server
-    searchcore_fconfig
     searchcore_matching
     searchcore_feedoperation
     searchcore_documentmetastore

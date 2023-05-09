@@ -5,6 +5,5 @@ vespa_add_executable(searchcore_proton_config_fetcher_test_app TEST
     DEPENDS
     searchcore_test
     searchcore_server
-    searchcore_fconfig
 )
 vespa_add_test(NAME searchcore_proton_config_fetcher_test_app COMMAND searchcore_proton_config_fetcher_test_app)

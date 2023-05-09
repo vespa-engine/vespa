@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include <vespa/config-proton.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
-#include <vespa/searchcore/config/config-proton.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/searchlib/common/tunefileinfo.h>

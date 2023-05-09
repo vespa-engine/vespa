@@ -14,7 +14,6 @@ vespa_add_executable(searchcore_maintenancecontroller_test_app TEST
     searchcore_persistenceengine
     searchcore_grouping
     searchcore_proton_metrics
-    searchcore_fconfig
     searchlib_test
 )
 vespa_add_test(NAME searchcore_maintenancecontroller_test_app COMMAND searchcore_maintenancecontroller_test_app)
