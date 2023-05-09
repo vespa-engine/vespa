@@ -723,26 +723,36 @@ TEST_F("require that high pri concurrency works", Fixture(2, 1ms))
     auto target2 = std::make_shared<SimpleTarget>("target2", 2, false);
     auto target3 = std::make_shared<SimpleTarget>("target3", 2, false);
     auto target4 = std::make_shared<HighPriorityTarget>("target4", 3, false);
-    auto handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3, target4}), "handler", 9);
+    auto target5 = std::make_shared<HighPriorityTarget>("target5", 5, false);
+    auto handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3, target4, target5}), "handler", 9);
     f.putFlushHandler("handler", handler);
     f.engine.start();
 
     EXPECT_TRUE(target1->_initDone.await(LONG_TIMEOUT));
     EXPECT_TRUE(target2->_initDone.await(LONG_TIMEOUT));
-    EXPECT_TRUE(!target3->_initDone.await(SHORT_TIMEOUT));
-    EXPECT_TRUE(target4->_initDone.await(SHORT_TIMEOUT));
+    EXPECT_TRUE(target4->_initDone.await(LONG_TIMEOUT));
+    EXPECT_FALSE(target3->_initDone.await(SHORT_TIMEOUT));
+    EXPECT_FALSE(target5->_initDone.await(SHORT_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target1", "handler.target2", "handler.target4"});
-    EXPECT_TRUE(!target3->_initDone.await(SHORT_TIMEOUT));
     target1->_proceed.countDown();
     EXPECT_TRUE(target1->_taskDone.await(LONG_TIMEOUT));
-    EXPECT_TRUE(!target3->_initDone.await(SHORT_TIMEOUT));
-    assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target4"});
+    EXPECT_TRUE(target5->_initDone.await(LONG_TIMEOUT));
+    EXPECT_FALSE(target3->_initDone.await(SHORT_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target4", "handler.target5"});
     target2->_proceed.countDown();
     EXPECT_TRUE(target2->_taskDone.await(LONG_TIMEOUT));
-    EXPECT_TRUE(target3->_initDone.await(LONG_TIMEOUT));
-    assertThatHandlersInCurrentSet(f.engine, {"handler.target4", "handler.target3"});
-    target3->_proceed.countDown();
+    EXPECT_FALSE(target3->_initDone.await(SHORT_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target4", "handler.target5"});
     target4->_proceed.countDown();
+    EXPECT_TRUE(target4->_taskDone.await(LONG_TIMEOUT));
+    EXPECT_TRUE(target3->_initDone.await(LONG_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target5", "handler.target3"});
+    target3->_proceed.countDown();
+    EXPECT_TRUE(target3->_taskDone.await(LONG_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target5"});
+    target5->_proceed.countDown();
+    EXPECT_TRUE(target5->_taskDone.await(LONG_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {});
 }
 
 TEST_F("require that concurrency works with triggerFlush", Fixture(2, 1ms))
