@@ -33,7 +33,6 @@ private:
     Map _constants;
 
 public:
-    using SP = std::shared_ptr<RankingConstants>;
     RankingConstants();
     RankingConstants(RankingConstants &&) noexcept;
     RankingConstants & operator =(RankingConstants &&) = delete;

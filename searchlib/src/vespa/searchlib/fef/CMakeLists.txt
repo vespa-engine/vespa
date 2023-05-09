@@ -30,6 +30,7 @@ vespa_add_library(searchlib_fef OBJECT
     query_value.cpp
     queryproperties.cpp
     rank_program.cpp
+    ranking_assets_builder.cpp
     ranking_assets_repo.cpp
     ranking_constants.cpp
     ranking_expressions.cpp

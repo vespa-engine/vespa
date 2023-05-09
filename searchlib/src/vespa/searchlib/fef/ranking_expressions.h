@@ -19,7 +19,6 @@ private:
     std::map<vespalib::string,vespalib::string> _expressions;
 
 public:
-    using SP = std::shared_ptr<RankingExpressions>;
     RankingExpressions();
     RankingExpressions(RankingExpressions &&rhs) noexcept;
     RankingExpressions & operator=(RankingExpressions &&rhs) = delete;

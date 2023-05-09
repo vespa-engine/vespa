@@ -55,9 +55,9 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
 DocumentDBConfig::DocumentDBConfig(
                int64_t generation,
                const RankProfilesConfigSP &rankProfiles,
-               const RankingConstants::SP &rankingConstants,
-               const RankingExpressions::SP &rankingExpressions,
-               const OnnxModels::SP &onnxModels,
+               const std::shared_ptr<const RankingConstants> &rankingConstants,
+               const std::shared_ptr<const RankingExpressions> &rankingExpressions,
+               const std::shared_ptr<const OnnxModels> &onnxModels,
                const IndexschemaConfigSP &indexschema,
                const AttributesConfigSP &attributes,
                const SummaryConfigSP &summary,

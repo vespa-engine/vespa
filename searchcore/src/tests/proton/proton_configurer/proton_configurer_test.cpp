@@ -58,17 +58,17 @@ struct DBConfigFixture {
         return DocumentDBConfig::build_schema(_attributesBuilder, _indexschemaBuilder);
     }
 
-    static RankingConstants::SP buildRankingConstants()
+    static std::shared_ptr<const RankingConstants> buildRankingConstants()
     {
         return std::make_shared<RankingConstants>();
     }
 
-    static RankingExpressions::SP buildRankingExpressions()
+    static std::shared_ptr<const RankingExpressions> buildRankingExpressions()
     {
         return std::make_shared<RankingExpressions>();
     }
 
-    static OnnxModels::SP buildOnnxModels()
+    static std::shared_ptr<const OnnxModels> buildOnnxModels()
     {
         return std::make_shared<OnnxModels>();
     }

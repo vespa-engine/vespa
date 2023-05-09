@@ -11,11 +11,14 @@ namespace proton::test {
  */
 class DocumentDBConfigBuilder {
 private:
+    using OnnxModels = DocumentDBConfig::OnnxModels;
+    using RankingConstants = DocumentDBConfig::RankingConstants;
+    using RankingExpressions = DocumentDBConfig::RankingExpressions;
     int64_t _generation;
     DocumentDBConfig::RankProfilesConfigSP _rankProfiles;
-    DocumentDBConfig::RankingConstants::SP _rankingConstants;
-    DocumentDBConfig::RankingExpressions::SP _rankingExpressions;
-    DocumentDBConfig::OnnxModels::SP _onnxModels;
+    std::shared_ptr<const RankingConstants> _rankingConstants;
+    std::shared_ptr<const RankingExpressions> _rankingExpressions;
+    std::shared_ptr<const OnnxModels> _onnxModels;
     DocumentDBConfig::IndexschemaConfigSP _indexschema;
     DocumentDBConfig::AttributesConfigSP _attributes;
     DocumentDBConfig::SummaryConfigSP _summary;
@@ -53,15 +56,15 @@ public:
         _attributes = attributes_in;
         return *this;
     }
-    DocumentDBConfigBuilder &rankingConstants(const DocumentDBConfig::RankingConstants::SP &rankingConstants_in) {
+    DocumentDBConfigBuilder &rankingConstants(const std::shared_ptr<const RankingConstants> &rankingConstants_in) {
         _rankingConstants = rankingConstants_in;
         return *this;
     }
-    DocumentDBConfigBuilder &rankingExpressions(const DocumentDBConfig::RankingExpressions::SP &rankingExpressions_in) {
+    DocumentDBConfigBuilder &rankingExpressions(const std::shared_ptr<const RankingExpressions> &rankingExpressions_in) {
         _rankingExpressions = rankingExpressions_in;
         return *this;
     }
-    DocumentDBConfigBuilder &onnxModels(const DocumentDBConfig::OnnxModels::SP &onnxModels_in) {
+    DocumentDBConfigBuilder &onnxModels(const std::shared_ptr<const OnnxModels> &onnxModels_in) {
         _onnxModels = onnxModels_in;
         return *this;
     }
