@@ -58,7 +58,7 @@ RankingAssetsBuilder::build(const OnnxModelsConfig& config)
 {
     OnnxModels::Vector models;
     if (_file_acquirer) {
-        for (const OnnxModelsConfig::Model &rc : config.model) {
+        for (const auto& rc : config.model) {
             auto desc = fmt("name='%s'", rc.name.c_str());
             vespalib::string file_path = resolve_file(desc, rc.fileref);
             models.emplace_back(rc.name, file_path);
@@ -73,7 +73,7 @@ RankingAssetsBuilder::build(const RankingConstantsConfig& config)
 {
     RankingConstants::Vector constants;
     if (_file_acquirer) {
-        for (const RankingConstantsConfig::Constant &rc : config.constant) {
+        for (const auto& rc : config.constant) {
             auto desc = fmt("name='%s', type='%s'", rc.name.c_str(), rc.type.c_str());
             vespalib::string file_path = resolve_file(desc, rc.fileref);
             constants.emplace_back(rc.name, rc.type, file_path);
@@ -87,7 +87,7 @@ RankingAssetsBuilder::build(const RankingExpressionsConfig& config)
 {
     RankingExpressions expressions;
     if (_file_acquirer) {
-        for (const RankingExpressionsConfig::Expression &rc : config.expression) {
+        for (const auto& rc : config.expression) {
             auto desc = fmt("name='%s'", rc.name.c_str());
             vespalib::string filePath = resolve_file(desc, rc.fileref);
             expressions.add(rc.name, filePath);
