@@ -41,7 +41,7 @@ public class ModelsEvaluator extends AbstractComponent {
                            RankingExpressionsConfig expressionsConfig,
                            OnnxModelsConfig onnxModelsConfig,
                            FileAcquirer fileAcquirer) {
-        this(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer, new OnnxRuntime());
+        this(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer, new OnnxRuntime(onnxModelsConfig));
     }
 
     public ModelsEvaluator(RankProfilesConfigImporter importer,
