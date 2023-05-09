@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.server;
 
+import ai.vespa.metrics.ContainerMetrics;
+
 /**
  * Place to store the metric names so where the metrics are logged can be found
  * more easily in an IDE.
@@ -8,24 +10,21 @@ package com.yahoo.vespa.http.server;
  * @author steinar
  */
 public final class MetricNames {
-
-    private static final String PREFIX = "httpapi_";
-
-    public static final String NUM_OPERATIONS = PREFIX + "num_operations";
-    public static final String NUM_PUTS = PREFIX + "num_puts";
-    public static final String NUM_REMOVES = PREFIX + "num_removes";
-    public static final String NUM_UPDATES = PREFIX + "num_updates";
-    public static final String OPERATIONS_PER_SEC = PREFIX + "ops_per_sec";
-    public static final String LATENCY = PREFIX + "latency";
-    public static final String FAILED = PREFIX + "failed";
-    public static final String CONDITION_NOT_MET = PREFIX + "condition_not_met";
-    public static final String NOT_FOUND = PREFIX + "not_found";
-    public static final String PARSE_ERROR = PREFIX + "parse_error";
-    public static final String SUCCEEDED = PREFIX + "succeeded";
-    public static final String PENDING = PREFIX + "pending";
-    public static final String FAILED_UNKNOWN = FAILED + "_unknown";
-    public static final String FAILED_TIMEOUT = FAILED + "_timeout";
-    public static final String FAILED_INSUFFICIENT_STORAGE = FAILED + "_insufficient_storage";
+    public static final String NUM_OPERATIONS = ContainerMetrics.HTTPAPI_NUM_OPERATIONS.baseName();
+    public static final String NUM_PUTS = ContainerMetrics.HTTPAPI_NUM_PUTS.baseName();
+    public static final String NUM_REMOVES = ContainerMetrics.HTTPAPI_NUM_REMOVES.baseName();
+    public static final String NUM_UPDATES = ContainerMetrics.HTTPAPI_NUM_UPDATES.baseName();
+    public static final String OPERATIONS_PER_SEC = ContainerMetrics.HTTPAPI_OPS_PER_SEC.baseName();
+    public static final String LATENCY = ContainerMetrics.HTTPAPI_LATENCY.baseName();
+    public static final String FAILED = ContainerMetrics.HTTPAPI_FAILED.baseName();
+    public static final String CONDITION_NOT_MET = ContainerMetrics.HTTPAPI_CONDITION_NOT_MET.baseName();
+    public static final String NOT_FOUND = ContainerMetrics.HTTPAPI_NOT_FOUND.baseName();
+    public static final String PARSE_ERROR = ContainerMetrics.HTTPAPI_PARSE_ERROR.baseName();
+    public static final String SUCCEEDED = ContainerMetrics.HTTPAPI_SUCCEEDED.baseName();
+    public static final String PENDING = ContainerMetrics.HTTPAPI_PENDING.baseName();
+    public static final String FAILED_UNKNOWN = ContainerMetrics.HTTPAPI_FAILED_UNKNOWN.baseName();
+    public static final String FAILED_TIMEOUT = ContainerMetrics.HTTPAPI_FAILED_TIMEOUT.baseName();
+    public static final String FAILED_INSUFFICIENT_STORAGE = ContainerMetrics.HTTPAPI_FAILED_INSUFFICIENT_STORAGE.baseName();
 
     private MetricNames() {
     }

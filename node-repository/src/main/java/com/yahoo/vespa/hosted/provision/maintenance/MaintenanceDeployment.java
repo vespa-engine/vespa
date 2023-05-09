@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import ai.vespa.metrics.ConfigServerMetrics;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
@@ -85,12 +86,12 @@ class MaintenanceDeployment implements Closeable {
         try {
             return Optional.of(step.get());
         } catch (TransientException | ActivationConflictException e) {
-            metric.add("maintenanceDeployment.transientFailure", 1, metric.createContext(Map.of()));
+            metric.add(ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_TRANSIENT_FAILURE.baseName(), 1, metric.createContext(Map.of()));
             log.log(Level.INFO, "Failed to maintenance deploy " + application + " with a transient error: " +
                                    Exceptions.toMessageString(e));
             return Optional.empty();
         } catch (RuntimeException e) {
-            metric.add("maintenanceDeployment.failure", 1, metric.createContext(Map.of()));
+            metric.add(ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_FAILURE.baseName(), 1, metric.createContext(Map.of()));
             log.log(Level.WARNING, "Exception on maintenance deploy of " + application, e);
             return Optional.empty();
         }
