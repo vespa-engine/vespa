@@ -23,4 +23,7 @@ public class ClusterStateRequestHandler implements StatusPageServer.RequestHandl
         return response;
     }
 
+    @Override
+    public String pattern() { return "^/clusterstate"; }
+
 }

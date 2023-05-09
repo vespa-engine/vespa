@@ -102,6 +102,9 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         return response;
     }
 
+    @Override
+    public String pattern() { return "^/$"; }
+
     public void writeHtmlState(StateVersionTracker stateVersionTracker, StringBuilder sb) {
         sb.append("<h2 id=\"clusterstates\">Cluster states</h2>\n");
         writeClusterStates(sb, stateVersionTracker.getVersionedClusterStateBundle());

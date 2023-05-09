@@ -113,7 +113,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                            MasterElectionHandler masterElectionHandler,
                            MetricUpdater metricUpdater,
                            FleetControllerOptions options) {
-        context.log(logger, Level.INFO, "Created");
+        context.log(logger, Level.FINE, "Created");
         this.context = context;
         this.timer = timer;
         this.monitor = timer;
@@ -131,19 +131,11 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         this.statusPageServer = new StatusHandler.ContainerStatusPageServer();
         this.rpcServer = server;
         this.masterElectionHandler = masterElectionHandler;
-        this.statusRequestRouter.addHandler(
-                "^/node=([a-z]+)\\.(\\d+)$",
-                new LegacyNodePageRequestHandler(timer, eventLog, cluster));
-        this.statusRequestRouter.addHandler(
-                "^/state.*",
-                new NodeHealthRequestHandler());
-        this.statusRequestRouter.addHandler(
-                "^/clusterstate",
-                new ClusterStateRequestHandler(stateVersionTracker));
+        this.statusRequestRouter.addHandler(new LegacyNodePageRequestHandler(timer, eventLog, cluster));
+        this.statusRequestRouter.addHandler(new NodeHealthRequestHandler());
+        this.statusRequestRouter.addHandler(new ClusterStateRequestHandler(stateVersionTracker));
         this.indexPageRequestHandler = new LegacyIndexPageRequestHandler(timer, cluster, masterElectionHandler, stateVersionTracker, eventLog, options);
-        this.statusRequestRouter.addHandler(
-                "^/$",
-                indexPageRequestHandler);
+        this.statusRequestRouter.addHandler(indexPageRequestHandler);
 
         propagateOptions();
     }

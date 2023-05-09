@@ -23,4 +23,7 @@ public class NodeHealthRequestHandler implements StatusPageServer.RequestHandler
         return response;
     }
 
+    @Override
+    public String pattern() { return "^/state.*"; }
+
 }
