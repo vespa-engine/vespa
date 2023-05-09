@@ -25,7 +25,6 @@ private:
     Map _models;
 
 public:
-    using SP = std::shared_ptr<OnnxModels>;
     OnnxModels();
     OnnxModels(Vector models);
     OnnxModels(OnnxModels &&) noexcept;

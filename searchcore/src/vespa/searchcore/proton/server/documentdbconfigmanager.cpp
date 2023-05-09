@@ -12,21 +12,19 @@
 #include <vespa/config-ranking-expressions.h>
 #include <vespa/config-summary.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/config/file_acquirer/file_acquirer.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/retriever/configretriever.h>
 #include <vespa/config/helper/legacy.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchlib/fef/ranking_assets_builder.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/vespalib/time/time_box.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/time.h>
 #include <vespa/config/retriever/configsnapshot.hpp>
 #include <thread>
 #include <cassert>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.documentdbconfigmanager");
@@ -39,6 +37,7 @@ using namespace vespa::config::search;
 using document::DocumentTypeRepo;
 using search::TuneFileDocumentDB;
 using search::fef::OnnxModels;
+using search::fef::RankingAssetsBuilder;
 using search::fef::RankingConstants;
 using search::fef::RankingExpressions;
 using search::index::Schema;
@@ -51,8 +50,6 @@ using search::WriteableFileChunk;
 using std::make_shared;
 using std::make_unique;
 using vespalib::datastore::CompactionStrategy;
-
-using vespalib::make_string_short::fmt;
 
 namespace proton {
 
@@ -238,26 +235,6 @@ build_alloc_config(const ProtonConfig& proton_config, const vespalib::string& do
                        distribution_config.redundancy, distribution_config.searchablecopies);
 }
 
-vespalib::string
-resolve_file(config::RpcFileAcquirer &fileAcquirer, vespalib::TimeBox &timeBox,
-             const vespalib::string &desc, const vespalib::string &fileref)
-{
-    vespalib::string filePath;
-    LOG(debug, "Waiting for file acquirer (%s, ref='%s')", desc.c_str(), fileref.c_str());
-    while (timeBox.hasTimeLeft() && (filePath == "")) {
-        filePath = fileAcquirer.wait_for(fileref, timeBox.timeLeft());
-        if (filePath == "") {
-            std::this_thread::sleep_for(100ms);
-        }
-    }
-    LOG(debug, "Got file path from file acquirer: '%s' (%s, ref='%s')", filePath.c_str(), desc.c_str(), fileref.c_str());
-    if (filePath == "") {
-        throw config::ConfigTimeoutException(fmt("could not get file path from file acquirer for %s (ref=%s)",
-                                                 desc.c_str(), fileref.c_str()));
-    }
-    return filePath;
-}
-
 }
 
 void
@@ -275,13 +252,12 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
 
     DocumentDBConfig::SP current = _pendingConfigSnapshot;
     RankProfilesConfigSP newRankProfilesConfig;
-    search::fef::RankingConstants::SP newRankingConstants;
-    search::fef::RankingExpressions::SP newRankingExpressions;
-    search::fef::OnnxModels::SP newOnnxModels;
+    std::shared_ptr<const RankingConstants> newRankingConstants;
+    std::shared_ptr<const RankingExpressions> newRankingExpressions;
+    std::shared_ptr<const OnnxModels> newOnnxModels;
     IndexschemaConfigSP newIndexschemaConfig;
     MaintenanceConfigSP oldMaintenanceConfig;
     MaintenanceConfigSP newMaintenanceConfig;
-    constexpr vespalib::duration file_resolve_timeout = 60min;
 
     if (!_ignoreForwardedConfig) {
         if (!(_bootstrapConfig->getDocumenttypesConfigSP() &&
@@ -312,52 +288,21 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
     if (snapshot.isChanged<RankProfilesConfig>(_configId, currentGeneration)) {
         newRankProfilesConfig = snapshot.getConfig<RankProfilesConfig>(_configId);
     }
-    vespalib::TimeBox timeBox(vespalib::to_s(file_resolve_timeout), 5);
+    RankingAssetsBuilder ranking_assets_builder(transport, _bootstrapConfig->getFiledistributorrpcConfig().connectionspec);
     if (snapshot.isChanged<RankingConstantsConfig>(_configId, currentGeneration)) {
         RankingConstantsConfigSP newRankingConstantsConfig = RankingConstantsConfigSP(
                 snapshot.getConfig<RankingConstantsConfig>(_configId));
-        const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
-        RankingConstants::Vector constants;
-        if (spec != "") {
-            config::RpcFileAcquirer fileAcquirer(transport, spec);
-            for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
-                auto desc = fmt("name='%s', type='%s'", rc.name.c_str(), rc.type.c_str());
-                vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
-                constants.emplace_back(rc.name, rc.type, filePath);
-            }
-        }
-        newRankingConstants = std::make_shared<RankingConstants>(constants);
+        newRankingConstants = ranking_assets_builder.build(*newRankingConstantsConfig);
     }
     if (snapshot.isChanged<RankingExpressionsConfig>(_configId, currentGeneration)) {
         RankingExpressionsConfigSP newRankingExpressionsConfig = RankingExpressionsConfigSP(
             snapshot.getConfig<RankingExpressionsConfig>(_configId));
-        const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
-        RankingExpressions expressions;
-        if (spec != "") {
-            config::RpcFileAcquirer fileAcquirer(transport, spec);
-            for (const RankingExpressionsConfig::Expression &rc : newRankingExpressionsConfig->expression) {
-                auto desc = fmt("name='%s'", rc.name.c_str());
-                vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
-                expressions.add(rc.name, filePath);
-            }
-        }
-        newRankingExpressions = std::make_shared<RankingExpressions>(std::move(expressions));
+        newRankingExpressions = ranking_assets_builder.build(*newRankingExpressionsConfig);
     }
     if (snapshot.isChanged<OnnxModelsConfig>(_configId, currentGeneration)) {
         OnnxModelsConfigSP newOnnxModelsConfig = OnnxModelsConfigSP(
                 snapshot.getConfig<OnnxModelsConfig>(_configId));
-        const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
-        OnnxModels::Vector models;
-        if (spec != "") {
-            config::RpcFileAcquirer fileAcquirer(transport, spec);
-            for (const OnnxModelsConfig::Model &rc : newOnnxModelsConfig->model) {
-                auto desc = fmt("name='%s'", rc.name.c_str());
-                vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
-                models.emplace_back(rc.name, filePath);
-                OnnxModels::configure(rc, models.back());
-            }
-        }
-        newOnnxModels = std::make_shared<OnnxModels>(std::move(models));
+        newOnnxModels = ranking_assets_builder.build(*newOnnxModelsConfig);
     }
     if (snapshot.isChanged<IndexschemaConfig>(_configId, currentGeneration)) {
         newIndexschemaConfig = snapshot.getConfig<IndexschemaConfig>(_configId);
