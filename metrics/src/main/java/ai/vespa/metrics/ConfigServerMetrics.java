@@ -24,6 +24,10 @@ public enum ConfigServerMetrics implements VespaMetrics {
     REMOVED_SESSIONS("configserver.removedSessions", Unit.SESSION, "Removed config sessions"),
     RPC_SERVER_WORK_QUEUE_SIZE("configserver.rpcServerWorkQueueSize", Unit.ITEM, "Number of elements in the RPC server work queue"),
 
+    MAINTENANCE_DEPLOYMENT_TRANSIENT_FAILURE("maintenanceDeployment.transientFailure", Unit.OPERATION, "Number of maintenance deployments that failed with a transient failure"),
+    MAINTENANCE_DEPLOYMENT_FAILURE("maintenanceDeployment.failure", Unit.OPERATION, "Number of maintenance deployments that failed with a permanent failure"),
+
+
     // ZooKeeper related metrics
     ZK_CONNECTIONS_LOST("configserver.zkConnectionLost", Unit.CONNECTION, "Number of ZooKeeper connections lost"),
     ZK_RECONNECTED("configserver.zkReconnected", Unit.CONNECTION, "Number of ZooKeeper reconnections"),
@@ -33,7 +37,16 @@ public enum ConfigServerMetrics implements VespaMetrics {
     ZK_AVG_LATENCY("configserver.zkAvgLatency", Unit.MILLISECOND, "Average latency for ZooKeeper requests"), // TODO: Confirm metric name
     ZK_MAX_LATENCY("configserver.zkMaxLatency", Unit.MILLISECOND, "Max latency for ZooKeeper requests"),
     ZK_CONNECTIONS("configserver.zkConnections", Unit.CONNECTION, "Number of ZooKeeper connections"),
-    ZK_OUTSTANDING_REQUESTS("configserver.zkOutstandingRequests", Unit.REQUEST, "Number of ZooKeeper requests in flight");
+    ZK_OUTSTANDING_REQUESTS("configserver.zkOutstandingRequests", Unit.REQUEST, "Number of ZooKeeper requests in flight"),
+
+    // Orchestrator lock metrics
+    ORCHESTRATOR_LOCK_ACQUIRE_LATENCY("orchestrator.lock.acquire-latency", Unit.SECOND, "Time to acquire zookeeper lock"),
+    ORCHESTRATOR_LOCK_ACQUIRE_SUCCESS("orchestrator.lock.acquire-success", Unit.OPERATION, "Number of times zookeeper lock has been acquired successfully"),
+    ORCHESTRATOR_LOCK_ACQUIRE_TIMEOUT("orchestrator.lock.acquire-timedout", Unit.OPERATION, "Number of times zookeeper lock couldn't be acquired within timeout"),
+    ORCHESTRATOR_LOCK_ACQUIRE("orchestrator.lock.acquire", Unit.OPERATION, "Number of attempts to acquire zookeeper lock"),
+    ORCHESTRATOR_LOCK_ACQUIRED("orchestrator.lock.acquired", Unit.OPERATION, "Number of times zookeeper lock was acquired"),
+    ORCHESTRATOR_LOCK_HOLD_LATENCY("orchestrator.lock.hold-latency", Unit.SECOND, "Time zookeeper lock was held before it was released");
+
 
     private final String name;
     private final Unit unit;

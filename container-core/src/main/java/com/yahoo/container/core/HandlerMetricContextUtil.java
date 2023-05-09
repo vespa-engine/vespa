@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.core;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.application.BindingMatch;
@@ -19,11 +20,11 @@ import java.util.concurrent.TimeUnit;
 public class HandlerMetricContextUtil {
 
     public static void onHandle(Request request, Metric metric, Class<?> handlerClass) {
-        metric.add("handled.requests", 1, contextFor(request, metric, handlerClass));
+        metric.add(ContainerMetrics.HANDLED_REQUESTS.baseName(), 1, contextFor(request, metric, handlerClass));
     }
 
     public static void onHandled(Request request, Metric metric, Class<?> handlerClass) {
-        metric.set("handled.latency", request.timeElapsed(TimeUnit.MILLISECONDS), contextFor(request, metric, handlerClass));
+        metric.set(ContainerMetrics.HANDLED_LATENCY.baseName(), request.timeElapsed(TimeUnit.MILLISECONDS), contextFor(request, metric, handlerClass));
     }
 
     public static Metric.Context contextFor(Request request, Metric metric, Class<?> handlerClass) {

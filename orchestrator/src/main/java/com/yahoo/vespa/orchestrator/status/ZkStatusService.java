@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.status;
 
+import ai.vespa.metrics.ConfigServerMetrics;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Metric;
@@ -173,11 +174,13 @@ public class ZkStatusService implements StatusService {
             acquireEndTime = timer.currentTime();
             double seconds = durationInSeconds(startTime, acquireEndTime);
             // TODO: These metrics are redundant with Lock's metrics
-            metric.set("orchestrator.lock.acquire-latency", seconds, metricContext);
-            metric.set("orchestrator.lock.acquired", lockAcquired ? 1 : 0, metricContext);
+            metric.set(ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_LATENCY.baseName(), seconds, metricContext);
+            metric.set(ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRED.baseName(), lockAcquired ? 1 : 0, metricContext);
 
-            metric.add("orchestrator.lock.acquire", 1, metricContext);
-            String acquireResultMetricName = lockAcquired ? "orchestrator.lock.acquire-success" : "orchestrator.lock.acquire-timedout";
+            metric.add(ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE.baseName(), 1, metricContext);
+            String acquireResultMetricName = lockAcquired
+                    ? ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_SUCCESS.baseName()
+                    : ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_TIMEOUT.baseName();
             metric.add(acquireResultMetricName, 1, metricContext);
         }
 
@@ -199,7 +202,7 @@ public class ZkStatusService implements StatusService {
 
             Instant lockReleasedTime = timer.currentTime();
             double seconds = durationInSeconds(acquireEndTime, lockReleasedTime);
-            metric.set("orchestrator.lock.hold-latency", seconds, metricContext);
+            metric.set(ConfigServerMetrics.ORCHESTRATOR_LOCK_HOLD_LATENCY.baseName(), seconds, metricContext);
         };
     }
 

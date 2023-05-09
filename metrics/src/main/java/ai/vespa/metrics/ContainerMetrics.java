@@ -91,6 +91,7 @@ public enum ContainerMetrics implements VespaMetrics {
     HTTPAPI_NUM_UPDATES("httpapi_num_updates", Unit.OPERATION, "Document update operations performed"),
     HTTPAPI_NUM_REMOVES("httpapi_num_removes", Unit.OPERATION, "Document remove operations performed"),
     HTTPAPI_NUM_PUTS("httpapi_num_puts", Unit.OPERATION, "Document put operations performed"),
+    HTTPAPI_OPS_PER_SEC("httpapi_ops_per_sec", Unit.OPERATION_PER_SECOND, "Document operations per second"), // TODO: Remove in Vespa 9
     HTTPAPI_SUCCEEDED("httpapi_succeeded", Unit.OPERATION, "Document operations that succeeded"),
     HTTPAPI_FAILED("httpapi_failed", Unit.OPERATION, "Document operations that failed"),
     HTTPAPI_PARSE_ERROR("httpapi_parse_error", Unit.OPERATION, "Document operations that failed due to document parse errors"),
