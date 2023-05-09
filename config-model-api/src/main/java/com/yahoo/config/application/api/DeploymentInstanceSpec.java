@@ -275,7 +275,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     /** Returns the rotations configuration of these instances */
     public List<Endpoint> endpoints() { return endpoints; }
 
-    /** Returns the BCP spec declared in this specified instance, or BcpSpec.empty() if none. */
+    /** Returns the BCP spec of this instance, or BcpSpec.empty() if none. */
     public Bcp bcp() { return bcp; }
 
     /** Returns whether this instance deploys to the given zone, either implicitly or explicitly */
