@@ -239,7 +239,8 @@ public class ProvisioningTester {
     }
 
     public List<HostSpec> prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString()))
+        ClusterSpec cluster = ClusterSpec.request(nodeType.isConfigServerLike() ? ClusterSpec.Type.admin : ClusterSpec.Type.container,
+                                                  ClusterSpec.Id.from(nodeType == NodeType.config ? "zone-config-servers" : nodeType.toString()))
                                          .vespaVersion(version)
                                          .stateful(nodeType == NodeType.config || nodeType == NodeType.controller)
                                          .build();

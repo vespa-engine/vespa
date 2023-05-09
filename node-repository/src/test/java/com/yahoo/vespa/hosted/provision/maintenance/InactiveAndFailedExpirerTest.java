@@ -32,7 +32,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -196,9 +195,11 @@ public class InactiveAndFailedExpirerTest {
         Supplier<Node> firstNode = () -> tester.nodeRepository().nodes().node(nodes.first().get().hostname()).get();
         ApplicationId application = firstNode.get().allocation().get().owner();
 
-        // Retired config server is moved to inactive
+        // Move retired config server to inactive via setRemovable
         tester.nodeRepository().nodes().retire(NodeListFilter.from(firstNode.get()), Agent.system, tester.clock().instant());
+        tester.nodeRepository().nodes().setRemovable(NodeList.of(firstNode.get()), true);
         tester.prepareAndActivateInfraApplication(application, NodeType.config);
+
         assertSame(Node.State.inactive, firstNode.get().state());
         expirer.maintain();
         assertSame(Node.State.inactive, firstNode.get().state());
