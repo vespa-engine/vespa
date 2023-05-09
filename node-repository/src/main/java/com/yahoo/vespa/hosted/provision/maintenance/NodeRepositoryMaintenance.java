@@ -6,7 +6,6 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.InfraDeployer;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
@@ -17,7 +16,6 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -49,9 +47,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new ExpeditedChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.expeditedChangeRedeployInterval));
         maintainers.add(new ReservationExpirer(nodeRepository, defaults.reservationExpiry, metric));
         maintainers.add(new RetiredExpirer(nodeRepository, deployer, metric, defaults.retiredInterval, defaults.retiredExpiry));
-        maintainers.add(new InactiveExpirer(nodeRepository, defaults.inactiveExpiry, Map.of(NodeType.config, defaults.inactiveConfigServerExpiry,
-                                                                                            NodeType.controller, defaults.inactiveControllerExpiry),
-                                            metric));
+        maintainers.add(new InactiveExpirer(nodeRepository, defaults.inactiveExpiry, metric));
         maintainers.add(new FailedExpirer(nodeRepository, zone, defaults.failedExpirerInterval, metric));
         maintainers.add(new DirtyExpirer(nodeRepository, defaults.dirtyExpiry, metric));
         maintainers.add(new ProvisionedExpirer(nodeRepository, defaults.provisionedExpiry, metric));
@@ -100,8 +96,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         
         private final Duration reservationExpiry;
         private final Duration inactiveExpiry;
-        private final Duration inactiveConfigServerExpiry;
-        private final Duration inactiveControllerExpiry;
         private final Duration retiredExpiry;
         private final Duration failedExpirerInterval;
         private final Duration dirtyExpiry;
@@ -154,8 +148,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             spareCapacityMaintenanceInterval = Duration.ofMinutes(30);
             switchRebalancerInterval = Duration.ofHours(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
-            inactiveConfigServerExpiry = Duration.ofMinutes(5);
-            inactiveControllerExpiry = Duration.ofMinutes(5);
             hostRetirerInterval = Duration.ofMinutes(30);
 
             if (zone.environment().isProduction() && ! zone.system().isCd()) {

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
@@ -19,7 +18,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
@@ -30,12 +28,8 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -69,7 +63,7 @@ public class InactiveAndFailedExpirerTest {
 
         // Inactive times out
         tester.advanceTime(Duration.ofMinutes(14));
-        new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), Map.of(), new TestMetric()).run();
+        new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), new TestMetric()).run();
         assertEquals(0, tester.nodeRepository().nodes().list(Node.State.inactive).size());
         NodeList dirty = tester.nodeRepository().nodes().list(Node.State.dirty);
         assertEquals(2, dirty.size());
@@ -132,7 +126,7 @@ public class InactiveAndFailedExpirerTest {
 
         // Inactive times out and one node is moved to parked
         tester.advanceTime(Duration.ofMinutes(11)); // Trigger InactiveExpirer
-        new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), Map.of(), new TestMetric()).run();
+        new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), new TestMetric()).run();
         assertEquals(1, tester.nodeRepository().nodes().list(Node.State.parked).size());
     }
 
@@ -154,7 +148,7 @@ public class InactiveAndFailedExpirerTest {
         assertEquals(1, inactiveNodes.size());
 
         // See that nodes are moved to dirty immediately.
-        new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), Map.of(), new TestMetric()).run();
+        new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), new TestMetric()).run();
         assertEquals(0, tester.nodeRepository().nodes().list(Node.State.inactive).size());
         NodeList dirty = tester.nodeRepository().nodes().list(Node.State.dirty);
         assertEquals(1, dirty.size());
@@ -178,35 +172,12 @@ public class InactiveAndFailedExpirerTest {
         // Nodes marked for deprovisioning are moved to dirty and then parked when readied by host-admin
         tester.patchNodes(inactiveNodes, (node) -> node.withWantToRetire(true, true, Agent.system, tester.clock().instant()));
         tester.advanceTime(Duration.ofMinutes(11));
-        new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), Map.of(), new TestMetric()).run();
+        new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), new TestMetric()).run();
 
         NodeList expired = tester.nodeRepository().nodes().list(Node.State.dirty);
         assertEquals(2, expired.size());
         expired.forEach(node -> tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(node.hostname(), Agent.operator, "Readied by host-admin"));
         assertEquals(2, tester.nodeRepository().nodes().list(Node.State.parked).size());
-    }
-
-    @Test
-    public void inactive_config_server_expires_according_to_custom_timeout() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        InactiveExpirer expirer = new InactiveExpirer(tester.nodeRepository(), Duration.ofHours(1),
-                                                      Map.of(NodeType.config, Duration.ofMinutes(5)),
-                                                      new TestMetric());
-        NodeList nodes = tester.makeConfigServers(3, "default", Vtag.currentVersion);
-        Supplier<Node> firstNode = () -> tester.nodeRepository().nodes().node(nodes.first().get().hostname()).get();
-        ApplicationId application = firstNode.get().allocation().get().owner();
-
-        // Retired config server is moved to inactive
-        tester.nodeRepository().nodes().retire(NodeListFilter.from(firstNode.get()), Agent.system, tester.clock().instant());
-        tester.prepareAndActivateInfraApplication(application, NodeType.config);
-        assertSame(Node.State.inactive, firstNode.get().state());
-        expirer.maintain();
-        assertSame(Node.State.inactive, firstNode.get().state());
-
-        // Config server expires
-        tester.clock().advance(Duration.ofMinutes(5).plus(Duration.ofSeconds(1)));
-        expirer.maintain();
-        assertSame(Node.State.dirty, firstNode.get().state());
     }
 
 }
