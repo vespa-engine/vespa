@@ -40,7 +40,7 @@ void
 DocumentRetrieverBase::getBucketMetaData(
         const storage::spi::Bucket &bucket,
         search::DocumentMetaData::Vector &result) const {
-    IDocumentMetaStoreContext::IReadGuard::UP readGuard = _meta_store.getReadGuard();
+    ReadGuard readGuard = _meta_store.getReadGuard();
     const search::IDocumentMetaStore &meta_store = readGuard->get();
     meta_store.getMetaData(bucket, result);
 }
@@ -48,7 +48,7 @@ DocumentRetrieverBase::getBucketMetaData(
 search::DocumentMetaData
 DocumentRetrieverBase::getDocumentMetaData(const DocumentId &id) const {
     const GlobalId &gid = id.getGlobalId();
-    IDocumentMetaStoreContext::IReadGuard::UP readGuard = _meta_store.getReadGuard();
+    ReadGuard readGuard = _meta_store.getReadGuard();
     const search::IDocumentMetaStore &meta_store = readGuard->get();
     return meta_store.getMetaData(gid);
 }

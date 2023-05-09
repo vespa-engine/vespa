@@ -19,16 +19,16 @@ namespace search::attribute {
 class BitVectorSearchCache {
 public:
     using BitVectorSP = std::shared_ptr<BitVector>;
-    using ReadGuardUP = IDocumentMetaStoreContext::IReadGuard::UP;
+    using ReadGuardSP = IDocumentMetaStoreContext::IReadGuard::SP;
 
     struct Entry {
         using SP = std::shared_ptr<Entry>;
         // We need to keep a document meta store read guard to ensure that no lids that are cached
         // in the bit vector are re-used until the guard is released.
-        ReadGuardUP dmsReadGuard;
+        ReadGuardSP dmsReadGuard;
         BitVectorSP bitVector;
         uint32_t docIdLimit;
-        Entry(ReadGuardUP dmsReadGuard_, BitVectorSP bitVector_, uint32_t docIdLimit_) noexcept
+        Entry(ReadGuardSP dmsReadGuard_, BitVectorSP bitVector_, uint32_t docIdLimit_) noexcept
             : dmsReadGuard(std::move(dmsReadGuard_)), bitVector(std::move(bitVector_)), docIdLimit(docIdLimit_) {}
     };
 

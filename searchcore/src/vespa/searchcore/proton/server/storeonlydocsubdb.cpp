@@ -160,7 +160,7 @@ bool
 StoreOnlyDocSubDB::hasDocument(const document::DocumentId &id)
 {
     search::DocumentIdT lid;
-    IDocumentMetaStoreContext::IReadGuard::UP guard = _metaStoreCtx->getReadGuard();
+    auto guard = _metaStoreCtx->getReadGuard();
     return guard->get().getLid(id.getGlobalId(), lid);
 }
 

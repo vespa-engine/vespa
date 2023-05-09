@@ -46,8 +46,8 @@ public:
 
     std::shared_ptr<proton::IDocumentMetaStore>   getSP() const override { return _metaStore; }
     proton::IDocumentMetaStore &       get()       override { return *_metaStore; }
-    IReadGuard::UP getReadGuard() const override {
-        return std::make_unique<ReadGuard>(_metaStoreAttr);
+    IReadGuard::SP getReadGuard() const override {
+        return std::make_shared<ReadGuard>(_metaStoreAttr);
     }
 
     void constructFreeList() override;

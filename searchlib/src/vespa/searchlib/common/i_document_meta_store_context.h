@@ -19,7 +19,7 @@ struct IDocumentMetaStoreContext {
      */
     struct IReadGuard {
 
-        using UP = std::unique_ptr<IReadGuard>;
+        using SP = std::shared_ptr<IReadGuard>;
 
         virtual ~IReadGuard() {}
 
@@ -35,7 +35,7 @@ struct IDocumentMetaStoreContext {
      * Access to read interface.
      * Should be used by all reader threads.
      */
-    virtual IReadGuard::UP getReadGuard() const = 0;
+    virtual IReadGuard::SP getReadGuard() const = 0;
 
 };
 

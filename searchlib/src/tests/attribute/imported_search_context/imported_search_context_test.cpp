@@ -474,7 +474,7 @@ makeSearchCacheEntry(const std::vector<uint32_t> docIds, uint32_t docIdLimit)
     for (uint32_t docId : docIds) {
         bitVector->setBit(docId);
     }
-    return std::make_shared<BitVectorSearchCache::Entry>(IDocumentMetaStoreContext::IReadGuard::UP(), bitVector, docIdLimit);
+    return std::make_shared<BitVectorSearchCache::Entry>(IDocumentMetaStoreContext::IReadGuard::SP(), bitVector, docIdLimit);
 }
 
 TEST_F("Bit vector from search cache is used if found", SearchCacheFixture)

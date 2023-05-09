@@ -25,7 +25,7 @@ struct MockDocumentMetaStoreContext : public IDocumentMetaStoreContext {
     mutable size_t get_read_guard_cnt;
 
     MockDocumentMetaStoreContext() noexcept : get_read_guard_cnt(0) {}
-    IReadGuard::UP getReadGuard() const override;
+    IReadGuard::SP getReadGuard() const override;
 };
 
 }

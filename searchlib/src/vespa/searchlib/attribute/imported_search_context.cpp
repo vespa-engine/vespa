@@ -38,7 +38,7 @@ ImportedSearchContext::ImportedSearchContext(
       _searchCacheLookup((_useSearchCache ? _imported_attribute.getSearchCache()->find(_queryTerm) :
                           std::shared_ptr<BitVectorSearchCache::Entry>())),
       _dmsReadGuard((_useSearchCache && !_searchCacheLookup) ? imported_attribute.getDocumentMetaStore()->getReadGuard() :
-                    std::unique_ptr<IDocumentMetaStoreContext::IReadGuard>()),
+                    std::shared_ptr<IDocumentMetaStoreContext::IReadGuard>()),
       _reference_attribute(*_imported_attribute.getReferenceAttribute()),
       _target_attribute(target_attribute),
       _target_search_context(_target_attribute.createSearchContext(std::move(term), params)),

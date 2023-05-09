@@ -84,6 +84,7 @@ private:
         const IAttributeVector *getAttributeStableEnum(const vespalib::string &) const override { return nullptr; }
         const vespalib::eval::Value* get_query_tensor(const vespalib::string&) const override;
         const AttributeBlueprintParams& get_attribute_blueprint_params() const override { return _params; }
+        const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override { return nullptr; }
     private:
         const vespalib::Doom _doom;
         const AttributeBlueprintParams _params;

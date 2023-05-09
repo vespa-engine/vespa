@@ -15,7 +15,7 @@ class DocumentMetaStore;
  */
 class GidToLidMapper : public search::IGidToLidMapper
 {
-    search::IDocumentMetaStoreContext::IReadGuard::UP _guard;
+    search::IDocumentMetaStoreContext::IReadGuard::SP _guard;
 public:
     GidToLidMapper(const search::IDocumentMetaStoreContext &dmsContext);
     virtual ~GidToLidMapper();
