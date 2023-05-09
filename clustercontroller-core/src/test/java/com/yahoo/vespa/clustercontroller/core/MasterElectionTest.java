@@ -143,7 +143,6 @@ public class MasterElectionTest extends FleetControllerTest {
         for (int i = 0; i < timeout().toMillis(); i += 100) {
             if (!fleetControllers.get(master).isMaster()) {
                 log.log(Level.INFO, "Node " + master + " is not master yet, sleeping more");
-                timer.advanceTime(100);
                 waitForCompleteCycle(master);
             } else {
                 log.log(Level.INFO, "Node " + master + " is master. Checking that no one else is master");
