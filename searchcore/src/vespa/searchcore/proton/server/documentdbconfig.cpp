@@ -4,15 +4,15 @@
 #include "threading_service_config.h"
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
+#include <vespa/config-onnx-models.h>
 #include <vespa/config-rank-profiles.h>
+#include <vespa/config-ranking-constants.h>
 #include <vespa/config-summary.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
-#include <vespa/searchcore/config/config-ranking-constants.h>
-#include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/searchcore/proton/attribute/attribute_aspect_delayer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>

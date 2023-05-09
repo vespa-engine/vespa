@@ -5,11 +5,11 @@
 #include "document_db_maintenance_config.h"
 #include "threading_service_config.h"
 #include <vespa/searchcore/proton/common/alloc_config.h>
-#include <vespa/searchcore/proton/matching/ranking_constants.h>
-#include <vespa/searchcore/proton/matching/ranking_expressions.h>
-#include <vespa/searchcore/proton/matching/onnx_models.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
+#include <vespa/searchlib/fef/onnx_models.h>
+#include <vespa/searchlib/fef/ranking_constants.h>
+#include <vespa/searchlib/fef/ranking_expressions.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 
@@ -98,9 +98,9 @@ public:
     using AttributesConfigSP = std::shared_ptr<AttributesConfig>;
     using RankProfilesConfig = const vespa::config::search::internal::InternalRankProfilesType;
     using RankProfilesConfigSP = std::shared_ptr<RankProfilesConfig>;
-    using RankingConstants = matching::RankingConstants;
-    using RankingExpressions = matching::RankingExpressions;
-    using OnnxModels = matching::OnnxModels;
+    using RankingConstants = search::fef::RankingConstants;
+    using RankingExpressions = search::fef::RankingExpressions;
+    using OnnxModels = search::fef::OnnxModels;
     using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
     using SummaryConfigSP = std::shared_ptr<SummaryConfig>;
     using JuniperrcConfig = const vespa::config::search::summary::internal::InternalJuniperrcType;

@@ -28,8 +28,6 @@ using vespa::config::search::RankProfilesConfig;
 namespace proton {
 
 using matching::Matcher;
-using matching::RankingExpressions;
-using matching::OnnxModels;
 
 using ARIConfig = AttributeReprocessingInitializer::Config;
 
@@ -117,10 +115,10 @@ SearchableDocSubDBConfigurer::createMatchers(const DocumentDBConfig& new_config_
 {
     auto& schema = new_config_snapshot.getSchemaSP();
     auto& cfg = new_config_snapshot.getRankProfilesConfig();
-    matching::RankingAssetsRepo ranking_assets_repo_source(_constant_value_factory,
-                                                           new_config_snapshot.getRankingConstantsSP(),
-                                                           new_config_snapshot.getRankingExpressionsSP(),
-                                                           new_config_snapshot.getOnnxModelsSP());
+    search::fef::RankingAssetsRepo ranking_assets_repo_source(_constant_value_factory,
+                                                              new_config_snapshot.getRankingConstantsSP(),
+                                                              new_config_snapshot.getRankingExpressionsSP(),
+                                                              new_config_snapshot.getOnnxModelsSP());
     auto newMatchers = std::make_shared<Matchers>(_clock, _queryLimiter, ranking_assets_repo_source);
     auto& ranking_assets_repo = newMatchers->get_ranking_assets_repo();
     for (const auto &profile : cfg.rankprofile) {

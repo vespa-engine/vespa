@@ -125,9 +125,9 @@ public:
         return std::make_shared<DocumentDBConfig>(
                         1,
                         std::make_shared<RankProfilesConfig>(),
-                        std::make_shared<matching::RankingConstants>(),
-                        std::make_shared<matching::RankingExpressions>(),
-                        std::make_shared<matching::OnnxModels>(),
+                        std::make_shared<search::fef::RankingConstants>(),
+                        std::make_shared<search::fef::RankingExpressions>(),
+                        std::make_shared<search::fef::OnnxModels>(),
                         indexschema,
                         attributes,
                         summary,

@@ -18,7 +18,6 @@
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
-#include <vespa/searchcore/proton/matching/ranking_assets_repo.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
@@ -35,6 +34,7 @@
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/attribute/interlock.h>
+#include <vespa/searchlib/fef/ranking_assets_repo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
@@ -58,6 +58,7 @@ using namespace vespalib;
 
 using proton::matching::SessionManager;
 using search::SerialNum;
+using search::fef::RankingAssetsRepo;
 using searchcorespi::IndexSearchable;
 using searchcorespi::index::IThreadingService;
 using proton::test::MockGidToLidChangeHandler;
