@@ -1,6 +1,7 @@
 package document
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -52,6 +53,19 @@ type ClientOptions struct {
 	Speedtest   bool
 	NowFunc     func() time.Time
 }
+
+type countingReader struct {
+	reader    io.ReadCloser
+	bytesRead int64
+}
+
+func (r *countingReader) Read(p []byte) (int, error) {
+	n, err := r.reader.Read(p)
+	r.bytesRead += int64(n)
+	return n, err
+}
+
+func (r *countingReader) Close() error { return r.reader.Close() }
 
 type countingHTTPClient struct {
 	client   util.HTTPClient
@@ -200,34 +214,36 @@ func (c *Client) buffer() *bytes.Buffer {
 	return buf
 }
 
-func (c *Client) createRequest(method, url string, body []byte) (*http.Request, error) {
+func (c *Client) createRequest(method, url string, body []byte) (*http.Request, *countingReader, error) {
 	if len(body) == 0 {
-		return http.NewRequest(method, url, nil)
+		req, err := http.NewRequest(method, url, nil)
+		return req, nil, err
 	}
-	var buf *bytes.Buffer
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
-	if useGzip {
-		buf = bytes.NewBuffer(make([]byte, 0, 1024))
-		w := c.gzipWriter(buf)
-		writeRequestBody(w, body)
-		if err := w.Close(); err != nil {
-			return nil, err
+	r, w := io.Pipe()
+	go func() {
+		defer w.Close()
+		if useGzip {
+			buf := bufio.NewWriterSize(w, 1024)
+			zw := c.gzipWriter(buf)
+			writeRequestBody(zw, body)
+			zw.Close()
+			c.gzippers.Put(zw)
+			buf.Flush()
+		} else {
+			writeRequestBody(w, body)
 		}
-		c.gzippers.Put(w)
-	} else {
-		buf = bytes.NewBuffer(make([]byte, 0, len(fieldsPrefix)+len(body)+len(fieldsSuffix)))
-		writeRequestBody(buf, body)
-	}
-	req, err := http.NewRequest(method, url, buf)
+	}()
+	cr := &countingReader{reader: r}
+	req, err := http.NewRequest(method, url, cr)
 	if err != nil {
-		return nil, err
+		return nil, cr, err
 	}
 	if useGzip {
 		req.Header.Set("Content-Encoding", "gzip")
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	req.ContentLength = int64(buf.Len())
-	return req, nil
+	return req, cr, nil
 }
 
 func (c *Client) clientTimeout() time.Duration {
@@ -242,7 +258,7 @@ func (c *Client) Send(document Document) Result {
 	start := c.now()
 	result := Result{Id: document.Id, Stats: Stats{Requests: 1}}
 	method, url := c.methodAndURL(document)
-	req, err := c.createRequest(method, url, document.Fields)
+	req, cr, err := c.createRequest(method, url, document.Fields)
 	if err != nil {
 		return resultWithErr(result, err)
 	}
@@ -252,7 +268,11 @@ func (c *Client) Send(document Document) Result {
 	}
 	defer resp.Body.Close()
 	elapsed := c.now().Sub(start)
-	return c.resultWithResponse(resp, req.ContentLength, result, elapsed)
+	var bytesRead int64
+	if cr != nil {
+		bytesRead = cr.bytesRead
+	}
+	return c.resultWithResponse(resp, bytesRead, result, elapsed)
 }
 
 func resultWithErr(result Result, err error) Result {

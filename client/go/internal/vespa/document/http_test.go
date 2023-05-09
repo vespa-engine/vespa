@@ -3,7 +3,6 @@ package document
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"net/http"
 	"reflect"
 	"strings"
@@ -63,7 +62,7 @@ func TestClientSend(t *testing.T) {
 		{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Fields: []byte(`{"foo": "456"}`)},
 		{Create: true, Id: mustParseId("id:ns:type::doc3"), Operation: OperationUpdate, Fields: []byte(`{"baz": "789"}`)},
 	}
-	httpClient := mock.HTTPClient{}
+	httpClient := mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
 		Timeout: time.Duration(5 * time.Second),
@@ -80,7 +79,6 @@ func TestClientSend(t *testing.T) {
 				TotalLatency: time.Second,
 				MinLatency:   time.Second,
 				MaxLatency:   time.Second,
-				BytesSent:    25,
 			},
 		}
 		if i < 2 {
@@ -100,6 +98,7 @@ func TestClientSend(t *testing.T) {
 			wantRes.Stats.BytesRecv = 36
 		}
 		res := client.Send(doc)
+		wantRes.Stats.BytesSent = int64(len(httpClient.LastBody))
 		if !reflect.DeepEqual(res, wantRes) {
 			t.Fatalf("got result %+v, want %+v", res, wantRes)
 		}
@@ -112,19 +111,12 @@ func TestClientSend(t *testing.T) {
 		if r.URL.String() != wantURL {
 			t.Errorf("got r.URL = %q, want %q", r.URL, wantURL)
 		}
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			t.Fatalf("got unexpected error %q", err)
-		}
 		var wantBody bytes.Buffer
 		wantBody.WriteString(`{"fields":`)
 		wantBody.Write(doc.Fields)
 		wantBody.WriteString("}")
-		if !bytes.Equal(body, wantBody.Bytes()) {
-			t.Errorf("got r.Body = %q, want %q", string(body), wantBody.String())
-		}
-		if r.ContentLength != int64(len(body)) {
-			t.Errorf("got r.ContentLength=%d, want %d", r.ContentLength, len(body))
+		if !bytes.Equal(httpClient.LastBody, wantBody.Bytes()) {
+			t.Errorf("got r.Body = %q, want %q", string(httpClient.LastBody), wantBody.String())
 		}
 	}
 	want := Stats{
@@ -148,52 +140,50 @@ func TestClientSend(t *testing.T) {
 }
 
 func TestClientSendCompressed(t *testing.T) {
-	httpClient := mock.HTTPClient{}
+	httpClient := &mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
 		Timeout: time.Duration(5 * time.Second),
-	}, []util.HTTPClient{&httpClient})
+	}, []util.HTTPClient{httpClient})
 
 	bigBody := fmt.Sprintf(`{"foo": "%s"}`, strings.Repeat("s", 512+1))
 	bigDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(bigBody)}
 	smallDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Fields: []byte(`{"foo": "s"}`)}
 
+	var result Result
 	client.options.Compression = CompressionNone
-	_ = client.Send(bigDoc)
-	assertCompressedRequest(t, false, httpClient.LastRequest)
-	_ = client.Send(smallDoc)
-	assertCompressedRequest(t, false, httpClient.LastRequest)
+	result = client.Send(bigDoc)
+	assertCompressedRequest(t, false, result, httpClient)
+	result = client.Send(smallDoc)
+	assertCompressedRequest(t, false, result, httpClient)
 
 	client.options.Compression = CompressionAuto
-	_ = client.Send(bigDoc)
-	assertCompressedRequest(t, true, httpClient.LastRequest)
-	_ = client.Send(smallDoc)
-	assertCompressedRequest(t, false, httpClient.LastRequest)
+	result = client.Send(bigDoc)
+	assertCompressedRequest(t, true, result, httpClient)
+	result = client.Send(smallDoc)
+	assertCompressedRequest(t, false, result, httpClient)
 
 	client.options.Compression = CompressionGzip
-	_ = client.Send(bigDoc)
-	assertCompressedRequest(t, true, httpClient.LastRequest)
-	_ = client.Send(smallDoc)
-	assertCompressedRequest(t, true, httpClient.LastRequest)
+	result = client.Send(bigDoc)
+	assertCompressedRequest(t, true, result, httpClient)
+	result = client.Send(smallDoc)
+	assertCompressedRequest(t, true, result, httpClient)
 }
 
-func assertCompressedRequest(t *testing.T, want bool, request *http.Request) {
+func assertCompressedRequest(t *testing.T, want bool, result Result, client *mock.HTTPClient) {
+	t.Helper()
 	wantEnc := ""
 	if want {
 		wantEnc = "gzip"
 	}
-	gotEnc := request.Header.Get("Content-Encoding")
+	gotEnc := client.LastRequest.Header.Get("Content-Encoding")
 	if gotEnc != wantEnc {
 		t.Errorf("got Content-Encoding=%q, want %q", gotEnc, wantEnc)
 	}
-	body, err := io.ReadAll(request.Body)
-	if err != nil {
-		t.Fatal(err)
+	if result.Stats.BytesSent != int64(len(client.LastBody)) {
+		t.Errorf("got BytesSent=%d, want %d", result.Stats.BytesSent, len(client.LastBody))
 	}
-	if request.ContentLength != int64(len(body)) {
-		t.Errorf("got ContentLength=%d, want %d", request.ContentLength, len(body))
-	}
-	compressed := bytes.HasPrefix(body, []byte{0x1f, 0x8b})
+	compressed := bytes.HasPrefix(client.LastBody, []byte{0x1f, 0x8b})
 	if compressed != want {
 		t.Errorf("got compressed=%t, want %t", compressed, want)
 	}
