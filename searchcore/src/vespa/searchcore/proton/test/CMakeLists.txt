@@ -20,7 +20,6 @@ vespa_add_library(searchcore_test STATIC
     transport_helper.cpp
     DEPENDS
     searchcore_server
-    searchcore_fconfig
     searchcorespi
     searchlib_test
 )

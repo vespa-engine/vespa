@@ -2,7 +2,7 @@
 
 #include "ranking_constants.h"
 
-namespace proton::matching {
+namespace search::fef {
 
 RankingConstants::Constant::Constant(const vespalib::string &name_in,
                                      const vespalib::string &type_in,

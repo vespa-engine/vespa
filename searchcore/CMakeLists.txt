@@ -16,7 +16,6 @@ vespa_define_module(
 
     LIBS
     src/vespa/searchcore/bmcluster
-    src/vespa/searchcore/config
     src/vespa/searchcore/grouping
     src/vespa/searchcore/proton/attribute
     src/vespa/searchcore/proton/bucketdb

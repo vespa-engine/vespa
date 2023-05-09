@@ -11,7 +11,7 @@ namespace search::fef {
 /**
  * Class containing configuration for a single onnx model setup. This
  * class is used both by the IIndexEnvironment api as well as the
- * OnnxModels config adapter in the search core (matching component).
+ * OnnxModels config adapter.
  **/
 class OnnxModel {
 private:

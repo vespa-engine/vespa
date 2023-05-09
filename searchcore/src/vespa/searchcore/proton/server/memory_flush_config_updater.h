@@ -4,7 +4,7 @@
 
 #include "i_disk_mem_usage_listener.h"
 #include "memoryflush.h"
-#include <vespa/searchcore/config/config-proton.h>
+#include <vespa/config-proton.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <mutex>
 

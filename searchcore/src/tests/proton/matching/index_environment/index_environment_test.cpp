@@ -3,14 +3,17 @@
 
 #include <vespa/eval/eval/value_cache/constant_value.h>
 #include <vespa/searchcore/proton/matching/indexenvironment.h>
-#include <vespa/searchcore/proton/matching/ranking_expressions.h>
-#include <vespa/searchcore/proton/matching/onnx_models.h>
+#include <vespa/searchlib/fef/onnx_models.h>
+#include <vespa/searchlib/fef/ranking_expressions.h>
 
 using namespace proton::matching;
 using search::fef::FieldInfo;
 using search::fef::FieldType;
-using search::fef::Properties;
+using search::fef::IRankingAssetsRepo;
 using search::fef::OnnxModel;
+using search::fef::OnnxModels;
+using search::fef::Properties;
+using search::fef::RankingExpressions;
 using search::index::Schema;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;

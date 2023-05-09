@@ -4,7 +4,7 @@
 
 using vespalib::eval::ConstantValue;
 
-namespace proton::matching {
+namespace search::fef {
 
 RankingAssetsRepo::RankingAssetsRepo(const ConstantValueFactory &factory,
                                      std::shared_ptr<const RankingConstants> constants,
@@ -35,7 +35,7 @@ RankingAssetsRepo::getExpression(const vespalib::string &name) const {
     return _rankingExpressions ? _rankingExpressions->loadExpression(name) : "";
 }
 
-const search::fef::OnnxModel *
+const OnnxModel *
 RankingAssetsRepo::getOnnxModel(const vespalib::string &name) const {
     return _onnxModels ? _onnxModels->getModel(name) : nullptr;
 }

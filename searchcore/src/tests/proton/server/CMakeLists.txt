@@ -4,7 +4,6 @@ vespa_add_executable(searchcore_documentretriever_test_app TEST
     documentretriever_test.cpp
     DEPENDS
     searchcore_server
-    searchcore_fconfig
     searchcore_attribute
     searchcore_feedoperation
     searchcore_documentmetastore
@@ -32,7 +31,6 @@ vespa_add_executable(searchcore_feedstates_test_app TEST
     searchcore_feedoperation
     searchcore_pcommon
     searchcore_proton_metrics
-    searchcore_fconfig
 )
 vespa_add_test(NAME searchcore_feedstates_test_app COMMAND searchcore_feedstates_test_app)
 vespa_add_executable(searchcore_memoryconfigstore_test_app TEST

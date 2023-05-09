@@ -21,7 +21,6 @@ vespa_add_executable(searchcore_docsummary_test_app TEST
     searchcore_pcommon
     searchcore_grouping
     searchcore_proton_metrics
-    searchcore_fconfig
 )
 vespa_add_test(NAME searchcore_docsummary_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/docsummary_test.sh
                DEPENDS searchcore_docsummary_test_app)

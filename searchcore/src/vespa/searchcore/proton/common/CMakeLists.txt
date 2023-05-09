@@ -29,7 +29,6 @@ vespa_add_library(searchcore_pcommon STATIC
     statusreport.cpp
     DEPENDS
     searchcore_proton_metrics
-    searchcore_fconfig
     EXTERNAL_DEPENDS
     ${VESPA_STDCXX_FS_LIB}
 )
