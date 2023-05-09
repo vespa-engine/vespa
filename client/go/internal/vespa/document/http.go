@@ -201,6 +201,9 @@ func (c *Client) buffer() *bytes.Buffer {
 }
 
 func (c *Client) createRequest(method, url string, body []byte) (*http.Request, error) {
+	if len(body) == 0 {
+		return http.NewRequest(method, url, nil)
+	}
 	var buf *bytes.Buffer
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
 	if useGzip {
