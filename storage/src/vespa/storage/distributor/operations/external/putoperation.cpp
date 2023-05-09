@@ -277,11 +277,12 @@ void
 PutOperation::on_completed_check_condition(const CheckCondition::Outcome& outcome,
                                            DistributorStripeMessageSender& sender)
 {
-    if (outcome.matched_condition()) {
+    const bool effectively_matched = (outcome.matched_condition()
+                                      || (outcome.not_found() && _msg->get_create_if_non_existent()));
+    if (effectively_matched) {
         _msg->clear_condition(); // Transform to unconditional Put
         start_direct_put_dispatch(sender);
     } else if (outcome.not_found()) {
-        // TODO create:true combined with not found
         // TODO "not found" not a TaS error...
         _tracker.fail(sender, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
                                               "Document does not exist"));

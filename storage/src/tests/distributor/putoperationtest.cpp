@@ -118,7 +118,7 @@ public:
         return reply;
     }
 
-    void set_up_tas_put_with_2_inconsistent_replica_nodes();
+    void set_up_tas_put_with_2_inconsistent_replica_nodes(bool create = false);
 
 };
 
@@ -677,7 +677,7 @@ TEST_F(PutOperationTest, minority_failure_override_not_in_effect_for_non_tas_err
               _sender.getLastReply());
 }
 
-void PutOperationTest::set_up_tas_put_with_2_inconsistent_replica_nodes() {
+void PutOperationTest::set_up_tas_put_with_2_inconsistent_replica_nodes(bool create) {
     setup_stripe(Redundancy(2), NodeCount(2), "version:1 storage:2 distributor:1");
     config_enable_condition_probing(true);
     tag_content_node_supports_condition_probing(0, true);
@@ -689,6 +689,7 @@ void PutOperationTest::set_up_tas_put_with_2_inconsistent_replica_nodes() {
 
     auto put = createPut(doc);
     put->setCondition(TestAndSetCondition("test.foo"));
+    put->set_create_if_non_existent(create);
     sendPut(std::move(put));
     ASSERT_EQ("Get => 1,Get => 0", _sender.getCommands(true));
 }
@@ -777,6 +778,47 @@ TEST_F(PutOperationTest, create_flag_in_parent_put_is_propagated_to_sent_puts) {
     EXPECT_TRUE(put_n1->get_create_if_non_existent());
     auto put_n0 = sent_put_command(1);
     EXPECT_TRUE(put_n0->get_create_if_non_existent());
+}
+
+TEST_F(PutOperationTest, not_found_condition_probe_with_create_set_acts_as_if_matched) {
+    ASSERT_NO_FATAL_FAILURE(set_up_tas_put_with_2_inconsistent_replica_nodes(true));
+
+    op->receive(_sender, make_get_reply(*sent_get_command(0), 0, false, false));
+    op->receive(_sender, make_get_reply(*sent_get_command(1), 0, false, false));
+
+    EXPECT_EQ(_sender.replies().size(), 0);
+    ASSERT_EQ("Get => 1,Get => 0,Put => 1,Put => 0", _sender.getCommands(true));
+
+    auto put_n1 = sent_put_command(2);
+    EXPECT_FALSE(put_n1->hasTestAndSetCondition());
+    auto put_n0 = sent_put_command(3);
+    EXPECT_FALSE(put_n0->hasTestAndSetCondition());
+}
+
+TEST_F(PutOperationTest, conditional_put_no_replicas_case_with_create_set_acts_as_if_matched) {
+    setup_stripe(Redundancy(2), NodeCount(2), "version:1 storage:2 distributor:1");
+    config_enable_condition_probing(true);
+    tag_content_node_supports_condition_probing(0, true);
+    tag_content_node_supports_condition_probing(1, true);
+
+    // Don't init the DB with any replicas for the put's target bucket
+    auto put = createPut(createDummyDocument("test", "test"));
+    put->setCondition(TestAndSetCondition("test.foo"));
+    put->set_create_if_non_existent(true);
+    sendPut(std::move(put));
+
+    EXPECT_EQ(_sender.replies().size(), 0);
+    // Pipelined create + put
+    ASSERT_EQ("Create bucket => 1,Create bucket => 0,Put => 1,Put => 0", _sender.getCommands(true));
+
+    // In this case we can preserve both the condition + create-flag.
+    // The content node will deal with them appropriately.
+    auto put_n1 = sent_put_command(2);
+    EXPECT_TRUE(put_n1->hasTestAndSetCondition());
+    EXPECT_TRUE(put_n1->get_create_if_non_existent());
+    auto put_n0 = sent_put_command(3);
+    EXPECT_TRUE(put_n0->hasTestAndSetCondition());
+    EXPECT_TRUE(put_n1->get_create_if_non_existent());
 }
 
 }
