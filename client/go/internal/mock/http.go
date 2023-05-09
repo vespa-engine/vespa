@@ -11,13 +11,20 @@ import (
 )
 
 type HTTPClient struct {
-	// The responses to return for future requests. Once a response is consumed, it's removed from this slice
+	// The responses to return for future requests. Once a response is consumed, it's removed from this slice.
 	nextResponses []HTTPResponse
 
-	// LastRequest is the last HTTP request made through this
+	// LastRequest is the last HTTP request made through this.
 	LastRequest *http.Request
 
-	// Requests contains all requests made through this
+	// ReadBody controls whether the client consumes the request body automatically. If true, LastBody will contain the
+	// body of the most recent request.
+	ReadBody bool
+
+	// LastBody is a copy of the last request payload sent through this.
+	LastBody []byte
+
+	// Requests contains all requests made through this.
 	Requests []*http.Request
 }
 
@@ -48,6 +55,13 @@ func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Res
 		c.nextResponses = c.nextResponses[1:]
 	}
 	c.LastRequest = request
+	if c.ReadBody && request.Body != nil {
+		body, err := io.ReadAll(request.Body)
+		if err != nil {
+			return nil, err
+		}
+		c.LastBody = body
+	}
 	c.Requests = append(c.Requests, request)
 	if response.Header == nil {
 		response.Header = make(http.Header)
