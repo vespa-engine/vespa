@@ -105,6 +105,7 @@ public:
     create_match_tools_factory(const search::engine::Request &request, ISearchContext &searchContext,
                                IAttributeContext &attrContext, const search::IDocumentMetaStore &metaStore,
                                const Properties &feature_overrides, vespalib::ThreadBundle &thread_bundle,
+                               const IDocumentMetaStoreContext::IReadGuard::SP * metaStoreReadGuard,
                                bool is_search) const;
 
     /**

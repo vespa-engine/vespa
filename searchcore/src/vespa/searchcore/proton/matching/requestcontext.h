@@ -26,7 +26,8 @@ public:
                    IAttributeContext& attributeContext,
                    const search::fef::IQueryEnvironment& query_env,
                    search::fef::IObjectStore& shared_store,
-                   const search::attribute::AttributeBlueprintParams& attribute_blueprint_params);
+                   const search::attribute::AttributeBlueprintParams& attribute_blueprint_params,
+                   const MetaStoreReadGuardSP * metaStoreReadGuard);
 
     const Doom & getDoom() const override { return _doom; }
     const search::attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override;

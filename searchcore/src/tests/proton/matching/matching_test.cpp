@@ -377,7 +377,7 @@ struct MyWorld {
     void verify_diversity_filter(const SearchRequest & req, bool expectDiverse) {
         Matcher::SP matcher = createMatcher();
         search::fef::Properties overrides;
-        auto mtf = matcher->create_match_tools_factory(req, searchContext, attributeContext, metaStore, overrides, ttb(), true);
+        auto mtf = matcher->create_match_tools_factory(req, searchContext, attributeContext, metaStore, overrides, ttb(), nullptr, true);
         auto diversity = mtf->createDiversifier(HeapSize::lookup(config));
         EXPECT_EQUAL(expectDiverse, static_cast<bool>(diversity));
     }
@@ -387,7 +387,7 @@ struct MyWorld {
         SearchRequest::SP request = createSimpleRequest("f1", "spread");
         search::fef::Properties overrides;
         MatchToolsFactory::UP match_tools_factory = matcher->create_match_tools_factory(
-            *request, searchContext, attributeContext, metaStore, overrides, ttb(), true);
+            *request, searchContext, attributeContext, metaStore, overrides, ttb(), nullptr, true);
         MatchTools::UP match_tools = match_tools_factory->createMatchTools();
         match_tools->setup_first_phase(nullptr);
         return match_tools->match_data().get_termwise_limit();

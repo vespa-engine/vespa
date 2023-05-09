@@ -6,7 +6,6 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/query_value.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
@@ -22,15 +21,15 @@ using search::attribute::IAttributeVector;
 RequestContext::RequestContext(const Doom & doom, IAttributeContext & attributeContext,
                                const search::fef::IQueryEnvironment& query_env,
                                search::fef::IObjectStore& shared_store,
-                               const search::attribute::AttributeBlueprintParams& attribute_blueprint_params)
+                               const search::attribute::AttributeBlueprintParams& attribute_blueprint_params,
+                               const MetaStoreReadGuardSP * metaStoreReadGuard)
     : _doom(doom),
       _attributeContext(attributeContext),
       _query_env(query_env),
       _shared_store(shared_store),
       _attribute_blueprint_params(attribute_blueprint_params),
-      _metaStoreReadGuard(nullptr)
-{
-}
+      _metaStoreReadGuard(metaStoreReadGuard)
+{ }
 
 const search::attribute::IAttributeVector *
 RequestContext::getAttribute(const vespalib::string &name) const

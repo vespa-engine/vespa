@@ -10,9 +10,6 @@
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
-#include <vespa/vespalib/data/slime/cursor.h>
-#include <vespa/vespalib/data/slime/inject.h>
-#include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
@@ -176,13 +173,14 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const Properties           & rankProperties,
                   const Properties           & featureOverrides,
                   vespalib::ThreadBundle     & thread_bundle,
+                  const search::IDocumentMetaStoreContext::IReadGuard::SP * metaStoreReadGuard,
                   bool                         is_search)
     : _queryLimiter(queryLimiter),
       _global_filter_params(extract_global_filter_params(rankSetup, rankProperties, metaStore.getNumActiveLids(), searchContext.getDocIdLimit())),
       _query(),
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties, searchContext.getIndexes()),
-      _requestContext(doom, attributeContext, _queryEnv, _queryEnv.getObjectStore(), _global_filter_params),
+      _requestContext(doom, attributeContext, _queryEnv, _queryEnv.getObjectStore(), _global_filter_params, metaStoreReadGuard),
       _mdl(),
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
