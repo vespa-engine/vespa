@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/searchlib/common/i_document_meta_store_context.h>
 
 namespace search::attribute { struct AttributeBlueprintParams; }
 namespace search::attribute { class IAttributeVector; }
@@ -17,6 +18,7 @@ namespace search::queryeval {
 class IRequestContext
 {
 public:
+    using MetaStoreReadGuardSP = std::shared_ptr<IDocumentMetaStoreContext::IReadGuard>;
     virtual ~IRequestContext() = default;
 
     /**
@@ -39,6 +41,8 @@ public:
     virtual const vespalib::eval::Value* get_query_tensor(const vespalib::string& tensor_name) const = 0;
 
     virtual const search::attribute::AttributeBlueprintParams& get_attribute_blueprint_params() const = 0;
+
+    virtual const MetaStoreReadGuardSP * getMetaStoreReadGuard() const = 0;
 };
 
 }

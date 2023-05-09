@@ -14,9 +14,9 @@ class DocumentSubDBCollection;
  */
 struct DocumentMetaStoreReadGuards
 {
-    IDocumentMetaStoreContext::IReadGuard::UP readydms;
-    IDocumentMetaStoreContext::IReadGuard::UP notreadydms;
-    IDocumentMetaStoreContext::IReadGuard::UP remdms;
+    IDocumentMetaStoreContext::IReadGuard::SP readydms;
+    IDocumentMetaStoreContext::IReadGuard::SP notreadydms;
+    IDocumentMetaStoreContext::IReadGuard::SP remdms;
 
     DocumentMetaStoreReadGuards(const DocumentSubDBCollection &subDBs);
     ~DocumentMetaStoreReadGuards();

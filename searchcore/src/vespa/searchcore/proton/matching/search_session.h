@@ -29,7 +29,7 @@ public:
         std::shared_ptr<const ISearchHandler> search_handler;
         std::unique_ptr<search::fef::Properties> feature_overrides;
         std::unique_ptr<MatchContext> context;
-        IDocumentMetaStoreContext::IReadGuard::UP readGuard;
+        IDocumentMetaStoreContext::IReadGuard::SP readGuard;
     };
 private:
     using SessionId = vespalib::string;

@@ -53,13 +53,13 @@ struct MockReadGuard : public IDocumentMetaStoreContext::IReadGuard {
 
 struct MockDocumentMetaStoreContext : public IDocumentMetaStoreContext
 {
-    std::unique_ptr<IReadGuard> getReadGuard() const override;
+    std::shared_ptr<IReadGuard> getReadGuard() const override;
 };
 
-std::unique_ptr<IDocumentMetaStoreContext::IReadGuard>
+std::shared_ptr<IDocumentMetaStoreContext::IReadGuard>
 MockDocumentMetaStoreContext::getReadGuard() const
 {
-    return std::make_unique<MockReadGuard>();
+    return std::make_shared<MockReadGuard>();
 }
 
 

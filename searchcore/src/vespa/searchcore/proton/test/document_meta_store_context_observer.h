@@ -26,7 +26,7 @@ struct DocumentMetaStoreContextObserver : public IDocumentMetaStoreContext
     // Implements IDocumentMetaStoreContext
     proton::IDocumentMetaStore::SP getSP() const override { return _observer; }
     proton::IDocumentMetaStore &     get()       override { return *_observer; }
-    IReadGuard::UP          getReadGuard() const override { return _context.getReadGuard(); }
+    IReadGuard::SP          getReadGuard() const override { return _context.getReadGuard(); }
     void               constructFreeList()       override { return _context.constructFreeList(); }
 };
 

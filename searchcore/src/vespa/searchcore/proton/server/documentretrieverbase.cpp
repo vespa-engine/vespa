@@ -11,11 +11,8 @@ using document::GlobalId;
 
 namespace proton {
 
-DocumentRetrieverBase::DocumentRetrieverBase(
-        const DocTypeName &docTypeName,
-        const document::DocumentTypeRepo &repo,
-        const IDocumentMetaStoreContext &meta_store,
-        bool hasFields)
+DocumentRetrieverBase::DocumentRetrieverBase(const DocTypeName &docTypeName, const document::DocumentTypeRepo &repo,
+                                             const IDocumentMetaStoreContext &meta_store, bool hasFields)
     : IDocumentRetriever(),
       _docTypeName(docTypeName),
       _repo(repo),
@@ -31,35 +28,17 @@ DocumentRetrieverBase::DocumentRetrieverBase(
 
 DocumentRetrieverBase::~DocumentRetrieverBase() = default;
 
-const document::DocumentTypeRepo &
-DocumentRetrieverBase::getDocumentTypeRepo() const {
-    return _repo;
-}
-
 void
-DocumentRetrieverBase::getBucketMetaData(
-        const storage::spi::Bucket &bucket,
-        search::DocumentMetaData::Vector &result) const {
-    IDocumentMetaStoreContext::IReadGuard::UP readGuard = _meta_store.getReadGuard();
-    const search::IDocumentMetaStore &meta_store = readGuard->get();
-    meta_store.getMetaData(bucket, result);
+DocumentRetrieverBase::getBucketMetaData(const storage::spi::Bucket &bucket,
+                                         search::DocumentMetaData::Vector &result) const
+{
+    _meta_store.getReadGuard()->get().getMetaData(bucket, result);
 }
 
 search::DocumentMetaData
 DocumentRetrieverBase::getDocumentMetaData(const DocumentId &id) const {
-    const GlobalId &gid = id.getGlobalId();
-    IDocumentMetaStoreContext::IReadGuard::UP readGuard = _meta_store.getReadGuard();
-    const search::IDocumentMetaStore &meta_store = readGuard->get();
-    return meta_store.getMetaData(gid);
+    return _meta_store.getReadGuard()->get().getMetaData(id.getGlobalId());
 }
-
-
-const search::IAttributeManager *
-DocumentRetrieverBase::getAttrMgr() const
-{
-    return nullptr;
-}
-
     
 CachedSelect::SP
 DocumentRetrieverBase::parseSelect(const vespalib::string &selection) const
@@ -72,12 +51,7 @@ DocumentRetrieverBase::parseSelect(const vespalib::string &selection) const
     
     auto nselect = std::make_shared<CachedSelect>();
     
-    nselect->set(selection,
-                 _docTypeName.getName(),
-                 *_emptyDoc,
-                 getDocumentTypeRepo(),
-                 getAttrMgr(),
-                 _hasFields);
+    nselect->set(selection, _docTypeName.getName(), *_emptyDoc, getDocumentTypeRepo(), getAttrMgr(), _hasFields);
 
     std::lock_guard<std::mutex> guard(_lock);
     if (_selectCache.hasKey(selection))

@@ -47,7 +47,7 @@ public:
     }
 
     const search::attribute::AttributeBlueprintParams& get_attribute_blueprint_params() const override;
-
+    const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override { return nullptr; }
 private:
     std::unique_ptr<vespalib::TestClock> _clock;
     const vespalib::Doom _doom;

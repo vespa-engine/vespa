@@ -25,7 +25,7 @@ class DocumentRetrieverBase : public IDocumentRetriever
     const bool             _hasFields;
 
 protected:
-    virtual const search::IAttributeManager * getAttrMgr() const;
+    virtual const search::IAttributeManager * getAttrMgr() const { return nullptr; }
     const document::DocumentType & getDocumentType() const {
         return _emptyDoc->getType();
     }
@@ -36,7 +36,7 @@ public:
                           bool hasFields);
     ~DocumentRetrieverBase() override;
 
-    const document::DocumentTypeRepo &getDocumentTypeRepo() const override;
+    const document::DocumentTypeRepo &getDocumentTypeRepo() const override { return _repo; }
     void getBucketMetaData(const storage::spi::Bucket &bucket, search::DocumentMetaData::Vector &result) const override;
     search::DocumentMetaData getDocumentMetaData(const document::DocumentId &id) const override;
     CachedSelect::SP parseSelect(const vespalib::string &selection) const override;

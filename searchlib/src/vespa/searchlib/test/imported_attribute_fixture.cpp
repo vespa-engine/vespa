@@ -14,10 +14,10 @@ namespace {
     };
 }
 
-IDocumentMetaStoreContext::IReadGuard::UP
+IDocumentMetaStoreContext::IReadGuard::SP
 MockDocumentMetaStoreContext::getReadGuard() const {
     ++get_read_guard_cnt;
-    return std::make_unique<MockReadGuard>();
+    return std::make_shared<MockReadGuard>();
 }
 
 }

@@ -23,7 +23,7 @@ class IDocumentRetriever
 {
 public:
     using ReadConsistency = storage::spi::ReadConsistency;
-    using ReadGuard = IDocumentMetaStoreContext::IReadGuard::UP;
+    using ReadGuard = IDocumentMetaStoreContext::IReadGuard::SP;
     using UP = std::unique_ptr<IDocumentRetriever>;
     using SP = std::shared_ptr<IDocumentRetriever>;
 

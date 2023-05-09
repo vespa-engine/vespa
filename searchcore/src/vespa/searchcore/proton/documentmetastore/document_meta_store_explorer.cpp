@@ -12,7 +12,7 @@ using vespalib::slime::Inserter;
 
 namespace proton {
 
-DocumentMetaStoreExplorer::DocumentMetaStoreExplorer(IDocumentMetaStoreContext::IReadGuard::UP metaStore)
+DocumentMetaStoreExplorer::DocumentMetaStoreExplorer(IDocumentMetaStoreContext::IReadGuard::SP metaStore)
     : _metaStore(std::move(metaStore))
 {
 }

@@ -14,7 +14,7 @@ using Entry = BitVectorSearchCache::Entry;
 Entry::SP
 makeEntry()
 {
-    return std::make_shared<Entry>(IDocumentMetaStoreContext::IReadGuard::UP(), BitVector::create(5), 10);
+    return std::make_shared<Entry>(IDocumentMetaStoreContext::IReadGuard::SP(), BitVector::create(5), 10);
 }
 
 struct Fixture {

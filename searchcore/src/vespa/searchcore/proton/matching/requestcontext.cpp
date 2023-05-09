@@ -27,7 +27,8 @@ RequestContext::RequestContext(const Doom & doom, IAttributeContext & attributeC
       _attributeContext(attributeContext),
       _query_env(query_env),
       _shared_store(shared_store),
-      _attribute_blueprint_params(attribute_blueprint_params)
+      _attribute_blueprint_params(attribute_blueprint_params),
+      _metaStoreReadGuard(nullptr)
 {
 }
 
@@ -61,12 +62,6 @@ RequestContext::get_query_tensor(const vespalib::string& tensor_name) const
                       ex.getMessage().c_str(), tensor_name.c_str());
         return nullptr;
     }
-}
-
-const search::attribute::AttributeBlueprintParams&
-RequestContext::get_attribute_blueprint_params() const
-{
-    return _attribute_blueprint_params;
 }
 
 }

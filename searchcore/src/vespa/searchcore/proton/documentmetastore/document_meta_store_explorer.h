@@ -13,10 +13,10 @@ namespace proton {
 class DocumentMetaStoreExplorer : public vespalib::StateExplorer
 {
 private:
-    IDocumentMetaStoreContext::IReadGuard::UP _metaStore;
+    IDocumentMetaStoreContext::IReadGuard::SP _metaStore;
 
 public:
-    DocumentMetaStoreExplorer(IDocumentMetaStoreContext::IReadGuard::UP metaStore);
+    DocumentMetaStoreExplorer(IDocumentMetaStoreContext::IReadGuard::SP metaStore);
 
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
 };
