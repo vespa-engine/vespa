@@ -2,7 +2,9 @@
 package com.yahoo.document.restapi.resource;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
@@ -152,7 +154,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         @Override public void close(CompletionHandler handler) { handler.completed(); }
     };
 
-    private static final JsonFactory jsonFactory = new JsonFactory();
+    private static final JsonFactory jsonFactory = new JsonFactoryBuilder()
+            .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
+            .build();
 
     private static final String CREATE = "create";
     private static final String CONDITION = "condition";

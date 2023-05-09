@@ -3,9 +3,11 @@ package ai.vespa.feed.client;
 
 import ai.vespa.feed.client.FeedClient.OperationType;
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -193,7 +195,9 @@ public class JsonFeeder implements Closeable {
         }
     }
 
-    private static final JsonFactory factory = new JsonFactory();
+    private static final JsonFactory factory = new JsonFactoryBuilder()
+            .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
+            .build();
 
     @Override public void close() throws IOException {
         closed = true;

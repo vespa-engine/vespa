@@ -1,9 +1,12 @@
 package com.yahoo.search.handler;
 
+import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.StreamReadConstraints;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.processing.IllegalInputException;
 
@@ -23,10 +26,11 @@ import java.util.Map;
  */
 class Json2SingleLevelMap {
 
-    private static final ObjectMapper jsonMapper = new ObjectMapper().configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
-    private final byte [] buf;
-    private final JsonParser parser;
+    private static final ObjectMapper jsonMapper = createMapper();
 
+    private final byte [] buf;
+
+    private final JsonParser parser;
     Json2SingleLevelMap(InputStream data) {
         try {
             buf = data.readAllBytes();
@@ -34,6 +38,14 @@ class Json2SingleLevelMap {
         } catch (IOException e) {
             throw new RuntimeException("Problem reading POSTed data", e);
         }
+    }
+
+    private static ObjectMapper createMapper() {
+        var jsonFactory = new JsonFactoryBuilder()
+                .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
+                .configure(JsonReadFeature.ALLOW_SINGLE_QUOTES, true)
+                .build();
+        return new ObjectMapper(jsonFactory);
     }
 
     Map<String, String> parse() {
