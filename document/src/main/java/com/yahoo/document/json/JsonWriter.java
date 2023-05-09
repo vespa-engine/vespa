@@ -2,7 +2,9 @@
 package com.yahoo.document.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentType;
@@ -74,7 +76,10 @@ import static com.yahoo.document.json.document.DocumentParser.REMOVE;
  */
 public class JsonWriter implements DocumentWriter {
 
-    private static final JsonFactory jsonFactory = new JsonFactory();
+    private static final JsonFactory jsonFactory = new JsonFactoryBuilder()
+            .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
+            .build();
+
     private final JsonGenerator generator;
 
     private final boolean tensorShortForm;

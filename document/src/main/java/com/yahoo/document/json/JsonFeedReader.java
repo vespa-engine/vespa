@@ -3,6 +3,7 @@ package com.yahoo.document.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonFactoryBuilder;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
@@ -28,7 +29,10 @@ public class JsonFeedReader implements FeedReader {
 
     private final JsonReader reader;
     private final InputStream stream;
-    private static final JsonFactory jsonFactory = new JsonFactoryBuilder().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES).build();
+    private static final JsonFactory jsonFactory = new JsonFactoryBuilder()
+            .disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES)
+            .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
+            .build();
 
     public JsonFeedReader(InputStream stream, DocumentTypeManager docMan) {
         reader = new JsonReader(docMan, stream, jsonFactory);

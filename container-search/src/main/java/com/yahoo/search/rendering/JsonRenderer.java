@@ -3,7 +3,9 @@ package com.yahoo.search.rendering;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -175,8 +177,10 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private static JsonFactory createGeneratorFactory() {
-        JsonFactory factory = new JsonFactory();
-        factory.setCodec(new ObjectMapper().disable(FLUSH_AFTER_WRITE_VALUE));
+        var factory = new JsonFactoryBuilder()
+                .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
+                .build();
+        factory.setCodec(new ObjectMapper(factory).disable(FLUSH_AFTER_WRITE_VALUE));
         return factory;
     }
 

@@ -11,14 +11,14 @@ import ai.vespa.feed.client.Result;
 import ai.vespa.feed.client.ResultException;
 import ai.vespa.feed.client.ResultParseException;
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,7 +43,9 @@ import static java.util.Objects.requireNonNull;
  */
 class HttpFeedClient implements FeedClient {
 
-    private static final JsonFactory factory = new JsonFactory();
+    private static final JsonFactory jsonParserFactory = new JsonFactoryBuilder()
+            .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
+            .build();
 
     private final Map<String, Supplier<String>> requestHeaders;
     private final RequestStrategy requestStrategy;
@@ -195,7 +197,7 @@ class HttpFeedClient implements FeedClient {
     static MessageAndTrace parse(DocumentId documentId, byte[] json) {
         String message = null;
         String trace = null;
-        try (JsonParser parser = factory.createParser(json)) {
+        try (JsonParser parser = jsonParserFactory.createParser(json)) {
             if (parser.nextToken() != JsonToken.START_OBJECT)
                 throw new ResultParseException(
                         documentId,
