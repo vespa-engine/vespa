@@ -139,8 +139,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 Files.createDirectories(privateKeyFile.getParent());
                 Files.createDirectories(certificateFile.getParent());
                 Files.createDirectories(identityDocumentFile.getParent());
-                registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
-                modified = true;
+                modified |= registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
             }
 
             X509Certificate certificate = readCertificateFromFile(certificateFile);
@@ -149,12 +148,10 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             var doc = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
             if (refreshIdentityDocument(doc, context)) {
                 context.log(logger, "Identity document is outdated (version=%d)", doc.documentVersion());
-                registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
-                modified = true;
+                modified |= registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
             } else if (isCertificateExpired(expiry, now)) {
                 context.log(logger, "Certificate has expired (expiry=%s)", expiry.toString());
-                registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
-                modified = true;
+                modified |= registerIdentity(context, privateKeyFile, certificateFile, identityDocumentFile, identityType, athenzIdentity);
             }
 
             Duration age = Duration.between(certificate.getNotBefore().toInstant(), now);
@@ -306,10 +303,11 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                         now)) > 0;
     }
 
-    private void registerIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile, IdentityType identityType, AthenzIdentity identity) {
+    private boolean registerIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile, ContainerPath identityDocumentFile, IdentityType identityType, AthenzIdentity identity) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        SignedIdentityDocument signedDoc = signedIdentityDocument(context, identityType);
-        IdentityDocument doc = signedDoc.identityDocument();
+        Optional<SignedIdentityDocument> signedDoc = signedIdentityDocument(context, identityType);
+        if (signedDoc.isEmpty()) return false;
+        IdentityDocument doc = signedDoc.get().identityDocument();
         CsrGenerator csrGenerator = new CsrGenerator(certificateDnsSuffix, doc.providerService().getFullName());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 identity, doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
@@ -321,12 +319,13 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     ztsClient.registerInstance(
                             doc.providerService(),
                             identity,
-                            EntityBindingsMapper.toAttestationData(signedDoc),
+                            EntityBindingsMapper.toAttestationData(signedDoc.get()),
                             csr);
-            EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedDoc);
+            EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedDoc.get());
             writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
         }
+        return true;
     }
 
     /**
@@ -398,10 +397,10 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         return now.isAfter(expiry.minus(EXPIRY_MARGIN));
     }
 
-    private SignedIdentityDocument signedIdentityDocument(NodeAgentContext context, IdentityType identityType) {
+    private Optional<SignedIdentityDocument> signedIdentityDocument(NodeAgentContext context, IdentityType identityType) {
         return switch (identityType) {
-            case NODE -> identityDocumentClient.getNodeIdentityDocument(context.hostname().value(), documentVersion(context));
-            case TENANT -> identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context)).get();
+            case NODE -> Optional.of(identityDocumentClient.getNodeIdentityDocument(context.hostname().value(), documentVersion(context)));
+            case TENANT -> identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context));
         };
     }
 
@@ -416,7 +415,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         if (Files.exists(identityDocumentFile)) {
             return Optional.of(EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile).identityDocument().serviceIdentity());
         } else {
-            return identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context))
+            return signedIdentityDocument(context, TENANT)
                     .map(doc -> doc.identityDocument().serviceIdentity());
         }
     }
