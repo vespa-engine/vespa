@@ -44,6 +44,7 @@ import java.io.Reader;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -59,6 +60,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparingInt;
@@ -138,10 +140,8 @@ public class DeploymentSpecXmlReader {
 
         List<Step> steps = new ArrayList<>();
         List<Endpoint> applicationEndpoints = new ArrayList<>();
-        Bcp defaultBcp;
         if ( ! containsTag(instanceTag, root)) { // deployment spec skipping explicit instance -> "default" instance
-            steps.addAll(readInstanceContent("default", root, new HashMap<>(), root));
-            defaultBcp = Bcp.empty();
+            steps.addAll(readInstanceContent("default", root, new HashMap<>(), root, Bcp.empty()));
         }
         else {
             if (XML.getChildren(root).stream().anyMatch(child -> child.getTagName().equals(prodTag)))
@@ -151,14 +151,14 @@ public class DeploymentSpecXmlReader {
 
             for (Element child : XML.getChildren(root)) {
                 String tagName = child.getTagName();
+                Bcp defaultBcp = readBcp(root, Optional.empty(), List.of(), List.of(), Map.of());
                 if (tagName.equals(instanceTag)) {
-                    steps.addAll(readInstanceContent(child.getAttribute(idAttribute), child, new HashMap<>(), root));
+                    steps.addAll(readInstanceContent(child.getAttribute(idAttribute), child, new HashMap<>(), root, defaultBcp));
                 } else {
-                    steps.addAll(readNonInstanceSteps(child, new HashMap<>(), root)); // (No global service id here)
+                    steps.addAll(readNonInstanceSteps(child, new HashMap<>(), root, defaultBcp)); // (No global service id here)
                 }
             }
             readEndpoints(root, Optional.empty(), steps, applicationEndpoints, Map.of());
-            defaultBcp = readBcp(root, Optional.empty(), steps, List.of(), Map.of());
         }
 
         return new DeploymentSpec(steps,
@@ -167,7 +167,6 @@ public class DeploymentSpecXmlReader {
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
                                   stringAttribute(cloudAccountAttribute, root).map(CloudAccount::from),
                                   applicationEndpoints,
-                                  defaultBcp,
                                   xmlForm,
                                   deprecatedElements);
     }
@@ -183,7 +182,8 @@ public class DeploymentSpecXmlReader {
     private List<DeploymentInstanceSpec> readInstanceContent(String instanceNameString,
                                                              Element instanceElement,
                                                              Map<String, String> prodAttributes,
-                                                             Element parentTag) {
+                                                             Element parentTag,
+                                                             Bcp defaultBcp) {
         if (instanceNameString.isBlank())
             illegal("<instance> attribute 'id' must be specified, and not be blank");
 
@@ -211,11 +211,11 @@ public class DeploymentSpecXmlReader {
         Tags tags = XML.attribute(tagsTag, instanceElement).map(Tags::fromString).orElse(Tags.empty());
         List<Step> steps = new ArrayList<>();
         for (Element instanceChild : XML.getChildren(instanceElement))
-            steps.addAll(readNonInstanceSteps(instanceChild, prodAttributes, instanceChild));
+            steps.addAll(readNonInstanceSteps(instanceChild, prodAttributes, instanceChild, defaultBcp));
         List<Endpoint> endpoints = new ArrayList<>();
         Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints = new LinkedHashMap<>();
         readEndpoints(instanceElement, Optional.of(instanceNameString), steps, endpoints, zoneEndpoints);
-        Bcp bcp = readBcp(instanceElement, Optional.of(instanceNameString), steps, endpoints, zoneEndpoints);
+        Bcp bcp = complete(readBcp(instanceElement, Optional.of(instanceNameString), steps, endpoints, zoneEndpoints).orElse(defaultBcp), steps);
         validateEndpoints(endpoints);
 
         // Build and return instances with these values
@@ -250,16 +250,16 @@ public class DeploymentSpecXmlReader {
         }
     }
 
-    private List<Step> readSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag) {
+    private List<Step> readSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag, Bcp defaultBcp) {
         if (stepTag.getTagName().equals(instanceTag))
-            return new ArrayList<>(readInstanceContent(stepTag.getAttribute(idAttribute), stepTag, prodAttributes, parentTag));
+            return new ArrayList<>(readInstanceContent(stepTag.getAttribute(idAttribute), stepTag, prodAttributes, parentTag, defaultBcp));
         else
-            return readNonInstanceSteps(stepTag, prodAttributes, parentTag);
+            return readNonInstanceSteps(stepTag, prodAttributes, parentTag, defaultBcp);
 
     }
 
     // Consume the given tag as 0-N steps. 0 if it is not a step, >1 if it contains multiple nested steps that should be flattened
-    private List<Step> readNonInstanceSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag) {
+    private List<Step> readNonInstanceSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag, Bcp defaultBcp) {
         Optional<AthenzService> athenzService = mostSpecificAttribute(stepTag, athenzServiceAttribute).map(AthenzService::from);
         Optional<String> testerFlavor = mostSpecificAttribute(stepTag, testerFlavorAttribute);
 
@@ -281,7 +281,7 @@ public class DeploymentSpecXmlReader {
                 return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccount(stepTag)));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
-                                               .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag).stream())
+                                               .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag, defaultBcp).stream())
                                                .toList();
             case delayTag:
                 return List.of(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
@@ -289,11 +289,11 @@ public class DeploymentSpecXmlReader {
                                                             longAttribute("seconds", stepTag))));
             case parallelTag: // regions and instances may be nested within
                 return List.of(new ParallelSteps(XML.getChildren(stepTag).stream()
-                                                    .flatMap(child -> readSteps(child, prodAttributes, parentTag).stream())
+                                                    .flatMap(child -> readSteps(child, prodAttributes, parentTag, defaultBcp).stream())
                                                     .toList()));
             case stepsTag: // regions and instances may be nested within
                 return List.of(new Steps(XML.getChildren(stepTag).stream()
-                                            .flatMap(child -> readSteps(child, prodAttributes, parentTag).stream())
+                                            .flatMap(child -> readSteps(child, prodAttributes, parentTag, defaultBcp).stream())
                                             .toList()));
             case regionTag:
                 return List.of(readDeclaredZone(Environment.prod, athenzService, testerFlavor, stepTag));
@@ -496,15 +496,15 @@ public class DeploymentSpecXmlReader {
                        List<Endpoint> endpoints, Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints) {
         Element bcpElement = XML.getChild(parent, "bcp");
         if (bcpElement == null) return Bcp.empty();
+        Optional<Duration> defaultDeadline = XML.attribute("deadline", bcpElement).map(value -> toDuration(value, "deadline"));
 
         List<Bcp.Group> groups = new ArrayList<>();
         Map<String, Map<RegionName, List<ZoneEndpoint>>> endpointsByZone = new LinkedHashMap<>();
         for (Element groupElement : XML.getChildren(bcpElement, "group")) {
             List<Bcp.RegionMember> regions = new ArrayList<>();
             for (Element regionElement : XML.getChildren(groupElement, "region")) {
-                RegionName region = RegionName.from(XML.getValue(regionElement));
                 double fraction = toDouble(XML.attribute("fraction", regionElement).orElse(null), "fraction").orElse(1.0);
-                regions.add(new Bcp.RegionMember(region, fraction));
+                regions.add(new Bcp.RegionMember(RegionName.from(XML.getValue(regionElement)), fraction));
             }
             for (Element endpointElement : XML.getChildren(groupElement, "endpoint")) {
                 if (instance.isEmpty()) illegal("The default <bcp> element at the root cannot define endpoints");
@@ -518,11 +518,32 @@ public class DeploymentSpecXmlReader {
                 endpoint.ifPresent(e -> endpoints.add(e));
             }
 
-            Duration deadline = XML.attribute("deadline", groupElement).map(value -> toDuration(value, "deadline")).orElse(Duration.ZERO);
+            Duration deadline = XML.attribute("deadline", groupElement).map(value -> toDuration(value, "deadline"))
+                                   .orElse(defaultDeadline.orElse(Duration.ZERO));
             groups.add(new Bcp.Group(regions, deadline));
         }
         validateAndConsolidate(endpointsByZone, zoneEndpoints);
-        return new Bcp(groups);
+        return new Bcp(groups, defaultDeadline);
+    }
+
+    /**
+     * A bcp instance as written and imported may either specify groups containing all regions,
+     * or no groups, meaning it should contain one group with all regions.
+     * This adds that missing implicit group when appropriate.
+     */
+    private Bcp complete(Bcp bcp, List<Step> steps) {
+        if ( ! bcp.groups().isEmpty()) return bcp; // has explicit groups
+        var group = new Bcp.Group(prodRegions(steps).stream().map(region -> new Bcp.RegionMember(region, 1.0)).toList(),
+                                  bcp.defaultDeadline().orElse(Duration.ZERO));
+        return bcp.withGroups(List.of(group));
+    }
+
+    private Set<RegionName> prodRegions(List<Step> steps) {
+        return steps.stream()
+                    .flatMap(s -> s.zones().stream())
+                    .filter(zone -> zone.environment().isProduction())
+                    .flatMap(z -> z.region().stream())
+                    .collect(Collectors.toSet());
     }
 
     static void validateAndConsolidate(Map<String, Map<RegionName, List<ZoneEndpoint>>> in, Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> out) {
@@ -784,24 +805,32 @@ public class DeploymentSpecXmlReader {
     }
 
     /**
-     * Returns a string consisting of a number followed by "m" or "M" to a duration of that number of minutes,
+     * Returns a string consisting of a number followed by "m" or "h" to a duration given in that unit,
      * or zero duration if null of blank.
      */
-    private static Duration toDuration(String minutesSpec, String sourceDescription) {
+    private static Duration toDuration(String durationSpec, String sourceDescription) {
         try {
-            if (minutesSpec == null || minutesSpec.isBlank()) return Duration.ZERO;
-            minutesSpec = minutesSpec.trim().toLowerCase();
-            if ( ! minutesSpec.endsWith("m"))
-                throw new IllegalArgumentException("Must end by 'm'");
-            try {
-                return Duration.ofMinutes(Integer.parseInt(minutesSpec.substring(0, minutesSpec.length() - 1)));
-            }
-            catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Must be an integer number of minutes followed by 'm'");
-            }
+            if (durationSpec == null || durationSpec.isBlank()) return Duration.ZERO;
+            durationSpec = durationSpec.trim().toLowerCase();
+            var magnitude = toMagnitude(durationSpec);
+            return switch (durationSpec.substring(durationSpec.length() - 1)) {
+                case "m" -> Duration.ofMinutes(magnitude);
+                case "h" -> Duration.ofHours(magnitude);
+                case "d" -> Duration.ofDays(magnitude);
+                default -> throw new IllegalArgumentException("Must end by 'm', 'h' or 'd'");
+            };
         }
         catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Illegal " + sourceDescription + " '" + minutesSpec + "'", e);
+            throw new IllegalArgumentException("Illegal " + sourceDescription + " '" + durationSpec + "'", e);
+        }
+    }
+
+    private static int toMagnitude(String durationSpec) {
+        try {
+            return Integer.parseInt(durationSpec.substring(0, durationSpec.length() - 1));
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Must be an integer followed by 'm' or 'h'");
         }
     }
 

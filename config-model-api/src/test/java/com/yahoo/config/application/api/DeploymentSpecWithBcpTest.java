@@ -104,7 +104,7 @@ public class DeploymentSpecWithBcpTest {
 
         var spec = DeploymentSpec.fromXml(r);
 
-        var betaBcp = spec.requireInstance("beta").bcp().orElse(spec.bcp());
+        var betaBcp = spec.requireInstance("beta").bcp();
         assertEquals(1, betaBcp.groups().size());
         var betaGroup = betaBcp.groups().get(0);
         assertEquals(2, betaGroup.members().size());
@@ -112,7 +112,7 @@ public class DeploymentSpecWithBcpTest {
         assertEquals(new Bcp.RegionMember(RegionName.from("us-east1"), 1.0), betaGroup.members().get(0));
         assertEquals(new Bcp.RegionMember(RegionName.from("us-east2"), 1.0), betaGroup.members().get(1));
 
-        var mainBcp = spec.requireInstance("main").bcp().orElse(spec.bcp());
+        var mainBcp = spec.requireInstance("main").bcp();
         assertEquals(7, mainBcp.regions().size());
         assertEquals(3, mainBcp.groups().size());
 
@@ -214,7 +214,7 @@ public class DeploymentSpecWithBcpTest {
             fail();
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Illegal deadline 'fast': Must end by 'm'", Exceptions.toMessageString(e));
+            assertEquals("Illegal deadline 'fast': Must be an integer followed by 'm' or 'h'", Exceptions.toMessageString(e));
         }
     }
 
@@ -403,7 +403,7 @@ public class DeploymentSpecWithBcpTest {
 
     }
     private void assertTwoRegions(DeploymentSpec spec) {
-        var bcp = spec.requireInstance("default").bcp().orElse(spec.bcp());
+        var bcp = spec.requireInstance("default").bcp();
         assertEquals(1, bcp.groups().size());
         var group = bcp.groups().get(0);
         assertEquals(2, group.members().size());
