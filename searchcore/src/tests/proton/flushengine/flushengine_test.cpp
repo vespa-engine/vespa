@@ -235,6 +235,7 @@ protected:
     SimpleTarget(const std::string &name, const Type &type, search::SerialNum flushedSerial = 0, bool proceedImmediately = true) :
         test::DummyFlushTarget(name, type, Component::OTHER),
         _flushedSerial(flushedSerial),
+        _currentSerial(0),
         _proceed(),
         _initDone(),
         _taskStart(),
@@ -266,7 +267,7 @@ public:
     { }
 
     SimpleTarget(const std::string &name, search::SerialNum flushedSerial = 0, bool proceedImmediately = true)
-            : SimpleTarget(name, Type::OTHER, flushedSerial, proceedImmediately)
+        : SimpleTarget(name, Type::OTHER, flushedSerial, proceedImmediately)
     { }
 
     Time getLastFlushTime() const override { return vespalib::system_clock::now(); }
@@ -288,8 +289,19 @@ public:
 class GCTarget : public SimpleTarget {
 public:
     GCTarget(const vespalib::string &name, search::SerialNum flushedSerial)
-            : SimpleTarget(name, Type::GC, flushedSerial)
+        : SimpleTarget(name, Type::GC, flushedSerial)
     {}
+};
+
+class HighPriorityTarget : public SimpleTarget {
+public:
+    HighPriorityTarget(const vespalib::string &name, search::SerialNum flushedSerial, bool proceed)
+        : SimpleTarget(name, Type::OTHER, flushedSerial, proceed)
+    {}
+
+    Priority getPriority() const override {
+        return Priority::HIGH;
+    }
 };
 
 class AssertedTarget : public SimpleTarget {
@@ -703,6 +715,44 @@ TEST_F("require that concurrency works", Fixture(2, 1ms))
     assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target3"});
     target3->_proceed.countDown();
     target2->_proceed.countDown();
+}
+
+TEST_F("require that high pri concurrency works", Fixture(2, 1ms))
+{
+    auto target1 = std::make_shared<SimpleTarget>("target1", 1, false);
+    auto target2 = std::make_shared<SimpleTarget>("target2", 2, false);
+    auto target3 = std::make_shared<SimpleTarget>("target3", 2, false);
+    auto target4 = std::make_shared<HighPriorityTarget>("target4", 3, false);
+    auto target5 = std::make_shared<HighPriorityTarget>("target5", 5, false);
+    auto handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3, target4, target5}), "handler", 9);
+    f.putFlushHandler("handler", handler);
+    f.engine.start();
+
+    EXPECT_TRUE(target1->_initDone.await(LONG_TIMEOUT));
+    EXPECT_TRUE(target2->_initDone.await(LONG_TIMEOUT));
+    EXPECT_TRUE(target4->_initDone.await(LONG_TIMEOUT));
+    EXPECT_FALSE(target3->_initDone.await(SHORT_TIMEOUT));
+    EXPECT_FALSE(target5->_initDone.await(SHORT_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target1", "handler.target2", "handler.target4"});
+    target1->_proceed.countDown();
+    EXPECT_TRUE(target1->_taskDone.await(LONG_TIMEOUT));
+    EXPECT_TRUE(target5->_initDone.await(LONG_TIMEOUT));
+    EXPECT_FALSE(target3->_initDone.await(SHORT_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target4", "handler.target5"});
+    target2->_proceed.countDown();
+    EXPECT_TRUE(target2->_taskDone.await(LONG_TIMEOUT));
+    EXPECT_FALSE(target3->_initDone.await(SHORT_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target4", "handler.target5"});
+    target4->_proceed.countDown();
+    EXPECT_TRUE(target4->_taskDone.await(LONG_TIMEOUT));
+    EXPECT_TRUE(target3->_initDone.await(LONG_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target5", "handler.target3"});
+    target3->_proceed.countDown();
+    EXPECT_TRUE(target3->_taskDone.await(LONG_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {"handler.target5"});
+    target5->_proceed.countDown();
+    EXPECT_TRUE(target5->_taskDone.await(LONG_TIMEOUT));
+    assertThatHandlersInCurrentSet(f.engine, {});
 }
 
 TEST_F("require that concurrency works with triggerFlush", Fixture(2, 1ms))
