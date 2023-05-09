@@ -49,6 +49,7 @@ type ClientOptions struct {
 	Route       string
 	TraceLevel  int
 	Compression Compression
+	Speedtest   bool
 	NowFunc     func() time.Time
 }
 
@@ -156,6 +157,9 @@ func (c *Client) methodAndURL(d Document) (string, string) {
 	}
 	if c.options.TraceLevel > 0 {
 		writeQueryParam(&sb, queryStart, false, "tracelevel", strconv.Itoa(c.options.TraceLevel))
+	}
+	if c.options.Speedtest {
+		writeQueryParam(&sb, queryStart, false, "dryRun", "true")
 	}
 	if d.Condition != "" {
 		writeQueryParam(&sb, queryStart, true, "condition", d.Condition)

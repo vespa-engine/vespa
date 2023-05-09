@@ -2,10 +2,14 @@ package document
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
+	"math/rand"
 	"strconv"
 	"strings"
+
+	"time"
 
 	"github.com/goccy/go-json"
 )
@@ -246,4 +250,35 @@ func parseDocument(d *jsonDocument) (Document, error) {
 
 func parseError(value string) error {
 	return fmt.Errorf("invalid document: expected id:<namespace>:<document-type>:[n=<number>|g=<group>]:<user-specific>, got %q", value)
+}
+
+// Generator is a reader that returns synthetic documents until a given deadline.
+type Generator struct {
+	Size     int
+	Deadline time.Time
+
+	buf     bytes.Buffer
+	nowFunc func() time.Time
+}
+
+func NewGenerator(size int, deadline time.Time) *Generator {
+	return &Generator{Size: size, Deadline: deadline, nowFunc: time.Now}
+}
+
+func (g *Generator) randString(size int) string {
+	b := make([]byte, size)
+	for i := range b {
+		b[i] = byte('a' + rand.Intn('z'-'a'+1))
+	}
+	return string(b)
+}
+
+func (g *Generator) Read(p []byte) (int, error) {
+	if g.buf.Len() == 0 {
+		if !g.nowFunc().Before(g.Deadline) {
+			return 0, io.EOF
+		}
+		fmt.Fprintf(&g.buf, "{\"put\": \"id:test:test::%s\", \"fields\": {\"test\": \"%s\"}}\n", g.randString(8), g.randString(g.Size))
+	}
+	return g.buf.Read(p)
 }
