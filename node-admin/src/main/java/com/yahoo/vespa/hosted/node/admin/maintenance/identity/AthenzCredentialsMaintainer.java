@@ -58,6 +58,7 @@ import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer.IdentityType.NODE;
 import static com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer.IdentityType.TENANT;
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * A maintainer that is responsible for providing and refreshing Athenz credentials for a container.
@@ -73,6 +74,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private static final Duration REFRESH_BACKOFF = Duration.ofHours(1); // Backoff when refresh fails to ensure ZTS is not DDoS'ed.
 
     private static final String CONTAINER_SIA_DIRECTORY = "/var/lib/sia";
+    private static final String LEGACY_SIA_DIRECTORY = "/opt/vespa/var/vespa/sia";
 
     private final URI ztsEndpoint;
     private final Path ztsTrustStorePath;
@@ -113,10 +115,12 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         if (context.zone().getSystemName().isPublic())
             return modified;
 
-        if (shouldWriteTenantServiceIdentity(context))
+        if (shouldWriteTenantServiceIdentity(context)) {
             modified |= maintain(context, TENANT);
-        else
+            createCredentialsSymlink(context);
+        } else {
             modified |= deleteTenantCredentials(context);
+        }
         return modified;
     }
 
@@ -429,6 +433,12 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 .with(FetchVector.Dimension.VESPA_VERSION, version.toFullString())
                 .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
                 .value();
+    }
+
+    private void createCredentialsSymlink(NodeAgentContext context) {
+        var siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
+        var legacySiaDirectory = context.paths().of(LEGACY_SIA_DIRECTORY, context.users().vespa());
+        uncheck(() -> Files.createSymbolicLink(legacySiaDirectory, siaDirectory));
     }
 
     /*
