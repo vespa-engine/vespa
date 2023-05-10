@@ -115,6 +115,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej, bjorncs"}) default boolean enableGlobalPhase() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select summary decode type") default String summaryDecodePolicy() { return "eager"; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean allowMoreThanOneContentGroupDown(ClusterSpec.Id id) { return false; }
+        @ModelFeatureFlag(owners = {"vekterli", "havardpe"}) default boolean enableConditionalPutRemoveWriteRepair() { return false; }
 
         //Below are all flags that must be kept until 7 is out of the door
         @ModelFeatureFlag(owners = {"arnej"}, removeAfter="7.last") default boolean ignoreThreadStackSizes() { return false; }

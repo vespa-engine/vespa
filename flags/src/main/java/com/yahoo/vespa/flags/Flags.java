@@ -414,6 +414,15 @@ public class Flags {
             "Takes effect at next host-admin tick",
             ZONE_ID);
 
+    public static final UnboundBooleanFlag ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR = defineFeatureFlag(
+            "enable-conditional-put-remove-write-repair", false,
+            List.of("vekterli", "havardpe"), "2023-05-10", "2023-07-01",
+            "If set, a conditional Put or Remove operation for a document in an inconsistent bucket " +
+            "will initiate a write-repair that evaluates the condition across all mutually inconsistent " +
+            "replicas, with the newest document version (if any) being authoritative",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
