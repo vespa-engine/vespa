@@ -1240,6 +1240,17 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(2, resolveMaxInhibitedGroupsConfigWithFeatureFlag(2));
     }
 
+    private boolean resolveConditionProbingFromWriteRepairFeatureFlag(boolean enable) throws Exception {
+        var cfg = resolveStorDistributormanagerConfig(new TestProperties().setEnableConditionalPutRemoveWriteRepair(enable));
+        return cfg.enable_condition_probing();
+    }
+
+    @Test
+    void distributor_condition_probing_is_controlled_by_write_repair_feature_flag() throws Exception {
+        assertFalse(resolveConditionProbingFromWriteRepairFeatureFlag(false));
+        assertTrue(resolveConditionProbingFromWriteRepairFeatureFlag(true));
+    }
+
     private int resolveNumDistributorStripesConfig(Optional<Flavor> flavor) throws Exception {
         var cc = createOneNodeCluster(new TestProperties(), flavor);
         var builder = new StorDistributormanagerConfig.Builder();
