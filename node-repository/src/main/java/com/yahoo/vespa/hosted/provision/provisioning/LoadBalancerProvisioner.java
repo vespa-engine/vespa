@@ -76,10 +76,8 @@ public class LoadBalancerProvisioner {
             try (var lock = db.lock(id.application())) {
                 var loadBalancer = db.readLoadBalancer(id);
                 loadBalancer.ifPresent(lb -> {
-//                    if (!zoneAccount.isUnspecified() && lb.instance().isPresent() && lb.instance().get().cloudAccount().isUnspecified())
-//                        lb = lb.with(Optional.of(lb.instance().get().with(zoneAccount)));
-                    if (nodeRepository.zone().getCloud().name().equals(CloudName.GCP))
-                        lb = lb.with(lb.instance().map(i -> i.with(CloudAccount.empty)));
+                    if (!zoneAccount.isUnspecified() && lb.instance().isPresent() && lb.instance().get().cloudAccount().isUnspecified())
+                        lb = lb.with(Optional.of(lb.instance().get().with(zoneAccount)));
                     db.writeLoadBalancer(lb, lb.state());
                 });
             }
