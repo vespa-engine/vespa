@@ -232,7 +232,7 @@ public record IP() {
 
             if (!hasPtr) {
                 // Without PTR records (reverse IP mapping): Ensure only forward resolving from hostnames.
-                return findUnusedHostnames(nodes).findFirst().map(address -> Allocation.fromHostname(address, resolver, ipAddresses.protocol));
+                return findUnusedHostnames(nodes).findFirst().map(hostname -> Allocation.fromHostname(hostname, resolver, ipAddresses.protocol));
             }
 
             if (ipAddresses.protocol == IpAddresses.Protocol.ipv4) {
