@@ -17,6 +17,7 @@ using vespa::config::search::vsm::VsmfieldsConfig;
 using search::fef::Blueprint;
 using search::fef::BlueprintFactory;
 using search::fef::FieldInfo;
+using search::fef::IRankingAssetsRepo;
 using search::fef::Properties;
 using search::fef::RankSetup;
 using vsm::VsmfieldsHandle;
@@ -162,13 +163,6 @@ RankManager::Snapshot::Snapshot() :
 }
 
 RankManager::Snapshot::~Snapshot() = default;
-    
-bool
-RankManager::Snapshot::setup(const RankManager & rm, const std::vector<NamedPropertySet> & properties)
-{
-    _properties = properties;
-    return setup(rm);
-}
 
 bool
 RankManager::Snapshot::setup(const RankManager & rm)
@@ -183,26 +177,27 @@ RankManager::Snapshot::setup(const RankManager & rm)
 }
 
 bool
-RankManager::Snapshot::setup(const RankManager & rm, const RankProfilesConfig & cfg)
+RankManager::Snapshot::setup(const RankManager & rm, const RankProfilesConfig & cfg, std::shared_ptr<const IRankingAssetsRepo> ranking_assets_repo)
 {
+    _protoEnv.set_ranking_assets_repo(std::move(ranking_assets_repo));
     addProperties(cfg);
     return setup(rm);
 }
 
 void
-RankManager::notify(const vsm::VSMConfigSnapshot & snap)
+RankManager::notify(const vsm::VSMConfigSnapshot & snap, std::shared_ptr<const IRankingAssetsRepo> ranking_assets_repo)
 {
-    configureRankProfiles(*snap.getConfig<RankProfilesConfig>());
+    configureRankProfiles(*snap.getConfig<RankProfilesConfig>(), std::move(ranking_assets_repo));
 }
 
 
 void
-RankManager::configureRankProfiles(const RankProfilesConfig & cfg)
+RankManager::configureRankProfiles(const RankProfilesConfig & cfg, std::shared_ptr<const IRankingAssetsRepo> ranking_assets_repo)
 {
     LOG(debug, "configureRankProfiles(): Size of cfg rankprofiles: %zd", cfg.rankprofile.size());
 
     auto snapshot = std::make_unique<Snapshot>();
-    if (snapshot->setup(*this, cfg)) {
+    if (snapshot->setup(*this, cfg, std::move(ranking_assets_repo))) {
         _snapshot.set(snapshot.release());
         _snapshot.latch(); // switch to the new config object
     } else {
@@ -224,9 +219,9 @@ RankManager::RankManager(VSMAdapter * const vsmAdapter) :
 RankManager::~RankManager() = default;
 
 void
-RankManager::configure(const vsm::VSMConfigSnapshot & snap)
+RankManager::configure(const vsm::VSMConfigSnapshot & snap, std::shared_ptr<const IRankingAssetsRepo> ranking_assets_repo)
 {
-    notify(snap);
+    notify(snap, std::move(ranking_assets_repo));
 }
     
 }

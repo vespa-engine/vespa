@@ -19,6 +19,7 @@ class RankManager
 public:
     /** collection of field ids for an index **/
     using View = std::vector<uint32_t>;
+    using IRankingAssetsRepo = search::fef::IRankingAssetsRepo;
 
     /**
      * This class represents a snapshot of the rank-profiles config with associated setup per rank profile.
@@ -51,8 +52,7 @@ public:
         Snapshot();
         ~Snapshot();
         const std::vector<NamedPropertySet> & getProperties() const { return _properties; }
-        bool setup(const RankManager & manager, const vespa::config::search::RankProfilesConfig & cfg);
-        bool setup(const RankManager & manager, const std::vector<NamedPropertySet> & properties);
+        bool setup(const RankManager & manager, const vespa::config::search::RankProfilesConfig & cfg, std::shared_ptr<const IRankingAssetsRepo> ranking_assets_repo);
         const search::fef::RankSetup & getRankSetup(const vespalib::string &rankProfile) const {
             return *(_rankSetup[getIndex(rankProfile)]);
         }
@@ -73,14 +73,14 @@ private:
     vespalib::PtrHolder<const Snapshot> _snapshot;
     const vsm::VSMAdapter       * _vsmAdapter;
 
-    void configureRankProfiles(const vespa::config::search::RankProfilesConfig & cfg);
-    virtual void notify(const vsm::VSMConfigSnapshot & snapshot);
+    void configureRankProfiles(const vespa::config::search::RankProfilesConfig & cfg, std::shared_ptr<const IRankingAssetsRepo> ranking_assets_repo);
+    virtual void notify(const vsm::VSMConfigSnapshot & snapshot, std::shared_ptr<const IRankingAssetsRepo> ranking_assets_repo);
 
 public:
     RankManager(vsm::VSMAdapter * const vsmAdapter);
     virtual ~RankManager();
 
-    void configure(const vsm::VSMConfigSnapshot & snap);
+    void configure(const vsm::VSMConfigSnapshot & snap, std::shared_ptr<const IRankingAssetsRepo> ranking_assets_repo);
 
     /**
      * Retrieves the current snapshot of the rank-profiles config.
