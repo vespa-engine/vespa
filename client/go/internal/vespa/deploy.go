@@ -220,7 +220,7 @@ func copyToPart(dst *multipart.Writer, src io.Reader, fieldname, filename string
 
 func Submit(opts DeploymentOptions) error {
 	if !opts.Target.IsCloud() {
-		return fmt.Errorf("%s: submit is unsupported by %s target", opts, opts.Target.Type())
+		return fmt.Errorf("%s: deploy is unsupported by %s target", opts, opts.Target.Type())
 	}
 	if err := checkDeploymentOpts(opts); err != nil {
 		return err
