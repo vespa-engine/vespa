@@ -58,7 +58,6 @@ import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer.IdentityType.NODE;
 import static com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer.IdentityType.TENANT;
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * A maintainer that is responsible for providing and refreshing Athenz credentials for a container.
@@ -117,7 +116,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
         if (shouldWriteTenantServiceIdentity(context)) {
             modified |= maintain(context, TENANT);
-            createCredentialsSymlink(context);
         } else {
             modified |= deleteTenantCredentials(context);
         }
@@ -177,6 +175,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
             if (identityType == TENANT) {
                 modified |= maintainRoleCertificates(context, siaDirectory, privateKeyFile, certificateFile, athenzIdentity, doc.identityDocument());
+                copyCredsToLegacyPath(context, privateKeyFile, certificateFile);
             }
             return modified;
         } catch (IOException e) {
@@ -435,11 +434,14 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 .value();
     }
 
-    private void createCredentialsSymlink(NodeAgentContext context) {
-        var siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
+    private void copyCredsToLegacyPath(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile) throws IOException {
         var legacySiaDirectory = context.paths().of(LEGACY_SIA_DIRECTORY, context.users().vespa());
-        if (Files.notExists(legacySiaDirectory))
-            uncheck(() -> Files.createSymbolicLink(legacySiaDirectory, siaDirectory));
+        var keysDirectory = legacySiaDirectory.resolve("keys");
+        var certsDirectory = legacySiaDirectory.resolve("certs");
+        Files.createDirectories(keysDirectory);
+        Files.createDirectories(certsDirectory);
+        Files.copy(certificateFile, certsDirectory.resolve(certificateFile.getFileName()));
+        Files.copy(privateKeyFile, keysDirectory.resolve(privateKeyFile.getFileName()));
     }
 
     /*
