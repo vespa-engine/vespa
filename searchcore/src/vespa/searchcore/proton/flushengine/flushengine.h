@@ -51,7 +51,7 @@ private:
     using FlushMap = std::map<uint32_t, FlushInfo>;
     using FlushHandlerMap = HandlerMap<IFlushHandler>;
     std::atomic<bool>              _closed;
-    const uint32_t                 _maxConcurrent;
+    const uint32_t                 _maxConcurrentNormal;
     const vespalib::duration       _idleInterval;
     uint32_t                       _taskId;    
     std::thread                    _thread;
@@ -179,6 +179,8 @@ public:
     FlushMetaSet getCurrentlyFlushingSet() const;
 
     void setStrategy(IFlushStrategy::SP strategy);
+    uint32_t maxConcurrentTotal() const { return _maxConcurrentNormal + 1; }
+    uint32_t maxConcurrentNormal() const { return _maxConcurrentNormal; }
 };
 
 } // namespace proton

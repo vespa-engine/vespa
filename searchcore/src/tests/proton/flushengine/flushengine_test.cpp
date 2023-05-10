@@ -727,6 +727,9 @@ TEST_F("require that high pri concurrency works", Fixture(2, 1ms))
     auto handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3, target4, target5}), "handler", 9);
     f.putFlushHandler("handler", handler);
     f.engine.start();
+    EXPECT_EQUAL(2u, f.engine.maxConcurrentNormal());
+    EXPECT_EQUAL(3u, f.engine.maxConcurrentTotal());
+    EXPECT_EQUAL(f.engine.maxConcurrentTotal(), f.engine.get_executor().getNumThreads());
 
     EXPECT_TRUE(target1->_initDone.await(LONG_TIMEOUT));
     EXPECT_TRUE(target2->_initDone.await(LONG_TIMEOUT));
