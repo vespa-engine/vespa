@@ -438,7 +438,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private void createCredentialsSymlink(NodeAgentContext context) {
         var siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
         var legacySiaDirectory = context.paths().of(LEGACY_SIA_DIRECTORY, context.users().vespa());
-        uncheck(() -> Files.createSymbolicLink(legacySiaDirectory, siaDirectory));
+        if (Files.notExists(legacySiaDirectory))
+            uncheck(() -> Files.createSymbolicLink(legacySiaDirectory, siaDirectory));
     }
 
     /*
