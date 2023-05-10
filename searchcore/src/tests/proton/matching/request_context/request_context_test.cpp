@@ -55,7 +55,7 @@ public:
           _attr_ctx(),
           _index_env(),
           _query_env(&_index_env),
-          _request_ctx(_doom, _attr_ctx, _query_env, _query_env.getObjectStore(), AttributeBlueprintParams()),
+          _request_ctx(_doom, _attr_ctx, _query_env, _query_env.getObjectStore(), AttributeBlueprintParams(), nullptr),
           _query_tensor(SimpleValue::from_spec(TensorSpec("tensor(x[2])")
                                                .add({{"x", 0}}, 3).add({{"x", 1}}, 5)))
     {

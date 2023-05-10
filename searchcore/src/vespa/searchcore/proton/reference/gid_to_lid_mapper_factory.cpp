@@ -11,9 +11,7 @@ GidToLidMapperFactory::GidToLidMapperFactory(std::shared_ptr<const search::IDocu
 {
 }
 
-GidToLidMapperFactory::~GidToLidMapperFactory()
-{
-}
+GidToLidMapperFactory::~GidToLidMapperFactory() = default;
 
 std::unique_ptr<search::IGidToLidMapper>
 GidToLidMapperFactory::getMapper() const

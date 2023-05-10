@@ -2,12 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/i_document_meta_store_context.h>
+#include <vespa/searchcommon/attribute/i_document_meta_store_context.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 
 namespace proton {
-
-class DocumentMetaStore;
 
 /*
  * Class for mapping from gid to lid. Instances should be short lived
@@ -18,8 +16,8 @@ class GidToLidMapper : public search::IGidToLidMapper
     search::IDocumentMetaStoreContext::IReadGuard::SP _guard;
 public:
     GidToLidMapper(const search::IDocumentMetaStoreContext &dmsContext);
-    virtual ~GidToLidMapper();
-    virtual void foreach(const search::IGidToLidMapperVisitor &visitor) const override;
+    ~GidToLidMapper() override;
+    void foreach(const search::IGidToLidMapperVisitor &visitor) const override;
 };
 
 } // namespace proton

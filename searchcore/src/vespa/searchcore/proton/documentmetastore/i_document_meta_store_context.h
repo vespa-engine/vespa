@@ -3,7 +3,7 @@
 #pragma once
 
 #include "i_document_meta_store.h"
-#include <vespa/searchlib/common/i_document_meta_store_context.h>
+#include <vespa/searchcommon/attribute/i_document_meta_store_context.h>
 
 namespace proton {
 

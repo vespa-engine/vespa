@@ -6,7 +6,7 @@
 #include "attributeguard.h"
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
-#include <vespa/searchlib/common/i_document_meta_store_context.h>
+#include <vespa/searchcommon/attribute/i_document_meta_store_context.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 #include <vespa/vespalib/util/arrayref.h>
 

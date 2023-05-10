@@ -10,9 +10,7 @@ GidToLidMapper::GidToLidMapper(const search::IDocumentMetaStoreContext &dmsConte
 {
 }
 
-GidToLidMapper::~GidToLidMapper()
-{
-}
+GidToLidMapper::~GidToLidMapper() = default;
 
 void
 GidToLidMapper::foreach(const search::IGidToLidMapperVisitor &visitor) const

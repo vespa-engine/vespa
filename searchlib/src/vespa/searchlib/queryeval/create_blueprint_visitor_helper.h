@@ -8,6 +8,7 @@
 #include <vespa/searchlib/query/tree/queryvisitor.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchcommon/attribute/search_context_params.h>
 #include <memory>
 
 namespace search::queryeval {
@@ -26,7 +27,8 @@ private:
 
 protected:
     const IRequestContext & getRequestContext() const { return _requestContext; }
-
+    attribute::SearchContextParams createContextParams() const;
+    attribute::SearchContextParams createContextParams(bool isFilter) const;
 public:
     CreateBlueprintVisitorHelper(Searchable &searchable, const FieldSpec &field, const IRequestContext & requestContext);
     ~CreateBlueprintVisitorHelper() override;

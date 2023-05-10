@@ -3,7 +3,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/attribute/bitvector_search_cache.h>
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/searchlib/common/i_document_meta_store_context.h>
 
 using namespace search;
 using namespace search::attribute;
