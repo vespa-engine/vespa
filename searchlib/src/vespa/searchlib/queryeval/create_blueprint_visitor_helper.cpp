@@ -9,6 +9,7 @@
 #include "simple_phrase_blueprint.h"
 #include "weighted_set_term_blueprint.h"
 #include "split_float.h"
+#include "irequestcontext.h"
 
 namespace search::queryeval {
 
@@ -20,6 +21,15 @@ CreateBlueprintVisitorHelper::CreateBlueprintVisitorHelper(Searchable &searchabl
 {}
 
 CreateBlueprintVisitorHelper::~CreateBlueprintVisitorHelper() = default;
+
+attribute::SearchContextParams
+CreateBlueprintVisitorHelper::createContextParams() const {
+    return attribute::SearchContextParams().metaStoreReadGuard(_requestContext.getMetaStoreReadGuard());
+}
+attribute::SearchContextParams
+CreateBlueprintVisitorHelper::createContextParams(bool useBitVector) const {
+    return createContextParams().useBitVector(useBitVector);
+}
 
 Blueprint::UP
 CreateBlueprintVisitorHelper::getResult()

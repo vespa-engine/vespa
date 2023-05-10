@@ -46,6 +46,7 @@
 LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
 
 using search::attribute::BasicType;
+using search::attribute::SearchContextParams;
 using search::attribute::CollectionType;
 using search::attribute::IAttributeVector;
 using search::attribute::ISearchContext;
@@ -128,11 +129,11 @@ private:
 
 public:
     AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
-                            const string &query_stack, const attribute::SearchContextParams &params)
+                            const string &query_stack, const SearchContextParams &params)
         : AttributeFieldBlueprint(field, attribute, QueryTermDecoder::decodeTerm(query_stack), params)
     { }
     AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
-                            QueryTermSimple::UP term, const attribute::SearchContextParams &params)
+                            QueryTermSimple::UP term, const SearchContextParams &params)
         : SimpleLeafBlueprint(field),
           _attr(attribute),
           _query_term(term->getTermString()),
@@ -179,8 +180,6 @@ public:
     bool getRange(vespalib::string &from, vespalib::string &to) const override;
 };
 
-namespace {
-
 vespalib::string
 get_type(const IAttributeVector& attr)
 {
@@ -203,8 +202,6 @@ visit_attribute(vespalib::ObjectVisitor& visitor, const IAttributeVector& attr)
     visitor.visitBool("fast_search", attr.getIsFastSearch());
     visitor.visitBool("filter", attr.getIsFilter());
     visitor.closeStruct();
-}
-
 }
 
 void
@@ -233,7 +230,7 @@ private:
     bool _should_use;
 
 public:
-    LocationPreFilterBlueprint(const FieldSpec &field, const IAttributeVector &attribute, const ZCurve::RangeVector &rangeVector, const attribute::SearchContextParams & scParams)
+    LocationPreFilterBlueprint(const FieldSpec &field, const IAttributeVector &attribute, const ZCurve::RangeVector &rangeVector, const SearchContextParams & scParams)
         : ComplexLeafBlueprint(field),
           _attribute(attribute),
           _rangeSearches(),
@@ -351,7 +348,7 @@ public:
 
 Blueprint::UP
 make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribute, const Location &loc,
-                        const attribute::SearchContextParams & scParams) {
+                        const SearchContextParams & scParams) {
     LOG(debug, "make_location_blueprint(fieldId[%u], p[%d,%d], r[%u], aspect[%u], bb[[%d,%d],[%d,%d]])",
         field.getFieldId(),
         loc.point.x, loc.point.y, loc.radius,
@@ -700,19 +697,14 @@ public:
             NodeAsKey key(n, _scratchPad);
             setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr.getName(), _attr, *_dwa, key));
         } else {
-            attribute::SearchContextParams scParams;
-            scParams.useBitVector(_field.isFilter())
-                    .metaStoreReadGuard(getRequestContext().getMetaStoreReadGuard());
+            SearchContextParams scParams = createContextParams(_field.isFilter());
             const string stack = StackDumpCreator::create(n);
             setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, stack, scParams));
         }
     }
 
     void visitLocation(LocationTerm &node) {
-        attribute::SearchContextParams scParams;
-        scParams.useBitVector(_field.isFilter())
-                .metaStoreReadGuard(getRequestContext().getMetaStoreReadGuard());
-        setResult(make_location_blueprint(_field, _attr, node.getTerm(), scParams));
+        setResult(make_location_blueprint(_field, _attr, node.getTerm(), createContextParams(_field.isFilter())));
     }
 
     void visitPredicate(PredicateQuery &query) {
@@ -733,9 +725,7 @@ public:
         const string stack = StackDumpCreator::create(n);
         const string term = queryeval::termAsString(n);
         QueryTermSimple parsed_term(term, QueryTermSimple::Type::WORD);
-        attribute::SearchContextParams scParams;
-        scParams.useBitVector(_field.isFilter())
-                .metaStoreReadGuard(getRequestContext().getMetaStoreReadGuard());
+        SearchContextParams scParams = createContextParams(_field.isFilter());
         if (parsed_term.getMaxPerGroup() > 0) {
             const IAttributeVector *diversity(getRequestContext().getAttribute(parsed_term.getDiversityAttribute()));
             if (check_valid_diversity_attr(diversity)) {
@@ -785,8 +775,7 @@ public:
         bool isInteger = _attr.isIntegerType();
         if (isSingleValue && (isString || isInteger)) {
             auto ws = std::make_unique<AttributeWeightedSetBlueprint>(_field, _attr);
-            attribute::SearchContextParams scParams;
-            scParams.metaStoreReadGuard(getRequestContext().getMetaStoreReadGuard());
+            SearchContextParams scParams = createContextParams();
             for (size_t i = 0; i < n.getNumTerms(); ++i) {
                 auto term = n.getAsString(i);
                 ws->addToken(_attr.createSearchContext(extractTerm(term.first, isInteger), scParams), term.second.percent());
@@ -870,8 +859,7 @@ template <typename WS>
 void
 CreateBlueprintVisitor::createShallowWeightedSet(WS *bp, MultiTerm &n, const FieldSpec &fs, bool isInteger) {
     Blueprint::UP result(bp);
-    attribute::SearchContextParams scParams;
-    scParams.metaStoreReadGuard(getRequestContext().getMetaStoreReadGuard());
+    SearchContextParams scParams = createContextParams();
     for (uint32_t i(0); i < n.getNumTerms(); i++) {
         FieldSpec childfs = bp->getNextChildField(fs);
         auto term = n.getAsString(i);
