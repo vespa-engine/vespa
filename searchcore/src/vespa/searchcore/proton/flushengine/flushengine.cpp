@@ -82,14 +82,14 @@ FlushEngine::FlushInfo::FlushInfo(uint32_t taskId, const vespalib::string& handl
 FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStatsFactory,
                          IFlushStrategy::SP strategy, uint32_t numThreads, vespalib::duration idleInterval)
     : _closed(false),
-      _maxConcurrent(numThreads),
+      _maxConcurrentNormal(numThreads),
       _idleInterval(idleInterval),
       _taskId(0),
       _thread(),
       _has_thread(false),
       _strategy(std::move(strategy)),
       _priorityStrategy(),
-      _executor(numThreads, CpuUsage::wrap(flush_engine_executor, CpuUsage::Category::COMPACT)),
+      _executor(maxConcurrentTotal(), CpuUsage::wrap(flush_engine_executor, CpuUsage::Category::COMPACT)),
       _lock(),
       _cond(),
       _handlers(),
@@ -150,9 +150,9 @@ bool
 FlushEngine::canFlushMore(const std::unique_lock<std::mutex> &, IFlushTarget::Priority priority) const
 {
     if (priority > IFlushTarget::Priority::NORMAL) {
-        return (_maxConcurrent + 1) > _flushing.size();
+        return maxConcurrentTotal() > _flushing.size();
     } else {
-        return _maxConcurrent > _flushing.size();
+        return maxConcurrentNormal() > _flushing.size();
     }
 }
 
