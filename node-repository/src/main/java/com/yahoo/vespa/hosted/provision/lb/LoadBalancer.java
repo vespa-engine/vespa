@@ -2,10 +2,12 @@
 package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
+import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Represents a load balancer for an application's cluster. This is immutable.
@@ -26,6 +28,10 @@ public class LoadBalancer {
         this.changedAt = Objects.requireNonNull(changedAt, "changedAt must be non-null");
         if (state == State.active && instance.isEmpty()) {
             throw new IllegalArgumentException("Load balancer instance is required in state " + state);
+        }
+        if (id.application().equals(new ConfigServerApplication().getApplicationId()) &&
+            Set.of(State.inactive, State.removable).contains(state)) {
+            throw new IllegalArgumentException("The config server load balancer is managed by Terraform - therefore the state cannot be '" + state + "'");
         }
     }
 
