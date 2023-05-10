@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -72,12 +73,13 @@ public class RequestTestCase {
     @Test
     void requireThatDefaultTimeoutIsInfinite() {
         MyTimer timer = new MyTimer();
+        var now = timer.currentTime();
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi(timer);
         Request request = newRequest(driver);
         assertNull(request.getTimeout(TimeUnit.MILLISECONDS));
         assertNull(request.timeRemaining(TimeUnit.MILLISECONDS));
         assertFalse(request.isCancelled());
-        timer.currentTime = Long.MAX_VALUE;
+        timer.currentTime = now.plus(Duration.ofHours(1)).toEpochMilli();
         assertFalse(request.isCancelled());
         request.release();
         assertTrue(driver.close());
