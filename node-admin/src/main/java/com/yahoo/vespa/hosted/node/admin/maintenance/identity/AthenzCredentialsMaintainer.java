@@ -43,6 +43,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -440,8 +441,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         var certsDirectory = legacySiaDirectory.resolve("certs");
         Files.createDirectories(keysDirectory);
         Files.createDirectories(certsDirectory);
-        Files.copy(certificateFile, certsDirectory.resolve(certificateFile.getFileName()));
-        Files.copy(privateKeyFile, keysDirectory.resolve(privateKeyFile.getFileName()));
+        Files.copy(certificateFile, certsDirectory.resolve(certificateFile.getFileName()), StandardCopyOption.values());
+        Files.copy(privateKeyFile, keysDirectory.resolve(privateKeyFile.getFileName()), StandardCopyOption.values());
     }
 
     /*
