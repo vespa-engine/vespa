@@ -3,11 +3,10 @@
 #pragma once
 
 #include "error.h"
+#include "message.h"
 #include <memory>
 
 namespace mbus {
-
-class Message;
 
 /**
  * A Result object is used as return value when trying to send a

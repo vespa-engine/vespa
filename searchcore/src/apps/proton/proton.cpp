@@ -3,6 +3,7 @@
 #include <vespa/searchcore/proton/server/proton.h>
 #include <vespa/storage/storageserver/storagenode.h>
 #include <vespa/metrics/metricmanager.h>
+#include <vespa/searchvisitor/searchvisitor.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -100,12 +101,15 @@ using storage::spi::PersistenceProvider;
 #include <vespa/storageserver/app/servicelayerprocess.h>
 
 class ProtonServiceLayerProcess : public storage::ServiceLayerProcess {
-    proton::Proton & _proton;
+    proton::Proton&         _proton;
+    FNET_Transport&         _transport;
+    vespalib::string        _file_distributor_connection_spec;
     metrics::MetricManager* _metricManager;
 
 public:
     ProtonServiceLayerProcess(const config::ConfigUri & configUri,
-                              proton::Proton & proton);
+                              proton::Proton & proton, FNET_Transport& transport,
+                              const vespalib::string& file_distributor_connection_spec);
     ~ProtonServiceLayerProcess() override { shutdown(); }
 
     void shutdown() override;
@@ -121,12 +125,16 @@ public:
         _metricManager = &mm;
     }
     int64_t getGeneration() const override;
+    void add_external_visitors() override;
 };
 
 ProtonServiceLayerProcess::ProtonServiceLayerProcess(const config::ConfigUri & configUri,
-                                                     proton::Proton & proton)
+                                                     proton::Proton & proton, FNET_Transport& transport,
+                                                     const vespalib::string& file_distributor_connection_spec)
     : ServiceLayerProcess(configUri),
       _proton(proton),
+      _transport(transport),
+      _file_distributor_connection_spec(file_distributor_connection_spec),
       _metricManager(nullptr)
 {
     setMetricManager(_proton.getMetricManager());
@@ -158,6 +166,12 @@ ProtonServiceLayerProcess::getGeneration() const
     int64_t slGen = storage::ServiceLayerProcess::getGeneration();
     int64_t protonGen = _proton.getConfigGeneration();
     return std::min(slGen, protonGen);
+}
+
+void
+ProtonServiceLayerProcess::add_external_visitors()
+{
+    _externalVisitors["searchvisitor"] = std::make_shared<streaming::SearchVisitorFactory>(_configUri, _transport, _file_distributor_connection_spec);
 }
 
 namespace {
@@ -244,11 +258,13 @@ App::startAndRun(FNET_Transport & transport, int argc, char **argv) {
             ExitOnSignal exit_on_signal;
             proton.init(configSnapshot);
         }
+        vespalib::string file_distributor_connection_spec = configSnapshot->getFiledistributorrpcConfig().connectionspec;
         configSnapshot.reset();
         std::unique_ptr<ProtonServiceLayerProcess> spiProton;
 
         if ( ! params.serviceidentity.empty()) {
-            spiProton = std::make_unique<ProtonServiceLayerProcess>(identityUri.createWithNewId(params.serviceidentity), proton);
+            spiProton = std::make_unique<ProtonServiceLayerProcess>(identityUri.createWithNewId(params.serviceidentity), proton, transport,
+                                                                    file_distributor_connection_spec);
             spiProton->setupConfig(subscribeTimeout);
             spiProton->createNode();
             EV_STARTED("servicelayer");

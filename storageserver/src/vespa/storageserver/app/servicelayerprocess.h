@@ -30,7 +30,9 @@ class ServiceLayerNode;
 class IStorageChainBuilder;
 
 class ServiceLayerProcess : public Process {
+protected:
     VisitorFactory::Map _externalVisitors;
+private:
     std::unique_ptr<ServiceLayerNode> _node;
     std::unique_ptr<IStorageChainBuilder> _storage_chain_builder;
 
@@ -51,6 +53,7 @@ public:
     StorageNodeContext& getContext() override;
     std::string getComponentName() const override;
     void set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder);
+    virtual void add_external_visitors();
 };
 
 } // storage

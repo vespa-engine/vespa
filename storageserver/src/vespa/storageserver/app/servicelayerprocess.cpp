@@ -7,7 +7,6 @@
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageserver/servicelayernode.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
-#include <vespa/searchvisitor/searchvisitor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storageserver.service_layer_process");
@@ -52,7 +51,7 @@ ServiceLayerProcess::shutdown()
 void
 ServiceLayerProcess::createNode()
 {
-    _externalVisitors["searchvisitor"] = std::make_shared<streaming::SearchVisitorFactory>(_configUri);
+    add_external_visitors();
     setupProvider();
     _node = std::make_unique<ServiceLayerNode>(_configUri, _context, *this, getProvider(), _externalVisitors);
     if (_storage_chain_builder) {
@@ -80,6 +79,11 @@ void
 ServiceLayerProcess::set_storage_chain_builder(std::unique_ptr<IStorageChainBuilder> builder)
 {
     _storage_chain_builder = std::move(builder);
+}
+
+void
+ServiceLayerProcess::add_external_visitors()
+{
 }
 
 } // storage
