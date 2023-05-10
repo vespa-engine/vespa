@@ -4,6 +4,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/fnet/transport.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
@@ -125,6 +126,7 @@ public:
     framework::defaultimplementation::FakeClock _clock;
     StorageComponentRegisterImpl      _componentRegister;
     std::unique_ptr<StorageComponent> _component;
+    FNET_Transport                    _transport;
     SearchEnvironment                 _env;
     SearchVisitorFactory              _factory;
     std::shared_ptr<DocumentTypeRepo> _repo;
@@ -159,8 +161,9 @@ public:
 
 SearchVisitorTest::SearchVisitorTest() :
     _componentRegister(),
-    _env(::config::ConfigUri("dir:cfg")),
-    _factory(::config::ConfigUri("dir:cfg")),
+    _transport(),
+    _env(::config::ConfigUri("dir:cfg"), _transport, ""),
+    _factory(::config::ConfigUri("dir:cfg"), _transport, ""),
     _repo(std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig("cfg/documenttypes.cfg"))),
     _doc_type(_repo->getDocumentType("test"))
 {

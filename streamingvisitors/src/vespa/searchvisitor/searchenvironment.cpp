@@ -15,14 +15,16 @@ namespace streaming {
 
 __thread SearchEnvironment::EnvMap * SearchEnvironment::_localEnvMap = nullptr;
 
-SearchEnvironment::Env::Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf)
+SearchEnvironment::Env::Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf, FNET_Transport& transport, const vespalib::string& file_distributor_connection_spec)
     : _configId(configUri.getConfigId()),
       _configurer(std::make_unique<config::SimpleConfigRetriever>(createKeySet(configUri.getConfigId()), configUri.getContext()), this),
       _vsmAdapter(std::make_unique<VSMAdapter>(_configId, wf)),
       _rankManager(std::make_unique<RankManager>(_vsmAdapter.get())),
-      _snapshot()
+      _snapshot(),
+      _lock(),
+      _transport(transport),
+      _file_distributor_connection_spec(file_distributor_connection_spec)
 {
-    
     _configurer.start();
 }
 
@@ -61,10 +63,12 @@ SearchEnvironment::Env::~Env()
     _configurer.close();
 }
 
-SearchEnvironment::SearchEnvironment(const config::ConfigUri & configUri) :
-    VisitorEnvironment(),
-    _envMap(),
-    _configUri(configUri)
+SearchEnvironment::SearchEnvironment(const config::ConfigUri & configUri, FNET_Transport& transport, const vespalib::string& file_distributor_connection_spec)
+    : VisitorEnvironment(),
+      _envMap(),
+      _configUri(configUri),
+      _transport(transport),
+      _file_distributor_connection_spec(file_distributor_connection_spec)
 {
 }
 
@@ -91,7 +95,7 @@ SearchEnvironment::getEnv(const vespalib::string & searchCluster)
         EnvMap::iterator found = _envMap.find(searchCluster);
         if (found == _envMap.end()) {
             LOG(debug, "Init VSMAdapter with config id = '%s'", searchCluster.c_str());
-            Env::SP env = std::make_shared<Env>(searchClusterUri, _wordFolder);
+            Env::SP env = std::make_shared<Env>(searchClusterUri, _wordFolder, _transport, _file_distributor_connection_spec);
             _envMap[searchCluster] = std::move(env);
             found = _envMap.find(searchCluster);
         }
