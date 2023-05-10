@@ -29,6 +29,8 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
 
     private static final int NODE_COUNT = 3;
 
+    private final Timer timer = new FakeTimer();
+
     // TODO dedupe fixture and setup stuff with other tests
     private FleetController ctrl;
     private DummyCommunicator communicator;

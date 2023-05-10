@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class RpcServerTest extends FleetControllerTest {
 
     public static Logger log = Logger.getLogger(RpcServerTest.class.getName());
+    private final FakeTimer timer = new FakeTimer();
 
     private Supervisor supervisor;
 
@@ -63,8 +64,8 @@ public class RpcServerTest extends FleetControllerTest {
     void testGetSystemState() throws Exception {
         LogFormatter.initializeLogging();
         FleetControllerOptions.Builder options = defaultOptions("mycluster");
-        setUpFleetController(true, options);
-        setUpVdsNodes(true);
+        setUpFleetController(timer, options);
+        setUpVdsNodes(timer);
         waitForStableSystem();
 
         assertTrue(nodes.get(0).isDistributor());
@@ -134,8 +135,8 @@ public class RpcServerTest extends FleetControllerTest {
         builder.setMinRatioOfStorageNodesUp(0);
         builder.setMaxInitProgressTime(30000);
         builder.setStableStateTimePeriod(60000);
-        setUpFleetController(true, builder);
-        setUpVdsNodes(true);
+        setUpFleetController(timer, builder);
+        setUpVdsNodes(timer);
         waitForStableSystem();
 
         setWantedNodeState(State.DOWN, NodeType.DISTRIBUTOR, 2);
@@ -227,8 +228,8 @@ public class RpcServerTest extends FleetControllerTest {
                 .setMinRatioOfStorageNodesUp(0)
                 .setMaxInitProgressTime(30000)
                 .setStableStateTimePeriod(60000);
-        setUpFleetController(true, builder);
-        setUpVdsNodes(true, false, configuredNodes);
+        setUpFleetController(timer, builder);
+        setUpVdsNodes(timer, false, configuredNodes);
         waitForState("version:\\d+ distributor:5 storage:5 .4.s:r");
 
         setWantedNodeState(State.DOWN, NodeType.DISTRIBUTOR, 2);
@@ -259,8 +260,8 @@ public class RpcServerTest extends FleetControllerTest {
             FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
                     .setMaxInitProgressTime(30000)
                     .setStableStateTimePeriod(60000);
-            setUpFleetController(true, builder);
-            setUpVdsNodes(true, false, configuredNodes);
+            setUpFleetController(timer, builder);
+            setUpVdsNodes(timer, false, configuredNodes);
             waitForState("version:\\d+ distributor:5 storage:5");
         }
 
@@ -274,7 +275,7 @@ public class RpcServerTest extends FleetControllerTest {
         }
 
         { // Configuration change: Add 2 new nodes and retire the 5 existing ones
-            setUpVdsNodes(true, false, 2);
+            setUpVdsNodes(timer, false, 2);
             Set<ConfiguredNode> configuredNodes = new TreeSet<>();
             for (int i = 0; i < 5; i++)
                 configuredNodes.add(new ConfiguredNode(i, true));
@@ -339,8 +340,8 @@ public class RpcServerTest extends FleetControllerTest {
                     .setMaxInitProgressTime(30000)
                     .setStableStateTimePeriod(60000);
             options = builder.build();
-            setUpFleetController(true, builder);
-            setUpVdsNodes(true, false, configuredNodes);
+            setUpFleetController(timer, builder);
+            setUpVdsNodes(timer, false, configuredNodes);
             waitForState("version:\\d+ distributor:5 storage:5");
         }
 
@@ -357,7 +358,7 @@ public class RpcServerTest extends FleetControllerTest {
         }
 
         { // Configuration change: Add 2 new nodes and retire the 5 existing ones
-            setUpVdsNodes(true, false, 2);
+            setUpVdsNodes(timer, false, 2);
             Set<ConfiguredNode> configuredNodes = new TreeSet<>();
             for (int i = 0; i < 5; i++)
                 configuredNodes.add(new ConfiguredNode(i, true));
@@ -412,8 +413,8 @@ public class RpcServerTest extends FleetControllerTest {
         Set<ConfiguredNode> configuredNodes = nodeIndexes.stream().map(i -> new ConfiguredNode(i, false)).collect(Collectors.toSet());
         FleetControllerOptions.Builder options = defaultOptions("mycluster", configuredNodes);
         //options.setStorageDistribution(new Distribution(getDistConfig(nodeIndexes)));
-        setUpFleetController(true, options);
-        setUpVdsNodes(true, false, nodeIndexes);
+        setUpFleetController(timer, options);
+        setUpVdsNodes(timer, false, nodeIndexes);
         waitForState("version:\\d+ distributor:26 .0.s:d .1.s:d .2.s:d .3.s:d .5.s:d .7.s:d .8.s:d .11.s:d .12.s:d .13.s:d .15.s:d .17.s:d .18.s:d .19.s:d .20.s:d .24.s:d storage:26 .0.s:d .1.s:d .2.s:d .3.s:d .5.s:d .7.s:d .8.s:d .11.s:d .12.s:d .13.s:d .15.s:d .17.s:d .18.s:d .19.s:d .20.s:d .24.s:d");
 
         int rpcPort = fleetController().getRpcPort();
@@ -449,8 +450,8 @@ public class RpcServerTest extends FleetControllerTest {
     void testSetNodeStateOutOfRange() throws Exception {
         FleetControllerOptions.Builder options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
-        setUpFleetController(true, options);
-        setUpVdsNodes(true);
+        setUpFleetController(timer, options);
+        setUpVdsNodes(timer);
         waitForStableSystem();
 
         int rpcPort = fleetController().getRpcPort();
@@ -475,8 +476,8 @@ public class RpcServerTest extends FleetControllerTest {
     void testGetMaster() throws Exception {
         FleetControllerOptions.Builder options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
-        setUpFleetController(true, options);
-        setUpVdsNodes(true);
+        setUpFleetController(timer, options);
+        setUpVdsNodes(timer);
         waitForStableSystem();
 
         int rpcPort = fleetController().getRpcPort();
@@ -493,9 +494,9 @@ public class RpcServerTest extends FleetControllerTest {
 
     @Test
     void testGetNodeList() throws Exception {
-        setUpFleetController(true, defaultOptions("mycluster", 5));
+        setUpFleetController(timer, defaultOptions("mycluster", 5));
         final int nodeCount = 5;
-        setUpVdsNodes(true, false, nodeCount);
+        setUpVdsNodes(timer, false, nodeCount);
         waitForStableSystem();
 
         assertTrue(nodes.get(0).isDistributor());

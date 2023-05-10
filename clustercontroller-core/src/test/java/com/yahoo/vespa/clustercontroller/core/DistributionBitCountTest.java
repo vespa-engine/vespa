@@ -24,8 +24,9 @@ public class DistributionBitCountTest extends FleetControllerTest {
         }
         var builder = defaultOptions("mycluster", configuredNodes);
         builder.setDistributionBits(17);
-        setUpFleetController(false, builder);
-        List<DummyVdsNode> nodes = setUpVdsNodes(false, true, configuredNodes);
+        Timer timer = new RealTimer();
+        setUpFleetController(timer, builder);
+        List<DummyVdsNode> nodes = setUpVdsNodes(timer, true, configuredNodes);
         for (DummyVdsNode node : nodes) {
             node.setNodeState(new NodeState(node.getType(), State.UP).setMinUsedBits(20));
             node.connect();

@@ -16,6 +16,8 @@ public class StateGatherTest extends FleetControllerTest {
 
     public static Logger log = Logger.getLogger(StateGatherTest.class.getName());
 
+    private final FakeTimer timer = new FakeTimer();
+
     private String getGetNodeStateReplyCounts(DummyVdsNode node) {
         StringBuilder sb = new StringBuilder();
         sb.append("timedout ").append(node.timedOutStateReplies)
@@ -34,7 +36,7 @@ public class StateGatherTest extends FleetControllerTest {
                 // Force actual message timeout to be lower than request timeout.
                 .setNodeStateRequestTimeoutEarliestPercentage(80)
                 .setNodeStateRequestTimeoutLatestPercentage(80);
-        setUpFleetController(true, builder);
+        setUpFleetController(timer, builder);
         String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
         DummyVdsNode dnode = new DummyVdsNode(timer, connectionSpecs, builder.clusterName(), NodeType.DISTRIBUTOR, 0);
         DummyVdsNode snode = new DummyVdsNode(timer, connectionSpecs, builder.clusterName(), NodeType.STORAGE, 0);

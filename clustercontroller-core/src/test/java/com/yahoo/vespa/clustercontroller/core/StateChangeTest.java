@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,7 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class StateChangeTest extends FleetControllerTest {
 
-    public static Logger log = Logger.getLogger(StateChangeTest.class.getName());
+    private final FakeTimer timer = new FakeTimer();
+
     private FleetController ctrl;
     private DummyCommunicator communicator;
     private EventLog eventLog;
@@ -935,15 +935,14 @@ public class StateChangeTest extends FleetControllerTest {
         FleetControllerOptions.Builder builder = defaultOptions()
                 .setMinTimeBeforeFirstSystemStateBroadcast(3 * 60 * 1000);
         setUpSystem(builder);
-        boolean useFakeTimer = true;
-        setUpVdsNodes(useFakeTimer, true);
+        setUpVdsNodes(timer, true);
         // Leave one node down to avoid sending cluster state due to having seen all node states.
         for (int i = 0; i < nodes.size(); ++i) {
             if (i != 3) {
                 nodes.get(i).connect();
             }
         }
-        setUpFleetController(useFakeTimer, builder);
+        setUpFleetController(timer, builder);
 
         StateWaiter waiter = new StateWaiter(timer);
         fleetController().addSystemStateListener(waiter);
@@ -980,10 +979,8 @@ public class StateChangeTest extends FleetControllerTest {
         FleetControllerOptions.Builder builder = defaultOptions()
                 .setMinTimeBeforeFirstSystemStateBroadcast(300 * 60 * 1000);
 
-        boolean useFakeTimer = true;
         setUpSystem(builder);
-
-        setUpVdsNodes(useFakeTimer, true);
+        setUpVdsNodes(timer, true);
 
         for (DummyVdsNode node : nodes) {
             node.connect();
@@ -991,7 +988,7 @@ public class StateChangeTest extends FleetControllerTest {
         // Marking one node as 'initializing' improves testing of state later on.
         nodes.get(3).setNodeState(State.INITIALIZING);
 
-        setUpFleetController(useFakeTimer, builder);
+        setUpFleetController(timer, builder);
 
         final StateWaiter waiter = new StateWaiter(timer);
 
@@ -1015,8 +1012,8 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     void testDontTagFailingSetSystemStateOk() throws Exception {
         FleetControllerOptions.Builder options = defaultOptions();
-        setUpFleetController(true, options);
-        setUpVdsNodes(true);
+        setUpFleetController(timer, options);
+        setUpVdsNodes(timer);
         waitForStableSystem();
 
         StateWaiter waiter = new StateWaiter(timer);
@@ -1091,8 +1088,8 @@ public class StateChangeTest extends FleetControllerTest {
     @Test
     void testSetAllTimestampsAfterDowntime() throws Exception {
         FleetControllerOptions.Builder options = defaultOptions();
-        setUpFleetController(true, options);
-        setUpVdsNodes(true);
+        setUpFleetController(timer, options);
+        setUpVdsNodes(timer);
         waitForStableSystem();
 
         StateWaiter waiter = new StateWaiter(timer);

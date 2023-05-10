@@ -15,13 +15,15 @@ public class SlobrokTest extends FleetControllerTest {
 
     private static final Logger log = Logger.getLogger(SlobrokTest.class.getName());
 
+    private final FakeTimer timer = new FakeTimer();
+
     @Test
     void testSingleSlobrokRestart() throws Exception {
         FleetControllerOptions.Builder builder = defaultOptions("mycluster")
                 .setNodeStateRequestTimeoutMS(60 * 60 * 1000)
                 .setMaxSlobrokDisconnectGracePeriod(60 * 60 * 1000);
-        setUpFleetController(true, builder);
-        setUpVdsNodes(true);
+        setUpFleetController(timer, builder);
+        setUpVdsNodes(timer);
         waitForStableSystem();
 
         FleetController fleetController = fleetController();
@@ -74,8 +76,8 @@ public class SlobrokTest extends FleetControllerTest {
         FleetControllerOptions.Builder builder = defaultOptions("mycluster")
                 .setMaxSlobrokDisconnectGracePeriod(60 * 1000)
                 .setNodeStateRequestTimeoutMS(10000 * 60 * 1000);
-        setUpFleetController(true, builder);
-        setUpVdsNodes(true);
+        setUpFleetController(timer, builder);
+        setUpVdsNodes(timer);
         waitForStableSystem();
 
         int version = fleetController().getSystemState().getVersion();

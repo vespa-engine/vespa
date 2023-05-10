@@ -15,16 +15,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Timeout(30)
 public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest {
 
+    private final Timer timer = new FakeTimer();
     private final Set<Integer> nodeIndices = asIntSet(0, 1, 2, 3);
     private final int foreignNodeIndex = 6;
 
     private FleetControllerOptions setUpClusterWithForeignNode(Set<Integer> validIndices) throws Exception {
         Set<ConfiguredNode> configuredNodes = asConfiguredNodes(validIndices);
         FleetControllerOptions.Builder options = optionsForConfiguredNodes(configuredNodes);
-        setUpFleetController(true, options);
+        setUpFleetController(timer, options);
         Set<Integer> nodesWithStranger = new TreeSet<>(validIndices);
         nodesWithStranger.add(foreignNodeIndex);
-        setUpVdsNodes(true, false, nodesWithStranger);
+        setUpVdsNodes(timer, false, nodesWithStranger);
         return options.build();
     }
 
@@ -39,13 +40,13 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
     @Test
     void testSlobrokNodeOutsideConfiguredIndexSetIsNotIncludedInCluster() throws Exception {
         setUpClusterWithForeignNode(nodeIndices);
-        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 storage:4", asIntSet(foreignNodeIndex));
+        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 storage:4", asIntSet(foreignNodeIndex), timer);
     }
 
     @Test
     void testNodeSetReconfigurationForcesFreshSlobrokFetch() throws Exception {
         var options = setUpClusterWithForeignNode(nodeIndices);
-        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 storage:4", asIntSet(foreignNodeIndex));
+        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 storage:4", asIntSet(foreignNodeIndex), timer);
 
         // If we get a configuration with the node present, we have to accept it into
         // cluster. If we do not re-fetch state from slobrok we risk racing
@@ -63,8 +64,8 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
     void test_removed_retired_node_is_not_included_in_state() throws Exception {
         Set<ConfiguredNode> configuredNodes = asConfiguredNodes(nodeIndices);
         FleetControllerOptions.Builder builder = optionsForConfiguredNodes(configuredNodes);
-        options = setUpFleetController(true, builder);
-        setUpVdsNodes(true, false, nodeIndices);
+        options = setUpFleetController(timer, builder);
+        setUpVdsNodes(timer, false, nodeIndices);
 
         waitForState("version:\\d+ distributor:4 storage:4");
 
@@ -89,11 +90,11 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
         // The previously retired node should now be marked as down, as it no longer
         // exists from the point of view of the content cluster. We have to use a subset
         // state waiter, as the controller will not send the new state to node 0.
-        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 .0.s:d storage:4 .0.s:d", asIntSet(0));
+        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 .0.s:d storage:4 .0.s:d", asIntSet(0), timer);
 
         // Ensure it remains down for subsequent cluster state versions as well.
         nodes.get(3).disconnect();
-        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 .0.s:d storage:4 .0.s:d .1.s:d", asIntSet(0, 1));
+        waitForStateExcludingNodeSubset("version:\\d+ distributor:4 .0.s:d storage:4 .0.s:d .1.s:d", asIntSet(0, 1), timer);
     }
 
 }
