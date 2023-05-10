@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.lb;
 
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
@@ -29,7 +30,7 @@ public class LoadBalancer {
         if (state == State.active && instance.isEmpty()) {
             throw new IllegalArgumentException("Load balancer instance is required in state " + state);
         }
-        if (id.application().equals(new ConfigServerApplication().getApplicationId()) &&
+        if (id.application().equals(InfrastructureApplication.CONFIG_SERVER.id()) &&
             Set.of(State.inactive, State.removable).contains(state)) {
             throw new IllegalArgumentException("The config server load balancer is managed by Terraform - therefore the state cannot be '" + state + "'");
         }
