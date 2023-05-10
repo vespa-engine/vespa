@@ -15,7 +15,7 @@ namespace search {
 class IGidToLidMapperVisitor
 {
 public:
-    virtual ~IGidToLidMapperVisitor() { }
+    virtual ~IGidToLidMapperVisitor() = default;
     virtual void visit(const document::GlobalId &gid, uint32_t lid) const = 0;
 };
 
@@ -28,7 +28,7 @@ public:
 class IGidToLidMapper
 {
 public:
-    virtual ~IGidToLidMapper() { }
+    virtual ~IGidToLidMapper() = default;
     virtual void foreach(const IGidToLidMapperVisitor &visitor) const = 0;
 };
 

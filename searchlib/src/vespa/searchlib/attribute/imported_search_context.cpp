@@ -37,6 +37,11 @@ ImportedSearchContext::ImportedSearchContext(
       _useSearchCache(_imported_attribute.getSearchCache()),
       _searchCacheLookup((_useSearchCache ? _imported_attribute.getSearchCache()->find(_queryTerm) :
                           std::shared_ptr<BitVectorSearchCache::Entry>())),
+      // Fallback in case we need to insert entry into cache, and no guard has been supplied in search context params.
+      // The latter will only happen for tests and docsum fetching.
+      _dmsReadGuardFallback((_useSearchCache && !_searchCacheLookup && (params.metaStoreReadGuard() == nullptr))
+                    ? _imported_attribute.getDocumentMetaStore()->getReadGuard()
+                    : IDocumentMetaStoreContext::IReadGuard::SP()),
       _reference_attribute(*_imported_attribute.getReferenceAttribute()),
       _target_attribute(target_attribute),
       _target_search_context(_target_attribute.createSearchContext(std::move(term), params)),
@@ -292,14 +297,15 @@ ImportedSearchContext::considerAddSearchCacheEntry()
     if (_useSearchCache && _merger.hasBitVector()) {
         IDocumentMetaStoreContext::IReadGuard::SP dmsReadGuard = (_params.metaStoreReadGuard() != nullptr)
                 ? *_params.metaStoreReadGuard()
-                : _imported_attribute.getDocumentMetaStore()->getReadGuard();
+                : _dmsReadGuardFallback;
         assert(dmsReadGuard);
         auto cacheEntry = std::make_shared<BitVectorSearchCache::Entry>(std::move(dmsReadGuard), _merger.getBitVectorSP(), _merger.getDocIdLimit());
         _imported_attribute.getSearchCache()->insert(_queryTerm, std::move(cacheEntry));
     }
 }
 
-void ImportedSearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo) {
+void
+ImportedSearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo) {
     if (!_searchCacheLookup) {
         _target_search_context->fetchPostings(execInfo);
         if (!_merger.merge_done() && (execInfo.isStrict() || (_target_attribute.getIsFastSearch() && execInfo.hitRate() > 0.01))) {
@@ -309,23 +315,28 @@ void ImportedSearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo
     }
 }
 
-bool ImportedSearchContext::valid() const {
+bool
+ImportedSearchContext::valid() const {
     return _target_search_context->valid();
 }
 
-Int64Range ImportedSearchContext::getAsIntegerTerm() const {
+Int64Range
+ImportedSearchContext::getAsIntegerTerm() const {
     return _target_search_context->getAsIntegerTerm();
 }
 
-DoubleRange ImportedSearchContext::getAsDoubleTerm() const {
+DoubleRange
+ImportedSearchContext::getAsDoubleTerm() const {
     return _target_search_context->getAsDoubleTerm();
 }
 
-const QueryTermUCS4 * ImportedSearchContext::queryTerm() const {
+const QueryTermUCS4 *
+ImportedSearchContext::queryTerm() const {
     return _target_search_context->queryTerm();
 }
 
-const vespalib::string& ImportedSearchContext::attributeName() const {
+const vespalib::string&
+ImportedSearchContext::attributeName() const {
     return _imported_attribute.getName();
 }
 
