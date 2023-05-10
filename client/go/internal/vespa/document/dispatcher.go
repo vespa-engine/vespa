@@ -48,8 +48,6 @@ func (op documentOp) resetResult() documentOp {
 	return op
 }
 
-func (op documentOp) complete() bool { return op.result.Success() || op.attempts == maxAttempts }
-
 func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, output io.Writer, verbose bool) *Dispatcher {
 	d := &Dispatcher{
 		feeder:         feeder,
@@ -150,7 +148,7 @@ func (d *Dispatcher) processResults() {
 		d.statsMu.Unlock()
 		if d.shouldRetry(op, op.result) {
 			d.enqueue(op.resetResult(), true)
-		} else if op.complete() {
+		} else {
 			d.inflightWg.Done()
 		}
 		d.dispatchNext(op.document.Id)
