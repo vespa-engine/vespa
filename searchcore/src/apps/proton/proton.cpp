@@ -171,7 +171,7 @@ ProtonServiceLayerProcess::getGeneration() const
 void
 ProtonServiceLayerProcess::add_external_visitors()
 {
-    _externalVisitors["searchvisitor"] = std::make_shared<streaming::SearchVisitorFactory>(_configUri, _transport, _file_distributor_connection_spec);
+    _externalVisitors["searchvisitor"] = std::make_shared<streaming::SearchVisitorFactory>(_configUri, &_transport, _file_distributor_connection_spec);
 }
 
 namespace {

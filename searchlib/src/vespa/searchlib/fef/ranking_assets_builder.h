@@ -27,7 +27,7 @@ class RankingAssetsBuilder {
 
     vespalib::string resolve_file(const vespalib::string& desc, const vespalib::string& fileref);
 public:
-    RankingAssetsBuilder(FNET_Transport& transport, const vespalib::string& file_distributor_connection_spec);
+    RankingAssetsBuilder(FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec);
     ~RankingAssetsBuilder();
     std::shared_ptr<const OnnxModels> build(const vespa::config::search::core::OnnxModelsConfig& config);
     std::shared_ptr<const RankingConstants> build(const vespa::config::search::core::RankingConstantsConfig& config);

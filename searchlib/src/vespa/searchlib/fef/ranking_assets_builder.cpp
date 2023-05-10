@@ -23,12 +23,12 @@ namespace search::fef {
 
 constexpr vespalib::duration file_resolve_timeout = 60min;
 
-RankingAssetsBuilder::RankingAssetsBuilder(FNET_Transport& transport, const vespalib::string& file_distributor_connection_spec)
+RankingAssetsBuilder::RankingAssetsBuilder(FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec)
     : _file_acquirer(),
       _time_box(vespalib::to_s(file_resolve_timeout), 5)
 {
-    if (file_distributor_connection_spec != "") {
-        _file_acquirer = std::make_unique<config::RpcFileAcquirer>(transport, file_distributor_connection_spec);
+    if (transport != nullptr && file_distributor_connection_spec != "") {
+        _file_acquirer = std::make_unique<config::RpcFileAcquirer>(*transport, file_distributor_connection_spec);
     }
 }
 

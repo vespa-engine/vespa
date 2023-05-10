@@ -23,7 +23,7 @@ private:
     class Env : public config::SimpleConfigurable {
     public:
         using SP = std::shared_ptr<Env>;
-        Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf, FNET_Transport& transport, const vespalib::string& file_distributor_connection_spec);
+        Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec);
         ~Env() override;
         void configure(const config::ConfigSnapshot & snapshot) override;
 
@@ -36,7 +36,7 @@ private:
         std::unique_ptr<RankManager>                     _rankManager;
         std::shared_ptr<const SearchEnvironmentSnapshot> _snapshot;
         std::mutex                                       _lock;
-        FNET_Transport&                                  _transport;
+        FNET_Transport* const                            _transport;
         const vespalib::string                           _file_distributor_connection_spec;
     };
     using EnvMap = vespalib::hash_map<vespalib::string, Env::SP>;
@@ -49,13 +49,13 @@ private:
     std::mutex               _lock;
     Fast_NormalizeWordFolder _wordFolder;
     config::ConfigUri        _configUri;
-    FNET_Transport&          _transport;
+    FNET_Transport* const    _transport;
     vespalib::string         _file_distributor_connection_spec;
 
     Env & getEnv(const vespalib::string & searchcluster);
 
 public:
-    SearchEnvironment(const config::ConfigUri & configUri, FNET_Transport& transport, const vespalib::string& file_distributor_connection_spec);
+    SearchEnvironment(const config::ConfigUri & configUri, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec);
     ~SearchEnvironment();
     std::shared_ptr<const SearchEnvironmentSnapshot> get_snapshot(const vespalib::string& search_cluster);
     // Should only be used by unit tests to simulate that the calling thread is finished.

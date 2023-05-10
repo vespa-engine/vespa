@@ -288,7 +288,7 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
     if (snapshot.isChanged<RankProfilesConfig>(_configId, currentGeneration)) {
         newRankProfilesConfig = snapshot.getConfig<RankProfilesConfig>(_configId);
     }
-    RankingAssetsBuilder ranking_assets_builder(transport, _bootstrapConfig->getFiledistributorrpcConfig().connectionspec);
+    RankingAssetsBuilder ranking_assets_builder(&transport, _bootstrapConfig->getFiledistributorrpcConfig().connectionspec);
     if (snapshot.isChanged<RankingConstantsConfig>(_configId, currentGeneration)) {
         RankingConstantsConfigSP newRankingConstantsConfig = RankingConstantsConfigSP(
                 snapshot.getConfig<RankingConstantsConfig>(_configId));

@@ -496,7 +496,7 @@ class SearchVisitorFactory : public storage::VisitorFactory {
     storage::Visitor* makeVisitor(storage::StorageComponent&, storage::VisitorEnvironment&env,
                          const vdslib::Parameters& params) override;
 public:
-    explicit SearchVisitorFactory(const config::ConfigUri & configUri, FNET_Transport& transport, const vespalib::string& file_distributor_connection_spec);
+    explicit SearchVisitorFactory(const config::ConfigUri & configUri, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec);
     ~SearchVisitorFactory() override;
 };
 
