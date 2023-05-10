@@ -220,23 +220,26 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 		return req, nil, err
 	}
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
-	pr, pw := io.Pipe()
-	go func() {
-		bw := bufio.NewWriterSize(pw, min(1024, len(fieldsPrefix)+len(body)+len(fieldsSuffix)))
-		defer func() {
-			bw.Flush()
-			pw.Close()
-		}()
-		if useGzip {
+	bodySize := len(fieldsPrefix) + len(body) + len(fieldsSuffix)
+	var rc io.ReadCloser
+	if useGzip {
+		pr, pw := io.Pipe()
+		go func() {
+			defer pw.Close()
+			bw := bufio.NewWriterSize(pw, min(1024, bodySize))
 			zw := c.gzipWriter(bw)
 			writeRequestBody(zw, body)
 			zw.Close()
 			c.gzippers.Put(zw)
-		} else {
-			writeRequestBody(bw, body)
-		}
-	}()
-	cr := &countingReader{reader: pr}
+			bw.Flush()
+		}()
+		rc = pr
+	} else {
+		buf := bytes.NewBuffer(make([]byte, 0, bodySize))
+		writeRequestBody(buf, body)
+		rc = io.NopCloser(buf)
+	}
+	cr := &countingReader{reader: rc}
 	req, err := http.NewRequest(method, url, cr)
 	if err != nil {
 		return nil, cr, err
