@@ -146,9 +146,9 @@ $ vespa prod deploy`,
 				return err
 			}
 			if err := vespa.Submit(opts); err != nil {
-				return fmt.Errorf("could not submit application for deployment: %w", err)
+				return fmt.Errorf("could not deploy application: %w", err)
 			} else {
-				cli.printSuccess("Submitted ", color.CyanString(pkg.Path), " for deployment")
+				cli.printSuccess("Deployed ", color.CyanString(pkg.Path))
 				log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
 					opts.Target.Deployment().System.ConsoleURL, opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application)))
 			}
