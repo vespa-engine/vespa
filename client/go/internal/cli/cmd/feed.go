@@ -70,7 +70,6 @@ If FILE is a single dash ('-'), documents will be read from standard input.
 $ cat docs.jsonl | vespa feed -`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
-		Hidden:            true, // TODO(mpolden): Remove when ready for public use
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if options.cpuprofile != "" {
 				f, err := os.Create(options.cpuprofile)
