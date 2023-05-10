@@ -27,6 +27,7 @@ func TestFeed(t *testing.T) {
 	clock := &manualClock{tick: time.Second}
 	cli, stdout, stderr := newTestCLI(t)
 	httpClient := cli.httpClient.(*mock.HTTPClient)
+	httpClient.ReadBody = true
 	cli.now = clock.now
 
 	td := t.TempDir()
