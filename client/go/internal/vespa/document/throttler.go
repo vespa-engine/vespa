@@ -102,19 +102,3 @@ func (t *dynamicThrottler) TargetInflight() int64 {
 	targetInflight := atomic.LoadInt64(&t.targetInflight)
 	return min(staticTargetInflight, targetInflight)
 }
-
-type number interface{ float64 | int64 }
-
-func min[T number](x, y T) T {
-	if x < y {
-		return x
-	}
-	return y
-}
-
-func max[T number](x, y T) T {
-	if x > y {
-		return x
-	}
-	return y
-}
