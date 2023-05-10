@@ -12,6 +12,8 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <set>
 
+namespace search::fef { struct IRankingAssetsRepo; }
+
 namespace streaming {
 
 /**
@@ -29,6 +31,7 @@ private:
     mutable FeatureMotivation            _motivation;
     mutable std::set<vespalib::string>   _rankAttributes;
     mutable std::set<vespalib::string>   _dumpAttributes;
+    std::shared_ptr<const search::fef::IRankingAssetsRepo> _ranking_assets_repo;
 
 public:
     IndexEnvironment(const search::fef::ITableManager & tableManager);
@@ -71,23 +74,19 @@ public:
 
     void hintAttributeAccess(const string & name) const override;
 
-    vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &) const override {
-        return vespalib::eval::ConstantValue::UP();
-    }
+    vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string& name) const override;
 
-    vespalib::string getRankingExpression(const vespalib::string &) const override {
-        return {};
-    }
+    vespalib::string getRankingExpression(const vespalib::string& name) const override;
 
-    const search::fef::OnnxModel *getOnnxModel(const vespalib::string &) const override {
-        return nullptr;
-    }
+    const search::fef::OnnxModel *getOnnxModel(const vespalib::string& name) const override;
 
     bool addField(const vespalib::string& name,
                   bool isAttribute,
                   search::fef::FieldInfo::DataType data_type);
 
     search::fef::Properties & getProperties() { return _properties; }
+
+    void set_ranking_assets_repo(std::shared_ptr<const search::fef::IRankingAssetsRepo> ranking_assets_repo);
 
     const std::set<vespalib::string> & getHintedRankAttributes() const { return _rankAttributes; }
 

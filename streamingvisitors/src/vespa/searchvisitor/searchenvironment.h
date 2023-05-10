@@ -3,6 +3,8 @@
 #pragma once
 
 #include "rankmanager.h"
+#include <vespa/eval/eval/value_cache/constant_tensor_loader.h>
+#include <vespa/eval/eval/value_cache/constant_value_cache.h>
 #include <vespa/searchsummary/docsummary/juniperproperties.h>
 #include <vespa/storage/visiting/visitor.h>
 #include <vespa/config/retriever/simpleconfigurer.h>
@@ -12,6 +14,16 @@
 #include <mutex>
 
 class FNET_Transport;
+
+namespace search::fef {
+
+struct IRankingAssetsRepo;
+class OnnxModels;
+class RankingAssetsBuilder;
+class RankingConstants;
+class RankingExpressions;
+
+}
 
 namespace streaming {
 
@@ -30,14 +42,25 @@ private:
         static config::ConfigKeySet createKeySet(const vespalib::string & configId);
         std::shared_ptr<const SearchEnvironmentSnapshot> get_snapshot();
     private:
-        const vespalib::string                           _configId;
-        config::SimpleConfigurer                         _configurer;
-        std::unique_ptr<vsm::VSMAdapter>                 _vsmAdapter;
-        std::unique_ptr<RankManager>                     _rankManager;
-        std::shared_ptr<const SearchEnvironmentSnapshot> _snapshot;
-        std::mutex                                       _lock;
-        FNET_Transport* const                            _transport;
-        const vespalib::string                           _file_distributor_connection_spec;
+        template <typename ConfigType, typename RankingAssetType>
+        void configure_ranking_asset(std::shared_ptr<const RankingAssetType> &ranking_asset,
+                                     const config::ConfigSnapshot& snapshot,
+                                     search::fef::RankingAssetsBuilder& builder);
+        const vespalib::string                                 _configId;
+        config::SimpleConfigurer                               _configurer;
+        std::unique_ptr<vsm::VSMAdapter>                       _vsmAdapter;
+        std::unique_ptr<RankManager>                           _rankManager;
+        std::shared_ptr<const SearchEnvironmentSnapshot>       _snapshot;
+        std::mutex                                             _lock;
+        vespalib::eval::ConstantTensorLoader                   _tensor_loader;
+        vespalib::eval::ConstantValueCache                     _constant_value_cache;
+        uint64_t                                               _generation;
+        std::shared_ptr<const search::fef::OnnxModels>         _onnx_models;
+        std::shared_ptr<const search::fef::RankingConstants>   _ranking_constants;
+        std::shared_ptr<const search::fef::RankingExpressions> _ranking_expressions;
+        std::shared_ptr<const search::fef::IRankingAssetsRepo> _ranking_assets_repo;
+        FNET_Transport* const                                  _transport;
+        const vespalib::string                                 _file_distributor_connection_spec;
     };
     using EnvMap = vespalib::hash_map<vespalib::string, Env::SP>;
     using EnvMapUP = std::unique_ptr<EnvMap>;

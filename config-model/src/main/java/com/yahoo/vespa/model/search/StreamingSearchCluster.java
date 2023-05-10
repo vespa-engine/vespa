@@ -13,6 +13,9 @@ import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
+import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
@@ -28,6 +31,9 @@ import java.util.List;
 public class StreamingSearchCluster extends SearchCluster implements
         DocumentdbInfoConfig.Producer,
         RankProfilesConfig.Producer,
+        RankingConstantsConfig.Producer,
+        RankingExpressionsConfig.Producer,
+        OnnxModelsConfig.Producer,
         VsmsummaryConfig.Producer,
         VsmfieldsConfig.Producer,
         SummaryConfig.Producer {
@@ -116,6 +122,15 @@ public class StreamingSearchCluster extends SearchCluster implements
     public void getConfig(RankProfilesConfig.Builder builder) {
         derivedConfig.getRankProfileList().getConfig(builder);
     }
+
+    @Override
+    public void getConfig(RankingConstantsConfig.Builder builder) { derivedConfig.getRankProfileList().getConfig(builder); }
+
+    @Override
+    public void getConfig(RankingExpressionsConfig.Builder builder) { derivedConfig.getRankProfileList().getConfig(builder); }
+
+    @Override
+    public void getConfig(OnnxModelsConfig.Builder builder) { derivedConfig.getRankProfileList().getConfig(builder); }
 
     @Override
     public void getConfig(VsmsummaryConfig.Builder builder) {
