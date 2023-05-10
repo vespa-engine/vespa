@@ -73,7 +73,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private static final Duration REFRESH_BACKOFF = Duration.ofHours(1); // Backoff when refresh fails to ensure ZTS is not DDoS'ed.
 
     private static final String CONTAINER_SIA_DIRECTORY = "/var/lib/sia";
-    private static final String LEGACY_SIA_DIRECTORY = "/opt/vespa/var/vespa/sia";
 
     private final URI ztsEndpoint;
     private final Path ztsTrustStorePath;
@@ -114,11 +113,10 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         if (context.zone().getSystemName().isPublic())
             return modified;
 
-        if (shouldWriteTenantServiceIdentity(context)) {
+        if (shouldWriteTenantServiceIdentity(context))
             modified |= maintain(context, TENANT);
-        } else {
+        else
             modified |= deleteTenantCredentials(context);
-        }
         return modified;
     }
 
@@ -175,7 +173,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
             if (identityType == TENANT) {
                 modified |= maintainRoleCertificates(context, siaDirectory, privateKeyFile, certificateFile, athenzIdentity, doc.identityDocument());
-                copyCredsToLegacyPath(context, privateKeyFile, certificateFile);
             }
             return modified;
         } catch (IOException e) {
@@ -432,16 +429,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 .with(FetchVector.Dimension.VESPA_VERSION, version.toFullString())
                 .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
                 .value();
-    }
-
-    private void copyCredsToLegacyPath(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile) throws IOException {
-        var legacySiaDirectory = context.paths().of(LEGACY_SIA_DIRECTORY, context.users().vespa());
-        var keysDirectory = legacySiaDirectory.resolve("keys");
-        var certsDirectory = legacySiaDirectory.resolve("certs");
-        Files.createDirectories(keysDirectory);
-        Files.createDirectories(certsDirectory);
-        Files.copy(certificateFile, certsDirectory.resolve(certificateFile.getFileName()));
-        Files.copy(privateKeyFile, keysDirectory.resolve(privateKeyFile.getFileName()));
     }
 
     /*
