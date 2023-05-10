@@ -15,7 +15,7 @@ namespace streaming {
 
 __thread SearchEnvironment::EnvMap * SearchEnvironment::_localEnvMap = nullptr;
 
-SearchEnvironment::Env::Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf, FNET_Transport& transport, const vespalib::string& file_distributor_connection_spec)
+SearchEnvironment::Env::Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec)
     : _configId(configUri.getConfigId()),
       _configurer(std::make_unique<config::SimpleConfigRetriever>(createKeySet(configUri.getConfigId()), configUri.getContext()), this),
       _vsmAdapter(std::make_unique<VSMAdapter>(_configId, wf)),
@@ -63,7 +63,7 @@ SearchEnvironment::Env::~Env()
     _configurer.close();
 }
 
-SearchEnvironment::SearchEnvironment(const config::ConfigUri & configUri, FNET_Transport& transport, const vespalib::string& file_distributor_connection_spec)
+SearchEnvironment::SearchEnvironment(const config::ConfigUri & configUri, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec)
     : VisitorEnvironment(),
       _envMap(),
       _configUri(configUri),

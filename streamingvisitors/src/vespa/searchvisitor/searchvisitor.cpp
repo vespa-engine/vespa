@@ -459,7 +459,7 @@ void SearchVisitor::init(const Parameters & params)
     VISITOR_TRACE(6, "Completed lazy VSM adapter initialization");
 }
 
-SearchVisitorFactory::SearchVisitorFactory(const config::ConfigUri & configUri, FNET_Transport& transport, const vespalib::string& file_distributor_connection_spec)
+SearchVisitorFactory::SearchVisitorFactory(const config::ConfigUri & configUri, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec)
     : VisitorFactory(),
       _configUri(configUri),
       _env(std::make_shared<SearchEnvironment>(_configUri, transport, file_distributor_connection_spec))

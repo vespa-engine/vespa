@@ -126,7 +126,6 @@ public:
     framework::defaultimplementation::FakeClock _clock;
     StorageComponentRegisterImpl      _componentRegister;
     std::unique_ptr<StorageComponent> _component;
-    FNET_Transport                    _transport;
     SearchEnvironment                 _env;
     SearchVisitorFactory              _factory;
     std::shared_ptr<DocumentTypeRepo> _repo;
@@ -161,9 +160,8 @@ public:
 
 SearchVisitorTest::SearchVisitorTest() :
     _componentRegister(),
-    _transport(),
-    _env(::config::ConfigUri("dir:cfg"), _transport, ""),
-    _factory(::config::ConfigUri("dir:cfg"), _transport, ""),
+    _env(::config::ConfigUri("dir:cfg"), nullptr, ""),
+    _factory(::config::ConfigUri("dir:cfg"), nullptr, ""),
     _repo(std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig("cfg/documenttypes.cfg"))),
     _doc_type(_repo->getDocumentType("test"))
 {
