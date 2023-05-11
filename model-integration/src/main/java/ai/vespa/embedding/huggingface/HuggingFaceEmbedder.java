@@ -91,7 +91,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public Tensor embed(String s, Context context, TensorType tensorType) {
-        List<Integer> tokenIds = embed(s.toLowerCase(), context);
+        List<Integer> tokenIds = embed(s, context);
         return embedTokens(tokenIds, tensorType);
     }
 
