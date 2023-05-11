@@ -198,7 +198,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                             .resolve(String.format("%s.cert.pem", role));
                     var roleKeyPath = siaDirectory.resolve("keys")
                             .resolve(String.format("%s.key.pem", role));
-                    if (!Files.exists(roleCertificatePath)) {
+                    if (Files.notExists(roleCertificatePath)) {
                         writeRoleCredentials(context, privateKeyFile, certificateFile, roleCertificatePath, roleKeyPath, identity, identityDocument, role);
                         modified = true;
                     } else if (shouldRefreshCertificate(context, roleCertificatePath)) {
@@ -215,8 +215,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private boolean shouldRefreshCertificate(NodeAgentContext context, ContainerPath certificatePath) throws IOException {
         var certificate = readCertificateFromFile(certificatePath);
         var now = timer.currentTime();
-        var shouldRefresh = now.isAfter(certificate.getNotAfter().toInstant()) ||
-                now.isBefore(certificate.getNotBefore().toInstant().plus(REFRESH_PERIOD));
+        var shouldRefresh = now.isAfter(certificate.getNotBefore().toInstant().plus(REFRESH_PERIOD));
         return !shouldThrottleRefreshAttempts(context.containerName(), now) &&
                 shouldRefresh;
     }
