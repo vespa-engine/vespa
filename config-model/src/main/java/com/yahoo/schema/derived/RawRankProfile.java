@@ -133,6 +133,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final Map<String, FieldRankSettings> fieldRankSettings = new java.util.LinkedHashMap<>();
         private final Set<ReferenceNode> summaryFeatures;
         private final Set<ReferenceNode> matchFeatures;
+        private final Collection<String> hiddenMatchFeatures;
         private final Set<ReferenceNode> rankFeatures;
         private final Map<String, String> featureRenames = new java.util.LinkedHashMap<>();
         private final List<RankProfile.RankProperty> rankProperties;
@@ -183,6 +184,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             globalPhaseRanking = compiled.getGlobalPhaseRanking();
             summaryFeatures = new LinkedHashSet<>(compiled.getSummaryFeatures());
             matchFeatures = new LinkedHashSet<>(compiled.getMatchFeatures());
+            hiddenMatchFeatures = compiled.getHiddenMatchFeatures();
             rankFeatures = compiled.getRankFeatures();
             rerankCount = compiled.getRerankCount();
             globalPhaseRerankCount = compiled.getGlobalPhaseRerankCount();
@@ -393,6 +395,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             }
             for (ReferenceNode feature : matchFeatures) {
                 properties.add(new Pair<>("vespa.match.feature", feature.toString()));
+            }
+            for (String feature : hiddenMatchFeatures) {
+                properties.add(new Pair<>("vespa.hidden.matchfeature", feature));
             }
             for (ReferenceNode feature : rankFeatures) {
                 properties.add(new Pair<>("vespa.dump.feature", feature.toString()));
