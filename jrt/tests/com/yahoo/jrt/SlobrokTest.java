@@ -13,7 +13,9 @@ import com.yahoo.jrt.slobrok.server.Slobrok;
 import org.junit.After;
 import org.junit.Before;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 public class SlobrokTest {
@@ -110,17 +112,18 @@ public class SlobrokTest {
         assertTrue(mirror.ready());
         assertTrue(mirror.updates() > 0);
 
+        mirror.dumpState();
         List<Entry> oneArr = mirror.lookup("*/*/*");
         mirror.dumpState();
-        assertTrue(oneArr.size() == 1);
+        assertEquals(1, oneArr.size());
         Mirror.Entry one = oneArr.get(0);
-        assertTrue(one.equals(new Mirror.Entry(wantName, mySpec)));
-        assertFalse(one.equals(new Mirror.Entry("B/x/w", mySpec)));
-        assertFalse(one.equals(new Mirror.Entry(wantName, "foo:99")));
-        assertFalse(one.equals(null));
-        assertFalse(one.equals(register));
-        assertTrue(one.getName().equals(wantName));
-        assertTrue(one.getSpecString().equals(mySpec));
+        assertEquals(one, new Entry(wantName, mySpec));
+        assertNotEquals(one, new Entry("B/x/w", mySpec));
+        assertNotEquals(one, new Entry(wantName, "foo:99"));
+        assertNotEquals(one, null);
+        assertNotEquals(one, register);
+        assertEquals(one.getName(), wantName);
+        assertEquals(one.getSpecString(), mySpec);
 
         register.registerName("B/x");
         check("B/x", new SpecList().add("B/x", mySpec));
