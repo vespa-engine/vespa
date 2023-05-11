@@ -265,7 +265,7 @@ func NewGenerator(size int, deadline time.Time) *Generator {
 	return &Generator{Size: size, Deadline: deadline, nowFunc: time.Now}
 }
 
-func (g *Generator) randString(size int) string {
+func randString(size int) string {
 	b := make([]byte, size)
 	for i := range b {
 		b[i] = byte('a' + rand.Intn('z'-'a'+1))
@@ -278,7 +278,7 @@ func (g *Generator) Read(p []byte) (int, error) {
 		if !g.nowFunc().Before(g.Deadline) {
 			return 0, io.EOF
 		}
-		fmt.Fprintf(&g.buf, "{\"put\": \"id:test:test::%s\", \"fields\": {\"test\": \"%s\"}}\n", g.randString(8), g.randString(g.Size))
+		fmt.Fprintf(&g.buf, "{\"put\": \"id:test:test::%s\", \"fields\": {\"test\": \"%s\"}}\n", randString(8), randString(g.Size))
 	}
 	return g.buf.Read(p)
 }
