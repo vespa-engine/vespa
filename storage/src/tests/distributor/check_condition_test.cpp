@@ -9,7 +9,8 @@
 #include <vespa/storage/distributor/persistence_operation_metric_set.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/distributor/distributor_stripe_test_util.h>
-#include <vespa/vespalib/gtest/gtest.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 using namespace ::testing;
 
@@ -27,6 +28,7 @@ public:
     BucketId                      _bucket_id{16, 1234};
     TestAndSetCondition           _tas_cond{"foo or bar"};
     PersistenceOperationMetricSet _metrics{"dummy_metrics", nullptr};
+    uint32_t                      _trace_level{5};
 
     CheckConditionTest();
     ~CheckConditionTest() override;
@@ -52,7 +54,8 @@ public:
         auto bucket        = Bucket(FixedBucketSpaces::default_space(), _bucket_id);
         assert(_bucket_id.contains(doc_bucket));
         return CheckCondition::create_if_inconsistent_replicas(bucket, bucket_space, _doc_id, _tas_cond,
-                                                               node_context(), operation_context(), _metrics);
+                                                               node_context(), operation_context(), _metrics,
+                                                               _trace_level);
     }
 
     std::shared_ptr<api::GetCommand> sent_get_command(size_t idx) {
@@ -84,6 +87,12 @@ public:
 
     std::shared_ptr<api::GetReply> make_tombstone_reply(size_t cmd_idx, api::Timestamp ts = 1000) {
         return make_reply(*sent_get_command(cmd_idx), ts, true, false);
+    }
+
+    std::shared_ptr<api::GetReply> make_trace_reply(size_t cmd_idx, api::Timestamp ts, std::string trace_message) {
+        auto reply = make_reply(*sent_get_command(cmd_idx), ts, true, false);
+        MBUS_TRACE(reply->getTrace(), _trace_level, trace_message);
+        return reply;
     }
 
     std::shared_ptr<api::GetReply> make_failed_reply(size_t cmd_idx) {
@@ -149,6 +158,7 @@ TEST_F(CheckConditionTest, starting_sends_condition_probe_gets) {
     EXPECT_EQ(cmd->condition(), _tas_cond);
     EXPECT_EQ(cmd->getFieldSet(), NoFields::NAME);
     EXPECT_EQ(cmd->internal_read_consistency(), api::InternalReadConsistency::Strong);
+    EXPECT_EQ(cmd->getTrace().getLevel(), _trace_level);
 }
 
 TEST_F(CheckConditionTest, condition_matching_completes_check_with_match_outcome) {
@@ -229,6 +239,17 @@ TEST_F(CheckConditionTest, check_fails_if_replica_set_changed_between_start_and_
         EXPECT_FALSE(outcome.not_found());
         EXPECT_TRUE(outcome.failed());
         EXPECT_EQ(outcome.error_code().getResult(), api::ReturnCode::BUCKET_NOT_FOUND);
+    });
+}
+
+TEST_F(CheckConditionTest, nested_get_traces_are_propagated_to_outcome) {
+    test_cond_with_2_gets_sent([&](auto& cond) {
+        cond.handle_reply(_sender, make_trace_reply(0, 100, "hello"));
+        cond.handle_reply(_sender, make_trace_reply(1, 200, "world"));
+    }, [&](auto& outcome) {
+        auto trace_str = outcome.trace().toString();
+        EXPECT_THAT(trace_str, HasSubstr("hello"));
+        EXPECT_THAT(trace_str, HasSubstr("world"));
     });
 }
 

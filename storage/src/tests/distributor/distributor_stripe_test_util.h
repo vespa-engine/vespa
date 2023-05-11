@@ -220,6 +220,15 @@ public:
         return cmd;
     }
 
+    template <typename ReplyType>
+    requires std::is_base_of_v<api::StorageReply, ReplyType>
+    [[nodiscard]] std::shared_ptr<ReplyType> sent_reply(size_t idx) {
+        assert(idx < _sender.replies().size());
+        auto reply = std::dynamic_pointer_cast<ReplyType>(_sender.reply(idx));
+        assert(reply != nullptr);
+        return reply;
+    }
+
     void config_enable_condition_probing(bool enable);
     void tag_content_node_supports_condition_probing(uint16_t index, bool supported);
 

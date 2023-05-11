@@ -156,13 +156,13 @@ void PutOperation::start_conditional_put(DistributorStripeMessageSender& sender)
     document::Bucket bucket(_msg->getBucket().getBucketSpace(), _doc_id_bucket_id);
     _check_condition = CheckCondition::create_if_inconsistent_replicas(bucket, _bucket_space, _msg->getDocumentId(),
                                                                        _msg->getCondition(), _node_ctx, _op_ctx,
-                                                                       _temp_metric);
+                                                                       _temp_metric, _msg->getTrace().getLevel());
     if (!_check_condition) {
         start_direct_put_dispatch(sender);
     } else {
         // Inconsistent replicas; need write repair
         _check_condition->start_and_send(sender);
-        const auto& outcome = _check_condition->maybe_outcome(); // Might be done immediately
+        auto& outcome = _check_condition->maybe_outcome(); // Might be done immediately
         if (outcome) {
             on_completed_check_condition(*outcome, sender);
         }
@@ -265,7 +265,7 @@ PutOperation::onReceive(DistributorStripeMessageSender& sender, const std::share
         _tracker.receiveReply(sender, dynamic_cast<api::BucketInfoReply&>(*msg));
     } else {
         _check_condition->handle_reply(sender, msg);
-        const auto& outcome = _check_condition->maybe_outcome();
+        auto& outcome = _check_condition->maybe_outcome();
         if (!outcome) {
             return; // Condition check not done yet
         }
@@ -274,9 +274,12 @@ PutOperation::onReceive(DistributorStripeMessageSender& sender, const std::share
 }
 
 void
-PutOperation::on_completed_check_condition(const CheckCondition::Outcome& outcome,
+PutOperation::on_completed_check_condition(CheckCondition::Outcome& outcome,
                                            DistributorStripeMessageSender& sender)
 {
+    if (!outcome.trace().isEmpty()) {
+        _tracker.add_trace_tree_to_reply(outcome.steal_trace());
+    }
     const bool effectively_matched = (outcome.matched_condition()
                                       || (outcome.not_found() && _msg->get_create_if_non_existent()));
     if (effectively_matched) {
