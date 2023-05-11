@@ -12,6 +12,7 @@ transformerMaxTokens int default=512
 # Input names
 transformerInputIds      string default=input_ids
 transformerAttentionMask string default=attention_mask
+transformerTokenTypeIds  string default=token_type_ids
 
 # Output name
 transformerOutput string default=last_hidden_state

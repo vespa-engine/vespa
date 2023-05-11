@@ -27,6 +27,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     private final String inputIdsName;
     private final String attentionMaskName;
+    private final String tokenTypeIdsName;
     private final String outputName;
     private final int maxTokens;
     private final boolean normalize;
@@ -38,6 +39,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         maxTokens = config.transformerMaxTokens();
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
+        tokenTypeIdsName = config.transformerTokenTypeIds();
         outputName = config.transformerOutput();
         normalize = config.normalize();
         tokenizer = new HuggingFaceTokenizer.Builder()
@@ -57,6 +59,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         Map<String, TensorType> inputs = evaluator.getInputInfo();
         validateName(inputs, inputIdsName, "input");
         validateName(inputs, attentionMaskName, "input");
+        if (!tokenTypeIdsName.isEmpty()) validateName(inputs, tokenTypeIdsName, "input");
 
         Map<String, TensorType> outputs = evaluator.getOutputInfo();
         validateName(outputs, outputName, "output");
@@ -91,18 +94,21 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public Tensor embed(String s, Context context, TensorType tensorType) {
-        List<Integer> tokenIds = embed(s, context);
-        return embedTokens(tokenIds, tensorType);
-    }
+        var encoding = tokenizer.encode(s, context.getLanguage());
+        Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1");
+        Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1");
+        Tensor tokenTypeIds = createTensorRepresentation(encoding.typeIds(), "d1");
 
-    Tensor embedTokens(List<Integer> tokenIds, TensorType tensorType) {
-        Tensor inputSequence = createTensorRepresentation(tokenIds, "d1");
-        Tensor attentionMask = createAttentionMask(inputSequence);
 
-        Map<String, Tensor> inputs = Map.of(
-                inputIdsName, inputSequence.expand("d0"),
-                attentionMaskName, attentionMask.expand("d0")
-        );
+        Map<String, Tensor> inputs;
+        if (tokenTypeIds.isEmpty()) {
+            inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
+                            attentionMaskName, attentionMask.expand("d0"));
+        } else {
+            inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
+                            attentionMaskName, attentionMask.expand("d0"),
+                            tokenTypeIdsName, tokenTypeIds.expand("d0"));
+        }
 
         Map<String, Tensor> outputs = evaluator.evaluate(inputs);
         Tensor tokenEmbeddings = outputs.get(outputName);
@@ -140,7 +146,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         return builder.build();
     }
 
-    private IndexedTensor createTensorRepresentation(List<Integer> input, String dimension) {
+    private IndexedTensor createTensorRepresentation(List<Long> input, String dimension) {
         int size = input.size();
         TensorType type = new TensorType.Builder(TensorType.Value.FLOAT).indexed(dimension, size).build();
         IndexedTensor.Builder builder = IndexedTensor.Builder.of(type);
