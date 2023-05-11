@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/shared_string_repo.h>
-#include <vespa/vespalib/util/rendezvous.h>
+#include <vespa/vespalib/test/thread_meets.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -115,41 +115,8 @@ std::unique_ptr<StringIdVector> make_weak_handles(const Handles &handles) {
 
 //-----------------------------------------------------------------------------
 
-struct Avg : Rendezvous<double, double> {
-    explicit Avg(size_t n) : Rendezvous<double, double>(n) {}
-    void mingle() override {
-        double sum = 0;
-        for (size_t i = 0; i < size(); ++i) {
-            sum += in(i);
-        }
-        double result = sum / size();
-        for (size_t i = 0; i < size(); ++i) {
-            out(i) = result;
-        }
-    }
-    double operator()(double value) { return rendezvous(value); }
-};
-
-struct Vote : Rendezvous<bool, bool> {
-    explicit Vote(size_t n) : Rendezvous<bool, bool>(n) {}
-    void mingle() override {
-        size_t true_cnt = 0;
-        size_t false_cnt = 0;
-        for (size_t i = 0; i < size(); ++i) {
-            if (in(i)) {
-                ++true_cnt;
-            } else {
-                ++false_cnt;
-            }
-        }
-        bool result = (true_cnt > false_cnt);
-        for (size_t i = 0; i < size(); ++i) {
-            out(i) = result;
-        }
-    }
-    [[nodiscard]] size_t num_threads() const { return size(); }
-    bool operator()(bool flag) { return rendezvous(flag); }
-};
+using Avg = vespalib::test::ThreadMeets::Avg;
+using Vote = vespalib::test::ThreadMeets::Vote;
 
 //-----------------------------------------------------------------------------
 
@@ -174,7 +141,7 @@ struct Fixture {
         : avg(num_threads), vote(num_threads), work(make_strings(work_size)), direct_work(make_direct_strings(work_size)), start_time(steady_clock::now()) {}
     ~Fixture() {
         if (verbose) {
-            fprintf(stderr, "benchmark results for %zu threads:\n", vote.num_threads());
+            fprintf(stderr, "benchmark results for %zu threads:\n", vote.size());
             for (const auto &[tag, ms_cost]: time_ms) {
                 fprintf(stderr, "    %s: %g ms\n", tag.c_str(), ms_cost);
             }
