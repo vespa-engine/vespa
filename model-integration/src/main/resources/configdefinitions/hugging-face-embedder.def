@@ -1,4 +1,3 @@
-package=ai.vespa.embedding.huggingface
 namespace=embedding.huggingface
 
 # Path to tokenizer.json
