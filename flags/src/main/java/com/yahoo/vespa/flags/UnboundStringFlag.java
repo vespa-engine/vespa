@@ -27,12 +27,13 @@ public class UnboundStringFlag extends UnboundFlagImpl<String, StringFlag, Unbou
 
     public UnboundStringFlag(FlagId id, String defaultValue, FetchVector fetchVector, Predicate<String> validator) {
         this(id, defaultValue, fetchVector,
-             new SimpleFlagSerializer<>(stringValue -> {
-                                            if (!validator.test(stringValue))
-                                                throw new IllegalArgumentException("Invalid value: '" + stringValue + "'");
-                                            return new TextNode(stringValue);
-                                        },
-                                        JsonNode::isTextual, JsonNode::asText));
+             new SimpleFlagSerializer<>(TextNode::new,
+                                        JsonNode::isTextual,
+                                        jsonNode -> {
+                                            if (!validator.test(jsonNode.asText()))
+                                                throw new IllegalArgumentException("Invalid value: '" + jsonNode.asText() + "'");
+                                            return jsonNode.asText();
+                                        }));
     }
 
     public UnboundStringFlag(FlagId id, String defaultValue, FetchVector defaultFetchVector,

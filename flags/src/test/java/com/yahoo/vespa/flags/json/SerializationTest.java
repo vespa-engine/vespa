@@ -3,6 +3,7 @@ package com.yahoo.vespa.flags.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 import com.yahoo.vespa.flags.json.wire.WireFlagData;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -141,5 +143,22 @@ public class SerializationTest {
         assertThat(wireData.serializeToJson(), equalTo("{\"id\":\"id3\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"zone\"}]}],\"attributes\":{}}"));
 
         assertThat(FlagData.deserialize(json).serializeToJson(), equalTo("{\"id\":\"id3\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"zone\"}]}]}"));
+    }
+
+    @Test
+    void validation() {
+        FlagData data = FlagData.deserialize("""
+                                                    {
+                                                        "id": "wanted-docker-tag",
+                                                        "rules": [
+                                                           {
+                                                                "value": "do.not.work"
+                                                            }
+                                                        ]
+                                                    }
+                                                    """);
+        IllegalArgumentException illegalArgumentException =
+                assertThrows(IllegalArgumentException.class, () -> data.validate(PermanentFlags.WANTED_DOCKER_TAG.serializer()));
+        assertThat(illegalArgumentException.getMessage(), equalTo("Invalid value: 'do.not.work'"));
     }
 }
