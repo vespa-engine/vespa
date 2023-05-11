@@ -45,7 +45,7 @@ EquivTest::test_equiv(bool strict, bool unpack_normal_features, bool unpack_inte
     FieldSpecBaseList fields;
     fields.add(FieldSpecBase(1, 1));
     fields.add(FieldSpecBase(2, 2));
-    auto bp = std::make_unique<EquivBlueprint>(fields, subLayout);
+    auto bp = std::make_unique<EquivBlueprint>(std::move(fields), subLayout);
 
     bp->addTerm(std::make_unique<FakeBlueprint>(FieldSpec("foo", 1, fbh11), a), 1.0);
     bp->addTerm(std::make_unique<FakeBlueprint>(FieldSpec("bar", 2, fbh21), b), 1.0);

@@ -60,7 +60,14 @@ private:
     List _list;
 
 public:
+    FieldSpecBaseList() = default;
+    FieldSpecBaseList(FieldSpecBase spec) : _list() { _list.push_back(spec); }
+    FieldSpecBaseList(FieldSpecBaseList &&) noexcept = default;
+    FieldSpecBaseList & operator=(FieldSpecBaseList &&) noexcept = default;
+    FieldSpecBaseList(const FieldSpecBaseList &) = default;
+    FieldSpecBaseList & operator=(FieldSpecBaseList &) = delete;
     ~FieldSpecBaseList();
+    void reserve(size_t sz) { _list.reserve(sz); }
     using const_iterator = List::const_iterator;
     FieldSpecBaseList &add(const FieldSpecBase &spec) {
         _list.push_back(spec);
@@ -71,8 +78,6 @@ public:
     const_iterator begin() const { return _list.begin(); }
     const_iterator end() const { return _list.end(); }
     const FieldSpecBase &operator[](size_t i) const { return _list[i]; }
-    void clear() { _list.clear(); }
-    void swap(FieldSpecBaseList & rhs) { _list.swap(rhs._list); }
 };
 
 /**

@@ -113,8 +113,8 @@ public:
         return SearchIterator::UP(new MySearch("leaf", tfmda, strict));
     }
 
-    MyLeaf(const FieldSpecBaseList &fields)
-        : SimpleLeafBlueprint(fields), _got_global_filter(false)
+    MyLeaf(FieldSpecBaseList fields)
+        : SimpleLeafBlueprint(std::move(fields)), _got_global_filter(false)
     {}
 
     MyLeaf &estimate(uint32_t hits, bool empty = false) {

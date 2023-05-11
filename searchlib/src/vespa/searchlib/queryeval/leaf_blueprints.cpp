@@ -28,8 +28,8 @@ EmptyBlueprint::EmptyBlueprint(const FieldSpecBase &field)
 {
 }
 
-EmptyBlueprint::EmptyBlueprint(const FieldSpecBaseList &fields)
-    : SimpleLeafBlueprint(fields)
+EmptyBlueprint::EmptyBlueprint(FieldSpecBaseList fields)
+    : SimpleLeafBlueprint(std::move(fields))
 {
 }
 

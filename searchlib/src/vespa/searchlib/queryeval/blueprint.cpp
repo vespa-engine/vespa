@@ -2,7 +2,6 @@
 
 #include "blueprint.h"
 #include "leaf_blueprints.h"
-#include "intermediate_blueprints.h"
 #include "emptysearch.h"
 #include "full_search.h"
 #include "field_spec.hpp"
@@ -17,7 +16,6 @@
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/data/slime/inserter.h>
-#include <type_traits>
 #include <map>
 
 #include <vespa/log/log.h>
@@ -89,8 +87,8 @@ Blueprint::sat_sum(const std::vector<HitEstimate> &data, uint32_t docid_limit)
     return { uint32_t(std::min(sum, uint64_t(limit))), empty };
 }
 
-Blueprint::State::State(const FieldSpecBaseList &fields_in)
-    : _fields(fields_in),
+Blueprint::State::State(FieldSpecBaseList fields_in)
+    : _fields(std::move(fields_in)),
       _estimate(),
       _cost_tier(COST_TIER_NORMAL),
       _tree_size(1),
@@ -483,6 +481,7 @@ IntermediateBlueprint::mixChildrenFields() const
             }
         }
     }
+    fieldList.reserve(fieldMap.size());
     for (const auto & entry : fieldMap) {
         fieldList.add(*entry.second);
     }
@@ -684,8 +683,8 @@ IntermediateBlueprint::calculateUnpackInfo(const fef::MatchData & md) const
 
 //-----------------------------------------------------------------------------
 
-LeafBlueprint::LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval)
-    : _state(fields)
+LeafBlueprint::LeafBlueprint(FieldSpecBaseList fields, bool allow_termwise_eval)
+    : _state(std::move(fields))
 {
     _state.allow_termwise_eval(allow_termwise_eval);
 }
@@ -693,9 +692,8 @@ LeafBlueprint::LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwis
 LeafBlueprint::~LeafBlueprint() = default;
 
 void
-LeafBlueprint::fetchPostings(const ExecuteInfo &execInfo)
+LeafBlueprint::fetchPostings(const ExecuteInfo &)
 {
-    (void) execInfo;
 }
 
 void

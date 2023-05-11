@@ -76,7 +76,7 @@ public:
         static constexpr uint32_t COST_TIER_EXPENSIVE = 2;
         static constexpr uint32_t COST_TIER_MAX = 999;
 
-        State(const FieldSpecBaseList &fields_in);
+        State(FieldSpecBaseList fields_in);
         State(const State &rhs) = delete;
         State(State &&rhs) = default;
         State &operator=(const State &rhs) = delete;
@@ -357,7 +357,7 @@ protected:
     void set_want_global_filter(bool value);
     void set_tree_size(uint32_t value);
 
-    LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval);
+    LeafBlueprint(FieldSpecBaseList fields, bool allow_termwise_eval);
 public:
     ~LeafBlueprint() override;
     const State &getState() const final { return _state; }
@@ -372,14 +372,14 @@ public:
 
 // for leaf nodes representing a single term
 struct SimpleLeafBlueprint : LeafBlueprint {
-    explicit SimpleLeafBlueprint(const FieldSpecBase &field) : LeafBlueprint(FieldSpecBaseList().add(field), true) {}
-    explicit SimpleLeafBlueprint(const FieldSpecBaseList &fields) : LeafBlueprint(fields, true) {}
+    explicit SimpleLeafBlueprint(const FieldSpecBase &field) : LeafBlueprint(FieldSpecBaseList(field), true) {}
+    explicit SimpleLeafBlueprint(FieldSpecBaseList fields) : LeafBlueprint(std::move(fields), true) {}
 };
 
 // for leaf nodes representing more complex structures like wand/phrase
 struct ComplexLeafBlueprint : LeafBlueprint {
-    explicit ComplexLeafBlueprint(const FieldSpecBase &field) : LeafBlueprint(FieldSpecBaseList().add(field), false) {}
-    explicit ComplexLeafBlueprint(const FieldSpecBaseList &fields) : LeafBlueprint(fields, false) {}
+    explicit ComplexLeafBlueprint(const FieldSpecBase &field) : LeafBlueprint(FieldSpecBaseList(field), false) {}
+    explicit ComplexLeafBlueprint(FieldSpecBaseList fields) : LeafBlueprint(std::move(fields), false) {}
 };
 
 //-----------------------------------------------------------------------------
