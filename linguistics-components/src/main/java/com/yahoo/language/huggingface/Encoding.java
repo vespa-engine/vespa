@@ -2,6 +2,8 @@
 
 package com.yahoo.language.huggingface;
 
+import com.yahoo.api.annotations.Beta;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -9,6 +11,7 @@ import java.util.List;
 /**
  * @author bjorncs
  */
+@Beta
 public record Encoding(
         List<Long> ids, List<Long> typeIds, List<String> tokens, List<Long> wordIds, List<Long> attentionMask,
         List<Long> specialTokenMask, List<CharSpan> charTokenSpans, List<Encoding> overflowing) {

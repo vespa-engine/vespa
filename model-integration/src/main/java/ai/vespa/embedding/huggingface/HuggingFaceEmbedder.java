@@ -3,6 +3,7 @@ package ai.vespa.embedding.huggingface;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
@@ -19,6 +20,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
+@Beta
 public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     private static final Logger LOG = LoggerFactory.getLogger(HuggingFaceEmbedder.class.getName());

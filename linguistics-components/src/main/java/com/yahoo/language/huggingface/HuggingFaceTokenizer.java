@@ -2,6 +2,7 @@
 
 package com.yahoo.language.huggingface;
 
+import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.Language;
@@ -25,6 +26,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  *
  * @author bjorncs
  */
+@Beta
 public class HuggingFaceTokenizer extends AbstractComponent implements Embedder, Segmenter, AutoCloseable {
 
     private final Map<Language, ai.djl.huggingface.tokenizers.HuggingFaceTokenizer> models = new EnumMap<>(Language.class);
