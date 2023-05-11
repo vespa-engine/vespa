@@ -115,7 +115,7 @@ public interface Waiter {
                         }
                         Duration timeLeft = Duration.between(Instant.now(), endTime);
                         if (timeLeft.isNegative() || timeLeft.isZero())
-                            throw new IllegalStateException("Timed out waiting max " + timeout + " ms for " + c + "\n  with wait task " + wt + ",\n  reason: " + reason);
+                            throw new IllegalStateException("Timed out waiting max " + timeout + " for " + c + "\n  with wait task " + wt + ",\n  reason: " + reason);
                         if (allowWait)
                             data.getMonitor().wait(Math.min(wt.getWaitTaskFrequencyInMillis(), timeLeft.toMillis()));
                     } catch (InterruptedException e) {
