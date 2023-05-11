@@ -215,7 +215,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private boolean shouldRefreshCertificate(NodeAgentContext context, ContainerPath certificatePath) throws IOException {
         var certificate = readCertificateFromFile(certificatePath);
         var now = timer.currentTime();
-        var shouldRefresh = now.isAfter(certificate.getNotBefore().toInstant().plus(REFRESH_PERIOD));
+        var shouldRefresh = now.isAfter(certificate.getNotAfter().toInstant()) ||
+                now.isAfter(certificate.getNotBefore().toInstant().plus(REFRESH_PERIOD));
         return !shouldThrottleRefreshAttempts(context.containerName(), now) &&
                 shouldRefresh;
     }
