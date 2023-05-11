@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -77,10 +78,15 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
 
     /** Verify DNS configuration of given node */
     private void verifyDns(Node node, IP.Config ipConfig) {
-        boolean enclave = node.cloudAccount().isEnclave(nodeRepository().zone());
         for (var ipAddress : ipConfig.primary()) {
-            IP.verifyDns(node.hostname(), ipAddress, nodeRepository().nameResolver(), !enclave);
+            IP.verifyDns(node.hostname(), ipAddress, nodeRepository().nameResolver(), verifyPtr(node, ipAddress));
         }
+    }
+
+    private boolean verifyPtr(Node node, String address) {
+        if (node.cloudAccount().isEnclave(nodeRepository().zone())) return false;
+        if (nodeRepository().zone().cloud().name().equals(CloudName.GCP) && IP.isV6(address)) return false;
+        return true;
     }
 
 }
