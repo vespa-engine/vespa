@@ -50,14 +50,6 @@ private:
 
 protected:
     /**
-     * Obtain the number of input and output values to be handled by
-     * mingle. This function is called by mingle.
-     *
-     * @return number of input and output values
-     **/
-    size_t size() const { return _size; }
-
-    /**
      * Obtain an input parameter. This function is called by mingle.
      *
      * @return reference to the appropriate input
@@ -85,6 +77,11 @@ public:
      **/
     Rendezvous(size_t n);
     virtual ~Rendezvous();
+
+    /**
+     * @return number of participants
+     **/
+    size_t size() const { return _size; }
 
     /**
      * Called by individual threads to synchronize execution and share
