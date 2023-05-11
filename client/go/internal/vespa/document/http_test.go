@@ -288,13 +288,22 @@ func benchmarkClientSend(b *testing.B, compression Compression, document Documen
 	}
 }
 
-func BenchmarkClientSend(b *testing.B) {
-	doc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(`{"foo": "my document"}`)}
-	benchmarkClientSend(b, CompressionNone, doc)
+func makeDocument(size int) Document {
+	return Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(fmt.Sprintf(`{"foo": "%s"}`, randString(size)))}
 }
 
-func BenchmarkClientSendCompressed(b *testing.B) {
-	body := fmt.Sprintf(`{"foo": "%s"}`, strings.Repeat("my document", 100))
-	doc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(body)}
-	benchmarkClientSend(b, CompressionGzip, doc)
+func BenchmarkClientSendSmallUncompressed(b *testing.B) {
+	benchmarkClientSend(b, CompressionNone, makeDocument(10))
+}
+
+func BenchmarkClientSendMediumUncompressed(b *testing.B) {
+	benchmarkClientSend(b, CompressionNone, makeDocument(10))
+}
+
+func BenchmarkClientSendMediumGzip(b *testing.B) {
+	benchmarkClientSend(b, CompressionGzip, makeDocument(1000))
+}
+
+func BenchmarkClientSendLargeGzip(b *testing.B) {
+	benchmarkClientSend(b, CompressionGzip, makeDocument(10000))
 }
