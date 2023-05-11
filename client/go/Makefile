@@ -3,7 +3,7 @@
 # The version to release. Defaults to the current tag or revision.
 # Use env VERSION=X.Y.Z make ... to override
 VERSION ?= $(shell git describe --tags --exact-match 2> /dev/null | sed "s/^v//")
-DEVEL_VERSION := $(shell echo "0.0.0-`git rev-parse --short HEAD`")
+DEVEL_VERSION := $(shell echo "0.0.0-`git rev-parse --short HEAD 2> /dev/null || echo unknown`")
 ifeq ($(VERSION),)
 	VERSION = $(DEVEL_VERSION)
 endif
