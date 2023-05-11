@@ -24,7 +24,7 @@ public class Cloud {
         this.allowHostSharing = allowHostSharing;
         this.requireAccessControl = requireAccessControl;
         this.account = Objects.requireNonNull(account);
-        if (name.equals(CloudName.AWS) && account.isUnspecified()) {
+        if ((name.equals(CloudName.AWS) || name.equals(CloudName.GCP)) && account.isUnspecified()) {
             throw new IllegalArgumentException("Account must be non-empty in cloud '" + name + "'");
         }
     }

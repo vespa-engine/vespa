@@ -79,12 +79,7 @@ public class Nodes {
     /** Read and write all nodes to make sure they are stored in the latest version of the serialized format */
     public void rewrite() {
         Instant start = clock.instant();
-        int nodesWritten = performOn(list(), (node, mutex) -> {
-            // TODO (valerijf): Remove after 8.162
-            if (node.cloudAccount().isUnspecified() && !zone.getCloud().account().isUnspecified())
-                node = node.with(zone.getCloud().account());
-            return write(node, mutex);
-        }).size();
+        int nodesWritten = performOn(list(), this::write).size();
         Instant end = clock.instant();
         log.log(Level.INFO, String.format("Rewrote %d nodes in %s", nodesWritten, Duration.between(start, end)));
     }
