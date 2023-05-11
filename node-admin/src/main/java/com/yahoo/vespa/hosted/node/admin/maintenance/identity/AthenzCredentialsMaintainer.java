@@ -43,6 +43,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -197,7 +198,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                             .resolve(String.format("%s.cert.pem", role));
                     var roleKeyPath = siaDirectory.resolve("keys")
                             .resolve(String.format("%s.key.pem", role));
-                    if (!Files.exists(roleCertificatePath)) {
+                    if (Files.notExists(roleCertificatePath)) {
                         writeRoleCredentials(context, privateKeyFile, certificateFile, roleCertificatePath, roleKeyPath, identity, identityDocument, role);
                         modified = true;
                     } else if (shouldRefreshCertificate(context, roleCertificatePath)) {
@@ -215,7 +216,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         var certificate = readCertificateFromFile(certificatePath);
         var now = timer.currentTime();
         var shouldRefresh = now.isAfter(certificate.getNotAfter().toInstant()) ||
-                now.isBefore(certificate.getNotBefore().toInstant().plus(REFRESH_PERIOD));
+                now.isAfter(certificate.getNotBefore().toInstant().plus(REFRESH_PERIOD));
         return !shouldThrottleRefreshAttempts(context.containerName(), now) &&
                 shouldRefresh;
     }
@@ -440,8 +441,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         var certsDirectory = legacySiaDirectory.resolve("certs");
         Files.createDirectories(keysDirectory);
         Files.createDirectories(certsDirectory);
-        Files.copy(certificateFile, certsDirectory.resolve(certificateFile.getFileName()));
-        Files.copy(privateKeyFile, keysDirectory.resolve(privateKeyFile.getFileName()));
+        Files.copy(certificateFile, certsDirectory.resolve(certificateFile.getFileName()), StandardCopyOption.values());
+        Files.copy(privateKeyFile, keysDirectory.resolve(privateKeyFile.getFileName()), StandardCopyOption.values());
     }
 
     /*
