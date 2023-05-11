@@ -7,3 +7,5 @@ namespace=language.huggingface
 model[].language string
 # The path to the model relative to the application package root
 model[].path path
+
+addSpecialTokens bool default=true

@@ -41,6 +41,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         outputName = config.transformerOutput();
         normalize = config.normalize();
         tokenizer = new HuggingFaceTokenizer.Builder()
+                .addSpecialTokens(true)
                 .addDefaultModel(Paths.get(config.tokenizerPath().toString()))
                 .build();
         var onnxOpts = new OnnxEvaluatorOptions();

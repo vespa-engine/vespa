@@ -71,6 +71,7 @@ class HuggingFaceTokenizerTest {
 
     private static HuggingFaceTokenizer createTokenizer(Path tmp, String model) throws IOException {
         return new HuggingFaceTokenizer.Builder()
+                .addSpecialTokens(false)
                 .addDefaultModel(decompressModelFile(tmp, Paths.get("src/test/models/huggingface/%s.json.gz".formatted(model))))
                 .build();
     }

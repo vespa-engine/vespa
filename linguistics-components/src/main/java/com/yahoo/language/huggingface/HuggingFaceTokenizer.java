@@ -13,7 +13,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
@@ -41,6 +41,7 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
                 models.put(language,
                            uncheck(() -> ai.djl.huggingface.tokenizers.HuggingFaceTokenizer.builder()
                                    .optTokenizerPath(path)
+                                   .optAddSpecialTokens(b.addSpecialTokens != null ? b.addSpecialTokens : true)
                                    .build()));
             });
         } finally {
@@ -51,11 +52,7 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
     @Override
     public List<Integer> embed(String text, Context ctx) {
         var encoding = resolve(ctx.getLanguage()).encode(text);
-        var ids = encoding.getIds();
-        var result = new ArrayList<Integer>(ids.length-2); // heuristic: -2 to exclude start/end tokens
-        for (int i = 0; i < ids.length; i++)
-            if (encoding.getSpecialTokenMask()[i] == 0) result.add(Math.toIntExact(ids[i]));
-        return result;
+        return Arrays.stream(encoding.getIds()).mapToInt(Math::toIntExact).boxed().toList();
     }
 
     @Override
@@ -65,12 +62,7 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
 
     @Override
     public List<String> segment(String input, Language language) {
-        var encoding = resolve(language).encode(input);
-        var tokens = encoding.getTokens();
-        var result = new ArrayList<String>(tokens.length-2); // heuristic: -2 to exclude start/end tokens
-        for (int i = 0; i < tokens.length; i++)
-            if (encoding.getSpecialTokenMask()[i] == 0) result.add(tokens[i]);
-        return result;
+        return List.of(resolve(language).encode(input).getTokens());
     }
 
     @Override
@@ -96,15 +88,18 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
 
     public static final class Builder {
         private final Map<Language, Path> models = new EnumMap<>(Language.class);
+        private Boolean addSpecialTokens;
 
         public Builder() {}
         public Builder(HuggingFaceTokenizerConfig cfg) {
             for (var model : cfg.model())
                 addModel(Language.fromLanguageTag(model.language()), model.path());
+            addSpecialTokens(cfg.addSpecialTokens());
         }
 
         public Builder addModel(Language lang, Path path) { models.put(lang, path); return this; }
         public Builder addDefaultModel(Path path) { return addModel(Language.UNKNOWN, path); }
+        public Builder addSpecialTokens(boolean enabled) { addSpecialTokens = enabled; return this; }
         public HuggingFaceTokenizer build() { return new HuggingFaceTokenizer(this); }
     }
 
