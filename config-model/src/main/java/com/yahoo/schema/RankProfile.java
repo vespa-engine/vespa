@@ -108,6 +108,7 @@ public class RankProfile implements Cloneable {
     private String inheritedSummaryFeaturesProfileName;
 
     private Set<ReferenceNode> matchFeatures;
+    private Set<String> hiddenMatchFeatures;
     private String inheritedMatchFeaturesProfileName;
 
     private Set<ReferenceNode> rankFeatures;
@@ -605,6 +606,12 @@ public class RankProfile implements Cloneable {
                 .orElse(Set.of());
     }
 
+    public Set<String> getHiddenMatchFeatures() {
+        if (hiddenMatchFeatures != null) return Collections.unmodifiableSet(hiddenMatchFeatures);
+        return uniquelyInherited(p -> p.getHiddenMatchFeatures(), f -> ! f.isEmpty(), "hidden match features")
+                .orElse(Set.of());
+    }
+
     private void addSummaryFeature(ReferenceNode feature) {
         if (summaryFeatures == null)
             summaryFeatures = new LinkedHashSet<>();
@@ -615,6 +622,21 @@ public class RankProfile implements Cloneable {
         if (matchFeatures == null)
             matchFeatures = new LinkedHashSet<>();
         matchFeatures.add(feature);
+    }
+
+    private void addImplicitMatchFeatures(List<FeatureList> list) {
+        if (matchFeatures == null)
+            matchFeatures = new LinkedHashSet<>();
+        if (hiddenMatchFeatures == null)
+            hiddenMatchFeatures = new LinkedHashSet<>();
+        for (var features : list) {
+            for (ReferenceNode feature : features) {
+                if (! matchFeatures.contains(feature)) {
+                    matchFeatures.add(feature);
+                    hiddenMatchFeatures.add(feature.toString());
+                }
+            }
+        }
     }
 
     /** Adds the content of the given feature list to the internal list of summary features. */
@@ -1037,16 +1059,18 @@ public class RankProfile implements Cloneable {
             var needInputs = new HashSet<String>();
             var recorder = new InputRecorder(needInputs);
             recorder.process(globalPhaseRanking.function().getBody(), context);
+            List<FeatureList> addIfMissing = new ArrayList<>();
             for (String input : needInputs) {
                 if (input.startsWith("constant(") || input.startsWith("query(")) {
                     continue;
                 }
                 try {
-                    addMatchFeatures(new FeatureList(input));
+                    addIfMissing.add(new FeatureList(input));
                 } catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
                     throw new IllegalArgumentException("invalid input in global-phase expression: "+input);
                 }
             }
+            addImplicitMatchFeatures(addIfMissing);
         }
     }
 
@@ -1132,7 +1156,7 @@ public class RankProfile implements Cloneable {
         allImportedFields().forEach(field -> addAttributeFeatureTypes(field, featureTypes));
         return featureTypes;
     }
-    
+
     public MapEvaluationTypeContext typeContext(QueryProfileRegistry queryProfiles,
                                                 Map<Reference, TensorType> featureTypes) {
         MapEvaluationTypeContext context = new MapEvaluationTypeContext(getExpressionFunctions(), featureTypes);

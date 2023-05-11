@@ -7,9 +7,15 @@ import com.yahoo.search.Result;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.ranking.RankProfilesEvaluator.GlobalPhaseData;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.FeatureData;
+import com.yahoo.search.result.Hit;
+import com.yahoo.search.result.HitGroup;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.data.access.helpers.MatchFeatureData;
+import com.yahoo.data.access.helpers.MatchFeatureFilter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -57,6 +63,28 @@ public class GlobalPhaseRanker {
         if (rerankCount < 0)
             rerankCount = 100;
         ResultReranker.rerankHits(result, new HitRescorer(supplier), rerankCount);
+        hideImplicitMatchFeatures(result, data.matchFeaturesToHide());
+    }
+
+    private void hideImplicitMatchFeatures(Result result, Collection<String> namesToHide) {
+        if (namesToHide.size() == 0) return;
+        var filter = new MatchFeatureFilter(namesToHide);
+        for (var iterator = result.hits().deepIterator(); iterator.hasNext();) {
+            Hit hit = iterator.next();
+            if (hit.isMeta() || hit instanceof HitGroup) {
+                continue;
+            }
+            if (hit.getField("matchfeatures") instanceof FeatureData matchFeatures) {
+                if (matchFeatures.inspect() instanceof MatchFeatureData.HitValue hitValue) {
+                    var newValue = hitValue.subsetFilter(filter);
+                    if (newValue.fieldCount() == 0) {
+                        hit.removeField("matchfeatures");
+                    } else {
+                        hit.setField("matchfeatures", newValue);
+                    }
+                }
+            }
+        }
     }
 
     private Optional<GlobalPhaseData> globalPhaseDataFor(Query query, String schema) {

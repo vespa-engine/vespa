@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * MatchFeatureData helps pack match features for hits into
@@ -84,6 +85,16 @@ public class MatchFeatureData {
                 return new Value.DataValue(dataValues[index]);
             }
             return new Value.DoubleValue(doubleValues[index]);
+        }
+
+        public HitValue subsetFilter(Function<Hashlet<String,Integer>, Hashlet<String,Integer>> filter) {
+            return new HitValue(filter.apply(hashlet), dataValues, doubleValues);
+        }
+        // used only from subsetFilter() above
+        private HitValue(Hashlet<String,Integer> hashlet, byte[][] dataValues, double[] doubleValues) {
+            this.hashlet = hashlet;
+            this.dataValues = dataValues;
+            this.doubleValues = doubleValues;
         }
     }
 
