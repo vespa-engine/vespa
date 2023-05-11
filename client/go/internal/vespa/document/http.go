@@ -219,10 +219,11 @@ func (c *Client) createRequest(method, url string, body []byte) (*http.Request, 
 		req, err := http.NewRequest(method, url, nil)
 		return req, nil, err
 	}
-	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
+	bodySize := len(fieldsPrefix) + len(body) + len(fieldsSuffix)
+	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && bodySize > 512)
 	pr, pw := io.Pipe()
 	go func() {
-		bw := bufio.NewWriterSize(pw, min(1024, len(fieldsPrefix)+len(body)+len(fieldsSuffix)))
+		bw := bufio.NewWriterSize(pw, min(1024, bodySize))
 		defer func() {
 			bw.Flush()
 			pw.Close()
