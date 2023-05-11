@@ -57,7 +57,6 @@ public abstract class FleetControllerTest implements Waiter {
     ZooKeeperTestServer zooKeeperServer;
     protected final List<FleetController> fleetControllers = new ArrayList<>();
     protected List<DummyVdsNode> nodes = new ArrayList<>();
-    private String testName;
 
     private final Waiter waiter = new Waiter.Impl(new DataRetriever() {
         @Override
@@ -72,11 +71,6 @@ public abstract class FleetControllerTest implements Waiter {
 
     static {
         LogSetup.initVespaLogging("fleetcontroller");
-    }
-
-    protected void startingTest(String name) {
-        System.err.println("STARTING TEST: " + name);
-        testName = name;
     }
 
     static protected FleetControllerOptions.Builder defaultOptions(String clusterName) {
@@ -248,11 +242,6 @@ public abstract class FleetControllerTest implements Waiter {
 
     @AfterEach
     public void tearDown() {
-        if (testName != null) {
-            //log.log(Level.INFO, "STOPPING TEST " + testName);
-            System.err.println("STOPPING TEST " + testName);
-            testName = null;
-        }
         fleetControllers.forEach(f -> {
             try {
                 f.shutdown();

@@ -62,7 +62,6 @@ public class RpcServerTest extends FleetControllerTest {
     @Test
     void testGetSystemState() throws Exception {
         LogFormatter.initializeLogging();
-        startingTest("RpcServerTest::testGetSystemState");
         FleetControllerOptions.Builder options = defaultOptions("mycluster");
         setUpFleetController(true, options);
         setUpVdsNodes(true);
@@ -128,7 +127,6 @@ public class RpcServerTest extends FleetControllerTest {
 
     @Test
     void testGetNodeState() throws Exception {
-        startingTest("RpcServerTest::testGetNodeState");
         Set<ConfiguredNode> configuredNodes = new TreeSet<>();
         for (int i = 0; i < 10; i++)
             configuredNodes.add(new ConfiguredNode(i, false));
@@ -221,7 +219,6 @@ public class RpcServerTest extends FleetControllerTest {
 
     @Test
     void testGetNodeStateWithConfiguredRetired() throws Exception {
-        startingTest("RpcServerTest::testGetNodeStateWithConfiguredRetired");
         List<ConfiguredNode> configuredNodes = new ArrayList<>();
         for (int i = 0; i < 4; i++)
             configuredNodes.add(new ConfiguredNode(i, false));
@@ -255,8 +252,6 @@ public class RpcServerTest extends FleetControllerTest {
 
     @Test
     void testGetNodeStateWithConfigurationChangeToRetiredWhileNodeDown() throws Exception {
-        startingTest("RpcServerTest::testGetNodeStateWithConfigurationChangeToRetiredWhileNodeDown");
-
         { // Configuration: 5 nodes, all normal
             List<ConfiguredNode> configuredNodes = new ArrayList<>();
             for (int i = 0; i < 5; i++)
@@ -336,8 +331,6 @@ public class RpcServerTest extends FleetControllerTest {
 
     @Test
     void testGetNodeStateWithConfigurationChangeToRetired() throws Exception {
-        startingTest("RpcServerTest::testGetNodeStateWithConfigurationChangeToRetired");
-
         { // Configuration: 5 nodes, all normal
             List<ConfiguredNode> configuredNodes = new ArrayList<>();
             for (int i = 0; i < 5; i++)
@@ -415,7 +408,6 @@ public class RpcServerTest extends FleetControllerTest {
 
     @Test
     void testSetNodeState() throws Exception {
-        startingTest("RpcServerTest::testSetNodeState");
         Set<Integer> nodeIndexes = new TreeSet<>(List.of(4, 6, 9, 10, 14, 16, 21, 22, 23, 25));
         Set<ConfiguredNode> configuredNodes = nodeIndexes.stream().map(i -> new ConfiguredNode(i, false)).collect(Collectors.toSet());
         FleetControllerOptions.Builder options = defaultOptions("mycluster", configuredNodes);
@@ -455,7 +447,6 @@ public class RpcServerTest extends FleetControllerTest {
 
     @Test
     void testSetNodeStateOutOfRange() throws Exception {
-        startingTest("RpcServerTest::testSetNodeStateOutOfRange");
         FleetControllerOptions.Builder options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
         setUpFleetController(true, options);
@@ -482,7 +473,6 @@ public class RpcServerTest extends FleetControllerTest {
 
     @Test
     void testGetMaster() throws Exception {
-        startingTest("RpcServerTest::testGetMaster");
         FleetControllerOptions.Builder options = defaultOptions("mycluster");
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
         setUpFleetController(true, options);
@@ -503,7 +493,6 @@ public class RpcServerTest extends FleetControllerTest {
 
     @Test
     void testGetNodeList() throws Exception {
-        startingTest("RpcServerTest::testGetNodeList");
         setUpFleetController(true, defaultOptions("mycluster", 5));
         final int nodeCount = 5;
         setUpVdsNodes(true, false, nodeCount);

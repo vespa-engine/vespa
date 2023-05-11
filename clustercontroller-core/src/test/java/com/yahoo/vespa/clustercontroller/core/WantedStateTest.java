@@ -28,7 +28,6 @@ public class WantedStateTest extends FleetControllerTest {
 
     @Test
     void testSettingStorageNodeMaintenanceAndBack() throws Exception {
-        startingTest("WantedStateTest::testSettingStorageNodeMaintenanceAndBack()");
         setUpFleetController(true, defaultOptions("mycluster"));
         setUpVdsNodes(true);
         waitForStableSystem();
@@ -42,7 +41,6 @@ public class WantedStateTest extends FleetControllerTest {
 
     @Test
     void testOverridingWantedStateOtherReason() throws Exception {
-        startingTest("WantedStateTest::testOverridingWantedStateOtherReason()");
         setUpFleetController(true, defaultOptions("mycluster"));
         setUpVdsNodes(true);
         waitForStableSystem();

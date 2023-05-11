@@ -752,7 +752,6 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     void testContinuousCrashRightAfterInit() throws Exception {
-        startingTest("StateChangeTest::testContinuousCrashRightAfterInit");
         // If node does this too many times, take it out of service
         FleetControllerOptions.Builder builder = defaultOptions()
                 .setMaxTransitionTime(NodeType.STORAGE, 5000)
@@ -806,7 +805,6 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     void testClusterStateMinNodes() throws Exception {
-        startingTest("StateChangeTest::testClusterStateMinNodes");
         // If node does this too many times, take it out of service
         FleetControllerOptions.Builder builder = defaultOptions()
                 .setMaxTransitionTime(NodeType.STORAGE, 0)
@@ -861,7 +859,6 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     void testClusterStateMinFactor() throws Exception {
-        startingTest("StateChangeTest::testClusterStateMinFactor");
         // If node does this too many times, take it out of service
         FleetControllerOptions.Builder options = defaultOptions();
         options.setMaxTransitionTime(NodeType.STORAGE, 0);
@@ -935,7 +932,6 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     void testNoSystemStateBeforeInitialTimePeriod() throws Exception {
-        startingTest("StateChangeTest::testNoSystemStateBeforeInitialTimePeriod()");
         FleetControllerOptions.Builder builder = defaultOptions()
                 .setMinTimeBeforeFirstSystemStateBroadcast(3 * 60 * 1000);
         setUpSystem(builder);
@@ -981,7 +977,6 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     void testSystemStateSentWhenNodesReplied() throws Exception {
-        startingTest("StateChangeTest::testSystemStateSentWhenNodesReplied()");
         FleetControllerOptions.Builder builder = defaultOptions()
                 .setMinTimeBeforeFirstSystemStateBroadcast(300 * 60 * 1000);
 
@@ -1019,7 +1014,6 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     void testDontTagFailingSetSystemStateOk() throws Exception {
-        startingTest("StateChangeTest::testDontTagFailingSetSystemStateOk()");
         FleetControllerOptions.Builder options = defaultOptions();
         setUpFleetController(true, options);
         setUpVdsNodes(true);
@@ -1050,7 +1044,6 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     void testAlteringDistributionSplitCount() throws Exception {
-        startingTest("StateChangeTest::testAlteringDistributionSplitCount");
         FleetControllerOptions.Builder options = defaultOptions();
         options.setDistributionBits(17);
 
@@ -1097,7 +1090,6 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     void testSetAllTimestampsAfterDowntime() throws Exception {
-        startingTest("StateChangeTest::testSetAllTimestampsAfterDowntime");
         FleetControllerOptions.Builder options = defaultOptions();
         setUpFleetController(true, options);
         setUpVdsNodes(true);

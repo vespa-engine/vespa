@@ -17,7 +17,6 @@ public class SlobrokTest extends FleetControllerTest {
 
     @Test
     void testSingleSlobrokRestart() throws Exception {
-        startingTest("SlobrokTest::testSingleSlobrokRestart");
         FleetControllerOptions.Builder builder = defaultOptions("mycluster")
                 .setNodeStateRequestTimeoutMS(60 * 60 * 1000)
                 .setMaxSlobrokDisconnectGracePeriod(60 * 60 * 1000);
@@ -72,7 +71,6 @@ public class SlobrokTest extends FleetControllerTest {
 
     @Test
     void testNodeTooLongOutOfSlobrok() throws Exception {
-        startingTest("SlobrokTest::testNodeTooLongOutOfSlobrok");
         FleetControllerOptions.Builder builder = defaultOptions("mycluster")
                 .setMaxSlobrokDisconnectGracePeriod(60 * 1000)
                 .setNodeStateRequestTimeoutMS(10000 * 60 * 1000);
