@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/full_search.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <mutex>
 
 #include <vespa/log/log.h>
@@ -12,7 +13,6 @@ LOG_SETUP(".proton.documentmetastore.lid_allocator");
 
 using search::fef::TermFieldMatchDataArray;
 using search::queryeval::Blueprint;
-using search::queryeval::FieldSpecBaseList;
 using search::queryeval::FullSearch;
 using search::queryeval::SearchIterator;
 using search::queryeval::SimpleLeafBlueprint;

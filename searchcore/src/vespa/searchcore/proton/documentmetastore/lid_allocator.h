@@ -5,10 +5,12 @@
 #include "lid_hold_list.h"
 #include "lidstatevector.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <atomic>
 
+namespace search::queryeval {
+    class Blueprint;
+}
 namespace proton::documentmetastore {
 
 /**
@@ -51,7 +53,7 @@ public:
                   generation_t currentGeneration);
     bool holdLidOK(DocId lid, DocId lidLimit) const;
     void constructFreeList(DocId lidLimit);
-    search::queryeval::Blueprint::UP createWhiteListBlueprint() const;
+    std::unique_ptr<search::queryeval::Blueprint> createWhiteListBlueprint() const;
     void updateActiveLids(DocId lid, bool active);
     void clearDocs(DocId lidLow, DocId lidLimit);
     void shrinkLidSpace(DocId committedDocIdLimit);

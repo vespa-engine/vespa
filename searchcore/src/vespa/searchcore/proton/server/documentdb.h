@@ -29,6 +29,9 @@
 #include <mutex>
 #include <condition_variable>
 
+namespace vespalib {
+    struct ThreadBundle;
+}
 namespace search {
     namespace attribute { class Interlock; }
     namespace common { class FileHeaderContext; }

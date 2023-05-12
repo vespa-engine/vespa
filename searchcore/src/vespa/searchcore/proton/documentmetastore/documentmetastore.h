@@ -8,7 +8,6 @@
 #include "lid_gid_key_comparator.h"
 #include "raw_document_meta_data.h"
 #include <vespa/searchcore/proton/common/subdbtype.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/docstore/ibucketizer.h>
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/vespalib/util/rcuvector.h>
@@ -202,7 +201,7 @@ public:
     DocId   getNumUsedLids() const override { return _lidAlloc.getNumUsedLids(); }
     DocId getNumActiveLids() const override { return _lidAlloc.getNumActiveLids(); }
     search::LidUsageStats getLidUsageStats() const override;
-    search::queryeval::Blueprint::UP createWhiteListBlueprint() const override;
+    std::unique_ptr<search::queryeval::Blueprint> createWhiteListBlueprint() const override;
 
     /**
      * Implements search::AttributeVector

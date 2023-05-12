@@ -2,10 +2,14 @@
 
 #pragma once
 
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include <memory>
 
+namespace search::queryeval {
+    struct SimpleLeafBlueprint;
+    class FieldSpec;
+}
 namespace search::index {
 class FieldLengthCalculator;
 class IndexBuilder;
@@ -23,7 +27,7 @@ class WordStore;
  */
 class IFieldIndex {
 public:
-    virtual ~IFieldIndex() {}
+    virtual ~IFieldIndex() = default;
 
     virtual uint64_t getNumUniqueWords() const = 0;
     virtual vespalib::MemoryUsage getMemoryUsage() const = 0;

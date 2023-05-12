@@ -13,6 +13,7 @@
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/persistence/spi/bucket_limits.h>
@@ -784,7 +785,7 @@ DocumentMetaStore::getLidUsageStats() const
     return {getCommittedDocIdLimit(), getNumUsedLids(), _lidAlloc.getLowestFreeLid(), _lidAlloc.getHighestUsedLid()};
 }
 
-Blueprint::UP
+std::unique_ptr<Blueprint>
 DocumentMetaStore::createWhiteListBlueprint() const
 {
     return _lidAlloc.createWhiteListBlueprint();
