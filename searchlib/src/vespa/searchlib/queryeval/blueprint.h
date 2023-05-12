@@ -66,15 +66,15 @@ public:
     private:
         FieldSpecBaseList _fields;
         HitEstimate       _estimate;
-        uint32_t          _cost_tier;
         uint32_t          _tree_size;
+        uint8_t           _cost_tier;
         bool              _allow_termwise_eval;
         bool              _want_global_filter;
 
     public:
-        static constexpr uint32_t COST_TIER_NORMAL = 1;
-        static constexpr uint32_t COST_TIER_EXPENSIVE = 2;
-        static constexpr uint32_t COST_TIER_MAX = 999;
+        static constexpr uint8_t COST_TIER_NORMAL = 1;
+        static constexpr uint8_t COST_TIER_EXPENSIVE = 2;
+        static constexpr uint8_t COST_TIER_MAX = 255;
 
         State();
         State(FieldSpecBase field);

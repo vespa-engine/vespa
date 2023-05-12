@@ -767,9 +767,9 @@ TEST("requireThatDocIdLimitInjectionWorks")
 }
 
 TEST("Control object sizes") {
-    EXPECT_EQUAL(48u, sizeof(Blueprint::State));
+    EXPECT_EQUAL(40u, sizeof(Blueprint::State));
     EXPECT_EQUAL(32u, sizeof(Blueprint));
-    EXPECT_EQUAL(80u, sizeof(LeafBlueprint));
+    EXPECT_EQUAL(72u, sizeof(LeafBlueprint));
 }
 
 TEST_MAIN() {

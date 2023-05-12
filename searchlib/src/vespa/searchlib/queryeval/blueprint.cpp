@@ -90,8 +90,8 @@ Blueprint::sat_sum(const std::vector<HitEstimate> &data, uint32_t docid_limit)
 Blueprint::State::State()
     : _fields(),
       _estimate(),
-      _cost_tier(COST_TIER_NORMAL),
       _tree_size(1),
+      _cost_tier(COST_TIER_NORMAL),
       _allow_termwise_eval(true),
       _want_global_filter(false)
 {}
@@ -105,8 +105,8 @@ Blueprint::State::State(FieldSpecBase field)
 Blueprint::State::State(FieldSpecBaseList fields_in)
     : _fields(std::move(fields_in)),
       _estimate(),
-      _cost_tier(COST_TIER_NORMAL),
       _tree_size(1),
+      _cost_tier(COST_TIER_NORMAL),
       _allow_termwise_eval(true),
       _want_global_filter(false)
 {
