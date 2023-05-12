@@ -277,12 +277,6 @@ public abstract class FleetControllerTest implements Waiter {
         fleetController().waitForCompleteCycle(timeout);
     }
 
-    public static Set<ConfiguredNode> toNodes(Integer ... indexes) {
-        return Arrays.stream(indexes)
-                .map(i -> new ConfiguredNode(i, false))
-                .collect(Collectors.toSet());
-    }
-
     void setWantedState(DummyVdsNode node, State state, String reason, Supervisor supervisor) {
         setWantedState(new NodeState(node.getType(), state), reason, node.getSlobrokName(), supervisor);
     }
