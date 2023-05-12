@@ -214,7 +214,7 @@ public class DeploymentSpecWithBcpTest {
             fail();
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Illegal deadline 'fast': Must be an integer followed by 'm' or 'h'", Exceptions.toMessageString(e));
+            assertEquals("Illegal deadline 'fast': Must be an integer followed by 'm', 'h' or 'd'", Exceptions.toMessageString(e));
         }
     }
 
