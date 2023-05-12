@@ -91,10 +91,10 @@ Blueprint::State::State()
     : _fields(),
       _estimateHits(0),
       _tree_size(1),
-      _cost_tier(COST_TIER_NORMAL),
       _estimateEmpty(true),
       _allow_termwise_eval(true),
-      _want_global_filter(false)
+      _want_global_filter(false),
+      _cost_tier(COST_TIER_NORMAL)
 {}
 
 Blueprint::State::State(FieldSpecBase field)
@@ -107,10 +107,10 @@ Blueprint::State::State(FieldSpecBaseList fields_in)
     : _fields(std::move(fields_in)),
       _estimateHits(0),
       _tree_size(1),
-      _cost_tier(COST_TIER_NORMAL),
       _estimateEmpty(true),
       _allow_termwise_eval(true),
-      _want_global_filter(false)
+      _want_global_filter(false),
+      _cost_tier(COST_TIER_NORMAL)
 {
 }
 

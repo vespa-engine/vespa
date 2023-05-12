@@ -66,11 +66,11 @@ public:
     private:
         FieldSpecBaseList _fields;
         uint32_t          _estimateHits;
-        uint16_t          _tree_size;
-        uint8_t           _cost_tier;
+        uint32_t          _tree_size : 20;
         bool              _estimateEmpty : 1;
         bool              _allow_termwise_eval : 1;
         bool              _want_global_filter : 1;
+        uint8_t           _cost_tier;
 
     public:
         static constexpr uint8_t COST_TIER_NORMAL = 1;
@@ -111,7 +111,7 @@ public:
             return (total_docs == 0) ? 0.0 : double(total_hits) / double(total_docs);
         }
         void tree_size(uint32_t value) {
-            assert(value < 0x10000);
+            assert(value < 0x100000);
             _tree_size = value;
         }
         uint32_t tree_size() const { return _tree_size; }
