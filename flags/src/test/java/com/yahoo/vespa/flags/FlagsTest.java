@@ -4,7 +4,6 @@ package com.yahoo.vespa.flags;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.yahoo.vespa.flags.json.FlagData;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
