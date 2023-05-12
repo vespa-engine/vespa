@@ -268,7 +268,7 @@ class NodeAllocation {
 
             if (node.state() != Node.State.active) // reactivated node - wipe state that deactivated it
                 node = node.unretire().removable(false);
-        } else {
+        } else if (retirement != Retirement.alreadyRetired) {
             LOG.info("Retiring " + node + " because " + retirement.description());
             ++wasRetiredJustNow;
             node = node.retire(nodeRepository.clock().instant());
