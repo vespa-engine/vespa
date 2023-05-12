@@ -26,12 +26,6 @@ getSerialDiff(SerialNum localLastSerial, const IFlushTarget &target)
     return localLastSerial - target.getFlushedSerialNum();
 }
 
-vespalib::string
-getName(const IFlushHandler & handler, const IFlushTarget & target)
-{
-    return (handler.getName() + "." + target.getName());
-}
-
 uint64_t
 estimateNeededTlsSizeForFlushTarget(const TlsStats &tlsStats, SerialNum flushedSerialNum)
 {
@@ -155,15 +149,14 @@ MemoryFlush::getFlushTargets(const FlushContext::List& targetList,
         config.maxMemoryGain, config.diskBloatFactor,
         vespalib::to_s(config.maxTimeGain),
         vespalib::to_s(_startTime.time_since_epoch()));
-    for (size_t i(0), m(targetList.size()); i < m; i++) {
-        const IFlushTarget & target(*targetList[i]->getTarget());
-        const IFlushHandler & handler(*targetList[i]->getHandler());
+    for (const auto & ctx : targetList) {
+        const IFlushTarget & target(*ctx->getTarget());
+        const IFlushHandler & handler(*ctx->getHandler());
         int64_t mgain(std::max(INT64_C(0), target.getApproxMemoryGain().gain()));
         const IFlushTarget::DiskGain dgain(target.getApproxDiskGain());
         totalDisk += dgain;
-        SerialNum localLastSerial = targetList[i]->getLastSerial();
+        SerialNum localLastSerial = ctx->getLastSerial();
         int64_t serialDiff = getSerialDiff(localLastSerial, target);
-        vespalib::string name(getName(handler, target));
         vespalib::system_time lastFlushTime = target.getLastFlushTime();
         vespalib::duration timeDiff(now - (lastFlushTime > vespalib::system_time() ? lastFlushTime : _startTime));
         totalMemory += mgain;
@@ -194,16 +187,10 @@ MemoryFlush::getFlushTargets(const FlushContext::List& targetList,
             "tlsSize(%" PRIu64 "), tlsSizeNeeded(%" PRIu64 "), "
             "flushedSerial(%" PRIu64 "), localLastSerial(%" PRIu64 "), serialDiff(%" PRId64 "), "
             "lastFlushTime(%fs), nowTime(%fs), timeDiff(%fs), order(%s)",
-            targetList[i]->getName().c_str(),
-            totalMemory,
-            mgain,
-            totalDisk.gain(),
-            dgain.gain(),
-            tlsStats.getNumBytes(),
-            estimateNeededTlsSizeForFlushTarget(tlsStats, target.getFlushedSerialNum()),
-            target.getFlushedSerialNum(),
-            localLastSerial,
-            serialDiff,
+            ctx->getName().c_str(), totalMemory, mgain,
+            totalDisk.gain(), dgain.gain(),
+            tlsStats.getNumBytes(), estimateNeededTlsSizeForFlushTarget(tlsStats, target.getFlushedSerialNum()),
+            target.getFlushedSerialNum(), localLastSerial, serialDiff,
             vespalib::to_s(lastFlushTime.time_since_epoch()),
             vespalib::to_s(now.time_since_epoch()),
             vespalib::to_s(timeDiff),
