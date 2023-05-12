@@ -297,13 +297,9 @@ func BenchmarkClientSendSmallUncompressed(b *testing.B) {
 }
 
 func BenchmarkClientSendMediumUncompressed(b *testing.B) {
-	benchmarkClientSend(b, CompressionNone, makeDocument(10))
+	benchmarkClientSend(b, CompressionNone, makeDocument(1000))
 }
 
 func BenchmarkClientSendMediumGzip(b *testing.B) {
 	benchmarkClientSend(b, CompressionGzip, makeDocument(1000))
-}
-
-func BenchmarkClientSendLargeGzip(b *testing.B) {
-	benchmarkClientSend(b, CompressionGzip, makeDocument(10000))
 }
