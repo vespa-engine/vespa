@@ -77,7 +77,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         updateTenantUsageMetrics(nodes);
         updateRepairTicketMetrics(nodes);
         updateAllocationMetrics(nodes);
-        updateExclusiveSwitchMetrics(nodes);
+        updateClusterMetrics(nodes);
         return 1.0;
     }
 
@@ -109,18 +109,29 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         });
     }
 
-    private void updateExclusiveSwitchMetrics(NodeList nodes) {
+    private void updateClusterMetrics(NodeList nodes) {
         Map<ClusterId, List<Node>> byCluster = nodes.stream()
                                                      .filter(node -> node.type() == NodeType.tenant)
                                                      .filter(node -> node.state() == State.active)
                                                      .filter(node -> node.allocation().isPresent())
                                                      .collect(Collectors.groupingBy(node -> new ClusterId(node.allocation().get().owner(), node.allocation().get().membership().cluster().id())));
         byCluster.forEach((clusterId, clusterNodes) -> {
-            NodeList clusterHosts = nodes.parentsOf(NodeList.copyOf(clusterNodes));
-            long nodesOnExclusiveSwitch = NodeList.copyOf(clusterNodes).onExclusiveSwitch(clusterHosts).size();
-            double exclusiveSwitchRatio = nodesOnExclusiveSwitch / (double) clusterNodes.size();
-            metric.set("nodes.exclusiveSwitchFraction", exclusiveSwitchRatio, getContext(dimensions(clusterId.application(), clusterId.cluster())));
+            Metric.Context context = getContext(dimensions(clusterId.application(), clusterId.cluster()));
+            updateExclusiveSwitchMetrics(clusterNodes, nodes, context);
+            updateClusterCostMetrics(clusterNodes, context);
         });
+    }
+
+    private void updateExclusiveSwitchMetrics(List<Node> clusterNodes, NodeList allNodes, Metric.Context context) {
+        NodeList clusterHosts = allNodes.parentsOf(NodeList.copyOf(clusterNodes));
+        long nodesOnExclusiveSwitch = NodeList.copyOf(clusterNodes).onExclusiveSwitch(clusterHosts).size();
+        double exclusiveSwitchRatio = nodesOnExclusiveSwitch / (double) clusterNodes.size();
+        metric.set("nodes.exclusiveSwitchFraction", exclusiveSwitchRatio,context);
+    }
+
+    private void updateClusterCostMetrics(List<Node>  clusterNodes, Metric.Context context) {
+        double cost = clusterNodes.stream().mapToDouble(node -> node.resources().cost()).sum();
+        metric.set("cluster.cost", cost, context);
     }
 
     private void updateZoneMetrics() {

@@ -257,6 +257,10 @@ public class MetricsReporterTest {
         assertEquals(4, getMetric("nodes.active", metric, dimensions));
         assertEquals(0, getMetric("nodes.nonActive", metric, dimensions));
 
+        Map<String, String> clusterDimensions = Map.of("applicationId", application.toFullString(),
+                                                       "clusterid", ProvisioningTester.contentClusterSpec().id().value());
+        assertEquals(1.392, getMetric("cluster.cost", metric, clusterDimensions));
+
         // One node fails
         tester.fail(activeNodes.get(0).hostname());
         metricsReporter.maintain();
