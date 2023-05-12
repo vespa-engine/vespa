@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/small_vector.h>
 #include <vector>
 
 namespace search::fef {
@@ -56,7 +57,7 @@ private:
 class FieldSpecBaseList
 {
 private:
-    using List = std::vector<FieldSpecBase>;
+    using List = vespalib::SmallVector<FieldSpecBase, 1>;
     List _list;
 
 public:
@@ -68,7 +69,7 @@ public:
     FieldSpecBaseList & operator=(FieldSpecBaseList &) = delete;
     ~FieldSpecBaseList();
     void reserve(size_t sz) { _list.reserve(sz); }
-    using const_iterator = List::const_iterator;
+    using const_iterator = const FieldSpecBase *;
     FieldSpecBaseList &add(const FieldSpecBase &spec) {
         _list.push_back(spec);
         return *this;
@@ -89,6 +90,11 @@ private:
     std::vector<FieldSpec> _list;
 
 public:
+    FieldSpecList() = default;
+    FieldSpecList(FieldSpecList &&) noexcept = delete;
+    FieldSpecList & operator=(FieldSpecList &&) noexcept = delete;
+    FieldSpecList(const FieldSpecList &) noexcept = delete;
+    FieldSpecList & operator=(const FieldSpecList &) noexcept = delete;
     ~FieldSpecList();
     FieldSpecList &add(const FieldSpec &spec) {
         _list.push_back(spec);
@@ -98,7 +104,6 @@ public:
     size_t size() const { return _list.size(); }
     const FieldSpec &operator[](size_t i) const { return _list[i]; }
     void clear() { _list.clear(); }
-    void swap(FieldSpecList & rhs) { _list.swap(rhs._list); }
 };
 
 }

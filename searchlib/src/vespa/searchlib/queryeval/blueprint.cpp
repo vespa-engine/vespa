@@ -89,9 +89,10 @@ Blueprint::sat_sum(const std::vector<HitEstimate> &data, uint32_t docid_limit)
 
 Blueprint::State::State()
     : _fields(),
-      _estimate(),
+      _estimateHits(0),
       _tree_size(1),
       _cost_tier(COST_TIER_NORMAL),
+      _estimateEmpty(true),
       _allow_termwise_eval(true),
       _want_global_filter(false)
 {}
@@ -104,9 +105,10 @@ Blueprint::State::State(FieldSpecBase field)
 
 Blueprint::State::State(FieldSpecBaseList fields_in)
     : _fields(std::move(fields_in)),
-      _estimate(),
+      _estimateHits(0),
       _tree_size(1),
       _cost_tier(COST_TIER_NORMAL),
+      _estimateEmpty(true),
       _allow_termwise_eval(true),
       _want_global_filter(false)
 {
@@ -400,10 +402,10 @@ IntermediateBlueprint::calculateEstimate() const
     return combine(estimates);
 }
 
-uint32_t
+uint8_t
 IntermediateBlueprint::calculate_cost_tier() const
 {
-    uint32_t cost_tier = State::COST_TIER_MAX;
+    uint8_t cost_tier = State::COST_TIER_MAX;
     for (const Blueprint::UP &child : _children) {
         cost_tier = std::min(cost_tier, child->getState().cost_tier());
     }
@@ -744,6 +746,7 @@ LeafBlueprint::setEstimate(HitEstimate est)
 void
 LeafBlueprint::set_cost_tier(uint32_t value)
 {
+    assert(value < 0x100);
     _state.cost_tier(value);
     notifyChange();
 }

@@ -65,11 +65,12 @@ public:
     {
     private:
         FieldSpecBaseList _fields;
-        HitEstimate       _estimate;
-        uint32_t          _tree_size;
+        uint32_t          _estimateHits;
+        uint16_t          _tree_size;
         uint8_t           _cost_tier;
-        bool              _allow_termwise_eval;
-        bool              _want_global_filter;
+        bool              _estimateEmpty : 1;
+        bool              _allow_termwise_eval : 1;
+        bool              _want_global_filter : 1;
 
     public:
         static constexpr uint8_t COST_TIER_NORMAL = 1;
@@ -99,21 +100,27 @@ public:
             return nullptr;
         }
 
-        void estimate(HitEstimate est) { _estimate = est; }
-        HitEstimate estimate() const { return _estimate; }
+        void estimate(HitEstimate est) {
+            _estimateHits = est.estHits;
+            _estimateEmpty = est.empty;
+        }
+        HitEstimate estimate() const { return HitEstimate(_estimateHits, _estimateEmpty); }
         double hit_ratio(uint32_t docid_limit) const {
-            uint32_t total_hits = _estimate.estHits;
+            uint32_t total_hits = _estimateHits;
             uint32_t total_docs = std::max(total_hits, docid_limit);
             return (total_docs == 0) ? 0.0 : double(total_hits) / double(total_docs);
         }
-        void tree_size(uint32_t value) { _tree_size = value; }
+        void tree_size(uint32_t value) {
+            assert(value < 0x10000);
+            _tree_size = value;
+        }
         uint32_t tree_size() const { return _tree_size; }
         void allow_termwise_eval(bool value) { _allow_termwise_eval = value; }
         bool allow_termwise_eval() const { return _allow_termwise_eval; }
         void want_global_filter(bool value) { _want_global_filter = value; }
         bool want_global_filter() const { return _want_global_filter; }
-        void cost_tier(uint32_t value) { _cost_tier = value; }
-        uint32_t cost_tier() const { return _cost_tier; }
+        void cost_tier(uint8_t value) { _cost_tier = value; }
+        uint8_t cost_tier() const { return _cost_tier; }
     };
 
     // utility that just takes maximum estimate
@@ -289,7 +296,7 @@ class IntermediateBlueprint : public blueprint::StateCache
 private:
     Children _children;
     HitEstimate calculateEstimate() const;
-    uint32_t calculate_cost_tier() const;
+    uint8_t calculate_cost_tier() const;
     uint32_t calculate_tree_size() const;
     bool infer_allow_termwise_eval() const;
     bool infer_want_global_filter() const;

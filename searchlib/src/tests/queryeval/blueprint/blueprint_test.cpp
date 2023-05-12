@@ -136,7 +136,7 @@ public:
 //-----------------------------------------------------------------------------
 
 struct MyTerm : SimpleLeafBlueprint {
-    MyTerm(FieldSpecBaseList fields, uint32_t hitEstimate) : SimpleLeafBlueprint(std::move(fields)) {
+    MyTerm(FieldSpecBase field, uint32_t hitEstimate) : SimpleLeafBlueprint(field) {
         setEstimate(HitEstimate(hitEstimate, false));
     }
     SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override {
@@ -311,13 +311,13 @@ TEST("testHitEstimateCalculation")
 
 TEST("testHitEstimatePropagation")
 {
-    MyLeaf *leaf1 = new MyLeaf(FieldSpecBaseList());
+    MyLeaf *leaf1 = new MyLeaf();
     leaf1->estimate(10);
 
-    MyLeaf *leaf2 = new MyLeaf(FieldSpecBaseList());
+    MyLeaf *leaf2 = new MyLeaf();
     leaf2->estimate(20);
 
-    MyLeaf *leaf3 = new MyLeaf(FieldSpecBaseList());
+    MyLeaf *leaf3 = new MyLeaf();
     leaf3->estimate(30);
 
     MyOr *parent = new MyOr();
@@ -727,7 +727,7 @@ struct BlueprintFixture
 {
     MyOr _blueprint;
     BlueprintFixture() : _blueprint() {
-        _blueprint.add(new MyTerm(FieldSpecBaseList(FieldSpecBase(5, 7)), 9));
+        _blueprint.add(new MyTerm(FieldSpecBase(5, 7), 9));
     }
 };
 
@@ -767,9 +767,9 @@ TEST("requireThatDocIdLimitInjectionWorks")
 }
 
 TEST("Control object sizes") {
-    EXPECT_EQUAL(40u, sizeof(Blueprint::State));
+    EXPECT_EQUAL(32u, sizeof(Blueprint::State));
     EXPECT_EQUAL(32u, sizeof(Blueprint));
-    EXPECT_EQUAL(72u, sizeof(LeafBlueprint));
+    EXPECT_EQUAL(64u, sizeof(LeafBlueprint));
 }
 
 TEST_MAIN() {
