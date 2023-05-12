@@ -62,7 +62,6 @@ private:
 
 public:
     FieldSpecBaseList() = default;
-    FieldSpecBaseList(FieldSpecBase spec) : _list() { _list.push_back(spec); }
     FieldSpecBaseList(FieldSpecBaseList &&) noexcept = default;
     FieldSpecBaseList & operator=(FieldSpecBaseList &&) noexcept = default;
     FieldSpecBaseList(const FieldSpecBaseList &) = default;

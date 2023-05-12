@@ -167,7 +167,7 @@ public:
     bool check_equal(const Blueprint &a, const Blueprint &b);
     bool check_not_equal(const Blueprint &a, const Blueprint &b);
     static bool check_equal(const SearchIterator &a, const SearchIterator &b);
-    bool check_not_equal(const SearchIterator &a, const SearchIterator &b);
+    static bool check_not_equal(const SearchIterator &a, const SearchIterator &b);
 };
 
 SearchIterator::UP
