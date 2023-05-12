@@ -50,7 +50,7 @@ private:
 
     void start_direct_put_dispatch(DistributorStripeMessageSender& sender);
     void start_conditional_put(DistributorStripeMessageSender& sender);
-    void on_completed_check_condition(const CheckCondition::Outcome& outcome,
+    void on_completed_check_condition(CheckCondition::Outcome& outcome,
                                       DistributorStripeMessageSender& sender);
     void insertDatabaseEntryAndScheduleCreateBucket(const OperationTargetList& copies, bool setOneActive,
                                                     const api::StorageCommand& originalCommand,

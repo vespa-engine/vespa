@@ -16,8 +16,9 @@
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/vespalib/gtest/gtest.h>
 #include <iomanip>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 using config::ConfigGetter;
 using config::FileSpec;
@@ -75,7 +76,8 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
                std::string authorVal,
                uint32_t timestamp,
                bool is_tombstone = false,
-               bool condition_matched = false)
+               bool condition_matched = false,
+               std::string trace_msg = "")
     {
         if (idx == LastCommand) {
             idx = _sender.commands().size() - 1;
@@ -98,6 +100,9 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
 
         auto reply = std::make_shared<api::GetReply>(*tmp, doc, timestamp, false, is_tombstone, condition_matched);
         reply->setResult(result);
+        if (!trace_msg.empty()) {
+            MBUS_TRACE(reply->getTrace(), 1, trace_msg);
+        }
 
         op->receive(_sender, reply);
     }
@@ -108,6 +113,10 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
 
     void reply_with_condition_match(uint32_t idx, uint32_t timestamp, bool condition_match) {
         sendReply(idx, api::ReturnCode::OK, "", timestamp, false, condition_match);
+    }
+
+    void reply_with_trace(uint32_t idx, uint32_t timestamp, std::string trace_message) {
+        sendReply(idx, api::ReturnCode::OK, "", timestamp, false, true, std::move(trace_message));
     }
 
     void replyWithFailure() {
@@ -682,6 +691,7 @@ void GetOperationTest::set_up_condition_match_get_operation() {
     TestAndSetCondition my_cond("my_cool_condition");
     auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(BucketId(0)), docId, document::NoFields::NAME);
     msg->set_condition(my_cond);
+    msg->getTrace().setLevel(9); // FIXME a very tiny bit dirty to set this here >_>
     start_operation(std::move(msg), api::InternalReadConsistency::Strong);
 
     ASSERT_EQ("Get => 0,Get => 2,Get => 1", _sender.getCommands(true));
@@ -741,5 +751,22 @@ TEST_F(GetOperationTest, condition_match_result_is_aggregated_for_newest_replica
     EXPECT_FALSE(last_reply_has_document());
     EXPECT_EQ(replica_of(api::Timestamp(500), bucketId, 2, true, false), *op->newest_replica());
 }
+
+TEST_F(GetOperationTest, trace_is_aggregated_from_all_sub_replies_and_propagated_to_operation_reply) {
+    ASSERT_NO_FATAL_FAILURE(set_up_condition_match_get_operation());
+
+    ASSERT_NO_FATAL_FAILURE(reply_with_trace(0, 400, "foo"));
+    ASSERT_NO_FATAL_FAILURE(reply_with_trace(1, 500, "bar"));
+    ASSERT_NO_FATAL_FAILURE(reply_with_trace(2, 300, "baz"));
+
+    ASSERT_EQ(_sender.replies().size(), 1);
+    auto get_reply = sent_reply<api::GetReply>(0);
+
+    auto trace_str = get_reply->getTrace().toString();
+    EXPECT_THAT(trace_str, HasSubstr("foo"));
+    EXPECT_THAT(trace_str, HasSubstr("bar"));
+    EXPECT_THAT(trace_str, HasSubstr("baz"));
+}
+
 
 }

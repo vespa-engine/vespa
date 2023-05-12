@@ -63,6 +63,7 @@ GetOperation::GetOperation(const DistributorNodeContext& node_ctx,
       _newest_replica(),
       _metric(metric),
       _operationTimer(node_ctx.clock()),
+      _trace(_msg->getTrace().getLevel()),
       _desired_read_consistency(desired_read_consistency),
       _has_replica_inconsistency(false),
       _any_replicas_failed(false)
@@ -156,7 +157,7 @@ GetOperation::onReceive(DistributorStripeMessageSender& sender, const std::share
 
     LOG(debug, "Received %s", msg->toString(true).c_str());
 
-    _msg->getTrace().addChild(getreply->steal_trace());
+    _trace.addChild(getreply->steal_trace()); // TODO sweet, sweet nectar of distributed tracing
     bool allDone = true;
     for (auto& response : _responses) {
         for (uint32_t i = 0; i < response.second.size(); i++) {
@@ -247,6 +248,10 @@ GetOperation::sendReply(DistributorStripeMessageSender& sender)
         const auto timestamp = (newest.is_tombstone ? api::Timestamp(0) : newest.timestamp);
         auto repl = std::make_shared<api::GetReply>(*_msg, _doc, timestamp, !_has_replica_inconsistency);
         repl->setResult(_returnCode);
+        if (!_trace.isEmpty()) {
+            _trace.setStrict(false);
+            repl->getTrace().addChild(std::move(_trace));
+        }
         update_internal_metrics();
         sender.sendReply(repl);
         _msg.reset();

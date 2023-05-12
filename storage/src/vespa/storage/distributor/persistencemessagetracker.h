@@ -23,10 +23,12 @@ struct PersistenceMessageTracker {
     virtual void queueCommand(api::BucketCommand::SP, uint16_t target) = 0;
     virtual void flushQueue(MessageSender&) = 0;
     virtual uint16_t handleReply(api::BucketReply& reply) = 0;
+    virtual void add_trace_tree_to_reply(vespalib::Trace trace) = 0;
 };
 
-class PersistenceMessageTrackerImpl : public PersistenceMessageTracker,
-                                      public MessageTracker
+class PersistenceMessageTrackerImpl final
+        : public PersistenceMessageTracker,
+          public MessageTracker
 {
 private:
     using BucketInfoMap = std::map<document::Bucket, std::vector<BucketCopy>>;
@@ -92,12 +94,14 @@ private:
     void updateFailureResult(const api::BucketInfoReply& reply);
     void handleCreateBucketReply(api::BucketInfoReply& reply, uint16_t node);
     void handlePersistenceReply(api::BucketInfoReply& reply, uint16_t node);
+    void transfer_trace_state_to_reply();
 
     void queueCommand(std::shared_ptr<api::BucketCommand> msg, uint16_t target) override {
         MessageTracker::queueCommand(std::move(msg), target);
     }
     void flushQueue(MessageSender& s) override { MessageTracker::flushQueue(s); }
     uint16_t handleReply(api::BucketReply& r) override { return MessageTracker::handleReply(r); }
+    void add_trace_tree_to_reply(vespalib::Trace trace) override;
 };
 
 }

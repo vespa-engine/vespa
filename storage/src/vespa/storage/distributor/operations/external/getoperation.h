@@ -88,28 +88,25 @@ private:
     };
 
     using GroupVector = std::vector<BucketChecksumGroup>;
+    using DbReplicaState = std::vector<std::pair<document::BucketId, uint16_t>>;
 
     // Organize the different copies by bucket/checksum pairs. We should
     // try to request GETs from each bucket and each different checksum
     // within that bucket.
-    std::map<GroupId, GroupVector> _responses;
-
-    const DistributorNodeContext& _node_ctx;
-    const DistributorBucketSpace &_bucketSpace;
-
-    std::shared_ptr<api::GetCommand> _msg;
-
-    api::ReturnCode _returnCode;
+    std::map<GroupId, GroupVector>      _responses;
+    const DistributorNodeContext&       _node_ctx;
+    const DistributorBucketSpace&       _bucketSpace;
+    std::shared_ptr<api::GetCommand>    _msg;
+    api::ReturnCode                     _returnCode;
     std::shared_ptr<document::Document> _doc;
-
-    std::optional<NewestReplica> _newest_replica;
-
-    PersistenceOperationMetricSet& _metric;
-    framework::MilliSecTimer _operationTimer;
-    std::vector<std::pair<document::BucketId, uint16_t>> _replicas_in_db;
-    api::InternalReadConsistency _desired_read_consistency;
-    bool _has_replica_inconsistency;
-    bool _any_replicas_failed;
+    std::optional<NewestReplica>        _newest_replica;
+    PersistenceOperationMetricSet&      _metric;
+    framework::MilliSecTimer            _operationTimer;
+    DbReplicaState                      _replicas_in_db;
+    vespalib::Trace                     _trace;
+    api::InternalReadConsistency        _desired_read_consistency;
+    bool                                _has_replica_inconsistency;
+    bool                                _any_replicas_failed;
 
     void sendReply(DistributorStripeMessageSender& sender);
     bool sendForChecksum(DistributorStripeMessageSender& sender, const document::BucketId& id, GroupVector& res);

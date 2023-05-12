@@ -60,17 +60,10 @@ public:
             NotFound,
         };
 
-        explicit Outcome(api::ReturnCode error_code) noexcept
-            : _error_code(std::move(error_code)),
-              _result(Result::HasError)
-        {
-        }
-
-        explicit Outcome(Result result) noexcept
-            : _error_code(),
-              _result(result)
-        {
-        }
+        Outcome(api::ReturnCode error_code, vespalib::Trace trace) noexcept;
+        Outcome(Result result, vespalib::Trace trace) noexcept;
+        explicit Outcome(Result result) noexcept;
+        ~Outcome();
 
         [[nodiscard]] bool failed() const noexcept {
             return _error_code.failed();
@@ -88,9 +81,18 @@ public:
             return _result == Result::NotFound;
         }
 
+        [[nodiscard]] const vespalib::Trace& trace() const noexcept {
+            return _trace;
+        }
+
+        [[nodiscard]] vespalib::Trace&& steal_trace() noexcept {
+            return std::move(_trace);
+        }
+
     private:
         api::ReturnCode _error_code;
         Result          _result;
+        vespalib::Trace _trace;
     };
 private:
     const document::Bucket        _doc_id_bucket;
@@ -113,6 +115,7 @@ public:
                    const DistributorBucketSpace& bucket_space,
                    const DistributorNodeContext& node_ctx,
                    PersistenceOperationMetricSet& metric,
+                   uint32_t trace_level,
                    private_ctor_tag);
     ~CheckCondition();
 
@@ -121,7 +124,7 @@ public:
                       const std::shared_ptr<api::StorageReply>& reply);
     void cancel(DistributorStripeMessageSender& sender);
 
-    [[nodiscard]] const std::optional<Outcome>& maybe_outcome() const noexcept {
+    [[nodiscard]] std::optional<Outcome>& maybe_outcome() noexcept {
         return _outcome;
     }
 
@@ -132,7 +135,8 @@ public:
             const documentapi::TestAndSetCondition& tas_condition,
             const DistributorNodeContext& node_ctx,
             const DistributorStripeOperationContext& op_ctx,
-            PersistenceOperationMetricSet& metric);
+            PersistenceOperationMetricSet& metric,
+            uint32_t trace_level = 0); // TODO remove default value
 private:
     [[nodiscard]] bool replica_set_changed_after_get_operation() const;
 

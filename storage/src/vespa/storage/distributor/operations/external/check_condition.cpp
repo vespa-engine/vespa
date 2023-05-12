@@ -16,6 +16,29 @@ LOG_SETUP(".distributor.operations.external.check_condition");
 
 namespace storage::distributor {
 
+CheckCondition::Outcome::Outcome(api::ReturnCode error_code, vespalib::Trace trace) noexcept
+    : _error_code(std::move(error_code)),
+      _result(Result::HasError),
+      _trace(std::move(trace))
+{
+}
+
+CheckCondition::Outcome::Outcome(Result result, vespalib::Trace trace) noexcept
+    : _error_code(),
+      _result(result),
+      _trace(std::move(trace))
+{
+}
+
+CheckCondition::Outcome::Outcome(Result result) noexcept
+    : _error_code(),
+      _result(result),
+      _trace()
+{
+}
+
+CheckCondition::Outcome::~Outcome() = default;
+
 CheckCondition::CheckCondition(Outcome known_outcome,
                                const DistributorBucketSpace& bucket_space,
                                const DistributorNodeContext& node_ctx,
@@ -36,6 +59,7 @@ CheckCondition::CheckCondition(const document::Bucket& bucket,
                                const DistributorBucketSpace& bucket_space,
                                const DistributorNodeContext& node_ctx,
                                PersistenceOperationMetricSet& metric,
+                               uint32_t trace_level,
                                private_ctor_tag)
     : _doc_id_bucket(bucket),
       _bucket_space(bucket_space),
@@ -48,6 +72,7 @@ CheckCondition::CheckCondition(const document::Bucket& bucket,
     // Side note: the BucketId provided to the GetCommand is ignored; GetOperation computes explicitly from the doc ID.
     auto get_cmd = std::make_shared<api::GetCommand>(_doc_id_bucket, doc_id, document::NoFields::NAME);
     get_cmd->set_condition(tas_condition);
+    get_cmd->getTrace().setLevel(trace_level);
     _cond_get_op = std::make_shared<GetOperation>(_node_ctx, _bucket_space,
                                                   _bucket_space.getBucketDatabase().acquire_read_guard(),
                                                   std::move(get_cmd),
@@ -129,7 +154,8 @@ void CheckCondition::handle_internal_get_operation_reply(std::shared_ptr<api::St
     if (reply->getResult().success()) {
         if (_cond_get_op->any_replicas_failed()) {
             _outcome.emplace(api::ReturnCode(api::ReturnCode::ABORTED,
-                                             "One or more replicas failed during test-and-set condition evaluation"));
+                                             "One or more replicas failed during test-and-set condition evaluation"),
+                             reply->steal_trace());
             return;
         }
         const auto state_version_now = _bucket_space.getClusterState().getVersion();
@@ -143,13 +169,14 @@ void CheckCondition::handle_internal_get_operation_reply(std::shared_ptr<api::St
             //    explicitly edge-handled...!
             _outcome.emplace(api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND,
                                              "Bucket ownership or replica set changed between condition "
-                                             "read and operation write phases"));
+                                             "read and operation write phases"),
+                             reply->steal_trace());
         } else {
             auto maybe_newest = _cond_get_op->newest_replica();
-            _outcome.emplace(newest_replica_to_outcome(maybe_newest));
+            _outcome.emplace(newest_replica_to_outcome(maybe_newest), reply->steal_trace());
         }
     } else {
-        _outcome.emplace(reply->getResult());
+        _outcome.emplace(reply->getResult(), reply->steal_trace());
     }
 }
 
@@ -193,7 +220,8 @@ CheckCondition::create_if_inconsistent_replicas(const document::Bucket& bucket,
                                                 const documentapi::TestAndSetCondition& tas_condition,
                                                 const DistributorNodeContext& node_ctx,
                                                 const DistributorStripeOperationContext& op_ctx,
-                                                PersistenceOperationMetricSet& metric)
+                                                PersistenceOperationMetricSet& metric,
+                                                uint32_t trace_level)
 {
     // TODO move this check to the caller?
     if (!op_ctx.distributor_config().enable_condition_probing()) {
@@ -210,7 +238,7 @@ CheckCondition::create_if_inconsistent_replicas(const document::Bucket& bucket,
         return {}; // Want write-repair, but one or more nodes are too old to use the feature
     }
     return std::make_shared<CheckCondition>(bucket, doc_id, tas_condition, bucket_space,
-                                            node_ctx, metric, private_ctor_tag{});
+                                            node_ctx, metric, trace_level, private_ctor_tag{});
 }
 
 }

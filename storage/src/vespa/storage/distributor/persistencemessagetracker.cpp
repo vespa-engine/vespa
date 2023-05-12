@@ -58,6 +58,7 @@ PersistenceMessageTrackerImpl::fail(MessageSender& sender, const api::ReturnCode
     if (_reply.get()) {
         _reply->setResult(result);
         updateMetrics();
+        transfer_trace_state_to_reply();
         sender.sendReply(_reply);
         _reply.reset();
     }
@@ -222,10 +223,7 @@ PersistenceMessageTrackerImpl::sendReply(MessageSender& sender)
     }
 
     updateMetrics();
-    if ( ! _trace.isEmpty()) {
-        _trace.setStrict(false);
-        _reply->getTrace().addChild(std::move(_trace));
-    }
+    transfer_trace_state_to_reply();
     
     sender.sendReply(_reply);
     _reply = std::shared_ptr<api::BucketInfoReply>();
@@ -288,6 +286,15 @@ PersistenceMessageTrackerImpl::handlePersistenceReply(
 }
 
 void
+PersistenceMessageTrackerImpl::transfer_trace_state_to_reply()
+{
+    if (!_trace.isEmpty()) {
+        _trace.setStrict(false);
+        _reply->getTrace().addChild(std::move(_trace));
+    }
+}
+
+void
 PersistenceMessageTrackerImpl::updateFromReply(
         MessageSender& sender,
         api::BucketInfoReply& reply,
@@ -316,6 +323,12 @@ PersistenceMessageTrackerImpl::updateFromReply(
         LOG(debug, "Sending reply early because initial redundancy has been reached");
         sendReply(sender);
     }
+}
+
+void
+PersistenceMessageTrackerImpl::add_trace_tree_to_reply(vespalib::Trace trace)
+{
+    _trace.addChild(std::move(trace));
 }
 
 }

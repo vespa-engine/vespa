@@ -10,20 +10,18 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/config/helper/configgetter.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
-using std::shared_ptr;
 using config::ConfigGetter;
 using config::FileSpec;
 using vespalib::string;
 using namespace document;
-using namespace storage;
-using namespace storage::api;
-using namespace storage::lib;
 using namespace std::literals::string_literals;
 using document::test::makeDocumentBucket;
+using storage::api::TestAndSetCondition;
 
 using namespace ::testing;
 
@@ -493,7 +491,8 @@ TEST_F(PutOperationTest, update_correct_bucket_on_remapped_put) {
     {
         std::shared_ptr<api::StorageCommand> msg2  = _sender.command(0);
         std::shared_ptr<api::StorageReply> reply(msg2->makeReply().release());
-        PutReply* sreply = (PutReply*)reply.get();
+        auto* sreply = dynamic_cast<api::PutReply*>(reply.get());
+        ASSERT_TRUE(sreply);
         sreply->remapBucketId(document::BucketId(17, 13));
         sreply->setBucketInfo(api::BucketInfo(1,2,3,4,5));
         op->receive(_sender, reply);
@@ -690,6 +689,7 @@ void PutOperationTest::set_up_tas_put_with_2_inconsistent_replica_nodes(bool cre
     auto put = createPut(doc);
     put->setCondition(TestAndSetCondition("test.foo"));
     put->set_create_if_non_existent(create);
+    put->getTrace().setLevel(9);
     sendPut(std::move(put));
     ASSERT_EQ("Get => 1,Get => 0", _sender.getCommands(true));
 }
@@ -819,6 +819,43 @@ TEST_F(PutOperationTest, conditional_put_no_replicas_case_with_create_set_acts_a
     auto put_n0 = sent_put_command(3);
     EXPECT_TRUE(put_n0->hasTestAndSetCondition());
     EXPECT_TRUE(put_n1->get_create_if_non_existent());
+}
+
+TEST_F(PutOperationTest, trace_is_propagated_from_condition_probe_gets_ok_probe_case) {
+    ASSERT_NO_FATAL_FAILURE(set_up_tas_put_with_2_inconsistent_replica_nodes());
+
+    ASSERT_EQ(sent_get_command(0)->getTrace().getLevel(), 9);
+    auto get_reply = make_get_reply(*sent_get_command(0), 50, false, true);
+    MBUS_TRACE(get_reply->getTrace(), 1, "a foo walks into a bar");
+
+    op->receive(_sender, get_reply);
+    op->receive(_sender, make_get_reply(*sent_get_command(1), 50, false, true));
+
+    ASSERT_EQ("Get => 1,Get => 0,Put => 1,Put => 0", _sender.getCommands(true));
+    sendReply(2);
+    sendReply(3);
+    ASSERT_EQ(_sender.replies().size(), 1);
+    auto put_reply = sent_reply<api::PutReply>(0);
+
+    auto trace_str = put_reply->getTrace().toString();
+    EXPECT_THAT(trace_str, HasSubstr("a foo walks into a bar"));
+}
+
+TEST_F(PutOperationTest, trace_is_propagated_from_condition_probe_gets_failed_probe_case) {
+    ASSERT_NO_FATAL_FAILURE(set_up_tas_put_with_2_inconsistent_replica_nodes());
+
+    auto get_reply = make_get_reply(*sent_get_command(0), 50, false, false);
+    MBUS_TRACE(get_reply->getTrace(), 1, "a foo walks into a zoo");
+
+    op->receive(_sender, get_reply);
+    op->receive(_sender, make_get_reply(*sent_get_command(1), 50, false, false));
+
+    ASSERT_EQ("Get => 1,Get => 0", _sender.getCommands(true));
+    ASSERT_EQ(_sender.replies().size(), 1);
+    auto put_reply = sent_reply<api::PutReply>(0);
+
+    auto trace_str = put_reply->getTrace().toString();
+    EXPECT_THAT(trace_str, HasSubstr("a foo walks into a zoo"));
 }
 
 }
