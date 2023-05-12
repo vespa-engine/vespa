@@ -128,7 +128,7 @@ func summaryTicker(secs int, cli *CLI, start time.Time, statsFunc func() documen
 	ticker := time.NewTicker(time.Duration(secs) * time.Second)
 	go func() {
 		for range ticker.C {
-			writeSummaryJSON(cli.Stdout, statsFunc(), cli.now().Sub(start))
+			writeSummaryJSON(cli.Stderr, statsFunc(), cli.now().Sub(start))
 		}
 	}()
 	return ticker
