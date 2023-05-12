@@ -10,6 +10,8 @@ import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.zpe.AuthorizationResult.Type;
 
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The default implementation of {@link Zpe}.
@@ -18,6 +20,13 @@ import java.security.cert.X509Certificate;
  * @author bjorncs
  */
 public class DefaultZpe implements Zpe {
+
+    // Disable log spam from ZPE library
+    private static final Logger fpksLogger =
+            Logger.getLogger(com.yahoo.athenz.zpe.pkey.file.FilePublicKeyStore.class.getName());
+    static {
+        fpksLogger.setLevel(Level.SEVERE);
+    }
 
     public DefaultZpe() {
         AuthZpeClient.init();
