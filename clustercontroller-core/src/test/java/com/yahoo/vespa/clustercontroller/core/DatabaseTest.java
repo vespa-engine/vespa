@@ -35,7 +35,7 @@ public class DatabaseTest extends FleetControllerTest {
 
     @Test
     void testWantedStatesInZooKeeper() throws Exception {
-        FleetControllerOptions.Builder builder = defaultOptions("mycluster");
+        FleetControllerOptions.Builder builder = defaultOptions();
         builder.setZooKeeperServerAddress("127.0.0.1");
         Timer timer = new FakeTimer();
         setUpFleetController(timer, builder);
@@ -90,7 +90,7 @@ public class DatabaseTest extends FleetControllerTest {
 
     @Test
     void testWantedStateOfUnknownNode() throws Exception {
-        FleetControllerOptions.Builder builder = defaultOptions("mycluster")
+        FleetControllerOptions.Builder builder = defaultOptions()
                 .setMinRatioOfDistributorNodesUp(0)
                 .setMinRatioOfStorageNodesUp(0)
                 .setZooKeeperServerAddress("localhost");

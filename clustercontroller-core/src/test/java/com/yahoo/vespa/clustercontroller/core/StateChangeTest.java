@@ -934,7 +934,7 @@ public class StateChangeTest extends FleetControllerTest {
     void testNoSystemStateBeforeInitialTimePeriod() throws Exception {
         FleetControllerOptions.Builder builder = defaultOptions()
                 .setMinTimeBeforeFirstSystemStateBroadcast(3 * 60 * 1000);
-        setUpSystem(builder);
+        setUpFleetController(timer, builder);
         setUpVdsNodes(timer, true);
         // Leave one node down to avoid sending cluster state due to having seen all node states.
         for (int i = 0; i < nodes.size(); ++i) {
@@ -942,7 +942,6 @@ public class StateChangeTest extends FleetControllerTest {
                 nodes.get(i).connect();
             }
         }
-        setUpFleetController(timer, builder);
 
         StateWaiter waiter = new StateWaiter(timer);
         fleetController().addSystemStateListener(waiter);
@@ -978,8 +977,7 @@ public class StateChangeTest extends FleetControllerTest {
     void testSystemStateSentWhenNodesReplied() throws Exception {
         FleetControllerOptions.Builder builder = defaultOptions()
                 .setMinTimeBeforeFirstSystemStateBroadcast(300 * 60 * 1000);
-
-        setUpSystem(builder);
+        setUpFleetController(timer, builder);
         setUpVdsNodes(timer, true);
 
         for (DummyVdsNode node : nodes) {
@@ -987,8 +985,6 @@ public class StateChangeTest extends FleetControllerTest {
         }
         // Marking one node as 'initializing' improves testing of state later on.
         nodes.get(3).setNodeState(State.INITIALIZING);
-
-        setUpFleetController(timer, builder);
 
         final StateWaiter waiter = new StateWaiter(timer);
 
@@ -1373,10 +1369,6 @@ public class StateChangeTest extends FleetControllerTest {
             ctrl.handleFleetData(leaderVotes);
             ctrl.tick();
         }
-    }
-
-    private static FleetControllerOptions.Builder defaultOptions() {
-        return defaultOptions("mycluster", createNodes(10));
     }
 
     private static FleetControllerOptions.Builder optionsWithZeroTransitionTime() {

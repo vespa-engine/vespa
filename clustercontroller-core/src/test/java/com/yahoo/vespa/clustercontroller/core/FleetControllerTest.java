@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
@@ -50,8 +51,8 @@ public abstract class FleetControllerTest implements Waiter {
     private static final int DEFAULT_NODE_COUNT = 10;
 
     private final Duration timeout = Duration.ofSeconds(30);
-
     protected Slobrok slobrok;
+
     protected FleetControllerOptions options;
     ZooKeeperTestServer zooKeeperServer;
     protected final List<FleetController> fleetControllers = new ArrayList<>();
@@ -59,29 +60,36 @@ public abstract class FleetControllerTest implements Waiter {
     // TODO: This should use the same timer as the fleet controllers (i.e. the one supplied in  createFleetControllers()
     private Waiter waiter = createWaiter(new FakeTimer());
 
+    FleetControllerTest() {
+        try {
+            slobrok = new Slobrok();
+        } catch (ListenFailedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     static {
         LogSetup.initVespaLogging("fleetcontroller");
     }
 
-    static protected FleetControllerOptions.Builder defaultOptions(String clusterName) {
-        return defaultOptions(clusterName, DEFAULT_NODE_COUNT);
+    protected static FleetControllerOptions.Builder defaultOptions() {
+        return defaultOptions(DEFAULT_NODE_COUNT);
     }
 
-    static protected FleetControllerOptions.Builder defaultOptions(String clusterName, int nodeCount) {
-        return defaultOptions(clusterName, IntStream.range(0, nodeCount)
+    protected static FleetControllerOptions.Builder defaultOptions(int nodeCount) {
+        return defaultOptions("mycluster", IntStream.range(0, nodeCount)
                                                     .mapToObj(i -> new ConfiguredNode(i, false))
                                                     .collect(Collectors.toSet()));
     }
 
-    static protected FleetControllerOptions.Builder defaultOptions(String clusterName, Collection<ConfiguredNode> nodes) {
+    protected static FleetControllerOptions.Builder defaultOptions(String clusterName, Collection<ConfiguredNode> nodes) {
         var builder = new FleetControllerOptions.Builder(clusterName, nodes);
         builder.enableTwoPhaseClusterStateActivation(true); // Enable by default, tests can explicitly disable.
         return builder;
     }
 
-    void setUpSystem(FleetControllerOptions.Builder builder) throws Exception {
+    private void setUpSystem(FleetControllerOptions.Builder builder) throws Exception {
         log.log(Level.FINE, "Setting up system");
-        slobrok = new Slobrok();
         if (builder.zooKeeperServerAddress() != null) {
             zooKeeperServer = new ZooKeeperTestServer();
             // Need to set zookeeper address again, as port number is not known until ZooKeeperTestServer has been created
@@ -89,7 +97,6 @@ public abstract class FleetControllerTest implements Waiter {
             log.log(Level.FINE, "Set up new zookeeper server at " + zooKeeperServer.getAddress());
         }
         builder.setSlobrokConnectionSpecs(getSlobrokConnectionSpecs(slobrok));
-        this.options = builder.build();
     }
 
     static FleetController createFleetController(Timer timer, FleetControllerOptions options) {
@@ -126,7 +133,7 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     protected FleetControllerOptions setUpFleetController(Timer timer, FleetControllerOptions.Builder builder) throws Exception {
-        if (slobrok == null) setUpSystem(builder);
+        setUpSystem(builder);
         options = builder.build();
         startFleetController(timer);
         return options;
@@ -243,10 +250,7 @@ public abstract class FleetControllerTest implements Waiter {
             node.shutdown();
             nodes = null;
         }
-        if (slobrok != null) {
-            slobrok.stop();
-            slobrok = null;
-        }
+        slobrok.stop();
     }
 
     public ClusterState waitForStableSystem() throws Exception { return waiter.waitForStableSystem(); }

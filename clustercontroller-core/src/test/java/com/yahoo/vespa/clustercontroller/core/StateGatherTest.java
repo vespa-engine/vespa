@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import java.time.Instant;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,7 +30,7 @@ public class StateGatherTest extends FleetControllerTest {
     @Test
     void testAlwaysHavePendingGetNodeStateRequestTowardsNodes() throws Exception {
         //Logger.getLogger(NodeStateGatherer.class.getName()).setLevel(Level.FINEST);
-        FleetControllerOptions.Builder builder = defaultOptions("mycluster")
+        FleetControllerOptions.Builder builder = defaultOptions()
                 .setNodeStateRequestTimeoutMS(10 * 60 * 1000)
                 // Force actual message timeout to be lower than request timeout.
                 .setNodeStateRequestTimeoutEarliestPercentage(80)

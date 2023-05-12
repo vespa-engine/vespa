@@ -69,7 +69,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
     }
 
     private static FleetControllerOptions createOptions(Map<String, Double> feedBlockLimits, double clusterFeedBlockNoiseLevel) {
-        return defaultOptions("mycluster")
+        return defaultOptions()
                 .setStorageDistribution(DistributionBuilder.forFlatCluster(NODE_COUNT))
                 .setNodes(new HashSet<>(DistributionBuilder.buildConfiguredNodes(NODE_COUNT)))
                 .setClusterFeedBlockEnabled(true)

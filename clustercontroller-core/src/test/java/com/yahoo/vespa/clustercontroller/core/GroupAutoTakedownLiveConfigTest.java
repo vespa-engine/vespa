@@ -15,7 +15,7 @@ public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
     private final Timer timer = new FakeTimer();
 
     private static FleetControllerOptions.Builder createOptions(DistributionBuilder.GroupBuilder groupBuilder, double minNodeRatio) {
-        return defaultOptions("mycluster")
+        return defaultOptions()
                 .setStorageDistribution(DistributionBuilder.forHierarchicCluster(groupBuilder))
                 .setNodes(new HashSet<>(DistributionBuilder.buildConfiguredNodes(groupBuilder.totalNodeCount())))
                 .setMinNodeRatioPerGroup(minNodeRatio)

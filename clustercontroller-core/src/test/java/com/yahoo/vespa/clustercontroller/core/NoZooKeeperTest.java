@@ -10,7 +10,7 @@ public class NoZooKeeperTest extends FleetControllerTest {
     @Test
     void testWantedStatesInZooKeeper() throws Exception {
         // Null is the default for zooKeeperServerAddress
-        FleetControllerOptions.Builder builder = defaultOptions("mycluster");
+        FleetControllerOptions.Builder builder = defaultOptions();
         Timer timer = new FakeTimer();
         setUpFleetController(timer, builder);
         setUpVdsNodes(timer);

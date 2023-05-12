@@ -63,7 +63,7 @@ public class RpcServerTest extends FleetControllerTest {
     @Test
     void testGetSystemState() throws Exception {
         LogFormatter.initializeLogging();
-        FleetControllerOptions.Builder options = defaultOptions("mycluster");
+        FleetControllerOptions.Builder options = defaultOptions();
         setUpFleetController(timer, options);
         setUpVdsNodes(timer);
         waitForStableSystem();
@@ -448,7 +448,7 @@ public class RpcServerTest extends FleetControllerTest {
 
     @Test
     void testSetNodeStateOutOfRange() throws Exception {
-        FleetControllerOptions.Builder options = defaultOptions("mycluster");
+        FleetControllerOptions.Builder options = defaultOptions();
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
         setUpFleetController(timer, options);
         setUpVdsNodes(timer);
@@ -474,7 +474,7 @@ public class RpcServerTest extends FleetControllerTest {
 
     @Test
     void testGetMaster() throws Exception {
-        FleetControllerOptions.Builder options = defaultOptions("mycluster");
+        FleetControllerOptions.Builder options = defaultOptions();
         options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
         setUpFleetController(timer, options);
         setUpVdsNodes(timer);
@@ -494,7 +494,7 @@ public class RpcServerTest extends FleetControllerTest {
 
     @Test
     void testGetNodeList() throws Exception {
-        setUpFleetController(timer, defaultOptions("mycluster", 5));
+        setUpFleetController(timer, defaultOptions(5));
         final int nodeCount = 5;
         setUpVdsNodes(timer, false, nodeCount);
         waitForStableSystem();
