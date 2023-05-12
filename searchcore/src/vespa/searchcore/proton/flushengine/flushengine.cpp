@@ -199,10 +199,8 @@ FlushEngine::checkAndFlush(vespalib::string prev) {
             prev = flushNextTarget(prev, lst.first);
         } else {
             FlushContext::List highPri;
-            for (const FlushContext::SP & ctx : lst.first) {
-                if (ctx->getTarget()->getPriority() > IFlushTarget::Priority::NORMAL) {
-                    highPri.push_back(ctx);
-                }
+            if (lst.first.front()->getTarget()->getPriority() > IFlushTarget::Priority::NORMAL) {
+                highPri.push_back(lst.first.front());
             }
             prev = flushNextTarget(prev, highPri);
         }
