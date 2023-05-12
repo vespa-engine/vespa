@@ -35,8 +35,17 @@ type pingChecker struct {
 	backticks util.BackTicks
 }
 
+func (pc *pingChecker) runPing(hostname string) (out string, err error) {
+	out, err = pc.backticks.Run("ping6", "-c", "1", "-q", hostname)
+	if err == nil {
+		return
+	}
+	out, err = pc.backticks.Run("ping", "-c", "1", "-q", hostname)
+	return
+}
+
 func (pc *pingChecker) ping(hostname string) bool {
-	out, err := pc.backticks.Run("ping", "-c", "1", "-q", hostname)
+	out, err := pc.runPing(hostname)
 	pc.lastErr[hostname] = err
 	pc.lastOut[hostname] = strings.TrimSuffix(out, "\n")
 	return err == nil
