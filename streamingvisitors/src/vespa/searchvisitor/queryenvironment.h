@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <vespa/searchcommon/attribute/iattributecontext.h>
+#include "attribute_access_recorder.h"
+#include "indexenvironment.h"
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/properties.h>
-#include "indexenvironment.h"
 
 namespace streaming {
 
@@ -20,7 +20,7 @@ class QueryEnvironment : public search::fef::IQueryEnvironment
 private:
     const IndexEnvironment                     &_indexEnv;
     const search::fef::Properties              &_properties;
-    search::attribute::IAttributeContext::UP    _attrCtx;
+    std::unique_ptr<AttributeAccessRecorder>    _attrCtx;
     std::vector<const search::fef::ITermData *> _queryTerms;
     std::vector<search::common::GeoLocationSpec> _locations;
 
@@ -61,6 +61,8 @@ public:
     virtual const search::fef::IIndexEnvironment & getIndexEnvironment() const override { return _indexEnv; }
 
     void addTerm(const search::fef::ITermData *term) { _queryTerms.push_back(term); }
+
+    std::vector<vespalib::string> get_accessed_attributes() const { return _attrCtx->get_accessed_attributes(); }
 };
 
 } // namespace streaming

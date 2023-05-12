@@ -46,7 +46,7 @@ QueryEnvironment::QueryEnvironment(const string & location_str,
                                    const IAttributeManager * attrMgr) :
     _indexEnv(indexEnv),
     _properties(properties),
-    _attrCtx(attrMgr->createContext()),
+    _attrCtx(std::make_unique<AttributeAccessRecorder>(attrMgr->createContext())),
     _queryTerms(),
     _locations(parseLocation(location_str))
 {
