@@ -60,6 +60,7 @@
             <endpoints>
                 <endpoint container-id="barz" />
             </endpoints>
+            <bcp deadline="1d"/>
         </instance>
     </parallel>
 
