@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provisioning.CloudConfig;
 
 import java.util.Objects;
@@ -27,6 +27,7 @@ public class Zone {
                   .name(CloudName.from(configserverConfig.cloud()))
                   .dynamicProvisioning(cloudConfig.dynamicProvisioning())
                   .allowHostSharing(cloudConfig.allowHostSharing())
+                  .allowEnclave(cloudConfig.dynamicProvisioning())
                   .requireAccessControl(cloudConfig.requireAccessControl())
                   .account(CloudAccount.from(cloudConfig.account()))
                   .build(),

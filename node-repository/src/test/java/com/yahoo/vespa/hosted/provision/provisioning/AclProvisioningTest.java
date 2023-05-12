@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
@@ -120,7 +119,7 @@ public class AclProvisioningTest {
         assertEquals(Set.of(), nodeAcl.trustedUdpPorts());
 
         // WireGuard UDP port is trusted in Public AWS zones
-        var publicTester = new ProvisioningTester.Builder().zone(new Zone(Cloud.builder().name(CloudName.AWS).account(CloudAccount.from("000000000000")).build(), SystemName.Public, Environment.defaultEnvironment(), RegionName.defaultName())).build();
+        var publicTester = new ProvisioningTester.Builder().zone(new Zone(Cloud.builder().allowEnclave(true).account(CloudAccount.from("000000000000")).build(), SystemName.Public, Environment.defaultEnvironment(), RegionName.defaultName())).build();
         publicTester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
         Node publicCfgNode = publicTester.nodeRepository().nodes().node("cfg1")
                 .orElseThrow(() -> new RuntimeException("Failed to find cfg1"));

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.node;
 
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -97,7 +96,7 @@ public record NodeAcl(Node node,
                                                                      NodeType.proxyhost, NodeType.proxy),
                                                    RPC_PORTS));
                 trustedPorts.add(4443);
-                if (zone.system().isPublic() && zone.cloud().name().equals(CloudName.AWS)) {
+                if (zone.system().isPublic() && zone.cloud().allowEnclave()) {
                     trustedUdpPorts.add(WIREGUARD_PORT);
                 }
             }

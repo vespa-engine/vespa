@@ -460,7 +460,7 @@ public class HostCapacityMaintainerTest {
 
     @Test
     public void custom_cloud_account() {
-        DynamicProvisioningTester tester = new DynamicProvisioningTester(Cloud.builder().name(CloudName.AWS).dynamicProvisioning(true).account(CloudAccount.from("001122334455")).build(),
+        DynamicProvisioningTester tester = new DynamicProvisioningTester(Cloud.builder().name(CloudName.AWS).dynamicProvisioning(true).allowEnclave(true).account(CloudAccount.from("001122334455")).build(),
                                                                          new MockNameResolver().mockAnyLookup());
         ProvisioningTester provisioningTester = tester.provisioningTester;
         ApplicationId applicationId = ApplicationId.from("t1", "a1", "i1");

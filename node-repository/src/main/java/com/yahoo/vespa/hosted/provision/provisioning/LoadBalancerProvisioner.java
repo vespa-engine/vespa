@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.CloudAccount;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
@@ -318,7 +317,7 @@ public class LoadBalancerProvisioner {
 
     /** Returns whether load balancer is provisioned in given account */
     private boolean inAccount(CloudAccount cloudAccount, LoadBalancer loadBalancer) {
-        return !nodeRepository.zone().cloud().name().equals(CloudName.AWS) || loadBalancer.instance().isEmpty() || loadBalancer.instance().get().cloudAccount().equals(cloudAccount);
+        return !nodeRepository.zone().cloud().allowEnclave() || loadBalancer.instance().isEmpty() || loadBalancer.instance().get().cloudAccount().equals(cloudAccount);
     }
 
     /** Find IP addresses reachable by the load balancer service */
