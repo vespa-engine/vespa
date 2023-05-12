@@ -256,7 +256,7 @@ public class RoutingController {
         EndpointList endpoints = declaredEndpointsOf(application.get()).targets(deployment);
         EndpointList globalEndpoints = endpoints.scope(Endpoint.Scope.global);
         for (var assignedRotation : instance.rotations()) {
-            EndpointList rotationEndpoints = globalEndpoints.named(assignedRotation.endpointId())
+            EndpointList rotationEndpoints = globalEndpoints.named(assignedRotation.endpointId(), Scope.global)
                                                             .requiresRotation();
 
             // Skip rotations which do not apply to this zone. Legacy names always point to all zones

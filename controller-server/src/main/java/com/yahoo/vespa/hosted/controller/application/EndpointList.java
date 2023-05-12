@@ -32,9 +32,10 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
         return not().legacy().asList().stream().findFirst();
     }
 
-    /** Returns the subset of endpoints named according to given ID */
-    public EndpointList named(EndpointId id) {
-        return matching(endpoint -> endpoint.name().equals(id.id()));
+    /** Returns the subset of endpoints named according to given ID and scope */
+    public EndpointList named(EndpointId id, Endpoint.Scope scope) {
+        return matching(endpoint -> endpoint.scope() == scope && // ID is only unique within a scope
+                                    endpoint.name().equals(id.id()));
     }
 
     /** Returns the subset of endpoints pointing to given cluster */
