@@ -72,7 +72,7 @@ type pendingDocument struct {
 	prepared chan bool
 
 	request *http.Request
-	size    int
+	buf     *bytes.Buffer
 	err     error
 }
 
@@ -218,49 +218,50 @@ func (c *Client) buffer() *bytes.Buffer {
 func (c *Client) preparePending() {
 	for pd := range c.pending {
 		method, url := c.methodAndURL(pd.document)
-		pd.request, pd.size, pd.err = c.createRequest(method, url, pd.document.Fields)
+		pd.buf = c.buffer()
+		pd.request, pd.err = c.createRequest(method, url, pd.document.Fields, pd.buf)
 		pd.prepared <- true
 	}
 }
 
-func (c *Client) prepare(document Document) (*http.Request, int, error) {
+func (c *Client) prepare(document Document) (*http.Request, *bytes.Buffer, error) {
 	pd := pendingDocument{document: document, prepared: make(chan bool)}
 	c.pending <- &pd
 	<-pd.prepared
-	return pd.request, pd.size, pd.err
+	return pd.request, pd.buf, pd.err
 }
 
-func (c *Client) createRequest(method, url string, body []byte) (*http.Request, int, error) {
+func (c *Client) createRequest(method, url string, body []byte, buf *bytes.Buffer) (*http.Request, error) {
 	if len(body) == 0 {
 		req, err := http.NewRequest(method, url, nil)
-		return req, 0, err
+		return req, err
 	}
 	bodySize := len(fieldsPrefix) + len(body) + len(fieldsSuffix)
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && bodySize > 512)
-	buf := bytes.NewBuffer(make([]byte, 0, min(1024, bodySize)))
+	buf.Grow(min(1024, bodySize))
 	if useGzip {
 		zw := c.gzipWriter(buf)
 		defer c.gzippers.Put(zw)
 		if err := writeRequestBody(zw, body); err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		if err := zw.Close(); err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 	} else {
 		if err := writeRequestBody(buf, body); err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 	}
 	req, err := http.NewRequest(method, url, buf)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	if useGzip {
 		req.Header.Set("Content-Encoding", "gzip")
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	return req, buf.Len(), nil
+	return req, nil
 }
 
 func (c *Client) clientTimeout() time.Duration {
@@ -274,17 +275,19 @@ func (c *Client) clientTimeout() time.Duration {
 func (c *Client) Send(document Document) Result {
 	start := c.now()
 	result := Result{Id: document.Id, Stats: Stats{Requests: 1}}
-	req, size, err := c.prepare(document)
+	req, buf, err := c.prepare(document)
+	defer c.buffers.Put(buf)
 	if err != nil {
 		return resultWithErr(result, err)
 	}
+	bodySize := buf.Len()
 	resp, err := c.leastBusyClient().Do(req, c.clientTimeout())
 	if err != nil {
 		return resultWithErr(result, err)
 	}
 	defer resp.Body.Close()
 	elapsed := c.now().Sub(start)
-	return c.resultWithResponse(resp, size, result, elapsed)
+	return resultWithResponse(resp, bodySize, result, elapsed, buf)
 }
 
 func resultWithErr(result Result, err error) Result {
@@ -294,7 +297,7 @@ func resultWithErr(result Result, err error) Result {
 	return result
 }
 
-func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result Result, elapsed time.Duration) Result {
+func resultWithResponse(resp *http.Response, sentBytes int, result Result, elapsed time.Duration, buf *bytes.Buffer) Result {
 	result.HTTPStatus = resp.StatusCode
 	result.Stats.Responses++
 	result.Stats.ResponsesByCode = map[int]int64{resp.StatusCode: 1}
@@ -312,8 +315,7 @@ func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result R
 		Message string          `json:"message"`
 		Trace   json.RawMessage `json:"trace"`
 	}
-	buf := c.buffer()
-	defer c.buffers.Put(buf)
+	buf.Reset()
 	written, err := io.Copy(buf, resp.Body)
 	if err != nil {
 		result.Status = StatusVespaFailure
