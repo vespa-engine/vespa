@@ -770,7 +770,35 @@ public class ProvisioningTest {
         tester.patchNodes(nodes.asList(), node -> node.withWantToRetire(true, Agent.system, tester.clock().instant()));
 
         tester.activate(application, tester.prepare(application, cluster, 3, 1, defaultResources));
-        assertEquals(3, tester.getNodes(application).state(Node.State.active).not().retired().size());
+        assertEquals(3, tester.getNodes(application).state(Node.State.active).size());
+    }
+
+    @Test
+    public void fails_if_retired_and_no_capacity() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        tester.makeReadyHosts(4, defaultResources).activateTenantHosts();
+
+        ApplicationId application = ProvisioningTester.applicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
+        tester.activate(application, tester.prepare(application, cluster, 3, 1, defaultResources));
+
+        // Retire one node
+        tester.patchNodes(tester.getNodes(application).first(1).asList(),
+                          node -> node.withWantToRetire(true, Agent.system, tester.clock().instant()));
+
+        tester.activate(application, tester.prepare(application, cluster, 3, 1, defaultResources));
+        assertEquals(4, tester.getNodes(application).state(Node.State.active).size());
+
+        // Retire another node
+        tester.patchNodes(tester.getNodes(application).not().retired().first(1).asList(),
+                          node -> node.withWantToRetire(true, Agent.system, tester.clock().instant()));
+
+        try {
+            // Deploy with increased cluster size, at this point there is no capacity even if we deploy
+            // without considering retirements
+            tester.activate(application, tester.prepare(application, cluster, 5, 1, defaultResources));
+            fail("Expected to failed due to lack of capacity");
+        } catch (NodeAllocationException ignored) {}
     }
 
     @Test
