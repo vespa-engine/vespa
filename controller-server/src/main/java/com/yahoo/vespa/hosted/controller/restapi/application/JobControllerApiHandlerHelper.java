@@ -271,15 +271,22 @@ class JobControllerApiHandlerHelper {
             stepObject.setString("instance", stepStatus.instance().value());
 
             // TODO: recursively search dependents for what is the relevant partial change when this is a delay step ...
-            Readiness readiness = stepStatus.job().map(jobsToRun::get).map(job -> job.get(0).readiness())
-                                            .orElse(stepStatus.readiness(change));
             Instant now = controller.clock().instant();
+            Readiness readiness = stepStatus.pausedUntil().okAt(now)
+                                  ? stepStatus.job().map(jobsToRun::get).map(job -> job.get(0).readiness())
+                                              .orElse(stepStatus.readiness(change))
+                                  : stepStatus.pausedUntil();
             if (readiness.ok()) {
+                // TODO jonmv: remove after UI changes.
                 stepObject.setLong("readyAt", readiness.at().toEpochMilli());
+
                 if ( ! readiness.okAt(now)) stepObject.setLong("delayedUntil", readiness.at().toEpochMilli());
             }
+
+            // TODO jonmv: remove after UI changes.
             if (readiness.cause() == DelayCause.coolingDown) stepObject.setLong("coolingDownUntil", readiness.at().toEpochMilli());
-            if ( ! stepStatus.pausedUntil().okAt(now)) stepObject.setLong("pausedUntil", stepStatus.pausedUntil().at().toEpochMilli());
+            if (readiness.cause() == DelayCause.paused) stepObject.setLong("pausedUntil", readiness.at().toEpochMilli());
+
             Readiness platformReadiness = stepStatus.blockedUntil(Change.of(controller.systemVersion(versionStatus))); // Dummy version — just anything with a platform.
             if ( ! platformReadiness.okAt(now))
                 stepObject.setLong("platformBlockedUntil", platformReadiness.at().toEpochMilli());
@@ -365,7 +372,7 @@ class JobControllerApiHandlerHelper {
 
                 JobStatus jobStatus = status.jobs().get(job).get();
                 Cursor toRunArray = stepObject.setArray("toRun");
-                showDelayCause = false;
+                showDelayCause = readiness.cause() == DelayCause.paused;
                 for (DeploymentStatus.Job versions : jobsToRun.getOrDefault(job, List.of())) {
                     boolean running = jobStatus.lastTriggered()
                                                .map(run ->    jobStatus.isRunning()
