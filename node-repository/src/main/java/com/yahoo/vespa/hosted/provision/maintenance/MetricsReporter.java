@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -78,7 +77,6 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         updateTenantUsageMetrics(nodes);
         updateRepairTicketMetrics(nodes);
         updateAllocationMetrics(nodes);
-        updateClusterMetrics(nodes);
         updateClusterMetrics(nodes);
         return 1.0;
     }
