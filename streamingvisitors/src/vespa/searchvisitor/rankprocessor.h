@@ -78,6 +78,7 @@ public:
     HitCollector & getHitCollector() { return *_hitCollector; }
     uint32_t getDocId() const { return _docId; }
     search::fef::IQueryEnvironment& get_query_env() { return _queryEnv; }
+    QueryEnvironment& get_real_query_env() { return _queryEnv; }
 };
 
 } // namespace streaming

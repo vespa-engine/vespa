@@ -133,11 +133,13 @@ private:
         RankProcessor::UP              _dumpProcessor;
 
         /**
-         * Process attribute hints and add needed attributes to the given list.
+         * Process attribute accessed and add needed attributes to the
+         * given list.
          **/
-        static void processHintedAttributes(const IndexEnvironment & indexEnv, bool rank,
-                                            const search::IAttributeManager & attrMan,
-                                            std::vector<AttrInfo> & attributeFields);
+        static void processAccessedAttributes(const QueryEnvironment& queryEnv,
+                                              bool rank,
+                                              const search::IAttributeManager& attrMan,
+                                              std::vector<AttrInfo>& attributeFields);
 
     public:
         RankController();

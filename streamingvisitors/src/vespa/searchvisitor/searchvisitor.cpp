@@ -548,11 +548,12 @@ SearchVisitor::PositionInserter::onStructStart(const Content & c)
 }
 
 void
-SearchVisitor::RankController::processHintedAttributes(const IndexEnvironment & indexEnv, bool rank,
-                                                       const search::IAttributeManager & attrMan,
-                                                       std::vector<AttrInfo> & attributeFields)
+SearchVisitor::RankController::processAccessedAttributes(const QueryEnvironment &queryEnv, bool rank,
+                                                         const search::IAttributeManager & attrMan,
+                                                         std::vector<AttrInfo> & attributeFields)
 {
-    const std::set<vespalib::string> & attributes = (rank ? indexEnv.getHintedRankAttributes() : indexEnv.getHintedDumpAttributes());
+    auto attributes = queryEnv.get_accessed_attributes();
+    auto& indexEnv = queryEnv.getIndexEnvironment();
     for (const vespalib::string & name : attributes) {
         LOG(debug, "Process attribute access hint (%s): '%s'", rank ? "rank" : "dump", name.c_str());
         const search::fef::FieldInfo * fieldInfo = indexEnv.getFieldByName(name);
@@ -601,22 +602,18 @@ SearchVisitor::RankController::setupRankProcessors(Query & query,
                                                    std::vector<AttrInfo> & attributeFields)
 {
     _rankSetup = &_rankManagerSnapshot->getRankSetup(_rankProfile);
-
-    // register attribute vectors needed for ranking
-    const IndexEnvironment & indexEnv = _rankManagerSnapshot->getIndexEnvironment(_rankProfile);
-    processHintedAttributes(indexEnv, true, attrMan, attributeFields);
-
     _rankProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, &attrMan);
     LOG(debug, "Initialize rank processor");
     _rankProcessor->initForRanking(wantedHitCount);
+    // register attribute vectors needed for ranking
+    processAccessedAttributes(_rankProcessor->get_real_query_env(), true, attrMan, attributeFields);
 
     if (_dumpFeatures) {
-        // register attribute vectors needed for dumping
-        processHintedAttributes(indexEnv, false, attrMan, attributeFields);
-
         _dumpProcessor = std::make_unique<RankProcessor>(_rankManagerSnapshot, _rankProfile, query, location, _queryProperties, &attrMan);
         LOG(debug, "Initialize dump processor");
         _dumpProcessor->initForDumping(wantedHitCount);
+        // register attribute vectors needed for dumping
+        processAccessedAttributes(_dumpProcessor->get_real_query_env(), false, attrMan, attributeFields);
     }
 
     _hasRanking = true;

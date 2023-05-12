@@ -13,8 +13,6 @@ IndexEnvironment::IndexEnvironment(const ITableManager & tableManager) :
     _fields(),
     _fieldNames(),
     _motivation(RANK),
-    _rankAttributes(),
-    _dumpAttributes(),
     _ranking_assets_repo()
 {
 }
@@ -41,15 +39,7 @@ IndexEnvironment::addField(const vespalib::string& name,
 }
 
 void
-IndexEnvironment::hintAttributeAccess(const string & name) const {
-    if (name.empty()) {
-        return;
-    }
-    if (_motivation == RANK) {
-        _rankAttributes.insert(name);
-    } else {
-        _dumpAttributes.insert(name);
-    }
+IndexEnvironment::hintAttributeAccess(const string &) const {
 }
 
 void

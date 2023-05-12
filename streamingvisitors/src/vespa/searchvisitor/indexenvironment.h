@@ -29,8 +29,6 @@ private:
     std::vector<search::fef::FieldInfo>  _fields;
     StringInt32Map                       _fieldNames;
     mutable FeatureMotivation            _motivation;
-    mutable std::set<vespalib::string>   _rankAttributes;
-    mutable std::set<vespalib::string>   _dumpAttributes;
     std::shared_ptr<const search::fef::IRankingAssetsRepo> _ranking_assets_repo;
 
 public:
@@ -87,10 +85,6 @@ public:
     search::fef::Properties & getProperties() { return _properties; }
 
     void set_ranking_assets_repo(std::shared_ptr<const search::fef::IRankingAssetsRepo> ranking_assets_repo);
-
-    const std::set<vespalib::string> & getHintedRankAttributes() const { return _rankAttributes; }
-
-    const std::set<vespalib::string> & getHintedDumpAttributes() const { return _dumpAttributes; }
 
     //TODO Wire in proper distribution key
     uint32_t getDistributionKey() const override { return 0; }
