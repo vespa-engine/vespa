@@ -31,8 +31,8 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.XML;
@@ -44,7 +44,6 @@ import java.io.Reader;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -830,7 +829,7 @@ public class DeploymentSpecXmlReader {
             return Integer.parseInt(durationSpec.substring(0, durationSpec.length() - 1));
         }
         catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Must be an integer followed by 'm' or 'h'");
+            throw new IllegalArgumentException("Must be an integer followed by 'm', 'h' or 'd'");
         }
     }
 
