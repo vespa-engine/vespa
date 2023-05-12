@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "check_condition.h"
 #include <vespa/storage/distributor/operations/sequenced_operation.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 
@@ -29,11 +30,21 @@ public:
     void onClose(DistributorStripeMessageSender& sender) override;
 
 private:
-    PersistenceMessageTrackerImpl       _trackerInstance;
+    PersistenceMessageTrackerImpl       _tracker_instance;
     PersistenceMessageTracker&          _tracker;
     std::shared_ptr<api::RemoveCommand> _msg;
+    document::BucketId                  _doc_id_bucket_id;
     const DistributorNodeContext&       _node_ctx;
-    DistributorBucketSpace&             _bucketSpace;
+    DistributorStripeOperationContext&  _op_ctx;
+    PersistenceOperationMetricSet&      _temp_metric;
+    DistributorBucketSpace&             _bucket_space;
+    std::shared_ptr<CheckCondition>     _check_condition;
+
+    void start_direct_remove_dispatch(DistributorStripeMessageSender& sender);
+    void start_conditional_remove(DistributorStripeMessageSender& sender);
+    void on_completed_check_condition(const CheckCondition::Outcome& outcome,
+                                      DistributorStripeMessageSender& sender);
+    [[nodiscard]] bool has_condition() const noexcept;
 };
 
 }

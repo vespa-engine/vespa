@@ -18,21 +18,50 @@ RemoveOperation::RemoveOperation(const DistributorNodeContext& node_ctx,
                                  PersistenceOperationMetricSet& metric,
                                  SequencingHandle sequencingHandle)
     : SequencedOperation(std::move(sequencingHandle)),
-      _trackerInstance(metric,
+      _tracker_instance(metric,
                std::make_shared<api::RemoveReply>(*msg),
                node_ctx, op_ctx, msg->getTimestamp()),
-      _tracker(_trackerInstance),
+      _tracker(_tracker_instance),
       _msg(std::move(msg)),
+      _doc_id_bucket_id(document::BucketIdFactory{}.getBucketId(_msg->getDocumentId())),
       _node_ctx(node_ctx),
-      _bucketSpace(bucketSpace)
+      _op_ctx(op_ctx),
+      _temp_metric(metric), // TODO
+      _bucket_space(bucketSpace),
+      _check_condition()
 {
 }
 
 RemoveOperation::~RemoveOperation() = default;
 
-void
-RemoveOperation::onStart(DistributorStripeMessageSender& sender)
-{
+void RemoveOperation::onStart(DistributorStripeMessageSender& sender) {
+    LOG(spam, "Received remove on document %s", _msg->getDocumentId().toString().c_str());
+
+    if (!has_condition()) {
+        start_direct_remove_dispatch(sender);
+    } else {
+        start_conditional_remove(sender);
+    }
+}
+
+void RemoveOperation::start_conditional_remove(DistributorStripeMessageSender& sender) {
+    document::Bucket bucket(_msg->getBucket().getBucketSpace(), _doc_id_bucket_id);
+    _check_condition = CheckCondition::create_if_inconsistent_replicas(bucket, _bucket_space, _msg->getDocumentId(),
+                                                                       _msg->getCondition(), _node_ctx, _op_ctx,
+                                                                       _temp_metric);
+    if (!_check_condition) {
+        start_direct_remove_dispatch(sender);
+    } else {
+        // Inconsistent replicas; need write repair
+        _check_condition->start_and_send(sender);
+        const auto& outcome = _check_condition->maybe_outcome(); // Might be done immediately
+        if (outcome) {
+            on_completed_check_condition(*outcome, sender);
+        }
+    }
+}
+
+void RemoveOperation::start_direct_remove_dispatch(DistributorStripeMessageSender& sender) {
     LOG(spam, "Started remove on document %s", _msg->getDocumentId().toString().c_str());
 
     document::BucketId bucketId(
@@ -40,7 +69,7 @@ RemoveOperation::onStart(DistributorStripeMessageSender& sender)
                     _msg->getDocumentId()));
 
     std::vector<BucketDatabase::Entry> entries;
-    _bucketSpace.getBucketDatabase().getParents(bucketId, entries);
+    _bucket_space.getBucketDatabase().getParents(bucketId, entries);
 
     bool sent = false;
 
@@ -68,7 +97,7 @@ RemoveOperation::onStart(DistributorStripeMessageSender& sender)
             "Remove document %s failed since no available nodes found. "
             "System state is %s",
             _msg->getDocumentId().toString().c_str(),
-            _bucketSpace.getClusterState().toString().c_str());
+            _bucket_space.getClusterState().toString().c_str());
 
         _tracker.fail(sender, api::ReturnCode(api::ReturnCode::OK));
     } else {
@@ -76,10 +105,18 @@ RemoveOperation::onStart(DistributorStripeMessageSender& sender)
     }
 };
 
-
 void
 RemoveOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
 {
+    if (_check_condition) {
+        _check_condition->handle_reply(sender, msg);
+        const auto& outcome = _check_condition->maybe_outcome();
+        if (!outcome) {
+            return; // Condition check not done yet
+        }
+        return on_completed_check_condition(*outcome, sender);
+    }
+
     auto& reply = static_cast<api::RemoveReply&>(*msg);
 
     if (_tracker.getReply().get()) {
@@ -94,10 +131,35 @@ RemoveOperation::onReceive(DistributorStripeMessageSender& sender, const std::sh
     _tracker.receiveReply(sender, reply);
 }
 
+void RemoveOperation::on_completed_check_condition(const CheckCondition::Outcome& outcome,
+                                                   DistributorStripeMessageSender& sender)
+{
+    if (outcome.matched_condition()) {
+        _msg->clear_condition(); // Transform to unconditional Remove
+        start_direct_remove_dispatch(sender);
+    } else if (outcome.not_found()) {
+        // TODO "not found" not a TaS error...
+        _tracker.fail(sender, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
+                                              "Document does not exist"));
+    } else if (outcome.failed()) {
+        api::ReturnCode wrapped_error(outcome.error_code().getResult(),
+                                      "Failed during write repair condition probe step. Reason: " + outcome.error_code().getMessage());
+        _tracker.fail(sender, wrapped_error);
+    } else {
+        _tracker.fail(sender, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
+                                              "Condition did not match document"));
+    }
+    _check_condition.reset();
+}
+
 void
 RemoveOperation::onClose(DistributorStripeMessageSender& sender)
 {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
+}
+
+bool RemoveOperation::has_condition() const noexcept {
+    return _msg->hasTestAndSetCondition();
 }
 
 }
