@@ -213,7 +213,7 @@ private:
     }
 public:
     WhiteListBlueprint(const search::BitVector &activeLids, bool all_lids_active)
-        : SimpleLeafBlueprint(FieldSpecBaseList()),
+        : SimpleLeafBlueprint(),
           _activeLids(activeLids),
           _all_lids_active(all_lids_active),
           _lock(),

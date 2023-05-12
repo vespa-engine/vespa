@@ -110,11 +110,14 @@ public:
     SearchIterator::UP
     createLeafSearch(const TFMDA &tfmda, bool strict) const override
     {
-        return SearchIterator::UP(new MySearch("leaf", tfmda, strict));
+        return std::make_unique<MySearch>("leaf", tfmda, strict);
     }
 
-    MyLeaf(const FieldSpecBaseList &fields)
-        : SimpleLeafBlueprint(fields), _got_global_filter(false)
+    MyLeaf()
+        : SimpleLeafBlueprint(), _got_global_filter(false)
+    {}
+    MyLeaf(FieldSpecBaseList fields)
+        : SimpleLeafBlueprint(std::move(fields)), _got_global_filter(false)
     {}
 
     MyLeaf &estimate(uint32_t hits, bool empty = false) {

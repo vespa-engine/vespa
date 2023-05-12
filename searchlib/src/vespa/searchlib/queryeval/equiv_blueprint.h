@@ -10,14 +10,13 @@ namespace search::queryeval {
 class EquivBlueprint : public ComplexLeafBlueprint
 {
 private:
-    FieldSpecBaseList          _fields;
     HitEstimate                _estimate;
     fef::MatchDataLayout       _layout;
     std::vector<Blueprint::UP> _terms;
     std::vector<double>        _exactness;
 
 public:
-    EquivBlueprint(const FieldSpecBaseList &fields, fef::MatchDataLayout subtree_mdl);
+    EquivBlueprint(FieldSpecBaseList fields, fef::MatchDataLayout subtree_mdl);
     ~EquivBlueprint() override;
 
     // used by create visitor

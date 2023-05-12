@@ -71,7 +71,7 @@ struct MockBlueprint : SimpleLeafBlueprint {
     bool postings_fetched = false;
     search::queryeval::ExecuteInfo postings_strict = search::queryeval::ExecuteInfo::FALSE;
     MockBlueprint(const FieldSpec &spec_in, const vespalib::string &term_in)
-        : SimpleLeafBlueprint(FieldSpecBaseList().add(spec_in)), spec(spec_in), term(term_in)
+        : SimpleLeafBlueprint(spec_in), spec(spec_in), term(term_in)
     {
         setEstimate(HitEstimate(756, false));
     }    

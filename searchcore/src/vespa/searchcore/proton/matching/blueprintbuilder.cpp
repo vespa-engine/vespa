@@ -2,7 +2,6 @@
 
 #include "blueprintbuilder.h"
 #include "querynodes.h"
-#include "termdatafromnode.h"
 #include "same_element_builder.h"
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
@@ -25,7 +24,7 @@ struct Mixer {
 
     void addAttribute(Blueprint::UP attr) {
         if (attributes.get() == 0) {
-            attributes.reset(new OrBlueprint());
+            attributes = std::make_unique<OrBlueprint>();
         }
         attributes->addChild(std::move(attr));
     }
@@ -92,7 +91,7 @@ private:
         for (size_t i = 0; i < n.numFields(); ++i) {
             specs.add(n.field(i).fieldSpec());
         }
-        EquivBlueprint *eq = new EquivBlueprint(specs, n.children_mdl);
+        EquivBlueprint *eq = new EquivBlueprint(std::move(specs), n.children_mdl);
         _result.reset(eq);
         for (size_t i = 0; i < n.getChildren().size(); ++i) {
             search::query::Node &node = *n.getChildren()[i];

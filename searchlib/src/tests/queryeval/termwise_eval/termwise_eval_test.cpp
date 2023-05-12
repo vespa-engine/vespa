@@ -66,12 +66,12 @@ struct MyTerm : public SearchIterator {
 struct MyBlueprint : SimpleLeafBlueprint {
     std::vector<uint32_t> hits;
     MyBlueprint(const std::vector<uint32_t> &hits_in)
-        : SimpleLeafBlueprint(FieldSpecBaseList()), hits(hits_in)
+        : SimpleLeafBlueprint(), hits(hits_in)
     {
         setEstimate(HitEstimate(hits.size(), hits.empty()));
     }
     MyBlueprint(const std::vector<uint32_t> &hits_in, bool allow_termwise_eval)
-        : SimpleLeafBlueprint(FieldSpecBaseList()), hits(hits_in)
+        : SimpleLeafBlueprint(), hits(hits_in)
     {
         setEstimate(HitEstimate(hits.size(), hits.empty()));
         set_allow_termwise_eval(allow_termwise_eval);

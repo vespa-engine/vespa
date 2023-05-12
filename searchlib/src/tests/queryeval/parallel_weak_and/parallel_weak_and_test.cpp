@@ -12,7 +12,6 @@
 #include <vespa/searchlib/test/weightedchildrenverifiers.h>
 #include <vespa/searchlib/test/document_weight_attribute_helper.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
-#include <vespa/searchlib/fef/fef.h>
 
 using namespace search::query;
 using namespace search::queryeval;
@@ -167,7 +166,8 @@ struct WandBlueprintSpec
     }
 
     Blueprint::UP blueprint(Searchable &searchable, const std::string &field, const search::query::Node &term) const {
-        FieldSpecList fields = FieldSpecList().add(FieldSpec(field, fieldId, handle));
+        FieldSpecList fields;
+        fields.add(FieldSpec(field, fieldId, handle));
         Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, term);
         EXPECT_TRUE(dynamic_cast<ParallelWeakAndBlueprint*>(bp.get()) != 0);
         return bp;

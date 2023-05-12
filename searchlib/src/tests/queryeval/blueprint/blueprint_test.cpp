@@ -22,19 +22,19 @@ class MyOr : public IntermediateBlueprint
 {
 private:
 public:
-    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const override {
+    HitEstimate combine(const std::vector<HitEstimate> &data) const override {
         return max(data);
     }
 
-    virtual FieldSpecBaseList exposeFields() const override {
+    FieldSpecBaseList exposeFields() const override {
         return mixChildrenFields();
     }
 
-    virtual void sort(Children &children) const override {
+    void sort(Children &children) const override {
         std::sort(children.begin(), children.end(), TieredGreaterEstimate());
     }
 
-    virtual bool inheritStrict(size_t i) const override {
+    bool inheritStrict(size_t i) const override {
         (void) i;
         return true;
     }
@@ -136,10 +136,10 @@ public:
 //-----------------------------------------------------------------------------
 
 struct MyTerm : SimpleLeafBlueprint {
-    MyTerm(const FieldSpecBaseList &fields, uint32_t hitEstimate) : SimpleLeafBlueprint(fields) {
+    MyTerm(FieldSpecBase field, uint32_t hitEstimate) : SimpleLeafBlueprint(field) {
         setEstimate(HitEstimate(hitEstimate, false));
     }
-    virtual SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override {
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override {
         return SearchIterator::UP();
     }
     SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {
@@ -149,49 +149,29 @@ struct MyTerm : SimpleLeafBlueprint {
 
 //-----------------------------------------------------------------------------
 
+Blueprint::UP ap(Blueprint *b) { return Blueprint::UP(b); }
+Blueprint::UP ap(Blueprint &b) { return Blueprint::UP(&b); }
+
 } // namespace <unnamed>
 
-class Test : public vespalib::TestApp
+class Fixture
 {
 private:
     MatchData::UP _md;
-
-    static Blueprint::UP ap(Blueprint *b) { return Blueprint::UP(b); }
-    static Blueprint::UP ap(Blueprint &b) { return Blueprint::UP(&b); }
-
-    SearchIterator::UP create(const Blueprint &blueprint);
-    bool check_equal(const SearchIterator &a, const SearchIterator &b);
-    bool check_equal(const Blueprint &a, const Blueprint &b);
-    bool check_not_equal(const SearchIterator &a, const SearchIterator &b);
-    bool check_not_equal(const Blueprint &a, const Blueprint &b);
-
 public:
-    Test()
-        : vespalib::TestApp(),
-          _md(MatchData::makeTestInstance(100, 10))
+    Fixture()
+        : _md(MatchData::makeTestInstance(100, 10))
     {}
-    ~Test() {}
-    Blueprint::UP buildBlueprint1();
-    Blueprint::UP buildBlueprint2();
-    void testBlueprintBuilding();
-    void testHitEstimateCalculation();
-    void testHitEstimatePropagation();
-    void testMatchDataPropagation();
-    void testChildSorting();
-    void testChildAndNotCollapsing();
-    void testChildAndCollapsing();
-    void testChildOrCollapsing();
-    void testSearchCreation();
-    void testBlueprintMakeNew();
-    void requireThatAsStringWorks();
-    void requireThatAsSlimeWorks();
-    void requireThatVisitMembersWorks();
-    void requireThatDocIdLimitInjectionWorks();
-    int Main() override;
+    ~Fixture() = default;
+    SearchIterator::UP create(const Blueprint &blueprint);
+    bool check_equal(const Blueprint &a, const Blueprint &b);
+    bool check_not_equal(const Blueprint &a, const Blueprint &b);
+    static bool check_equal(const SearchIterator &a, const SearchIterator &b);
+    static bool check_not_equal(const SearchIterator &a, const SearchIterator &b);
 };
 
 SearchIterator::UP
-Test::create(const Blueprint &blueprint)
+Fixture::create(const Blueprint &blueprint)
 {
     const_cast<Blueprint &>(blueprint).fetchPostings(ExecuteInfo::TRUE);
     SearchIterator::UP search = blueprint.createSearch(*_md, true);
@@ -200,39 +180,37 @@ Test::create(const Blueprint &blueprint)
 }
 
 bool
-Test::check_equal(const SearchIterator &a, const SearchIterator &b)
+Fixture::check_equal(const SearchIterator &a, const SearchIterator &b)
 {
     return EXPECT_EQUAL(a.asString(), b.asString());
 }
 
 bool
-Test::check_equal(const Blueprint &a, const Blueprint &b)
-{
-    SearchIterator::UP searchA = create(a);
-    SearchIterator::UP searchB = create(b);
-    TEST_STATE("check_equal");
-    bool ok = check_equal(*searchA, *searchB);
-    return ok;
-}
-
-bool
-Test::check_not_equal(const SearchIterator &a, const SearchIterator &b)
+Fixture::check_not_equal(const SearchIterator &a, const SearchIterator &b)
 {
     return EXPECT_NOT_EQUAL(a.asString(), b.asString());
 }
 
 bool
-Test::check_not_equal(const Blueprint &a, const Blueprint &b)
+Fixture::check_equal(const Blueprint &a, const Blueprint &b)
 {
     SearchIterator::UP searchA = create(a);
     SearchIterator::UP searchB = create(b);
-    TEST_STATE("check_not_equal");
+    bool ok = check_equal(*searchA, *searchB);
+    return ok;
+}
+
+bool
+Fixture::check_not_equal(const Blueprint &a, const Blueprint &b)
+{
+    SearchIterator::UP searchA = create(a);
+    SearchIterator::UP searchB = create(b);
     bool ok = check_not_equal(*searchA, *searchB);
     return ok;
 }
 
 Blueprint::UP
-Test::buildBlueprint1()
+buildBlueprint1()
 {
     return ap(MyAnd::create()
               .add(MyOr::create()
@@ -248,7 +226,7 @@ Test::buildBlueprint1()
 }
 
 Blueprint::UP
-Test::buildBlueprint2()
+buildBlueprint2()
 {
     return ap(MyAnd::create()
               .add(MyOr::create()
@@ -263,19 +241,17 @@ Test::buildBlueprint2()
               );
 }
 
-void
-Test::testBlueprintBuilding()
+TEST_F("testBlueprintBuilding", Fixture)
 {
     Blueprint::UP root1 = buildBlueprint1();
     Blueprint::UP root2 = buildBlueprint2();
-    SearchIterator::UP search1 = create(*root1);
-    SearchIterator::UP search2 = create(*root2);
+    SearchIterator::UP search1 = f.create(*root1);
+    SearchIterator::UP search2 = f.create(*root2);
     // fprintf(stderr, "%s\n", search1->asString().c_str());
     // fprintf(stderr, "%s\n", search2->asString().c_str());
 }
 
-void
-Test::testHitEstimateCalculation()
+TEST("testHitEstimateCalculation")
 {
     {
         Blueprint::UP leaf = ap(MyLeafSpec(37).create());
@@ -333,16 +309,15 @@ Test::testHitEstimateCalculation()
     }
 }
 
-void
-Test::testHitEstimatePropagation()
+TEST("testHitEstimatePropagation")
 {
-    MyLeaf *leaf1 = new MyLeaf(FieldSpecBaseList());
+    MyLeaf *leaf1 = new MyLeaf();
     leaf1->estimate(10);
 
-    MyLeaf *leaf2 = new MyLeaf(FieldSpecBaseList());
+    MyLeaf *leaf2 = new MyLeaf();
     leaf2->estimate(20);
 
-    MyLeaf *leaf3 = new MyLeaf(FieldSpecBaseList());
+    MyLeaf *leaf3 = new MyLeaf();
     leaf3->estimate(30);
 
     MyOr *parent = new MyOr();
@@ -375,8 +350,7 @@ Test::testHitEstimatePropagation()
     EXPECT_EQUAL(25u, root->getState().estimate().estHits);
 }
 
-void
-Test::testMatchDataPropagation()
+TEST("testMatchDataPropagation")
 {
     {
         Blueprint::UP leaf = ap(MyLeafSpec(0, true).create());
@@ -430,8 +404,7 @@ Test::testMatchDataPropagation()
     }
 }
 
-void
-Test::testChildAndNotCollapsing()
+TEST_F("testChildAndNotCollapsing", Fixture)
 {
     Blueprint::UP unsorted = ap(OtherAndNot::create()
                                 .add(OtherAndNot::create()
@@ -464,13 +437,12 @@ Test::testChildAndNotCollapsing()
                                    .add(MyLeafSpec(3).addField(2, 62).create())
                                    )
                               );
-    TEST_DO(check_not_equal(*sorted, *unsorted));
+    TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted = Blueprint::optimize(std::move(unsorted));
-    TEST_DO(check_equal(*sorted, *unsorted));
+    TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
-void
-Test::testChildAndCollapsing()
+TEST_F("testChildAndCollapsing", Fixture)
 {
     Blueprint::UP unsorted = ap(OtherAnd::create()
                                 .add(OtherAnd::create()
@@ -504,13 +476,12 @@ Test::testChildAndCollapsing()
                                    .add(MyLeafSpec(300).addField(1, 31).create())
                               );
 
-    TEST_DO(check_not_equal(*sorted, *unsorted));
+    TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted = Blueprint::optimize(std::move(unsorted));
-    TEST_DO(check_equal(*sorted, *unsorted));
+    TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
-void
-Test::testChildOrCollapsing()
+TEST_F("testChildOrCollapsing", Fixture)
 {
     Blueprint::UP unsorted = ap(OtherOr::create()
                                 .add(OtherOr::create()
@@ -543,13 +514,12 @@ Test::testChildOrCollapsing()
                                    .add(MyLeafSpec(2).addField(2, 52).create())
                                    .add(MyLeafSpec(1).addField(2, 42).create())
                               );
-    TEST_DO(check_not_equal(*sorted, *unsorted));
+    TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted = Blueprint::optimize(std::move(unsorted));
-    TEST_DO(check_equal(*sorted, *unsorted));
+    TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
-void
-Test::testChildSorting()
+TEST_F("testChildSorting", Fixture)
 {
     Blueprint::UP unsorted = ap(MyAnd::create()
                                 .add(MyOr::create()
@@ -587,33 +557,32 @@ Test::testChildSorting()
                                    )
                               );
 
-    TEST_DO(check_not_equal(*sorted, *unsorted));
+    TEST_DO(f.check_not_equal(*sorted, *unsorted));
     unsorted = Blueprint::optimize(std::move(unsorted));
-    TEST_DO(check_equal(*sorted, *unsorted));
+    TEST_DO(f.check_equal(*sorted, *unsorted));
 }
 
 
-void
-Test::testSearchCreation()
+TEST_F("testSearchCreation", Fixture)
 {
     {
         Blueprint::UP l = ap(MyLeafSpec(3)
                              .addField(1, 1)
                              .addField(2, 2)
                              .addField(3, 3).create());
-        SearchIterator::UP leafsearch = create(*l);
+        SearchIterator::UP leafsearch = f.create(*l);
 
         MySearch *lw = new MySearch("leaf", true, true);
         lw->addHandle(1).addHandle(2).addHandle(3);
         SearchIterator::UP wantleaf(lw);
 
-        TEST_DO(check_equal(*wantleaf, *leafsearch));
+        TEST_DO(f.check_equal(*wantleaf, *leafsearch));
     }
     {
         Blueprint::UP a = ap(MyAnd::create()
                              .add(MyLeafSpec(1).addField(1, 1).create())
                              .add(MyLeafSpec(2).addField(2, 2).create()));
-        SearchIterator::UP andsearch = create(*a);
+        SearchIterator::UP andsearch = f.create(*a);
 
         MySearch *l1 = new MySearch("leaf", true, true);
         MySearch *l2 = new MySearch("leaf", true, false);
@@ -623,13 +592,13 @@ Test::testSearchCreation()
         aw->add(l1);
         aw->add(l2);
         SearchIterator::UP wanted(aw);
-        TEST_DO(check_equal(*wanted, *andsearch));
+        TEST_DO(f.check_equal(*wanted, *andsearch));
     }
     {
         Blueprint::UP o = ap(MyOr::create()
                              .add(MyLeafSpec(1).addField(1, 11).create())
                              .add(MyLeafSpec(2).addField(2, 22).create()));
-        SearchIterator::UP orsearch = create(*o);
+        SearchIterator::UP orsearch = f.create(*o);
 
         MySearch *l1 = new MySearch("leaf", true, true);
         MySearch *l2 = new MySearch("leaf", true, true);
@@ -639,18 +608,11 @@ Test::testSearchCreation()
         ow->add(l1);
         ow->add(l2);
         SearchIterator::UP wanted(ow);
-        TEST_DO(check_equal(*wanted, *orsearch));
+        TEST_DO(f.check_equal(*wanted, *orsearch));
     }
 }
 
-template<typename T>
-Blueprint::UP makeNew(T *orig)
-{
-    return std::make_unique<T>(*orig);
-}
-
-void
-Test::testBlueprintMakeNew()
+TEST("testBlueprintMakeNew")
 {
     Blueprint::UP orig = ap(MyOr::create()
                             .add(MyLeafSpec(1).addField(1, 11).create())
@@ -765,19 +727,17 @@ struct BlueprintFixture
 {
     MyOr _blueprint;
     BlueprintFixture() : _blueprint() {
-        _blueprint.add(new MyTerm(FieldSpecBaseList().add(FieldSpecBase(5, 7)), 9));
+        _blueprint.add(new MyTerm(FieldSpecBase(5, 7), 9));
     }
 };
 
-void
-Test::requireThatAsStringWorks()
+TEST("requireThatAsStringWorks")
 {
     BlueprintFixture f;
     EXPECT_EQUAL(getExpectedBlueprint(), f._blueprint.asString());
 }
 
-void
-Test::requireThatAsSlimeWorks()
+TEST("requireThatAsSlimeWorks")
 {
     BlueprintFixture f;
     vespalib::Slime slime;
@@ -788,8 +748,7 @@ Test::requireThatAsSlimeWorks()
     EXPECT_EQUAL(expectedSlime, slime);
 }
 
-void
-Test::requireThatVisitMembersWorks()
+TEST("requireThatVisitMembersWorks")
 {
     BlueprintFixture f;
     vespalib::ObjectDumper dumper;
@@ -797,8 +756,7 @@ Test::requireThatVisitMembersWorks()
     EXPECT_EQUAL(getExpectedBlueprint(), dumper.toString());
 }
 
-void
-Test::requireThatDocIdLimitInjectionWorks()
+TEST("requireThatDocIdLimitInjectionWorks")
 {
     BlueprintFixture f;
     ASSERT_GREATER(f._blueprint.childCnt(), 0u);
@@ -808,26 +766,13 @@ Test::requireThatDocIdLimitInjectionWorks()
     EXPECT_EQUAL(1000u, term.get_docid_limit());
 }
 
-int
-Test::Main()
-{
-    TEST_DEBUG("lhs.out", "rhs.out");
-    TEST_INIT("blueprint_test");
-    testBlueprintBuilding();
-    testHitEstimateCalculation();
-    testHitEstimatePropagation();
-    testMatchDataPropagation();
-    testChildSorting();
-    testChildAndNotCollapsing();
-    testChildAndCollapsing();
-    testChildOrCollapsing();
-    testSearchCreation();
-    testBlueprintMakeNew();
-    requireThatAsStringWorks();
-    requireThatAsSlimeWorks();
-    requireThatVisitMembersWorks();
-    requireThatDocIdLimitInjectionWorks();
-    TEST_DONE();
+TEST("Control object sizes") {
+    EXPECT_EQUAL(32u, sizeof(Blueprint::State));
+    EXPECT_EQUAL(32u, sizeof(Blueprint));
+    EXPECT_EQUAL(64u, sizeof(LeafBlueprint));
 }
 
-TEST_APPHOOK(Test);
+TEST_MAIN() {
+    TEST_DEBUG("lhs.out", "rhs.out");
+    TEST_RUN_ALL();
+}

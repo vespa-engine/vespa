@@ -11,8 +11,7 @@ namespace search::queryeval {
 //-----------------------------------------------------------------------------
 
 SearchIterator::UP
-EmptyBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &,
-                                 bool) const
+EmptyBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const
 {
     return std::make_unique<EmptySearch>();
 }
@@ -23,21 +22,10 @@ EmptyBlueprint::createFilterSearch(bool /*strict*/, FilterConstraint /* constrai
     return std::make_unique<EmptySearch>();
 }
 
-EmptyBlueprint::EmptyBlueprint(const FieldSpecBase &field)
-    : SimpleLeafBlueprint(field)
+EmptyBlueprint::EmptyBlueprint(FieldSpecBaseList fields)
+    : SimpleLeafBlueprint(std::move(fields))
 {
 }
-
-EmptyBlueprint::EmptyBlueprint(const FieldSpecBaseList &fields)
-    : SimpleLeafBlueprint(fields)
-{
-}
-
-EmptyBlueprint::EmptyBlueprint()
-    : SimpleLeafBlueprint(FieldSpecBaseList())
-{
-}
-
 
 SearchIterator::UP
 AlwaysTrueBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const
@@ -51,7 +39,7 @@ AlwaysTrueBlueprint::createFilterSearch(bool /*strict*/, FilterConstraint /* con
     return std::make_unique<FullSearch>();
 }
 
-AlwaysTrueBlueprint::AlwaysTrueBlueprint() : SimpleLeafBlueprint(FieldSpecBaseList())
+AlwaysTrueBlueprint::AlwaysTrueBlueprint() : SimpleLeafBlueprint()
 {
     setEstimate(HitEstimate(search::endDocId, false));
 }
@@ -61,25 +49,23 @@ AlwaysTrueBlueprint::AlwaysTrueBlueprint() : SimpleLeafBlueprint(FieldSpecBaseLi
 SearchIterator::UP
 SimpleBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool strict) const
 {
-    SimpleSearch *ss = new SimpleSearch(_result, strict);
-    SearchIterator::UP search(ss);
-    ss->tag(_tag);
+    auto search = std::make_unique<SimpleSearch>(_result, strict);
+    search->tag(_tag);
     return search;
 }
 
 SearchIterator::UP
 SimpleBlueprint::createFilterSearch(bool strict, FilterConstraint constraint) const
 {
-    SimpleSearch *ss = new SimpleSearch(_result, strict);
-    SearchIterator::UP search(ss);
-    ss->tag(_tag +
-            (strict ? "<strict," : "<nostrict,") +
-            (constraint == FilterConstraint::UPPER_BOUND ? "upper>" : "lower>"));
+    auto search = std::make_unique<SimpleSearch>(_result, strict);
+    search->tag(_tag +
+               (strict ? "<strict," : "<nostrict,") +
+               (constraint == FilterConstraint::UPPER_BOUND ? "upper>" : "lower>"));
     return search;
 }
 
 SimpleBlueprint::SimpleBlueprint(const SimpleResult &result)
-    : SimpleLeafBlueprint(FieldSpecBaseList()),
+    : SimpleLeafBlueprint(),
       _tag(),
       _result(result)
 {

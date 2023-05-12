@@ -2,7 +2,6 @@
 
 #include "blueprint.h"
 #include "leaf_blueprints.h"
-#include "intermediate_blueprints.h"
 #include "emptysearch.h"
 #include "full_search.h"
 #include "field_spec.hpp"
@@ -17,7 +16,6 @@
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/data/slime/inserter.h>
-#include <type_traits>
 #include <map>
 
 #include <vespa/log/log.h>
@@ -89,13 +87,30 @@ Blueprint::sat_sum(const std::vector<HitEstimate> &data, uint32_t docid_limit)
     return { uint32_t(std::min(sum, uint64_t(limit))), empty };
 }
 
-Blueprint::State::State(const FieldSpecBaseList &fields_in)
-    : _fields(fields_in),
-      _estimate(),
-      _cost_tier(COST_TIER_NORMAL),
+Blueprint::State::State()
+    : _fields(),
+      _estimateHits(0),
       _tree_size(1),
+      _estimateEmpty(true),
       _allow_termwise_eval(true),
-      _want_global_filter(false)
+      _want_global_filter(false),
+      _cost_tier(COST_TIER_NORMAL)
+{}
+
+Blueprint::State::State(FieldSpecBase field)
+    : State()
+{
+    _fields.add(field);
+}
+
+Blueprint::State::State(FieldSpecBaseList fields_in)
+    : _fields(std::move(fields_in)),
+      _estimateHits(0),
+      _tree_size(1),
+      _estimateEmpty(true),
+      _allow_termwise_eval(true),
+      _want_global_filter(false),
+      _cost_tier(COST_TIER_NORMAL)
 {
 }
 
@@ -387,10 +402,10 @@ IntermediateBlueprint::calculateEstimate() const
     return combine(estimates);
 }
 
-uint32_t
+uint8_t
 IntermediateBlueprint::calculate_cost_tier() const
 {
-    uint32_t cost_tier = State::COST_TIER_MAX;
+    uint8_t cost_tier = State::COST_TIER_MAX;
     for (const Blueprint::UP &child : _children) {
         cost_tier = std::min(cost_tier, child->getState().cost_tier());
     }
@@ -483,6 +498,7 @@ IntermediateBlueprint::mixChildrenFields() const
             }
         }
     }
+    fieldList.reserve(fieldMap.size());
     for (const auto & entry : fieldMap) {
         fieldList.add(*entry.second);
     }
@@ -684,18 +700,9 @@ IntermediateBlueprint::calculateUnpackInfo(const fef::MatchData & md) const
 
 //-----------------------------------------------------------------------------
 
-LeafBlueprint::LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval)
-    : _state(fields)
-{
-    _state.allow_termwise_eval(allow_termwise_eval);
-}
-
-LeafBlueprint::~LeafBlueprint() = default;
-
 void
-LeafBlueprint::fetchPostings(const ExecuteInfo &execInfo)
+LeafBlueprint::fetchPostings(const ExecuteInfo &)
 {
-    (void) execInfo;
 }
 
 void
@@ -739,6 +746,7 @@ LeafBlueprint::setEstimate(HitEstimate est)
 void
 LeafBlueprint::set_cost_tier(uint32_t value)
 {
+    assert(value < 0x100);
     _state.cost_tier(value);
     notifyChange();
 }

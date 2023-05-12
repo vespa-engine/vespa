@@ -101,7 +101,8 @@ struct WS {
         FakeRequestContext requestContext(&ac);
         MatchData::UP md = layout.createMatchData();
         Node::UP node = createNode();
-        FieldSpecList fields = FieldSpecList().add(FieldSpec(field, fieldId, handle));
+        FieldSpecList fields;
+        fields.add(FieldSpec(field, fieldId, handle));
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
         bp->fetchPostings(queryeval::ExecuteInfo::create(strict));
         SearchIterator::UP sb = bp->createSearch(*md, strict);
@@ -113,7 +114,8 @@ struct WS {
         FakeRequestContext requestContext(&ac);
         MatchData::UP md = layout.createMatchData();
         Node::UP node = createNode();
-        FieldSpecList fields = FieldSpecList().add(FieldSpec(field, fieldId, handle));
+        FieldSpecList fields;
+        fields.add(FieldSpec(field, fieldId, handle));
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
         bp->fetchPostings(queryeval::ExecuteInfo::create(strict));
         SearchIterator::UP sb = bp->createSearch(*md, strict);

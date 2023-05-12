@@ -65,22 +65,25 @@ public:
     {
     private:
         FieldSpecBaseList _fields;
-        HitEstimate       _estimate;
-        uint32_t          _cost_tier;
-        uint32_t          _tree_size;
-        bool              _allow_termwise_eval;
-        bool              _want_global_filter;
+        uint32_t          _estimateHits;
+        uint32_t          _tree_size : 20;
+        bool              _estimateEmpty : 1;
+        bool              _allow_termwise_eval : 1;
+        bool              _want_global_filter : 1;
+        uint8_t           _cost_tier;
 
     public:
-        static constexpr uint32_t COST_TIER_NORMAL = 1;
-        static constexpr uint32_t COST_TIER_EXPENSIVE = 2;
-        static constexpr uint32_t COST_TIER_MAX = 999;
+        static constexpr uint8_t COST_TIER_NORMAL = 1;
+        static constexpr uint8_t COST_TIER_EXPENSIVE = 2;
+        static constexpr uint8_t COST_TIER_MAX = 255;
 
-        State(const FieldSpecBaseList &fields_in);
+        State();
+        State(FieldSpecBase field);
+        State(FieldSpecBaseList fields_in);
         State(const State &rhs) = delete;
-        State(State &&rhs) = default;
+        State(State &&rhs) noexcept = default;
         State &operator=(const State &rhs) = delete;
-        State &operator=(State &&rhs) = default;
+        State &operator=(State &&rhs) noexcept = default;
         ~State();
 
         bool isTermLike() const { return !_fields.empty(); }
@@ -97,21 +100,27 @@ public:
             return nullptr;
         }
 
-        void estimate(HitEstimate est) { _estimate = est; }
-        HitEstimate estimate() const { return _estimate; }
+        void estimate(HitEstimate est) {
+            _estimateHits = est.estHits;
+            _estimateEmpty = est.empty;
+        }
+        HitEstimate estimate() const { return HitEstimate(_estimateHits, _estimateEmpty); }
         double hit_ratio(uint32_t docid_limit) const {
-            uint32_t total_hits = _estimate.estHits;
+            uint32_t total_hits = _estimateHits;
             uint32_t total_docs = std::max(total_hits, docid_limit);
             return (total_docs == 0) ? 0.0 : double(total_hits) / double(total_docs);
         }
-        void tree_size(uint32_t value) { _tree_size = value; }
+        void tree_size(uint32_t value) {
+            assert(value < 0x100000);
+            _tree_size = value;
+        }
         uint32_t tree_size() const { return _tree_size; }
         void allow_termwise_eval(bool value) { _allow_termwise_eval = value; }
         bool allow_termwise_eval() const { return _allow_termwise_eval; }
         void want_global_filter(bool value) { _want_global_filter = value; }
         bool want_global_filter() const { return _want_global_filter; }
-        void cost_tier(uint32_t value) { _cost_tier = value; }
-        uint32_t cost_tier() const { return _cost_tier; }
+        void cost_tier(uint8_t value) { _cost_tier = value; }
+        uint8_t cost_tier() const { return _cost_tier; }
     };
 
     // utility that just takes maximum estimate
@@ -269,7 +278,7 @@ protected:
     virtual State calculateState() const = 0;
 
 public:
-    StateCache() : _stale(true), _state(FieldSpecBaseList()) {}
+    StateCache() : _stale(true), _state() {}
     const State &getState() const final {
         if (_stale) {
             updateState();
@@ -287,7 +296,7 @@ class IntermediateBlueprint : public blueprint::StateCache
 private:
     Children _children;
     HitEstimate calculateEstimate() const;
-    uint32_t calculate_cost_tier() const;
+    uint8_t calculate_cost_tier() const;
     uint32_t calculate_tree_size() const;
     bool infer_allow_termwise_eval() const;
     bool infer_want_global_filter() const;
@@ -348,7 +357,6 @@ class LeafBlueprint : public Blueprint
 {
 private:
     State _state;
-
 protected:
     void optimize(Blueprint* &self) final;
     void setEstimate(HitEstimate est);
@@ -357,9 +365,25 @@ protected:
     void set_want_global_filter(bool value);
     void set_tree_size(uint32_t value);
 
-    LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwise_eval);
+    LeafBlueprint(bool allow_termwise_eval)
+        : _state()
+    {
+        _state.allow_termwise_eval(allow_termwise_eval);
+    }
+
+    LeafBlueprint(FieldSpecBase field, bool allow_termwise_eval)
+        : _state(field)
+    {
+        _state.allow_termwise_eval(allow_termwise_eval);
+    }
+    LeafBlueprint(FieldSpecBaseList fields, bool allow_termwise_eval)
+        : _state(std::move(fields))
+    {
+        _state.allow_termwise_eval(allow_termwise_eval);
+    }
+
 public:
-    ~LeafBlueprint() override;
+    ~LeafBlueprint() override = default;
     const State &getState() const final { return _state; }
     void setDocIdLimit(uint32_t limit) final { Blueprint::setDocIdLimit(limit); }
     void fetchPostings(const ExecuteInfo &execInfo) override;
@@ -372,14 +396,15 @@ public:
 
 // for leaf nodes representing a single term
 struct SimpleLeafBlueprint : LeafBlueprint {
-    explicit SimpleLeafBlueprint(const FieldSpecBase &field) : LeafBlueprint(FieldSpecBaseList().add(field), true) {}
-    explicit SimpleLeafBlueprint(const FieldSpecBaseList &fields) : LeafBlueprint(fields, true) {}
+    explicit SimpleLeafBlueprint() : LeafBlueprint(true) {}
+    explicit SimpleLeafBlueprint(FieldSpecBase field) : LeafBlueprint(field, true) {}
+    explicit SimpleLeafBlueprint(FieldSpecBaseList fields) : LeafBlueprint(std::move(fields), true) {}
 };
 
 // for leaf nodes representing more complex structures like wand/phrase
 struct ComplexLeafBlueprint : LeafBlueprint {
-    explicit ComplexLeafBlueprint(const FieldSpecBase &field) : LeafBlueprint(FieldSpecBaseList().add(field), false) {}
-    explicit ComplexLeafBlueprint(const FieldSpecBaseList &fields) : LeafBlueprint(fields, false) {}
+    explicit ComplexLeafBlueprint(FieldSpecBase field) : LeafBlueprint(field, false) {}
+    explicit ComplexLeafBlueprint(FieldSpecBaseList fields) : LeafBlueprint(std::move(fields), false) {}
 };
 
 //-----------------------------------------------------------------------------

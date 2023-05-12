@@ -339,7 +339,7 @@ class DummySingleValueBitNumericAttributeBlueprint : public SimpleLeafBlueprint
 {
 public:
     explicit DummySingleValueBitNumericAttributeBlueprint(const SimpleResult & result) :
-        SimpleLeafBlueprint(FieldSpecBaseList()),
+        SimpleLeafBlueprint(),
         _a("a", search::GrowStrategy(), false),
         _sc(),
         _tfmd()
