@@ -6,6 +6,6 @@ namespace=language.huggingface
 # Use "unknown" for models to be used with any language.
 model[].language string
 # The path to the model relative to the application package root
-model[].path path
+model[].path model
 
 addSpecialTokens bool default=true
