@@ -19,6 +19,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>

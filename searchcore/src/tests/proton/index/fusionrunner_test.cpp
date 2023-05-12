@@ -19,6 +19,7 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/testkit/testapp.h>

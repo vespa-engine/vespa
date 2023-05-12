@@ -4,6 +4,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/gtest/gtest.h>

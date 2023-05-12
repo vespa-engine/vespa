@@ -6,7 +6,6 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/searchlib/query/tree/node.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/field_spec.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/searchlib/queryeval/searchable.h>
@@ -35,7 +34,6 @@ protected:
     using FieldSpecList = search::queryeval::FieldSpecList;
     using Node = search::query::Node;
     using IAttributeContext = search::attribute::IAttributeContext;
-    using Blueprint = search::queryeval::Blueprint;
 public:
     using SP = std::shared_ptr<IndexSearchable>;
 

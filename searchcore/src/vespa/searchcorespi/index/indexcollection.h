@@ -46,9 +46,9 @@ public:
     uint32_t getSourceId(uint32_t i) const override;
 
     // Implements IndexSearchable
-    Blueprint::UP
+    std::unique_ptr<search::queryeval::Blueprint>
     createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term) override;
-    Blueprint::UP
+    std::unique_ptr<search::queryeval::Blueprint>
     createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term) override;
     search::SearchableStats getSearchableStats() const  override;
     search::SerialNum getSerialNum() const override;

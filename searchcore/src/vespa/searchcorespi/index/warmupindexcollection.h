@@ -45,14 +45,10 @@ public:
     uint32_t getSourceId(uint32_t i) const override;
 
     // Implements IndexSearchable
-    Blueprint::UP
-    createBlueprint(const IRequestContext & requestContext,
-                    const FieldSpec &field,
-                    const Node &term) override;
-    Blueprint::UP
-    createBlueprint(const IRequestContext & requestContext,
-                    const FieldSpecList &fields,
-                    const Node &term) override;
+    std::unique_ptr<search::queryeval::Blueprint>
+    createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term) override;
+    std::unique_ptr<search::queryeval::Blueprint>
+    createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term) override;
     search::SearchableStats getSearchableStats() const override;
     search::SerialNum getSerialNum() const override;
     void accept(IndexSearchableVisitor &visitor) const override;
@@ -70,45 +66,11 @@ public:
     vespalib::string toString() const override;
     bool doUnpack() const { return _warmupConfig.getUnpack(); }
     void drainPending();
+    const vespalib::Clock & clock() const { return _clock; }
+    vespalib::steady_time warmupEndTime() const { return _warmupEndTime; }
+    vespalib::MonitoredRefCount & pendingTasks() { return _pendingTasks; }
 private:
-    using MatchData = search::fef::MatchData;
     using Task = vespalib::Executor::Task;
-    class WarmupRequestContext : public IRequestContext {
-        using IAttributeVector = search::attribute::IAttributeVector;
-        using AttributeBlueprintParams = search::attribute::AttributeBlueprintParams;
-    public:
-        WarmupRequestContext(const vespalib::Clock & clock);
-        ~WarmupRequestContext() override;
-        const vespalib::Doom & getDoom() const override { return _doom; }
-        const IAttributeVector *getAttribute(const vespalib::string &) const override { return nullptr; }
-        const IAttributeVector *getAttributeStableEnum(const vespalib::string &) const override { return nullptr; }
-        const vespalib::eval::Value* get_query_tensor(const vespalib::string&) const override;
-        const AttributeBlueprintParams& get_attribute_blueprint_params() const override { return _params; }
-        const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override { return nullptr; }
-    private:
-        const vespalib::Doom _doom;
-        const AttributeBlueprintParams _params;
-    };
-    class WarmupTask : public Task {
-    public:
-        WarmupTask(std::unique_ptr<MatchData> md, std::shared_ptr<WarmupIndexCollection> warmup);
-        ~WarmupTask() override;
-        WarmupTask &createBlueprint(const FieldSpec &field, const Node &term) {
-            _bluePrint = _warmup->createBlueprint(_requestContext, field, term);
-            return *this;
-        }
-        WarmupTask &createBlueprint(const FieldSpecList &fields, const Node &term) {
-            _bluePrint = _warmup->createBlueprint(_requestContext, fields, term);
-            return *this;
-        }
-    private:
-        void run() override;
-        std::shared_ptr<WarmupIndexCollection>  _warmup;
-        vespalib::RetainGuard                   _retainGuard;
-        std::unique_ptr<MatchData>              _matchData;
-        Blueprint::UP                           _bluePrint;
-        WarmupRequestContext                    _requestContext;
-    };
 
     void fireWarmup(Task::UP task);
     bool handledBefore(uint32_t fieldId, const Node &term);

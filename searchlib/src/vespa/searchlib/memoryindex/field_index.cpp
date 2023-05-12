@@ -5,6 +5,7 @@
 #include "posting_iterator.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/btree/btree.hpp>

@@ -12,10 +12,10 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
 #include <vespa/searchlib/common/i_flush_token.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -36,6 +36,7 @@ using search::index::SchemaUtil;
 using search::common::FileHeaderContext;
 using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
+using search::queryeval::Blueprint;
 using search::SerialNum;
 using vespalib::makeLambdaTask;
 using vespalib::makeSharedLambdaCallback;

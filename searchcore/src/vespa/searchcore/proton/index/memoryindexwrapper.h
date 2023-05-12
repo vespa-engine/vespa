@@ -5,6 +5,7 @@
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchcorespi/index/imemoryindex.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <atomic>
@@ -34,14 +35,14 @@ public:
     /**
      * Implements searchcorespi::IndexSearchable
      */
-    search::queryeval::Blueprint::UP
+    std::unique_ptr<search::queryeval::Blueprint>
     createBlueprint(const search::queryeval::IRequestContext & requestContext,
                     const search::queryeval::FieldSpec &field,
                     const search::query::Node &term) override
     {
         return _index.createBlueprint(requestContext, field, term);
     }
-    search::queryeval::Blueprint::UP
+    std::unique_ptr<search::queryeval::Blueprint>
     createBlueprint(const search::queryeval::IRequestContext & requestContext,
                     const search::queryeval::FieldSpecList &fields,
                     const search::query::Node &term) override

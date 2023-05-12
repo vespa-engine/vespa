@@ -4,6 +4,7 @@
 
 #include "indexsearchable.h"
 #include <vespa/searchlib/queryeval/fake_searchable.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 
 namespace searchcorespi {
 
@@ -18,11 +19,8 @@ public:
     FakeIndexSearchable() : _fake() { }
 
     search::queryeval::FakeSearchable &getFake() { return _fake; }
-    
-    /**
-     * Implements IndexSearchable
-     */
-    Blueprint::UP
+
+    std::unique_ptr<search::queryeval::Blueprint>
     createBlueprint(const IRequestContext & requestContext,
                     const FieldSpec &field,
                     const Node &term) override
@@ -35,9 +33,7 @@ public:
     }
 
     search::SerialNum getSerialNum() const override { return 0; }
-    void accept(IndexSearchableVisitor &visitor) const override {
-        (void) visitor;
-    }
+    void accept(IndexSearchableVisitor &) const override { }
 
     search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
         (void) field_name;
