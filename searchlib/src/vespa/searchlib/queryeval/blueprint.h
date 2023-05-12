@@ -76,11 +76,13 @@ public:
         static constexpr uint32_t COST_TIER_EXPENSIVE = 2;
         static constexpr uint32_t COST_TIER_MAX = 999;
 
+        State();
+        State(FieldSpecBase field);
         State(FieldSpecBaseList fields_in);
         State(const State &rhs) = delete;
-        State(State &&rhs) = default;
+        State(State &&rhs) noexcept = default;
         State &operator=(const State &rhs) = delete;
-        State &operator=(State &&rhs) = default;
+        State &operator=(State &&rhs) noexcept = default;
         ~State();
 
         bool isTermLike() const { return !_fields.empty(); }
@@ -269,7 +271,7 @@ protected:
     virtual State calculateState() const = 0;
 
 public:
-    StateCache() : _stale(true), _state(FieldSpecBaseList()) {}
+    StateCache() : _stale(true), _state() {}
     const State &getState() const final {
         if (_stale) {
             updateState();
@@ -348,7 +350,6 @@ class LeafBlueprint : public Blueprint
 {
 private:
     State _state;
-
 protected:
     void optimize(Blueprint* &self) final;
     void setEstimate(HitEstimate est);
@@ -357,9 +358,25 @@ protected:
     void set_want_global_filter(bool value);
     void set_tree_size(uint32_t value);
 
-    LeafBlueprint(FieldSpecBaseList fields, bool allow_termwise_eval);
+    LeafBlueprint(bool allow_termwise_eval)
+        : _state()
+    {
+        _state.allow_termwise_eval(allow_termwise_eval);
+    }
+
+    LeafBlueprint(FieldSpecBase field, bool allow_termwise_eval)
+        : _state(field)
+    {
+        _state.allow_termwise_eval(allow_termwise_eval);
+    }
+    LeafBlueprint(FieldSpecBaseList fields, bool allow_termwise_eval)
+        : _state(std::move(fields))
+    {
+        _state.allow_termwise_eval(allow_termwise_eval);
+    }
+
 public:
-    ~LeafBlueprint() override;
+    ~LeafBlueprint() override = default;
     const State &getState() const final { return _state; }
     void setDocIdLimit(uint32_t limit) final { Blueprint::setDocIdLimit(limit); }
     void fetchPostings(const ExecuteInfo &execInfo) override;
@@ -372,13 +389,14 @@ public:
 
 // for leaf nodes representing a single term
 struct SimpleLeafBlueprint : LeafBlueprint {
-    explicit SimpleLeafBlueprint(const FieldSpecBase &field) : LeafBlueprint(FieldSpecBaseList(field), true) {}
+    explicit SimpleLeafBlueprint() : LeafBlueprint(true) {}
+    explicit SimpleLeafBlueprint(FieldSpecBase field) : LeafBlueprint(field, true) {}
     explicit SimpleLeafBlueprint(FieldSpecBaseList fields) : LeafBlueprint(std::move(fields), true) {}
 };
 
 // for leaf nodes representing more complex structures like wand/phrase
 struct ComplexLeafBlueprint : LeafBlueprint {
-    explicit ComplexLeafBlueprint(const FieldSpecBase &field) : LeafBlueprint(FieldSpecBaseList(field), false) {}
+    explicit ComplexLeafBlueprint(FieldSpecBase field) : LeafBlueprint(field, false) {}
     explicit ComplexLeafBlueprint(FieldSpecBaseList fields) : LeafBlueprint(std::move(fields), false) {}
 };
 

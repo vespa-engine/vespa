@@ -17,8 +17,8 @@ protected:
     SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
 public:
     EmptyBlueprint(FieldSpecBaseList fields);
-    EmptyBlueprint(const FieldSpecBase &field);
-    EmptyBlueprint();
+    EmptyBlueprint(FieldSpecBase field) : SimpleLeafBlueprint(field) {}
+    EmptyBlueprint() = default;
     SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 };
 
