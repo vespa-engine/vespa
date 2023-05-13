@@ -57,8 +57,7 @@ public abstract class FleetControllerTest implements Waiter {
     ZooKeeperTestServer zooKeeperServer;
     protected final List<FleetController> fleetControllers = new ArrayList<>();
     protected List<DummyVdsNode> nodes = new ArrayList<>();
-    // TODO: This should use the same timer as the fleet controllers (i.e. the one supplied in  createFleetControllers()
-    private Waiter waiter = createWaiter(new FakeTimer());
+    private Waiter waiter;
 
     FleetControllerTest() {
         try {
@@ -99,7 +98,8 @@ public abstract class FleetControllerTest implements Waiter {
         builder.setSlobrokConnectionSpecs(getSlobrokConnectionSpecs(slobrok));
     }
 
-    static FleetController createFleetController(Timer timer, FleetControllerOptions options) {
+    FleetController createFleetController(Timer timer, FleetControllerOptions options) {
+        waiter = createWaiter(timer);
         var context = new TestFleetControllerContext(options);
         var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex(), options.clusterName());
         var log = new EventLog(timer, metricUpdater);
@@ -153,7 +153,6 @@ public abstract class FleetControllerTest implements Waiter {
     void startFleetController(Timer timer) {
         if ( ! fleetControllers.isEmpty()) throw new IllegalStateException("already started fleetcontroller, not starting another");
 
-        waiter = createWaiter(timer);
         fleetControllers.add(createFleetController(timer, options));
     }
 
@@ -300,6 +299,7 @@ public abstract class FleetControllerTest implements Waiter {
 
     Duration timeout() { return timeout; }
 
+    // Note: This should use the same timer as the fleet controller as monitor
     private Impl createWaiter(Timer timer) {
         return new Impl(new DataRetriever() {
             @Override
