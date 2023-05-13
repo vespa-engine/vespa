@@ -310,7 +310,6 @@ FlowCompletenessBlueprint::setup(const fef::IIndexEnvironment &env,
     describeOutput(_output[3], "element weight of best scored element");
     describeOutput(_output[4], "field weight");
     describeOutput(_output[5], "query terms matching in best element (measured by flow)");
-    env.hintFieldAccess(field->id());
     return true;
 }
 

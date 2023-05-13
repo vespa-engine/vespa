@@ -51,8 +51,8 @@ private:
     bool _use_nns_tensor;
     bool _use_item_label;
 
-    bool setup_geopos(const fef::IIndexEnvironment & env, const vespalib::string &attr);
-    bool setup_nns(const fef::IIndexEnvironment & env, const vespalib::string &attr);
+    bool setup_geopos(const vespalib::string &attr);
+    bool setup_nns(const vespalib::string &attr);
 
 public:
     DistanceBlueprint();

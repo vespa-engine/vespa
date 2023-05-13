@@ -163,7 +163,6 @@ JaroWinklerDistanceBlueprint::setup(const search::fef::IIndexEnvironment &env,
 
     defineInput(vespalib::make_string("fieldLength(%s)", params[0].getValue().c_str()));
     describeOutput("out", "JaroWinklerDistance distance measure.");
-    env.hintFieldAccess(_config.fieldId);
     return true;
 }
 

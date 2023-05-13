@@ -87,7 +87,7 @@ TermFieldMdBlueprint::createInstance() const
 }
 
 bool
-TermFieldMdBlueprint::setup(const IIndexEnvironment & env,
+TermFieldMdBlueprint::setup(const IIndexEnvironment &,
                             const ParameterList & params)
 {
     _field = params[0].asField();
@@ -101,7 +101,6 @@ TermFieldMdBlueprint::setup(const IIndexEnvironment & env,
     describeOutput("occurrences", "The sum of occurrences (positions) in the match data");
     describeOutput("maxTermWeight", "The max term weight among ranked terms matching this field");
 
-    env.hintFieldAccess(_field->id());
     return true;
 }
 

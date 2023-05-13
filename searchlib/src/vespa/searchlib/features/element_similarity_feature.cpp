@@ -430,7 +430,6 @@ ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env, const fef::
         }
         _outputs.push_back(OutputContext_UP(new OutputContext(*function, std::move(aggr))));
     }
-    env.hintFieldAccess(field->id());
     return true;
 }
 

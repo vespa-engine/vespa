@@ -62,9 +62,6 @@ TensorFromWeightedSetBlueprint::setup(const search::fef::IIndexEnvironment &env,
     describeOutput("tensor",
                    "The tensor created from the given weighted set source (attribute field or query parameter)",
                    FeatureType::object(ValueType::make_type(CellType::DOUBLE, {{_dimension}})));
-    if (validSource && _sourceType == ATTRIBUTE_SOURCE) {
-        env.hintAttributeAccess(_sourceParam);
-    }
     return validSource;
 }
 

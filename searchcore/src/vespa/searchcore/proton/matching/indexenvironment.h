@@ -61,8 +61,6 @@ public:
     const search::fef::ITableManager &getTableManager() const override;
     FeatureMotivation getFeatureMotivation() const override;
     void hintFeatureMotivation(FeatureMotivation motivation) const override;
-    void hintFieldAccess(uint32_t fieldId) const override;
-    void hintAttributeAccess(const string &name) const override;
     uint32_t getDistributionKey() const override { return _distributionKey; }
 
     vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override {

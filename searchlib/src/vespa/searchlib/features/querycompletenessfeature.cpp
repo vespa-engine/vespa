@@ -81,7 +81,7 @@ QueryCompletenessBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironme
 }
 
 bool
-QueryCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
+QueryCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &,
                                   const search::fef::ParameterList &params)
 {
     _config.fieldId = params[0].asField()->id();
@@ -98,7 +98,6 @@ QueryCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
     }
     describeOutput("hit",  "The number of query terms matched in field.");
     describeOutput("miss", "The number of query terms not matched in field.");
-    env.hintFieldAccess(_config.fieldId);
     return true;
 }
 
