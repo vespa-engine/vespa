@@ -99,12 +99,7 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     FleetController createFleetController(Timer timer, FleetControllerOptions options) {
-        waiter = createWaiter(timer);
         var context = new TestFleetControllerContext(options);
-        var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex(), options.clusterName());
-        var log = new EventLog(timer, metricUpdater);
-        var cluster = new ContentCluster(options.clusterName(), options.nodes(), options.storageDistribution());
-        var stateGatherer = new NodeStateGatherer(timer, timer, log);
         var communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
                 timer,
@@ -115,8 +110,22 @@ public abstract class FleetControllerTest implements Waiter {
                 options.nodeStateRequestRoundTripTimeMaxSeconds());
         var lookUp = new SlobrokClient(context, timer, new String[0]);
         var rpcServer = new RpcServer(timer, options.clusterName(), options.fleetControllerIndex());
-        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress(), timer);
+        return createFleetController(timer, options, context, communicator, lookUp, rpcServer, true);
+    }
 
+    FleetController createFleetController(Timer timer,
+                                          FleetControllerOptions options,
+                                          TestFleetControllerContext context,
+                                          Communicator communicator,
+                                          NodeLookup nodeLookup,
+                                          RpcServer rpcServer,
+                                          boolean start) {
+        waiter = createWaiter(timer);
+        var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex(), options.clusterName());
+        var log = new EventLog(timer, metricUpdater);
+        var cluster = new ContentCluster(options.clusterName(), options.nodes(), options.storageDistribution());
+        var stateGatherer = new NodeStateGatherer(timer, timer, log);
+        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress(), timer);
         // Setting this <1000 ms causes ECONNREFUSED on socket trying to connect to ZK server, in ZooKeeper,
         // after creating a new ZooKeeper (session).  This causes ~10s extra time to connect after connection loss.
         // Reasons unknown.  Larger values like the default 10_000 causes that much additional running time for some tests.
@@ -126,9 +135,10 @@ public abstract class FleetControllerTest implements Waiter {
         var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
         var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex(), options.fleetControllerCount(), timer, timer);
 
-        var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, rpcServer, lookUp,
+        var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, rpcServer, nodeLookup,
                                              database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
-        controller.start();
+        if (start)
+            controller.start();
         return controller;
     }
 

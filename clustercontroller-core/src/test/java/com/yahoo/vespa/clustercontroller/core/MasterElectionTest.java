@@ -467,7 +467,6 @@ public class MasterElectionTest extends FleetControllerTest {
                 .setClusterHasGlobalDocumentTypes(true)
                 .setMasterZooKeeperCooldownPeriod(1)
                 .setMinTimeBeforeFirstSystemStateBroadcast(100000);
-        boolean useFakeTimer = false;
         Timer timer = new RealTimer();
         setUpFleetControllers(3, timer, builder);
         setUpVdsNodes(timer);
