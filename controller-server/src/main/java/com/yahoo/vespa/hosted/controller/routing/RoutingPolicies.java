@@ -170,7 +170,7 @@ public class RoutingPolicies {
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
             controller.routing().readDeclaredEndpointsOf(routingId.instance())
-                      .named(routingId.endpointId())
+                      .named(routingId.endpointId(), Endpoint.Scope.global)
                       .not().requiresRotation()
                       .forEach(endpoint -> updateGlobalDnsOf(endpoint, inactiveZones, routeEntry.getValue(), owner));
         }
@@ -269,8 +269,7 @@ public class RoutingPolicies {
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
             EndpointList endpoints = controller.routing().declaredEndpointsOf(application)
-                                               .scope(Endpoint.Scope.application)
-                                               .named(routingId.endpointId());
+                                               .named(routingId.endpointId(), Endpoint.Scope.application);
             for (Endpoint endpoint : endpoints) {
                 for (var policy : routeEntry.getValue()) {
                     for (var target : endpoint.targets()) {
@@ -471,7 +470,7 @@ public class RoutingPolicies {
         for (var id : removalCandidates) {
             EndpointList endpoints = controller.routing().readDeclaredEndpointsOf(id.instance())
                                                .not().requiresRotation()
-                                               .named(id.endpointId());
+                                               .named(id.endpointId(), Endpoint.Scope.global);
             NameServiceForwarder forwarder = nameServiceForwarderIn(allocation.deployment.zoneId());
             // This removes all ALIAS records having this DNS name. There is no attempt to delete only the entry for the
             // affected zone. Instead, the correct set of records is (re)created by updateGlobalDnsOf
@@ -491,7 +490,7 @@ public class RoutingPolicies {
             TenantAndApplicationId application = TenantAndApplicationId.from(id.instance());
             EndpointList endpoints = controller.routing()
                                                .readDeclaredEndpointsOf(application)
-                                               .named(id.endpointId());
+                                               .named(id.endpointId(), Endpoint.Scope.application);
             List<RoutingPolicy> policies = routingTable.get(id);
             for (var policy : policies) {
                 if (!policy.appliesTo(allocation.deployment)) continue;

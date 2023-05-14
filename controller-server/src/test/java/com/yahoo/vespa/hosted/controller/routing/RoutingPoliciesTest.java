@@ -846,8 +846,8 @@ public class RoutingPoliciesTest {
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
                              Map.of(betaZone5, 1));
         assertTrue(tester.controllerTester().controller().routing()
-                        .readDeclaredEndpointsOf(application)
-                        .named(EndpointId.of("a1")).isEmpty(),
+                         .readDeclaredEndpointsOf(application)
+                         .named(EndpointId.of("a1"), Endpoint.Scope.application).isEmpty(),
                 "Endpoint removed");
     }
 
@@ -915,6 +915,31 @@ public class RoutingPoliciesTest {
                 Map.of(betaZone1, 2,
                        mainZone1, 8,
                        mainZone2, 9));
+    }
+
+    @Test
+    public void duplicate_endpoint_ids_across_different_scopes() {
+        RoutingPoliciesTester tester = new RoutingPoliciesTester();
+        ApplicationId instance = ApplicationId.from("t1", "a1", "i1");
+        DeploymentContext context = tester.newDeploymentContext(instance);
+        var applicationPackage = applicationPackageBuilder()
+                .instances(instance.instance().value())
+                .region(zone1.region())
+                .region(zone2.region())
+                .endpoint("default", "c0")
+                .applicationEndpoint("default", "c0", zone1.region().value(),
+                                     Map.of(instance.instance(), 1))
+                .build();
+        tester.provisionLoadBalancers(1, instance, zone1, zone2);
+        context.submit(applicationPackage).deploy();
+        tester.assertTargets(instance, EndpointId.defaultId(), 0, zone1, zone2);
+        tester.assertTargets(TenantAndApplicationId.from(instance), EndpointId.defaultId(),
+                             ClusterSpec.Id.from("c0"), 0, Map.of(context.deploymentIdIn(zone1), 1));
+
+        tester.controllerTester().controller().applications().deactivate(context.instanceId(), zone1);
+        tester.controllerTester().controller().applications().deactivate(context.instanceId(), zone2);
+        assertTrue(tester.controllerTester().controller().routing().policies().read(context.instanceId()).isEmpty(),
+                   "Policies removed");
     }
 
     /** Returns an application package builder that satisfies requirements for a directly routed endpoint */
@@ -1053,7 +1078,7 @@ public class RoutingPoliciesTest {
             Map<String, List<DeploymentId>> deploymentsByDnsName = new HashMap<>();
             for (var deployment : deploymentWeights.keySet()) {
                 EndpointList applicationEndpoints = tester.controller().routing().readDeclaredEndpointsOf(application)
-                                                          .named(endpointId)
+                                                          .named(endpointId, Endpoint.Scope.application)
                                                           .targets(deployment)
                                                           .cluster(cluster);
                 assertEquals(1,
@@ -1103,7 +1128,7 @@ public class RoutingPoliciesTest {
             });
             List<DeploymentId> deployments = zoneWeights.keySet().stream().map(z -> new DeploymentId(instance, z)).toList();
             String globalEndpoint = tester.controller().routing().readDeclaredEndpointsOf(instance)
-                                          .named(endpointId)
+                                          .named(endpointId, Endpoint.Scope.global)
                                           .targets(deployments)
                                           .primary()
                                           .map(Endpoint::dnsName)
