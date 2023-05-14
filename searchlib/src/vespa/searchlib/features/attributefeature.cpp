@@ -534,7 +534,6 @@ AttributeBlueprint::setup(const fef::IIndexEnvironment & env,
         describeOutput("count", "Returns the number of elements in this array or weighted set attribute.");
         _numOutputs = 4;
     }
-    env.hintAttributeAccess(_attrName);
     return !_tensorType.is_error();
 }
 

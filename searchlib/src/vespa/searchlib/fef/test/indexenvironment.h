@@ -63,8 +63,6 @@ public:
     const ITableManager &getTableManager() const override { return _tableMan; }
     FeatureMotivation getFeatureMotivation() const override { return UNKNOWN; }
     void hintFeatureMotivation(FeatureMotivation) const override {}
-    void hintFieldAccess(uint32_t) const override {}
-    void hintAttributeAccess(const string &) const override {}
     uint32_t getDistributionKey() const override { return 3; }
 
     /** Returns a reference to the properties map of this. */

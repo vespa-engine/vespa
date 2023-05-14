@@ -333,7 +333,6 @@ AttributeMatchBlueprint::setup(const IIndexEnvironment & env,
     describeOutput("averageWeight", "totalWeight/matches");
     describeOutput("maxWeight",     "The max weight of the attribute keys matched in a weighted set attribute");
 
-    env.hintAttributeAccess(_params.attrInfo->name());
     return true;
 }
 

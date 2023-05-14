@@ -66,13 +66,12 @@ EuclideanDistanceBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFe
 }
 
 bool
-EuclideanDistanceBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
+EuclideanDistanceBlueprint::setup(const IIndexEnvironment &, const ParameterList &params)
 {
     _attributeName = params[0].getValue();
     _queryVector = params[1].getValue();
     describeOutput("distance", "The result after calculating the euclidean distance of the vector represented by the array "
                              "and the vector sent down with the query");
-    env.hintAttributeAccess(_attributeName);
     return true;
 }
 

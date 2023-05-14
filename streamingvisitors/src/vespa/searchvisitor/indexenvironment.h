@@ -68,10 +68,6 @@ public:
         _motivation = motivation;
     }
 
-    void hintFieldAccess(uint32_t) const override {}
-
-    void hintAttributeAccess(const string & name) const override;
-
     vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string& name) const override;
 
     vespalib::string getRankingExpression(const vespalib::string& name) const override;

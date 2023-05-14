@@ -121,7 +121,7 @@ ProximityBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
 }
 
 bool
-ProximityBlueprint::setup(const search::fef::IIndexEnvironment &env,
+ProximityBlueprint::setup(const search::fef::IIndexEnvironment&,
                           const search::fef::ParameterList &params)
 {
     _config.fieldId = params[0].asField()->id();
@@ -130,7 +130,6 @@ ProximityBlueprint::setup(const search::fef::IIndexEnvironment &env,
     describeOutput("out" , "The proximity of the query terms.");
     describeOutput("posA", "The best position of the first query term.");
     describeOutput("posB", "The best position of the second query term.");
-    env.hintFieldAccess(_config.fieldId);
     return true;
 }
 

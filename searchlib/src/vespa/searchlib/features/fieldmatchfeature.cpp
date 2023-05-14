@@ -334,7 +334,6 @@ FieldMatchBlueprint::setup(const IIndexEnvironment & env,
                    "positions separating the start of each field adjacent segment.");
     describeOutput("degradedMatches",
                    "The number of degraded query terms (no position information available) which was matched in this field.");
-    env.hintFieldAccess(_field->id());
     return true;
 }
 

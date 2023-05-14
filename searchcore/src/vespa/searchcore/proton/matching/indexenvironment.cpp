@@ -161,12 +161,6 @@ IndexEnvironment::hintFeatureMotivation(FeatureMotivation motivation) const {
     _motivation = motivation;
 }
 
-void
-IndexEnvironment::hintFieldAccess(uint32_t ) const { }
-
-void
-IndexEnvironment::hintAttributeAccess(const string &) const { }
-
 IndexEnvironment::~IndexEnvironment() = default;
 
 }

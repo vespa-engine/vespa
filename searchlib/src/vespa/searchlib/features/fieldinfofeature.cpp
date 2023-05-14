@@ -174,7 +174,6 @@ FieldInfoBlueprint::setup(const fef::IIndexEnvironment &indexEnv,
         if (fi != 0) {
             _fieldId = fi->id();
             if (fi->type() == fef::FieldType::INDEX) {
-                indexEnv.hintFieldAccess(_fieldId);
                 _type = 1.0;
             } else if (fi->type() == fef::FieldType::ATTRIBUTE) {
                 _type = 2.0;

@@ -201,7 +201,7 @@ TextSimilarityBlueprint::createInstance() const
 }
 
 bool
-TextSimilarityBlueprint::setup(const fef::IIndexEnvironment &env,
+TextSimilarityBlueprint::setup(const fef::IIndexEnvironment &,
                                const fef::ParameterList &params)
 {
     const fef::FieldInfo *field = params[0].asField();
@@ -211,7 +211,6 @@ TextSimilarityBlueprint::setup(const fef::IIndexEnvironment &env,
     describeOutput(order_output, "normalized match order score");
     describeOutput(query_coverage_output, "normalized query match coverage");
     describeOutput(field_coverage_output, "normalized field match coverage");
-    env.hintFieldAccess(field->id());
     return true;
 }
 

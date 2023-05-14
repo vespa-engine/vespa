@@ -107,7 +107,7 @@ ReverseProximityBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironmen
 }
 
 bool
-ReverseProximityBlueprint::setup(const search::fef::IIndexEnvironment &env,
+ReverseProximityBlueprint::setup(const search::fef::IIndexEnvironment &,
                                  const search::fef::ParameterList &params)
 {
     _config.fieldId = params[0].asField()->id();
@@ -116,7 +116,6 @@ ReverseProximityBlueprint::setup(const search::fef::IIndexEnvironment &env,
     describeOutput("out" , "The reverse proximity of the query terms.");
     describeOutput("posA", "The best position of the first query term.");
     describeOutput("posB", "The best position of the second query term.");
-    env.hintFieldAccess(_config.fieldId);
     return true;
 }
 

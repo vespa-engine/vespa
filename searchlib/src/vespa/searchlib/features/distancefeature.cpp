@@ -164,8 +164,7 @@ DistanceBlueprint::createInstance() const
 }
 
 bool
-DistanceBlueprint::setup_geopos(const IIndexEnvironment & env,
-                                const vespalib::string &attr)
+DistanceBlueprint::setup_geopos(const vespalib::string &attr)
 {
     _arg_string = attr;
     _use_geo_pos = true;
@@ -174,18 +173,15 @@ DistanceBlueprint::setup_geopos(const IIndexEnvironment & env,
     describeOutput("latitude", "Latitude of closest point");
     describeOutput("longitude", "Longitude of closest point");
     describeOutput("km", "Distance in kilometer units");
-    env.hintAttributeAccess(_arg_string);
     return true;
 }
 
 bool
-DistanceBlueprint::setup_nns(const IIndexEnvironment & env,
-                             const vespalib::string &attr)
+DistanceBlueprint::setup_nns(const vespalib::string &attr)
 {
     _arg_string = attr;
     _use_nns_tensor = true;
     describeOutput("out", "The euclidean distance from the query position.");
-    env.hintAttributeAccess(_arg_string);
     return true;
 }
 
@@ -215,7 +211,7 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
     const FieldInfo *fi = env.getFieldByName(z);
     if (fi != nullptr && fi->hasAttribute()) {
         // can't check anything here because streaming has wrong information
-        return setup_geopos(env, z);
+        return setup_geopos(z);
     }
     fi = env.getFieldByName(arg);
     if (fi != nullptr && fi->hasAttribute()) {
@@ -223,11 +219,11 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
         auto ct = fi->collection();
         if (dt == DataType::TENSOR && ct == CollectionType::SINGLE) {
             _attr_id = fi->id();
-            return setup_nns(env, arg);
+            return setup_nns(arg);
         }
         // could check if ct is CollectionType::SINGLE or CollectionType::ARRAY)
         if (dt == DataType::INT64) {
-            return setup_geopos(env, arg);
+            return setup_geopos(arg);
         }
     }
     if (env.getFieldByName(arg) == nullptr) {

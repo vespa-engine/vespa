@@ -223,13 +223,12 @@ InternalMaxReduceProdJoinBlueprint::getDescriptions() const {
 }
 
 bool
-InternalMaxReduceProdJoinBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params) {
+InternalMaxReduceProdJoinBlueprint::setup(const IIndexEnvironment &, const ParameterList &params) {
     _attribute = params[0].getValue();
     _attrKey = createAttributeKey(_attribute);
     _queryVector = params[1].getValue();
     _queryVectorKey = make_queryvector_key(getBaseName(), _queryVector);
     describeOutput("scalar", "Internal executor for optimized execution of reduce(join(A,Q,f(x,y)(x*y)),max)");
-    env.hintAttributeAccess(_attribute);
     return true;
 }
 

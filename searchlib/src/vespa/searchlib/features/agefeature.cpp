@@ -50,14 +50,13 @@ AgeBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
 }
 
 bool
-AgeBlueprint::setup(const search::fef::IIndexEnvironment &env,
+AgeBlueprint::setup(const search::fef::IIndexEnvironment&,
                     const search::fef::ParameterList &params)
 {
     _attribute = params[0].getValue();
     defineInput("now");
 
     describeOutput("out", "The age of the document, in seconds.");
-    env.hintAttributeAccess(_attribute);
     return true;
 }
 

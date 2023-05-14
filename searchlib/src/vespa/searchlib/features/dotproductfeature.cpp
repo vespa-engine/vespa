@@ -795,7 +795,7 @@ DotProductBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVi
 }
 
 bool
-DotProductBlueprint::setup(const IIndexEnvironment & env, const ParameterList & params)
+DotProductBlueprint::setup(const IIndexEnvironment&, const ParameterList & params)
 {
     _defaultAttribute = params[0].getValue();
     _attributeOverride = _defaultAttribute + ".override.name";
@@ -804,7 +804,6 @@ DotProductBlueprint::setup(const IIndexEnvironment & env, const ParameterList & 
     _queryVectorKey = make_queryvector_key(getBaseName(), _queryVector);
     describeOutput("scalar", "The result after calculating the dot product of the vector represented by the weighted set "
                              "and the vector sent down with the query");
-    env.hintAttributeAccess(_defaultAttribute);
     return true;
 }
 

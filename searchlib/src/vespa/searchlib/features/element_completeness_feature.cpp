@@ -138,7 +138,6 @@ ElementCompletenessBlueprint::setup(const fef::IIndexEnvironment &env,
     describeOutput(_output[1], "best scored element completeness");
     describeOutput(_output[2], "query completeness for best scored element");
     describeOutput(_output[3], "element weight of best scored element");
-    env.hintFieldAccess(field->id());
     return true;
 }
 

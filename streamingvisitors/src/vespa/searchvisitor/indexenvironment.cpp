@@ -39,10 +39,6 @@ IndexEnvironment::addField(const vespalib::string& name,
 }
 
 void
-IndexEnvironment::hintAttributeAccess(const string &) const {
-}
-
-void
 IndexEnvironment::set_ranking_assets_repo(std::shared_ptr<const IRankingAssetsRepo> ranking_assets_repo)
 {
     _ranking_assets_repo = std::move(ranking_assets_repo);

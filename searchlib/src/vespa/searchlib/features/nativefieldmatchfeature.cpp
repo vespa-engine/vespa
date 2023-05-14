@@ -180,7 +180,6 @@ NativeFieldMatchBlueprint::setup(const IIndexEnvironment & env,
             }
         }
         if (param.field) {
-            env.hintFieldAccess(fieldId);
             if (first_field) {
                 first_field = false;
             } else {

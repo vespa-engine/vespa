@@ -68,13 +68,12 @@ DebugAttributeWaitBlueprint::createInstance() const
 }
 
 bool
-DebugAttributeWaitBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
+DebugAttributeWaitBlueprint::setup(const IIndexEnvironment &, const ParameterList &params)
 {
     _attribute = params[0].getValue();
     _params.busyWait = (params[1].asDouble() == 1.0);
 
     describeOutput("out", "actual time waited");
-    env.hintAttributeAccess(_attribute);
     return true;
 }
 

@@ -106,7 +106,7 @@ FieldTermMatchBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment 
 }
 
 bool
-FieldTermMatchBlueprint::setup(const search::fef::IIndexEnvironment &env,
+FieldTermMatchBlueprint::setup(const search::fef::IIndexEnvironment &,
                                const search::fef::ParameterList &params)
 {
     _fieldId = params[0].asField()->id();
@@ -116,7 +116,6 @@ FieldTermMatchBlueprint::setup(const search::fef::IIndexEnvironment &env,
     describeOutput("occurrences",  "The number of occurrence of this term.");
     describeOutput("weight", "The sum occurence weights of this term.");
     describeOutput("exactness", "The average exactness this term.");
-    env.hintFieldAccess(_fieldId);
     return true;
 }
 

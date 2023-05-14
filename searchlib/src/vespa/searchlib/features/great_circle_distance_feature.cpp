@@ -96,13 +96,12 @@ GreatCircleDistanceBlueprint::createInstance() const
 }
 
 bool
-GreatCircleDistanceBlueprint::setup_geopos(const IIndexEnvironment & env, const vespalib::string &attr)
+GreatCircleDistanceBlueprint::setup_geopos(const vespalib::string &attr)
 {
     _attr_name = attr;
     describeOutput("km", "The distance (in km) from the query position.");
     describeOutput("latitude", "Latitude of closest point");
     describeOutput("longitude", "Longitude of closest point");
-    env.hintAttributeAccess(_attr_name);
     return true;
 }
 
@@ -144,7 +143,7 @@ GreatCircleDistanceBlueprint::setup(const IIndexEnvironment & env,
             }
         }
         */
-        return setup_geopos(env, z);
+        return setup_geopos(z);
     }
     if (env.getFieldByName(_field_name) == nullptr && fi == nullptr) {
         LOG(error, "unknown field '%s' for rank feature %s\n", _field_name.c_str(), getName().c_str());

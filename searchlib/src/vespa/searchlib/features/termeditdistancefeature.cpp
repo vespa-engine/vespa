@@ -214,7 +214,6 @@ TermEditDistanceBlueprint::setup(const search::fef::IIndexEnvironment &env,
     describeOutput("del", "Number of deletions performed.");
     describeOutput("ins", "Number of insertions performed.");
     describeOutput("sub", "Number of substitutions performed.");
-    env.hintFieldAccess(_config.fieldId);
     return true;
 }
 
