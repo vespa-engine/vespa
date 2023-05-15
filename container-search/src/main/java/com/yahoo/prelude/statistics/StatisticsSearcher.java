@@ -4,7 +4,6 @@ package com.yahoo.prelude.statistics;
 import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.MetricSettings;
@@ -25,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.yahoo.container.protect.Error.BACKEND_COMMUNICATION_ERROR;
@@ -224,7 +224,9 @@ public class StatisticsSearcher extends Searcher {
 
         incrQueryCount(metricContext);
         logQuery(query);
-        long start_ns = getStartNanoTime(query);
+        // Timestamp when request was initially processed by Jetty
+        long startMs = Optional.ofNullable(query.getHttpRequest())
+                .map(r -> r.creationTime(TimeUnit.MILLISECONDS)).orElseGet(System::currentTimeMillis);
         qps(metricContext);
         metric.set(QUERY_TIMEOUT_METRIC, query.getTimeout(), metricContext);
         Result result;
@@ -236,14 +238,14 @@ public class StatisticsSearcher extends Searcher {
             throw e;
         }
 
-        long end_ns = System.nanoTime(); // End time, in nanoseconds
-        long latency_ns = end_ns - start_ns;
-        if (latency_ns >= 0) {
-            addLatency(latency_ns, metricContext);
+        long endMs = System.currentTimeMillis();
+        long latencyMs = endMs - startMs;
+        if (latencyMs >= 0) {
+            addLatency(latencyMs, metricContext);
         } else {
             getLogger().log(Level.WARNING,
-                            "Apparently negative latency measure, start: " + start_ns
-                            + ", end: " + end_ns + ", for query: " + query);
+                            "Apparently negative latency measure, start: " + startMs
+                            + ", end: " + endMs + ", for query: " + query + ". Could be caused by NTP adjustments.");
         }
         if (result.hits().getError() != null) {
             incrErrorCount(result, metricContext);
@@ -284,11 +286,10 @@ public class StatisticsSearcher extends Searcher {
         }
     }
 
-    private void addLatency(long latency_ns, Metric.Context metricContext) {
-        double latency = 0.000001 * latency_ns;
-        metric.set(QUERY_LATENCY_METRIC, latency, metricContext);
-        metric.set(MEAN_QUERY_LATENCY_METRIC, latency, metricContext);
-        metric.set(MAX_QUERY_LATENCY_METRIC, latency, metricContext);
+    private void addLatency(long latencyMs, Metric.Context metricContext) {
+        metric.set(QUERY_LATENCY_METRIC, (double) latencyMs, metricContext);
+        metric.set(MEAN_QUERY_LATENCY_METRIC, (double) latencyMs, metricContext);
+        metric.set(MAX_QUERY_LATENCY_METRIC, (double) latencyMs, metricContext);
     }
 
     private void incrQueryCount(Metric.Context metricContext) {
@@ -407,15 +408,6 @@ public class StatisticsSearcher extends Searcher {
 
     private void addItemCountMetric(Query query, Metric.Context context) {
         metric.set(QUERY_ITEM_COUNT, query.getModel().getQueryTree().treeSize(), context);
-    }
-
-    /**
-     * Returns the relative start time from request was received by jdisc
-     */
-    private static long getStartNanoTime(Query query) {
-        return Optional.ofNullable(query.getHttpRequest())
-                .map(HttpRequest::relativeCreatedAtNanoTime)
-                .orElseGet(System::nanoTime);
     }
 
 }
