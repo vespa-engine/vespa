@@ -105,13 +105,14 @@ public class ApplicationSerializerTest {
                 true,
                 false,
                 Optional.of("~(˘▾˘)~"),
+                Optional.of(Instant.ofEpochMilli(496)),
                 3);
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
         RevisionId id = RevisionId.forDevelopment(31, new JobId(id1, DeploymentContext.productionUsEast3));
         SourceRevision source = new SourceRevision("repo1", "branch1", "commit1");
         Version compileVersion = Version.fromString("6.3.1");
-        ApplicationVersion applicationVersion2 = new ApplicationVersion(id, Optional.of(source), Optional.of("a@b"), Optional.of(compileVersion), Optional.empty(), Optional.of(Instant.ofEpochMilli(496)), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
+        ApplicationVersion applicationVersion2 = new ApplicationVersion(id, Optional.of(source), Optional.of("a@b"), Optional.of(compileVersion), Optional.empty(), Optional.of(Instant.ofEpochMilli(496)), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), Optional.empty(), 0);
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
         deployments.add(new Deployment(zone1, CloudAccount.empty, applicationVersion1.id(), Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
                 DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty()));
@@ -179,6 +180,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.revisions().last().get().hasPackage(), serialized.revisions().last().get().hasPackage());
         assertEquals(original.revisions().last().get().shouldSkip(), serialized.revisions().last().get().shouldSkip());
         assertEquals(original.revisions().last().get().description(), serialized.revisions().last().get().description());
+        assertEquals(original.revisions().last().get().submittedAt(), serialized.revisions().last().get().submittedAt());
         assertEquals(original.revisions().last().get().risk(), serialized.revisions().last().get().risk());
         assertEquals(original.revisions().withPackage(), serialized.revisions().withPackage());
         assertEquals(original.revisions().production(), serialized.revisions().production());

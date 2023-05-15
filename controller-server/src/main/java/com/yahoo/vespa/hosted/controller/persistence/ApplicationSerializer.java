@@ -116,6 +116,7 @@ public class ApplicationSerializer {
     private static final String branchField = "branchField";
     private static final String commitField = "commitField";
     private static final String descriptionField = "description";
+    private static final String submittedAtField = "submittedAt";
     private static final String riskField = "risk";
     private static final String authorEmailField = "authorEmailField";
     private static final String deployedDirectlyField = "deployedDirectly";
@@ -271,6 +272,7 @@ public class ApplicationSerializer {
         object.setBool(hasPackageField, applicationVersion.hasPackage());
         object.setBool(shouldSkipField, applicationVersion.shouldSkip());
         applicationVersion.description().ifPresent(description -> object.setString(descriptionField, description));
+        applicationVersion.submittedAt().ifPresent(at -> object.setLong(submittedAtField, at.toEpochMilli()));
         if (applicationVersion.risk() != 0) object.setLong(riskField, applicationVersion.risk());
         applicationVersion.bundleHash().ifPresent(bundleHash -> object.setString(bundleHashField, bundleHash));
     }
@@ -496,11 +498,12 @@ public class ApplicationSerializer {
         boolean hasPackage = object.field(hasPackageField).asBool();
         boolean shouldSkip = object.field(shouldSkipField).asBool();
         Optional<String> description = SlimeUtils.optionalString(object.field(descriptionField));
+        Optional<Instant> submittedAt = SlimeUtils.optionalInstant(object.field(submittedAtField));
         int risk = (int) object.field(riskField).asLong();
         Optional<String> bundleHash = SlimeUtils.optionalString(object.field(bundleHashField));
 
         return new ApplicationVersion(id, sourceRevision, authorEmail, compileVersion, allowedMajor, buildTime,
-                                      sourceUrl, commit, bundleHash, obsoleteAt, hasPackage, shouldSkip, description, risk);
+                                      sourceUrl, commit, bundleHash, obsoleteAt, hasPackage, shouldSkip, description, submittedAt, risk);
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {

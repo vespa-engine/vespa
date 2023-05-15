@@ -109,7 +109,7 @@ public class ControllerTest {
         context.submit(applicationPackage);
         RevisionId id = RevisionId.forProduction(1);
         Version compileVersion = new Version("6.1");
-        assertEquals(new ApplicationVersion(id, Optional.of(DeploymentContext.defaultSourceRevision), Optional.of("a@b"), Optional.of(compileVersion), Optional.empty(), Optional.of(Instant.ofEpochSecond(1)), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0),
+        assertEquals(new ApplicationVersion(id, Optional.of(DeploymentContext.defaultSourceRevision), Optional.of("a@b"), Optional.of(compileVersion), Optional.empty(), Optional.of(Instant.ofEpochSecond(1)), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), Optional.empty(), 0),
                      context.application().revisions().get(context.instance().change().revision().get()),
                      "Application version is known from completion of initial job");
         context.runJob(systemTest);
@@ -1339,7 +1339,7 @@ public class ControllerTest {
         ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(deploymentXml);
         byte[] testPackage = ApplicationPackage.filesZip(Map.of("tests/staging-test/foo.json", new byte[0]));
         var app = tester.newDeploymentContext();
-        tester.jobs().submit(app.application().id(), Submission.basic(applicationPackage, testPackage), 1);
+        tester.jobs().submit(app.application().id(), new Submission(applicationPackage, testPackage, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Instant.EPOCH, 0), 1);
         assertEquals(List.of(new Notification(tester.clock().instant(),
                         Type.testPackage,
                         Level.warning,

@@ -3070,7 +3070,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         ApplicationPackage applicationPackage =
                 new ApplicationPackage(dataParts.get(APPLICATION_ZIP), true, controller.system().isPublic());
         byte[] testPackage = dataParts.getOrDefault(APPLICATION_TEST_ZIP, new byte[0]);
-        Submission submission = new Submission(applicationPackage, testPackage, sourceUrl, sourceRevision, authorEmail, description, risk);
+        Submission submission = new Submission(applicationPackage, testPackage, sourceUrl, sourceRevision, authorEmail, description, controller.clock().instant(), risk);
 
         TenantName tenantName = TenantName.from(tenant);
         controller.applications().verifyPlan(tenantName);
@@ -3089,7 +3089,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
                                                      TenantAndApplicationId.from(tenant, application),
                                                      new Submission(ApplicationPackage.deploymentRemoval(), new byte[0], Optional.empty(),
-                                                                    Optional.empty(), Optional.empty(), Optional.empty(), 0),
+                                                                    Optional.empty(), Optional.empty(), Optional.empty(), controller.clock().instant(), 0),
                                                      0);
         return new MessageResponse("All deployments removed");
     }

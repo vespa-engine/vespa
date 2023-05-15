@@ -416,6 +416,7 @@ class JobControllerApiHandlerHelper {
         version.description().ifPresent(description -> versionObject.setString("description", description));
         if (version.risk() != 0) versionObject.setLong("risk", version.risk());
         versionObject.setBool("deployable", version.isDeployable());
+        version.submittedAt().ifPresent(submittedAt -> versionObject.setLong("submittedAt", submittedAt.toEpochMilli()));
     }
 
     static void toSlime(Cursor versionObject, ApplicationVersion version) {
