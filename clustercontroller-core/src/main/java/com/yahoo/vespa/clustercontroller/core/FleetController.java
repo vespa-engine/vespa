@@ -370,6 +370,8 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         }
     }
 
+    public EventLog getEventLog() { return eventLog; }
+
     private boolean maybePublishOldMetrics() {
         verifyInControllerThread();
         if (isMaster() && cycleCount > 300 + lastMetricUpdateCycleCount) {
