@@ -15,4 +15,5 @@ public class ValidationProcessor implements PreProcessor {
             throw new UnsupportedOperationException("XInclude not supported, use preprocess:include instead");
         return input;
     }
+
 }

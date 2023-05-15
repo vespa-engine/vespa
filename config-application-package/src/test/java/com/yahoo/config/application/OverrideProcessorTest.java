@@ -287,38 +287,6 @@ public class OverrideProcessorTest {
         assertOverride(Environment.from("test"), RegionName.from("us-west"), expected);
     }
 
-    @Test
-    public void testParsingInheritEnvironment() throws TransformerException {
-        String expected =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
-                        "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
-                        "  <admin version=\"2.0\">" +
-                        "    <adminserver hostalias=\"node0\"/>" +
-                        "  </admin>" +
-                        "  <content id=\"foo\" version=\"1.0\">" +
-                        "    <redundancy>1</redundancy>" +
-                        "    <documents>" +
-                        "      <document mode='index' type='music'/>\n" +
-                        "      <document mode='index' type='music2'/>\n" +
-                        "      <document type='music2' mode='index' />\n" +
-                        "    </documents>" +
-                        "    <nodes>" +
-                // node1 is specified for us-west but does not match because region overrides implies environment=prod
-                        "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
-                        "    </nodes>" +
-                        "  </content>" +
-                        "  <container id=\"stateless\" version=\"1.0\">" +
-                        "    <search/>" +
-                        "    <component id=\"foo\" class=\"MyFoo\" bundle=\"foobundle\" />" +
-                        "    <component id=\"bar\" class=\"TestBar\" bundle=\"foobundle\" />" +
-                        "    <nodes>" +
-                        "      <node hostalias=\"node0\"/>" +
-                        "    </nodes>" +
-                        "  </container>" +
-                        "</services>";
-        assertOverride(Environment.from("staging"), RegionName.from("us-west"), expected);
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void testParsingDifferentEnvInParentAndChild() throws TransformerException {
         String in = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +

@@ -22,6 +22,7 @@
     <preprocess:include file='jdisc.xml'/>
 
     <content version='1.0' id='foo'>
+        <thread deploy:region="us-central us-east" count="128"/>
         <preprocess:include file='content/content_foo.xml'/>
     </content>
 

@@ -45,6 +45,7 @@ public class IncludeProcessorTest {
                         <adminserver hostalias="node1"/>
                     </admin>
                     <content id="foo" version="1.0">
+                        <thread count="128" deploy:region="us-central us-east"/>
                         <redundancy>1</redundancy>
                         <documents>
                             <document mode="index" type="music.sd"/>
