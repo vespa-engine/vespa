@@ -14,18 +14,20 @@ public class Cloud {
 
     private final boolean dynamicProvisioning;
     private final boolean allowHostSharing;
+    private final boolean allowEnclave;
     private final boolean requireAccessControl;
     private final CloudAccount account;
 
-    private Cloud(CloudName name, boolean dynamicProvisioning, boolean allowHostSharing, boolean requireAccessControl,
-                  CloudAccount account) {
+    private Cloud(CloudName name, boolean dynamicProvisioning, boolean allowHostSharing, boolean allowEnclave,
+                  boolean requireAccessControl, CloudAccount account) {
         this.name = Objects.requireNonNull(name);
         this.dynamicProvisioning = dynamicProvisioning;
         this.allowHostSharing = allowHostSharing;
+        this.allowEnclave = allowEnclave;
         this.requireAccessControl = requireAccessControl;
         this.account = Objects.requireNonNull(account);
-        if ((name.equals(CloudName.AWS) || name.equals(CloudName.GCP)) && account.isUnspecified()) {
-            throw new IllegalArgumentException("Account must be non-empty in cloud '" + name + "'");
+        if (allowEnclave && account.isUnspecified()) {
+            throw new IllegalArgumentException("Account must be non-empty in '" + name + "'");
         }
     }
 
@@ -41,6 +43,9 @@ public class Cloud {
 
     /** Returns whether this allows host sharing */
     public boolean allowHostSharing() { return allowHostSharing; }
+
+    /** Returns whether this allows deployments to enclave */
+    public boolean allowEnclave() { return allowEnclave; }
 
     /** Returns whether to require access control for all clusters in this */
     public boolean requireAccessControl() {
@@ -66,6 +71,7 @@ public class Cloud {
         private CloudName name = CloudName.DEFAULT;
         private boolean dynamicProvisioning = false;
         private boolean allowHostSharing = true;
+        private boolean allowEnclave = false;
         private boolean requireAccessControl = false;
         private CloudAccount account = CloudAccount.empty;
 
@@ -86,6 +92,11 @@ public class Cloud {
             return this;
         }
 
+        public Builder allowEnclave(boolean allowEnclave) {
+            this.allowEnclave = allowEnclave;
+            return this;
+        }
+
         public Builder requireAccessControl(boolean requireAccessControl) {
             this.requireAccessControl = requireAccessControl;
             return this;
@@ -97,7 +108,7 @@ public class Cloud {
         }
 
         public Cloud build() {
-            return new Cloud(name, dynamicProvisioning, allowHostSharing, requireAccessControl, account);
+            return new Cloud(name, dynamicProvisioning, allowHostSharing, allowEnclave, requireAccessControl, account);
         }
 
     }

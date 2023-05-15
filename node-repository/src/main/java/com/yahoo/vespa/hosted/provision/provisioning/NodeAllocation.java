@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -121,7 +120,7 @@ class NodeAllocation {
                 if ( candidate.state() == Node.State.active && allocation.removable()) continue; // don't accept; causes removal
                 if ( candidate.state() == Node.State.active && candidate.wantToFail()) continue; // don't accept; causes failing
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
-                if (nodeRepository.zone().cloud().name().equals(CloudName.AWS) && candidate.parent.isPresent() && ! candidate.parent.get().cloudAccount().equals(requestedNodes.cloudAccount())) continue; // wrong account
+                if (nodeRepository.zone().cloud().allowEnclave() && candidate.parent.isPresent() && ! candidate.parent.get().cloudAccount().equals(requestedNodes.cloudAccount())) continue; // wrong account
 
                 boolean resizeable = requestedNodes.considerRetiring() && candidate.isResizable;
                 boolean acceptToRetire = acceptToRetire(candidate);

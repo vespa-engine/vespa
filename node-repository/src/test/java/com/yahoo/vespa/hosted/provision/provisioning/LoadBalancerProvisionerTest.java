@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -67,7 +66,7 @@ public class LoadBalancerProvisionerTest {
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final ProvisioningTester tester = new ProvisioningTester.Builder().flagSource(flagSource)
-            .zone(new Zone(Cloud.builder().name(CloudName.AWS).account(CloudAccount.from("001122334455")).build(), SystemName.main, Environment.prod, RegionName.defaultName())).build();
+            .zone(new Zone(Cloud.builder().allowEnclave(true).account(CloudAccount.from("001122334455")).build(), SystemName.main, Environment.prod, RegionName.defaultName())).build();
 
     @Test
     public void provision_load_balancer() {
