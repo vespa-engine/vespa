@@ -8,13 +8,13 @@ namespace vespalib {
 
 namespace {
 
-void bomb(Gate &gate, size_t seconds) {    
-    if (seconds > 5) {
-        if (gate.await(from_s(seconds - 5))) {
+void bomb(Gate &gate, vespalib::duration timeout) {
+    if (timeout > 5s) {
+        if (gate.await(timeout - 5s)) {
             return;
         }
     }
-    size_t countdown = std::min(seconds, size_t(5));
+    size_t countdown = std::min(count_s(timeout), 5l);
     while (countdown > 0) {
         fprintf(stderr, "...%zu...\n", countdown--);
         if (gate.await(1s)) {
@@ -27,9 +27,9 @@ void bomb(Gate &gate, size_t seconds) {
 
 } // namespace vespalib::<unnamed>
 
-TimeBomb::TimeBomb(size_t seconds)
+TimeBomb::TimeBomb(duration timeout)
     : _gate(),
-      _thread(bomb, std::ref(_gate), seconds)
+      _thread(bomb, std::ref(_gate), timeout)
 {
 }
 

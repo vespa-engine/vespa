@@ -5,9 +5,9 @@
 #include <vespa/searchcore/proton/common/scheduledexecutor.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/count_down_latch.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/testkit/time_bomb.h>
 #include <thread>
 
 using vespalib::Executor;
@@ -84,29 +84,36 @@ TYPED_TEST(ScheduledExecutorTest, test_drop_handle) {
 }
 
 TYPED_TEST(ScheduledExecutorTest, test_only_one_instance_running) {
+    vespalib::TimeBomb time_bomb(60s);
     vespalib::Gate latch;
     std::atomic<uint64_t> counter = 0;
     auto handleA = this->timer->scheduleAtFixedRate(makeLambdaTask([&]() { counter++; latch.await();}), 0ms, 1ms);
     std::this_thread::sleep_for(2s);
     EXPECT_EQ(1, counter);
     latch.countDown();
-    std::this_thread::sleep_for(2s);
+    while (counter <= 10) { std::this_thread::sleep_for(1ms); }
     EXPECT_GT(counter, 10);
 }
 
 TYPED_TEST(ScheduledExecutorTest, test_sync_delete) {
+    vespalib::TimeBomb time_bomb(60s);
     vespalib::Gate latch;
     std::atomic<uint64_t> counter = 0;
     std::atomic<uint64_t> reset_counter = 0;
+    std::mutex handleLock;
     auto handleA = this->timer->scheduleAtFixedRate(makeLambdaTask([&]() { counter++; latch.await();}), 0ms, 1ms);
-    auto handleB = this->timer->scheduleAtFixedRate(makeLambdaTask([&]() { handleA.reset(); reset_counter++; }), 0ms, 1ms);
-    std::this_thread::sleep_for(2s);
+    auto handleB = this->timer->scheduleAtFixedRate(makeLambdaTask([&]() {
+        std::lock_guard guard(handleLock);
+        handleA.reset();
+        reset_counter++;
+    }), 0ms, 1ms);
+    while (counter < 1) { std::this_thread::sleep_for(1ms); }
     EXPECT_EQ(1, counter);
     EXPECT_EQ(0, reset_counter);
     latch.countDown();
-    std::this_thread::sleep_for(2s);
+    while (reset_counter <= 10) { std::this_thread::sleep_for(1ms); }
     EXPECT_EQ(1, counter);
-    EXPECT_GT(reset_counter, 10);
+    std::lock_guard guard(handleLock);
     EXPECT_EQ(nullptr, handleA.get());
     EXPECT_FALSE(nullptr == handleB.get());
 }
