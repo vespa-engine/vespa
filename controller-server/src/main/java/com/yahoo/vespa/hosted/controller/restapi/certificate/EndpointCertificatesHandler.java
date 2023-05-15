@@ -42,7 +42,7 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
 
     public HttpResponse handle(HttpRequest request) {
         if (request.getMethod().equals(GET)) return listEndpointCertificates();
-        if (request.getMethod().equals(POST)) return reRequestEndpointCertificateFor(request.getProperty("application"));
+        if (request.getMethod().equals(POST)) return reRequestEndpointCertificateFor(request.getProperty("application"), request.getProperty("ignoreExistingMetadata") != null);
         throw new RestApiException.MethodNotAllowed(request);
     }
 
@@ -59,7 +59,7 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
         return new StringResponse(requestsWithNames);
     }
 
-    public StringResponse reRequestEndpointCertificateFor(String instanceId) {
+    public StringResponse reRequestEndpointCertificateFor(String instanceId, boolean ignoreExistingMetadata) {
         ApplicationId applicationId = ApplicationId.fromFullString(instanceId);
 
         try (var lock = curator.lock(TenantAndApplicationId.from(applicationId))) {
@@ -67,7 +67,7 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
                     .orElseThrow(() -> new RestApiException.NotFound("No certificate found for application " + applicationId.serializedForm()));
 
             EndpointCertificateMetadata reRequestedMetadata = endpointCertificateProvider.requestCaSignedCertificate(
-                    applicationId, endpointCertificateMetadata.requestedDnsSans(), Optional.of(endpointCertificateMetadata));
+                    applicationId, endpointCertificateMetadata.requestedDnsSans(), ignoreExistingMetadata ? Optional.empty() : Optional.of(endpointCertificateMetadata));
 
             curator.writeEndpointCertificateMetadata(applicationId, reRequestedMetadata);
 
