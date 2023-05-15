@@ -210,6 +210,10 @@ public class NodeResources {
     public Architecture architecture() { return architecture; }
     public GpuResources gpuResources() { return gpuResources; }
 
+    public boolean vcpuIsUnspecified() { return vcpu == 0; }
+    public boolean memoryGbIsUnspecified() { return memoryGb == 0; }
+    public boolean diskGbIsUnspecified() { return diskGb == 0; }
+
     /** Returns the standard cost of these resources, in dollars per hour */
     public double cost() {
         return (vcpu * cpuUnitCost) +
@@ -219,19 +223,16 @@ public class NodeResources {
     }
 
     public NodeResources withVcpu(double vcpu) {
-        ensureSpecified();
         if (vcpu == this.vcpu) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources withMemoryGb(double memoryGb) {
-        ensureSpecified();
         if (memoryGb == this.memoryGb) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }
 
     public NodeResources withDiskGb(double diskGb) {
-        ensureSpecified();
         if (diskGb == this.diskGb) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
     }

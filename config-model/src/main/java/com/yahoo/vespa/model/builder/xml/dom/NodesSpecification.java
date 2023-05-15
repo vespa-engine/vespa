@@ -307,9 +307,9 @@ public class NodesSpecification {
     }
 
     private static Pair<NodeResources, NodeResources> nodeResourcesFromResourcesElement(ModelElement element) {
-        Pair<Double, Double> vcpu       = toRange(element.requiredStringAttribute("vcpu"),   .0, Double::parseDouble);
-        Pair<Double, Double> memory     = toRange(element.requiredStringAttribute("memory"), .0, s -> parseGbAmount(s, "B"));
-        Pair<Double, Double> disk       = toRange(element.requiredStringAttribute("disk"),   .0, s -> parseGbAmount(s, "B"));
+        Pair<Double, Double> vcpu       = toRange(element.stringAttribute("vcpu"),   .0, Double::parseDouble);
+        Pair<Double, Double> memory     = toRange(element.stringAttribute("memory"), .0, s -> parseGbAmount(s, "B"));
+        Pair<Double, Double> disk       = toRange(element.stringAttribute("disk"),   .0, s -> parseGbAmount(s, "B"));
         Pair<Double, Double> bandwith   = toRange(element.stringAttribute("bandwidth"),      .3, s -> parseGbAmount(s, "BPS"));
         NodeResources.DiskSpeed   diskSpeed     = parseOptionalDiskSpeed(element.stringAttribute("disk-speed"));
         NodeResources.StorageType storageType   = parseOptionalStorageType(element.stringAttribute("storage-type"));

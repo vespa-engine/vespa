@@ -130,51 +130,60 @@ public class VespaModelTester {
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(String services, String hosts, boolean failOnOutOfCapacity, String ... retiredHostNames) {
-        return createModel(Zone.defaultZone(), services, hosts, failOnOutOfCapacity, false, false, 0,
+        return createModel(Zone.defaultZone(), services, hosts, failOnOutOfCapacity, false, false,
+                           NodeResources.unspecified(), 0,
                            Optional.empty(), new DeployState.Builder(), retiredHostNames);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(String services, boolean failOnOutOfCapacity, DeployState.Builder builder) {
-        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, false, 0, Optional.empty(), builder);
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, false,
+                           NodeResources.unspecified(), 0, Optional.empty(), builder);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(String services, boolean failOnOutOfCapacity, boolean useMaxResources, String ... retiredHostNames) {
-        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, useMaxResources, false, 0,
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, useMaxResources, false,
+                           NodeResources.unspecified(), 0,
                            Optional.empty(), new DeployState.Builder(), retiredHostNames);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(String services, boolean failOnOutOfCapacity, boolean useMaxResources, boolean alwaysReturnOneNode, String ... retiredHostNames) {
-        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, useMaxResources, alwaysReturnOneNode, 0,
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, useMaxResources, alwaysReturnOneNode,
+                           NodeResources.unspecified(), 0,
                            Optional.empty(), new DeployState.Builder(), retiredHostNames);
     }
 
     /** Creates a model which uses 0 as start index */
-    public VespaModel createModel(String services, boolean failOnOutOfCapacity, int startIndexForClusters, String ... retiredHostNames) {
-        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, false, startIndexForClusters,
+    public VespaModel createModel(String services, boolean failOnOutOfCapacity, NodeResources defaultResources,
+                                  int startIndexForClusters, String ... retiredHostNames) {
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, false,
+                           defaultResources, startIndexForClusters,
                            Optional.empty(), new DeployState.Builder(), retiredHostNames);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(Zone zone, String services, boolean failOnOutOfCapacity, String ... retiredHostNames) {
-        return createModel(zone, services, failOnOutOfCapacity, false, false, 0,
+        return createModel(zone, services, failOnOutOfCapacity, false, false, NodeResources.unspecified(), 0,
                            Optional.empty(), new DeployState.Builder(), retiredHostNames);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(Zone zone, String services, boolean failOnOutOfCapacity,
                                   DeployState.Builder deployStateBuilder, String ... retiredHostNames) {
-        return createModel(zone, services, failOnOutOfCapacity, false, false, 0,
+        return createModel(zone, services, failOnOutOfCapacity, false, false,
+                           NodeResources.unspecified(),0,
                            Optional.empty(), deployStateBuilder, retiredHostNames);
     }
 
     public VespaModel createModel(Zone zone, String services, boolean failOnOutOfCapacity, boolean useMaxResources,
                                   boolean alwaysReturnOneNode,
+                                  NodeResources defaultResources,
                                   int startIndexForClusters, Optional<VespaModel> previousModel,
                                   DeployState.Builder deployStatebuilder, String ... retiredHostNames) {
         return createModel(zone, services, null, failOnOutOfCapacity, useMaxResources, alwaysReturnOneNode,
+                           defaultResources,
                            startIndexForClusters, previousModel, deployStatebuilder, retiredHostNames);
     }
     /**
@@ -189,6 +198,7 @@ public class VespaModelTester {
      */
     public VespaModel createModel(Zone zone, String services, String hosts, boolean failOnOutOfCapacity, boolean useMaxResources,
                                   boolean alwaysReturnOneNode,
+                                  NodeResources defaultResources,
                                   int startIndexForClusters, Optional<VespaModel> previousModel,
                                   DeployState.Builder deployStatebuilder, String ... retiredHostNames) {
         VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(hosts, services, generateSchemas("type1"));
@@ -200,7 +210,7 @@ public class VespaModelTester {
                                                                       useMaxResources,
                                                                       alwaysReturnOneNode,
                                                                       false,
-                                                                      NodeResources.unspecified(),
+                                                                      defaultResources,
                                                                       startIndexForClusters,
                                                                       retiredHostNames);
             provisioner.setEnvironment(zone.environment());

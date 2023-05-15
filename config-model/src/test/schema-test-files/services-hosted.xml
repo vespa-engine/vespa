@@ -25,7 +25,7 @@
   <content id="search" version="1.0">
     <redundancy>2</redundancy>
     <nodes count="7" flavor="large" groups="12" no-vespamalloc="proton distributord">
-      <resources vcpu="3.0" memory="32000.0Mb" disk="300 Gb"/>
+      <resources memory="32000.0Mb" disk="300 Gb"/>
     </nodes>
   </content>
 
