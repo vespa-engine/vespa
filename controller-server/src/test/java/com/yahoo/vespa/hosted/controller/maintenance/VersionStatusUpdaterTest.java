@@ -25,11 +25,10 @@ public class VersionStatusUpdaterTest {
     @Test
     void testVersionUpdating() {
         ControllerTester tester = new ControllerTester();
-        tester.controller().updateVersionStatus(new VersionStatus(Collections.emptyList()));
+        tester.controller().updateVersionStatus(VersionStatus.empty());
         assertFalse(tester.controller().readVersionStatus().systemVersion().isPresent());
 
-        VersionStatusUpdater updater = new VersionStatusUpdater(tester.controller(), Duration.ofDays(1)
-        );
+        VersionStatusUpdater updater = new VersionStatusUpdater(tester.controller(), Duration.ofDays(1));
         updater.maintain();
         assertTrue(tester.controller().readVersionStatus().systemVersion().isPresent());
     }

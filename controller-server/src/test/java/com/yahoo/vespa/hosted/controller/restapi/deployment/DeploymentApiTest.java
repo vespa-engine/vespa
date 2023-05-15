@@ -105,7 +105,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
             }
             censored.add(version);
         }
-        return new VersionStatus(censored);
+        return new VersionStatus(censored, versionStatus.currentMajor());
     }
 
 }
