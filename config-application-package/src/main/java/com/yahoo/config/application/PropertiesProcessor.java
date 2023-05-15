@@ -3,7 +3,11 @@ package com.yahoo.config.application;
 
 import java.util.logging.Level;
 import com.yahoo.text.XML;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.xml.transform.TransformerException;
 import java.util.ArrayList;
@@ -18,6 +22,7 @@ import java.util.logging.Logger;
  * @author hmusum
  */
 class PropertiesProcessor implements PreProcessor {
+
     private final static Logger log = Logger.getLogger(PropertiesProcessor.class.getName());
     private final LinkedHashMap<String, String> properties;
 
@@ -27,7 +32,7 @@ class PropertiesProcessor implements PreProcessor {
 
     public Document process(Document input) throws TransformerException {
         Document doc = Xml.copyDocument(input);
-        final Document document = buildProperties(doc);
+        Document document = buildProperties(doc);
         applyProperties(document.getDocumentElement());
         return document;
     }
@@ -36,11 +41,9 @@ class PropertiesProcessor implements PreProcessor {
         NodeList list = input.getElementsByTagNameNS(XmlPreProcessor.preprocessNamespaceUri, "properties");
         while (list.getLength() > 0) {
             Element propertiesElement = (Element) list.item(0);
-            //System.out.println("prop=" + propertiesElement);
             Element parent = (Element) propertiesElement.getParentNode();
             for (Node node : XML.getChildren(propertiesElement)) {
-                //System.out.println("Found " + node.getNodeName() + ", " + node.getTextContent());
-                final String propertyName = node.getNodeName();
+                String propertyName = node.getNodeName();
                 if (properties.containsKey(propertyName)) {
                     log.log(Level.WARNING, "Duplicate definition for property '" + propertyName + "' detected");
                 }
@@ -53,8 +56,7 @@ class PropertiesProcessor implements PreProcessor {
     }
 
     private void applyProperties(Element parent) {
-        // System.out.println("applying properties for " + parent.getNodeName());
-        final NamedNodeMap attributes = parent.getAttributes();
+        NamedNodeMap attributes = parent.getAttributes();
         for (int i = 0; i < attributes.getLength(); i++) {
             Node a = attributes.item(i);
             if (hasProperty(a)) {
@@ -84,7 +86,7 @@ class PropertiesProcessor implements PreProcessor {
         // Use a list with keys sorted by length (longest key first)
         // Needed for replacing values where you have overlapping keys
         ArrayList<String> keys = new ArrayList<>(properties.keySet());
-        Collections.sort(keys, Collections.reverseOrder(Comparator.comparing(String::length)));
+        keys.sort(Collections.reverseOrder(Comparator.comparing(String::length)));
 
         for (String key : keys) {
             String value = properties.get(key);
@@ -92,10 +94,10 @@ class PropertiesProcessor implements PreProcessor {
             // first, the else branch will only happen when there cannot be an exact
             // match, i.e. where you want to replace only parts of the attribute or node value
             if (propertyValue.equals("${" + key + "}")) {
-                final String regex = "\\$\\{" + key + "\\}";
+                String regex = "\\$\\{" + key + "}";
                 return propertyValue.replaceAll(regex, value);
             } else if (propertyValue.contains(key)) {
-                return propertyValue.replaceAll("\\$\\{" + key + "\\}", value);
+                return propertyValue.replaceAll("\\$\\{" + key + "}", value);
             }
         }
         throw new IllegalArgumentException("Unable to find property replace in " + propertyValue);
@@ -116,10 +118,11 @@ class PropertiesProcessor implements PreProcessor {
     }
 
     private static boolean hasProperty(String s) {
-        return s.matches("^.*\\$\\{.+\\}.*$");
+        return s.matches("^.*\\$\\{.+}.*$");
     }
 
     public LinkedHashMap<String, String> getProperties() {
         return properties;
     }
+
 }

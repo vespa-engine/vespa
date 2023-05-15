@@ -57,14 +57,14 @@ public class XmlPreprocessorTest {
                                                     Tags.empty()).run());
 
         // Difference from dev: node1
-        //  Difference from dev: no TestBar
+        // Difference from dev: no TestBar
         String expectedStaging =
                 """
                 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
                 <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
                 <services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
                     <admin version="2.0">
-                        <adminserver hostalias="node1"/>
+                        <adminserver hostalias="node0"/>
                     </admin>
                     <content id="foo" version="1.0">
                       <redundancy>1</redundancy>
@@ -91,7 +91,81 @@ public class XmlPreprocessorTest {
                                                     RegionName.defaultName(),
                                                     Tags.empty()).run());
 
-        String expectedUsWest =
+        String expectedPerfUsWest =
+                """
+                <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+                <services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
+                    <admin version="2.0">
+                        <adminserver hostalias="node0"/>
+                    </admin>
+                    <content id="foo" version="1.0">
+                      <redundancy>1</redundancy>
+                      <documents>
+                        <document mode="index" type="music.sd"/>
+                      </documents>
+                      <nodes>
+                        <node distribution-key="0" hostalias="node0"/>
+                      </nodes>
+                    </content>
+                    <container id="stateless" version="1.0">
+                      <search/>
+                      <component bundle="foobundle" class="MyFoo" id="foo"/>
+                      <nodes>
+                        <node hostalias="node0" baseport="5000"/>
+                      </nodes>
+                    </container>
+                </services>""";
+        TestBase.assertDocument(expectedPerfUsWest,
+                                new XmlPreProcessor(appDir,
+                                                    services,
+                                                    InstanceName.defaultName(),
+                                                    Environment.perf,
+                                                    RegionName.from("us-west"),
+                                                    Tags.empty()).run());
+
+        String expectedPerfUsEastAndCentral =
+                """
+                <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+                <services xmlns:deploy="vespa" xmlns:preprocess="properties" version="1.0">
+                    <admin version="2.0">
+                        <adminserver hostalias="node0"/>
+                    </admin>
+                    <content id="foo" version="1.0">
+                      <thread count="128"/>
+                      <redundancy>1</redundancy>
+                      <documents>
+                        <document mode="index" type="music.sd"/>
+                      </documents>
+                      <nodes>
+                        <node distribution-key="0" hostalias="node0"/>
+                      </nodes>
+                    </content>
+                    <container id="stateless" version="1.0">
+                      <search/>
+                      <component bundle="foobundle" class="MyFoo" id="foo"/>
+                      <nodes>
+                        <node hostalias="node0" baseport="5000"/>
+                      </nodes>
+                    </container>
+                </services>""";
+        TestBase.assertDocument(expectedPerfUsEastAndCentral,
+                                new XmlPreProcessor(appDir,
+                                                    services,
+                                                    InstanceName.defaultName(),
+                                                    Environment.perf,
+                                                    RegionName.from("us-east"),
+                                                    Tags.empty()).run());
+        TestBase.assertDocument(expectedPerfUsEastAndCentral,
+                                new XmlPreProcessor(appDir,
+                                                    services,
+                                                    InstanceName.defaultName(),
+                                                    Environment.perf,
+                                                    RegionName.from("us-central"),
+                                                    Tags.empty()).run());
+
+        String expectedProdUsWest =
                 """
                 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
                 <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
@@ -125,7 +199,7 @@ public class XmlPreprocessorTest {
                       </nodes>
                     </container>
                 </services>""";
-        TestBase.assertDocument(expectedUsWest,
+        TestBase.assertDocument(expectedProdUsWest,
                                 new XmlPreProcessor(appDir,
                                                     services,
                                                     InstanceName.defaultName(),
@@ -133,7 +207,7 @@ public class XmlPreprocessorTest {
                                                     RegionName.from("us-west"),
                                                     Tags.empty()).run());
 
-        String expectedUsEastAndCentral =
+        String expectedProdUsEastAndCentral =
                 """
                 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
                 <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
@@ -142,6 +216,7 @@ public class XmlPreprocessorTest {
                         <adminserver hostalias="node1"/>
                     </admin>
                     <content id="foo" version="1.0">
+                      <thread count="128"/>
                       <redundancy>1</redundancy>
                       <documents>
                         <document mode="index" type="music.sd"/>
@@ -166,14 +241,14 @@ public class XmlPreprocessorTest {
                       </nodes>
                     </container>
                 </services>""";
-        TestBase.assertDocument(expectedUsEastAndCentral,
+        TestBase.assertDocument(expectedProdUsEastAndCentral,
                                 new XmlPreProcessor(appDir,
                                                     services,
                                                     InstanceName.defaultName(),
                                                     Environment.prod,
                                                     RegionName.from("us-east"),
                                                     Tags.empty()).run());
-        TestBase.assertDocument(expectedUsEastAndCentral,
+        TestBase.assertDocument(expectedProdUsEastAndCentral,
                                 new XmlPreProcessor(appDir,
                                                     services,
                                                     InstanceName.defaultName(),

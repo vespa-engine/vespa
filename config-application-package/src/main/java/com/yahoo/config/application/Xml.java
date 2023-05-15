@@ -32,19 +32,18 @@ import java.util.logging.Logger;
  * @author hmusum
  */
 public class Xml {
+
     private static final Logger log = Logger.getLogger(Xml.class.getPackage().toString());
 
     // Access to this needs to be synchronized (as it is in getDocumentBuilder() below)
     private static final DocumentBuilderFactory factory = createDocumentBuilderFactory();
 
     public static Document getDocument(Reader reader) {
-        Document doc;
         try {
-            doc = getDocumentBuilder().parse(new InputSource(reader));
+            return getDocumentBuilder().parse(new InputSource(reader));
         } catch (SAXException | IOException e) {
             throw new IllegalArgumentException(e);
         }
-        return doc;
     }
 
     private static DocumentBuilderFactory createDocumentBuilderFactory() {
@@ -67,7 +66,7 @@ public class Xml {
     /**
      * Creates a new XML document builder.
      *
-     * @return A new DocumentBuilder instance, or null if we fail to get one.
+     * @return a new DocumentBuilder instance, or null if we fail to get one.
      */
     private static synchronized DocumentBuilder getDocumentBuilder() {
         try {
@@ -114,7 +113,7 @@ public class Xml {
     }
 
     /**
-     * Utility method to get an XML element from a reader
+     * Utility method to get an XML element from a reader.
      *
      * @param reader the {@link Reader} to get an xml element from
      */
@@ -122,9 +121,7 @@ public class Xml {
         return XML.getDocument(reader).getDocumentElement();
     }
 
-    /**
-     * @return The root element of each xml file under pathFromAppRoot/ in the app package
-     */
+    /** Returns the root element of each xml file under pathFromAppRoot/ in the app package. */
     public static List<Element> allElemsFromPath(ApplicationPackage app, String pathFromAppRoot) {
         List<Element> ret = new ArrayList<>();
         List<NamedReader> files = null;
@@ -156,4 +153,5 @@ public class Xml {
         }
         return children;
     }
+
 }
