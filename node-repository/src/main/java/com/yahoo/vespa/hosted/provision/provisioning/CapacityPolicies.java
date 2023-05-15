@@ -84,7 +84,21 @@ public class CapacityPolicies {
         return target;
     }
 
-    public NodeResources defaultNodeResources(ClusterSpec clusterSpec, ApplicationId applicationId) {
+    public ClusterResources specifyFully(ClusterResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
+        return resources.with(specifyFully(resources.nodeResources(), clusterSpec, applicationId));
+    }
+
+    public NodeResources specifyFully(NodeResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
+        if (resources.vcpuIsUnspecified())
+            resources = resources.withVcpu(defaultResources(clusterSpec, applicationId).vcpu());
+        if (resources.memoryGbIsUnspecified())
+            resources = resources.withMemoryGb(defaultResources(clusterSpec, applicationId).memoryGb());
+        if (resources.diskGbIsUnspecified())
+            resources = resources.withDiskGb(defaultResources(clusterSpec, applicationId).diskGb());
+        return resources;
+    }
+
+    private NodeResources defaultResources(ClusterSpec clusterSpec, ApplicationId applicationId) {
         if (clusterSpec.type() == ClusterSpec.Type.admin) {
             Architecture architecture = adminClusterArchitecture(applicationId);
 

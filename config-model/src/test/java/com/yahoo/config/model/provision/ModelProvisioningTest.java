@@ -1542,7 +1542,7 @@ public class ModelProvisioningTest {
         tester.addHosts(new NodeResources(8, 200, 1000000, 0.3), 5); // Content-foo
         tester.addHosts(new NodeResources(10, 64, 200, 0.3), 6); // Content-bar
         tester.addHosts(new NodeResources(0.5, 2, 10, 0.3), 6); // Cluster-controller
-        VespaModel model = tester.createModel(services, true, 0);
+        VespaModel model = tester.createModel(services, true, NodeResources.unspecified(), 0);
         assertEquals(totalHosts, model.getRoot().hostSystem().getHosts().size());
     }
 
@@ -2425,7 +2425,7 @@ public class ModelProvisioningTest {
             assertTrue(config.build().server().stream().noneMatch(ZookeeperServerConfig.Server::joining), "Initial servers are not joining");
         }
         {
-            VespaModel nextModel = tester.createModel(Zone.defaultZone(), servicesXml.apply(3), true, false, false, 0, Optional.of(model), new DeployState.Builder(), "node-1-3-50-04", "node-1-3-50-03");
+            VespaModel nextModel = tester.createModel(Zone.defaultZone(), servicesXml.apply(3), true, false, false, NodeResources.unspecified(), 0, Optional.of(model), new DeployState.Builder(), "node-1-3-50-04", "node-1-3-50-03");
             ApplicationContainerCluster cluster = nextModel.getContainerClusters().get("zk");
             ZookeeperServerConfig.Builder config = new ZookeeperServerConfig.Builder();
             cluster.getContainers().forEach(c -> c.getConfig(config));
@@ -2491,11 +2491,33 @@ public class ModelProvisioningTest {
 
          VespaModelTester tester = new VespaModelTester();
          tester.addHosts(new NodeResources(1, 3, 10, 5, NodeResources.DiskSpeed.slow), 5);
-         VespaModel model = tester.createModel(services, true, 0);
+         VespaModel model = tester.createModel(services, true, NodeResources.unspecified(), 0);
          ContentSearchCluster cluster = model.getContentClusters().get("test").getSearch();
          assertEquals(2, cluster.getSearchNodes().size());
          assertEquals(40, getProtonConfig(cluster, 0).hwinfo().disk().writespeed(), 0.001);
          assertEquals(40, getProtonConfig(cluster, 1).hwinfo().disk().writespeed(), 0.001);
+    }
+
+    @Test
+    public void require_that_resources_can_be_partially_specified() {
+        String services = joinLines("<?xml version='1.0' encoding='utf-8' ?>",
+                                    "<services>",
+                                    "  <content version='1.0' id='test'>",
+                                    "     <redundancy>2</redundancy>" +
+                                    "     <documents>",
+                                    "       <document type='type1' mode='index'/>",
+                                    "     </documents>",
+                                    "     <nodes count='2'>",
+                                    "       <resources vcpu='1'/>",
+                                    "     </nodes>",
+                                    "  </content>",
+                                    "</services>");
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(new NodeResources(1, 3, 10, 5), 5);
+        VespaModel model = tester.createModel(services, true, new NodeResources(1.0, 3.0, 9.0, 1.0), 0);
+        ContentSearchCluster cluster = model.getContentClusters().get("test").getSearch();
+        assertEquals(2, cluster.getSearchNodes().size());
     }
 
     private static ProtonConfig getProtonConfig(ContentSearchCluster cluster, int searchNodeIdx) {
@@ -2542,7 +2564,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(new NodeResources(1, 3, 10, 1), 4);
         tester.addHosts(new NodeResources(1, 128, 100, 0.3), 1);
-        VespaModel model = tester.createModel(services, true, 0);
+        VespaModel model = tester.createModel(services, true, NodeResources.unspecified(), 0);
         ContentSearchCluster cluster = model.getContentClusters().get("test").getSearch();
         ProtonConfig cfg = getProtonConfig(model, cluster.getSearchNodes().get(0).getConfigId());
         assertEquals(2000, cfg.flush().memory().maxtlssize()); // from config override
