@@ -5,12 +5,9 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.http.JettyHttpServer;
-import com.yahoo.vespa.model.container.http.ssl.ConfiguredDirectSslProvider;
+import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.ssl.DefaultSslProvider;
-import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
-
-import java.util.List;
+import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
 
 /**
  * Enforces that Cloud applications cannot
@@ -27,21 +24,22 @@ public class CloudHttpConnectorValidator extends Validator {
         model.getContainerClusters().forEach((__, cluster) -> {
             var http = cluster.getHttp();
             if (http == null) return;
-            var connectors = http.getHttpServer().map(JettyHttpServer::getConnectorFactories).orElse(List.of());
-            for (var connector : connectors) {
-                int port = connector.getListenPort();
-                if (!List.of(ContainerModelBuilder.HOSTED_VESPA_DATAPLANE_PORT, Container.BASEPORT).contains(port)) {
-                    throw new IllegalArgumentException(
-                            "Adding additional HTTP connectors is not allowed for Vespa Cloud applications. " +
-                                    "See https://cloud.vespa.ai/en/security/whitepaper.");
-                }
-                var sslProvider = connector.sslProvider();
-                if (!(sslProvider instanceof ConfiguredDirectSslProvider || sslProvider instanceof DefaultSslProvider)) {
-                    throw new IllegalArgumentException(
-                            "Overriding connector specific TLS configuration is not allowed in Vespa Cloud. " +
-                                    "See https://cloud.vespa.ai/en/security/guide#data-plane.");
-                }
-            }
+            var illegalConnectors = http.getHttpServer().stream().flatMap(s -> s.getConnectorFactories().stream()
+                    .filter(c -> !isAllowedConnector(c)))
+                    .map(cf -> "%s@%d".formatted(cf.getName(), cf.getListenPort()))
+                    .toList();
+            if (illegalConnectors.isEmpty()) return;
+            throw new IllegalArgumentException(
+                    ("Adding additional or modifying existing HTTPS connectors is not allowed for Vespa Cloud applications." +
+                            " Violating connectors: %s. See https://cloud.vespa.ai/en/security/whitepaper, " +
+                            "https://cloud.vespa.ai/en/security/guide#data-plane.")
+                            .formatted(illegalConnectors));
         });
+    }
+
+    private static boolean isAllowedConnector(ConnectorFactory cf) {
+        return cf instanceof HostedSslConnectorFactory
+                || cf.getClass().getSimpleName().endsWith("HealthCheckProxyConnector")
+                || (cf.getListenPort() == Container.BASEPORT && cf.sslProvider() instanceof DefaultSslProvider);
     }
 }
