@@ -86,10 +86,7 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
     /** Returns the subset of nodes which have a replaceable root disk */
     public NodeList replaceableRootDisk() {
-        // TODO(mpolden): Support any architecture if we change how cloud images for other
-        //                architectures are managed
-        return matching(node -> node.resources().storageType() == NodeResources.StorageType.remote &&
-                                node.resources().architecture() == NodeResources.Architecture.x86_64);
+        return matching(node -> node.resources().storageType() == NodeResources.StorageType.remote);
     }
 
     /** Returns the subset of nodes which satisfy the given resources */
