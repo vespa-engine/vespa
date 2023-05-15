@@ -3,7 +3,6 @@
 #include "sessionmanager.h"
 #include <vespa/vespalib/stllike/lrucache_map.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <mutex>
