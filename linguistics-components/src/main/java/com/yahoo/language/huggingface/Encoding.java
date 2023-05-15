@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-package ai.vespa.embedding.huggingface;
+package com.yahoo.language.huggingface;
+
+import com.yahoo.api.annotations.Beta;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,6 +11,7 @@ import java.util.List;
 /**
  * @author bjorncs
  */
+@Beta
 public record Encoding(
         List<Long> ids, List<Long> typeIds, List<String> tokens, List<Long> wordIds, List<Long> attentionMask,
         List<Long> specialTokenMask, List<CharSpan> charTokenSpans, List<Encoding> overflowing) {
