@@ -21,7 +21,8 @@ private:
     Gate _gate;
     std::thread _thread;
 public:
-    TimeBomb(size_t seconds);
+    TimeBomb(size_t seconds) : TimeBomb(from_s(seconds)) {}
+    TimeBomb(vespalib::duration duration);
     ~TimeBomb(); // defuse the bomb
 };
 
