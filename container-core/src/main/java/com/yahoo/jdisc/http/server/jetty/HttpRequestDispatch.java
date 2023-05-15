@@ -163,7 +163,8 @@ class HttpRequestDispatch {
         double maxConnectionLifeInSeconds = connectorConfig.maxConnectionLife();
         if (maxConnectionLifeInSeconds > 0) {
             long createdAt = connection.getCreatedTimeStamp();
-            Instant expiredAt = Instant.ofEpochMilli((long) (createdAt + maxConnectionLifeInSeconds * 1000));
+            long tenPctVariance = createdAt % 10; // should be random enough, and must be consistent for a given connection
+            Instant expiredAt = Instant.ofEpochMilli((long) (createdAt + maxConnectionLifeInSeconds * 10 * (100 - tenPctVariance)));
             boolean isExpired = Instant.now().isAfter(expiredAt);
             if (isExpired) {
                 gracefulShutdown(connection);
