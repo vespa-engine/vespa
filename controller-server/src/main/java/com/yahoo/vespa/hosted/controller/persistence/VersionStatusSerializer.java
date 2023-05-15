@@ -32,6 +32,7 @@ public class VersionStatusSerializer {
 
     // VersionStatus fields
     private static final String versionsField = "versions";
+    private static final String currentMajorField = "currentMajor";
 
     // VespaVersion fields
     private static final String releaseCommitField = "releaseCommit";
@@ -61,12 +62,14 @@ public class VersionStatusSerializer {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         versionsToSlime(status.versions(), root.setArray(versionsField));
+        root.setLong(currentMajorField, status.currentMajor());
         return slime;
     }
 
     public VersionStatus fromSlime(Slime slime) {
         Inspector root = slime.get();
-        return new VersionStatus(vespaVersionsFromSlime(root.field(versionsField)));
+        return new VersionStatus(vespaVersionsFromSlime(root.field(versionsField)),
+                                 (int) root.field(currentMajorField).asLong());
     }
 
     private void versionsToSlime(List<VespaVersion> versions, Cursor array) {

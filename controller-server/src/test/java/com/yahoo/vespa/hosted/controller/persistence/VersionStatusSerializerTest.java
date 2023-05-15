@@ -32,7 +32,7 @@ public class VersionStatusSerializerTest {
         vespaVersions.add(new VespaVersion(version, "cafe", Instant.now(), true, true,
                 false, nodeVersions(Version.fromString("5.0"), Version.fromString("5.1"),
                 "cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
-        VersionStatus status = new VersionStatus(vespaVersions);
+        VersionStatus status = new VersionStatus(vespaVersions, 5);
         VersionStatusSerializer serializer = new VersionStatusSerializer(new NodeVersionSerializer());
         VersionStatus deserialized = serializer.fromSlime(serializer.toSlime(status));
 
@@ -49,6 +49,7 @@ public class VersionStatusSerializerTest {
             assertEquals(a.nodeVersions(), b.nodeVersions());
             assertEquals(a.confidence(), b.confidence());
         }
+        assertEquals(status.currentMajor(), deserialized.currentMajor());
 
     }
 

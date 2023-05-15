@@ -35,13 +35,14 @@ import java.util.stream.Collectors;
  * @author bratseth
  * @author mpolden
  */
-public record VersionStatus(List<VespaVersion> versions) {
+public record VersionStatus(List<VespaVersion> versions, int currentMajor) {
 
     private static final Logger log = Logger.getLogger(VersionStatus.class.getName());
     
     /** Create a version status. DO NOT USE: Public for testing and serialization only */
-    public VersionStatus(List<VespaVersion> versions) {
+    public VersionStatus(List<VespaVersion> versions, int currentMajor) {
         this.versions = List.copyOf(versions);
+        this.currentMajor = currentMajor;
     }
 
     /** Returns the current version of controllers in this system */
@@ -98,11 +99,12 @@ public record VersionStatus(List<VespaVersion> versions) {
     }
 
     /** Create the empty version status */
-    public static VersionStatus empty() { return new VersionStatus(List.of()); }
+    public static VersionStatus empty() { return new VersionStatus(List.of(), -1); }
 
     /** Create a full, updated version status. This is expensive and should be done infrequently */
     public static VersionStatus compute(Controller controller) {
         VersionStatus versionStatus = controller.readVersionStatus();
+        int currentMajor = versionStatus.currentMajor();
         List<NodeVersion> systemApplicationVersions = findSystemApplicationVersions(controller, versionStatus);
         Map<ControllerVersion, List<HostName>> controllerVersions = findControllerVersions(controller);
 
@@ -164,6 +166,8 @@ public record VersionStatus(List<VespaVersion> versions) {
                                                           controller,
                                                           versionStatus);
                 versions.add(vespaVersion);
+                if (vespaVersion.confidence().equalOrHigherThan(Confidence.high))
+                    currentMajor = Math.max(currentMajor, vespaVersion.versionNumber().getMajor());
             } catch (IllegalArgumentException e) {
                 log.log(Level.WARNING, "Unable to create VespaVersion for version " +
                                        statistics.version().toFullString(), e);
@@ -172,7 +176,7 @@ public record VersionStatus(List<VespaVersion> versions) {
 
         Collections.sort(versions);
 
-        return new VersionStatus(versions);
+        return new VersionStatus(versions, currentMajor);
     }
 
     private static List<NodeVersion> findSystemApplicationVersions(Controller controller, VersionStatus versionStatus) {
@@ -275,12 +279,7 @@ public record VersionStatus(List<VespaVersion> versions) {
 
     /** Whether no version on a newer major, with high confidence, can be deployed. */
     public boolean isOnCurrentMajor(Version version) {
-        for (VespaVersion available : deployableVersions())
-            if (   available.confidence().equalOrHigherThan(Confidence.high)
-                && available.versionNumber().getMajor() > version.getMajor())
-                return false;
-
-        return true;
+        return version.getMajor() >= currentMajor;
     }
 
 }
