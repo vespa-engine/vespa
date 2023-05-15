@@ -267,7 +267,7 @@ func TestClientMethodAndURL(t *testing.T) {
 		client.options.Route = tt.options.Route
 		client.options.TraceLevel = tt.options.TraceLevel
 		client.options.Speedtest = tt.options.Speedtest
-		method, url := client.methodAndURL(tt.in)
+		method, url := client.methodAndURL(tt.in, &bytes.Buffer{})
 		if url != tt.url || method != tt.method {
 			t.Errorf("#%d: methodAndURL(doc) = (%s, %s), want (%s, %s)", i, method, url, tt.method, tt.url)
 		}
