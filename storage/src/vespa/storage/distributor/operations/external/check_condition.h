@@ -136,7 +136,7 @@ public:
             const DistributorNodeContext& node_ctx,
             const DistributorStripeOperationContext& op_ctx,
             PersistenceOperationMetricSet& metric,
-            uint32_t trace_level = 0); // TODO remove default value
+            uint32_t trace_level);
 private:
     [[nodiscard]] bool replica_set_changed_after_get_operation() const;
 

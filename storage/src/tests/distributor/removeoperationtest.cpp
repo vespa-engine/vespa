@@ -6,7 +6,8 @@
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operations/external/removeoperation.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/vespalib/gtest/gtest.h>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 using documentapi::TestAndSetCondition;
 using document::test::makeDocumentBucket;
@@ -119,6 +120,7 @@ void ExtRemoveOperationTest::set_up_tas_remove_with_2_nodes(ReplicaState replica
 
     auto remove = createRemove(docId);
     remove->setCondition(TestAndSetCondition("test.foo"));
+    remove->getTrace().setLevel(9);
     sendRemove(std::move(remove));
     if (replica_state == ReplicaState::INCONSISTENT) {
         ASSERT_EQ("Get => 1,Get => 0", _sender.getCommands(true));
@@ -302,6 +304,43 @@ TEST_F(ExtRemoveOperationTest, failed_condition_probe_fails_op_with_returned_err
               "ReturnCode(ABORTED, Failed during write repair condition probe step. Reason: "
               "One or more replicas failed during test-and-set condition evaluation)",
               _sender.getLastReply());
+}
+
+TEST_F(ExtRemoveOperationTest, trace_is_propagated_from_condition_probe_gets_ok_probe_case) {
+    ASSERT_NO_FATAL_FAILURE(set_up_tas_remove_with_2_nodes(ReplicaState::INCONSISTENT));
+
+    ASSERT_EQ(sent_get_command(0)->getTrace().getLevel(), 9);
+    auto get_reply = make_get_reply(0, 50, false, true);
+    MBUS_TRACE(get_reply->getTrace(), 1, "a foo walks into a bar");
+
+    op->receive(_sender, get_reply);
+    op->receive(_sender, make_get_reply(1, 50, false, true));
+
+    ASSERT_EQ("Get => 1,Get => 0,Remove => 1,Remove => 0", _sender.getCommands(true));
+    reply_with(make_remove_reply(2, 50)); // remove from node 1
+    reply_with(make_remove_reply(3, 50)); // remove from node 0
+    ASSERT_EQ(_sender.replies().size(), 1);
+    auto remove_reply = sent_reply<api::RemoveReply>(0);
+
+    auto trace_str = remove_reply->getTrace().toString();
+    EXPECT_THAT(trace_str, HasSubstr("a foo walks into a bar"));
+}
+
+TEST_F(ExtRemoveOperationTest, trace_is_propagated_from_condition_probe_gets_failed_probe_case) {
+    ASSERT_NO_FATAL_FAILURE(set_up_tas_remove_with_2_nodes(ReplicaState::INCONSISTENT));
+
+    auto get_reply = make_get_reply(0, 50, false, false);
+    MBUS_TRACE(get_reply->getTrace(), 1, "a foo walks into a zoo");
+
+    op->receive(_sender, get_reply);
+    op->receive(_sender, make_get_reply(1, 50, false, false));
+
+    ASSERT_EQ("Get => 1,Get => 0", _sender.getCommands(true));
+    ASSERT_EQ(_sender.replies().size(), 1);
+    auto remove_reply = sent_reply<api::RemoveReply>(0);
+
+    auto trace_str = remove_reply->getTrace().toString();
+    EXPECT_THAT(trace_str, HasSubstr("a foo walks into a zoo"));
 }
 
 } // storage::distributor
