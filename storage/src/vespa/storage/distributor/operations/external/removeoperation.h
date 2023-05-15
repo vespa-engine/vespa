@@ -42,7 +42,7 @@ private:
 
     void start_direct_remove_dispatch(DistributorStripeMessageSender& sender);
     void start_conditional_remove(DistributorStripeMessageSender& sender);
-    void on_completed_check_condition(const CheckCondition::Outcome& outcome,
+    void on_completed_check_condition(CheckCondition::Outcome& outcome,
                                       DistributorStripeMessageSender& sender);
     [[nodiscard]] bool has_condition() const noexcept;
 };

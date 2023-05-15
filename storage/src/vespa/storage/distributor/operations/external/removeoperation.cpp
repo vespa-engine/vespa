@@ -48,13 +48,13 @@ void RemoveOperation::start_conditional_remove(DistributorStripeMessageSender& s
     document::Bucket bucket(_msg->getBucket().getBucketSpace(), _doc_id_bucket_id);
     _check_condition = CheckCondition::create_if_inconsistent_replicas(bucket, _bucket_space, _msg->getDocumentId(),
                                                                        _msg->getCondition(), _node_ctx, _op_ctx,
-                                                                       _temp_metric);
+                                                                       _temp_metric, _msg->getTrace().getLevel());
     if (!_check_condition) {
         start_direct_remove_dispatch(sender);
     } else {
         // Inconsistent replicas; need write repair
         _check_condition->start_and_send(sender);
-        const auto& outcome = _check_condition->maybe_outcome(); // Might be done immediately
+        auto& outcome = _check_condition->maybe_outcome(); // Might be done immediately
         if (outcome) {
             on_completed_check_condition(*outcome, sender);
         }
@@ -110,7 +110,7 @@ RemoveOperation::onReceive(DistributorStripeMessageSender& sender, const std::sh
 {
     if (_check_condition) {
         _check_condition->handle_reply(sender, msg);
-        const auto& outcome = _check_condition->maybe_outcome();
+        auto& outcome = _check_condition->maybe_outcome();
         if (!outcome) {
             return; // Condition check not done yet
         }
@@ -131,9 +131,12 @@ RemoveOperation::onReceive(DistributorStripeMessageSender& sender, const std::sh
     _tracker.receiveReply(sender, reply);
 }
 
-void RemoveOperation::on_completed_check_condition(const CheckCondition::Outcome& outcome,
+void RemoveOperation::on_completed_check_condition(CheckCondition::Outcome& outcome,
                                                    DistributorStripeMessageSender& sender)
 {
+    if (!outcome.trace().isEmpty()) {
+        _tracker.add_trace_tree_to_reply(outcome.steal_trace());
+    }
     if (outcome.matched_condition()) {
         _msg->clear_condition(); // Transform to unconditional Remove
         start_direct_remove_dispatch(sender);
