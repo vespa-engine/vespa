@@ -441,8 +441,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         var certsDirectory = legacySiaDirectory.resolve("certs");
         Files.createDirectories(keysDirectory);
         Files.createDirectories(certsDirectory);
-        Files.copy(certificateFile, certsDirectory.resolve(certificateFile.getFileName()), StandardCopyOption.values());
-        Files.copy(privateKeyFile, keysDirectory.resolve(privateKeyFile.getFileName()), StandardCopyOption.values());
+        writeFile(certsDirectory.resolve(certificateFile.getFileName()), new String(Files.readAllBytes(certificateFile)));
+        writeFile(keysDirectory.resolve(privateKeyFile.getFileName()), new String(Files.readAllBytes(privateKeyFile)));
     }
 
     /*
