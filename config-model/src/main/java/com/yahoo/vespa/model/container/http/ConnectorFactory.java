@@ -59,6 +59,8 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
 
     public void setDefaultResponseFilterChain(ComponentId filterChain) { this.defaultResponseFilterChain = filterChain; }
 
+    public SslProvider sslProvider() { return sslProviderComponent; }
+
     public static class Builder {
         private final String name;
         private final int listenPort;
