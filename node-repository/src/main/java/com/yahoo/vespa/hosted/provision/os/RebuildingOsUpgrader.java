@@ -55,7 +55,7 @@ public class RebuildingOsUpgrader extends OsUpgrader {
     private List<Node> rebuildableHosts(OsVersionTarget target, NodeList allNodes, Instant now) {
         NodeList hostsOfTargetType = allNodes.nodeType(target.nodeType());
         if (softRebuild) {
-            // Soft rebuild is enabled so this should act on hosts having replacable root disk
+            // Soft rebuild is enabled so this should act on hosts having replaceable root disk
             hostsOfTargetType = hostsOfTargetType.replaceableRootDisk();
         }
 
