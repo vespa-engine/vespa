@@ -35,12 +35,14 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     private final boolean hasPackage;
     private final boolean shouldSkip;
     private final Optional<String> description;
+    private final Optional<Instant> submittedAt;
     private final int risk;
 
     public ApplicationVersion(RevisionId id, Optional<SourceRevision> source, Optional<String> authorEmail,
                               Optional<Version> compileVersion, Optional<Integer> allowedMajor, Optional<Instant> buildTime,
                               Optional<String> sourceUrl, Optional<String> commit, Optional<String> bundleHash,
-                              Optional<Instant> obsoleteAt, boolean hasPackage, boolean shouldSkip, Optional<String> description, int risk) {
+                              Optional<Instant> obsoleteAt, boolean hasPackage, boolean shouldSkip, Optional<String> description,
+                              Optional<Instant> submittedAt, int risk) {
 
         if (commit.isPresent() && commit.get().length() > 128)
             throw new IllegalArgumentException("Commit may not be longer than 128 characters");
@@ -64,6 +66,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         this.hasPackage = hasPackage;
         this.shouldSkip = shouldSkip;
         this.description = description;
+        this.submittedAt = requireNonNull(submittedAt);
         this.risk = requireAtLeast(risk, "application build risk", 0);
     }
 
@@ -73,15 +76,18 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Creates a minimal version for a development build. */
     public static ApplicationVersion forDevelopment(RevisionId id, Optional<Version> compileVersion, Optional<Integer> allowedMajor) {
-        return new ApplicationVersion(id, Optional.empty(), Optional.empty(), compileVersion, allowedMajor, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false, Optional.empty(), 0);
+        return new ApplicationVersion(id, Optional.empty(), Optional.empty(), compileVersion, allowedMajor, Optional.empty(),
+                                      Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), true, false,
+                                      Optional.empty(), Optional.empty(), 0);
     }
 
     /** Creates a version from a completed build, an author email, and build metadata. */
     public static ApplicationVersion forProduction(RevisionId id, Optional<SourceRevision> source, Optional<String> authorEmail,
                                                    Optional<Version> compileVersion, Optional<Integer> allowedMajor, Optional<Instant> buildTime, Optional<String> sourceUrl,
-                                                   Optional<String> commit, Optional<String> bundleHash, Optional<String> description, int risk) {
+                                                   Optional<String> commit, Optional<String> bundleHash, Optional<String> description, Instant submittedAt, int risk) {
         return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime,
-                                      sourceUrl, commit, bundleHash, Optional.empty(), true, false, description, risk);
+                                      sourceUrl, commit, bundleHash, Optional.empty(), true, false,
+                                      description, Optional.of(submittedAt), risk);
     }
 
     /** Returns a unique identifier for this version or "unknown" if version is not known */
@@ -140,12 +146,12 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Returns a copy of this without a package stored. */
     public ApplicationVersion withoutPackage() {
-        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, obsoleteAt, false, shouldSkip, description, risk);
+        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, obsoleteAt, false, shouldSkip, description, submittedAt, risk);
     }
 
     /** Returns a copy of this which is obsolete now. */
     public ApplicationVersion obsoleteAt(Instant now) {
-        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, Optional.of(now), hasPackage, shouldSkip, description, risk);
+        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, Optional.of(now), hasPackage, shouldSkip, description, submittedAt, risk);
     }
 
     /** Returns the instant at which this became obsolete, i.e., no longer relevant for automated deployments. */
@@ -160,7 +166,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Returns a copy of this which will not be rolled out to production. */
     public ApplicationVersion skipped() {
-        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, obsoleteAt, hasPackage, true, description, risk);
+        return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, obsoleteAt, hasPackage, true, description, submittedAt, risk);
     }
 
     /** Whether we still have the package for this revision. */
@@ -176,6 +182,11 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     /** An optional, free-text description on this build. */
     public Optional<String> description() {
         return description;
+    }
+
+    /** Instant at which this version was submitted to the build system. */
+    public Optional<Instant> submittedAt() {
+        return submittedAt;
     }
 
     /** The assumed risk of rolling out this revision, relative to the previous. */

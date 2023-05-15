@@ -706,7 +706,8 @@
       "commit": "commit1",
       "description": "my best commit yet",
       "risk": 9001,
-      "deployable": true
+      "deployable": true,
+      "submittedAt": 1600000000000
     },
     {
       "build": 3,
@@ -715,7 +716,8 @@
       "commit": "commit1",
       "description": "my best commit yet",
       "risk": 9001,
-      "deployable": false
+      "deployable": false,
+      "submittedAt": 1600000000000
     },
     {
       "build": 2,
@@ -724,7 +726,8 @@
       "commit": "commit1",
       "description": "my best commit yet",
       "risk": 9001,
-      "deployable": false
+      "deployable": false,
+      "submittedAt": 1600000000000
     },
     {
       "build": 1,
@@ -733,7 +736,8 @@
       "commit": "commit1",
       "description": "my best commit yet",
       "risk": 9001,
-      "deployable": true
+      "deployable": true,
+      "submittedAt": 1600000000000
     }
   ]
 }

@@ -5,8 +5,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 
+import java.time.Instant;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage.calculateHash;
 
@@ -21,21 +21,20 @@ public class Submission {
     private final Optional<SourceRevision> source;
     private final Optional<String> authorEmail;
     private final Optional<String> description;
+    private final Instant now;
     private final int risk;
 
     public Submission(ApplicationPackage applicationPackage, byte[] testPackage, Optional<String> sourceUrl,
-                      Optional<SourceRevision> source, Optional<String> authorEmail, Optional<String> description, int risk) {
+                      Optional<SourceRevision> source, Optional<String> authorEmail, Optional<String> description,
+                      Instant now, int risk) {
         this.applicationPackage = applicationPackage;
         this.testPackage = testPackage;
         this.sourceUrl = sourceUrl;
         this.source = source;
         this.authorEmail = authorEmail;
         this.description = description;
+        this.now = now;
         this.risk = risk;
-    }
-
-    public static Submission basic(ApplicationPackage applicationPackage, byte[] testPackage) {
-        return new Submission(applicationPackage, testPackage, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), 0);
     }
 
     public ApplicationVersion toApplicationVersion(long number) {
@@ -49,6 +48,7 @@ public class Submission {
                                                 source.map(SourceRevision::commit),
                                                 Optional.of(applicationPackage.bundleHash() + calculateHash(testPackage)),
                                                 description,
+                                                now,
                                                 risk);
     }
 

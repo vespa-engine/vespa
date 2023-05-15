@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
@@ -92,7 +93,7 @@ public class JobRunnerTest {
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
-        jobs.submit(appId, Submission.basic(applicationPackage, testPackageBytes), 2);
+        jobs.submit(appId, submission(applicationPackage, testPackageBytes), 2);
         start(jobs, id, systemTest);
         try {
             start(jobs, id, systemTest);
@@ -128,7 +129,7 @@ public class JobRunnerTest {
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
-        jobs.submit(appId, Submission.basic(applicationPackage, testPackageBytes), 2);
+        jobs.submit(appId, submission(applicationPackage, testPackageBytes), 2);
         Supplier<Run> run = () -> jobs.last(id, systemTest).get();
 
         start(jobs, id, systemTest);
@@ -236,7 +237,7 @@ public class JobRunnerTest {
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
-        jobs.submit(appId, Submission.basic(applicationPackage, testPackageBytes), 2);
+        jobs.submit(appId, submission(applicationPackage, testPackageBytes), 2);
 
         RunId runId = new RunId(id, systemTest, 1);
         start(jobs, id, systemTest);
@@ -276,7 +277,7 @@ public class JobRunnerTest {
         ApplicationId instanceId = appId.defaultInstance();
         JobId jobId = new JobId(instanceId, systemTest);
         byte[] testPackageBytes = new byte[0];
-        jobs.submit(appId, Submission.basic(applicationPackage, testPackageBytes), 2);
+        jobs.submit(appId, submission(applicationPackage, testPackageBytes), 2);
         assertFalse(jobs.lastSuccess(jobId).isPresent());
 
         for (int i = 0; i < jobs.historyLength(); i++) {
@@ -372,7 +373,7 @@ public class JobRunnerTest {
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
-        jobs.submit(appId, Submission.basic(applicationPackage, testPackageBytes), 2);
+        jobs.submit(appId, submission(applicationPackage, testPackageBytes), 2);
 
         start(jobs, id, systemTest);
         tester.clock().advance(JobRunner.jobTimeout.plus(Duration.ofSeconds(1)));
@@ -390,7 +391,7 @@ public class JobRunnerTest {
         TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
-        jobs.submit(appId, Submission.basic(applicationPackage, testPackageBytes), 2);
+        jobs.submit(appId, submission(applicationPackage, testPackageBytes), 2);
 
         for (Step step : JobProfile.of(systemTest).steps())
             outcomes.put(step, running);
@@ -473,6 +474,10 @@ public class JobRunnerTest {
             }
             return Optional.of(running);
         };
+    }
+
+    private static Submission submission(ApplicationPackage applicationPackage, byte[] testPackage) {
+        return new Submission(applicationPackage, testPackage, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Instant.EPOCH, 0);
     }
 
 }
