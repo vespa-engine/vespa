@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
@@ -13,7 +12,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.change.CertificateRemovalChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.CloudAccountChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.ConfigValueChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ContainerRestartValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentClusterRemovalValidator;
@@ -23,11 +21,11 @@ import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterC
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.RedundancyIncreaseValidator;
+import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.first.RedundancyValidator;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -88,6 +86,7 @@ public class Validation {
         new CloudDataPlaneFilterValidator().validate(model, deployState);
         new AccessControlFilterExcludeValidator().validate(model, deployState);
         new CloudUserFilterValidator().validate(model, deployState);
+        new CloudHttpConnectorValidator().validate(model, deployState);
 
         additionalValidators.forEach(v -> v.validate(model, deployState));
 
