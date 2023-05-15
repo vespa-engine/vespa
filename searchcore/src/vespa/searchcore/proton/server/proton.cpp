@@ -380,7 +380,9 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     _flushEngine->start();
     vespalib::duration pruneSessionsInterval = vespalib::from_s(protonConfig.grouping.sessionmanager.pruning.interval);
-    _sessionPruneHandle = _scheduler->scheduleAtFixedRate(makeLambdaTask([&]() { _sessionManager->pruneTimedOutSessions(vespalib::steady_clock::now()); }), pruneSessionsInterval, pruneSessionsInterval);
+    _sessionPruneHandle = _scheduler->scheduleAtFixedRate(makeLambdaTask([&]() {
+        _sessionManager->pruneTimedOutSessions(vespalib::steady_clock::now(), _shared_service->shared());
+    }), pruneSessionsInterval, pruneSessionsInterval);
     _isInitializing = false;
     _protonConfigurer.setAllowReconfig(true);
     _initComplete = true;
