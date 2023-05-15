@@ -11,13 +11,14 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
-import com.yahoo.vespa.clustercontroller.core.FleetControllerTest;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskScheduler;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.StateRestAPI;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.UnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.server.JsonWriter;
+
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -53,7 +54,7 @@ public abstract class StateRestApiTest {
         Distribution distribution = new Distribution(getSimpleGroupConfig(2, 10));
         jsonWriter.setDefaultPathPrefix("/cluster/v2");
         {
-            Set<ConfiguredNode> nodes = FleetControllerTest.toNodes(0, 1, 2, 3);
+            Set<ConfiguredNode> nodes = toNodes(0, 1, 2, 3);
             ContentCluster cluster = new ContentCluster("books", nodes, distribution);
             initializeCluster(cluster, nodes);
             AnnotatedClusterState baselineState = AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString("distributor:4 storage:4"));
@@ -64,8 +65,8 @@ public abstract class StateRestApiTest {
                     ClusterStateBundle.of(baselineState, bucketSpaceStates), 0, 0);
         }
         {
-            Set<ConfiguredNode> nodes = FleetControllerTest.toNodes(1, 2, 3, 5, 7);
-            Set<ConfiguredNode> nodesInSlobrok = FleetControllerTest.toNodes(1, 3, 5, 7);
+            Set<ConfiguredNode> nodes = toNodes(1, 2, 3, 5, 7);
+            Set<ConfiguredNode> nodesInSlobrok = toNodes(1, 3, 5, 7);
 
             ContentCluster cluster = new ContentCluster("music", nodes, distribution);
             if (dontInitializeNode2) {
@@ -200,6 +201,12 @@ public abstract class StateRestApiTest {
             sb.append("group[" + group + "].nodes[").append(i / 2).append("].index ").append(i).append("\n");
         }
         return sb.toString();
+    }
+
+    private static Set<ConfiguredNode> toNodes(Integer ... indexes) {
+        return Arrays.stream(indexes)
+                .map(i -> new ConfiguredNode(i, false))
+                .collect(Collectors.toSet());
     }
 
 }

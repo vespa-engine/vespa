@@ -5,11 +5,9 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
-import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
-import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
-import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +27,8 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
 
     private static final int NODE_COUNT = 3;
 
-    // TODO dedupe fixture and setup stuff with other tests
+    private final Timer timer = new FakeTimer();
+
     private FleetController ctrl;
     private DummyCommunicator communicator;
 
@@ -42,16 +41,8 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
 
         var context = new TestFleetControllerContext(options);
         communicator = new DummyCommunicator(nodes, timer);
-        var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex(), options.clusterName());
-        var eventLog = new EventLog(timer, metricUpdater);
-        var cluster = new ContentCluster(options);
-        var stateGatherer = new NodeStateGatherer(timer, timer, eventLog);
-        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress(), timer);
-        var stateGenerator = new StateChangeHandler(context, timer, eventLog);
-        var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
-        var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex(), options.fleetControllerCount(), timer, timer);
-        ctrl = new FleetController(context, timer, eventLog, cluster, stateGatherer, communicator, null, communicator, database,
-                                   stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
+        boolean start = false;
+        ctrl = createFleetController(timer, options, context, communicator, communicator, null, start);
 
         ctrl.tick();
         markAllNodesAsUp(options);
@@ -67,7 +58,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
     }
 
     private static FleetControllerOptions createOptions(Map<String, Double> feedBlockLimits, double clusterFeedBlockNoiseLevel) {
-        return defaultOptions("mycluster")
+        return defaultOptions()
                 .setStorageDistribution(DistributionBuilder.forFlatCluster(NODE_COUNT))
                 .setNodes(new HashSet<>(DistributionBuilder.buildConfiguredNodes(NODE_COUNT)))
                 .setClusterFeedBlockEnabled(true)

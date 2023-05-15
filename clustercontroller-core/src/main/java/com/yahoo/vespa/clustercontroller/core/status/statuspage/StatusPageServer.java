@@ -2,9 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core.status.statuspage;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,8 +20,6 @@ public class StatusPageServer {
      */
     public static class HttpRequest {
         private final String request;
-        private String pathPrefix = "";
-        private final Map<String, String> params = new HashMap<String, String>();
         private final String path;
 
         static Pattern pathPattern;
@@ -32,7 +28,7 @@ public class StatusPageServer {
             // status pages.
             // If you stare at it for long enough, this sorta looks like one of those
             // magic eye pictures.
-            pathPattern = Pattern.compile("^(/([\\w=\\./]+)?)(?:\\?((?:&?\\w+(?:=[\\w\\.]*)?)*))?$");
+            pathPattern = Pattern.compile("^(/([\\w=./]+)?)(?:\\?((?:&?\\w+(?:=[\\w.]*)?)*))?$");
         }
 
         public HttpRequest(String request) {
@@ -42,17 +38,7 @@ public class StatusPageServer {
                 throw new IllegalArgumentException("Illegal HTTP request path: " + request);
             }
             path = m.group(1);
-            if (m.group(3) != null) {
-                String[] rawParams = m.group(3).split("&");
-                for (String param : rawParams) {
-                    // Parameter values are optional.
-                    String[] queryParts = param.split("=");
-                    params.put(queryParts[0], queryParts.length > 1 ? queryParts[1] : null);
-                }
-            }
         }
-
-        public String getPathPrefix() { return pathPrefix; }
 
         public String toString() {
             return "HttpRequest(" + request + ")";
@@ -66,25 +52,11 @@ public class StatusPageServer {
             return path;
         }
 
-        public boolean hasQueryParameters() {
-            return !params.isEmpty();
-        }
-
-        public String getQueryParameter(String name) {
-            return params.get(name);
-        }
-
-        public boolean hasQueryParameter(String name) {
-            return params.containsKey(name);
-        }
-
-        public void setPathPrefix(String pathPrefix) {
-            this.pathPrefix = pathPrefix;
-        }
     }
 
     public interface RequestHandler {
         StatusPageResponse handle(HttpRequest request);
+        String pattern();
     }
 
     public interface RequestRouter {
@@ -114,12 +86,8 @@ public class StatusPageServer {
 
         private final List<PatternRouting> patterns = new ArrayList<>();
 
-        public void addHandler(Pattern pattern, RequestHandler handler) {
-            patterns.add(new PatternRouting(pattern, handler));
-        }
-
-        public void addHandler(String pattern, RequestHandler handler) {
-            addHandler(Pattern.compile(pattern), handler);
+        public void addHandler(RequestHandler handler) {
+            patterns.add(new PatternRouting(Pattern.compile(handler.pattern()), handler));
         }
 
         @Override

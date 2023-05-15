@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class WantedStateTest extends FleetControllerTest {
 
     private Supervisor supervisor;
+    private final Timer timer = new FakeTimer();
 
     @BeforeEach
     public void setup() {
@@ -28,9 +29,8 @@ public class WantedStateTest extends FleetControllerTest {
 
     @Test
     void testSettingStorageNodeMaintenanceAndBack() throws Exception {
-        startingTest("WantedStateTest::testSettingStorageNodeMaintenanceAndBack()");
-        setUpFleetController(true, defaultOptions("mycluster"));
-        setUpVdsNodes(true);
+        setUpFleetController(timer, defaultOptions());
+        setUpVdsNodes(timer);
         waitForStableSystem();
 
         setWantedState(nodes.get(1), State.MAINTENANCE, null, supervisor);
@@ -42,9 +42,8 @@ public class WantedStateTest extends FleetControllerTest {
 
     @Test
     void testOverridingWantedStateOtherReason() throws Exception {
-        startingTest("WantedStateTest::testOverridingWantedStateOtherReason()");
-        setUpFleetController(true, defaultOptions("mycluster"));
-        setUpVdsNodes(true);
+        setUpFleetController(timer, defaultOptions());
+        setUpVdsNodes(timer);
         waitForStableSystem();
 
         setWantedState(nodes.get(1), State.MAINTENANCE, "Foo", supervisor);

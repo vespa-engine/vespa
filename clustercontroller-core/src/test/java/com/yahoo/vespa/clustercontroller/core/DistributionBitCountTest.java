@@ -17,16 +17,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ExtendWith(CleanupZookeeperLogsOnSuccess.class)
 public class DistributionBitCountTest extends FleetControllerTest {
 
-    private FleetControllerOptions setUpSystem(String testName) throws Exception {
+    private FleetControllerOptions setUpSystem() throws Exception {
         List<ConfiguredNode> configuredNodes = new ArrayList<>();
         for (int i = 0 ; i < 10; i++) {
             configuredNodes.add(new ConfiguredNode(i, false));
         }
         var builder = defaultOptions("mycluster", configuredNodes);
         builder.setDistributionBits(17);
-        setUpFleetController(false, builder);
-        startingTest(testName);
-        List<DummyVdsNode> nodes = setUpVdsNodes(false, true, configuredNodes);
+        Timer timer = new RealTimer();
+        setUpFleetController(timer, builder);
+        List<DummyVdsNode> nodes = setUpVdsNodes(timer, true, configuredNodes);
         for (DummyVdsNode node : nodes) {
             node.setNodeState(new NodeState(node.getType(), State.UP).setMinUsedBits(20));
             node.connect();
@@ -41,7 +41,7 @@ public class DistributionBitCountTest extends FleetControllerTest {
      */
     @Test
     void testDistributionBitCountConfigIncrease() throws Exception {
-        var options = setUpSystem("DistributionBitCountTest::testDistributionBitCountConfigIncrease");
+        var options = setUpSystem();
         var builder = FleetControllerOptions.Builder.copy(options);
         builder.setDistributionBits(20);
         fleetController().updateOptions(builder.build());
@@ -58,7 +58,7 @@ public class DistributionBitCountTest extends FleetControllerTest {
      */
     @Test
     void testDistributionBitCountConfigDecrease() throws Exception {
-        FleetControllerOptions options = setUpSystem("DistributionBitCountTest::testDistributionBitCountConfigDecrease");
+        FleetControllerOptions options = setUpSystem();
         var builder = FleetControllerOptions.Builder.copy(options);
         builder.setDistributionBits(12);
         fleetController().updateOptions(builder.build());
@@ -68,13 +68,13 @@ public class DistributionBitCountTest extends FleetControllerTest {
     /**
      * Test that when storage node reports higher bit count, but another storage
      * node has equally low bitcount, the fleetcontroller does nothing.
-     *
+     * <p
      * Test that when storage node reports higher bit count, but another storage
      * node now being lowest, the fleetcontroller adjusts to use that bit in system state.
      */
     @Test
     void testStorageNodeReportingHigherBitCount() throws Exception {
-        setUpSystem("DistributionBitCountTest::testStorageNodeReportingHigherBitCount");
+        setUpSystem();
 
         nodes.get(1).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(11));
         nodes.get(3).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(11));
@@ -97,7 +97,7 @@ public class DistributionBitCountTest extends FleetControllerTest {
      */
     @Test
     void testStorageNodeReportingLowerBitCount() throws Exception {
-        setUpSystem("DistributionBitCountTest::testStorageNodeReportingLowerBitCount");
+        setUpSystem();
 
         nodes.get(1).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(13));
         ClusterState currentState = waitForState("version:\\d+ bits:13 distributor:10 storage:10");

@@ -59,4 +59,7 @@ public class LegacyNodePageRequestHandler implements StatusPageServer.RequestHan
         return response;
     }
 
+    @Override
+    public String pattern() { return "^/node=([a-z]+)\\.(\\d+)$"; }
+
 }

@@ -35,11 +35,11 @@ public class DatabaseTest extends FleetControllerTest {
 
     @Test
     void testWantedStatesInZooKeeper() throws Exception {
-        startingTest("DatabaseTest::testWantedStatesInZooKeeper");
-        FleetControllerOptions.Builder builder = defaultOptions("mycluster");
+        FleetControllerOptions.Builder builder = defaultOptions();
         builder.setZooKeeperServerAddress("127.0.0.1");
-        setUpFleetController(true, builder);
-        setUpVdsNodes(true);
+        Timer timer = new FakeTimer();
+        setUpFleetController(timer, builder);
+        setUpVdsNodes(timer);
         log.info("WAITING FOR STABLE SYSTEM");
         waitForStableSystem();
 
@@ -68,7 +68,8 @@ public class DatabaseTest extends FleetControllerTest {
 
         log.info("CHECK THAT WANTED STATES PERSIST FLEETCONTROLLER RESTART");
         stopFleetController();
-        startFleetController(false);
+        timer = new RealTimer();
+        startFleetController(timer);
 
         waitForState("version:\\d+ distributor:10 .2.s:d storage:10 .3.s:m .7.s:r");
         assertWantedStates(wantedStates);
@@ -89,13 +90,13 @@ public class DatabaseTest extends FleetControllerTest {
 
     @Test
     void testWantedStateOfUnknownNode() throws Exception {
-        startingTest("DatabaseTest::testWantedStatesOfUnknownNode");
-        FleetControllerOptions.Builder builder = defaultOptions("mycluster")
+        FleetControllerOptions.Builder builder = defaultOptions()
                 .setMinRatioOfDistributorNodesUp(0)
                 .setMinRatioOfStorageNodesUp(0)
                 .setZooKeeperServerAddress("localhost");
-        setUpFleetController(true, builder);
-        setUpVdsNodes(true);
+        Timer timer = new FakeTimer();
+        setUpFleetController(timer, builder);
+        setUpVdsNodes(timer);
         waitForStableSystem();
 
         // Populate map of wanted states we should have
@@ -132,7 +133,8 @@ public class DatabaseTest extends FleetControllerTest {
 
         stopFleetController();
         for (int i = 6; i < nodes.size(); ++i) nodes.get(i).disconnect();
-        startFleetController(false);
+        timer = new RealTimer();
+        startFleetController(timer);
 
         waitForState("version:\\d+ distributor:3 storage:7 .1.s:m .3.s:d .4.s:d .5.s:d .6.s:m");
 

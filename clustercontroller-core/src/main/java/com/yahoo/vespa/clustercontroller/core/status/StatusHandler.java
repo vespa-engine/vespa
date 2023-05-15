@@ -98,7 +98,6 @@ public class StatusHandler implements HttpRequestHandler {
             fleetControllerPath = "/";
         }
         StatusPageServer.HttpRequest req = new StatusPageServer.HttpRequest(fleetControllerPath);
-        req.setPathPrefix("/clustercontroller-status/v1");
         StatusPageResponse response = statusServer.getStatus(req);
         HttpResult result = new HttpResult();
         if (response.getResponseCode() != null) {

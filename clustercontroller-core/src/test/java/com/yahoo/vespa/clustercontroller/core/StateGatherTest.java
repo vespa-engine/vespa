@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import java.time.Instant;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,6 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class StateGatherTest extends FleetControllerTest {
 
     public static Logger log = Logger.getLogger(StateGatherTest.class.getName());
+
+    private final FakeTimer timer = new FakeTimer();
 
     private String getGetNodeStateReplyCounts(DummyVdsNode node) {
         StringBuilder sb = new StringBuilder();
@@ -28,14 +29,13 @@ public class StateGatherTest extends FleetControllerTest {
 
     @Test
     void testAlwaysHavePendingGetNodeStateRequestTowardsNodes() throws Exception {
-        Logger.getLogger(NodeStateGatherer.class.getName()).setLevel(Level.FINEST);
-        startingTest("StateGatherTest::testOverlappingGetNodeStateRequests");
-        FleetControllerOptions.Builder builder = defaultOptions("mycluster")
+        //Logger.getLogger(NodeStateGatherer.class.getName()).setLevel(Level.FINEST);
+        FleetControllerOptions.Builder builder = defaultOptions()
                 .setNodeStateRequestTimeoutMS(10 * 60 * 1000)
                 // Force actual message timeout to be lower than request timeout.
                 .setNodeStateRequestTimeoutEarliestPercentage(80)
                 .setNodeStateRequestTimeoutLatestPercentage(80);
-        setUpFleetController(true, builder);
+        setUpFleetController(timer, builder);
         String[] connectionSpecs = getSlobrokConnectionSpecs(slobrok);
         DummyVdsNode dnode = new DummyVdsNode(timer, connectionSpecs, builder.clusterName(), NodeType.DISTRIBUTOR, 0);
         DummyVdsNode snode = new DummyVdsNode(timer, connectionSpecs, builder.clusterName(), NodeType.STORAGE, 0);
