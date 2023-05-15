@@ -10,5 +10,5 @@ vespa_add_executable(searchcore_flushengine_test_app TEST
 vespa_add_test(
     NAME searchcore_flushengine_test_app
     COMMAND searchcore_flushengine_test_app
-    ENVIRONMENT "VESPA_LOG_LEVEL=all;VESPA_LOG_TARGET=file:vlog.txt"
+    ENVIRONMENT "VESPA_LOG_LEVEL=all"
 )
