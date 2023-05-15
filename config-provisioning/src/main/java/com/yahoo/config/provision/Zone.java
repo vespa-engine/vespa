@@ -27,7 +27,7 @@ public class Zone {
                   .name(CloudName.from(configserverConfig.cloud()))
                   .dynamicProvisioning(cloudConfig.dynamicProvisioning())
                   .allowHostSharing(cloudConfig.allowHostSharing())
-                  .allowEnclave(cloudConfig.dynamicProvisioning())
+                  .allowEnclave(configserverConfig.cloud().equals("aws") || configserverConfig.cloud().equals("gcp"))
                   .requireAccessControl(cloudConfig.requireAccessControl())
                   .account(CloudAccount.from(cloudConfig.account()))
                   .build(),
