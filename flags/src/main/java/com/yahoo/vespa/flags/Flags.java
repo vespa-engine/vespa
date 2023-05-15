@@ -48,6 +48,12 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag IPV6_IN_GCP = defineFeatureFlag(
+            "ipv6-in-gcp", true,
+            List.of("hakonhall"), "2023-05-15", "2023-06-15",
+            "Provision GCP hosts with external IPv6 addresses",
+            "Takes effect on the next host provisioning");
+
     public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
             "drop-caches", false,
             List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-06-05",
