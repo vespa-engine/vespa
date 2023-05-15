@@ -17,6 +17,7 @@ import (
 
 	"github.com/klauspost/compress/gzip"
 
+	"github.com/vespa-engine/vespa/client/go/internal/build"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
@@ -31,6 +32,16 @@ const (
 var (
 	fieldsPrefix = []byte(`{"fields":`)
 	fieldsSuffix = []byte("}")
+
+	defaultHeaders http.Header = map[string][]string{
+		"User-Agent":   {fmt.Sprintf("Vespa CLI/%s", build.Version)},
+		"Content-Type": {"application/json; charset=utf-8"},
+	}
+	gzipHeaders http.Header = map[string][]string{
+		"User-Agent":       {fmt.Sprintf("Vespa CLI/%s", build.Version)},
+		"Content-Type":     {"application/json; charset=utf-8"},
+		"Content-Encoding": {"gzip"},
+	}
 )
 
 // Client represents a HTTP client for the /document/v1/ API.
@@ -230,14 +241,26 @@ func (c *Client) prepare(document Document) (*http.Request, *bytes.Buffer, error
 	return pd.request, pd.buf, pd.err
 }
 
+func newRequest(method, url string, body io.Reader, gzipped bool) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	if gzipped {
+		req.Header = gzipHeaders
+	} else {
+		req.Header = defaultHeaders
+	}
+	return req, nil
+}
+
 func (c *Client) createRequest(method, url string, body []byte, buf *bytes.Buffer) (*http.Request, error) {
+	buf.Reset()
 	if len(body) == 0 {
-		req, err := http.NewRequest(method, url, nil)
-		return req, err
+		return newRequest(method, url, nil, false)
 	}
 	bodySize := len(fieldsPrefix) + len(body) + len(fieldsSuffix)
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && bodySize > 512)
-	buf.Reset()
 	buf.Grow(min(1024, bodySize))
 	if useGzip {
 		zw := c.gzipWriter(buf)
@@ -253,15 +276,7 @@ func (c *Client) createRequest(method, url string, body []byte, buf *bytes.Buffe
 			return nil, err
 		}
 	}
-	req, err := http.NewRequest(method, url, buf)
-	if err != nil {
-		return nil, err
-	}
-	if useGzip {
-		req.Header.Set("Content-Encoding", "gzip")
-	}
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	return req, nil
+	return newRequest(method, url, buf, useGzip)
 }
 
 func (c *Client) clientTimeout() time.Duration {

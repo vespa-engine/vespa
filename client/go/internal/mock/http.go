@@ -61,6 +61,8 @@ func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Res
 			return nil, err
 		}
 		c.LastBody = body
+	} else {
+		c.LastBody = nil
 	}
 	c.Requests = append(c.Requests, request)
 	if response.Header == nil {
