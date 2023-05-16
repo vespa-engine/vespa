@@ -2428,6 +2428,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if ( ! type.environment().isManuallyDeployed() && ! (isOperator(request) || controller.system().isCd()))
             throw new IllegalArgumentException("Direct deployments are only allowed to manually deployed environments.");
 
+        controller.applications().verifyPlan(id.tenant());
+
         Map<String, byte[]> dataParts = parseDataParts(request);
         if ( ! dataParts.containsKey("applicationZip"))
             throw new IllegalArgumentException("Missing required form part 'applicationZip'");
