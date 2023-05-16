@@ -253,4 +253,20 @@ TEST_F(CheckConditionTest, nested_get_traces_are_propagated_to_outcome) {
     });
 }
 
+TEST_F(CheckConditionTest, condition_evaluation_increments_probe_latency_metrics) {
+    getClock().setAbsoluteTimeInSeconds(1);
+    EXPECT_EQ(_metrics.latency.getLongValue("count"), 0);
+    EXPECT_EQ(_metrics.ok.getLongValue("last"), 0);
+    test_cond_with_2_gets_sent([&](auto& cond) {
+        cond.handle_reply(_sender, make_matched_reply(0));
+        getClock().setAbsoluteTimeInSeconds(3);
+        cond.handle_reply(_sender, make_matched_reply(1));
+    }, [&](auto& outcome) noexcept {
+        (void)outcome;
+    });
+    EXPECT_EQ(_metrics.latency.getLongValue("count"), 1);
+    EXPECT_EQ(_metrics.ok.getLongValue("last"), 1);
+    EXPECT_DOUBLE_EQ(_metrics.latency.getLast(), 2'000.0); // in millis
+}
+
 }

@@ -40,10 +40,11 @@ class PersistenceOperationMetricSet : public metrics::MetricSet
     mutable std::mutex _mutex;
 public:
     metrics::DoubleAverageMetric latency;
-    metrics::LongCountMetric ok;
+    metrics::LongCountMetric     ok;
     PersistenceFailuresMetricSet failures;
 
-    PersistenceOperationMetricSet(const std::string& name, metrics::MetricSet* owner = nullptr);
+    PersistenceOperationMetricSet(const std::string& name, metrics::MetricSet* owner);
+    explicit PersistenceOperationMetricSet(const std::string& name);
     ~PersistenceOperationMetricSet() override;
 
     MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
@@ -57,7 +58,6 @@ public:
      */
     void updateFromResult(const api::ReturnCode& result);
 
-    friend class LockWrapper;
     class LockWrapper {
         std::unique_lock<std::mutex> _lock;
         PersistenceOperationMetricSet& _self;

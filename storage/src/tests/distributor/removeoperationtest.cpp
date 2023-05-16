@@ -41,7 +41,8 @@ struct RemoveOperationTest : Test, DistributorStripeTestUtil {
                 operation_context(),
                 getDistributorBucketSpace(),
                 msg,
-                metrics().removes);
+                metrics().removes,
+                metrics().remove_condition_probes);
 
         op->start(_sender);
     }

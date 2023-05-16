@@ -58,7 +58,7 @@ CheckCondition::CheckCondition(const document::Bucket& bucket,
                                const documentapi::TestAndSetCondition& tas_condition,
                                const DistributorBucketSpace& bucket_space,
                                const DistributorNodeContext& node_ctx,
-                               PersistenceOperationMetricSet& metric,
+                               PersistenceOperationMetricSet& condition_probe_metrics,
                                uint32_t trace_level,
                                private_ctor_tag)
     : _doc_id_bucket(bucket),
@@ -66,7 +66,8 @@ CheckCondition::CheckCondition(const document::Bucket& bucket,
       _node_ctx(node_ctx),
       _cluster_state_version_at_creation_time(_bucket_space.getClusterState().getVersion()),
       _cond_get_op(),
-      _sent_message_map()
+      _sent_message_map(),
+      _outcome()
 {
     // Condition checks only return metadata back to the distributor and thus have an empty fieldset.
     // Side note: the BucketId provided to the GetCommand is ignored; GetOperation computes explicitly from the doc ID.
@@ -75,8 +76,8 @@ CheckCondition::CheckCondition(const document::Bucket& bucket,
     get_cmd->getTrace().setLevel(trace_level);
     _cond_get_op = std::make_shared<GetOperation>(_node_ctx, _bucket_space,
                                                   _bucket_space.getBucketDatabase().acquire_read_guard(),
-                                                  std::move(get_cmd),
-                                                  metric, api::InternalReadConsistency::Strong);
+                                                  std::move(get_cmd), condition_probe_metrics,
+                                                  api::InternalReadConsistency::Strong);
 }
 
 CheckCondition::~CheckCondition() = default;
@@ -220,7 +221,7 @@ CheckCondition::create_if_inconsistent_replicas(const document::Bucket& bucket,
                                                 const documentapi::TestAndSetCondition& tas_condition,
                                                 const DistributorNodeContext& node_ctx,
                                                 const DistributorStripeOperationContext& op_ctx,
-                                                PersistenceOperationMetricSet& metric,
+                                                PersistenceOperationMetricSet& condition_probe_metrics,
                                                 uint32_t trace_level)
 {
     // TODO move this check to the caller?
@@ -237,8 +238,8 @@ CheckCondition::create_if_inconsistent_replicas(const document::Bucket& bucket,
     if (!all_nodes_support_document_condition_probe(entries, op_ctx)) {
         return {}; // Want write-repair, but one or more nodes are too old to use the feature
     }
-    return std::make_shared<CheckCondition>(bucket, doc_id, tas_condition, bucket_space,
-                                            node_ctx, metric, trace_level, private_ctor_tag{});
+    return std::make_shared<CheckCondition>(bucket, doc_id, tas_condition, bucket_space, node_ctx,
+                                            condition_probe_metrics, trace_level, private_ctor_tag{});
 }
 
 }

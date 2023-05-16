@@ -16,6 +16,7 @@ RemoveOperation::RemoveOperation(const DistributorNodeContext& node_ctx,
                                  DistributorBucketSpace& bucketSpace,
                                  std::shared_ptr<api::RemoveCommand> msg,
                                  PersistenceOperationMetricSet& metric,
+                                 PersistenceOperationMetricSet& condition_probe_metrics,
                                  SequencingHandle sequencingHandle)
     : SequencedOperation(std::move(sequencingHandle)),
       _tracker_instance(metric,
@@ -26,7 +27,7 @@ RemoveOperation::RemoveOperation(const DistributorNodeContext& node_ctx,
       _doc_id_bucket_id(document::BucketIdFactory{}.getBucketId(_msg->getDocumentId())),
       _node_ctx(node_ctx),
       _op_ctx(op_ctx),
-      _temp_metric(metric), // TODO
+      _condition_probe_metrics(condition_probe_metrics),
       _bucket_space(bucketSpace),
       _check_condition()
 {
@@ -48,7 +49,7 @@ void RemoveOperation::start_conditional_remove(DistributorStripeMessageSender& s
     document::Bucket bucket(_msg->getBucket().getBucketSpace(), _doc_id_bucket_id);
     _check_condition = CheckCondition::create_if_inconsistent_replicas(bucket, _bucket_space, _msg->getDocumentId(),
                                                                        _msg->getCondition(), _node_ctx, _op_ctx,
-                                                                       _temp_metric, _msg->getTrace().getLevel());
+                                                                       _condition_probe_metrics, _msg->getTrace().getLevel());
     if (!_check_condition) {
         start_direct_remove_dispatch(sender);
     } else {
