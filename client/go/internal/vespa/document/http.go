@@ -2,7 +2,6 @@ package document
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -14,6 +13,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/goccy/go-json"
 
 	"github.com/klauspost/compress/gzip"
 
