@@ -2,7 +2,6 @@ package document
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -15,8 +14,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/goccy/go-json"
+
 	"github.com/klauspost/compress/gzip"
 
+	"github.com/vespa-engine/vespa/client/go/internal/build"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
@@ -31,6 +33,16 @@ const (
 var (
 	fieldsPrefix = []byte(`{"fields":`)
 	fieldsSuffix = []byte("}")
+
+	defaultHeaders http.Header = map[string][]string{
+		"User-Agent":   {fmt.Sprintf("Vespa CLI/%s", build.Version)},
+		"Content-Type": {"application/json; charset=utf-8"},
+	}
+	gzipHeaders http.Header = map[string][]string{
+		"User-Agent":       {fmt.Sprintf("Vespa CLI/%s", build.Version)},
+		"Content-Type":     {"application/json; charset=utf-8"},
+		"Content-Encoding": {"gzip"},
+	}
 )
 
 // Client represents a HTTP client for the /document/v1/ API.
@@ -106,7 +118,7 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, e
 	return c, nil
 }
 
-func writeQueryParam(sb *strings.Builder, start int, escape bool, k, v string) {
+func writeQueryParam(sb *bytes.Buffer, start int, escape bool, k, v string) {
 	if sb.Len() == start {
 		sb.WriteString("?")
 	} else {
@@ -130,7 +142,7 @@ func writeRequestBody(w io.Writer, body []byte) error {
 	return nil
 }
 
-func (c *Client) methodAndURL(d Document) (string, string) {
+func (c *Client) methodAndURL(d Document, sb *bytes.Buffer) (string, string) {
 	httpMethod := ""
 	switch d.Operation {
 	case OperationPut:
@@ -140,7 +152,6 @@ func (c *Client) methodAndURL(d Document) (string, string) {
 	case OperationRemove:
 		httpMethod = "DELETE"
 	}
-	var sb strings.Builder
 	// Base URL and path
 	sb.WriteString(c.options.BaseURL)
 	if !strings.HasSuffix(c.options.BaseURL, "/") {
@@ -165,22 +176,22 @@ func (c *Client) methodAndURL(d Document) (string, string) {
 	// Query part
 	queryStart := sb.Len()
 	if c.options.Timeout > 0 {
-		writeQueryParam(&sb, queryStart, false, "timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
+		writeQueryParam(sb, queryStart, false, "timeout", strconv.FormatInt(c.options.Timeout.Milliseconds(), 10)+"ms")
 	}
 	if c.options.Route != "" {
-		writeQueryParam(&sb, queryStart, true, "route", c.options.Route)
+		writeQueryParam(sb, queryStart, true, "route", c.options.Route)
 	}
 	if c.options.TraceLevel > 0 {
-		writeQueryParam(&sb, queryStart, false, "tracelevel", strconv.Itoa(c.options.TraceLevel))
+		writeQueryParam(sb, queryStart, false, "tracelevel", strconv.Itoa(c.options.TraceLevel))
 	}
 	if c.options.Speedtest {
-		writeQueryParam(&sb, queryStart, false, "dryRun", "true")
+		writeQueryParam(sb, queryStart, false, "dryRun", "true")
 	}
 	if d.Condition != "" {
-		writeQueryParam(&sb, queryStart, true, "condition", d.Condition)
+		writeQueryParam(sb, queryStart, true, "condition", d.Condition)
 	}
 	if d.Create {
-		writeQueryParam(&sb, queryStart, false, "create", "true")
+		writeQueryParam(sb, queryStart, false, "create", "true")
 	}
 	return httpMethod, sb.String()
 }
@@ -217,8 +228,8 @@ func (c *Client) buffer() *bytes.Buffer {
 
 func (c *Client) preparePending() {
 	for pd := range c.pending {
-		method, url := c.methodAndURL(pd.document)
 		pd.buf = c.buffer()
+		method, url := c.methodAndURL(pd.document, pd.buf)
 		pd.request, pd.err = c.createRequest(method, url, pd.document.Fields, pd.buf)
 		pd.prepared <- true
 	}
@@ -231,10 +242,23 @@ func (c *Client) prepare(document Document) (*http.Request, *bytes.Buffer, error
 	return pd.request, pd.buf, pd.err
 }
 
+func newRequest(method, url string, body io.Reader, gzipped bool) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	if gzipped {
+		req.Header = gzipHeaders
+	} else {
+		req.Header = defaultHeaders
+	}
+	return req, nil
+}
+
 func (c *Client) createRequest(method, url string, body []byte, buf *bytes.Buffer) (*http.Request, error) {
+	buf.Reset()
 	if len(body) == 0 {
-		req, err := http.NewRequest(method, url, nil)
-		return req, err
+		return newRequest(method, url, nil, false)
 	}
 	bodySize := len(fieldsPrefix) + len(body) + len(fieldsSuffix)
 	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && bodySize > 512)
@@ -253,15 +277,7 @@ func (c *Client) createRequest(method, url string, body []byte, buf *bytes.Buffe
 			return nil, err
 		}
 	}
-	req, err := http.NewRequest(method, url, buf)
-	if err != nil {
-		return nil, err
-	}
-	if useGzip {
-		req.Header.Set("Content-Encoding", "gzip")
-	}
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	return req, nil
+	return newRequest(method, url, buf, useGzip)
 }
 
 func (c *Client) clientTimeout() time.Duration {

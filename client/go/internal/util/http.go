@@ -19,17 +19,20 @@ type HTTPClient interface {
 }
 
 type defaultHTTPClient struct {
-	client *http.Client
+	client       *http.Client
+	setUserAgent bool
 }
 
 func (c *defaultHTTPClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
 	if c.client.Timeout != timeout { // Set wanted timeout
 		c.client.Timeout = timeout
 	}
-	if request.Header == nil {
-		request.Header = make(http.Header)
+	if c.setUserAgent {
+		if request.Header == nil {
+			request.Header = make(http.Header)
+		}
+		request.Header.Set("User-Agent", fmt.Sprintf("Vespa CLI/%s", build.Version))
 	}
-	request.Header.Set("User-Agent", fmt.Sprintf("Vespa CLI/%s", build.Version))
 	return c.client.Do(request)
 }
 
@@ -65,6 +68,7 @@ func ForceHTTP2(client HTTPClient, certificates []tls.Certificate, caCertificate
 	if !ok {
 		return
 	}
+	c.setUserAgent = false // Let caller control all request headers
 	var dialFunc func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error)
 	if certificates == nil {
 		// No certificate, so force H2C (HTTP/2 over clear-text) by using a non-TLS Dialer
@@ -86,8 +90,11 @@ func ForceHTTP2(client HTTPClient, certificates []tls.Certificate, caCertificate
 }
 
 func CreateClient(timeout time.Duration) HTTPClient {
-	return &defaultHTTPClient{client: &http.Client{
-		Timeout:   timeout,
-		Transport: http.DefaultTransport,
-	}}
+	return &defaultHTTPClient{
+		client: &http.Client{
+			Timeout:   timeout,
+			Transport: http.DefaultTransport,
+		},
+		setUserAgent: true,
+	}
 }

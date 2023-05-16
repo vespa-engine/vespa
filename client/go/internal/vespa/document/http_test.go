@@ -57,10 +57,23 @@ func assertLeastBusy(t *testing.T, id int, client *Client) {
 }
 
 func TestClientSend(t *testing.T) {
-	docs := []Document{
-		{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(`{"foo": "123"}`)},
-		{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Fields: []byte(`{"foo": "456"}`)},
-		{Create: true, Id: mustParseId("id:ns:type::doc3"), Operation: OperationUpdate, Fields: []byte(`{"baz": "789"}`)},
+	var tests = []struct {
+		in     Document
+		method string
+		url    string
+	}{
+		{Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(`{"foo": "123"}`)},
+			"PUT",
+			"https://example.com:1337/document/v1/ns/type/docid/doc1?timeout=5000ms&create=true"},
+		{Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Fields: []byte(`{"foo": "456"}`)},
+			"PUT",
+			"https://example.com:1337/document/v1/ns/type/docid/doc2?timeout=5000ms"},
+		{Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationRemove},
+			"DELETE",
+			"https://example.com:1337/document/v1/ns/type/docid/doc3?timeout=5000ms"},
+		{Document{Condition: "foo", Id: mustParseId("id:ns:type::doc4"), Operation: OperationUpdate, Fields: []byte(`{"baz": "789"}`)},
+			"PUT",
+			"https://example.com:1337/document/v1/ns/type/docid/doc4?timeout=5000ms&condition=foo"},
 	}
 	httpClient := mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
@@ -70,7 +83,8 @@ func TestClientSend(t *testing.T) {
 	clock := manualClock{t: time.Now(), tick: time.Second}
 	client.now = clock.now
 	var stats Stats
-	for i, doc := range docs {
+	for i, tt := range tests {
+		doc := tt.in
 		wantRes := Result{
 			Id: doc.Id,
 			Stats: Stats{
@@ -81,7 +95,8 @@ func TestClientSend(t *testing.T) {
 				MaxLatency:   time.Second,
 			},
 		}
-		if i < 2 {
+		var wantBody bytes.Buffer
+		if i < 3 {
 			httpClient.NextResponseString(200, `{"message":"All good!"}`)
 			wantRes.Status = StatusSuccess
 			wantRes.HTTPStatus = 200
@@ -97,6 +112,11 @@ func TestClientSend(t *testing.T) {
 			wantRes.Stats.Errors = 1
 			wantRes.Stats.BytesRecv = 36
 		}
+		if tt.method == http.MethodPut {
+			wantBody.WriteString(`{"fields":`)
+			wantBody.Write(doc.Fields)
+			wantBody.WriteString("}")
+		}
 		res := client.Send(doc)
 		wantRes.Stats.BytesSent = int64(len(httpClient.LastBody))
 		if !reflect.DeepEqual(res, wantRes) {
@@ -104,35 +124,33 @@ func TestClientSend(t *testing.T) {
 		}
 		stats.Add(res.Stats)
 		r := httpClient.LastRequest
-		if r.Method != http.MethodPut {
-			t.Errorf("got r.Method = %q, want %q", r.Method, http.MethodPut)
+		if r.Method != tt.method {
+			t.Errorf("got r.Method = %q, want %q", r.Method, tt.method)
 		}
-		wantURL := fmt.Sprintf("https://example.com:1337/document/v1/ns/type/docid/%s?timeout=5000ms&create=true", doc.Id.UserSpecific)
-		if r.URL.String() != wantURL {
-			t.Errorf("got r.URL = %q, want %q", r.URL, wantURL)
+		if !reflect.DeepEqual(r.Header, defaultHeaders) {
+			t.Errorf("got r.Header = %v, want %v", r.Header, defaultHeaders)
 		}
-		var wantBody bytes.Buffer
-		wantBody.WriteString(`{"fields":`)
-		wantBody.Write(doc.Fields)
-		wantBody.WriteString("}")
+		if r.URL.String() != tt.url {
+			t.Errorf("got r.URL = %q, want %q", r.URL, tt.url)
+		}
 		if !bytes.Equal(httpClient.LastBody, wantBody.Bytes()) {
 			t.Errorf("got r.Body = %q, want %q", string(httpClient.LastBody), wantBody.String())
 		}
 	}
 	want := Stats{
-		Requests:  3,
-		Responses: 3,
+		Requests:  4,
+		Responses: 4,
 		ResponsesByCode: map[int]int64{
-			200: 2,
+			200: 3,
 			502: 1,
 		},
 		Errors:       1,
 		Inflight:     0,
-		TotalLatency: 3 * time.Second,
+		TotalLatency: 4 * time.Second,
 		MinLatency:   time.Second,
 		MaxLatency:   time.Second,
 		BytesSent:    75,
-		BytesRecv:    82,
+		BytesRecv:    105,
 	}
 	if !reflect.DeepEqual(want, stats) {
 		t.Errorf("got %+v, want %+v", stats, want)
@@ -267,7 +285,7 @@ func TestClientMethodAndURL(t *testing.T) {
 		client.options.Route = tt.options.Route
 		client.options.TraceLevel = tt.options.TraceLevel
 		client.options.Speedtest = tt.options.Speedtest
-		method, url := client.methodAndURL(tt.in)
+		method, url := client.methodAndURL(tt.in, &bytes.Buffer{})
 		if url != tt.url || method != tt.method {
 			t.Errorf("#%d: methodAndURL(doc) = (%s, %s), want (%s, %s)", i, method, url, tt.method, tt.url)
 		}
