@@ -14,8 +14,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/goccy/go-json"
-
+	"github.com/go-json-experiment/json"
 	"github.com/klauspost/compress/gzip"
 
 	"github.com/vespa-engine/vespa/client/go/internal/build"
@@ -328,8 +327,8 @@ func resultWithResponse(resp *http.Response, sentBytes int, result Result, elaps
 		result.Status = StatusTransportFailure
 	}
 	var body struct {
-		Message string          `json:"message"`
-		Trace   json.RawMessage `json:"trace"`
+		Message string        `json:"message"`
+		Trace   json.RawValue `json:"trace"`
 	}
 	buf.Reset()
 	written, err := io.Copy(buf, resp.Body)

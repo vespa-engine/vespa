@@ -6,7 +6,8 @@ require (
 	github.com/alessio/shellescape v1.4.1
 	github.com/briandowns/spinner v1.23.0
 	github.com/fatih/color v1.15.0
-	github.com/goccy/go-json v0.10.2
+	// This is the most recent version compatible with Go 1.18. Upgrade when we upgrade our Go version
+	github.com/go-json-experiment/json v0.0.0-20220727223814-4987ed27d447
 	github.com/klauspost/compress v1.16.5
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mattn/go-isatty v0.0.18

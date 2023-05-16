@@ -113,18 +113,26 @@ func feedInput(jsonl bool) string {
 		`
 {
   "put": "id:ns:type::doc1",
-  "fields": {"foo": "123"}
+  "fields":    {  "foo"  : "123", "bar": {"a": [1, 2, 3]}}
 }`,
 		`
 {
   "put": "id:ns:type::doc2",
+  "create": false,
+  "condition": "foo",
   "fields": {"bar": "456"}
 }`,
 		`
 {
-  "remove": "id:ns:type::doc1"
+  "remove": "id:ns:type::doc3"
 }
-`}
+`,
+		`
+{
+  "put": "id:ns:type::doc4",
+  "create": true,
+  "fields": {"qux": "789"}
+}`}
 	if jsonl {
 		return strings.Join(operations, "\n")
 	}
@@ -135,9 +143,10 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 	t.Helper()
 	r := NewDecoder(strings.NewReader(jsonLike))
 	want := []Document{
-		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Fields: []byte(`{"foo": "123"}`)},
-		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Fields: []byte(`{"bar": "456"}`)},
-		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationRemove},
+		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Fields: []byte(`{  "foo"  : "123", "bar": {"a": [1, 2, 3]}}`)},
+		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Condition: "foo", Fields: []byte(`{"bar": "456"}`)},
+		{Id: mustParseId("id:ns:type::doc3"), Operation: OperationRemove},
+		{Id: mustParseId("id:ns:type::doc4"), Operation: OperationPut, Create: true, Fields: []byte(`{"qux": "789"}`)},
 	}
 	got := []Document{}
 	for {
@@ -155,10 +164,11 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 	}
 }
 
-func TestDocumentDecoder(t *testing.T) {
-	testDocumentDecoder(t, feedInput(false))
-	testDocumentDecoder(t, feedInput(true))
+func TestDocumentDecoderArray(t *testing.T) { testDocumentDecoder(t, feedInput(false)) }
 
+func TestDocumentDecoderJSONL(t *testing.T) { testDocumentDecoder(t, feedInput(true)) }
+
+func TestDocumentDecoderInvalid(t *testing.T) {
 	jsonLike := `
 {
   "put": "id:ns:type::doc1",
@@ -175,7 +185,7 @@ func TestDocumentDecoder(t *testing.T) {
 		t.Errorf("unexpected error: %s", err)
 	}
 	_, err = r.Decode()
-	wantErr := "invalid json at byte offset 122: json: string of object unexpected end of JSON input"
+	wantErr := "invalid json at byte offset 109: json: invalid character '\\n' within string (expecting non-control character)"
 	if err.Error() != wantErr {
 		t.Errorf("want error %q, got %q", wantErr, err.Error())
 	}
