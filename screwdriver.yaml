@@ -234,31 +234,13 @@ jobs:
        GIT_SSH_COMMAND: "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 
     steps:
-      - get-vespa-version: |
-          JSON=$(screwdriver/factory-command.sh create-release)
-          VESPA_VERSION=$(jq -re '.version' <<< "$JSON")
-          JSON=$(screwdriver/factory-command.sh get-version $VESPA_VERSION)
-          VESPA_REF=$(jq -re '.commits|.[]|select(.repo=="vespa")|.ref' <<< "$JSON")
-          echo "VESPA_VERSION=$VESPA_VERSION VESPA_REF=$VESPA_REF"
-          if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]]; then
-            echo "Must have valid Vespa version and reference to continue (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF)."
-            return 1
-          fi
-          meta set vespa.version $VESPA_VERSION
       - install-dependencies: |
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
           dnf install -y docker-ce docker-ce-cli containerd.io
           docker system info
-      - release-java-artifacts: |
-          screwdriver/release-java-artifacts.sh $VESPA_VERSION $VESPA_REF
-      - release-rpms: |
-          screwdriver/release-rpms.sh $VESPA_VERSION $VESPA_REF
       - release-container-image: |
+          export VESPA_VERSION=8.164.52
           screwdriver/release-container-image-docker.sh $VESPA_VERSION
-      - update-sample-apps: |
-          screwdriver/update-vespa-version-in-sample-apps.sh $VESPA_VERSION
-      - update-released-time: |
-          screwdriver/factory-command.sh update-released-time $VESPA_VERSION
 
   publish-legacy-release:
     image: docker.io/vespaengine/vespa-build-centos-stream8:latest
