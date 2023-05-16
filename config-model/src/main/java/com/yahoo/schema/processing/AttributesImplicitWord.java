@@ -44,10 +44,8 @@ public class AttributesImplicitWord extends Processor {
 
     private boolean fieldImplicitlyWordMatch(ImmutableSDField field) {
         // numeric types should not trigger exact-match query parsing
-        DataType dt = field.getDataType().getPrimitiveType();
-        if (dt != null && dt instanceof NumericDataType) {
-            return false;
-        }
+        if (field.getDataType().getPrimitiveType() instanceof NumericDataType) return false;
+
         return (! field.hasIndex()
                 && !field.getAttributes().isEmpty()
                 && field.getIndices().isEmpty()
