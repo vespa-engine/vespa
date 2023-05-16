@@ -57,7 +57,7 @@ shared:
 
 jobs:
   build-vespa:
-    requires: [~pr]
+    #requires: [~pr]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -91,6 +91,7 @@ jobs:
           df -h
 
   component-build:
+    requires: [ ~pr ]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
