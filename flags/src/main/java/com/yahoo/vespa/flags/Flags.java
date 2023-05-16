@@ -429,6 +429,14 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENABLE_DATAPLANE_PROXY = defineFeatureFlag(
+            "enable-dataplane-proxy", false,
+            List.of("mortent", "olaa"), "2023-05-15", "2023-08-01",
+            "Whether to enable dataplane proxy",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
