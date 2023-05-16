@@ -56,6 +56,12 @@ ParallelWeakAndBlueprint::getNextChildField(const FieldSpec &outer)
 }
 
 void
+ParallelWeakAndBlueprint::reserve(size_t num_children) {
+    _weights.reserve(num_children);
+    _terms.reserve(num_children);
+}
+
+void
 ParallelWeakAndBlueprint::addTerm(Blueprint::UP term, int32_t weight)
 {
     HitEstimate childEst = term->getState().estimate();
@@ -78,6 +84,7 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     assert(tfmda.size() == 1);
     fef::MatchData::UP childrenMatchData = _layout.createMatchData();
     wand::Terms terms;
+    terms.reserve(_terms.size());
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
         assert(childState.numFields() == 1);

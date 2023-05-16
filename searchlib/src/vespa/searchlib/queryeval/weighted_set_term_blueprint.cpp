@@ -74,6 +74,13 @@ WeightedSetTermBlueprint::WeightedSetTermBlueprint(const FieldSpec &field)
 WeightedSetTermBlueprint::~WeightedSetTermBlueprint() = default;
 
 void
+WeightedSetTermBlueprint::reserve(size_t num_children) {
+    _weights.reserve(num_children);
+    _terms.reserve(num_children);
+    _layout.reserve(num_children);
+}
+
+void
 WeightedSetTermBlueprint::addTerm(Blueprint::UP term, int32_t weight)
 {
     HitEstimate childEst = term->getState().estimate();
@@ -100,7 +107,7 @@ WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &t
         // TODO: pass ownership with unique_ptr
         children[i] = _terms[i]->createSearch(*md, true).release();
     }
-    return SearchIterator::UP(WeightedSetTermSearch::create(children, *tfmda[0], _children_field.isFilter(), _weights, std::move(md)));
+    return WeightedSetTermSearch::create(children, *tfmda[0], _children_field.isFilter(), _weights, std::move(md));
 }
 
 SearchIterator::UP
