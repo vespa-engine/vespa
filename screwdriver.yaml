@@ -137,7 +137,7 @@ jobs:
           (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
           (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s:<version>[[]8,9[)]</version>:<version>$VESPA_VERSION</version>:" {} \;)
       - make-srpm: |
-          $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status running "Building"
+          #$SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status running "Building"
 
           make -C $WORKDIR/vespa -f .copr/Makefile srpm outdir=$WORKDIR
       - *restore-cache
@@ -204,7 +204,7 @@ jobs:
             DESCRIPTION="Build failed"
           fi
           echo "Reporting build status as $FACTORY_BUILD_STATUS"
-          $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status $FACTORY_BUILD_STATUS "$DESCRIPTION"
+          #$SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status $FACTORY_BUILD_STATUS "$DESCRIPTION"
 
   publish-release:
     image: docker.io/vespaengine/vespa-build-centos-stream8:latest
