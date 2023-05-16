@@ -114,7 +114,7 @@ public:
                    const documentapi::TestAndSetCondition& tas_condition,
                    const DistributorBucketSpace& bucket_space,
                    const DistributorNodeContext& node_ctx,
-                   PersistenceOperationMetricSet& metric,
+                   PersistenceOperationMetricSet& condition_probe_metrics,
                    uint32_t trace_level,
                    private_ctor_tag);
     ~CheckCondition();
@@ -135,7 +135,7 @@ public:
             const documentapi::TestAndSetCondition& tas_condition,
             const DistributorNodeContext& node_ctx,
             const DistributorStripeOperationContext& op_ctx,
-            PersistenceOperationMetricSet& metric,
+            PersistenceOperationMetricSet& condition_probe_metrics,
             uint32_t trace_level);
 private:
     [[nodiscard]] bool replica_set_changed_after_get_operation() const;

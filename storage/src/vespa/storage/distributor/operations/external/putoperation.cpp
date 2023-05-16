@@ -26,6 +26,7 @@ PutOperation::PutOperation(const DistributorNodeContext& node_ctx,
                            DistributorBucketSpace& bucket_space,
                            std::shared_ptr<api::PutCommand> msg,
                            PersistenceOperationMetricSet& metric,
+                           PersistenceOperationMetricSet& condition_probe_metrics,
                            SequencingHandle sequencing_handle)
     : SequencedOperation(std::move(sequencing_handle)),
       _tracker_instance(metric, std::make_shared<api::PutReply>(*msg), node_ctx, op_ctx, msg->getTimestamp()),
@@ -34,7 +35,7 @@ PutOperation::PutOperation(const DistributorNodeContext& node_ctx,
       _doc_id_bucket_id(document::BucketIdFactory{}.getBucketId(_msg->getDocumentId())),
       _node_ctx(node_ctx),
       _op_ctx(op_ctx),
-      _temp_metric(metric), // TODO
+      _condition_probe_metrics(condition_probe_metrics),
       _bucket_space(bucket_space)
 {
 }
@@ -156,7 +157,7 @@ void PutOperation::start_conditional_put(DistributorStripeMessageSender& sender)
     document::Bucket bucket(_msg->getBucket().getBucketSpace(), _doc_id_bucket_id);
     _check_condition = CheckCondition::create_if_inconsistent_replicas(bucket, _bucket_space, _msg->getDocumentId(),
                                                                        _msg->getCondition(), _node_ctx, _op_ctx,
-                                                                       _temp_metric, _msg->getTrace().getLevel());
+                                                                       _condition_probe_metrics, _msg->getTrace().getLevel());
     if (!_check_condition) {
         start_direct_put_dispatch(sender);
     } else {

@@ -34,6 +34,7 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
     : SequencedOperation(std::move(sequencingHandle)),
       _updateMetric(metrics.updates),
       _putMetric(metrics.update_puts),
+      _put_condition_probe_metrics(metrics.put_condition_probes), // Updates never trigger put write repair, so we sneakily use a ref to someone else
       _getMetric(metrics.update_gets),
       _metadata_get_metrics(metrics.update_metadata_gets),
       _updateCmd(std::move(msg)),
@@ -263,7 +264,7 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<documen
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), document::BucketId(0));
     auto put = std::make_shared<api::PutCommand>(bucket, doc, putTimestamp);
     copyMessageSettings(*_updateCmd, *put);
-    auto putOperation = std::make_shared<PutOperation>(_node_ctx, _op_ctx, _bucketSpace, std::move(put), _putMetric);
+    auto putOperation = std::make_shared<PutOperation>(_node_ctx, _op_ctx, _bucketSpace, std::move(put), _putMetric, _put_condition_probe_metrics);
     PutOperation & op = *putOperation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(putOperation), sender);
     op.start(intermediate, _node_ctx.clock().getSystemTime());

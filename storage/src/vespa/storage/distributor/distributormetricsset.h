@@ -20,24 +20,26 @@ struct BucketDbMetrics : metrics::MetricSet {
 class DistributorMetricSet : public metrics::MetricSet {
 public:
     PersistenceOperationMetricSet puts;
-    UpdateMetricSet updates;
+    PersistenceOperationMetricSet put_condition_probes;
+    UpdateMetricSet               updates;
     PersistenceOperationMetricSet update_puts;
     PersistenceOperationMetricSet update_gets;
     PersistenceOperationMetricSet update_metadata_gets;
     PersistenceOperationMetricSet removes;
+    PersistenceOperationMetricSet remove_condition_probes;
     PersistenceOperationMetricSet removelocations;
     PersistenceOperationMetricSet gets;
     PersistenceOperationMetricSet stats;
     PersistenceOperationMetricSet getbucketlists;
-    VisitorMetricSet visits;
-    metrics::DoubleAverageMetric stateTransitionTime;
-    metrics::DoubleAverageMetric set_cluster_state_processing_time;
-    metrics::DoubleAverageMetric activate_cluster_state_processing_time;
-    metrics::DoubleAverageMetric recoveryModeTime;
-    metrics::LongValueMetric docsStored;
-    metrics::LongValueMetric bytesStored;
-    BucketDbMetrics mutable_dbs;
-    BucketDbMetrics read_only_dbs;
+    VisitorMetricSet              visits;
+    metrics::DoubleAverageMetric  stateTransitionTime;
+    metrics::DoubleAverageMetric  set_cluster_state_processing_time;
+    metrics::DoubleAverageMetric  activate_cluster_state_processing_time;
+    metrics::DoubleAverageMetric  recoveryModeTime;
+    metrics::LongValueMetric      docsStored;
+    metrics::LongValueMetric      bytesStored;
+    BucketDbMetrics               mutable_dbs;
+    BucketDbMetrics               read_only_dbs;
 
     explicit DistributorMetricSet();
     ~DistributorMetricSet() override;
