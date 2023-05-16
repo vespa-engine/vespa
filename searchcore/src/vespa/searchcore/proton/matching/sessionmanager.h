@@ -6,6 +6,7 @@
 #include <vespa/searchcore/grouping/sessionid.h>
 #include <vespa/vespalib/stllike/lrucache_map.h>
 
+namespace vespalib { class ThreadExecutor; }
 namespace proton::matching {
 
 using SessionId = vespalib::string;
@@ -58,6 +59,8 @@ public:
     size_t getNumSearchSessions() const;
     std::vector<SearchSessionInfo> getSortedSearchSessionInfo() const;
 
+    void pruneTimedOutSessions(vespalib::steady_time currentTime, vespalib::ThreadExecutor & executor);
+    // Only used for testing
     void pruneTimedOutSessions(vespalib::steady_time currentTime);
 };
 

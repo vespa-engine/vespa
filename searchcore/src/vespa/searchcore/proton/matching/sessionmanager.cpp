@@ -3,6 +3,8 @@
 #include "sessionmanager.h"
 #include <vespa/vespalib/stllike/lrucache_map.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <mutex>
 #include <algorithm>
 
@@ -49,10 +51,6 @@ struct SessionCache : SessionCacheBase {
             _cache.erase(id);
         }
         return ret;
-    }
-    void pruneTimedOutSessions(vespalib::steady_time currentTime) {
-        std::vector<EntryUP> toDestruct = stealTimedOutSessions(currentTime);
-        toDestruct.clear();
     }
     std::vector<EntryUP> stealTimedOutSessions(vespalib::steady_time currentTime) {
         std::vector<EntryUP> toDestruct;
@@ -103,10 +101,6 @@ struct SessionMap : SessionCacheBase {
         }
         return EntrySP();
     }
-    void pruneTimedOutSessions(vespalib::steady_time currentTime) {
-        std::vector<EntrySP> toDestruct = stealTimedOutSessions(currentTime);
-        toDestruct.clear();
-    }
     std::vector<EntrySP> stealTimedOutSessions(vespalib::steady_time currentTime) {
         std::vector<EntrySP> toDestruct;
         std::vector<SessionId> keys;
@@ -151,7 +145,8 @@ struct SessionMap : SessionCacheBase {
     }
 };
 
-void SessionCacheBase::entryDropped(const SessionId &id) {
+void
+SessionCacheBase::entryDropped(const SessionId &id) {
     LOG(debug, "Session cache is full, dropping entry to fit session '%s'", id.c_str());
     _stats.numDropped++;
 }
@@ -179,19 +174,23 @@ SessionManager::~SessionManager() {
     assert(_search_map->empty());
 }
 
-void SessionManager::insert(search::grouping::GroupingSession::UP session) {
+void
+SessionManager::insert(search::grouping::GroupingSession::UP session) {
     _grouping_cache->insert(std::move(session));
 }
 
-void SessionManager::insert(SearchSession::SP session) {
+void
+SessionManager::insert(SearchSession::SP session) {
     _search_map->insert(std::move(session));
 }
 
-GroupingSession::UP SessionManager::pickGrouping(const SessionId &id) {
+GroupingSession::UP
+SessionManager::pickGrouping(const SessionId &id) {
     return _grouping_cache->pick(id);
 }
 
-SearchSession::SP SessionManager::pickSearch(const SessionId &id) {
+SearchSession::SP
+SessionManager::pickSearch(const SessionId &id) {
     return _search_map->pick(id);
 }
 
@@ -199,33 +198,56 @@ std::vector<SessionManager::SearchSessionInfo>
 SessionManager::getSortedSearchSessionInfo() const
 {
     std::vector<SearchSessionInfo> sessions;
-    _search_map->each([&sessions](const SearchSession &session)
-                     {
-                         sessions.emplace_back(session.getSessionId(),
-                                 session.getCreateTime(),
-                                 session.getTimeOfDoom());
-                     });
+    _search_map->each([&sessions](const SearchSession &session) {
+        sessions.emplace_back(session.getSessionId(), session.getCreateTime(), session.getTimeOfDoom());
+    });
     std::sort(sessions.begin(), sessions.end(),
-              [](const SearchSessionInfo &a,
-                 const SearchSessionInfo &b)
-              {
+              [](const SearchSessionInfo &a, const SearchSessionInfo &b) {
                   return (a.created < b.created);
               });
     return sessions;
 }
 
-void SessionManager::pruneTimedOutSessions(vespalib::steady_time currentTime) {
-    _grouping_cache->pruneTimedOutSessions(currentTime);
-    _search_map->pruneTimedOutSessions(currentTime);
+void
+SessionManager::pruneTimedOutSessions(vespalib::steady_time currentTime) {
+    vespalib::ForegroundThreadExecutor executor;
+    pruneTimedOutSessions(currentTime, executor);
 }
 
-SessionManager::Stats SessionManager::getGroupingStats() {
+namespace {
+
+template <typename T>
+void
+split_and_execute(std::vector<T> tasks, vespalib::ThreadExecutor & executor) {
+    size_t num_bundles = std::max(1ul, std::min(tasks.size(), 2*executor.getNumThreads()));
+    std::vector<std::vector<T>> bundles(num_bundles);
+    for (size_t i = 0; i < tasks.size(); i++) {
+        bundles[i%bundles.size()].push_back(std::move(tasks[i]));
+    }
+    for (size_t i = 0; i < bundles.size(); i++) {
+        executor.execute(vespalib::makeLambdaTask([part=std::move(bundles[i])]() {
+            // Objects will be destructed in the given executor;
+        }));
+    }
+}
+
+}
+void
+SessionManager::pruneTimedOutSessions(vespalib::steady_time currentTime, vespalib::ThreadExecutor & executor) {
+    split_and_execute(_grouping_cache->stealTimedOutSessions(currentTime), executor);
+    split_and_execute(_search_map->stealTimedOutSessions(currentTime), executor);
+}
+
+SessionManager::Stats
+SessionManager::getGroupingStats() {
     return _grouping_cache->getStats();
 }
-SessionManager::Stats SessionManager::getSearchStats() {
+SessionManager::Stats
+SessionManager::getSearchStats() {
     return _search_map->getStats();
 }
-size_t SessionManager::getNumSearchSessions() const {
+size_t
+SessionManager::getNumSearchSessions() const {
     return _search_map->size();
 }
 

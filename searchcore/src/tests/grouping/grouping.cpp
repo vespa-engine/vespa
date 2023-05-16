@@ -197,8 +197,8 @@ TEST_F("testGroupingContextUsage", DoomFixture()) {
             .addLevel(createGL(MU<AttributeNode>("attr3"), MU<AttributeNode>("attr1")));
 
 
-    GroupingContext::GroupingPtr r1(new Grouping(request1));
-    GroupingContext::GroupingPtr r2(new Grouping(request2));
+    auto r1 = std::make_shared<Grouping>(request1);
+    auto r2 = std::make_shared<Grouping>(request2);
     GroupingContext context(f1.clock.clock(), f1.timeOfDoom);
     ASSERT_TRUE(context.empty());
     context.addGrouping(r1);
@@ -222,7 +222,7 @@ TEST_F("testGroupingContextSerializing", DoomFixture()) {
     baseRequest.serialize(nos);
 
     GroupingContext context(f1.clock.clock(), f1.timeOfDoom);
-    GroupingContext::GroupingPtr bp(new Grouping(baseRequest));
+    auto bp = std::make_shared<Grouping>(baseRequest);
     context.addGrouping(bp);
     context.serialize();
     vespalib::nbostream & res(context.getResult());
@@ -240,7 +240,7 @@ TEST_F("testGroupingManager", DoomFixture()) {
             .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")));
 
     GroupingContext context(f1.clock.clock(), f1.timeOfDoom);
-    GroupingContext::GroupingPtr bp(new Grouping(request1));
+    auto bp = std::make_shared<Grouping>(request1);
     context.addGrouping(bp);
     GroupingManager manager(context);
     ASSERT_TRUE(!manager.empty());
@@ -272,8 +272,8 @@ TEST_F("testGroupingSession", DoomFixture()) {
     request2.select(attrCheck, attrCheck);
     EXPECT_EQUAL(0u, attrCheck._numrefs);
 
-    GroupingContext::GroupingPtr r1(new Grouping(request1));
-    GroupingContext::GroupingPtr r2(new Grouping(request2));
+    auto r1 = std::make_shared<Grouping>(request1);
+    auto r2 = std::make_shared<Grouping>(request2);
     GroupingContext initContext(f1.clock.clock(), f1.timeOfDoom);
     initContext.addGrouping(r1);
     initContext.addGrouping(r2);
@@ -307,7 +307,7 @@ TEST_F("testGroupingSession", DoomFixture()) {
     // Test second pass
     {
         GroupingContext context(f1.clock.clock(), f1.timeOfDoom);
-        GroupingContext::GroupingPtr r(new Grouping(request1));
+        auto r = std::make_shared<Grouping>(request1);
         r->setFirstLevel(1);
         r->setLastLevel(1);
         context.addGrouping(r);
@@ -318,7 +318,7 @@ TEST_F("testGroupingSession", DoomFixture()) {
     // Test last pass. Session should be marked as finished
     {
         GroupingContext context(f1.clock.clock(), f1.timeOfDoom);
-        GroupingContext::GroupingPtr r(new Grouping(request1));
+        auto r = std::make_shared<Grouping>(request1);
         r->setFirstLevel(2);
         r->setLastLevel(2);
         context.addGrouping(r);
@@ -340,7 +340,7 @@ TEST_F("testEmptySessionId", DoomFixture()) {
             .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
             .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")));
 
-    GroupingContext::GroupingPtr r1(new Grouping(request1));
+    auto r1 = std::make_shared<Grouping>(request1);
     GroupingContext initContext(f1.clock.clock(), f1.timeOfDoom);
     initContext.addGrouping(r1);
     SessionId id;
@@ -373,7 +373,7 @@ TEST_F("testSessionManager", DoomFixture()) {
                                                .setExpression(MU<AttributeNode>("attr0"))
                                                .setResult(Int64ResultNode(0))));
 
-    GroupingContext::GroupingPtr r1(new Grouping(request1));
+    auto r1 = std::make_shared<Grouping>(request1);
     GroupingContext initContext(f1.clock.clock(), f1.timeOfDoom);
     initContext.addGrouping(r1);
 
@@ -381,9 +381,9 @@ TEST_F("testSessionManager", DoomFixture()) {
     SessionId id1("foo");
     SessionId id2("bar");
     SessionId id3("baz");
-    GroupingSession::UP s1(new GroupingSession(id1, initContext, world.attributeContext));
-    GroupingSession::UP s2(new GroupingSession(id2, initContext, world.attributeContext));
-    GroupingSession::UP s3(new GroupingSession(id3, initContext, world.attributeContext));
+    auto s1 = std::make_unique<GroupingSession>(id1, initContext, world.attributeContext);
+    auto s2 = std::make_unique<GroupingSession>(id2, initContext, world.attributeContext);
+    auto s3 = std::make_unique<GroupingSession>(id3, initContext, world.attributeContext);
 
     ASSERT_EQUAL(f1.timeOfDoom, s1->getTimeOfDoom());
     mgr.insert(std::move(s1));
@@ -431,7 +431,7 @@ TEST_F("test grouping fork/join", DoomFixture()) {
            .setFirstLevel(0)
            .setLastLevel(1);
 
-    GroupingContext::GroupingPtr g1(new Grouping(request));
+    auto g1 = std::make_shared<Grouping>(request);
     GroupingContext context(f1.clock.clock(), f1.timeOfDoom);
     context.addGrouping(g1);
     GroupingSession session(SessionId(), context, world.attributeContext);
@@ -476,24 +476,20 @@ TEST_F("test session timeout", DoomFixture()) {
 
     GroupingContext initContext1(f1.clock.clock(), steady_time(duration(10)));
     GroupingContext initContext2(f1.clock.clock(), steady_time(duration(20)));
-    GroupingSession::UP s1(new GroupingSession(id1, initContext1, world.attributeContext));
-    GroupingSession::UP s2(new GroupingSession(id2, initContext2, world.attributeContext));
+    auto s1 = std::make_unique<GroupingSession>(id1, initContext1, world.attributeContext);
+    auto s2 = std::make_unique<GroupingSession>(id2, initContext2, world.attributeContext);
     mgr.insert(std::move(s1));
     mgr.insert(std::move(s2));
     mgr.pruneTimedOutSessions(steady_time(5ns));
-    SessionManager::Stats stats(mgr.getGroupingStats());
-    ASSERT_EQUAL(2u, stats.numCached);
+    ASSERT_EQUAL(2u, mgr.getGroupingStats().numCached);
     mgr.pruneTimedOutSessions(steady_time(10ns));
-    stats = mgr.getGroupingStats();
-    ASSERT_EQUAL(2u, stats.numCached);
+    ASSERT_EQUAL(2u, mgr.getGroupingStats().numCached);
 
     mgr.pruneTimedOutSessions(steady_time(11ns));
-    stats = mgr.getGroupingStats();
-    ASSERT_EQUAL(1u, stats.numCached);
+    ASSERT_EQUAL(1u, mgr.getGroupingStats().numCached);
 
     mgr.pruneTimedOutSessions(steady_time(21ns));
-    stats = mgr.getGroupingStats();
-    ASSERT_EQUAL(0u, stats.numCached);
+    ASSERT_EQUAL(0u, mgr.getGroupingStats().numCached);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
