@@ -65,7 +65,6 @@ func JustStartConfigserver() int {
 func runConfigserverWithRunserver() int {
 	commonPreChecks()
 	vespa.CheckCorrectUser()
-	waitForDnsResolving()
 	rs := RunServer{
 		ServiceName: SERVICE_NAME,
 		Args:        []string{"just-start-configserver"},
