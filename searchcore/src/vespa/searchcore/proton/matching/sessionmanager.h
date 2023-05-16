@@ -59,8 +59,9 @@ public:
     size_t getNumSearchSessions() const;
     std::vector<SearchSessionInfo> getSortedSearchSessionInfo() const;
 
-    void pruneTimedOutSessions(vespalib::steady_time currentTime);
     void pruneTimedOutSessions(vespalib::steady_time currentTime, vespalib::ThreadExecutor & executor);
+    // Only used for testing
+    void pruneTimedOutSessions(vespalib::steady_time currentTime);
 };
 
 }

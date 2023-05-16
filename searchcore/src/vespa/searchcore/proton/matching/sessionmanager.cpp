@@ -219,7 +219,7 @@ namespace {
 template <typename T>
 void
 split_and_execute(std::vector<T> tasks, vespalib::ThreadExecutor & executor) {
-    size_t num_bundles = std::min(tasks.size(), 2*executor.getNumThreads());
+    size_t num_bundles = std::max(1ul, std::min(tasks.size(), 2*executor.getNumThreads()));
     std::vector<std::vector<T>> bundles(num_bundles);
     for (size_t i = 0; i < tasks.size(); i++) {
         bundles[i%bundles.size()].push_back(std::move(tasks[i]));
@@ -234,10 +234,8 @@ split_and_execute(std::vector<T> tasks, vespalib::ThreadExecutor & executor) {
 }
 void
 SessionManager::pruneTimedOutSessions(vespalib::steady_time currentTime, vespalib::ThreadExecutor & executor) {
-    auto groupings = _grouping_cache->stealTimedOutSessions(currentTime);
-    auto queries = _search_map->stealTimedOutSessions(currentTime);
-    split_and_execute(std::move(groupings), executor);
-    split_and_execute(std::move(queries), executor);
+    split_and_execute(_grouping_cache->stealTimedOutSessions(currentTime), executor);
+    split_and_execute(_search_map->stealTimedOutSessions(currentTime), executor);
 }
 
 SessionManager::Stats
