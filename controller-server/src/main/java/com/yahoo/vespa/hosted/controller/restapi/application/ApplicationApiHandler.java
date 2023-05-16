@@ -2428,6 +2428,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if ( ! type.environment().isManuallyDeployed() && ! (isOperator(request) || controller.system().isCd()))
             throw new IllegalArgumentException("Direct deployments are only allowed to manually deployed environments.");
 
+        controller.applications().verifyPlan(id.tenant());
+
         Map<String, byte[]> dataParts = parseDataParts(request);
         if ( ! dataParts.containsKey("applicationZip"))
             throw new IllegalArgumentException("Missing required form part 'applicationZip'");
@@ -3047,6 +3049,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse submit(String tenant, String application, HttpRequest request) {
+        TenantName tenantName = TenantName.from(tenant);
+        controller.applications().verifyPlan(tenantName);
+
         Map<String, byte[]> dataParts = parseDataParts(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
         long projectId = submitOptions.field("projectId").asLong(); // Absence of this means it's not a prod app :/
@@ -3072,8 +3077,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         byte[] testPackage = dataParts.getOrDefault(APPLICATION_TEST_ZIP, new byte[0]);
         Submission submission = new Submission(applicationPackage, testPackage, sourceUrl, sourceRevision, authorEmail, description, controller.clock().instant(), risk);
 
-        TenantName tenantName = TenantName.from(tenant);
-        controller.applications().verifyPlan(tenantName);
         controller.applications().verifyApplicationIdentityConfiguration(tenantName,
                                                                          Optional.empty(),
                                                                          Optional.empty(),
