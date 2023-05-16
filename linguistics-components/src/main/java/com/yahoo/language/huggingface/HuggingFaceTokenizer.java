@@ -76,6 +76,7 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
     public String decode(List<Long> tokens, Language language) { return resolve(language).decode(toArray(tokens)); }
 
     @Override public void close() { models.forEach((__, model) -> model.close()); }
+    @Override public void deconstruct() { close(); }
 
     private ai.djl.huggingface.tokenizers.HuggingFaceTokenizer resolve(Language language) {
         // Disregard language if there is default model
