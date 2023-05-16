@@ -66,6 +66,7 @@ const (
 	VESPA_ONLY_IP_V6_NETWORKING            = "VESPA_ONLY_IP_V6_NETWORKING"
 	VESPA_PORT_BASE                        = "VESPA_PORT_BASE"
 	VESPA_SERVICE_NAME                     = "VESPA_SERVICE_NAME"
+	VESPA_SKIP_PING                        = "VESPA_SKIP_PING"
 	VESPA_TIMER_HZ                         = "VESPA_TIMER_HZ"
 	VESPA_TLS_CA_CERT                      = "VESPA_TLS_CA_CERT"
 	VESPA_TLS_CERT                         = "VESPA_TLS_CERT"
