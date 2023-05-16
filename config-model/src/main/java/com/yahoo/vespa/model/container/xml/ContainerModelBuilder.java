@@ -932,9 +932,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
             deployState.getDeployLogger().logApplicationPackage(Level.INFO, "Using " + nodeCount + " nodes in " + cluster);
             var nodesSpec = NodesSpecification.dedicated(nodeCount, context);
+            ClusterSpec.Id clusterId = ClusterSpec.Id.from(cluster.getName());
             var hosts = nodesSpec.provision(hostSystem,
                                             ClusterSpec.Type.container,
-                                            ClusterSpec.Id.from(cluster.getName()),
+                                            clusterId,
+                                            zoneEndpoint(context, clusterId),
                                             deployState.getDeployLogger(),
                                             false,
                                             context.clusterInfo().build());
