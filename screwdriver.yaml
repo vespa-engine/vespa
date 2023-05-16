@@ -109,10 +109,10 @@ jobs:
       - SVC_OKTA_VESPA_FACTORY_TOKEN
     steps:
       - get-vespa-version: |
-          VERSION_INFO=$(screwdriver/factory-command.sh create-build)
-          VESPA_VERSION=$(jq -re '.version' <<< "$VERSION_INFO")
-          VESPA_REF=$(jq -re '.commits|.[]|select(.repo=="vespa")|.ref' <<< "$VERSION_INFO")
-          SYSTEM_TEST_REF=$(jq -re '.commits|.[]|select(.repo=="system-test")|.ref' <<< "$VERSION_INFO")
+          #VERSION_INFO=$(screwdriver/factory-command.sh create-build)
+          #VESPA_VERSION=$(jq -re '.version' <<< "$VERSION_INFO")
+          #VESPA_REF=$(jq -re '.commits|.[]|select(.repo=="vespa")|.ref' <<< "$VERSION_INFO")
+          #SYSTEM_TEST_REF=$(jq -re '.commits|.[]|select(.repo=="system-test")|.ref' <<< "$VERSION_INFO")
           VESPA_VERSION=8.164.52
           VESPA_REF=93aada3ca9572712e06ce2125e7e5f915111cef4
           SYSTEM_TEST_REF=173fbbb764fbf53930cdbd808d8a3883bc0fc55a
