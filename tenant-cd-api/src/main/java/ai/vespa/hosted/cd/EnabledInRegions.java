@@ -35,7 +35,7 @@ class EnabledInRegionsCondition implements ExecutionCondition {
             return ConditionEvaluationResult.enabled(EnabledInRegions.class.getSimpleName() + " is not present");
 
         List<String> enablingRegions = List.of(annotation.get().value());
-        String thisRegion = TestRuntime.get().application().instance();
+        String thisRegion = TestRuntime.get().zone().region();
         String reason = "Enabled in: %s. Current region: %s.".formatted(enablingRegions.isEmpty() ? "no regions" : "regions " + String.join(", ", enablingRegions), thisRegion);
         return enablingRegions.contains(thisRegion) ? ConditionEvaluationResult.enabled(reason) : ConditionEvaluationResult.disabled(reason);
     }
