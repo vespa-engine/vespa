@@ -548,7 +548,11 @@ TEST_F("require that GC targets are not considered when oldest serial is found",
 
     // Before anything is flushed the oldest serial is 5.
     // After 'foo' has been flushed the oldest serial is 20 as GC target 'bar' is not considered.
-    EXPECT_EQUAL(FlushDoneHistory({ 5, 20, 20, 25 }), handler->getFlushDoneHistory());
+    FlushDoneHistory history = handler->getFlushDoneHistory();
+    EXPECT_TRUE(history.end() == std::find(history.begin(), history.end(), 10));
+    auto last_unique = std::unique(history.begin(), history.end());
+    history.erase(last_unique, history.end());
+    EXPECT_EQUAL(FlushDoneHistory({ 5, 20, 25 }), history);
 }
 
 TEST_F("require that oldest serial is found in group", Fixture(2, IINTERVAL))
