@@ -122,6 +122,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
         DefaultTimes(Zone zone, Deployer deployer) {
+            boolean isCdZone = zone.system().isCd();
+
             autoscalingInterval = Duration.ofMinutes(5);
             dynamicProvisionerInterval = Duration.ofMinutes(3);
             hostDeprovisionerInterval = Duration.ofMinutes(3);
@@ -137,7 +139,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
             expeditedChangeRedeployInterval = Duration.ofMinutes(3);
             // Vespa upgrade frequency is higher in CD so (de)activate OS upgrades more frequently as well
-            osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
+            osUpgradeActivatorInterval = isCdZone ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
             periodicRedeployInterval = Duration.ofMinutes(60);
             provisionedExpiry = zone.cloud().dynamicProvisioning() ? Duration.ofMinutes(40) : Duration.ofHours(4);
             rebalancerInterval = Duration.ofMinutes(120);
@@ -150,7 +152,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             hostRetirerInterval = Duration.ofMinutes(30);
 
-            if (zone.environment().isProduction() && ! zone.system().isCd()) {
+            if (zone.environment().isProduction() && ! isCdZone) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(15);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
@@ -159,8 +161,10 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 // long enough that nodes aren't reused immediately and delete can happen on all config servers
                 // with time enough to clean up even with ZK connection issues on config servers
                 inactiveExpiry = Duration.ofMinutes(1);
-                retiredInterval = Duration.ofMinutes(1);
                 dirtyExpiry = Duration.ofMinutes(30);
+                // Longer time in non-CD since we might end up with many deployments in a short time
+                // when retiring many hosts, e.g. when doing OS upgrades
+                retiredInterval = isCdZone ? Duration.ofMinutes(1) : Duration.ofMinutes(5);
                 retiredExpiry = Duration.ofDays(1);
             }
         }
