@@ -197,9 +197,11 @@ public class Cluster {
         Duration totalDuration = Duration.ZERO;
         for (ScalingEvent event : scalingEvents()) {
             if (event.duration().isEmpty()) continue;
+            // Assume we have missed timely recording completion if it is longer than 4 days, so ignore
+            if ( ! event.duration().get().minus(Duration.ofDays(4)).isNegative()) continue;
+
             completedEventCount++;
-            // Assume we have missed timely recording completion if it is longer than 4 days
-            totalDuration = totalDuration.plus(maximum(Duration.ofDays(4), event.duration().get()));
+            totalDuration = totalDuration.plus(event.duration().get());
         }
         if (completedEventCount == 0) { // Use defaults
             if (clusterSpec.isStateful()) return Duration.ofHours(12);
@@ -220,12 +222,6 @@ public class Cluster {
     private static Duration minimum(Duration smallestAllowed, Duration duration) {
         if (duration.minus(smallestAllowed).isNegative())
             return smallestAllowed;
-        return duration;
-    }
-
-    private static Duration maximum(Duration largestAllowed, Duration duration) {
-        if ( ! duration.minus(largestAllowed).isNegative())
-            return largestAllowed;
         return duration;
     }
 
