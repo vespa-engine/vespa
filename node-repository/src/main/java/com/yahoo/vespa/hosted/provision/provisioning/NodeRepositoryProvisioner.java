@@ -269,34 +269,32 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private IllegalArgumentException newNoAllocationPossible(ClusterSpec spec, Limits limits) {
         StringBuilder message = new StringBuilder("No allocation possible within ").append(limits);
 
-        if (nodeRepository.exclusiveAllocation(spec))
-            message.append(". Nearest allowed node resources: ").append(findNearestNodeResources(limits));
+        if (nodeRepository.exclusiveAllocation(spec) && findNearestNodeResources(limits).isPresent())
+            message.append(". Nearest allowed node resources: ").append(findNearestNodeResources(limits).get());
 
         return new IllegalArgumentException(message.toString());
     }
 
-    private NodeResources findNearestNodeResources(Limits limits) {
-        NodeResources nearestMin = nearestFlavorResources(limits.min().nodeResources());
-        NodeResources nearestMax = nearestFlavorResources(limits.max().nodeResources());
-        if (limits.min().nodeResources().distanceTo(nearestMin) < limits.max().nodeResources().distanceTo(nearestMax))
+    private Optional<NodeResources> findNearestNodeResources(Limits limits) {
+        Optional<NodeResources> nearestMin = nearestFlavorResources(limits.min().nodeResources());
+        Optional<NodeResources> nearestMax = nearestFlavorResources(limits.max().nodeResources());
+        if (nearestMin.isEmpty()) return nearestMax;
+        if (nearestMax.isEmpty()) return nearestMin;
+        if (limits.min().nodeResources().distanceTo(nearestMin.get()) < limits.max().nodeResources().distanceTo(nearestMax.get()))
             return nearestMin;
         else
             return nearestMax;
     }
 
     /** Returns the advertised flavor resources which are nearest to the given resources */
-    private NodeResources nearestFlavorResources(NodeResources requestedResources) {
-        NodeResources nearestHostResources = nodeRepository.flavors().getFlavors().stream()
-                                                           .map(flavor -> nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor))
-                                                           .filter(resources -> resources.diskSpeed().compatibleWith(requestedResources.diskSpeed()))
-                                                           .filter(resources -> resources.storageType().compatibleWith(requestedResources.storageType()))
-                                                           .filter(resources -> resources.architecture().compatibleWith(requestedResources.architecture()))
-                                                           .min(Comparator.comparingDouble(resources -> resources.distanceTo(requestedResources)))
-                                                           .orElseThrow()
-                                                           .withBandwidthGbps(requestedResources.bandwidthGbps());
-        if ( nearestHostResources.storageType() == NodeResources.StorageType.remote)
-            nearestHostResources = nearestHostResources.withDiskGb(requestedResources.diskGb());
-        return nearestHostResources;
+    private Optional<NodeResources> nearestFlavorResources(NodeResources requestedResources) {
+        return nodeRepository.flavors().getFlavors().stream()
+                             .map(flavor -> nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor))
+                             .filter(resources -> resources.satisfies(requestedResources))
+                             .min(Comparator.comparingDouble(resources -> resources.distanceTo(requestedResources)))
+                             .map(resources -> resources.withBandwidthGbps(requestedResources.bandwidthGbps()))
+                             .map(resources -> resources.storageType() == NodeResources.StorageType.remote ?
+                                               resources.withDiskGb(requestedResources.diskGb()) : resources);
     }
 
 }
