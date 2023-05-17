@@ -29,13 +29,7 @@ public:
                const vespalib::string &field,
                const vespalib::string &term,
                const FakeResult &res,
-               fef::TermFieldMatchDataArray tfmda)
-        : _tag(tag), _field(field), _term(term),
-          _result(res), _offset(0), _tfmda(std::move(tfmda)),
-          _ctx(nullptr)
-    {
-        assert(_tfmda.size() == 1);
-    }
+               fef::TermFieldMatchDataArray tfmda);
     void attr_ctx(const attribute::ISearchContext *ctx) { _ctx = ctx; }
     bool is_attr() const { return (_ctx != nullptr); }
     void doSeek(uint32_t docid) override;

@@ -5,6 +5,7 @@
 #include "load_utils.h"
 #include "attributevector.h"
 #include <vespa/searchcommon/attribute/multivalue.h>
+#include <cassert>
 
 namespace search::attribute {
 

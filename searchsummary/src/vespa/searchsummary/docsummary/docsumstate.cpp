@@ -14,6 +14,7 @@
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/issue.h>
+#include <cassert>
 
 using search::common::GeoLocationParser;
 using search::common::GeoLocationSpec;

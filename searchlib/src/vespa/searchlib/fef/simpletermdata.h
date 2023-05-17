@@ -7,7 +7,6 @@
 #include "simpletermfielddata.h"
 #include <vespa/searchlib/query/weight.h>
 #include <vector>
-#include <cassert>
 
 namespace search::fef {
 
@@ -126,26 +125,6 @@ public:
         }
         return nullptr;
     }
-};
-
-/**
- * convenience adapter for easy iteration
- **/
-class SimpleTermFieldRangeAdapter
-{
-    SimpleTermData& _ref;
-    size_t _idx;
-    size_t _lim;
-public:
-    explicit SimpleTermFieldRangeAdapter(SimpleTermData& ref)
-        : _ref(ref), _idx(0), _lim(ref.numFields())
-    {}
-
-    [[nodiscard]] bool valid() const { return (_idx < _lim); }
-
-    [[nodiscard]] SimpleTermFieldData& get() const  { return _ref.field(_idx); }
-
-    void next() { assert(valid()); ++_idx; }
 };
 
 }

@@ -1,9 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "zcposocciterators.h"
+#include "zc4_posting_params.h"
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include "zc4_posting_params.h"
+#include <cassert>
 
 namespace search::diskindex {
 

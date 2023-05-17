@@ -6,6 +6,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/fastos/file.h>
 #include <cinttypes>
+#include <cassert>
 #include <arpa/inet.h>
 
 #include <vespa/log/log.h>

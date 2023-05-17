@@ -4,6 +4,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <functional>
+#include <cassert>
 
 using search::fef::TermFieldMatchData;
 using std::unique_ptr;

@@ -4,7 +4,6 @@
 
 #include <mutex>
 #include <condition_variable>
-#include <cassert>
 
 namespace vespalib {
 

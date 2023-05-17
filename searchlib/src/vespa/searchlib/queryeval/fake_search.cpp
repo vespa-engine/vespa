@@ -5,8 +5,19 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
+#include <cassert>
 
 namespace search::queryeval {
+
+FakeSearch::FakeSearch(const vespalib::string &tag, const vespalib::string &field,
+                       const vespalib::string &term, const FakeResult &res,
+                       fef::TermFieldMatchDataArray tfmda)
+    : _tag(tag), _field(field), _term(term),
+      _result(res), _offset(0), _tfmda(std::move(tfmda)),
+      _ctx(nullptr)
+{
+    assert(_tfmda.size() == 1);
+}
 
 void
 FakeSearch::doSeek(uint32_t docid)

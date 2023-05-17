@@ -8,6 +8,7 @@
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.zcposting");

@@ -5,6 +5,7 @@
 #include <vespa/log/exceptions.h>
 #include <vespa/log/log_message.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".logd.empty_forwarder");

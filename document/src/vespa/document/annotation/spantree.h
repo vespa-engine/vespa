@@ -4,7 +4,6 @@
 
 #include "annotation.h"
 #include <vector>
-#include <cassert>
 
 namespace document {
 struct SpanNode;
@@ -24,7 +23,6 @@ public:
     SpanTree(vespalib::stringref name, std::unique_ptr<T> root)
         : _name(name),
           _root(std::move(root)) {
-        assert(_root.get());
     }
     ~SpanTree();
 

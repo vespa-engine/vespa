@@ -11,6 +11,7 @@
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.docsumfilter");

@@ -16,6 +16,7 @@
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+#include <cassert>
 
 using document::FieldValue;
 using document::BoolFieldValue;
