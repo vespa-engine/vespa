@@ -4,7 +4,7 @@
   "state": "ready",
   "type": "tenant",
   "hostname": "host3.yahoo.com",
-  "flavor": "[vcpu: 0.5, memory: 48.0 Gb, disk 500.0 Gb, bandwidth: 1.0 Gbps, storage type: local, architecture: x86_64]",
+  "flavor": "[vcpu: 0.5, memory: 48.0 Gb, disk: 500.0 Gb, bandwidth: 1.0 Gbps, storage type: local, architecture: x86_64]",
   "resources":{"vcpu":0.5,"memoryGb":48.0,"diskGb":500.0,"bandwidthGbps":1.0,"diskSpeed":"fast","storageType":"local","architecture":"x86_64"},
   "realResources":{"vcpu":0.5,"memoryGb":48.0,"diskGb":500.0,"bandwidthGbps":1.0,"diskSpeed":"fast","storageType":"local","architecture":"x86_64"},
   "environment": "DOCKER_CONTAINER",

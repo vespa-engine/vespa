@@ -440,7 +440,7 @@ public class VirtualNodeProvisioningTest {
         catch (Exception e) {
             assertEquals("No room for 3 nodes as 2 of 4 hosts are exclusive",
                          "Could not satisfy request for 3 nodes with " +
-                         "[vcpu: 2.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, architecture: any] " +
+                         "[vcpu: 2.0, memory: 4.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, architecture: any] " +
                          "in tenant2.app2 container cluster 'my-container' 6.39: " +
                          "Node allocation failure on group 0: " +
                          "Not enough suitable nodes available due to host exclusivity constraints",
@@ -467,7 +467,7 @@ public class VirtualNodeProvisioningTest {
         }
         catch (NodeAllocationException e) {
             assertEquals("Could not satisfy request for 2 nodes with " +
-                         "[vcpu: 1.0, memory: 4.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote, architecture: any] " +
+                         "[vcpu: 1.0, memory: 4.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote, architecture: any] " +
                          "in tenant.app1 content cluster 'my-content'" +
                          " 6.42: Node allocation failure on group 0",
                          e.getMessage());
@@ -549,8 +549,8 @@ public class VirtualNodeProvisioningTest {
         }
         catch (IllegalArgumentException e) {
             assertEquals("No allocation possible within limits: " +
-                         "from 2 nodes with [vcpu: 1.0, memory: 5.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps, architecture: any] " +
-                         "to 4 nodes with [vcpu: 1.0, memory: 5.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps, architecture: any]",
+                         "from 2 nodes with [vcpu: 1.0, memory: 5.0 Gb, disk: 10.0 Gb, bandwidth: 1.0 Gbps, architecture: any] " +
+                         "to 4 nodes with [vcpu: 1.0, memory: 5.0 Gb, disk: 10.0 Gb, bandwidth: 1.0 Gbps, architecture: any]",
                          e.getMessage());
         }
     }
@@ -573,9 +573,9 @@ public class VirtualNodeProvisioningTest {
         }
         catch (IllegalArgumentException e) {
             assertEquals("No allocation possible within limits: " +
-                         "from 2 nodes with [vcpu: 20.0, memory: 37.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, architecture: any] " +
-                         "to 4 nodes with [vcpu: 20.0, memory: 37.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, architecture: any]. " +
-                         "Nearest allowed node resources: [vcpu: 20.0, memory: 40.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote, architecture: any]",
+                         "from 2 nodes with [vcpu: 20.0, memory: 37.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, architecture: any] " +
+                         "to 4 nodes with [vcpu: 20.0, memory: 37.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, architecture: any]. " +
+                         "Nearest allowed node resources: [vcpu: 20.0, memory: 40.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote, architecture: any]",
                          e.getMessage());
         }
     }

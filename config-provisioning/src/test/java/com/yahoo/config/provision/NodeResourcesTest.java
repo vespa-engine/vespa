@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -20,11 +22,11 @@ public class NodeResourcesTest {
 
     @Test
     void testToString() {
-        assertEquals("[vcpu: 1.0, memory: 10.0 Gb, disk 100.0 Gb, architecture: any]",
+        assertEquals("[vcpu: 1.0, memory: 10.0 Gb, disk: 100.0 Gb, architecture: any]",
                                new NodeResources(1., 10., 100., 0).toString());
-        assertEquals("[vcpu: 0.3, memory: 3.3 Gb, disk 33.3 Gb, bandwidth: 0.3 Gbps, architecture: any]",
+        assertEquals("[vcpu: 0.3, memory: 3.3 Gb, disk: 33.3 Gb, bandwidth: 0.3 Gbps, architecture: any]",
                                new NodeResources(1 / 3., 10 / 3., 100 / 3., 0.3).toString());
-        assertEquals("[vcpu: 0.7, memory: 9.0 Gb, disk 66.7 Gb, bandwidth: 0.7 Gbps, architecture: any]",
+        assertEquals("[vcpu: 0.7, memory: 9.0 Gb, disk: 66.7 Gb, bandwidth: 0.7 Gbps, architecture: any]",
                                new NodeResources(2 / 3., 8.97, 200 / 3., 0.67).toString());
     }
 
@@ -34,6 +36,33 @@ public class NodeResourcesTest {
         assertInvalid("memory",    () -> new NodeResources(1.0, Double.NaN, 1.0, 1.0));
         assertInvalid("disk",      () -> new NodeResources(1.0, 1.0, Double.NaN, 1.0));
         assertInvalid("bandwidth", () -> new NodeResources(1.0, 1.0, 1.0, Double.NaN));
+    }
+
+    @Test
+    void testSatisfies() {
+        var hostResources = new NodeResources(1, 2, 3, 1);
+        assertTrue(hostResources.satisfies(new NodeResources(1, 2, 3, 1)));
+        assertTrue(hostResources.satisfies(new NodeResources(1, 1, 1, 1)));
+        assertFalse(hostResources.satisfies(new NodeResources(2, 2, 3, 1)));
+        assertFalse(hostResources.satisfies(new NodeResources(1, 3, 3, 1)));
+        assertFalse(hostResources.satisfies(new NodeResources(1, 2, 4, 1)));
+
+        var gpuHostResources = new NodeResources(1, 2, 3, 1,
+                                                 NodeResources.DiskSpeed.fast,
+                                                 NodeResources.StorageType.local,
+                                                 NodeResources.Architecture.x86_64,
+                                                 new NodeResources.GpuResources(1, 16));
+        assertTrue(gpuHostResources.satisfies(new NodeResources(1, 2, 3, 1,
+                                                                NodeResources.DiskSpeed.fast,
+                                                                NodeResources.StorageType.local,
+                                                                NodeResources.Architecture.x86_64,
+                                                                new NodeResources.GpuResources(1, 16))));
+        assertFalse(gpuHostResources.satisfies(new NodeResources(1, 2, 3, 1,
+                                                                 NodeResources.DiskSpeed.fast,
+                                                                 NodeResources.StorageType.local,
+                                                                 NodeResources.Architecture.x86_64,
+                                                                 new NodeResources.GpuResources(1, 32))));
+        assertFalse(hostResources.satisfies(gpuHostResources));
     }
 
     @Test
