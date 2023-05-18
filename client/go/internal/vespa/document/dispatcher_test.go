@@ -61,8 +61,8 @@ func TestDispatcher(t *testing.T) {
 	breaker := NewCircuitBreaker(time.Second, 0)
 	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard, false)
 	docs := []Document{
-		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Fields: []byte(`{"foo": "123"}`)},
-		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Fields: []byte(`{"bar": "456"}`)},
+		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields": {"foo": "123"}}`)},
+		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Body: []byte(`{"fields": {"bar": "456"}}`)},
 	}
 	for _, d := range docs {
 		dispatcher.Enqueue(d)
@@ -192,7 +192,7 @@ func BenchmarkDocumentDispatching(b *testing.B) {
 	throttler := newThrottler(8, clock.now)
 	breaker := NewCircuitBreaker(time.Second, 0)
 	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard, false)
-	doc := Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Fields: []byte(`{"foo": "123"}`)}
+	doc := Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields": {"foo": "123"}}`)}
 	b.ResetTimer() // ignore setup time
 
 	for n := 0; n < b.N; n++ {

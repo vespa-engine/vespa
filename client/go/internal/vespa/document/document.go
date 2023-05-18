@@ -33,6 +33,11 @@ const (
 	jsonString      json.Kind = '"'
 )
 
+var (
+	fieldsPrefix = []byte(`{"fields":`)
+	fieldsSuffix = []byte("}")
+)
+
 // Id represents a Vespa document ID.
 type Id struct {
 	id string
@@ -107,7 +112,7 @@ func ParseId(serialized string) (Id, error) {
 type Document struct {
 	Id        Id
 	Condition string
-	Fields    []byte
+	Body      []byte
 	Operation Operation
 	Create    bool
 }
@@ -141,9 +146,9 @@ func (d Document) String() string {
 	if d.Create {
 		sb.WriteString(", create=true")
 	}
-	if d.Fields != nil {
-		sb.WriteString(", fields=")
-		sb.WriteString(string(d.Fields))
+	if d.Body != nil {
+		sb.WriteString(", body=")
+		sb.WriteString(string(d.Body))
 	}
 	return sb.String()
 }
@@ -251,10 +256,11 @@ func (d *Decoder) readField(name string, doc *Document) error {
 			}
 		}
 		d.fieldsEnd = d.dec.InputOffset()
-		doc.Fields = make([]byte, int(d.fieldsEnd-start))
-		if _, err := d.buf.Read(doc.Fields); err != nil {
-			return err
-		}
+		fields := d.buf.Next(int(d.fieldsEnd - start))
+		doc.Body = make([]byte, 0, len(fieldsPrefix)+len(fields)+len(fieldsSuffix))
+		doc.Body = append(doc.Body, fieldsPrefix...)
+		doc.Body = append(doc.Body, fields...)
+		doc.Body = append(doc.Body, fieldsSuffix...)
 	}
 	if readId {
 		s, err := d.readString()

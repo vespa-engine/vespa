@@ -3,7 +3,6 @@ package document
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -62,16 +61,16 @@ func TestClientSend(t *testing.T) {
 		method string
 		url    string
 	}{
-		{Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(`{"foo": "123"}`)},
+		{Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "123"}}`)},
 			"PUT",
 			"https://example.com:1337/document/v1/ns/type/docid/doc1?timeout=5000ms&create=true"},
-		{Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Fields: []byte(`{"foo": "456"}`)},
+		{Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "456"}}`)},
 			"PUT",
 			"https://example.com:1337/document/v1/ns/type/docid/doc2?timeout=5000ms"},
 		{Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationRemove},
 			"DELETE",
 			"https://example.com:1337/document/v1/ns/type/docid/doc3?timeout=5000ms"},
-		{Document{Condition: "foo", Id: mustParseId("id:ns:type::doc4"), Operation: OperationUpdate, Fields: []byte(`{"baz": "789"}`)},
+		{Document{Condition: "foo", Id: mustParseId("id:ns:type::doc4"), Operation: OperationUpdate, Body: []byte(`{"fields":{"baz": "789"}}`)},
 			"PUT",
 			"https://example.com:1337/document/v1/ns/type/docid/doc4?timeout=5000ms&condition=foo"},
 	}
@@ -95,7 +94,6 @@ func TestClientSend(t *testing.T) {
 				MaxLatency:   time.Second,
 			},
 		}
-		var wantBody bytes.Buffer
 		if i < 3 {
 			httpClient.NextResponseString(200, `{"message":"All good!"}`)
 			wantRes.Status = StatusSuccess
@@ -111,11 +109,6 @@ func TestClientSend(t *testing.T) {
 			wantRes.Stats.ResponsesByCode = map[int]int64{502: 1}
 			wantRes.Stats.Errors = 1
 			wantRes.Stats.BytesRecv = 36
-		}
-		if tt.method == http.MethodPut {
-			wantBody.WriteString(`{"fields":`)
-			wantBody.Write(doc.Fields)
-			wantBody.WriteString("}")
 		}
 		res := client.Send(doc)
 		wantRes.Stats.BytesSent = int64(len(httpClient.LastBody))
@@ -133,8 +126,8 @@ func TestClientSend(t *testing.T) {
 		if r.URL.String() != tt.url {
 			t.Errorf("got r.URL = %q, want %q", r.URL, tt.url)
 		}
-		if !bytes.Equal(httpClient.LastBody, wantBody.Bytes()) {
-			t.Errorf("got r.Body = %q, want %q", string(httpClient.LastBody), wantBody.String())
+		if !bytes.Equal(httpClient.LastBody, doc.Body) {
+			t.Errorf("got r.Body = %q, want %q", string(httpClient.LastBody), doc.Body)
 		}
 	}
 	want := Stats{
@@ -164,9 +157,9 @@ func TestClientSendCompressed(t *testing.T) {
 		Timeout: time.Duration(5 * time.Second),
 	}, []util.HTTPClient{httpClient})
 
-	bigBody := fmt.Sprintf(`{"foo": "%s"}`, strings.Repeat("s", 512+1))
-	bigDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(bigBody)}
-	smallDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Fields: []byte(`{"foo": "s"}`)}
+	bigBody := fmt.Sprintf(`{"fields": {"foo": "%s"}}`, strings.Repeat("s", 512+1))
+	bigDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(bigBody)}
+	smallDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Body: []byte(`{"fields": {"foo": "s"}}`)}
 
 	var result Result
 	client.options.Compression = CompressionNone
@@ -307,7 +300,7 @@ func benchmarkClientSend(b *testing.B, compression Compression, document Documen
 }
 
 func makeDocument(size int) Document {
-	return Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(fmt.Sprintf(`{"foo": "%s"}`, randString(size)))}
+	return Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(fmt.Sprintf(`{"fields": {"foo": "%s"}}`, randString(size)))}
 }
 
 func BenchmarkClientSendSmallUncompressed(b *testing.B) {

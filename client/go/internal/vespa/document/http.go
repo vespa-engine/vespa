@@ -30,9 +30,6 @@ const (
 )
 
 var (
-	fieldsPrefix = []byte(`{"fields":`)
-	fieldsSuffix = []byte("}")
-
 	defaultHeaders http.Header = map[string][]string{
 		"User-Agent":   {fmt.Sprintf("Vespa CLI/%s", build.Version)},
 		"Content-Type": {"application/json; charset=utf-8"},
@@ -132,15 +129,6 @@ func writeQueryParam(sb *bytes.Buffer, start int, escape bool, k, v string) {
 	}
 }
 
-func writeRequestBody(w io.Writer, body []byte) error {
-	for _, b := range [][]byte{fieldsPrefix, body, fieldsSuffix} {
-		if _, err := w.Write(b); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (c *Client) methodAndURL(d Document, sb *bytes.Buffer) (string, string) {
 	httpMethod := ""
 	switch d.Operation {
@@ -229,7 +217,7 @@ func (c *Client) preparePending() {
 	for pd := range c.pending {
 		pd.buf = c.buffer()
 		method, url := c.methodAndURL(pd.document, pd.buf)
-		pd.request, pd.err = c.createRequest(method, url, pd.document.Fields, pd.buf)
+		pd.request, pd.err = c.createRequest(method, url, pd.document.Body, pd.buf)
 		pd.prepared <- true
 	}
 }
@@ -259,24 +247,23 @@ func (c *Client) createRequest(method, url string, body []byte, buf *bytes.Buffe
 	if len(body) == 0 {
 		return newRequest(method, url, nil, false)
 	}
-	bodySize := len(fieldsPrefix) + len(body) + len(fieldsSuffix)
-	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && bodySize > 512)
-	buf.Grow(min(1024, bodySize))
+	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
+	var r io.Reader
 	if useGzip {
+		buf.Grow(min(1024, len(body)))
 		zw := c.gzipWriter(buf)
 		defer c.gzippers.Put(zw)
-		if err := writeRequestBody(zw, body); err != nil {
+		if _, err := zw.Write(body); err != nil {
 			return nil, err
 		}
 		if err := zw.Close(); err != nil {
 			return nil, err
 		}
+		r = buf
 	} else {
-		if err := writeRequestBody(buf, body); err != nil {
-			return nil, err
-		}
+		r = bytes.NewReader(body)
 	}
-	return newRequest(method, url, buf, useGzip)
+	return newRequest(method, url, r, useGzip)
 }
 
 func (c *Client) clientTimeout() time.Duration {
@@ -295,7 +282,10 @@ func (c *Client) Send(document Document) Result {
 	if err != nil {
 		return resultWithErr(result, err)
 	}
-	bodySize := buf.Len()
+	bodySize := len(document.Body)
+	if buf.Len() > 0 {
+		bodySize = buf.Len()
+	}
 	resp, err := c.leastBusyClient().Do(req, c.clientTimeout())
 	if err != nil {
 		return resultWithErr(result, err)
