@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "simple_metrics_manager.h"
 #include "simple_tick.h"
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.metrics.simple_metrics_manager");

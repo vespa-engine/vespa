@@ -3,6 +3,7 @@
 #include "zc4_posting_writer.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
+#include <cassert>
 
 using search::index::DocIdAndFeatures;
 using search::index::PostingListCounts;

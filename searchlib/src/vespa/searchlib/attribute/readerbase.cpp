@@ -6,6 +6,7 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/util/filesizecalculator.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.attribute.readerbase");
@@ -72,6 +73,13 @@ ReaderBase::ReaderBase(AttributeVector &attr)
 }
 
 ReaderBase::~ReaderBase() = default;
+
+size_t
+ReaderBase::getEnumCount() const {
+    size_t dataSize = _datFile.data_size();
+    assert((dataSize % sizeof(uint32_t)) == 0);
+    return dataSize / sizeof(uint32_t);
+}
 
 bool
 ReaderBase::hasWeight() const {

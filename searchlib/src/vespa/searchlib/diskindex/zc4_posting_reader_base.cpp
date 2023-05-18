@@ -3,7 +3,7 @@
 #include "zc4_posting_reader_base.h"
 #include "zc4_posting_header.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
-
+#include <cassert>
 namespace search::diskindex {
 
 using index::PostingListCounts;

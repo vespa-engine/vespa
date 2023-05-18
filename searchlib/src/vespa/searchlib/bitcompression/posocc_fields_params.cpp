@@ -5,6 +5,7 @@
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".posocc_fields_params");
@@ -36,6 +37,12 @@ PosOccFieldsParams::operator=(const PosOccFieldsParams &rhs)
     _params = rhs._params;
     cacheParamsRef();
     return *this;
+}
+
+void
+PosOccFieldsParams::assertCachedParamsRef() const {
+    assert(_numFields == _params.size());
+    assert(_fieldParams == (_params.empty() ? nullptr : &_params[0]));
 }
 
 

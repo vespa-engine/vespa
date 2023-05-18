@@ -4,7 +4,6 @@
 
 #include <memory>
 #include <vector>
-#include <assert.h>
 
 namespace vespalib {
 
@@ -54,8 +53,8 @@ private:
 
     StableStore(size_t sz, UP &&more, std::vector<T> &&mine);
 
-    size_t _size;
-    UP _more;
+    size_t         _size;
+    UP             _more;
     std::vector<T> _mine;
 };
 

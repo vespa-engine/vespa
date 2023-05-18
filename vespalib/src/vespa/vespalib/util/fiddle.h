@@ -4,8 +4,7 @@
 
 #include <cassert>
 
-namespace vespalib {
-namespace bits {
+namespace vespalib::bits {
 
 //-----------------------------------------------------------------------------
 
@@ -79,6 +78,5 @@ uint32_t split_range(uint32_t min, uint32_t max,
 
 //-----------------------------------------------------------------------------
 
-} // namespace bits
-} // namespace vespalib
+}
 

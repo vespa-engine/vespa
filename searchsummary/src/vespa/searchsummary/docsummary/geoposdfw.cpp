@@ -10,6 +10,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/issue.h>
 #include <climits>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.geoposdfw");

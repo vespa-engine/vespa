@@ -7,6 +7,7 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <sstream>
+#include <cassert>
 
 namespace document {
 

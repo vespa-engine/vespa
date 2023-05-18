@@ -3,6 +3,7 @@
 #include "zc4_posting_reader.h"
 #include "zc4_posting_header.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <cassert>
 
 namespace search::diskindex {
 
@@ -19,9 +20,7 @@ Zc4PostingReader<bigEndian>::Zc4PostingReader(bool dynamic_k)
 }
 
 template <bool bigEndian>
-Zc4PostingReader<bigEndian>::~Zc4PostingReader()
-{
-}
+Zc4PostingReader<bigEndian>::~Zc4PostingReader() = default;
 
 template <bool bigEndian>
 void
