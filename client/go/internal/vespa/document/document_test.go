@@ -185,7 +185,7 @@ func TestDocumentDecoderInvalid(t *testing.T) {
 		t.Errorf("unexpected error: %s", err)
 	}
 	_, err = r.Decode()
-	wantErr := "invalid json at byte offset 109: json: invalid character '\\n' within string (expecting non-control character)"
+	wantErr := "invalid json at byte offset 110: json: invalid character '\\n' within string (expecting non-control character)"
 	if err.Error() != wantErr {
 		t.Errorf("want error %q, got %q", wantErr, err.Error())
 	}

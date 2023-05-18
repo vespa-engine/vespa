@@ -1,7 +1,6 @@
 package document
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -19,8 +18,6 @@ import (
 	// - Few allocations during parsing (especially for large objects)
 	"github.com/go-json-experiment/json"
 )
-
-var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
 
 type Operation int
 
@@ -117,7 +114,6 @@ type Document struct {
 
 // Decoder decodes documents from a JSON structure which is either an array of objects, or objects separated by newline.
 type Decoder struct {
-	r   *bufio.Reader
 	dec *json.Decoder
 	buf bytes.Buffer
 
@@ -153,29 +149,20 @@ func (d Document) String() string {
 }
 
 func (d *Decoder) guessMode() error {
-	for !d.array && !d.jsonl {
-		b, err := d.r.ReadByte()
-		if err != nil {
+	if d.array || d.jsonl {
+		return nil
+	}
+	kind := d.dec.PeekKind()
+	switch kind {
+	case jsonArrayStart:
+		if _, err := d.readNext(jsonArrayStart); err != nil {
 			return err
 		}
-		// Skip leading whitespace
-		if b < 0x80 && asciiSpace[b] != 0 {
-			continue
-		}
-		switch json.Kind(b) {
-		case jsonObjectStart:
-			d.jsonl = true
-		case jsonArrayStart:
-			d.array = true
-		default:
-			return fmt.Errorf("unexpected token: %q", string(b))
-		}
-		if err := d.r.UnreadByte(); err != nil {
-			return err
-		}
-		if err := d.readArrayDelim(true); err != nil {
-			return err
-		}
+		d.array = true
+	case jsonObjectStart:
+		d.jsonl = true
+	default:
+		return fmt.Errorf("expected %s or %s, got %s", jsonArrayStart, jsonObjectStart, kind)
 	}
 	return nil
 }
@@ -189,18 +176,6 @@ func (d *Decoder) readNext(kind json.Kind) (json.Token, error) {
 		return json.Token{}, fmt.Errorf("unexpected json kind: %q: want %q", t, kind)
 	}
 	return t, nil
-}
-
-func (d *Decoder) readArrayDelim(open bool) error {
-	if !d.array {
-		return nil
-	}
-	kind := jsonArrayEnd
-	if open {
-		kind = jsonArrayStart
-	}
-	_, err := d.readNext(kind)
-	return err
 }
 
 func (d *Decoder) readString() (string, error) {
@@ -299,9 +274,9 @@ func (d *Decoder) decode() (Document, error) {
 	if err := d.guessMode(); err != nil {
 		return Document{}, err
 	}
-	if d.dec.PeekKind() == jsonArrayEnd {
+	if d.array && d.dec.PeekKind() == jsonArrayEnd {
 		// Reached end of the array holding document operations
-		if err := d.readArrayDelim(false); err != nil {
+		if _, err := d.readNext(jsonArrayEnd); err != nil {
 			return Document{}, err
 		}
 		return Document{}, io.EOF
@@ -333,9 +308,8 @@ loop:
 }
 
 func NewDecoder(r io.Reader) *Decoder {
-	sz := 1 << 26
-	d := &Decoder{r: bufio.NewReaderSize(r, sz)}
-	d.dec = json.NewDecoder(io.TeeReader(d.r, &d.buf))
+	d := &Decoder{}
+	d.dec = json.NewDecoder(io.TeeReader(r, &d.buf))
 	return d
 }
 
