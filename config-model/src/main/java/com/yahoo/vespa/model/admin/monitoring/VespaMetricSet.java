@@ -131,6 +131,11 @@ public class VespaMetricSet {
         addMetric(metrics, ConfigServerMetrics.ZK_CONNECTIONS.last());
         addMetric(metrics, ConfigServerMetrics.ZK_OUTSTANDING_REQUESTS.last());
 
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_COST.last());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_CPU.last());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_MEMORY.last());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_DISK.last());
+
         return metrics;
     }
 

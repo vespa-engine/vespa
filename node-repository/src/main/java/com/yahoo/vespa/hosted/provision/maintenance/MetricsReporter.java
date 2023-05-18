@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import ai.vespa.metrics.ConfigServerMetrics;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
@@ -18,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 import com.yahoo.vespa.hosted.provision.persistence.CacheStats;
@@ -118,7 +120,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         byCluster.forEach((clusterId, clusterNodes) -> {
             Metric.Context context = getContext(dimensions(clusterId.application(), clusterId.cluster()));
             updateExclusiveSwitchMetrics(clusterNodes, nodes, context);
-            updateClusterCostMetrics(clusterNodes, context);
+            updateClusterCostMetrics(clusterId, clusterNodes, context);
         });
     }
 
@@ -129,9 +131,16 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         metric.set("nodes.exclusiveSwitchFraction", exclusiveSwitchRatio,context);
     }
 
-    private void updateClusterCostMetrics(List<Node>  clusterNodes, Metric.Context context) {
+    private void updateClusterCostMetrics(ClusterId clusterId,
+                                          List<Node>  clusterNodes, Metric.Context context) {
+        var cluster = nodeRepository().applications().get(clusterId.application())
+                                      .flatMap(application -> application.cluster(clusterId.cluster()));
+        if (cluster.isEmpty()) return;
         double cost = clusterNodes.stream().mapToDouble(node -> node.resources().cost()).sum();
-        metric.set("cluster.cost", cost, context);
+        metric.set(ConfigServerMetrics.CLUSTER_COST.baseName(), cost, context);
+        metric.set(ConfigServerMetrics.CLUSTER_LOAD_IDEAL_CPU.baseName(), cluster.get().target().ideal().cpu(), context);
+        metric.set(ConfigServerMetrics.CLUSTER_LOAD_IDEAL_MEMORY.baseName(), cluster.get().target().ideal().memory(), context);
+        metric.set(ConfigServerMetrics.CLUSTER_LOAD_IDEAL_DISK.baseName(), cluster.get().target().ideal().disk(), context);
     }
 
     private void updateZoneMetrics() {
