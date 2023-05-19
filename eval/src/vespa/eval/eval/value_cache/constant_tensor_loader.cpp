@@ -137,29 +137,25 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
     Slime slime;
     decode_json(path, slime);
     TensorSpec spec(type);
+    bool isSingleDenseType = value_type.is_dense() && (value_type.count_indexed_dimensions() == 1);
+    bool isSingleMappedType = value_type.is_sparse() && (value_type.count_mapped_dimensions() == 1);
     const Inspector &root = slime.get();
     const Inspector &cells = root["cells"];
     const Inspector &values = root["values"];
     if (cells.type().getId() == vespalib::slime::ARRAY::ID) {
         decodeLiteralForm(cells, value_type, spec);
     }
-    else if (cells.type().getId() == vespalib::slime::OBJECT::ID
-             && value_type.is_sparse()
-             && value_type.count_mapped_dimensions() == 1)
-    {
+    else if (cells.type().getId() == vespalib::slime::OBJECT::ID && isSingleMappedType) {
         decodeSingleMappedForm(cells, value_type, spec);
     }
-    else if (values.type().getId() == vespalib::slime::ARRAY::ID
-             && value_type.is_dense()
-             && value_type.count_indexed_dimensions() == 1)
-    {
+    else if (values.type().getId() == vespalib::slime::ARRAY::ID && isSingleDenseType) {
         decodeSingleDenseForm(values, value_type, spec);
     }
-    else if (root.type().getId() == vespalib::slime::OBJECT::ID
-             && value_type.is_sparse()
-             && value_type.count_mapped_dimensions() == 1)
-    {
+    else if (root.type().getId() == vespalib::slime::OBJECT::ID && isSingleMappedType) {
         decodeSingleMappedForm(root, value_type, spec);
+    }
+    else if (root.type().getId() == vespalib::slime::ARRAY::ID && isSingleDenseType) {
+        decodeSingleDenseForm(root, value_type, spec);
     }
     try {
         return std::make_unique<SimpleConstantValue>(value_from_spec(spec, _factory));

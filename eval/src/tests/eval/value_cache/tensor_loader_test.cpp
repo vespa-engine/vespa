@@ -90,11 +90,13 @@ TEST_F("require that lz4 compressed sparse tensor can be loaded", ConstantTensor
 }
 
 TEST_F("require that sparse tensor short form can be loaded", ConstantTensorLoader(factory)) {
-    TEST_DO(verify_tensor(make_simple_sparse_tensor(), f1.create(TEST_PATH("sparse-short.json"), "tensor(mydim{})")));
+    TEST_DO(verify_tensor(make_simple_sparse_tensor(), f1.create(TEST_PATH("sparse-short1.json"), "tensor(mydim{})")));
+    TEST_DO(verify_tensor(make_simple_sparse_tensor(), f1.create(TEST_PATH("sparse-short2.json"), "tensor(mydim{})")));
 }
 
 TEST_F("require that dense tensor short form can be loaded", ConstantTensorLoader(factory)) {
-    TEST_DO(verify_tensor(make_simple_dense_tensor(), f1.create(TEST_PATH("dense-short.json"), "tensor(z[3])")));
+    TEST_DO(verify_tensor(make_simple_dense_tensor(), f1.create(TEST_PATH("dense-short1.json"), "tensor(z[3])")));
+    TEST_DO(verify_tensor(make_simple_dense_tensor(), f1.create(TEST_PATH("dense-short2.json"), "tensor(z[3])")));
 }
 
 TEST_F("require that bad lz4 file fails to load creating empty result", ConstantTensorLoader(factory)) {
