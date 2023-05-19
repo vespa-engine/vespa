@@ -420,6 +420,12 @@ public class Flags {
             "Takes effect at next host-admin tick",
             ZONE_ID);
 
+    public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
+            "weighted-endpoint-record-ttl", List.of(), String.class, List.of("jonmv"), "2023-05-16", "2023-06-16",
+            "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
+            "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
+            "Takes effect at redeployment from controller");
+
     public static final UnboundBooleanFlag ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR = defineFeatureFlag(
             "enable-conditional-put-remove-write-repair", false,
             List.of("vekterli", "havardpe"), "2023-05-10", "2023-07-01",
