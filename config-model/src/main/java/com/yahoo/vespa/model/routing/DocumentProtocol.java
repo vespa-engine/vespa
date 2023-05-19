@@ -110,7 +110,7 @@ public final class DocumentProtocol implements Protocol,
         for (ContentCluster cluster : Content.getContentClusters(repo)) {
             DocumentProtocolPoliciesConfig.Cluster.Builder clusterBuilder = new DocumentProtocolPoliciesConfig.Cluster.Builder();
             addSelector(cluster.getConfigId(), cluster.getRoutingSelector(), clusterBuilder);
-            if (cluster.getSearch().hasIndexedCluster())
+            if (cluster.getSearch().getIndexingDocproc().isPresent())
                 addRoutes(getDirectRouteName(cluster.getConfigId()), getIndexedRouteName(cluster.getConfigId()), clusterBuilder);
             else
                 clusterBuilder.defaultRoute(cluster.getConfigId());
@@ -227,10 +227,11 @@ public final class DocumentProtocol implements Protocol,
         for (ContentCluster cluster : content) {
             RouteSpec spec = new RouteSpec(cluster.getConfigId());
 
-            if (cluster.getSearch().hasIndexedCluster()) {
+            if (cluster.getSearch().getIndexingDocproc().isPresent()) {
+                var indexingDocproc = cluster.getSearch().getIndexingDocproc().get();
                 table.addRoute(spec.addHop("[MessageType:" + cluster.getConfigId() + "]"));
                 table.addRoute(new RouteSpec(getIndexedRouteName(cluster.getConfigId()))
-                                       .addHop(cluster.getSearch().getIndexed().getIndexingServiceName())
+                                       .addHop(indexingDocproc.getServiceName())
                                        .addHop("[Content:cluster=" + cluster.getName() + "]"));
                 table.addRoute(new RouteSpec(getDirectRouteName(cluster.getConfigId()))
                                        .addHop("[Content:cluster=" + cluster.getName() + "]"));
