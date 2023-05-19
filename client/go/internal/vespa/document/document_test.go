@@ -116,7 +116,8 @@ func feedInput(jsonl bool) string {
   "fields":    {  "foo"  : "123", "bar": {"a": [1, 2, 3]}}
 }`,
 		`
-{
+
+     {
   "put": "id:ns:type::doc2",
   "create": false,
   "condition": "foo",
@@ -129,9 +130,13 @@ func feedInput(jsonl bool) string {
 `,
 		`
 {
+  "fields": {"qux": "789"},
   "put": "id:ns:type::doc4",
-  "create": true,
-  "fields": {"qux": "789"}
+  "create": true
+}`,
+		`
+{
+  "remove": "id:ns:type::doc5"
 }`}
 	if jsonl {
 		return strings.Join(operations, "\n")
@@ -141,16 +146,17 @@ func feedInput(jsonl bool) string {
 
 func testDocumentDecoder(t *testing.T, jsonLike string) {
 	t.Helper()
-	r := NewDecoder(strings.NewReader(jsonLike))
+	dec := NewDecoder(strings.NewReader(jsonLike))
 	want := []Document{
 		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields":{  "foo"  : "123", "bar": {"a": [1, 2, 3]}}}`)},
 		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Condition: "foo", Body: []byte(`{"fields":{"bar": "456"}}`)},
 		{Id: mustParseId("id:ns:type::doc3"), Operation: OperationRemove},
 		{Id: mustParseId("id:ns:type::doc4"), Operation: OperationPut, Create: true, Body: []byte(`{"fields":{"qux": "789"}}`)},
+		{Id: mustParseId("id:ns:type::doc5"), Operation: OperationRemove},
 	}
 	got := []Document{}
 	for {
-		doc, err := r.Decode()
+		doc, err := dec.Decode()
 		if err == io.EOF {
 			break
 		}
@@ -158,6 +164,13 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 			t.Fatal(err)
 		}
 		got = append(got, doc)
+	}
+	wantBufLen := 0
+	if dec.array {
+		wantBufLen = 1
+	}
+	if l := dec.buf.Len(); l != wantBufLen {
+		t.Errorf("got dec.buf.Len() = %d, want %d", l, wantBufLen)
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)
@@ -179,12 +192,12 @@ func TestDocumentDecoderInvalid(t *testing.T) {
   "fields": {"foo": "invalid
 }
 `
-	r := NewDecoder(strings.NewReader(jsonLike))
-	_, err := r.Decode() // first object is valid
+	dec := NewDecoder(strings.NewReader(jsonLike))
+	_, err := dec.Decode() // first object is valid
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
-	_, err = r.Decode()
+	_, err = dec.Decode()
 	wantErr := "invalid json at byte offset 110: json: invalid character '\\n' within string (expecting non-control character)"
 	if err.Error() != wantErr {
 		t.Errorf("want error %q, got %q", wantErr, err.Error())

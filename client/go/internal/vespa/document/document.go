@@ -1,6 +1,7 @@
 package document
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -211,7 +212,7 @@ func (d *Decoder) Decode() (Document, error) {
 	return doc, err
 }
 
-func (d *Decoder) readField(name string, doc *Document) error {
+func (d *Decoder) readField(name string, offset int64, doc *Document) error {
 	readId := false
 	switch name {
 	case "id", "put":
@@ -239,9 +240,9 @@ func (d *Decoder) readField(name string, doc *Document) error {
 		if _, err := d.readNext(jsonObjectStart); err != nil {
 			return err
 		}
-		start := d.dec.InputOffset() - 1
-		// Skip data between the most recent ending position of fields and current offset
-		d.buf.Next(int(start - d.fieldsEnd))
+		// Skip data between start of operation and start of fields
+		fieldsStart := d.dec.InputOffset() - 1
+		d.buf.Next(int(fieldsStart - offset))
 		depth := 1
 		for depth > 0 {
 			t, err := d.dec.ReadToken()
@@ -256,7 +257,7 @@ func (d *Decoder) readField(name string, doc *Document) error {
 			}
 		}
 		d.fieldsEnd = d.dec.InputOffset()
-		fields := d.buf.Next(int(d.fieldsEnd - start))
+		fields := d.buf.Next(int(d.fieldsEnd - fieldsStart))
 		doc.Body = make([]byte, 0, len(fieldsPrefix)+len(fields)+len(fieldsSuffix))
 		doc.Body = append(doc.Body, fieldsPrefix...)
 		doc.Body = append(doc.Body, fields...)
@@ -277,6 +278,7 @@ func (d *Decoder) readField(name string, doc *Document) error {
 }
 
 func (d *Decoder) decode() (Document, error) {
+	start := d.dec.InputOffset()
 	if err := d.guessMode(); err != nil {
 		return Document{}, err
 	}
@@ -300,13 +302,17 @@ loop:
 			if err != nil {
 				return Document{}, err
 			}
-			if err := d.readField(t.String(), &doc); err != nil {
+			if err := d.readField(t.String(), start, &doc); err != nil {
 				return Document{}, err
 			}
 		default:
 			if _, err := d.readNext(jsonObjectEnd); err != nil {
 				return Document{}, err
 			}
+			// Drop operation from the buffer
+			start = max(start, d.fieldsEnd)
+			end := d.dec.InputOffset()
+			d.buf.Next(int(end - start))
 			break loop
 		}
 	}
@@ -314,8 +320,9 @@ loop:
 }
 
 func NewDecoder(r io.Reader) *Decoder {
+	br := bufio.NewReaderSize(r, 1<<26)
 	d := &Decoder{}
-	d.dec = json.NewDecoder(io.TeeReader(r, &d.buf))
+	d.dec = json.NewDecoder(io.TeeReader(br, &d.buf))
 	return d
 }
 
