@@ -143,10 +143,10 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 	t.Helper()
 	r := NewDecoder(strings.NewReader(jsonLike))
 	want := []Document{
-		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Fields: []byte(`{  "foo"  : "123", "bar": {"a": [1, 2, 3]}}`)},
-		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Condition: "foo", Fields: []byte(`{"bar": "456"}`)},
+		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields":{  "foo"  : "123", "bar": {"a": [1, 2, 3]}}}`)},
+		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Condition: "foo", Body: []byte(`{"fields":{"bar": "456"}}`)},
 		{Id: mustParseId("id:ns:type::doc3"), Operation: OperationRemove},
-		{Id: mustParseId("id:ns:type::doc4"), Operation: OperationPut, Create: true, Fields: []byte(`{"qux": "789"}`)},
+		{Id: mustParseId("id:ns:type::doc4"), Operation: OperationPut, Create: true, Body: []byte(`{"fields":{"qux": "789"}}`)},
 	}
 	got := []Document{}
 	for {
@@ -185,7 +185,7 @@ func TestDocumentDecoderInvalid(t *testing.T) {
 		t.Errorf("unexpected error: %s", err)
 	}
 	_, err = r.Decode()
-	wantErr := "invalid json at byte offset 109: json: invalid character '\\n' within string (expecting non-control character)"
+	wantErr := "invalid json at byte offset 110: json: invalid character '\\n' within string (expecting non-control character)"
 	if err.Error() != wantErr {
 		t.Errorf("want error %q, got %q", wantErr, err.Error())
 	}
