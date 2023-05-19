@@ -83,3 +83,5 @@ install_config_definition(onnx-models.def vespa.config.search.core.onnx-models.d
 vespa_generate_config(configdefinitions proton.def)
 install_config_definition(proton.def vespa.config.search.core.proton.def)
 vespa_generate_config(configdefinitions hwinfo.def)
+vespa_generate_config(configdefinitions dataplane-proxy.def)
+install_config_definition(dataplane-proxy.def cloud.config.dataplane-proxy.def)
