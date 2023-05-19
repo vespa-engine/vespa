@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -71,6 +72,11 @@ type targetOptions struct {
 	logLevel string
 	// noCertificate declares that no client certificate should be required when using this target.
 	noCertificate bool
+}
+
+type targetType struct {
+	name string
+	url  string
 }
 
 // errHint creates a new CLI error, with optional hints that will be printed after the error
@@ -297,7 +303,19 @@ func (c *CLI) printWarning(msg interface{}, hints ...string) {
 
 // target creates a target according the configuration of this CLI and given opts.
 func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
-	target, err := c.createTarget(opts)
+	targetType, err := c.targetType()
+	if err != nil {
+		return nil, err
+	}
+	var target vespa.Target
+	switch targetType.name {
+	case vespa.TargetLocal, vespa.TargetCustom:
+		target, err = c.createCustomTarget(targetType.name, targetType.url)
+	case vespa.TargetCloud, vespa.TargetHosted:
+		target, err = c.createCloudTarget(targetType.name, opts, targetType.url)
+	default:
+		return nil, errHint(fmt.Errorf("invalid target: %s", targetType), "Valid targets are 'local', 'cloud', 'hosted' or an URL")
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -309,24 +327,39 @@ func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
 	return target, nil
 }
 
-func (c *CLI) createTarget(opts targetOptions) (vespa.Target, error) {
-	targetType, err := c.config.targetType()
+// targetType resolves the real target type and its custom URL (if any)
+func (c *CLI) targetType() (targetType, error) {
+	v, err := c.config.targetOrURL()
 	if err != nil {
-		return nil, err
+		return targetType{}, err
 	}
-	customURL := ""
-	if strings.HasPrefix(targetType, "http") {
-		customURL = targetType
-		targetType = vespa.TargetCustom
+	tt := targetType{name: v}
+	if strings.HasPrefix(tt.name, "http://") || strings.HasPrefix(tt.name, "https://") {
+		tt.url = tt.name
+		tt.name, err = c.targetFromURL(tt.url)
+		if err != nil {
+			return targetType{}, err
+		}
 	}
-	switch targetType {
-	case vespa.TargetLocal, vespa.TargetCustom:
-		return c.createCustomTarget(targetType, customURL)
-	case vespa.TargetCloud, vespa.TargetHosted:
-		return c.createCloudTarget(targetType, opts)
-	default:
-		return nil, errHint(fmt.Errorf("invalid target: %s", targetType), "Valid targets are 'local', 'cloud', 'hosted' or an URL")
+	return tt, nil
+}
+
+func (c *CLI) targetFromURL(customURL string) (string, error) {
+	u, err := url.Parse(customURL)
+	if err != nil {
+		return "", err
 	}
+	// Check if URL belongs to a cloud target
+	for _, cloudTarget := range []string{vespa.TargetHosted, vespa.TargetCloud} {
+		system, err := c.system(cloudTarget)
+		if err != nil {
+			return "", err
+		}
+		if strings.HasSuffix(u.Hostname(), "."+system.EndpointDomain) {
+			return cloudTarget, nil
+		}
+	}
+	return vespa.TargetCustom, nil
 }
 
 func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, error) {
@@ -344,7 +377,7 @@ func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, er
 	}
 }
 
-func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Target, error) {
+func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL string) (vespa.Target, error) {
 	system, err := c.system(targetType)
 	if err != nil {
 		return nil, err
@@ -409,6 +442,7 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Ta
 	deploymentOptions := vespa.CloudDeploymentOptions{
 		Deployment:  deployment,
 		TLSOptions:  deploymentTLSOptions,
+		CustomURL:   customURL,
 		ClusterURLs: endpoints,
 	}
 	logLevel := opts.logLevel

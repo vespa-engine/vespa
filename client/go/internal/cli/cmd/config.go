@@ -329,7 +329,7 @@ func (c *Config) write() error {
 	return c.config.WriteFile(configFile)
 }
 
-func (c *Config) targetType() (string, error) {
+func (c *Config) targetOrURL() (string, error) {
 	targetType, ok := c.get(targetFlag)
 	if !ok {
 		return "", fmt.Errorf("target is unset")
