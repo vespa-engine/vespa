@@ -28,6 +28,7 @@ import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
+import com.yahoo.vespa.model.search.IndexingDocproc;
 import com.yahoo.vespa.model.search.IndexingDocprocChain;
 import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.SearchNode;
@@ -213,13 +214,17 @@ public class Content extends ConfigModel {
         /** Select/creates and initializes the indexing cluster coupled to this */
         private void buildIndexingClusters(Content content, ConfigModelContext modelContext,
                                            ApplicationConfigProducerRoot root) {
-            if ( ! content.getCluster().getSearch().hasIndexedCluster()) return;
-
-            IndexedSearchCluster indexedSearchCluster = content.getCluster().getSearch().getIndexed();
-            if (indexedSearchCluster.hasExplicitIndexingCluster()) {
-                setExistingIndexingCluster(indexedSearchCluster, content.containers);
+            var search = content.getCluster().getSearch();
+            if (!search.getIndexingDocproc().isPresent()) {
+                return;
+            }
+            var indexingDocproc = search.getIndexingDocproc().get();
+            if (indexingDocproc.hasExplicitCluster()) {
+                setExistingIndexingCluster(content, indexingDocproc, content.containers);
             } else {
-                setContainerAsIndexingCluster(indexedSearchCluster, content, modelContext, root);
+                if (search.hasIndexedCluster()) {
+                    setContainerAsIndexingCluster(search.getIndexed(), content, modelContext, root);
+                }
             }
         }
 
@@ -237,18 +242,19 @@ public class Content extends ConfigModel {
                     targetCluster = content.containers.iterator().next().getCluster();
 
                 addDocproc(targetCluster);
-                indexedSearchCluster.setIndexingClusterName(targetCluster.getName());
-                addIndexingChainsTo(targetCluster, indexedSearchCluster);
+                var indexingDocproc = indexedSearchCluster.getIndexingDocproc();
+                indexingDocproc.setClusterName(targetCluster.getName());
+                addIndexingChainsTo(targetCluster, content, indexingDocproc);
             }
         }
 
-        private void setExistingIndexingCluster(IndexedSearchCluster cluster, Collection<ContainerModel> containers) {
-            String indexingClusterName = cluster.getIndexingClusterName();
+        private void setExistingIndexingCluster(Content content, IndexingDocproc indexingDocproc, Collection<ContainerModel> containers) {
+            String indexingClusterName = indexingDocproc.getClusterName(content.getCluster().getName());
             ContainerModel containerModel = findByName(indexingClusterName, containers);
             if (containerModel == null)
-                throw new IllegalArgumentException("Content cluster '" + cluster.getClusterName() + "' refers to docproc " +
+                throw new IllegalArgumentException("Content cluster '" + content.getCluster().getName() + "' refers to docproc " +
                                                    "cluster '" + indexingClusterName + "', but this cluster does not exist.");
-            addIndexingChainsTo(containerModel.getCluster(), cluster);
+            addIndexingChainsTo(containerModel.getCluster(), content, indexingDocproc);
         }
 
         private ContainerModel findByName(String name, Collection<ContainerModel> containers) {
@@ -258,19 +264,19 @@ public class Content extends ConfigModel {
             return null;
         }
 
-        private void addIndexingChainsTo(ContainerCluster<?> indexer, IndexedSearchCluster cluster) {
+        private void addIndexingChainsTo(ContainerCluster<?> indexer, Content content, IndexingDocproc indexingDocproc) {
             addIndexingChain(indexer);
             DocprocChain indexingChain;
             ComponentRegistry<DocprocChain> allChains = indexer.getDocprocChains().allChains();
-            if (cluster.hasExplicitIndexingChain()) {
-                indexingChain = allChains.getComponent(cluster.getIndexingChainName());
+            if (indexingDocproc.hasExplicitChain() && !indexingDocproc.getChainName().equals(IndexingDocprocChain.NAME)) {
+                indexingChain = allChains.getComponent(indexingDocproc.getChainName());
                 if (indexingChain == null) {
-                    throw new IllegalArgumentException(cluster + " refers to docproc " +
-                                                       "chain '" + cluster.getIndexingChainName() +
+                    throw new IllegalArgumentException(content.getCluster() + " refers to docproc " +
+                                                       "chain '" + indexingDocproc.getChainName() +
                                                        "' for indexing, but this chain does not exist");
                 }
                 else if (indexingChain.getId().getName().equals("default")) {
-                    throw new IllegalArgumentException(cluster + " specifies the chain " +
+                    throw new IllegalArgumentException(content.getCluster() + " specifies the chain " +
                                                        "'default' as indexing chain. As the 'default' chain is run by default, " +
                                                        "using it as the indexing chain will run it twice. " +
                                                        "Use a different name for the indexing chain.");
@@ -282,7 +288,7 @@ public class Content extends ConfigModel {
                 indexingChain = allChains.getComponent(IndexingDocprocChain.NAME);
             }
 
-            cluster.setIndexingChain(indexingChain);
+            indexingDocproc.setChain(indexingChain);
         }
 
         private TreeConfigProducer<AnyConfigProducer> getDocProc(ApplicationConfigProducerRoot root) {
@@ -301,7 +307,7 @@ public class Content extends ConfigModel {
                                                    Content content,
                                                    ConfigModelContext modelContext,
                                                    ApplicationConfigProducerRoot root) {
-            String indexerName = cluster.getIndexingClusterName();
+            String indexerName = cluster.getIndexingDocproc().getClusterName(content.getCluster().getName());
             TreeConfigProducer<AnyConfigProducer> parent = getDocProc(root);
             ApplicationContainerCluster indexingCluster = new ApplicationContainerCluster(parent, "cluster." + indexerName, indexerName, modelContext.getDeployState());
             ContainerModel indexingClusterModel = new ContainerModel(modelContext.withParent(parent).withId(indexingCluster.getSubId()));
@@ -334,7 +340,7 @@ public class Content extends ConfigModel {
             indexingCluster.addContainers(nodes);
 
             addIndexingChain(indexingCluster);
-            cluster.setIndexingChain(indexingCluster.getDocprocChains().allChains().getComponent(IndexingDocprocChain.NAME));
+            cluster.getIndexingDocproc().setChain(indexingCluster.getDocprocChains().allChains().getComponent(IndexingDocprocChain.NAME));
         }
 
         private ContainerCluster<?> getContainerWithDocproc(Collection<ContainerModel> containers) {
