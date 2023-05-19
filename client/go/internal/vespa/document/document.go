@@ -1,6 +1,7 @@
 package document
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -319,8 +320,9 @@ loop:
 }
 
 func NewDecoder(r io.Reader) *Decoder {
+	br := bufio.NewReaderSize(r, 1<<26)
 	d := &Decoder{}
-	d.dec = json.NewDecoder(io.TeeReader(r, &d.buf))
+	d.dec = json.NewDecoder(io.TeeReader(br, &d.buf))
 	return d
 }
 
