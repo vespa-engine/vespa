@@ -27,7 +27,6 @@ public enum ConfigServerMetrics implements VespaMetrics {
     MAINTENANCE_DEPLOYMENT_TRANSIENT_FAILURE("maintenanceDeployment.transientFailure", Unit.OPERATION, "Number of maintenance deployments that failed with a transient failure"),
     MAINTENANCE_DEPLOYMENT_FAILURE("maintenanceDeployment.failure", Unit.OPERATION, "Number of maintenance deployments that failed with a permanent failure"),
 
-
     // ZooKeeper related metrics
     ZK_CONNECTIONS_LOST("configserver.zkConnectionLost", Unit.CONNECTION, "Number of ZooKeeper connections lost"),
     ZK_RECONNECTED("configserver.zkReconnected", Unit.CONNECTION, "Number of ZooKeeper reconnections"),
@@ -45,8 +44,13 @@ public enum ConfigServerMetrics implements VespaMetrics {
     ORCHESTRATOR_LOCK_ACQUIRE_TIMEOUT("orchestrator.lock.acquire-timedout", Unit.OPERATION, "Number of times zookeeper lock couldn't be acquired within timeout"),
     ORCHESTRATOR_LOCK_ACQUIRE("orchestrator.lock.acquire", Unit.OPERATION, "Number of attempts to acquire zookeeper lock"),
     ORCHESTRATOR_LOCK_ACQUIRED("orchestrator.lock.acquired", Unit.OPERATION, "Number of times zookeeper lock was acquired"),
-    ORCHESTRATOR_LOCK_HOLD_LATENCY("orchestrator.lock.hold-latency", Unit.SECOND, "Time zookeeper lock was held before it was released");
+    ORCHESTRATOR_LOCK_HOLD_LATENCY("orchestrator.lock.hold-latency", Unit.SECOND, "Time zookeeper lock was held before it was released"),
 
+    // Node repository metrics
+    CLUSTER_COST("cluster.cost", Unit.DOLLAR_PER_HOUR, "The cost of the nodes allocated to a certain cluster, in $/hr"),
+    CLUSTER_LOAD_IDEAL_CPU("cluster.load.ideal.cpu", Unit.FRACTION, "The ideal cpu load of a certain cluster"),
+    CLUSTER_LOAD_IDEAL_MEMORY("cluster.load.ideal.memory", Unit.FRACTION, "The ideal memory load of a certain cluster"),
+    CLUSTER_LOAD_IDEAL_DISK("cluster.load.ideal.disk", Unit.FRACTION, "The ideal disk load of a certain cluster");
 
     private final String name;
     private final Unit unit;

@@ -57,7 +57,7 @@ public class SimpleTokenizer implements Tokenizer {
     }
 
     /** Tokenize the input, and apply the given transform to each token string. */
-    public Iterable<Token> tokenize(String input, Function<String, String> tokenProocessor) {
+    public Iterable<Token> tokenize(String input, Function<String, String> tokenProcessor) {
         if (input.isEmpty()) return List.of();
 
         List<Token> tokens = new ArrayList<>();
@@ -71,7 +71,7 @@ public class SimpleTokenizer implements Tokenizer {
                 String original = input.substring(prev, next);
                 tokens.add(new SimpleToken(original).setOffset(prev)
                                                     .setType(tokenType)
-                                                    .setTokenString(tokenProocessor.apply(original)));
+                                                    .setTokenString(tokenProcessor.apply(original)));
                 prev = next;
                 prevType = nextType;
                 tokenType = prevType;
