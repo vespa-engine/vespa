@@ -1,6 +1,6 @@
 module github.com/vespa-engine/vespa/client/go
 
-go 1.18
+go 1.19
 
 require (
 	github.com/alessio/shellescape v1.4.1
