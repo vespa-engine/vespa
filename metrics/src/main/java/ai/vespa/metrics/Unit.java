@@ -86,7 +86,7 @@ public enum Unit {
         FILE("file"),
         FRACTION("fraction"),
         HIT("hit"),
-        HOUR("hout"),
+        HOUR("hour"),
         INSTANCE("instance"),
         ITEM("item"),
         MILLISECOND("millisecond", "ms"),
