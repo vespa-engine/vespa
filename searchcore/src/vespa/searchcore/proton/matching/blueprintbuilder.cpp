@@ -30,21 +30,21 @@ struct Mixer {
     }
 
     Blueprint::UP mix(Blueprint::UP indexes) {
-        if (attributes.get() == 0) {
-            if (indexes.get() == 0) {
+        if ( ! attributes) {
+            if ( ! indexes) {
                 return std::make_unique<EmptyBlueprint>();
             }
-            return Blueprint::UP(std::move(indexes));
+            return indexes;
         }
-        if (indexes.get() == 0) {
+        if ( ! indexes) {
             if (attributes->childCnt() == 1) {
                 return attributes->removeChild(0);
             } else {
-                return Blueprint::UP(std::move(attributes));
+                return std::move(attributes);
             }
         }
-        attributes->addChild(Blueprint::UP(std::move(indexes)));
-        return Blueprint::UP(std::move(attributes));
+        attributes->addChild(std::move(indexes));
+        return std::move(attributes);
     }
 };
 
@@ -88,6 +88,7 @@ private:
     void buildEquiv(ProtonEquiv &n) {
         double eqw = n.getWeight().percent();
         FieldSpecBaseList specs;
+        specs.reserve(n.numFields());
         for (size_t i = 0; i < n.numFields(); ++i) {
             specs.add(n.field(i).fieldSpec());
         }
@@ -123,9 +124,7 @@ private:
             assert(field.getFieldId() != search::fef::IllegalFieldId);
             assert(field.getHandle() != search::fef::IllegalHandle);
             if (field.attribute_field) {
-                FieldSpecList attrField;
-                attrField.add(field.fieldSpec());
-                mixer.addAttribute(_context.getAttributes().createBlueprint(_requestContext, attrField, n));
+                mixer.addAttribute(_context.getAttributes().createBlueprint(_requestContext, field.fieldSpec(), n));
             } else {
                 indexFields.add(field.fieldSpec());
             }

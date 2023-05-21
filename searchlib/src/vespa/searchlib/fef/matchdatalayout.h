@@ -14,14 +14,16 @@ namespace search::fef {
 class MatchDataLayout
 {
 private:
-    uint32_t _numTermFields;
     std::vector<uint32_t> _fieldIds;
-
 public:
     /**
      * Create an empty object.
      **/
     MatchDataLayout();
+    MatchDataLayout(MatchDataLayout &&) noexcept = default;
+    MatchDataLayout & operator=(MatchDataLayout &&) noexcept = default;
+    MatchDataLayout(const MatchDataLayout &) = default;
+    MatchDataLayout & operator=(const MatchDataLayout &) = delete;
     ~MatchDataLayout();
 
     /**
@@ -32,8 +34,9 @@ public:
      **/
     TermFieldHandle allocTermField(uint32_t fieldId) {
         _fieldIds.push_back(fieldId);
-        return _numTermFields++;
+        return _fieldIds.size() - 1;
     }
+    void reserve(size_t sz) { _fieldIds.reserve(sz); }
 
     /**
      * Create a match data object with the layout described by this

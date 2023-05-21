@@ -44,7 +44,7 @@ public:
                              score_t scoreThreshold,
                              double thresholdBoostFactor,
                              uint32_t scoresAdjustFrequency);
-    virtual ~ParallelWeakAndBlueprint() override;
+    ~ParallelWeakAndBlueprint() override;
 
     const WeakAndHeap &getScores() const { return _scores; }
 
@@ -56,6 +56,7 @@ public:
     FieldSpec getNextChildField(const FieldSpec &outer);
 
     // Used by create visitor
+    void reserve(size_t num_children);
     void addTerm(Blueprint::UP term, int32_t weight);
 
     SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;

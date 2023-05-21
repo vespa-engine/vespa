@@ -3,8 +3,6 @@
 #include "same_element_blueprint.h"
 #include "same_element_search.h"
 #include "field_spec.hpp"
-#include "andsearch.h"
-#include "emptysearch.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -66,8 +64,7 @@ SameElementBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 std::unique_ptr<SameElementSearch>
 SameElementBlueprint::create_same_element_search(search::fef::TermFieldMatchData& tfmd, bool strict) const
 {
-    fef::MatchDataLayout my_layout = _layout;
-    fef::MatchData::UP md = my_layout.createMatchData();
+    fef::MatchData::UP md = _layout.createMatchData();
     std::vector<ElementIterator::UP> children(_terms.size());
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
