@@ -1,13 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.SlimeUtils;
-
-import java.util.stream.Stream;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
  * An exception due to server error, a bad request, or similar.
  *
@@ -49,17 +42,8 @@ public class ConfigServerException extends RuntimeException {
         CERTIFICATE_NOT_READY,
         LOAD_BALANCER_NOT_READY,
         INCOMPLETE_RESPONSE,
-        CONFIG_NOT_CONVERGED
-    }
-
-    public static ConfigServerException readException(byte[] body, String context) {
-        Inspector root = SlimeUtils.jsonToSlime(body).get();
-        String codeName = root.field("error-code").asString();
-        ErrorCode code = Stream.of(ErrorCode.values())
-                               .filter(value -> value.name().equals(codeName))
-                               .findAny().orElse(ErrorCode.INCOMPLETE_RESPONSE);
-        String message = root.field("message").valid() ? root.field("message").asString() : new String(body, UTF_8);
-        return new ConfigServerException(code, message, context);
+        CONFIG_NOT_CONVERGED,
+        QUOTA_EXCEEDED
     }
 
 }

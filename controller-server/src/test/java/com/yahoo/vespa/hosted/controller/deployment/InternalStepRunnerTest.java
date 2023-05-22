@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -45,12 +44,12 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.inst
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.quotaExceeded;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -538,6 +537,18 @@ public class InternalStepRunnerTest {
         tester.clock().advance(InternalStepRunner.Timeouts.of(system()).testerCertificate().plus(Duration.ofSeconds(1)));
         tester.runner().run();
         assertEquals(RunStatus.error, tester.jobs().run(id).status());
+    }
+
+
+    @Test
+    public void quotaExceededAbortsJob() {
+        RuntimeException exception = new ConfigServerException(ConfigServerException.ErrorCode.QUOTA_EXCEEDED,
+                                                               "Quota exceeded",
+                                                               "deploy failure");
+        tester.configServer().throwOnNextPrepare(exception);
+        tester.jobs().deploy(app.instanceId(), DeploymentContext.devUsEast1, Optional.empty(), applicationPackage());
+        assertEquals(failed, tester.jobs().last(app.instanceId(), DeploymentContext.devUsEast1).get().stepStatuses().get(Step.deployReal));
+        assertEquals(quotaExceeded, tester.jobs().last(app.instanceId(), DeploymentContext.devUsEast1).get().status());
     }
 
     private void assertTestLogEntries(RunId id, Step step, LogEntry... entries) {
