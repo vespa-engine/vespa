@@ -71,13 +71,13 @@ import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.cancelled;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.invalidApplication;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.quotaExceeded;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
@@ -267,10 +267,6 @@ public class InternalStepRunner implements StepRunner {
                 case BAD_REQUEST -> {
                     logger.log(WARNING, e.getMessage());
                     return Optional.of(deploymentFailed);
-                }
-                case QUOTA_EXCEEDED -> {
-                    logger.log(WARNING, e.getMessage());
-                    return Optional.of(quotaExceeded);
                 }
             }
 
@@ -832,9 +828,6 @@ public class InternalStepRunner implements StepRunner {
             case error:
             case endpointCertificateTimeout:
                 break;
-            case quotaExceeded:
-                updater.accept("quota exceeded. Contact support to upgrade your plan.");
-                return;
             default:
                 logger.log(WARNING, "Don't know what to set console notification to for run status '" + run.status() + "'");
         }

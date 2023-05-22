@@ -53,8 +53,7 @@ public class HttpErrorResponse extends HttpResponse {
         LOAD_BALANCER_NOT_READY,
         CONFIG_NOT_CONVERGED,
         REINDEXING_STATUS_UNAVAILABLE,
-        PRECONDITION_FAILED,
-        QUOTA_EXCEEDED
+        PRECONDITION_FAILED
     }
 
     public static HttpErrorResponse notFoundError(String msg) {
@@ -119,10 +118,6 @@ public class HttpErrorResponse extends HttpResponse {
 
     public static HttpResponse preconditionFailed(String msg) {
         return new HttpErrorResponse(PRECONDITION_FAILED, ErrorCode.PRECONDITION_FAILED.name(), msg);
-    }
-
-    public static HttpResponse quotaExceeded(String msg) {
-        return new HttpErrorResponse(BAD_REQUEST, ErrorCode.QUOTA_EXCEEDED.name(), msg);
     }
 
     @Override

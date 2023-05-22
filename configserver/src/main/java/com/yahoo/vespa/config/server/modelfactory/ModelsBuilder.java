@@ -14,7 +14,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeAllocationException;
-import com.yahoo.config.provision.QuotaExceededException;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.http.InternalServerException;
@@ -123,7 +122,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                                buildLatestModelForThisMajor, majorVersion));
                 buildLatestModelForThisMajor = false; // We have successfully built latest model version, do it only for this major
             }
-            catch (NodeAllocationException | ApplicationLockException | TransientException | QuotaExceededException e) {
+            catch (NodeAllocationException | ApplicationLockException | TransientException e) {
                 // Don't wrap this exception, and don't try to load other model versions as this is (most likely)
                 // caused by the state of the system, not the model version/application combination
                 throw e;

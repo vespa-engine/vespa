@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.DelayCause;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.Readiness;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.StepType;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -239,7 +240,6 @@ class JobControllerApiHandlerHelper {
             case installationFailed                   -> "installationFailed";
             case invalidApplication, deploymentFailed -> "deploymentFailed";
             case success                              -> "success";
-            case quotaExceeded                        -> "quotaExceeded";
         };
     }
 
