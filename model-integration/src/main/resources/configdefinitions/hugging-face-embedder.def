@@ -25,4 +25,5 @@ normalize bool default=false
 transformerExecutionMode enum { parallel, sequential } default=sequential
 transformerInterOpThreads int default=1
 transformerIntraOpThreads int default=-4
-transformerGpuDevice      int default=-1
+# GPU device id, -1 for CPU
+transformerGpuDevice      int default=0
