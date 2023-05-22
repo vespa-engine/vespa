@@ -86,11 +86,6 @@ public:
         return false;
     }
 
-    void swap(NodeElement &rhs) {
-        std::swap(_node, rhs._node);
-        std::swap(_idx, rhs._idx);
-    }
-
     bool operator!=(const NodeElement &rhs) const {
         return (_node != rhs._node) || (_idx != rhs._idx);
     }

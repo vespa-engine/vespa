@@ -13,10 +13,10 @@ namespace vespalib::btree {
 
 template <typename, typename, typename, size_t, size_t>
 class BTreeNodeAllocator;
-template <typename, typename, typename, size_t, size_t, class> class
-BTreeBuilder;
-template <typename, typename, typename, size_t, size_t, class> class
-BTreeAggregator;
+template <typename, typename, typename, size_t, size_t, class>
+class BTreeBuilder;
+template <typename, typename, typename, size_t, size_t, class>
+class BTreeAggregator;
 
 template <typename KeyT,
           typename DataT,
