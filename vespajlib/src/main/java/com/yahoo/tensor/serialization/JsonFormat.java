@@ -213,7 +213,7 @@ public class JsonFormat {
         if (root.field("cells").valid() && ! primitiveContent(root.field("cells")))
             decodeCells(root.field("cells"), builder);
         else if (root.field("values").valid() && builder.type().dimensions().stream().allMatch(d -> d.isIndexed()))
-            decodeValues(root.field("values"), builder);
+            decodeValuesAtTop(root.field("values"), builder);
         else if (root.field("blocks").valid())
             decodeBlocks(root.field("blocks"), builder);
         else
@@ -252,11 +252,11 @@ public class JsonFormat {
         builder.cell(asAddress(key, builder.type()), decodeNumeric(value));
     }
 
-    private static void decodeValues(Inspector values, Tensor.Builder builder) {
-        decodeValues(values, builder, new MutableInteger(0));
+    private static void decodeValuesAtTop(Inspector values, Tensor.Builder builder) {
+        decodeNestedValues(values, builder, new MutableInteger(0));
     }
 
-    private static void decodeValues(Inspector values, Tensor.Builder builder, MutableInteger index) {
+    private static void decodeNestedValues(Inspector values, Tensor.Builder builder, MutableInteger index) {
         if ( ! (builder instanceof IndexedTensor.BoundBuilder indexedBuilder))
             throw new IllegalArgumentException("An array of values can only be used with a dense tensor. Use a map instead");
         if (values.type() == Type.STRING) {
@@ -275,7 +275,7 @@ public class JsonFormat {
 
         values.traverse((ArrayTraverser) (__, value) -> {
             if (value.type() == Type.ARRAY)
-                decodeValues(value, builder, index);
+                decodeNestedValues(value, builder, index);
             else if (value.type() == Type.LONG || value.type() == Type.DOUBLE)
                 indexedBuilder.cellByDirectIndex(index.next(), value.asDouble());
             else
@@ -300,7 +300,7 @@ public class JsonFormat {
         if (block.type() != Type.OBJECT)
             throw new IllegalArgumentException("Expected an item in a blocks array to be an object, not " + block.type());
         mixedBuilder.block(decodeAddress(block.field("address"), mixedBuilder.type().mappedSubtype()),
-                           decodeValues(block.field("values"), mixedBuilder));
+                           decodeValuesInBlock(block.field("values"), mixedBuilder));
     }
 
     /** Decodes a tensor value directly at the root, where the format is decided by the tensor type. */
@@ -311,7 +311,7 @@ public class JsonFormat {
         if (isArrayOfObjects(root))
             decodeCells(root, builder);
         else if ( ! hasMapped)
-            decodeValues(root, builder);
+            decodeValuesAtTop(root, builder);
         else if (hasMapped && hasIndexed)
             decodeBlocks(root, builder);
         else
@@ -330,7 +330,7 @@ public class JsonFormat {
         if (value.type() != Type.ARRAY)
             throw new IllegalArgumentException("Expected an item in a blocks array to be an array, not " + value.type());
         mixedBuilder.block(asAddress(key, mixedBuilder.type().mappedSubtype()),
-                           decodeValues(value, mixedBuilder));
+                           decodeValuesInBlock(value, mixedBuilder));
     }
 
     private static byte decodeHex(String input, int index) {
@@ -408,7 +408,7 @@ public class JsonFormat {
         };
     }
 
-    private static double[] decodeValues(Inspector valuesField, MixedTensor.BoundBuilder mixedBuilder) {
+    private static double[] decodeValuesInBlock(Inspector valuesField, MixedTensor.BoundBuilder mixedBuilder) {
         double[] values = new double[(int)mixedBuilder.denseSubspaceSize()];
         if (valuesField.type() == Type.ARRAY) {
             if (valuesField.entries() == 0) {
