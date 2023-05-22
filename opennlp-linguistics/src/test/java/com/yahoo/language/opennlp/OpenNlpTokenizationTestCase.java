@@ -165,11 +165,18 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testTokenizeEmojis() {
-        String emoji = "\uD83D\uDD2A"; // 🔪
-        Iterator<Token> tokens = tokenizer.tokenize(emoji, Language.ENGLISH, StemMode.ALL, true).iterator();
-        assertTrue(tokens.hasNext());
-        assertEquals(emoji, tokens.next().getTokenString());
-        assertFalse(tokens.hasNext());
+        String emoji1 = "\uD83D\uDD2A"; // 🔪
+        Iterator<Token> tokens1 = tokenizer.tokenize(emoji1, Language.ENGLISH, StemMode.ALL, true).iterator();
+        assertTrue(tokens1.hasNext());
+        assertEquals(emoji1, tokens1.next().getTokenString());
+        assertFalse(tokens1.hasNext());
+
+        String emoji2 = "\uD83D\uDE00"; // 😀
+        Iterator<Token> tokens2 = tokenizer.tokenize(emoji1 + emoji2, Language.ENGLISH, StemMode.ALL, true).iterator();
+        assertTrue(tokens2.hasNext());
+        assertEquals(emoji1, tokens2.next().getTokenString());
+        assertEquals(emoji2, tokens2.next().getTokenString());
+        assertFalse(tokens2.hasNext());
     }
 
     @Test

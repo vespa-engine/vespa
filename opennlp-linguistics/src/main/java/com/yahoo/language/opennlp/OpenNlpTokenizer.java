@@ -25,7 +25,6 @@ import java.util.List;
  */
 public class OpenNlpTokenizer implements Tokenizer {
 
-    private final static int SPACE_CODE = 32;
     private final Normalizer normalizer;
     private final Transformer transformer;
     private final SimpleTokenizer simpleTokenizer;
@@ -74,26 +73,26 @@ public class OpenNlpTokenizer implements Tokenizer {
     }
 
     private SnowballStemmer.ALGORITHM algorithmFor(Language language) {
-        switch (language) {
-            case DANISH: return SnowballStemmer.ALGORITHM.DANISH;
-            case DUTCH: return SnowballStemmer.ALGORITHM.DUTCH;
-            case FINNISH: return SnowballStemmer.ALGORITHM.FINNISH;
-            case FRENCH: return SnowballStemmer.ALGORITHM.FRENCH;
-            case GERMAN: return SnowballStemmer.ALGORITHM.GERMAN;
-            case HUNGARIAN: return SnowballStemmer.ALGORITHM.HUNGARIAN;
-            case IRISH: return SnowballStemmer.ALGORITHM.IRISH;
-            case ITALIAN: return SnowballStemmer.ALGORITHM.ITALIAN;
-            case NORWEGIAN_BOKMAL: return SnowballStemmer.ALGORITHM.NORWEGIAN;
-            case NORWEGIAN_NYNORSK: return SnowballStemmer.ALGORITHM.NORWEGIAN;
-            case PORTUGUESE: return SnowballStemmer.ALGORITHM.PORTUGUESE;
-            case ROMANIAN: return SnowballStemmer.ALGORITHM.ROMANIAN;
-            case RUSSIAN: return SnowballStemmer.ALGORITHM.RUSSIAN;
-            case SPANISH: return SnowballStemmer.ALGORITHM.SPANISH;
-            case SWEDISH: return SnowballStemmer.ALGORITHM.SWEDISH;
-            case TURKISH: return SnowballStemmer.ALGORITHM.TURKISH;
-            case ENGLISH: return SnowballStemmer.ALGORITHM.ENGLISH;
-            default: return null;
-        }
+        return switch (language) {
+            case DANISH -> SnowballStemmer.ALGORITHM.DANISH;
+            case DUTCH -> SnowballStemmer.ALGORITHM.DUTCH;
+            case FINNISH -> SnowballStemmer.ALGORITHM.FINNISH;
+            case FRENCH -> SnowballStemmer.ALGORITHM.FRENCH;
+            case GERMAN -> SnowballStemmer.ALGORITHM.GERMAN;
+            case HUNGARIAN -> SnowballStemmer.ALGORITHM.HUNGARIAN;
+            case IRISH -> SnowballStemmer.ALGORITHM.IRISH;
+            case ITALIAN -> SnowballStemmer.ALGORITHM.ITALIAN;
+            case NORWEGIAN_BOKMAL -> SnowballStemmer.ALGORITHM.NORWEGIAN;
+            case NORWEGIAN_NYNORSK -> SnowballStemmer.ALGORITHM.NORWEGIAN;
+            case PORTUGUESE -> SnowballStemmer.ALGORITHM.PORTUGUESE;
+            case ROMANIAN -> SnowballStemmer.ALGORITHM.ROMANIAN;
+            case RUSSIAN -> SnowballStemmer.ALGORITHM.RUSSIAN;
+            case SPANISH -> SnowballStemmer.ALGORITHM.SPANISH;
+            case SWEDISH -> SnowballStemmer.ALGORITHM.SWEDISH;
+            case TURKISH -> SnowballStemmer.ALGORITHM.TURKISH;
+            case ENGLISH -> SnowballStemmer.ALGORITHM.ENGLISH;
+            default -> null;
+        };
     }
 
 }

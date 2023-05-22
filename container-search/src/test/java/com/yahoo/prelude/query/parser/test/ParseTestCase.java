@@ -2589,7 +2589,7 @@ public class ParseTestCase {
         String emoji2 = "\uD83D\uDE00"; // 😀
         tester.assertParsed(emoji2, emoji2, Query.Type.ANY);
 
-        tester.assertParsed(emoji1 + emoji2, emoji1 + emoji2, Query.Type.ANY);
+        tester.assertParsed("AND " + emoji1 + " " + emoji2, emoji1 + emoji2, Query.Type.ANY);
     }
 
 }

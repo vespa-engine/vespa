@@ -1,9 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.simple;
 
+import com.yahoo.language.Language;
 import com.yahoo.language.process.AbstractTokenizerTestCase;
 import com.yahoo.language.process.StemMode;
+import com.yahoo.language.process.Token;
 import org.junit.Test;
+
+import java.util.Iterator;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Steinar Knutsen
@@ -36,9 +44,12 @@ public class SimpleTokenizerTestCase extends AbstractTokenizerTestCase {
     @Test
     public void testTokenizeEmojis() {
         TokenizerTester tester = new TokenizerTester().setStemMode(StemMode.ALL);
-        String emoji = "\uD83D\uDD2A"; // 🔪
-        tester.assertTokens(emoji, emoji);
-        tester.assertTokens(emoji + "foo", emoji, "foo");
+
+        String emoji1 = "\uD83D\uDD2A"; // 🔪
+        String emoji2 = "\uD83D\uDE00"; // 😀
+        tester.assertTokens(emoji1, emoji1);
+        tester.assertTokens(emoji1 + "foo", emoji1, "foo");
+        tester.assertTokens(emoji1 + emoji2, emoji1, emoji2);
     }
 
 }
