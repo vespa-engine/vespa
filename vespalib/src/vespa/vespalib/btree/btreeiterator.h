@@ -35,59 +35,73 @@ class NodeElement
     using NodeType = NodeT;
     using KeyType = typename NodeType::KeyType;
     using DataType = typename NodeType::DataType;
-    const NodeType *_node;
-    uint32_t        _idx;
+    uint64_t _nodeAndIdx;
 
-    NodeType * getWNode() const { return const_cast<NodeType *>(_node); }
+    NodeType * getWNode() const { return const_cast<NodeType *>(getNode()); }
+    static constexpr uint8_t NODE_BITS = 57;
+    static constexpr uint8_t IDX_BITS = 64 - NODE_BITS;
+    static constexpr uint64_t NODE_MASK = (1ul << NODE_BITS) - 1ul;
+    static constexpr uint64_t IDX_MASK = (1ul << IDX_BITS) - 1ul;
+    static constexpr uint8_t IDX_SHIFT = NODE_BITS;
+
 public:
-    NodeElement() : _node(nullptr), _idx(0u) { }
-    NodeElement(const NodeType *node, uint32_t idx) : _node(node), _idx(idx) { }
-
-    void invalidate() { _node = nullptr; _idx = 0; }
-    void setNode(const NodeType *node) { _node = node; }
-    const NodeType * getNode() const { return _node; }
-    void setIdx(uint32_t idx) { _idx = idx; }
-    uint32_t getIdx() const { return _idx; }
-    void incIdx() { ++_idx; }
-    void decIdx() { --_idx; }
-
-    void setNodeAndIdx(const NodeType *node, uint32_t idx) {
-        _node = node;
-        _idx = idx;
+    NodeElement() : _nodeAndIdx(0ul) { }
+    NodeElement(const NodeType *node, uint32_t idx) : _nodeAndIdx(uint64_t(node) | uint64_t(idx) << IDX_SHIFT) {
+        assert((uint64_t(node) & ~NODE_MASK) == 0ul);
+        assert(idx <= IDX_MASK);
     }
 
-    const KeyType & getKey() const { return _node->getKey(_idx); }
-    const DataType & getData() const { return _node->getData(_idx); }
+    void invalidate() { _nodeAndId = 0; }
+    void setNode(const NodeType *node) {
+        assert((uint64_t(node) & ~NODE_MASK) == 0ul);
+        _nodeAndIdx = (_nodeAndIdx & ~NODE_MASK) | uint64_t(node);
+    }
+    const NodeType * getNode() const { return reinterpret_cast<const NodeType *>(_nodeAndIdx & NODE_MASK); }
+    void setIdx(uint32_t idx) {
+        assert(idx <= IDX_MASK);
+        _nodeAndIdx = (_nodeAndIdx & NODE_MASK) | (uint64_t(idx) << IDX_SHIFT);
+    }
+    uint32_t getIdx() const { return _nodeAndIdx >> IDX_SHIFT; }
+    void incIdx() { setIdx(getIdx() + 1); }
+    void decIdx() { setIdx(getIdx() - 1); }
+
+    void setNodeAndIdx(const NodeType *node, uint32_t idx) {
+        assert((uint64_t(node) & ~NODE_MASK) == 0ul);
+        assert(idx <= IDX_MASK);
+        _nodeAndIdx = uint64_t(node) | uint64_t(idx) << IDX_SHIFT;
+    }
+
+    const KeyType & getKey() const { return getNode()->getKey(getIdx()); }
+    const DataType & getData() const { return getNode()->getData(getIdx()); }
     // Only use during compaction when changing reference to moved value
-    DataType &getWData() { return getWNode()->getWData(_idx); }
-    bool valid() const { return _node != nullptr; }
+    DataType &getWData() { return getWNode()->getWData(getIdx()); }
+    bool valid() const { return _nodeAndIdx != 0; }
     void adjustLeftVictimKilled() {
-        assert(_idx > 0);
-        --_idx;
+        assert(getIdx() > 0);
+        decIdx();
     }
 
     void adjustSteal(uint32_t stolen) {
-        assert(_idx + stolen < _node->validSlots());
-        _idx += stolen;
+        assert(getIdx() + stolen < getNode()->validSlots());
+        setIdx(getIdx() + stolen);
     }
 
     void adjustSplit(bool inRightSplit) {
         if (inRightSplit)
-            ++_idx;
+            incIdx();
     }
 
     bool adjustSplit(bool inRightSplit, const NodeType *splitNode) {
         adjustSplit(inRightSplit);
-        if (_idx >= _node->validSlots()) {
-            _idx -= _node->validSlots();
-            _node = splitNode;
+        if (getIdx() >= getNode()->validSlots()) {
+            setNodeAndIdx(splitNode, getIdx() - getNode()->validSlots());
             return true;
         }
         return false;
     }
 
     bool operator!=(const NodeElement &rhs) const {
-        return (_node != rhs._node) || (_idx != rhs._idx);
+        return _nodeAndIdx != rhs._nodeAndIdx;
     }
 };
 
