@@ -53,8 +53,8 @@ public class QuotaValidator extends Validator {
         }
 
         throwIfBudgetNegative(actualSpend, budget, systemName);
-        throwIfBudgetExceeded(actualSpend, budget, systemName);
-        throwIfBudgetExceeded(maxSpend, budget, systemName);
+        throwIfBudgetExceeded(actualSpend, budget, systemName, true);
+        throwIfBudgetExceeded(maxSpend, budget, systemName, false);
     }
 
     private Set<ClusterSpec.Id> adminClusterIds(VespaModel model) {
@@ -86,18 +86,22 @@ public class QuotaValidator extends Validator {
 
     private static void throwIfBudgetNegative(double spend, BigDecimal budget, SystemName systemName) {
         if (budget.doubleValue() < 0) {
-            throw new IllegalArgumentException(quotaMessage("Please free up some capacity.", systemName, spend, budget));
+            throw new IllegalArgumentException(quotaMessage("Please free up some capacity.", systemName, spend, budget, true));
         }
     }
 
-    private static void throwIfBudgetExceeded(double spend, BigDecimal budget, SystemName systemName) {
+    private static void throwIfBudgetExceeded(double spend, BigDecimal budget, SystemName systemName, boolean actual) {
         if (budget.doubleValue() < spend) {
-            throw new IllegalArgumentException(quotaMessage("Contact support to upgrade your plan.", systemName, spend, budget));
+            throw new IllegalArgumentException(quotaMessage("Contact support to upgrade your plan.", systemName, spend, budget, actual));
         }
     }
 
-    private static String quotaMessage(String message, SystemName system, double spend, BigDecimal budget) {
-        String quotaDescription = String.format(Locale.ENGLISH, "The max resources specified cost $%.2f but your quota is $%.2f", spend, budget);
+    private static String quotaMessage(String message, SystemName system, double spend, BigDecimal budget, boolean actual) {
+        String quotaDescription = String.format(Locale.ENGLISH,
+                                                "The %s cost $%.2f but your quota is $%.2f",
+                                                actual ? "resources used" : "max resources specified",
+                                                spend,
+                                                budget);
         return (system == SystemName.Public ? "" : system.value() + ": ") + quotaDescription + ": " + message;
     }
 
