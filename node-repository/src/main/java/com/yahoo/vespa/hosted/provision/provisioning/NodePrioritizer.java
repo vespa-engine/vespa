@@ -140,6 +140,7 @@ public class NodePrioritizer {
 
         for (Node host : allNodes) {
             if ( ! nodes.canAllocateTenantNodeTo(host, dynamicProvisioning)) continue;
+            if (nodes.suspended(host)) continue; // Hosts that are suspended may be down for some time, e.g. for OS upgrade
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
             if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
             if (host.exclusiveToApplicationId().isPresent()) continue; // Never allocate new nodes to exclusive hosts
