@@ -43,6 +43,7 @@ public:
     NodeElement() : _node(nullptr), _idx(0u) { }
     NodeElement(const NodeType *node, uint32_t idx) : _node(node), _idx(idx) { }
 
+    void invalidate() { _node = nullptr; _idx = 0; }
     void setNode(const NodeType *node) { _node = node; }
     const NodeType * getNode() const { return _node; }
     void setIdx(uint32_t idx) { _idx = idx; }
