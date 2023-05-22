@@ -355,6 +355,7 @@ public class DocumentV1ApiTest {
                        {
                          "pathId": "/document/v1/space/music/docid",
                          "documents": [],
+                         "documentCount": 0,
                          "message": "failure?"
                        }""", response.readAll());
         assertEquals(200, response.getStatus());
@@ -383,7 +384,8 @@ public class DocumentV1ApiTest {
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?destinationCluster=content&selection=true&cluster=content&timeout=60", POST);
         assertSameJson("""
                        {
-                         "pathId": "/document/v1/space/music/docid"
+                         "pathId": "/document/v1/space/music/docid",
+                         "documentCount": 0
                        }""",
                        response.readAll());
         assertEquals(200, response.getStatus());
@@ -416,7 +418,8 @@ public class DocumentV1ApiTest {
                                       }""");
         assertSameJson("""
                        {
-                         "pathId": "/document/v1/space/music/docid"
+                         "pathId": "/document/v1/space/music/docid",
+                         "documentCount": 0
                        }""",
                        response.readAll());
         assertEquals(200, response.getStatus());
@@ -470,6 +473,7 @@ public class DocumentV1ApiTest {
         assertSameJson("""
                        {
                          "pathId": "/document/v1/space/music/docid",
+                         "documentCount": 0,
                          "message": "boom"
                        }""",
                        response.readAll());
@@ -511,6 +515,7 @@ public class DocumentV1ApiTest {
                        {
                          "pathId": "/document/v1/space/music/group/best%27",
                          "documents": [],
+                         "documentCount": 0,
                          "message": "error"
                        }""",
                        response.readAll());

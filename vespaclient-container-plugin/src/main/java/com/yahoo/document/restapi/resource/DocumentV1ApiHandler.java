@@ -1367,8 +1367,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         try (response) {
                             callback.onEnd(response);
 
-                            if (getVisitorStatistics() != null)
-                                response.writeDocumentCount(getVisitorStatistics().getDocumentsVisited());
+                            response.writeDocumentCount(getVisitorStatistics() == null ? 0 : getVisitorStatistics().getDocumentsVisited());
 
                             if (session.get() != null)
                                 response.writeTrace(session.get().getTrace());
