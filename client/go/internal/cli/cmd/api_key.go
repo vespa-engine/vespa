@@ -58,11 +58,11 @@ func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
 	if err != nil {
 		return err
 	}
-	targetType, err := cli.config.targetType()
+	targetType, err := cli.targetType()
 	if err != nil {
 		return err
 	}
-	system, err := cli.system(targetType)
+	system, err := cli.system(targetType.name)
 	if err != nil {
 		return err
 	}

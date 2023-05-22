@@ -261,6 +261,22 @@ func TestConfigReadTLSOptions(t *testing.T) {
 	)
 }
 
+func TestConfigTargetResolving(t *testing.T) {
+	cli, _, _ := newTestCLI(t)
+	require.Nil(t, cli.Run("config", "set", "target", "https://example.com"))
+	assertTargetType(t, vespa.TargetCustom, cli)
+	require.Nil(t, cli.Run("config", "set", "target", "https://foo.bar.vespa-team.no-north-1.dev.z.vespa-app.cloud"))
+	assertTargetType(t, vespa.TargetCloud, cli)
+	require.Nil(t, cli.Run("config", "set", "target", "https://foo.bar.vespa-team.no-north-1.dev.z.vespa.oath.cloud:4443"))
+	assertTargetType(t, vespa.TargetHosted, cli)
+}
+
+func assertTargetType(t *testing.T, expected string, cli *CLI) {
+	targetType, err := cli.targetType()
+	require.Nil(t, err)
+	assert.Equal(t, expected, targetType.name)
+}
+
 func assertTLSOptions(t *testing.T, homeDir string, app vespa.ApplicationID, target string, want vespa.TLSOptions, envVars ...string) {
 	t.Helper()
 	envVars = append(envVars, "VESPA_CLI_HOME="+homeDir)
