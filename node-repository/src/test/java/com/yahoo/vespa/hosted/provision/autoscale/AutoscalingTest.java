@@ -61,7 +61,7 @@ public class AutoscalingTest {
 
         fixture.loader().applyCpuLoad(0.7f, 10);
         var scaledResources = fixture.tester().assertResources("Scaling up since resource usage is too high",
-                                                               9, 1, 3.6,  7.7, 31.7,
+                                                               8, 1, 4.0,  9.3, 36.2,
                                                                fixture.autoscale());
 
         fixture.deploy(Capacity.from(scaledResources));
@@ -83,7 +83,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(7));
         fixture.loader().applyCpuLoad(0.1f, 10);
         fixture.tester().assertResources("Scaling cpu down since usage has gone down significantly",
-                                         8, 1, 1.0, 7.3, 22.1,
+                                         7, 1, 1.1, 8.7, 25.4,
                                          fixture.autoscale());
     }
 
@@ -107,7 +107,7 @@ public class AutoscalingTest {
         fixture.loader().applyLoad(new Load(0.1, 0.1, 0.1), 3);
         fixture.loader().applyLoad(new Load(1.0, 1.0, 1.0), 1);
         fixture.tester().assertResources("Scaling up since resource usage is too high",
-                                         9, 1, 4.7, 14.8, 66.0,
+                                         8, 1, 5.3, 17.5, 75.4,
                                          fixture.autoscale());
     }
 
@@ -167,7 +167,7 @@ public class AutoscalingTest {
         var fixture = DynamicProvisioningTester.fixture().awsProdSetup(true).build();
         fixture.loader().applyLoad(new Load(1.0, 0.1, 1.0), 10);
         fixture.tester().assertResources("Scaling up (only) since resource usage is too high",
-                                         8, 1, 7.1, 8.8, 75.4,
+                                         8, 1, 7.1, 9.3, 75.4,
                                          fixture.autoscale());
     }
 
@@ -199,7 +199,7 @@ public class AutoscalingTest {
         fixture.loader().applyCpuLoad(0.70, 1);
         fixture.loader().applyCpuLoad(0.01, 100);
         fixture.tester().assertResources("Scaling up since peak resource usage is too high",
-                                         9, 1, 3.8, 7.7, 31.7,
+                                         8, 1, 4.3, 9.3, 36.2,
                                          fixture.autoscale());
     }
 
@@ -210,7 +210,7 @@ public class AutoscalingTest {
         fixture.loader().applyCpuLoad(0.70, 1);
         fixture.loader().applyCpuLoad(0.01, 100);
         fixture.tester().assertResources("Scaling up since peak resource usage is too high",
-                                         10, 1, 4, 8.0, 22.7,
+                                         9, 1, 4, 16.0, 25.5,
                                          fixture.autoscale());
     }
 
@@ -221,7 +221,7 @@ public class AutoscalingTest {
         fixture.loader().applyCpuLoad(0.70, 1);
         fixture.loader().applyCpuLoad(0.01, 100);
         fixture.tester().assertResources("Scaling up since peak resource usage is too high",
-                                         9, 1, 3.8, 8.0, 37.5,
+                                         8, 1, 4.3, 9.7, 42.9,
                                          fixture.autoscale());
     }
 
@@ -283,7 +283,7 @@ public class AutoscalingTest {
                                                     new NodeResources(100, 1000, 1000, 1, DiskSpeed.any));
         var capacity = Capacity.from(min, max);
         ClusterResources scaledResources = fixture.tester().assertResources("Scaling up",
-                                                                            13, 1, 1.5,  26.7, 26.7,
+                                                                            13, 1, 1.5,  29.1, 26.7,
                                                                             fixture.autoscale(capacity));
         assertEquals("Disk speed from new capacity is used",
                      DiskSpeed.any, scaledResources.nodeResources().diskSpeed());
@@ -401,7 +401,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyCpuLoad(0.4, 240);
         fixture.tester().assertResources("Scaling cpu up",
-                                         8, 4, 4.6,  4.0, 10.0,
+                                         8, 4, 4.6,  4.2, 10.0,
                                          fixture.autoscale());
     }
 
@@ -446,7 +446,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyCpuLoad(1.0, 120);
         fixture.tester().assertResources("Suggesting above capacity limit",
-                                         8, 1, 6.2,  7.0, 29.0,
+                                         8, 1, 6.2,  7.4, 29.0,
                                          fixture.tester().suggest(fixture.applicationId, fixture.clusterSpec.id(), min, min));
     }
 
@@ -492,7 +492,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyCpuLoad(0.9, 120);
         fixture.tester().assertResources("Scaling up to 2 nodes, scaling memory and disk down at the same time",
-                                         10, 5, 7.7,  39.3, 38.5,
+                                         10, 5, 7.7,  41.5, 38.5,
                                          fixture.autoscale());
     }
 
@@ -528,7 +528,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(timePassed.negated());
         fixture.loader().addLoadMeasurements(10, t -> t == 0 ? 200.0 : 100.0, t -> 10.0);
         fixture.tester().assertResources("Scaling up cpu, others down, changing to 1 group is cheaper",
-                                         9, 1, 2.5, 30.7, 30.1,
+                                         7, 1, 3.2, 43.3, 40.1,
                                          fixture.autoscale());
     }
 
@@ -548,7 +548,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(timePassed.negated());
         fixture.loader().addLoadMeasurements(10, t -> t == 0 ? 20.0 : 10.0, t -> 100.0);
         fixture.tester().assertResources("Scaling down since resource usage is too high, changing to 1 group is cheaper",
-                                         6, 1, 1.0,  49.1, 48.1,
+                                         5, 1, 1.0,  62.6, 60.1,
                                          fixture.autoscale());
     }
 
@@ -565,7 +565,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(1));
         fixture.loader().applyMemLoad(1.0, 1000);
         fixture.tester().assertResources("Increase group size to reduce memory load",
-                                         8, 2, 13.9,  94.5, 60.1,
+                                         8, 2, 13.9,  96.3, 60.1,
                                          fixture.autoscale());
     }
 
@@ -594,7 +594,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofHours(12 * 3 + 1));
         fixture.loader().applyCpuLoad(0.02, 120);
         fixture.tester().assertResources("Scaling down since enough time has passed",
-                                         3, 1, 1.0, 24.6, 101.4,
+                                         3, 1, 1.0, 23.6, 101.4,
                                          fixture.autoscale());
     }
 
@@ -638,7 +638,7 @@ public class AutoscalingTest {
         fixture.loader().addCpuMeasurements(0.25, 200);
 
         fixture.tester().assertResources("Scale up since we assume we need 2x cpu for growth when no data scaling time data",
-                                         10, 1, 1.2,  5.5, 22.5,
+                                         8, 1, 1.5,  7.4, 29.0,
                                          fixture.autoscale());
 
         fixture.setScalingDuration(Duration.ofMinutes(5));
@@ -647,7 +647,7 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.25, 200);
         fixture.tester().assertResources("Scale down since observed growth is slower than scaling time",
-                                         10, 1, 1.0,   5.5, 22.5,
+                                         8, 1, 1.3,   7.4, 29.0,
                                          fixture.autoscale());
 
         fixture.setScalingDuration(Duration.ofMinutes(60));
@@ -658,7 +658,7 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.25, 200);
         fixture.tester().assertResources("Scale up since observed growth is faster than scaling time",
-                                         9, 1, 1.4,  6.1, 25.3,
+                                         8, 1, 1.6,  7.4, 29.0,
                                          fixture.autoscale());
     }
 
@@ -670,12 +670,12 @@ public class AutoscalingTest {
         fixture.setScalingDuration(Duration.ofMinutes(60));
         fixture.tester().clock().advance(Duration.ofDays(2));
         Duration timeAdded = fixture.loader().addLoadMeasurements(100,
-                                                         t -> scalingFactor * (100.0 + (t < 50 ? t * t * t : 125000 - (t - 49) * (t - 49) * (t - 49))),
+                                                         t -> scalingFactor * (100.0 + (t < 50 ? t * t * t : 155000 - (t - 49) * (t - 49) * (t - 49))),
                                                          t -> 0.0);
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.7, 200);
         fixture.tester().assertResources("Scale up slightly since observed growth is faster than scaling time, but we are not confident",
-                                         10, 1, 1.0,  5.5, 22.5,
+                                         8, 1, 1.3,  7.4, 29.0,
                                          fixture.autoscale());
     }
 
@@ -693,7 +693,7 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.4, 200);
         fixture.tester.assertResources("Query and write load is equal -> scale up somewhat",
-                                       10, 1, 1.4,   5.5, 22.5,
+                                       8, 1, 1.8,   7.4, 29.0,
                                        fixture.autoscale());
 
         fixture.tester().clock().advance(Duration.ofDays(2));
@@ -702,7 +702,7 @@ public class AutoscalingTest {
         fixture.loader().addCpuMeasurements(0.4, 200);
         // TODO: Ackhually, we scale down here - why?
         fixture.tester().assertResources("Query load is 4x write load -> scale up more",
-                                         10, 1, 1.3,  5.5, 22.5,
+                                         8, 1, 1.6,  7.4, 29.0,
                                          fixture.autoscale());
 
         fixture.tester().clock().advance(Duration.ofDays(2));
@@ -710,7 +710,7 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.4, 200);
         fixture.tester().assertResources("Write load is 10x query load -> scale down",
-                                         6, 1, 1.1,  9.8, 40.5,
+                                         6, 1, 1.1,  10.0, 40.5,
                                          fixture.autoscale());
 
         fixture.tester().clock().advance(Duration.ofDays(2));
@@ -718,7 +718,7 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.4, 200);
         fixture.tester().assertResources("Query only -> largest possible",
-                                         9, 1, 2.7,  6.1, 25.3,
+                                         8, 1, 3.1,  7.4, 29.0,
                                          fixture.autoscale());
 
         fixture.tester().clock().advance(Duration.ofDays(2));
@@ -726,7 +726,7 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.4, 200);
         fixture.tester().assertResources("Write only -> smallest possible",
-                                         4, 1, 1.1,  16.4, 67.6,
+                                         4, 1, 1.1,  16.1, 67.6,
                                          fixture.autoscale());
     }
 
@@ -781,7 +781,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(1.0, 1.0, 1.0), 200);
         fixture.tester().assertResources("We scale even in dev because resources are 'required'",
-                                         3, 1, 1.0,  12.3, 62.5,
+                                         3, 1, 1.0,  13.4, 62.5,
                                          fixture.autoscale());
     }
 
@@ -851,7 +851,7 @@ public class AutoscalingTest {
         fixture.loader().applyLoad(new Load(0.06, 0.52, 0.27), 100);
         var autoscaling = fixture.autoscale();
         fixture.tester().assertResources("Scaling down",
-                                         7, 1, 2, 14.7, 384.0,
+                                         7, 1, 2, 14.5, 384.0,
                                          autoscaling);
         fixture.deploy(Capacity.from(autoscaling.resources().get()));
         assertEquals("Initial nodes are kept", initialNodes, fixture.nodes().asList());
