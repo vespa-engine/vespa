@@ -22,8 +22,8 @@ BTreeIteratorBase(const BTreeIteratorBase &other)
     for (size_t i = 0; i < _pathSize; ++i) {
         _path[i] = other._path[i];
     }
-    if (other._compatLeafNode.get()) {
-        _compatLeafNode.reset( new LeafNodeTempType(*other._compatLeafNode));
+    if (other._compatLeafNode) {
+        _compatLeafNode = std::make_unique<LeafNodeTempType>(*other._compatLeafNode);
     }
     if (other._leaf.getNode() == other._compatLeafNode.get()) {
         _leaf.setNode(_compatLeafNode.get());
@@ -435,8 +435,8 @@ BTreeIteratorBase(const KeyDataType *shortArray,
       _leafRoot(nullptr),
       _compatLeafNode()
 {
-    if(arraySize > 0) {
-        _compatLeafNode.reset(new LeafNodeTempType(shortArray, arraySize));
+    if (arraySize > 0) {
+        _compatLeafNode = std::make_unique<LeafNodeTempType>(shortArray, arraySize);
         _leaf.setNode(_compatLeafNode.get());
         _leafRoot = _leaf.getNode();
         if constexpr (AggrCalcT::hasAggregated()) {
@@ -450,7 +450,7 @@ BTreeIteratorBase(const KeyDataType *shortArray,
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
 BTreeIteratorBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, PATH_SIZE>::
-BTreeIteratorBase()
+BTreeIteratorBase() noexcept
     : _leaf(nullptr, 0u),
       _path(),
       _pathSize(0),

@@ -45,53 +45,53 @@ class NodeElement
     static constexpr uint8_t IDX_SHIFT = NODE_BITS;
 
 public:
-    NodeElement() : _nodeAndIdx(0ul) { }
-    NodeElement(const NodeType *node, uint32_t idx) : _nodeAndIdx(uint64_t(node) | uint64_t(idx) << IDX_SHIFT) {
+    NodeElement() noexcept : _nodeAndIdx(0ul) { }
+    NodeElement(const NodeType *node, uint32_t idx) noexcept : _nodeAndIdx(uint64_t(node) | uint64_t(idx) << IDX_SHIFT) {
         assert((uint64_t(node) & ~NODE_MASK) == 0ul);
         assert(idx <= IDX_MASK);
     }
 
-    void invalidate() { _nodeAndId = 0; }
-    void setNode(const NodeType *node) {
+    void invalidate() noexcept { _nodeAndIdx = 0; }
+    void setNode(const NodeType *node) noexcept {
         assert((uint64_t(node) & ~NODE_MASK) == 0ul);
         _nodeAndIdx = (_nodeAndIdx & ~NODE_MASK) | uint64_t(node);
     }
-    const NodeType * getNode() const { return reinterpret_cast<const NodeType *>(_nodeAndIdx & NODE_MASK); }
-    void setIdx(uint32_t idx) {
+    const NodeType * getNode() const noexcept { return reinterpret_cast<const NodeType *>(_nodeAndIdx & NODE_MASK); }
+    void setIdx(uint32_t idx) noexcept {
         assert(idx <= IDX_MASK);
         _nodeAndIdx = (_nodeAndIdx & NODE_MASK) | (uint64_t(idx) << IDX_SHIFT);
     }
-    uint32_t getIdx() const { return _nodeAndIdx >> IDX_SHIFT; }
-    void incIdx() { setIdx(getIdx() + 1); }
-    void decIdx() { setIdx(getIdx() - 1); }
+    uint32_t getIdx() const noexcept { return _nodeAndIdx >> IDX_SHIFT; }
+    void incIdx() noexcept { setIdx(getIdx() + 1); }
+    void decIdx() noexcept { setIdx(getIdx() - 1); }
 
-    void setNodeAndIdx(const NodeType *node, uint32_t idx) {
+    void setNodeAndIdx(const NodeType *node, uint32_t idx) noexcept {
         assert((uint64_t(node) & ~NODE_MASK) == 0ul);
         assert(idx <= IDX_MASK);
         _nodeAndIdx = uint64_t(node) | uint64_t(idx) << IDX_SHIFT;
     }
 
-    const KeyType & getKey() const { return getNode()->getKey(getIdx()); }
-    const DataType & getData() const { return getNode()->getData(getIdx()); }
+    const KeyType & getKey() const noexcept { return getNode()->getKey(getIdx()); }
+    const DataType & getData() const noexcept { return getNode()->getData(getIdx()); }
     // Only use during compaction when changing reference to moved value
-    DataType &getWData() { return getWNode()->getWData(getIdx()); }
-    bool valid() const { return _nodeAndIdx != 0; }
-    void adjustLeftVictimKilled() {
+    DataType &getWData() noexcept { return getWNode()->getWData(getIdx()); }
+    bool valid() const noexcept { return _nodeAndIdx != 0; }
+    void adjustLeftVictimKilled() noexcept {
         assert(getIdx() > 0);
         decIdx();
     }
 
-    void adjustSteal(uint32_t stolen) {
+    void adjustSteal(uint32_t stolen) noexcept {
         assert(getIdx() + stolen < getNode()->validSlots());
         setIdx(getIdx() + stolen);
     }
 
-    void adjustSplit(bool inRightSplit) {
+    void adjustSplit(bool inRightSplit) noexcept {
         if (inRightSplit)
             incIdx();
     }
 
-    bool adjustSplit(bool inRightSplit, const NodeType *splitNode) {
+    bool adjustSplit(bool inRightSplit, const NodeType *splitNode) noexcept {
         adjustSplit(inRightSplit);
         if (getIdx() >= getNode()->validSlots()) {
             setNodeAndIdx(splitNode, getIdx() - getNode()->validSlots());
@@ -100,7 +100,7 @@ public:
         return false;
     }
 
-    bool operator!=(const NodeElement &rhs) const {
+    bool operator!=(const NodeElement &rhs) const noexcept {
         return _nodeAndIdx != rhs._nodeAndIdx;
     }
 };
@@ -203,7 +203,7 @@ protected:
     /**
      * Default constructor.  Iterator is not associated with a tree.
      */
-    BTreeIteratorBase();
+    BTreeIteratorBase() noexcept;
 
     /**
      * Step iterator forwards. If at end then leave it at end.
@@ -532,7 +532,7 @@ public:
     /**
      * Default constructor.  Iterator is not associated with a tree.
      */
-    BTreeConstIterator() : ParentType() { }
+    BTreeConstIterator() noexcept : ParentType() { }
 
     /**
      * Step iterator forwards. If at end then leave it at end.

@@ -366,7 +366,7 @@ BTreeInternalNode<KeyT, AggrT, NumSlots>::cleanFrozen()
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::
-BTreeLeafNode(const KeyDataType *smallArray, uint32_t arraySize)
+BTreeLeafNode(const KeyDataType *smallArray, uint32_t arraySize) noexcept
     : ParentType(LEAF_LEVEL)
 {
     assert(arraySize <= BTreeLeafNode::maxSlots());
