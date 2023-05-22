@@ -44,12 +44,9 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
 
         // Be a bit more cautious when removing nodes permanently
         if (!permanent) {
-            // Disallow suspending a 2nd and downed config server to avoid losing ZK quorum.
-            if (!clusterApi.isConfigServerLike()) {
-                Optional<SuspensionReasons> suspensionReasons = clusterApi.allServicesDown();
-                if (suspensionReasons.isPresent()) {
-                    return suspensionReasons.get();
-                }
+            Optional<SuspensionReasons> suspensionReasons = clusterApi.allServicesDown();
+            if (suspensionReasons.isPresent()) {
+                return suspensionReasons.get();
             }
         }
 
