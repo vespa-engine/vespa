@@ -860,6 +860,7 @@ void
 CreateBlueprintVisitor::createShallowWeightedSet(WS *bp, MultiTerm &n, const FieldSpec &fs, bool isInteger) {
     Blueprint::UP result(bp);
     SearchContextParams scParams = createContextParams();
+    bp->reserve(n.getNumTerms());
     for (uint32_t i(0); i < n.getNumTerms(); i++) {
         FieldSpec childfs = bp->getNextChildField(fs);
         auto term = n.getAsString(i);

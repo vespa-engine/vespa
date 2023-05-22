@@ -44,7 +44,7 @@ public:
     };
 
 private:
-    std::vector<FieldEntry> _fields;
+    vespalib::SmallVector<FieldEntry, 1u> _fields;
 
     void propagate_document_frequency(uint32_t matching_count_doc, uint32_t total_doc_count);
 

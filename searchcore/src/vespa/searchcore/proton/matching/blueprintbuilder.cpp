@@ -23,7 +23,7 @@ struct Mixer {
     Mixer() : attributes() {}
 
     void addAttribute(Blueprint::UP attr) {
-        if (attributes.get() == 0) {
+        if ( ! attributes) {
             attributes = std::make_unique<OrBlueprint>();
         }
         attributes->addChild(std::move(attr));
@@ -62,6 +62,7 @@ private:
     void buildChildren(IntermediateBlueprint &parent,
                        const std::vector<search::query::Node *> &children)
     {
+        parent.reserve(children.size());
         for (size_t i = 0; i < children.size(); ++i) {
             parent.addChild(BlueprintBuilder::build(_requestContext, *children[i], _context));
         }
