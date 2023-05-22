@@ -160,7 +160,7 @@ public class InMemoryProvisioner implements HostProvisioner {
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         provisioned.add(cluster.id(), requested);
         clusters.add(cluster);
-        if (environment == Environment.dev) {
+        if (environment == Environment.dev && ! requested.isRequired()) {
             requested = requested.withLimits(requested.minResources().withNodes(1),
                                              requested.maxResources().withNodes(1));
         }

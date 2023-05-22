@@ -25,7 +25,7 @@ type Dispatcher struct {
 	msgs    chan string
 
 	inflight      map[string]*Queue[documentOp]
-	inflightCount int64
+	inflightCount atomic.Int64
 	output        io.Writer
 	verbose       bool
 
@@ -76,7 +76,7 @@ func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 	}
 	if result.HTTPStatus == 429 || result.HTTPStatus == 503 {
 		d.msgs <- fmt.Sprintf("feed: %s was throttled with status %d: retrying", op.document, result.HTTPStatus)
-		d.throttler.Throttled(atomic.LoadInt64(&d.inflightCount))
+		d.throttler.Throttled(d.inflightCount.Load())
 		return true
 	}
 	if result.Err != nil || result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 504 {
@@ -226,20 +226,20 @@ func (d *Dispatcher) acceptDocument() bool {
 }
 
 func (d *Dispatcher) acquireSlot() {
-	for atomic.LoadInt64(&d.inflightCount) >= d.throttler.TargetInflight() {
+	for d.inflightCount.Load() >= d.throttler.TargetInflight() {
 		time.Sleep(time.Millisecond)
 	}
-	atomic.AddInt64(&d.inflightCount, 1)
+	d.inflightCount.Add(1)
 }
 
-func (d *Dispatcher) releaseSlot() { atomic.AddInt64(&d.inflightCount, -1) }
+func (d *Dispatcher) releaseSlot() { d.inflightCount.Add(-1) }
 
 func (d *Dispatcher) Enqueue(doc Document) error { return d.enqueue(documentOp{document: doc}, false) }
 
 func (d *Dispatcher) Stats() Stats {
 	d.statsMu.Lock()
 	defer d.statsMu.Unlock()
-	d.stats.Inflight = atomic.LoadInt64(&d.inflightCount)
+	d.stats.Inflight = d.inflightCount.Load()
 	return d.stats
 }
 

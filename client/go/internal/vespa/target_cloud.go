@@ -26,6 +26,7 @@ type APIOptions struct {
 type CloudDeploymentOptions struct {
 	Deployment  Deployment
 	TLSOptions  TLSOptions
+	CustomURL   string
 	ClusterURLs map[string]string // Endpoints keyed on cluster name
 }
 
@@ -73,7 +74,15 @@ func CloudTarget(httpClient util.HTTPClient, apiAuth Authenticator, deploymentAu
 	}, nil
 }
 
-func (t *cloudTarget) findClusterURL(cluster string) (string, error) {
+func (t *cloudTarget) findClusterURL(cluster string, timeout time.Duration, runID int64) (string, error) {
+	if t.deploymentOptions.CustomURL != "" {
+		return t.deploymentOptions.CustomURL, nil
+	}
+	if t.deploymentOptions.ClusterURLs == nil {
+		if err := t.waitForEndpoints(timeout, runID); err != nil {
+			return "", err
+		}
+	}
 	clusters := make([]string, 0, len(t.deploymentOptions.ClusterURLs))
 	for c := range t.deploymentOptions.ClusterURLs {
 		clusters = append(clusters, c)
@@ -129,12 +138,7 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 		}
 		return service, nil
 	case QueryService, DocumentService:
-		if t.deploymentOptions.ClusterURLs == nil {
-			if err := t.waitForEndpoints(timeout, runID); err != nil {
-				return nil, err
-			}
-		}
-		url, err := t.findClusterURL(cluster)
+		url, err := t.findClusterURL(cluster, timeout, runID)
 		if err != nil {
 			return nil, err
 		}
