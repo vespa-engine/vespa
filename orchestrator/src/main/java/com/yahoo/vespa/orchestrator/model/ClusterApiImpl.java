@@ -136,7 +136,8 @@ class ClusterApiImpl implements ClusterApi {
                 continue;
             }
 
-            if (service.serviceStatus() == ServiceStatus.DOWN) {
+            // Disallow suspending a 2nd and downed config server to avoid losing ZK quorum.
+            if (service.serviceStatus() == ServiceStatus.DOWN && !isConfigServerLike()) {
                 Optional<Instant> since = service.serviceStatusInfo().since();
                 if (since.isEmpty()) {
                     reasons.mergeWith(SuspensionReasons.isDown(service));
