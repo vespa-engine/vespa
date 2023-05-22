@@ -25,7 +25,6 @@ import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.QuotaExceededException;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.VespaVersion;
@@ -223,7 +222,7 @@ public class VespaModelFactory implements ModelFactory {
                                                                     Exceptions.toMessageString(e));
             else
                 rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
-        } catch (IllegalArgumentException | TransientException | QuotaExceededException e) {
+        } catch (IllegalArgumentException | TransientException e) {
             rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
         } catch (Exception e) {
             throw new RuntimeException(e);

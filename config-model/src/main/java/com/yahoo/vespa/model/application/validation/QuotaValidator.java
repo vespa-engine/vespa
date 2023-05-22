@@ -6,7 +6,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.QuotaExceededException;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.model.VespaModel;
 
@@ -81,19 +80,19 @@ public class QuotaValidator extends Validator {
 
         if (!invalidClusters.isEmpty()) {
             var clusterNames = String.join(", ", invalidClusters);
-            throw new QuotaExceededException("Clusters " + clusterNames + " exceeded max cluster size of " + maxClusterSize);
+            throw new IllegalArgumentException("Clusters " + clusterNames + " exceeded max cluster size of " + maxClusterSize);
         }
     }
 
     private static void throwIfBudgetNegative(double spend, BigDecimal budget, SystemName systemName) {
         if (budget.doubleValue() < 0) {
-            throw new QuotaExceededException(quotaMessage("Please free up some capacity.", systemName, spend, budget, true));
+            throw new IllegalArgumentException(quotaMessage("Please free up some capacity.", systemName, spend, budget, true));
         }
     }
 
     private static void throwIfBudgetExceeded(double spend, BigDecimal budget, SystemName systemName, boolean actual) {
         if (budget.doubleValue() < spend) {
-            throw new QuotaExceededException(quotaMessage("Contact support to upgrade your plan.", systemName, spend, budget, actual));
+            throw new IllegalArgumentException(quotaMessage("Contact support to upgrade your plan.", systemName, spend, budget, actual));
         }
     }
 
