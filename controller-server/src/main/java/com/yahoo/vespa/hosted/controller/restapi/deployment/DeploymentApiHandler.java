@@ -268,6 +268,7 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
             case installationFailed                   -> "installationFailed";
             case invalidApplication, deploymentFailed -> "deploymentFailed";
             case success                              -> "success";
+            case quotaExceeded                        -> "quotaExceeded";
         };
     }
 

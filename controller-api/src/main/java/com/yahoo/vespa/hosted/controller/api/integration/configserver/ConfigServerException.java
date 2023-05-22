@@ -49,15 +49,17 @@ public class ConfigServerException extends RuntimeException {
         CERTIFICATE_NOT_READY,
         LOAD_BALANCER_NOT_READY,
         INCOMPLETE_RESPONSE,
-        CONFIG_NOT_CONVERGED
+        CONFIG_NOT_CONVERGED,
+        QUOTA_EXCEEDED
     }
 
+    // Note: Used by code in internal repo
     public static ConfigServerException readException(byte[] body, String context) {
         Inspector root = SlimeUtils.jsonToSlime(body).get();
         String codeName = root.field("error-code").asString();
         ErrorCode code = Stream.of(ErrorCode.values())
-                               .filter(value -> value.name().equals(codeName))
-                               .findAny().orElse(ErrorCode.INCOMPLETE_RESPONSE);
+                .filter(value -> value.name().equals(codeName))
+                .findAny().orElse(ErrorCode.INCOMPLETE_RESPONSE);
         String message = root.field("message").valid() ? root.field("message").asString() : new String(body, UTF_8);
         return new ConfigServerException(code, message, context);
     }
