@@ -35,8 +35,8 @@ public class PackageTally {
 
     public Map<String, ExportPackageAnnotation> exportedPackages() {
         Map<String, ExportPackageAnnotation> ret = new HashMap<>();
-        definedPackagesMap.forEach((k, v) -> {
-            v.ifPresent(annotation -> ret.put(k, annotation));
+        definedPackagesMap.forEach((pkg, annotation) -> {
+            annotation.ifPresent(a -> ret.put(pkg, a));
         });
         return ret;
     }
