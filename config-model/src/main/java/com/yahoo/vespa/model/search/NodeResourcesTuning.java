@@ -28,6 +28,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final double fractionOfMemoryReserved;
 
     // "Reserve" 0.5GB of memory for other processes running on the content node (config-proxy, metrics-proxy).
+    // And 0.2GB for distributor and proton basics.
     public static final double reservedMemoryGb = 0.7;
 
     public NodeResourcesTuning(NodeResources resources,
