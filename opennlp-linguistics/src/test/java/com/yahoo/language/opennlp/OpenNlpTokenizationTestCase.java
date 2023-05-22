@@ -150,8 +150,7 @@ public class OpenNlpTokenizationTestCase {
     @Test
     public void testIndexability() {
         String input = "tafsirnya\u0648\u0643\u064F\u0646\u0652";
-        for (StemMode stemMode : new StemMode[] { StemMode.NONE,
-                StemMode.SHORTEST }) {
+        for (StemMode stemMode : new StemMode[] { StemMode.NONE, StemMode.SHORTEST }) {
             for (Language l : List.of(Language.INDONESIAN, Language.ENGLISH, Language.ARABIC)) {
                 for (boolean accentDrop : new boolean[] { true, false }) {
                     for (Token token : tokenizer.tokenize(input, l, stemMode, accentDrop)) {
@@ -162,6 +161,15 @@ public class OpenNlpTokenizationTestCase {
                 }
             }
         }
+    }
+
+    @Test
+    public void testTokenizeEmojis() {
+        String emoji = "\uD83D\uDD2A"; // 🔪
+        Iterator<Token> tokens = tokenizer.tokenize(emoji, Language.ENGLISH, StemMode.ALL, true).iterator();
+        assertTrue(tokens.hasNext());
+        assertEquals(emoji, tokens.next().getTokenString());
+        assertFalse(tokens.hasNext());
     }
 
     @Test

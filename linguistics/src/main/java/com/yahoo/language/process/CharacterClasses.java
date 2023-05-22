@@ -13,9 +13,9 @@ public class CharacterClasses {
      * which are useful to view as letters even though not defined as such in unicode.
      */
     public boolean isLetter(int c) {
-        if (java.lang.Character.isLetter(c)) return true;
+        if (Character.isLetter(c)) return true;
         if (Character.isDigit(c) &&  ! isLatin(c)) return true; // Not considering these digits, so treat them as letters
-        // if (c == '_') return true;
+        if (Character.getType(c) == Character.OTHER_SYMBOL) return true; // emojis searchable
 
         // Some CJK punctuation defined as word characters
         if (c == '\u3008' || c == '\u3009' || c == '\u300a' || c == '\u300b' ||

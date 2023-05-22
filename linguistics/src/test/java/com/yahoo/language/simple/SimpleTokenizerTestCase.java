@@ -33,4 +33,12 @@ public class SimpleTokenizerTestCase extends AbstractTokenizerTestCase {
                             " ", "gods", ".", "running", ")");
     }
 
+    @Test
+    public void testTokenizeEmojis() {
+        TokenizerTester tester = new TokenizerTester().setStemMode(StemMode.ALL);
+        String emoji = "\uD83D\uDD2A"; // 🔪
+        tester.assertTokens(emoji, emoji);
+        tester.assertTokens(emoji + "foo", emoji, "foo");
+    }
+
 }
