@@ -46,7 +46,7 @@ type Client struct {
 	options     ClientOptions
 	httpClients []countingHTTPClient
 	now         func() time.Time
-	sendCount   int32
+	sendCount   atomic.Int32
 	gzippers    sync.Pool
 	buffers     sync.Pool
 	pending     chan *pendingDocument
@@ -65,13 +65,11 @@ type ClientOptions struct {
 
 type countingHTTPClient struct {
 	client   util.HTTPClient
-	inflight int64
+	inflight atomic.Int64
 }
 
-func (c *countingHTTPClient) addInflight(n int64) { atomic.AddInt64(&c.inflight, n) }
-
 func (c *countingHTTPClient) Do(req *http.Request, timeout time.Duration) (*http.Response, error) {
-	defer c.addInflight(-1)
+	defer c.inflight.Add(-1)
 	return c.client.Do(req, timeout)
 }
 
@@ -186,18 +184,18 @@ func (c *Client) methodAndURL(d Document, sb *bytes.Buffer) (string, string) {
 func (c *Client) leastBusyClient() *countingHTTPClient {
 	leastBusy := c.httpClients[0]
 	min := int64(math.MaxInt64)
-	next := atomic.AddInt32(&c.sendCount, 1)
+	next := c.sendCount.Add(1)
 	start := int(next) % len(c.httpClients)
 	for i := range c.httpClients {
 		j := (i + start) % len(c.httpClients)
 		client := c.httpClients[j]
-		inflight := atomic.LoadInt64(&client.inflight)
+		inflight := client.inflight.Load()
 		if inflight < min {
 			leastBusy = client
 			min = inflight
 		}
 	}
-	leastBusy.addInflight(1)
+	leastBusy.inflight.Add(1)
 	return &leastBusy
 }
 

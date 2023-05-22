@@ -36,13 +36,13 @@ func TestLeastBusyClient(t *testing.T) {
 		httpClients = append(httpClients, &mockHTTPClient{i, &httpClient})
 	}
 	client, _ := NewClient(ClientOptions{}, httpClients)
-	client.httpClients[0].addInflight(1)
-	client.httpClients[1].addInflight(1)
+	client.httpClients[0].inflight.Add(1)
+	client.httpClients[1].inflight.Add(1)
 	assertLeastBusy(t, 2, client)
 	assertLeastBusy(t, 2, client)
 	assertLeastBusy(t, 3, client)
-	client.httpClients[3].addInflight(1)
-	client.httpClients[1].addInflight(-1)
+	client.httpClients[3].inflight.Add(1)
+	client.httpClients[1].inflight.Add(-1)
 	assertLeastBusy(t, 1, client)
 }
 
