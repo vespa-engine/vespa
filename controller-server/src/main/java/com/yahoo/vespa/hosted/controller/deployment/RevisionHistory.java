@@ -60,7 +60,7 @@ public class RevisionHistory {
         return new RevisionHistory(production, development);
     }
 
-    /** Returns a copy of this where any obsolete production revisions older than the given one are removed. */
+    /** Returns a copy of this where any production revisions without packages, and older than the given one, are removed. */
     public RevisionHistory withoutOlderThan(RevisionId id) {
         if (production.headMap(id).isEmpty()) return this;
         NavigableMap<RevisionId, ApplicationVersion> production = new TreeMap<>(this.production);
