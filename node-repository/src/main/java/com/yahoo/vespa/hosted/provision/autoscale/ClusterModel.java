@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -8,6 +9,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -42,12 +44,16 @@ public class ClusterModel {
     static final double idealContainerDiskLoad = 0.95;
     static final double idealContentDiskLoad = 0.6;
 
+    // Memory for other processes running on the node (config-proxy, metrics-proxy).
+    // Keep in sync with config-model/NodeResourcesTuning.
+    static final double nodeMemoryOverheadGb = 0.7;
+
     // When a query is issued on a node the cost is the sum of a fixed cost component and a cost component
     // proportional to document count. We must account for this when comparing configurations with more or fewer nodes.
     // TODO: Measure this, and only take it into account with queries
     private static final double fixedCpuCostFraction = 0.1;
 
-    private final Zone zone;
+    private final NodeRepository nodeRepository;
     private final Application application;
     private final ClusterSpec clusterSpec;
     private final Cluster cluster;
@@ -69,14 +75,14 @@ public class ClusterModel {
     private Double maxQueryGrowthRate = null;
     private OptionalDouble averageQueryRate = null;
 
-    public ClusterModel(Zone zone,
+    public ClusterModel(NodeRepository nodeRepository,
                         Application application,
                         ClusterSpec clusterSpec,
                         Cluster cluster,
                         NodeList clusterNodes,
                         MetricsDb metricsDb,
                         Clock clock) {
-        this.zone = zone;
+        this.nodeRepository = nodeRepository;
         this.application = application;
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
@@ -88,7 +94,7 @@ public class ClusterModel {
         this.at = clock.instant();
     }
 
-    ClusterModel(Zone zone,
+    ClusterModel(NodeRepository nodeRepository,
                  Application application,
                  ClusterSpec clusterSpec,
                  Cluster cluster,
@@ -96,7 +102,7 @@ public class ClusterModel {
                  Duration scalingDuration,
                  ClusterTimeseries clusterTimeseries,
                  ClusterNodesTimeseries nodeTimeseries) {
-        this.zone = zone;
+        this.nodeRepository = nodeRepository;
         this.application = application;
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
@@ -179,7 +185,7 @@ public class ClusterModel {
             double queryCpu = queryCpuPerGroup * groupCount() / groups;
             double writeCpu = (double)groupSize() / groupSize;
             return new Load(queryCpuFraction() * queryCpu + (1 - queryCpuFraction()) * writeCpu,
-                            (double)groupSize() / groupSize,
+                            (1 - fixedMemoryFraction()) * (double)groupSize() / groupSize + fixedMemoryFraction() * 1,
                             (double)groupSize() / groupSize);
         }
         else {
@@ -315,7 +321,7 @@ public class ClusterModel {
 
     /** Returns the headroom for growth during organic traffic growth as a multiple of current resources. */
     private double growthRateHeadroom() {
-        if ( ! zone.environment().isProduction()) return 1;
+        if ( ! nodeRepository.zone().environment().isProduction()) return 1;
         double growthRateHeadroom = 1 + maxQueryGrowthRate() * scalingDuration().toMinutes();
         // Cap headroom at 10% above the historical observed peak
         if (queryFractionOfMax() != 0)
@@ -329,7 +335,7 @@ public class ClusterModel {
      * as a multiple of current resources.
      */
     private double trafficShiftHeadroom() {
-        if ( ! zone.environment().isProduction()) return 1;
+        if ( ! nodeRepository.zone().environment().isProduction()) return 1;
         if (canRescaleWithinBcpDeadline()) return 1;
         double trafficShiftHeadroom;
         if (application.status().maxReadShare() == 0) // No traffic fraction data
@@ -369,6 +375,34 @@ public class ClusterModel {
         return idealContentMemoryLoad;
     }
 
+    /**
+     * Returns the fraction of memory of the current allocation which is currently consumed by
+     * fixed data structures which take the same amount of space regardless of document volume.
+     */
+    private double fixedMemoryFraction() {
+        if (clusterSpec().type().isContainer()) return 1.0;
+        double fixedMemory = nodeMemoryOverheadGb +
+                             (averageRealMemory() - nodeMemoryOverheadGb) * 0.05; // TODO: Measure actual content node usage
+        return fixedMemory / averageRealMemory();
+    }
+
+    private double averageRealMemory() {
+        if (nodes.isEmpty()) { // we're estimating
+            var initialResources = new CapacityPolicies(nodeRepository).specifyFully(cluster.minResources().nodeResources(),
+                                                                                     clusterSpec,
+                                                                                     application.id());
+            return nodeRepository.resourcesCalculator().requestToReal(initialResources,
+                                                                      nodeRepository.exclusiveAllocation(clusterSpec),
+                                                                      false).memoryGb();
+        }
+        else {
+            return nodes.stream()
+                        .mapToDouble(node -> nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository).memoryGb())
+                        .average()
+                        .getAsDouble();
+        }
+    }
+
     private double idealDiskLoad() {
         // Stateless clusters are not expected to consume more disk over time -
         // if they do it is due to logs which will be rotated away right before the disk is full
@@ -380,7 +414,7 @@ public class ClusterModel {
      * This is useful in cases where it's possible to continue without the cluster model,
      * as QuestDb is known to temporarily fail during reading of data.
      */
-    public static Optional<ClusterModel> create(Zone zone,
+    public static Optional<ClusterModel> create(NodeRepository nodeRepository,
                                                 Application application,
                                                 ClusterSpec clusterSpec,
                                                 Cluster cluster,
@@ -388,7 +422,7 @@ public class ClusterModel {
                                                 MetricsDb metricsDb,
                                                 Clock clock) {
         try {
-            return Optional.of(new ClusterModel(zone, application, clusterSpec, cluster, clusterNodes, metricsDb, clock));
+            return Optional.of(new ClusterModel(nodeRepository, application, clusterSpec, cluster, clusterNodes, metricsDb, clock));
         }
         catch (Exception e) {
             log.log(Level.WARNING, "Failed creating a cluster model for " + application + " " + cluster, e);

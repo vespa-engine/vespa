@@ -525,14 +525,14 @@ public class ProvisioningTest {
         tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 20),
                                                       resources(6, 3, 3, 15, 25)));
         tester.assertNodes("Allocation preserving resources within new limits",
-                           6, 2, 3, 8.0/4*21 / (6.0/2), 25,
+                           6, 2, 3, 14.57, 25,
                            app1, cluster1);
 
         // Widening window does not change allocation
         tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 1, 5, 15),
                                                       resources(8, 4, 4, 21, 30)));
         tester.assertNodes("Same allocation",
-                           6, 2, 3, 8.0/4*21 / (6.0/2), 25,
+                           6, 2, 3, 14.57, 25,
                            app1, cluster1);
 
         // Changing limits in opposite directions cause a mixture of min and max

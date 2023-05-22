@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.yahoo.vespa.model.search.NodeResourcesTuning.reservedMemoryGb;
+import static com.yahoo.vespa.model.search.NodeResourcesTuning.nodeMemoryOverheadGb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.MB;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
@@ -33,13 +33,13 @@ public class NodeResourcesTuningTest {
 
     @Test
     void require_that_hwinfo_memory_size_is_set() {
-        assertEquals(24 * GB, configFromMemorySetting(24 + reservedMemoryGb, 0).hwinfo().memory().size());
-        assertEquals(combinedFactor * 24 * GB, configFromMemorySetting(24 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster * 0.01).hwinfo().memory().size(), 1000);
+        assertEquals(24 * GB, configFromMemorySetting(24 + nodeMemoryOverheadGb, 0).hwinfo().memory().size());
+        assertEquals(combinedFactor * 24 * GB, configFromMemorySetting(24 + nodeMemoryOverheadGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster * 0.01).hwinfo().memory().size(), 1000);
     }
 
     @Test
     void reserved_memory_on_content_node() {
-        assertEquals(0.7, reservedMemoryGb, delta);
+        assertEquals(0.7, nodeMemoryOverheadGb, delta);
     }
 
     private ProtonConfig getProtonMemoryConfig(List<Pair<String, String>> sdAndMode, double gb) {
@@ -54,7 +54,7 @@ public class NodeResourcesTuningTest {
     }
 
     private void verify_that_initial_numdocs_is_dependent_of_mode() {
-        ProtonConfig cfg = getProtonMemoryConfig(Arrays.asList(new Pair<>("a", "INDEX"), new Pair<>("b", "STREAMING"), new Pair<>("c", "STORE_ONLY")), 24 + reservedMemoryGb);
+        ProtonConfig cfg = getProtonMemoryConfig(Arrays.asList(new Pair<>("a", "INDEX"), new Pair<>("b", "STREAMING"), new Pair<>("c", "STORE_ONLY")), 24 + nodeMemoryOverheadGb);
         assertEquals(3, cfg.documentdb().size());
         assertEquals(1024, cfg.documentdb(0).allocation().initialnumdocs());
         assertEquals("a", cfg.documentdb(0).inputdoctypename());
@@ -162,14 +162,14 @@ public class NodeResourcesTuningTest {
 
     @Test
     void require_that_summary_cache_max_bytes_is_set_based_on_memory() {
-        assertEquals(1 * GB / 25, configFromMemorySetting(1 + reservedMemoryGb, 0).summary().cache().maxbytes());
-        assertEquals(256 * GB / 25, configFromMemorySetting(256 + reservedMemoryGb, 0).summary().cache().maxbytes());
+        assertEquals(1 * GB / 25, configFromMemorySetting(1 + nodeMemoryOverheadGb, 0).summary().cache().maxbytes());
+        assertEquals(256 * GB / 25, configFromMemorySetting(256 + nodeMemoryOverheadGb, 0).summary().cache().maxbytes());
     }
 
     @Test
     void require_that_summary_cache_memory_is_reduced_with_combined_cluster() {
-        assertEquals(combinedFactor * 1 * GB / 25, configFromMemorySetting(1 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster * 0.01).summary().cache().maxbytes(), 1000);
-        assertEquals(combinedFactor * 256 * GB / 25, configFromMemorySetting(256 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster * 0.01).summary().cache().maxbytes(), 1000);
+        assertEquals(combinedFactor * 1 * GB / 25, configFromMemorySetting(1 + nodeMemoryOverheadGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster * 0.01).summary().cache().maxbytes(), 1000);
+        assertEquals(combinedFactor * 256 * GB / 25, configFromMemorySetting(256 + nodeMemoryOverheadGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster * 0.01).summary().cache().maxbytes(), 1000);
     }
 
     @Test
@@ -191,12 +191,12 @@ public class NodeResourcesTuningTest {
     }
 
     private static void assertDocumentStoreMaxFileSize(long expFileSizeBytes, int wantedMemoryGb) {
-        assertEquals(expFileSizeBytes, configFromMemorySetting(wantedMemoryGb + reservedMemoryGb, 0).summary().log().maxfilesize());
+        assertEquals(expFileSizeBytes, configFromMemorySetting(wantedMemoryGb + nodeMemoryOverheadGb, 0).summary().log().maxfilesize());
     }
 
     private static void assertFlushStrategyMemory(long expMemoryBytes, int wantedMemoryGb) {
-        assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + reservedMemoryGb, 0).flush().memory().maxmemory());
-        assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + reservedMemoryGb, 0).flush().memory().each().maxmemory());
+        assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + nodeMemoryOverheadGb, 0).flush().memory().maxmemory());
+        assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + nodeMemoryOverheadGb, 0).flush().memory().each().maxmemory());
     }
 
     private static void assertFlushStrategyTlsSize(long expTlsSizeBytes, int diskGb) {

@@ -10,10 +10,12 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.HostResources;
@@ -27,6 +29,8 @@ import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsHostResourcesCalcu
 import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsNodeTypes;
 import com.yahoo.vespa.hosted.provision.provisioning.DynamicProvisioningTester;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
+import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
+
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -40,14 +44,12 @@ import java.util.Optional;
 public class Fixture {
 
     final DynamicProvisioningTester tester;
-    final Zone zone;
     final ApplicationId applicationId;
     final ClusterSpec clusterSpec;
     final Capacity capacity;
     final Loader loader;
 
     public Fixture(Fixture.Builder builder, Optional<ClusterResources> initialResources, int hostCount) {
-        zone = builder.zone;
         applicationId = builder.application;
         clusterSpec = builder.cluster;
         capacity = builder.capacity;
@@ -80,7 +82,7 @@ public class Fixture {
     public Capacity capacity() { return capacity; }
 
     public ClusterModel clusterModel() {
-        return new ClusterModel(zone,
+        return new ClusterModel(tester.nodeRepository(),
                                 application(),
                                 clusterSpec,
                                 cluster(),
