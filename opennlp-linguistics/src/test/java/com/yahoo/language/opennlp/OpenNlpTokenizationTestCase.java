@@ -150,8 +150,7 @@ public class OpenNlpTokenizationTestCase {
     @Test
     public void testIndexability() {
         String input = "tafsirnya\u0648\u0643\u064F\u0646\u0652";
-        for (StemMode stemMode : new StemMode[] { StemMode.NONE,
-                StemMode.SHORTEST }) {
+        for (StemMode stemMode : new StemMode[] { StemMode.NONE, StemMode.SHORTEST }) {
             for (Language l : List.of(Language.INDONESIAN, Language.ENGLISH, Language.ARABIC)) {
                 for (boolean accentDrop : new boolean[] { true, false }) {
                     for (Token token : tokenizer.tokenize(input, l, stemMode, accentDrop)) {
@@ -162,6 +161,22 @@ public class OpenNlpTokenizationTestCase {
                 }
             }
         }
+    }
+
+    @Test
+    public void testTokenizeEmojis() {
+        String emoji1 = "\uD83D\uDD2A"; // 🔪
+        Iterator<Token> tokens1 = tokenizer.tokenize(emoji1, Language.ENGLISH, StemMode.ALL, true).iterator();
+        assertTrue(tokens1.hasNext());
+        assertEquals(emoji1, tokens1.next().getTokenString());
+        assertFalse(tokens1.hasNext());
+
+        String emoji2 = "\uD83D\uDE00"; // 😀
+        Iterator<Token> tokens2 = tokenizer.tokenize(emoji1 + emoji2, Language.ENGLISH, StemMode.ALL, true).iterator();
+        assertTrue(tokens2.hasNext());
+        assertEquals(emoji1, tokens2.next().getTokenString());
+        assertEquals(emoji2, tokens2.next().getTokenString());
+        assertFalse(tokens2.hasNext());
     }
 
     @Test

@@ -52,7 +52,7 @@ public class NGramTestCase extends AbstractSchemaTestCase {
     @Test
     void testInvalidNGramSetting1() throws IOException, ParseException {
         try {
-            Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/invalidngram1.sd");
+            ApplicationBuilder.buildFromFile("src/test/examples/invalidngram1.sd");
             fail("Should cause an exception");
         }
         catch (IllegalArgumentException e) {
@@ -63,7 +63,7 @@ public class NGramTestCase extends AbstractSchemaTestCase {
     @Test
     void testInvalidNGramSetting2() throws IOException, ParseException {
         try {
-            Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/invalidngram2.sd");
+            ApplicationBuilder.buildFromFile("src/test/examples/invalidngram2.sd");
             fail("Should cause an exception");
         }
         catch (IllegalArgumentException e) {
@@ -74,7 +74,7 @@ public class NGramTestCase extends AbstractSchemaTestCase {
     @Test
     void testInvalidNGramSetting3() throws IOException, ParseException {
         try {
-            Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/invalidngram3.sd");
+            ApplicationBuilder.buildFromFile("src/test/examples/invalidngram3.sd");
             fail("Should cause an exception");
         }
         catch (IllegalArgumentException e) {

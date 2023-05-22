@@ -49,6 +49,17 @@ public class GramSplitterTestCase {
     }
 
     @Test
+    public void testEmojis() {
+        String emoji1 = "\uD83D\uDD2A"; // 🔪
+        String emoji2 = "\uD83D\uDE00"; // 😀
+        assertGramSplit(emoji1, 2, "[" + emoji1+ "]");
+        assertGramSplit(emoji1 + emoji2, 2, "[" + emoji1 + ", " + emoji2 + "]");
+        assertGramSplit(emoji1 + "." + emoji2, 2, "[" + emoji1 + ", " + emoji2 + "]");
+        assertGramSplit("." + emoji1 + "." + emoji2 + ".", 2, "[" + emoji1 + ", " + emoji2 + "]");
+        assertGramSplit("foo" + emoji1 + "bar" + emoji2 + "baz", 2, "[fo, oo, " + emoji1 + ", ba, ar, " + emoji2 + ", ba, az]");
+    }
+
+    @Test
     public void testSpaceCornerCases() {
         // space corner cases
         assertGramSplit("e   en   e", 1, "[e, e, n, e]");

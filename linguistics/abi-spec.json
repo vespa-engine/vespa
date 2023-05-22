@@ -322,6 +322,7 @@
     "methods" : [
       "public void <init>()",
       "public boolean isLetter(int)",
+      "public boolean isSymbol(int)",
       "public boolean isDigit(int)",
       "public boolean isLatinDigit(int)",
       "public boolean isLatin(int)",
