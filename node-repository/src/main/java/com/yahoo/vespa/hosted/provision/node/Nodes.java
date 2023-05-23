@@ -755,7 +755,6 @@ public class Nodes {
         if ( ! host.type().canRun(NodeType.tenant)) return false;
         if (host.status().wantToRetire()) return false;
         if (host.allocation().map(alloc -> alloc.membership().retired()).orElse(false)) return false;
-        if (suspended(host)) return false;
 
         if (dynamicProvisioning)
             return EnumSet.of(Node.State.active, Node.State.ready, Node.State.provisioned).contains(host.state());
