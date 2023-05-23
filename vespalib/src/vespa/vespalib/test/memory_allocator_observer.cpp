@@ -20,7 +20,7 @@ MemoryAllocatorObserver::MemoryAllocatorObserver(Stats &stats)
 }
 MemoryAllocatorObserver::~MemoryAllocatorObserver() = default;
 
-MemoryAllocatorObserver::PtrAndSize
+PtrAndSize
 MemoryAllocatorObserver::alloc(size_t sz) const
 {
     ++_stats.alloc_cnt;

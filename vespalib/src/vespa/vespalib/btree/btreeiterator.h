@@ -48,13 +48,12 @@ class NodeElement
     static_assert((NodeType::maxSlots() + 1) < (1ul << IDX_BITS), "IDX can be out of bounds above 127");
 public:
     NodeElement() noexcept : _nodeAndIdx(0ul) { }
-    NodeElement(const NodeType *node, uint32_t idx) noexcept : _nodeAndIdx(uint64_t(node) | uint64_t(idx) << IDX_SHIFT) {
-        assert((uint64_t(node) & ~NODE_MASK) == 0ul);
-    }
+    NodeElement(const NodeType *node, uint32_t idx) noexcept
+        : _nodeAndIdx(uint64_t(node) | uint64_t(idx) << IDX_SHIFT)
+    { }
 
     void invalidate() noexcept { _nodeAndIdx = 0; }
     void setNode(const NodeType *node) noexcept {
-        assert((uint64_t(node) & ~NODE_MASK) == 0ul);
         _nodeAndIdx = (_nodeAndIdx & ~NODE_MASK) | uint64_t(node);
     }
     const NodeType * getNode() const noexcept { return reinterpret_cast<const NodeType *>(_nodeAndIdx & NODE_MASK); }
@@ -66,7 +65,6 @@ public:
     void decIdx() noexcept { _nodeAndIdx -= IDX_ONE; }
 
     void setNodeAndIdx(const NodeType *node, uint32_t idx) noexcept {
-        assert((uint64_t(node) & ~NODE_MASK) == 0ul);
         _nodeAndIdx = uint64_t(node) | uint64_t(idx) << IDX_SHIFT;
     }
 

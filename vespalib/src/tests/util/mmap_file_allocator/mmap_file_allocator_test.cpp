@@ -6,6 +6,7 @@
 
 using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::MmapFileAllocator;
+using vespalib::alloc::PtrAndSize;
 
 namespace {
 
@@ -18,10 +19,10 @@ struct MyAlloc
     void*                  data;
     size_t                 size;
 
-    MyAlloc(MemoryAllocator& allocator_in, MemoryAllocator::PtrAndSize buf)
+    MyAlloc(MemoryAllocator& allocator_in, PtrAndSize buf)
         : allocator(allocator_in),
-          data(buf.first),
-          size(buf.second)
+          data(buf.get()),
+          size(buf.size())
     {
     }
 
@@ -30,7 +31,7 @@ struct MyAlloc
         allocator.free(data, size);
     }
 
-    MemoryAllocator::PtrAndSize asPair() const noexcept { return std::make_pair(data, size); }
+    PtrAndSize asPair() const noexcept { return PtrAndSize(data, size); }
 };
 
 }
