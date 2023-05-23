@@ -8,15 +8,8 @@ namespace search::attribute {
 
 using BitVectorSP = BitVectorSearchCache::BitVectorSP;
 
-BitVectorSearchCache::BitVectorSearchCache()
-    : _mutex(),
-      _cache()
-{
-}
-
-BitVectorSearchCache::~BitVectorSearchCache()
-{
-}
+BitVectorSearchCache::BitVectorSearchCache() = default;
+BitVectorSearchCache::~BitVectorSearchCache() = default;
 
 void
 BitVectorSearchCache::insert(const vespalib::string &term, Entry::SP entry)
