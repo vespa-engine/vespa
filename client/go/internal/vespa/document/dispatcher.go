@@ -20,7 +20,6 @@ type Dispatcher struct {
 	stats          Stats
 
 	started bool
-	ready   chan documentOp
 	results chan documentOp
 	msgs    chan string
 
@@ -29,7 +28,6 @@ type Dispatcher struct {
 	output        io.Writer
 	verbose       bool
 
-	queuePool  sync.Pool
 	mu         sync.Mutex
 	statsMu    sync.Mutex
 	wg         sync.WaitGroup
@@ -57,7 +55,6 @@ func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, o
 		output:         output,
 		verbose:        verbose,
 	}
-	d.queuePool.New = func() any { return NewQueue[documentOp]() }
 	d.start()
 	return d
 }
@@ -110,21 +107,12 @@ func (d *Dispatcher) start() {
 	if d.started {
 		return
 	}
-	d.ready = make(chan documentOp, 4096)
 	d.results = make(chan documentOp, 4096)
 	d.msgs = make(chan string, 4096)
 	d.started = true
-	d.wg.Add(3)
-	go d.dispatchReady()
+	d.wg.Add(2)
 	go d.processResults()
 	go d.printMessages()
-}
-
-func (d *Dispatcher) dispatchReady() {
-	defer d.wg.Done()
-	for op := range d.ready {
-		d.dispatch(op)
-	}
 }
 
 func (d *Dispatcher) dispatch(op documentOp) {
@@ -163,13 +151,19 @@ func (d *Dispatcher) dispatchNext(id Id) {
 	if !ok {
 		panic("no queue exists for " + id.String() + ": this should not happen")
 	}
-	if next, ok := q.Poll(); ok {
-		// we have more operations with this ID: notify dispatcher about the next one
-		d.ready <- next
-	} else {
+	hasNext := q != nil
+	if hasNext {
+		next, ok := q.Poll()
+		if ok {
+			// we have more operations with this ID: dispatch the next one
+			d.dispatch(next)
+		} else {
+			hasNext = false
+		}
+	}
+	if !hasNext {
 		// no more operations with this ID: release slot
 		delete(d.inflight, k)
-		d.queuePool.Put(q)
 		d.releaseSlot()
 	}
 }
@@ -191,12 +185,15 @@ func (d *Dispatcher) enqueue(op documentOp, isRetry bool) error {
 		d.mu.Unlock()
 		return fmt.Errorf("refusing to enqueue document %s: too many errors", op.document.Id.String())
 	}
-	key := op.document.Id.String()
-	q, ok := d.inflight[key]
+	k := op.document.Id.String()
+	q, ok := d.inflight[k]
 	if !ok {
-		q = d.queuePool.Get().(*Queue[documentOp])
-		d.inflight[key] = q
+		d.inflight[k] = nil // track operation, but defer allocating queue until needed
 	} else {
+		if q == nil {
+			q = NewQueue[documentOp]()
+			d.inflight[k] = q
+		}
 		q.Add(op, isRetry)
 	}
 	if !isRetry {
@@ -204,9 +201,9 @@ func (d *Dispatcher) enqueue(op documentOp, isRetry bool) error {
 	}
 	d.mu.Unlock()
 	if !ok && !isRetry {
-		// first operation with this ID: acquire slot
+		// first operation with this ID: acquire slot and dispatch
 		d.acquireSlot()
-		d.ready <- op
+		d.dispatch(op)
 		d.throttler.Sent()
 	}
 	return nil
@@ -248,7 +245,6 @@ func (d *Dispatcher) Close() error {
 	d.inflightWg.Wait() // Wait for all inflight operations to complete
 	d.mu.Lock()
 	if d.started {
-		close(d.ready)
 		close(d.results)
 		close(d.msgs)
 		d.started = false
