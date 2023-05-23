@@ -211,8 +211,8 @@ public:
     void get_state(const vespalib::slime::Inserter& inserter) const override;
     void shrink_lid_space(uint32_t doc_id_limit) override;
 
-    std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override;
-    std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file) override;
+    std::unique_ptr<NearestNeighborIndexSaver> make_saver(vespalib::GenericHeader& header) const override;
+    std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file, const vespalib::GenericHeader& header) override;
 
     std::vector<Neighbor> find_top_k(
             uint32_t k,

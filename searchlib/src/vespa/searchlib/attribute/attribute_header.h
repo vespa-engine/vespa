@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/searchcommon/attribute/collectiontype.h>
 #include <vespa/searchcommon/attribute/hnsw_index_params.h>
 #include <vespa/searchcommon/attribute/predicate_params.h>
-#include <vespa/eval/eval/value_type.h>
+#include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <optional>
-
-namespace vespalib { class GenericHeader; }
 
 namespace search::attribute {
 
@@ -34,6 +33,7 @@ private:
     uint64_t    _totalValueCount;
     uint64_t    _createSerialNum;
     uint32_t    _version;
+    vespalib::GenericHeader _extra_tags;
 
     void internalExtractTags(const vespalib::GenericHeader &header);
 public:
@@ -71,6 +71,7 @@ public:
     const std::optional<HnswIndexParams>& get_hnsw_index_params() const { return _hnsw_index_params; }
     static AttributeHeader extractTags(const vespalib::GenericHeader &header, const vespalib::string &file_name);
     void addTags(vespalib::GenericHeader &header) const;
+    vespalib::GenericHeader& get_extra_tags() noexcept { return _extra_tags; }
 };
 
 }
