@@ -241,7 +241,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     @Override
     public PrivateKey getPrivateKey() {
-        return autoReloadingX509KeyManager.getPrivateKey(AutoReloadingX509KeyManager.CERTIFICATE_ALIAS);
+        return autoReloadingX509KeyManager.getCurrentCertificateWithKey().privateKey();
     }
 
     @Override
@@ -251,7 +251,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     @Override
     public List<X509Certificate> getIdentityCertificate() {
-        return List.of(autoReloadingX509KeyManager.getCertificateChain(AutoReloadingX509KeyManager.CERTIFICATE_ALIAS));
+        return List.of(autoReloadingX509KeyManager.getCurrentCertificateWithKey().certificate());
     }
 
     @Override
