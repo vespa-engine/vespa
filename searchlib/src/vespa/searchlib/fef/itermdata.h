@@ -16,7 +16,7 @@ namespace search::fef {
 class ITermData
 {
 protected:
-    virtual ~ITermData() {}
+    virtual ~ITermData() = default;
 
 public:
     /**

@@ -86,7 +86,7 @@ public:
 class FieldSpecList
 {
 private:
-    std::vector<FieldSpec> _list;
+    vespalib::SmallVector<FieldSpec, 1> _list;
 
 public:
     FieldSpecList() = default;
