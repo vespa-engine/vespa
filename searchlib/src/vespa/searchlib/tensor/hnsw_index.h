@@ -158,7 +158,6 @@ protected:
         return _vectors.get_vectors(docid);
     }
 
-    double calc_distance(uint32_t lhs_nodeid, uint32_t rhs_nodeid) const;
     double calc_distance(const BoundDistanceFunction &df, uint32_t rhs_nodeid) const;
     double calc_distance(const BoundDistanceFunction &df, uint32_t rhs_docid, uint32_t rhs_subspace) const;
     uint32_t estimate_visited_nodes(uint32_t level, uint32_t nodeid_limit, uint32_t neighbors_to_find, const GlobalFilter* filter) const;
