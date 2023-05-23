@@ -29,10 +29,10 @@ StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased)
                                                                  term.getFuzzyPrefixLength(),
                                                                  isCased());
     } else if (isCased()) {
-        _term._char = term.getTerm();
+        _term = term.getTerm();
         _termLen = term.getTermLen();
     } else {
-        term.term(_term._ucs4);
+        _ucs4 = term.asUcs4();
     }
 }
 
@@ -49,7 +49,7 @@ StringSearchHelper::isMatch(const char *src) const {
         return getFuzzyMatcher().isMatch(src);
     }
     if (__builtin_expect(isCased(), false)) {
-        int res = strncmp(_term._char, src, _termLen);
+        int res = strncmp(_term, src, _termLen);
         return (res == 0) && (src[_termLen] == 0 || isPrefix());
     }
     vespalib::Utf8ReaderForZTS u8reader(src);
@@ -58,11 +58,11 @@ StringSearchHelper::isMatch(const char *src) const {
     for (;; ++j) {
         val = u8reader.getChar();
         val = vespalib::LowerCase::convert(val);
-        if (_term._ucs4[j] == 0 || _term._ucs4[j] != val) {
+        if (_ucs4[j] == 0 || _ucs4[j] != val) {
             break;
         }
     }
-    return (_term._ucs4[j] == 0 && (val == 0 || isPrefix()));
+    return (_ucs4[j] == 0 && (val == 0 || isPrefix()));
 }
 
 }
