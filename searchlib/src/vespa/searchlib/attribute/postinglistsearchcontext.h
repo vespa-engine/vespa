@@ -32,26 +32,25 @@ protected:
     using FrozenDictionary = Dictionary::FrozenView;
     using EnumIndex = IEnumStore::Index;
 
-    const IEnumStoreDictionary& _dictionary;
-    const FrozenDictionary _frozenDictionary;
+    const IEnumStoreDictionary & _dictionary;
+    const ISearchContext       &_baseSearchCtx;
+    const BitVector            *_bv; // bitvector if _useBitVector has been set
+    const FrozenDictionary  _frozenDictionary;
     DictionaryConstIterator _lowerDictItr;
     DictionaryConstIterator _upperDictItr;
+    uint64_t                _numValues; // attr.getStatus().getNumValues();
     uint32_t                _uniqueValues;
     uint32_t                _docIdLimit;
     uint32_t                _dictSize;
-    uint64_t                _numValues; // attr.getStatus().getNumValues();
-    bool                    _hasWeight;
-    bool                    _useBitVector;
     vespalib::datastore::EntryRef     _pidx;
     vespalib::datastore::EntryRef     _frozenRoot; // Posting list in tree form
     float _FSTC;  // Filtering Search Time Constant
     float _PLSTC; // Posting List Search Time Constant
-    const BitVector *_bv; // bitvector if _useBitVector has been set
-    const ISearchContext    &_baseSearchCtx;
+    bool                    _hasWeight;
+    bool                    _useBitVector;
 
-
-    PostingListSearchContext(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
-                             bool useBitVector, const ISearchContext &baseSearchCtx);
+    PostingListSearchContext(const IEnumStoreDictionary& dictionary, bool has_btree_dictionary, uint32_t docIdLimit,
+                             uint64_t numValues, bool hasWeight, bool useBitVector, const ISearchContext &baseSearchCtx);
 
     ~PostingListSearchContext() override;
 

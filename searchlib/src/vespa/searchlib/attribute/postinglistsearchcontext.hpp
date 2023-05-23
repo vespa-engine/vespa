@@ -22,9 +22,8 @@ namespace search::attribute {
 template <typename DataT>
 PostingListSearchContextT<DataT>::
 PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
-                          const PostingList &postingList,
-                          bool useBitVector, const ISearchContext &searchContext)
-    : PostingListSearchContext(dictionary, docIdLimit, numValues, hasWeight, useBitVector, searchContext),
+                          const PostingList &postingList, bool useBitVector, const ISearchContext &searchContext)
+    : PostingListSearchContext(dictionary, dictionary.get_has_btree_dictionary(), docIdLimit, numValues, hasWeight, useBitVector, searchContext),
       _postingList(postingList),
       _merger(docIdLimit)
 {

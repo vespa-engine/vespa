@@ -18,8 +18,12 @@ public:
     using ParentType = vespalib::datastore::UniqueStoreComparator<EntryT, IEnumStore::InternalIndex>;
     using DataStoreType = typename ParentType::DataStoreType;
 
-    EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value);
-    EnumStoreComparator(const DataStoreType& data_store);
+    EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value)
+        : ParentType(data_store, fallback_value)
+    {}
+    EnumStoreComparator(const DataStoreType& data_store)
+        : ParentType(data_store)
+    {}
 
     static bool equal_helper(const EntryT& lhs, const EntryT& rhs);
 };

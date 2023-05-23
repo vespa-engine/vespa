@@ -10,28 +10,24 @@ namespace search::attribute {
 using vespalib::btree::BTreeNode;
 
 PostingListSearchContext::
-PostingListSearchContext(const IEnumStoreDictionary& dictionary,
-                         uint32_t docIdLimit,
-                         uint64_t numValues,
-                         bool hasWeight,
-                         bool useBitVector,
-                         const ISearchContext &baseSearchCtx)
+PostingListSearchContext(const IEnumStoreDictionary& dictionary, bool has_btree_dictionary, uint32_t docIdLimit,
+                         uint64_t numValues, bool hasWeight, bool useBitVector, const ISearchContext &baseSearchCtx)
     : _dictionary(dictionary),
-      _frozenDictionary(_dictionary.get_has_btree_dictionary() ? _dictionary.get_posting_dictionary().getFrozenView() : FrozenDictionary()),
-      _lowerDictItr(_dictionary.get_has_btree_dictionary() ? DictionaryConstIterator(BTreeNode::Ref(), _frozenDictionary.getAllocator()) : DictionaryConstIterator()),
-      _upperDictItr(_dictionary.get_has_btree_dictionary() ? DictionaryConstIterator(BTreeNode::Ref(), _frozenDictionary.getAllocator()) : DictionaryConstIterator()),
+      _baseSearchCtx(baseSearchCtx),
+      _bv(nullptr),
+      _frozenDictionary(has_btree_dictionary ? _dictionary.get_posting_dictionary().getFrozenView() : FrozenDictionary()),
+      _lowerDictItr(has_btree_dictionary ? DictionaryConstIterator(BTreeNode::Ref(), _frozenDictionary.getAllocator()) : DictionaryConstIterator()),
+      _upperDictItr(has_btree_dictionary ? DictionaryConstIterator(BTreeNode::Ref(), _frozenDictionary.getAllocator()) : DictionaryConstIterator()),
+      _numValues(numValues),
       _uniqueValues(0u),
       _docIdLimit(docIdLimit),
       _dictSize(_frozenDictionary.size()),
-      _numValues(numValues),
-      _hasWeight(hasWeight),
-      _useBitVector(useBitVector),
       _pidx(),
       _frozenRoot(),
       _FSTC(0.0),
       _PLSTC(0.0),
-      _bv(nullptr),
-      _baseSearchCtx(baseSearchCtx)
+      _hasWeight(hasWeight),
+      _useBitVector(useBitVector)
 {
 }
 
