@@ -8,6 +8,17 @@
 
 namespace vespalib::alloc {
 
+class PtrAndSize {
+public:
+    PtrAndSize() noexcept : _ptr(nullptr), _sz(0ul) {}
+    PtrAndSize(void * ptr, size_t sz) noexcept;
+    void * get() const noexcept { return _ptr; }
+    size_t size() const noexcept { return _sz; }
+private:
+    void * _ptr;
+    size_t _sz;
+};
+
 /*
  * Abstract base class for allocating memory at a low level.
  */
@@ -15,7 +26,6 @@ class MemoryAllocator {
 public:
     static constexpr size_t PAGE_SIZE = 4_Ki;
     static constexpr size_t HUGEPAGE_SIZE = 2_Mi;
-    using PtrAndSize = std::pair<void *, size_t>;
     MemoryAllocator(const MemoryAllocator &) = delete;
     MemoryAllocator & operator = (const MemoryAllocator &) = delete;
     MemoryAllocator() = default;

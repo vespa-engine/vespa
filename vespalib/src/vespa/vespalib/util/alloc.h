@@ -15,14 +15,12 @@ namespace vespalib::alloc {
 **/
 class Alloc
 {
-private:
-    using PtrAndSize = std::pair<void *, size_t>;
 public:
-    size_t size() const { return _alloc.second; }
-    void * get() { return _alloc.first; }
-    const void * get() const { return _alloc.first; }
-    void * operator -> () { return _alloc.first; }
-    const void * operator -> () const { return _alloc.first; }
+    size_t size() const noexcept { return _alloc.size(); }
+    void * get() noexcept { return _alloc.get(); }
+    const void * get() const noexcept { return _alloc.get(); }
+    void * operator -> () noexcept { return get(); }
+    const void * operator -> () const noexcept { return get(); }
     /*
      * If possible the allocations will be resized. If it was possible it will return true
      * And you have an area that can be accessed up to the new size.
@@ -42,7 +40,7 @@ public:
     }
     Alloc & operator=(Alloc && rhs) noexcept {
         if (this != & rhs) {
-            if (_alloc.first != nullptr) {
+            if (_alloc.get() != nullptr) {
                 _allocator->free(_alloc);
             }
             _alloc = rhs._alloc;
@@ -53,9 +51,9 @@ public:
     }
     Alloc() noexcept : _alloc(nullptr, 0), _allocator(nullptr) { }
     ~Alloc() {
-        if (_alloc.first != nullptr) {
+        if (_alloc.get() != nullptr) {
             _allocator->free(_alloc);
-            _alloc.first = nullptr;
+            _alloc = PtrAndSize();
         }
     }
     void swap(Alloc & rhs) noexcept {
@@ -63,10 +61,9 @@ public:
         std::swap(_allocator, rhs._allocator);
     }
     void reset() {
-        if (_alloc.first != nullptr) {
+        if (_alloc.get() != nullptr) {
             _allocator->free(_alloc);
-            _alloc.first = nullptr;
-            _alloc.second = 0u;
+            _alloc = PtrAndSize();
         }
     }
     Alloc create(size_t sz) const noexcept {
@@ -96,8 +93,7 @@ private:
           _allocator(allocator)
     { }
     void clear() {
-        _alloc.first = nullptr;
-        _alloc.second = 0;
+        _alloc = PtrAndSize();
         _allocator = nullptr;
     }
     PtrAndSize              _alloc;

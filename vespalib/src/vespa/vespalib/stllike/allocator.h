@@ -17,7 +17,7 @@ public:
     allocator_large() noexcept : _allocator(alloc::MemoryAllocator::select_allocator()) {}
     using value_type = T;
     constexpr T * allocate(std::size_t n) {
-        return static_cast<T *>(_allocator->alloc(n*sizeof(T)).first);
+        return static_cast<T *>(_allocator->alloc(n*sizeof(T)).get());
     }
     void deallocate(T * p, std::size_t n) {
         _allocator->free(p, n*sizeof(T));
