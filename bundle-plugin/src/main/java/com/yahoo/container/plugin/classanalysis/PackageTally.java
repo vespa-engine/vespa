@@ -42,6 +42,13 @@ public class PackageTally {
         return ret;
     }
 
+    public Set<String> publicApiPackages() {
+        return definedPackages.values().stream()
+                .filter(PackageInfo::isPublicApi)
+                .map(PackageInfo::name)
+                .collect(Collectors.toSet());
+    }
+
     /**
      * Returns the set of packages that is referenced from this tally, but not included in the given set of available packages.
      *

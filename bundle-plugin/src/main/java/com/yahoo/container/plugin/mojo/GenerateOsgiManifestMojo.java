@@ -102,7 +102,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
 
             Map<String, String> manifestContent = generateManifestContent(artifactSet.getJarArtifactsToInclude(), calculatedImports, includedPackages);
-            addAdditionalManifestProperties(manifestContent);
+            addAdditionalManifestProperties(manifestContent, projectPackages);
             createManifestFile(Paths.get(project.getBuild().getOutputDirectory()), manifestContent);
 
         } catch (Exception e) {
@@ -110,13 +110,18 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         }
     }
 
-    private void addAdditionalManifestProperties(Map<String, String> manifestContent) {
+    private void addAdditionalManifestProperties(Map<String, String> manifestContent, PackageTally projectPackages) {
+        addIfNotEmpty(manifestContent, "X-JDisc-PublicApi-Package", publicApi(projectPackages));
         addIfNotEmpty(manifestContent, "Bundle-Activator", bundleActivator);
         addIfNotEmpty(manifestContent, "X-JDisc-Privileged-Activator", jdiscPrivilegedActivator);
         addIfNotEmpty(manifestContent, "Main-Class", mainClass);
         addIfNotEmpty(manifestContent, "X-JDisc-Application", discApplicationClass);
         addIfNotEmpty(manifestContent, "X-JDisc-Preinstall-Bundle", trimWhitespace(Optional.ofNullable(discPreInstallBundle)));
         addIfNotEmpty(manifestContent, "WebInfUrl", webInfUrl);
+    }
+
+    private static String publicApi(PackageTally tally) {
+        return tally.publicApiPackages().stream().sorted().collect(Collectors.joining(","));
     }
 
     private void logDebugPackageSets(List<Export> exportedPackagesFromProvidedJars, PackageTally includedPackages) {

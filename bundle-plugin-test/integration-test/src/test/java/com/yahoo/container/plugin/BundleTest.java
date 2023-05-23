@@ -103,6 +103,11 @@ public class BundleTest {
         assertTrue(exportPackage.contains("com.yahoo.test;version=1.2.3.RELEASE"));
     }
 
+    @Test
+    void require_that_manifest_contains_public_api() {
+        assertEquals("com.yahoo.test", mainAttributes.getValue("X-JDisc-PublicApi-Package"));
+    }
+
     // TODO: use another jar than jrt, which now pulls in a lot of dependencies that pollute the manifest of the
     //       generated bundle. (It's compile scoped in pom.xml to be added to the bundle-cp.)
     @Test
