@@ -102,7 +102,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
 
             Map<String, String> manifestContent = generateManifestContent(artifactSet.getJarArtifactsToInclude(), calculatedImports, includedPackages);
-            addAdditionalManifestProperties(manifestContent, projectPackages);
+            addAdditionalManifestProperties(manifestContent, includedPackages);
             createManifestFile(Paths.get(project.getBuild().getOutputDirectory()), manifestContent);
 
         } catch (Exception e) {
@@ -110,8 +110,8 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         }
     }
 
-    private void addAdditionalManifestProperties(Map<String, String> manifestContent, PackageTally projectPackages) {
-        addIfNotEmpty(manifestContent, "X-JDisc-PublicApi-Package", publicApi(projectPackages));
+    private void addAdditionalManifestProperties(Map<String, String> manifestContent, PackageTally includedPackages) {
+        addIfNotEmpty(manifestContent, "X-JDisc-PublicApi-Package", publicApi(includedPackages));
         addIfNotEmpty(manifestContent, "Bundle-Activator", bundleActivator);
         addIfNotEmpty(manifestContent, "X-JDisc-Privileged-Activator", jdiscPrivilegedActivator);
         addIfNotEmpty(manifestContent, "Main-Class", mainClass);
