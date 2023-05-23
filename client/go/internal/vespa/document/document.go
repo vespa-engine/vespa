@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"sync"
 
 	"time"
 
@@ -116,6 +117,24 @@ type Document struct {
 	Body      []byte
 	Operation Operation
 	Create    bool
+
+	resetFunc func()
+}
+
+func (d Document) Equal(o Document) bool {
+	return d.Id.Equal(o.Id) &&
+		d.Condition == o.Condition &&
+		bytes.Equal(d.Body, o.Body) &&
+		d.Operation == o.Operation &&
+		d.Create == o.Create
+}
+
+// Reset discards the body of this document.
+func (d *Document) Reset() {
+	d.Body = nil
+	if d.resetFunc != nil {
+		d.resetFunc()
+	}
 }
 
 // Decoder decodes documents from a JSON structure which is either an array of objects, or objects separated by newline.
@@ -127,6 +146,8 @@ type Decoder struct {
 	jsonl bool
 
 	fieldsEnd int64
+
+	documentBuffers sync.Pool
 }
 
 func (d Document) String() string {
@@ -212,6 +233,12 @@ func (d *Decoder) Decode() (Document, error) {
 	return doc, err
 }
 
+func (d *Decoder) buffer() *bytes.Buffer {
+	buf := d.documentBuffers.Get().(*bytes.Buffer)
+	buf.Reset()
+	return buf
+}
+
 func (d *Decoder) readField(name string, offset int64, doc *Document) error {
 	readId := false
 	switch name {
@@ -258,10 +285,14 @@ func (d *Decoder) readField(name string, offset int64, doc *Document) error {
 		}
 		d.fieldsEnd = d.dec.InputOffset()
 		fields := d.buf.Next(int(d.fieldsEnd - fieldsStart))
-		doc.Body = make([]byte, 0, len(fieldsPrefix)+len(fields)+len(fieldsSuffix))
-		doc.Body = append(doc.Body, fieldsPrefix...)
-		doc.Body = append(doc.Body, fields...)
-		doc.Body = append(doc.Body, fieldsSuffix...)
+		// Try to re-use buffers holding the document body. The buffer is released by document.Reset()
+		bodyBuf := d.buffer()
+		bodyBuf.Grow(len(fieldsPrefix) + len(fields) + len(fieldsSuffix))
+		bodyBuf.Write(fieldsPrefix)
+		bodyBuf.Write(fields)
+		bodyBuf.Write(fieldsSuffix)
+		doc.Body = bodyBuf.Bytes()
+		doc.resetFunc = func() { d.documentBuffers.Put(bodyBuf) }
 	}
 	if readId {
 		s, err := d.readString()
@@ -322,6 +353,7 @@ loop:
 func NewDecoder(r io.Reader) *Decoder {
 	br := bufio.NewReaderSize(r, 1<<26)
 	d := &Decoder{}
+	d.documentBuffers.New = func() any { return &bytes.Buffer{} }
 	d.dec = json.NewDecoder(io.TeeReader(br, &d.buf))
 	return d
 }

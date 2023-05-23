@@ -3,7 +3,6 @@ package document
 import (
 	"fmt"
 	"io"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -147,14 +146,14 @@ func feedInput(jsonl bool) string {
 func testDocumentDecoder(t *testing.T, jsonLike string) {
 	t.Helper()
 	dec := NewDecoder(strings.NewReader(jsonLike))
-	want := []Document{
+	docs := []Document{
 		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields":{  "foo"  : "123", "bar": {"a": [1, 2, 3]}}}`)},
 		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Condition: "foo", Body: []byte(`{"fields":{"bar": "456"}}`)},
 		{Id: mustParseId("id:ns:type::doc3"), Operation: OperationRemove},
 		{Id: mustParseId("id:ns:type::doc4"), Operation: OperationPut, Create: true, Body: []byte(`{"fields":{"qux": "789"}}`)},
 		{Id: mustParseId("id:ns:type::doc5"), Operation: OperationRemove},
 	}
-	got := []Document{}
+	result := []Document{}
 	for {
 		doc, err := dec.Decode()
 		if err == io.EOF {
@@ -163,7 +162,7 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		got = append(got, doc)
+		result = append(result, doc)
 	}
 	wantBufLen := 0
 	if dec.array {
@@ -172,8 +171,15 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 	if l := dec.buf.Len(); l != wantBufLen {
 		t.Errorf("got dec.buf.Len() = %d, want %d", l, wantBufLen)
 	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %+v, want %+v", got, want)
+	if len(docs) != len(result) {
+		t.Errorf("len(result) = %d, want %d", len(result), len(docs))
+	}
+	for i := 0; i < len(docs); i++ {
+		got := result[i]
+		want := docs[i]
+		if !got.Equal(want) {
+			t.Errorf("got %+v, want %+v", got, want)
+		}
 	}
 }
 

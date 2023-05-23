@@ -137,6 +137,7 @@ func (d *Dispatcher) processResults() {
 		if d.shouldRetry(op, op.result) {
 			d.enqueue(op.resetResult(), true)
 		} else {
+			op.document.Reset()
 			d.inflightWg.Done()
 		}
 		d.dispatchNext(op.document.Id)
