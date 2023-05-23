@@ -226,8 +226,8 @@ public:
 
     bool isFull() const noexcept { return validSlots() == NumSlots; }
     bool isAtLeastHalfFull() const noexcept { return validSlots() >= minSlots(); }
-    static uint32_t maxSlots() noexcept { return NumSlots; }
-    static uint32_t minSlots() noexcept { return NumSlots / 2; }
+    static constexpr uint32_t maxSlots() noexcept { return NumSlots; }
+    static constexpr uint32_t minSlots() noexcept { return NumSlots / 2; }
 };
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
@@ -430,8 +430,7 @@ public:
     }
 };
 
-template <typename KeyT, typename DataT, typename AggrT,
-          uint32_t NumSlots = 16>
+template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots = 16>
 class BTreeLeafNode : public BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>
 {
 public:
