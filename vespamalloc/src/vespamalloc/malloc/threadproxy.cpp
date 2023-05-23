@@ -58,6 +58,7 @@ void * mallocThreadProxy (void * arg)
     vespamalloc::Mutex::addThread();
     vespamalloc::_G_myMemP->initThisThread();
     void * result = nullptr;
+    ASSERT_STACKTRACE(uint64_t(&result) < vespamalloc::MAX_PTR); // Sanity check that stack is a legal PTR.
     DEBUG(fprintf(stderr, "arg(%p=%p), local(%p=%p)\n", &arg, arg, &ta, ta));
 
     pthread_cleanup_push(cleanupThread, ta);

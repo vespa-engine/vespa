@@ -168,6 +168,7 @@ MmapMemory::get(size_t len)
         errno = prevErrno; // The temporary error should not impact if the end is good.
         memory = getNormalPages(len);
     }
+    ASSERT_STACKTRACE((uint64_t(&memory) + len) < vespamalloc::MAX_PTR);
     return memory;
 }
 
