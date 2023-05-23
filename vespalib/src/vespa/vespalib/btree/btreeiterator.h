@@ -43,12 +43,13 @@ class NodeElement
     static constexpr uint64_t NODE_MASK = (1ul << NODE_BITS) - 1ul;
     static constexpr uint64_t IDX_MASK = (1ul << IDX_BITS) - 1ul;
     static constexpr uint8_t IDX_SHIFT = NODE_BITS;
+    static constexpr uint64_t IDX_ONE = 1ul << NODE_BITS;
 
+    static_assert((NodeType::maxSlots() + 1) < (1ul << IDX_BITS), "IDX can be out of bounds above 127");
 public:
     NodeElement() noexcept : _nodeAndIdx(0ul) { }
     NodeElement(const NodeType *node, uint32_t idx) noexcept : _nodeAndIdx(uint64_t(node) | uint64_t(idx) << IDX_SHIFT) {
         assert((uint64_t(node) & ~NODE_MASK) == 0ul);
-        assert(idx <= IDX_MASK);
     }
 
     void invalidate() noexcept { _nodeAndIdx = 0; }
@@ -58,16 +59,14 @@ public:
     }
     const NodeType * getNode() const noexcept { return reinterpret_cast<const NodeType *>(_nodeAndIdx & NODE_MASK); }
     void setIdx(uint32_t idx) noexcept {
-        assert(idx <= IDX_MASK);
         _nodeAndIdx = (_nodeAndIdx & NODE_MASK) | (uint64_t(idx) << IDX_SHIFT);
     }
     uint32_t getIdx() const noexcept { return _nodeAndIdx >> IDX_SHIFT; }
-    void incIdx() noexcept { setIdx(getIdx() + 1); }
-    void decIdx() noexcept { setIdx(getIdx() - 1); }
+    void incIdx() noexcept { _nodeAndIdx += IDX_ONE; }
+    void decIdx() noexcept { _nodeAndIdx -= IDX_ONE; }
 
     void setNodeAndIdx(const NodeType *node, uint32_t idx) noexcept {
         assert((uint64_t(node) & ~NODE_MASK) == 0ul);
-        assert(idx <= IDX_MASK);
         _nodeAndIdx = uint64_t(node) | uint64_t(idx) << IDX_SHIFT;
     }
 
@@ -119,9 +118,7 @@ template <typename KeyT,
 class BTreeIteratorBase
 {
 protected:
-    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT,
-                                                 INTERNAL_SLOTS,
-                                                 LEAF_SLOTS>;
+    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>;
     using InternalNodeType = BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS>;
     using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS> ;
     using InternalNodeTypeRefPair = typename InternalNodeType::RefPair;
@@ -161,7 +158,6 @@ protected:
 
     // Temporary leaf node when iterating over short arrays
     std::unique_ptr<LeafNodeTempType> _compatLeafNode;
-
 private:
     /*
      * Find the next leaf node, called by operator++() as needed.
