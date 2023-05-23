@@ -619,8 +619,10 @@ public class NodeAgentImpl implements NodeAgent {
         } catch (OrchestratorException e) {
             // Ensure the ACLs are up to date: The reason we're unable to suspend may be because some other
             // node is unable to resume because the ACL rules of SOME Docker container is wrong...
+            // Same can happen with stale WireGuard config, so update that too
             try {
                 aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
+                wireguardTasks.forEach(task -> getContainer(context).ifPresent(c -> task.converge(context, c.id())));
             } catch (RuntimeException suppressed) {
                 logger.log(Level.WARNING, "Suppressing ACL update failure: " + suppressed);
                 e.addSuppressed(suppressed);
