@@ -389,8 +389,8 @@ testSingleValue(Attribute & svsa, Config &cfg)
 TEST("testSingleValue")
 {
     EXPECT_EQUAL(24u, sizeof(SearchContext));
-    EXPECT_EQUAL(32u, sizeof(StringSearchHelper));
-    EXPECT_EQUAL(88u, sizeof(attribute::SingleStringEnumSearchContext));
+    EXPECT_EQUAL(40u, sizeof(StringSearchHelper));
+    EXPECT_EQUAL(96u, sizeof(attribute::SingleStringEnumSearchContext));
     {
         Config cfg(BasicType::STRING, CollectionType::SINGLE);
         SingleValueStringAttribute svsa("svsa", cfg);

@@ -21,6 +21,7 @@ public:
     uint32_t getTermLen() const { return _cachedTermLen; }
     uint32_t term(const char * & t)     const { t = getTerm(); return _cachedTermLen; }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    std::unique_ptr<ucs4_t[]> asUcs4() const;
     uint32_t term(const ucs4_t * & t) {
         t = _termUCS4.load(std::memory_order_relaxed);
         if (t == nullptr) {
