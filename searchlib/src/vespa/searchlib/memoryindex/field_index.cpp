@@ -97,7 +97,7 @@ FieldIndex<interleaved_features>::findFrozen(const vespalib::stringref word) con
     if (itr.valid()) {
         return _postingListStore.beginFrozen(itr.getData().load_acquire());
     }
-    return typename PostingList::Iterator();
+    return typename PostingList::ConstIterator();
 }
 
 template <bool interleaved_features>
