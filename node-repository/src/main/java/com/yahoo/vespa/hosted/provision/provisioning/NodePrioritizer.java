@@ -2,8 +2,11 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -44,11 +47,11 @@ public class NodePrioritizer {
     private final boolean topologyChange;
     private final int currentClusterSize;
     private final Set<Node> spareHosts;
-    private final boolean enclave;
+    private final boolean hasPtrRecords;
 
     public NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
                            int wantedGroups, boolean dynamicProvisioning, NameResolver nameResolver, Nodes nodes,
-                           HostResourcesCalculator hostResourcesCalculator, int spareCount, boolean enclave) {
+                           HostResourcesCalculator hostResourcesCalculator, int spareCount, CloudAccount cloudAccount, Zone zone) {
         this.allNodes = allNodes;
         this.capacity = new HostCapacity(this.allNodes, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
@@ -60,7 +63,7 @@ public class NodePrioritizer {
                 capacity.findSpareHosts(this.allNodes.asList(), spareCount);
         this.nameResolver = nameResolver;
         this.nodes = nodes;
-        this.enclave = enclave;
+        this.hasPtrRecords = !cloudAccount.isEnclave(zone) && !zone.getCloud().name().equals(CloudName.GCP);
 
         NodeList nodesInCluster = this.allNodes.owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
         NodeList nonRetiredNodesInCluster = nodesInCluster.not().retired();
@@ -155,7 +158,7 @@ public class NodePrioritizer {
                                                         spareHosts.contains(host),
                                                         allNodes,
                                                         nameResolver,
-                                                        !enclave));
+                                                        hasPtrRecords));
         }
     }
 
