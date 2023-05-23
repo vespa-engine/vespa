@@ -5,6 +5,8 @@
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+using vespalib::GenericHeader;
+
 namespace search::attribute {
 
 namespace {
@@ -57,7 +59,8 @@ AttributeHeader::AttributeHeader(const vespalib::string &fileName)
       _uniqueValueCount(0),
       _totalValueCount(0),
       _createSerialNum(0u),
-      _version(0)
+      _version(0),
+      _extra_tags()
 {
 }
 
@@ -243,6 +246,10 @@ AttributeHeader::addTags(vespalib::GenericHeader &header) const
         header.putTag(Tag(predicateArityTag, params.arity()));
         header.putTag(Tag(predicateLowerBoundTag, params.lower_bound()));
         header.putTag(Tag(predicateUpperBoundTag, params.upper_bound()));
+    }
+    for (uint32_t i = 0; i < _extra_tags.getNumTags(); ++i) {
+        auto& tag = _extra_tags.getTag(i);
+        header.putTag(tag);
     }
 }
 

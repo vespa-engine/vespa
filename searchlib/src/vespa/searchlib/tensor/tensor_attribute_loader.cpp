@@ -273,7 +273,7 @@ TensorAttributeLoader::load_index()
 {
     FileWithHeader index_file(LoadUtils::openFile(_attr, TensorAttributeSaver::index_file_suffix()));
     try {
-        auto index_loader = _index->make_loader(index_file.file());
+        auto index_loader = _index->make_loader(index_file.file(), index_file.header());
         size_t cnt = 0;
         while (index_loader->load_next()) {
             if ((++cnt % LOAD_COMMIT_INTERVAL) == 0) {

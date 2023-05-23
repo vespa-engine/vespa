@@ -37,6 +37,18 @@ public:
     }
 };
 
+class MipsDistanceFunctionFactoryBase : public DistanceFunctionFactory {
+protected:
+    std::shared_ptr<MaximumSquaredNormStore> _sq_norm_store;
+public:
+    MipsDistanceFunctionFactoryBase()
+        : _sq_norm_store(std::make_shared<MaximumSquaredNormStore>())
+    {
+    }
+    ~MipsDistanceFunctionFactoryBase() = default;
+    MaximumSquaredNormStore& get_max_squared_norm_store() noexcept { return *_sq_norm_store; }
+};
+
 /**
  * Factory for distance functions which can apply a transformation
  * mapping Maximum Inner Product Search to a nearest neighbor
@@ -45,10 +57,10 @@ public:
  * to the longest vector inserted so far, or at least length 1.
  */
 template<typename FloatType>
-class MipsDistanceFunctionFactory : public DistanceFunctionFactory {
-    std::shared_ptr<MaximumSquaredNormStore> _sq_norm_store;
+class MipsDistanceFunctionFactory : public MipsDistanceFunctionFactoryBase {
 public:
-    MipsDistanceFunctionFactory() : _sq_norm_store(std::make_shared<MaximumSquaredNormStore>()) {}
+    MipsDistanceFunctionFactory() : MipsDistanceFunctionFactoryBase() { }
+    ~MipsDistanceFunctionFactory() = default;
 
     BoundDistanceFunction::UP for_query_vector(const vespalib::eval::TypedCells& lhs) override;
 
