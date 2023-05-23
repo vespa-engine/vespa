@@ -515,7 +515,7 @@ func (c *Config) readAPIKey(cli *CLI, system vespa.System, tenantName string) ([
 		if _, err := os.Stat(c.authConfigPath()); err == nil {
 			return nil, nil // We have auth config, so we should prefer Auth0 over API key
 		}
-		cli.printWarning("Authenticating with API key. This is discouraged in non-CI environments", "Authenticate with 'vespa auth login' instead")
+		cli.printWarning("Authenticating with API key, intended for use in CI environments.", "Authenticate with 'vespa auth login' instead")
 	}
 	return os.ReadFile(c.apiKeyPath(tenantName))
 }
