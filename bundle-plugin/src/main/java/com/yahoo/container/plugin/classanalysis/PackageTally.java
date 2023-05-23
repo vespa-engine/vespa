@@ -59,7 +59,7 @@ public class PackageTally {
      * Represents the classes for two package tallies that are deployed as a single unit.
      * <p>
      * ExportPackageAnnotations from this has precedence over the other.
-     * TODO: try using Map.merge (as in the functions below). Can't see how Maps.combine is any different.
+     * TODO: Add unit test and try using Map.merge (as in the functions below). Can't see how Maps.combine is any different.
      */
     public PackageTally combine(PackageTally other) {
         var definedPkgs = Maps.combine(this.definedPackages, other.definedPackages, PackageInfo::hasExportPackageOrElse);
