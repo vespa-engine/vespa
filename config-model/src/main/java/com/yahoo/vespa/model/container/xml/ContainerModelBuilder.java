@@ -905,22 +905,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
     
     private static boolean applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
-        if (memoryPercentage == null || memoryPercentage.isEmpty()) return false;
-        memoryPercentage = memoryPercentage.trim();
-
-        if ( ! memoryPercentage.endsWith("%"))
-            throw new IllegalArgumentException("The memory percentage given for nodes in " + cluster +
-                                               " must be an integer percentage ending by the '%' sign");
-        memoryPercentage = memoryPercentage.substring(0, memoryPercentage.length()-1).trim();
-
         try {
+            if (memoryPercentage == null || memoryPercentage.isEmpty()) return false;
+            memoryPercentage = memoryPercentage.trim();
+            if ( ! memoryPercentage.endsWith("%"))
+                throw new IllegalArgumentException("Missing % sign");
+            memoryPercentage = memoryPercentage.substring(0, memoryPercentage.length()-1).trim();
             cluster.setMemoryPercentage(Integer.parseInt(memoryPercentage));
+            return true;
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("The memory percentage given for nodes in " + cluster +
-                                               " must be an integer percentage ending by the '%' sign");
+                                               " must be an integer percentage ending by the '%' sign", e);
         }
-        return true;
     }
 
     /** Allocate a container cluster without a nodes tag */

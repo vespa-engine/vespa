@@ -78,7 +78,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int rpc_num_targets = 2;
     private int rpc_events_before_wakeup = 1;
     private int mbus_network_threads = 1;
-    private int heapSizePercentage = ApplicationContainerCluster.defaultHeapSizePercentageOfTotalNodeMemory;
+    private int heapSizePercentage = ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
     private boolean useRestrictedDataPlaneBindings = false;
     private Optional<CloudAccount> cloudAccount = Optional.empty();

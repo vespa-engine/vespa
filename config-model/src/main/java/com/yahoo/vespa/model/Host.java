@@ -8,12 +8,16 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
 import java.util.Objects;
 
 /**
- * A physical host, running a set of services.
+ * A node with an identity, with some dedicated compute resources, running a set of services.
  * The identity of a host is its hostname. Hosts are comparable on their host name.
  *
  * @author gjoranv
  */
 public final class Host extends TreeConfigProducer<AnyConfigProducer> implements SentinelConfig.Producer, Comparable<Host> {
+
+    // Memory needed for auxiliary processes always running on the node (config-proxy, metrics-proxy).
+    // Keep in sync with node-repository/ClusterModel.
+    public static final double memoryOverheadGb = 0.7;
 
     private ConfigSentinel configSentinel = null;
     private final String hostname;
