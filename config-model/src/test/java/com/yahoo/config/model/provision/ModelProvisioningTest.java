@@ -57,7 +57,7 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed;
 import static com.yahoo.config.provision.NodeResources.StorageType;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
-import static com.yahoo.vespa.model.search.NodeResourcesTuning.nodeMemoryOverheadGb;
+import static com.yahoo.vespa.model.Host.memoryOverheadGb;
 import static com.yahoo.vespa.model.test.utils.ApplicationPackageUtils.generateSchemas;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -202,6 +202,12 @@ public class ModelProvisioningTest {
                 "     <search/>" +
                 "     <nodes count='1'/>" +
                 "  </container>" +
+                "  <container version='1.0' id='container2'>" +
+                "     <search/>" +
+                "     <nodes count='1'>" +
+                "       <resources vcpu='10' memory='100Gb' disk='1Tb'/>" +
+                "     </nodes>" +
+                "  </container>" +
                 "  <content version='1.0' id='content1'>" +
                 "     <redundancy>2</redundancy>" +
                 "     <documents>" +
@@ -219,12 +225,14 @@ public class ModelProvisioningTest {
                 "</services>";
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(8);
+        tester.addHosts(new NodeResources(20, 200, 2000, 1.0), 1);
         VespaModel model = tester.createModel(xmlWithNodes, true);
 
         assertEquals(2, model.getContentClusters().get("content1").getRootGroup().getNodes().size(), "Nodes in content1");
         assertEquals(1, model.getContainerClusters().get("container1").getContainers().size(), "Nodes in container1");
         assertEquals(2, model.getContentClusters().get("content").getRootGroup().getNodes().size(), "Nodes in cluster without ID");
-        assertEquals(ApplicationContainerCluster.defaultHeapSizePercentageOfTotalNodeMemory, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size for container");
+        assertEquals(65, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size for container1");
+        assertEquals(84, physicalMemoryPercentage(model.getContainerClusters().get("container2")), "Heap size for container2");
         assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Type.content, model);
         assertProvisioned(1, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
         assertProvisioned(2, ClusterSpec.Id.from("content"), ClusterSpec.Type.content, model);
@@ -277,8 +285,7 @@ public class ModelProvisioningTest {
         assertEquals(2, model.getContentClusters().get("content1").getRootGroup().getNodes().size(), "Nodes in content1");
         assertEquals(2, model.getContainerClusters().get("container1").getContainers().size(), "Nodes in container1");
         assertEquals(18, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size is lowered with combined clusters");
-        assertEquals((long) ((3 - nodeMemoryOverheadGb) * (Math.pow(1024, 3)) * (1 - 0.18)), protonMemorySize(model.getContentClusters()
-                                                                                                                   .get("content1")), "Memory for proton is lowered to account for the jvm heap");
+        assertEquals(2025077080L, protonMemorySize(model.getContentClusters().get("content1")), "Memory for proton is lowered to account for the jvm heap");
         assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
         assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
         assertEquals(1, logger.msgs().size());
@@ -314,7 +321,7 @@ public class ModelProvisioningTest {
         assertEquals(2, model.getContentClusters().get("content1").getRootGroup().getNodes().size(), "Nodes in content1");
         assertEquals(2, model.getContainerClusters().get("container1").getContainers().size(), "Nodes in container1");
         assertEquals(30, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size is lowered with combined clusters");
-        assertEquals((long) ((3 - nodeMemoryOverheadGb) * (Math.pow(1024, 3)) * (1 - 0.30)), protonMemorySize(model.getContentClusters()
+        assertEquals((long) ((3 - memoryOverheadGb) * (Math.pow(1024, 3)) * (1 - 0.30)), protonMemorySize(model.getContentClusters()
                                                                                                                    .get("content1")), "Memory for proton is lowered to account for the jvm heap");
         assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
         assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
@@ -345,8 +352,8 @@ public class ModelProvisioningTest {
         VespaModel model = tester.createModel(xmlWithNodes, true);
         assertEquals(2, model.getContentClusters().get("content1").getRootGroup().getNodes().size(), "Nodes in content1");
         assertEquals(2, model.getContainerClusters().get("container1").getContainers().size(), "Nodes in container1");
-        assertEquals(ApplicationContainerCluster.defaultHeapSizePercentageOfTotalNodeMemory, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size is normal");
-        assertEquals((long) ((3 - nodeMemoryOverheadGb) * (Math.pow(1024, 3))), protonMemorySize(model.getContentClusters().get("content1")), "Memory for proton is normal");
+        assertEquals(65, physicalMemoryPercentage(model.getContainerClusters().get("container1")), "Heap size is normal");
+        assertEquals((long) ((3 - memoryOverheadGb) * (Math.pow(1024, 3))), protonMemorySize(model.getContentClusters().get("content1")), "Memory for proton is normal");
     }
 
     @Test
@@ -2569,7 +2576,7 @@ public class ModelProvisioningTest {
         ProtonConfig cfg = getProtonConfig(model, cluster.getSearchNodes().get(0).getConfigId());
         assertEquals(2000, cfg.flush().memory().maxtlssize()); // from config override
         assertEquals(1000, cfg.flush().memory().maxmemory()); // from explicit tuning
-        assertEquals((long) ((128 - nodeMemoryOverheadGb) * GB * 0.08), cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
+        assertEquals((long) ((128 - memoryOverheadGb) * GB * 0.08), cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
     }
 
     private static ProtonConfig getProtonConfig(VespaModel model, String configId) {
