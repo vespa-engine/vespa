@@ -176,8 +176,9 @@ template <HnswIndexType type>
 bool
 HnswIndex<type>::have_closer_distance(HnswTraversalCandidate candidate, const HnswTraversalCandidateVector& result) const
 {
+    auto df = _distance_ff->for_insertion_vector(get_vector(candidate.nodeid));
     for (const auto & neighbor : result) {
-        double dist = calc_distance(candidate.nodeid, neighbor.nodeid);
+        double dist = calc_distance(*df, neighbor.nodeid);
         if (dist < candidate.distance) {
             return true;
         }
@@ -253,8 +254,9 @@ HnswIndex<type>::shrink_if_needed(uint32_t nodeid, uint32_t level)
     if (old_links.size() > max_links) {
         HnswTraversalCandidateVector neighbors;
         neighbors.reserve(old_links.size());
+        auto df = _distance_ff->for_insertion_vector(get_vector(nodeid));
         for (uint32_t neighbor_nodeid : old_links) {
-            double dist = calc_distance(nodeid, neighbor_nodeid);
+            double dist = calc_distance(*df, neighbor_nodeid);
             neighbors.emplace_back(neighbor_nodeid, dist);
         }
         auto split = select_neighbors(neighbors, max_links);
@@ -295,17 +297,6 @@ HnswIndex<type>::remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32
         if (id != remove_id) new_links.push_back(id);
     }
     _graph.set_link_array(remove_from, level, new_links);
-}
-
-
-template <HnswIndexType type>
-double
-HnswIndex<type>::calc_distance(uint32_t lhs_nodeid, uint32_t rhs_nodeid) const
-{
-    auto lhs = get_vector(lhs_nodeid);
-    auto df = _distance_ff->for_insertion_vector(lhs);
-    auto rhs = get_vector(rhs_nodeid);
-    return df->calc(rhs);
 }
 
 template <HnswIndexType type>
@@ -639,10 +630,14 @@ HnswIndex<type>::mutual_reconnect(const LinkArrayRef &cluster, uint32_t level)
     for (uint32_t i = 0; i + 1 < cluster.size(); ++i) {
         uint32_t n_id_1 = cluster[i];
         LinkArrayRef n_list_1 = _graph.get_link_array(n_id_1, level);
+        std::unique_ptr<BoundDistanceFunction> df;
         for (uint32_t j = i + 1; j < cluster.size(); ++j) {
             uint32_t n_id_2 = cluster[j];
             if (has_link_to(n_list_1, n_id_2)) continue;
-            pairs.emplace_back(n_id_1, n_id_2, calc_distance(n_id_1, n_id_2));
+            if (!df) {
+                df = _distance_ff->for_insertion_vector(get_vector(n_id_1));
+            }
+            pairs.emplace_back(n_id_1, n_id_2, calc_distance(*df, n_id_2));
         }
     }
     std::sort(pairs.begin(), pairs.end());
