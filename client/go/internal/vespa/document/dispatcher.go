@@ -12,6 +12,9 @@ import (
 // maxAttempts controls the maximum number of times a document operation is attempted before giving up.
 const maxAttempts = 10
 
+// Feeder is the interface for a consumer of documents.
+type Feeder interface{ Send(Document) Result }
+
 // Dispatcher dispatches documents from a queue to a Feeder.
 type Dispatcher struct {
 	feeder         Feeder
@@ -132,7 +135,7 @@ func (d *Dispatcher) processResults() {
 	defer d.wg.Done()
 	for op := range d.results {
 		d.statsMu.Lock()
-		d.stats.Add(op.result.Stats)
+		d.stats.Add(op.result)
 		d.statsMu.Unlock()
 		if d.shouldRetry(op, op.result) {
 			d.enqueue(op.resetResult(), true)

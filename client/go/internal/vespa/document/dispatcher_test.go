@@ -42,9 +42,6 @@ func (f *mockFeeder) Send(doc Document) Result {
 	} else {
 		f.documents = append(f.documents, doc)
 	}
-	if !result.Success() {
-		result.Stats.Errors = 1
-	}
 	return result
 }
 
@@ -135,7 +132,7 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	dispatcher.Close()
 	wantDocs := docs[:2]
 	assert.Equal(t, wantDocs, feeder.documents)
-	assert.Equal(t, int64(20), dispatcher.Stats().Errors)
+	assert.Equal(t, int64(20), dispatcher.Stats().Unsuccessful())
 
 	// Dispatching more documents for same ID succeed
 	feeder.failAfterN(0)
@@ -145,7 +142,7 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	dispatcher.Enqueue(Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut})
 	dispatcher.Enqueue(Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationPut})
 	dispatcher.Close()
-	assert.Equal(t, int64(20), dispatcher.Stats().Errors)
+	assert.Equal(t, int64(20), dispatcher.Stats().Unsuccessful())
 	assert.Equal(t, 6, len(feeder.documents))
 }
 
@@ -166,7 +163,7 @@ func TestDispatcherOrderingWithRetry(t *testing.T) {
 	}
 	dispatcher.Close()
 	assert.Equal(t, docs, feeder.documents)
-	assert.Equal(t, int64(5), dispatcher.Stats().Errors)
+	assert.Equal(t, int64(5), dispatcher.Stats().Unsuccessful())
 }
 
 func TestDispatcherOpenCircuit(t *testing.T) {
