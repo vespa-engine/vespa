@@ -297,9 +297,9 @@ BTreeTest::assertMemoryUsage(const vespalib::MemoryUsage & exp, const vespalib::
 }
 
 TEST_F(BTreeTest, control_iterator_size) {
-    EXPECT_EQ(208u,  sizeof(BTreeIteratorBase<uint32_t, uint32_t, NoAggregated>));
-    EXPECT_EQ(208u,  sizeof(BTreeIteratorBase<uint32_t, BTreeNoLeafData, NoAggregated>));
-    EXPECT_EQ(544u, sizeof(MyTree::Iterator));
+    EXPECT_EQ(120u,  sizeof(BTreeIteratorBase<uint32_t, uint32_t, NoAggregated>));
+    EXPECT_EQ(120u,  sizeof(BTreeIteratorBase<uint32_t, BTreeNoLeafData, NoAggregated>));
+    EXPECT_EQ(288u, sizeof(MyTree::Iterator));
 }
 
 TEST_F(BTreeTest, require_that_node_insert_works)
