@@ -31,7 +31,7 @@ ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name, Att
         } else {
             metaGuard = metaItr->second;
         }
-        auto insRes = attributes.emplace(name, result->makeReadGuard(std::move(metaGuard), stableEnumGuard));
+        auto insRes = attributes.insert(std::make_pair(name, result->makeReadGuard(std::move(metaGuard), stableEnumGuard)));
         return insRes.first->second->attribute();
     } else {
         return nullptr;
