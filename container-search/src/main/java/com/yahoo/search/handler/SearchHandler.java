@@ -280,9 +280,7 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     private Renderer<Result> toRendererCopy(ComponentSpecification format) {
-        Renderer<Result> renderer = executionFactory.rendererRegistry().getRenderer(format);
-        renderer = perRenderingCopy(renderer);
-        return renderer;
+        return perRenderingCopy(executionFactory.rendererRegistry().getRenderer(format));
     }
 
     private Tuple2<String, Chain<Searcher>> resolveChain(String explicitChainName) {
