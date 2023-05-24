@@ -250,7 +250,7 @@ public class InternalStepRunner implements StepRunner {
                 case LOAD_BALANCER_NOT_READY, PARENT_HOST_NOT_READY -> {
                     logger.log(e.message()); // Consider splitting these messages in summary and details, on config server.
                     Instant someTimeAfterStart = startTime.plusSeconds(200);
-                    Instant inALittleWhile = controller.clock().instant().plusSeconds(90);
+                    Instant inALittleWhile = controller.clock().instant().plusSeconds(60);
                     controller.jobController().locked(id, run -> run.sleepingUntil(someTimeAfterStart.isAfter(inALittleWhile) ? someTimeAfterStart : inALittleWhile));
                     return result;
                 }
