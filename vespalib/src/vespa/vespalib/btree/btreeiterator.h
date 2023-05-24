@@ -5,6 +5,7 @@
 #include "btreenode.h"
 #include "btreenodeallocator.h"
 #include "btreetraits.h"
+#include <cassert>
 
 namespace vespalib::btree {
 
