@@ -153,6 +153,11 @@ public class ClusterModel {
         return true;
     }
 
+    public static Duration minScalingDuration(ClusterSpec clusterSpec) {
+        if (clusterSpec.isStateful()) return Duration.ofHours(12);
+        return Duration.ofMinutes(5);
+    }
+
     /** Returns the predicted duration of a rescaling of this cluster */
     public Duration scalingDuration() { return scalingDuration; }
 
