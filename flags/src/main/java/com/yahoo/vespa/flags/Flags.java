@@ -391,7 +391,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundBooleanFlag ALLOW_MORE_THAN_ONE_CONTENT_GROUP_DOWN = defineFeatureFlag(
-            "allow-more-than-one-content-group-down", false, List.of("hmusum"), "2023-04-14", "2023-06-14",
+            "allow-more-than-one-content-group-down", false, List.of("hmusum"), "2023-04-14", "2023-07-01",
             "Whether to enable possible configuration of letting more than one content group down",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -415,7 +415,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
-            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-06-01",
+            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-07-01",
             "Whether to enable the one program that should not be named",
             "Takes effect at next host-admin tick",
             ZONE_ID);
