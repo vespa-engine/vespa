@@ -33,7 +33,7 @@ private:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     using MetaStoreReadGuard = search::IDocumentMetaStoreContext::IReadGuard;
 
-    using AttributeCache = std::unordered_map<vespalib::string, std::unique_ptr<AttributeReadGuard>, vespalib::hash<vespalib::string>>;
+    using AttributeCache = vespalib::hash_map<vespalib::string, std::unique_ptr<AttributeReadGuard>>;
     using MetaStoreCache = std::unordered_map<const void *, std::shared_ptr<MetaStoreReadGuard>>;
     using LockGuard = std::lock_guard<std::mutex>;
 
@@ -41,7 +41,7 @@ private:
     mutable AttributeCache _guardedAttributes;
     mutable AttributeCache _enumGuardedAttributes;
     mutable MetaStoreCache _metaStores;
-    mutable std::mutex _cacheMutex;
+    mutable std::mutex     _cacheMutex;
 
     const IAttributeVector *getOrCacheAttribute(const vespalib::string &name, AttributeCache &attributes,
                                                 bool stableEnumGuard, const LockGuard &) const;
