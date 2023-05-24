@@ -85,37 +85,28 @@ func TestClientSend(t *testing.T) {
 	for i, tt := range tests {
 		doc := tt.in
 		wantRes := Result{
-			Id: doc.Id,
-			Stats: Stats{
-				Requests:     1,
-				Responses:    1,
-				TotalLatency: time.Second,
-				MinLatency:   time.Second,
-				MaxLatency:   time.Second,
-			},
+			Id:      doc.Id,
+			Latency: time.Second,
 		}
 		if i < 3 {
 			httpClient.NextResponseString(200, `{"message":"All good!"}`)
 			wantRes.Status = StatusSuccess
 			wantRes.HTTPStatus = 200
 			wantRes.Message = "All good!"
-			wantRes.Stats.ResponsesByCode = map[int]int64{200: 1}
-			wantRes.Stats.BytesRecv = 23
+			wantRes.BytesRecv = 23
 		} else {
 			httpClient.NextResponseString(502, `{"message":"Good bye, cruel world!"}`)
 			wantRes.Status = StatusVespaFailure
 			wantRes.HTTPStatus = 502
 			wantRes.Message = "Good bye, cruel world!"
-			wantRes.Stats.ResponsesByCode = map[int]int64{502: 1}
-			wantRes.Stats.Errors = 1
-			wantRes.Stats.BytesRecv = 36
+			wantRes.BytesRecv = 36
 		}
 		res := client.Send(doc)
-		wantRes.Stats.BytesSent = int64(len(httpClient.LastBody))
+		wantRes.BytesSent = int64(len(httpClient.LastBody))
 		if !reflect.DeepEqual(res, wantRes) {
 			t.Fatalf("got result %+v, want %+v", res, wantRes)
 		}
-		stats.Add(res.Stats)
+		stats.Add(res)
 		r := httpClient.LastRequest
 		if r.Method != tt.method {
 			t.Errorf("got r.Method = %q, want %q", r.Method, tt.method)
@@ -137,7 +128,7 @@ func TestClientSend(t *testing.T) {
 			200: 3,
 			502: 1,
 		},
-		Errors:       1,
+		Errors:       0,
 		Inflight:     0,
 		TotalLatency: 4 * time.Second,
 		MinLatency:   time.Second,
@@ -191,8 +182,8 @@ func assertCompressedRequest(t *testing.T, want bool, result Result, client *moc
 	if gotEnc != wantEnc {
 		t.Errorf("got Content-Encoding=%q, want %q", gotEnc, wantEnc)
 	}
-	if result.Stats.BytesSent != int64(len(client.LastBody)) {
-		t.Errorf("got BytesSent=%d, want %d", result.Stats.BytesSent, len(client.LastBody))
+	if result.BytesSent != int64(len(client.LastBody)) {
+		t.Errorf("got BytesSent=%d, want %d", result.BytesSent, len(client.LastBody))
 	}
 	compressed := bytes.HasPrefix(client.LastBody, []byte{0x1f, 0x8b})
 	if compressed != want {

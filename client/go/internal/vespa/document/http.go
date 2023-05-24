@@ -274,7 +274,7 @@ func (c *Client) clientTimeout() time.Duration {
 // Send given document to the endpoint configured in this client.
 func (c *Client) Send(document Document) Result {
 	start := c.now()
-	result := Result{Id: document.Id, Stats: Stats{Requests: 1}}
+	result := Result{Id: document.Id}
 	req, buf, err := c.prepare(document)
 	defer c.buffers.Put(buf)
 	if err != nil {
@@ -294,7 +294,6 @@ func (c *Client) Send(document Document) Result {
 }
 
 func resultWithErr(result Result, err error) Result {
-	result.Stats.Errors++
 	result.Status = StatusTransportFailure
 	result.Err = err
 	return result
@@ -302,8 +301,6 @@ func resultWithErr(result Result, err error) Result {
 
 func resultWithResponse(resp *http.Response, sentBytes int, result Result, elapsed time.Duration, buf *bytes.Buffer) Result {
 	result.HTTPStatus = resp.StatusCode
-	result.Stats.Responses++
-	result.Stats.ResponsesByCode = map[int]int64{resp.StatusCode: 1}
 	switch resp.StatusCode {
 	case 200:
 		result.Status = StatusSuccess
@@ -314,30 +311,24 @@ func resultWithResponse(resp *http.Response, sentBytes int, result Result, elaps
 	default:
 		result.Status = StatusTransportFailure
 	}
-	var body struct {
-		Message string        `json:"message"`
-		Trace   json.RawValue `json:"trace"`
-	}
 	buf.Reset()
 	written, err := io.Copy(buf, resp.Body)
 	if err != nil {
-		result.Status = StatusVespaFailure
-		result.Err = err
+		result = resultWithErr(result, err)
 	} else {
+		var body struct {
+			Message string        `json:"message"`
+			Trace   json.RawValue `json:"trace"`
+		}
 		if err := json.Unmarshal(buf.Bytes(), &body); err != nil {
-			result.Status = StatusVespaFailure
-			result.Err = fmt.Errorf("failed to decode json response: %w", err)
+			result = resultWithErr(result, fmt.Errorf("failed to decode json response: %w", err))
+		} else {
+			result.Message = body.Message
+			result.Trace = string(body.Trace)
 		}
 	}
-	result.Message = body.Message
-	result.Trace = string(body.Trace)
-	result.Stats.BytesSent = int64(sentBytes)
-	result.Stats.BytesRecv = int64(written)
-	if !result.Success() {
-		result.Stats.Errors++
-	}
-	result.Stats.TotalLatency = elapsed
-	result.Stats.MinLatency = elapsed
-	result.Stats.MaxLatency = elapsed
+	result.Latency = elapsed
+	result.BytesSent = int64(sentBytes)
+	result.BytesRecv = int64(written)
 	return result
 }

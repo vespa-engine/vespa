@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// Status of a document operation.
 type Status int
 
 const (
@@ -25,9 +26,11 @@ type Result struct {
 	Id         Id
 	Message    string
 	Trace      string
-	Stats      Stats
 	Status     Status
 	HTTPStatus int
+	Latency    time.Duration
+	BytesSent  int64
+	BytesRecv  int64
 }
 
 func (r Result) Success() bool {
@@ -57,39 +60,46 @@ func (s Stats) AvgLatency() time.Duration {
 	return s.TotalLatency / time.Duration(requests)
 }
 
-func (s Stats) Successes() int64 {
+func (s Stats) Successful() int64 {
 	if s.ResponsesByCode == nil {
 		return 0
 	}
 	return s.ResponsesByCode[200]
 }
 
-// Add all statistics contained in other to this.
-func (s *Stats) Add(other Stats) {
-	s.Requests += other.Requests
-	s.Responses += other.Responses
-	if s.ResponsesByCode == nil && other.ResponsesByCode != nil {
-		s.ResponsesByCode = make(map[int]int64)
-	}
-	for code, count := range other.ResponsesByCode {
-		_, ok := s.ResponsesByCode[code]
-		if ok {
-			s.ResponsesByCode[code] += count
-		} else {
-			s.ResponsesByCode[code] = count
+func (s Stats) Unsuccessful() int64 { return s.Requests - s.Successful() }
+
+func (s Stats) Clone() Stats {
+	if s.ResponsesByCode != nil {
+		mapCopy := make(map[int]int64)
+		for k, v := range s.ResponsesByCode {
+			mapCopy[k] = v
 		}
+		s.ResponsesByCode = mapCopy
 	}
-	s.Errors += other.Errors
-	s.TotalLatency += other.TotalLatency
-	if s.MinLatency == 0 || (other.MinLatency > 0 && other.MinLatency < s.MinLatency) {
-		s.MinLatency = other.MinLatency
-	}
-	if other.MaxLatency > s.MaxLatency {
-		s.MaxLatency = other.MaxLatency
-	}
-	s.BytesSent += other.BytesSent
-	s.BytesRecv += other.BytesRecv
+	return s
 }
 
-// Feeder is the interface for a consumer of documents.
-type Feeder interface{ Send(Document) Result }
+// Add statistics from result to this.
+func (s *Stats) Add(result Result) {
+	s.Requests++
+	if s.ResponsesByCode == nil {
+		s.ResponsesByCode = make(map[int]int64)
+	}
+	responsesByCode := s.ResponsesByCode[result.HTTPStatus]
+	s.ResponsesByCode[result.HTTPStatus] = responsesByCode + 1
+	if result.Err == nil {
+		s.Responses++
+	} else {
+		s.Errors++
+	}
+	s.TotalLatency += result.Latency
+	if result.Latency < s.MinLatency || s.MinLatency == 0 {
+		s.MinLatency = result.Latency
+	}
+	if result.Latency > s.MaxLatency {
+		s.MaxLatency = result.Latency
+	}
+	s.BytesSent += result.BytesSent
+	s.BytesRecv += result.BytesRecv
+}
