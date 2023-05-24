@@ -108,21 +108,6 @@ public final class Capacity {
         return from(resources, required, canFail, NodeType.tenant);
     }
 
-    // TODO: Remove after March 2023
-    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail, Optional<CloudAccount> cloudAccount) {
-        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, ClusterInfo.empty());
-    }
-
-    // TODO: Remove after March 2023
-    public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail) {
-        return new Capacity(min, max, IntRange.empty(), required, canFail, NodeType.tenant, Optional.empty(), ClusterInfo.empty());
-    }
-
-    // TODO: Remove after March 2023
-    public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail, Optional<CloudAccount> cloudAccount) {
-        return new Capacity(min, max, IntRange.empty(), required, canFail, NodeType.tenant, cloudAccount, ClusterInfo.empty());
-    }
-
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
                                 Optional<CloudAccount> cloudAccount, ClusterInfo clusterInfo) {
         return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, clusterInfo);
