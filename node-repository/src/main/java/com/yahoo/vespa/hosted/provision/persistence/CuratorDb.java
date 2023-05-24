@@ -206,7 +206,7 @@ public class CuratorDb {
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
                                     node.history().recordStateTransition(node.state(), toState, agent, clock.instant()),
                                     node.type(), node.reports(), node.modelName(), node.reservedTo(),
-                                    node.exclusiveToApplicationId(), node.hostTTL(), node.exclusiveToClusterType(),
+                                    node.exclusiveToApplicationId(), node.hostTTL(), node.hostEmptyAt(), node.exclusiveToClusterType(),
                                     node.switchHostname(), node.trustedCertificates(), node.cloudAccount(), node.wireguardPubKey());
             curatorTransaction.add(createOrSet(nodePath(newNode), nodeSerializer.toJson(newNode)));
             writtenNodes.add(newNode);
