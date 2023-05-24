@@ -17,16 +17,17 @@ import java.util.stream.Collectors;
  * @author ollivir
  */
 public class PackageTally {
-    private final Map<String, Optional<ExportPackageAnnotation>> definedPackagesMap;
+
+    private final Map<String, PackageInfo> definedPackages;
     private final Set<String> referencedPackagesUnfiltered;
 
-    PackageTally(Map<String, Optional<ExportPackageAnnotation>> definedPackagesMap, Set<String> referencedPackagesUnfiltered) {
-        this.definedPackagesMap = definedPackagesMap;
+    PackageTally(Map<String, PackageInfo> definedPackages, Set<String> referencedPackagesUnfiltered) {
+        this.definedPackages = definedPackages;
         this.referencedPackagesUnfiltered = referencedPackagesUnfiltered;
     }
 
     public Set<String> definedPackages() {
-        return definedPackagesMap.keySet();
+        return definedPackages.keySet();
     }
 
     public Set<String> referencedPackages() {
@@ -35,10 +36,17 @@ public class PackageTally {
 
     public Map<String, ExportPackageAnnotation> exportedPackages() {
         Map<String, ExportPackageAnnotation> ret = new HashMap<>();
-        definedPackagesMap.forEach((k, v) -> {
-            v.ifPresent(annotation -> ret.put(k, annotation));
+        definedPackages.forEach((pkg, pkgInfo) -> {
+            pkgInfo.exportPackage().ifPresent(a -> ret.put(pkg, a));
         });
         return ret;
+    }
+
+    public Set<String> publicApiPackages() {
+        return definedPackages.values().stream()
+                .filter(PackageInfo::isPublicApi)
+                .map(PackageInfo::name)
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -58,36 +66,37 @@ public class PackageTally {
      * Represents the classes for two package tallies that are deployed as a single unit.
      * <p>
      * ExportPackageAnnotations from this has precedence over the other.
+     * TODO: Add unit test and try using Map.merge (as in the functions below). Can't see how Maps.combine is any different.
      */
     public PackageTally combine(PackageTally other) {
-        Map<String, Optional<ExportPackageAnnotation>> map = Maps.combine(this.definedPackagesMap, other.definedPackagesMap,
-                (l, r) -> l.isPresent() ? l : r);
+        var definedPkgs = Maps.combine(this.definedPackages, other.definedPackages, PackageInfo::hasExportPackageOrElse);
         Set<String> referencedPkgs = new HashSet<>(this.referencedPackagesUnfiltered);
         referencedPkgs.addAll(other.referencedPackagesUnfiltered);
 
-        return new PackageTally(map, referencedPkgs);
+        return new PackageTally(definedPkgs, referencedPkgs);
     }
 
     public static PackageTally combine(Collection<PackageTally> packageTallies) {
-        Map<String, Optional<ExportPackageAnnotation>> map = new HashMap<>();
+        var definedPkgs = new HashMap<String, PackageInfo>();
         Set<String> referencedPkgs = new HashSet<>();
 
-        for (PackageTally pt : packageTallies) {
-            pt.definedPackagesMap.forEach((k, v) -> map.merge(k, v, (l, r) -> l.isPresent() ? l : r));
-            referencedPkgs.addAll(pt.referencedPackagesUnfiltered);
+        for (PackageTally tally : packageTallies) {
+            tally.definedPackages.forEach((pkg, info) -> definedPkgs.merge(pkg, info, PackageInfo::hasExportPackageOrElse));
+            referencedPkgs.addAll(tally.referencedPackagesUnfiltered);
         }
-        return new PackageTally(map, referencedPkgs);
+        return new PackageTally(definedPkgs, referencedPkgs);
     }
 
     public static PackageTally fromAnalyzedClassFiles(Collection<ClassFileMetaData> analyzedClassFiles) {
-        Map<String, Optional<ExportPackageAnnotation>> map = new HashMap<>();
-        Set<String> referencedPkgs = new HashSet<>();
+        var definedPkgs = new HashMap<String, PackageInfo>();
+        var referencedPkgs = new HashSet<String>();
 
-        for (ClassFileMetaData metaData : analyzedClassFiles) {
-            String packageName = Packages.packageName(metaData.getName());
-            map.merge(packageName, metaData.getExportPackage(), (l, r) -> l.isPresent() ? l : r);
-            metaData.getReferencedClasses().forEach(className -> referencedPkgs.add(Packages.packageName(className)));
+        for (ClassFileMetaData classData : analyzedClassFiles) {
+            var pkgName = classData.packageInfo().name();
+            definedPkgs.merge(pkgName, classData.packageInfo(), PackageInfo::hasExportPackageOrElse);
+            classData.getReferencedClasses().forEach(className -> referencedPkgs.add(Packages.packageName(className)));
         }
-        return new PackageTally(map, referencedPkgs);
+        return new PackageTally(definedPkgs, referencedPkgs);
     }
+
 }

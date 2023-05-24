@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.classanalysis;
 
+import com.yahoo.api.annotations.PublicApi;
 import com.yahoo.osgi.annotation.ExportPackage;
 import com.yahoo.osgi.annotation.Version;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
@@ -28,6 +29,7 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
     private String name = null;
     private final Set<String> imports = new HashSet<>();
     private Optional<ExportPackageAnnotation> exportPackageAnnotation = Optional.empty();
+    private boolean isPublicApi = false;
 
     private final Optional<ArtifactVersion> defaultExportPackageVersion;
 
@@ -159,6 +161,9 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
         if (ExportPackage.class.getName().equals(Type.getType(desc).getClassName())) {
             return visitExportPackage();
+        } if (PublicApi.class.getName().equals(Type.getType(desc).getClassName())) {
+            isPublicApi = true;
+            return null;
         } else {
             if (visible) {
                 addImportWithTypeDesc(desc);
@@ -169,7 +174,8 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
 
     ClassFileMetaData result() {
         assert (!imports.contains("int"));
-        return new ClassFileMetaData(name, imports, exportPackageAnnotation);
+        var packageInfo = new PackageInfo(Packages.packageName(name), exportPackageAnnotation, isPublicApi);
+        return new ClassFileMetaData(name, imports, packageInfo);
     }
 
 }
