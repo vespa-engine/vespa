@@ -5,6 +5,7 @@
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/distance_metric_utils.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/query_value.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
@@ -14,10 +15,14 @@
 #include <vespa/searchlib/tensor/tensor_ext_attribute.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
+#include <algorithm>
+#include <cctype>
 
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
+using search::attribute::DistanceMetric;
+using search::attribute::DistanceMetricUtils;
 using search::fef::QueryValue;
 using search::tensor::DistanceCalculator;
 using search::tensor::TensorExtAttribute;
@@ -61,7 +66,7 @@ NearestNeighborFieldSearcher::NodeAndCalc::to_raw_score(double distance)
 }
 
 NearestNeighborFieldSearcher::NearestNeighborFieldSearcher(FieldIdT fid,
-                                                           search::attribute::DistanceMetric metric)
+                                                           DistanceMetric metric)
     : FieldSearcher(fid),
       _metric(metric),
       _attr(),
@@ -134,25 +139,20 @@ NearestNeighborFieldSearcher::onValue(const document::FieldValue& fv)
     }
 }
 
-search::attribute::DistanceMetric
+DistanceMetric
 NearestNeighborFieldSearcher::distance_metric_from_string(const vespalib::string& value)
 {
-    using search::attribute::DistanceMetric;
     // Valid string values must match the definition of DistanceMetric in
     // config-model/src/main/java/com/yahoo/schema/document/Attribute.java
-    if (value == "EUCLIDEAN") {
+    auto v = value;
+    std::transform(v.begin(), v.end(), v.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+    try {
+        return DistanceMetricUtils::to_distance_metric(v);
+    } catch (vespalib::IllegalStateException&) {
+        vespalib::Issue::report("Distance metric '%s' is not supported. Using 'euclidean' instead", value.c_str());
         return DistanceMetric::Euclidean;
-    } else if (value == "ANGULAR") {
-        return DistanceMetric::Angular;
-    } else if (value == "GEODEGREES") {
-        return DistanceMetric::GeoDegrees;
-    } else if (value == "INNERPRODUCT") {
-        return DistanceMetric::InnerProduct;
-    } else if (value == "HAMMING") {
-        return DistanceMetric::Hamming;
     }
-    vespalib::Issue::report("Distance metric '%s' is not supported. Using 'euclidean' instead", value.c_str());
-    return DistanceMetric::Euclidean;
 }
 
 }
