@@ -44,7 +44,7 @@ var (
 // Client represents a HTTP client for the /document/v1/ API.
 type Client struct {
 	options     ClientOptions
-	httpClients []countingHTTPClient
+	httpClients []*countingHTTPClient
 	now         func() time.Time
 	sendCount   atomic.Int32
 	gzippers    sync.Pool
@@ -90,9 +90,9 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, e
 	if err != nil {
 		return nil, fmt.Errorf("invalid base url: %w", err)
 	}
-	countingClients := make([]countingHTTPClient, 0, len(httpClients))
+	countingClients := make([]*countingHTTPClient, 0, len(httpClients))
 	for _, client := range httpClients {
-		countingClients = append(countingClients, countingHTTPClient{client: client})
+		countingClients = append(countingClients, &countingHTTPClient{client: client})
 	}
 	nowFunc := options.NowFunc
 	if nowFunc == nil {
@@ -196,7 +196,7 @@ func (c *Client) leastBusyClient() *countingHTTPClient {
 		}
 	}
 	leastBusy.inflight.Add(1)
-	return &leastBusy
+	return leastBusy
 }
 
 func (c *Client) gzipWriter(w io.Writer) *gzip.Writer {

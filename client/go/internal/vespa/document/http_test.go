@@ -39,7 +39,7 @@ func TestLeastBusyClient(t *testing.T) {
 	client.httpClients[0].inflight.Add(1)
 	client.httpClients[1].inflight.Add(1)
 	assertLeastBusy(t, 2, client)
-	assertLeastBusy(t, 2, client)
+	assertLeastBusy(t, 3, client)
 	assertLeastBusy(t, 3, client)
 	client.httpClients[3].inflight.Add(1)
 	client.httpClients[1].inflight.Add(-1)
