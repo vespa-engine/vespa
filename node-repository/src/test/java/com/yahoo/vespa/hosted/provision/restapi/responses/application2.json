@@ -94,7 +94,7 @@
           "at" : 123
         }
       ],
-      "scalingDuration": 43200000
+      "scalingDuration": 28800000
     }
   }
 }

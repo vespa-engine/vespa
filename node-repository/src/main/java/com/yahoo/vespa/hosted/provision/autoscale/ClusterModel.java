@@ -154,7 +154,7 @@ public class ClusterModel {
     }
 
     public static Duration minScalingDuration(ClusterSpec clusterSpec) {
-        if (clusterSpec.isStateful()) return Duration.ofHours(12);
+        if (clusterSpec.isStateful()) return Duration.ofHours(8);
         return Duration.ofMinutes(5);
     }
 

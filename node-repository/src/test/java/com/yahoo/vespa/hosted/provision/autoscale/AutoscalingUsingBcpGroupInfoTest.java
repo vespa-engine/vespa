@@ -216,7 +216,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.tester().clock().advance(duration3.negated());
         fixture.loader().addQueryRateMeasurements(10, __ -> 90.0);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         8, 1, 2.4, 7.4, 29.0,
+                                         8, 1, 2.3, 7.4, 29.0,
                                          fixture.autoscale());
 
         // Local only
@@ -226,7 +226,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.tester().clock().advance(duration4.negated());
         fixture.loader().addQueryRateMeasurements(10, __ -> 100.0);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         8, 1, 2.3, 7.4, 29.0,
+                                         8, 1, 2.2, 7.4, 29.0,
                                          fixture.autoscale());
 
         // No group info, should be the same as the above
@@ -236,7 +236,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.tester().clock().advance(duration5.negated());
         fixture.loader().addQueryRateMeasurements(10, __ -> 100.0);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         8, 1, 2.3, 7.4, 29.0,
+                                         8, 1, 2.2, 7.4, 29.0,
                                          fixture.autoscale());
 
         // 40 query rate, no group info (for reference to the below)
@@ -266,7 +266,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.tester().clock().advance(duration8.negated());
         fixture.loader().addQueryRateMeasurements(10, __ -> 40.0);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         8, 1, 2.0, 7.4, 29.0,
+                                         8, 1, 1.9, 7.4, 29.0,
                                          fixture.autoscale());
     }
 
