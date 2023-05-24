@@ -476,13 +476,17 @@ public class NodeSerializerTest {
                 nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
         Node node = nodeSerializer.fromJson(nodeSerializer.toJson(builder.build()));
         assertFalse(node.exclusiveToApplicationId().isPresent());
+        assertFalse(node.hostTTL().isPresent());
         assertFalse(node.exclusiveToClusterType().isPresent());
 
         ApplicationId exclusiveToApp = ApplicationId.from("tenant1", "app1", "instance1");
         ClusterSpec.Type exclusiveToCluster = ClusterSpec.Type.admin;
-        node = builder.exclusiveToApplicationId(exclusiveToApp).exclusiveToClusterType(exclusiveToCluster).build();
+        node = builder.exclusiveToApplicationId(exclusiveToApp)
+                      .hostTTL(Duration.ofDays(1))
+                      .exclusiveToClusterType(exclusiveToCluster).build();
         node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(exclusiveToApp, node.exclusiveToApplicationId().get());
+        assertEquals(Duration.ofDays(1), node.hostTTL().get());
         assertEquals(exclusiveToCluster, node.exclusiveToClusterType().get());
     }
 

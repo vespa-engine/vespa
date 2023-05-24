@@ -1018,13 +1018,18 @@ public class NodesV2ApiTest {
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         tester.assertPartialResponse(new Request(url), "exclusiveTo\":\"t1:a1:i1\",", true);
 
+        assertResponse(new Request(url, Utf8.toBytes("{\"hostTTL\": 86400000}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        tester.assertPartialResponse(new Request(url), "exclusiveTo\":\"t1:a1:i1\",\"hostTTL\":86400000", true);
+
         assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveToClusterType\": \"admin\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
-        tester.assertPartialResponse(new Request(url), "exclusiveTo\":\"t1:a1:i1\",\"exclusiveToClusterType\":\"admin\",", true);
+        tester.assertPartialResponse(new Request(url), "exclusiveTo\":\"t1:a1:i1\",\"hostTTL\":86400000,\"exclusiveToClusterType\":\"admin\",", true);
 
-        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": null, \"exclusiveToClusterType\": null}"), Request.Method.PATCH),
+        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": null, \"hostTTL\":null, \"exclusiveToClusterType\": null}"), Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         tester.assertPartialResponse(new Request(url), "exclusiveTo", false);
+        tester.assertPartialResponse(new Request(url), "hostTTL", false);
     }
 
     @Test

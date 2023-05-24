@@ -143,6 +143,7 @@ public class NodePrioritizer {
             if (nodes.suspended(host)) continue; // Hosts that are suspended may be down for some time, e.g. for OS upgrade
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
             if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
+            // TODO jonmv: allow reusing exclusive hosts after all, if the host matches what we'd provision for that node anyway.
             if (host.exclusiveToApplicationId().isPresent()) continue; // Never allocate new nodes to exclusive hosts
             if ( ! host.exclusiveToClusterType().map(clusterSpec.type()::equals).orElse(true)) continue;
             if (spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
