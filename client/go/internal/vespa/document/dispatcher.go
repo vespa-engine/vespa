@@ -157,8 +157,7 @@ func (d *Dispatcher) dispatchNext(id Id) {
 	}
 	hasNext := q != nil
 	if hasNext {
-		next, ok := q.Poll()
-		if ok {
+		if next, ok := q.Poll(); ok {
 			// we have more operations with this ID: dispatch the next one
 			d.dispatch(next)
 		} else {
@@ -240,8 +239,9 @@ func (d *Dispatcher) Enqueue(doc Document) error { return d.enqueue(documentOp{d
 func (d *Dispatcher) Stats() Stats {
 	d.statsMu.Lock()
 	defer d.statsMu.Unlock()
-	d.stats.Inflight = d.inflightCount.Load()
-	return d.stats
+	statsCopy := d.stats.Clone()
+	statsCopy.Inflight = d.inflightCount.Load()
+	return statsCopy
 }
 
 // Close waits for all inflight operations to complete and closes the dispatcher.

@@ -69,6 +69,17 @@ func (s Stats) Successful() int64 {
 
 func (s Stats) Unsuccessful() int64 { return s.Requests - s.Successful() }
 
+func (s Stats) Clone() Stats {
+	if s.ResponsesByCode != nil {
+		mapCopy := make(map[int]int64)
+		for k, v := range s.ResponsesByCode {
+			mapCopy[k] = v
+		}
+		s.ResponsesByCode = mapCopy
+	}
+	return s
+}
+
 // Add statistics from result to this.
 func (s *Stats) Add(result Result) {
 	s.Requests++
