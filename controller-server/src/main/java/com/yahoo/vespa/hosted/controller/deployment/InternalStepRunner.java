@@ -808,7 +808,7 @@ public class InternalStepRunner implements StepRunner {
         NotificationSource source = NotificationSource.from(run.id());
         Consumer<String> updater = msg -> controller.notificationsDb().setNotification(source, Notification.Type.deployment, Notification.Level.error, msg);
         switch (isRemoved ? success : run.status()) {
-            case aborted: return; // wait and see how the next run goes.
+            case aborted, cancelled: return; // wait and see how the next run goes.
             case noTests:
             case running:
             case success:
