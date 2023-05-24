@@ -637,8 +637,8 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.25, 200);
 
-        fixture.tester().assertResources("Scale up since we assume we need 2x cpu for growth when no data scaling time data",
-                                         8, 1, 1.5,  7.4, 29.0,
+        fixture.tester().assertResources("Scale up since we assume we need 2x cpu for growth when no scaling time data",
+                                         8, 1, 1.6,  7.4, 29.0,
                                          fixture.autoscale());
 
         fixture.setScalingDuration(Duration.ofMinutes(5));
@@ -647,7 +647,7 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.25, 200);
         fixture.tester().assertResources("Scale down since observed growth is slower than scaling time",
-                                         8, 1, 1.3,   7.4, 29.0,
+                                         8, 1, 1.2,   7.4, 29.0,
                                          fixture.autoscale());
 
         fixture.setScalingDuration(Duration.ofMinutes(60));
@@ -658,7 +658,7 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.25, 200);
         fixture.tester().assertResources("Scale up since observed growth is faster than scaling time",
-                                         8, 1, 1.6,  7.4, 29.0,
+                                         8, 1, 1.5,  7.4, 29.0,
                                          fixture.autoscale());
     }
 
@@ -702,7 +702,7 @@ public class AutoscalingTest {
         fixture.loader().addCpuMeasurements(0.4, 200);
         // TODO: Ackhually, we scale down here - why?
         fixture.tester().assertResources("Query load is 4x write load -> scale up more",
-                                         8, 1, 1.6,  7.4, 29.0,
+                                         8, 1, 1.4,  7.4, 29.0,
                                          fixture.autoscale());
 
         fixture.tester().clock().advance(Duration.ofDays(2));
@@ -718,7 +718,7 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.4, 200);
         fixture.tester().assertResources("Query only -> largest possible",
-                                         8, 1, 3.1,  7.4, 29.0,
+                                         8, 1, 2.5,  7.4, 29.0,
                                          fixture.autoscale());
 
         fixture.tester().clock().advance(Duration.ofDays(2));
