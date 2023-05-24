@@ -38,10 +38,14 @@ public:
 
         void setValid() noexcept;
         bool setInvalid() noexcept;
-        void release() noexcept;
+        void release() noexcept {
+            _refCount.fetch_sub(2);
+        }
         GenerationHold *acquire() noexcept;
         static GenerationHold *copy(GenerationHold *self) noexcept;
-        uint32_t getRefCount() const noexcept;
+        uint32_t getRefCount() const noexcept {
+            return _refCount.load(std::memory_order_relaxed) / 2;
+        }
     };
 
     /**
@@ -57,11 +61,15 @@ public:
             }
         }
     public:
-        Guard() noexcept;
-        Guard(GenerationHold *hold) noexcept; // hold is never nullptr
-        ~Guard();
-        Guard(const Guard & rhs) noexcept;
-        Guard(Guard &&rhs) noexcept;
+        Guard() noexcept : _hold(nullptr) { }
+        Guard(GenerationHold *hold) noexcept : _hold(hold->acquire()) { } // hold is never nullptr
+        ~Guard() { cleanup(); }
+        Guard(const Guard & rhs) noexcept : _hold(GenerationHold::copy(rhs._hold)) { }
+        Guard(Guard &&rhs) noexcept
+            : _hold(rhs._hold)
+        {
+            rhs._hold = nullptr;
+        }
         Guard & operator=(const Guard & rhs) noexcept;
         Guard & operator=(Guard &&rhs) noexcept;
 
@@ -75,9 +83,9 @@ private:
     std::atomic<generation_t>     _generation;
     std::atomic<generation_t>     _oldest_used_generation;
     std::atomic<GenerationHold *> _last;      // Points to "current generation" entry
-    GenerationHold *_first;     // Points to "firstUsedGeneration" entry
-    GenerationHold *_free;      // List of free entries
-    uint32_t        _numHolds;  // Number of allocated generation hold entries
+    GenerationHold               *_first;     // Points to "firstUsedGeneration" entry
+    GenerationHold               *_free;      // List of free entries
+    uint32_t                      _numHolds;  // Number of allocated generation hold entries
 
     void set_generation(generation_t generation) noexcept { _generation.store(generation, std::memory_order_relaxed); }
 

@@ -31,11 +31,6 @@ GenerationHandler::GenerationHold::setInvalid() noexcept {
     return _refCount.compare_exchange_strong(refs, 1, std::memory_order_seq_cst);
 }
 
-void
-GenerationHandler::GenerationHold::release() noexcept {
-    _refCount.fetch_sub(2);
-}
-
 GenerationHandler::GenerationHold *
 GenerationHandler::GenerationHold::acquire() noexcept {
     if (valid(_refCount.fetch_add(2))) {
@@ -56,37 +51,6 @@ GenerationHandler::GenerationHold::copy(GenerationHold *self) noexcept {
         assert(valid(oldRefCount));
         return self;
     }
-}
-
-uint32_t
-GenerationHandler::GenerationHold::getRefCount() const noexcept {
-    return _refCount / 2;
-}
-
-GenerationHandler::Guard::Guard() noexcept
-    : _hold(nullptr)
-{
-}
-
-GenerationHandler::Guard::Guard(GenerationHold *hold) noexcept
-    : _hold(hold->acquire())
-{
-}
-
-GenerationHandler::Guard::~Guard()
-{
-    cleanup();
-}
-
-GenerationHandler::Guard::Guard(const Guard & rhs) noexcept
-    : _hold(GenerationHold::copy(rhs._hold))
-{
-}
-
-GenerationHandler::Guard::Guard(Guard &&rhs) noexcept
-    : _hold(rhs._hold)
-{
-    rhs._hold = nullptr;
 }
 
 GenerationHandler::Guard &
