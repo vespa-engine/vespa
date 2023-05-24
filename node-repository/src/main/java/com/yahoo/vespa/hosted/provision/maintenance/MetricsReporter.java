@@ -105,9 +105,9 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                 nonActiveFraction = (double) nonActiveNodes / ((double) activeNodes + (double) nonActiveNodes);
             }
             Metric.Context context = getContext(dimensions(clusterId.application(), clusterId.cluster()));
-            metric.set("nodes.active", activeNodes, context);
-            metric.set("nodes.nonActive", nonActiveNodes, context);
-            metric.set("nodes.nonActiveFraction", nonActiveFraction, context);
+            metric.set(ConfigServerMetrics.NODES_ACTIVE.baseName(), activeNodes, context);
+            metric.set(ConfigServerMetrics.NODES_NON_ACTIVE.baseName(), nonActiveNodes, context);
+            metric.set(ConfigServerMetrics.NODES_NON_ACTIVE_FRACTION.baseName(), nonActiveFraction, context);
         });
     }
 
@@ -128,7 +128,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         NodeList clusterHosts = allNodes.parentsOf(NodeList.copyOf(clusterNodes));
         long nodesOnExclusiveSwitch = NodeList.copyOf(clusterNodes).onExclusiveSwitch(clusterHosts).size();
         double exclusiveSwitchRatio = nodesOnExclusiveSwitch / (double) clusterNodes.size();
-        metric.set("nodes.exclusiveSwitchFraction", exclusiveSwitchRatio,context);
+        metric.set(ConfigServerMetrics.NODES_EXCLUSIVE_SWITCH_FRACTION.baseName(), exclusiveSwitchRatio,context);
     }
 
     private void updateClusterCostMetrics(ClusterId clusterId,
@@ -144,23 +144,23 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     }
 
     private void updateZoneMetrics() {
-        metric.set("zone.working", nodeRepository().nodes().isWorking() ? 1 : 0, null);
+        metric.set(ConfigServerMetrics.ZONE_WORKING.baseName(), nodeRepository().nodes().isWorking() ? 1 : 0, null);
     }
 
     private void updateCacheMetrics() {
         CacheStats nodeCacheStats = nodeRepository().database().nodeSerializerCacheStats();
-        metric.set("cache.nodeObject.hitRate", nodeCacheStats.hitRate(), null);
-        metric.set("cache.nodeObject.evictionCount", nodeCacheStats.evictionCount(), null);
-        metric.set("cache.nodeObject.size", nodeCacheStats.size(), null);
+        metric.set(ConfigServerMetrics.CACHE_NODE_OBJECT_HIT_RATE.baseName(), nodeCacheStats.hitRate(), null);
+        metric.set(ConfigServerMetrics.CACHE_NODE_OBJECT_EVICTION_COUNT.baseName(), nodeCacheStats.evictionCount(), null);
+        metric.set(ConfigServerMetrics.CACHE_NODE_OBJECT_SIZE.baseName(), nodeCacheStats.size(), null);
 
         CacheStats curatorCacheStats = nodeRepository().database().cacheStats();
-        metric.set("cache.curator.hitRate", curatorCacheStats.hitRate(), null);
-        metric.set("cache.curator.evictionCount", curatorCacheStats.evictionCount(), null);
-        metric.set("cache.curator.size", curatorCacheStats.size(), null);
+        metric.set(ConfigServerMetrics.CACHE_CURATOR_HIT_RATE.baseName(), curatorCacheStats.hitRate(), null);
+        metric.set(ConfigServerMetrics.CACHE_CURATOR_EVICTION_COUNT.baseName(), curatorCacheStats.evictionCount(), null);
+        metric.set(ConfigServerMetrics.CACHE_CURATOR_SIZE.baseName(), curatorCacheStats.size(), null);
     }
 
     private void updateMaintenanceMetrics() {
-        metric.set("hostedVespa.pendingRedeployments", pendingRedeploymentsSupplier.get(), null);
+        metric.set(ConfigServerMetrics.HOSTED_VESPA_PENDING_REDEPLOYMENTS.baseName(), pendingRedeploymentsSupplier.get(), null);
     }
 
     /**
@@ -180,24 +180,24 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
             context = getContext(dimensions);
 
             long wantedRestartGeneration = allocation.get().restartGeneration().wanted();
-            metric.set("wantedRestartGeneration", wantedRestartGeneration, context);
+            metric.set(ConfigServerMetrics.WANTED_RESTART_GENERATION.baseName(), wantedRestartGeneration, context);
             long currentRestartGeneration = allocation.get().restartGeneration().current();
-            metric.set("currentRestartGeneration", currentRestartGeneration, context);
+            metric.set(ConfigServerMetrics.CURRENT_RESTART_GENERATION.baseName(), currentRestartGeneration, context);
             boolean wantToRestart = currentRestartGeneration < wantedRestartGeneration;
-            metric.set("wantToRestart", wantToRestart ? 1 : 0, context);
+            metric.set(ConfigServerMetrics.WANT_TO_RESTART.baseName(), wantToRestart ? 1 : 0, context);
 
-            metric.set("retired", allocation.get().membership().retired() ? 1 : 0, context);
+            metric.set(ConfigServerMetrics.RETIRED.baseName(), allocation.get().membership().retired() ? 1 : 0, context);
 
             Version wantedVersion = allocation.get().membership().cluster().vespaVersion();
             double wantedVersionNumber = getVersionAsNumber(wantedVersion);
-            metric.set("wantedVespaVersion", wantedVersionNumber, context);
+            metric.set(ConfigServerMetrics.WANTED_VESPA_VERSION.baseName(), wantedVersionNumber, context);
 
             Optional<Version> currentVersion = node.status().vespaVersion();
             boolean converged = currentVersion.isPresent() &&
                     currentVersion.get().equals(wantedVersion);
-            metric.set("wantToChangeVespaVersion", converged ? 0 : 1, context);
+            metric.set(ConfigServerMetrics.WANT_TO_CHANGE_VESPA_VERSION.baseName(), converged ? 0 : 1, context);
             if (node.cloudAccount().isEnclave(nodeRepository().zone())) {
-                metric.set("hasWireguardKey", node.wireguardPubKey().isPresent() ? 1 : 0, context);
+                metric.set(ConfigServerMetrics.HAS_WIRE_GUARD_KEY.baseName(), node.wireguardPubKey().isPresent() ? 1 : 0, context);
             }
         } else {
             context = getContext(Map.of("state", node.state().name(),
@@ -207,19 +207,19 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         Optional<Version> currentVersion = node.status().vespaVersion();
         if (currentVersion.isPresent()) {
             double currentVersionNumber = getVersionAsNumber(currentVersion.get());
-            metric.set("currentVespaVersion", currentVersionNumber, context);
+            metric.set(ConfigServerMetrics.CURRENT_VESPA_VERSION.baseName(), currentVersionNumber, context);
         }
 
         long wantedRebootGeneration = node.status().reboot().wanted();
-        metric.set("wantedRebootGeneration", wantedRebootGeneration, context);
+        metric.set(ConfigServerMetrics.WANTED_REBOOT_GENERATION.baseName(), wantedRebootGeneration, context);
         long currentRebootGeneration = node.status().reboot().current();
-        metric.set("currentRebootGeneration", currentRebootGeneration, context);
+        metric.set(ConfigServerMetrics.CURRENT_REBOOT_GENERATION.baseName(), currentRebootGeneration, context);
         boolean wantToReboot = currentRebootGeneration < wantedRebootGeneration;
-        metric.set("wantToReboot", wantToReboot ? 1 : 0, context);
+        metric.set(ConfigServerMetrics.WANT_TO_REBOOT.baseName(), wantToReboot ? 1 : 0, context);
 
-        metric.set("wantToRetire", node.status().wantToRetire() ? 1 : 0, context);
-        metric.set("wantToDeprovision", node.status().wantToDeprovision() ? 1 : 0, context);
-        metric.set("failReport", NodeFailer.reasonsToFailHost(node).isEmpty() ? 0 : 1, context);
+        metric.set(ConfigServerMetrics.WANT_TO_RETIRE.baseName(), node.status().wantToRetire() ? 1 : 0, context);
+        metric.set(ConfigServerMetrics.WANT_TO_DEPROVISION.baseName(), node.status().wantToDeprovision() ? 1 : 0, context);
+        metric.set(ConfigServerMetrics.FAIL_REPORT.baseName(), NodeFailer.reasonsToFailHost(node).isEmpty() ? 0 : 1, context);
 
         HostName hostname = new HostName(node.hostname());
 
@@ -228,11 +228,11 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                 .map(reference -> nodeRepository().orchestrator().getHostInfo(reference, hostname))
                 .ifPresent(info -> {
                     int suspended = info.status().isSuspended() ? 1 : 0;
-                    metric.set("suspended", suspended, context);
+                    metric.set(ConfigServerMetrics.SUSPENDED.baseName(), suspended, context);
                     long suspendedSeconds = info.suspendedSince()
                             .map(suspendedSince -> Duration.between(suspendedSince, clock().instant()).getSeconds())
                             .orElse(0L);
-                    metric.set("suspendedSeconds", suspendedSeconds, context);
+                    metric.set(ConfigServerMetrics.SUSPENDED_SECONDS.baseName(), suspendedSeconds, context);
                 });
 
         long numberOfServices;
@@ -246,30 +246,30 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
             numberOfServices = servicesCount.values().stream().mapToLong(Long::longValue).sum();
 
             metric.set(
-                    "numberOfServicesUp",
+                    ConfigServerMetrics.NUMBER_OF_SERVICES_UP.baseName(),
                     servicesCount.getOrDefault(ServiceStatus.UP, 0L),
                     context);
 
             metric.set(
-                    "numberOfServicesNotChecked",
+                    ConfigServerMetrics.NUMBER_OF_SERVICES_NOT_CHECKED.baseName(),
                     servicesCount.getOrDefault(ServiceStatus.NOT_CHECKED, 0L),
                     context);
 
             long numberOfServicesDown = servicesCount.getOrDefault(ServiceStatus.DOWN, 0L);
-            metric.set("numberOfServicesDown", numberOfServicesDown, context);
+            metric.set(ConfigServerMetrics.NUMBER_OF_SERVICES_DOWN.baseName(), numberOfServicesDown, context);
 
-            metric.set("someServicesDown", (numberOfServicesDown > 0 ? 1 : 0), context);
+            metric.set(ConfigServerMetrics.SOME_SERVICES_DOWN.baseName(), (numberOfServicesDown > 0 ? 1 : 0), context);
 
-            metric.set("numberOfServicesUnknown", servicesCount.getOrDefault(ServiceStatus.UNKNOWN, 0L), context);
+            metric.set(ConfigServerMetrics.NUMBER_OF_SERVICES_UNKNOWN.baseName(), servicesCount.getOrDefault(ServiceStatus.UNKNOWN, 0L), context);
 
             boolean down = NodeHealthTracker.allDown(services);
-            metric.set("nodeFailerBadNode", (down ? 1 : 0), context);
+            metric.set(ConfigServerMetrics.NODE_FAILER_BAD_NODE.baseName(), (down ? 1 : 0), context);
 
             boolean nodeDownInNodeRepo = node.isDown();
-            metric.set("downInNodeRepo", (nodeDownInNodeRepo ? 1 : 0), context);
+            metric.set(ConfigServerMetrics.DOWN_IN_NODE_REPO.baseName(), (nodeDownInNodeRepo ? 1 : 0), context);
         }
 
-        metric.set("numberOfServices", numberOfServices, context);
+        metric.set(ConfigServerMetrics.NUMBER_OF_SERVICES.baseName(), numberOfServices, context);
     }
 
     private static String toApp(ApplicationId applicationId) {
@@ -313,19 +313,19 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                     Metric.Context context = getContext(Map.of("lockPath", lockPath));
 
                     LatencyMetrics acquireLatencyMetrics = lockMetrics.getAndResetAcquireLatencyMetrics();
-                    setNonZero("lockAttempt.acquireMaxActiveLatency", acquireLatencyMetrics.maxActiveLatencySeconds(), context);
-                    setNonZero("lockAttempt.acquireHz", acquireLatencyMetrics.startHz(), context);
-                    setNonZero("lockAttempt.acquireLoad", acquireLatencyMetrics.load(), context);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ACQUIRE_MAX_ACTIVE_LATENCY.baseName(), acquireLatencyMetrics.maxActiveLatencySeconds(), context);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ACQUIRE_HZ.baseName(), acquireLatencyMetrics.startHz(), context);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ACQUIRE_LOAD.baseName(), acquireLatencyMetrics.load(), context);
 
                     LatencyMetrics lockedLatencyMetrics = lockMetrics.getAndResetLockedLatencyMetrics();
-                    setNonZero("lockAttempt.lockedLatency", lockedLatencyMetrics.maxLatencySeconds(), context);
-                    setNonZero("lockAttempt.lockedLoad", lockedLatencyMetrics.load(), context);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LATENCY.baseName(), lockedLatencyMetrics.maxLatencySeconds(), context);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LOAD.baseName(), lockedLatencyMetrics.load(), context);
 
-                    setNonZero("lockAttempt.acquireTimedOut", lockMetrics.getAndResetAcquireTimedOutCount(), context);
-                    setNonZero("lockAttempt.deadlock", lockMetrics.getAndResetDeadlockCount(), context);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ACQUIRE_TIMED_OUT.baseName(), lockMetrics.getAndResetAcquireTimedOutCount(), context);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_DEADLOCK.baseName(), lockMetrics.getAndResetDeadlockCount(), context);
 
                     // bucket for various rare errors - to reduce #metrics
-                    setNonZero("lockAttempt.errors",
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ERRORS.baseName(),
                             lockMetrics.getAndResetAcquireFailedCount() +
                                     lockMetrics.getAndResetReleaseFailedCount() +
                                     lockMetrics.getAndResetNakedReleaseCount() +
@@ -349,14 +349,14 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
 
     private void updateContainerMetrics(NodeList nodes) {
         NodeResources totalCapacity = getCapacityTotal(nodes);
-        metric.set("hostedVespa.docker.totalCapacityCpu", totalCapacity.vcpu(), null);
-        metric.set("hostedVespa.docker.totalCapacityMem", totalCapacity.memoryGb(), null);
-        metric.set("hostedVespa.docker.totalCapacityDisk", totalCapacity.diskGb(), null);
+        metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_CPU.baseName(), totalCapacity.vcpu(), null);
+        metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_MEM.baseName(), totalCapacity.memoryGb(), null);
+        metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_DISK.baseName(), totalCapacity.diskGb(), null);
 
         NodeResources totalFreeCapacity = getFreeCapacityTotal(nodes);
-        metric.set("hostedVespa.docker.freeCapacityCpu", totalFreeCapacity.vcpu(), null);
-        metric.set("hostedVespa.docker.freeCapacityMem", totalFreeCapacity.memoryGb(), null);
-        metric.set("hostedVespa.docker.freeCapacityDisk", totalFreeCapacity.diskGb(), null);
+        metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_CPU.baseName(), totalFreeCapacity.vcpu(), null);
+        metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_MEM.baseName(), totalFreeCapacity.memoryGb(), null);
+        metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_DISK.baseName(), totalFreeCapacity.diskGb(), null);
     }
 
     private void updateTenantUsageMetrics(NodeList nodes) {
@@ -371,9 +371,9 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
 
                             var context = getContext(dimensions(applicationId));
 
-                            metric.set("hostedVespa.docker.allocatedCapacityCpu", allocatedCapacity.vcpu(), context);
-                            metric.set("hostedVespa.docker.allocatedCapacityMem", allocatedCapacity.memoryGb(), context);
-                            metric.set("hostedVespa.docker.allocatedCapacityDisk", allocatedCapacity.diskGb(), context);
+                            metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_CPU.baseName(), allocatedCapacity.vcpu(), context);
+                            metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_MEM.baseName(), allocatedCapacity.memoryGb(), context);
+                            metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_DISK.baseName(), allocatedCapacity.diskGb(), context);
                         }
                 );
     }
@@ -384,7 +384,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
              .flatMap(Optional::stream)
              .map(report -> report.getInspector().field("status").asString())
              .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
-             .forEach((status, number) -> metric.set("hostedVespa.breakfixedHosts", number, getContext(Map.of("status", status))));
+             .forEach((status, number) -> metric.set(ConfigServerMetrics.HOSTED_VESPA_BREAKFIXED_HOSTS.baseName(), number, getContext(Map.of("status", status))));
     }
 
     static Map<String, String> dimensions(ApplicationId application, ClusterSpec.Id cluster) {

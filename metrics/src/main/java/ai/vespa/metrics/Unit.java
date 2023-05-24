@@ -16,8 +16,11 @@ public enum Unit {
     FAILURE(BaseUnit.FAILURE, "Failures, typically for requests, operations or nodes"),
     FILE(BaseUnit.FILE, "Data file stored on the disk on a node"),
     FRACTION(BaseUnit.FRACTION, "A value in the range [0..1]. Higher values can occur for some metrics, but would indicate the value is outside of the allowed range."),
+    GENERATION(BaseUnit.GENERATION,"Typically generation of configuration or application package"),
+    GIGABYTE(BaseUnit.GIGABYTE,"One billion bytes"),
     HIT(BaseUnit.HIT, "Document that meets the filtering/restriction criteria specified by a given query"),
     HIT_PER_QUERY(BaseUnit.HIT, BaseUnit.QUERY, "Number of hits per query over a period of time"),
+    HOST(BaseUnit.HOST, "Bare metal computer that contain nodes"),
     INSTANCE(BaseUnit.INSTANCE, "Typically tenant or application"),
     ITEM(BaseUnit.ITEM, "Object or unit maintained in e.g. a queue"),
     MILLISECOND(BaseUnit.MILLISECOND, "Millisecond, 1/1000 of a second"),
@@ -38,6 +41,8 @@ public enum Unit {
     SESSION(BaseUnit.SESSION, "A set of operations taking place during one connection or as part of a higher level operation"),
     TASK(BaseUnit.TASK, "Piece of work executed by a server, e.g. to perform back-ground data maintenance"),
     THREAD(BaseUnit.THREAD, "Computer thread for executing e.g. tasks, operations or queries"),
+    VCPU(BaseUnit.VCPU,"Virtual CPU"),
+
     VERSION(BaseUnit.VERSION, "Software or config version"),
     WAKEUP(BaseUnit.WAKEUP, "Computer thread wake-ups for doing some work");
 
@@ -85,7 +90,10 @@ public enum Unit {
         FAILURE("failure"),
         FILE("file"),
         FRACTION("fraction"),
+        GENERATION("generation"),
+        GIGABYTE("gigabyte"),
         HIT("hit"),
+        HOST("host"),
         HOUR("hour"),
         INSTANCE("instance"),
         ITEM("item"),
@@ -105,6 +113,7 @@ public enum Unit {
         SESSION("session"),
         TASK("task"),
         THREAD("thread"),
+        VCPU("vcpu"),
         VERSION("version"),
         WAKEUP("wakeup");
 
