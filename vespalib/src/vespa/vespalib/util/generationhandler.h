@@ -28,20 +28,20 @@ public:
         // least significant bit is invalid flag
         std::atomic<uint32_t> _refCount;
 
-        static bool valid(uint32_t refCount) { return (refCount & 1) == 0u; }
+        static bool valid(uint32_t refCount) noexcept { return (refCount & 1) == 0u; }
     public:
         std::atomic<generation_t> _generation;
         GenerationHold *_next;	// next free element or next newer element.
 
-        GenerationHold();
+        GenerationHold() noexcept;
         ~GenerationHold();
 
-        void setValid();
-        bool setInvalid();
-        void release();
-        GenerationHold *acquire();
-        static GenerationHold *copy(GenerationHold *self);
-        uint32_t getRefCount() const;
+        void setValid() noexcept;
+        bool setInvalid() noexcept;
+        void release() noexcept;
+        GenerationHold *acquire() noexcept;
+        static GenerationHold *copy(GenerationHold *self) noexcept;
+        uint32_t getRefCount() const noexcept;
     };
 
     /**
@@ -50,22 +50,22 @@ public:
     class Guard {
     private:
         GenerationHold *_hold;
-        void cleanup() {
+        void cleanup() noexcept {
             if (_hold != nullptr) {
                 _hold->release();
                 _hold = nullptr;
             }
         }
     public:
-        Guard();
-        Guard(GenerationHold *hold); // hold is never nullptr
+        Guard() noexcept;
+        Guard(GenerationHold *hold) noexcept; // hold is never nullptr
         ~Guard();
-        Guard(const Guard & rhs);
-        Guard(Guard &&rhs);
-        Guard & operator=(const Guard & rhs);
-        Guard & operator=(Guard &&rhs);
+        Guard(const Guard & rhs) noexcept;
+        Guard(Guard &&rhs) noexcept;
+        Guard & operator=(const Guard & rhs) noexcept;
+        Guard & operator=(Guard &&rhs) noexcept;
 
-        bool valid() const {
+        bool valid() const noexcept {
             return _hold != nullptr;
         }
         generation_t getGeneration() const { return _hold->_generation.load(std::memory_order_relaxed); }

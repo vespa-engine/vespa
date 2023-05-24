@@ -440,7 +440,13 @@ private:
     vespalib::steady_time                 _nextStatUpdateTime;
     std::shared_ptr<vespalib::alloc::MemoryAllocator> _memory_allocator;
 
-////// Locking strategy interface. only available from the Guards.
+    /// Clean up [0, firstUsed>
+    virtual void reclaim_memory(generation_t oldest_used_gen);
+    virtual void before_inc_generation(generation_t current_gen);
+    virtual void onUpdateStat() = 0;
+    friend class AttributeTest;
+public:
+    ////// Locking strategy interface.
     /**
      * Used to guard that a value you reference will always reference
      * a value. It might not be the same value, but at least it will
@@ -448,22 +454,6 @@ private:
      * the guard is alive.
     */
     GenerationHandler::Guard takeGenerationGuard() { return _genHandler.takeGuard(); }
-
-    /// Clean up [0, firstUsed>
-    virtual void reclaim_memory(generation_t oldest_used_gen);
-    virtual void before_inc_generation(generation_t current_gen);
-    virtual void onUpdateStat() = 0;
-    /**
-     * Used to regulate access to critical resources. Apply the
-     * reader/writer guards.
-     */
-    std::shared_mutex & getEnumLock() { return _enumLock; }
-
-    friend class ComponentGuard<AttributeVector>;
-    friend class AttributeValueGuard;
-    friend class AttributeTest;
-    friend class AttributeManagerTest;
-public:
     bool headerTypeOK(const vespalib::GenericHeader &header) const;
     bool hasMultiValue() const override final;
     bool hasWeightedSetType() const override final;

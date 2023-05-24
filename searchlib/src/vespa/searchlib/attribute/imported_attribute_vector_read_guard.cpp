@@ -18,7 +18,7 @@ ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(std::shared_p
       _imported_attribute(imported_attribute),
       _targetLids(),
       _target_docid_limit(0u),
-      _reference_attribute_guard(imported_attribute.getReferenceAttribute()),
+      _reference_attribute_guard(imported_attribute.getReferenceAttribute()->takeGenerationGuard()),
       _target_attribute_guard(imported_attribute.getTargetAttribute()->makeReadGuard(stableEnumGuard)),
       _reference_attribute(*imported_attribute.getReferenceAttribute()),
       _target_attribute(*_target_attribute_guard->attribute())
