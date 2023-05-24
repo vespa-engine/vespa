@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_header.h"
+#include "distance_metric_utils.h"
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/vespalib/util/exceptions.h>
 
 using vespalib::GenericHeader;
 
@@ -26,13 +26,6 @@ const vespalib::string hnsw_index_value = "hnsw";
 const vespalib::string hnsw_max_links_tag = "hnsw.max_links_per_node";
 const vespalib::string hnsw_neighbors_to_explore_tag = "hnsw.neighbors_to_explore_at_insert";
 const vespalib::string hnsw_distance_metric = "hnsw.distance_metric";
-const vespalib::string euclidean = "euclidean";
-const vespalib::string angular = "angular";
-const vespalib::string geodegrees = "geodegrees";
-const vespalib::string innerproduct = "innerproduct";
-const vespalib::string prenormalized_angular = "prenormalized_angular";
-const vespalib::string dotproduct = "dotproduct";
-const vespalib::string hamming = "hamming";
 const vespalib::string doc_id_limit_tag = "docIdLimit";
 const vespalib::string enumerated_tag = "enumerated";
 const vespalib::string unique_value_count_tag = "uniqueValueCount";
@@ -95,47 +88,6 @@ AttributeHeader::AttributeHeader(const vespalib::string &fileName,
 
 AttributeHeader::~AttributeHeader() = default;
 
-namespace {
-
-vespalib::string
-to_string(DistanceMetric metric)
-{
-    switch (metric) {
-        case DistanceMetric::Euclidean: return euclidean;
-        case DistanceMetric::Angular: return angular;
-        case DistanceMetric::GeoDegrees: return geodegrees;
-        case DistanceMetric::InnerProduct: return innerproduct;
-        case DistanceMetric::Hamming: return hamming;
-        case DistanceMetric::PrenormalizedAngular: return prenormalized_angular;
-        case DistanceMetric::Dotproduct: return dotproduct;
-    }
-    throw vespalib::IllegalArgumentException("Unknown distance metric " + std::to_string(static_cast<int>(metric)));
-}
-
-DistanceMetric
-to_distance_metric(const vespalib::string& metric)
-{
-    if (metric == euclidean) {
-        return DistanceMetric::Euclidean;
-    } else if (metric == angular) {
-        return DistanceMetric::Angular;
-    } else if (metric == geodegrees) {
-        return DistanceMetric::GeoDegrees;
-    } else if (metric == innerproduct) {
-        return DistanceMetric::InnerProduct;
-    } else if (metric == prenormalized_angular) {
-        return DistanceMetric::PrenormalizedAngular;
-    } else if (metric == dotproduct) {
-        return DistanceMetric::Dotproduct;
-    } else if (metric == hamming) {
-        return DistanceMetric::Hamming;
-    } else {
-        throw vespalib::IllegalStateException("Unknown distance metric '" + metric + "'");
-    }
-}
-
-}
-
 void
 AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)
 {
@@ -167,7 +119,7 @@ AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)
 
             uint32_t max_links = header.getTag(hnsw_max_links_tag).asInteger();
             uint32_t neighbors_to_explore = header.getTag(hnsw_neighbors_to_explore_tag).asInteger();
-            DistanceMetric distance_metric = to_distance_metric(header.getTag(hnsw_distance_metric).asString());
+            DistanceMetric distance_metric = DistanceMetricUtils::to_distance_metric(header.getTag(hnsw_distance_metric).asString());
             _hnsw_index_params.emplace(max_links, neighbors_to_explore, distance_metric);
         }
     }
@@ -238,7 +190,7 @@ AttributeHeader::addTags(vespalib::GenericHeader &header) const
             const auto& params = *_hnsw_index_params;
             header.putTag(Tag(hnsw_max_links_tag, params.max_links_per_node()));
             header.putTag(Tag(hnsw_neighbors_to_explore_tag, params.neighbors_to_explore_at_insert()));
-            header.putTag(Tag(hnsw_distance_metric, to_string(params.distance_metric())));
+            header.putTag(Tag(hnsw_distance_metric, DistanceMetricUtils::to_string(params.distance_metric())));
         }
     }
     if (_basicType.type() == attribute::BasicType::Type::PREDICATE) {
