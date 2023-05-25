@@ -3,6 +3,7 @@ package document
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -36,9 +37,22 @@ const (
 )
 
 var (
+	ErrMissingId = errors.New("no id specified")
 	fieldsPrefix = []byte(`{"fields":`)
 	fieldsSuffix = []byte("}")
 )
+
+func (o Operation) String() string {
+	switch o {
+	case OperationPut:
+		return "put"
+	case OperationUpdate:
+		return "update"
+	case OperationRemove:
+		return "remove"
+	}
+	return ""
+}
 
 // Id represents a Vespa document ID.
 type Id struct {
@@ -152,14 +166,8 @@ type Decoder struct {
 
 func (d Document) String() string {
 	var sb strings.Builder
-	switch d.Operation {
-	case OperationPut:
-		sb.WriteString("put ")
-	case OperationUpdate:
-		sb.WriteString("update ")
-	case OperationRemove:
-		sb.WriteString("remove ")
-	}
+	sb.WriteString(d.Operation.String())
+	sb.WriteString(" ")
 	sb.WriteString(d.Id.String())
 	if d.Condition != "" {
 		sb.WriteString(", condition=")
@@ -228,7 +236,7 @@ func (d *Decoder) readBool() (bool, error) {
 func (d *Decoder) Decode() (Document, error) {
 	doc, err := d.decode()
 	if err != nil && err != io.EOF {
-		return Document{}, fmt.Errorf("invalid json at byte offset %d: %w", d.dec.InputOffset(), err)
+		return doc, fmt.Errorf("invalid operation at byte offset %d: %w", d.dec.InputOffset(), err)
 	}
 	return doc, err
 }
@@ -346,6 +354,9 @@ loop:
 			d.buf.Next(int(end - start))
 			break loop
 		}
+	}
+	if doc.Id.id == "" {
+		return doc, ErrMissingId
 	}
 	return doc, nil
 }
