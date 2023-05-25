@@ -32,7 +32,7 @@ class ImportedSearchContext : public ISearchContext {
     const ImportedAttributeVector&                  _imported_attribute;
     vespalib::string                                _queryTerm;
     bool                                            _useSearchCache;
-    BitVectorSearchCache::Entry::SP                 _searchCacheLookup;
+    std::shared_ptr<BitVectorSearchCache::Entry>    _searchCacheLookup;
     IDocumentMetaStoreContext::IReadGuard::SP       _dmsReadGuardFallback;
     const ReferenceAttribute&                       _reference_attribute;
     const IAttributeVector                         &_target_attribute;
