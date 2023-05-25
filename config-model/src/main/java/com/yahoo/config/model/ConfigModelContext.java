@@ -72,6 +72,7 @@ public final class ConfigModelContext {
 
     /** Returns a cluster info builder pre-populated with info known in this context. */
     public ClusterInfo.Builder clusterInfo() {
+        // TODO jonmv: get TTL
         var instance = getApplicationPackage().getDeploymentSpec().instance(properties().applicationId().instance());
         if ( ! instance.isPresent()) return new ClusterInfo.Builder();
         var maxDeadline = instance.get().bcp().groups().stream()

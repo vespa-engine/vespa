@@ -11,6 +11,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -66,6 +67,7 @@ public interface HostProvisioner {
                         HostSharing sharing,
                         Optional<ClusterSpec.Type> clusterType,
                         Optional<ClusterSpec.Id> clusterId,
+                        Duration hostTTL,
                         CloudAccount cloudAccount,
                         Consumer<List<ProvisionedHost>> provisionedHostConsumer) throws NodeAllocationException;
 

@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 /**
  * Implementation of the host provisioner API for hosted Vespa, using the node repository to allocate nodes.
@@ -101,7 +100,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
             groups = target.groups();
             resources = getNodeResources(cluster, target.nodeResources(), application);
             nodeSpec = NodeSpec.from(target.nodes(), resources, cluster.isExclusive(), actual.canFail(),
-                                     requested.cloudAccount().orElse(nodeRepository.zone().cloud().account()));
+                                     requested.cloudAccount().orElse(nodeRepository.zone().cloud().account()),
+                                     requested.clusterInfo().hostTTL());
         }
         else {
             groups = 1; // type request with multiple groups is not supported

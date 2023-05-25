@@ -197,7 +197,8 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
             List<Node> hosts = new ArrayList<>();
             hostProvisioner.provisionHosts(provisionIndices, NodeType.host, nodeResources, ApplicationId.defaultId(), osVersion,
-                                           HostSharing.shared, Optional.empty(), Optional.empty(), nodeRepository().zone().cloud().account(),
+                                           HostSharing.shared, Optional.empty(), Optional.empty(), Duration.ZERO,
+                                           nodeRepository().zone().cloud().account(),
                                            provisionedHosts -> {
                                                hosts.addAll(provisionedHosts.stream().map(ProvisionedHost::generateHost).toList());
                                                nodeRepository().nodes().addNodes(hosts, Agent.HostCapacityMaintainer);
@@ -246,7 +247,8 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                 // build() requires a version, even though it is not (should not be) used
                 .vespaVersion(Vtag.currentVersion)
                 .build();
-        NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), nodeResources, false, true, nodeRepository().zone().cloud().account());
+        NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), nodeResources, false, true,
+                                          nodeRepository().zone().cloud().account(), Duration.ZERO);
         int wantedGroups = 1;
 
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes, applicationId, clusterSpec, nodeSpec, wantedGroups,

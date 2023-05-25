@@ -86,7 +86,7 @@ public class ProvisioningTest {
 
         // deploy another application
         SystemState state1App2 = prepare(application2, 2, 2, 3, 3, defaultResources, tester);
-        assertFalse("Hosts to different apps are disjunct", state1App2.allHosts.removeAll(state1.allHosts));
+        assertFalse("Hosts to different apps are disjoint", state1App2.allHosts.removeAll(state1.allHosts));
         tester.activate(application2, state1App2.allHosts);
 
         // prepare twice

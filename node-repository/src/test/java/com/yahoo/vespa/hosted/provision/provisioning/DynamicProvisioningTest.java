@@ -85,6 +85,7 @@ public class DynamicProvisioningTest {
         assertEquals(20, tester.nodeRepository().nodes().list().size());
         assertEquals(8, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).size());
         assertEquals(12, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+        assert false: "TODO: test with TTL";
     }
 
     @Test

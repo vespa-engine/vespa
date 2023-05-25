@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,7 +68,8 @@ public class MockHostProvisioner implements HostProvisioner {
     public void provisionHosts(List<Integer> provisionIndices, NodeType hostType, NodeResources resources,
                                ApplicationId applicationId, Version osVersion, HostSharing sharing,
                                Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId,
-                               CloudAccount cloudAccount, Consumer<List<ProvisionedHost>> provisionedHostsConsumer) {
+                               Duration hostTTL, CloudAccount cloudAccount,
+                               Consumer<List<ProvisionedHost>> provisionedHostsConsumer) {
         Flavor hostFlavor = hostFlavors.get(clusterType.orElse(ClusterSpec.Type.content));
         if (hostFlavor == null)
             hostFlavor = flavors.stream()
@@ -85,6 +87,7 @@ public class MockHostProvisioner implements HostProvisioner {
                                           hostType,
                                           sharing == HostSharing.exclusive ? Optional.of(applicationId) : Optional.empty(),
                                           Optional.empty(),
+                                          hostTTL,
                                           createHostnames(hostType, hostFlavor, index),
                                           resources,
                                           osVersion,
