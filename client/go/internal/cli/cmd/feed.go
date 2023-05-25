@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -164,7 +165,7 @@ func feedFiles(files []string, dispatcher *document.Dispatcher, cli *CLI) {
 }
 
 func dispatchFrom(r io.ReadCloser, dispatcher *document.Dispatcher, cli *CLI) {
-	dec := document.NewDecoder(r)
+	dec := document.NewDecoder(bufio.NewReaderSize(r, 1<<26)) // Buffer up to 64M of data at a time
 	defer r.Close()
 	for {
 		doc, err := dec.Decode()
