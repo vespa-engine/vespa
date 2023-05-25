@@ -39,7 +39,9 @@ import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
 public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
     private enum BundleType {
-        CORE, INTERNAL, USER
+        CORE,      // up to container-dev
+        INTERNAL,  // other vespa bundles (need not be set for groupId 'com.yahoo.vespa')
+        USER
     }
 
     @Parameter
@@ -98,7 +100,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                 logMissingPackages(exportedPackagesFromProvidedDeps, projectPackages, compileJarsPackages, includedPackages);
             } else {
                 getLog().warn(("This project does not have '%s' as provided dependency, so the generated 'Import-Package' " +
-                        "OSGi header may be missing important packages.").formatted(wantedProvidedDependency(bundleType)));
+                        "OSGi header may be missing important packages.").formatted(wantedProvidedDependency()));
             }
             logOverlappingPackages(projectPackages, exportedPackagesFromProvidedDeps);
             logUnnecessaryPackages(compileJarsPackages, exportedPackagesFromProvidedDeps);
@@ -117,12 +119,17 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         }
     }
 
-    private static String wantedProvidedDependency(BundleType bundleType) {
-        return switch (bundleType) {
+    private String wantedProvidedDependency() {
+        return switch (effectiveBundleType()) {
             case CORE -> "jdisc_core";
             case INTERNAL -> "container-dev";
             case USER -> "container";
         };
+    }
+
+    private BundleType effectiveBundleType() {
+        if (bundleType != BundleType.USER) return bundleType;
+        return project.getGroupId().equals("com.yahoo.vespa") ? BundleType.INTERNAL : BundleType.USER;
     }
 
     private void addAdditionalManifestProperties(Map<String, String> manifestContent, PackageTally includedPackages) {
