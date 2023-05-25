@@ -186,6 +186,7 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
+            <bundleType>CORE</bundleType>
             <discApplicationClass>com.yahoo.container.jdisc.ConfiguredApplication</discApplicationClass>
             <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
             <discPreInstallBundle>

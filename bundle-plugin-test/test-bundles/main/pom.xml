@@ -34,6 +34,7 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
+          <bundleType>INTERNAL</bundleType>
           <Import-Package>
             manualImport.withoutVersion,
             manualImport.withVersion;version="12.3.4",
