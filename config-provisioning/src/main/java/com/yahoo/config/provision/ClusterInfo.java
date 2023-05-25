@@ -50,8 +50,8 @@ public class ClusterInfo {
 
     public static class Builder {
 
-        private Duration bcpDeadline = Duration.ofMinutes(0);
-        private Duration hostTTL = Duration.ofMinutes(0);
+        private Duration bcpDeadline = Duration.ZERO;
+        private Duration hostTTL = Duration.ZERO;
 
         public Builder bcpDeadline(Duration duration) {
             this.bcpDeadline = Objects.requireNonNull(duration);

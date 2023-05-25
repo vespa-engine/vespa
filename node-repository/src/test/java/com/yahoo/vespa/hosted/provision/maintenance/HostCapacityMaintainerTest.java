@@ -219,6 +219,11 @@ public class HostCapacityMaintainerTest {
     }
 
     @Test
+    public void respects_host_TTL() {
+        fail();
+    }
+
+    @Test
     public void test_minimum_capacity() {
         var tester = new DynamicProvisioningTester();
         NodeResources resources1 = new NodeResources(24, 64, 100, 10);

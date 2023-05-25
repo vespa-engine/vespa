@@ -34,15 +34,19 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
+
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * @author freva
@@ -67,10 +71,9 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
 
     @Override
     protected double maintain() {
-        NodeList nodes = nodeRepository().nodes().list();
-        List<Node> excessHosts;
+        List<Node> provisionedSnapshot;
         try {
-            excessHosts = provision(nodes);
+            provisionedSnapshot = provision(nodeRepository().nodes().list());
         } catch (NodeAllocationException | IllegalStateException e) {
             log.log(Level.WARNING, "Failed to allocate preprovisioned capacity and/or find excess hosts: " + e.getMessage());
             return 0;  // avoid removing excess hosts
@@ -79,33 +82,68 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             return 0;  // avoid removing excess hosts
         }
 
-        return markForRemoval(excessHosts);
+        return markForRemoval(provisionedSnapshot);
     }
 
-    private double markForRemoval(List<Node> excessHosts) {
-        if (excessHosts.isEmpty()) return 1;
+    private double markForRemoval(List<Node> provisionedSnapshot) {
+        // Group nodes by parent; no parent means it's a host.
+        Map<Optional<String>, List<Node>> nodesByParent = provisionedSnapshot.stream().collect(groupingBy(Node::parentHostname));
+
+        // Find all hosts that we once thought were empty (first clouse), or whose children are now all removable (second clause).
+        List<Node> emptyHosts = nodesByParent.get(Optional.<String>empty()).stream()
+                                             .filter(host ->    host.hostEmptyAt().isPresent()
+                                                             || nodesByParent.getOrDefault(Optional.of(host.hostname()), List.of())
+                                                                             .stream().allMatch(HostCapacityMaintainer::canDeprovision))
+                                             .toList();
+
+        if (emptyHosts.isEmpty()) return 1;
 
         int attempts = 0, success = 0;
-        for (List<Node> typeExcessHosts : excessHosts.stream().collect(Collectors.groupingBy(Node::type)).values()) {
+        for (Set<Node> typeEmptyHosts : emptyHosts.stream().collect(groupingBy(Node::type, toSet())).values()) {
             attempts++;
             // All nodes in the list are hosts of the same type, so they use the same lock regardless of their allocation
-            Optional<NodeMutex> appMutex = nodeRepository().nodes().lockAndGet(typeExcessHosts.get(0), Duration.ofSeconds(10));
+            Optional<NodeMutex> appMutex = nodeRepository().nodes().lockAndGet(typeEmptyHosts.iterator().next(), Duration.ofSeconds(10));
             if (appMutex.isEmpty()) continue;
             try (Mutex lock = appMutex.get();
                  Mutex unallocatedLock = nodeRepository().nodes().lockUnallocated()) {
                 // Re-read all nodes under lock and compute the candidates for removal. The actual nodes we want
-                // to mark for removal is the intersection with typeExcessHosts
-                List<Node> toMarkForRemoval = candidatesForRemoval(nodeRepository().nodes().list().asList()).stream()
-                        .filter(typeExcessHosts::contains)
-                        .toList();
+                // to mark for removal is the intersection with typeEmptyHosts, which excludes the preprovisioned hosts.
+                Map<Optional<String>, List<Node>> currentNodesByParent = nodeRepository().nodes().list().stream().collect(groupingBy(Node::parentHostname));
+                List<Node> candidateHosts = new ArrayList<>(currentNodesByParent.get(Optional.<String>empty()));
+                candidateHosts.retainAll(typeEmptyHosts);
 
-                for (Node host : toMarkForRemoval) {
+                for (Node host : candidateHosts) {
                     attempts++;
-                    // Retire the host to parked if possible, otherwise move it straight to parked
-                    if (EnumSet.of(Node.State.reserved, Node.State.active, Node.State.inactive).contains(host.state())) {
-                        Node retiredHost = host.withWantToRetire(true, true, Agent.HostCapacityMaintainer, nodeRepository().clock().instant());
-                        nodeRepository().nodes().write(retiredHost, lock);
-                    } else nodeRepository().nodes().park(host.hostname(), true, Agent.HostCapacityMaintainer, "Parked for removal");
+
+                    // Any hosts that are no longer empty should be marked as such, and excluded from removal.
+                    if (currentNodesByParent.getOrDefault(Optional.of(host.hostname()), List.of())
+                                            .stream().anyMatch(n -> ! canDeprovision(n))) {
+                        if (host.hostEmptyAt().isPresent()) {
+                            nodeRepository().nodes().write(host.withHostEmptyAt(null), lock);
+                        }
+                    }
+                    // If the host is still empty, we can mark it as empty now, or mark it for removal if it has already expired.
+                    else {
+                        Instant now = clock().instant();
+                        Node emptyHost = host.hostEmptyAt().isPresent() ? host : host.withHostEmptyAt(now);
+                        boolean expired = ! now.isBefore(emptyHost.hostEmptyAt().get().plus(host.hostTTL().orElse(Duration.ZERO)));
+
+                        if (expired && canRemoveHost(emptyHost)) {
+                            // Retire the host to parked if possible, otherwise move it straight to parked.
+                            if (EnumSet.of(Node.State.reserved, Node.State.active, Node.State.inactive).contains(host.state())) {
+                                emptyHost = emptyHost.withWantToRetire(true, true, Agent.HostCapacityMaintainer, nodeRepository().clock().instant());
+                                nodeRepository().nodes().write(emptyHost, lock);
+                            }
+                            else {
+                                if (emptyHost != host) nodeRepository().nodes().write(emptyHost, lock);
+                                nodeRepository().nodes().park(host.hostname(), true, Agent.HostCapacityMaintainer, "Parked for removal");
+                            }
+                        }
+                        else {
+                            if (emptyHost != host) nodeRepository().nodes().write(emptyHost, lock);
+                        }
+                    }
+
                     success++;
                 }
             } catch (UncheckedTimeoutException e) {
@@ -116,22 +154,20 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         return asSuccessFactorDeviation(attempts, attempts - success);
     }
 
-    /**
-     * Provision hosts to ensure there is room to allocate spare nodes.
-     *
-     * @param nodeList list of all nodes
-     * @return excess hosts that can safely be deprovisioned: An excess host 1. contains no nodes allocated
-     *         to an application, and assuming the spare nodes have been allocated, and 2. is not parked
-     *         without wantToDeprovision (which means an operator is looking at the node).
-     */
     private List<Node> provision(NodeList nodeList) {
-        var nodes = new ArrayList<>(provisionUntilNoDeficit(nodeList));
-        return candidatesForRemoval(nodes).stream()
-                .sorted(Comparator.comparing(node -> node.history().events().stream()
-                                                         .map(History.Event::at).min(Comparator.naturalOrder()).orElse(Instant.MIN)))
-                .toList();
+        return provisionUntilNoDeficit(nodeList).stream()
+                                                .sorted(comparing(node -> node.history().events().stream()
+                                                                              .map(History.Event::at)
+                                                                              .min(naturalOrder())
+                                                                              .orElse(Instant.MIN)))
+                                                .toList();
     }
 
+    /**
+     * Excess hosts that can safely be deprovisioned: An excess host 1. contains no nodes allocated
+     * to an application, and assuming the spare nodes have been allocated, and 2. is not parked
+     * without wantToDeprovision (which means an operator is looking at the node).
+     */
     private static List<Node> candidatesForRemoval(List<Node> nodes) {
         Map<String, Node> removableHostsByHostname = new HashMap<>();
         for (var node : nodes) {
