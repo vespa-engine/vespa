@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import ai.vespa.metrics.ConfigServerMetrics;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -72,7 +73,7 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
             hostCount++;
             totalSkew += Node.skew(host.flavor().resources(), capacity.unusedCapacityOf(host));
         }
-        metric.set("hostedVespa.docker.skew", totalSkew/hostCount, null);
+        metric.set(ConfigServerMetrics.HOSTED_VESPA_DOCKER_SKEW.baseName(),totalSkew/hostCount, null);
     }
 
     private double skewReductionByRemoving(Node node, Node fromHost, HostCapacity capacity) {
