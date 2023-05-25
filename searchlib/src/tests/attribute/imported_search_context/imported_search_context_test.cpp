@@ -467,7 +467,7 @@ struct SearchCacheFixture : Fixture {
 
 SearchCacheFixture::~SearchCacheFixture() = default;
 
-BitVectorSearchCache::Entry::SP
+std::shared_ptr<BitVectorSearchCache::Entry>
 makeSearchCacheEntry(const std::vector<uint32_t> docIds, uint32_t docIdLimit)
 {
     std::shared_ptr<BitVector> bitVector = BitVector::create(docIdLimit);
