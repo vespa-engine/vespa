@@ -95,11 +95,12 @@ func TestClientSend(t *testing.T) {
 			wantRes.Message = "All good!"
 			wantRes.BytesRecv = 23
 		} else {
-			httpClient.NextResponseString(502, `{"message":"Good bye, cruel world!"}`)
+			errMsg := `something went wront`
+			httpClient.NextResponseString(502, errMsg)
 			wantRes.Status = StatusVespaFailure
 			wantRes.HTTPStatus = 502
-			wantRes.Message = "Good bye, cruel world!"
-			wantRes.BytesRecv = 36
+			wantRes.Body = []byte(errMsg)
+			wantRes.BytesRecv = 20
 		}
 		res := client.Send(doc)
 		wantRes.BytesSent = int64(len(httpClient.LastBody))
@@ -134,10 +135,42 @@ func TestClientSend(t *testing.T) {
 		MinLatency:   time.Second,
 		MaxLatency:   time.Second,
 		BytesSent:    75,
-		BytesRecv:    105,
+		BytesRecv:    89,
 	}
 	if !reflect.DeepEqual(want, stats) {
 		t.Errorf("got %+v, want %+v", stats, want)
+	}
+}
+
+func TestClientGet(t *testing.T) {
+	httpClient := mock.HTTPClient{ReadBody: true}
+	client, _ := NewClient(ClientOptions{
+		BaseURL: "https://example.com:1337",
+		Timeout: time.Duration(5 * time.Second),
+	}, []util.HTTPClient{&httpClient})
+	clock := manualClock{t: time.Now(), tick: time.Second}
+	client.now = clock.now
+	doc := `{
+    "pathId": "/document/v1/mynamespace/music/docid/doc1",
+    "id": "id:mynamespace:music::doc1",
+    "fields": {
+        "artist": "Metallica",
+        "album": "Master of Puppets"
+    }
+}`
+	id := Id{Namespace: "mynamespace", Type: "music", UserSpecific: "doc1"}
+	httpClient.NextResponseString(200, doc)
+	result := client.Get(id)
+	want := Result{
+		Id:         id,
+		Body:       []byte(doc),
+		Status:     StatusSuccess,
+		HTTPStatus: 200,
+		Latency:    time.Second,
+		BytesRecv:  192,
+	}
+	if !reflect.DeepEqual(want, result) {
+		t.Errorf("got %+v, want %+v", result, want)
 	}
 }
 

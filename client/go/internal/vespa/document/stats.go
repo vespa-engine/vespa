@@ -26,6 +26,7 @@ type Result struct {
 	Id         Id
 	Message    string
 	Trace      string
+	Body       []byte
 	Status     Status
 	HTTPStatus int
 	Latency    time.Duration
