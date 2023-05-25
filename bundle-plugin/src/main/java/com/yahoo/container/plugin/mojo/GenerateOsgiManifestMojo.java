@@ -38,6 +38,10 @@ import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
 @Mojo(name = "generate-osgi-manifest", requiresDependencyResolution = ResolutionScope.TEST, threadSafe = true)
 public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
+    private enum BundleType {
+        CORE, INTERNAL, USER
+    }
+
     @Parameter
     private String discApplicationClass = null;
 
@@ -55,6 +59,9 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
     @Parameter(alias = "Main-Class")
     private String mainClass = null;
+
+    @Parameter(alias = "Bundle-Type")
+    private BundleType bundleType = BundleType.USER;
 
     @Parameter(defaultValue = "false")
     private boolean buildLegacyVespaPlatformBundle;
@@ -90,8 +97,8 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                 // jdisc_core being provided guarantees that log output does not contain its exported packages
                 logMissingPackages(exportedPackagesFromProvidedDeps, projectPackages, compileJarsPackages, includedPackages);
             } else {
-                getLog().warn("This project does not have jdisc_core as provided dependency, so the " +
-                                      "generated 'Import-Package' OSGi header may be missing important packages.");
+                getLog().warn(("This project does not have '%s' as provided dependency, so the generated 'Import-Package' " +
+                        "OSGi header may be missing important packages.").formatted(wantedProvidedDependency(bundleType)));
             }
             logOverlappingPackages(projectPackages, exportedPackagesFromProvidedDeps);
             logUnnecessaryPackages(compileJarsPackages, exportedPackagesFromProvidedDeps);
@@ -108,6 +115,14 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         } catch (Exception e) {
             throw new MojoExecutionException("Failed generating osgi manifest", e);
         }
+    }
+
+    private static String wantedProvidedDependency(BundleType bundleType) {
+        return switch (bundleType) {
+            case CORE -> "jdisc_core";
+            case INTERNAL -> "container-dev";
+            case USER -> "container";
+        };
     }
 
     private void addAdditionalManifestProperties(Map<String, String> manifestContent, PackageTally includedPackages) {
