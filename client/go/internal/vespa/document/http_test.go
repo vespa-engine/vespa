@@ -89,10 +89,11 @@ func TestClientSend(t *testing.T) {
 			Latency: time.Second,
 		}
 		if i < 3 {
-			httpClient.NextResponseString(200, `{"message":"All good!"}`)
+			msg := `{"message":"All good!"}`
+			httpClient.NextResponseString(200, msg)
 			wantRes.Status = StatusSuccess
 			wantRes.HTTPStatus = 200
-			wantRes.Message = "All good!"
+			wantRes.Body = []byte(msg)
 			wantRes.BytesRecv = 23
 		} else {
 			errMsg := `something went wront`
