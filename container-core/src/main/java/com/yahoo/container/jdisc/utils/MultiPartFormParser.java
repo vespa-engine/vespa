@@ -56,6 +56,7 @@ public class MultiPartFormParser {
         public String name() { return name; }
         public InputStream data() { return data; }
         public String contentType() { return contentType; }
+        @Override public String toString() { return "PartItem{" + "name='" + name + '\'' + ", contentType='" + contentType + '\'' + '}'; }
     }
 
     public static class MultiPartException extends IOException {
