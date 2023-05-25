@@ -1,7 +1,6 @@
 package document
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -12,7 +11,6 @@ func TestCircuitBreaker(t *testing.T) {
 	clock := &manualClock{}
 	breaker := NewCircuitBreaker(time.Second, time.Minute)
 	breaker.now = clock.now
-	err := errors.New("error")
 
 	assert.Equal(t, CircuitClosed, breaker.State(), "Initial state is closed")
 
@@ -25,7 +23,7 @@ func TestCircuitBreaker(t *testing.T) {
 	clock.advance(100 * time.Second)
 	assert.Equal(t, CircuitClosed, breaker.State(), "State is closed some time after a success")
 
-	breaker.Error(err)
+	breaker.Failure()
 	assert.Equal(t, CircuitClosed, breaker.State(), "State is closed right after a failure")
 
 	clock.advance(time.Second)
@@ -37,7 +35,7 @@ func TestCircuitBreaker(t *testing.T) {
 	breaker.Success()
 	assert.Equal(t, CircuitClosed, breaker.State(), "State is closed after a new success")
 
-	breaker.Error(err)
+	breaker.Failure()
 	clock.advance(time.Minute)
 	assert.Equal(t, CircuitHalfOpen, breaker.State(), "State is half-open until doom duration has passed")
 

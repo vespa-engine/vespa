@@ -3,6 +3,7 @@ package document
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -62,41 +63,51 @@ func NewDispatcher(feeder Feeder, throttler Throttler, breaker CircuitBreaker, o
 	return d
 }
 
-func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
+func (d *Dispatcher) logResult(doc Document, result Result, retry bool) {
 	if result.Trace != "" {
-		d.msgs <- fmt.Sprintf("feed: trace for %s:\n%s", op.document, result.Trace)
+		d.msgs <- fmt.Sprintf("feed: trace for %s %s:\n%s", doc.Operation, doc.Id, result.Trace)
 	}
-	if result.Success() {
-		if d.verbose {
-			d.msgs <- fmt.Sprintf("feed: %s succeeded with status %d", op.document, result.HTTPStatus)
-		}
-		d.throttler.Success()
-		d.circuitBreaker.Success()
-		return false
+	if !d.verbose && result.Success() {
+		return
 	}
-	if result.HTTPStatus == 429 || result.HTTPStatus == 503 {
-		d.msgs <- fmt.Sprintf("feed: %s was throttled with status %d: retrying", op.document, result.HTTPStatus)
-		d.throttler.Throttled(d.inflightCount.Load())
-		return true
+	var msg strings.Builder
+	msg.WriteString("feed: got status ")
+	msg.WriteString(strconv.Itoa(result.HTTPStatus))
+	msg.WriteString(" (")
+	if result.Body != nil {
+		msg.Write(result.Body)
+	} else {
+		msg.WriteString("no body")
 	}
-	if result.Err != nil || result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 504 {
-		retry := op.attempts < maxAttempts
-		var msg strings.Builder
-		msg.WriteString("feed: ")
-		msg.WriteString(op.document.String())
-		msg.WriteString(" failed: ")
-		if result.Err != nil {
-			msg.WriteString(result.Err.Error())
-		} else {
-			msg.WriteString(fmt.Sprintf("status %d", result.HTTPStatus))
-		}
+	msg.WriteString(")")
+	msg.WriteString(" for ")
+	msg.WriteString(doc.Operation.String())
+	msg.WriteString(" ")
+	msg.WriteString(doc.Id.String())
+	if !result.Success() {
 		if retry {
 			msg.WriteString(": retrying")
 		} else {
-			msg.WriteString(fmt.Sprintf(": giving up after %d attempts", maxAttempts))
+			msg.WriteString(": giving up after ")
+			msg.WriteString(strconv.Itoa(maxAttempts))
+			msg.WriteString(" attempts")
 		}
-		d.msgs <- msg.String()
-		d.circuitBreaker.Error(fmt.Errorf("request failed with status %d", result.HTTPStatus))
+	}
+	d.msgs <- msg.String()
+}
+
+func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
+	retry := op.attempts < maxAttempts
+	d.logResult(op.document, result, retry)
+	if result.Success() {
+		d.throttler.Success()
+		d.circuitBreaker.Success()
+		return false
+	} else if result.HTTPStatus == 429 || result.HTTPStatus == 503 {
+		d.throttler.Throttled(d.inflightCount.Load())
+		return true
+	} else if result.Err != nil || result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 504 {
+		d.circuitBreaker.Failure()
 		if retry {
 			return true
 		}
