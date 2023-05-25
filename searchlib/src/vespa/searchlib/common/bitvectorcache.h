@@ -4,7 +4,7 @@
 #include "condensedbitvectors.h"
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <mutex>
+#include <shared_mutex>
 
 namespace search {
 
@@ -39,7 +39,7 @@ public:
     void removeIndex(uint32_t index);
     void adjustDocIdLimit(uint32_t docId);
     void populate(uint32_t count, const PopulateInterface &);
-    bool needPopulation() const { return _needPopulation; }
+    bool needPopulation() const { return _needPopulation.load(std::memory_order_relaxed); }
     void requirePopulation() { _needPopulation = true; }
 private:
     class KeyMeta {
@@ -75,14 +75,14 @@ private:
 
     VESPA_DLL_LOCAL static SortedKeyMeta getSorted(Key2Index & keys);
     VESPA_DLL_LOCAL static void populate(Key2Index & newKeys, CondensedBitVector & chunk, const PopulateInterface & lookup);
-    VESPA_DLL_LOCAL bool hasCostChanged(const std::lock_guard<std::mutex> &);
+    VESPA_DLL_LOCAL bool hasCostChanged(const std::shared_lock<std::shared_mutex> &);
 
-    uint64_t           _lookupCount;
-    bool               _needPopulation;
-    mutable std::mutex _lock;
-    Key2Index          _keys;
-    ChunkV             _chunks;
-    GenerationHolder  &_genHolder;
+    std::atomic<uint64_t>     _lookupCount;
+    std::atomic<bool>         _needPopulation;
+    mutable std::shared_mutex _mutex;
+    Key2Index                 _keys;
+    ChunkV                    _chunks;
+    GenerationHolder         &_genHolder;
 };
 
 }

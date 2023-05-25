@@ -4,19 +4,20 @@
 #include <algorithm>
 #include <cassert>
 #include <cinttypes>
+#include <mutex>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.common.bitvectorcache");
 
 namespace search {
 
-BitVectorCache::BitVectorCache(GenerationHolder &genHolder) :
-    _lookupCount(0),
-    _needPopulation(false),
-    _lock(),
-    _keys(),
-    _chunks(),
-    _genHolder(genHolder)
+BitVectorCache::BitVectorCache(GenerationHolder &genHolder)
+    : _lookupCount(0),
+      _needPopulation(false),
+      _mutex(),
+      _keys(),
+      _chunks(),
+      _genHolder(genHolder)
 {
 }
 
@@ -29,7 +30,7 @@ BitVectorCache::computeCountVector(KeySet & keys, CountVector & v) const
     std::vector<CondensedBitVector::KeySet> keySets;
     ChunkV chunks;
     {
-        std::lock_guard<std::mutex> guard(_lock);
+        std::shared_lock guard(_mutex);
         keySets.resize(_chunks.size());
         Key2Index::const_iterator end(_keys.end());
         for (Key k : keys) {
@@ -61,13 +62,13 @@ BitVectorCache::KeySet
 BitVectorCache::lookupCachedSet(const KeyAndCountSet & keys)
 {
     KeySet cached(keys.size()*3);
-    std::lock_guard<std::mutex> guard(_lock);
-    _lookupCount++;
-    if (_lookupCount == 2000) {
-        _needPopulation = true;
-    } else if ((_lookupCount & 0x1fffff) == 0x100000) {
-        if (hasCostChanged(guard)) {
-            _needPopulation = true;
+    std::shared_lock shared_guard(_mutex);
+    uint64_t lookupCount = _lookupCount++;
+    if (lookupCount == 2000) {
+        requirePopulation();
+    } else if ((lookupCount & 0x1fffff) == 0x100000) {
+        if (hasCostChanged(shared_guard)) {
+            requirePopulation();
         }
     }
     for (const auto & e : keys) {
@@ -79,7 +80,12 @@ BitVectorCache::lookupCachedSet(const KeyAndCountSet & keys)
                 cached.insert(e.first);
             }
         } else {
-            _keys[e.first] = KeyMeta().lookup().bitCount(e.second);
+            shared_guard.unlock();
+            {
+                std::unique_lock unique_guard(_mutex);
+                _keys[e.first] = KeyMeta().lookup().bitCount(e.second);
+            }
+            shared_guard.lock();
         }
     }
     return cached;
@@ -101,7 +107,7 @@ BitVectorCache::getSorted(Key2Index & keys)
 }
 
 bool
-BitVectorCache::hasCostChanged(const std::lock_guard<std::mutex> & guard)
+BitVectorCache::hasCostChanged(const std::shared_lock<std::shared_mutex> & guard)
 {
     (void) guard;
     if ( ! _chunks.empty()) {
@@ -168,10 +174,8 @@ BitVectorCache::populate(Key2Index & newKeys, CondensedBitVector & chunk, const 
 void
 BitVectorCache::populate(uint32_t sz, const PopulateInterface & lookup)
 {
-    std::unique_lock<std::mutex> guard(_lock);
-    if (! _needPopulation) {
-        return;
-    }
+    if (!needPopulation()) return;
+    std::unique_lock guard(_mutex);
     Key2Index newKeys(_keys);
     guard.unlock();
 
@@ -187,7 +191,7 @@ BitVectorCache::populate(uint32_t sz, const PopulateInterface & lookup)
 void
 BitVectorCache::set(Key key, uint32_t index, bool v)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::shared_lock guard(_mutex);
     auto found = _keys.find(key);
     if (found != _keys.end()) {
         const KeyMeta & m(found->second);
@@ -207,7 +211,7 @@ BitVectorCache::get(Key key, uint32_t index) const
 void
 BitVectorCache::removeIndex(uint32_t index)
 {
-    std::lock_guard<std::mutex> guard(_lock);
+    std::unique_lock guard(_mutex);
     for (auto & chunk : _chunks) {
         chunk->clearIndex(index);
     }

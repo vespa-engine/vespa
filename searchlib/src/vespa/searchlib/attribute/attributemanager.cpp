@@ -151,12 +151,11 @@ AttributeManager::getAttributeRef(const string & name) const
 AttributeGuard::UP
 AttributeManager::getAttribute(const string & name) const
 {
-    AttributeGuard::UP attrGuard(new AttributeGuard(VectorHolder()));
     const VectorHolder * vh = findAndLoadAttribute(name);
     if ( vh != nullptr ) {
-        attrGuard.reset(new AttributeGuard(*vh));
+        return std::make_unique<AttributeGuard>(*vh);
     }
-    return attrGuard;
+    return std::make_unique<AttributeGuard>();
 }
 
 std::unique_ptr<attribute::AttributeReadGuard>
