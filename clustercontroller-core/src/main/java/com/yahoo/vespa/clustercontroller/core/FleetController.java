@@ -1003,7 +1003,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     private boolean atFirstClusterStateSendTimeEdge() {
         // We only care about triggering a state recomputation for the master, which is the only
         // one allowed to actually broadcast any states.
-        if (!isMaster || systemStateBroadcaster.hasBroadcastedClusterStateBundle()) {
+        if (!isMaster || systemStateBroadcaster.hasBroadcastClusterStateBundle()) {
             return false;
         }
         return hasPassedFirstStateBroadcastTimePoint(timer.getCurrentTimeInMillis());
@@ -1021,7 +1021,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
             if ( ! isMaster) {
                 // If we just became master, restore state from ZooKeeper
                 stateChangeHandler.setStateChangedFlag();
-                systemStateBroadcaster.resetBroadcastedClusterStateBundle();
+                systemStateBroadcaster.resetBroadcastClusterStateBundle();
 
                 stateVersionTracker.setVersionRetrievedFromZooKeeper(database.getLatestSystemStateVersion());
                 ClusterStateBundle previousBundle = database.getLatestClusterStateBundle();
