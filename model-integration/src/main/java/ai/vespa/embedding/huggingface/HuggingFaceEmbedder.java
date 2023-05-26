@@ -29,14 +29,12 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     private final String attentionMaskName;
     private final String tokenTypeIdsName;
     private final String outputName;
-    private final int maxTokens;
     private final boolean normalize;
     private final HuggingFaceTokenizer tokenizer;
     private final OnnxEvaluator evaluator;
 
     @Inject
     public HuggingFaceEmbedder(OnnxRuntime onnx, HuggingFaceEmbedderConfig config) {
-        maxTokens = config.transformerMaxTokens();
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
         tokenTypeIdsName = config.transformerTokenTypeIds();
@@ -45,6 +43,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         tokenizer = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
                 .addDefaultModel(Paths.get(config.tokenizerPath().toString()))
+                .setTruncation(true)
+                .setMaxLength(config.transformerMaxTokens())
                 .build();
         var onnxOpts = new OnnxEvaluatorOptions();
         if (config.transformerGpuDevice() >= 0)
@@ -74,16 +74,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public List<Integer> embed(String s, Context context) {
-        var tokenIds = tokenizer.embed(s, context);
-
-        int tokensSize = tokenIds.size();
-
-        if (tokensSize > maxTokens) {
-            Integer lastElement = tokenIds.get(tokensSize - 1);
-            tokenIds = tokenIds.subList(0, maxTokens - 1);
-            tokenIds.add(lastElement);
-        }
-        return tokenIds;
+        return tokenizer.embed(s, context);
     }
 
     @Override
