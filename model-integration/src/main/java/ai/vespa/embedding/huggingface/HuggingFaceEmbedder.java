@@ -13,8 +13,6 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.file.Paths;
 import java.util.List;
@@ -23,20 +21,16 @@ import java.util.Map;
 @Beta
 public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HuggingFaceEmbedder.class.getName());
-
     private final String inputIdsName;
     private final String attentionMaskName;
     private final String tokenTypeIdsName;
     private final String outputName;
-    private final int maxTokens;
     private final boolean normalize;
     private final HuggingFaceTokenizer tokenizer;
     private final OnnxEvaluator evaluator;
 
     @Inject
     public HuggingFaceEmbedder(OnnxRuntime onnx, HuggingFaceEmbedderConfig config) {
-        maxTokens = config.transformerMaxTokens();
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
         tokenTypeIdsName = config.transformerTokenTypeIds();
@@ -45,6 +39,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         tokenizer = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
                 .addDefaultModel(Paths.get(config.tokenizerPath().toString()))
+                .setTruncation(true)
+                .setMaxLength(config.transformerMaxTokens())
                 .build();
         var onnxOpts = new OnnxEvaluatorOptions();
         if (config.transformerGpuDevice() >= 0)
@@ -74,16 +70,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public List<Integer> embed(String s, Context context) {
-        var tokenIds = tokenizer.embed(s, context);
-
-        int tokensSize = tokenIds.size();
-
-        if (tokensSize > maxTokens) {
-            Integer lastElement = tokenIds.get(tokensSize - 1);
-            tokenIds = tokenIds.subList(0, maxTokens - 1);
-            tokenIds.add(lastElement);
-        }
-        return tokenIds;
+        return tokenizer.embed(s, context);
     }
 
     @Override
@@ -156,9 +143,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         return builder.build();
     }
 
-    private Tensor createAttentionMask(Tensor inputSequence) {
-        return inputSequence.map((x) -> 1);
-    }
 
 }
 
