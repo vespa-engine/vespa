@@ -12,6 +12,7 @@ import com.yahoo.vdslib.state.NodeType;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,7 +28,7 @@ class GroupAvailabilityCalculator {
                                         double minNodeRatioPerGroup,
                                         int safeMaintenanceGroupThreshold,
                                         List<Integer> nodesSafelySetToMaintenance) {
-        this.distribution = distribution;
+        this.distribution = Objects.requireNonNull(distribution, "distribution must be non-null");
         this.minNodeRatioPerGroup = minNodeRatioPerGroup;
         this.safeMaintenanceGroupThreshold = safeMaintenanceGroupThreshold;
         this.nodesSafelySetToMaintenance = nodesSafelySetToMaintenance;
@@ -181,9 +182,6 @@ class GroupAvailabilityCalculator {
     }
 
     public Result calculate(ClusterState state) {
-        if (distribution == null) { // FIXME: for tests that don't set distribution properly!
-            return new Result();
-        }
         if (isFlatCluster(distribution.getRootGroup())) {
             // Implicit group takedown only applies to hierarchic cluster setups.
             return new Result();
