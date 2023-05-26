@@ -95,11 +95,15 @@ ScheduledForwardExecutor::~ScheduledForwardExecutor() {
 bool
 ScheduledForwardExecutor::cancel(uint64_t key)
 {
-    std::lock_guard guard(_lock);
-    auto found = _taskList.find(key);
-    if (found == _taskList.end()) return false;
-    found->second->cancel();
-    _taskList.erase(found);
+    std::unique_ptr<State> state;
+    {
+        std::lock_guard guard(_lock);
+        auto found = _taskList.find(key);
+        if (found == _taskList.end()) return false;
+        state = std::move(found->second);
+        _taskList.erase(found);
+    }
+    state->cancel();
     return true;
 }
 
