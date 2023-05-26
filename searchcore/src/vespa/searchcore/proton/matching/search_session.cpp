@@ -25,9 +25,9 @@ SearchSession::~SearchSession() = default;
 
 SearchSession::OwnershipBundle::OwnershipBundle(MatchContext && match_context,
                                                 std::shared_ptr<const ISearchHandler> searchHandler) noexcept
-    : context(std::move(match_context)),
-      search_handler(std::move(searchHandler)),
+    : search_handler(std::move(searchHandler)),
       feature_overrides(),
+      context(std::move(match_context)),
       readGuard()
 {}
 
