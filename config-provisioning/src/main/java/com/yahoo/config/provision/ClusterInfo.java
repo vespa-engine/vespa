@@ -3,6 +3,8 @@ package com.yahoo.config.provision;
 import java.time.Duration;
 import java.util.Objects;
 
+import static ai.vespa.validation.Validation.requireAtLeast;
+
 /**
  * Auxiliary information about a cluster, provided by the config model to the node repo during a
  * capacity request.
@@ -19,6 +21,7 @@ public class ClusterInfo {
     private ClusterInfo(Builder builder) {
         this.bcpDeadline = builder.bcpDeadline;
         this.hostTTL = builder.hostTTL;
+        requireAtLeast(hostTTL, "host TTL", Duration.ZERO);
     }
 
     public Duration bcpDeadline() { return bcpDeadline; }

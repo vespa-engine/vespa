@@ -510,11 +510,10 @@ public class HostCapacityMaintainerTest {
         tester.provisioningTester.makeReadyHosts(2, new NodeResources(1, 1, 1, 1)).activateTenantHosts();
         List<Node> hosts = tester.nodeRepository.nodes().list(Node.State.active).asList();
         Node host1 = hosts.get(0);
-        tester.nodeRepository.nodes().write(host1.withHostTTL(Duration.ofDays(1)), () -> { });
-        Node host11 = tester.addNode("host1-1", Optional.of(host1.hostname()), NodeType.tenant, State.active, DynamicProvisioningTester.tenantApp);
         Node host2 = hosts.get(1);
-        tester.nodeRepository.nodes().write(host2.withHostTTL(Duration.ofDays(1)), () -> { });
-        Node host21 = tester.addNode("host2-1", Optional.of(host2.hostname()), NodeType.tenant, State.active, ApplicationId.from("t", "a", "i"));
+        tester.nodeRepository.nodes().write(host1.withHostTTL(Duration.ofDays(1)), () -> { });
+        tester.nodeRepository.nodes().write(host2.withHostTTL(Duration.ofHours(1)), () -> { });
+        Node host11 = tester.addNode("host1-1", Optional.of(host1.hostname()), NodeType.tenant, State.active, DynamicProvisioningTester.tenantApp);
 
         // Host is not marked for deprovisioning by maintainer, because child is present
         tester.maintain();
@@ -537,14 +536,19 @@ public class HostCapacityMaintainerTest {
         assertEquals(Optional.of(clock.instant().truncatedTo(ChronoUnit.MILLIS)),
                      tester.nodeRepository.nodes().node(host1.hostname()).get().hostEmptyAt());
 
-        // Some time passes, but not enough for host to be deprovisioned
+        // Some time passes, but not enough for host1 to be deprovisioned
         clock.advance(Duration.ofDays(1).minusSeconds(1));
         tester.maintain();
         assertFalse(tester.nodeRepository.nodes().node(host1.hostname()).get().status().wantToDeprovision());
         assertEquals(Optional.of(clock.instant().minus(Duration.ofDays(1).minusSeconds(1)).truncatedTo(ChronoUnit.MILLIS)),
                      tester.nodeRepository.nodes().node(host1.hostname()).get().hostEmptyAt());
+        assertTrue(tester.nodeRepository.nodes().node(host2.hostname()).get().status().wantToDeprovision());
+        assertTrue(tester.nodeRepository.nodes().node(host2.hostname()).get().status().wantToRetire());
+        assertEquals(State.active, tester.nodeRepository.nodes().node(host2.hostname()).get().state());
+        assertEquals(Optional.of(clock.instant().minus(Duration.ofDays(1).minusSeconds(1)).truncatedTo(ChronoUnit.MILLIS)),
+                     tester.nodeRepository.nodes().node(host2.hostname()).get().hostEmptyAt());
 
-        // Some more time passes, but child is reactivated, rendering the host non-empty again
+        // Some more time passes, but child is reactivated on host1, rendering the host non-empty again
         clock.advance(Duration.ofDays(1));
         tester.nodeRepository.nodes().reactivate(host11.hostname(), Agent.operator, "all good");
         tester.maintain();
@@ -581,7 +585,7 @@ public class HostCapacityMaintainerTest {
         // Host and children can now be removed.
         tester.provisioningTester.activateTenantHosts();
         tester.maintain();
-        assertEquals(Set.of(host2, host21), Set.copyOf(tester.nodeRepository.nodes().list().asList()));
+        assertEquals(List.of(), tester.nodeRepository.nodes().list().asList());
     }
 
     @Test

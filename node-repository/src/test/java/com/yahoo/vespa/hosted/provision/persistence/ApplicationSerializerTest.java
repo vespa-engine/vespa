@@ -68,7 +68,7 @@ public class ApplicationSerializerTest {
                                                  Load.zero(),
                                                  Load.one(),
                                                  Autoscaling.Metrics.zero()),
-                                 new ClusterInfo.Builder().bcpDeadline(Duration.ofMinutes(33)).build(),
+                                 new ClusterInfo.Builder().bcpDeadline(Duration.ofMinutes(33)).hostTTL(Duration.ofSeconds(321)).build(),
                                  new BcpGroupInfo(0.1, 0.2, 0.3),
                                  List.of(new ScalingEvent(new ClusterResources(10, 5, minResources),
                                                           new ClusterResources(12, 6, minResources),
