@@ -28,8 +28,9 @@ public:
         OwnershipBundle(OwnershipBundle &&) noexcept = default;
         OwnershipBundle & operator = (OwnershipBundle &&) noexcept = delete;
         ~OwnershipBundle();
-        MatchContext context;
+        // Note that SearchHandler must above the other members due to life time guarantees.
         std::shared_ptr<const ISearchHandler> search_handler;
+        MatchContext context;
         std::unique_ptr<search::fef::Properties> feature_overrides;
         IDocumentMetaStoreContext::IReadGuard::SP readGuard;
     };
