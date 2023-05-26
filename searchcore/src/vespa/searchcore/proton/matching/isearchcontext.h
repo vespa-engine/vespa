@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/queryeval/searchable.h>
-
 #include <memory>
 
+namespace search::queryeval { class Searchable; }
 namespace searchcorespi { class IndexSearchable; }
 
 namespace proton::matching {
@@ -25,10 +24,6 @@ class ISearchContext
 protected:
     ISearchContext() = default;
 public:
-    /**
-     * Convenience typedef for an auto pointer to this interface.
-     **/
-    using UP = std::unique_ptr<ISearchContext>;
     ISearchContext(const ISearchContext &) = delete;
     ISearchContext & operator = (const ISearchContext &) = delete;
 

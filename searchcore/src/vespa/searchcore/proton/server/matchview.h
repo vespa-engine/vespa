@@ -10,26 +10,23 @@
 
 namespace searchcorespi { class IndexSearchable; }
 
-namespace proton {
-
-namespace matching {
-
-class MatchContext;
-class Matcher;
-class SessionManager;
-
+namespace proton::matching {
+    class MatchContext;
+    class Matcher;
+    class SessionManager;
 }
 
+namespace proton {
 struct IAttributeManager;
 
 class MatchView {
     using SessionManager = matching::SessionManager;
-    std::shared_ptr<Matchers>           _matchers;
-    std::shared_ptr<searchcorespi::IndexSearchable> _indexSearchable;
-    std::shared_ptr<IAttributeManager>   _attrMgr;
-    SessionManager                     & _sessionMgr;
-    std::shared_ptr<IDocumentMetaStoreContext> _metaStore;
-    DocIdLimit                          &_docIdLimit;
+    std::shared_ptr<Matchers>                        _matchers;
+    std::shared_ptr<searchcorespi::IndexSearchable>  _indexSearchable;
+    std::shared_ptr<IAttributeManager>               _attrMgr;
+    SessionManager                                 & _sessionMgr;
+    std::shared_ptr<IDocumentMetaStoreContext>       _metaStore;
+    DocIdLimit                                      &_docIdLimit;
 
     size_t getNumDocs() const {
         return _metaStore->get().getNumActiveLids();
@@ -63,7 +60,7 @@ public:
         return _matchers->getStats(rankProfile);
     }
 
-    std::unique_ptr<matching::MatchContext> createContext() const;
+    matching::MatchContext createContext() const;
 
     std::unique_ptr<search::engine::SearchReply>
     match(std::shared_ptr<const ISearchHandler> searchHandler,
