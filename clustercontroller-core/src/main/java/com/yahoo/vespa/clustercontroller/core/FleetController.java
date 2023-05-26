@@ -207,15 +207,11 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     public void addSystemStateListener(SystemStateListener listener) {
         systemStateListeners.add(listener);
         // Always give cluster state listeners the current state, in case acceptable state has come before listener is registered.
-        com.yahoo.vdslib.state.ClusterState state = getSystemState();
-        if (state == null) {
-            throw new NullPointerException("Cluster state should never be null at this point");
-        }
+        var state = getSystemState();
         listener.handleNewPublishedState(ClusterStateBundle.ofBaselineOnly(AnnotatedClusterState.withoutAnnotations(state)));
         ClusterStateBundle convergedState = systemStateBroadcaster.getLastClusterStateBundleConverged();
-        if (convergedState != null) {
+        if (convergedState != null)
             listener.handleStateConvergedInCluster(convergedState);
-        }
     }
 
     public FleetControllerOptions getOptions() {
