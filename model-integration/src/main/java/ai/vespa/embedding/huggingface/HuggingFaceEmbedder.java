@@ -13,8 +13,6 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.file.Paths;
 import java.util.List;
@@ -22,8 +20,6 @@ import java.util.Map;
 
 @Beta
 public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
-
-    private static final Logger LOG = LoggerFactory.getLogger(HuggingFaceEmbedder.class.getName());
 
     private final String inputIdsName;
     private final String attentionMaskName;
@@ -147,9 +143,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         return builder.build();
     }
 
-    private Tensor createAttentionMask(Tensor inputSequence) {
-        return inputSequence.map((x) -> 1);
-    }
 
 }
 
