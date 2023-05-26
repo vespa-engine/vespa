@@ -46,6 +46,11 @@ public:
     virtual void releaseEnumGuards() {}
 
     /**
+     * Must be called before multiple threads will access the context.
+     */
+    virtual void enableMultiThreadSafe() {}
+
+    /**
      * Virtual destructor to allow safe subclassing.
      **/
     virtual ~IAttributeContext() = default;
