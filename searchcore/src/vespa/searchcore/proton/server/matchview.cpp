@@ -50,17 +50,16 @@ MatchView::MatchView(Matchers::SP matchers,
 
 MatchView::~MatchView() = default;
 
-Matcher::SP
+std::shared_ptr<Matcher>
 MatchView::getMatcher(const vespalib::string & rankProfile) const
 {
     return _matchers->lookup(rankProfile);
 }
 
-MatchContext::UP
+MatchContext
 MatchView::createContext() const {
-    IAttributeContext::UP attrCtx = _attrMgr->createContext();
     auto searchCtx = std::make_unique<SearchContext>(_indexSearchable, _docIdLimit.get());
-    return std::make_unique<MatchContext>(std::move(attrCtx), std::move(searchCtx));
+    return {_attrMgr->createContext(), std::move(searchCtx)};
 }
 
 std::unique_ptr<SearchReply>
@@ -68,14 +67,13 @@ MatchView::match(std::shared_ptr<const ISearchHandler> searchHandler, const Sear
                  vespalib::ThreadBundle &threadBundle) const
 {
     Matcher::SP matcher = getMatcher(req.ranking);
-    SearchSession::OwnershipBundle owned_objects;
-    owned_objects.search_handler = std::move(searchHandler);
+    SearchSession::OwnershipBundle owned_objects(createContext(), std::move(searchHandler));
     owned_objects.readGuard = _metaStore->getReadGuard();
-    owned_objects.context = createContext();
-    MatchContext *ctx = owned_objects.context.get();
+    ISearchContext & search_ctx = owned_objects.context.getSearchContext();
+    IAttributeContext & attribute_ctx = owned_objects.context.getAttributeContext();
     const search::IDocumentMetaStore & dms = owned_objects.readGuard->get();
     const bucketdb::BucketDBOwner & bucketDB = _metaStore->get().getBucketDB();
-    return matcher->match(req, threadBundle, ctx->getSearchContext(), ctx->getAttributeContext(),
+    return matcher->match(req, threadBundle, search_ctx, attribute_ctx,
                           _sessionMgr, dms, bucketDB, std::move(owned_objects));
 }
 

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "match_context.h"
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/vespalib/stllike/string.h>
@@ -22,13 +23,14 @@ class MatchContext;
 class SearchSession {
 public:
     struct OwnershipBundle {
-        OwnershipBundle();
-        OwnershipBundle(OwnershipBundle &&) = default;
-        OwnershipBundle & operator = (OwnershipBundle &&) = default;
+        OwnershipBundle() noexcept;
+        OwnershipBundle(MatchContext && matchContext, std::shared_ptr<const ISearchHandler> searchHandler) noexcept;
+        OwnershipBundle(OwnershipBundle &&) noexcept = default;
+        OwnershipBundle & operator = (OwnershipBundle &&) noexcept = delete;
         ~OwnershipBundle();
+        MatchContext context;
         std::shared_ptr<const ISearchHandler> search_handler;
         std::unique_ptr<search::fef::Properties> feature_overrides;
-        std::unique_ptr<MatchContext> context;
         IDocumentMetaStoreContext::IReadGuard::SP readGuard;
     };
 private:
@@ -44,8 +46,7 @@ public:
     using SP = std::shared_ptr<SearchSession>;
 
     SearchSession(const SessionId &id, vespalib::steady_time create_time, vespalib::steady_time time_of_doom,
-                  std::unique_ptr<MatchToolsFactory> match_tools_factory,
-                  OwnershipBundle &&owned_objects);
+                  std::unique_ptr<MatchToolsFactory> match_tools_factory, OwnershipBundle &&owned_objects);
     ~SearchSession();
 
     const SessionId &getSessionId() const { return _session_id; }

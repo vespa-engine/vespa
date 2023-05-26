@@ -21,9 +21,9 @@ private:
     using IAttributeFunctor = attribute::IAttributeFunctor;
 
     const IAttributeManager & _manager;
-    mutable AttributeMap              _attributes;
-    mutable AttributeMap              _enumAttributes;
-    mutable std::mutex                _cacheLock;
+    mutable AttributeMap      _attributes;
+    mutable AttributeMap      _enumAttributes;
+    mutable std::mutex        _cacheLock;
 
     const IAttributeVector *getAttribute(AttributeMap & map, const string & name, bool stableEnum) const;
 

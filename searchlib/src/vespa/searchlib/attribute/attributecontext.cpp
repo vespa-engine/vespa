@@ -30,11 +30,11 @@ AttributeContext::getAttribute(AttributeMap & map, const string & name, bool sta
     }
 }
 
-AttributeContext::AttributeContext(const IAttributeManager & manager) :
-    _manager(manager),
-    _attributes(),
-    _enumAttributes(),
-    _cacheLock()
+AttributeContext::AttributeContext(const IAttributeManager & manager)
+    : _manager(manager),
+      _attributes(),
+      _enumAttributes(),
+      _cacheLock()
 { }
 
 AttributeContext::~AttributeContext() = default;

@@ -12,6 +12,7 @@ vespa_add_library(searchcore_matching STATIC
     i_match_loop_communicator.cpp
     indexenvironment.cpp
     match_loop_communicator.cpp
+    match_context.cpp
     match_master.cpp
     match_params.cpp
     match_phase_limit_calculator.cpp
