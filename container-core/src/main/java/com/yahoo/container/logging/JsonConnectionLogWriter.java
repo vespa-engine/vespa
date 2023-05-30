@@ -70,12 +70,15 @@ class JsonConnectionLogWriter implements LogWriter<ConnectionLogEntry> {
             String sslSniServerName = unwrap(record.sslSniServerName());
             String sslPeerIssuerSubject = unwrap(record.sslPeerIssuerSubject());
             String sslPeerFingerprint = unwrap(record.sslPeerFingerprint());
+            Long sslBytesReceived = unwrap(record.sslBytesReceived());
+            Long sslBytesSent = unwrap(record.sslBytesSent());
             ConnectionLogEntry.SslHandshakeFailure sslHandshakeFailure = unwrap(record.sslHandshakeFailure());
             List<String> sslSubjectAlternativeNames = record.sslSubjectAlternativeNames();
 
             if (isAnyValuePresent(
                     sslProtocol, sslSessionId, sslCipherSuite, sslPeerSubject, sslPeerNotBefore, sslPeerNotAfter,
-                    sslSniServerName, sslHandshakeFailure, sslPeerIssuerSubject, sslPeerFingerprint)) {
+                    sslSniServerName, sslHandshakeFailure, sslPeerIssuerSubject, sslPeerFingerprint,
+                    sslBytesReceived, sslBytesSent)) {
                 generator.writeObjectFieldStart("ssl");
 
                 writeOptionalString(generator, "protocol", sslProtocol);
@@ -87,6 +90,8 @@ class JsonConnectionLogWriter implements LogWriter<ConnectionLogEntry> {
                 writeOptionalTimestamp(generator, "peerNotAfter", sslPeerNotAfter);
                 writeOptionalString(generator, "peerFingerprint", sslPeerFingerprint);
                 writeOptionalString(generator, "sniServerName", sslSniServerName);
+                writeOptionalLong(generator, "bytesReceived", sslBytesReceived);
+                writeOptionalLong(generator, "bytesSent", sslBytesSent);
 
                 if (sslHandshakeFailure != null) {
                     generator.writeObjectFieldStart("handshake-failure");
