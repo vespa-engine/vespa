@@ -21,6 +21,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -31,6 +32,7 @@ import org.junit.Test;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -85,7 +87,6 @@ public class DynamicProvisioningTest {
         assertEquals(20, tester.nodeRepository().nodes().list().size());
         assertEquals(8, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).size());
         assertEquals(12, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-        assert false: "TODO: test with TTL";
     }
 
     @Test
@@ -114,6 +115,55 @@ public class DynamicProvisioningTest {
         assertEquals(12, nodes.nodeType(NodeType.host).state(Node.State.active).size());
         assertEquals(12, nodes.nodeType(NodeType.tenant).state(Node.State.active).size());
         assertEquals(4, nodes.retired().size());
+    }
+
+    @Test
+    public void empty_exclusive_to_hosts_reused_iff_new_allocation_fits_perfectly() {
+        var tester = tester(true);
+
+        NodeResources highResources = new NodeResources(4, 80, 100, 1);
+        NodeResources lowResources = new NodeResources(2, 20, 50, 1);
+
+        ApplicationId application = ProvisioningTester.applicationId();
+        prepareAndActivate(application, clusterSpec("mycluster", true), 2, 1, highResources, tester);
+
+        // Total of 4 nodes should now be in node-repo, 2 active hosts and 2 active nodes.
+        assertEquals(4, tester.nodeRepository().nodes().list().size());
+        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+
+        // Redeploying the application causes no changes at all.
+        prepareAndActivate(application, clusterSpec("mycluster", true), 2, 1, highResources, tester);
+        assertEquals(4, tester.nodeRepository().nodes().list().size());
+        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+
+        // Deploying with a smaller node flavour causes new, smaller hosts to be provisioned.
+        prepareAndActivate(application, clusterSpec("mycluster", true), 2, 1, lowResources, tester);
+
+        // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes, of which 2 are retired.
+        NodeList nodes = tester.nodeRepository().nodes().list();
+        assertEquals(8, nodes.size());
+        assertEquals(4, nodes.nodeType(NodeType.host).state(Node.State.active).size());
+        assertEquals(4, nodes.nodeType(NodeType.tenant).state(Node.State.active).size());
+        assertEquals(2, nodes.retired().size());
+
+        // Remove the child nodes, and redeploy with the original flavour. This should reuse the existing hosts.
+        tester.nodeRepository().database().writeTo(State.deprovisioned, nodes.retired().asList(), Agent.operator, Optional.empty());
+        tester.nodeRepository().nodes().list().state(State.deprovisioned).forEach(tester.nodeRepository().nodes()::forget);
+
+        // Total of 6 nodes should now be in node-repo, 4 active hosts and 2 active nodes.
+        nodes = tester.nodeRepository().nodes().list();
+        assertEquals(6, nodes.size());
+        assertEquals(4, nodes.nodeType(NodeType.host).state(Node.State.active).size());
+        assertEquals(2, nodes.nodeType(NodeType.tenant).state(Node.State.active).size());
+        assertEquals(0, nodes.retired().size());
+
+        // Deploy again with high resources.
+        prepareAndActivate(application, clusterSpec("mycluster", true), 2, 1, highResources, tester);
+        // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes.
+        nodes = tester.nodeRepository().nodes().list();
+        assertEquals(8, nodes.size());
+        assertEquals(4, nodes.nodeType(NodeType.host).state(Node.State.active).size());
+        assertEquals(4, nodes.nodeType(NodeType.tenant).state(Node.State.active).size());
     }
 
     @Test

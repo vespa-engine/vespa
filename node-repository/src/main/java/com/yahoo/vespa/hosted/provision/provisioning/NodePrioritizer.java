@@ -38,8 +38,6 @@ public class NodePrioritizer {
     private final NameResolver nameResolver;
     private final Nodes nodes;
     private final boolean dynamicProvisioning;
-    /** Whether node specification allows new nodes to be allocated. */
-    private final boolean canAllocateNew;
     private final boolean canAllocateToSpareHosts;
     private final boolean topologyChange;
     private final int currentClusterSize;
@@ -81,9 +79,6 @@ public class NodePrioritizer {
         // NodeCandidate::compareTo will ensure that they will not be used until there is no room elsewhere.
         // In non-dynamically provisioned zones, we only allow allocating to spare hosts to replace failed nodes.
         this.canAllocateToSpareHosts = dynamicProvisioning || isReplacement(nodesInCluster, clusterSpec.group());
-        // Do not allocate new nodes for exclusive deployments in dynamically provisioned zones: provision new host instead.
-        this.canAllocateNew = requestedNodes instanceof NodeSpec.CountNodeSpec
-                              && (!dynamicProvisioning || !requestedNodes.isExclusive());
     }
 
     /** Collects all node candidates for this application and returns them in the most-to-least preferred order */
@@ -136,15 +131,14 @@ public class NodePrioritizer {
 
     /** Add a node on each host with enough capacity for the requested flavor  */
     private void addCandidatesOnExistingHosts() {
-        if ( !canAllocateNew) return;
+        if (requestedNodes.resources().isEmpty()) return;
 
         for (Node host : allNodes) {
             if ( ! nodes.canAllocateTenantNodeTo(host, dynamicProvisioning)) continue;
             if (nodes.suspended(host)) continue; // Hosts that are suspended may be down for some time, e.g. for OS upgrade
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
             if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
-            // TODO jonmv: allow reusing exclusive hosts after all, if the host matches what we'd provision for that node anyway.
-            if (host.exclusiveToApplicationId().isPresent()) continue; // Never allocate new nodes to exclusive hosts
+            if (host.exclusiveToApplicationId().isPresent() && ! fitsPerfectly(host)) continue;
             if ( ! host.exclusiveToClusterType().map(clusterSpec.type()::equals).orElse(true)) continue;
             if (spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
             if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
@@ -158,6 +152,10 @@ public class NodePrioritizer {
                                                         nameResolver,
                                                         !enclave));
         }
+    }
+
+    private boolean fitsPerfectly(Node host) {
+        return requestedNodes.resources().get().compatibleWith(host.resources());
     }
 
     /** Add existing nodes allocated to the application */
