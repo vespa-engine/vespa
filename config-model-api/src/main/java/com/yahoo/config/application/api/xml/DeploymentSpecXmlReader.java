@@ -277,7 +277,7 @@ public class DeploymentSpecXmlReader {
             case testTag:
                 if (Stream.iterate(stepTag, Objects::nonNull, Node::getParentNode)
                           .anyMatch(node -> prodTag.equals(node.getNodeName()))) {
-                    return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()))); // A production test
+                    return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()), readCloudAccount(stepTag), readHostTTL(stepTag))); // A production test
                 }
             case devTag, perfTag, stagingTag: // Intentional fallthrough from test tag.
                 return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccount(stepTag), readHostTTL(stepTag)));

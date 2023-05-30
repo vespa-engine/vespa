@@ -5,7 +5,9 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
@@ -128,10 +130,7 @@ public class TestPackage {
                                                                        testerApp)));
 
                 entries.put(deploymentFile,
-                            __ -> new ByteArrayInputStream(deploymentXml(id.tester(),
-                                                                         spec.athenzDomain(),
-                                                                         spec.requireInstance(id.application().instance())
-                                                                             .athenzService(id.type().zone().environment(), id.type().zone().region()))));
+                            __ -> new ByteArrayInputStream(deploymentXml(id.tester(), id.application().instance(), id.type().zone(), spec)));
 
                 if (certificate != null) {
                     entries.put("artifacts/key", __ -> new ByteArrayInputStream(KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8)));
@@ -297,13 +296,26 @@ public class TestPackage {
     }
 
     /** Returns a dummy deployment xml which sets up the service identity for the tester, if present. */
-    static byte[] deploymentXml(TesterId id, Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
+    static byte[] deploymentXml(TesterId id, InstanceName instance, ZoneId zone, DeploymentSpec original) {
+        Optional<AthenzDomain> athenzDomain = original.athenzDomain();
+        Optional<AthenzService> athenzService = original.requireInstance(instance)
+                                                        .athenzService(zone.environment(), zone.region());
+        Optional<CloudAccount> cloudAccount = original.requireInstance(instance)
+                                                      .cloudAccount(zone.environment(), Optional.of(zone.region()));
+        Optional<Duration> hostTTL = zone.environment().isProduction()
+                                     ? original.requireInstance(instance)
+                                               .steps().stream().filter(step -> step.isTest() && step.concerns(zone.environment(), Optional.of(zone.region())))
+                                               .findFirst().flatMap(Step::hostTTL)
+                                     : original.requireInstance(instance).hostTTL(zone.environment(), Optional.of(zone.region()));
         String deploymentSpec =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
-                "<deployment version=\"1.0\" " +
-                athenzDomain.map(domain -> "athenz-domain=\"" + domain.value() + "\" ").orElse("") +
-                athenzService.map(service -> "athenz-service=\"" + service.value() + "\" ").orElse("") + ">" +
-                "  <instance id=\"" + id.id().instance().value() + "\" />" +
+                "<deployment version='1.0'" +
+                athenzDomain.map(domain -> " athenz-domain='" + domain.value() + "'").orElse("") +
+                athenzService.map(service -> " athenz-service='" + service.value() + "'").orElse("") +
+                cloudAccount.map(account -> " cloud-account='" + account.value() + "'").orElse("") +
+                hostTTL.map(ttl -> " empty-host-ttl='" + ttl.getSeconds() / 60 + "m'").orElse("") +
+                ">" +
+                "  <instance id='" + id.id().instance().value() + "' />" +
                 "</deployment>";
         return deploymentSpec.getBytes(UTF_8);
     }

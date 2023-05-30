@@ -1806,6 +1806,8 @@ public class DeploymentSpecTest {
                     <prod empty-host-ttl='1m'>
                         <region>us-east</region>
                         <region empty-host-ttl='2m'>us-west</region>
+                        <test>us-east</test>
+                        <test empty-host-ttl='3m'>us-west</test>
                     </prod>
                   </instance>
                   <instance id='beta'>
@@ -1833,6 +1835,14 @@ public class DeploymentSpecTest {
         assertHostTTL(Duration.ofHours(1), spec, "alpha", perf, null);
         assertHostTTL(Duration.ofMinutes(1), spec, "alpha", prod, "us-east");
         assertHostTTL(Duration.ofMinutes(2), spec, "alpha", prod, "us-west");
+        assertEquals(Optional.of(Duration.ofMinutes(1)), spec.requireInstance("alpha").steps().stream()
+                                                           .filter(step -> step.concerns(prod, Optional.of(RegionName.from("us-east"))) && step.isTest())
+                                                           .findFirst().orElseThrow()
+                                                           .hostTTL());
+        assertEquals(Optional.of(Duration.ofMinutes(3)), spec.requireInstance("alpha").steps().stream()
+                                                             .filter(step -> step.concerns(prod, Optional.of(RegionName.from("us-west"))) && step.isTest())
+                                                             .findFirst().orElseThrow()
+                                                             .hostTTL());
 
         assertHostTTL(Duration.ofHours(1), spec, "beta", test, null);
         assertHostTTL(Duration.ofDays(3), spec, "beta", staging, null);

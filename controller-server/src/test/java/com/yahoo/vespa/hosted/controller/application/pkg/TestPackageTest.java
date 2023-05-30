@@ -2,10 +2,12 @@ package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.TestSummary;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig.Steprunner.Testerapp;
@@ -19,6 +21,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
@@ -147,28 +152,61 @@ public class TestPackageTest {
     }
 
     @Test
+    void generates_correct_deployment_spec() {
+        DeploymentSpec spec = DeploymentSpec.fromXml("""
+                                                     <deployment version='1.0' athenz-domain='domain' athenz-service='service' cloud-account='123123123123' empty-host-ttl='1h'>
+                                                         <test empty-host-ttl='1d' />
+                                                         <staging cloud-account='321321321321'/>
+                                                         <prod>
+                                                             <region>us-east-3</region>
+                                                             <test>us-east-3</test>
+                                                             <region>us-west-1</region>
+                                                             <test empty-host-ttl='0m'>us-west-1</test>
+                                                             <region empty-host-ttl='1d'>us-central-1</region>
+                                                             <test>us-central-1</test>
+                                                         </prod>
+                                                     </deployment>
+                                                     """);
+        verifyAttributes("123123123123", 1440, ZoneId.from("test", "us-east-1"), spec);
+        verifyAttributes("321321321321", 60, ZoneId.from("staging", "us-east-2"), spec);
+        verifyAttributes("123123123123", 60, ZoneId.from("prod", "us-east-3"), spec);
+        verifyAttributes("123123123123", 0, ZoneId.from("prod", "us-west-1"), spec);
+        verifyAttributes("123123123123", 60, ZoneId.from("prod", "us-central-1"), spec);
+    }
+
+    private void verifyAttributes(String expectedAccount, int expectedTTL, ZoneId zone, DeploymentSpec spec) {
+        assertEquals("<?xml version='1.0' encoding='UTF-8'?>\n" +
+                     "<deployment version='1.0' athenz-domain='domain' athenz-service='service' " +
+                     "cloud-account='" + expectedAccount + "' empty-host-ttl='" + expectedTTL + "m'>  " +
+                     "<instance id='default-t' /></deployment>",
+                     new String(TestPackage.deploymentXml(TesterId.of(ApplicationId.defaultId()), InstanceName.defaultName(), zone, spec)));
+    }
+
+    @Test
     void generates_correct_tester_flavor() {
-        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
-                "    <instance id='first'>\n" +
-                "        <test tester-flavor=\"d-6-16-100\" />\n" +
-                "        <prod>\n" +
-                "            <region active=\"true\">us-west-1</region>\n" +
-                "            <test>us-west-1</test>\n" +
-                "        </prod>\n" +
-                "    </instance>\n" +
-                "    <instance id='second'>\n" +
-                "        <test />\n" +
-                "        <staging />\n" +
-                "        <prod tester-flavor=\"d-6-16-100\">\n" +
-                "            <parallel>\n" +
-                "                <region active=\"true\">us-east-3</region>\n" +
-                "                <region active=\"true\">us-central-1</region>\n" +
-                "            </parallel>\n" +
-                "            <region active=\"true\">us-west-1</region>\n" +
-                "            <test>us-west-1</test>\n" +
-                "        </prod>\n" +
-                "    </instance>\n" +
-                "</deployment>\n");
+        DeploymentSpec spec = DeploymentSpec.fromXml("""
+                                                     <deployment version='1.0' athenz-domain='domain' athenz-service='service'>
+                                                         <instance id='first'>
+                                                             <test tester-flavor="d-6-16-100" />
+                                                             <prod>
+                                                                 <region active="true">us-west-1</region>
+                                                                 <test>us-west-1</test>
+                                                             </prod>
+                                                         </instance>
+                                                         <instance id='second'>
+                                                             <test />
+                                                             <staging />
+                                                             <prod tester-flavor="d-6-16-100">
+                                                                 <parallel>
+                                                                     <region active="true">us-east-3</region>
+                                                                     <region active="true">us-central-1</region>
+                                                                 </parallel>
+                                                                 <region active="true">us-west-1</region>
+                                                                 <test>us-west-1</test>
+                                                             </prod>
+                                                         </instance>
+                                                     </deployment>
+                                                     """);
 
         NodeResources firstResources = TestPackage.testerResourcesFor(ZoneId.from("prod", "us-west-1"), spec.requireInstance("first"));
         assertEquals(TestPackage.DEFAULT_TESTER_RESOURCES, firstResources);

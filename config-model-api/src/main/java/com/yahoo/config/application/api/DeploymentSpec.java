@@ -387,6 +387,8 @@ public class DeploymentSpec {
             return true;
         }
 
+        public Optional<Duration> hostTTL() { return Optional.empty(); }
+
     }
 
     /** A deployment step which is to wait for some time before progressing to the next step */
@@ -495,6 +497,7 @@ public class DeploymentSpec {
             return environment + (region.map(regionName -> "." + regionName).orElse(""));
         }
 
+        @Override
         public Optional<Duration> hostTTL() {
             return hostTTL;
         }
@@ -505,9 +508,15 @@ public class DeploymentSpec {
     public static class DeclaredTest extends Step {
 
         private final RegionName region;
+        private final Optional<Duration> hostTTL;
 
-        public DeclaredTest(RegionName region) {
+        public DeclaredTest(RegionName region, Optional<CloudAccount> cloudAccount, Optional<Duration> hostTTL) {
             this.region = Objects.requireNonNull(region);
+            this.hostTTL = Objects.requireNonNull(hostTTL);
+            hostTTL.ifPresent(ttl -> {
+                if (cloudAccount.isEmpty()) illegal("Host TTL can only be specified with custom cloud accounts");
+                if (ttl.isNegative()) illegal("Host TTL cannot be negative");
+            });
         }
 
         @Override
@@ -521,6 +530,11 @@ public class DeploymentSpec {
         /** Returns the region this test is for. */
         public RegionName region() {
             return region;
+        }
+
+        @Override
+        public Optional<Duration> hostTTL() {
+            return hostTTL;
         }
 
         @Override
