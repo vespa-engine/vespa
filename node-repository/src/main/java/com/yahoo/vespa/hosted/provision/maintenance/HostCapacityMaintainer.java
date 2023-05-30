@@ -131,7 +131,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                         if (expired && canRemoveHost(emptyHost)) {
                             // Retire the host to parked if possible, otherwise move it straight to parked.
                             if (EnumSet.of(Node.State.reserved, Node.State.active, Node.State.inactive).contains(host.state())) {
-                                emptyHost = emptyHost.withWantToRetire(true, true, Agent.HostCapacityMaintainer, nodeRepository().clock().instant());
+                                emptyHost = emptyHost.withWantToRetire(true, true, Agent.HostCapacityMaintainer, now);
                                 nodeRepository().nodes().write(emptyHost, lock);
                             }
                             else {
@@ -161,26 +161,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                                                                               .min(naturalOrder())
                                                                               .orElse(Instant.MIN)))
                                                 .toList();
-    }
-
-    /**
-     * Excess hosts that can safely be deprovisioned: An excess host 1. contains no nodes allocated
-     * to an application, and assuming the spare nodes have been allocated, and 2. is not parked
-     * without wantToDeprovision (which means an operator is looking at the node).
-     */
-    private static List<Node> candidatesForRemoval(List<Node> nodes) {
-        Map<String, Node> removableHostsByHostname = new HashMap<>();
-        for (var node : nodes) {
-            if (canRemoveHost(node)) {
-                removableHostsByHostname.put(node.hostname(), node);
-            }
-        }
-        for (var node : nodes) {
-            if (node.parentHostname().isPresent() && !canDeprovision(node)) {
-                removableHostsByHostname.remove(node.parentHostname().get());
-            }
-        }
-        return List.copyOf(removableHostsByHostname.values());
     }
 
     private static boolean canRemoveHost(Node host) {

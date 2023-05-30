@@ -155,7 +155,7 @@ public class NodePrioritizer {
     }
 
     private boolean fitsPerfectly(Node host) {
-        return requestedNodes.resources().get().compatibleWith(host.resources());
+        return host.resources().compatibleWith(requestedNodes.resources().get());
     }
 
     /** Add existing nodes allocated to the application */
