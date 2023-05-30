@@ -84,11 +84,11 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         var encoding = tokenizer.encode(s, context.getLanguage());
         Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1");
         Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1");
-        Tensor tokenTypeIds = createTensorRepresentation(encoding.typeIds(), "d1");
+        Tensor tokenTypeIds = tokenTypeIdsName.isEmpty() ? null : createTensorRepresentation(encoding.typeIds(), "d1");
 
 
         Map<String, Tensor> inputs;
-        if (tokenTypeIds.isEmpty()) {
+        if (tokenTypeIdsName.isEmpty() || tokenTypeIds.isEmpty()) {
             inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
                             attentionMaskName, attentionMask.expand("d0"));
         } else {
