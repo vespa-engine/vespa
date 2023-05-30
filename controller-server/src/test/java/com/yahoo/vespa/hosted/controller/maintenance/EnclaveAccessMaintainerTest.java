@@ -33,7 +33,7 @@ class EnclaveAccessMaintainerTest {
 
         tester.flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of("123123123123", "321321321321"), String.class);
         assertEquals(1, sharer.maintain());
-        assertEquals(Set.of(CloudAccount.from("123123123123"), CloudAccount.from("321321321321")), amis.currentAccounts());
+        assertEquals(Set.of(CloudAccount.from("aws:123123123123"), CloudAccount.from("aws:321321321321")), amis.currentAccounts());
     }
 
 }
