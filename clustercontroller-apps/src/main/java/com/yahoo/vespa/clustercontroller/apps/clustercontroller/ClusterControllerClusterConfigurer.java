@@ -69,7 +69,6 @@ public class ClusterControllerClusterConfigurer extends AbstractComponent {
         builder.setCount(config.fleet_controller_count());
         builder.setZooKeeperSessionTimeout((int) (config.zookeeper_session_timeout() * 1000));
         builder.setMasterZooKeeperCooldownPeriod((int) (config.master_zookeeper_cooldown_period() * 1000));
-        builder.setStateGatherCount(config.state_gather_count());
         builder.setRpcPort(config.rpc_port());
         builder.setHttpPort(config.http_port());
         builder.setMaxTransitionTime(NodeType.STORAGE, config.storage_transition_time());

@@ -561,7 +561,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
 
             if ( ! isRunning()) { return; }
 
-            if (masterElectionHandler.isAmongNthFirst(options.stateGatherCount())) {
+            if (masterElectionHandler.isFirstInLine()) {
                 didWork |= resyncLocallyCachedState(); // Calls to metricUpdate.forWork inside method
             } else {
                 stepDownAsStateGatherer();
