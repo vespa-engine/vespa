@@ -394,7 +394,7 @@ public class FleetControllerOptions {
         private String clusterName;
         private int index = 0;
         private int count = 1;
-        private int stateGatherCount = 2;
+        private int stateGatherCount = 1;
         private String[] slobrokConnectionSpecs;
         private int rpcPort = 0;
         private int httpPort = 0;
