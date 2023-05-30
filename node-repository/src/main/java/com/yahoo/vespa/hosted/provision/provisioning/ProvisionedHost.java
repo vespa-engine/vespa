@@ -33,7 +33,6 @@ public class ProvisionedHost {
     private final NodeType hostType;
     private final Optional<ApplicationId> exclusiveToApplicationId;
     private final Optional<ClusterSpec.Type> exclusiveToClusterType;
-    private final Duration hostTTL;
     private final List<HostName> nodeHostnames;
     private final NodeResources nodeResources;
     private final Version osVersion;
@@ -41,7 +40,7 @@ public class ProvisionedHost {
 
     public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, NodeType hostType,
                            Optional<ApplicationId> exclusiveToApplicationId, Optional<ClusterSpec.Type> exclusiveToClusterType,
-                           Duration hostTTL, List<HostName> nodeHostnames, NodeResources nodeResources,
+                           List<HostName> nodeHostnames, NodeResources nodeResources,
                            Version osVersion, CloudAccount cloudAccount) {
         if (!hostType.isHost()) throw new IllegalArgumentException(hostType + " is not a host");
         this.id = Objects.requireNonNull(id, "Host id must be set");
@@ -49,7 +48,6 @@ public class ProvisionedHost {
         this.hostFlavor = Objects.requireNonNull(hostFlavor, "Host flavor must be set");
         this.hostType = Objects.requireNonNull(hostType, "Host type must be set");
         this.exclusiveToApplicationId = Objects.requireNonNull(exclusiveToApplicationId, "exclusiveToApplicationId must be set");
-        this.hostTTL = Objects.requireNonNull(hostTTL, "hostTTL must be set");
         this.exclusiveToClusterType = Objects.requireNonNull(exclusiveToClusterType, "exclusiveToClusterType must be set");
         this.nodeHostnames = validateNodeAddresses(nodeHostnames);
         this.nodeResources = Objects.requireNonNull(nodeResources, "Node resources must be set");
@@ -66,7 +64,7 @@ public class ProvisionedHost {
     }
 
     /** Generate {@link Node} instance representing the provisioned physical host */
-    public Node generateHost() {
+    public Node generateHost(Duration hostTTL) {
         Node.Builder builder = Node.create(id, IP.Config.of(Set.of(), Set.of(), nodeHostnames), hostHostname, hostFlavor, hostType)
                                    .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))))
                                    .cloudAccount(cloudAccount);
@@ -107,7 +105,6 @@ public class ProvisionedHost {
                hostType == that.hostType &&
                exclusiveToApplicationId.equals(that.exclusiveToApplicationId) &&
                exclusiveToClusterType.equals(that.exclusiveToClusterType) &&
-               hostTTL.equals(that.hostTTL) &&
                nodeHostnames.equals(that.nodeHostnames) &&
                nodeResources.equals(that.nodeResources) &&
                osVersion.equals(that.osVersion) &&
@@ -116,7 +113,7 @@ public class ProvisionedHost {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, hostHostname, hostFlavor, hostType, exclusiveToApplicationId, exclusiveToClusterType, hostTTL, nodeHostnames, nodeResources, osVersion, cloudAccount);
+        return Objects.hash(id, hostHostname, hostFlavor, hostType, exclusiveToApplicationId, exclusiveToClusterType, nodeHostnames, nodeResources, osVersion, cloudAccount);
     }
 
     @Override
@@ -128,7 +125,6 @@ public class ProvisionedHost {
                ", hostType=" + hostType +
                ", exclusiveToApplicationId=" + exclusiveToApplicationId +
                ", exclusiveToClusterType=" + exclusiveToClusterType +
-               ", hostTTL=" + hostTTL +
                ", nodeAddresses=" + nodeHostnames +
                ", nodeResources=" + nodeResources +
                ", osVersion=" + osVersion +

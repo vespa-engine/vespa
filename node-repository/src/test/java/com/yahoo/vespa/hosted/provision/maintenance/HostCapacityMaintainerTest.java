@@ -762,7 +762,7 @@ public class HostCapacityMaintainerTest {
 
         private long provisionedHostsMatching(NodeResources resources) {
             return hostProvisioner.provisionedHosts().stream()
-                                  .filter(host -> host.generateHost().resources().compatibleWith(resources))
+                                  .filter(host -> host.generateHost(Duration.ZERO).resources().compatibleWith(resources))
                                   .count();
         }
 
