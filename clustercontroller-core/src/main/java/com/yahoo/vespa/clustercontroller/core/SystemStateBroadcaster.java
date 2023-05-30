@@ -288,27 +288,26 @@ public class SystemStateBroadcaster {
             return false;
         }
 
-        ClusterState baselineState = clusterStateBundle.getBaselineClusterState();
+        int baselineStateVersion = clusterStateBundle.getBaselineClusterState().getVersion();
 
         if (!currentBundleVersionIsTaggedOfficial()) {
-            context.log(log, Level.INFO, "Publishing cluster state version " + baselineState.getVersion());
+            context.log(log, Level.INFO, "Publishing cluster state version " + baselineStateVersion);
             tagCurrentBundleVersionAsOfficial();
         }
 
         List<NodeInfo> recipients = resolveStateVersionSendSet(dbContext);
+        ClusterStateBundle modifiedBundle = clusterStateBundle.cloneWithMapper(state -> buildModifiedClusterState(state, dbContext));
         for (NodeInfo node : recipients) {
             if (nodeNeedsToObserveStartupTimestamps(node)) {
-                // TODO this is the same for all nodes, compute only once
-                ClusterStateBundle modifiedBundle = clusterStateBundle.cloneWithMapper(state -> buildModifiedClusterState(state, dbContext));
                 context.log(log,
                             Level.FINE,
-                            () -> "Sending modified cluster state version " + baselineState.getVersion() +
+                            () -> "Sending modified cluster state version " + baselineStateVersion +
                                   " to node " + node + ": " + modifiedBundle);
                 communicator.setSystemState(modifiedBundle, node, setClusterStateWaiter);
             } else {
                 context.log(log,
                             Level.FINE,
-                            () -> "Sending system state version " + baselineState.getVersion() +
+                            () -> "Sending system state version " + baselineStateVersion +
                                   " to node " + node + ". (went down time " + node.getWentDownWithStartTime() +
                                   ", node start time " + node.getStartTimestamp() + ")");
                 communicator.setSystemState(clusterStateBundle, node, setClusterStateWaiter);

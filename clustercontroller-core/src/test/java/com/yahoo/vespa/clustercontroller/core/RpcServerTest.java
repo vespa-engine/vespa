@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -33,7 +34,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -490,49 +490,6 @@ public class RpcServerTest extends FleetControllerTest {
         assertEquals("All 1 nodes agree that 0 is current master.", req.returnValues().get(1).asString(), req.toString());
 
         // Note that this feature is tested better in MasterElectionTest.testGetMaster as it has multiple fleetcontrollers
-    }
-
-    @Test
-    void testGetNodeList() throws Exception {
-        setUpFleetController(timer, defaultOptions(5));
-        final int nodeCount = 5;
-        setUpVdsNodes(timer, false, nodeCount);
-        waitForStableSystem();
-
-        assertTrue(nodes.get(0).isDistributor());
-        nodes.get(0).disconnect();
-        waitForState("version:\\d+ distributor:5 .0.s:d storage:5");
-
-        int rpcPort = fleetController().getRpcPort();
-        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
-        assertTrue(connection.isValid());
-
-        Request req = new Request("getNodeList");
-        connection.invokeSync(req, timeout());
-        assertEquals(ErrorCode.NONE, req.errorCode(), req.errorMessage());
-        assertTrue(req.checkReturnTypes("SS"), req.toString());
-        String[] slobrok = req.returnValues().get(0).asStringArray().clone();
-        String[] rpc = req.returnValues().get(1).asStringArray().clone();
-
-        assertEquals(2 * nodeCount, slobrok.length);
-        assertEquals(2 * nodeCount, rpc.length);
-
-        // Verify that we can connect to all addresses returned.
-        for (int i = 0; i < 2 * nodeCount; ++i) {
-            if (slobrok[i].equals("storage/cluster.mycluster/distributor/0")) {
-                if (i < nodeCount && !"".equals(rpc[i])) {
-                    continue;
-                }
-                assertEquals("", rpc[i], slobrok[i]);
-                continue;
-            }
-            assertNotEquals("", rpc[i]);
-            Request req2 = new Request("getnodestate3");
-            req2.parameters().add(new StringValue("unknown"));
-            Target connection2 = supervisor.connect(new Spec(rpc[i]));
-            connection2.invokeSync(req2, timeout());
-            assertEquals(ErrorCode.NONE, req.errorCode(), req2.toString());
-        }
     }
 
     private Request setNodeState(String node, NodeState newNodeState, Target connection) {

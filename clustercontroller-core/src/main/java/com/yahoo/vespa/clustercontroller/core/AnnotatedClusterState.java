@@ -44,11 +44,10 @@ public class AnnotatedClusterState implements Cloneable {
 
     public AnnotatedClusterState(ClusterState clusterState,
                                  Optional<ClusterStateReason> clusterStateReason,
-                                 Map<Node, NodeStateReason> nodeStateReasons)
-    {
-        this.clusterState = clusterState;
-        this.clusterStateReason = clusterStateReason;
-        this.nodeStateReasons = nodeStateReasons;
+                                 Map<Node, NodeStateReason> nodeStateReasons) {
+        this.clusterState = Objects.requireNonNull(clusterState, "Cluster state cannot be null");
+        this.clusterStateReason = Objects.requireNonNull(clusterStateReason, "Cluster state reason cannot be null");
+        this.nodeStateReasons = Objects.requireNonNull(nodeStateReasons, "Node state reasons cannot be null");
     }
 
     public static AnnotatedClusterState emptyState() {
