@@ -131,6 +131,7 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -1882,12 +1883,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
 
-        // TODO (freva): Get cloudAccount from deployment once all applications have redeployed once
-        controller.applications().decideCloudAccountOf(deploymentId, application.deploymentSpec()).ifPresent(cloudAccount -> {
+        if (controller.zoneRegistry().isEnclave(deployment.cloudAccount())) {
             Cursor enclave = response.setObject("enclave");
-            enclave.setString("cloudAccount", cloudAccount.value());
-            controller.zoneRegistry().cloudAccountAthenzDomain(cloudAccount).ifPresent(domain -> enclave.setString("athensDomain", domain.value()));
-        });
+            enclave.setString("cloudAccount", deployment.cloudAccount().value());
+            controller.zoneRegistry().cloudAccountAthenzDomain(deployment.cloudAccount()).ifPresent(domain -> enclave.setString("athensDomain", domain.value()));
+        }
 
         var instance = application.instances().get(deploymentId.applicationId().instance());
         if (instance != null) {
