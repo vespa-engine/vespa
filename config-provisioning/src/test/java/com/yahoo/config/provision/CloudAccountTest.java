@@ -63,7 +63,7 @@ class CloudAccountTest {
     @Test
     void invalid_accounts() {
         assertInvalidAccount("aws:123", "Invalid cloud account 'aws:123': Account ID must match '[0-9]{12}'");
-        assertInvalidAccount("gcp:123", "Invalid cloud account 'gcp:123': Project name must match '[a-z][a-z0-9-]{4,28}[a-z0-9]'");
+        assertInvalidAccount("gcp:123", "Invalid cloud account 'gcp:123': Project ID must match '[a-z][a-z0-9-]{4,28}[a-z0-9]'");
         assertInvalidAccount("$something", "Invalid cloud account '$something': Must be on format '<cloud-name>:<account>' or 'default'");
         assertInvalidAccount("unknown:account", "Invalid cloud account 'unknown:account': Cloud name must be one of: aws, gcp");
     }
