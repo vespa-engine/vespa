@@ -408,12 +408,6 @@ public class Flags {
             "Takes effect on application deployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_VESPA_ALMA_LINUX_X86_64_AMI = defineFeatureFlag(
-            "use-vespa-alma-linux-x86_64-ami", true, List.of("hmusum"), "2023-05-04", "2023-07-01",
-            "Whether to use VESPA-ALMALINUX-8-* AMI for x86_64 architecture",
-            "Takes effect when provisioning new AWS hosts",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
             "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-07-01",
             "Whether to enable the one program that should not be named",
