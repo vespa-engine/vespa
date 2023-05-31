@@ -1041,20 +1041,17 @@ HnswIndex<type>::count_reachable_nodes() const
         }
         --search_level;
     }
-    uint32_t iterations = 0;
     uint32_t found_cnt = found_links.size();
     search::AllocatedBitVector visitNext(visited.size());
-    bool runAnotherVisit = false;
     for (uint32_t nodeid : found_links) {
         visitNext.setBit(nodeid);
-        runAnotherVisit = true;
     }
+    bool runAnotherVisit = true;
     while (runAnotherVisit) {
-        ++iterations;
         if (vespalib::steady_clock::now() > doom) {
             return {found_cnt, false};
         }
-        runAnotherVisit = 0;
+        runAnotherVisit = false;
         visitNext.foreach_truebit(
                 [&] (uint32_t nodeid) {
                     // note: search_level == 0
