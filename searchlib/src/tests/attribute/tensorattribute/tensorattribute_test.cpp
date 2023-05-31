@@ -25,6 +25,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/vespalib/util/fake_doom.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/eval/eval/fast_value.h>
@@ -301,23 +302,27 @@ public:
     std::vector<Neighbor> find_top_k(uint32_t k,
                                      const search::tensor::BoundDistanceFunction &df,
                                      uint32_t explore_k,
+                                     const vespalib::Doom& doom,
                                      double distance_threshold) const override
     {
         (void) k;
         (void) df;
         (void) explore_k;
+        (void) doom;
         (void) distance_threshold;
         return std::vector<Neighbor>();
     }
     std::vector<Neighbor> find_top_k_with_filter(uint32_t k,
                                                  const search::tensor::BoundDistanceFunction &df,
                                                  const GlobalFilter& filter, uint32_t explore_k,
+                                                 const vespalib::Doom& doom,
                                                  double distance_threshold) const override
     {
         (void) k;
         (void) df;
         (void) explore_k;
         (void) filter;
+        (void) doom;
         (void) distance_threshold;
         return std::vector<Neighbor>();
     }
@@ -1291,10 +1296,12 @@ template <typename ParentT>
 class NearestNeighborBlueprintFixtureBase : public ParentT {
 private:
     std::unique_ptr<Value> _query_tensor;
+    vespalib::FakeDoom     _no_doom;
 
 public:
     NearestNeighborBlueprintFixtureBase()
-        : _query_tensor()
+        : _query_tensor(),
+          _no_doom()
     {
         this->set_tensor(1, vec_2d(1, 1));
         this->set_tensor(2, vec_2d(2, 2));
@@ -1321,7 +1328,7 @@ public:
                                                  create_query_tensor(vec_2d(17, 42))),
             3, approximate, 5,
             100100.25,
-            global_filter_lower_limit, 1.0);
+            global_filter_lower_limit, 1.0, _no_doom.get_doom());
         EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
         EXPECT_EQUAL(100100.25 * 100100.25, bp->get_distance_threshold());
         return bp;

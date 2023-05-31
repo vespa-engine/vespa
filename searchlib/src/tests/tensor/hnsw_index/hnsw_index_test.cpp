@@ -17,6 +17,7 @@
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/fake_doom.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <type_traits>
@@ -90,13 +91,15 @@ public:
     LevelGenerator* level_generator;
     GenerationHandler gen_handler;
     std::unique_ptr<IndexType> index;
+    std::unique_ptr<vespalib::FakeDoom> _doom;
 
     HnswIndexTest()
         : vectors(),
           global_filter(GlobalFilter::create()),
           level_generator(),
           gen_handler(),
-          index()
+          index(),
+          _doom(std::make_unique<vespalib::FakeDoom>())
     {
         vectors.set(1, {2, 2}).set(2, {3, 2}).set(3, {2, 3})
                .set(4, {1, 2}).set(5, {8, 3}).set(6, {7, 2})
@@ -173,8 +176,8 @@ public:
         vespalib::eval::TypedCells qv_cells(qv_ref);
         auto df = index->distance_function_factory().for_query_vector(qv_cells);
         auto got_by_docid = (global_filter->is_active()) ?
-                            index->find_top_k_with_filter(k, *df, *global_filter, explore_k, 10000.0) :
-                            index->find_top_k(k, *df, explore_k, 10000.0);
+                            index->find_top_k_with_filter(k, *df, *global_filter, explore_k, _doom->get_doom(), 10000.0) :
+                            index->find_top_k(k, *df, explore_k, _doom->get_doom(), 10000.0);
         std::vector<uint32_t> act;
         act.reserve(got_by_docid.size());
         for (auto& hit : got_by_docid) {
@@ -186,7 +189,7 @@ public:
         uint32_t k = 3;
         auto qv = vectors.get_vector(docid, 0);
         auto df = index->distance_function_factory().for_query_vector(qv);
-        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active()).peek();
+        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active(), _doom->get_doom()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
         for (const auto & hit : rv) {
@@ -197,25 +200,27 @@ public:
         if (exp_hits.size() == k) {
             std::vector<uint32_t> expected_by_docid = exp_hits;
             std::sort(expected_by_docid.begin(), expected_by_docid.end());
-            auto got_by_docid = index->find_top_k(k, *df, k, 100100.25);
+            auto got_by_docid = index->find_top_k(k, *df, k, _doom->get_doom(), 100100.25);
             for (idx = 0; idx < k; ++idx) {
                 EXPECT_EQ(expected_by_docid[idx], got_by_docid[idx].docid);
             }
         }
-        check_with_distance_threshold(docid);
+        if (!exp_hits.empty()) {
+            check_with_distance_threshold(docid);
+        }
     }
     void check_with_distance_threshold(uint32_t docid) {
         auto qv = vectors.get_vector(docid, 0);
         auto df = index->distance_function_factory().for_query_vector(qv);
         uint32_t k = 3;
-        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active()).peek();
+        auto rv = index->top_k_candidates(*df, k, global_filter->ptr_if_active(), _doom->get_doom()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         EXPECT_EQ(rv.size(), 3);
         EXPECT_LE(rv[0].distance, rv[1].distance);
         double thr = (rv[0].distance + rv[1].distance) * 0.5;
         auto got_by_docid = (global_filter->is_active())
-            ? index->find_top_k_with_filter(k, *df, *global_filter, k, thr)
-            : index->find_top_k(k, *df, k, thr);
+            ? index->find_top_k_with_filter(k, *df, *global_filter, k, _doom->get_doom(), thr)
+            : index->find_top_k(k, *df, k, _doom->get_doom(), thr);
         EXPECT_EQ(got_by_docid.size(), 1);
         EXPECT_EQ(got_by_docid[0].docid, index->get_docid(rv[0].nodeid));
         for (const auto & hit : got_by_docid) {
@@ -261,6 +266,12 @@ public:
         auto& id_mapping = index->get_id_mapping();
         HnswIndexLoader<VectorBufferReader, IndexType::index_type> loader(graph, id_mapping, std::make_unique<VectorBufferReader>(data));
         while (loader.load_next()) {}
+    }
+    void reset_doom() {
+        _doom = std::make_unique<vespalib::FakeDoom>();
+    }
+    void reset_doom(vespalib::steady_time::duration time_to_doom) {
+        _doom = std::make_unique<vespalib::FakeDoom>(time_to_doom);
     }
 
     static constexpr bool is_single = std::is_same_v<IndexType, HnswIndex<HnswIndexType::SINGLE>>;
@@ -334,6 +345,8 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_selec
     this->expect_top_3(7, {3, 2});
     this->expect_top_3(8, {4, 3});
     this->expect_top_3(9, {3, 2});
+    this->reset_doom(-1s);
+    this->expect_top_3(2, {});
 }
 
 TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_and_removed)
@@ -823,6 +836,10 @@ TEST_F(HnswMultiIndexTest, duplicate_docid_is_removed)
     this->expect_top_3_by_docid("{1, 2}", {1, 2}, {1, 3, 4});
     this->expect_top_3_by_docid("{2, 0}", {2, 0}, {1, 2, 4});
     this->expect_top_3_by_docid("{2, 1}", {2, 1}, {2, 3, 4});
+    this->expect_top_3_by_docid("{2, 2}", {2, 2}, {1, 3, 4});
+    this->reset_doom(-1s); // 1s beyond doom => no hits
+    this->expect_top_3_by_docid("{2, 2}", {2, 2}, {});
+    this->reset_doom();
     this->expect_top_3_by_docid("{2, 2}", {2, 2}, {1, 3, 4});
     auto filter = std::make_shared<MyGlobalFilter>(GlobalFilter::create({1, 2}, 3));
     global_filter = filter;

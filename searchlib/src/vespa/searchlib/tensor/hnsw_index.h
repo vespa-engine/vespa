@@ -170,12 +170,15 @@ protected:
     void search_layer_helper(const BoundDistanceFunction &df, uint32_t neighbors_to_find, BestNeighbors& best_neighbors,
                              uint32_t level, const GlobalFilter *filter,
                              uint32_t nodeid_limit,
+                             const vespalib::Doom* const doom,
                              uint32_t estimated_visited_nodes) const;
     template <class BestNeighbors>
     void search_layer(const BoundDistanceFunction &df, uint32_t neighbors_to_find, BestNeighbors& best_neighbors,
-                      uint32_t level, const GlobalFilter *filter = nullptr) const;
+                      uint32_t level, const vespalib::Doom* const doom,
+                      const GlobalFilter *filter = nullptr) const;
     std::vector<Neighbor> top_k_by_docid(uint32_t k, const BoundDistanceFunction &df,
                                          const GlobalFilter *filter, uint32_t explore_k,
+                                         const vespalib::Doom& doom,
                                          double distance_threshold) const;
 
     internal::PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
@@ -217,19 +220,22 @@ public:
             uint32_t k,
             const BoundDistanceFunction &df,
             uint32_t explore_k,
+            const vespalib::Doom& doom,
             double distance_threshold) const override;
 
     std::vector<Neighbor> find_top_k_with_filter(
             uint32_t k,
             const BoundDistanceFunction &df,
             const GlobalFilter &filter, uint32_t explore_k,
+            const vespalib::Doom& doom,
             double distance_threshold) const override;
 
     DistanceFunctionFactory &distance_function_factory() const override { return *_distance_ff; }
 
     SearchBestNeighbors top_k_candidates(
             const BoundDistanceFunction &df,
-            uint32_t k, const GlobalFilter *filter) const;
+            uint32_t k, const GlobalFilter *filter,
+            const vespalib::Doom& doom) const;
 
     uint32_t get_entry_nodeid() const { return _graph.get_entry_node().nodeid; }
     int32_t get_entry_level() const { return _graph.get_entry_node().level; }

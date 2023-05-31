@@ -45,6 +45,7 @@ private:
     bool _global_filter_set;
     std::optional<uint32_t> _global_filter_hits;
     std::optional<double> _global_filter_hit_ratio;
+    const vespalib::Doom& _doom;
 
     void perform_top_k(const search::tensor::NearestNeighborIndex* nns_index);
 public:
@@ -53,7 +54,8 @@ public:
                              uint32_t target_hits, bool approximate, uint32_t explore_additional_hits,
                              double distance_threshold,
                              double global_filter_lower_limit,
-                             double global_filter_upper_limit);
+                             double global_filter_upper_limit,
+                             const vespalib::Doom& doom);
     NearestNeighborBlueprint(const NearestNeighborBlueprint&) = delete;
     NearestNeighborBlueprint& operator=(const NearestNeighborBlueprint&) = delete;
     ~NearestNeighborBlueprint();

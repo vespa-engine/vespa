@@ -835,7 +835,8 @@ public:
                                                                             n.get_explore_additional_hits(),
                                                                             n.get_distance_threshold(),
                                                                             getRequestContext().get_attribute_blueprint_params().global_filter_lower_limit,
-                                                                            getRequestContext().get_attribute_blueprint_params().global_filter_upper_limit));
+                                                                            getRequestContext().get_attribute_blueprint_params().global_filter_upper_limit,
+                                                                            getRequestContext().getDoom()));
         } catch (const vespalib::IllegalArgumentException& ex) {
             return fail_nearest_neighbor_term(n, ex.getMessage());
 
