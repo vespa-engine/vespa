@@ -139,7 +139,7 @@ public final class Node implements Nodelike {
             throw new IllegalArgumentException("Only tenant hosts can be exclusive to an application");
 
         if (type != NodeType.host && hostTTL.isPresent())
-            throw new IllegalArgumentException("Only tenant hosts can have an exclusive host TTL");
+            throw new IllegalArgumentException("Only tenant hosts can have a TTL");
 
         if (type != NodeType.host && exclusiveToClusterType.isPresent())
             throw new IllegalArgumentException("Only tenant hosts can be exclusive to a cluster type");
