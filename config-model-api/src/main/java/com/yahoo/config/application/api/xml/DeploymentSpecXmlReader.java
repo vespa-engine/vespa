@@ -94,6 +94,7 @@ public class DeploymentSpecXmlReader {
     private static final String majorVersionAttribute = "major-version";
     private static final String globalServiceIdAttribute = "global-service-id";
     private static final String cloudAccountAttribute = "cloud-account";
+    private static final String hostTTLAttribute = "empty-host-ttl";
 
     private final boolean validate;
     private final Clock clock;
@@ -165,6 +166,7 @@ public class DeploymentSpecXmlReader {
                                   stringAttribute(athenzDomainAttribute, root).map(AthenzDomain::from),
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
                                   stringAttribute(cloudAccountAttribute, root).map(CloudAccount::from),
+                                  stringAttribute(hostTTLAttribute, root).map(s -> toDuration(s, "empty host TTL")),
                                   applicationEndpoints,
                                   xmlForm,
                                   deprecatedElements);
@@ -204,6 +206,7 @@ public class DeploymentSpecXmlReader {
         List<DeploymentSpec.ChangeBlocker> changeBlockers = readChangeBlockers(instanceElement, parentTag);
         Optional<AthenzService> athenzService = mostSpecificAttribute(instanceElement, athenzServiceAttribute).map(AthenzService::from);
         Optional<CloudAccount> cloudAccount = mostSpecificAttribute(instanceElement, cloudAccountAttribute).map(CloudAccount::from);
+        Optional<Duration> hostTTL = mostSpecificAttribute(instanceElement, hostTTLAttribute).map(s -> toDuration(s, "empty host TTL"));
         Notifications notifications = readNotifications(instanceElement, parentTag);
 
         // Values where there is no default
@@ -233,6 +236,7 @@ public class DeploymentSpecXmlReader {
                                                              Optional.ofNullable(prodAttributes.get(globalServiceIdAttribute)),
                                                              athenzService,
                                                              cloudAccount,
+                                                             hostTTL,
                                                              notifications,
                                                              endpoints,
                                                              zoneEndpoints,
@@ -258,6 +262,7 @@ public class DeploymentSpecXmlReader {
     }
 
     // Consume the given tag as 0-N steps. 0 if it is not a step, >1 if it contains multiple nested steps that should be flattened
+    @SuppressWarnings("fallthrough")
     private List<Step> readNonInstanceSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag, Bcp defaultBcp) {
         Optional<AthenzService> athenzService = mostSpecificAttribute(stepTag, athenzServiceAttribute).map(AthenzService::from);
         Optional<String> testerFlavor = mostSpecificAttribute(stepTag, testerFlavorAttribute);
@@ -272,12 +277,10 @@ public class DeploymentSpecXmlReader {
             case testTag:
                 if (Stream.iterate(stepTag, Objects::nonNull, Node::getParentNode)
                           .anyMatch(node -> prodTag.equals(node.getNodeName()))) {
-                    // A production test
-                    return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim())));
+                    return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()), readCloudAccount(stepTag), readHostTTL(stepTag))); // A production test
                 }
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccount(stepTag)));
-            case devTag, perfTag, stagingTag:
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccount(stepTag)));
+            case devTag, perfTag, stagingTag: // Intentional fallthrough from test tag.
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccount(stepTag), readHostTTL(stepTag)));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag, defaultBcp).stream())
@@ -682,11 +685,15 @@ public class DeploymentSpecXmlReader {
                                           Optional<String> testerFlavor, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
                                 readActive(regionTag), athenzService, testerFlavor,
-                                readCloudAccount(regionTag));
+                                readCloudAccount(regionTag), readHostTTL(regionTag));
     }
 
     private Optional<CloudAccount> readCloudAccount(Element tag) {
         return mostSpecificAttribute(tag, cloudAccountAttribute).map(CloudAccount::from);
+    }
+
+    private Optional<Duration> readHostTTL(Element tag) {
+        return mostSpecificAttribute(tag, hostTTLAttribute).map(s -> toDuration(s, "empty host TTL"));
     }
 
     private Optional<String> readGlobalServiceId(Element environmentTag) {
@@ -804,8 +811,8 @@ public class DeploymentSpecXmlReader {
     }
 
     /**
-     * Returns a string consisting of a number followed by "m" or "h" to a duration given in that unit,
-     * or zero duration if null of blank.
+     * Returns a string consisting of a number followed by "m", "h" or "d" to a duration given in that unit,
+     * or zero duration if null or blank.
      */
     private static Duration toDuration(String durationSpec, String sourceDescription) {
         try {

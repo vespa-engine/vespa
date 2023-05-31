@@ -21,11 +21,14 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.net.HostName;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -37,6 +40,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.InfraDeployerImpl;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
+import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockDuperModel;
 import com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -50,6 +54,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -60,6 +65,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner.Behaviour;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -497,15 +503,101 @@ public class HostCapacityMaintainerTest {
     }
 
     @Test
+    public void deprovision_node_when_no_allocation_and_past_TTL() {
+        var tester = new DynamicProvisioningTester();
+        ManualClock clock = (ManualClock) tester.nodeRepository.clock();
+        tester.hostProvisioner.with(Behaviour.failProvisioning);
+        tester.provisioningTester.makeReadyHosts(2, new NodeResources(1, 1, 1, 1)).activateTenantHosts();
+        List<Node> hosts = tester.nodeRepository.nodes().list(Node.State.active).asList();
+        Node host1 = hosts.get(0);
+        Node host2 = hosts.get(1);
+        tester.nodeRepository.nodes().write(host1.withHostTTL(Duration.ofDays(1)), () -> { });
+        tester.nodeRepository.nodes().write(host2.withHostTTL(Duration.ofHours(1)), () -> { });
+        Node host11 = tester.addNode("host1-1", Optional.of(host1.hostname()), NodeType.tenant, State.active, DynamicProvisioningTester.tenantApp);
+
+        // Host is not marked for deprovisioning by maintainer, because child is present
+        tester.maintain();
+        assertFalse(tester.nodeRepository.nodes().node(host1.hostname()).get().status().wantToDeprovision());
+        assertEquals(Optional.empty(), tester.nodeRepository.nodes().node(host1.hostname()).get().hostEmptyAt());
+
+        // Child is set to deprovision, but turns active
+        tester.nodeRepository.nodes().park(host11.hostname(), true, Agent.operator, "not good");
+        tester.nodeRepository.nodes().reactivate(host11.hostname(), Agent.operator, "all good");
+        assertTrue(tester.nodeRepository.nodes().node(host11.hostname()).get().status().wantToDeprovision());
+        assertEquals(State.active, tester.nodeRepository.nodes().node(host11.hostname()).get().state());
+        tester.maintain();
+        assertFalse(tester.nodeRepository.nodes().node(host1.hostname()).get().status().wantToDeprovision());
+        assertEquals(Optional.empty(), tester.nodeRepository.nodes().node(host1.hostname()).get().hostEmptyAt());
+
+        // Child is parked, to make the host effectively empty
+        tester.nodeRepository.nodes().park(host11.hostname(), true, Agent.operator, "not good");
+        tester.maintain();
+        assertFalse(tester.nodeRepository.nodes().node(host1.hostname()).get().status().wantToDeprovision());
+        assertEquals(Optional.of(clock.instant().truncatedTo(ChronoUnit.MILLIS)),
+                     tester.nodeRepository.nodes().node(host1.hostname()).get().hostEmptyAt());
+
+        // Some time passes, but not enough for host1 to be deprovisioned
+        clock.advance(Duration.ofDays(1).minusSeconds(1));
+        tester.maintain();
+        assertFalse(tester.nodeRepository.nodes().node(host1.hostname()).get().status().wantToDeprovision());
+        assertEquals(Optional.of(clock.instant().minus(Duration.ofDays(1).minusSeconds(1)).truncatedTo(ChronoUnit.MILLIS)),
+                     tester.nodeRepository.nodes().node(host1.hostname()).get().hostEmptyAt());
+        assertTrue(tester.nodeRepository.nodes().node(host2.hostname()).get().status().wantToDeprovision());
+        assertTrue(tester.nodeRepository.nodes().node(host2.hostname()).get().status().wantToRetire());
+        assertEquals(State.active, tester.nodeRepository.nodes().node(host2.hostname()).get().state());
+        assertEquals(Optional.of(clock.instant().minus(Duration.ofDays(1).minusSeconds(1)).truncatedTo(ChronoUnit.MILLIS)),
+                     tester.nodeRepository.nodes().node(host2.hostname()).get().hostEmptyAt());
+
+        // Some more time passes, but child is reactivated on host1, rendering the host non-empty again
+        clock.advance(Duration.ofDays(1));
+        tester.nodeRepository.nodes().reactivate(host11.hostname(), Agent.operator, "all good");
+        tester.maintain();
+        assertFalse(tester.nodeRepository.nodes().node(host1.hostname()).get().status().wantToDeprovision());
+        assertEquals(Optional.empty(), tester.nodeRepository.nodes().node(host1.hostname()).get().hostEmptyAt());
+
+        // Child is removed, and host is marked as empty
+        tester.nodeRepository.database().writeTo(State.deprovisioned, host11, Agent.operator, Optional.empty());
+        tester.nodeRepository.nodes().forget(tester.nodeRepository.nodes().node(host11.hostname()).get());
+        assertEquals(Optional.empty(), tester.nodeRepository.nodes().node(host11.hostname()));
+        tester.maintain();
+        assertFalse(tester.nodeRepository.nodes().node(host1.hostname()).get().status().wantToDeprovision());
+        assertEquals(Optional.of(clock.instant().truncatedTo(ChronoUnit.MILLIS)),
+                     tester.nodeRepository.nodes().node(host1.hostname()).get().hostEmptyAt());
+
+        // Enough time passes for the host to be deprovisioned
+        clock.advance(Duration.ofDays(1));
+        tester.maintain();
+        assertTrue(tester.nodeRepository.nodes().node(host1.hostname()).get().status().wantToDeprovision());
+        assertTrue(tester.nodeRepository.nodes().node(host1.hostname()).get().status().wantToRetire());
+        assertEquals(State.active, tester.nodeRepository.nodes().node(host1.hostname()).get().state());
+        assertEquals(Optional.of(clock.instant().minus(Duration.ofDays(1)).truncatedTo(ChronoUnit.MILLIS)),
+                     tester.nodeRepository.nodes().node(host1.hostname()).get().hostEmptyAt());
+
+        // Let tenant host app redeploy, retiring the obsolete host.
+        tester.provisioningTester.activateTenantHosts();
+        clock.advance(Duration.ofHours(1));
+        new RetiredExpirer(tester.nodeRepository,
+                           new MockDeployer(tester.nodeRepository),
+                           new NullMetric(),
+                           Duration.ofHours(1),
+                           Duration.ofHours(1)).maintain();
+
+        // Host and children can now be removed.
+        tester.provisioningTester.activateTenantHosts();
+        tester.maintain();
+        assertEquals(List.of(), tester.nodeRepository.nodes().list().asList());
+    }
+
+    @Test
     public void deprovision_parked_node_with_allocation() {
         var tester = new DynamicProvisioningTester();
         tester.hostProvisioner.with(Behaviour.failProvisioning);
-        Node host4 = tester.addNode("host4", Optional.empty(), NodeType.host, Node.State.parked);
+        Node host4 = tester.addNode("host4", Optional.empty(), NodeType.host, Node.State.parked, null, Duration.ofDays(1));
         Node host41 = tester.addNode("host4-1", Optional.of("host4"), NodeType.tenant, Node.State.parked, DynamicProvisioningTester.tenantApp);
         Node host42 = tester.addNode("host4-2", Optional.of("host4"), NodeType.tenant, Node.State.active, DynamicProvisioningTester.tenantApp);
         Node host43 = tester.addNode("host4-3", Optional.of("host4"), NodeType.tenant, Node.State.failed, DynamicProvisioningTester.tenantApp);
 
-        // Host and children are marked for deprovisioning
+        // Host and children are marked for deprovisioning, bypassing host TTL.
         tester.nodeRepository.nodes().deprovision("host4", Agent.operator, Instant.now());
         for (var node : List.of(host4, host41, host42, host43)) {
             assertTrue(tester.nodeRepository.nodes().node(node.hostname()).map(n -> n.status().wantToDeprovision()).get());
@@ -522,7 +614,7 @@ public class HostCapacityMaintainerTest {
         // Last child is parked
         tester.nodeRepository.nodes().park(host42.hostname(), false, Agent.system, getClass().getSimpleName());
 
-        // Host and children can now be removed
+        // Host and children can now be removed.
         tester.maintain();
         for (var node : List.of(host4, host41, host42, host43)) {
             assertTrue(node.hostname() + " removed", tester.nodeRepository.nodes().node(node.hostname()).isEmpty());
@@ -633,17 +725,22 @@ public class HostCapacityMaintainerTest {
             return cfghost;
         }
 
-        private Node addNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state) {
-            return addNode(hostname, parentHostname, nodeType, state, null);
+        private Node addNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state, ApplicationId application) {
+            return addNode(hostname, parentHostname, nodeType, state, application, null);
         }
 
-        private Node addNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state, ApplicationId application) {
-            Node node = createNode(hostname, parentHostname, nodeType, state, application);
+        private Node addNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state, ApplicationId application, Duration hostTTL) {
+            Node node = createNode(hostname, parentHostname, nodeType, state, application, hostTTL);
             return nodeRepository.database().addNodesInState(List.of(node), node.state(), Agent.system).get(0);
         }
 
         private Node createNode(String hostname, Optional<String> parentHostname, NodeType nodeType,
                                 Node.State state, ApplicationId application, String... additionalHostnames) {
+            return createNode(hostname, parentHostname, nodeType, state, application, null, additionalHostnames);
+        }
+
+        private Node createNode(String hostname, Optional<String> parentHostname, NodeType nodeType,
+                                Node.State state, ApplicationId application, Duration hostTTL, String... additionalHostnames) {
             Flavor flavor = nodeRepository.flavors().getFlavor(parentHostname.isPresent() ? "docker" : "host3").orElseThrow();
             Optional<Allocation> allocation = Optional.ofNullable(application)
                     .map(app -> new Allocation(
@@ -654,7 +751,8 @@ public class HostCapacityMaintainerTest {
                             false));
             List<com.yahoo.config.provision.HostName> hostnames = Stream.of(additionalHostnames).map(com.yahoo.config.provision.HostName::of).toList();
             Node.Builder builder = Node.create("fake-id-" + hostname, hostname, flavor, state, nodeType)
-                    .ipConfig(IP.Config.of(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of(), hostnames));
+                                       .ipConfig(IP.Config.of(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of(), hostnames))
+                                       .hostTTL(hostTTL);
             parentHostname.ifPresent(builder::parentHostname);
             allocation.ifPresent(builder::allocation);
             if (hostname.equals("host2-1"))
@@ -664,7 +762,7 @@ public class HostCapacityMaintainerTest {
 
         private long provisionedHostsMatching(NodeResources resources) {
             return hostProvisioner.provisionedHosts().stream()
-                                  .filter(host -> host.generateHost().resources().compatibleWith(resources))
+                                  .filter(host -> host.generateHost(Duration.ZERO).resources().compatibleWith(resources))
                                   .count();
         }
 

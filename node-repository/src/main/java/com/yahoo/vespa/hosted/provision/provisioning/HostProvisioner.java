@@ -11,6 +11,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -53,7 +54,7 @@ public interface HostProvisioner {
      *                    to be shared by multiple cluster nodes
      * @param cloudAccount the cloud account to use
      * @param provisionedHostConsumer consumer of {@link ProvisionedHost}s describing the provisioned nodes,
-     *                                the {@link Node} returned from {@link ProvisionedHost#generateHost()} must be
+     *                                the {@link Node} returned from {@link ProvisionedHost#generateHost} must be
      *                                written to ZK immediately in case the config server goes down while waiting
      *                                for the provisioning to finish.
      * @throws NodeAllocationException if the cloud provider cannot satisfy the request

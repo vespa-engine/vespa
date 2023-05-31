@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import ai.vespa.validation.Validation;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
@@ -31,6 +32,7 @@ import static ai.vespa.validation.Validation.requireAtLeast;
 import static ai.vespa.validation.Validation.requireInRange;
 import static com.yahoo.config.application.api.DeploymentSpec.RevisionChange.whenClear;
 import static com.yahoo.config.application.api.DeploymentSpec.RevisionTarget.next;
+import static com.yahoo.config.application.api.DeploymentSpec.illegal;
 import static com.yahoo.config.provision.Environment.prod;
 
 /**
@@ -58,6 +60,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final Optional<String> globalServiceId;
     private final Optional<AthenzService> athenzService;
     private final Optional<CloudAccount> cloudAccount;
+    private final Optional<Duration> hostTTL;
     private final Notifications notifications;
     private final List<Endpoint> endpoints;
     private final Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints;
@@ -75,6 +78,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   Optional<String> globalServiceId,
                                   Optional<AthenzService> athenzService,
                                   Optional<CloudAccount> cloudAccount,
+                                  Optional<Duration> hostTTL,
                                   Notifications notifications,
                                   List<Endpoint> endpoints,
                                   Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints,
@@ -98,6 +102,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.globalServiceId = Objects.requireNonNull(globalServiceId);
         this.athenzService = Objects.requireNonNull(athenzService);
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
+        this.hostTTL = Objects.requireNonNull(hostTTL);
         this.notifications = Objects.requireNonNull(notifications);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
         Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpointsCopy =  new HashMap<>();
@@ -108,6 +113,10 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         validateEndpoints(globalServiceId, this.endpoints);
         validateChangeBlockers(changeBlockers, now);
         validateBcp(bcp);
+        hostTTL.ifPresent(ttl -> {
+            if (cloudAccount.isEmpty()) illegal("Host TTL can only be specified with custom cloud accounts");
+            if (ttl.isNegative()) illegal("Host TTL cannot be negative");
+        });
     }
 
     public InstanceName name() { return name; }
@@ -267,6 +276,15 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                       .findFirst()
                       .flatMap(DeploymentSpec.DeclaredZone::cloudAccount)
                       .or(() -> cloudAccount);
+    }
+
+    /** Returns the host TTL to use for given environment and region, if any */
+    public Optional<Duration> hostTTL(Environment environment, Optional<RegionName> region) {
+        return zones().stream()
+                      .filter(zone -> zone.concerns(environment, region))
+                      .findFirst()
+                      .flatMap(DeploymentSpec.DeclaredZone::hostTTL)
+                      .or(() -> hostTTL);
     }
 
     /** Returns the notification configuration of these instances */

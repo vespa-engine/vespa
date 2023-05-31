@@ -256,6 +256,10 @@ public class NodePatcher {
             case "exclusiveTo":
             case "exclusiveToApplicationId":
                 return node.withExclusiveToApplicationId(SlimeUtils.optionalString(value).map(ApplicationId::fromSerializedForm).orElse(null));
+            case "hostTTL":
+                return node.withHostTTL(SlimeUtils.optionalDuration(value).orElse(null));
+            case "hostEmptyAt":
+                return node.withHostEmptyAt(SlimeUtils.optionalInstant(value).orElse(null));
             case "exclusiveToClusterType":
                 return node.withExclusiveToClusterType(SlimeUtils.optionalString(value).map(ClusterSpec.Type::valueOf).orElse(null));
             case "switchHostname":

@@ -3,15 +3,18 @@ package com.yahoo.config.model;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterInfo;
+import com.yahoo.config.provision.ClusterInfo.Builder;
 import com.yahoo.vespa.model.VespaModel;
 
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -72,14 +75,20 @@ public final class ConfigModelContext {
 
     /** Returns a cluster info builder pre-populated with info known in this context. */
     public ClusterInfo.Builder clusterInfo() {
-        var instance = getApplicationPackage().getDeploymentSpec().instance(properties().applicationId().instance());
-        if ( ! instance.isPresent()) return new ClusterInfo.Builder();
+        DeploymentSpec spec = getApplicationPackage().getDeploymentSpec();
+        var instance = spec.instance(properties().applicationId().instance());
+        ClusterInfo.Builder builder = new ClusterInfo.Builder();
+        spec.hostTTL().ifPresent(builder::hostTTL);
+        if (instance.isEmpty()) return builder;
+        instance.get()
+                .hostTTL(deployState.zone().environment(), Optional.of(deployState.zone().region()))
+                .ifPresent(builder::hostTTL);
         var maxDeadline = instance.get().bcp().groups().stream()
                              .filter(group -> group.memberRegions().contains(properties().zone().region()))
                              .map(group -> group.deadline())
                              .min(Comparator.comparing(deadline -> deadline))
                              .orElse(Duration.ofMinutes(0));
-        return new ClusterInfo.Builder().bcpDeadline(maxDeadline);
+        return builder.bcpDeadline(maxDeadline);
     }
 
     /**

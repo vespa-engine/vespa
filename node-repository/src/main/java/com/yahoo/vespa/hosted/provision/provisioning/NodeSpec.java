@@ -7,6 +7,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -67,6 +68,9 @@ public interface NodeSpec {
     /** Returns the cloud account to use when fulfilling this spec */
     CloudAccount cloudAccount();
 
+    /** Returns the host TTL to use for any hosts provisioned as a result of this fulfilling this spec. */
+    default Duration hostTTL() { return Duration.ZERO; }
+
     /**
      * Returns true if a node with given current resources and current spare host resources can be resized
      * in-place to resources in this spec.
@@ -76,8 +80,9 @@ public interface NodeSpec {
         return false;
     }
 
-    static NodeSpec from(int nodeCount, NodeResources resources, boolean exclusive, boolean canFail, CloudAccount cloudAccount) {
-        return new CountNodeSpec(nodeCount, resources, exclusive, canFail, canFail, cloudAccount);
+    static NodeSpec from(int nodeCount, NodeResources resources, boolean exclusive, boolean canFail,
+                         CloudAccount cloudAccount, Duration hostTTL) {
+        return new CountNodeSpec(nodeCount, resources, exclusive, canFail, canFail, cloudAccount, hostTTL);
     }
 
     static NodeSpec from(NodeType type, CloudAccount cloudAccount) {
@@ -93,14 +98,17 @@ public interface NodeSpec {
         private final boolean canFail;
         private final boolean considerRetiring;
         private final CloudAccount cloudAccount;
+        private final Duration hostTTL;
 
-        private CountNodeSpec(int count, NodeResources resources, boolean exclusive, boolean canFail, boolean considerRetiring, CloudAccount cloudAccount) {
+        private CountNodeSpec(int count, NodeResources resources, boolean exclusive, boolean canFail,
+                              boolean considerRetiring, CloudAccount cloudAccount, Duration hostTTL) {
             this.count = count;
             this.requestedNodeResources = Objects.requireNonNull(resources, "Resources must be specified");
             this.exclusive = exclusive;
             this.canFail = canFail;
             this.considerRetiring = considerRetiring;
             this.cloudAccount = Objects.requireNonNull(cloudAccount);
+            this.hostTTL = Objects.requireNonNull(hostTTL);
 
             if (!canFail && considerRetiring)
                 throw new IllegalArgumentException("Cannot consider retiring nodes if we cannot fail");
@@ -145,11 +153,11 @@ public interface NodeSpec {
 
         @Override
         public NodeSpec fraction(int divisor) {
-            return new CountNodeSpec(count/divisor, requestedNodeResources, exclusive, canFail, considerRetiring, cloudAccount);
+            return new CountNodeSpec(count/divisor, requestedNodeResources, exclusive, canFail, considerRetiring, cloudAccount, hostTTL);
         }
 
         public NodeSpec withoutRetiring() {
-            return new CountNodeSpec(count, requestedNodeResources, exclusive, canFail, false, cloudAccount);
+            return new CountNodeSpec(count, requestedNodeResources, exclusive, canFail, false, cloudAccount, hostTTL);
         }
 
         @Override
@@ -185,6 +193,9 @@ public interface NodeSpec {
         public CloudAccount cloudAccount() {
             return cloudAccount;
         }
+
+        @Override
+        public Duration hostTTL() { return hostTTL; }
 
         @Override
         public String toString() { return "request for " + count + " nodes with " + requestedNodeResources; }

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import ai.vespa.validation.Validation;
 import com.yahoo.collections.Comparables;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
@@ -45,6 +46,7 @@ public class DeploymentSpec {
                                                                   Optional.empty(),
                                                                   Optional.empty(),
                                                                   Optional.empty(),
+                                                                  Optional.empty(),
                                                                   List.of(),
                                                                   "<deployment version='1.0'/>",
                                                                   List.of());
@@ -56,6 +58,7 @@ public class DeploymentSpec {
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<AthenzService> athenzService;
     private final Optional<CloudAccount> cloudAccount;
+    private final Optional<Duration> hostTTL;
     private final List<Endpoint> endpoints;
     private final List<DeprecatedElement> deprecatedElements;
 
@@ -66,6 +69,7 @@ public class DeploymentSpec {
                           Optional<AthenzDomain> athenzDomain,
                           Optional<AthenzService> athenzService,
                           Optional<CloudAccount> cloudAccount,
+                          Optional<Duration> hostTTL,
                           List<Endpoint> endpoints,
                           String xmlForm,
                           List<DeprecatedElement> deprecatedElements) {
@@ -74,6 +78,7 @@ public class DeploymentSpec {
         this.athenzDomain = Objects.requireNonNull(athenzDomain);
         this.athenzService = Objects.requireNonNull(athenzService);
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
+        this.hostTTL = Objects.requireNonNull(hostTTL);
         this.xmlForm = Objects.requireNonNull(xmlForm);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
         this.deprecatedElements = List.copyOf(Objects.requireNonNull(deprecatedElements));
@@ -81,6 +86,10 @@ public class DeploymentSpec {
         validateUpgradePoliciesOfIncreasingConservativeness(steps);
         validateAthenz();
         validateApplicationEndpoints();
+        hostTTL.ifPresent(ttl -> {
+            if (cloudAccount.isEmpty()) illegal("Host TTL can only be specified with custom cloud accounts");
+            if (ttl.isNegative()) illegal("Host TTL cannot be negative");
+        });
     }
 
     public boolean isEmpty() { return this == empty; }
@@ -184,6 +193,14 @@ public class DeploymentSpec {
     public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
 
     /**
+     * Additional host time-to-live for this application. Requires a custom cloud account to be set.
+     * This also applies only to zones with dynamic provisioning, and is then the time hosts are
+     * allowed remain empty, before being deprovisioned. This is useful for applications which frequently
+     * deploy to, e.g., test and staging zones, and want to avoid the delay of having to provision hosts.
+     */
+    public Optional<Duration> hostTTL() { return hostTTL; }
+
+    /**
      * Returns the most specific zone endpoint, where specificity is given, in decreasing order:
      * 1. The given instance has declared a zone endpoint for the cluster, for the given region.
      * 2. The given instance has declared a universal zone endpoint for the cluster.
@@ -262,7 +279,7 @@ public class DeploymentSpec {
     }
 
 
-    private static void illegal(String message) {
+    static void illegal(String message) {
         throw new IllegalArgumentException(message);
     }
 
@@ -370,6 +387,8 @@ public class DeploymentSpec {
             return true;
         }
 
+        public Optional<Duration> hostTTL() { return Optional.empty(); }
+
     }
 
     /** A deployment step which is to wait for some time before progressing to the next step */
@@ -403,14 +422,15 @@ public class DeploymentSpec {
         private final Optional<AthenzService> athenzService;
         private final Optional<String> testerFlavor;
         private final Optional<CloudAccount> cloudAccount;
+        private final Optional<Duration> hostTTL;
 
         public DeclaredZone(Environment environment) {
-            this(environment, Optional.empty(), false, Optional.empty(), Optional.empty(), Optional.empty());
+            this(environment, Optional.empty(), false, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
         }
 
         public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active,
                             Optional<AthenzService> athenzService, Optional<String> testerFlavor,
-                            Optional<CloudAccount> cloudAccount) {
+                            Optional<CloudAccount> cloudAccount, Optional<Duration> hostTTL) {
             if (environment != Environment.prod && region.isPresent())
                 illegal("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && region.isEmpty())
@@ -421,6 +441,11 @@ public class DeploymentSpec {
             this.athenzService = Objects.requireNonNull(athenzService);
             this.testerFlavor = Objects.requireNonNull(testerFlavor);
             this.cloudAccount = Objects.requireNonNull(cloudAccount);
+            this.hostTTL = Objects.requireNonNull(hostTTL);
+            hostTTL.ifPresent(ttl -> {
+                if (cloudAccount.isEmpty()) illegal("Host TTL can only be specified with custom cloud accounts");
+                if (ttl.isNegative()) illegal("Host TTL cannot be negative");
+            });
         }
 
         public Environment environment() { return environment; }
@@ -472,15 +497,26 @@ public class DeploymentSpec {
             return environment + (region.map(regionName -> "." + regionName).orElse(""));
         }
 
+        @Override
+        public Optional<Duration> hostTTL() {
+            return hostTTL;
+        }
+
     }
 
     /** A declared production test */
     public static class DeclaredTest extends Step {
 
         private final RegionName region;
+        private final Optional<Duration> hostTTL;
 
-        public DeclaredTest(RegionName region) {
+        public DeclaredTest(RegionName region, Optional<CloudAccount> cloudAccount, Optional<Duration> hostTTL) {
             this.region = Objects.requireNonNull(region);
+            this.hostTTL = Objects.requireNonNull(hostTTL);
+            hostTTL.ifPresent(ttl -> {
+                if (cloudAccount.isEmpty()) illegal("Host TTL can only be specified with custom cloud accounts");
+                if (ttl.isNegative()) illegal("Host TTL cannot be negative");
+            });
         }
 
         @Override
@@ -494,6 +530,11 @@ public class DeploymentSpec {
         /** Returns the region this test is for. */
         public RegionName region() {
             return region;
+        }
+
+        @Override
+        public Optional<Duration> hostTTL() {
+            return hostTTL;
         }
 
         @Override
