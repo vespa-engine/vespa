@@ -4,8 +4,6 @@ package com.yahoo.vespa.config.server;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
-import ai.vespa.util.http.hc5.DefaultHttpClientBuilder;
-import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
@@ -21,10 +19,8 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.EndpointsChecker;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
-import com.yahoo.config.provision.EndpointsChecker.HealthCheckerProvider;
-import com.yahoo.config.provision.EndpointsChecker.HealthChecker;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
-import com.yahoo.config.provision.EndpointsChecker.Status;
+import com.yahoo.config.provision.EndpointsChecker.HealthCheckerProvider;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.InfraDeployer;
@@ -95,10 +91,7 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.core5.http.HttpHeaders;
-import org.apache.hc.core5.http.message.BasicHeader;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -124,7 +117,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static ai.vespa.http.HttpURL.Path.parse;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
@@ -185,7 +177,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              infraDeployerProvider.getInfraDeployer(),
              configConvergenceChecker,
              httpProxy,
-             createEndpointsChecker(configserverConfig, zone, healthCheckers.getHealthChecker()),
+             EndpointsChecker.of(healthCheckers.getHealthChecker()),
              configserverConfig,
              orchestrator,
              new LogRetriever(),
@@ -1225,39 +1217,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         @Override
         public void notifyCompletion() {}
 
-    }
-
-    private static EndpointsChecker createEndpointsChecker(ConfigserverConfig config, Zone zone, HealthChecker healthChecker) {
-        CloseableHttpClient client = (SystemName.from(config.system()).isPublic()
-                                      ? DefaultHttpClientBuilder.create(() -> null, "hosted-vespa-convergence-health-checker")
-                                      : VespaHttpClientBuilder.custom().apacheBuilder().setUserAgent("hosted-vespa-convergence-health-checker"))
-                .setDefaultHeaders(List.of(new BasicHeader(HttpHeaders.CONNECTION, "close")))
-                .build();
-        return EndpointsChecker.of(endpoint -> {
-            Availability health = healthChecker.healthy(endpoint);
-            if (   health.status() != Status.available // Unhealthy targets is the root cause, so return those details.
-                || endpoint.isPublic()                 // Controller checks /status.html on its own.
-                || endpoint.account().isEnclave(zone)) // Private endpoints in enclave are not reachable by us.
-                return health;
-
-            int remainingFailures = 3;
-            int remainingSuccesses = 10;
-            while (remainingSuccesses > 0 && remainingFailures > 0) {
-                try {
-                    if (client.execute(new HttpGet(endpoint.url().withPath(parse("/status.html")).asURI()),
-                                       response -> response.getCode() == 200))
-                        remainingSuccesses--;
-                    else
-                        throw new IOException("got non-200 status code");
-                }
-                catch (Exception e) {
-                    log.log(Level.FINE, e, () -> "Failed to check " + endpoint + "status.html: " + e.getMessage());
-                    if (--remainingFailures == 0)
-                        return new Availability(Status.containersUnhealthy, "Failed to get enough healthy responses from " + endpoint.url());
-                }
-            }
-            return Availability.ready;
-        });
     }
 
 }

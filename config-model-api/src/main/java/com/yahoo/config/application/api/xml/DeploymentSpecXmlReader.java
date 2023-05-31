@@ -205,7 +205,7 @@ public class DeploymentSpecXmlReader {
         int maxIdleHours = getWithFallback(instanceElement, parentTag, upgradeTag, "max-idle-hours", Integer::parseInt, 8);
         List<DeploymentSpec.ChangeBlocker> changeBlockers = readChangeBlockers(instanceElement, parentTag);
         Optional<AthenzService> athenzService = mostSpecificAttribute(instanceElement, athenzServiceAttribute).map(AthenzService::from);
-        Optional<CloudAccount> cloudAccount = mostSpecificAttribute(instanceElement, cloudAccountAttribute).map(CloudAccount::from);
+        Optional<CloudAccount> cloudAccount = readCloudAccount(instanceElement);
         Optional<Duration> hostTTL = mostSpecificAttribute(instanceElement, hostTTLAttribute).map(s -> toDuration(s, "empty host TTL"));
         Notifications notifications = readNotifications(instanceElement, parentTag);
 

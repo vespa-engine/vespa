@@ -4,7 +4,6 @@ package com.yahoo.config.provision;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * A capacity request.
