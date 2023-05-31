@@ -31,6 +31,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     exceptions.cpp
     execution_profiler.cpp
     executor_idle_tracking.cpp
+    fake_doom.cpp
     featureset.cpp
     file_area_freelist.cpp
     foregroundtaskexecutor.cpp

@@ -57,6 +57,7 @@ public:
         _candidates.pop();
     }
     const HnswCandidateVector& peek() const { return _candidates.peek(); }
+    bool empty() const { return _candidates.empty(); }
     const HnswCandidate& top() const { return _candidates.top(); }
     size_t size() const { return _docids.size(); }
     void emplace(uint32_t nodeid, uint32_t docid, EntryRef ref, double distance) {

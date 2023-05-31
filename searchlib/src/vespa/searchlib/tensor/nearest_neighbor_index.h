@@ -14,6 +14,7 @@
 
 class FastOS_FileInterface;
 
+namespace vespalib { class Doom; }
 namespace vespalib { class GenericHeader; }
 namespace vespalib::datastore {
 class CompactionSpec;
@@ -101,6 +102,7 @@ public:
     virtual std::vector<Neighbor> find_top_k(uint32_t k,
                                              const BoundDistanceFunction &df,
                                              uint32_t explore_k,
+                                             const vespalib::Doom& doom,
                                              double distance_threshold) const = 0;
 
     // only return neighbors where the corresponding filter bit is set
@@ -108,6 +110,7 @@ public:
                                                          const BoundDistanceFunction &df,
                                                          const GlobalFilter &filter,
                                                          uint32_t explore_k,
+                                                         const vespalib::Doom& doom,
                                                          double distance_threshold) const = 0;
 
     virtual DistanceFunctionFactory &distance_function_factory() const = 0;
