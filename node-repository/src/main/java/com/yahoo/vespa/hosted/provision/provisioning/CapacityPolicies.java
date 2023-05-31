@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -103,7 +104,7 @@ public class CapacityPolicies {
             Architecture architecture = adminClusterArchitecture(applicationId);
 
             if (clusterSpec.id().value().equals("cluster-controllers")) {
-                return clusterControllerResources(clusterSpec, architecture).with(architecture);
+                return clusterControllerResources(clusterSpec).with(architecture);
             }
 
             return (nodeRepository.exclusiveAllocation(clusterSpec)
@@ -112,10 +113,13 @@ public class CapacityPolicies {
                     .with(architecture);
         }
 
+        if (zone.environment() == Environment.dev && zone.system() == SystemName.cd) {
+            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 4, 50, 0.3)));
+        }
+
         if (clusterSpec.type() == ClusterSpec.Type.content) {
             return zone.cloud().dynamicProvisioning()
-                   ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2.0, 8, 50, 0.3),
-                                                   new Version(8, 75), new NodeResources(2, 16, 300, 0.3)))
+                   ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2, 16, 300, 0.3)))
                    : versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3)));
         }
         else {
@@ -125,7 +129,7 @@ public class CapacityPolicies {
         }
     }
 
-    private NodeResources clusterControllerResources(ClusterSpec clusterSpec, Architecture architecture) {
+    private NodeResources clusterControllerResources(ClusterSpec clusterSpec) {
         if (nodeRepository.exclusiveAllocation(clusterSpec)) {
             return versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()));
         }
@@ -133,7 +137,6 @@ public class CapacityPolicies {
         // 1.32 fits floor(8/1.32) = 6 cluster controllers on each 8Gb host, and each will have
         // 1.32-(0.7+0.6)*(1.32/8) = 1.1 Gb real memory given current taxes.
         return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
-                                             new Version(8, 127, 11), new NodeResources(0.25, 1.5, 10, 0.3),
                                              new Version(8, 129,  4), new NodeResources(0.25, 1.32, 10, 0.3)));
     }
 
