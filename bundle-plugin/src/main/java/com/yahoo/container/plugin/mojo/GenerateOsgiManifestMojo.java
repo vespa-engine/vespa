@@ -78,10 +78,10 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
             if (! isContainerDiscArtifact(project.getArtifact()))
                 throwIfInternalContainerArtifactsAreIncluded(artifactSet.getJarArtifactsToInclude());
 
-            List<Export> exportedPackagesFromProvidedJars = exportedPackagesAggregated(
-                    artifactSet.getJarArtifactsProvided().stream().map(Artifact::getFile).toList());
+            List<Artifact> providedJarArtifacts = artifactSet.getJarArtifactsProvided();
+            List<Export> exportedPackagesFromProvidedJars = exportedPackagesAggregated(providedJarArtifacts.stream().map(Artifact::getFile).toList());
 
-            // Packages from Export-Package headers in provided scoped jars
+            // Packages from Export-Package/PublicApi headers in provided scoped jars
             Set<String> exportedPackagesFromProvidedDeps = ExportPackages.packageNames(exportedPackagesFromProvidedJars);
 
             // Packaged defined in this project's code
@@ -95,7 +95,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
             logDebugPackageSets(exportedPackagesFromProvidedJars, includedPackages);
 
-            if (hasJdiscCoreProvided(artifactSet.getJarArtifactsProvided())) {
+            if (hasJdiscCoreProvided(providedJarArtifacts)) {
                 // jdisc_core being provided guarantees that log output does not contain its exported packages
                 logMissingPackages(exportedPackagesFromProvidedDeps, projectPackages, compileJarsPackages, includedPackages);
             } else {
