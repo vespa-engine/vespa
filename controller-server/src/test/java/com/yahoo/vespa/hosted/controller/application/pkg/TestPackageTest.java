@@ -21,9 +21,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
@@ -35,7 +32,6 @@ import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPacka
 import static com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.validateTests;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author jonmv
@@ -125,7 +121,7 @@ public class TestPackageTest {
     }
 
     @Test
-    void testTestPacakgeAssembly() throws IOException {
+    void testTestPackageAssembly() throws IOException {
         byte[] bundleZip = ApplicationPackage.filesZip(Map.of("components/foo-tests.jar", testsJar("SystemTest", "ProductionTest"),
                                                               "artifacts/key", new byte[0]));
         TestPackage bundleTests = new TestPackage(() -> new ByteArrayInputStream(bundleZip),
