@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -110,6 +111,10 @@ public class CapacityPolicies {
                     ? versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()))
                     : versioned(clusterSpec, Map.of(new Version(0), smallestSharedResources())))
                     .with(architecture);
+        }
+
+        if (zone.environment() == Environment.dev && zone.system() == SystemName.cd) {
+            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 4, 50, 0.3)));
         }
 
         if (clusterSpec.type() == ClusterSpec.Type.content) {
