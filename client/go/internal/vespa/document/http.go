@@ -291,10 +291,10 @@ func (c *Client) Send(document Document) Result {
 	}
 	defer resp.Body.Close()
 	elapsed := c.now().Sub(start)
-	return c.resultWithResponse(resp, bodySize, result, elapsed)
+	return c.resultWithResponse(resp, bodySize, result, elapsed, buf, false)
 }
 
-// Get retrieves document with given ID.nnnnnn
+// Get retrieves document with given ID.
 func (c *Client) Get(id Id) Result {
 	start := c.now()
 	buf := c.buffer()
@@ -312,7 +312,7 @@ func (c *Client) Get(id Id) Result {
 	}
 	defer resp.Body.Close()
 	elapsed := c.now().Sub(start)
-	return c.resultWithResponse(resp, 0, result, elapsed)
+	return c.resultWithResponse(resp, 0, result, elapsed, buf, true)
 }
 
 func resultWithErr(result Result, err error) Result {
@@ -321,7 +321,7 @@ func resultWithErr(result Result, err error) Result {
 	return result
 }
 
-func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result Result, elapsed time.Duration) Result {
+func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result Result, elapsed time.Duration, buf *bytes.Buffer, copyBody bool) Result {
 	result.HTTPStatus = resp.StatusCode
 	switch resp.StatusCode {
 	case 200:
@@ -333,24 +333,28 @@ func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result R
 	default:
 		result.Status = StatusTransportFailure
 	}
-	b, err := io.ReadAll(resp.Body)
+	buf.Reset()
+	written, err := io.Copy(buf, resp.Body)
 	if err != nil {
 		result = resultWithErr(result, err)
 	} else {
-		result.Body = b
-		if result.HTTPStatus == 200 && c.options.TraceLevel > 0 {
+		if result.Success() && c.options.TraceLevel > 0 {
 			var jsonResponse struct {
 				Trace json.RawValue `json:"trace"`
 			}
-			if err := json.Unmarshal(b, &jsonResponse); err != nil {
+			if err := json.Unmarshal(buf.Bytes(), &jsonResponse); err != nil {
 				result = resultWithErr(result, fmt.Errorf("failed to decode json response: %w", err))
 			} else {
 				result.Trace = string(jsonResponse.Trace)
 			}
 		}
+		if !result.Success() || copyBody {
+			result.Body = make([]byte, buf.Len())
+			copy(result.Body, buf.Bytes())
+		}
 	}
 	result.Latency = elapsed
 	result.BytesSent = int64(sentBytes)
-	result.BytesRecv = int64(len(b))
+	result.BytesRecv = int64(written)
 	return result
 }

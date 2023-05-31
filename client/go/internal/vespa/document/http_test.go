@@ -93,7 +93,6 @@ func TestClientSend(t *testing.T) {
 			httpClient.NextResponseString(200, msg)
 			wantRes.Status = StatusSuccess
 			wantRes.HTTPStatus = 200
-			wantRes.Body = []byte(msg)
 			wantRes.BytesRecv = 23
 		} else {
 			errMsg := `something went wront`
