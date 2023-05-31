@@ -397,7 +397,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag NEW_IDDOC_LAYOUT = defineFeatureFlag(
-            "new_iddoc_layout", false, List.of("tokle", "bjorncs", "olaa"), "2023-04-24", "2023-05-31",
+            "new_iddoc_layout", false, List.of("tokle", "bjorncs", "olaa"), "2023-04-24", "2023-06-30",
             "Whether to use new identity document layout",
             "Takes effect on node reboot",
             HOSTNAME, APPLICATION_ID, VESPA_VERSION);
