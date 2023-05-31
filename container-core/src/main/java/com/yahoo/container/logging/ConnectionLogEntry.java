@@ -38,6 +38,8 @@ public class ConnectionLogEntry {
     private final List<String> sslSubjectAlternativeNames;
     private final String httpProtocol;
     private final String proxyProtocolVersion;
+    private final Long sslBytesReceived;
+    private final Long sslBytesSent;
 
 
     private ConnectionLogEntry(Builder builder) {
@@ -67,6 +69,8 @@ public class ConnectionLogEntry {
         this.sslSubjectAlternativeNames = builder.sslSubjectAlternativeNames;
         this.httpProtocol = builder.httpProtocol;
         this.proxyProtocolVersion = builder.proxyProtocolVersion;
+        this.sslBytesReceived = builder.sslBytesReceived;
+        this.sslBytesSent = builder.sslBytesSent;
     }
 
     public static Builder builder(UUID id, Instant timestamp) {
@@ -99,6 +103,8 @@ public class ConnectionLogEntry {
     public List<String> sslSubjectAlternativeNames() { return sslSubjectAlternativeNames == null ? List.of() : sslSubjectAlternativeNames; }
     public Optional<String> httpProtocol() { return Optional.ofNullable(httpProtocol); }
     public Optional<String> proxyProtocolVersion() { return Optional.ofNullable(proxyProtocolVersion); }
+    public Optional<Long> sslBytesReceived() { return Optional.ofNullable(sslBytesReceived); }
+    public Optional<Long> sslBytesSent() { return Optional.ofNullable(sslBytesSent); }
 
     public static class SslHandshakeFailure {
         private final String type;
@@ -153,6 +159,8 @@ public class ConnectionLogEntry {
         private List<String> sslSubjectAlternativeNames;
         private String httpProtocol;
         private String proxyProtocolVersion;
+        private Long sslBytesReceived;
+        private Long sslBytesSent;
 
 
         Builder(UUID id, Instant timestamp) {
@@ -255,6 +263,14 @@ public class ConnectionLogEntry {
         }
         public Builder withProxyProtocolVersion(String version) {
             this.proxyProtocolVersion = version;
+            return this;
+        }
+        public Builder withSslBytesReceived(long bytesReceived) {
+            this.sslBytesReceived = bytesReceived;
+            return this;
+        }
+        public Builder withSslBytesSent(long bytesSent) {
+            this.sslBytesSent = bytesSent;
             return this;
         }
 
