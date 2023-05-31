@@ -95,7 +95,6 @@ FixedWidthBucketFunctionNode::onPrepareResult()
         setResultType(std::make_unique<IntegerBucketResultNodeVector>());
         _bucketHandler.reset(new IntegerVectorBucketHandler(_width->getInteger()));
     } else if (input.getClass().inherits(FloatResultNodeVector::classId)) {
-        ResultNode::UP res(new FloatBucketResultNodeVector());
         setResultType(std::make_unique<FloatBucketResultNodeVector>());
         _bucketHandler.reset(new FloatVectorBucketHandler(_width->getFloat()));
     } else {
