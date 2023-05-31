@@ -3,8 +3,7 @@
 
 #include "functionnode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class MultiArgFunctionNode : public FunctionNode
 {
@@ -13,11 +12,11 @@ public:
     DECLARE_NBO_SERIALIZE;
     void visitMembers(vespalib::ObjectVisitor & visitor) const override;
     DECLARE_ABSTRACT_EXPRESSIONNODE(MultiArgFunctionNode);
-    MultiArgFunctionNode();
+    MultiArgFunctionNode() noexcept;
     MultiArgFunctionNode(const MultiArgFunctionNode &);
     MultiArgFunctionNode & operator = (const MultiArgFunctionNode &);
-    MultiArgFunctionNode(MultiArgFunctionNode &&) = default;
-    MultiArgFunctionNode & operator = (MultiArgFunctionNode &&) = default;
+    MultiArgFunctionNode(MultiArgFunctionNode &&) noexcept = default;
+    MultiArgFunctionNode & operator = (MultiArgFunctionNode &&) noexcept = default;
     ~MultiArgFunctionNode();
     MultiArgFunctionNode & appendArg(ExpressionNode::UP arg) { return addArg(std::move(arg)); }
     MultiArgFunctionNode & addArg(ExpressionNode::UP arg) {
@@ -42,5 +41,3 @@ private:
 };
 
 }
-}
-

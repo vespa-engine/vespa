@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributenode.h"
+#include "resultvector.h"
 #include "enumattributeresult.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 
@@ -17,7 +18,7 @@ template <typename V>
 class AttributeNode::IntegerHandler : public AttributeNode::Handler
 {
 public:
-    IntegerHandler(ResultNode & result) :
+    IntegerHandler(ResultNode & result) noexcept :
         Handler(),
         _vector(((V &)result).getVector()),
         _wVector()
@@ -31,7 +32,7 @@ private:
 class AttributeNode::FloatHandler : public AttributeNode::Handler
 {
 public:
-    FloatHandler(ResultNode & result) :
+    FloatHandler(ResultNode & result) noexcept :
         Handler(),
         _vector(((FloatResultNodeVector &)result).getVector()),
         _wVector()
@@ -45,7 +46,7 @@ private:
 class AttributeNode::StringHandler : public AttributeNode::Handler
 {
 public:
-    StringHandler(ResultNode & result) :
+    StringHandler(ResultNode & result) noexcept :
         Handler(),
         _vector(((StringResultNodeVector &)result).getVector()),
         _wVector()
@@ -59,7 +60,7 @@ private:
 class AttributeNode::EnumHandler : public AttributeNode::Handler
 {
 public:
-    EnumHandler(ResultNode & result) :
+    EnumHandler(ResultNode & result) noexcept :
         Handler(),
         _vector(((EnumResultNodeVector &)result).getVector()),
         _wVector()

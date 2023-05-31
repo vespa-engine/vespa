@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_map_lookup_node.h"
+#include "resultvector.h"
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>

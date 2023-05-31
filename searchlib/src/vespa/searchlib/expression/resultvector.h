@@ -83,8 +83,8 @@ public:
     using Vector = std::vector<B>;
     using BaseType = B;
     ~ResultNodeVectorT() override;
-    const Vector & getVector() const { return _result; }
-    Vector & getVector() { return _result; }
+    const Vector & getVector() const noexcept { return _result; }
+    Vector & getVector() noexcept { return _result; }
     const ResultNode * find(const ResultNode & key) const override;
     void sort() override;
     void reverse() override;
@@ -113,14 +113,16 @@ template <typename B, typename C, typename G>
 ResultNodeVectorT<B, C, G>::~ResultNodeVectorT() = default;
 
 template <typename B, typename C, typename G>
-ResultNodeVector & ResultNodeVectorT<B, C, G>::set(size_t index, const ResultNode & node)
+ResultNodeVector &
+ResultNodeVectorT<B, C, G>::set(size_t index, const ResultNode & node)
 {
     _result[index].set(node);
     return *this;
 }
 
 template <typename B, typename C, typename G>
-ResultNodeVector & ResultNodeVectorT<B, C, G>::push_back_safe(const ResultNode & node)
+ResultNodeVector &
+ResultNodeVectorT<B, C, G>::push_back_safe(const ResultNode & node)
 {
     if (node.inherits(B::classId)) {
         _result.push_back(static_cast<const B &>(node));
@@ -133,14 +135,16 @@ ResultNodeVector & ResultNodeVectorT<B, C, G>::push_back_safe(const ResultNode &
 }
 
 template <typename B, typename C, typename G>
-ResultNodeVector & ResultNodeVectorT<B, C, G>::push_back(const ResultNode & node)
+ResultNodeVector &
+ResultNodeVectorT<B, C, G>::push_back(const ResultNode & node)
 {
     _result.push_back(static_cast<const B &>(node));
     return *this;
 }
 
 template <typename B, typename C, typename G>
-int ResultNodeVectorT<B, C, G>::onCmp(const Identifiable & rhs) const
+int
+ResultNodeVectorT<B, C, G>::onCmp(const Identifiable & rhs) const
 {
     const ResultNodeVectorT & b(static_cast<const ResultNodeVectorT &>(rhs));
     int diff = _result.size() - b._result.size();
@@ -151,20 +155,23 @@ int ResultNodeVectorT<B, C, G>::onCmp(const Identifiable & rhs) const
 }
 
 template <typename B, typename C, typename G>
-void ResultNodeVectorT<B, C, G>::sort()
+void
+ResultNodeVectorT<B, C, G>::sort()
 {
     using LC = cmpT<B>;
     std::sort(_result.begin(), _result.end(), typename LC::less());
 }
 
 template <typename B, typename C, typename G>
-void ResultNodeVectorT<B, C, G>::reverse()
+void
+ResultNodeVectorT<B, C, G>::reverse()
 {
     std::reverse(_result.begin(), _result.end());
 }
 
 template <typename B, typename C, typename G>
-size_t ResultNodeVectorT<B, C, G>::hash() const
+size_t
+ResultNodeVectorT<B, C, G>::hash() const
 {
     size_t h(0);
     for(typename Vector::const_iterator it(_result.begin()), mt(_result.end()); it != mt; it++) {
@@ -174,7 +181,8 @@ size_t ResultNodeVectorT<B, C, G>::hash() const
 }
 
 template <typename B, typename C, typename G>
-void ResultNodeVectorT<B, C, G>::negate()
+void
+ResultNodeVectorT<B, C, G>::negate()
 {
     for(typename Vector::iterator it(_result.begin()), mt(_result.end()); it != mt; it++) {
         it->negate();
@@ -182,25 +190,28 @@ void ResultNodeVectorT<B, C, G>::negate()
 }
 
 template <typename B, typename C, typename G>
-const ResultNode * ResultNodeVectorT<B, C, G>::find(const ResultNode & key) const
+const ResultNode *
+ResultNodeVectorT<B, C, G>::find(const ResultNode & key) const
 {
     G getter;
     typename Vector::const_iterator found = std::lower_bound(_result.begin(), _result.end(), getter(key), typename C::less() );
     if (found != _result.end()) {
         typename C::equal equal;
-        return equal(*found, getter(key)) ? &(*found) : NULL;
+        return equal(*found, getter(key)) ? &(*found) : nullptr;
     }
-    return NULL;
+    return nullptr;
 }
 
 template <typename B, typename C, typename G>
-vespalib::Serializer & ResultNodeVectorT<B, C, G>::onSerialize(vespalib::Serializer & os) const
+vespalib::Serializer &
+ResultNodeVectorT<B, C, G>::onSerialize(vespalib::Serializer & os) const
 {
     return serialize(_result, os);
 }
 
 template <typename B, typename C, typename G>
-vespalib::Deserializer & ResultNodeVectorT<B, C, G>::onDeserialize(vespalib::Deserializer & is)
+vespalib::Deserializer &
+ResultNodeVectorT<B, C, G>::onDeserialize(vespalib::Deserializer & is)
 {
     return deserialize(_result, is);
 }
@@ -226,8 +237,8 @@ public:
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
-            v.multiply(vec[i]);
+        for (const B & item : vec) {
+            v.multiply(item);
         }
         r.set(v);
         return r;
@@ -236,8 +247,8 @@ public:
         Int64ResultNode v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
-            v.andOp(vec[i]);
+        for (const B & item : vec) {
+            v.andOp(item);
         }
         r.set(v);
         return r;
@@ -246,8 +257,8 @@ public:
         Int64ResultNode v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
-            v.orOp(vec[i]);
+        for (const B & item : vec) {
+            v.orOp(item);
         }
         r.set(v);
         return r;
@@ -256,8 +267,8 @@ public:
         Int64ResultNode v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
-            v.xorOp(vec[i]);
+        for (const B & item : vec) {
+            v.xorOp(item);
         }
         r.set(v);
         return r;
@@ -266,8 +277,8 @@ public:
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
-            v.add(vec[i]);
+        for (const B & item : vec) {
+            v.add(item);
         }
         r.set(v);
         return r;
@@ -276,8 +287,8 @@ public:
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
-            v.max(vec[i]);
+        for (const B & item : vec) {
+            v.max(item);
         }
         r.set(v);
         return r;
@@ -286,8 +297,8 @@ public:
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
-            v.min(vec[i]);
+        for (const B & item : vec) {
+            v.min(item);
         }
         r.set(v);
         return r;
@@ -296,10 +307,10 @@ public:
         B v;
         v.set(r);
         const std::vector<B> & vec(this->getVector());
-        for (size_t i(0), m(vec.size()); i < m; i++) {
+        for (const B & item : vec) {
             B squared;
-            squared.set(vec[i]);
-            squared.multiply(vec[i]);
+            squared.set(item);
+            squared.multiply(item);
             v.add(squared);
         }
         r.set(v);
@@ -311,7 +322,7 @@ public:
 class BoolResultNodeVector : public NumericResultNodeVectorT<BoolResultNode>
 {
 public:
-    BoolResultNodeVector() { }
+    BoolResultNodeVector() noexcept = default;
     DECLARE_RESULTNODE(BoolResultNodeVector);
 
     const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
@@ -320,7 +331,7 @@ public:
 class Int8ResultNodeVector : public NumericResultNodeVectorT<Int8ResultNode>
 {
 public:
-    Int8ResultNodeVector() { }
+    Int8ResultNodeVector() noexcept = default;
     DECLARE_RESULTNODE(Int8ResultNodeVector);
 
     const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
@@ -329,7 +340,7 @@ public:
 class Int16ResultNodeVector : public NumericResultNodeVectorT<Int16ResultNode>
 {
 public:
-    Int16ResultNodeVector() { }
+    Int16ResultNodeVector() = default;
     DECLARE_RESULTNODE(Int16ResultNodeVector);
 
     const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
@@ -338,7 +349,7 @@ public:
 class Int32ResultNodeVector : public NumericResultNodeVectorT<Int32ResultNode>
 {
 public:
-    Int32ResultNodeVector() { }
+    Int32ResultNodeVector() = default;
     DECLARE_RESULTNODE(Int32ResultNodeVector);
 
     const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
@@ -347,7 +358,7 @@ public:
 class Int64ResultNodeVector : public NumericResultNodeVectorT<Int64ResultNode>
 {
 public:
-    Int64ResultNodeVector() { }
+    Int64ResultNodeVector() = default;
     DECLARE_RESULTNODE(Int64ResultNodeVector);
 
     const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
@@ -358,14 +369,14 @@ using IntegerResultNodeVector = Int64ResultNodeVector;
 class EnumResultNodeVector : public NumericResultNodeVectorT<EnumResultNode>
 {
 public:
-    EnumResultNodeVector() {}
+    EnumResultNodeVector() = default;
     DECLARE_RESULTNODE(EnumResultNodeVector);
 };
 
 class FloatResultNodeVector : public NumericResultNodeVectorT<FloatResultNode>
 {
 public:
-    FloatResultNodeVector() { }
+    FloatResultNodeVector() = default;
     DECLARE_RESULTNODE(FloatResultNodeVector);
 
     const FloatBucketResultNode& getNullBucket() const override { return FloatBucketResultNode::getNull(); }
@@ -374,7 +385,7 @@ public:
 class StringResultNodeVector : public ResultNodeVectorT<StringResultNode, cmpT<ResultNode>, vespalib::Identity>
 {
 public:
-    StringResultNodeVector() { }
+    StringResultNodeVector() = default;
     DECLARE_RESULTNODE(StringResultNodeVector);
 
     const StringBucketResultNode& getNullBucket() const override { return StringBucketResultNode::getNull(); }
@@ -383,7 +394,7 @@ public:
 class RawResultNodeVector : public ResultNodeVectorT<RawResultNode, cmpT<ResultNode>, vespalib::Identity>
 {
 public:
-    RawResultNodeVector() { }
+    RawResultNodeVector() = default;
     DECLARE_RESULTNODE(RawResultNodeVector);
 
     const RawBucketResultNode& getNullBucket() const override { return RawBucketResultNode::getNull(); }
@@ -392,28 +403,28 @@ public:
 class IntegerBucketResultNodeVector : public ResultNodeVectorT<IntegerBucketResultNode, contains<IntegerBucketResultNode, int64_t>, GetInteger >
 {
 public:
-    IntegerBucketResultNodeVector() { }
+    IntegerBucketResultNodeVector() = default;
     DECLARE_RESULTNODE(IntegerBucketResultNodeVector);
 };
 
 class FloatBucketResultNodeVector : public ResultNodeVectorT<FloatBucketResultNode, contains<FloatBucketResultNode, double>, GetFloat >
 {
 public:
-    FloatBucketResultNodeVector() { }
+    FloatBucketResultNodeVector() = default;
     DECLARE_RESULTNODE(FloatBucketResultNodeVector);
 };
 
 class StringBucketResultNodeVector : public ResultNodeVectorT<StringBucketResultNode, contains<StringBucketResultNode, ResultNode::ConstBufferRef>, GetString >
 {
 public:
-    StringBucketResultNodeVector() { }
+    StringBucketResultNodeVector() = default;
     DECLARE_RESULTNODE(StringBucketResultNodeVector);
 };
 
 class RawBucketResultNodeVector : public ResultNodeVectorT<RawBucketResultNode, contains<RawBucketResultNode, ResultNode::ConstBufferRef>, GetString >
 {
 public:
-    RawBucketResultNodeVector() { }
+    RawBucketResultNodeVector() = default;
     DECLARE_RESULTNODE(RawBucketResultNodeVector);
 };
 

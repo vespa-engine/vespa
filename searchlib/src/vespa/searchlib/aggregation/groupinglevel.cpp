@@ -19,7 +19,7 @@ GroupingLevel::GroupingLevel() :
     _frozen(false),
     _classify(),
     _collect(),
-    _grouper(NULL)
+    _grouper(nullptr)
 { }
 
 GroupingLevel::~GroupingLevel() = default;
@@ -63,11 +63,6 @@ GroupingLevel::Grouper::Grouper(const Grouping * grouping, uint32_t level) :
 {
 }
 
-bool GroupingLevel::Grouper::isFrosen(size_t level) const
-{
-    return level < _grouping->getFirstLevel();
-}
-
 bool GroupingLevel::Grouper::hasNext(size_t level) const
 {
     return level < _grouping->getLevels().size();
@@ -77,7 +72,7 @@ template<typename Doc>
 void GroupingLevel::SingleValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
 {
     Group * next = g.groupSingle(result, rank, _grouping->getLevels()[_level]);
-    if ((next != NULL) && doNext()) { // do next level ?
+    if ((next != nullptr) && doNext()) { // do next level ?
         next->aggregate(*_grouping, _level + 1, doc, rank);
     }
 }
