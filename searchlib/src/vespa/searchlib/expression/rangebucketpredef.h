@@ -7,8 +7,7 @@
 #include "floatresultnode.h"
 #include "stringresultnode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class RangeBucketPreDefFunctionNode : public UnaryFunctionNode
 {
@@ -57,8 +56,8 @@ private:
 public:
     DECLARE_EXPRESSIONNODE(RangeBucketPreDefFunctionNode);
     DECLARE_NBO_SERIALIZE;
-    RangeBucketPreDefFunctionNode() : UnaryFunctionNode(), _predef(), _result(NULL), _nullResult(NULL) {}
-    RangeBucketPreDefFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)), _predef(), _result(NULL), _nullResult(NULL) {}
+    RangeBucketPreDefFunctionNode() : UnaryFunctionNode(), _predef(), _result(nullptr), _nullResult(nullptr) {}
+    RangeBucketPreDefFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)), _predef(), _result(nullptr), _nullResult(nullptr) {}
     RangeBucketPreDefFunctionNode(const RangeBucketPreDefFunctionNode & rhs);
     RangeBucketPreDefFunctionNode & operator = (const RangeBucketPreDefFunctionNode & rhs);
     ~RangeBucketPreDefFunctionNode();
@@ -71,5 +70,4 @@ public:
     }
 };
 
-}
 }

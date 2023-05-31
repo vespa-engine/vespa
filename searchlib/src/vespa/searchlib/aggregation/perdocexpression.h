@@ -29,7 +29,6 @@
 #include <vespa/searchlib/expression/catfunctionnode.h>
 #include <vespa/searchlib/expression/xorbitfunctionnode.h>
 #include <vespa/searchlib/expression/md5bitfunctionnode.h>
-#include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/searchlib/expression/fixedwidthbucketfunctionnode.h>
 #include <vespa/searchlib/expression/rangebucketpredef.h>
 #include <vespa/searchlib/expression/timestamp.h>

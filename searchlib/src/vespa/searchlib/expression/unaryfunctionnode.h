@@ -3,14 +3,13 @@
 
 #include "multiargfunctionnode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class UnaryFunctionNode : public MultiArgFunctionNode
 {
 public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(UnaryFunctionNode);
-    UnaryFunctionNode() { }
+    UnaryFunctionNode() noexcept = default;
     UnaryFunctionNode(ExpressionNode::UP arg) :
         MultiArgFunctionNode()
     {
@@ -23,5 +22,3 @@ private:
 };
 
 }
-}
-

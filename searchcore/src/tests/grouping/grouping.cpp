@@ -4,6 +4,7 @@
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/expression/integerresultnode.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>

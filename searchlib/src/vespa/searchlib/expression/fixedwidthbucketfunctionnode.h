@@ -5,11 +5,9 @@
 #include "numericresultnode.h"
 #include "integerbucketresultnode.h"
 #include "floatbucketresultnode.h"
-#include "resultvector.h"
 #include <memory>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class FixedWidthBucketFunctionNode : public UnaryFunctionNode
 {
@@ -19,7 +17,7 @@ public:
         using CP = vespalib::CloneablePtr<BucketHandler>;
         virtual void update(ResultNode &result, const ResultNode &value) const = 0;
         virtual BucketHandler *clone() const = 0;
-        virtual ~BucketHandler() {}
+        virtual ~BucketHandler() = default;
     };
 
     // update integer result bucket based on integer value
@@ -60,12 +58,11 @@ public:
     DECLARE_NBO_SERIALIZE;
     FixedWidthBucketFunctionNode() : UnaryFunctionNode(), _width(), _bucketHandler() {}
     FixedWidthBucketFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)), _width(), _bucketHandler() {}
-    ~FixedWidthBucketFunctionNode();
+    ~FixedWidthBucketFunctionNode() override;
     FixedWidthBucketFunctionNode &setWidth(const NumericResultNode::CP &width) {
         _width = width;
         return *this;
     }
 };
 
-}
 }

@@ -2,9 +2,6 @@
 #pragma once
 
 #include "unaryfunctionnode.h"
-#include "stringresultnode.h"
-#include "resultvector.h"
-#include <vespa/searchlib/common/sortspec.h>
 
 namespace search::expression {
 

@@ -28,10 +28,8 @@ private:
         virtual Grouper * clone() const = 0;
     protected:
         Grouper(const Grouping * grouping, uint32_t level);
-        bool isFrozen() const { return _frozen; }
         bool  hasNext() const { return _hasNext; }
         bool   doNext() const { return _doNext; }
-        bool isFrosen(size_t level) const;
         bool  hasNext(size_t level) const;
         const Grouping * _grouping;
         uint32_t   _level;
