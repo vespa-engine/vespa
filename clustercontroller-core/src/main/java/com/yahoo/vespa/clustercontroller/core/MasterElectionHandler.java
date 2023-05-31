@@ -118,7 +118,7 @@ public class MasterElectionHandler implements MasterInterface {
         return 2 * followers <= totalCount;
     }
 
-    public boolean isAmongNthFirst(int first) { return (nextInLineCount < first); }
+    public boolean isFirstInLine() { return (nextInLineCount < 1); }
 
     public boolean watchMasterElection(DatabaseHandler database, DatabaseHandler.DatabaseContext dbContext) {
         if (totalCount == 1 && !usingZooKeeper) {
@@ -251,7 +251,7 @@ public class MasterElectionHandler implements MasterInterface {
         nextMasterData = null;
     }
 
-    public void writeHtmlState(StringBuilder sb, int stateGatherCount) {
+    public void writeHtmlState(StringBuilder sb) {
         sb.append("<h2>Master state</h2>\n");
         Integer master = getMaster();
         if (master != null) {
@@ -270,7 +270,7 @@ public class MasterElectionHandler implements MasterInterface {
                   .append(" before electing new master unless all possible master candidates are online.</p>");
             }
         }
-        if ((master == null || master != index) && nextInLineCount < stateGatherCount) {
+        if ((master == null || master != index) && nextInLineCount < 1) {
             sb.append("<p>As we are number ").append(nextInLineCount)
                     .append(" in line for taking over as master, we're gathering state from nodes.</p>");
             sb.append("<p><font color=\"red\">As we are not the master, we don't know about nodes current system state"
