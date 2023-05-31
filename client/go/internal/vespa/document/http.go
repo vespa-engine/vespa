@@ -127,37 +127,38 @@ func writeQueryParam(sb *bytes.Buffer, start int, escape bool, k, v string) {
 	}
 }
 
-func (c *Client) methodAndURL(d Document, sb *bytes.Buffer) (string, string) {
-	httpMethod := ""
-	switch d.Operation {
-	case OperationPut:
-		httpMethod = "POST"
-	case OperationUpdate:
-		httpMethod = "PUT"
-	case OperationRemove:
-		httpMethod = "DELETE"
-	}
-	// Base URL and path
-	sb.WriteString(c.options.BaseURL)
-	if !strings.HasSuffix(c.options.BaseURL, "/") {
-		sb.WriteString("/")
-	}
-	sb.WriteString("document/v1/")
-	sb.WriteString(url.PathEscape(d.Id.Namespace))
+func (c *Client) writeDocumentPath(id Id, sb *bytes.Buffer) {
+	sb.WriteString(strings.TrimSuffix(c.options.BaseURL, "/"))
+	sb.WriteString("/document/v1/")
+	sb.WriteString(url.PathEscape(id.Namespace))
 	sb.WriteString("/")
-	sb.WriteString(url.PathEscape(d.Id.Type))
-	if d.Id.Number != nil {
+	sb.WriteString(url.PathEscape(id.Type))
+	if id.Number != nil {
 		sb.WriteString("/number/")
-		n := uint64(*d.Id.Number)
+		n := uint64(*id.Number)
 		sb.WriteString(strconv.FormatUint(n, 10))
-	} else if d.Id.Group != "" {
+	} else if id.Group != "" {
 		sb.WriteString("/group/")
-		sb.WriteString(url.PathEscape(d.Id.Group))
+		sb.WriteString(url.PathEscape(id.Group))
 	} else {
 		sb.WriteString("/docid")
 	}
 	sb.WriteString("/")
-	sb.WriteString(url.PathEscape(d.Id.UserSpecific))
+	sb.WriteString(url.PathEscape(id.UserSpecific))
+}
+
+func (c *Client) methodAndURL(d Document, sb *bytes.Buffer) (string, string) {
+	httpMethod := ""
+	switch d.Operation {
+	case OperationPut:
+		httpMethod = http.MethodPost
+	case OperationUpdate:
+		httpMethod = http.MethodPut
+	case OperationRemove:
+		httpMethod = http.MethodDelete
+	}
+	// Base URL and path
+	c.writeDocumentPath(d.Id, sb)
 	// Query part
 	queryStart := sb.Len()
 	if c.options.Timeout > 0 {
@@ -290,7 +291,28 @@ func (c *Client) Send(document Document) Result {
 	}
 	defer resp.Body.Close()
 	elapsed := c.now().Sub(start)
-	return resultWithResponse(resp, bodySize, result, elapsed, buf)
+	return c.resultWithResponse(resp, bodySize, result, elapsed)
+}
+
+// Get retrieves document with given ID.nnnnnn
+func (c *Client) Get(id Id) Result {
+	start := c.now()
+	buf := c.buffer()
+	defer c.buffers.Put(buf)
+	c.writeDocumentPath(id, buf)
+	url := buf.String()
+	result := Result{Id: id}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return resultWithErr(result, err)
+	}
+	resp, err := c.leastBusyClient().Do(req, c.clientTimeout())
+	if err != nil {
+		return resultWithErr(result, err)
+	}
+	defer resp.Body.Close()
+	elapsed := c.now().Sub(start)
+	return c.resultWithResponse(resp, 0, result, elapsed)
 }
 
 func resultWithErr(result Result, err error) Result {
@@ -299,7 +321,7 @@ func resultWithErr(result Result, err error) Result {
 	return result
 }
 
-func resultWithResponse(resp *http.Response, sentBytes int, result Result, elapsed time.Duration, buf *bytes.Buffer) Result {
+func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result Result, elapsed time.Duration) Result {
 	result.HTTPStatus = resp.StatusCode
 	switch resp.StatusCode {
 	case 200:
@@ -311,24 +333,24 @@ func resultWithResponse(resp *http.Response, sentBytes int, result Result, elaps
 	default:
 		result.Status = StatusTransportFailure
 	}
-	buf.Reset()
-	written, err := io.Copy(buf, resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		result = resultWithErr(result, err)
 	} else {
-		var body struct {
-			Message string        `json:"message"`
-			Trace   json.RawValue `json:"trace"`
-		}
-		if err := json.Unmarshal(buf.Bytes(), &body); err != nil {
-			result = resultWithErr(result, fmt.Errorf("failed to decode json response: %w", err))
-		} else {
-			result.Message = body.Message
-			result.Trace = string(body.Trace)
+		result.Body = b
+		if result.HTTPStatus == 200 && c.options.TraceLevel > 0 {
+			var jsonResponse struct {
+				Trace json.RawValue `json:"trace"`
+			}
+			if err := json.Unmarshal(b, &jsonResponse); err != nil {
+				result = resultWithErr(result, fmt.Errorf("failed to decode json response: %w", err))
+			} else {
+				result.Trace = string(jsonResponse.Trace)
+			}
 		}
 	}
 	result.Latency = elapsed
 	result.BytesSent = int64(sentBytes)
-	result.BytesRecv = int64(written)
+	result.BytesRecv = int64(len(b))
 	return result
 }

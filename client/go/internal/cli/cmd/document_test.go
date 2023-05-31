@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"os"
 	"strconv"
 	"testing"
@@ -20,6 +21,11 @@ func TestDocumentSendPut(t *testing.T) {
 		"put", "POST", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Put.json", t)
 }
 
+func TestDocumentSendPutWithIdInFile(t *testing.T) {
+	assertDocumentSend([]string{"document", "testdata/A-Head-Full-of-Dreams-Put-Id.json"},
+		"put", "POST", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Put-Id.json", t)
+}
+
 func TestDocumentSendPutVerbose(t *testing.T) {
 	assertDocumentSend([]string{"document", "-v", "testdata/A-Head-Full-of-Dreams-Put.json"},
 		"put", "POST", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Put.json", t)
@@ -32,7 +38,7 @@ func TestDocumentSendUpdate(t *testing.T) {
 
 func TestDocumentSendRemove(t *testing.T) {
 	assertDocumentSend([]string{"document", "testdata/A-Head-Full-of-Dreams-Remove.json"},
-		"remove", "DELETE", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Remove.json", t)
+		"remove", "DELETE", "id:mynamespace:music::a-head-full-of-dreams", "", t)
 }
 
 func TestDocumentPutWithIdArg(t *testing.T) {
@@ -57,19 +63,24 @@ func TestDocumentUpdateWithoutIdArg(t *testing.T) {
 
 func TestDocumentRemoveWithIdArg(t *testing.T) {
 	assertDocumentSend([]string{"document", "remove", "id:mynamespace:music::a-head-full-of-dreams"},
-		"remove", "DELETE", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Remove.json", t)
+		"remove", "DELETE", "id:mynamespace:music::a-head-full-of-dreams", "", t)
 }
 
 func TestDocumentRemoveWithoutIdArg(t *testing.T) {
 	assertDocumentSend([]string{"document", "remove", "testdata/A-Head-Full-of-Dreams-Remove.json"},
-		"remove", "DELETE", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Remove.json", t)
+		"remove", "DELETE", "id:mynamespace:music::a-head-full-of-dreams", "", t)
+}
+
+func TestDocumentRemoveWithoutIdArgVerbose(t *testing.T) {
+	assertDocumentSend([]string{"document", "remove", "-v", "testdata/A-Head-Full-of-Dreams-Remove.json"},
+		"remove", "DELETE", "id:mynamespace:music::a-head-full-of-dreams", "", t)
 }
 
 func TestDocumentSendMissingId(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	assert.NotNil(t, cli.Run("document", "put", "testdata/A-Head-Full-of-Dreams-Without-Operation.json"))
 	assert.Equal(t,
-		"Error: No document id given neither as argument or as a 'put' key in the json file\n",
+		"Error: no document id given neither as argument or as a 'put', 'update' or 'remove' key in the JSON file\n",
 		stderr.String())
 }
 
@@ -77,7 +88,7 @@ func TestDocumentSendWithDisagreeingOperations(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	assert.NotNil(t, cli.Run("document", "update", "testdata/A-Head-Full-of-Dreams-Put.json"))
 	assert.Equal(t,
-		"Error: Wanted document operation is update but the JSON file specifies put\n",
+		"Error: wanted document operation is update, but JSON file specifies put\n",
 		stderr.String())
 }
 
@@ -103,7 +114,7 @@ func assertDocumentSend(arguments []string, expectedOperation string, expectedMe
 		t.Fatal(err)
 	}
 	expectedPath, _ := vespa.IdToURLPath(expectedDocumentId)
-	expectedURL := documentURL + "/document/v1/" + expectedPath
+	expectedURL := documentURL + "/document/v1/" + expectedPath + "?timeout=60000ms"
 
 	assert.Nil(t, cli.Run(arguments...))
 	verbose := false
@@ -113,16 +124,29 @@ func assertDocumentSend(arguments []string, expectedOperation string, expectedMe
 		}
 	}
 	if verbose {
-		expectedCurl := "curl -X " + expectedMethod + " -H 'Content-Type: application/json' --data-binary @" + expectedPayloadFile + " " + expectedURL + "\n"
+		expectedCurl := "curl -X " + expectedMethod + " -H 'Content-Type: application/json; charset=utf-8' -H 'User-Agent: Vespa CLI/0.0.0-devel'"
+		if expectedPayloadFile != "" {
+			expectedCurl += " --data-binary @" + expectedPayloadFile
+		}
+		expectedCurl += " '" + expectedURL + "'\n"
 		assert.Equal(t, expectedCurl, stderr.String())
 	}
 	assert.Equal(t, "Success: "+expectedOperation+" "+expectedDocumentId+"\n", stdout.String())
 	assert.Equal(t, expectedURL, client.LastRequest.URL.String())
-	assert.Equal(t, "application/json", client.LastRequest.Header.Get("Content-Type"))
+	assert.Equal(t, "application/json; charset=utf-8", client.LastRequest.Header.Get("Content-Type"))
 	assert.Equal(t, expectedMethod, client.LastRequest.Method)
 
-	expectedPayload, _ := os.ReadFile(expectedPayloadFile)
-	assert.Equal(t, string(expectedPayload), util.ReaderToString(client.LastRequest.Body))
+	if expectedPayloadFile != "" {
+		data, err := os.ReadFile(expectedPayloadFile)
+		assert.Nil(t, err)
+		var expectedPayload struct {
+			Fields json.RawMessage `json:"fields"`
+		}
+		assert.Nil(t, json.Unmarshal(data, &expectedPayload))
+		assert.Equal(t, `{"fields":`+string(expectedPayload.Fields)+"}", util.ReaderToString(client.LastRequest.Body))
+	} else {
+		assert.Nil(t, client.LastRequest.Body)
+	}
 }
 
 func assertDocumentGet(arguments []string, documentId string, t *testing.T) {
@@ -170,7 +194,7 @@ func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
 		"id:mynamespace:music::a-head-full-of-dreams",
 		"testdata/A-Head-Full-of-Dreams-Put.json"))
 	assert.Equal(t,
-		"Error: Container (document API) at 127.0.0.1:8080: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
+		"Error: Container (document API) at http://127.0.0.1:8080: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
 		stderr.String())
 }
 

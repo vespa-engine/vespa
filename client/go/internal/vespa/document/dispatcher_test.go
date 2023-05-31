@@ -48,7 +48,7 @@ func (f *mockFeeder) Send(doc Document) Result {
 type mockCircuitBreaker struct{ state CircuitState }
 
 func (c *mockCircuitBreaker) Success()            {}
-func (c *mockCircuitBreaker) Error(err error)     {}
+func (c *mockCircuitBreaker) Failure()            {}
 func (c *mockCircuitBreaker) State() CircuitState { return c.state }
 
 func TestDispatcher(t *testing.T) {

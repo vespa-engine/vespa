@@ -19,7 +19,7 @@ const (
 
 type CircuitBreaker interface {
 	Success()
-	Error(error)
+	Failure()
 	State() CircuitState
 }
 
@@ -28,7 +28,6 @@ type timeCircuitBreaker struct {
 	doomDuration  time.Duration
 
 	failingSinceMillis atomic.Int64
-	lastError          atomic.Value
 	halfOpen           atomic.Bool
 	open               atomic.Bool
 
@@ -42,10 +41,8 @@ func (b *timeCircuitBreaker) Success() {
 	}
 }
 
-func (b *timeCircuitBreaker) Error(err error) {
-	if b.failingSinceMillis.CompareAndSwap(math.MaxInt64, b.now().UnixMilli()) {
-		b.lastError.Store(err)
-	}
+func (b *timeCircuitBreaker) Failure() {
+	b.failingSinceMillis.CompareAndSwap(math.MaxInt64, b.now().UnixMilli())
 }
 
 func (b *timeCircuitBreaker) State() CircuitState {
