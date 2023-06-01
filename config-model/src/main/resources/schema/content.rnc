@@ -301,6 +301,9 @@ Tuning = element tuning {
          element persearch { xsd:nonNegativeInteger }? &
          element summary { xsd:nonNegativeInteger }?
       }? &
+      element lidspace {
+         element max-bloat-factor { xsd:double { minInclusive = "0.0" maxInclusive = "1.0" } }?
+      }? &
       element flushstrategy {
          element native {
             element total {

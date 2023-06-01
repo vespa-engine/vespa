@@ -53,6 +53,16 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
             }
         }
 
+        public static class LidSpace implements ProtonConfig.Producer {
+            public Double bloatFactor = null;
+
+            @Override
+            public void getConfig(ProtonConfig.Builder builder) {
+                if (bloatFactor != null) builder.lidspacecompaction.allowedlidbloatfactor(bloatFactor);
+            }
+
+        }
+
         public static class RemovedDB implements ProtonConfig.Producer {
 
             public static class Prune implements ProtonConfig.Producer {
@@ -371,6 +381,7 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
         }
 
         public RequestThreads threads = null;
+        public LidSpace lidSpace = null;
         public FlushStrategy strategy = null;
         public Resizing resizing = null;
         public Index index = null;
@@ -383,6 +394,7 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
         @Override
         public void getConfig(ProtonConfig.Builder builder) {
             if (threads != null) threads.getConfig(builder);
+            if (lidSpace != null) lidSpace.getConfig(builder);
             if (strategy != null) strategy.getConfig(builder);
             if (resizing != null) resizing.getConfig(builder);
             if (index != null) index.getConfig(builder);

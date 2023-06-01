@@ -58,6 +58,16 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     }
 
     @Test
+    void requireThatWeCanParseLidSpaceTag() {
+        Tuning t = createTuning(parseXml("<lidspace>",
+                "<max-bloat-factor>0.5</max-bloat-factor>",
+                "</lidspace>"));
+        assertEquals(0.5, t.searchNode.lidSpace.bloatFactor.doubleValue());
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(cfg.lidspacecompaction().allowedlidbloatfactor(), 0.5);
+    }
+
+    @Test
     void requireThatWeCanParseFlushStrategyTag() {
         Tuning t = createTuning(parseXml("<flushstrategy>", "<native>",
                 "<total>",
