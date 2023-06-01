@@ -6,8 +6,24 @@
   "hostname": "host5.yahoo.com",
   "parentHostname": "dockerhost2.yahoo.com",
   "flavor": "[vcpu: 1.0, memory: 8.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, disk speed: slow, storage type: remote, architecture: x86_64]",
-  "resources":{"vcpu":1.0,"memoryGb":8.0,"diskGb":100.0,"bandwidthGbps":1.0,"diskSpeed":"slow","storageType":"remote","architecture":"x86_64"},
-  "realResources":{"vcpu":1.0,"memoryGb":8.0,"diskGb":100.0,"bandwidthGbps":1.0,"diskSpeed":"slow","storageType":"remote","architecture":"x86_64"},
+  "resources": {
+    "vcpu": 1.0,
+    "memoryGb": 8.0,
+    "diskGb": 100.0,
+    "bandwidthGbps": 1.0,
+    "diskSpeed": "slow",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
+  "realResources": {
+    "vcpu": 1.0,
+    "memoryGb": 8.0,
+    "diskGb": 100.0,
+    "bandwidthGbps": 1.0,
+    "diskSpeed": "slow",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
   "environment": "DOCKER_CONTAINER",
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
@@ -56,10 +72,7 @@
       "agent": "system"
     }
   ],
-  "ipAddresses": [
-    "127.0.5.1",
-    "::5:1"
-  ],
+  "ipAddresses": ["127.0.5.1", "::5:1"],
   "additionalIpAddresses": [],
-  "cloudAccount": "111222333444"
+  "cloudAccount": "aws:111222333444"
 }

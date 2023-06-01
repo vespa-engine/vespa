@@ -26,7 +26,7 @@ class CloudAccountTest {
             assertEquals(account, CloudAccount.from(account.value()));
             assertEquals("123456789012", account.account());
             assertEquals(CloudName.AWS, account.cloudName());
-            assertEquals("123456789012", account.value());
+            assertEquals("aws:123456789012", account.value());
         }
     }
 
@@ -41,7 +41,7 @@ class CloudAccountTest {
             assertEquals(account, CloudAccount.from(account.value()));
             assertEquals("my-project", account.account());
             assertEquals(CloudName.GCP, account.cloudName());
-            assertEquals("my-project", account.value());
+            assertEquals("gcp:my-project", account.value());
         }
     }
 

@@ -6,8 +6,24 @@
   "hostname": "test-node-pool-102-2",
   "parentHostname": "dockerhost3.yahoo.com",
   "flavor": "[vcpu: 1.0, memory: 4.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote, architecture: x86_64]",
-  "resources":{"vcpu":1.0,"memoryGb":4.0,"diskGb":100.0,"bandwidthGbps":1.0,"diskSpeed":"fast","storageType":"remote","architecture":"x86_64"},
-  "realResources":{"vcpu":1.0,"memoryGb":4.0,"diskGb":100.0,"bandwidthGbps":1.0,"diskSpeed":"fast","storageType":"remote","architecture":"x86_64"},
+  "resources": {
+    "vcpu": 1.0,
+    "memoryGb": 4.0,
+    "diskGb": 100.0,
+    "bandwidthGbps": 1.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
+  "realResources": {
+    "vcpu": 1.0,
+    "memoryGb": 4.0,
+    "diskGb": 100.0,
+    "bandwidthGbps": 1.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
   "environment": "DOCKER_CONTAINER",
   "owner": {
     "tenant": "tenant3",
@@ -25,7 +41,15 @@
   "currentRestartGeneration": 0,
   "wantedDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.42.0",
   "wantedVespaVersion": "6.42.0",
-  "requestedResources": { "vcpu":1.0, "memoryGb":4.0, "diskGb":100.0, "bandwidthGbps":1.0,"diskSpeed":"fast", "storageType":"any","architecture":"any" },
+  "requestedResources": {
+    "vcpu": 1.0,
+    "memoryGb": 4.0,
+    "diskGb": 100.0,
+    "bandwidthGbps": 1.0,
+    "diskSpeed": "fast",
+    "storageType": "any",
+    "architecture": "any"
+  },
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
   "failCount": 0,
@@ -63,9 +87,7 @@
       "agent": "application"
     }
   ],
-  "ipAddresses": [
-    "::102:2"
-  ],
+  "ipAddresses": ["::102:2"],
   "additionalIpAddresses": [],
-  "cloudAccount": "111222333444"
+  "cloudAccount": "aws:111222333444"
 }

@@ -21,9 +21,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
@@ -35,7 +32,6 @@ import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPacka
 import static com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.validateTests;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author jonmv
@@ -156,7 +152,7 @@ public class TestPackageTest {
         DeploymentSpec spec = DeploymentSpec.fromXml("""
                                                      <deployment version='1.0' athenz-domain='domain' athenz-service='service' cloud-account='123123123123' empty-host-ttl='1h'>
                                                          <test empty-host-ttl='1d' />
-                                                         <staging cloud-account='321321321321'/>
+                                                         <staging cloud-account='aws:321321321321'/>
                                                          <prod>
                                                              <region>us-east-3</region>
                                                              <test>us-east-3</test>
@@ -167,11 +163,11 @@ public class TestPackageTest {
                                                          </prod>
                                                      </deployment>
                                                      """);
-        verifyAttributes("123123123123", 1440, ZoneId.from("test", "us-east-1"), spec);
-        verifyAttributes("321321321321", 60, ZoneId.from("staging", "us-east-2"), spec);
-        verifyAttributes("123123123123", 60, ZoneId.from("prod", "us-east-3"), spec);
-        verifyAttributes("123123123123", 0, ZoneId.from("prod", "us-west-1"), spec);
-        verifyAttributes("123123123123", 60, ZoneId.from("prod", "us-central-1"), spec);
+        verifyAttributes("aws:123123123123", 1440, ZoneId.from("test", "us-east-1"), spec);
+        verifyAttributes("aws:321321321321", 60, ZoneId.from("staging", "us-east-2"), spec);
+        verifyAttributes("aws:123123123123", 60, ZoneId.from("prod", "us-east-3"), spec);
+        verifyAttributes("aws:123123123123", 0, ZoneId.from("prod", "us-west-1"), spec);
+        verifyAttributes("aws:123123123123", 60, ZoneId.from("prod", "us-central-1"), spec);
     }
 
     private void verifyAttributes(String expectedAccount, int expectedTTL, ZoneId zone, DeploymentSpec spec) {

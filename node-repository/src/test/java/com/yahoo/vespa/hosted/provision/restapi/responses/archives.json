@@ -9,7 +9,7 @@
       "uri": "ftp://host/dir/"
     },
     {
-      "account": "777888999000",
+      "account": "aws:777888999000",
       "uri": "s3://acc-bucket/"
     }
   ]

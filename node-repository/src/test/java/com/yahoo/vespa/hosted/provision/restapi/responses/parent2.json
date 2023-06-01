@@ -8,8 +8,24 @@
   "reservedTo": "myTenant",
   "exclusiveTo": "tenant1:app1:instance1",
   "cpuCores": 64.0,
-  "resources": {"vcpu":64.0,"memoryGb":128.0,"diskGb":2000.0,"bandwidthGbps":15.0,"diskSpeed":"fast","storageType":"remote","architecture":"x86_64"},
-  "realResources": {"vcpu":64.0,"memoryGb":128.0,"diskGb":2000.0,"bandwidthGbps":15.0,"diskSpeed":"fast","storageType":"remote","architecture":"x86_64"},
+  "resources": {
+    "vcpu": 64.0,
+    "memoryGb": 128.0,
+    "diskGb": 2000.0,
+    "bandwidthGbps": 15.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
+  "realResources": {
+    "vcpu": 64.0,
+    "memoryGb": 128.0,
+    "diskGb": 2000.0,
+    "bandwidthGbps": 15.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
   "environment": "BARE_METAL",
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
@@ -34,10 +50,7 @@
       "agent": "operator"
     }
   ],
-  "ipAddresses": [
-    "127.0.127.1",
-    "::127:1"
-  ],
+  "ipAddresses": ["127.0.127.1", "::127:1"],
   "additionalIpAddresses": [],
-  "cloudAccount":"111222333444"
+  "cloudAccount": "aws:111222333444"
 }

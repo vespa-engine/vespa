@@ -6,8 +6,24 @@
   "hostname": "dockerhost1.yahoo.com",
   "flavor": "large",
   "cpuCores": 4.0,
-  "resources":{"vcpu":4.0,"memoryGb":32.0,"diskGb":1600.0,"bandwidthGbps":20.0,"diskSpeed":"fast","storageType":"remote","architecture":"x86_64"},
-  "realResources":{"vcpu":4.0,"memoryGb":32.0,"diskGb":1600.0,"bandwidthGbps":20.0,"diskSpeed":"fast","storageType":"remote","architecture":"x86_64"},
+  "resources": {
+    "vcpu": 4.0,
+    "memoryGb": 32.0,
+    "diskGb": 1600.0,
+    "bandwidthGbps": 20.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
+  "realResources": {
+    "vcpu": 4.0,
+    "memoryGb": 32.0,
+    "diskGb": 1600.0,
+    "bandwidthGbps": 20.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
   "environment": "BARE_METAL",
   "owner": {
     "tenant": "zoneapp",
@@ -32,7 +48,7 @@
     "bandwidthGbps": 20.0,
     "diskSpeed": "fast",
     "storageType": "remote",
-    "architecture":"x86_64"
+    "architecture": "x86_64"
   },
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
@@ -107,15 +123,8 @@
       "agent": "system"
     }
   ],
-  "ipAddresses": [
-    "127.0.100.1",
-    "::100:1"
-  ],
-  "additionalIpAddresses": [
-    "::100:2",
-    "::100:3",
-    "::100:4"
-  ],
+  "ipAddresses": ["127.0.100.1", "::100:1"],
+  "additionalIpAddresses": ["::100:2", "::100:3", "::100:4"],
   "reports": {
     "actualCpuCores": {
       "createdMillis": 1,
@@ -129,12 +138,9 @@
       "type": "HARD_FAIL",
       "details": {
         "inGib": 3,
-        "disks": [
-          "/dev/sda1",
-          "/dev/sdb3"
-        ]
+        "disks": ["/dev/sda1", "/dev/sdb3"]
       }
     }
   },
-  "cloudAccount": "111222333444"
+  "cloudAccount": "aws:111222333444"
 }

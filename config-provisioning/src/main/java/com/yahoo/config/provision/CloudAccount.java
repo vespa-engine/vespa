@@ -35,7 +35,10 @@ public class CloudAccount implements Comparable<CloudAccount> {
     public CloudName cloudName() { return cloudName; }
 
     /** Returns the serialized value of this account that can be deserialized with {@link CloudAccount#from} */
-    public final String value() { return account; } // TODO (freva): Change to cloudName:account
+    public final String value() {
+        if (isUnspecified()) return account;
+        return cloudName.value() + ':' + account;
+    }
 
     public boolean isUnspecified() {
         return this.equals(empty);

@@ -6,8 +6,24 @@
   "hostname": "host9.yahoo.com",
   "flavor": "large-variant",
   "cpuCores": 64.0,
-  "resources":{"vcpu":64.0,"memoryGb":128.0,"diskGb":2000.0,"bandwidthGbps":15.0,"diskSpeed":"fast","storageType":"remote","architecture":"x86_64"},
-  "realResources":{"vcpu":64.0,"memoryGb":128.0,"diskGb":2000.0,"bandwidthGbps":15.0,"diskSpeed":"fast","storageType":"remote","architecture":"x86_64"},
+  "resources": {
+    "vcpu": 64.0,
+    "memoryGb": 128.0,
+    "diskGb": 2000.0,
+    "bandwidthGbps": 15.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
+  "realResources": {
+    "vcpu": 64.0,
+    "memoryGb": 128.0,
+    "diskGb": 2000.0,
+    "bandwidthGbps": 15.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
   "environment": "BARE_METAL",
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
@@ -32,11 +48,8 @@
       "agent": "operator"
     }
   ],
-  "ipAddresses": [
-    "127.0.9.1",
-    "::9:1"
-  ],
+  "ipAddresses": ["127.0.9.1", "::9:1"],
   "additionalIpAddresses": [],
   "additionalHostnames": ["node9-1.yahoo.com"],
-  "cloudAccount":"111222333444"
+  "cloudAccount": "aws:111222333444"
 }
