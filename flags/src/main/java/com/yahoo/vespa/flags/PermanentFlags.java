@@ -350,7 +350,7 @@ public class PermanentFlags {
             TENANT_ID);
 
     public static final UnboundIntFlag KEEP_FILE_REFERENCES_ON_TENANT_NODES = defineIntFlag(
-            "keep-file-references-on-tenant-nodes", 21,
+            "keep-file-references-on-tenant-nodes", 30,
             "How many days to keep file references on tenant nodes (based on last modification time)",
             "Takes effect on restart of Docker container",
             ZONE_ID, APPLICATION_ID
