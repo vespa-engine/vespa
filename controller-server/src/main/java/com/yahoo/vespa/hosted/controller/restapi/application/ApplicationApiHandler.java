@@ -1883,7 +1883,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
 
-        if (controller.zoneRegistry().isEnclave(deployment.cloudAccount())) {
+        if (controller.zoneRegistry().isExternal(deployment.cloudAccount())) {
             Cursor enclave = response.setObject("enclave");
             enclave.setString("cloudAccount", deployment.cloudAccount().value());
             controller.zoneRegistry().cloudAccountAthenzDomain(deployment.cloudAccount()).ifPresent(domain -> enclave.setString("athensDomain", domain.value()));
@@ -1918,7 +1918,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setDouble("quota", deployment.quota().rate());
         deployment.cost().ifPresent(cost -> response.setDouble("cost", cost));
 
-        (controller.zoneRegistry().isEnclave(deployment.cloudAccount()) ?
+        (controller.zoneRegistry().isExclave(deployment.cloudAccount()) ?
                 controller.archiveBucketDb().archiveUriFor(deploymentId.zoneId(), deployment.cloudAccount(), false) :
                 controller.archiveBucketDb().archiveUriFor(deploymentId.zoneId(), deploymentId.applicationId().tenant(), false))
                 .ifPresent(archiveUri -> response.setString("archiveUri", archiveUri.toString()));
