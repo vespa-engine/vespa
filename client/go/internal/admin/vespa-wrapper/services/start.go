@@ -54,6 +54,7 @@ func VespaStartServices() int {
 	vespa.RunPreStart()
 	trace.Debug("prestart ok")
 	util.TuneResourceLimits()
+	increase_vm_max_map_count()
 	trace.Debug("resource limits ok")
 	checkjava()
 	trace.Debug("java ok")
