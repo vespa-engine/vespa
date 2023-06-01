@@ -32,6 +32,7 @@ public class NodePrioritizer {
     private final List<NodeCandidate> candidates = new ArrayList<>();
     private final LockedNodeList allNodes;
     private final HostCapacity capacity;
+    private final HostResourcesCalculator calculator;
     private final NodeSpec requestedNodes;
     private final ApplicationId application;
     private final ClusterSpec clusterSpec;
@@ -48,6 +49,7 @@ public class NodePrioritizer {
                            int wantedGroups, boolean dynamicProvisioning, NameResolver nameResolver, Nodes nodes,
                            HostResourcesCalculator hostResourcesCalculator, int spareCount, boolean enclave) {
         this.allNodes = allNodes;
+        this.calculator = hostResourcesCalculator;
         this.capacity = new HostCapacity(this.allNodes, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
@@ -155,7 +157,7 @@ public class NodePrioritizer {
     }
 
     private boolean fitsPerfectly(Node host) {
-        return host.resources().compatibleWith(requestedNodes.resources().get());
+        return calculator.advertisedResourcesOf(host.flavor()).compatibleWith(requestedNodes.resources().get());
     }
 
     /** Add existing nodes allocated to the application */
