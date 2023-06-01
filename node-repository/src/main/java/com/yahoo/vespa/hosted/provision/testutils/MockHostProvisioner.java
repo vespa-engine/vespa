@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
-import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
@@ -16,11 +14,11 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostIpConfig;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisionRequest;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,34 +63,31 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public void provisionHosts(List<Integer> provisionIndices, NodeType hostType, NodeResources resources,
-                               ApplicationId applicationId, Version osVersion, HostSharing sharing,
-                               Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId,
-                               CloudAccount cloudAccount, Consumer<List<ProvisionedHost>> provisionedHostsConsumer) {
-        Flavor hostFlavor = hostFlavors.get(clusterType.orElse(ClusterSpec.Type.content));
+    public void provisionHosts(HostProvisionRequest request, Consumer<List<ProvisionedHost>> whenProvisioned) {
+        Flavor hostFlavor = hostFlavors.get(request.clusterType().orElse(ClusterSpec.Type.content));
         if (hostFlavor == null)
             hostFlavor = flavors.stream()
-                                .filter(f -> sharing == HostSharing.exclusive ? compatible(f, resources)
-                                                                              : f.resources().satisfies(resources))
+                                .filter(f -> request.sharing() == HostSharing.exclusive ? compatible(f, request.resources())
+                                                                              : f.resources().satisfies(request.resources()))
                                 .findFirst()
-                                .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + resources, true));
+                                .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + request.resources(), true));
 
         List<ProvisionedHost> hosts = new ArrayList<>();
-        for (int index : provisionIndices) {
-            String hostHostname = hostType == NodeType.host ? "host" + index : hostType.name() + index;
-            hosts.add(new ProvisionedHost("id-of-" + hostType.name() + index,
+        for (int index : request.indices()) {
+            String hostHostname = request.type() == NodeType.host ? "host" + index : request.type().name() + index;
+            hosts.add(new ProvisionedHost("id-of-" + request.type().name() + index,
                                           hostHostname,
                                           hostFlavor,
-                                          hostType,
-                                          sharing == HostSharing.exclusive ? Optional.of(applicationId) : Optional.empty(),
+                                          request.type(),
+                                          request.sharing() == HostSharing.exclusive ? Optional.of(request.owner()) : Optional.empty(),
                                           Optional.empty(),
-                                          createHostnames(hostType, hostFlavor, index),
-                                          resources,
-                                          osVersion,
-                                          cloudAccount));
+                                          createHostnames(request.type(), hostFlavor, index),
+                                          request.resources(),
+                                          request.osVersion(),
+                                          request.cloudAccount()));
         }
         provisionedHosts.addAll(hosts);
-        provisionedHostsConsumer.accept(hosts);
+        whenProvisioned.accept(hosts);
     }
 
     @Override

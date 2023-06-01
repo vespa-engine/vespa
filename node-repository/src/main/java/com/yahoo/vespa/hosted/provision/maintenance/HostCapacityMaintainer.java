@@ -24,18 +24,17 @@ import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisionRequest;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeCandidate;
 import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeSpec;
-import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -212,9 +211,10 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
             List<Node> hosts = new ArrayList<>();
-            hostProvisioner.provisionHosts(provisionIndices, NodeType.host, nodeResources, ApplicationId.defaultId(), osVersion,
-                                           HostSharing.shared, Optional.empty(), Optional.empty(),
-                                           nodeRepository().zone().cloud().account(),
+            HostProvisionRequest request = new HostProvisionRequest(provisionIndices, NodeType.host, nodeResources, ApplicationId.defaultId(), osVersion,
+                                                                    HostSharing.shared, Optional.empty(), Optional.empty(),
+                                                                    nodeRepository().zone().cloud().account());
+            hostProvisioner.provisionHosts(request,
                                            provisionedHosts -> {
                                                hosts.addAll(provisionedHosts.stream().map(host -> host.generateHost(Duration.ZERO)).toList());
                                                nodeRepository().nodes().addNodes(hosts, Agent.HostCapacityMaintainer);
