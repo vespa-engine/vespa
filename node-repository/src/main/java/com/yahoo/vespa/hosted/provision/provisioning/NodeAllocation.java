@@ -31,6 +31,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Used to manage a list of nodes during the node reservation process to fulfill the nodespec.
@@ -73,7 +74,7 @@ class NodeAllocation {
     /** The number of nodes that just now was changed to retired */
     private int wasRetiredJustNow = 0;
 
-    /** The node indexes to verify uniqueness of each members index */
+    /** The node indexes to verify uniqueness of each member's index */
     private final Set<Integer> indexes = new HashSet<>();
 
     /** The next membership index to assign to a new node */
@@ -93,11 +94,11 @@ class NodeAllocation {
         this.nodeRepository = nodeRepository;
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.requiredHostFlavor = Optional.of(PermanentFlags.HOST_FLAVOR.bindTo(nodeRepository.flagSource())
-                        .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
-                        .with(FetchVector.Dimension.CLUSTER_TYPE, cluster.type().name())
-                        .with(FetchVector.Dimension.CLUSTER_ID, cluster.id().value())
-                        .value())
-                .filter(s -> !s.isBlank());
+                                                                        .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
+                                                                        .with(FetchVector.Dimension.CLUSTER_TYPE, cluster.type().name())
+                                                                        .with(FetchVector.Dimension.CLUSTER_ID, cluster.id().value())
+                                                                        .value())
+                                          .filter(s -> !s.isBlank());
     }
 
     /**
@@ -379,8 +380,8 @@ class NodeAllocation {
      * @return the final list of nodes
      */
     List<Node> finalNodes() {
-        int wantToRetireCount = (int) nodes.values().stream().filter(NodeCandidate::wantToRetire).count();
-        int currentRetiredCount = (int) nodes.values().stream().filter(node -> node.allocation().get().membership().retired()).count();
+        int wantToRetireCount = (int) matching(NodeCandidate::wantToRetire).count();
+        int currentRetiredCount = (int) matching(node -> node.allocation().get().membership().retired()).count();
         int deltaRetiredCount = requestedNodes.idealRetiredCount(nodes.size(), wantToRetireCount, currentRetiredCount);
 
         if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0
@@ -415,24 +416,21 @@ class NodeAllocation {
             nodes.put(candidate.toNode().hostname(), candidate);
         }
 
-        return nodes.values().stream().map(n -> n.toNode()).toList();
+        return nodes.values().stream().map(NodeCandidate::toNode).toList();
     }
 
     List<Node> reservableNodes() {
         // Include already reserved nodes to extend reservation period and to potentially update their cluster spec.
         EnumSet<Node.State> reservableStates = EnumSet.of(Node.State.inactive, Node.State.ready, Node.State.reserved);
-        return nodesFilter(n -> ! n.isNew && reservableStates.contains(n.state()));
+        return matching(n -> ! n.isNew && reservableStates.contains(n.state())).toList();
     }
 
     List<Node> newNodes() {
-        return nodesFilter(n -> n.isNew);
+        return matching(node -> node.isNew).toList();
     }
 
-    private List<Node> nodesFilter(Predicate<NodeCandidate> predicate) {
-        return nodes.values().stream()
-                .filter(predicate)
-                .map(n -> n.toNode())
-                .toList();
+    private Stream<Node> matching(Predicate<NodeCandidate> predicate) {
+        return nodes.values().stream().filter(predicate).map(NodeCandidate::toNode);
     }
 
     /** Returns the number of nodes accepted this far */
@@ -487,8 +485,8 @@ class NodeAllocation {
         outsideRealLimits("node real resources is outside limits"),
         violatesParentHostPolicy("node violates parent host policy"),
         incompatibleResources("node resources are incompatible"),
-        hardRequest("node is requested to retire"),
-        softRequest("node is requested to retire (soft)"),
+        hardRequest("node is requested and required to retire"),
+        softRequest("node is requested to retire"),
         violatesExclusivity("node violates host exclusivity"),
         violatesHostFlavor("node violates host flavor"),
         none("");
@@ -499,7 +497,7 @@ class NodeAllocation {
             this.description = description;
         }
 
-        /** Human readable description of this cause */
+        /** Human-readable description of this cause */
         public String description() {
             return description;
         }

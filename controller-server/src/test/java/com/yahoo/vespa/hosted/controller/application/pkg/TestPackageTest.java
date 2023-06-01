@@ -121,7 +121,7 @@ public class TestPackageTest {
     }
 
     @Test
-    void testTestPacakgeAssembly() throws IOException {
+    void testTestPackageAssembly() throws IOException {
         byte[] bundleZip = ApplicationPackage.filesZip(Map.of("components/foo-tests.jar", testsJar("SystemTest", "ProductionTest"),
                                                               "artifacts/key", new byte[0]));
         TestPackage bundleTests = new TestPackage(() -> new ByteArrayInputStream(bundleZip),
