@@ -10,6 +10,7 @@
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/metrics/countmetric.h>
 #include <vespa/metrics/metricset.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <atomic>
 #include <vector>
 #include <unordered_map>
@@ -60,26 +61,24 @@ class ChangedBucketOwnershipHandler
       private config::IFetcherCallback<vespa::config::content::PersistenceConfig>
 {
 public:
-    class Metrics : public metrics::MetricSet
-    {
+    class Metrics : public metrics::MetricSet {
     public:
         metrics::LongAverageMetric averageAbortProcessingTime;
         metrics::LongCountMetric idealStateOpsAborted;
         metrics::LongCountMetric externalLoadOpsAborted;
 
-        Metrics(metrics::MetricSet* owner = 0);
-        ~Metrics();
+        explicit Metrics(metrics::MetricSet* owner = nullptr);
+        ~Metrics() override;
     };
 
     /**
      * Wrapper around the distribution & state pairs that decides how to
      * compute the owner distributor for a bucket. It's possible to have
      * an ownership state with a nullptr cluster state when the node
-     * initially starts up, which is why no owership state must be used unless
+     * initially starts up, which is why no ownership state must be used unless
      * invoking valid() on it returns true.
      */
-    class OwnershipState
-    {
+    class OwnershipState {
         using BucketSpace = document::BucketSpace;
         std::unordered_map<BucketSpace, std::shared_ptr<const lib::Distribution>, BucketSpace::hash> _distributions;
         std::shared_ptr<const lib::ClusterStateBundle> _state;
@@ -93,7 +92,7 @@ public:
 
         static const uint16_t FAILED_TO_RESOLVE = 0xffff;
 
-        bool valid() const {
+        [[nodiscard]] bool valid() const noexcept {
             return (!_distributions.empty() && _state);
         }
 
@@ -114,16 +113,21 @@ public:
     void reloadClusterState();
 
 private:
-    ServiceLayerComponent _component;
-    Metrics               _metrics;
-    std::unique_ptr<config::ConfigFetcher> _configFetcher;
-    mutable std::mutex    _stateLock;
-    std::shared_ptr<const lib::ClusterStateBundle> _currentState;
-    OwnershipState::CSP _currentOwnership;
+    class ClusterStateSyncAndApplyTask;
 
-    std::atomic<bool> _abortQueuedAndPendingOnStateChange;
-    std::atomic<bool> _abortMutatingIdealStateOps;
-    std::atomic<bool> _abortMutatingExternalLoadOps;
+    using ConfigFetcherUP       = std::unique_ptr<config::ConfigFetcher>;
+    using ClusterStateBundleCSP = std::shared_ptr<const lib::ClusterStateBundle>;
+
+    ServiceLayerComponent         _component;
+    Metrics                       _metrics;
+    ConfigFetcherUP               _configFetcher;
+    vespalib::ThreadStackExecutor _state_sync_executor;
+    mutable std::mutex            _stateLock;
+    ClusterStateBundleCSP         _currentState;
+    OwnershipState::CSP           _currentOwnership;
+    std::atomic<bool>             _abortQueuedAndPendingOnStateChange;
+    std::atomic<bool>             _abortMutatingIdealStateOps;
+    std::atomic<bool>             _abortMutatingExternalLoadOps;
 
     std::unique_ptr<AbortBucketOperationsCommand::AbortPredicate>
     makeLazyAbortPredicate(
@@ -183,14 +187,12 @@ private:
 public:
     ChangedBucketOwnershipHandler(const config::ConfigUri& configUri,
                                   ServiceLayerComponentRegister& compReg);
-    ~ChangedBucketOwnershipHandler();
+    ~ChangedBucketOwnershipHandler() override;
 
-    bool onSetSystemState(
-            const std::shared_ptr<api::SetSystemStateCommand>&) override;
+    bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>&) override;
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
-
-    bool onInternalReply(
-            const std::shared_ptr<api::InternalReply>& reply) override;
+    bool onInternalReply(const std::shared_ptr<api::InternalReply>& reply) override;
+    void onClose() override;
 
     void configure(std::unique_ptr<vespa::config::content::PersistenceConfig>) override;
 
