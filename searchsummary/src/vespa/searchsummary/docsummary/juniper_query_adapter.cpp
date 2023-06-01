@@ -121,6 +121,9 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             break;
         case search::ParseItem::ITEM_TRUE:
         case search::ParseItem::ITEM_FALSE:
+            if (!v->VisitOther(&item, iterator.getArity())) {
+                rc = skipItem(&iterator);
+            }
             break;
         // Unhandled items are just ignored by juniper
         case search::ParseItem::ITEM_WAND:
