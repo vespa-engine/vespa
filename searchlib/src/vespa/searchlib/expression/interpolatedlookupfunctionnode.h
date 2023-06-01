@@ -3,10 +3,9 @@
 
 #include "unaryfunctionnode.h"
 
-namespace search {
-    namespace attribute { class IAttributeVector; }
+namespace search::attribute { class IAttributeVector; }
 
-namespace expression {
+namespace search::expression {
 
 class InterpolatedLookup : public UnaryFunctionNode
 {
@@ -14,8 +13,8 @@ public:
     DECLARE_EXPRESSIONNODE(InterpolatedLookup);
     DECLARE_NBO_SERIALIZE;
 
-    InterpolatedLookup();
-    ~InterpolatedLookup();
+    InterpolatedLookup() noexcept;
+    ~InterpolatedLookup() override;
     InterpolatedLookup(const vespalib::string &attribute, ExpressionNode::UP arg);
     InterpolatedLookup(const search::attribute::IAttributeVector &attr, ExpressionNode::UP lookupArg);
     InterpolatedLookup(const InterpolatedLookup &rhs);
@@ -31,5 +30,3 @@ private:
 };
 
 }
-}
-

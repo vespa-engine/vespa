@@ -6,21 +6,22 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
 IMPLEMENT_EXPRESSIONNODE(ArrayAtLookup, UnaryFunctionNode);
 
-ArrayAtLookup::ArrayAtLookup()
+ArrayAtLookup::ArrayAtLookup() noexcept
+    : _attributeName(),
+      _attribute(nullptr),
+      _docId(0),
+      _basicAttributeType(BAT_STRING)
 {
 }
 
-ArrayAtLookup::~ArrayAtLookup()
-{
-}
+ArrayAtLookup::~ArrayAtLookup() = default;
 
 ArrayAtLookup::ArrayAtLookup(const vespalib::string &attribute, ExpressionNode::UP arg)
     : UnaryFunctionNode(std::move(arg)),
@@ -41,11 +42,9 @@ ArrayAtLookup::ArrayAtLookup(const ArrayAtLookup &rhs) :
     UnaryFunctionNode(rhs),
     _attributeName(rhs._attributeName),
     _attribute(rhs._attribute),
-    _docId(rhs._docId),
+    _docId(0),
     _basicAttributeType(rhs._basicAttributeType)
 {
-    // why?
-    _docId = 0;
 }
 
 ArrayAtLookup & ArrayAtLookup::operator= (const ArrayAtLookup &rhs)
@@ -54,7 +53,6 @@ ArrayAtLookup & ArrayAtLookup::operator= (const ArrayAtLookup &rhs)
         UnaryFunctionNode::operator =(rhs);
         _attributeName = rhs._attributeName;
         _attribute = rhs._attribute;
-        // _docId = rhs._docId;
         _docId = 0;
         _basicAttributeType = rhs._basicAttributeType;
     }
@@ -65,13 +63,13 @@ void ArrayAtLookup::onPrepareResult()
 {
     if (_attribute->isIntegerType()) {
         _basicAttributeType = BAT_INT;
-        setResultType(std::unique_ptr<ResultNode>(new Int64ResultNode()));
+        setResultType(std::make_unique<Int64ResultNode>());
     } else if (_attribute->isFloatingPointType()) {
         _basicAttributeType = BAT_FLOAT;
-        setResultType(std::unique_ptr<ResultNode>(new FloatResultNode()));
+        setResultType(std::make_unique<FloatResultNode>());
     } else {
         _basicAttributeType = BAT_STRING;
-        setResultType(std::unique_ptr<ResultNode>(new StringResultNode()));
+        setResultType(std::make_unique<StringResultNode>());
     }
 }
 
@@ -137,7 +135,7 @@ bool ArrayAtLookup::onExecute() const
 void ArrayAtLookup::wireAttributes(const search::attribute::IAttributeContext & attrCtx)
 {
     _attribute = attrCtx.getAttribute(_attributeName);
-    if (_attribute == NULL) {
+    if (_attribute == nullptr) {
         throw std::runtime_error(vespalib::make_string("Failed locating attribute vector '%s'", _attributeName.c_str()));
     }
 }
@@ -156,5 +154,4 @@ Deserializer & ArrayAtLookup::onDeserialize(Deserializer & is)
     return is;
 }
 
-} // namespace expression
-} // namespace search
+}

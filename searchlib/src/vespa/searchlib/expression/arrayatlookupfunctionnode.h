@@ -3,12 +3,12 @@
 
 #include "unaryfunctionnode.h"
 
-namespace search {
-    namespace attribute {
-        class IAttributeVector;
-        class IAttributeContext;
-    }
-namespace expression {
+namespace search::attribute {
+    class IAttributeVector;
+    class IAttributeContext;
+}
+
+namespace search::expression {
 
 class ArrayAtLookup : public UnaryFunctionNode
 {
@@ -16,8 +16,8 @@ public:
     DECLARE_EXPRESSIONNODE(ArrayAtLookup);
     DECLARE_NBO_SERIALIZE;
 
-    ArrayAtLookup();
-    ~ArrayAtLookup();
+    ArrayAtLookup() noexcept;
+    ~ArrayAtLookup() override;
     ArrayAtLookup(const vespalib::string &attribute, ExpressionNode::UP arg);
     ArrayAtLookup(const search::attribute::IAttributeVector &attr, ExpressionNode::UP indexArg);
     ArrayAtLookup(const ArrayAtLookup &rhs);
@@ -32,12 +32,10 @@ private:
         BAT_INT, BAT_FLOAT, BAT_STRING
     };
 
-    vespalib::string _attributeName = vespalib::string();
-    const search::attribute::IAttributeVector * _attribute = 0;
-    DocId _docId = 0;
-    BasicAttributeType _basicAttributeType = BAT_STRING;
+    vespalib::string                            _attributeName;
+    const search::attribute::IAttributeVector * _attribute;
+    DocId                                       _docId;
+    BasicAttributeType                          _basicAttributeType;
 };
 
 }
-}
-
