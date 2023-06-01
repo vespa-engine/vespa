@@ -30,6 +30,13 @@ public:
     virtual double to_distance(double rawscore) const {
         return (1.0 / rawscore) - 1.0;
     }
+
+    /**
+     * The minimum rawscore (also used as closeness) that this distance function can return.
+     */
+    virtual double min_rawscore() const {
+        return 0.0;
+    }
 };
 
 }

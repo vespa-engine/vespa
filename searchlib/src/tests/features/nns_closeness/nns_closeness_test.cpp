@@ -16,6 +16,7 @@ using namespace search::features;
 using namespace search::fef::test;
 using namespace search::fef;
 
+using search::attribute::DistanceMetric;
 using vespalib::eval::TensorSpec;
 
 const vespalib::string labelFeatureName("closeness(label,nns)");
@@ -144,6 +145,25 @@ TEST(NnsClosenessTest, raw_score_is_calculated_on_the_fly_using_label_setup)
     RankFixture f2(0, 1, f1, labelFeatureName, "tensor(x[2]):[3,11]");
     ASSERT_FALSE(f2.failed());
     expect_raw_score_calculated_on_the_fly(f2);
+}
+
+TEST(NnsClosenessTest, can_return_negative_values_with_dotproduct_distance_metric)
+{
+    NoLabel f1;
+    RankFixture f2(0, 2, f1, fieldFeatureName, "tensor(x[2]):[2,3]", DistanceMetric::Dotproduct);
+    ASSERT_FALSE(f2.failed());
+
+    f2.set_bar_rawscore(0, 7, 5.0);
+    f2.set_bar_rawscore(1, 8, -5.0);
+    f2.set_attribute_tensor(9, TensorSpec::from_expr("tensor(x[2]):[4,5]"));
+    f2.set_attribute_tensor(10, TensorSpec::from_expr("tensor(x[2]):[-4,-5]"));
+
+    // For docids 9 and 10 the raw score is calculated on the fly
+    // using a distance calculator over the attribute and query tensors.
+    EXPECT_EQ(5.0, f2.getScore(7));
+    EXPECT_EQ(-5.0, f2.getScore(8));
+    EXPECT_EQ(23.0, f2.getScore(9));
+    EXPECT_EQ(-23.0, f2.getScore(10));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

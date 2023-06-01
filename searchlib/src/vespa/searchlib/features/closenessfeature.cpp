@@ -44,7 +44,7 @@ ConvertRawScoreToCloseness::ConvertRawScoreToCloseness(const fef::IQueryEnvironm
 void
 ConvertRawScoreToCloseness::execute(uint32_t docId)
 {
-    feature_t max_closeness = 0.0;
+    feature_t max_closeness = _bundle.min_rawscore();
     assert(_md);
     for (const auto& elem : _bundle.elements()) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(elem.handle);
