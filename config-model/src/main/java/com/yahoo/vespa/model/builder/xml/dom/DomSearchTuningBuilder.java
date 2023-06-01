@@ -75,7 +75,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
     private void handleLidSpace(Element spec, Tuning.SearchNode t) {
         t.lidSpace = new Tuning.SearchNode.LidSpace();
         for (Element e : XML.getChildren(spec)) {
-            if (equals("bloat-factor", e)) {
+            if (equals("max-bloat-factor", e)) {
                 t.lidSpace.bloatFactor = asDouble(e);
             }
         }

@@ -302,7 +302,7 @@ Tuning = element tuning {
          element summary { xsd:nonNegativeInteger }?
       }? &
       element lidspace {
-         element bloat-factor { xsd:double { minInclusive = "0.0" maxInclusive = "1.0" } }?
+         element max-bloat-factor { xsd:double { minInclusive = "0.0" maxInclusive = "1.0" } }?
       }? &
       element flushstrategy {
          element native {

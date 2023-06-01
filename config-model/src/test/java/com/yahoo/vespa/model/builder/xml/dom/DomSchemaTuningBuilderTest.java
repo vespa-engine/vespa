@@ -60,7 +60,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     @Test
     void requireThatWeCanParseLidSpaceTag() {
         Tuning t = createTuning(parseXml("<lidspace>",
-                "<bloat-factor>0.5</bloat-factor>",
+                "<max-bloat-factor>0.5</max-bloat-factor>",
                 "</lidspace>"));
         assertEquals(0.5, t.searchNode.lidSpace.bloatFactor.doubleValue());
         ProtonConfig cfg = getProtonCfg(t);
