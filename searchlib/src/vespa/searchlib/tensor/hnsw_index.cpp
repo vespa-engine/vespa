@@ -1038,7 +1038,7 @@ HnswIndex<type>::count_reachable_nodes() const
         visited[entry.nodeid] = true;
     }
     vespalib::steady_time doom = vespalib::steady_clock::now() + MAX_COUNT_DURATION;
-    while (search_level >= 0) {
+    while (search_level > 0) {
         for (uint32_t idx = 0; idx < found_links.size(); ++idx) {
             if (vespalib::steady_clock::now() > doom) {
                 return {found_links.size(), false};
@@ -1057,7 +1057,35 @@ HnswIndex<type>::count_reachable_nodes() const
         }
         --search_level;
     }
-    return {found_links.size(), true};
+    uint32_t found_cnt = found_links.size();
+    search::AllocatedBitVector visitNext(visited.size());
+    for (uint32_t nodeid : found_links) {
+        visitNext.setBit(nodeid);
+    }
+    bool runAnotherVisit = true;
+    while (runAnotherVisit) {
+        if (vespalib::steady_clock::now() > doom) {
+            return {found_cnt, false};
+        }
+        runAnotherVisit = false;
+        visitNext.foreach_truebit(
+                [&] (uint32_t nodeid) {
+                    // note: search_level == 0
+                    auto neighbors = _graph.acquire_link_array(nodeid, 0);
+                    for (uint32_t neighbor : neighbors) {
+                        if (neighbor >= visited.size() || visited[neighbor]) {
+                            continue;
+                        }
+                        ++found_cnt;
+                        visited[neighbor] = true;
+                        visitNext.setBit(neighbor);
+                        runAnotherVisit = true;
+                    }
+                    visitNext.clearBit(nodeid);
+                }
+            );
+    }
+    return {found_cnt, true};
 }
 
 template class HnswIndex<HnswIndexType::SINGLE>;
