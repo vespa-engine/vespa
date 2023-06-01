@@ -139,6 +139,7 @@ public:
             uint32_t trace_level);
 private:
     [[nodiscard]] bool replica_set_changed_after_get_operation() const;
+    [[nodiscard]] bool distributor_no_longer_owns_bucket() const;
 
     void handle_internal_get_operation_reply(std::shared_ptr<api::StorageReply> reply);
 

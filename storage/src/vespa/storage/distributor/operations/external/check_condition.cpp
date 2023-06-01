@@ -127,6 +127,10 @@ bool CheckCondition::replica_set_changed_after_get_operation() const {
     return (replicas_in_db_now != _cond_get_op->replicas_in_db());
 }
 
+bool CheckCondition::distributor_no_longer_owns_bucket() const {
+    return !_bucket_space.check_ownership_in_pending_and_current_state(_doc_id_bucket.getBucketId()).isOwned();
+}
+
 CheckCondition::Outcome::Result
 CheckCondition::newest_replica_to_outcome(const std::optional<NewestReplica>& newest) noexcept {
     if (!newest) {
@@ -161,7 +165,8 @@ void CheckCondition::handle_internal_get_operation_reply(std::shared_ptr<api::St
         }
         const auto state_version_now = _bucket_space.getClusterState().getVersion();
         if ((state_version_now != _cluster_state_version_at_creation_time)
-            && replica_set_changed_after_get_operation())
+            && (replica_set_changed_after_get_operation()
+                || distributor_no_longer_owns_bucket()))
         {
             // BUCKET_NOT_FOUND is semantically (usually) inaccurate here, but it's what we use for this purpose
             // in existing operations. Checking the replica set will implicitly check for ownership changes,
