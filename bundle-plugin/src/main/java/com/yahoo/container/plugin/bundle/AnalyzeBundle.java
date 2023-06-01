@@ -7,12 +7,14 @@ import com.yahoo.container.plugin.util.JarFiles;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 
 /**
  * Static utilities for analyzing jar files.
@@ -41,6 +43,22 @@ public class AnalyzeBundle {
         } catch (Exception e) {
             throw new RuntimeException(String.format("Invalid manifest in bundle '%s'", jarFile.getPath()), e);
         }
+    }
+
+    public static List<String> publicApiPackagesAggregated(Collection<File> jarFiles) {
+        return jarFiles.stream()
+                .map(AnalyzeBundle::publicApiPackages)
+                .flatMap(List::stream)
+                .distinct()
+                .toList();
+    }
+
+    static List<String> publicApiPackages(File jarFile) {
+        var manifest = getOsgiManifest(jarFile);
+        if (manifest == null) return Collections.emptyList();
+        return getMainAttributeValue(manifest, "X-JDisc-PublicApi-Package")
+                .map(s -> Arrays.asList(s.split(",")))
+                .orElseGet(ArrayList::new);
     }
 
     private static Manifest getOsgiManifest(File jarFile) {

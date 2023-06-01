@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.container.plugin.bundle.AnalyzeBundle.exportedPackagesAggregated;
+import static com.yahoo.container.plugin.bundle.AnalyzeBundle.publicApiPackagesAggregated;
+import static com.yahoo.container.plugin.classanalysis.Packages.disallowedVespaImports;
 import static com.yahoo.container.plugin.osgi.ExportPackages.exportsByPackageName;
 import static com.yahoo.container.plugin.osgi.ImportPackages.calculateImports;
 import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
@@ -79,7 +81,9 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                 throwIfInternalContainerArtifactsAreIncluded(artifactSet.getJarArtifactsToInclude());
 
             List<Artifact> providedJarArtifacts = artifactSet.getJarArtifactsProvided();
-            List<Export> exportedPackagesFromProvidedJars = exportedPackagesAggregated(providedJarArtifacts.stream().map(Artifact::getFile).toList());
+            List<File> providedJarFiles = providedJarArtifacts.stream().map(Artifact::getFile).toList();
+            List<Export> exportedPackagesFromProvidedJars = exportedPackagesAggregated(providedJarFiles);
+            List<String> publicApiPackagesFromProvidedJars = publicApiPackagesAggregated(providedJarFiles);
 
             // Packages from Export-Package/PublicApi headers in provided scoped jars
             Set<String> exportedPackagesFromProvidedDeps = ExportPackages.packageNames(exportedPackagesFromProvidedJars);
@@ -109,6 +113,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                                                                      includedPackages.definedPackages(),
                                                                      exportsByPackageName(exportedPackagesFromProvidedJars));
 
+            logNonPublicApiUsage(calculatedImports, publicApiPackagesFromProvidedJars);
 
             Map<String, String> manifestContent = generateManifestContent(artifactSet.getJarArtifactsToInclude(), calculatedImports, includedPackages);
             addAdditionalManifestProperties(manifestContent, includedPackages);
@@ -116,6 +121,15 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
         } catch (Exception e) {
             throw new MojoExecutionException("Failed generating osgi manifest", e);
+        }
+    }
+
+    private void logNonPublicApiUsage(Map<String, Import> calculatedImports, List<String> publicApiPackagesFromProvidedJars) {
+        if (bundleType != BundleType.USER) return;
+
+        List<String> nonPublicApiUsed = disallowedVespaImports(calculatedImports, publicApiPackagesFromProvidedJars);
+        if (! nonPublicApiUsed.isEmpty()) {
+            getLog().warn("This project uses packages that are not part of Vespa's public api: %s".formatted(nonPublicApiUsed));
         }
     }
 
