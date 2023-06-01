@@ -228,7 +228,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         sb.append("<tr><td><nobr>RPC port</nobr></td><td align=\"right\">").append(options.rpcPort() == 0 ? "Pick random available" : options.rpcPort()).append("</td></tr>");
         sb.append("<tr><td><nobr>HTTP port</nobr></td><td align=\"right\">").append(options.httpPort() == 0 ? "Pick random available" : options.httpPort()).append("</td></tr>");
         sb.append("<tr><td><nobr>Master cooldown period</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.masterZooKeeperCooldownPeriod())).append("</td></tr>");
-        String zooKeeperAddress = (options.zooKeeperServerAddress() == null ? "Not using Zookeeper" : splitZooKeeperAddress(options.zooKeeperServerAddress()));
+        String zooKeeperAddress = splitZooKeeperAddress(options.zooKeeperServerAddress());
         sb.append("<tr><td><nobr>Zookeeper server address</nobr></td><td align=\"right\">").append(zooKeeperAddress).append("</td></tr>");
         sb.append("<tr><td><nobr>Zookeeper session timeout</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.zooKeeperSessionTimeout())).append("</td></tr>");
 

@@ -488,7 +488,6 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
 
         masterElectionHandler.setFleetControllerCount(options.fleetControllerCount());
         masterElectionHandler.setMasterZooKeeperCooldownPeriod(options.masterZooKeeperCooldownPeriod());
-        masterElectionHandler.setUsingZooKeeper(options.zooKeeperServerAddress() != null && !options.zooKeeperServerAddress().isEmpty());
 
         if (rpcServer != null) {
             rpcServer.setMasterElectionHandler(masterElectionHandler);
@@ -560,7 +559,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
 
             if ( ! isRunning()) { return; }
 
-            if (masterElectionHandler.isFirstInLine()) {
+            if (masterElectionHandler.isFirstInLine() || options.fleetControllerCount() == 1) {
                 didWork |= resyncLocallyCachedState(); // Calls to metricUpdate.forWork inside method
             } else {
                 stepDownAsStateGatherer();

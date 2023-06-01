@@ -6,7 +6,6 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
@@ -53,7 +52,6 @@ public class MasterElectionTest extends FleetControllerTest {
         if (zooKeeperServer == null) {
             zooKeeperServer = new ZooKeeperTestServer();
         }
-        slobrok = new Slobrok();
         builder.setZooKeeperSessionTimeout(defaultZkSessionTimeoutInMillis())
                .setZooKeeperServerAddress(zooKeeperServer.getAddress())
                .setSlobrokConnectionSpecs(getSlobrokConnectionSpecs(slobrok))

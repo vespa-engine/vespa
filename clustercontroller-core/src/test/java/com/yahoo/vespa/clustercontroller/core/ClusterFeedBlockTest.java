@@ -32,15 +32,17 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
     private FleetController ctrl;
     private DummyCommunicator communicator;
 
-    private void initialize(FleetControllerOptions options) throws Exception {
+    private void initialize(FleetControllerOptions.Builder builder) throws Exception {
         List<Node> nodes = new ArrayList<>();
-        for (int i = 0; i < options.nodes().size(); ++i) {
+        for (int i = 0; i < builder.nodes().size(); ++i) {
             nodes.add(new Node(NodeType.STORAGE, i));
             nodes.add(new Node(NodeType.DISTRIBUTOR, i));
         }
 
-        var context = new TestFleetControllerContext(options);
         communicator = new DummyCommunicator(nodes, timer);
+        setUpZooKeeperServer(builder);
+        options = builder.build();
+        var context = new TestFleetControllerContext(options);
         boolean start = false;
         ctrl = createFleetController(timer, options, context, communicator, communicator, null, start);
 
@@ -57,16 +59,16 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         ctrl.tick();
     }
 
-    private static FleetControllerOptions createOptions(Map<String, Double> feedBlockLimits, double clusterFeedBlockNoiseLevel) {
+    private static FleetControllerOptions.Builder createOptions(Map<String, Double> feedBlockLimits, double clusterFeedBlockNoiseLevel) {
         return defaultOptions()
                 .setStorageDistribution(DistributionBuilder.forFlatCluster(NODE_COUNT))
                 .setNodes(new HashSet<>(DistributionBuilder.buildConfiguredNodes(NODE_COUNT)))
                 .setClusterFeedBlockEnabled(true)
                 .setClusterFeedBlockLimit(feedBlockLimits)
-                .setClusterFeedBlockNoiseLevel(clusterFeedBlockNoiseLevel).build();
+                .setClusterFeedBlockNoiseLevel(clusterFeedBlockNoiseLevel);
     }
 
-    private static FleetControllerOptions createOptions(Map<String, Double> feedBlockLimits) {
+    private static FleetControllerOptions.Builder createOptions(Map<String, Double> feedBlockLimits) {
         return createOptions(feedBlockLimits, 0.0);
     }
 
@@ -109,7 +111,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         assertTrue(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
 
         // Increase cheese allowance. Should now automatically unblock since reported usage is lower.
-        ctrl.updateOptions(createOptions(mapOf(usage("cheese", 0.9), usage("wine", 0.4))));
+        ctrl.updateOptions(createOptions(mapOf(usage("cheese", 0.9), usage("wine", 0.4))).build());
         ctrl.tick(); // Options propagation
         ctrl.tick(); // State recomputation
         assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
