@@ -272,7 +272,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public boolean isEnclave(CloudAccount cloudAccount) {
+    public boolean isExternal(CloudAccount cloudAccount) {
         return system.isPublic() && !cloudAccount.isUnspecified() && !cloudAccount.equals(systemCloudAccount);
     }
 

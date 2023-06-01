@@ -39,8 +39,12 @@ public interface ZoneRegistry {
     /** Returns whether cloudAccount in this system supports given zone */
     boolean hasZone(ZoneId zoneId, CloudAccount cloudAccount);
 
-    /** Returns whether the given cloud account is an enclave */
-    boolean isEnclave(CloudAccount cloudAccount);
+    /** Returns whether the given cloud account is not one of the system accounts */
+    boolean isExternal(CloudAccount cloudAccount);
+
+    default boolean isExclave(CloudAccount cloudAccount) {
+        return system().isPublic() && isExternal(cloudAccount);
+    }
 
     /** Returns a list containing the id of all zones in this registry */
     ZoneFilter zones();
