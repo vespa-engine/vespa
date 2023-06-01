@@ -79,7 +79,7 @@ void
 ExpressionTree::onPrepare(bool preserveAccurateTypes)
 {
     (void) preserveAccurateTypes;
-    if (_root.get() != NULL) {
+    if (_root) {
         gather(_attributeNodes).from(*_root);
         gather(_documentAccessorNodes).from(*_root);
         gather(_relevanceNodes).from(*_root);
@@ -141,18 +141,16 @@ ExpressionTree::swap(ExpressionTree & e)
     _arrayAtLookupNodes.swap(_arrayAtLookupNodes);
 }
 
-ExpressionTree::~ExpressionTree()
-{
-}
+ExpressionTree::~ExpressionTree() = default;
 
 bool
 ExpressionTree::execute(const document::Document & doc, HitRank rank) const
 {
-    for(DocumentAccessorNodeList::const_iterator it(_documentAccessorNodes.begin()), mt(_documentAccessorNodes.end()); it != mt; it++) {
-        (*it)->setDoc(doc);
+    for(auto * node : _documentAccessorNodes) {
+        node->setDoc(doc);
     }
-    for(RelevanceNodeList::const_iterator it(_relevanceNodes.begin()), mt(_relevanceNodes.end()); it != mt; it++) {
-        (*it)->setRelevance(rank);
+    for(auto * node : _relevanceNodes) {
+        node->setRelevance(rank);
     }
     return _root->execute();
 }

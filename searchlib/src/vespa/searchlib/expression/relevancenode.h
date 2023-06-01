@@ -3,8 +3,7 @@
 
 #include "floatresultnode.h"
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class RelevanceNode : public ExpressionNode
 {
@@ -22,5 +21,3 @@ private:
 };
 
 }
-}
-
