@@ -74,27 +74,17 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     protected static FleetControllerOptions.Builder defaultOptions() {
-        return defaultOptions(DEFAULT_NODE_COUNT);
+        return defaultOptions(IntStream.range(0, DEFAULT_NODE_COUNT)
+                                      .mapToObj(i -> new ConfiguredNode(i, false))
+                                      .collect(Collectors.toSet()));
     }
 
-    protected static FleetControllerOptions.Builder defaultOptions(int nodeCount) {
-        return defaultOptions("mycluster", IntStream.range(0, nodeCount)
-                                                    .mapToObj(i -> new ConfiguredNode(i, false))
-                                                    .collect(Collectors.toSet()));
-    }
-
-    protected static FleetControllerOptions.Builder defaultOptions(String clusterName, Collection<ConfiguredNode> nodes) {
-        var builder = new FleetControllerOptions.Builder(clusterName, nodes);
+    protected static FleetControllerOptions.Builder defaultOptions(Collection<ConfiguredNode> nodes) {
+        var builder = new FleetControllerOptions.Builder("mycluster", nodes);
         builder.enableTwoPhaseClusterStateActivation(true); // Enable by default, tests can explicitly disable.
         builder.setStorageDistribution(DistributionBuilder.forFlatCluster(builder.nodes().size()));
         builder.setZooKeeperServerAddress("localhost:2181");
         return builder;
-    }
-
-    protected void setUpSystem(FleetControllerOptions.Builder builder) throws Exception {
-        log.log(Level.FINE, "Setting up system");
-        setUpZooKeeperServer(builder);
-        builder.setSlobrokConnectionSpecs(getSlobrokConnectionSpecs(slobrok));
     }
 
     protected void setUpZooKeeperServer(FleetControllerOptions.Builder builder) throws IOException {
@@ -149,7 +139,8 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     protected FleetControllerOptions setUpFleetController(Timer timer, FleetControllerOptions.Builder builder) throws Exception {
-        setUpSystem(builder);
+        setUpZooKeeperServer(builder);
+        builder.setSlobrokConnectionSpecs(getSlobrokConnectionSpecs(slobrok));
         options = builder.build();
         startFleetController(timer);
         return options;

@@ -421,7 +421,7 @@ public class StateChangeTest extends FleetControllerTest {
             nodes.add(new ConfiguredNode(i, retired));
         }
 
-        FleetControllerOptions.Builder builder = defaultOptions("mycluster", nodes)
+        FleetControllerOptions.Builder builder = defaultOptions(nodes)
                 .setMaxSlobrokDisconnectGracePeriod(60 * 1000);
 
         initialize(builder);
@@ -482,7 +482,7 @@ public class StateChangeTest extends FleetControllerTest {
             nodes.add(new ConfiguredNode(i, retired));
         }
 
-        FleetControllerOptions.Builder builder = defaultOptions("mycluster", nodes)
+        FleetControllerOptions.Builder builder = defaultOptions(nodes)
                 .setMaxSlobrokDisconnectGracePeriod(60 * 1000);
         initialize(builder);
 
