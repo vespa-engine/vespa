@@ -154,7 +154,7 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private void warmup() {
         try {
-            handle(HttpRequest.createTestRequest("/search/?yql=select+*+from+sources+*+where+true+limit+1;",
+            handle(HttpRequest.createTestRequest("/search/?timeout=2s&yql=select+*+from+sources+*+where+true+limit+1;",
                                                  com.yahoo.jdisc.http.HttpRequest.Method.GET));
         }
         catch (RuntimeException e) {
