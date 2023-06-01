@@ -119,7 +119,8 @@ public class GroupPreparer {
                                                                             sharing,
                                                                             Optional.of(cluster.type()),
                                                                             Optional.of(cluster.id()),
-                                                                            requestedNodes.cloudAccount());
+                                                                            requestedNodes.cloudAccount(),
+                                                                            false);
                     hostProvisioner.get().provisionHosts(request, whenProvisioned);
                 } catch (NodeAllocationException e) {
                     // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do

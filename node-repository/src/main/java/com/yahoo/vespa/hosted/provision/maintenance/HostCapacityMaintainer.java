@@ -213,7 +213,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             List<Node> hosts = new ArrayList<>();
             HostProvisionRequest request = new HostProvisionRequest(provisionIndices, NodeType.host, nodeResources, ApplicationId.defaultId(), osVersion,
                                                                     HostSharing.shared, Optional.empty(), Optional.empty(),
-                                                                    nodeRepository().zone().cloud().account());
+                                                                    nodeRepository().zone().cloud().account(), false);
             hostProvisioner.provisionHosts(request,
                                            provisionedHosts -> {
                                                hosts.addAll(provisionedHosts.stream().map(host -> host.generateHost(Duration.ZERO)).toList());
