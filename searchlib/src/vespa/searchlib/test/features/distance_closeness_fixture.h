@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchcommon/attribute/distance_metric.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
@@ -61,12 +62,14 @@ struct DistanceClosenessFixture : BlueprintFactoryFixture, IndexEnvironmentFixtu
     bool     _failed;
     DistanceClosenessFixture(size_t fooCnt, size_t barCnt,
                              const Labels &labels, const vespalib::string &featureName,
-                             const vespalib::string& query_tensor = "");
+                             const vespalib::string& query_tensor = "",
+                             search::attribute::DistanceMetric distance_metric = search::attribute::DistanceMetric::Euclidean);
     DistanceClosenessFixture(const vespalib::string& tensor_type,
                              bool direct_tensor,
                              size_t fooCnt, size_t barCnt,
                              const Labels &labels, const vespalib::string &featureName,
-                             const vespalib::string& query_tensor = "");
+                             const vespalib::string& query_tensor = "",
+                             search::attribute::DistanceMetric distance_metric = search::attribute::DistanceMetric::Euclidean);
     ~DistanceClosenessFixture();
     void set_attribute_tensor(uint32_t docid, const vespalib::eval::TensorSpec& spec);
     void set_query_tensor(const vespalib::string& query_tensor_name,
@@ -86,8 +89,11 @@ struct DistanceClosenessFixture : BlueprintFactoryFixture, IndexEnvironmentFixtu
         setScore(fooHandles[i], docId, 1.0/(1.0+distance));
     }
     void setBarScore(uint32_t i, uint32_t docId, feature_t distance) {
+        set_bar_rawscore(i, docId, 1.0/(1.0+distance));
+    }
+    void set_bar_rawscore(uint32_t i, uint32_t docid, feature_t rawscore) {
         ASSERT_LT(i, barHandles.size());
-        setScore(barHandles[i], docId, 1.0/(1.0+distance));
+        setScore(barHandles[i], docid, rawscore);
     }
     bool failed() const noexcept { return _failed; }
 };

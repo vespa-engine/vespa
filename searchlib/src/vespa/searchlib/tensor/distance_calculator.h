@@ -46,7 +46,7 @@ public:
 
     double calc_raw_score(uint32_t docid) const {
         auto vectors = _attr_tensor.get_vectors(docid);
-        double result = 0.0;
+        double result = _dist_fun->min_rawscore();
         for (uint32_t i = 0; i < vectors.subspaces(); ++i) {
             double distance = _dist_fun->calc(vectors.cells(i));
             double score = _dist_fun->to_rawscore(distance);

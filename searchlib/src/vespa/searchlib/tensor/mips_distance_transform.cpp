@@ -67,6 +67,9 @@ public:
     double to_distance(double rawscore) const override {
         return -rawscore;
     }
+    double min_rawscore() const override {
+        return std::numeric_limits<double>::lowest();
+    }
     double calc_with_limit(const vespalib::eval::TypedCells& rhs, double) const override {
         return calc(rhs);
     }
