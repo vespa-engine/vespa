@@ -281,10 +281,8 @@ public class RpcServerTest extends FleetControllerTest {
                 configuredNodes.add(new ConfiguredNode(i, true));
             configuredNodes.add(new ConfiguredNode(5, false));
             configuredNodes.add(new ConfiguredNode(6, false));
-            FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
-                    .setSlobrokConnectionSpecs(this.options.slobrokConnectionSpecs())
-                    .setMaxInitProgressTime(30000)
-                    .setStableStateTimePeriod(60000);
+            var builder = FleetControllerOptions.Builder.copy(fleetController().getOptions())
+                    .setNodes(configuredNodes);
             fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:m .1.s:m .2.s:r .3.s:r .4.s:r");
         }
@@ -311,10 +309,8 @@ public class RpcServerTest extends FleetControllerTest {
             Set<ConfiguredNode> configuredNodes = new TreeSet<>();
             for (int i = 0; i < 7; i++)
                 configuredNodes.add(new ConfiguredNode(i, false));
-            FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
-                    .setSlobrokConnectionSpecs(this.options.slobrokConnectionSpecs())
-                    .setMaxInitProgressTime(30000)
-                    .setStableStateTimePeriod(60000);
+            var builder = FleetControllerOptions.Builder.copy(fleetController().getOptions())
+                    .setNodes(configuredNodes);
             fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:m .1.s:m");
         }
@@ -349,10 +345,8 @@ public class RpcServerTest extends FleetControllerTest {
             Set<ConfiguredNode> configuredNodes = new TreeSet<>();
             for (int i = 0; i < 5; i++)
                 configuredNodes.add(new ConfiguredNode(i, false));
-            FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
-                    .setSlobrokConnectionSpecs(options.slobrokConnectionSpecs())
-                    .setMaxInitProgressTime(30000)
-                    .setStableStateTimePeriod(60000);
+            var builder = FleetControllerOptions.Builder.copy(fleetController().getOptions())
+                    .setNodes(configuredNodes);
             fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:5 storage:5");
         }
@@ -364,10 +358,8 @@ public class RpcServerTest extends FleetControllerTest {
                 configuredNodes.add(new ConfiguredNode(i, true));
             configuredNodes.add(new ConfiguredNode(5, false));
             configuredNodes.add(new ConfiguredNode(6, false));
-            FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
-                    .setSlobrokConnectionSpecs(options.slobrokConnectionSpecs())
-                    .setMaxInitProgressTime(30000)
-                    .setStableStateTimePeriod(60000);
+            var builder = FleetControllerOptions.Builder.copy(fleetController().getOptions())
+                    .setNodes(configuredNodes);
             fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:r .1.s:r .2.s:r .3.s:r .4.s:r");
         }
@@ -378,10 +370,8 @@ public class RpcServerTest extends FleetControllerTest {
                 configuredNodes.add(new ConfiguredNode(i, true));
             configuredNodes.add(new ConfiguredNode(5, false));
             configuredNodes.add(new ConfiguredNode(6, false));
-            FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
-                    .setSlobrokConnectionSpecs(options.slobrokConnectionSpecs())
-                    .setMaxInitProgressTime(30000)
-                    .setStableStateTimePeriod(60000);
+            var builder = FleetControllerOptions.Builder.copy(fleetController().getOptions())
+                    .setNodes(configuredNodes);
             fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:r .1.s:r .2.s:r .3.s:r .4.s:r");
         }
