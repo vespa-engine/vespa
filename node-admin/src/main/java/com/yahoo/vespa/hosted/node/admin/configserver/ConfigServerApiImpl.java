@@ -72,10 +72,10 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                 provider);
     }
 
-    public static ConfigServerApiImpl createFor(Collection<URI> configServers,
+    public static ConfigServerApiImpl createFor(URI uri,
                                                 ServiceIdentityProvider provider,
                                                 HostnameVerifier hostnameVerifier) {
-        return new ConfigServerApiImpl(configServers, hostnameVerifier, provider);
+        return new ConfigServerApiImpl(List.of(uri), hostnameVerifier, provider);
     }
 
     private ConfigServerApiImpl(Collection<URI> configServers,
