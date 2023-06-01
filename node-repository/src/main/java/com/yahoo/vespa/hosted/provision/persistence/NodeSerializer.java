@@ -486,7 +486,6 @@ public class NodeSerializer {
             case "RebuildingOsUpgrader" -> Agent.RebuildingOsUpgrader;
             case "SpareCapacityMaintainer" -> Agent.SpareCapacityMaintainer;
             case "SwitchRebalancer" -> Agent.SwitchRebalancer;
-            case "HostEncrypter" -> Agent.HostEncrypter;
             case "ParkedExpirer" -> Agent.ParkedExpirer;
             default -> throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
         };
@@ -510,7 +509,6 @@ public class NodeSerializer {
             case RebuildingOsUpgrader -> "RebuildingOsUpgrader";
             case SpareCapacityMaintainer -> "SpareCapacityMaintainer";
             case SwitchRebalancer -> "SwitchRebalancer";
-            case HostEncrypter -> "HostEncrypter";
             case ParkedExpirer -> "ParkedExpirer";
         };
     }
