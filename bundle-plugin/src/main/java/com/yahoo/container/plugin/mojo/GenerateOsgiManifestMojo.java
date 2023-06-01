@@ -113,23 +113,16 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                                                                      includedPackages.definedPackages(),
                                                                      exportsByPackageName(exportedPackagesFromProvidedJars));
 
-            logNonPublicApiUsage(calculatedImports, publicApiPackagesFromProvidedJars);
+            List<String> nonPublicApiUsed = disallowedVespaImports(calculatedImports, publicApiPackagesFromProvidedJars);
+            logNonPublicApiUsage(nonPublicApiUsed);
 
             Map<String, String> manifestContent = generateManifestContent(artifactSet.getJarArtifactsToInclude(), calculatedImports, includedPackages);
             addAdditionalManifestProperties(manifestContent, includedPackages);
+            addManifestPropertiesForUserBundles(manifestContent, nonPublicApiUsed);
             createManifestFile(Paths.get(project.getBuild().getOutputDirectory()), manifestContent);
 
         } catch (Exception e) {
             throw new MojoExecutionException("Failed generating osgi manifest", e);
-        }
-    }
-
-    private void logNonPublicApiUsage(Map<String, Import> calculatedImports, List<String> publicApiPackagesFromProvidedJars) {
-        if (bundleType != BundleType.USER) return;
-
-        List<String> nonPublicApiUsed = disallowedVespaImports(calculatedImports, publicApiPackagesFromProvidedJars);
-        if (! nonPublicApiUsed.isEmpty()) {
-            getLog().warn("This project uses packages that are not part of Vespa's public api: %s".formatted(nonPublicApiUsed));
         }
     }
 
@@ -154,6 +147,16 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         addIfNotEmpty(manifestContent, "X-JDisc-Application", discApplicationClass);
         addIfNotEmpty(manifestContent, "X-JDisc-Preinstall-Bundle", trimWhitespace(Optional.ofNullable(discPreInstallBundle)));
         addIfNotEmpty(manifestContent, "WebInfUrl", webInfUrl);
+    }
+
+    private void addManifestPropertiesForUserBundles(Map<String, String> manifestContent, List<String> nonPublicApiUsed) {
+        if (bundleType != BundleType.USER) return;
+        addIfNotEmpty(manifestContent, "X-JDisc-Non-PublicApi-Import-Package", String.join(",", nonPublicApiUsed));
+    }
+
+    private void logNonPublicApiUsage(List<String> nonPublicApiUsed) {
+        if (bundleType != BundleType.USER || nonPublicApiUsed.isEmpty()) return;
+        getLog().warn("This project uses packages that are not part of Vespa's public api: %s".formatted(nonPublicApiUsed));
     }
 
     private static String publicApi(PackageTally tally) {
