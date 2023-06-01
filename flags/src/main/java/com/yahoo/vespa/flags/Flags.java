@@ -349,13 +349,6 @@ public class Flags {
             "Takes effect at next tick",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag CONSOLE_CSRF = defineFeatureFlag(
-            "console-csrf", false,
-            List.of("bjorncs", "tokle"), "2022-09-26", "2023-06-01",
-            "Enable CSRF token in console",
-            "Takes effect immediately",
-            CONSOLE_USER_EMAIL);
-
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
             List.of("vekterli"), "2022-11-03", "2023-10-01",
