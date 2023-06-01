@@ -50,5 +50,5 @@
   ],
   "ipAddresses": ["127.0.8.1"],
   "additionalIpAddresses": ["127.0.8.2"],
-  "cloudAccount":"111222333444"
+  "cloudAccount": "aws:111222333444"
 }

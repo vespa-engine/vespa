@@ -6,8 +6,24 @@
   "hostname": "host11.yahoo.com",
   "parentHostname": "parent.host.yahoo.com",
   "flavor": "[vcpu: 1.0, memory: 1.0 Gb, disk: 100.0 Gb, bandwidth: 0.3 Gbps, architecture: any]",
-  "resources":{"vcpu":1.0,"memoryGb":1.0,"diskGb":100.0,"bandwidthGbps":0.3,"diskSpeed":"fast","storageType":"any","architecture":"any"},
-  "realResources":{"vcpu":1.0,"memoryGb":1.0,"diskGb":100.0,"bandwidthGbps":0.3,"diskSpeed":"fast","storageType":"any","architecture":"any"},
+  "resources": {
+    "vcpu": 1.0,
+    "memoryGb": 1.0,
+    "diskGb": 100.0,
+    "bandwidthGbps": 0.3,
+    "diskSpeed": "fast",
+    "storageType": "any",
+    "architecture": "any"
+  },
+  "realResources": {
+    "vcpu": 1.0,
+    "memoryGb": 1.0,
+    "diskGb": 100.0,
+    "bandwidthGbps": 0.3,
+    "diskSpeed": "fast",
+    "storageType": "any",
+    "architecture": "any"
+  },
   "environment": "DOCKER_CONTAINER",
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
@@ -31,10 +47,7 @@
       "agent": "operator"
     }
   ],
-  "ipAddresses": [
-    "::11"
-  ],
-  "additionalIpAddresses": [
-  ],
-  "cloudAccount":"111222333444"
+  "ipAddresses": ["::11"],
+  "additionalIpAddresses": [],
+  "cloudAccount": "aws:111222333444"
 }

@@ -56,6 +56,7 @@ import com.yahoo.vespa.hosted.controller.routing.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.jupiter.api.Test;
+
 import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
@@ -1467,29 +1468,29 @@ public class ControllerTest {
         DeploymentContext context = tester.newDeploymentContext();
         ZoneId devZone = devUsEast1.zone();
         ZoneId prodZone = productionUsWest1.zone();
-        String cloudAccount = "012345678912";
+        String cloudAccount = "aws:012345678912";
         var applicationPackage = new ApplicationPackageBuilder()
                 .cloudAccount(cloudAccount)
                 .region(prodZone.region())
                 .build();
 
         // Submission fails because cloud account is not declared for this tenant
-        assertEquals("cloud accounts [012345678912] are not valid for tenant tenant",
+        assertEquals("cloud accounts [aws:012345678912] are not valid for tenant tenant",
                      assertThrows(IllegalArgumentException.class,
                                   () -> context.submit(applicationPackage))
                              .getMessage());
-        assertEquals("cloud accounts [012345678912] are not valid for tenant tenant",
+        assertEquals("cloud accounts [aws:012345678912] are not valid for tenant tenant",
                      assertThrows(IllegalArgumentException.class,
                                   () -> context.runJob(devUsEast1, applicationPackage))
                              .getMessage());
 
         // Deployment fails because zone is not configured in requested cloud account
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
-        assertEquals("Zone test.us-east-1 is not configured in requested cloud account '012345678912'",
+        assertEquals("Zone test.us-east-1 is not configured in requested cloud account 'aws:012345678912'",
                      assertThrows(IllegalArgumentException.class,
                                   () -> context.submit(applicationPackage))
                              .getMessage());
-        assertEquals("Zone dev.us-east-1 is not configured in requested cloud account '012345678912'",
+        assertEquals("Zone dev.us-east-1 is not configured in requested cloud account 'aws:012345678912'",
                      assertThrows(IllegalArgumentException.class,
                                   () -> context.runJob(devUsEast1, applicationPackage))
                              .getMessage());
@@ -1518,7 +1519,7 @@ public class ControllerTest {
         var context = tester.newDeploymentContext();
         var prodZone1 = productionUsEast3.zone();
         var prodZone2 = productionUsWest1.zone();
-        var cloudAccount = "012345678912";
+        var cloudAccount = "aws:012345678912";
         var application = new ApplicationPackageBuilder()
                 .cloudAccount(cloudAccount)
                 .region(prodZone1.region())

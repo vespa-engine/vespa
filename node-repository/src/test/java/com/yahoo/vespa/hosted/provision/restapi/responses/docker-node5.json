@@ -6,8 +6,24 @@
   "hostname": "dockerhost5.yahoo.com",
   "flavor": "large",
   "cpuCores": 4.0,
-  "resources":{"vcpu":4.0,"memoryGb":32.0,"diskGb":1600.0,"bandwidthGbps":20.0,"diskSpeed":"fast","storageType":"remote","architecture":"x86_64"},
-  "realResources":{"vcpu":4.0,"memoryGb":32.0,"diskGb":1600.0,"bandwidthGbps":20.0,"diskSpeed":"fast","storageType":"remote","architecture":"x86_64"},
+  "resources": {
+    "vcpu": 4.0,
+    "memoryGb": 32.0,
+    "diskGb": 1600.0,
+    "bandwidthGbps": 20.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
+  "realResources": {
+    "vcpu": 4.0,
+    "memoryGb": 32.0,
+    "diskGb": 1600.0,
+    "bandwidthGbps": 20.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
   "environment": "BARE_METAL",
   "owner": {
     "tenant": "zoneapp",
@@ -25,7 +41,15 @@
   "currentRestartGeneration": 0,
   "wantedDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.42.0",
   "wantedVespaVersion": "6.42.0",
-  "requestedResources": { "vcpu":4.0, "memoryGb":32.0, "diskGb":1600.0, "bandwidthGbps":20.0, "diskSpeed":"fast", "storageType":"remote","architecture":"x86_64" },
+  "requestedResources": {
+    "vcpu": 4.0,
+    "memoryGb": 32.0,
+    "diskGb": 1600.0,
+    "bandwidthGbps": 20.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
   "deferOsUpgrade": true,
@@ -89,14 +113,7 @@
       "agent": "application"
     }
   ],
-  "ipAddresses": [
-    "127.0.104.1",
-    "::104:1"
-  ],
-  "additionalIpAddresses": [
-    "::104:2",
-    "::104:3",
-    "::104:4"
-  ],
-  "cloudAccount": "111222333444"
+  "ipAddresses": ["127.0.104.1", "::104:1"],
+  "additionalIpAddresses": ["::104:2", "::104:3", "::104:4"],
+  "cloudAccount": "aws:111222333444"
 }
