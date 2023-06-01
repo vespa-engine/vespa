@@ -870,7 +870,9 @@ public class ClusterStateGeneratorTest {
                 .setMinNodeRatioPerGroup(0.6)
                 .setDistributionBits(7)
                 .setMaxTransitionTime(NodeType.DISTRIBUTOR, 1000)
-                .setMaxTransitionTime(NodeType.STORAGE, 2000).build();
+                .setMaxTransitionTime(NodeType.STORAGE, 2000)
+                .setZooKeeperServerAddress("localhost:2181")
+                .build();
 
         final ClusterStateGenerator.Params params = ClusterStateGenerator.Params.fromOptions(options);
         assertThat(params.maxPrematureCrashes, equalTo(options.maxPrematureCrashes()));
