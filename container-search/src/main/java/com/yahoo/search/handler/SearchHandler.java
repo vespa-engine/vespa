@@ -139,6 +139,8 @@ public class SearchHandler extends LoggingRequestHandler {
         this.numRequestsLeftToTrace = new AtomicLong(numQueriesToTraceOnDebugAfterStartup);
         metric.set(SEARCH_CONNECTIONS, 0.0d, null);
         this.zoneInfo = zoneInfo;
+
+        warmup();
     }
 
     Metric metric() { return metric; }
@@ -148,6 +150,16 @@ public class SearchHandler extends LoggingRequestHandler {
             return ((ThreadPoolExecutor) executor).getMaximumPoolSize();
         }
         return Integer.MAX_VALUE; // assume unbound
+    }
+
+    private void warmup() {
+        try {
+            handle(HttpRequest.createTestRequest("/search/?yql=select+*+from+sources+*+where+true+limit+1;",
+                                                 com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        }
+        catch (RuntimeException e) {
+            log.log(Level.WARNING, "Error warming up search handler", e);
+        }
     }
 
     @Override
