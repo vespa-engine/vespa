@@ -153,12 +153,12 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     }
 
     private void addManifestPropertiesForUserBundles(Map<String, String> manifestContent, List<String> nonPublicApiUsed) {
-        if (bundleType != BundleType.USER) return;
+        if (effectiveBundleType() != BundleType.USER) return;
         addIfNotEmpty(manifestContent, "X-JDisc-Non-PublicApi-Import-Package", String.join(",", nonPublicApiUsed));
     }
 
     private void logNonPublicApiUsage(List<String> nonPublicApiUsed) {
-        if (bundleType != BundleType.USER || nonPublicApiUsed.isEmpty()) return;
+        if (effectiveBundleType() != BundleType.USER || nonPublicApiUsed.isEmpty()) return;
         warnOrThrow("This project uses packages that are not part of Vespa's public api: %s".formatted(nonPublicApiUsed));
     }
 
