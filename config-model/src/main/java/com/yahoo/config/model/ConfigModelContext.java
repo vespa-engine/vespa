@@ -2,6 +2,7 @@
 package com.yahoo.config.model;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.Bcp.Group;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.api.ModelContext;
@@ -10,6 +11,7 @@ import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterInfo.Builder;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.model.VespaModel;
 
 import java.time.Duration;
@@ -76,19 +78,21 @@ public final class ConfigModelContext {
     /** Returns a cluster info builder pre-populated with info known in this context. */
     public ClusterInfo.Builder clusterInfo() {
         DeploymentSpec spec = getApplicationPackage().getDeploymentSpec();
-        var instance = spec.instance(properties().applicationId().instance());
         ClusterInfo.Builder builder = new ClusterInfo.Builder();
-        spec.hostTTL().ifPresent(builder::hostTTL);
-        if (instance.isEmpty()) return builder;
-        instance.get()
-                .hostTTL(deployState.zone().environment(), Optional.of(deployState.zone().region()))
-                .ifPresent(builder::hostTTL);
-        var maxDeadline = instance.get().bcp().groups().stream()
-                             .filter(group -> group.memberRegions().contains(properties().zone().region()))
-                             .map(group -> group.deadline())
-                             .min(Comparator.comparing(deadline -> deadline))
-                             .orElse(Duration.ofMinutes(0));
-        return builder.bcpDeadline(maxDeadline);
+        spec.hostTTL(properties().applicationId().instance(), deployState.zone().environment(), deployState.zone().region())
+            .ifPresent(ttl -> {
+                ZoneId zoneId = ZoneId.from(deployState.zone().environment(), deployState.zone().region());
+                if (spec.cloudAccount(deployState.zone().cloud().name(), properties().applicationId().instance(), zoneId).isUnspecified())
+                    throw new IllegalArgumentException("deployment spec specifies host TTL for " + zoneId +
+                                                       " but no cloud account is specified for this zone");
+            });
+        spec.instance(properties().applicationId().instance())
+            .flatMap(instance -> instance.bcp().groups().stream()
+                                         .filter(group -> group.memberRegions().contains(properties().zone().region()))
+                                         .map(Group::deadline)
+                                         .min(Comparator.naturalOrder()))
+            .ifPresent(builder::bcpDeadline);
+        return builder;
     }
 
     /**

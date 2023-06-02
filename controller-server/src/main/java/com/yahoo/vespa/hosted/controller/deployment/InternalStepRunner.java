@@ -912,6 +912,7 @@ public class InternalStepRunner implements StepRunner {
         TestPackage testPackage = new TestPackage(() -> controller.applications().applicationStore().streamTester(id.application().tenant(),
                                                                                                                   id.application().application(), revision),
                                                   controller.system().isPublic(),
+                                                  controller.zoneRegistry().get(id.type().zone()).getCloudName(),
                                                   id,
                                                   controller.controllerConfig().steprunner().testerapp(),
                                                   spec,

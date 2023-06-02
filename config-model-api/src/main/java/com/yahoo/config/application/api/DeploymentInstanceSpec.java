@@ -4,6 +4,7 @@ package com.yahoo.config.application.api;
 import ai.vespa.validation.Validation;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -59,7 +60,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final List<DeploymentSpec.ChangeBlocker> changeBlockers;
     private final Optional<String> globalServiceId;
     private final Optional<AthenzService> athenzService;
-    private final Optional<CloudAccount> cloudAccount;
+    private final Map<CloudName, CloudAccount> cloudAccounts;
     private final Optional<Duration> hostTTL;
     private final Notifications notifications;
     private final List<Endpoint> endpoints;
@@ -77,7 +78,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   List<DeploymentSpec.ChangeBlocker> changeBlockers,
                                   Optional<String> globalServiceId,
                                   Optional<AthenzService> athenzService,
-                                  Optional<CloudAccount> cloudAccount,
+                                  Map<CloudName, CloudAccount> cloudAccounts,
                                   Optional<Duration> hostTTL,
                                   Notifications notifications,
                                   List<Endpoint> endpoints,
@@ -101,7 +102,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.changeBlockers = Objects.requireNonNull(changeBlockers);
         this.globalServiceId = Objects.requireNonNull(globalServiceId);
         this.athenzService = Objects.requireNonNull(athenzService);
-        this.cloudAccount = Objects.requireNonNull(cloudAccount);
+        this.cloudAccounts = Map.copyOf(cloudAccounts);
         this.hostTTL = Objects.requireNonNull(hostTTL);
         this.notifications = Objects.requireNonNull(notifications);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
@@ -113,10 +114,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         validateEndpoints(globalServiceId, this.endpoints);
         validateChangeBlockers(changeBlockers, now);
         validateBcp(bcp);
-        hostTTL.ifPresent(ttl -> {
-            if (cloudAccount.isEmpty()) illegal("Host TTL can only be specified with custom cloud accounts");
-            if (ttl.isNegative()) illegal("Host TTL cannot be negative");
-        });
+        hostTTL.filter(Duration::isNegative).ifPresent(ttl -> illegal("Host TTL cannot be negative"));
     }
 
     public InstanceName name() { return name; }
@@ -266,22 +264,22 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                       .filter(zone -> zone.concerns(environment, Optional.of(region)))
                       .findFirst()
                       .flatMap(DeploymentSpec.DeclaredZone::athenzService)
-                      .or(() -> this.athenzService);
+                      .or(() -> athenzService);
     }
 
-    /** Returns the cloud account to use for given environment and region, if any */
-    public Optional<CloudAccount> cloudAccount(Environment environment, Optional<RegionName> region) {
+    /** Returns the cloud accounts to use for given environment and region, if any */
+    public Map<CloudName, CloudAccount> cloudAccounts(Environment environment, RegionName region) {
         return zones().stream()
-                      .filter(zone -> zone.concerns(environment, region))
+                      .filter(zone -> zone.concerns(environment, Optional.of(region)))
                       .findFirst()
-                      .flatMap(DeploymentSpec.DeclaredZone::cloudAccount)
-                      .or(() -> cloudAccount);
+                      .map(DeploymentSpec.DeclaredZone::cloudAccounts)
+                      .orElse(cloudAccounts);
     }
 
     /** Returns the host TTL to use for given environment and region, if any */
-    public Optional<Duration> hostTTL(Environment environment, Optional<RegionName> region) {
+    public Optional<Duration> hostTTL(Environment environment, RegionName region) {
         return zones().stream()
-                      .filter(zone -> zone.concerns(environment, region))
+                      .filter(zone -> zone.concerns(environment, Optional.of(region)))
                       .findFirst()
                       .flatMap(DeploymentSpec.DeclaredZone::hostTTL)
                       .or(() -> hostTTL);

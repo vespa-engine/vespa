@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -24,6 +25,9 @@ import java.util.Set;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
+import static com.yahoo.config.provision.CloudName.AWS;
+import static com.yahoo.config.provision.CloudName.DEFAULT;
+import static com.yahoo.config.provision.CloudName.GCP;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.production;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging_setup;
@@ -126,6 +130,7 @@ public class TestPackageTest {
                                                               "artifacts/key", new byte[0]));
         TestPackage bundleTests = new TestPackage(() -> new ByteArrayInputStream(bundleZip),
                                                   false,
+                                                  CloudName.DEFAULT,
                                                   new RunId(ApplicationId.defaultId(), JobType.dev("abc"), 123),
                                                   new Testerapp.Builder().tenantCdBundle("foo").runtimeProviderClass("bar").build(),
                                                   DeploymentSpec.fromXml("""
@@ -150,7 +155,7 @@ public class TestPackageTest {
     @Test
     void generates_correct_deployment_spec() {
         DeploymentSpec spec = DeploymentSpec.fromXml("""
-                                                     <deployment version='1.0' athenz-domain='domain' athenz-service='service' cloud-account='123123123123' empty-host-ttl='1h'>
+                                                     <deployment version='1.0' athenz-domain='domain' athenz-service='service' cloud-account='123123123123,gcp:foobar' empty-host-ttl='1h'>
                                                          <test empty-host-ttl='1d' />
                                                          <staging cloud-account='aws:321321321321'/>
                                                          <prod>
@@ -163,19 +168,31 @@ public class TestPackageTest {
                                                          </prod>
                                                      </deployment>
                                                      """);
-        verifyAttributes("aws:123123123123", 1440, ZoneId.from("test", "us-east-1"), spec);
-        verifyAttributes("aws:321321321321", 60, ZoneId.from("staging", "us-east-2"), spec);
-        verifyAttributes("aws:123123123123", 60, ZoneId.from("prod", "us-east-3"), spec);
-        verifyAttributes("aws:123123123123", 0, ZoneId.from("prod", "us-west-1"), spec);
-        verifyAttributes("aws:123123123123", 60, ZoneId.from("prod", "us-central-1"), spec);
+        verifyAttributes("", 0, DEFAULT, ZoneId.from("test", "us-east-1"), spec);
+        verifyAttributes("", 0, DEFAULT, ZoneId.from("staging", "us-east-2"), spec);
+        verifyAttributes("", 0, DEFAULT, ZoneId.from("prod", "us-east-3"), spec);
+        verifyAttributes("", 0, DEFAULT, ZoneId.from("prod", "us-west-1"), spec);
+        verifyAttributes("", 0, DEFAULT, ZoneId.from("prod", "us-central-1"), spec);
+
+        verifyAttributes("aws:123123123123", 1440, AWS, ZoneId.from("test", "us-east-1"), spec);
+        verifyAttributes("aws:321321321321", 60, AWS, ZoneId.from("staging", "us-east-2"), spec);
+        verifyAttributes("aws:123123123123", 60, AWS, ZoneId.from("prod", "us-east-3"), spec);
+        verifyAttributes("aws:123123123123", 0, AWS, ZoneId.from("prod", "us-west-1"), spec);
+        verifyAttributes("aws:123123123123", 60, AWS, ZoneId.from("prod", "us-central-1"), spec);
+
+        verifyAttributes("gcp:foobar", 1440, GCP, ZoneId.from("test", "us-east-1"), spec);
+        verifyAttributes("", 0, GCP, ZoneId.from("staging", "us-east-2"), spec);
+        verifyAttributes("gcp:foobar", 60, GCP, ZoneId.from("prod", "us-east-3"), spec);
+        verifyAttributes("gcp:foobar", 0, GCP, ZoneId.from("prod", "us-west-1"), spec);
+        verifyAttributes("gcp:foobar", 60, GCP, ZoneId.from("prod", "us-central-1"), spec);
     }
 
-    private void verifyAttributes(String expectedAccount, int expectedTTL, ZoneId zone, DeploymentSpec spec) {
+    private void verifyAttributes(String expectedAccount, int expectedTTL, CloudName cloud, ZoneId zone, DeploymentSpec spec) {
         assertEquals("<?xml version='1.0' encoding='UTF-8'?>\n" +
-                     "<deployment version='1.0' athenz-domain='domain' athenz-service='service' " +
-                     "cloud-account='" + expectedAccount + "' empty-host-ttl='" + expectedTTL + "m'>  " +
+                     "<deployment version='1.0' athenz-domain='domain' athenz-service='service'" +
+                     (expectedAccount.isEmpty() ? "" : " cloud-account='" + expectedAccount + "' empty-host-ttl='" + expectedTTL + "m'") + ">  " +
                      "<instance id='default-t' /></deployment>",
-                     new String(TestPackage.deploymentXml(TesterId.of(ApplicationId.defaultId()), InstanceName.defaultName(), zone, spec)));
+                     new String(TestPackage.deploymentXml(TesterId.of(ApplicationId.defaultId()), InstanceName.defaultName(), cloud, zone, spec)));
     }
 
     @Test
