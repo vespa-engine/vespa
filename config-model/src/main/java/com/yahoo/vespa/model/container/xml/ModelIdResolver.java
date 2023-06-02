@@ -1,12 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.FileReference;
+import com.yahoo.config.ModelReference;
+import com.yahoo.config.UrlReference;
+import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -70,9 +75,35 @@ public class ModelIdResolver {
             value.removeAttribute("path");
         }
         else if ( ! value.hasAttribute("url") && ! value.hasAttribute("path")) {
-            throw new IllegalArgumentException(value.getTagName() + " is configured with only a 'model-id'. " +
-                                               "Add a 'path' or 'url' to deploy this outside Vespa Cloud");
+            throw onlyModelIdInHostedException(value.getTagName());
         }
+    }
+
+
+    public static ModelReference resolveToModelReference(Element elem, boolean hosted) {
+        return resolveToModelReference(
+                elem.getTagName(), XmlHelper.getOptionalAttribute(elem, "model-id"),
+                XmlHelper.getOptionalAttribute(elem, "url"), XmlHelper.getOptionalAttribute(elem, "path"), hosted);
+    }
+
+    public static ModelReference resolveToModelReference(
+            String paramName, Optional<String> id, Optional<String> url, Optional<String> path, boolean hosted) {
+        if (id.isEmpty()) return ModelReference.unresolved(
+                Optional.empty(), url.map(UrlReference::valueOf), path.map(FileReference::new));
+        else if (hosted) {
+            return ModelReference.unresolved(
+                    id, Optional.of(UrlReference.valueOf(modelIdToUrl(paramName, id.get()))), Optional.empty());
+        } else if (url.isEmpty() && path.isEmpty()) {
+            throw onlyModelIdInHostedException(paramName);
+        } else {
+            return ModelReference.unresolved(
+                    Optional.empty(), url.map(UrlReference::valueOf), path.map(FileReference::new));
+        }
+    }
+
+    private static IllegalArgumentException onlyModelIdInHostedException(String paramName) {
+        return new IllegalArgumentException(paramName + " is configured with only a 'model-id'. " +
+                                             "Add a 'path' or 'url' to deploy this outside Vespa Cloud");
     }
 
     private static String modelIdToUrl(String valueName, String modelId) {

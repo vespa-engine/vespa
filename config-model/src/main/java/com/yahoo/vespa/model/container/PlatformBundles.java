@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.EVALUATION_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
+import static com.yahoo.vespa.model.container.ContainerModelEvaluation.LINGUISTICS_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.ONNXRUNTIME_BUNDLE_NAME;
 
 /**
@@ -57,7 +58,7 @@ public class PlatformBundles {
     public static final Set<Path> SEARCH_AND_DOCPROC_BUNDLES = toBundlePaths(
             SEARCH_AND_DOCPROC_BUNDLE,
             "docprocs",
-            "linguistics-components",
+            LINGUISTICS_BUNDLE_NAME,
             EVALUATION_BUNDLE_NAME,
             INTEGRATION_BUNDLE_NAME,
             ONNXRUNTIME_BUNDLE_NAME
