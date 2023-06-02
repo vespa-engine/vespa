@@ -50,6 +50,7 @@
     <modules>
         <module>artifact-version-for-exports</module>
         <module>artifact-version-for-exports-dep</module>
+        <module>non-public-api-usage</module>
         <module>main</module>
     </modules>
 
