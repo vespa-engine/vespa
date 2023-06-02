@@ -108,7 +108,7 @@ public class CoreCollector {
         }
 
         try {
-            String binPath = readBinPath(context, coredumpPath);
+            String binPath = context.paths().underVespaHome("").resolve(readBinPath(context, coredumpPath)).pathInContainer();
             metadata.setType(CoreDumpMetadata.Type.CORE_DUMP).setBinPath(binPath);
 
             if (Path.of(binPath).getFileName().toString().equals("java")) {
