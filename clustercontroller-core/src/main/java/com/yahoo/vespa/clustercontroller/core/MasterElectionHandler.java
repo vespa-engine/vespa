@@ -33,7 +33,8 @@ public class MasterElectionHandler implements MasterInterface {
         this.timer = timer;
         this.index = index;
         this.totalCount = totalCount;
-        this.nextInLineCount = Integer.MAX_VALUE;
+        // nextInLineCount should/will always be 0 when we have one controller
+        this.nextInLineCount = totalCount == 1 ? 0 : Integer.MAX_VALUE;
         if (cannotBecomeMaster())
             context.log(logger, Level.FINE, () -> "We can never become master and will always stay a follower.");
         // Tag current time as when we have not seen any other master. Make sure we're not taking over at once for master that is on the way down
