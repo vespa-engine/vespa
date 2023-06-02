@@ -103,7 +103,7 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
     /** Returns whether to expedite changes performed by agent */
     private boolean expediteChangeBy(Agent agent) {
         return switch (agent) {
-            case operator, HostEncrypter, HostResumeProvisioner, RebuildingOsUpgrader -> true;
+            case operator, HostResumeProvisioner, RebuildingOsUpgrader -> true;
             default -> false;
         };
     }

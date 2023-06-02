@@ -28,6 +28,5 @@ public enum Agent {
     RebuildingOsUpgrader,
     SpareCapacityMaintainer,
     SwitchRebalancer,
-    HostEncrypter,
 
 }
