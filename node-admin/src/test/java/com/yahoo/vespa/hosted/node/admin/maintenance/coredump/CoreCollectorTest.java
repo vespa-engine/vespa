@@ -57,11 +57,6 @@ public class CoreCollectorTest {
         assertEquals(TEST_BIN_PATH, coreCollector.readBinPath(context, TEST_CORE_PATH));
 
         mockExec(cmd,
-                "/tmp/core.1234: ELF 64-bit LSB core file x86-64, version 1 (SYSV), SVR4-style, from " +
-                        "'/usr/bin/program'");
-        assertEquals(TEST_BIN_PATH, coreCollector.readBinPath(context, TEST_CORE_PATH));
-
-        mockExec(cmd,
                 "/tmp/core.1234: ELF 64-bit LSB core file x86-64, version 1 (SYSV), SVR4-style, " +
                         "from 'program', real uid: 0, effective uid: 0, real gid: 0, effective gid: 0, " +
                         "execfn: '/usr/bin/program', platform: 'x86_64");
@@ -155,6 +150,27 @@ public class CoreCollectorTest {
                                              .setType(CoreDumpMetadata.Type.CORE_DUMP)
                                              .setBacktrace(GDB_BACKTRACE)
                                              .setBacktraceAllThreads(GDB_BACKTRACE);
+        assertEquals(expected, coreCollector.collect(context, TEST_CORE_PATH));
+    }
+
+    @Test
+    void collectsDataRelativePath() {
+        mockExec(new String[]{"file", TEST_CORE_PATH.pathInContainer()},
+                "/tmp/core.1234: ELF 64-bit LSB core file x86-64, version 1 (SYSV), SVR4-style, from 'sbin/distributord-bin'");
+        String absolutePath = "/opt/vespa/sbin/distributord-bin";
+        mockExec(new String[]{GDB_PATH_RHEL8, "-n", "-ex", "set print frame-arguments none",
+                        "-ex", "bt", "-batch", absolutePath, "/tmp/core.1234"},
+                String.join("\n", GDB_BACKTRACE));
+        mockExec(new String[]{GDB_PATH_RHEL8, "-n", "-ex", "set print frame-arguments none",
+                        "-ex", "thread apply all bt", "-batch", absolutePath, "/tmp/core.1234"},
+                String.join("\n", GDB_BACKTRACE));
+
+        var expected = new CoreDumpMetadata()
+                .setBinPath(absolutePath)
+                .setCreated(CORE_CREATED)
+                .setType(CoreDumpMetadata.Type.CORE_DUMP)
+                .setBacktrace(GDB_BACKTRACE)
+                .setBacktraceAllThreads(GDB_BACKTRACE);
         assertEquals(expected, coreCollector.collect(context, TEST_CORE_PATH));
     }
 
