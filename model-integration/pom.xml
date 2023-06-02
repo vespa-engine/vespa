@@ -134,6 +134,10 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
+        <configuration>
+          <!-- defines package 'com.yahoo.embedding' which is also defined in 'configdefinitions' -->
+          <suppressWarningOverlappingPackages>true</suppressWarningOverlappingPackages>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

@@ -116,6 +116,9 @@
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
+                <configuration>
+                    <suppressWarningMissingImportPackages>true</suppressWarningMissingImportPackages>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
