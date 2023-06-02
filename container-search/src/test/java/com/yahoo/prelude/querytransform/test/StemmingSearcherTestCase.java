@@ -142,7 +142,10 @@ public class StemmingSearcherTestCase {
     @Test
     void testEmojiStemming() {
         String emoji1 = "\uD83C\uDF49"; // 🍉
+        String emoji2 = "\uD83D\uDE00"; // 😀
         assertStemmed("WEAKAND(100) " + emoji1, "/search?query=" + emoji1);
+        assertStemmed("WEAKAND(100) (AND " + emoji1 + " " + emoji2 + ")", "/search?query=" + emoji1 + emoji2);
+        assertStemmed("WEAKAND(100) (AND " + emoji1 + " foo " + emoji2 + ")", "/search?query=" + emoji1 + "foo" + emoji2);
     }
 
     private Execution.Context newExecutionContext() {
