@@ -139,6 +139,12 @@ public class StemmingSearcherTestCase {
                       "/search?language=en&search=four&query=trees \"nouns girls\" flowers \"a verbs a\" girls&default-index=foobar");
     }
 
+    @Test
+    void testEmojiStemming() {
+        String emoji1 = "\uD83C\uDF49"; // 🍉
+        assertStemmed("WEAKAND(100) " + emoji1, "/search?query=" + emoji1);
+    }
+
     private Execution.Context newExecutionContext() {
         return Execution.Context.createContextStub(indexFacts, linguistics);
     }
