@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
+import static com.yahoo.config.provision.CloudName.AWS;
 import static com.yahoo.config.provision.Environment.dev;
 import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.Environment.test;
@@ -744,10 +746,10 @@ public class DeploymentSpecWithoutInstanceTest {
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         DeploymentInstanceSpec instance = spec.requireInstance("default");
-        assertEquals(Optional.of(CloudAccount.from("012345678912")), spec.cloudAccount());
-        assertEquals(Optional.of(CloudAccount.from("219876543210")), instance.cloudAccount(prod, Optional.of(RegionName.from("us-east-1"))));
-        assertEquals(Optional.of(CloudAccount.from("012345678912")), instance.cloudAccount(prod, Optional.of(RegionName.from("us-west-1"))));
-        assertEquals(Optional.of(CloudAccount.from("012345678912")), instance.cloudAccount(Environment.staging, Optional.empty()));
+        assertEquals(Map.of(AWS, CloudAccount.from("012345678912")), spec.cloudAccounts());
+        assertEquals(Map.of(AWS, CloudAccount.from("219876543210")), instance.cloudAccounts(prod, RegionName.from("us-east-1")));
+        assertEquals(Map.of(AWS, CloudAccount.from("012345678912")), instance.cloudAccounts(prod, RegionName.from("us-west-1")));
+        assertEquals(Map.of(AWS, CloudAccount.from("012345678912")), instance.cloudAccounts(Environment.staging, RegionName.defaultName()));
 
         r = new StringReader(
                 "<deployment version='1.0'>" +
@@ -758,9 +760,9 @@ public class DeploymentSpecWithoutInstanceTest {
                 "</deployment>"
         );
         spec = DeploymentSpec.fromXml(r);
-        assertEquals(Optional.empty(), spec.cloudAccount());
-        assertEquals(Optional.of(CloudAccount.from("219876543210")), spec.requireInstance("default").cloudAccount(prod, Optional.of(RegionName.from("us-east-1"))));
-        assertEquals(Optional.empty(), spec.requireInstance("default").cloudAccount(prod, Optional.of(RegionName.from("us-west-1"))));
+        assertEquals(Map.of(), spec.cloudAccounts());
+        assertEquals(Map.of(AWS, CloudAccount.from("219876543210")), spec.requireInstance("default").cloudAccounts(prod, RegionName.from("us-east-1")));
+        assertEquals(Map.of(), spec.requireInstance("default").cloudAccounts(prod, RegionName.from("us-west-1")));
     }
 
     @Test

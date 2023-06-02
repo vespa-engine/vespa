@@ -2436,8 +2436,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(APPLICATION_ZIP));
         controller.applications().verifyApplicationIdentityConfiguration(id.tenant(),
-                                                                         Optional.of(id.instance()),
-                                                                         Optional.of(type.zone()),
+                                                                         Optional.of(new DeploymentId(id, type.zone())),
                                                                          applicationPackage,
                                                                          Optional.of(requireUserPrincipal(request)));
 
@@ -3078,7 +3077,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Submission submission = new Submission(applicationPackage, testPackage, sourceUrl, sourceRevision, authorEmail, description, controller.clock().instant(), risk);
 
         controller.applications().verifyApplicationIdentityConfiguration(tenantName,
-                                                                         Optional.empty(),
                                                                          Optional.empty(),
                                                                          applicationPackage,
                                                                          Optional.of(requireUserPrincipal(request)));

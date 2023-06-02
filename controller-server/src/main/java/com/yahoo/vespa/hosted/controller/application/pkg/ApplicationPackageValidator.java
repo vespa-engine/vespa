@@ -67,11 +67,10 @@ public class ApplicationPackageValidator {
 
     private void validateCloudAccounts(Application application, ApplicationPackage applicationPackage) {
         Set<CloudAccount> tenantAccounts = new TreeSet<>(controller.applications().accountsOf(application.id().tenant()));
-        Set<CloudAccount> declaredAccounts = new TreeSet<>();
-        applicationPackage.deploymentSpec().cloudAccount().ifPresent(declaredAccounts::add);
+        Set<CloudAccount> declaredAccounts = new TreeSet<>(applicationPackage.deploymentSpec().cloudAccounts().values());
         for (DeploymentInstanceSpec instance : applicationPackage.deploymentSpec().instances())
             for (ZoneId zone : controller.zoneRegistry().zones().controllerUpgraded().ids())
-                instance.cloudAccount(zone.environment(), Optional.of(zone.region())).ifPresent(declaredAccounts::add);
+                declaredAccounts.addAll(instance.cloudAccounts(zone.environment(), zone.region()).values());
 
         declaredAccounts.removeIf(tenantAccounts::contains);
         declaredAccounts.removeIf(CloudAccount::isUnspecified);

@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.Endpoint.Level;
 import com.yahoo.config.application.api.Endpoint.Target;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -25,6 +26,7 @@ import java.time.ZoneId;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,6 +34,8 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
+import static com.yahoo.config.provision.CloudName.AWS;
+import static com.yahoo.config.provision.CloudName.GCP;
 import static com.yahoo.config.provision.Environment.dev;
 import static com.yahoo.config.provision.Environment.perf;
 import static com.yahoo.config.provision.Environment.prod;
@@ -1757,18 +1761,19 @@ public class DeploymentSpecTest {
     public void cloudAccount() {
         String r =
                 """
-                <deployment version='1.0' cloud-account='100000000000'>
+                <deployment version='1.0' cloud-account='100000000000,gcp:foobar'>
                     <instance id='alpha'>
                       <prod cloud-account='800000000000'>
                           <region>us-east-1</region>
                       </prod>
                     </instance>
                     <instance id='beta' cloud-account='200000000000'>
-                      <staging cloud-account='600000000000'/>
+                      <staging cloud-account='gcp:barbaz'/>
                       <perf cloud-account='700000000000'/>
                       <prod>
                           <region>us-west-1</region>
                           <region cloud-account='default'>us-west-2</region>
+                          <region cloud-account=''>us-west-3</region>
                       </prod>
                     </instance>
                     <instance id='main'>
@@ -1782,18 +1787,24 @@ public class DeploymentSpecTest {
                 </deployment>
                 """;
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(Optional.of(CloudAccount.from("100000000000")), spec.cloudAccount());
-        assertCloudAccount("800000000000", spec.requireInstance("alpha"), prod, "us-east-1");
-        assertCloudAccount("200000000000", spec.requireInstance("beta"), prod, "us-west-1");
-        assertCloudAccount("600000000000", spec.requireInstance("beta"), staging, "");
-        assertCloudAccount("700000000000", spec.requireInstance("beta"), perf, "");
-        assertCloudAccount("200000000000", spec.requireInstance("beta"), dev, "");
-        assertCloudAccount("300000000000", spec.requireInstance("main"), prod, "us-east-1");
-        assertCloudAccount("100000000000", spec.requireInstance("main"), prod, "eu-west-1");
-        assertCloudAccount("400000000000", spec.requireInstance("main"), dev, "");
-        assertCloudAccount("500000000000", spec.requireInstance("main"), test, "");
-        assertCloudAccount("100000000000", spec.requireInstance("main"), staging, "");
-        assertCloudAccount("default", spec.requireInstance("beta"), prod, "us-west-2");
+        assertEquals(Map.of(AWS, CloudAccount.from("100000000000"),
+                            GCP, CloudAccount.from("gcp:foobar")), spec.cloudAccounts());
+        assertCloudAccount("800000000000", spec, AWS, "alpha", prod,    "us-east-1");
+        assertCloudAccount("",             spec, GCP, "alpha", prod,    "us-east-1");
+        assertCloudAccount("200000000000", spec, AWS, "beta",  prod,    "us-west-1");
+        assertCloudAccount("",             spec, AWS, "beta",  staging, "default");
+        assertCloudAccount("gcp:barbaz",   spec, GCP, "beta",  staging, "default");
+        assertCloudAccount("700000000000", spec, AWS, "beta",  perf,    "default");
+        assertCloudAccount("200000000000", spec, AWS, "beta",  dev,     "default");
+        assertCloudAccount("300000000000", spec, AWS, "main",  prod,    "us-east-1");
+        assertCloudAccount("100000000000", spec, AWS, "main",  prod,    "eu-west-1");
+        assertCloudAccount("400000000000", spec, AWS, "main",  dev,     "default");
+        assertCloudAccount("500000000000", spec, AWS, "main",  test,    "default");
+        assertCloudAccount("100000000000", spec, AWS, "main",  staging, "default");
+        assertCloudAccount("default",      spec, AWS, "beta",  prod,    "us-west-2");
+        assertCloudAccount("",             spec, GCP, "beta",  prod,    "us-west-2");
+        assertCloudAccount("",             spec, AWS, "beta",  prod,    "us-west-3");
+        assertCloudAccount("",             spec, GCP, "beta",  prod,    "us-west-3");
     }
 
     @Test
@@ -1827,7 +1838,7 @@ public class DeploymentSpecTest {
                 </deployment>
                 """;
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(Optional.of(CloudAccount.from("100000000000")), spec.cloudAccount());
+        assertEquals(Map.of(AWS, CloudAccount.from("100000000000")), spec.cloudAccounts());
 
         assertHostTTL(Duration.ofHours(1), spec, "alpha", test, null);
         assertHostTTL(Duration.ofHours(1), spec, "alpha", staging, null);
@@ -1864,69 +1875,15 @@ public class DeploymentSpecTest {
         assertHostTTL(Duration.ofHours(1), spec, "nope", perf, null);
         assertHostTTL(Duration.ofHours(1), spec, "nope", prod, "us-east");
         assertHostTTL(Duration.ofHours(1), spec, "nope", prod, "us-west");
-
-        assertEquals("Host TTL can only be specified with custom cloud accounts",
-                     assertThrows(IllegalArgumentException.class,
-                                  () -> DeploymentSpec.fromXml("""
-                                                  <deployment version='1.0' empty-host-ttl='0m'>
-                                                    <instance id='main'>
-                                                      <prod>
-                                                        <region>us-east-1</region>
-                                                      </prod>
-                                                    </instance>
-                                                  </deployment>
-                                                  """))
-                             .getMessage());
-
-        assertEquals("Host TTL can only be specified with custom cloud accounts",
-                     assertThrows(IllegalArgumentException.class,
-                                  () -> DeploymentSpec.fromXml("""
-                                                  <deployment version='1.0'>
-                                                    <instance id='main' empty-host-ttl='0m'>
-                                                      <prod>
-                                                        <region>us-east-1</region>
-                                                      </prod>
-                                                    </instance>
-                                                  </deployment>
-                                                  """))
-                             .getMessage());
-
-        assertEquals("Host TTL can only be specified with custom cloud accounts",
-                     assertThrows(IllegalArgumentException.class,
-                                  () -> DeploymentSpec.fromXml("""
-                                                  <deployment version='1.0'>
-                                                    <instance id='main'>
-                                                      <prod empty-host-ttl='0m'>
-                                                        <region>us-east-1</region>
-                                                      </prod>
-                                                    </instance>
-                                                  </deployment>
-                                                  """))
-                             .getMessage());
-
-        assertEquals("Host TTL can only be specified with custom cloud accounts",
-        assertThrows(IllegalArgumentException.class,
-                     () -> DeploymentSpec.fromXml("""
-                                                  <deployment version='1.0'>
-                                                    <instance id='main'>
-                                                      <prod>
-                                                        <region empty-host-ttl='0m'>us-east-1</region>
-                                                      </prod>
-                                                    </instance>
-                                                  </deployment>
-                                                  """))
-                .getMessage());
-
     }
 
-    private void assertCloudAccount(String expected, DeploymentInstanceSpec instance, Environment environment, String region) {
-        assertEquals(Optional.of(expected).map(CloudAccount::from), instance.cloudAccount(environment, Optional.of(region).filter(s -> !s.isEmpty()).map(RegionName::from)));
+    private void assertCloudAccount(String expected, DeploymentSpec spec, CloudName cloud, String instance, Environment environment, String region) {
+        assertEquals(CloudAccount.from(expected),
+                     spec.cloudAccount(cloud, InstanceName.from(instance), com.yahoo.config.provision.zone.ZoneId.from(environment, RegionName.from(region))));
     }
 
     private void assertHostTTL(Duration expected, DeploymentSpec spec, String instance, Environment environment, String region) {
-        assertEquals(Optional.of(expected), spec.instance(InstanceName.from(instance))
-                                                .flatMap(iSpec -> iSpec.hostTTL(environment, Optional.ofNullable(region).map(RegionName::from)))
-                                                .or(spec::hostTTL));
+        assertEquals(Optional.of(expected), spec.hostTTL(InstanceName.from(instance), environment, region == null ? RegionName.defaultName() : RegionName.from(region)));
     }
 
     private static void assertInvalid(String deploymentSpec, String errorMessagePart) {
