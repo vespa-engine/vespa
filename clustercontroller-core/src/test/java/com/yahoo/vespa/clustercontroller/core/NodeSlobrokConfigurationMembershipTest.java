@@ -30,7 +30,7 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
     }
 
     private FleetControllerOptions.Builder optionsForConfiguredNodes(Set<ConfiguredNode> configuredNodes) {
-        return defaultOptions("mycluster", configuredNodes)
+        return defaultOptions(configuredNodes)
                 .setMaxSlobrokDisconnectGracePeriod(60 * 1000)
                 .setNodeStateRequestTimeoutMS(10000 * 60 * 1000)
                 .setMaxTransitionTime(NodeType.DISTRIBUTOR, 0)

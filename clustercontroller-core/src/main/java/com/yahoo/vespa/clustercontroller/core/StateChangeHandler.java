@@ -234,6 +234,7 @@ public class StateChangeHandler {
         setMaxInitProgressTime(options.maxInitProgressTime());
         setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod());
         setMaxTransitionTime(options.maxTransitionTime());
+        setStateChangedFlag(); // Always trigger state recomputation after reconfig
     }
 
     // TODO too many hidden behavior dependencies between this and the actually

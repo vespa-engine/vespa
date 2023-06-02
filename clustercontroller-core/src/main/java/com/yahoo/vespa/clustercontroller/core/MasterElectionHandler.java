@@ -26,7 +26,6 @@ public class MasterElectionHandler implements MasterInterface {
     private Map<Integer, Integer> nextMasterData;
     private long masterGoneFromZooKeeperTime; // Set to time master fleet controller disappears from zookeeper
     private long masterZooKeeperCooldownPeriod; // The period in ms that we won't take over unless master come back.
-    private boolean usingZooKeeper = false; // Unit tests may not use ZooKeeper at all.
 
     public MasterElectionHandler(FleetControllerContext context, int index, int totalCount, Object monitor, Timer timer) {
         this.context = context;
@@ -34,7 +33,8 @@ public class MasterElectionHandler implements MasterInterface {
         this.timer = timer;
         this.index = index;
         this.totalCount = totalCount;
-        this.nextInLineCount = Integer.MAX_VALUE;
+        // nextInLineCount should/will always be 0 when we have one controller
+        this.nextInLineCount = totalCount == 1 ? 0 : Integer.MAX_VALUE;
         if (cannotBecomeMaster())
             context.log(logger, Level.FINE, () -> "We can never become master and will always stay a follower.");
         // Tag current time as when we have not seen any other master. Make sure we're not taking over at once for master that is on the way down
@@ -43,23 +43,10 @@ public class MasterElectionHandler implements MasterInterface {
 
     public void setFleetControllerCount(int count) {
         totalCount = count;
-        if (count == 1 && !usingZooKeeper) {
-            masterCandidate = 0;
-            followers = 1;
-            nextInLineCount = 0;
-        }
     }
 
     public void setMasterZooKeeperCooldownPeriod(int period) {
         masterZooKeeperCooldownPeriod = period;
-    }
-
-    public void setUsingZooKeeper(boolean usingZK) {
-        if (!usingZooKeeper && usingZK) {
-            // Reset any shortcuts taken by non-ZK election logic.
-            resetElectionProgress();
-        }
-        usingZooKeeper = usingZK;
     }
 
     @Override
@@ -121,15 +108,13 @@ public class MasterElectionHandler implements MasterInterface {
     public boolean isFirstInLine() { return (nextInLineCount < 1); }
 
     public boolean watchMasterElection(DatabaseHandler database, DatabaseHandler.DatabaseContext dbContext) {
-        if (totalCount == 1 && !usingZooKeeper) {
-            return false; // Allow single configured node to become master implicitly if no ZK configured
-        }
         if (nextMasterData == null) {
             if (masterCandidate == null) {
                 context.log(logger, Level.FINEST, () -> "No current master candidate. Waiting for data to do master election.");
             }
             return false; // Nothing have happened since last time.
         }
+
         // Move next data to temporary, such that we don't need to keep lock, and such that we don't retry
         // if we happen to fail processing the data.
         Map<Integer, Integer> state;
@@ -140,6 +125,7 @@ public class MasterElectionHandler implements MasterInterface {
         }
         context.log(logger, Level.INFO, "Got master election state " + toString(state) + ".");
         if (state.isEmpty()) throw new IllegalStateException("Database has no master data. We should at least have data for ourselves.");
+
         Map.Entry<Integer, Integer> first = state.entrySet().iterator().next();
         Integer currentMaster = getMaster();
         if (currentMaster != null && first.getKey().intValue() != currentMaster.intValue()) {
@@ -238,10 +224,8 @@ public class MasterElectionHandler implements MasterInterface {
     }
 
     public void lostDatabaseConnection() {
-        if (totalCount > 1 || usingZooKeeper) {
-            context.log(logger, Level.INFO, "Clearing master data as we lost connection on node " + index);
-            resetElectionProgress();
-        }
+        context.log(logger, Level.INFO, "Clearing master data as we lost connection on node " + index);
+        resetElectionProgress();
     }
 
     private void resetElectionProgress() {

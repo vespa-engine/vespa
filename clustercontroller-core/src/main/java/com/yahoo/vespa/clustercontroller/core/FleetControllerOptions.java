@@ -178,7 +178,7 @@ public class FleetControllerOptions {
         this.distributionBits = distributionBits;
         this.zooKeeperSessionTimeout = zooKeeperSessionTimeout;
         this.masterZooKeeperCooldownPeriod = masterZooKeeperCooldownPeriod;
-        this.zooKeeperServerAddress = zooKeeperServerAddress;
+        this.zooKeeperServerAddress = Objects.requireNonNull(zooKeeperServerAddress, "zooKeeperServerAddress cannot be null");
         this.maxTransitionTime = maxTransitionTime;
         this.maxInitProgressTime = maxInitProgressTime;
         this.maxPrematureCrashes = maxPrematureCrashes;

@@ -485,11 +485,9 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
 
         // TODO: remove as many temporal parameter dependencies as possible here. Currently duplication of state.
         stateChangeHandler.reconfigureFromOptions(options);
-        stateChangeHandler.setStateChangedFlag(); // Always trigger state recomputation after reconfig
 
         masterElectionHandler.setFleetControllerCount(options.fleetControllerCount());
         masterElectionHandler.setMasterZooKeeperCooldownPeriod(options.masterZooKeeperCooldownPeriod());
-        masterElectionHandler.setUsingZooKeeper(options.zooKeeperServerAddress() != null && !options.zooKeeperServerAddress().isEmpty());
 
         if (rpcServer != null) {
             rpcServer.setMasterElectionHandler(masterElectionHandler);

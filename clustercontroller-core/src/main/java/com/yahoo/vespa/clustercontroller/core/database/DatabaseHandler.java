@@ -15,6 +15,7 @@ import org.apache.zookeeper.KeeperException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -101,8 +102,7 @@ public class DatabaseHandler {
         this.timer = timer;
         pendingStore.masterVote = fleetControllerContext.id().index(); // To begin with we'll vote for ourselves.
         this.monitor = monitor;
-        // TODO: Require non-null, not possible now since at least ClusterFeedBlockTest uses null address
-        this.zooKeeperAddress = zooKeeperAddress;
+        this.zooKeeperAddress = Objects.requireNonNull(zooKeeperAddress, "zooKeeperAddress cannot be null");
     }
 
     private boolean isDatabaseClosedSafe() {
@@ -161,11 +161,9 @@ public class DatabaseHandler {
     }
 
     public void setZooKeeperAddress(String address, DatabaseContext databaseContext) {
-        if (address == null && zooKeeperAddress == null) return;
-        if (address != null && address.equals(zooKeeperAddress)) return;
-        if (zooKeeperAddress != null) {
-            fleetControllerContext.log(logger, Level.INFO, "" + (address == null ? "Stopped using ZooKeeper." : "Got new ZooKeeper address to use: " + address));
-        }
+        Objects.requireNonNull(address, "address cannot be null");
+        if (address.equals(zooKeeperAddress)) return;
+        fleetControllerContext.log(logger, Level.INFO, "Got new ZooKeeper address to use: " + address);
         zooKeeperAddress = address;
         reset(databaseContext);
     }
@@ -176,8 +174,6 @@ public class DatabaseHandler {
         zooKeeperSessionTimeout = timeout;
         reset(databaseContext);
     }
-
-    private boolean usingZooKeeper() { return (zooKeeperAddress != null); }
 
     private void connect(long currentTime) {
         try {
@@ -245,7 +241,7 @@ public class DatabaseHandler {
                 didWork = true;
             }
         }
-        if (isDatabaseClosedSafe() && zooKeeperIsConfigured()) {
+        if (isDatabaseClosedSafe()) {
             long currentTime = timer.getCurrentTimeInMillis();
             if (currentTime - lastZooKeeperConnectionAttempt < minimumWaitBetweenFailedConnectionAttempts) {
                 return false; // Not time to attempt connection yet.
@@ -268,11 +264,6 @@ public class DatabaseHandler {
             relinquishDatabaseConnectivity(databaseContext);
         }
         return didWork;
-    }
-
-    private boolean zooKeeperIsConfigured() {
-        // This should only ever be null during unit testing.
-        return zooKeeperAddress != null;
     }
 
     private void relinquishDatabaseConnectivity(DatabaseContext databaseContext) {
@@ -383,9 +374,7 @@ public class DatabaseHandler {
         }
         Integer version = currentlyStored.lastSystemStateVersion;
         if (version == null) {
-            if (usingZooKeeper()) {
-                fleetControllerContext.log(logger, Level.WARNING, "Failed to retrieve latest system state version from ZooKeeper. Returning version 0.");
-            }
+            fleetControllerContext.log(logger, Level.WARNING, "Failed to retrieve latest system state version from ZooKeeper. Returning version 0.");
             return 0; // FIXME "fail-oblivious" is not a good error handling mode for such a critical component!
         }
         return version;
@@ -395,22 +384,13 @@ public class DatabaseHandler {
         fleetControllerContext.log(logger, Level.FINE, () -> "Scheduling bundle " + clusterStateBundle + " to be saved to ZooKeeper");
         pendingStore.clusterStateBundle = clusterStateBundle;
         doNextZooKeeperTask(databaseContext);
-        // FIXME this is a nasty hack to get around the fact that a massive amount of unit tests
-        // set up the system with a null ZooKeeper server address. If we don't fake that we have
-        // written the state version, the tests will never progress past waiting for state broadcasts.
-        if (zooKeeperAddress == null) {
-            logger.warning(() -> "Simulating ZK write of version " + clusterStateBundle.getVersion() + 
-                                 ". This should not happen in production!");
-            lastKnownStateBundleVersionWrittenBySelf = clusterStateBundle.getVersion();
-        }
     }
 
     // TODO should we expand this to cover _any_ pending ZK write?
     public boolean hasPendingClusterStateMetaDataStore() {
         synchronized (databaseMonitor) {
-            return ((zooKeeperAddress != null) &&
-                    ((pendingStore.clusterStateBundle != null) ||
-                     (pendingStore.lastSystemStateVersion != null)));
+            return ((pendingStore.clusterStateBundle != null) ||
+                    (pendingStore.lastSystemStateVersion != null));
         }
     }
 
@@ -458,11 +438,9 @@ public class DatabaseHandler {
         }
         Map<Node, NodeState> wantedStates = currentlyStored.wantedStates;
         if (wantedStates == null) {
-            if (usingZooKeeper()) {
-                // We get here if the ZooKeeper client has lost the connection to ZooKeeper.
-                // TODO: Should instead fail the tick until connected!?
-                fleetControllerContext.log(logger, Level.FINE, () -> "Failed to retrieve wanted states from ZooKeeper. Assuming UP for all nodes.");
-            }
+            // We get here if the ZooKeeper client has lost connection to ZooKeeper.
+            // TODO: Should instead fail the tick until connected!?
+            fleetControllerContext.log(logger, Level.FINE, () -> "Failed to retrieve wanted states from ZooKeeper. Assuming UP for all nodes.");
             wantedStates = new TreeMap<>();
         }
         boolean altered = false;
@@ -510,9 +488,7 @@ public class DatabaseHandler {
         }
         Map<Node, Long> startTimestamps = currentlyStored.startTimestamps;
         if (startTimestamps == null) {
-            if (usingZooKeeper()) {
-                fleetControllerContext.log(logger, Level.WARNING, "Failed to retrieve start timestamps from ZooKeeper. Cluster state will be bloated with timestamps until we get them set.");
-            }
+            fleetControllerContext.log(logger, Level.WARNING, "Failed to retrieve start timestamps from ZooKeeper. Cluster state will be bloated with timestamps until we get them set.");
             startTimestamps = new TreeMap<>();
         }
         for (Map.Entry<Node, Long> e : startTimestamps.entrySet()) {

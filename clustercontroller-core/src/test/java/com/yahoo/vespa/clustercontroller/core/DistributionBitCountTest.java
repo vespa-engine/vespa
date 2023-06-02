@@ -22,7 +22,7 @@ public class DistributionBitCountTest extends FleetControllerTest {
         for (int i = 0 ; i < 10; i++) {
             configuredNodes.add(new ConfiguredNode(i, false));
         }
-        var builder = defaultOptions("mycluster", configuredNodes);
+        var builder = defaultOptions(configuredNodes);
         builder.setDistributionBits(17);
         Timer timer = new RealTimer();
         setUpFleetController(timer, builder);
