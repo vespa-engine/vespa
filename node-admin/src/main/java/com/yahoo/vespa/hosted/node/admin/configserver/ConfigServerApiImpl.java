@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 import ai.vespa.util.http.hc4.SslConnectionSocketFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
@@ -73,14 +72,10 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                 provider);
     }
 
-    public static ConfigServerApiImpl createFor(ConfigServerInfo info,
+    public static ConfigServerApiImpl createFor(URI uri,
                                                 ServiceIdentityProvider provider,
-                                                HostnameVerifier hostnameVerifier,
-                                                HostName configServerHostname) {
-        return new ConfigServerApiImpl(
-                List.of(info.getConfigServerUri(configServerHostname.value())),
-                hostnameVerifier,
-                provider);
+                                                HostnameVerifier hostnameVerifier) {
+        return new ConfigServerApiImpl(List.of(uri), hostnameVerifier, provider);
     }
 
     private ConfigServerApiImpl(Collection<URI> configServers,
