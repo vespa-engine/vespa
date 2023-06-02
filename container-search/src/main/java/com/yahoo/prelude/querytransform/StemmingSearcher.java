@@ -193,9 +193,10 @@ public class StemmingSearcher extends Searcher {
         Item blockAsItem = (Item)current;
         CompositeItem composite;
         List<StemList> segments = linguistics.getStemmer().stem(current.stringValue(), index.getStemMode(), context.language);
+        if (segments.isEmpty()) return blockAsItem;
+
         String indexName = current.getIndexName();
         Substring substring = getOffsets(current);
-
         if (segments.size() == 1) {
             TaggableItem w = singleWordSegment(current, segments.get(0), index, substring, context.insidePhrase);
             setMetaData(current, context.reverseConnectivity, w);
