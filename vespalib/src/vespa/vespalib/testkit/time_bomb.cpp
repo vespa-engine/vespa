@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "time_bomb.h"
+#include <cstdint>
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.testkit.time_bomb");
 
@@ -14,7 +15,7 @@ void bomb(Gate &gate, vespalib::duration timeout) {
             return;
         }
     }
-    size_t countdown = std::min(count_s(timeout), 5l);
+    size_t countdown = std::min(count_s(timeout), INT64_C(5));
     while (countdown > 0) {
         fprintf(stderr, "...%zu...\n", countdown--);
         if (gate.await(1s)) {
