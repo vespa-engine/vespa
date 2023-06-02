@@ -25,11 +25,11 @@
       "changedAt": 0
     },
     {
-      "routingMethod": "sharedLayer4",
+      "routingMethod": "exclusive",
       "environment": "dev",
       "region": "aws-us-east-2a",
       "status": "in",
-      "agent": "operator",
+      "agent": "system",
       "changedAt": 0
     },
     {
