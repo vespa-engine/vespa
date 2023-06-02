@@ -34,7 +34,7 @@ public class AccessControlFilterExcludeValidator extends Validator {
     private void verifyNoExclusions(String clusterId, AccessControl accessControl, DeployState deployState) {
         if (!accessControl.excludedBindings().isEmpty()) {
             String message = "Application cluster %s excludes paths from access control, this is not allowed and should be removed.".formatted(clusterId);
-            if (deployState.zone().cloud().name() == CloudName.AWS) {
+            if (deployState.zone().cloud().name().equals(CloudName.AWS)) {
                 throw new IllegalArgumentException(message);
             } else {
                 deployState.getDeployLogger().log(Level.WARNING, message);
