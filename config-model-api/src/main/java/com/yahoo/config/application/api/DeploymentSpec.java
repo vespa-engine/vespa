@@ -209,7 +209,7 @@ public class DeploymentSpec {
      * deploy to, e.g., test and staging zones, and want to avoid the delay of having to provision hosts.
      */
     public Optional<Duration> hostTTL(InstanceName instance, Environment environment, RegionName region) {
-        return instance(instance).flatMap(spec -> spec.hostTTL(environment, region))
+        return instance(instance).flatMap(spec -> spec.hostTTL(environment, Optional.of(region)))
                                  .or(this::hostTTL);
     }
 

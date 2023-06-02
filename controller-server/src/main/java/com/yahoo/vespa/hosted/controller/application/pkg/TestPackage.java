@@ -51,6 +51,7 @@ import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.of;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.production;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging_setup;
@@ -307,7 +308,7 @@ public class TestPackage {
                                       ? original.requireInstance(instance)
                                                 .steps().stream().filter(step -> step.isTest() && step.concerns(zone.environment(), Optional.of(zone.region())))
                                                 .findFirst().flatMap(Step::hostTTL)
-                                      : original.requireInstance(instance).hostTTL(zone.environment(), zone.region()))
+                                      : original.requireInstance(instance).hostTTL(zone.environment(), Optional.of(zone.region())))
                 .filter(__ -> cloudAccount.isPresent());
         String deploymentSpec =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +

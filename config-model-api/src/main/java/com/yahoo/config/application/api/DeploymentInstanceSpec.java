@@ -277,9 +277,9 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     }
 
     /** Returns the host TTL to use for given environment and region, if any */
-    public Optional<Duration> hostTTL(Environment environment, RegionName region) {
+    public Optional<Duration> hostTTL(Environment environment, Optional<RegionName> region) {
         return zones().stream()
-                      .filter(zone -> zone.concerns(environment, Optional.of(region)))
+                      .filter(zone -> zone.concerns(environment, region))
                       .findFirst()
                       .flatMap(DeploymentSpec.DeclaredZone::hostTTL)
                       .or(() -> hostTTL);

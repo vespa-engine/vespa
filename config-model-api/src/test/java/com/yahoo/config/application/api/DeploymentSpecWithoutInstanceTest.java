@@ -778,9 +778,9 @@ public class DeploymentSpecWithoutInstanceTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals(Optional.of(Duration.ofDays(1)), spec.hostTTL());
         DeploymentInstanceSpec instance = spec.requireInstance("default");
-        assertEquals(Optional.of(Duration.ofMinutes(1)), instance.hostTTL(prod, RegionName.from("us-east-1")));
-        assertEquals(Optional.of(Duration.ofDays(1)), instance.hostTTL(prod, RegionName.from("us-west-1")));
-        assertEquals(Optional.of(Duration.ofDays(1)), instance.hostTTL(test, RegionName.defaultName()));
+        assertEquals(Optional.of(Duration.ofMinutes(1)), instance.hostTTL(prod, Optional.of(RegionName.from("us-east-1"))));
+        assertEquals(Optional.of(Duration.ofDays(1)), instance.hostTTL(prod, Optional.of(RegionName.from("us-west-1"))));
+        assertEquals(Optional.of(Duration.ofDays(1)), instance.hostTTL(test, Optional.empty()));
 
         r = """
                    <deployment version='1.0' cloud-account='012345678912'>
@@ -793,9 +793,9 @@ public class DeploymentSpecWithoutInstanceTest {
         spec = DeploymentSpec.fromXml(r);
         assertEquals(Optional.empty(), spec.hostTTL());
         instance = spec.requireInstance("default");
-        assertEquals(Optional.of(Duration.ofMinutes(1)), instance.hostTTL(prod, RegionName.from("us-east-1")));
-        assertEquals(Optional.of(Duration.ofDays(1)), instance.hostTTL(prod, RegionName.from("us-west-1")));
-        assertEquals(Optional.empty(), instance.hostTTL(test, RegionName.defaultName()));
+        assertEquals(Optional.of(Duration.ofMinutes(1)), instance.hostTTL(prod, Optional.of(RegionName.from("us-east-1"))));
+        assertEquals(Optional.of(Duration.ofDays(1)), instance.hostTTL(prod, Optional.of(RegionName.from("us-west-1"))));
+        assertEquals(Optional.empty(), instance.hostTTL(test, Optional.empty()));
     }
 
     private static Set<String> endpointRegions(String endpointId, DeploymentSpec spec) {
