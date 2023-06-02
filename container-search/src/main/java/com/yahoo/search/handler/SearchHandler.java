@@ -59,6 +59,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static java.io.InputStream.nullInputStream;
+
 /**
  * Handles search request.
  *
@@ -155,10 +157,11 @@ public class SearchHandler extends LoggingRequestHandler {
     private void warmup() {
         try {
             handle(HttpRequest.createTestRequest("/search/?timeout=2s&yql=select+*+from+sources+*+where+true+limit+1;",
-                                                 com.yahoo.jdisc.http.HttpRequest.Method.GET));
+                                                 com.yahoo.jdisc.http.HttpRequest.Method.GET,
+                                                 nullInputStream()));
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Error warming up search handler", e);
+            log.log(Level.INFO, "Exception warming up search handler", e);
         }
     }
 
