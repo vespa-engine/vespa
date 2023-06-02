@@ -724,6 +724,7 @@
       "public static final enum com.yahoo.language.process.TokenType SYMBOL",
       "public static final enum com.yahoo.language.process.TokenType ALPHABETIC",
       "public static final enum com.yahoo.language.process.TokenType NUMERIC",
+      "public static final enum com.yahoo.language.process.TokenType INDEXABLE_SYMBOL",
       "public static final enum com.yahoo.language.process.TokenType MARKER"
     ]
   },

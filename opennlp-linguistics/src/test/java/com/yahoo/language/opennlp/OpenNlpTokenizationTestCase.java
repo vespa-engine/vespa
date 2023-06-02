@@ -2,6 +2,7 @@
 package com.yahoo.language.opennlp;
 
 import com.yahoo.language.Language;
+import com.yahoo.language.process.StemList;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.TokenType;
@@ -177,6 +178,17 @@ public class OpenNlpTokenizationTestCase {
         assertEquals(emoji1, tokens2.next().getTokenString());
         assertEquals(emoji2, tokens2.next().getTokenString());
         assertFalse(tokens2.hasNext());
+    }
+
+    @Test
+    public void testStemEmojis() {
+        var stemmer = new OpenNlpLinguistics().getStemmer();
+        String emoji = "\uD83D\uDD2A"; // 🔪
+        List<StemList> stems = stemmer.stem(emoji, StemMode.ALL, Language.ENGLISH);
+        assertEquals(1, stems.size());
+        var stemList = stems.get(0);
+        assertEquals(1, stemList.size());
+        assertEquals(emoji, stemList.get(0));
     }
 
     @Test
