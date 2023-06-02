@@ -36,6 +36,9 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
+        <configuration>
+          <failOnWarnings>false</failOnWarnings>
+        </configuration>
       </plugin>
     </plugins>
   </build>
