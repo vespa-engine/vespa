@@ -36,6 +36,7 @@ MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
                                ThrottleToken throttle_token)
     : MessageTracker(timer, env, replySender, true, std::move(bucketLock), std::move(msg), std::move(throttle_token))
 {}
+
 MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
                                const PersistenceUtil & env,
                                MessageSender & replySender,
@@ -90,7 +91,7 @@ MessageTracker::sendReply() {
     if (count_result_as_failure()) {
         _env._metrics.failedOperations.inc();
     }
-    vespalib::duration duration = vespalib::from_s(_timer.getElapsedTimeAsDouble()/1000.0);
+    vespalib::duration duration = _timer.getElapsedTime();
     if (duration >= WARN_ON_SLOW_OPERATIONS) {
         LOGBT(warning, _msg->getType().toString(),
               "Slow processing of message %s. Processing time: %1.1f s (>=%1.1f s)",
