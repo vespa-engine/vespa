@@ -457,8 +457,7 @@ jobs:
             exit 1
           fi
       - calculate-docker-image-age: |
-          image_date=`curl https://hub.docker.com/v2/repositories/vespaengine/vespa/ | \
-            python -m json.tool| grep last_updated | awk '{print $2}' | tr -d '",'`
+          image_date=$(curl https://hub.docker.com/v2/repositories/vespaengine/vespa/ | jq -re '.last_updated)
           echo "Docker image last_updated: " $image_date
           image_epoch=`date -d "$image_date" "+%s"`
           echo "Docker image epoch: " $image_epoch
