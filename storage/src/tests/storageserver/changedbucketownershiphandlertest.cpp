@@ -40,15 +40,11 @@ struct ChangedBucketOwnershipHandlerTest : Test {
             uint16_t wantedOwner,
             const lib::ClusterState& state);
 
-    std::shared_ptr<api::SetSystemStateCommand> createStateCmd(
-            const lib::ClusterState& state) const
-    {
+    std::shared_ptr<api::SetSystemStateCommand> createStateCmd(const lib::ClusterState& state) const {
         return std::make_shared<api::SetSystemStateCommand>(state);
     }
 
-    std::shared_ptr<api::SetSystemStateCommand> createStateCmd(
-            const std::string& stateStr) const
-    {
+    std::shared_ptr<api::SetSystemStateCommand> createStateCmd(const std::string& stateStr) const {
         return createStateCmd(lib::ClusterState(stateStr));
     }
 
@@ -71,11 +67,17 @@ struct ChangedBucketOwnershipHandlerTest : Test {
     template <typename MsgType, typename... MsgParams>
     void expectDownAbortsMessage(bool expected, MsgParams&& ... params);
 
-    lib::ClusterState getDefaultTestClusterState() const {
+    std::shared_ptr<AbortBucketOperationsCommand> fetch_dispatched_abort_operations_command() {
+        _bottom->waitForMessages(2, 60); // abort cmd + set cluster state cmd
+        EXPECT_EQ(2, _bottom->getNumCommands());
+        return std::dynamic_pointer_cast<AbortBucketOperationsCommand>(_bottom->getCommand(0));
+    }
+
+    static lib::ClusterState getDefaultTestClusterState() {
         return lib::ClusterState("distributor:4 storage:1");
     }
 
-    lib::ClusterState getStorageDownTestClusterState() const {
+    static lib::ClusterState getStorageDownTestClusterState() {
         return lib::ClusterState("distributor:4 storage:1 .0.s:d");
     }
 
@@ -173,29 +175,26 @@ hasAbortedNoneOf(const AbortBucketOperationsCommand::SP& cmd, const Vec& v)
 
 bool
 hasOnlySetSystemStateCmdQueued(DummyStorageLink& link) {
+    link.waitForMessages(1, 60);
     if (link.getNumCommands() != 1) {
         std::cerr << "expected 1 command, found"
                   << link.getNumCommands() << "\n";
     }
-    api::SetSystemStateCommand::SP cmd(
-            std::dynamic_pointer_cast<api::SetSystemStateCommand>(
-                    link.getCommand(0)));
-    return (cmd.get() != 0);
+    auto cmd = std::dynamic_pointer_cast<api::SetSystemStateCommand>(link.getCommand(0));
+    return static_cast<bool>(cmd);
 }
 
 }
 
 void
-ChangedBucketOwnershipHandlerTest::applyDistribution(
-    Redundancy redundancy, NodeCount nodeCount)
+ChangedBucketOwnershipHandlerTest::applyDistribution(Redundancy redundancy, NodeCount nodeCount)
 {
     _app->setDistribution(redundancy, nodeCount);
     _handler->storageDistributionChanged();
 }
 
 void
-ChangedBucketOwnershipHandlerTest::applyClusterState(
-        const lib::ClusterState& state)
+ChangedBucketOwnershipHandlerTest::applyClusterState(const lib::ClusterState& state)
 {
     _app->setClusterState(state);
     _handler->reloadClusterState();
@@ -212,10 +211,8 @@ TEST_F(ChangedBucketOwnershipHandlerTest, enumerate_buckets_belonging_on_changed
     auto node2Buckets(insertBuckets(2, 2, stateBefore));
     
     _top->sendDown(createStateCmd("distributor:4 .1.s:d .3.s:d storage:1"));
-    // TODO: refactor into own function
-    ASSERT_EQ(2, _bottom->getNumCommands());
-    auto cmd = std::dynamic_pointer_cast<AbortBucketOperationsCommand>(_bottom->getCommand(0));
-    ASSERT_TRUE(cmd.get() != 0);
+    auto cmd = fetch_dispatched_abort_operations_command();
+    ASSERT_TRUE(cmd);
 
     EXPECT_TRUE(hasAbortedAllOf(cmd, node1Buckets));
     EXPECT_TRUE(hasAbortedAllOf(cmd, node3Buckets));
@@ -280,10 +277,8 @@ TEST_F(ChangedBucketOwnershipHandlerTest, down_edge_to_no_available_distributors
     lib::ClusterState downState("distributor:3 .0.s:d .1.s:s .2.s:s storage:1");
 
     _top->sendDown(createStateCmd(downState));
-    // TODO: refactor into own function
-    ASSERT_EQ(2, _bottom->getNumCommands());
-    auto cmd = std::dynamic_pointer_cast<AbortBucketOperationsCommand>(_bottom->getCommand(0));
-    ASSERT_TRUE(cmd.get() != 0);
+    auto cmd = fetch_dispatched_abort_operations_command();
+    ASSERT_TRUE(cmd);
 
     EXPECT_TRUE(hasAbortedAllOf(cmd, node0Buckets));
     EXPECT_TRUE(hasAbortedAllOf(cmd, node1Buckets));
@@ -304,10 +299,8 @@ TEST_F(ChangedBucketOwnershipHandlerTest, ownership_changed_on_distributor_up_ed
     auto node2Buckets(insertBuckets(2, 2, stateAfter));
     
     _top->sendDown(createStateCmd(stateAfter));
-    // TODO: refactor into own function
-    ASSERT_EQ(2, _bottom->getNumCommands());
-    auto cmd = std::dynamic_pointer_cast<AbortBucketOperationsCommand>(_bottom->getCommand(0));
-    ASSERT_TRUE(cmd.get() != 0);
+    auto cmd = fetch_dispatched_abort_operations_command();
+    ASSERT_TRUE(cmd);
 
     EXPECT_TRUE(hasAbortedAllOf(cmd, node1Buckets));
     EXPECT_TRUE(hasAbortedNoneOf(cmd, node0Buckets));
@@ -319,8 +312,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, ownership_changed_on_distributor_up_ed
 }
 
 void
-ChangedBucketOwnershipHandlerTest::sendAndExpectAbortedCreateBucket(
-        uint16_t fromDistributorIndex)
+ChangedBucketOwnershipHandlerTest::sendAndExpectAbortedCreateBucket(uint16_t fromDistributorIndex)
 {
     document::BucketId bucket(16, 6786);
     auto msg = std::make_shared<api::CreateBucketCommand>(makeDocumentBucket(bucket));
@@ -350,7 +342,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, distribution_config_change_updates_own
 
 /**
  * Generate and dispatch a message of the given type with the provided
- * aruments as if that message was sent from distributor 1. Messages will
+ * arguments as if that message was sent from distributor 1. Messages will
  * be checked as if the state contains 4 distributors in Up state. This
  * means that it suffices to send in a message with a bucket that is not
  * owned by distributor 1 in this state to trigger an abort.
@@ -382,7 +374,7 @@ ChangedBucketOwnershipHandlerTest::expectChangeAbortsMessage(bool expected, MsgP
 
 /**
  * Generate and dispatch a message of the given type with the provided
- * aruments as if that message was sent from distributor 1. Messages will
+ * arguments as if that message was sent from distributor 1. Messages will
  * be checked as if the state contains 4 distributors in Up state and storage
  * node is down. This means that any abortable message will trigger an abort.
  */
@@ -394,6 +386,7 @@ ChangedBucketOwnershipHandlerTest::expectDownAbortsMessage(bool expected, MsgPar
     (void) _bottom->getCommandsOnce();
     ASSERT_NO_FATAL_FAILURE((expectChangeAbortsMessage<MsgType, MsgParams...>(false, std::forward<MsgParams>(params)...)));
     _top->sendDown(createStateCmd(getStorageDownTestClusterState()));
+    _bottom->waitForMessages(3, 60);
     ASSERT_EQ(_bottom->getNumCommands(), 3);
     auto setSystemStateCommand = std::dynamic_pointer_cast<api::SetSystemStateCommand>(_bottom->getCommand(2));
     ASSERT_TRUE(setSystemStateCommand);

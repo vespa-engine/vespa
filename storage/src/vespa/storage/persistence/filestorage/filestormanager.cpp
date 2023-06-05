@@ -184,7 +184,8 @@ computeAllPossibleHandlerThreads(const vespa::config::content::StorFilestorConfi
     return cfg.numThreads +
            computeNumResponseThreads(cfg.numResponseThreads) +
            cfg.numNetworkThreads +
-           cfg.numVisitorThreads;
+           cfg.numVisitorThreads +
+           1; // Async cluster state processing thread (might be a pessimization to include here...)
 }
 
 }
