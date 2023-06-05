@@ -29,5 +29,6 @@ public enum Agent {
     SpareCapacityMaintainer,
     SwitchRebalancer,
     HostEncrypter,
+    HostFlavorUpgrader,
 
 }

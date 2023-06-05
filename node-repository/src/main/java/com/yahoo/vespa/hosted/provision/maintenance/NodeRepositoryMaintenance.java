@@ -70,7 +70,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                         new HostDeprovisioner(nodeRepository, defaults.hostDeprovisionerInterval, metric, hostProvisioner),
                                         new HostResumeProvisioner(nodeRepository, defaults.hostResumeProvisionerInterval, metric, hostProvisioner),
                                         new HostRetirer(nodeRepository, defaults.hostRetirerInterval, metric, hostProvisioner),
-                                        new DiskReplacer(nodeRepository, defaults.diskReplacerInterval, metric, hostProvisioner)))
+                                        new DiskReplacer(nodeRepository, defaults.diskReplacerInterval, metric, hostProvisioner),
+                                        new HostFlavorUpgrader(nodeRepository, defaults.hostFlavorUpgraderInterval, metric, deployer, hostProvisioner))
+                                )
                                 .ifPresent(maintainers::addAll);
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintainButThrowOnException();
@@ -118,6 +120,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration scalingSuggestionsInterval;
         private final Duration switchRebalancerInterval;
         private final Duration hostRetirerInterval;
+        private final Duration hostFlavorUpgraderInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -151,6 +154,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             switchRebalancerInterval = Duration.ofHours(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             hostRetirerInterval = Duration.ofMinutes(30);
+            hostFlavorUpgraderInterval = Duration.ofMinutes(30);
 
             if (zone.environment().isProduction() && ! isCdZone) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy

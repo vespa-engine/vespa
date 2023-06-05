@@ -37,7 +37,6 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -327,14 +326,15 @@ public class NodeSerializerTest {
     }
 
     @Test
-    public void want_to_rebuild() {
+    public void want_to_rebuild_and_upgrade_flavor() {
         Node node = nodeSerializer.fromJson(nodeSerializer.toJson(createNode()));
         assertFalse(node.status().wantToRebuild());
-        node = node.with(node.status().withWantToRetire(true, false, true));
+        node = node.with(node.status().withWantToRetire(true, false, true, true));
         node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertTrue(node.status().wantToRetire());
         assertFalse(node.status().wantToDeprovision());
         assertTrue(node.status().wantToRebuild());
+        assertTrue(node.status().wantToUpgradeFlavor());
     }
 
     @Test

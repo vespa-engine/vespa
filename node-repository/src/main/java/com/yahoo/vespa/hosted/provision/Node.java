@@ -276,7 +276,7 @@ public final class Node implements Nodelike {
      * If both given wantToRetire and wantToDeprovision are equal to the current values, the method is no-op.
      */
     public Node withWantToRetire(boolean wantToRetire, boolean wantToDeprovision, Agent agent, Instant at) {
-        return withWantToRetire(wantToRetire, wantToDeprovision, false, agent, at);
+        return withWantToRetire(wantToRetire, wantToDeprovision, false, false, agent, at);
     }
 
     /**
@@ -285,15 +285,16 @@ public final class Node implements Nodelike {
      *
      * If all given values are equal to the current ones, the method is no-op.
      */
-    public Node withWantToRetire(boolean wantToRetire, boolean wantToDeprovision, boolean wantToRebuild, Agent agent, Instant at) {
+    public Node withWantToRetire(boolean wantToRetire, boolean wantToDeprovision, boolean wantToRebuild, boolean wantToUpgradeFlavor, Agent agent, Instant at) {
         if (wantToRetire == status.wantToRetire() &&
             wantToDeprovision == status.wantToDeprovision() &&
-            wantToRebuild == status.wantToRebuild()) return this;
+            wantToRebuild == status.wantToRebuild() &&
+            wantToUpgradeFlavor == status.wantToUpgradeFlavor()) return this;
         if (wantToRebuild && !wantToRetire && resources().storageType() != NodeResources.StorageType.remote) {
             throw new IllegalArgumentException("Cannot rebuild " + this + " without retiring because storage is " +
                                                resources().storageType());
         }
-        Node node = this.with(status.withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild));
+        Node node = this.with(status.withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, wantToUpgradeFlavor));
         if (wantToRetire)
             node = node.with(history.with(new History.Event(History.Event.Type.wantToRetire, agent, at)));
         return node;
