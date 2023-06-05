@@ -86,12 +86,13 @@ public class SearchDefinition {
         return idx;
     }
 
-    public void addCommand(String indexName, String commandString) {
+    public Index addCommand(String indexName, String commandString) {
         Index index = getOrCreateIndex(indexName);
         index.addCommand(commandString);
         if (index.isDefaultPosition()) {
             defaultPosition = index.getName();
         }
+        return index;
     }
 
 }
