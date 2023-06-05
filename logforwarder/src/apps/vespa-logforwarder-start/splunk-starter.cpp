@@ -36,6 +36,15 @@ cfFilePath(const vespalib::string &parent, const vespalib::string &filename) {
     return path + "/" + filename;
 }
 
+vespalib::string splunkCertPath(const vespalib::string &parent, const vespalib::string &filename) {
+        vespalib::string path = parent;
+        path = fixDir(path, "var");
+        path = fixDir(path, "lib");
+        path = fixDir(path, "sia");
+        path = fixDir(path, "certs");
+        return path + "/" + filename;
+    }
+
 void appendFile(FILE *target, const vespalib::string &filename) {
     FILE *fp = fopen(filename.c_str(), "r");
     if (fp != NULL) {
@@ -95,12 +104,12 @@ void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
     vespalib::string clientCert = clientCertFile();
     vespalib::string clientKey = clientKeyFile();
     if (!clientCert.empty() && !clientKey.empty()) {
-        vespalib::string certPath = cfFilePath(config.splunkHome, "clientcert.pem");
+        vespalib::string certPath = splunkCertPath(config.splunkHome, "servercert.pem");
         tmpPath = certPath + ".new";
         fp = fopen(tmpPath.c_str(), "w");
         appendFile(fp, clientCert);
         appendFile(fp, clientKey);
-        appendFile(fp, "/etc/ssl/certs/ca-bundle.crt");
+        appendFile(fp, "/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem");
         fclose(fp);
         rename(tmpPath.c_str(), certPath.c_str());
 
@@ -110,6 +119,21 @@ void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
         if (fp != NULL) {
             fprintf(fp, "[tcpout]\n");
             fprintf(fp, "clientCert = %s\n", certPath.c_str());
+            fclose(fp);
+            rename(tmpPath.c_str(), path.c_str());
+        }
+        path = cfFilePath(config.splunkHome, "server.conf");
+        tmpPath = path + ".new";
+        fp = fopen(tmpPath.c_str(), "w");
+        if (fp != NULL) {
+            fprintf(fp, "[sslConfig]\n");
+            fprintf(fp, "enableSplunkdSSL = true\n");
+            fprintf(fp, "requireClientCert = true\n");
+            fprintf(fp, "sslRootCAPath = /opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem\n");
+            fprintf(fp, "serverCert = %s\n", certPath.c_str());
+            fprintf(fp, "\n");
+            fprintf(fp, "[httpServer]\n");
+            fprintf(fp, "disableDefaultPort = true\n");
             fclose(fp);
             rename(tmpPath.c_str(), path.c_str());
         }
