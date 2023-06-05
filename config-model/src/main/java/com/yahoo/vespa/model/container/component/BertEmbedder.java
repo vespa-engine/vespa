@@ -35,8 +35,8 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
 
     public BertEmbedder(Element xml, DeployState state) {
         super("ai.vespa.embedding.BertBaseEmbedder", INTEGRATION_BUNDLE_NAME, xml);
-        model = ModelIdResolver.resolveToModelReference(getChild(xml, "transformer-model"), state.isHosted());
-        vocab = ModelIdResolver.resolveToModelReference(getChild(xml, "tokenizer-vocab"), state.isHosted());
+        model = ModelIdResolver.resolveToModelReference(getChild(xml, "transformer-model"), state);
+        vocab = ModelIdResolver.resolveToModelReference(getChild(xml, "tokenizer-vocab"), state);
         maxTokens = getOptionalChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
         transformerInputIds = getOptionalChildValue(xml, "transformer-input-ids").orElse(null);
         transformerAttentionMask = getOptionalChildValue(xml, "transformer-attention-mask").orElse(null);

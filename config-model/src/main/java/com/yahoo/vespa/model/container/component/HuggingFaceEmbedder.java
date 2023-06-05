@@ -35,12 +35,11 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
 
     public HuggingFaceEmbedder(Element xml, DeployState state) {
         super("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", INTEGRATION_BUNDLE_NAME, xml);
-        boolean hosted = state.isHosted();
         var transformerModelElem = getOptionalChild(xml, "transformer-model").orElseThrow();
-        model = ModelIdResolver.resolveToModelReference(transformerModelElem, hosted);
+        model = ModelIdResolver.resolveToModelReference(transformerModelElem, state);
         vocab = getOptionalChild(xml, "tokenizer-model")
-                .map(elem -> ModelIdResolver.resolveToModelReference(elem, hosted))
-                .orElseGet(() -> resolveDefaultVocab(transformerModelElem, hosted));
+                .map(elem -> ModelIdResolver.resolveToModelReference(elem, state))
+                .orElseGet(() -> resolveDefaultVocab(transformerModelElem, state));
         maxTokens = getOptionalChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
         transformerInputIds = getOptionalChildValue(xml, "transformer-input-ids").orElse(null);
         transformerAttentionMask = getOptionalChildValue(xml, "transformer-attention-mask").orElse(null);
@@ -54,11 +53,11 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         poolingStrategy = getOptionalChildValue(xml, "pooling-strategy").orElse(null);
     }
 
-    private static ModelReference resolveDefaultVocab(Element model, boolean hosted) {
-        if (hosted && model.hasAttribute("model-id")) {
+    private static ModelReference resolveDefaultVocab(Element model, DeployState state) {
+        if (state.isHosted() && model.hasAttribute("model-id")) {
             var implicitVocabId = model.getAttribute("model-id") + "-vocab";
             return ModelIdResolver.resolveToModelReference(
-                    "tokenizer-model", Optional.of(implicitVocabId), Optional.empty(), Optional.empty(), true);
+                    "tokenizer-model", Optional.of(implicitVocabId), Optional.empty(), Optional.empty(), state);
         }
         throw new IllegalArgumentException("'tokenizer-model' must be specified");
     }
