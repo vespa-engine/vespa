@@ -64,6 +64,7 @@
             <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
             <Bundle-Version>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</Bundle-Version>
             <Export-Package>com.yahoo.component.annotation;version=1.0.0;-noimport:=true</Export-Package>
+            <X-JDisc-PublicApi-Package>com.yahoo.component.annotation</X-JDisc-PublicApi-Package>
             <_nouses>true</_nouses> <!-- Don't include 'uses' directives for package exports -->
           </instructions>
         </configuration>
