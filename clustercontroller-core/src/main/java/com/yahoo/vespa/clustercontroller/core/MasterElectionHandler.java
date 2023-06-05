@@ -180,9 +180,8 @@ public class MasterElectionHandler implements MasterInterface {
             }
             if (nextInLineCount != ourPosition) {
                 nextInLineCount = ourPosition;
-                if (ourPosition > 0) {
-                    context.log(logger, Level.FINE, () -> "We are now " + getPosition(nextInLineCount) + " in queue to take over being master.");
-                }
+                if (nextInLineCount > 0)
+                    context.log(logger, Level.FINE, () -> "We are now in position " + nextInLineCount + " in queue to take over being master.");
             }
         }
         masterData = state;
@@ -207,14 +206,6 @@ public class MasterElectionHandler implements MasterInterface {
         return sb.toString();
     }
 
-    private String getPosition(int val) {
-        if (val < 1) return "invalid(" + val + ")";
-        if (val == 1) { return "first"; }
-        if (val == 2) { return "second"; }
-        if (val == 3) { return "third"; }
-        return val + "th";
-    }
-
     public void handleFleetData(Map<Integer, Integer> data) {
         context.log(logger, Level.INFO, "Got new fleet data with " + data.size() + " entries: " + data);
         synchronized (monitor) {
@@ -225,10 +216,6 @@ public class MasterElectionHandler implements MasterInterface {
 
     public void lostDatabaseConnection() {
         context.log(logger, Level.INFO, "Clearing master data as we lost connection on node " + index);
-        resetElectionProgress();
-    }
-
-    private void resetElectionProgress() {
         masterData = null;
         masterCandidate = null;
         followers = 0;
