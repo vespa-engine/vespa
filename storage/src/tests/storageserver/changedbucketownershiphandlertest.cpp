@@ -69,7 +69,7 @@ struct ChangedBucketOwnershipHandlerTest : Test {
 
     std::shared_ptr<AbortBucketOperationsCommand> fetch_dispatched_abort_operations_command() {
         _bottom->waitForMessages(2, 60); // abort cmd + set cluster state cmd
-        EXPECT_EQ(2, _bottom->getNumCommands()); // always _at least_ 2
+        EXPECT_EQ(2, _bottom->getNumCommands());
         return std::dynamic_pointer_cast<AbortBucketOperationsCommand>(_bottom->getCommand(0));
     }
 

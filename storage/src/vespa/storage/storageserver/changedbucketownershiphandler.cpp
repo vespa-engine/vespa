@@ -263,10 +263,12 @@ public:
     void run() override {
         OwnershipState::CSP old_ownership;
         OwnershipState::CSP new_ownership;
-        // Get old state and update own current cluster state _before_ it is
-        // applied to the rest of the system. This helps ensure that no message
-        // can get through in the off-case that the lower level storage links
-        // don't apply the state immediately for some reason.
+        // Update the ownership state inspected by all bucket-mutating operations passing through
+        // this component so that messages from outdated distributors will be rejected. Note that
+        // this is best-effort; with our current multitude of RPC threads directly dispatching
+        // operations into the persistence provider, it's possible for a thread carrying an outdated
+        // operation to have already passed the barrier, but be preempted so that it will apply the
+        // op _after_ the abort step has completed.
         {
             std::lock_guard guard(_owner._stateLock);
             old_ownership = _owner._currentOwnership;
@@ -477,7 +479,7 @@ ChangedBucketOwnershipHandler::onInternalReply(
 void
 ChangedBucketOwnershipHandler::onClose()
 {
-    _state_sync_executor.shutdown();
+    _state_sync_executor.shutdown().sync();
 }
 
 }
