@@ -246,7 +246,7 @@ class NodesResponse extends SlimeJsonResponse {
         return Optional.empty();
     }
 
-    static void ipAddressesToSlime(Set<String> ipAddresses, Cursor array) {
+    static void ipAddressesToSlime(Collection<String> ipAddresses, Cursor array) {
         ipAddresses.forEach(array::addString);
     }
 

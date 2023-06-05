@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.net.InetAddresses;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
@@ -30,6 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -136,8 +138,18 @@ public class RealNodeRepository implements NodeRepository {
         final GetNodesResponse response = configServerApi.get(path, GetNodesResponse.class);
 
         return response.nodes.stream()
-                .filter(node -> node.wireguardPubkey != null && ! node.wireguardPubkey.isEmpty())
-                .map(RealNodeRepository::createTenantPeer)
+                .mapMulti((NodeRepositoryNode node, Consumer<WireguardPeer> consumer) -> {
+                    if (node.wireguardPubkey == null || node.wireguardPubkey.isEmpty()) return;
+                    List<VersionedIpAddress> ipAddresses = node.ipAddresses.stream()
+                            .map(InetAddresses::forString)
+                            .filter(address -> !address.isLoopbackAddress() && !address.isLinkLocalAddress() && !address.isSiteLocalAddress())
+                            .map(VersionedIpAddress::from)
+                            .toList();
+                    if (ipAddresses.isEmpty()) return;
+
+                    consumer.accept(new WireguardPeer(
+                            HostName.of(node.hostname), ipAddresses, WireguardKey.from(node.wireguardPubkey)));
+                })
                 .sorted()
                 .toList();
     }
@@ -353,16 +365,9 @@ public class RealNodeRepository implements NodeRepository {
         return node;
     }
 
-    private static WireguardPeer createTenantPeer(NodeRepositoryNode node) {
-        return new WireguardPeer(HostName.of(node.hostname),
-                                 node.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
-                                 WireguardKey.from(node.wireguardPubkey));
-    }
-
     private static WireguardPeer createConfigserverPeer(GetWireguardResponse.Configserver configServer) {
         return new WireguardPeer(HostName.of(configServer.hostname),
                                  configServer.ipAddresses.stream().map(VersionedIpAddress::from).toList(),
                                  WireguardKey.from(configServer.wireguardPubkey));
     }
-
 }
