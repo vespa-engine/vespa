@@ -80,7 +80,7 @@ ComponentDefinition =
 
 TypedComponentDefinition =
    attribute id { xsd:Name } &
-   (HuggingFaceEmbedder | HuggingFaceTokenizer) &
+   (HuggingFaceEmbedder | HuggingFaceTokenizer | BertBaseEmbedder) &
    GenericConfig* &
    Component*
 
@@ -94,10 +94,7 @@ HuggingFaceEmbedder =
    element transformer-token-type-ids { xsd:string }? &
    element transformer-output { xsd:string }? &
    element normalize { xsd:boolean }? &
-   element onnx-execution-mode { "parallel" | "sequential" }? &
-   element onnx-interop-threads { xsd:integer }? &
-   element onnx-intraop-threads { xsd:integer }? &
-   element onnx-gpu-device { xsd:integer }?
+   OnnxModelExecutionParams
 
 HuggingFaceTokenizer =
     attribute type { "hugging-face-tokenizer" } &
@@ -105,3 +102,23 @@ HuggingFaceTokenizer =
     element special-tokens { xsd:boolean }? &
     element max-length { xsd:integer }? &
     element truncation { xsd:boolean }?
+
+BertBaseEmbedder =
+    attribute type { "bert-embedder" } &
+    element transformer-model { ModelReference } &
+    element tokenizer-vocab { ModelReference } &
+    element max-tokens { xsd:nonNegativeInteger }? &
+    element pooling-strategy { "cls" | "mean" }? &
+    element transformer-input-ids { xsd:string }? &
+    element transformer-attention-mask { xsd:string }? &
+    element transformer-token-type-ids { xsd:string }? &
+    element transformer-output { xsd:string }? &
+    element transformer-start-sequence-token { xsd:integer }? &
+    element transformer-end-sequence-token { xsd:integer }? &
+    OnnxModelExecutionParams
+
+OnnxModelExecutionParams =
+    element onnx-execution-mode { "parallel" | "sequential" }? &
+    element onnx-interop-threads { xsd:integer }? &
+    element onnx-intraop-threads { xsd:integer }? &
+    element onnx-gpu-device { xsd:integer }?

@@ -7,6 +7,7 @@ import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.model.container.component.BertEmbedder;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
 import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
@@ -44,6 +45,7 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
             return switch (type) {
                 case "hugging-face-embedder" -> new HuggingFaceEmbedder(spec, state);
                 case "hugging-face-tokenizer" -> new HuggingFaceTokenizer(spec, state);
+                case "bert-embedder" -> new BertEmbedder(spec, state);
                 default -> throw new IllegalArgumentException("Unknown component type '%s'".formatted(type));
             };
         } else {
