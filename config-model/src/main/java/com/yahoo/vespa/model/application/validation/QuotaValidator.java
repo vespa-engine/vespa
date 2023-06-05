@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.QuotaExceededException;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 
 import java.math.BigDecimal;
@@ -32,11 +33,10 @@ public class QuotaValidator extends Validator {
     public void validate(VespaModel model, DeployState deployState) {
         var quota = deployState.getProperties().quota();
         quota.maxClusterSize().ifPresent(maxClusterSize -> validateMaxClusterSize(maxClusterSize, model));
-        quota.budgetAsDecimal().ifPresent(budget -> validateBudget(budget, model, deployState.getProperties().zone().system()));
+        quota.budgetAsDecimal().ifPresent(budget -> validateBudget(budget, model, deployState.getProperties().zone()));
     }
 
-    private void validateBudget(BigDecimal budget, VespaModel model, SystemName systemName) {
-
+    private void validateBudget(BigDecimal budget, VespaModel model, Zone zone) {
         var maxSpend = model.allClusters().stream()
                 .filter(id -> !adminClusterIds(model).contains(id))
                 .map(id -> model.provisioned().all().getOrDefault(id, zeroCapacity))
@@ -53,9 +53,10 @@ public class QuotaValidator extends Validator {
             return;
         }
 
-        throwIfBudgetNegative(actualSpend, budget, systemName);
-        throwIfBudgetExceeded(actualSpend, budget, systemName, true);
-        throwIfBudgetExceeded(maxSpend, budget, systemName, false);
+        throwIfBudgetNegative(actualSpend, budget, zone.system());
+        throwIfBudgetExceeded(actualSpend, budget, zone.system(), true);
+        if ( ! zone.environment().isTest()) // Usage is constant after deploy in test zones
+            throwIfBudgetExceeded(maxSpend, budget, zone.system(), false);
     }
 
     private Set<ClusterSpec.Id> adminClusterIds(VespaModel model) {
