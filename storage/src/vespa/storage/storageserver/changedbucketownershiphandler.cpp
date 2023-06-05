@@ -320,7 +320,9 @@ ChangedBucketOwnershipHandler::onSetSystemState(
     // Dispatch to background worker. This indirection is because operations such as lid-space compaction
     // may cause the implicit operation abort waiting step to block the caller for a relatively long time.
     // It is very important that the executor only has 1 thread, which means this has FIFO behavior.
-    _state_sync_executor.execute(std::make_unique<ClusterStateSyncAndApplyTask>(*this, stateCmd));
+    [[maybe_unused]] auto rejected_task = _state_sync_executor.execute(std::make_unique<ClusterStateSyncAndApplyTask>(*this, stateCmd));
+    // If this fails, we have processed a message _after_ onClose has been called, which should not happen.
+    assert(!rejected_task);
     return true;
 }
 
