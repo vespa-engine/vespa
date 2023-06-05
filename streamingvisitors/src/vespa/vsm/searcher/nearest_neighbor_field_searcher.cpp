@@ -33,10 +33,11 @@ namespace {
 constexpr uint32_t scratch_docid = 0;
 
 std::unique_ptr<TensorExtAttribute>
-make_attribute(const ValueType& tensor_type)
+make_attribute(const ValueType& tensor_type, search::attribute::DistanceMetric dm)
 {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
     cfg.setTensorType(tensor_type);
+    cfg.set_distance_metric(dm);
     auto result = std::make_unique<TensorExtAttribute>("nnfs_attr", cfg);
     uint32_t docid;
     result->addDoc(docid);
@@ -94,7 +95,7 @@ NearestNeighborFieldSearcher::prepare(search::streaming::QueryTermList& qtl,
         vespalib::Issue::report("Data type for field %u is '%s', but expected it to be a tensor type",
                                 field(), field_paths[field()].back().getDataType().toString().c_str());
     }
-    _attr = make_attribute(tensor_type->getTensorType());
+    _attr = make_attribute(tensor_type->getTensorType(), _metric);
     _calcs.clear();
     for (auto term : qtl) {
         auto* nn_term = term->as_nearest_neighbor_query_node();

@@ -140,7 +140,7 @@ get_tensor_type(const document::FieldValue& fv)
 }
 
 AttributeVector::SP
-createAttribute(const vespalib::string & name, const document::FieldValue & fv)
+createAttribute(const vespalib::string & name, const document::FieldValue & fv, search::attribute::DistanceMetric dm)
 {
     LOG(debug, "Create single value attribute '%s' with value type '%s'", name.c_str(), fv.className());
     if (fv.isA(document::FieldValue::Type::BYTE) || fv.isA(document::FieldValue::Type::INT) || fv.isA(document::FieldValue::Type::LONG)) {
@@ -156,6 +156,7 @@ createAttribute(const vespalib::string & name, const document::FieldValue & fv)
         auto tdt = get_tensor_type(fv);
         assert(tdt != nullptr);
         cfg.setTensorType(tdt->getTensorType());
+        cfg.set_distance_metric(dm);
         return std::make_shared<search::tensor::TensorExtAttribute>(name, cfg);
     } else {
         LOG(debug, "Can not make an attribute out of %s of type '%s'.", name.c_str(), fv.className());
@@ -860,7 +861,7 @@ void SearchVisitor::setupAttributeVector(const FieldPath &fieldPath) {
     } else if (typeSeen == WSET) {
         attr = createMultiValueAttribute (attrName, fv, false);
     } else {
-        attr = createAttribute(attrName, fv);
+        attr = createAttribute(attrName, fv, _fieldSearchSpecMap.get_distance_metric(attrName));
     }
 
     if (attr) {
