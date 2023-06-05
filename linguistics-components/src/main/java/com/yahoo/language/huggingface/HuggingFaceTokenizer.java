@@ -6,6 +6,7 @@ import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.Language;
+import com.yahoo.language.huggingface.config.HuggingFaceTokenizerConfig;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.language.tools.Embed;

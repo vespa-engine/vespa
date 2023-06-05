@@ -5,6 +5,8 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
+import com.yahoo.language.huggingface.config.HuggingFaceTokenizerConfig;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -12,6 +14,9 @@ import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
+import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
+import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
+import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
@@ -108,6 +113,28 @@ public class EmbedderTestCase {
         assertEquals("minilm-l6-v2 application-url \"\"", config.getObject("transformerModel").getValue());
         assertEquals("\"\" \"\" files/vocab.txt", config.getObject("tokenizerVocab").getValue());
         assertEquals("4", config.getObject("onnxIntraOpThreads").getValue());
+
+        {
+            var hfEmbedder = (HuggingFaceEmbedder)containerCluster.getComponentsMap().get(new ComponentId("hf-embedder"));
+            assertEquals("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", hfEmbedder.getClassId().getName());
+            var cfgBuilder = new HuggingFaceEmbedderConfig.Builder();
+            hfEmbedder.getConfig(cfgBuilder);
+            var cfg = cfgBuilder.build();
+            assertEquals("my_input_ids", cfg.transformerInputIds());
+        }
+        {
+            var hfTokenizer = (HuggingFaceTokenizer)containerCluster.getComponentsMap().get(new ComponentId("hf-tokenizer"));
+            assertEquals("com.yahoo.language.huggingface.HuggingFaceTokenizer", hfTokenizer.getClassId().getName());
+            var cfgBuilder = new HuggingFaceTokenizerConfig.Builder();
+            hfTokenizer.getConfig(cfgBuilder);
+            var cfg = cfgBuilder.build();
+            assertEquals(768, cfg.maxLength());
+        }
+    }
+
+    @Test
+    void passesXmlValdiation() {
+        new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed/").create();
     }
 
     @Test

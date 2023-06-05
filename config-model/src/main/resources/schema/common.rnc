@@ -53,6 +53,11 @@ GenericConfig = element config {
     anyElement*
 }
 
+ModelReference =
+    attribute model-id { xsd:string }? &
+    attribute path { xsd:string }? &
+    attribute url { xsd:string }?
+
 ComponentSpec =
     ( attribute id { xsd:Name | JavaId } | attribute idref { xsd:Name } | attribute ident { xsd:Name } )
 
@@ -64,7 +69,7 @@ BundleSpec =
     attribute bundle { xsd:Name }?
 
 Component = element component {
-   ComponentDefinition
+   (ComponentDefinition | TypedComponentDefinition)
 }
 
 ComponentDefinition =
@@ -72,3 +77,31 @@ ComponentDefinition =
    BundleSpec &
    GenericConfig* &
    Component*
+
+TypedComponentDefinition =
+   attribute id { xsd:Name } &
+   (HuggingFaceEmbedder | HuggingFaceTokenizer) &
+   GenericConfig* &
+   Component*
+
+HuggingFaceEmbedder =
+   attribute type { "hugging-face-embedder" } &
+   element transformer-model { ModelReference } &
+   element tokenizer-model { ModelReference }? &
+   element max-tokens { xsd:nonNegativeInteger }? &
+   element transformer-input-ids { xsd:string }? &
+   element transformer-attention-mask { xsd:string }? &
+   element transformer-token-type-ids { xsd:string }? &
+   element transformer-output { xsd:string }? &
+   element normalize { xsd:boolean }? &
+   element onnx-execution-mode { "parallel" | "sequential" }? &
+   element onnx-interop-threads { xsd:integer }? &
+   element onnx-intraop-threads { xsd:integer }? &
+   element onnx-gpu-device { xsd:integer }?
+
+HuggingFaceTokenizer =
+    attribute type { "hugging-face-tokenizer" } &
+    element model { attribute language { xsd:string }? & ModelReference }+ &
+    element special-tokens { xsd:boolean }? &
+    element max-length { xsd:integer }? &
+    element truncation { xsd:boolean }?
