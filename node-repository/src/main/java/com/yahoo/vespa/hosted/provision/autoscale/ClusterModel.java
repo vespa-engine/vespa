@@ -121,10 +121,27 @@ public class ClusterModel {
 
     public Application application() { return application; }
     public ClusterSpec clusterSpec() { return clusterSpec; }
-    public Cluster cluster() { return cluster; }
+    private ClusterNodesTimeseries nodeTimeseries() { return nodeTimeseries; }
+    private ClusterTimeseries clusterTimeseries() { return clusterTimeseries; }
+
+    /** Returns the instant this model was created. */
+    public Instant at() { return at;}
 
     public boolean isEmpty() {
         return nodeTimeseries().isEmpty();
+    }
+
+    /** Returns the predicted duration of a rescaling of this cluster */
+    public Duration scalingDuration() { return scalingDuration; }
+
+    /** Returns the average of the peak load measurement in each dimension, from each node. */
+    public Load peakLoad() {
+        return nodeTimeseries().peakLoad();
+    }
+
+    /** Returns the relative load adjustment accounting for redundancy in this. */
+    public Load redundancyAdjustment() {
+        return loadWith(nodeCount(), groupCount());
     }
 
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
@@ -160,19 +177,6 @@ public class ClusterModel {
     public static Duration minScalingDuration(ClusterSpec clusterSpec) {
         if (clusterSpec.isStateful()) return Duration.ofHours(8);
         return Duration.ofMinutes(5);
-    }
-
-    /** Returns the predicted duration of a rescaling of this cluster */
-    public Duration scalingDuration() { return scalingDuration; }
-
-    /** Returns the average of the peak load measurement in each dimension, from each node. */
-    public Load peakLoad() {
-        return nodeTimeseries().peakLoad();
-    }
-
-    /** Returns the relative load adjustment accounting for redundancy in this. */
-    public Load redundancyAdjustment() {
-        return loadWith(nodeCount(), groupCount());
     }
 
     /**
@@ -232,9 +236,6 @@ public class ClusterModel {
                                        cpu.costPerQuery().orElse(0));
     }
 
-    /** Returns the instant this model was created. */
-    public Instant at() { return at;}
-
     private Load adjustQueryDependentIdealLoadByBcpGroupInfo(Load ideal) {
         double currentClusterTotalVcpuPerGroup = nodes.not().retired().first().get().resources().vcpu() * groupSize();
 
@@ -255,10 +256,6 @@ public class ClusterModel {
         if (lastCompletion.isEmpty()) return true; // Ongoing
         return lastCompletion.get().isAfter(clock.instant().minus(period));
     }
-
-    private ClusterNodesTimeseries nodeTimeseries() { return nodeTimeseries; }
-
-    private ClusterTimeseries clusterTimeseries() { return clusterTimeseries; }
 
     /**
      * Returns the predicted max query growth rate per minute as a fraction of the average traffic
