@@ -213,9 +213,11 @@ class HttpFeedClientTest {
     @Test
     void testHandshake() {
         // dummy:123 does not exist, and results in a host-not-found exception.
-        assertTrue(assertThrows(FeedException.class,
-                                () -> new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123")))))
-                           .getMessage().startsWith("failed handshake with server: java.net.UnknownHostException"));
+        FeedException exception = assertThrows(FeedException.class,
+                                                   () -> new HttpFeedClient(new FeedClientBuilderImpl(Collections.singletonList(URI.create("https://dummy:123")))));
+        String message = exception.getMessage();
+        assertTrue(message.startsWith("failed handshake with server after "), message);
+        assertTrue(message.contains("java.net.UnknownHostException"), message);
 
         HttpResponse oldResponse = HttpResponse.of(400, "{\"pathId\":\"/document/v1/test/build/docid/foo\",\"message\":\"Could not read document, no document?\"}".getBytes(UTF_8));
         HttpResponse okResponse = HttpResponse.of(200, null);
