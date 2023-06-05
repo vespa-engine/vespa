@@ -341,6 +341,7 @@ jobs:
           fi
 
   publish-el9-preview:
+    requires: [~pr]
     image: docker.io/vespaengine/vespa-build-centos-stream8:latest
     annotations:
       screwdriver.cd/cpu: 7
@@ -381,21 +382,16 @@ jobs:
           docker context use vespa-context
           docker buildx create --name vespa-builder --driver docker-container --use
           docker buildx inspect --bootstrap
-          docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
           docker buildx build \
                 --progress plain \
                 --load \
-                --platform linux/amd64,linux/arm64 \
+                --platform linux/amd64 \
                 --build-arg VESPA_BASE_IMAGE=el9 \
                 --build-arg VESPA_VERSION=$VESPA_VERSION \
                 --file Dockerfile  \
-                --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION \
-                --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_MAJOR \
-                --tag docker.io/vespaengine/$IMAGE_NAME:latest \
+                --tag vespaengine/$IMAGE_NAME:latest \
                 .
       - verify-container-image: |
-          # Trick to be able to use the documentation testing to verify the image built locally
-          buildah tag $IMAGE_NAME:$VESPA_VERSION vespaengine/vespa:latest
           # Run quick start guide
           $SD_SOURCE_DIR/screwdriver/test-quick-start-guide.sh
       - publish-image: |
