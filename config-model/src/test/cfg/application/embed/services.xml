@@ -16,6 +16,7 @@
       <onnx-intraop-threads>10</onnx-intraop-threads>
       <onnx-interop-threads>8</onnx-interop-threads>
       <onnx-gpu-device>1</onnx-gpu-device>
+      <pooling-strategy>mean</pooling-strategy>
     </component>
 
     <component id="hf-tokenizer" type="hugging-face-tokenizer">
