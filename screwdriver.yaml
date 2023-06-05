@@ -444,7 +444,7 @@ jobs:
           now_epoch=`date "+%s"`
           echo "Now epoch: " $now_epoch
       - calculate-current-release-age: |
-          current_release_date=$(curl -sL https://repo1.maven.org/maven2/com/yahoo/vespa/cloud-tenant-base/maven-metadata.xml | \
+          current_release_date=$(curl -sLf https://repo1.maven.org/maven2/com/yahoo/vespa/cloud-tenant-base/maven-metadata.xml | \
           grep -oP "<lastUpdated>\K\w+" | cut -c 1-8)
           echo "Current release date: " $current_release_date
           current_release_epoch=`date -d "$current_release_date" "+%s"`
@@ -457,7 +457,7 @@ jobs:
             exit 1
           fi
       - calculate-docker-image-age: |
-          image_date=$(curl https://hub.docker.com/v2/repositories/vespaengine/vespa/ | jq -re '.last_updated)
+          image_date=$(curl -sLf https://hub.docker.com/v2/repositories/vespaengine/vespa/ | jq -re '.last_updated')
           echo "Docker image last_updated: " $image_date
           image_epoch=`date -d "$image_date" "+%s"`
           echo "Docker image epoch: " $image_epoch
