@@ -55,6 +55,7 @@
 			<extensions>true</extensions>
 			<configuration>
 				<bundleType>CORE</bundleType>
+				<suppressWarningMissingImportPackages>true</suppressWarningMissingImportPackages>
 			</configuration>
 		</plugin>
 	    <plugin>

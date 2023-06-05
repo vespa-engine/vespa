@@ -46,6 +46,8 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         USER
     }
 
+    private static final String VESPA_GROUP_ID = "com.yahoo.vespa";
+
     @Parameter
     private String discApplicationClass = null;
 
@@ -146,7 +148,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
     private BundleType effectiveBundleType() {
         if (bundleType != BundleType.USER) return bundleType;
-        return project.getGroupId().equals("com.yahoo.vespa") ? BundleType.INTERNAL : BundleType.USER;
+        return isVespaInternalGroupId(project.getGroupId()) ? BundleType.INTERNAL : BundleType.USER;
     }
 
     private void addAdditionalManifestProperties(Map<String, String> manifestContent, PackageTally includedPackages) {
@@ -256,12 +258,18 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         }
     }
 
+    private boolean isVespaInternalGroupId(String groupId) {
+        return groupId.equals(VESPA_GROUP_ID)
+                || groupId.equals(VESPA_GROUP_ID + ".hosted")
+                || groupId.equals(VESPA_GROUP_ID + ".hosted.controller");
+    }
+
     private boolean isJdiscComponentArtifact(Artifact a) {
-        return a.getArtifactId().equals("component") && a.getGroupId().equals("com.yahoo.vespa");
+        return a.getArtifactId().equals("component") && a.getGroupId().equals(VESPA_GROUP_ID);
     }
 
     private boolean isContainerDiscArtifact(Artifact a) {
-        return a.getArtifactId().equals("container-disc") && a.getGroupId().equals("com.yahoo.vespa");
+        return a.getArtifactId().equals("container-disc") && a.getGroupId().equals(VESPA_GROUP_ID);
     }
 
     private PackageTally getProjectClassesTally() {

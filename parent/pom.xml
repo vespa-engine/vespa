@@ -246,6 +246,7 @@
                     <configuration>
                         <configGenVersion>${project.version}</configGenVersion>
                         <useCommonAssemblyIds>true</useCommonAssemblyIds>
+                        <failOnWarnings>true</failOnWarnings>
                     </configuration>
                 </plugin>
                 <plugin>
