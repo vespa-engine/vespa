@@ -15,11 +15,13 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -276,6 +278,46 @@ public class MasterElectionTest extends FleetControllerTest {
     }
 
     @Test
+    void testGetMaster() throws Exception {
+        FleetControllerOptions.Builder options = defaultOptions();
+        options.setMasterZooKeeperCooldownPeriod(3600 * 1000); // An hour
+        FakeTimer timer = new FakeTimer();
+        setUpFleetControllers(3, timer, options);
+        waitForMaster(0);
+
+        timer.advanceTime(24 * 3600 * 1000); // A day
+        waitForCompleteCycles();
+
+        long maxRetries = timeout().toMillis() / 100;
+        for (int nodeIndex = 0; nodeIndex < 3; ++nodeIndex) {
+            assertEquals((nodeIndex == 0), fleetControllers.get(nodeIndex).isMaster());
+        }
+
+        log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
+        fleetControllers.get(0).shutdown();
+        // Wait until fc 1 & 2 votes for node 1
+        waitForCompleteCycle(1);
+        waitForCompleteCycle(2);
+        // 5 minutes is not long enough period to wait before letting this node be master.
+        timer.advanceTime(300 * 1000); // 5 minutes
+
+        List<Integer> remainingNodes = List.of(1, 2);
+        waitForNoMaster(remainingNodes);
+        // Verify that fc 1 is not master
+        assertFalse(fleetControllers.get(1).isMaster());
+
+        // But after an hour it should become one.
+        timer.advanceTime(3600 * 1000); // 60 minutes
+        waitForMaster(1);
+
+        for (int i = 0; i < maxRetries; ++i) {
+            if (fleetControllers.get(i).isMaster()) break;
+            // We may have bad timing causing node not to have realized it is master yet
+        }
+        assertTrue(fleetControllers.get(1).isMaster());
+    }
+
+    @Test
     void testReconfigure() throws Exception {
         FleetControllerOptions.Builder options = defaultOptions();
         options.setMasterZooKeeperCooldownPeriod(1);
@@ -399,6 +441,24 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(0);
         waitForStableSystem();
         waitForStateInAllSpaces("version:\\d+ distributor:10 storage:10");
+    }
+
+    private void waitForNoMaster(List<Integer> nodes) {
+        Instant endTime = Instant.now().plus(timeout());
+        while (Instant.now().isBefore(endTime)) {
+            boolean allOk = true;
+            for (int node : nodes) {
+                if (fleetControllers.get(node).isMaster()) {  // there is a master, we are waiting for no master
+                    allOk = false;
+                    break;
+                }
+            }
+            if (allOk) return;
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) { /* ignore */ }
+        }
+        throw new IllegalStateException("Did not end up in state with no master within timeout of " + timeout());
     }
 
 }
