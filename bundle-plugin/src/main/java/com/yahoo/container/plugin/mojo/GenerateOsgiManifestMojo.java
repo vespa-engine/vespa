@@ -68,6 +68,13 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     private BundleType bundleType = BundleType.USER;
 
     @Parameter(defaultValue = "false")
+    private boolean suppressWarningMissingImportPackages;
+    @Parameter(defaultValue = "false")
+    private boolean suppressWarningPublicApi;
+    @Parameter(defaultValue = "false")
+    private boolean suppressWarningOverlappingPackages;
+
+    @Parameter(defaultValue = "false")
     private boolean failOnWarnings;
 
     @Parameter(defaultValue = "false")
@@ -105,7 +112,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
             if (hasJdiscCoreProvided(providedJarArtifacts)) {
                 // jdisc_core being provided guarantees that log output does not contain its exported packages
                 logMissingPackages(exportedPackagesFromProvidedDeps, projectPackages, compileJarsPackages, includedPackages);
-            } else {
+            } else if (! suppressWarningMissingImportPackages) {
                 warnOrThrow(("This project does not have '%s' as provided dependency, so the generated 'Import-Package' " +
                         "OSGi header may be missing important packages.").formatted(wantedProvidedDependency()));
             }
@@ -158,7 +165,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     }
 
     private void logNonPublicApiUsage(List<String> nonPublicApiUsed) {
-        if (effectiveBundleType() != BundleType.USER || nonPublicApiUsed.isEmpty()) return;
+        if (suppressWarningPublicApi || effectiveBundleType() != BundleType.USER || nonPublicApiUsed.isEmpty()) return;
         warnOrThrow("This project uses packages that are not part of Vespa's public api: %s".formatted(nonPublicApiUsed));
     }
 
@@ -201,6 +208,8 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
     private void logOverlappingPackages(PackageTally projectPackages,
                                         Set<String> exportedPackagesFromProvidedDeps) {
+        if (suppressWarningOverlappingPackages) return;
+
         Set<String> overlappingProjectPackages = Sets.intersection(projectPackages.definedPackages(), exportedPackagesFromProvidedDeps);
         if (! overlappingProjectPackages.isEmpty()) {
             warnOrThrow("This project defines packages that are also defined in provided scoped dependencies " +
