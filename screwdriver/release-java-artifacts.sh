@@ -16,7 +16,7 @@ fi
 readonly VESPA_RELEASE="$1"
 readonly VESPA_REF="$2"
 
-QUERY_VERSION_HTTP_CODE=$(curl --write-out %{http_code} --silent --location --output /dev/null https://oss.sonatype.org/content/repositories/releases/com/yahoo/vespa/parent/${VESPA_RELEASE}/)
+QUERY_VERSION_HTTP_CODE=$(curl --write-out %{http_code} --silent --location --output /dev/null https://oss.sonatype.org/content/repositories/releases/com/yahoo/vespa/parent/${VESPA_RELEASE}/parent-${VESPA_RELEASE}.pom)
 if [[ "200" == $QUERY_VERSION_HTTP_CODE ]]; then
   echo "Vespa version $VESPA_RELEASE is already promoted, exiting"
   exit 0

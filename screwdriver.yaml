@@ -436,6 +436,7 @@ jobs:
           make -C client/go install-brew
 
   verify-opensource-release-7days:
+    requires: [~pr]
     annotations:
       screwdriver.cd/buildPeriodically: H 0 * * *
     steps:
@@ -443,8 +444,8 @@ jobs:
           now_epoch=`date "+%s"`
           echo "Now epoch: " $now_epoch
       - calculate-current-release-age: |
-          current_release_date=`curl -s 'https://repo1.maven.org/maven2/com/yahoo/vespa/parent/' | \
-            grep '^<a href="[0-9]' | awk '{print $4}' | sort | tail -1`
+          current_release_date=$(curl -sL https://repo1.maven.org/maven2/com/yahoo/vespa/cloud-tenant-base/maven-metadata.xml | \
+          grep -oP "<lastUpdated>\K\w+" | cut -c 1-8)
           echo "Current release date: " $current_release_date
           current_release_epoch=`date -d "$current_release_date" "+%s"`
           echo "Current release epoch: " $current_release_epoch
