@@ -341,7 +341,6 @@ jobs:
           fi
 
   publish-el9-preview:
-    requires: [~pr]
     image: docker.io/vespaengine/vespa-build-centos-stream8:latest
     annotations:
       screwdriver.cd/cpu: 7
