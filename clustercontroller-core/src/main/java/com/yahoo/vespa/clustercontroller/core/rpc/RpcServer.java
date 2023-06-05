@@ -3,7 +3,6 @@ package com.yahoo.vespa.clustercontroller.core.rpc;
 
 import com.yahoo.jrt.Acceptor;
 import com.yahoo.jrt.ErrorCode;
-import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
@@ -121,13 +120,7 @@ public class RpcServer {
     }
 
     public void addMethods() {
-        Method m = new Method("getMaster", "", "is", this::queueRpcRequest);
-        m.methodDesc("Get index of current fleetcontroller master");
-        m.returnDesc(0, "masterindex", "The index of the current master according to this node, or -1 if there is none.");
-        m.returnDesc(1, "description", "A textual field, used for additional information, such as why there is no master.");
-        supervisor.addMethod(m);
-
-        m = new Method("getSystemState", "", "ss", this::queueRpcRequest);
+        Method m = new Method("getSystemState", "", "ss", this::queueRpcRequest);
         m.methodDesc("Get nodeState of all nodes and the system itself");
         m.returnDesc(0, "systemstate", "nodeState string of system");
         m.returnDesc(1, "nodestate", "nodeState-string for distributor and storage-nodes");
@@ -175,15 +168,6 @@ public class RpcServer {
                 handledAnyRequests = true;
             }
             try{
-                if (req.methodName().equals("getMaster")) {
-                    log.log(Level.FINE, "Resolving RPC getMaster request");
-                    Integer master = masterHandler.getMaster();
-                    String masterReason = masterHandler.getMasterReason();
-                    req.returnValues().add(new Int32Value(master == null ? -1 : master));
-                    req.returnValues().add(new StringValue(masterReason == null ? "No reason given" : masterReason));
-                    req.returnRequest();
-                    continue;
-                }
                 if (!masterHandler.isMaster()) {
                     throw new IllegalStateException("Refusing to answer RPC calls as we are not the master fleetcontroller.");
                 }

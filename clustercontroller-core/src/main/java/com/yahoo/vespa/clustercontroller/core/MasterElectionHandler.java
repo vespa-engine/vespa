@@ -77,30 +77,6 @@ public class MasterElectionHandler implements MasterInterface {
         return masterCandidate;
     }
 
-    public String getMasterReason() {
-        if (masterCandidate == null) {
-            return "There is currently no master candidate.";
-        }
-        if (tooFewFollowersToHaveAMaster()) {
-            return "More than half of the nodes must agree for there to be a master. Only " + followers + " of "
-                    + totalCount + " nodes agree on current master candidate (" + masterCandidate + ").";
-        }
-        // If all are following master candidate, it is master if it exists.
-        if (followers == totalCount) {
-            return "All " + totalCount + " nodes agree that " + masterCandidate + " is current master.";
-        }
-
-        // If not all are following we only accept master candidate if old master
-        // disappeared sufficient time ago
-        if (masterGoneFromZooKeeperTime + masterZooKeeperCooldownPeriod > timer.getCurrentTimeInMillis()) {
-            return followers + " of " + totalCount + " nodes agree " + masterCandidate + " should be master, "
-                    + "but old master cooldown period of " + masterZooKeeperCooldownPeriod + " ms has not passed yet. "
-                    + "To ensure it has got time to realize it is no longer master before we elect a new one, "
-                    + "currently there is no master.";
-        }
-        return followers + " of " + totalCount + " nodes agree " + masterCandidate + " is master.";
-    }
-
     private boolean tooFewFollowersToHaveAMaster() {
         return 2 * followers <= totalCount;
     }

@@ -462,26 +462,6 @@ public class RpcServerTest extends FleetControllerTest {
         waitForState("version:\\d+ distributor:10 storage:10 .9.s:m");
     }
 
-    @Test
-    void testGetMaster() throws Exception {
-        FleetControllerOptions.Builder options = defaultOptions();
-        options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
-        setUpFleetController(timer, options);
-        setUpVdsNodes(timer);
-        waitForStableSystem();
-
-        int rpcPort = fleetController().getRpcPort();
-        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
-        assertTrue(connection.isValid());
-
-        Request req = new Request("getMaster");
-        connection.invokeSync(req, timeout());
-        assertEquals(0, req.returnValues().get(0).asInt32(), req.toString());
-        assertEquals("All 1 nodes agree that 0 is current master.", req.returnValues().get(1).asString(), req.toString());
-
-        // Note that this feature is tested better in MasterElectionTest.testGetMaster as it has multiple fleetcontrollers
-    }
-
     private Request setNodeState(String node, NodeState newNodeState, Target connection) {
         return setNodeState(node, newNodeState.serialize(true), connection);
     }
