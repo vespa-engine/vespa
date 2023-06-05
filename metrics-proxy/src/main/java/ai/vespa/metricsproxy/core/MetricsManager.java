@@ -9,7 +9,6 @@ import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.service.VespaService;
 import ai.vespa.metricsproxy.service.VespaServices;
-import com.yahoo.component.Vtag;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -138,7 +137,6 @@ public class MetricsManager {
     private Map<DimensionId, String> getGlobalDimensions() {
         Map<DimensionId, String> globalDimensions = new LinkedHashMap<>(applicationDimensions.getDimensions());
         globalDimensions.putAll(nodeDimensions.getDimensions());
-        globalDimensions.put(VESPA_VERSION, Vtag.currentVersion.toFullString());
         return globalDimensions;
     }
 
