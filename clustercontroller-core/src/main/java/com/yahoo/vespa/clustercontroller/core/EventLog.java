@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -20,18 +21,17 @@ public class EventLog implements EventLogInterface {
     private final Timer timer;
     private final LinkedList<Event> eventLog = new LinkedList<>();
     private final Map<Node, LinkedList<NodeEvent>> nodeLog = new TreeMap<>();
-    private final MetricUpdater metricUpdater;  // may be null
+    private final MetricUpdater metricUpdater;
     private long eventsSeen = 0;
     private final long startTime;
     private int maxSize = 1024;
     private int maxNodeSize = 1024;
     private final long recentTimePeriod = 7 * 24 * 60 * 60 * 1000; // millisecs - 1 week
 
-    /** Note: metricReporter may be null. */
     public EventLog(Timer timer, MetricUpdater metricUpdater) {
         this.timer = timer;
         this.startTime = timer.getCurrentTimeInMillis();
-        this.metricUpdater = metricUpdater;
+        this.metricUpdater = Objects.requireNonNull(metricUpdater, "metricUpdater must be non-null");
     }
 
     public void setMaxSize(int size, int nodesize) {
@@ -70,9 +70,7 @@ public class EventLog implements EventLogInterface {
 
     public void addNodeOnlyEvent(NodeEvent e, java.util.logging.Level level) {
         log.log(level, "Added node only event: " + e.toString());
-        if (metricUpdater != null) {
-            metricUpdater.recordNewNodeEvent();
-        }
+        metricUpdater.recordNewNodeEvent();
         LinkedList<NodeEvent> nodeList = nodeLog.get(e.getNode().getNode());
         if (nodeList == null) {
             nodeList = new LinkedList<>();
