@@ -40,55 +40,18 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class EmbedderTestCase {
 
-    private static final String BUNDLED_EMBEDDER_CLASS = "ai.vespa.embedding.BertBaseEmbedder";
-    private static final String BUNDLED_EMBEDDER_CONFIG = "embedding.bert-base-embedder";
-
-    @Test
-    void testBundledEmbedder_selfhosted() throws IOException, SAXException {
-        String input = "<component id='test' class='" + BUNDLED_EMBEDDER_CLASS + "' bundle='model-integration'>" +
-                       "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                       "    <transformerModel id='my_model_id' url='my-model-url' />" +
-                       "    <tokenizerVocab id='my_vocab_id' url='my-vocab-url' />" +
-                       "  </config>" +
-                       "</component>";
-        String component = "<component id='test' class='" + BUNDLED_EMBEDDER_CLASS + "' bundle='model-integration'>" +
-                           "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                           "    <transformerModel id='my_model_id' url='my-model-url' />" +
-                           "    <tokenizerVocab id='my_vocab_id' url='my-vocab-url' />" +
-                           "  </config>" +
-                           "</component>";
-        assertTransform(input, component, false);
-    }
-
-    @Test
-    void testBundledEmbedder_hosted() throws IOException, SAXException {
-        String input = "<component id='test' class='" + BUNDLED_EMBEDDER_CLASS + "' bundle='model-integration'>" +
-                       "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                       "    <transformerModel model-id='minilm-l6-v2' />" +
-                       "    <tokenizerVocab model-id='bert-base-uncased' path='ignored.txt'/>" +
-                       "  </config>" +
-                       "</component>";
-        String component = "<component id='test' class='" + BUNDLED_EMBEDDER_CLASS + "' bundle='model-integration'>" +
-                           "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                           "      <transformerModel model-id='minilm-l6-v2' url='https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx' />" +
-                           "      <tokenizerVocab model-id='bert-base-uncased' url='https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt' />" +
-                           "  </config>" +
-                           "</component>";
-        assertTransform(input, component, true);
-    }
-
     @Test
     void testApplicationComponentWithModelReference_hosted() throws IOException, SAXException {
-        String input = "<component id='test' class='ApplicationSpecificEmbedder' bundle='model-integration'>" +
-                       "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                       "    <transformerModel model-id='minilm-l6-v2' />" +
-                       "    <tokenizerVocab model-id='bert-base-uncased' />" +
+        String input = "<component id='test' class='ai.vespa.example.paragraph.ApplicationSpecificEmbedder' bundle='app'>" +
+                       "  <config name='ai.vespa.example.paragraph.sentence-embedder'>" +
+                       "    <model model-id='minilm-l6-v2' />" +
+                       "    <vocab model-id='bert-base-uncased' />" +
                        "  </config>" +
                        "</component>";
-        String component = "<component id='test' class='ApplicationSpecificEmbedder' bundle='model-integration'>" +
-                           "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                           "      <transformerModel  model-id='minilm-l6-v2' url='https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx' />" +
-                           "      <tokenizerVocab model-id='bert-base-uncased' url='https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt' />" +
+        String component = "<component id='test' class='ai.vespa.example.paragraph.ApplicationSpecificEmbedder' bundle='app'>" +
+                           "  <config name='ai.vespa.example.paragraph.sentence-embedder'>" +
+                           "      <model  model-id='minilm-l6-v2' url='https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx' />" +
+                           "      <vocab model-id='bert-base-uncased' url='https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt' />" +
                            "  </config>" +
                            "</component>";
         assertTransform(input, component, true);
@@ -96,28 +59,15 @@ public class EmbedderTestCase {
 
     @Test
     void testUnknownModelId_hosted() throws IOException, SAXException {
-        String embedder = "<component id='test' class='" + BUNDLED_EMBEDDER_CLASS + "'>" +
-                          "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                          "    <transformerModel model-id='my_model_id' />" +
-                          "    <tokenizerVocab model-id='my_vocab_id' />" +
+        String embedder = "<component id='test' class='ai.vespa.example.paragraph.ApplicationSpecificEmbedder'>" +
+                          "  <config name='ai.vespa.example.paragraph.sentence-embedder'>" +
+                          "    <model model-id='my_model_id' />" +
+                          "    <vocab model-id='my_vocab_id' />" +
                           "  </config>" +
                           "</component>";
         assertTransformThrows(embedder,
-                              "Unknown model id 'my_model_id' on 'transformerModel'",
+                              "Unknown model id 'my_model_id' on 'model'",
                               true);
-    }
-
-    @Test
-    void testApplicationPackageWithEmbedder_selfhosted() throws Exception  {
-        Path applicationDir = Path.fromString("src/test/cfg/application/embed/");
-        VespaModel model = loadModel(applicationDir, false);
-        ApplicationContainerCluster containerCluster = model.getContainerClusters().get("container");
-
-        Component<?, ?> transformer = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
-        ConfigPayloadBuilder config = transformer.getUserConfigs().get(new ConfigDefinitionKey("bert-base-embedder", "embedding"));
-        assertEquals("minilm-l6-v2 application-url \"\"", config.getObject("transformerModel").getValue());
-        assertEquals("\"\" \"\" files/vocab.txt", config.getObject("tokenizerVocab").getValue());
-        assertEquals("4", config.getObject("onnxIntraOpThreads").getValue());
     }
 
     @Test
@@ -166,22 +116,8 @@ public class EmbedderTestCase {
     }
 
     @Test
-    void passesXmlValdiation() {
+    void passesXmlValidation() {
         new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed/").create();
-    }
-
-    @Test
-    void testApplicationPackageWithEmbedder_hosted() throws Exception  {
-        Path applicationDir = Path.fromString("src/test/cfg/application/embed/");
-        VespaModel model = loadModel(applicationDir, true);
-        ApplicationContainerCluster containerCluster = model.getContainerClusters().get("container");
-
-        Component<?, ?> transformer = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
-        ConfigPayloadBuilder config = transformer.getUserConfigs().get(new ConfigDefinitionKey("bert-base-embedder", "embedding"));
-        assertEquals("minilm-l6-v2 https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx \"\"",
-                     config.getObject("transformerModel").getValue());
-        assertEquals("\"\" \"\" files/vocab.txt", config.getObject("tokenizerVocab").getValue());
-        assertEquals("4", config.getObject("onnxIntraOpThreads").getValue());
     }
 
     @Test
@@ -217,7 +153,7 @@ public class EmbedderTestCase {
             fail("Expected failure");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("transformerModel is configured with only a 'model-id'. Add a 'path' or 'url' to deploy this outside Vespa Cloud",
+            assertEquals("model is configured with only a 'model-id'. Add a 'path' or 'url' to deploy this outside Vespa Cloud",
                          Exceptions.toMessageString(e));
         }
     }
