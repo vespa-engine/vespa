@@ -67,7 +67,7 @@ public class SimpleTokenizer implements Tokenizer {
         for (int prev = 0, next = Character.charCount(nextCode); next <= input.length(); ) {
             nextCode = next < input.length() ? input.codePointAt(next) : SPACE_CODE;
             TokenType nextType = SimpleTokenType.valueOf(nextCode);
-            if (!prevType.isIndexable() || !nextType.isIndexable()) {
+            if (isAtTokenBoundary(prevType, nextType)) {
                 String original = input.substring(prev, next);
                 tokens.add(new SimpleToken(original).setOffset(prev)
                                                     .setType(tokenType)
@@ -82,6 +82,12 @@ public class SimpleTokenizer implements Tokenizer {
             next += Character.charCount(nextCode);
         }
         return tokens;
+    }
+
+    private boolean isAtTokenBoundary(TokenType prevType, TokenType nextType) {
+        // Always index each symbol as a token
+        if (prevType == TokenType.INDEXABLE_SYMBOL || nextType == TokenType.INDEXABLE_SYMBOL) return true;
+        return !prevType.isIndexable() || !nextType.isIndexable();
     }
 
     private TokenType determineType(TokenType tokenType, TokenType characterType) {

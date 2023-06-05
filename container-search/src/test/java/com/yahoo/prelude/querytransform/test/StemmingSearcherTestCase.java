@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias M. Lidal</a>
+ * @author Mathias M. Lidal
  */
 public class StemmingSearcherTestCase {
 
@@ -33,8 +33,8 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testStemOnlySomeTerms() {
-        assertStem("/search?query=Holes in CVS and Subversion nostem:Found",
-                "WEAKAND(100) hole in cvs and subversion nostem:Found");
+        assertStemmed("WEAKAND(100) hole in cvs and subversion nostem:Found", "/search?query=Holes in CVS and Subversion nostem:Found"
+                     );
     }
 
     @Test
@@ -78,7 +78,7 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testDontStemPrefixes() {
-        assertStem("/search?query=ist*&language=de", "WEAKAND(100) ist*");
+        assertStemmed("WEAKAND(100) ist*", "/search?query=ist*&language=de");
     }
 
     @Test
@@ -90,10 +90,10 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testNounStemming() {
-        assertStem("/search?query=noun:towers noun:tower noun:tow",
-                "WEAKAND(100) noun:tower noun:tower noun:tow");
-        assertStem("/search?query=notnoun:towers notnoun:tower notnoun:tow",
-                "WEAKAND(100) notnoun:tower notnoun:tower notnoun:tow");
+        assertStemmed("WEAKAND(100) noun:tower noun:tower noun:tow", "/search?query=noun:towers noun:tower noun:tow"
+                     );
+        assertStemmed("WEAKAND(100) notnoun:tower notnoun:tower notnoun:tow", "/search?query=notnoun:towers notnoun:tower notnoun:tow"
+                     );
     }
 
     @SuppressWarnings("deprecation")
@@ -133,11 +133,19 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testMultipleStemming() {
-        Query q = new Query(QueryTestCase.httpEncode("/search?language=en&search=four&query=trees \"nouns girls\" flowers \"a verbs a\" girls&default-index=foobar"));
-        executeStemming(q);
-        assertEquals("WEAKAND(100) WORD_ALTERNATIVES foobar:[ tree(0.7) trees(1.0) ] " +
-                "foobar:\"noun girl\" WORD_ALTERNATIVES foobar:[ flower(0.7) flowers(1.0) ] " +
-                "foobar:\"a verb a\" WORD_ALTERNATIVES foobar:[ girl(0.7) girls(1.0) ]", q.getModel().getQueryTree().getRoot().toString());
+        assertStemmed("WEAKAND(100) WORD_ALTERNATIVES foobar:[ tree(0.7) trees(1.0) ] " +
+                      "foobar:\"noun girl\" WORD_ALTERNATIVES foobar:[ flower(0.7) flowers(1.0) ] " +
+                      "foobar:\"a verb a\" WORD_ALTERNATIVES foobar:[ girl(0.7) girls(1.0) ]",
+                      "/search?language=en&search=four&query=trees \"nouns girls\" flowers \"a verbs a\" girls&default-index=foobar");
+    }
+
+    @Test
+    void testEmojiStemming() {
+        String emoji1 = "\uD83C\uDF49"; // 🍉
+        String emoji2 = "\uD83D\uDE00"; // 😀
+        assertStemmed("WEAKAND(100) " + emoji1, "/search?query=" + emoji1);
+        assertStemmed("WEAKAND(100) (AND " + emoji1 + " " + emoji2 + ")", "/search?query=" + emoji1 + emoji2);
+        assertStemmed("WEAKAND(100) (AND " + emoji1 + " foo " + emoji2 + ")", "/search?query=" + emoji1 + "foo" + emoji2);
     }
 
     private Execution.Context newExecutionContext() {
@@ -153,12 +161,8 @@ public class StemmingSearcherTestCase {
                       newExecutionContext()).search(query);
     }
 
-    private void assertStem(String queryString, String expectedQueryTree) {
-        assertStemEncoded(QueryTestCase.httpEncode(queryString), expectedQueryTree);
-    }
-
-    private void assertStemEncoded(String encodedQueryString, String expectedQueryTree) {
-        Query query = new Query(encodedQueryString);
+    private void assertStemmed(String expectedQueryTree, String queryString) {
+        Query query = new Query(QueryTestCase.httpEncode(queryString));
         executeStemming(query);
         assertEquals(expectedQueryTree, query.getModel().getQueryTree().getRoot().toString());
     }
