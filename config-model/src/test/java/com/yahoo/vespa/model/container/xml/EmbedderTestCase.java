@@ -2,6 +2,9 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.config.InnerNode;
+import com.yahoo.config.ModelNode;
+import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -113,23 +116,30 @@ public class EmbedderTestCase {
         assertEquals("minilm-l6-v2 application-url \"\"", config.getObject("transformerModel").getValue());
         assertEquals("\"\" \"\" files/vocab.txt", config.getObject("tokenizerVocab").getValue());
         assertEquals("4", config.getObject("onnxIntraOpThreads").getValue());
+    }
 
-        {
-            var hfEmbedder = (HuggingFaceEmbedder)containerCluster.getComponentsMap().get(new ComponentId("hf-embedder"));
-            assertEquals("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", hfEmbedder.getClassId().getName());
-            var cfgBuilder = new HuggingFaceEmbedderConfig.Builder();
-            hfEmbedder.getConfig(cfgBuilder);
-            var cfg = cfgBuilder.build();
-            assertEquals("my_input_ids", cfg.transformerInputIds());
-        }
-        {
-            var hfTokenizer = (HuggingFaceTokenizer)containerCluster.getComponentsMap().get(new ComponentId("hf-tokenizer"));
-            assertEquals("com.yahoo.language.huggingface.HuggingFaceTokenizer", hfTokenizer.getClassId().getName());
-            var cfgBuilder = new HuggingFaceTokenizerConfig.Builder();
-            hfTokenizer.getConfig(cfgBuilder);
-            var cfg = cfgBuilder.build();
-            assertEquals(768, cfg.maxLength());
-        }
+    @Test
+    void huggingfaceEmbedder_selfhosted() throws Exception {
+        var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), false);
+        var cluster = model.getContainerClusters().get("container");
+        var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);
+        assertEquals("my_input_ids", embedderCfg.transformerInputIds());
+        assertEquals("https://my/url/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
+        assertEquals("https://my/url/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
+        assertEquals(768, tokenizerCfg.maxLength());
+    }
+
+    @Test
+    void huggingfaceEmbedder_hosted() throws Exception {
+        var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), true);
+        var cluster = model.getContainerClusters().get("container");
+        var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);
+        assertEquals("my_input_ids", embedderCfg.transformerInputIds());
+        assertEquals("https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
+        assertEquals("https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
+        assertEquals(768, tokenizerCfg.maxLength());
     }
 
     @Test
@@ -242,6 +252,33 @@ public class EmbedderTestCase {
     private Element createElement(String xml) throws IOException, SAXException {
         Document doc = XML.getDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
         return (Element) doc.getFirstChild();
+    }
+
+    private static HuggingFaceTokenizerConfig assertHuggingfaceTokenizerComponentPresent(ApplicationContainerCluster cluster) {
+        var hfTokenizer = (HuggingFaceTokenizer) cluster.getComponentsMap().get(new ComponentId("hf-tokenizer"));
+        assertEquals("com.yahoo.language.huggingface.HuggingFaceTokenizer", hfTokenizer.getClassId().getName());
+        var cfgBuilder = new HuggingFaceTokenizerConfig.Builder();
+        hfTokenizer.getConfig(cfgBuilder);
+        return cfgBuilder.build();
+    }
+
+    private static HuggingFaceEmbedderConfig assertHuggingfaceEmbedderComponentPresent(ApplicationContainerCluster cluster) {
+        var hfEmbedder = (HuggingFaceEmbedder) cluster.getComponentsMap().get(new ComponentId("hf-embedder"));
+        assertEquals("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", hfEmbedder.getClassId().getName());
+        var cfgBuilder = new HuggingFaceEmbedderConfig.Builder();
+        hfEmbedder.getConfig(cfgBuilder);
+        return cfgBuilder.build();
+    }
+
+    // Ugly hack to read underlying model reference from config instance
+    private static ModelReference modelReference(InnerNode cfg, String name) {
+        try {
+            var f = cfg.getClass().getDeclaredField(name);
+            f.setAccessible(true);
+            return ((ModelNode) f.get(cfg)).getModelReference();
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
