@@ -366,6 +366,7 @@ jobs:
             echo "Must have valid Vespa version to continue (got VESPA_VERSION=$VESPA_VERSION)."
             return 1
           fi
+          VESPA_MAJOR=$(echo $VESPA_VERSION | cut -d. -f1)
       - install-dependencies: |
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
           dnf -y install docker-ce docker-ce-cli containerd.io
