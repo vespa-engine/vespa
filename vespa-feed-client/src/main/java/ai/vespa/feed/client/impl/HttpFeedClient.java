@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -128,12 +129,13 @@ class HttpFeedClient implements FeedClient {
     }
 
     private void verifyConnection(FeedClientBuilderImpl builder, Cluster cluster) {
+        Instant start = Instant.now();
         try {
             HttpRequest request = new HttpRequest("POST",
                                                   getPath(DocumentId.of("feeder", "handshake", "dummy")) + getQuery(empty(), true),
                                                   requestHeaders,
                                                   null,
-                                                  Duration.ofSeconds(10));
+                                                  Duration.ofSeconds(15));
             CompletableFuture<HttpResponse> future = new CompletableFuture<>();
             cluster.dispatch(request, future);
             HttpResponse response = future.get(20, TimeUnit.SECONDS);
@@ -155,7 +157,8 @@ class HttpFeedClient implements FeedClient {
             }
         }
         catch (ExecutionException e) {
-            throw new FeedException("failed handshake with server: " + e.getCause(), e.getCause());
+            Duration duration = Duration.between(start, Instant.now());
+            throw new FeedException("failed handshake with server after " + duration + ": " + e.getCause(), e.getCause());
         }
         catch (InterruptedException e) {
             Thread.currentThread().interrupt();
