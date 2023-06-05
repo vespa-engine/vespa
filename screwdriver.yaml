@@ -436,7 +436,6 @@ jobs:
           make -C client/go install-brew
 
   verify-opensource-release-7days:
-    requires: [~pr]
     annotations:
       screwdriver.cd/buildPeriodically: H 0 * * *
     steps:
