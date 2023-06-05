@@ -11,22 +11,25 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>main</artifactId>
+  <artifactId>non-public-api-usage</artifactId>
   <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
+
   <dependencies>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>defaults</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
-      <!-- Added to verify that module-info.class can be handled by bundle-plugin without throwing an exception. -->
-      <groupId>javax.xml.bind</groupId>
-      <artifactId>jaxb-api</artifactId>
-      <version>2.3.0</version>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vespajlib</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -34,13 +37,7 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
-          <bundleType>INTERNAL</bundleType>
-          <Import-Package>
-            manualImport.withoutVersion,
-            manualImport.withVersion;version="12.3.4",
-            multiple.packages.with.the.same.version1;multiple.packages.with.the.same.version2;version="[1,2)"
-          </Import-Package>
-          <WebInfUrl>/WEB-INF/web.xml</WebInfUrl>
+          <failOnWarnings>false</failOnWarnings>
         </configuration>
       </plugin>
     </plugins>

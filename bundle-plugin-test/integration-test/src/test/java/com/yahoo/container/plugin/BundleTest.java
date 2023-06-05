@@ -30,9 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class BundleTest {
     static final String TEST_BUNDLE_PATH = System.getProperty("test.bundle.path", ".") + "/";
 
-    // If bundle-plugin-test is compiled in a mvn command that also built dependencies, e.g. jrt,
-    // the artifact is jrt.jar, otherwise the installed and versioned artifact
-    // is used: jrt-7-SNAPSHOT.jar or e.g. jrt-7.123.45.jar.
+    // If bundle-plugin-test is compiled in a mvn command that also built dependencies, e.g. 'defaults',
+    // the artifact is defaults.jar, otherwise the installed and versioned artifact
+    // is used: defaults-7-SNAPSHOT.jar or e.g. defaults-7.123.45.jar.
     private static final String snapshotOrVersionOrNone = "(-\\d+((-SNAPSHOT)|((\\.\\d+(\\.\\d+)?)?))?)?\\.jar";
 
     private JarFile jarFile;
@@ -104,38 +104,36 @@ public class BundleTest {
     }
 
     @Test
-    void require_that_manifest_contains_public_api() {
-        assertEquals("com.yahoo.test", mainAttributes.getValue("X-JDisc-PublicApi-Package"));
+    void require_that_manifest_contains_public_api_for_this_bundle_and_embedded_bundles() {
+        assertEquals("com.yahoo.test,com.yahoo.vespa.defaults", mainAttributes.getValue("X-JDisc-PublicApi-Package"));
     }
 
-    // TODO: use another jar than jrt, which now pulls in a lot of dependencies that pollute the manifest of the
-    //       generated bundle. (It's compile scoped in pom.xml to be added to the bundle-cp.)
     @Test
     void require_that_manifest_contains_bundle_class_path() {
         String bundleClassPath = mainAttributes.getValue("Bundle-ClassPath");
         assertTrue(bundleClassPath.contains(".,"));
 
-        Pattern jrtPattern = Pattern.compile("dependencies/jrt" + snapshotOrVersionOrNone);
-        assertTrue(jrtPattern.matcher(bundleClassPath).find(), "Bundle class path did not contain jrt.");
+        Pattern jrtPattern = Pattern.compile("dependencies/defaults" + snapshotOrVersionOrNone);
+        assertTrue(jrtPattern.matcher(bundleClassPath).find(), "Bundle class path did not contain 'defaults''.");
     }
 
     @Test
     void require_that_component_jar_file_contains_compile_artifacts() {
-        String depJrt = "dependencies/jrt";
-        Pattern jrtPattern = Pattern.compile(depJrt + snapshotOrVersionOrNone);
-        ZipEntry jrtEntry = null;
+        String requiredDep = "dependencies/defaults";
+        Pattern depPattern = Pattern.compile(requiredDep + snapshotOrVersionOrNone);
+        ZipEntry depEntry = null;
 
         Enumeration<JarEntry> entries = jarFile.entries();
         while (entries.hasMoreElements()) {
             var e = entries.nextElement();
-            if (e.getName().startsWith(depJrt)) {
-                if (jrtPattern.matcher(e.getName()).matches()) {
-                    jrtEntry = e;
+            if (e.getName().startsWith(requiredDep)) {
+                if (depPattern.matcher(e.getName()).matches()) {
+                    depEntry = e;
                     break;
                 }
             }
         }
-        assertNotNull(jrtEntry, "Component jar file did not contain jrt dependency.");
+        assertNotNull(depEntry, "Component jar file did not contain 'defaults' dependency.");
     }
 
 
