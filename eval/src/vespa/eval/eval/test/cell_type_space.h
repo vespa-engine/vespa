@@ -36,6 +36,8 @@ public:
         assert(n > 0);
         skip_unwanted();
     }
+    CellTypeSpace(const CellTypeSpace& rhs) = default;
+    CellTypeSpace(CellTypeSpace&& rhs) noexcept = default;
     ~CellTypeSpace();
     CellTypeSpace &same() {
         _drop_different = true;
