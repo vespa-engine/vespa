@@ -26,7 +26,8 @@ set(AUTORUN_UNIT_TESTS FALSE CACHE BOOL "If TRUE, tests will be run immediately 
 
 # Warnings
 set(C_WARN_OPTS "-Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wcomment -Wformat -Wparentheses -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings")
-if (VESPA_USE_SANITIZER OR VESPA_DISABLE_INLINE_WARNINGS)
+if (VESPA_USE_SANITIZER OR VESPA_DISABLE_INLINE_WARNINGS OR
+    (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "13"))
     # Instrumenting code changes binary size, which triggers inlining warnings that
     # don't happen during normal, non-instrumented compilation.
 else()
