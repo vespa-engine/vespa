@@ -77,30 +77,6 @@ public class MasterElectionHandler implements MasterInterface {
         return masterCandidate;
     }
 
-    public String getMasterReason() {
-        if (masterCandidate == null) {
-            return "There is currently no master candidate.";
-        }
-        if (tooFewFollowersToHaveAMaster()) {
-            return "More than half of the nodes must agree for there to be a master. Only " + followers + " of "
-                    + totalCount + " nodes agree on current master candidate (" + masterCandidate + ").";
-        }
-        // If all are following master candidate, it is master if it exists.
-        if (followers == totalCount) {
-            return "All " + totalCount + " nodes agree that " + masterCandidate + " is current master.";
-        }
-
-        // If not all are following we only accept master candidate if old master
-        // disappeared sufficient time ago
-        if (masterGoneFromZooKeeperTime + masterZooKeeperCooldownPeriod > timer.getCurrentTimeInMillis()) {
-            return followers + " of " + totalCount + " nodes agree " + masterCandidate + " should be master, "
-                    + "but old master cooldown period of " + masterZooKeeperCooldownPeriod + " ms has not passed yet. "
-                    + "To ensure it has got time to realize it is no longer master before we elect a new one, "
-                    + "currently there is no master.";
-        }
-        return followers + " of " + totalCount + " nodes agree " + masterCandidate + " is master.";
-    }
-
     private boolean tooFewFollowersToHaveAMaster() {
         return 2 * followers <= totalCount;
     }
@@ -180,9 +156,8 @@ public class MasterElectionHandler implements MasterInterface {
             }
             if (nextInLineCount != ourPosition) {
                 nextInLineCount = ourPosition;
-                if (ourPosition > 0) {
-                    context.log(logger, Level.FINE, () -> "We are now " + getPosition(nextInLineCount) + " in queue to take over being master.");
-                }
+                if (nextInLineCount > 0)
+                    context.log(logger, Level.FINE, () -> "We are now in position " + nextInLineCount + " in queue to take over being master.");
             }
         }
         masterData = state;
@@ -207,14 +182,6 @@ public class MasterElectionHandler implements MasterInterface {
         return sb.toString();
     }
 
-    private String getPosition(int val) {
-        if (val < 1) return "invalid(" + val + ")";
-        if (val == 1) { return "first"; }
-        if (val == 2) { return "second"; }
-        if (val == 3) { return "third"; }
-        return val + "th";
-    }
-
     public void handleFleetData(Map<Integer, Integer> data) {
         context.log(logger, Level.INFO, "Got new fleet data with " + data.size() + " entries: " + data);
         synchronized (monitor) {
@@ -225,10 +192,6 @@ public class MasterElectionHandler implements MasterInterface {
 
     public void lostDatabaseConnection() {
         context.log(logger, Level.INFO, "Clearing master data as we lost connection on node " + index);
-        resetElectionProgress();
-    }
-
-    private void resetElectionProgress() {
         masterData = null;
         masterCandidate = null;
         followers = 0;
