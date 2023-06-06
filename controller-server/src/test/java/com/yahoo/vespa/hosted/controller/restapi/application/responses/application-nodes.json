@@ -12,6 +12,7 @@
       "bandwidthGbps": 1.0,
       "diskSpeed": "slow",
       "storageType": "remote",
+      "architecture": "any",
       "clusterId": "default",
       "clusterType": "container",
       "down": false,
