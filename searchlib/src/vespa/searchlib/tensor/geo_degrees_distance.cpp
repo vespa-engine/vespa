@@ -2,6 +2,7 @@
 
 #include "geo_degrees_distance.h"
 #include "temporary_vector_store.h"
+#include <numbers>
 
 using vespalib::typify_invoke;
 using vespalib::eval::TypifyCellType;
@@ -56,6 +57,13 @@ public:
         return hav_central_angle;
     }
     double convert_threshold(double threshold) const override {
+        if (threshold < 0.0) {
+            return 0.0;
+        }
+        constexpr double max_threshold = std::numbers::pi * earth_mean_radius;
+        if (threshold > max_threshold) {
+            threshold = max_threshold;
+        }
         double half_angle = threshold / (2 * earth_mean_radius);
         double rt_hav = sin(half_angle);
         return rt_hav * rt_hav;

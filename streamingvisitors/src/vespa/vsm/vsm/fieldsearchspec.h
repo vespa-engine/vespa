@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/searchcommon/attribute/distance_metric.h>
 #include <vespa/vsm/searcher/fieldsearcher.h>
 #include <vespa/vsm/config/vsm-cfif.h>
 
@@ -21,6 +22,8 @@ public:
     FieldIdT                    id() const { return _id; }
     bool                     valid() const { return static_cast<bool>(_searcher); }
     size_t               maxLength() const { return _maxLength; }
+    bool uses_nearest_neighbor_search_method() const noexcept { return _searchMethod == VsmfieldsConfig::Fieldspec::Searchmethod::NEAREST_NEIGHBOR; }
+    const vespalib::string& get_arg1() const noexcept { return _arg1; }
 
     /**
      * Reconfigures the field searcher based on information in the given query term.
@@ -87,6 +90,7 @@ public:
     friend vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpecMap & f);
 
     static vespalib::string stripNonFields(const vespalib::string & rawIndex);
+    search::attribute::DistanceMetric get_distance_metric(const vespalib::string& name) const;
 
 private:
     FieldSearchSpecMapT         _specMap;         // mapping from field id to field search spec
