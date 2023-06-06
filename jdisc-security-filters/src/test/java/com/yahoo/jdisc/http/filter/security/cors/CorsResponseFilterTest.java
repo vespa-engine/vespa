@@ -54,6 +54,12 @@ public class CorsResponseFilterTest {
         assertEquals("http://any.origin", headers.get(ALLOW_ORIGIN_HEADER));
     }
 
+    @Test
+    void matches_subdomains() {
+        Map<String, String> headers = doFilterRequest(newResponseFilter("http://*.domain.origin"), "http://any.domain.origin");
+        assertEquals("http://any.domain.origin", headers.get(ALLOW_ORIGIN_HEADER));
+    }
+
     private static Map<String, String> doFilterRequest(SecurityResponseFilter filter, String originUrl) {
         TestResponse response = new TestResponse();
         filter.filter(response, newRequestView(originUrl));

@@ -10,8 +10,6 @@ import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.yolean.chain.Provides;
 
-import java.util.Set;
-
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
 
 /**
@@ -33,11 +31,11 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
  */
 @Provides("CorsPreflightRequestFilter")
 public class CorsPreflightRequestFilter implements SecurityRequestFilter {
-    private final Set<String> allowedUrls;
+    private final CorsLogic cors;
 
     @Inject
     public CorsPreflightRequestFilter(CorsFilterConfig config) {
-        this.allowedUrls = Set.copyOf(config.allowedUrls());
+        this.cors = CorsLogic.forAllowedOrigins(config.allowedUrls());
     }
 
     @Override
@@ -46,8 +44,7 @@ public class CorsPreflightRequestFilter implements SecurityRequestFilter {
             return;
 
         HttpResponse response = HttpResponse.newInstance(Response.Status.OK);
-        String origin = discFilterRequest.getHeader("Origin");
-        CorsLogic.createCorsPreflightResponseHeaders(origin, allowedUrls)
+        cors.preflightResponseHeaders(discFilterRequest.getHeader("Origin"))
                 .forEach(response.headers()::put);
 
         ContentChannel cc = responseHandler.handleResponse(response);
