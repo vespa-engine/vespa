@@ -167,7 +167,8 @@ public class Nodes {
                     if (rebuilding) {
                         node = node.with(node.status().withWantToRetire(existing.get().status().wantToRetire(),
                                                                         false,
-                                                                        rebuilding));
+                                                                        rebuilding,
+                                                                        existing.get().status().wantToUpgradeFlavor()));
                     }
                     nodesToRemove.add(existing.get());
                 }
@@ -190,7 +191,7 @@ public class Nodes {
         if (node.status().wantToDeprovision() || node.status().wantToRebuild())
             return park(node.hostname(), false, agent, reason);
 
-        node = node.withWantToRetire(false, false, false, agent, clock.instant());
+        node = node.withWantToRetire(false, false, false, false, agent, clock.instant());
         return db.writeTo(Node.State.ready, node, agent, Optional.of(reason));
     }
 
@@ -638,6 +639,11 @@ public class Nodes {
         return decommission(hostname, soft ? HostOperation.softRebuild : HostOperation.rebuild, agent, instant);
     }
 
+    /** Upgrade flavor for given host */
+    public List<Node> upgradeFlavor(String hostname, Agent agent, Instant instant, boolean upgrade) {
+        return decommission(hostname, upgrade ? HostOperation.upgradeFlavor : HostOperation.cancel, agent, instant);
+    }
+
     private List<Node> decommission(String hostname, HostOperation op, Agent agent, Instant instant) {
         Optional<NodeMutex> nodeMutex = lockAndGet(hostname);
         if (nodeMutex.isEmpty()) return List.of();
@@ -645,20 +651,20 @@ public class Nodes {
         boolean wantToDeprovision = op == HostOperation.deprovision;
         boolean wantToRebuild = op == HostOperation.rebuild || op == HostOperation.softRebuild;
         boolean wantToRetire = op.needsRetirement();
+        boolean wantToUpgradeFlavor = op == HostOperation.upgradeFlavor;
         Node host = nodeMutex.get().node();
         try (NodeMutex lock = nodeMutex.get()) {
             if ( ! host.type().isHost()) throw new IllegalArgumentException("Cannot " + op + " non-host " + host);
             try (Mutex allocationLock = lockUnallocated()) {
                 // Modify parent with wantToRetire while holding the allocationLock to prevent
                 // any further allocation of nodes on this host
-                Node newHost = lock.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, agent, instant);
+                Node newHost = lock.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, wantToUpgradeFlavor, agent, instant);
                 result.add(write(newHost, lock));
             }
         }
-
-        if (wantToRetire) { // Apply recursively if we're retiring
+        if (wantToRetire || op == HostOperation.cancel) { // Apply recursively if we're retiring, or cancelling
             List<Node> updatedNodes = performOn(list().childrenOf(host), (node, nodeLock) -> {
-                Node newNode = node.withWantToRetire(wantToRetire, wantToDeprovision, false, agent, instant);
+                Node newNode = node.withWantToRetire(wantToRetire, wantToDeprovision, false, false, agent, instant);
                 return write(newNode, nodeLock);
             });
             result.addAll(updatedNodes);
@@ -888,7 +894,13 @@ public class Nodes {
         rebuild(true),
 
         /** Host is stopped and re-bootstrapped, data is preserved */
-        softRebuild(false);
+        softRebuild(false),
+
+        /** Host flavor should be upgraded, data is destroyed */
+        upgradeFlavor(true),
+
+        /** Attempt to cancel any ongoing operations. If the current operation has progressed too far, cancelling won't have any effect */
+        cancel(false);
 
         private final boolean needsRetirement;
 

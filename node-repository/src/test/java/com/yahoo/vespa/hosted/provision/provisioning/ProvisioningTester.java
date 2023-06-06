@@ -7,9 +7,11 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
@@ -21,6 +23,8 @@ import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.ProvisionLogger;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
@@ -671,6 +675,20 @@ public class ProvisioningTester {
         public Builder zone(Zone zone) {
             this.zone = zone;
             return this;
+        }
+
+        public Builder dynamicProvisioning() {
+            return dynamicProvisioning(true, true);
+        }
+
+        public Builder dynamicProvisioning(boolean enabled, boolean allowHostSharing) {
+            return zone(new Zone(Cloud.builder()
+                                      .dynamicProvisioning(enabled)
+                                      .allowHostSharing(allowHostSharing)
+                                      .build(),
+                                 SystemName.defaultSystem(),
+                                 Environment.defaultEnvironment(),
+                                 RegionName.defaultName()));
         }
 
         public Builder nameResolver(NameResolver nameResolver) {

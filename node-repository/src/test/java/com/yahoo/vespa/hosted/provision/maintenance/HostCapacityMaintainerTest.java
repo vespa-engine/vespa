@@ -756,7 +756,7 @@ public class HostCapacityMaintainerTest {
             parentHostname.ifPresent(builder::parentHostname);
             allocation.ifPresent(builder::allocation);
             if (hostname.equals("host2-1"))
-                builder.status(Status.initial().withWantToRetire(true, true, false));
+                builder.status(Status.initial().withWantToRetire(true, true, false, false));
             return builder.build();
         }
 

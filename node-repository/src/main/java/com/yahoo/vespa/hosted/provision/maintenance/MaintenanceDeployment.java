@@ -38,6 +38,7 @@ class MaintenanceDeployment implements Closeable {
     private final Metric metric;
     private final Optional<Mutex> lock;
     private final Optional<Deployment> deployment;
+    private final boolean throwOnFailure;
 
     private boolean closed = false;
 
@@ -45,8 +46,17 @@ class MaintenanceDeployment implements Closeable {
                                  Deployer deployer,
                                  Metric metric,
                                  NodeRepository nodeRepository) {
+        this(application, deployer, metric, nodeRepository, false);
+    }
+
+    public MaintenanceDeployment(ApplicationId application,
+                                 Deployer deployer,
+                                 Metric metric,
+                                 NodeRepository nodeRepository,
+                                 boolean throwOnFailure) {
         this.application = application;
         this.metric = metric;
+        this.throwOnFailure = throwOnFailure;
 
         Optional<Mutex> lock = tryLock(application, nodeRepository);
         try {
@@ -93,6 +103,9 @@ class MaintenanceDeployment implements Closeable {
         } catch (RuntimeException e) {
             metric.add(ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_FAILURE.baseName(), 1, metric.createContext(Map.of()));
             log.log(Level.WARNING, "Exception on maintenance deploy of " + application, e);
+            if (throwOnFailure) {
+                throw e;
+            }
             return Optional.empty();
         }
     }

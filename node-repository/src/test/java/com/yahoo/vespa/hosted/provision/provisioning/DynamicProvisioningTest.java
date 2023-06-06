@@ -3,10 +3,8 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
@@ -15,9 +13,6 @@ import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -250,7 +245,7 @@ public class DynamicProvisioningTest {
         List<Flavor> flavors = List.of(new Flavor("2x",
                                                   new NodeResources(2, 17, 200, 10, fast, remote)));
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone(false))
+        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
@@ -295,7 +290,8 @@ public class DynamicProvisioningTest {
         List<Flavor> flavors = List.of(new Flavor("x86", new NodeResources(2, 4, 50, 0.1, fast, local, Architecture.x86_64)),
                                        new Flavor("arm", new NodeResources(2, 4, 50, 0.1, fast, local, Architecture.arm64)));
         MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors);
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone(false))
+        ProvisioningTester tester = new ProvisioningTester.Builder()
+                .dynamicProvisioning(true, false)
                 .flavors(flavors)
                 .hostProvisioner(hostProvisioner)
                 .resourcesCalculator(0, 0)
@@ -338,7 +334,7 @@ public class DynamicProvisioningTest {
                                        new Flavor("2x", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
                                        new Flavor("4x", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)));
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone(false))
+        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
@@ -413,7 +409,7 @@ public class DynamicProvisioningTest {
                                        new Flavor("4x",  new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)),
                                        new Flavor("4xl", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, local)));
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone(false))
+        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
@@ -448,7 +444,7 @@ public class DynamicProvisioningTest {
                                        new Flavor("2xl", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
                                        new Flavor("4xl", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)));
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone(false))
+        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
@@ -471,7 +467,7 @@ public class DynamicProvisioningTest {
     public void gpu_host()  {
         List<Flavor> flavors = List.of(new Flavor("gpu", new NodeResources(4, 16, 125, 10, fast, local,
                                                                            Architecture.x86_64, new NodeResources.GpuResources(1, 16))));
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone(false))
+        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors))
                                                                     .nameResolver(nameResolver)
@@ -484,17 +480,9 @@ public class DynamicProvisioningTest {
                        2, 1, resources);
     }
 
-    private Zone zone(boolean sharing) {
-        return new Zone(
-                Cloud.builder().dynamicProvisioning(true).allowHostSharing(sharing).build(),
-                SystemName.main,
-                Environment.prod,
-                RegionName.from("us-east"));
-    }
-
     private ProvisioningTester tester(boolean sharing) {
         var hostProvisioner = new MockHostProvisioner(new NodeFlavors(ProvisioningTester.createConfig()).getFlavors(), nameResolver, 0);
-        return new ProvisioningTester.Builder().zone(zone(sharing)).hostProvisioner(hostProvisioner).nameResolver(nameResolver).build();
+        return new ProvisioningTester.Builder().dynamicProvisioning(true, sharing).hostProvisioner(hostProvisioner).nameResolver(nameResolver).build();
     }
 
     private void prepareAndActivate(ApplicationId application, ClusterSpec clusterSpec, int nodes, int groups, NodeResources resources,

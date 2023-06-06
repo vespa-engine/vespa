@@ -76,4 +76,7 @@ public interface HostProvisioner {
      */
     List<HostEvent> hostEventsIn(List<CloudAccount> cloudAccounts);
 
+    /** Returns whether flavor for given host can be upgraded to a newer generation */
+    boolean canUpgradeFlavor(Node host, Node child);
+
 }

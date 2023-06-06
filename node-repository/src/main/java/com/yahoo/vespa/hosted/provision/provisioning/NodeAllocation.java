@@ -74,6 +74,9 @@ class NodeAllocation {
     /** The number of nodes that just now was changed to retired */
     private int wasRetiredJustNow = 0;
 
+    /** The number of nodes that just now was changed to retired to upgrade its host flavor */
+    private int wasRetiredDueToFlavorUpgrade = 0;
+
     /** The node indexes to verify uniqueness of each member's index */
     private final Set<Integer> indexes = new HashSet<>();
 
@@ -168,6 +171,7 @@ class NodeAllocation {
         if ( ! nodeResourceLimits.isWithinRealLimits(candidate, application, cluster)) return Retirement.outsideRealLimits;
         if (violatesParentHostPolicy(candidate)) return Retirement.violatesParentHostPolicy;
         if ( ! hasCompatibleResources(candidate)) return Retirement.incompatibleResources;
+        if (candidate.parent.map(node -> node.status().wantToUpgradeFlavor()).orElse(false)) return Retirement.violatesHostFlavorGeneration;
         if (candidate.wantToRetire()) return Retirement.hardRequest;
         if (candidate.preferToRetire() && candidate.replaceableBy(candidates)) return Retirement.softRequest;
         if (violatesExclusivity(candidate)) return Retirement.violatesExclusivity;
@@ -271,6 +275,9 @@ class NodeAllocation {
         } else if (retirement != Retirement.alreadyRetired) {
             LOG.info("Retiring " + node + " because " + retirement.description());
             ++wasRetiredJustNow;
+            if (retirement == Retirement.violatesHostFlavorGeneration) {
+                ++wasRetiredDueToFlavorUpgrade;
+            }
             node = node.retire(nodeRepository.clock().instant());
         }
         if ( ! node.allocation().get().membership().cluster().equals(cluster)) {
@@ -320,15 +327,19 @@ class NodeAllocation {
     /**
      * Returns {@link HostDeficit} describing the host deficit for the given {@link NodeSpec}.
      *
-     * @return empty if the requested spec is already fulfilled. Otherwise returns {@link HostDeficit} containing the
+     * @return empty if the requested spec is already fulfilled. Otherwise, returns {@link HostDeficit} containing the
      *         flavor and host count required to cover the deficit.
      */
     Optional<HostDeficit> hostDeficit() {
         if (nodeType().isHost()) {
             return Optional.empty(); // Hosts are provisioned as required by the child application
         }
+        int deficit = requestedNodes.fulfilledDeficitCount(accepted());
+        // We can only require flavor upgrade if the entire deficit is caused by upgrades
+        boolean dueToFlavorUpgrade = deficit == wasRetiredDueToFlavorUpgrade;
         return Optional.of(new HostDeficit(requestedNodes.resources().orElseGet(NodeResources::unspecified),
-                                           requestedNodes.fulfilledDeficitCount(accepted())))
+                                           deficit,
+                                           dueToFlavorUpgrade))
                        .filter(hostDeficit -> hostDeficit.count() > 0);
     }
 
@@ -489,6 +500,7 @@ class NodeAllocation {
         softRequest("node is requested to retire"),
         violatesExclusivity("node violates host exclusivity"),
         violatesHostFlavor("node violates host flavor"),
+        violatesHostFlavorGeneration("node violates host flavor generation"),
         none("");
 
         private final String description;
@@ -505,27 +517,11 @@ class NodeAllocation {
     }
 
     /** A host deficit, the number of missing hosts, for a deployment */
-    static class HostDeficit {
-
-        private final NodeResources resources;
-        private final int count;
-
-        private HostDeficit(NodeResources resources, int count) {
-            this.resources = resources;
-            this.count = count;
-        }
-
-        NodeResources resources() {
-            return resources;
-        }
-
-        int count() {
-            return count;
-        }
+    record HostDeficit(NodeResources resources, int count, boolean dueToFlavorUpgrade) {
 
         @Override
         public String toString() {
-            return "deficit of " + count + " nodes with " + resources;
+            return "deficit of " + count + " nodes with " + resources + (dueToFlavorUpgrade ? ", due to flavor upgrade" : "");
         }
 
     }
