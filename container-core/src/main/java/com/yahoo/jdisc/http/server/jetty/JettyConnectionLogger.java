@@ -135,8 +135,9 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             if (info == null) return; // Closed connection already handled
             if (connection instanceof HttpConnection) {
                 info.setHttpBytes(connection.getBytesIn(), connection.getBytesOut());
-            } else if (connection instanceof SslConnection) {
-                info.setSslBytes(connection.getBytesIn(), connection.getBytesOut());
+            }
+            if (connection.getEndPoint() instanceof SslConnection.DecryptedEndPoint ssl) {
+                info.setSslBytes(ssl.getSslConnection().getBytesIn(), ssl.getSslConnection().getBytesOut());
             }
             if (!endpoint.isOpen()) {
                 info.setClosedAt(System.currentTimeMillis());
