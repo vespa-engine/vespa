@@ -65,7 +65,8 @@ public class Spooler {
         this(defaultSpoolPath, defaultMaxEntriesPerFile, clock, keepSuccessFiles, maxFailures);
     }
 
-    Spooler(Path spoolPath, int maxEntriesPerFile, Clock clock, boolean keepSuccessFiles, int maxFailures) {
+    // Note: Needs to be public, used in system tests
+    public Spooler(Path spoolPath, int maxEntriesPerFile, Clock clock, boolean keepSuccessFiles, int maxFailures) {
         this.spoolPath = spoolPath;
         this.maxEntriesPerFile = maxEntriesPerFile;
         this.clock = clock;
@@ -109,14 +110,14 @@ public class Spooler {
     public void processFiles(List<File> files, Function<LoggerEntry, Boolean> transport) {
         for (File f : files) {
             log.log(Level.FINE, "Processing file " + f);
-            boolean succcess = false;
+            boolean success = false;
             try {
                 List<String> lines = Files.readAllLines(f.toPath());
                 for (String line : lines) {
                     LoggerEntry entry = LoggerEntry.deserialize(line);
                     log.log(Level.FINE, "Read entry " + entry + " from " + f);
-                    succcess = transport.apply(entry);
-                    if (! succcess) {
+                    success = transport.apply(entry);
+                    if (! success) {
                         throw new RuntimeException("Unable to process file " + f + ": unsuccessful call to transport() for " + entry);
                     }
                 }
@@ -124,7 +125,7 @@ public class Spooler {
             } catch (Exception e) {
                 handleFailure(f);
             } finally {
-                if (succcess && keepSuccessFiles) {
+                if (success && keepSuccessFiles) {
                     moveProcessedFile(f, successesPath);
                 }
             }
