@@ -112,7 +112,6 @@ public class RoutingController {
         Set<Endpoint> endpoints = new LinkedHashSet<>();
         // To discover the cluster name for a zone-scoped endpoint, we need to read routing policies
         for (var policy : routingPolicies.read(deployment)) {
-            if (!policy.status().isActive()) continue;
             RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(policy.id().zone());
             endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod));
             endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));

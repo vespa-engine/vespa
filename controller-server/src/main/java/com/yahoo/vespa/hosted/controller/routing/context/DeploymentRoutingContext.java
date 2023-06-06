@@ -146,8 +146,7 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
             // first matching policy here
             return controller.policies().read(deployment)
                              .first()
-                             .map(RoutingPolicy::status)
-                             .map(RoutingPolicy.Status::routingStatus)
+                             .map(RoutingPolicy::routingStatus)
                              .orElse(RoutingStatus.DEFAULT);
         }
 
