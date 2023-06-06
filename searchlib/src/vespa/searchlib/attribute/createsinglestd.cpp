@@ -61,9 +61,4 @@ AttributeFactory::createSingleStd(stringref name, const Config & info)
     return AttributeVector::SP();
 }
 
-template class SingleValueNumericAttribute<IntegerAttributeTemplate<int8_t>>;
-template class SingleValueNumericAttribute<IntegerAttributeTemplate<int16_t>>;
-template class SingleValueNumericAttribute<IntegerAttributeTemplate<int32_t>>;
-template class SingleValueNumericAttribute<IntegerAttributeTemplate<int64_t>>;
-
-}  // namespace search
+}

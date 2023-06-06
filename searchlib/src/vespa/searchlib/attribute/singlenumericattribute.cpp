@@ -11,5 +11,4 @@ template class SingleValueNumericAttribute<IntegerAttributeTemplate<int64_t>>;
 template class SingleValueNumericAttribute<FloatingPointAttributeTemplate<float>>;
 template class SingleValueNumericAttribute<FloatingPointAttributeTemplate<double>>;
 
-} // namespace search
-
+}
