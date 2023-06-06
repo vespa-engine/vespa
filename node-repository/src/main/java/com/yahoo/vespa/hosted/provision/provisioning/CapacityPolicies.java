@@ -138,10 +138,7 @@ public class CapacityPolicies {
         // 1.32-(0.7+0.6)*(1.32/8) = 1.1 Gb real memory given current taxes.
         if (architecture == Architecture.x86_64)
             return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
-                                                 new Version(8, 129, 4), new NodeResources(0.25, 1.32, 10, 0.3),
-                                                 // TODO: Remove the two entries below when no version between 8.173.5 and 8.173.12 is in use
-                                                 new Version(8, 173, 5), new NodeResources(0.25, 1.50, 10, 0.3),
-                                                 new Version(8, 173, 12), new NodeResources(0.25, 1.32, 10, 0.3)));
+                                                 new Version(8, 129, 4), new NodeResources(0.25, 1.32, 10, 0.3)));
         else
             // arm64 nodes need more memory
             return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
@@ -160,14 +157,14 @@ public class CapacityPolicies {
                 .getValue();
     }
 
-    // The lowest amount resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
+    // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
     private NodeResources smallestExclusiveResources() {
         return (zone.cloud().name().equals(CloudName.GCP))
                 ? new NodeResources(1, 4, 50, 0.3)
                 : new NodeResources(0.5, 4, 50, 0.3);
     }
 
-    // The lowest amount resources that can be shared (i.e. a matching host flavor for this exists)
+    // The lowest amount of resources that can be shared (i.e. a matching host flavor for this exists)
     private NodeResources smallestSharedResources() {
         return (zone.cloud().name().equals(CloudName.GCP))
                 ? new NodeResources(1, 4, 50, 0.3)
