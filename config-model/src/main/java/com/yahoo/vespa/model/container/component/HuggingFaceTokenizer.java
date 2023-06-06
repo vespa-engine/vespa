@@ -28,7 +28,7 @@ public class HuggingFaceTokenizer extends TypedComponent implements HuggingFaceT
         super("com.yahoo.language.huggingface.HuggingFaceTokenizer", LINGUISTICS_BUNDLE_NAME, xml);
         for (Element element : XML.getChildren(xml, "model")) {
             var lang = element.hasAttribute("language") ? element.getAttribute("language") : "unknown";
-            langToModel.put(lang, ModelIdResolver.resolveToModelReference(element, state.isHosted()));
+            langToModel.put(lang, ModelIdResolver.resolveToModelReference(element, state));
         }
         specialTokens = getOptionalChildValue(xml, "special-tokens").map(Boolean::parseBoolean).orElse(null);
         maxLength = getOptionalChildValue(xml, "max-length").map(Integer::parseInt).orElse(null);

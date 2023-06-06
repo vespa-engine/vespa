@@ -4,14 +4,11 @@
 
   <container version="1.0">
 
-    <component id="transformer" class="ai.vespa.embedding.BertBaseEmbedder" bundle="model-integration">
-      <config name="embedding.bert-base-embedder">
-        <!-- No fallback to url or path when deploying outside cloud -->
-        <transformerModel model-id="minilm-l6-v2"/>
-        <tokenizerVocab path="files/vocab.txt"/>
-
-        <!-- tunable parameters: number of threads etc -->
-        <onnxIntraOpThreads>4</onnxIntraOpThreads>
+    <component id="transformer" class="ai.vespa.example.paragraph.ApplicationSpecificEmbedder" bundle="app">
+      <config name='ai.vespa.example.paragraph.sentence-embedder'>
+        <model model-id="minilm-l6-v2"/>
+        <vocab path="files/vocab.txt"/>
+        <myValue>foo</myValue>
       </config>
     </component>
 

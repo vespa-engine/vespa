@@ -21,6 +21,8 @@ transformerOutput string default=last_hidden_state
 # Normalize tensors from tokenizer
 normalize bool default=false
 
+poolingStrategy enum { cls, mean } default=mean
+
 # Settings for ONNX model evaluation
 transformerExecutionMode enum { parallel, sequential } default=sequential
 transformerInterOpThreads int default=1

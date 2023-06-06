@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
-import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
 import com.yahoo.config.model.builder.xml.XmlHelper;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
@@ -80,25 +80,24 @@ public class ModelIdResolver {
     }
 
 
-    public static ModelReference resolveToModelReference(Element elem, boolean hosted) {
+    public static ModelReference resolveToModelReference(Element elem, DeployState state) {
         return resolveToModelReference(
                 elem.getTagName(), XmlHelper.getOptionalAttribute(elem, "model-id"),
-                XmlHelper.getOptionalAttribute(elem, "url"), XmlHelper.getOptionalAttribute(elem, "path"), hosted);
+                XmlHelper.getOptionalAttribute(elem, "url"), XmlHelper.getOptionalAttribute(elem, "path"), state);
     }
 
     public static ModelReference resolveToModelReference(
-            String paramName, Optional<String> id, Optional<String> url, Optional<String> path, boolean hosted) {
-        if (id.isEmpty()) return ModelReference.unresolved(
-                Optional.empty(), url.map(UrlReference::valueOf), path.map(FileReference::new));
-        else if (hosted) {
-            return ModelReference.unresolved(
-                    id, Optional.of(UrlReference.valueOf(modelIdToUrl(paramName, id.get()))), Optional.empty());
-        } else if (url.isEmpty() && path.isEmpty()) {
-            throw onlyModelIdInHostedException(paramName);
-        } else {
-            return ModelReference.unresolved(
-                    Optional.empty(), url.map(UrlReference::valueOf), path.map(FileReference::new));
-        }
+            String paramName, Optional<String> id, Optional<String> url, Optional<String> path, DeployState state) {
+        if (id.isEmpty()) return createModelReference(Optional.empty(), url, path, state);
+        else if (state.isHosted())
+            return createModelReference(id, Optional.of(modelIdToUrl(paramName, id.get())), Optional.empty(), state);
+        else if (url.isEmpty() && path.isEmpty()) throw onlyModelIdInHostedException(paramName);
+        else return createModelReference(id, url, path, state);
+    }
+
+    private static ModelReference createModelReference(Optional<String> id, Optional<String> url, Optional<String> path, DeployState state) {
+        var fileRef = path.map(p -> state.getFileRegistry().addFile(p));
+        return ModelReference.unresolved(id, url.map(UrlReference::valueOf), fileRef);
     }
 
     private static IllegalArgumentException onlyModelIdInHostedException(String paramName) {
