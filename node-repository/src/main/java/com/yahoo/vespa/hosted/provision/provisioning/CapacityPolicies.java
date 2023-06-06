@@ -137,7 +137,8 @@ public class CapacityPolicies {
         // 1.32 fits floor(8/1.32) = 6 cluster controllers on each 8Gb host, and each will have
         // 1.32-(0.7+0.6)*(1.32/8) = 1.1 Gb real memory given current taxes.
         return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
-                                             new Version(8, 129,  4), new NodeResources(0.25, 1.32, 10, 0.3)));
+                                             new Version(8, 129,  4), new NodeResources(0.25, 1.32, 10, 0.3),
+                                             new Version(8, 173, 5), new NodeResources(0.25, 1.50, 10, 0.3)));
     }
 
     private Architecture adminClusterArchitecture(ApplicationId instance) {
