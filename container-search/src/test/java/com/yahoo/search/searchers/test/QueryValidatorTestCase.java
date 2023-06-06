@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class QueryValidatorTestCase {
 
     @Test
-    void testValidation() {
+    void testTensorsCannotBeSearchedForTerms() {
         SearchDefinition sd = new SearchDefinition("test");
         sd.addCommand("mytensor1", "type tensor(x[100]");
         sd.addCommand("mytensor2", "type tensor<float>(x[100]");
@@ -27,24 +27,47 @@ public class QueryValidatorTestCase {
 
         IndexFacts indexFacts = new IndexFacts(model);
         Execution execution = new Execution(Execution.Context.createContextStub(indexFacts));
-        new QueryValidator().search(new Query("?query=mystring:foo"), execution);
+        assertSucceeds("?query=mystring:foo", execution);
+        assertFails("Cannot search for terms in 'mytensor1': It is a tensor field",
+                    "?query=mytensor1:foo", execution);
+        assertFails("Cannot search for terms in 'mytensor2': It is a tensor field",
+                    "?query=mytensor2:foo", execution);
+    }
 
+    @Test
+    void testPrefixRequiresAttribute() {
+        SearchDefinition sd = new SearchDefinition("test");
+        sd.addCommand("attributeOnly", "type string")
+          .addCommand("attribute");
+        sd.addCommand("indexOnly", "type string")
+          .addCommand("index");
+        sd.addCommand("attributeAndIndex", "type string")
+          .addCommand("attribute")
+          .addCommand("index");
+        IndexModel model = new IndexModel(sd);
+
+        IndexFacts indexFacts = new IndexFacts(model);
+        Execution execution = new Execution(Execution.Context.createContextStub(indexFacts));
+
+        assertSucceeds("?query=attributeOnly:foo*", execution);
+        assertFails("'indexOnly' is not an attribute field: Prefix matching is not supported",
+                    "?query=indexOnly:foo*", execution);
+        assertFails("'attributeAndIndex' is an index field: Prefix matching is not supported even when it is also an attribute",
+                    "?query=attributeAndIndex:foo*", execution);
+    }
+
+    private void assertSucceeds(String query, Execution execution) {
+        new QueryValidator().search(new Query(query), execution);
+    }
+
+    private void assertFails(String expectedError, String query, Execution execution) {
         try {
-            new QueryValidator().search(new Query("?query=mytensor1:foo"), execution);
-            fail("Expected validation error");
+            new QueryValidator().search(new Query(query), execution);
+            fail("Expected validation error from " + query);
         }
         catch (IllegalArgumentException e) {
             // success
-            assertEquals("Cannot search 'mytensor1': It is a tensor field", e.getMessage());
-        }
-
-        try {
-            new QueryValidator().search(new Query("?query=mytensor2:foo"), execution);
-            fail("Expected validation error");
-        }
-        catch (IllegalArgumentException e) {
-            // success
-            assertEquals("Cannot search 'mytensor2': It is a tensor field", e.getMessage());
+            assertEquals(expectedError, e.getMessage());
         }
     }
 
