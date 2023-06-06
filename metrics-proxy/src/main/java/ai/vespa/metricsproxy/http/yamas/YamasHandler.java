@@ -21,6 +21,7 @@ import com.yahoo.slime.Slime;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -65,7 +66,7 @@ public class YamasHandler extends HttpHandlerBase {
 
     private HttpResponse valuesResponse(String consumer) {
         try {
-            List<MetricsPacket> metrics = consumer == null ? valuesFetcher.fetchAllMetrics() : valuesFetcher.fetch(consumer);
+            List<MetricsPacket> metrics = new ArrayList<>(consumer == null ? valuesFetcher.fetchAllMetrics() : valuesFetcher.fetch(consumer));
             if (consumer == null || "Vespa".equalsIgnoreCase(consumer)) {
                 metrics.addAll(nodeMetricGatherer.gatherMetrics()); // TODO: Currently only add these metrics in this handler. Eventually should be included in all handlers
             }
