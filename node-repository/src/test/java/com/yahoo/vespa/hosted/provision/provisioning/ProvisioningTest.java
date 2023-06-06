@@ -682,6 +682,22 @@ public class ProvisioningTest {
     }
 
     @Test
+    public void non_matching_resources_but_cannot_fail() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        tester.makeReadyHosts(4, defaultResources).activateTenantHosts();
+        ApplicationId application = ProvisioningTester.applicationId();
+        var cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
+        var hosts1 = tester.prepare(application, cluster, Capacity.from(new ClusterResources(4, 1, defaultResources), false, true));
+        tester.activate(application, hosts1);
+
+        var nonMatchingResources = defaultResources.withVcpu(defaultResources.vcpu() * 2);
+        var hosts2 = tester.prepare(application, cluster, Capacity.from(new ClusterResources(4, 1, nonMatchingResources), false, false));
+        assertEquals(hosts1, hosts2);
+        for (var host : hosts2)
+            assertFalse(host.membership().get().retired());
+    }
+
+    @Test
     public void out_of_capacity_all_nodes_want_to_retire() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
