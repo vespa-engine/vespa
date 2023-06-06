@@ -65,6 +65,7 @@ struct ArrayStoreTest : public TestT
         EntryRef ref = add(input);
         assertGet(ref, input);
     }
+    size_t reference_store_count(EntryRef ref) const __attribute__((noinline));
     EntryRef add(const ElemVector &input) {
         EntryRef result;
         if (add_using_allocate) {
@@ -78,7 +79,7 @@ struct ArrayStoreTest : public TestT
             // This is default and preferred way of adding an array.
             result = store.add(ConstArrayRef(input));
         }
-        assert(refStore.count(result) == 0);
+        assert(reference_store_count(result) == 0);
         refStore.insert(std::make_pair(result, input));
         return result;
     }
@@ -166,6 +167,13 @@ struct ArrayStoreTest : public TestT
 
 template <typename TestT, typename ElemT, typename RefT>
 ArrayStoreTest<TestT, ElemT, RefT>::~ArrayStoreTest() = default;
+
+template <typename TestT, typename ElemT, typename RefT>
+size_t
+ArrayStoreTest<TestT, ElemT, RefT>::reference_store_count(EntryRef ref) const
+{
+    return refStore.count(ref);
+}
 
 struct TestParam {
     bool add_using_allocate;
