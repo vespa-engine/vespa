@@ -36,7 +36,6 @@ public class Index {
     private boolean hostIndex = false;
     private StemMode stemMode = StemMode.NONE;
     private boolean isAttribute = false;
-    private boolean isIndex = false;
     private boolean isDefaultPosition = false;
     private boolean dynamicSummary=false;
     private boolean highlightSummary=false;
@@ -158,8 +157,6 @@ public class Index {
             setNGram(true, Integer.parseInt(command.substring(6)));
         } else if (command.equals("attribute")) {
             setAttribute(true);
-        } else if (command.equals("index")) {
-            setIndex(true);
         } else if (command.equals("default-position")) {
             setDefaultPosition(true);
         } else if (command.equals("plain-tokens")) {
@@ -274,12 +271,6 @@ public class Index {
 
     public void setAttribute(boolean isAttribute) {
         this.isAttribute = isAttribute;
-    }
-
-    public boolean isIndex() { return isIndex; }
-
-    public void setIndex(boolean isIndex) {
-        this.isIndex = isIndex;
     }
 
     public boolean hasPlainTokens() { return plainTokens; }
