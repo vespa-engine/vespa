@@ -60,8 +60,11 @@ class NodeAllocation {
     /** The number of already allocated nodes accepted and not retired */
     private int accepted = 0;
 
-    /** The number of already allocated nodes accepted and not retired and not needing resize */
-    private int acceptedWithoutResizingRetired = 0;
+    /** The number of already allocated nodes of compatible size */
+    private int acceptedAndCompatible = 0;
+
+    /** The number of already allocated nodes which can be made compatible*/
+    private int acceptedAndCompatibleOrResizable = 0;
 
     /** The number of nodes rejected because of clashing parentHostname */
     private int rejectedDueToClashingParentHost = 0;
@@ -127,9 +130,8 @@ class NodeAllocation {
                 if (nodeRepository.zone().cloud().allowEnclave() && candidate.parent.isPresent() && ! candidate.parent.get().cloudAccount().equals(requestedNodes.cloudAccount())) continue; // wrong account
 
                 boolean resizeable = requestedNodes.considerRetiring() && candidate.isResizable;
-                boolean acceptToRetire = acceptToRetire(candidate);
 
-                if ((! saturated() && hasCompatibleResources(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire) {
+                if ((! saturated() && hasCompatibleResources(candidate) && requestedNodes.acceptable(candidate)) || acceptIncompatible(candidate)) {
                     candidate = candidate.withNode();
                     if (candidate.isValid())
                         acceptNode(candidate, shouldRetire(candidate, candidates), resizeable);
@@ -225,23 +227,27 @@ class NodeAllocation {
     /**
      * Returns whether this node should be accepted into the cluster even if it is not currently desired
      * (already enough nodes, or wrong resources, etc.).
-     * Such nodes will be marked retired during finalization of the list of accepted nodes.
+     * Such nodes will be marked retired during finalization of the list of accepted nodes when allowed.
      * The conditions for this are:
      *
-     * This is a stateful node. These must always be retired before being removed to allow the cluster to
+     * - We are forced to accept since we cannot remove gracefully (bootstrap).
+     *
+     * - This is a stateful node. These must always be retired before being removed to allow the cluster to
      * migrate away data.
      *
-     * This is a container node and it is not desired due to having the wrong flavor. In this case this
+     * - This is a container node and it is not desired due to having the wrong flavor. In this case this
      * will (normally) obtain for all the current nodes in the cluster and so retiring before removing must
      * be used to avoid removing all the current nodes at once, before the newly allocated replacements are
      * initialized. (In the other case, where a container node is not desired because we have enough nodes we
      * do want to remove it immediately to get immediate feedback on how the size reduction works out.)
      */
-    private boolean acceptToRetire(NodeCandidate candidate) {
+    private boolean acceptIncompatible(NodeCandidate candidate) {
         if (candidate.state() != Node.State.active) return false;
         if (! candidate.allocation().get().membership().cluster().group().equals(cluster.group())) return false;
         if (candidate.allocation().get().membership().retired()) return true; // don't second-guess if already retired
-        if (! requestedNodes.considerRetiring()) return false;
+
+        if ( ! requestedNodes.considerRetiring()) // the node is active and we are not allowed to remove gracefully, so keep
+            return true;
 
         return cluster.isStateful() ||
                (cluster.type() == ClusterSpec.Type.container && !hasCompatibleResources(candidate));
@@ -263,12 +269,15 @@ class NodeAllocation {
             // We want to allocate new nodes rather than unretiring with resize, so count without those
             // for the purpose of deciding when to stop accepting nodes (saturation)
             if (node.allocation().isEmpty()
-                || ! ( requestedNodes.needsResize(node) && node.allocation().get().membership().retired()))
-                acceptedWithoutResizingRetired++;
-
-            if (resizeable && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired())) {
-                node = resize(node);
+                || ! ( requestedNodes.needsResize(node) &&
+                       (node.allocation().get().membership().retired() || ! requestedNodes.considerRetiring()))) {
+                acceptedAndCompatible++;
             }
+            if (hasCompatibleResources(candidate))
+                acceptedAndCompatibleOrResizable++;
+
+            if (resizeable && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired()))
+                node = resize(node);
 
             if (node.state() != Node.State.active) // reactivated node - wipe state that deactivated it
                 node = node.unretire().removable(false);
@@ -305,13 +314,13 @@ class NodeAllocation {
     }
 
     /** Returns true if no more nodes are needed in this list */
-    private boolean saturated() {
-        return requestedNodes.saturatedBy(acceptedWithoutResizingRetired);
+    public boolean saturated() {
+        return requestedNodes.saturatedBy(acceptedAndCompatible);
     }
 
     /** Returns true if the content of this list is sufficient to meet the request */
     boolean fulfilled() {
-        return requestedNodes.fulfilledBy(accepted());
+        return requestedNodes.fulfilledBy(acceptedAndCompatibleOrResizable());
     }
 
     /** Returns true if this allocation was already fulfilled and resulted in no new changes */
@@ -334,7 +343,7 @@ class NodeAllocation {
         if (nodeType().isHost()) {
             return Optional.empty(); // Hosts are provisioned as required by the child application
         }
-        int deficit = requestedNodes.fulfilledDeficitCount(accepted());
+        int deficit = requestedNodes.fulfilledDeficitCount(acceptedAndCompatibleOrResizable());
         // We can only require flavor upgrade if the entire deficit is caused by upgrades
         boolean dueToFlavorUpgrade = deficit == wasRetiredDueToFlavorUpgrade;
         return Optional.of(new HostDeficit(requestedNodes.resources().orElseGet(NodeResources::unspecified),
@@ -445,8 +454,8 @@ class NodeAllocation {
     }
 
     /** Returns the number of nodes accepted this far */
-    private int accepted() {
-        if (nodeType() == NodeType.tenant) return accepted;
+    private int acceptedAndCompatibleOrResizable() {
+        if (nodeType() == NodeType.tenant) return acceptedAndCompatibleOrResizable;
         // Infrastructure nodes are always allocated by type. Count all nodes as accepted so that we never exceed
         // the wanted number of nodes for the type.
         return allNodes.nodeType(nodeType()).size();
