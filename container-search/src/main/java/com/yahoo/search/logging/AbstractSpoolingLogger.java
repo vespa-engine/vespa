@@ -30,15 +30,15 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
     public AbstractSpoolingLogger(Spooler spooler) {
         this.spooler = spooler;
         this.executorService = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("AbstractSpoolingLogger-send-"));
-        executorService.scheduleWithFixedDelay(this, 0, 10L, TimeUnit.MILLISECONDS);
+        executorService.scheduleWithFixedDelay(this, 0, 1L, TimeUnit.SECONDS);
     }
 
     public void run() {
         try {
             spooler.switchFileIfNeeded();
             spooler.processFiles(this::transport);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Exception when processing files: " + e.getMessage());
         }
     }
 
