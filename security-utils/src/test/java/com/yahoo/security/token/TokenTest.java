@@ -71,6 +71,13 @@ public class TokenTest {
     }
 
     @Test
+    void fingerprint_is_printed_with_delimiters_by_default() {
+        var t = Token.of(TEST_DOMAIN, "bar");
+        var fp = t.fingerprint();
+        assertEquals("7c:47:14:4e:5d:c6:84:7a:5d:20:08:6d:bd:17:70:00", fp.toString());
+    }
+
+    @Test
     void token_check_hash_differs_from_fingerprint() { // ... with extremely high probability
         var t = Token.of(TEST_DOMAIN, "foo");
         var fp = t.fingerprint();
@@ -95,7 +102,7 @@ public class TokenTest {
     @Test
     void token_stringification_only_contains_fingerprint() {
         var t = Token.of(TEST_DOMAIN, "foo");
-        assertEquals("Token(fingerprint: 532e4e09d54f96f41a4482eff044b9a2)", t.toString());
+        assertEquals("Token(fingerprint: 53:2e:4e:09:d5:4f:96:f4:1a:44:82:ef:f0:44:b9:a2)", t.toString());
     }
 
     @Test

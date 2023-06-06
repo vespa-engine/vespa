@@ -2,6 +2,7 @@
 package com.yahoo.security.token;
 
 import java.util.Arrays;
+import java.util.HexFormat;
 
 import static com.yahoo.security.ArrayUtils.hex;
 
@@ -11,6 +12,9 @@ import static com.yahoo.security.ArrayUtils.hex;
  * </p><p>
  * Token fingerprints should not be used directly for access checks; use derived
  * {@link TokenCheckHash} instances for this purpose.
+ * </p><p>
+ * Fingerprints are printed in the common hex:hex:hex:... format, e.g.
+ * <code>53:2e:4e:09:d5:4f:96:f4:1a:44:82:ef:f0:44:b9:a2</code>
  * </p>
  */
 public record TokenFingerprint(byte[] hashBytes) {
@@ -36,9 +40,13 @@ public record TokenFingerprint(byte[] hashBytes) {
         return hex(hashBytes);
     }
 
+    public String toDelimitedHexString() {
+        return HexFormat.ofDelimiter(":").formatHex(hashBytes);
+    }
+
     @Override
     public String toString() {
-        return toHexString();
+        return toDelimitedHexString();
     }
 
     public static TokenFingerprint of(Token token) {
