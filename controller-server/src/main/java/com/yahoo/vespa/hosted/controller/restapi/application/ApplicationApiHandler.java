@@ -1427,6 +1427,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         };
     }
 
+    private static String valueOf(NodeResources.Architecture architecture) {
+        return switch (architecture) {
+            case x86_64 : yield "x86_64";
+            case arm64  : yield "arm64";
+            case any    : yield "any";
+        };
+    }
+
     private HttpResponse logs(String tenantName, String applicationName, String instanceName, String environment, String region, Map<String, String> queryParameters) {
         ApplicationId application = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = requireZone(environment, region);
@@ -2836,6 +2844,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setDouble("bandwidthGbps", resources.bandwidthGbps());
         object.setString("diskSpeed", valueOf(resources.diskSpeed()));
         object.setString("storageType", valueOf(resources.storageType()));
+        object.setString("architecture", valueOf(resources.architecture()));
     }
 
     // A tenant has different content when in a list ... antipattern, but not solvable before application/v5
