@@ -84,7 +84,7 @@ private:
 public:
     RemoveReplyPolicyFactory(bool selectOnRetry,
                              std::vector<uint32_t> consumableErrors,
-                             uint32_t idxRemove);
+                             uint32_t idxRemove) noexcept;
     ~RemoveReplyPolicyFactory() override;
     IRoutingPolicy::UP create(const string &param) override;
 };
@@ -93,10 +93,10 @@ RemoveReplyPolicyFactory::~RemoveReplyPolicyFactory() = default;
 
 RemoveReplyPolicyFactory::RemoveReplyPolicyFactory(bool selectOnRetry,
                                                    std::vector<uint32_t> consumableErrors,
-                                                   uint32_t idxRemove) :
-    _selectOnRetry(selectOnRetry),
-    _consumableErrors(std::move(consumableErrors)),
-    _idxRemove(idxRemove)
+                                                   uint32_t idxRemove) noexcept
+    : _selectOnRetry(selectOnRetry),
+      _consumableErrors(std::move(consumableErrors)),
+      _idxRemove(idxRemove)
 {
     // empty
 }

@@ -252,12 +252,12 @@ class PrefixTextFieldGenerator : public FieldGenerator
     uint32_t _mod;
     uint32_t _div;
 public:
-    PrefixTextFieldGenerator(std::vector<string> argv);
+    PrefixTextFieldGenerator(std::vector<string> argv) noexcept;
     virtual ~PrefixTextFieldGenerator() override;
     virtual void generateValue(vespalib::asciistream &doc, uint32_t id) override;
 };
 
-PrefixTextFieldGenerator::PrefixTextFieldGenerator(std::vector<string> argv)
+PrefixTextFieldGenerator::PrefixTextFieldGenerator(std::vector<string> argv) noexcept
     : FieldGenerator(argv[0]),
       _prefix(),
       _mod(std::numeric_limits<uint32_t>::max()),

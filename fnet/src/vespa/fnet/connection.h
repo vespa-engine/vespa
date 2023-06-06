@@ -67,7 +67,7 @@ private:
     struct ResolveHandler : public vespalib::AsyncResolver::ResultHandler {
         FNET_Connection *connection;
         vespalib::SocketAddress address;
-        ResolveHandler(FNET_Connection *conn);
+        ResolveHandler(FNET_Connection *conn) noexcept;
         void handle_result(vespalib::SocketAddress result) override;
         ~ResolveHandler();
     };
