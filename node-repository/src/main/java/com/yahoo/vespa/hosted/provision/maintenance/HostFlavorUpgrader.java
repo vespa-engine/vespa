@@ -82,8 +82,7 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
                 redeployed = true;
                 return asSuccessFactorDeviation(attempts, failures);
             } catch (NodeAllocationException e) {
-                log.log(Level.WARNING, "No capacity for flavor upgrade of " + parent + ". Retrying in " +
-                                       interval(), e);
+               // Fine, no capacity for upgrade
             } finally {
                 if (deploymentValid && !redeployed) { // Cancel upgrade if redeploy failed
                     failures++;
