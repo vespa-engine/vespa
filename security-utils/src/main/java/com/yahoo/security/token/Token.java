@@ -67,7 +67,8 @@ public class Token {
     @Override
     public String toString() {
         // Avoid leaking raw token secret as part of toString() output
-        return "Token(fingerprint: %s)".formatted(fingerprint);
+        // Fingerprint first, since that's the most important bit.
+        return "Token(fingerprint: %s, domain: %s)".formatted(fingerprint, domain);
     }
 
     /**

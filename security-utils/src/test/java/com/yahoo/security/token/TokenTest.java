@@ -100,9 +100,11 @@ public class TokenTest {
     }
 
     @Test
-    void token_stringification_only_contains_fingerprint() {
+    void token_stringification_does_not_contain_raw_secret() {
         var t = Token.of(TEST_DOMAIN, "foo");
-        assertEquals("Token(fingerprint: 53:2e:4e:09:d5:4f:96:f4:1a:44:82:ef:f0:44:b9:a2)", t.toString());
+        assertEquals("Token(fingerprint: 53:2e:4e:09:d5:4f:96:f4:1a:44:82:ef:f0:44:b9:a2, " +
+                           "domain: 'my fingerprint'/'my check hash')",
+                     t.toString());
     }
 
     @Test

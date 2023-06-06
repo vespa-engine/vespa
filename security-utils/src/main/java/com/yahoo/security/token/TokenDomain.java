@@ -3,6 +3,7 @@ package com.yahoo.security.token;
 
 import java.util.Arrays;
 
+import static com.yahoo.security.ArrayUtils.fromUtf8Bytes;
 import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
 
 /**
@@ -41,6 +42,11 @@ public record TokenDomain(byte[] fingerprintContext, byte[] checkHashContext) {
         int result = Arrays.hashCode(fingerprintContext);
         result = 31 * result + Arrays.hashCode(checkHashContext);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "'%s'/'%s'".formatted(fromUtf8Bytes(fingerprintContext), fromUtf8Bytes(checkHashContext));
     }
 
     public static TokenDomain of(String fingerprintContext, String checkHashContext) {
