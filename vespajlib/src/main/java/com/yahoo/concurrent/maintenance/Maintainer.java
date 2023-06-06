@@ -37,10 +37,10 @@ public abstract class Maintainer implements Runnable {
     private final AtomicBoolean shutDown = new AtomicBoolean();
     private final boolean ignoreCollision;
     private final Clock clock;
-    private final Double successFactorBaseline;
+    private final double successFactorBaseline;
 
     public Maintainer(String name, Duration interval, Clock clock, JobControl jobControl,
-                      JobMetrics jobMetrics, List<String> clusterHostnames, boolean ignoreCollision, Double successFactorBaseline) {
+                      JobMetrics jobMetrics, List<String> clusterHostnames, boolean ignoreCollision, double successFactorBaseline) {
         this.name = name;
         this.interval = requireInterval(interval);
         this.jobControl = Objects.requireNonNull(jobControl);
@@ -98,7 +98,7 @@ public abstract class Maintainer implements Runnable {
      * Called once each time this maintenance job should run.
      *
      * @return the degree to which the run was deviated from the successFactorBaseline - a number between -1 (no success), to 0 (complete success).
-     *         Note that this indicates whether something is wrong, so e.g if the call did nothing because it should do
+     *         Note that this indicates whether something is wrong, so e.g. if the call did nothing because it should do
      *         nothing, 0.0 should be returned.
      */
     protected abstract double maintain();
