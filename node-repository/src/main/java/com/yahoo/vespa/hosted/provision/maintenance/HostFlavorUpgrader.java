@@ -60,8 +60,6 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
         NodeList activeNodes = allNodes.nodeType(NodeType.tenant)
                                        .state(Node.State.active)
                                        .shuffle(random); // Shuffle to avoid getting stuck trying to upgrade the same host
-        int attempts = 0;
-        int failures = 0;
         for (var node : activeNodes) {
             Optional<Node> parent = allNodes.parentOf(node);
             if (parent.isEmpty()) continue;
@@ -74,18 +72,16 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
                 deploymentValid = deployment.isValid();
                 if (!deploymentValid) continue;
 
-                attempts++;
                 log.log(Level.INFO, () -> "Redeploying " + node.allocation().get().owner() + " to upgrade flavor (" +
                                           parent.get().flavor().name() + ") of " + parent.get());
                 upgradeFlavor(parent.get(), true);
                 deployment.activate();
                 redeployed = true;
-                return asSuccessFactorDeviation(attempts, failures);
+                return 1.0;
             } catch (NodeAllocationException e) {
                // Fine, no capacity for upgrade
             } finally {
                 if (deploymentValid && !redeployed) { // Cancel upgrade if redeploy failed
-                    failures++;
                     upgradeFlavor(parent.get(), false);
                 }
             }

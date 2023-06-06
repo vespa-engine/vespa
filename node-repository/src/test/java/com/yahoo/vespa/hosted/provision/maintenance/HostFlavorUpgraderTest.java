@@ -54,14 +54,14 @@ class HostFlavorUpgraderTest {
         assertEquals(flavor0, host.flavor().name());
 
         // Nothing to upgrade initially
-        upgrader.maintain();
+        assertEquals(1, upgrader.maintain());
         assertEquals(NodeList.of(), tester.nodeRepository().nodes().list()
                                           .matching(h -> h.status().wantToUpgradeFlavor()));
 
         // Mark flavor as upgradable, but fail all provisioning requests
         hostProvisioner.addUpgradableFlavor(flavor0)
                        .with(Behaviour.failProvisionRequest);
-        upgrader.maintain();
+        assertEquals(1, upgrader.maintain());
         assertEquals(NodeList.of(),
                      tester.nodeRepository().nodes().list()
                            .matching(node -> node.status().wantToUpgradeFlavor() || node.status().wantToRetire()),
@@ -69,7 +69,7 @@ class HostFlavorUpgraderTest {
 
         // First provision request fails, but second succeeds and a replacement host starts provisioning
         hostProvisioner.with(Behaviour.failProvisionRequest, 1);
-        assertEquals(-0.5, upgrader.maintain(), Double.MIN_VALUE); // One host failed, one succeeded
+        assertEquals(1, upgrader.maintain());
         NodeList nodes = tester.nodeRepository().nodes().list();
         NodeList upgradingFlavor = nodes.matching(node -> node.status().wantToRetire() &&
                                                           node.status().wantToUpgradeFlavor());
@@ -77,7 +77,7 @@ class HostFlavorUpgraderTest {
         assertEquals(1, nodes.state(Node.State.provisioned).size());
 
         // No more upgrades are started while host is retiring
-        assertEquals(1.0, upgrader.maintain(), Double.MIN_VALUE);
+        assertEquals(1, upgrader.maintain());
         assertEquals(upgradingFlavor, tester.nodeRepository().nodes().list()
                                             .matching(node -> node.status().wantToUpgradeFlavor()));
     }
