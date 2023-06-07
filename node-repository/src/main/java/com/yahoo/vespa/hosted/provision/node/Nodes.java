@@ -503,11 +503,7 @@ public class Nodes {
                 db.removeNodes(removed, transaction);
             } else {
                 removed = removeChildren(node, force, transaction);
-                if (zone.cloud().dynamicProvisioning()) {
-                    db.removeNodes(List.of(node), transaction);
-                } else {
-                    move(node.hostname(), Node.State.deprovisioned, Agent.system, false, Optional.empty(), transaction);
-                }
+                move(node.hostname(), Node.State.deprovisioned, Agent.system, false, Optional.empty(), transaction);
                 removed.add(node);
             }
             transaction.commit();

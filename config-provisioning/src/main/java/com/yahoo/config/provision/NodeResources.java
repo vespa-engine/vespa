@@ -461,7 +461,7 @@ public class NodeResources {
             throw new IllegalStateException("Cannot perform this on unspecified resources");
     }
 
-    // Returns squared euclidean distance of the relevant numerical values of two node resources
+    // Returns squared Euclidean distance of the relevant numerical values of two node resources
     public double distanceTo(NodeResources other) {
         if ( ! this.diskSpeed().compatibleWith(other.diskSpeed())) return Double.MAX_VALUE;
         if ( ! this.storageType().compatibleWith(other.storageType())) return Double.MAX_VALUE;
