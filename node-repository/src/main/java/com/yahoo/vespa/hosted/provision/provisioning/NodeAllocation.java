@@ -362,6 +362,7 @@ class NodeAllocation {
 
         // Infrastructure hosts have fixed indices, starting at 1
         Set<Integer> currentIndices = allNodes.nodeType(hostType)
+                                              .not().state(Node.State.deprovisioned)
                                               .hostnames()
                                               .stream()
                                               // TODO(mpolden): Use cluster index instead of parsing hostname, once all
@@ -375,7 +376,7 @@ class NodeAllocation {
                 indices.add(i);
             }
         }
-        // Ignore our own index as we should never try to provision ourself. This can happen in the following scenario:
+        // Ignore our own index as we should never try to provision ourselves. This can happen in the following scenario:
         // - cfg1 has been deprovisioned
         // - cfg2 has triggered provisioning of a new cfg1
         // - cfg1 is starting and redeploys its infrastructure application during bootstrap. A deficit is detected

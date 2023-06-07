@@ -60,6 +60,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new AutoscalingMaintainer(nodeRepository, deployer, metric, defaults.autoscalingInterval));
         maintainers.add(new ScalingSuggestionsMaintainer(nodeRepository, defaults.scalingSuggestionsInterval, metric));
         maintainers.add(new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer));
+        maintainers.add(new DeprovisionedExpirer(nodeRepository, defaults.deprovisionedExpiry, metric));
 
         provisionServiceProvider.getLoadBalancerService()
                                 .map(lbService -> new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric))
@@ -121,6 +122,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration switchRebalancerInterval;
         private final Duration hostRetirerInterval;
         private final Duration hostFlavorUpgraderInterval;
+        private final Duration deprovisionedExpiry;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -155,6 +157,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             hostRetirerInterval = Duration.ofMinutes(30);
             hostFlavorUpgraderInterval = Duration.ofMinutes(30);
+            // CD (de)provisions hosts frequently. Expire deprovisioned ones earlier
+            deprovisionedExpiry = isCdZone ? Duration.ofDays(1) : Duration.ofDays(30);
 
             if (zone.environment().isProduction() && ! isCdZone) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy

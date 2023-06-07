@@ -83,7 +83,7 @@ public class HostCapacityMaintainerTest {
         assertTrue(tester.nodeRepository.nodes().node("host3").isPresent());
 
         tester.maintain();
-        assertTrue(tester.nodeRepository.nodes().node("host2").isEmpty());
+        assertSame(State.deprovisioned, tester.nodeRepository.nodes().node("host2").get().state());
     }
 
     @Test
@@ -94,7 +94,7 @@ public class HostCapacityMaintainerTest {
         assertTrue(failedHost.isPresent());
 
         tester.maintain();
-        assertTrue("Failed host is deprovisioned", tester.nodeRepository.nodes().node(failedHost.get().hostname()).isEmpty());
+        assertSame("Failed host is deprovisioned", State.deprovisioned, tester.nodeRepository.nodes().node(failedHost.get().hostname()).get().state());
         assertEquals(1, tester.hostProvisioner.deprovisionedHosts());
     }
 
@@ -118,9 +118,9 @@ public class HostCapacityMaintainerTest {
 
         assertEquals(2, tester.hostProvisioner.provisionedHosts().size());
         assertEquals(2, tester.provisionedHostsMatching(new NodeResources(48, 128, 1000, 10)));
-        NodeList nodesAfter = tester.nodeRepository.nodes().list();
+        NodeList nodesAfter = tester.nodeRepository.nodes().list().not().state(State.deprovisioned);
         assertEquals(9, nodesAfter.size());  // 2 removed, 2 added
-        assertTrue("Failed host 'host2' is deprovisioned", tester.nodeRepository.nodes().node("host2").isEmpty());
+        assertSame("Failed host 'host2' is deprovisioned", State.deprovisioned, tester.nodeRepository.nodes().node("host2").get().state());
         assertTrue("Node on deprovisioned host removed", tester.nodeRepository.nodes().node("host2-1").isEmpty());
         assertTrue("Host satisfying 16-24-100-1 is kept", tester.nodeRepository.nodes().node("host3").isPresent());
         assertTrue("New 48-128-1000-10 host added", tester.nodeRepository.nodes().node("host100").isPresent());
@@ -177,8 +177,8 @@ public class HostCapacityMaintainerTest {
 
         assertEquals(2, tester.hostProvisioner.provisionedHosts().size());
         assertEquals(2, tester.provisionedHostsMatching(new NodeResources(48, 128, 1000, 10)));
-        assertEquals(8, tester.nodeRepository.nodes().list().size());  // 3 removed, 2 added
-        assertTrue("preprovision capacity is prefered on shared hosts", tester.nodeRepository.nodes().node("host3").isEmpty());
+        assertEquals(8, tester.nodeRepository.nodes().list().not().state(State.deprovisioned).size());  // 3 removed, 2 added
+        assertSame("preprovision capacity is prefered on shared hosts", State.deprovisioned, tester.nodeRepository.nodes().node("host3").get().state());
         assertTrue(tester.nodeRepository.nodes().node("host100").isPresent());
         assertTrue(tester.nodeRepository.nodes().node("host101").isPresent());
 
@@ -193,13 +193,13 @@ public class HostCapacityMaintainerTest {
         assertEquals("one provisioned host has been deprovisioned, so there are 2 -> 1 provisioned hosts",
                      1, tester.hostProvisioner.provisionedHosts().size());
         assertEquals(1, tester.provisionedHostsMatching(new NodeResources(48, 128, 1000, 10)));
-        assertEquals(7, tester.nodeRepository.nodes().list().size());  // 4 removed, 2 added
+        assertEquals(7, tester.nodeRepository.nodes().list().not().state(State.deprovisioned).size());  // 4 removed, 2 added
         if (tester.nodeRepository.nodes().node("host100").isPresent()) {
-            assertTrue("host101 is superfluous and should have been deprovisioned",
-                    tester.nodeRepository.nodes().node("host101").isEmpty());
+            assertSame("host101 is superfluous and should have been deprovisioned", State.deprovisioned,
+                       tester.nodeRepository.nodes().node("host101").get().state());
         } else {
             assertTrue("host101 is required for preprovision capacity",
-                    tester.nodeRepository.nodes().node("host101").isPresent());
+                       tester.nodeRepository.nodes().node("host101").isPresent());
         }
 
     }
@@ -207,8 +207,8 @@ public class HostCapacityMaintainerTest {
     private void verifyFirstMaintain(DynamicProvisioningTester tester) {
         assertEquals(1, tester.hostProvisioner.provisionedHosts().size());
         assertEquals(1, tester.provisionedHostsMatching(new NodeResources(48, 128, 1000, 10)));
-        assertEquals(8, tester.nodeRepository.nodes().list().size());  // 2 removed, 1 added
-        assertTrue("Failed host 'host2' is deprovisioned", tester.nodeRepository.nodes().node("host2").isEmpty());
+        assertEquals(8, tester.nodeRepository.nodes().list().not().state(State.deprovisioned).size());  // 2 removed, 1 added
+        assertSame("Failed host 'host2' is deprovisioned", State.deprovisioned, tester.nodeRepository.nodes().node("host2").get().state());
         assertTrue("Node on deprovisioned host removed", tester.nodeRepository.nodes().node("host2-1").isEmpty());
         assertTrue("One 1-30-20-3 node fits on host3", tester.nodeRepository.nodes().node("host3").isPresent());
         assertTrue("New 48-128-1000-10 host added", tester.nodeRepository.nodes().node("host100").isPresent());
@@ -390,7 +390,7 @@ public class HostCapacityMaintainerTest {
         tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
 
         // Expected number of hosts and children are provisioned
-        NodeList allNodes = tester.nodeRepository().nodes().list();
+        NodeList allNodes = tester.nodeRepository().nodes().list().not().state(State.deprovisioned);
         NodeList configHosts = allNodes.nodeType(hostType);
         NodeList configNodes = allNodes.nodeType(hostType.childNodeType());
         assertEquals(3, configHosts.size());
@@ -427,7 +427,7 @@ public class HostCapacityMaintainerTest {
 
         // Host and child is removed
         dynamicProvisioningTester.maintain();
-        allNodes = tester.nodeRepository().nodes().list();
+        allNodes = tester.nodeRepository().nodes().list().not().state(State.deprovisioned);
         assertEquals(2, allNodes.nodeType(hostType).size());
         assertEquals(2, allNodes.nodeType(hostType.childNodeType()).size());
 
@@ -585,7 +585,7 @@ public class HostCapacityMaintainerTest {
         // Host and children can now be removed.
         tester.provisioningTester.activateTenantHosts();
         tester.maintain();
-        assertEquals(List.of(), tester.nodeRepository.nodes().list().asList());
+        assertEquals(List.of(), tester.nodeRepository.nodes().list().not().state(State.deprovisioned).asList());
     }
 
     @Test
@@ -617,7 +617,11 @@ public class HostCapacityMaintainerTest {
         // Host and children can now be removed.
         tester.maintain();
         for (var node : List.of(host4, host41, host42, host43)) {
-            assertTrue(node.hostname() + " removed", tester.nodeRepository.nodes().node(node.hostname()).isEmpty());
+            if (node.type().isHost()) {
+                assertSame(node.hostname() + " moved to deprovisioned", State.deprovisioned, tester.nodeRepository.nodes().node(node.hostname()).get().state());
+            } else {
+                assertTrue(node.hostname() + " removed", tester.nodeRepository.nodes().node(node.hostname()).isEmpty());
+            }
         }
     }
 
@@ -651,7 +655,7 @@ public class HostCapacityMaintainerTest {
     private void assertCfghost3IsDeprovisioned(DynamicProvisioningTester tester) {
         assertEquals(4, tester.nodeRepository.nodes().list(Node.State.active).size());
         assertEquals(2, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.confighost).size());
-        assertTrue(tester.nodeRepository.nodes().node("cfghost3").isEmpty());
+        assertSame(State.deprovisioned, tester.nodeRepository.nodes().node("cfghost3").get().state());
     }
 
     private static class DynamicProvisioningTester {
