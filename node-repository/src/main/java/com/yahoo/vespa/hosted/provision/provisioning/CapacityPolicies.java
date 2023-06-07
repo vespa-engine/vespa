@@ -90,13 +90,7 @@ public class CapacityPolicies {
     }
 
     public NodeResources specifyFully(NodeResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        if (resources.vcpuIsUnspecified())
-            resources = resources.withVcpu(defaultResources(clusterSpec, applicationId).vcpu());
-        if (resources.memoryGbIsUnspecified())
-            resources = resources.withMemoryGb(defaultResources(clusterSpec, applicationId).memoryGb());
-        if (resources.diskGbIsUnspecified())
-            resources = resources.withDiskGb(defaultResources(clusterSpec, applicationId).diskGb());
-        return resources;
+        return resources.withUnspecifiedNumbersFrom(defaultResources(clusterSpec, applicationId));
     }
 
     private NodeResources defaultResources(ClusterSpec clusterSpec, ApplicationId applicationId) {
