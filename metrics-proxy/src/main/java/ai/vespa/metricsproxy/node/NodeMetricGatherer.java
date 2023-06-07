@@ -5,6 +5,7 @@ import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
+import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.ServiceId;
@@ -78,6 +79,14 @@ public class NodeMetricGatherer {
             while(keys.hasNext()) {
                 String key = (String) keys.next();
                 builder.putMetric(MetricId.toMetricId(key), metrics.get(key).asLong());
+            }
+        }
+        if (object.has("dimensions")) {
+            JsonNode dimensions = object.get("dimensions");
+            Iterator<?> keys = dimensions.fieldNames();
+            while(keys.hasNext()) {
+                String key = (String) keys.next();
+                builder.putDimension(DimensionId.toDimensionId(key), dimensions.get(key).asText());
             }
         }
         builder.addConsumers(Set.of(ConsumerId.toConsumerId("Vespa")));

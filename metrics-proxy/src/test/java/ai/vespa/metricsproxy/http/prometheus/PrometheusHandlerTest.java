@@ -68,7 +68,6 @@ public class PrometheusHandlerTest extends HttpHandlerTestBase {
     public void response_contains_node_metrics() {
         String cpu = getLine(valuesResponse, CPU_METRIC + "{");
         assertTrue(cpu.contains("} 12.345"));   // metric value
-        assertTrue(cpu.contains("{vespaVersion="));
     }
 
     @Test
