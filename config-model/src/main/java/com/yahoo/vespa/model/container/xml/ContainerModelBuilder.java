@@ -36,6 +36,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.jdisc.DataplaneProxyService;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.io.IOUtils;
@@ -599,6 +600,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
                 cluster.getHttp().getFilterChains().add(tokenChain);
 
+                cluster.addSimpleComponent(DataplaneProxyCredentials.class);
+                cluster.addSimpleComponent(DataplaneProxyService.class);
                 var dataplaneProxy = new DataplaneProxy(
                         getDataplanePort(deployState),
                         endpointCertificateSecrets.certificate(),

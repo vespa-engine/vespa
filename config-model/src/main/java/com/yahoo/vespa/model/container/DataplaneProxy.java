@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.DataplaneProxyConfig;
-import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
+import com.yahoo.container.jdisc.DataplaneProxyConfigurator;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 public class DataplaneProxy extends SimpleComponent implements DataplaneProxyConfig.Producer {
@@ -12,7 +12,7 @@ public class DataplaneProxy extends SimpleComponent implements DataplaneProxyCon
     private final String serverKey;
 
     public DataplaneProxy(Integer port, String serverCertificate, String serverKey) {
-        super(DataplaneProxyCredentials.class.getName());
+        super(DataplaneProxyConfigurator.class.getName());
         this.port = port;
         this.serverCertificate = serverCertificate;
         this.serverKey = serverKey;
