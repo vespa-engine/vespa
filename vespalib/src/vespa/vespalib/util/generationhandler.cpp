@@ -17,23 +17,27 @@ GenerationHandler::GenerationHold::~GenerationHold() {
 
 void
 GenerationHandler::GenerationHold::setValid() noexcept {
-    assert(!valid(_refCount));
-    _refCount.fetch_sub(1);
+    auto old = _refCount.fetch_sub(1, std::memory_order_release);
+    assert(!valid(old));
 }
 
 bool
 GenerationHandler::GenerationHold::setInvalid() noexcept {
-    uint32_t refs = _refCount;
-    assert(valid(refs));
-    if (refs != 0) {
+    uint32_t refs = 0;
+    if (_refCount.compare_exchange_strong(refs, 1,
+                                          std::memory_order_acq_rel,
+                                          std::memory_order_relaxed))
+    {
+        return true;
+    } else {
+        assert(valid(refs));
         return false;
     }
-    return _refCount.compare_exchange_strong(refs, 1, std::memory_order_seq_cst);
 }
 
 GenerationHandler::GenerationHold *
 GenerationHandler::GenerationHold::acquire() noexcept {
-    if (valid(_refCount.fetch_add(2))) {
+    if (valid(_refCount.fetch_add(2, std::memory_order_acq_rel))) {
         return this;
     } else {
         release();
@@ -46,7 +50,7 @@ GenerationHandler::GenerationHold::copy(GenerationHold *self) noexcept {
     if (self == nullptr) {
         return nullptr;
     } else {
-        uint32_t oldRefCount = self->_refCount.fetch_add(2);
+        uint32_t oldRefCount = self->_refCount.fetch_add(2, std::memory_order_relaxed);
         (void) oldRefCount;
         assert(valid(oldRefCount));
         return self;
@@ -143,15 +147,10 @@ GenerationHandler::incGeneration()
 {
     generation_t ngen = getNextGeneration();
 
-    // Make pending writes visible to other threads before checking for readers
-    // present in last generation.
-    std::atomic_thread_fence(std::memory_order_seq_cst);
     auto last = _last.load(std::memory_order_relaxed);
-    if (last->getRefCount() == 0) {
+    if (last->getRefCountAcqRel() == 0) {
         // Last generation is unused, morph it to new generation.  This is
         // the typical case when no readers are present.
-        // Note: atomic thread fence above is needed to avoid stale data in
-        // reader
         set_generation(ngen);
         last->_generation.store(ngen, std::memory_order_relaxed);
         update_oldest_used_generation();
