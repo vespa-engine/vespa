@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
@@ -109,7 +110,7 @@ public class Nodes {
 
         if (node.resources().bandwidthGbpsIsUnspecified())
             node = node.with(new Flavor(node.resources().withBandwidthGbps(0.3)), Agent.system, clock.instant());
-        if (node.resources().architecture().isDefault()) {
+        if ( node.resources().architecture() == NodeResources.Architecture.any) {
             Optional<Node> parent = allNodes.parentOf(node);
             if (parent.isPresent())
                 node = node.with(new Flavor(node.resources().with(parent.get().resources().architecture())), Agent.system, clock.instant());
