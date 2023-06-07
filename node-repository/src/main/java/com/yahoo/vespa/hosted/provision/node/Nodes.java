@@ -97,8 +97,24 @@ public class Nodes {
      * @param inState the states to return nodes from. If no states are given, all nodes are returned
      */
     public NodeList list(Node.State... inState) {
-        NodeList nodes = NodeList.copyOf(db.readNodes());
-        return inState.length == 0 ? nodes : nodes.state(Set.of(inState));
+        NodeList allNodes = NodeList.copyOf(db.readNodes());
+        NodeList nodes = inState.length == 0 ? allNodes : allNodes.state(Set.of(inState));
+        nodes = NodeList.copyOf(nodes.stream().map(node -> specifyFully(node, allNodes)).toList());
+        return nodes;
+    }
+
+    // Repair underspecified node resources. TODO: Remove this after June 2023
+    private Node specifyFully(Node node, NodeList allNodes) {
+        if (node.resources().isUnspecified()) return node;
+
+        if (node.resources().bandwidthGbpsIsUnspecified())
+            node = node.with(new Flavor(node.resources().withBandwidthGbps(0.3)), Agent.system, clock.instant());
+        if (node.resources().architecture().isDefault()) {
+            Optional<Node> parent = allNodes.parentOf(node);
+            if (parent.isPresent())
+                node = node.with(new Flavor(node.resources().with(parent.get().resources().architecture())), Agent.system, clock.instant());
+        }
+        return node;
     }
 
     /** Returns a locked list of all nodes in this repository */
