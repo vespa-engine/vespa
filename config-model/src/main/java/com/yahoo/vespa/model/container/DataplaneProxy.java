@@ -11,10 +11,14 @@ import java.util.Optional;
 public class DataplaneProxy extends AbstractService implements DataplaneProxyConfig.Producer {
 
     private final Integer port;
+    private final String serverCertificate;
+    private final String serverKey;
 
-    public DataplaneProxy(TreeConfigProducer<? super DataplaneProxy> parent, Integer port) {
+    public DataplaneProxy(TreeConfigProducer<? super DataplaneProxy> parent, Integer port, String serverCertificate, String serverKey) {
         super(parent, "dataplane-proxy");
         this.port = port;
+        this.serverCertificate = serverCertificate;
+        this.serverKey = serverKey;
         setProp("clustertype", "hosts");
         setProp("clustername", "admin");
     }
@@ -39,6 +43,8 @@ public class DataplaneProxy extends AbstractService implements DataplaneProxyCon
     @Override
     public void getConfig(DataplaneProxyConfig.Builder builder) {
         builder.port(port);
+        builder.serverCertificate(serverCertificate);
+        builder.serverKey(serverKey);
     }
 
     @Override

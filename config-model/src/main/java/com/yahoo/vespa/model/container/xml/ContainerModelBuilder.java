@@ -461,7 +461,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             addDefaultConnectorHostedFilterBinding(cluster);
             addAdditionalHostedConnector(deployState, cluster);
             addCloudDataPlaneFilter(deployState, cluster);
-            addDataplaneProxy(deployState, cluster);
         }
     }
 
@@ -496,28 +495,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .filter(c -> c.getListenPort() == Defaults.getDefaults().vespaWebServicePort()).findAny().orElseThrow()
                 .setDefaultRequestFilterChain(insecureChain.getComponentId());
 
-    }
-
-    private void addDataplaneProxy(DeployState deployState, ApplicationContainerCluster cluster) {
-        if (!deployState.featureFlags().enableDataplaneProxy())
-            return;
-
-        var tokenChain = new HttpFilterChain("cloud-data-plane-token", HttpFilterChain.Type.SYSTEM);
-        tokenChain.addInnerComponent(new Filter(
-                new ChainedComponentModel(
-                        new BundleInstantiationSpecification(
-                                new ComponentSpecification("com.yahoo.jdisc.http.filter.security.misc.BlockingRequestFilter"),
-                                null, new ComponentSpecification("jdisc-security-filters")),
-                        Dependencies.emptyDependencies())));
-
-        cluster.getHttp().getFilterChains().add(tokenChain);
-
-        cluster.getContainers().forEach(container -> {
-            var hostResource = container.getHostResource();
-            var dataplaneProxy = new DataplaneProxy(hostResource.getHost(), getDataplanePort(deployState));
-            dataplaneProxy.setHostResource(hostResource);
-            dataplaneProxy.initService(deployState);
-        });
     }
 
     protected void addClients(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
@@ -608,11 +585,30 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .orElse(false);
 
             // TODO (mortent): Implement token support in model
-            boolean enableTokenSupport = false;
+            boolean enableTokenSupport = deployState.featureFlags().enableDataplaneProxy();
 
             // Set up component to generate proxy cert if token support is enabled
             if (enableTokenSupport) {
                 cluster.addSimpleComponent(DataplaneProxyCredentials.class);
+                var tokenChain = new HttpFilterChain("cloud-data-plane-token", HttpFilterChain.Type.SYSTEM);
+                tokenChain.addInnerComponent(new Filter(
+                        new ChainedComponentModel(
+                                new BundleInstantiationSpecification(
+                                        new ComponentSpecification("com.yahoo.jdisc.http.filter.security.misc.BlockingRequestFilter"),
+                                        null, new ComponentSpecification("jdisc-security-filters")),
+                                Dependencies.emptyDependencies())));
+
+                cluster.getHttp().getFilterChains().add(tokenChain);
+
+                cluster.getContainers().forEach(container -> {
+                    var hostResource = container.getHostResource();
+                    var dataplaneProxy = new DataplaneProxy(hostResource.getHost(),
+                            getDataplanePort(deployState),
+                            endpointCertificateSecrets.certificate(),
+                            endpointCertificateSecrets.key());
+                    dataplaneProxy.setHostResource(hostResource);
+                    dataplaneProxy.initService(deployState);
+                });
             }
             connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
@@ -1389,8 +1385,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private static int getDataplanePort(DeployState deployState) {
-        // TODO: Determine port
-        return deployState.featureFlags().enableDataplaneProxy() ? 9999 : HOSTED_VESPA_DATAPLANE_PORT;
+        return deployState.featureFlags().enableDataplaneProxy() ? 8443 : HOSTED_VESPA_DATAPLANE_PORT;
     }
 
 }
