@@ -233,7 +233,7 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     // Minimal capacity policies
     private NodeResources decideResources(NodeResources resources) {
-        return resources.withUnspecifiedNumbersFrom(resources);
+        return resources.withUnspecifiedNumbersFrom(defaultNodeResources);
     }
 
     private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, NodeResources requestedResourcesOrUnspecified,
