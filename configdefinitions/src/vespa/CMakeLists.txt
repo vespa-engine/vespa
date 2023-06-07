@@ -83,3 +83,6 @@ install_config_definition(onnx-models.def vespa.config.search.core.onnx-models.d
 vespa_generate_config(configdefinitions proton.def)
 install_config_definition(proton.def vespa.config.search.core.proton.def)
 vespa_generate_config(configdefinitions hwinfo.def)
+install_config_definition(hugging-face-embedder.def embedding.huggingface.hugging-face-embedder.def)
+install_config_definition(hugging-face-embedder.def language.huggingface.config.hugging-face-tokenizer.def)
+install_config_definition(bert-base-embedder.def embedding.bert-base-embedder.def)
