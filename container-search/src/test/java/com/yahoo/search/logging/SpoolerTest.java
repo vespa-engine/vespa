@@ -57,6 +57,35 @@ public class SpoolerTest {
     }
 
     @Test
+    public void testSpoolingLoggerCleanup() throws IOException {
+        Path spoolDir = tempDir.resolve("spool");
+
+        Spooler spooler = createSpooler(spoolDir, 1, false, 5);
+
+        TestLogger logger = new TestLogger(spooler);
+        assertTrue(sendEntry(logger, "Yo entry"));
+
+        Path readyPath = spooler.readyPath();
+        Path readyFile1 = readyPath.resolve(spooler.fileNameBase.get() + "-0");
+        waitUntilFileExists(readyFile1);
+
+        // Check content after being moved to ready path
+        assertContent(readyFile1, "Yo entry");
+
+        // Process files (read, transport files)
+        logger.manualRun();
+        assertEquals(1, logger.entriesSent());
+
+        // No files in processing or ready or successes
+        assertProcessedFiles(spooler, 0);
+        assertReadyFiles(spooler, 0);
+        assertSuccessFiles(spooler, 0);
+        assertFailureFiles(spooler, 0);
+
+        assertTrue(spooler.failures().isEmpty(), spooler.failures().toString());
+    }
+
+    @Test
     public void testSpoolingManyEntriesPerFile() throws IOException {
         Path spoolDir = tempDir.resolve("spool");
 

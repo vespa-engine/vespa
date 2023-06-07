@@ -125,8 +125,15 @@ public class Spooler {
             } catch (Exception e) {
                 handleFailure(f);
             } finally {
-                if (success && keepSuccessFiles) {
-                    moveProcessedFile(f, successesPath);
+                if (success) {
+                    if (keepSuccessFiles)
+                        moveProcessedFile(f, successesPath);
+                    else
+                        try {
+                            Files.delete(f.toPath());
+                        } catch (IOException e) {
+                            log.log(Level.WARNING, "Unable to delete file " + f, e);
+                        }
                 }
             }
         }
