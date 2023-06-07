@@ -39,6 +39,7 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
 import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.path.Path;
@@ -606,13 +607,20 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .map(clientAuth -> clientAuth == AccessControl.ClientAuthentication.need)
                     .orElse(false);
 
+            // TODO (mortent): Implement token support in model
+            boolean enableTokenSupport = false;
+
+            // Set up component to generate proxy cert if token support is enabled
+            if (enableTokenSupport) {
+                cluster.addSimpleComponent(DataplaneProxyCredentials.class);
+            }
             connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
                     serverName, endpointCertificateSecrets, X509CertificateUtils.toPem(clientCertificates),
-                    tlsCiphersOverride, proxyProtocolMixedMode, port, endpointConnectionTtl)
+                    tlsCiphersOverride, proxyProtocolMixedMode, port, endpointConnectionTtl, enableTokenSupport)
                     : HostedSslConnectorFactory.withProvidedCertificate(
                     serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride,
-                    proxyProtocolMixedMode, port, endpointConnectionTtl);
+                    proxyProtocolMixedMode, port, endpointConnectionTtl, enableTokenSupport);
         } else {
             connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(
                     serverName, tlsCiphersOverride, proxyProtocolMixedMode, port,

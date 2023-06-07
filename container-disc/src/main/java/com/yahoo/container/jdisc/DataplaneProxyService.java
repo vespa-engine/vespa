@@ -3,6 +3,7 @@ package com.yahoo.container.jdisc;
 
 import com.yahoo.cloud.config.DataplaneProxyConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -36,22 +37,18 @@ public class DataplaneProxyService extends AbstractComponent {
         this.started = false;
     }
 
-    public void reconfigure(DataplaneProxyConfig config) {
+    public void reconfigure(DataplaneProxyConfig config, DataplaneProxyCredentials credentialsProvider) {
         try {
             String serverCert = config.serverCertificate();
             String serverKey = config.serverKey();
-            String clientCert = config.clientCertificate();
-            String clientKey = config.clientKey();
 
             boolean configChanged = false;
-            configChanged |= writeFile(clientCertificateFile, clientCert);
-            configChanged |= writeFile(clientKeyFile, clientKey);
             configChanged |= writeFile(serverCertificateFile, serverCert);
             configChanged |= writeFile(serverKeyFile, serverKey);
             configChanged |= writeFile(nginxConf,
                       nginxConfig(
-                              clientCertificateFile,
-                              clientKeyFile,
+                              credentialsProvider.certificateFile(),
+                              credentialsProvider.keyFile(),
                               serverCertificateFile,
                               serverKeyFile,
                               URI.create(config.mTlsEndpoint()),

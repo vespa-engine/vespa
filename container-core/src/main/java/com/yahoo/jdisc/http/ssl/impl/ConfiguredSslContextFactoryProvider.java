@@ -110,7 +110,7 @@ public class ConfiguredSslContextFactoryProvider implements SslProvider {
     private static boolean hasBoth(String a, String b) { return !a.isBlank() && !b.isBlank(); }
     private static boolean hasNeither(String a, String b) { return a.isBlank() && b.isBlank(); }
 
-    private static Optional<String> getCaCertificates(ConnectorConfig.Ssl sslConfig) {
+    Optional<String> getCaCertificates(ConnectorConfig.Ssl sslConfig) {
         if (!sslConfig.caCertificate().isBlank()) {
             return Optional.of(sslConfig.caCertificate());
         } else if (!sslConfig.caCertificateFile().isBlank()) {
@@ -130,7 +130,7 @@ public class ConfiguredSslContextFactoryProvider implements SslProvider {
         return readToString(config.certificateFile());
     }
 
-    private static String readToString(String filename) {
+    static String readToString(String filename) {
         try {
             return Files.readString(Paths.get(filename), StandardCharsets.UTF_8);
         } catch (IOException e) {

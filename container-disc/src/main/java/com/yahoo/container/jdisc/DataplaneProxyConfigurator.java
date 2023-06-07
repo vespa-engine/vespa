@@ -3,7 +3,7 @@ package com.yahoo.container.jdisc;
 
 import com.yahoo.cloud.config.DataplaneProxyConfig;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
 
 /**
  * Reconfigurable component for supporting data plane proxy. Configures the {@code DataplaneProxyService} by calling {@code DataplaneProxyService#init}
@@ -12,8 +12,8 @@ import com.yahoo.jdisc.http.ConnectorConfig;
  */
 public class DataplaneProxyConfigurator extends AbstractComponent {
 
-    public DataplaneProxyConfigurator(DataplaneProxyConfig config, DataplaneProxyService dataplaneProxyService) {
-        dataplaneProxyService.reconfigure(config);
+    public DataplaneProxyConfigurator(DataplaneProxyConfig config, DataplaneProxyService dataplaneProxyService, DataplaneProxyCredentials credentialsProvider) {
+        dataplaneProxyService.reconfigure(config, credentialsProvider);
     }
 
     @Override
