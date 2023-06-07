@@ -10,6 +10,7 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.UnitStateRe
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.*;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DummyStateApi implements StateRestAPI {
@@ -28,8 +29,8 @@ public class DummyStateApi implements StateRestAPI {
     }
 
     public class SubUnitListImpl implements SubUnitList {
-        private Map<String, String> links = new LinkedHashMap<>();
-        private Map<String, UnitResponse> values = new LinkedHashMap<>();
+        private final Map<String, String> links = new LinkedHashMap<>();
+        private final Map<String, UnitResponse> values = new LinkedHashMap<>();
 
         @Override
         public Map<String, String> getSubUnitLinks() { return links; }
@@ -156,18 +157,18 @@ public class DummyStateApi implements StateRestAPI {
     @Override
     public UnitResponse getState(UnitStateRequest request) throws StateRestApiException {
         checkForInducedException();
-        String[] path = request.getUnitPath();
-        if (path.length == 0) {
+        List<String> path = request.getUnitPath();
+        if (path.size() == 0) {
             return getClusterList(request.getRecursiveLevels());
         }
-        final DummyBackend.Cluster c = backend.getClusters().get(path[0]);
+        DummyBackend.Cluster c = backend.getClusters().get(path.get(0));
         if (c == null) throw new MissingUnitException(path, 0);
-        if (path.length == 1) {
+        if (path.size() == 1) {
             return getClusterState(c, request.getRecursiveLevels());
         }
-        final DummyBackend.Node n = c.nodes.get(path[1]);
+        DummyBackend.Node n = c.nodes.get(path.get(1));
         if (n == null) throw new MissingUnitException(path, 1);
-        if (path.length == 2) {
+        if (path.size() == 2) {
             return getNodeState(n);
         }
         throw new MissingUnitException(path, 3);
@@ -176,15 +177,15 @@ public class DummyStateApi implements StateRestAPI {
     @Override
     public SetResponse setUnitState(SetUnitStateRequest request) throws StateRestApiException {
         checkForInducedException();
-        String[] path = request.getUnitPath();
-        if (path.length != 2) {
+        List<String> path = request.getUnitPath();
+        if (path.size() != 2) {
             throw new OperationNotSupportedForUnitException(
                     path, "You can only set states on nodes");
         }
         DummyBackend.Node n = null;
-        DummyBackend.Cluster c = backend.getClusters().get(path[0]);
+        DummyBackend.Cluster c = backend.getClusters().get(path.get(0));
         if (c != null) {
-            n = c.nodes.get(path[1]);
+            n = c.nodes.get(path.get(1));
         }
         if (n == null) throw new MissingUnitException(path, 2);
         Map<String, UnitState> newState = request.getNewState();

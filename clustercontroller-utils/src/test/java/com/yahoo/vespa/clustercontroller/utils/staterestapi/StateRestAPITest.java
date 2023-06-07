@@ -19,6 +19,7 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.server.RestApiHandle
 import com.yahoo.vespa.clustercontroller.utils.test.TestTransport;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -486,9 +487,7 @@ public class StateRestAPITest {
             assertEquals(expected, result.getContent().toString());
         }
         {
-            String path[] = new String[1];
-            path[0] = "foo";
-            stateApi.induceException(new OperationNotSupportedForUnitException(path, "Foo"));
+            stateApi.induceException(new OperationNotSupportedForUnitException(List.of("foo"), "Foo"));
             HttpResult result = execute(new HttpRequest().setPath("/cluster/v2"));
             assertEquals(405, result.getHttpReturnCode(), result.toString(true));
             assertEquals("Operation not supported for resource", result.getHttpReturnCodeDescription(), result.toString(true));

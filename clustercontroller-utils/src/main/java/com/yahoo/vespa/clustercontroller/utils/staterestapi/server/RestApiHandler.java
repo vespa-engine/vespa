@@ -25,7 +25,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,7 +63,7 @@ public class RestApiHandler implements HttpRequestHandler {
         Instant start = clock.instant();
 
         try{
-            final String[] unitPath = createUnitPath(request);
+            List<String> unitPath = createUnitPath(request);
             if (request.getHttpOperation().equals(HttpRequest.HttpOp.GET)) {
                 final int recursiveLevel = getRecursiveLevel(request);
                 UnitResponse data = restApi.getState(new UnitStateRequest() {
@@ -73,9 +72,7 @@ public class RestApiHandler implements HttpRequestHandler {
                         return recursiveLevel;
                     }
                     @Override
-                    public String[] getUnitPath() {
-                        return unitPath;
-                    }
+                    public List<String> getUnitPath() { return unitPath; }
                 });
                 return new JsonHttpResult().setJson(jsonWriter.createJson(data));
             } else {
@@ -87,7 +84,7 @@ public class RestApiHandler implements HttpRequestHandler {
                         return setRequestData.stateMap;
                     }
                     @Override
-                    public String[] getUnitPath() {
+                    public List<String> getUnitPath() {
                         return unitPath;
                     }
                     @Override
@@ -137,9 +134,9 @@ public class RestApiHandler implements HttpRequestHandler {
         }
     }
 
-    private String[] createUnitPath(HttpRequest request) {
-        List<String> path = Arrays.asList(request.getPath().split("/"));
-        return path.subList(3, path.size()).toArray(new String[0]);
+    private List<String> createUnitPath(HttpRequest request) {
+        List<String> path = List.of(request.getPath().split("/"));
+        return path.subList(3, path.size());
     }
 
     private int getRecursiveLevel(HttpRequest request) throws StateRestApiException {
