@@ -1625,7 +1625,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region(zone.region().value())
                 .build();
         app.submit(applicationPackage).deploy();
-        app.addInactiveRoutingPolicy(zone);
 
         // GET application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)

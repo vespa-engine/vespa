@@ -67,8 +67,7 @@ public class RoutingPolicySerializer {
             policy.instanceEndpoints().forEach(endpointId -> instanceEndpointsArray.addString(endpointId.id()));
             var applicationEndpointsArray = policyObject.setArray(applicationEndpointsField);
             policy.applicationEndpoints().forEach(endpointId -> applicationEndpointsArray.addString(endpointId.id()));
-            policyObject.setBool(loadBalancerActiveField, policy.status().isActive());
-            globalRoutingToSlime(policy.status().routingStatus(), policyObject.setObject(globalRoutingField));
+            globalRoutingToSlime(policy.routingStatus(), policyObject.setObject(globalRoutingField));
             if ( ! policy.isPublic()) policyObject.setBool(privateOnlyField, true);
         });
         return slime;
@@ -93,8 +92,7 @@ public class RoutingPolicySerializer {
                                            SlimeUtils.optionalString(inspect.field(dnsZoneField)),
                                            instanceEndpoints,
                                            applicationEndpoints,
-                                           new RoutingPolicy.Status(inspect.field(loadBalancerActiveField).asBool(),
-                                                                    globalRoutingFromSlime(inspect.field(globalRoutingField))),
+                                           routingStatusFromSlime(inspect.field(globalRoutingField)),
                                            isPublic));
         });
         return Collections.unmodifiableList(policies);
@@ -106,7 +104,7 @@ public class RoutingPolicySerializer {
         object.setLong(changedAtField, routingStatus.changedAt().toEpochMilli());
     }
 
-    public RoutingStatus globalRoutingFromSlime(Inspector object) {
+    public RoutingStatus routingStatusFromSlime(Inspector object) {
         var status = RoutingStatus.Value.valueOf(object.field(statusField).asString());
         var agent = RoutingStatus.Agent.valueOf(object.field(agentField).asString());
         var changedAt = SlimeUtils.optionalInstant(object.field(changedAtField)).orElse(Instant.EPOCH);

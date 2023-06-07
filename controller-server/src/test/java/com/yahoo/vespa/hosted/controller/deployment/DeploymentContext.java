@@ -15,7 +15,6 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -53,7 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -268,22 +266,6 @@ public class DeploymentContext {
         finally {
             dispatcher.shutdown();
         }
-    }
-
-    /** Add a routing policy for this in given zone, with status set to inactive */
-    public DeploymentContext addInactiveRoutingPolicy(ZoneId zone) {
-        var clusterId = "default-inactive";
-        var id = new RoutingPolicyId(instanceId, Id.from(clusterId), zone);
-        var policies = new LinkedHashMap<>(tester.controller().routing().policies().read(instanceId).asMap());
-        policies.put(id, new RoutingPolicy(id, Optional.of(HostName.of("lb-host")),
-                                           Optional.empty(),
-                                           Optional.empty(),
-                                           Set.of(EndpointId.of("default")),
-                                           Set.of(),
-                                           new RoutingPolicy.Status(false, RoutingStatus.DEFAULT),
-                                           true));
-        tester.controller().curator().writeRoutingPolicies(instanceId, List.copyOf(policies.values()));
-        return this;
     }
 
     /** Submit given application package for deployment */
