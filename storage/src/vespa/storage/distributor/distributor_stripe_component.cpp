@@ -166,7 +166,10 @@ DistributorStripeComponent::update_bucket_database(
         }
     }
 
-    UpdateBucketDatabaseProcessor processor(getClock(), found_down_node ? up_nodes : changed_nodes, bucketSpace.get_ideal_service_layer_nodes_bundle(bucket.getBucketId()).get_available_nodes(), (update_flags & DatabaseUpdate::RESET_TRUSTED) != 0);
+    UpdateBucketDatabaseProcessor processor(getClock(),
+                                            found_down_node ? up_nodes : changed_nodes,
+                                            bucketSpace.get_ideal_service_layer_nodes_bundle(bucket.getBucketId()).get_available_nodes(),
+                                            (update_flags & DatabaseUpdate::RESET_TRUSTED) != 0);
 
     bucketSpace.getBucketDatabase().process_update(bucket.getBucketId(), processor, (update_flags & DatabaseUpdate::CREATE_IF_NONEXISTING) != 0);
 }
