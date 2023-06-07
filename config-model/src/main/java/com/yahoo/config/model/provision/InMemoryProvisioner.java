@@ -233,6 +233,7 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     // Minimal capacity policies
     private NodeResources decideResources(NodeResources resources) {
+        if (defaultNodeResources.isUnspecified()) return resources;
         return resources.withUnspecifiedNumbersFrom(defaultNodeResources);
     }
 
