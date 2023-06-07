@@ -589,7 +589,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             // Set up component to generate proxy cert if token support is enabled
             if (enableTokenSupport) {
-                cluster.addSimpleComponent(DataplaneProxyCredentials.class);
                 var tokenChain = new HttpFilterChain("cloud-data-plane-token", HttpFilterChain.Type.SYSTEM);
                 tokenChain.addInnerComponent(new Filter(
                         new ChainedComponentModel(
@@ -600,15 +599,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
                 cluster.getHttp().getFilterChains().add(tokenChain);
 
-                cluster.getContainers().forEach(container -> {
-                    var hostResource = container.getHostResource();
-                    var dataplaneProxy = new DataplaneProxy(hostResource.getHost(),
-                            getDataplanePort(deployState),
-                            endpointCertificateSecrets.certificate(),
-                            endpointCertificateSecrets.key());
-                    dataplaneProxy.setHostResource(hostResource);
-                    dataplaneProxy.initService(deployState);
-                });
+                var dataplaneProxy = new DataplaneProxy(
+                        getDataplanePort(deployState),
+                        endpointCertificateSecrets.certificate(),
+                        endpointCertificateSecrets.key());
+                cluster.addComponent(dataplaneProxy);
             }
             connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(

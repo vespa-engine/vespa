@@ -2,57 +2,27 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.DataplaneProxyConfig;
-import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.vespa.model.AbstractService;
-import com.yahoo.vespa.model.PortAllocBridge;
+import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
+import com.yahoo.vespa.model.container.component.SimpleComponent;
 
-import java.util.Optional;
-
-public class DataplaneProxy extends AbstractService implements DataplaneProxyConfig.Producer {
+public class DataplaneProxy extends SimpleComponent implements DataplaneProxyConfig.Producer {
 
     private final Integer port;
     private final String serverCertificate;
     private final String serverKey;
 
-    public DataplaneProxy(TreeConfigProducer<? super DataplaneProxy> parent, Integer port, String serverCertificate, String serverKey) {
-        super(parent, "dataplane-proxy");
+    public DataplaneProxy(Integer port, String serverCertificate, String serverKey) {
+        super(DataplaneProxyCredentials.class.getName());
         this.port = port;
         this.serverCertificate = serverCertificate;
         this.serverKey = serverKey;
-        setProp("clustertype", "hosts");
-        setProp("clustername", "admin");
     }
-
-
-    // Does not need any ports.
-    @Override
-    public void allocatePorts(int start, PortAllocBridge from) { }
-
-    /**
-     *
-     * @return The number of ports reserved
-     */
-    public int getPortCount() { return 0; }
-
-    /**
-     * @return The command used to start
-     */
-    @Override
-    public Optional<String> getStartupCommand() { return Optional.of("exec $ROOT/bin/vespa-dataplane-proxy-start -c " + getConfigId()); }
 
     @Override
     public void getConfig(DataplaneProxyConfig.Builder builder) {
         builder.port(port);
         builder.serverCertificate(serverCertificate);
         builder.serverKey(serverKey);
-    }
-
-    @Override
-    public Optional<String> getPreShutdownCommand() {
-        var builder = new DataplaneProxyConfig.Builder();
-        getConfig(builder);
-        String cmd = "$ROOT/bin/vespa-dataplane-proxy-start -S -c " + getConfigId();
-        return Optional.of(cmd);
     }
 
 }
