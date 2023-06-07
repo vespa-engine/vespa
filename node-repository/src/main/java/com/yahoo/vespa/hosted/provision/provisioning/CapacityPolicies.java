@@ -141,7 +141,7 @@ public class CapacityPolicies {
                                                  new Version(8, 129, 4), new NodeResources(0.25, 1.32, 10, 0.3)));
         else
             // arm64 nodes need more memory
-            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
+            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.50, 10, 0.3),
                                                  new Version(8, 129, 4), new NodeResources(0.25, 1.32, 10, 0.3),
                                                  new Version(8, 173, 5), new NodeResources(0.25, 1.50, 10, 0.3)));
     }
