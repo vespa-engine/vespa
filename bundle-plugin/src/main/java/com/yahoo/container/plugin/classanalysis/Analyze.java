@@ -52,16 +52,12 @@ public class Analyze {
     }
 
     static Optional<String> getClassName(Type aType) {
-        switch (aType.getSort()) {
-            case Type.ARRAY:
-                return getClassName(aType.getElementType());
-            case Type.OBJECT:
-                return Optional.of(aType.getClassName());
-            case Type.METHOD:
-                return getClassName(aType.getReturnType());
-            default:
-                return Optional.empty();
-        }
+        return switch (aType.getSort()) {
+            case Type.ARRAY -> getClassName(aType.getElementType());
+            case Type.OBJECT -> Optional.of(aType.getClassName());
+            case Type.METHOD -> getClassName(aType.getReturnType());
+            default -> Optional.empty();
+        };
     }
 
     static AnnotationVisitor visitAnnotationDefault(ImportCollector collector) {
