@@ -133,7 +133,9 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             addIndexCommand(field.getName(), CMD_DEFAULT_POSITION);
         }
 
-        addIndexCommand(field, CMD_INDEX); // List the indices
+        for (var index : field.getIndices().values()) {
+            addIndexCommand(index.getName(), CMD_INDEX); // List the indices
+        }
 
         if (needLowerCase(field)) {
             addIndexCommand(field, CMD_LOWERCASE);
