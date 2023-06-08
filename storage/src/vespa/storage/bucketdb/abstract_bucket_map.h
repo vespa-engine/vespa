@@ -34,40 +34,37 @@ private:
     class LockKeeper {
     public:
         LockKeeper() noexcept
-            : _map(nullptr), _key(), _locked(false) {}
+            : _map(nullptr), _key() {}
         LockKeeper(AbstractBucketMap& map, key_type key) noexcept
-            : _map(&map), _key(key), _locked(true) {}
+            : _map(&map), _key(key) {}
         LockKeeper(LockKeeper && rhs) noexcept
             : _map(rhs._map),
-              _key(rhs._key),
-              _locked(rhs._locked)
+              _key(rhs._key)
         {
-            rhs._locked = false;
+            rhs._map = nullptr;
         }
         LockKeeper & operator=(LockKeeper && rhs) noexcept {
             if (&rhs == this) return *this;
             cleanup();
             _map = rhs._map;
             _key = rhs._key;
-            _locked = rhs._locked;
-            rhs._locked = false;
+            rhs._map = nullptr;
             return *this;
         }
         ~LockKeeper() { cleanup(); }
         AbstractBucketMap & map() { return *_map; }
         void unlock() {
             _map->unlock(_key);
-            _locked = false;
+            _map = nullptr;
         }
-        bool locked() const noexcept { return _locked; }
+        bool locked() const noexcept { return _map != nullptr; }
         const key_type & key() const noexcept { return _key; }
     private:
         void cleanup() {
-            if (_locked) unlock();
+            if (_map) unlock();
         }
         AbstractBucketMap * _map;
         key_type            _key;
-        bool                _locked;
     };
 public:
 

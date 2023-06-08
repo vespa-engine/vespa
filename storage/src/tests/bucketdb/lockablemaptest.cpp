@@ -781,7 +781,7 @@ TYPED_TEST(LockableMapTest, entry_changes_not_visible_if_write_not_invoked_on_gu
 
 TYPED_TEST(LockableMapTest, track_sizes) {
     TypeParam map;
-    EXPECT_EQ(56ul, sizeof(typename TypeParam::WrappedEntry));
+    EXPECT_EQ(48ul, sizeof(typename TypeParam::WrappedEntry));
 }
 
 } // storage
