@@ -10,23 +10,21 @@ struct StorageBucketInfo {
     api::BucketInfo info;
 
     StorageBucketInfo() noexcept : info() {}
-    static bool mayContain(const StorageBucketInfo&) { return true; }
     void print(std::ostream&, bool verbose, const std::string& indent) const;
-    bool valid() const { return info.valid(); }
-    void setBucketInfo(const api::BucketInfo& i) { info = i; }
-    const api::BucketInfo& getBucketInfo() const { return info; }
-    void setEmptyWithMetaData() {
-        info.setChecksum(1);
-        info.setMetaCount(1);
-        info.setDocumentCount(0);
-        info.setTotalDocumentSize(0);
+    bool valid() const noexcept { return info.valid(); }
+    void setBucketInfo(const api::BucketInfo& i) noexcept { info = i; }
+    const api::BucketInfo& getBucketInfo() const noexcept { return info; }
+    bool verifyLegal() const noexcept { return true; }
+    uint32_t getMetaCount() const noexcept { return info.getMetaCount(); }
+    bool operator == (const StorageBucketInfo &) const noexcept {
+        return true;
     }
-    bool verifyLegal() const { return true; }
-    uint32_t getMetaCount() const { return info.getMetaCount(); }
-    void setChecksum(uint32_t crc) { info.setChecksum(crc); }
-    bool operator == (const StorageBucketInfo & b) const;
-    bool operator != (const StorageBucketInfo & b) const;
-    bool operator < (const StorageBucketInfo & b) const;
+    bool operator != (const StorageBucketInfo & rhs) const noexcept {
+        return !(*this == rhs);
+    }
+    bool operator < (const StorageBucketInfo &) const noexcept {
+        return false;
+    }
 };
 
 std::ostream& operator<<(std::ostream& out, const StorageBucketInfo& info);
