@@ -28,47 +28,45 @@ public:
     using size_type   = size_t;
     using BucketId    = document::BucketId;
     struct WrappedEntry;
-
+private:
     // Responsible for releasing lock in map when out of scope.
     class LockKeeper {
         friend struct WrappedEntry;
         AbstractBucketMap& _map;
-        key_type _key;
-        bool _locked;
-
-        LockKeeper(AbstractBucketMap& map, key_type key) noexcept
-            : _map(map), _key(key), _locked(true) {}
+        key_type           _key;
+        bool               _locked;
         void unlock() { _map.unlock(_key); _locked = false; }
     public:
+        LockKeeper(AbstractBucketMap& map, key_type key) noexcept
+            : _map(map), _key(key), _locked(true) {}
         ~LockKeeper() { if (_locked) unlock(); }
     };
+public:
 
     struct WrappedEntry {
         WrappedEntry() noexcept
-            : _exists(false),
-              _preExisted(false),
-              _lockKeeper(),
+            : _lockKeeper(),
               _value(),
-              _clientId(nullptr)
+              _clientId(nullptr),
+              _exists(false),
+              _preExisted(false)
         {}
-        WrappedEntry(AbstractBucketMap& map,
-                     const key_type& key, const mapped_type& val,
+        WrappedEntry(AbstractBucketMap& map, const key_type& key, const mapped_type& val,
                      const char* clientId, bool preExisted_)
-            : _exists(true),
-              _preExisted(preExisted_),
-              _lockKeeper(new LockKeeper(map, key)),
+            : _lockKeeper(std::make_unique<LockKeeper>(map, key)),
               _value(val),
-              _clientId(clientId) {}
-        WrappedEntry(AbstractBucketMap& map, const key_type& key,
-                     const char* clientId)
-            : _exists(false),
-              _preExisted(false),
-              _lockKeeper(new LockKeeper(map, key)),
+              _clientId(clientId),
+              _exists(true),
+              _preExisted(preExisted_) {}
+        WrappedEntry(AbstractBucketMap& map, const key_type& key, const char* clientId)
+            : _lockKeeper(std::make_unique<LockKeeper>(map, key)),
               _value(),
-              _clientId(clientId) {}
+              _clientId(clientId),
+              _exists(false),
+              _preExisted(false) {}
         // TODO noexcept on these:
-        WrappedEntry(WrappedEntry&&) = default;
-        WrappedEntry& operator=(WrappedEntry&&) = default;
+        WrappedEntry(WrappedEntry&&) noexcept = default;
+        WrappedEntry& operator=(WrappedEntry&&) noexcept = default;
         ~WrappedEntry();
 
         mapped_type* operator->() { return &_value; }
@@ -91,12 +89,11 @@ public:
             return BucketId(BucketId::keyToBucketId(getKey()));
         }
     protected:
-        bool _exists;
-        bool _preExisted;
         std::unique_ptr<LockKeeper> _lockKeeper;
         mapped_type _value;
         const char* _clientId;
-        friend class AbstractLockableMap;
+        bool _exists;
+        bool _preExisted;
     };
 
     struct LockId {

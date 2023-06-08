@@ -9,7 +9,7 @@ namespace storage::bucketdb {
 struct StorageBucketInfo {
     api::BucketInfo info;
 
-    StorageBucketInfo() : info() {}
+    StorageBucketInfo() noexcept : info() {}
     static bool mayContain(const StorageBucketInfo&) { return true; }
     void print(std::ostream&, bool verbose, const std::string& indent) const;
     bool valid() const { return info.valid(); }
