@@ -35,14 +35,14 @@ public class ApplicationPackageStream {
     private final AtomicReference<ApplicationPackage> truncatedPackage = new AtomicReference<>();
     private final FileTime createdAt = FileTime.fromMillis(System.currentTimeMillis());
 
-    /** Stream that effectively copies the input stream to its {@link #truncatedPackage()} when exhausted. */
+    /** Stream that copies application meta and other XML files from the input stream to its {@link #truncatedPackage()} when exhausted. */
     public ApplicationPackageStream(Supplier<InputStream> in) {
-        this(in, () -> __ -> true, Map.of());
+        this(in, () -> name -> ApplicationPackage.prePopulated.contains(name) || name.endsWith(".xml"), Map.of());
     }
 
-    /** Stream that replaces the indicated entries, and copies all metadata files to its {@link #truncatedPackage()} when exhausted. */
-    public ApplicationPackageStream(Supplier<InputStream> in, Supplier<Replacer> replacer) {
-        this(in, () -> name -> ApplicationPackage.prePopulated.contains(name) || name.endsWith(".xml"), replacer);
+    /** Stream that copies the indicated entries from the input stream to its {@link #truncatedPackage()} when exhausted. */
+    public ApplicationPackageStream(Supplier<InputStream> in, Supplier<Predicate<String>> truncation) {
+        this(in, truncation, Map.of());
     }
 
     /** Stream that replaces the indicated entries, and copies the filtered entries to its {@link #truncatedPackage()} when exhausted. */
@@ -58,7 +58,7 @@ public class ApplicationPackageStream {
     }
 
     /**
-     * Returns a new stream continaing the zipped application package this wraps. Separate streams may exist concurrently,
+     * Returns a new stream containing the zipped application package this wraps. Separate streams may exist concurrently,
      * and the first to be exhausted will populate the truncated application package.
      */
     public InputStream zipStream() {
