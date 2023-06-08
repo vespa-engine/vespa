@@ -14,6 +14,7 @@ public enum TokenType {
     SYMBOL(3),
     ALPHABETIC(4),
     NUMERIC(5),
+    INDEXABLE_SYMBOL(6),
     MARKER(255);
 
     private final int value;
@@ -34,10 +35,10 @@ public enum TokenType {
      * @return whether this type of token can be indexed
      */
     public boolean isIndexable() {
-        switch (this) {
-            case ALPHABETIC: case NUMERIC: return true;
-            default: return false;
-        }
+        return switch (this) {
+            case ALPHABETIC, NUMERIC, INDEXABLE_SYMBOL -> true;
+            default -> false;
+        };
     }
 
     /** Translates this from the int code representation returned from {@link #getValue} */

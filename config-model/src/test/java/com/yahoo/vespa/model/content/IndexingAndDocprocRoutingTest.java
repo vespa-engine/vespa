@@ -220,7 +220,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().startsWith("Indexing cluster 'musiccluster' specifies the chain 'default' as indexing chain"));
+            assertTrue(e.getMessage().startsWith("content cluster 'musiccluster' specifies the chain 'default' as indexing chain"));
         }
     }
 

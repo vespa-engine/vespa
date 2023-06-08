@@ -1397,4 +1397,42 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(2, fleetControllerConfigBuilder.build().max_number_of_groups_allowed_to_be_down());
     }
 
+    private void assertIndexingDocprocEnabled(boolean indexed, boolean force, boolean expEnabled)
+    {
+        String services = "<?xml version='1.0' encoding='UTF-8' ?>" +
+                "<services version='1.0'>" +
+                "  <container id='default' version='1.0'>" +
+                "    <document-processing/>" +
+                "  </container>" +
+                "  <content id='search' version='1.0'>" +
+                "    <redundancy>1</redundancy>" +
+                "    <documents>" +
+                "      <document-processing cluster='default'" + (force ? " chain='indexing'" : "") + "/>" +
+                "      <document type='type1' mode='" + (indexed ? "index" : "streaming") + "'/>" +
+                "    </documents>" +
+                "  </content>" +
+                "</services>";
+        VespaModel model = createEnd2EndOneNode(new TestProperties(), services);
+        var searchCluster = model.getContentClusters().get("search").getSearch();
+        assertEquals(expEnabled, searchCluster.getIndexingDocproc().isPresent());
+    }
+
+    @Test
+    void testIndexingDocprocEnabledWhenIndexMode()
+    {
+        assertIndexingDocprocEnabled(true, false, true);
+    }
+
+    @Test
+    void testIndexingDocprocNotEnabledWhenStreamingMode()
+    {
+        assertIndexingDocprocEnabled(false, false, false);
+    }
+
+    @Test
+    void testIndexingDocprocEnabledWhenStreamingModeAndForced()
+    {
+        assertIndexingDocprocEnabled(false, true, true);
+    }
+
 }

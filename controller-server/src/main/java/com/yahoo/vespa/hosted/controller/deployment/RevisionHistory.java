@@ -16,9 +16,11 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 
 import static ai.vespa.validation.Validation.require;
 import static java.util.Collections.emptyNavigableMap;
+import static java.util.function.Predicate.not;
 
 /**
  * History of application revisions for an {@link com.yahoo.vespa.hosted.controller.Application}.
@@ -58,10 +60,12 @@ public class RevisionHistory {
         return new RevisionHistory(production, development);
     }
 
-    /** Returns a copy of this without any production revisions older than the given. */
+    /** Returns a copy of this where any production revisions without packages, and older than the given one, are removed. */
     public RevisionHistory withoutOlderThan(RevisionId id) {
         if (production.headMap(id).isEmpty()) return this;
-        return new RevisionHistory(production.tailMap(id, true), development);
+        NavigableMap<RevisionId, ApplicationVersion> production = new TreeMap<>(this.production);
+        production.headMap(id).values().removeIf(not(ApplicationVersion::hasPackage));
+        return new RevisionHistory(production, development);
     }
 
     /** Returns a copy of this without any development revisions older than the given. */

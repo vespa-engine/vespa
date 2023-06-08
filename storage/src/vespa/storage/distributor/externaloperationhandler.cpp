@@ -332,7 +332,9 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
     if (allow) {
         _op = std::make_shared<PutOperation>(_node_ctx, _op_ctx,
                                              _op_ctx.bucket_space_repo().get(bucket_space),
-                                             std::move(cmd), getMetrics().puts, std::move(handle));
+                                             std::move(cmd),
+                                             getMetrics().puts, getMetrics().put_condition_probes,
+                                             std::move(handle));
     } else {
         _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }
@@ -386,7 +388,8 @@ bool ExternalOperationHandler::onRemove(const std::shared_ptr<api::RemoveCommand
         auto &distributorBucketSpace(_op_ctx.bucket_space_repo().get(bucket_space));
 
         _op = std::make_shared<RemoveOperation>(_node_ctx, _op_ctx, distributorBucketSpace, std::move(cmd),
-                                                getMetrics().removes, std::move(handle));
+                                                getMetrics().removes, getMetrics().remove_condition_probes,
+                                                std::move(handle));
     } else {
         _msg_sender.sendUp(makeConcurrentMutationRejectionReply(*cmd, cmd->getDocumentId(), metrics));
     }

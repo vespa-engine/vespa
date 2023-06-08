@@ -4,14 +4,17 @@ package com.yahoo.vespa.config.server.deploy;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
+import com.yahoo.config.provision.QuotaExceededException;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.MockProvisioner;
+import com.yahoo.vespa.config.server.session.PrepareParams;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class HostedDeployNodeAllocationTest {
 
@@ -48,6 +52,26 @@ public class HostedDeployNodeAllocationTest {
         assertEquals(resources(3), get("host2", hosts).advertisedResources());
         assertEquals(resources(2), get("host3", hosts).advertisedResources());
         assertEquals(resources(2), get("host4", hosts).advertisedResources());
+    }
+
+    @Test
+    public void testExceedsQuota() {
+        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("7.2")),
+                                                    createHostedModelFactory(Version.fromString("7.3")));
+        var provisioner = new VersionProvisioner();
+        DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactories(modelFactories)
+                .provisioner(new MockProvisioner().hostProvisioner(provisioner))
+                .hostedConfigserverConfig(Zone.defaultZone())
+                .build();
+
+        try {
+            tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
+                    .vespaVersion("7.3")
+                    .quota(new Quota(Optional.of(4), Optional.of(0))));
+            fail("Expected to get a QuotaExceededException");
+        } catch (QuotaExceededException e) {
+            assertEquals("main: The resources used cost $1.02 but your quota is $0.00: Contact support to upgrade your plan.", e.getMessage());
+        }
     }
 
     private HostSpec get(String hostname, Set<HostSpec> hosts) {

@@ -309,10 +309,7 @@ public class RoutingPoliciesTest {
 
         // Remove app2 completely
         tester.controllerTester().controller().applications().requireInstance(context2.instanceId()).deployments().keySet()
-              .forEach(zone -> {
-                  tester.controllerTester().configServer().removeLoadBalancers(context2.instanceId(), zone);
-                  tester.controllerTester().controller().applications().deactivate(context2.instanceId(), zone);
-              });
+              .forEach(zone -> tester.controllerTester().controller().applications().deactivate(context2.instanceId(), zone));
         context2.flushDnsUpdates();
         expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -573,15 +570,15 @@ public class RoutingPoliciesTest {
 
         // Status details is stored in policy
         var policy1 = tester.routingPolicies().read(context.deploymentIdIn(zone1)).first().get();
-        assertEquals(RoutingStatus.Value.out, policy1.status().routingStatus().value());
-        assertEquals(RoutingStatus.Agent.tenant, policy1.status().routingStatus().agent());
-        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().routingStatus().changedAt());
+        assertEquals(RoutingStatus.Value.out, policy1.routingStatus().value());
+        assertEquals(RoutingStatus.Agent.tenant, policy1.routingStatus().agent());
+        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.routingStatus().changedAt());
 
         // Other zone remains in
         var policy2 = tester.routingPolicies().read(context.deploymentIdIn(zone2)).first().get();
-        assertEquals(RoutingStatus.Value.in, policy2.status().routingStatus().value());
-        assertEquals(RoutingStatus.Agent.system, policy2.status().routingStatus().agent());
-        assertEquals(Instant.EPOCH, policy2.status().routingStatus().changedAt());
+        assertEquals(RoutingStatus.Value.in, policy2.routingStatus().value());
+        assertEquals(RoutingStatus.Agent.system, policy2.routingStatus().agent());
+        assertEquals(Instant.EPOCH, policy2.routingStatus().changedAt());
 
         // Next deployment does not affect status
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
@@ -598,9 +595,9 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context.instanceId(), EndpointId.of("r1"), 0, zone1, zone2);
 
         policy1 = tester.routingPolicies().read(context.deploymentIdIn(zone1)).first().get();
-        assertEquals(RoutingStatus.Value.in, policy1.status().routingStatus().value());
-        assertEquals(RoutingStatus.Agent.tenant, policy1.status().routingStatus().agent());
-        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().routingStatus().changedAt());
+        assertEquals(RoutingStatus.Value.in, policy1.routingStatus().value());
+        assertEquals(RoutingStatus.Agent.tenant, policy1.routingStatus().agent());
+        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.routingStatus().changedAt());
 
         // Deployment is set out through a new deployment.xml
         var applicationPackage2 = applicationPackageBuilder()
@@ -652,8 +649,7 @@ public class RoutingPoliciesTest {
         for (var context : contexts) {
             var policies = tester.routingPolicies().read(context.instanceId());
             assertTrue(policies.asList().stream()
-                            .map(RoutingPolicy::status)
-                            .map(RoutingPolicy.Status::routingStatus)
+                            .map(RoutingPolicy::routingStatus)
                             .map(RoutingStatus::value)
                             .allMatch(status -> status == RoutingStatus.Value.in),
                     "Global routing status for policy remains " + RoutingStatus.Value.in);
@@ -763,7 +759,7 @@ public class RoutingPoliciesTest {
                 RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
         for (var policy : tester.routingPolicies().read(context.instanceId())) {
-            assertSame(RoutingStatus.Value.in, policy.status().routingStatus().value());
+            assertSame(RoutingStatus.Value.in, policy.routingStatus().value());
         }
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
     }

@@ -26,7 +26,6 @@ public class MasterElectionHandler implements MasterInterface {
     private Map<Integer, Integer> nextMasterData;
     private long masterGoneFromZooKeeperTime; // Set to time master fleet controller disappears from zookeeper
     private long masterZooKeeperCooldownPeriod; // The period in ms that we won't take over unless master come back.
-    private boolean usingZooKeeper = false; // Unit tests may not use ZooKeeper at all.
 
     public MasterElectionHandler(FleetControllerContext context, int index, int totalCount, Object monitor, Timer timer) {
         this.context = context;
@@ -34,7 +33,8 @@ public class MasterElectionHandler implements MasterInterface {
         this.timer = timer;
         this.index = index;
         this.totalCount = totalCount;
-        this.nextInLineCount = Integer.MAX_VALUE;
+        // nextInLineCount should/will always be 0 when we have one controller
+        this.nextInLineCount = totalCount == 1 ? 0 : Integer.MAX_VALUE;
         if (cannotBecomeMaster())
             context.log(logger, Level.FINE, () -> "We can never become master and will always stay a follower.");
         // Tag current time as when we have not seen any other master. Make sure we're not taking over at once for master that is on the way down
@@ -43,23 +43,10 @@ public class MasterElectionHandler implements MasterInterface {
 
     public void setFleetControllerCount(int count) {
         totalCount = count;
-        if (count == 1 && !usingZooKeeper) {
-            masterCandidate = 0;
-            followers = 1;
-            nextInLineCount = 0;
-        }
     }
 
     public void setMasterZooKeeperCooldownPeriod(int period) {
         masterZooKeeperCooldownPeriod = period;
-    }
-
-    public void setUsingZooKeeper(boolean usingZK) {
-        if (!usingZooKeeper && usingZK) {
-            // Reset any shortcuts taken by non-ZK election logic.
-            resetElectionProgress();
-        }
-        usingZooKeeper = usingZK;
     }
 
     @Override
@@ -90,46 +77,20 @@ public class MasterElectionHandler implements MasterInterface {
         return masterCandidate;
     }
 
-    public String getMasterReason() {
-        if (masterCandidate == null) {
-            return "There is currently no master candidate.";
-        }
-        if (tooFewFollowersToHaveAMaster()) {
-            return "More than half of the nodes must agree for there to be a master. Only " + followers + " of "
-                    + totalCount + " nodes agree on current master candidate (" + masterCandidate + ").";
-        }
-        // If all are following master candidate, it is master if it exists.
-        if (followers == totalCount) {
-            return "All " + totalCount + " nodes agree that " + masterCandidate + " is current master.";
-        }
-
-        // If not all are following we only accept master candidate if old master
-        // disappeared sufficient time ago
-        if (masterGoneFromZooKeeperTime + masterZooKeeperCooldownPeriod > timer.getCurrentTimeInMillis()) {
-            return followers + " of " + totalCount + " nodes agree " + masterCandidate + " should be master, "
-                    + "but old master cooldown period of " + masterZooKeeperCooldownPeriod + " ms has not passed yet. "
-                    + "To ensure it has got time to realize it is no longer master before we elect a new one, "
-                    + "currently there is no master.";
-        }
-        return followers + " of " + totalCount + " nodes agree " + masterCandidate + " is master.";
-    }
-
     private boolean tooFewFollowersToHaveAMaster() {
         return 2 * followers <= totalCount;
     }
 
-    public boolean isAmongNthFirst(int first) { return (nextInLineCount < first); }
+    public boolean isFirstInLine() { return (nextInLineCount < 1); }
 
     public boolean watchMasterElection(DatabaseHandler database, DatabaseHandler.DatabaseContext dbContext) {
-        if (totalCount == 1 && !usingZooKeeper) {
-            return false; // Allow single configured node to become master implicitly if no ZK configured
-        }
         if (nextMasterData == null) {
             if (masterCandidate == null) {
                 context.log(logger, Level.FINEST, () -> "No current master candidate. Waiting for data to do master election.");
             }
             return false; // Nothing have happened since last time.
         }
+
         // Move next data to temporary, such that we don't need to keep lock, and such that we don't retry
         // if we happen to fail processing the data.
         Map<Integer, Integer> state;
@@ -140,6 +101,7 @@ public class MasterElectionHandler implements MasterInterface {
         }
         context.log(logger, Level.INFO, "Got master election state " + toString(state) + ".");
         if (state.isEmpty()) throw new IllegalStateException("Database has no master data. We should at least have data for ourselves.");
+
         Map.Entry<Integer, Integer> first = state.entrySet().iterator().next();
         Integer currentMaster = getMaster();
         if (currentMaster != null && first.getKey().intValue() != currentMaster.intValue()) {
@@ -194,9 +156,8 @@ public class MasterElectionHandler implements MasterInterface {
             }
             if (nextInLineCount != ourPosition) {
                 nextInLineCount = ourPosition;
-                if (ourPosition > 0) {
-                    context.log(logger, Level.FINE, () -> "We are now " + getPosition(nextInLineCount) + " in queue to take over being master.");
-                }
+                if (nextInLineCount > 0)
+                    context.log(logger, Level.FINE, () -> "We are now in position " + nextInLineCount + " in queue to take over being master.");
             }
         }
         masterData = state;
@@ -221,14 +182,6 @@ public class MasterElectionHandler implements MasterInterface {
         return sb.toString();
     }
 
-    private String getPosition(int val) {
-        if (val < 1) return "invalid(" + val + ")";
-        if (val == 1) { return "first"; }
-        if (val == 2) { return "second"; }
-        if (val == 3) { return "third"; }
-        return val + "th";
-    }
-
     public void handleFleetData(Map<Integer, Integer> data) {
         context.log(logger, Level.INFO, "Got new fleet data with " + data.size() + " entries: " + data);
         synchronized (monitor) {
@@ -238,20 +191,14 @@ public class MasterElectionHandler implements MasterInterface {
     }
 
     public void lostDatabaseConnection() {
-        if (totalCount > 1 || usingZooKeeper) {
-            context.log(logger, Level.INFO, "Clearing master data as we lost connection on node " + index);
-            resetElectionProgress();
-        }
-    }
-
-    private void resetElectionProgress() {
+        context.log(logger, Level.INFO, "Clearing master data as we lost connection on node " + index);
         masterData = null;
         masterCandidate = null;
         followers = 0;
         nextMasterData = null;
     }
 
-    public void writeHtmlState(StringBuilder sb, int stateGatherCount) {
+    public void writeHtmlState(StringBuilder sb) {
         sb.append("<h2>Master state</h2>\n");
         Integer master = getMaster();
         if (master != null) {
@@ -270,7 +217,7 @@ public class MasterElectionHandler implements MasterInterface {
                   .append(" before electing new master unless all possible master candidates are online.</p>");
             }
         }
-        if ((master == null || master != index) && nextInLineCount < stateGatherCount) {
+        if ((master == null || master != index) && nextInLineCount < 1) {
             sb.append("<p>As we are number ").append(nextInLineCount)
                     .append(" in line for taking over as master, we're gathering state from nodes.</p>");
             sb.append("<p><font color=\"red\">As we are not the master, we don't know about nodes current system state"

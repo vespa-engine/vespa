@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <cstdint>
-#include <cstddef>
+#include <vespa/vespalib/util/compress.h>
+#include <cstring>
+#include <cstdlib>
 
 namespace search {
 /**
@@ -45,13 +46,35 @@ private:
 public:
     RawBuf(const RawBuf &) = delete;
     RawBuf& operator=(const RawBuf &) = delete;
-    explicit RawBuf(size_t size);    // malloc-s given size, assigns to _bufStart
-    ~RawBuf();      // Frees _bufStart, i.e. the char[].
+    explicit RawBuf(size_t size)
+        : _bufStart(static_cast<char *>(malloc(size))),
+          _bufEnd(_bufStart + size),
+          _bufFillPos(_bufStart),
+          _bufDrainPos(_bufStart)
+    { }
+    ~RawBuf() {
+        free(_bufStart);
+    }      // Frees _bufStart, i.e. the char[].
 
-    void    append(const void *data, size_t len);
-    void    append(uint8_t byte);
-    void    appendCompressedPositiveNumber(uint64_t n);
-    void    appendCompressedNumber(int64_t n);
+    void    append(const void *data, size_t len) {
+        if (__builtin_expect(len != 0, true)) {
+            ensureSize(len);
+            memcpy(_bufFillPos, data, len);
+            _bufFillPos += len;
+        }
+    }
+    void    append(uint8_t byte) {
+        ensureSize(1);
+        *_bufFillPos++ = byte;
+    }
+    void    appendCompressedPositiveNumber(uint64_t n) {
+        ensureSize(vespalib::compress::Integer::compressedPositiveLength(n));
+        _bufFillPos += vespalib::compress::Integer::compressPositive(n, _bufFillPos);
+    }
+    void    appendCompressedNumber(int64_t n) {
+        ensureSize(vespalib::compress::Integer::compressedLength(n));
+        _bufFillPos += vespalib::compress::Integer::compress(n, _bufFillPos);
+    }
     size_t      GetFreeLen() const { return _bufEnd - _bufFillPos; }
     const char *GetDrainPos() const { return _bufDrainPos; }
     char *      GetWritableFillPos(size_t len) { preAlloc(len); return _bufFillPos; }

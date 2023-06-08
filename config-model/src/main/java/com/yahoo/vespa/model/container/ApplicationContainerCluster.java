@@ -31,6 +31,7 @@ import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
@@ -75,8 +76,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_1 = SystemBindingPattern.fromHttpPath(PrometheusV1Handler.V1_PATH);
     private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_2 = SystemBindingPattern.fromHttpPath(PrometheusV1Handler.V1_PATH + "/*");
 
-    public static final int defaultHeapSizePercentageOfTotalNodeMemory = 70;
-    public static final int heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster = 18;
+    public static final int defaultHeapSizePercentageOfAvailableMemory = 85;
+    public static final int heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster = 24;
 
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 
@@ -91,7 +92,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private int zookeeperSessionTimeoutSeconds = 30;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
-    private final int heapSizePercentageOfTotalNodeMemory;
+
+    /** The heap size % of total memory available to the JVM process. */
+    private final int heapSizePercentageOfAvailableMemory;
 
     private Integer memoryPercentage = null;
 
@@ -119,9 +122,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addTestrunnerComponentsIfTester(deployState);
         transport_connections_per_target = deployState.featureFlags().mbusJavaRpcNumTargets();
         transport_events_before_wakeup = deployState.featureFlags().mbusJavaEventsBeforeWakeup();
-        heapSizePercentageOfTotalNodeMemory = deployState.featureFlags().heapSizePercentage() > 0
+        heapSizePercentageOfAvailableMemory = deployState.featureFlags().heapSizePercentage() > 0
                 ? Math.min(99, deployState.featureFlags().heapSizePercentage())
-                : defaultHeapSizePercentageOfTotalNodeMemory;
+                : defaultHeapSizePercentageOfAvailableMemory;
     }
 
     @Override
@@ -178,12 +181,18 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     @Override
     public Optional<Integer> getMemoryPercentage() {
-        if (memoryPercentage != null) {
-            return Optional.of(memoryPercentage);
-        } else if (isHostedVespa()) {
-            return getHostClusterId().isPresent() ?
-                    Optional.of(heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster) :
-                    Optional.of(heapSizePercentageOfTotalNodeMemory);
+        if (memoryPercentage != null) return Optional.of(memoryPercentage);
+
+        if (isHostedVespa()) {
+            int availableMemoryPercentage = getHostClusterId().isPresent() ?
+                                            heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster :
+                                            heapSizePercentageOfAvailableMemory;
+            if (getContainers().isEmpty()) return Optional.of(availableMemoryPercentage); // Node memory is not known
+
+            // Node memory is known so convert available memory percentage to node memory percentage
+            double totalMemory = getContainers().get(0).getHostResource().realResources().memoryGb();
+            double availableMemory = totalMemory - Host.memoryOverheadGb;
+            return Optional.of((int) (availableMemory / totalMemory * availableMemoryPercentage));
         }
         return Optional.empty();
     }
@@ -289,9 +298,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                 .compressedClassSpaceSize(0)
                 .minHeapsize(1536)
                 .heapsize(1536);
-        if (getMemoryPercentage().isPresent()) {
-            builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getMemoryPercentage().get());
-        }
+        getMemoryPercentage().ifPresent(percentage -> builder.jvm.heapSizeAsPercentageOfPhysicalMemory(percentage));
     }
 
     @Override

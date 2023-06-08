@@ -1,12 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.jrt.Request;
-import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
-import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
@@ -17,10 +13,9 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,7 +48,6 @@ public class MasterElectionTest extends FleetControllerTest {
         if (zooKeeperServer == null) {
             zooKeeperServer = new ZooKeeperTestServer();
         }
-        slobrok = new Slobrok();
         builder.setZooKeeperSessionTimeout(defaultZkSessionTimeoutInMillis())
                .setZooKeeperServerAddress(zooKeeperServer.getAddress())
                .setSlobrokConnectionSpecs(getSlobrokConnectionSpecs(slobrok))
@@ -283,33 +277,6 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(1);
     }
 
-    private void waitForNoMasterWithExpectedReason(String reason, List<Target> connections, int[] nodes) {
-        Objects.requireNonNull(reason, "reason cannot be null");
-        Instant endTime = Instant.now().plus(timeout());
-        while (Instant.now().isBefore(endTime)) {
-            boolean allOk = true;
-            for (int node : nodes) {
-                Request req = new Request("getMaster");
-                connections.get(node).invokeSync(req, timeout());
-                if (req.isError()) {
-                    allOk = false;
-                    break;
-                }
-                if (req.returnValues().get(0).asInt32() != -1) {  // -1 means no master, which we are waiting for
-                    allOk = false;
-                    break;
-                }
-                if ( ! reason.equals(req.returnValues().get(1).asString())) {
-                    allOk = false;
-                    break;
-                }
-            }
-            if (allOk) return;
-            try { Thread.sleep(100); } catch (InterruptedException e) { /* ignore */ }
-        }
-        throw new IllegalStateException("Did not get master reason '" + reason + "' within timeout of " + timeout());
-    }
-
     @Test
     void testGetMaster() throws Exception {
         FleetControllerOptions.Builder options = defaultOptions();
@@ -318,32 +285,12 @@ public class MasterElectionTest extends FleetControllerTest {
         setUpFleetControllers(3, timer, options);
         waitForMaster(0);
 
-        List<Target> connections = new ArrayList<>();
-        for (FleetController fleetController : fleetControllers) {
-            int rpcPort = fleetController.getRpcPort();
-            Target connection = supervisor.connect(new Spec("localhost", rpcPort));
-            assertTrue(connection.isValid());
-            connections.add(connection);
-        }
-
         timer.advanceTime(24 * 3600 * 1000); // A day
         waitForCompleteCycles();
 
-        Request req = new Request("getMaster");
-
         long maxRetries = timeout().toMillis() / 100;
         for (int nodeIndex = 0; nodeIndex < 3; ++nodeIndex) {
-            for (int retry = 0; retry < maxRetries; ++retry) {
-                req = new Request("getMaster");
-                connections.get(nodeIndex).invokeSync(req, timeout());
-                assertFalse(req.isError(), req.errorMessage());
-                if (req.returnValues().get(0).asInt32() == 0 &&
-                        req.returnValues().get(1).asString().equals("All 3 nodes agree that 0 is current master.")) {
-                    break;
-                }
-            }
-            assertEquals(0, req.returnValues().get(0).asInt32(), req.toString());
-            assertEquals("All 3 nodes agree that 0 is current master.", req.returnValues().get(1).asString(), req.toString());
+            assertEquals((nodeIndex == 0), fleetControllers.get(nodeIndex).isMaster());
         }
 
         log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
@@ -354,41 +301,20 @@ public class MasterElectionTest extends FleetControllerTest {
         // 5 minutes is not long enough period to wait before letting this node be master.
         timer.advanceTime(300 * 1000); // 5 minutes
 
-        int[] remainingNodes = {1, 2};
-        waitForNoMasterWithExpectedReason(
-                "2 of 3 nodes agree 1 should be master, but old master cooldown period of 3600000 ms has not passed yet. To ensure it has got time to realize it is no longer master before we elect a new one, currently there is no master.",
-                connections,
-                remainingNodes);
-        // Verify that fc 1 is not master, and the correct reasons for why not
+        List<Integer> remainingNodes = List.of(1, 2);
+        waitForNoMaster(remainingNodes);
+        // Verify that fc 1 is not master
         assertFalse(fleetControllers.get(1).isMaster());
 
         // But after an hour it should become one.
         timer.advanceTime(3600 * 1000); // 60 minutes
         waitForMaster(1);
 
-        req = new Request("getMaster");
-        connections.get(0).invokeSync(req, timeout());
-        assertEquals(104, req.errorCode(), req.toString());
-        assertEquals("Connection error", req.errorMessage(), req.toString());
-
         for (int i = 0; i < maxRetries; ++i) {
-            req = new Request("getMaster");
-            connections.get(1).invokeSync(req, timeout());
-            assertFalse(req.isError(), req.errorMessage());
-            if (req.returnValues().get(0).asInt32() != -1) break;
+            if (fleetControllers.get(i).isMaster()) break;
             // We may have bad timing causing node not to have realized it is master yet
         }
-        assertEquals(1, req.returnValues().get(0).asInt32(), req.toString());
-        assertEquals("2 of 3 nodes agree 1 is master.", req.returnValues().get(1).asString(), req.toString());
-
-        for (int i = 0; i < maxRetries; ++i) {
-            req = new Request("getMaster");
-            connections.get(2).invokeSync(req, timeout());
-            assertFalse(req.isError(), req.errorMessage());
-            if (req.returnValues().get(0).asInt32() != -1) break;
-        }
-        assertEquals(1, req.returnValues().get(0).asInt32(), req.toString());
-        assertEquals("2 of 3 nodes agree 1 is master.", req.returnValues().get(1).asString(), req.toString());
+        assertTrue(fleetControllers.get(1).isMaster());
     }
 
     @Test
@@ -515,6 +441,24 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(0);
         waitForStableSystem();
         waitForStateInAllSpaces("version:\\d+ distributor:10 storage:10");
+    }
+
+    private void waitForNoMaster(List<Integer> nodes) {
+        Instant endTime = Instant.now().plus(timeout());
+        while (Instant.now().isBefore(endTime)) {
+            boolean allOk = true;
+            for (int node : nodes) {
+                if (fleetControllers.get(node).isMaster()) {  // there is a master, we are waiting for no master
+                    allOk = false;
+                    break;
+                }
+            }
+            if (allOk) return;
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) { /* ignore */ }
+        }
+        throw new IllegalStateException("Did not end up in state with no master within timeout of " + timeout());
     }
 
 }

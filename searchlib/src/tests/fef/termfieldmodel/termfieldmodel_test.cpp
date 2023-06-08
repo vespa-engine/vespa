@@ -27,6 +27,26 @@ struct State {
 State::State() : term(), md(), f3(nullptr), f5(nullptr), f7(nullptr), array() {}
 State::~State() = default;
 
+/**
+ * convenience adapter for easy iteration
+ **/
+class SimpleTermFieldRangeAdapter
+{
+    SimpleTermData& _ref;
+    size_t _idx;
+    size_t _lim;
+public:
+    explicit SimpleTermFieldRangeAdapter(SimpleTermData& ref)
+            : _ref(ref), _idx(0), _lim(ref.numFields())
+    {}
+
+    [[nodiscard]] bool valid() const { return (_idx < _lim); }
+
+    [[nodiscard]] SimpleTermFieldData& get() const  { return _ref.field(_idx); }
+
+    void next() { assert(valid()); ++_idx; }
+};
+
 void testInvalidId() {
     const TermFieldMatchData empty;
     using search::queryeval::SearchIterator;
@@ -44,7 +64,7 @@ void testSetup(State &state) {
     state.term.addField(5); // docfreq = 3
 
     using FRA = search::fef::ITermFieldRangeAdapter;
-    using SFR = search::fef::SimpleTermFieldRangeAdapter;
+    using SFR = SimpleTermFieldRangeAdapter;
 
     // lookup terms
     {

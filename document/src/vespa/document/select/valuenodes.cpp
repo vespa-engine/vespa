@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/text/lowercase.h>
+#include <cassert>
 #include <iomanip>
 #include <sys/time.h>
 

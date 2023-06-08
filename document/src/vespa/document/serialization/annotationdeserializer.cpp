@@ -40,7 +40,7 @@ unique_ptr<SpanTree> AnnotationDeserializer::readSpanTree() {
     deserializer.read(tree_name);
     _nodes.clear();
     SpanNode::UP root = readSpanNode();
-    unique_ptr<SpanTree> span_tree(new SpanTree(tree_name.getValue(), std::move(root)));
+    auto span_tree = std::make_unique<SpanTree>(tree_name.getValue(), std::move(root));
 
     uint32_t annotation_count = getInt1_2_4Bytes(_stream);
     span_tree->reserveAnnotations(annotation_count);

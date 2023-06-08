@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
+import com.yahoo.vespa.model.Host;
 
 import static java.lang.Long.min;
 import static java.lang.Long.max;
@@ -26,9 +27,6 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final NodeResources resources;
     private final int threadsPerSearch;
     private final double fractionOfMemoryReserved;
-
-    // "Reserve" 0.5GB of memory for other processes running on the content node (config-proxy, metrics-proxy).
-    public static final double reservedMemoryGb = 0.7;
 
     public NodeResourcesTuning(NodeResources resources,
                                int threadsPerSearch,
@@ -128,7 +126,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
 
     /** Returns the memory we can expect will be available for the content node processes */
     private double usableMemoryGb() {
-        double usableMemoryGb = resources.memoryGb() - reservedMemoryGb;
+        double usableMemoryGb = resources.memoryGb() - Host.memoryOverheadGb;
         return usableMemoryGb * (1 - fractionOfMemoryReserved);
     }
 

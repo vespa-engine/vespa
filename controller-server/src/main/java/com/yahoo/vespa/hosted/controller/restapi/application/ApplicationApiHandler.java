@@ -131,6 +131,7 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -1426,6 +1427,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         };
     }
 
+    private static String valueOf(NodeResources.Architecture architecture) {
+        return switch (architecture) {
+            case x86_64 : yield "x86_64";
+            case arm64  : yield "arm64";
+            case any    : yield "any";
+        };
+    }
+
     private HttpResponse logs(String tenantName, String applicationName, String instanceName, String environment, String region, Map<String, String> queryParameters) {
         ApplicationId application = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = requireZone(environment, region);
@@ -1882,12 +1891,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
 
-        // TODO (freva): Get cloudAccount from deployment once all applications have redeployed once
-        controller.applications().decideCloudAccountOf(deploymentId, application.deploymentSpec()).ifPresent(cloudAccount -> {
+        if (controller.zoneRegistry().isExternal(deployment.cloudAccount())) {
             Cursor enclave = response.setObject("enclave");
-            enclave.setString("cloudAccount", cloudAccount.value());
-            controller.zoneRegistry().cloudAccountAthenzDomain(cloudAccount).ifPresent(domain -> enclave.setString("athensDomain", domain.value()));
-        });
+            enclave.setString("cloudAccount", deployment.cloudAccount().value());
+            controller.zoneRegistry().cloudAccountAthenzDomain(deployment.cloudAccount()).ifPresent(domain -> enclave.setString("athensDomain", domain.value()));
+        }
 
         var instance = application.instances().get(deploymentId.applicationId().instance());
         if (instance != null) {
@@ -1918,7 +1926,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setDouble("quota", deployment.quota().rate());
         deployment.cost().ifPresent(cost -> response.setDouble("cost", cost));
 
-        (controller.zoneRegistry().isEnclave(deployment.cloudAccount()) ?
+        (controller.zoneRegistry().isExclave(deployment.cloudAccount()) ?
                 controller.archiveBucketDb().archiveUriFor(deploymentId.zoneId(), deployment.cloudAccount(), false) :
                 controller.archiveBucketDb().archiveUriFor(deploymentId.zoneId(), deploymentId.applicationId().tenant(), false))
                 .ifPresent(archiveUri -> response.setString("archiveUri", archiveUri.toString()));
@@ -2428,14 +2436,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if ( ! type.environment().isManuallyDeployed() && ! (isOperator(request) || controller.system().isCd()))
             throw new IllegalArgumentException("Direct deployments are only allowed to manually deployed environments.");
 
+        controller.applications().verifyPlan(id.tenant());
+
         Map<String, byte[]> dataParts = parseDataParts(request);
         if ( ! dataParts.containsKey("applicationZip"))
             throw new IllegalArgumentException("Missing required form part 'applicationZip'");
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(APPLICATION_ZIP));
         controller.applications().verifyApplicationIdentityConfiguration(id.tenant(),
-                                                                         Optional.of(id.instance()),
-                                                                         Optional.of(type.zone()),
+                                                                         Optional.of(new DeploymentId(id, type.zone())),
                                                                          applicationPackage,
                                                                          Optional.of(requireUserPrincipal(request)));
 
@@ -2835,6 +2844,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setDouble("bandwidthGbps", resources.bandwidthGbps());
         object.setString("diskSpeed", valueOf(resources.diskSpeed()));
         object.setString("storageType", valueOf(resources.storageType()));
+        object.setString("architecture", valueOf(resources.architecture()));
     }
 
     // A tenant has different content when in a list ... antipattern, but not solvable before application/v5
@@ -3047,6 +3057,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse submit(String tenant, String application, HttpRequest request) {
+        TenantName tenantName = TenantName.from(tenant);
+        controller.applications().verifyPlan(tenantName);
+
         Map<String, byte[]> dataParts = parseDataParts(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
         long projectId = submitOptions.field("projectId").asLong(); // Absence of this means it's not a prod app :/
@@ -3072,10 +3085,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         byte[] testPackage = dataParts.getOrDefault(APPLICATION_TEST_ZIP, new byte[0]);
         Submission submission = new Submission(applicationPackage, testPackage, sourceUrl, sourceRevision, authorEmail, description, controller.clock().instant(), risk);
 
-        TenantName tenantName = TenantName.from(tenant);
-        controller.applications().verifyPlan(tenantName);
         controller.applications().verifyApplicationIdentityConfiguration(tenantName,
-                                                                         Optional.empty(),
                                                                          Optional.empty(),
                                                                          applicationPackage,
                                                                          Optional.of(requireUserPrincipal(request)));

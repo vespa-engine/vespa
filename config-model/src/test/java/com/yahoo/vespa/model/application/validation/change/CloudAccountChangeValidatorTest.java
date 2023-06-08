@@ -1,14 +1,14 @@
 package com.yahoo.vespa.model.application.validation.change;
 
-import com.yahoo.config.provision.ClusterInfo;
-import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
@@ -36,7 +36,7 @@ class CloudAccountChangeValidatorTest {
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals(e.getMessage(), "Cannot change cloud account from unspecified account to " +
-                                         "account '000000000000'. The existing deployment must be removed before " +
+                                         "account '000000000000' in aws. The existing deployment must be removed before " +
                                          "changing accounts");
         }
         assertEquals(List.of(), validator.validate(model0, model0, new DeployState.Builder().build()));

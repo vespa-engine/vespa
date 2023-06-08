@@ -61,6 +61,14 @@ for data in "Dockerfile vespa"; do
     if curl -fsSL https://index.docker.io/v1/repositories/vespaengine/$IMAGE_NAME/tags/$VESPA_VERSION &> /dev/null; then
         echo "Container image docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION aldready exists."
     else
+        # Build only for x86_64 first for test as BuildKit does not support loading multi arch into docker daemon.
+        docker buildx build --progress plain --load --platform linux/amd64 --build-arg VESPA_VERSION=$VESPA_VERSION \
+               --file $DOCKER_FILE --tag vespaengine/$IMAGE_NAME:latest .
+
+        # Test
+        $SD_SOURCE_DIR/screwdriver/test-quick-start-guide.sh
+
+        # Build for arm64 and publish
         docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
         docker buildx build --progress plain --push --platform linux/amd64,linux/arm64 --build-arg VESPA_VERSION=$VESPA_VERSION \
                --file $DOCKER_FILE --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION \

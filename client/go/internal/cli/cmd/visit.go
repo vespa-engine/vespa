@@ -138,6 +138,18 @@ $ vespa visit --field-set "[id]" # list document IDs
 	return cmd
 }
 
+func getEpoch(timeStamp string) (int64, error) {
+	t, err := strconv.ParseInt(timeStamp, 10, 64)
+	if err != nil {
+		t, err := time.Parse(time.RFC3339, timeStamp)
+		if err != nil {
+			return 0, err
+		}
+		return t.Unix(), nil
+	}
+	return t, nil
+}
+
 func checkArguments(vArgs visitArgs) (res util.OperationResult) {
 	if vArgs.slices > 0 || vArgs.sliceId > -1 {
 		if !(vArgs.slices > 0 && vArgs.sliceId > -1) {
@@ -149,13 +161,13 @@ func checkArguments(vArgs visitArgs) (res util.OperationResult) {
 	}
 	// to and from will support RFC3339 format soon, add more validation then
 	if vArgs.from != "" {
-		_, err := strconv.ParseInt(vArgs.from, 10, 64)
+		_, err := getEpoch(vArgs.from)
 		if err != nil {
 			return util.Failure("Invalid 'from' argument: '" + vArgs.from + "': " + err.Error())
 		}
 	}
 	if vArgs.to != "" {
-		_, err := strconv.ParseInt(vArgs.to, 10, 64)
+		_, err := getEpoch(vArgs.to)
 		if err != nil {
 			return util.Failure("Invalid 'to' argument: '" + vArgs.to + "': " + err.Error())
 		}
@@ -336,11 +348,11 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 		urlPath = urlPath + fmt.Sprintf("&wantedDocumentCount=%d", vArgs.chunkCount)
 	}
 	if vArgs.from != "" {
-		fromSeconds, _ := strconv.ParseInt(vArgs.from, 10, 64)
+		fromSeconds, _ := getEpoch(vArgs.from)
 		urlPath = urlPath + fmt.Sprintf("&fromTimestamp=%d", fromSeconds*1000000)
 	}
 	if vArgs.to != "" {
-		toSeconds, _ := strconv.ParseInt(vArgs.to, 10, 64)
+		toSeconds, _ := getEpoch(vArgs.to)
 		urlPath = urlPath + fmt.Sprintf("&toTimestamp=%d", toSeconds*1000000)
 	}
 	if vArgs.slices > 0 {

@@ -107,7 +107,7 @@ public class RoutingPolicies {
         ApplicationId instance = deployment.applicationId();
         List<LoadBalancer> loadBalancers = controller.serviceRegistry().configServer()
                                                      .getLoadBalancers(instance, deployment.zoneId());
-        LoadBalancerAllocation allocation = new LoadBalancerAllocation(loadBalancers, deployment, deploymentSpec);
+        LoadBalancerAllocation allocation = new LoadBalancerAllocation(deployment, deploymentSpec, loadBalancers);
         Set<ZoneId> inactiveZones = inactiveZones(instance, deploymentSpec);
         Optional<TenantAndApplicationId> owner = ownerOf(allocation);
         try (var lock = db.lockRoutingPolicies()) {
@@ -147,8 +147,7 @@ public class RoutingPolicies {
             RoutingPolicyList deploymentPolicies = applicationPolicies.deployment(deployment);
             Map<RoutingPolicyId, RoutingPolicy> updatedPolicies = new LinkedHashMap<>(applicationPolicies.asMap());
             for (var policy : deploymentPolicies) {
-                var newPolicy = policy.with(policy.status().with(RoutingStatus.create(value, agent,
-                                                                                      controller.clock().instant())));
+                var newPolicy = policy.with(RoutingStatus.create(value, agent, controller.clock().instant()));
                 updatedPolicies.put(policy.id(), newPolicy);
             }
 
@@ -360,11 +359,11 @@ public class RoutingPolicies {
             var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.ipAddress(), dnsZone,
                                               allocation.instanceEndpointsOf(loadBalancer),
                                               allocation.applicationEndpointsOf(loadBalancer),
-                                              new RoutingPolicy.Status(isActive(loadBalancer), RoutingStatus.DEFAULT),
+                                              RoutingStatus.DEFAULT,
                                               loadBalancer.isPublic());
             // Preserve global routing status for existing policy
             if (existingPolicy != null) {
-                newPolicy = newPolicy.with(newPolicy.status().with(existingPolicy.status().routingStatus()));
+                newPolicy = newPolicy.with(existingPolicy.routingStatus());
             }
             updateZoneDnsOf(newPolicy, loadBalancer, allocation.deployment);
             policies.put(newPolicy.id(), newPolicy);
@@ -553,17 +552,8 @@ public class RoutingPolicies {
         // - deployment level (RoutingPolicy)
         // - application package level (deployment.xml)
         return zonePolicy.routingStatus().value() == RoutingStatus.Value.out ||
-               policy.status().routingStatus().value() == RoutingStatus.Value.out ||
+               policy.routingStatus().value() == RoutingStatus.Value.out ||
                inactiveZones.contains(policy.id().zone());
-    }
-
-    private static boolean isActive(LoadBalancer loadBalancer) {
-        return switch (loadBalancer.state()) {
-            // Count reserved as active as we want callers (application API) to see the endpoint as early
-            // as possible
-            case reserved, active -> true;
-            default -> false;
-        };
     }
 
     /** Represents records for a region-wide endpoint */
@@ -604,18 +594,25 @@ public class RoutingPolicies {
 
     }
 
-    /** Load balancers allocated to a deployment */
-    private static class LoadBalancerAllocation {
+    /** Active load balancers allocated to a deployment */
+    record LoadBalancerAllocation(DeploymentId deployment,
+                                  DeploymentSpec deploymentSpec,
+                                  List<LoadBalancer> loadBalancers) {
 
-        private final DeploymentId deployment;
-        private final List<LoadBalancer> loadBalancers;
-        private final DeploymentSpec deploymentSpec;
-
-        private LoadBalancerAllocation(List<LoadBalancer> loadBalancers, DeploymentId deployment,
-                                       DeploymentSpec deploymentSpec) {
+        public LoadBalancerAllocation(DeploymentId deployment,
+                                      DeploymentSpec deploymentSpec,
+                                      List<LoadBalancer> loadBalancers) {
             this.deployment = deployment;
-            this.loadBalancers = List.copyOf(loadBalancers);
+            this.loadBalancers = loadBalancers.stream().filter(LoadBalancerAllocation::isActive).toList();
             this.deploymentSpec = deploymentSpec;
+        }
+
+        private static boolean isActive(LoadBalancer loadBalancer) {
+            return switch (loadBalancer.state()) {
+                // Count reserved as active as we want to do DNS updates as early as possible
+                case reserved, active -> true;
+                default -> false;
+            };
         }
 
         /** Returns the policy IDs of the load balancers contained in this */
@@ -637,7 +634,7 @@ public class RoutingPolicies {
                 return Set.of();
             }
             if (instanceSpec.get().globalServiceId().filter(id -> id.equals(loadBalancer.cluster().value())).isPresent()) {
-                // Legacy assignment always has the default endpoint Id
+                // Legacy assignment always has the default endpoint ID
                 return Set.of(EndpointId.defaultId());
             }
             return instanceSpec.get().endpoints().stream()

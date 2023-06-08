@@ -71,7 +71,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
             this.zones = List.of(ZoneApiMock.fromId("test.us-east-1"),
                                  ZoneApiMock.fromId("staging.us-east-3"),
                                  ZoneApiMock.fromId("dev.us-east-1"),
-                                 ZoneApiMock.fromId("dev.aws-us-east-2a"),
+                                 ZoneApiMock.newBuilder().withId("dev.aws-us-east-2a").withCloud("aws").build(),
                                  ZoneApiMock.fromId("perf.us-east-3"),
                                  ZoneApiMock.newBuilder().withId("prod.aws-us-east-1a").withCloud("aws").build(),
                                  ZoneApiMock.newBuilder().withId("prod.aws-us-east-1b").withCloud("aws").build(),
@@ -272,7 +272,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public boolean isEnclave(CloudAccount cloudAccount) {
+    public boolean isExternal(CloudAccount cloudAccount) {
         return system.isPublic() && !cloudAccount.isUnspecified() && !cloudAccount.equals(systemCloudAccount);
     }
 

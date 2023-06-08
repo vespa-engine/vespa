@@ -43,7 +43,6 @@ PhraseSplitterQueryEnv::PhraseSplitterQueryEnv(const IQueryEnvironment & queryEn
     TermFieldHandle numHandles = 0; // how many handles existed in underlying data
     for (uint32_t i = 0; i < queryEnv.getNumTerms(); ++i) {
         const ITermData *td = queryEnv.getTerm(i);
-        assert(td != nullptr);
         considerTerm(i, *td, fieldId);
         numHandles += td->numFields();
     }

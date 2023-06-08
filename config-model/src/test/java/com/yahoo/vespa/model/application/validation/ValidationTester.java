@@ -57,6 +57,7 @@ public class ValidationTester {
     public ValidationTester(InMemoryProvisioner hostProvisioner, TestProperties testProperties) {
         this.hostProvisioner = hostProvisioner;
         this.properties = testProperties;
+        hostProvisioner.setEnvironment(testProperties.zone().environment());
     }
 
     /**

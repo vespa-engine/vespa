@@ -30,13 +30,13 @@ public class DomComponentBuilderTest extends DomBuilderTest {
     @Test
     @SuppressWarnings("unchecked")
     void components_can_be_nested() {
-        Component<Component<?, ?>, ?> parent = new DomComponentBuilder().doBuild(root.getDeployState(), root, parse(
+        Component<? super Component<?, ?>, ?> parent = new DomComponentBuilder().doBuild(root.getDeployState(), root, parse(
                 "<component id='parent'>",
                 "  <component id='child' />",
                 "</component>"));
 
         assertEquals(ComponentId.fromString("parent"), parent.getGlobalComponentId());
-        Component<?, ?> child = first(parent.getChildren().values());
+        Component<?, ?> child = (Component<?, ?>) first(parent.getChildren().values());
         assertNotNull(child);
 
         assertEquals(ComponentId.fromString("child@parent"), child.getGlobalComponentId());

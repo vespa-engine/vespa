@@ -140,7 +140,7 @@
           "at" : 123
         }
       ],
-      "scalingDuration": 600000
+      "scalingDuration": 300000
     }
   }
 }

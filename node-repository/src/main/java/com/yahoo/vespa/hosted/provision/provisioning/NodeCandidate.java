@@ -25,6 +25,7 @@ import java.util.logging.Logger;
  * A node candidate containing the details required to prioritize it for allocation. This is immutable.
  *
  * @author smorgrav
+ * @author bratseth
  */
 public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidate> {
 

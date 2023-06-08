@@ -76,10 +76,11 @@ public class RPCCommunicatorTest {
     @Test
     void testGenerateNodeStateRequestTimeoutMsWithUpdates() {
         final RPCCommunicator communicator = new RPCCommunicator(RPCCommunicator.createRealSupervisor(), null /* Timer */, INDEX, 1, 1, 100, 0);
-        FleetControllerOptions.Builder builder = new FleetControllerOptions.Builder(null /*clustername*/, Set.of(new ConfiguredNode(0, false)));
-        builder.setNodeStateRequestTimeoutEarliestPercentage(100);
-        builder.setNodeStateRequestTimeoutLatestPercentage(100);
-        builder.setNodeStateRequestTimeoutMS(NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS);
+        FleetControllerOptions.Builder builder = new FleetControllerOptions.Builder(null /*clustername*/, Set.of(new ConfiguredNode(0, false)))
+                .setNodeStateRequestTimeoutEarliestPercentage(100)
+                .setNodeStateRequestTimeoutLatestPercentage(100)
+                .setNodeStateRequestTimeoutMS(NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS)
+                .setZooKeeperServerAddress("localhost:2181");
         communicator.propagateOptions(builder.build());
         long timeOutMs = communicator.generateNodeStateRequestTimeout().toMillis();
         assertEquals(timeOutMs, NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS);

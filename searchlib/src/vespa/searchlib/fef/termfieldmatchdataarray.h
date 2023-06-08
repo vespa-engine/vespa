@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vector>
-#include <cassert>
 #include <cstddef>
 
 namespace search::fef {
@@ -43,7 +42,6 @@ public:
      * @param value the pointer to be added
      **/
     TermFieldMatchDataArray &add(TermFieldMatchData *value) {
-        assert(value != nullptr);
         _array.push_back(value);
         return *this;
     }

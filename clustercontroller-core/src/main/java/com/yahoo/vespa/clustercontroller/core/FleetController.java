@@ -207,15 +207,11 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     public void addSystemStateListener(SystemStateListener listener) {
         systemStateListeners.add(listener);
         // Always give cluster state listeners the current state, in case acceptable state has come before listener is registered.
-        com.yahoo.vdslib.state.ClusterState state = getSystemState();
-        if (state == null) {
-            throw new NullPointerException("Cluster state should never be null at this point");
-        }
+        var state = getSystemState();
         listener.handleNewPublishedState(ClusterStateBundle.ofBaselineOnly(AnnotatedClusterState.withoutAnnotations(state)));
         ClusterStateBundle convergedState = systemStateBroadcaster.getLastClusterStateBundleConverged();
-        if (convergedState != null) {
+        if (convergedState != null)
             listener.handleStateConvergedInCluster(convergedState);
-        }
     }
 
     public FleetControllerOptions getOptions() {
@@ -489,11 +485,9 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
 
         // TODO: remove as many temporal parameter dependencies as possible here. Currently duplication of state.
         stateChangeHandler.reconfigureFromOptions(options);
-        stateChangeHandler.setStateChangedFlag(); // Always trigger state recomputation after reconfig
 
         masterElectionHandler.setFleetControllerCount(options.fleetControllerCount());
         masterElectionHandler.setMasterZooKeeperCooldownPeriod(options.masterZooKeeperCooldownPeriod());
-        masterElectionHandler.setUsingZooKeeper(options.zooKeeperServerAddress() != null && !options.zooKeeperServerAddress().isEmpty());
 
         if (rpcServer != null) {
             rpcServer.setMasterElectionHandler(masterElectionHandler);
@@ -565,7 +559,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
 
             if ( ! isRunning()) { return; }
 
-            if (masterElectionHandler.isAmongNthFirst(options.stateGatherCount())) {
+            if (masterElectionHandler.isFirstInLine()) {
                 didWork |= resyncLocallyCachedState(); // Calls to metricUpdate.forWork inside method
             } else {
                 stepDownAsStateGatherer();

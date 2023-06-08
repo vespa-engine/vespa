@@ -27,8 +27,7 @@ public class SpoolerTest {
     public void testSpoolingLogger() throws IOException {
         Path spoolDir = tempDir.resolve("spool");
 
-        int maxEntriesPerFile = 1;
-        Spooler spooler = new Spooler(spoolDir, maxEntriesPerFile, clock, true);
+        Spooler spooler = createSpooler(spoolDir, 1);
 
         TestLogger logger = new TestLogger(spooler);
         assertTrue(sendEntry(logger, "Yo entry"));
@@ -53,14 +52,44 @@ public class SpoolerTest {
         assertReadyFiles(spooler, 0);
         assertSuccessFiles(spooler, 2);
         assertFailureFiles(spooler, 0);
+
+        assertTrue(spooler.failures().isEmpty(), spooler.failures().toString());
+    }
+
+    @Test
+    public void testSpoolingLoggerCleanup() throws IOException {
+        Path spoolDir = tempDir.resolve("spool");
+
+        Spooler spooler = createSpooler(spoolDir, 1, false, 5);
+
+        TestLogger logger = new TestLogger(spooler);
+        assertTrue(sendEntry(logger, "Yo entry"));
+
+        Path readyPath = spooler.readyPath();
+        Path readyFile1 = readyPath.resolve(spooler.fileNameBase.get() + "-0");
+        waitUntilFileExists(readyFile1);
+
+        // Check content after being moved to ready path
+        assertContent(readyFile1, "Yo entry");
+
+        // Process files (read, transport files)
+        logger.manualRun();
+        assertEquals(1, logger.entriesSent());
+
+        // No files in processing or ready or successes
+        assertProcessedFiles(spooler, 0);
+        assertReadyFiles(spooler, 0);
+        assertSuccessFiles(spooler, 0);
+        assertFailureFiles(spooler, 0);
+
+        assertTrue(spooler.failures().isEmpty(), spooler.failures().toString());
     }
 
     @Test
     public void testSpoolingManyEntriesPerFile() throws IOException {
         Path spoolDir = tempDir.resolve("spool");
 
-        int maxEntriesPerFile = 2;
-        Spooler spooler = new Spooler(spoolDir, maxEntriesPerFile, clock, true);
+        Spooler spooler = createSpooler(spoolDir, 2);
 
         TestLogger logger = new TestLogger(spooler);
         assertTrue(sendEntry(logger, "Yo entry"));
@@ -111,8 +140,8 @@ public class SpoolerTest {
     @Test
     public void failingToTransportIsRetried() throws IOException {
         Path spoolDir = tempDir.resolve("spool");
-        Spooler spooler = new Spooler(spoolDir, 1, clock, true);
-        FailingToTransportSecondEntryLogger logger = new FailingToTransportSecondEntryLogger(spooler);
+        Spooler spooler = createSpooler(spoolDir, 1, true, 2);
+        FailingToTransportNthEntryLogger logger = new FailingToTransportNthEntryLogger(spooler, 2);
 
         assertTrue(sendEntry(logger, "Yo entry"));
         logger.manualRun(); // Success for first message
@@ -121,17 +150,47 @@ public class SpoolerTest {
         assertTrue(sendEntry(logger, "Yo entry 2"));
         logger.manualRun(); // Failure for second message, so still just 1 file in successes path
         assertEquals(1, spooler.listFilesInPath(spooler.successesPath()).size());
+        assertEquals(0, spooler.listFilesInPath(spooler.failuresPath()).size());
 
         logger.manualRun(); // Success when retrying second message, so 2 files in successes path
         assertEquals(2, spooler.listFilesInPath(spooler.successesPath()).size());
     }
 
     @Test
+    public void failingToTransportGivesUpAfterNTries() throws IOException {
+        Path spoolDir = tempDir.resolve("spool");
+        Spooler spooler = createSpooler(spoolDir, 1, true, 2);
+        FailingToTransportAfterNEntriesLogger logger = new FailingToTransportAfterNEntriesLogger(spooler, 2);
+
+        assertTrue(sendEntry(logger, "Yo entry"));
+        assertEquals(1, spooler.listFilesInPath(spooler.readyPath()).size());
+        logger.manualRun(); // Success for first message
+        assertEquals(1, spooler.listFilesInPath(spooler.successesPath()).size());
+        assertEquals(0, spooler.listFilesInPath(spooler.failuresPath()).size());
+
+        assertTrue(sendEntry(logger, "Yo entry 2"));
+        assertEquals(1, spooler.listFilesInPath(spooler.readyPath()).size());
+        logger.manualRun(); // Failure for second message, so still just 1 file in successes path
+        assertEquals(1, spooler.listFilesInPath(spooler.successesPath()).size());
+        assertEquals(0, spooler.listFilesInPath(spooler.failuresPath()).size());
+
+        logger.manualRun(); // Fails again, but should be retried
+        assertEquals(1, spooler.listFilesInPath(spooler.readyPath()).size());
+        assertEquals(1, spooler.listFilesInPath(spooler.successesPath()).size());
+        assertEquals(0, spooler.listFilesInPath(spooler.failuresPath()).size());
+
+        logger.manualRun(); // Fails again, should be moved to failures path
+        assertEquals(0, spooler.listFilesInPath(spooler.readyPath()).size());
+        assertEquals(1, spooler.listFilesInPath(spooler.successesPath()).size());
+        assertEquals(1, spooler.listFilesInPath(spooler.failuresPath()).size());
+    }
+
+    @Test
     public void noSuccessFiles() throws IOException {
         Path spoolDir = tempDir.resolve("spool");
         boolean keepSuccessFiles = false;
-        Spooler spooler = new Spooler(spoolDir, 1, clock, keepSuccessFiles);
-        FailingToTransportSecondEntryLogger logger = new FailingToTransportSecondEntryLogger(spooler);
+        Spooler spooler = createSpooler(spoolDir, 1, keepSuccessFiles, 2);
+        FailingToTransportNthEntryLogger logger = new FailingToTransportNthEntryLogger(spooler, 2);
 
         assertTrue(sendEntry(logger, "Yo entry"));
         logger.manualRun(); // Success for first message
@@ -163,6 +222,14 @@ public class SpoolerTest {
         assertTrue(content.contains(Base64.getEncoder().encodeToString(expectedContent.getBytes())));
     }
 
+    private static Spooler createSpooler(Path spoolDir, int maxEntriesPerFile) {
+        return new Spooler(spoolDir, maxEntriesPerFile, clock, true, 1000);
+    }
+
+    private static Spooler createSpooler(Path spoolDir, int maxEntriesPerFile, boolean keepSuccessFiles, int maxFailures) {
+        return new Spooler(spoolDir, maxEntriesPerFile, clock, keepSuccessFiles, maxFailures);
+    }
+
     private static class TestLogger extends AbstractSpoolingLogger {
 
         private final List<LoggerEntry> entriesSent = new ArrayList<>();
@@ -178,9 +245,7 @@ public class SpoolerTest {
         }
 
         @Override
-        public void run() {
-            // Do nothing, use manualRun
-        }
+        public void run() {} // do nothing, call manualRun() to do something
 
         @Override
         public boolean send(LoggerEntry entry) {
@@ -198,12 +263,14 @@ public class SpoolerTest {
 
     }
 
-    private static class FailingToTransportSecondEntryLogger extends AbstractSpoolingLogger {
+    private static class FailingToTransportNthEntryLogger extends AbstractSpoolingLogger {
 
         private int transportCount = 0;
+        private final int entriesToFail;
 
-        public FailingToTransportSecondEntryLogger(Spooler spooler) {
+        public FailingToTransportNthEntryLogger(Spooler spooler, int entriesToFail) {
             super(spooler);
+            this.entriesToFail = entriesToFail;
         }
 
         @Override
@@ -215,13 +282,42 @@ public class SpoolerTest {
         @Override
         public boolean transport(LoggerEntry entry) {
             transportCount++;
-            return transportCount != 2;
+            return transportCount != entriesToFail;
         }
 
         @Override
-        public void run() {
-            // do nothing
+        public void run() {} // do nothing, call manualRun() to do something
+
+        public void manualRun() {
+            super.run();
         }
+
+    }
+
+    private static class FailingToTransportAfterNEntriesLogger extends AbstractSpoolingLogger {
+
+        private int transportCount = 0;
+        private final int entriesToFailAfter;
+
+        public FailingToTransportAfterNEntriesLogger(Spooler spooler, int entriesToFailAfter) {
+            super(spooler);
+            this.entriesToFailAfter = entriesToFailAfter;
+        }
+
+        @Override
+        public boolean send(LoggerEntry entry) {
+            spooler.write(entry);
+            return true;
+        }
+
+        @Override
+        public boolean transport(LoggerEntry entry) {
+            transportCount++;
+            return transportCount < entriesToFailAfter;
+        }
+
+        @Override
+        public void run() {} // do nothing, call manualRun() to do something
 
         public void manualRun() {
             super.run();

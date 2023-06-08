@@ -58,8 +58,8 @@ PersistenceFailuresMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return (PersistenceFailuresMetricSet*)
-            (new PersistenceFailuresMetricSet(owner))->assignValues(*this);
+    return dynamic_cast<PersistenceFailuresMetricSet*>(
+            (new PersistenceFailuresMetricSet(owner))->assignValues(*this));
 }
 
 PersistenceOperationMetricSet::PersistenceOperationMetricSet(const std::string& name, MetricSet* owner)
@@ -68,6 +68,11 @@ PersistenceOperationMetricSet::PersistenceOperationMetricSet(const std::string& 
       ok("ok", {{"logdefault"},{"yamasdefault"}}, vespalib::make_string("The number of successful %s operations performed", name.c_str()), this),
       failures(this)
 { }
+
+PersistenceOperationMetricSet::PersistenceOperationMetricSet(const std::string& name)
+    : PersistenceOperationMetricSet(name, nullptr)
+{
+}
 
 PersistenceOperationMetricSet::~PersistenceOperationMetricSet() = default;
 
@@ -78,9 +83,8 @@ PersistenceOperationMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyTyp
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return (PersistenceOperationMetricSet*)
-            (new PersistenceOperationMetricSet(getName(), owner))
-                ->assignValues(*this);
+    return dynamic_cast<PersistenceOperationMetricSet*>(
+            (new PersistenceOperationMetricSet(getName(), owner))->assignValues(*this));
 }
 
 void

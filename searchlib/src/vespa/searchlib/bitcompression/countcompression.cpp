@@ -2,6 +2,7 @@
 
 #include "countcompression.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
+#include <cassert>
 
 namespace search::bitcompression {
 

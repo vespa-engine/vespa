@@ -3,6 +3,7 @@
 #pragma once
 
 #include "btreerootbase.h"
+#include <cassert>
 
 namespace vespalib::btree {
 

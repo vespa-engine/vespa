@@ -43,11 +43,7 @@ public class IndexedSearchCluster extends SearchCluster
         DispatchNodesConfig.Producer,
         ConfigInstance.Producer {
 
-    private String indexingClusterName = null; // The name of the docproc cluster to run indexing, by config.
-    private String indexingChainName = null;
-
-    private DocprocChain indexingChain; // The actual docproc chain indexing for this.
-
+    private IndexingDocproc indexingDocproc;
     private Tuning tuning;
     private SearchCoverage searchCoverage;
 
@@ -77,6 +73,7 @@ public class IndexedSearchCluster extends SearchCluster
 
     public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName, int index, ModelContext.FeatureFlags featureFlags) {
         super(parent, clusterName, index);
+        indexingDocproc = new IndexingDocproc();
         documentDbsConfigProducer = new MultipleDocumentDatabasesConfigProducer(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
         defaultDispatchPolicy = DispatchTuning.Builder.toDispatchPolicy(featureFlags.queryDispatchPolicy());
@@ -87,58 +84,7 @@ public class IndexedSearchCluster extends SearchCluster
     @Override
     protected IndexingMode getIndexingMode() { return IndexingMode.REALTIME; }
 
-    public final boolean hasExplicitIndexingCluster() {
-        return indexingClusterName != null;
-    }
-
-    public final boolean hasExplicitIndexingChain() {
-        return indexingChainName != null;
-    }
-
-    /**
-     * Returns the name of the docproc cluster running indexing for this search cluster. This is derived from the
-     * services file on initialization, this can NOT be used at runtime to determine indexing chain. When initialization
-     * is done, the {@link #getIndexingServiceName()} method holds the actual indexing docproc chain object.
-     *
-     * @return the name of the docproc cluster associated with this
-     */
-    public String getIndexingClusterName() {
-        return hasExplicitIndexingCluster() ? indexingClusterName : getClusterName() + ".indexing";
-    }
-
-    public String getIndexingChainName() {
-        return indexingChainName;
-    }
-
-    public void setIndexingChainName(String indexingChainName) {
-        this.indexingChainName = indexingChainName;
-    }
-
-    /**
-     * Sets the name of the docproc cluster running indexing for this search cluster. This is for initial configuration,
-     * and will not reflect the actual indexing chain. See {@link #getIndexingClusterName} for more detail.
-     *
-     * @param name the name of the docproc cluster associated with this
-     */
-    public void setIndexingClusterName(String name) {
-        indexingClusterName = name;
-    }
-
-    public String getIndexingServiceName() {
-        return indexingChain.getServiceName();
-    }
-
-    /**
-     * Sets the docproc chain that will be running indexing for this search cluster. This is set by the
-     * {@link com.yahoo.vespa.model.content.Content} model during build.
-     *
-     * @param chain the chain that is to run indexing for this cluster
-     * @return this, to allow chaining
-     */
-    public SearchCluster setIndexingChain(DocprocChain chain) {
-        indexingChain = chain;
-        return this;
-    }
+    public IndexingDocproc getIndexingDocproc() { return indexingDocproc; }
 
     public DispatchGroup getRootDispatch() { return rootDispatch; }
 

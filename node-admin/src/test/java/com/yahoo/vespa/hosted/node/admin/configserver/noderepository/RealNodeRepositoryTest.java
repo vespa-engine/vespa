@@ -211,7 +211,7 @@ public class RealNodeRepositoryTest {
         assertEquals(1, cfgPeers.size());
 
         assertWireguardPeer(cfgPeers.get(0), "cfg1.yahoo.com",
-                            "::201:1", "127.0.201.1",
+                            "::201:1",
                             "lololololololololololololololololololololoo=");
 
         //// Exclave nodes ////
@@ -222,15 +222,14 @@ public class RealNodeRepositoryTest {
         assertEquals(1, exclavePeers.size());
 
         assertWireguardPeer(exclavePeers.get(0), "dockerhost2.yahoo.com",
-                            "::101:1", "127.0.101.1",
+                            "::101:1",
                             "000011112222333344445555666677778888999900c=");
     }
 
-    private void assertWireguardPeer(WireguardPeer peer, String hostname, String ipv6, String ipv4, String publicKey) {
+    private void assertWireguardPeer(WireguardPeer peer, String hostname, String ipv6, String publicKey) {
         assertEquals(hostname, peer.hostname().value());
-        assertEquals(2, peer.ipAddresses().size());
+        assertEquals(1, peer.ipAddresses().size());
         assertIp(peer.ipAddresses().get(0), ipv6, 6);
-        assertIp(peer.ipAddresses().get(1), ipv4, 4);
         assertEquals(publicKey, peer.publicKey().value());
     }
 

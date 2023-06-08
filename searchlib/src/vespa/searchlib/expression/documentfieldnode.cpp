@@ -6,6 +6,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/locale/c.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.documentfieldnode");

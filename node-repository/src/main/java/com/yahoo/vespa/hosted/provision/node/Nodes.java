@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
@@ -97,8 +98,24 @@ public class Nodes {
      * @param inState the states to return nodes from. If no states are given, all nodes are returned
      */
     public NodeList list(Node.State... inState) {
-        NodeList nodes = NodeList.copyOf(db.readNodes());
-        return inState.length == 0 ? nodes : nodes.state(Set.of(inState));
+        NodeList allNodes = NodeList.copyOf(db.readNodes());
+        NodeList nodes = inState.length == 0 ? allNodes : allNodes.state(Set.of(inState));
+        nodes = NodeList.copyOf(nodes.stream().map(node -> specifyFully(node, allNodes)).toList());
+        return nodes;
+    }
+
+    // Repair underspecified node resources. TODO: Remove this after June 2023
+    private Node specifyFully(Node node, NodeList allNodes) {
+        if (node.resources().isUnspecified()) return node;
+
+        if (node.resources().bandwidthGbpsIsUnspecified())
+            node = node.with(new Flavor(node.resources().withBandwidthGbps(0.3)), Agent.system, clock.instant());
+        if ( node.resources().architecture() == NodeResources.Architecture.any) {
+            Optional<Node> parent = allNodes.parentOf(node);
+            if (parent.isPresent())
+                node = node.with(new Flavor(node.resources().with(parent.get().resources().architecture())), Agent.system, clock.instant());
+        }
+        return node;
     }
 
     /** Returns a locked list of all nodes in this repository */
@@ -167,7 +184,8 @@ public class Nodes {
                     if (rebuilding) {
                         node = node.with(node.status().withWantToRetire(existing.get().status().wantToRetire(),
                                                                         false,
-                                                                        rebuilding));
+                                                                        rebuilding,
+                                                                        existing.get().status().wantToUpgradeFlavor()));
                     }
                     nodesToRemove.add(existing.get());
                 }
@@ -190,7 +208,7 @@ public class Nodes {
         if (node.status().wantToDeprovision() || node.status().wantToRebuild())
             return park(node.hostname(), false, agent, reason);
 
-        node = node.withWantToRetire(false, false, false, agent, clock.instant());
+        node = node.withWantToRetire(false, false, false, false, agent, clock.instant());
         return db.writeTo(Node.State.ready, node, agent, Optional.of(reason));
     }
 
@@ -502,11 +520,7 @@ public class Nodes {
                 db.removeNodes(removed, transaction);
             } else {
                 removed = removeChildren(node, force, transaction);
-                if (zone.cloud().dynamicProvisioning()) {
-                    db.removeNodes(List.of(node), transaction);
-                } else {
-                    move(node.hostname(), Node.State.deprovisioned, Agent.system, false, Optional.empty(), transaction);
-                }
+                move(node.hostname(), Node.State.deprovisioned, Agent.system, false, Optional.empty(), transaction);
                 removed.add(node);
             }
             transaction.commit();
@@ -638,6 +652,11 @@ public class Nodes {
         return decommission(hostname, soft ? HostOperation.softRebuild : HostOperation.rebuild, agent, instant);
     }
 
+    /** Upgrade flavor for given host */
+    public List<Node> upgradeFlavor(String hostname, Agent agent, Instant instant, boolean upgrade) {
+        return decommission(hostname, upgrade ? HostOperation.upgradeFlavor : HostOperation.cancel, agent, instant);
+    }
+
     private List<Node> decommission(String hostname, HostOperation op, Agent agent, Instant instant) {
         Optional<NodeMutex> nodeMutex = lockAndGet(hostname);
         if (nodeMutex.isEmpty()) return List.of();
@@ -645,20 +664,20 @@ public class Nodes {
         boolean wantToDeprovision = op == HostOperation.deprovision;
         boolean wantToRebuild = op == HostOperation.rebuild || op == HostOperation.softRebuild;
         boolean wantToRetire = op.needsRetirement();
+        boolean wantToUpgradeFlavor = op == HostOperation.upgradeFlavor;
         Node host = nodeMutex.get().node();
         try (NodeMutex lock = nodeMutex.get()) {
             if ( ! host.type().isHost()) throw new IllegalArgumentException("Cannot " + op + " non-host " + host);
             try (Mutex allocationLock = lockUnallocated()) {
                 // Modify parent with wantToRetire while holding the allocationLock to prevent
                 // any further allocation of nodes on this host
-                Node newHost = lock.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, agent, instant);
+                Node newHost = lock.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, wantToUpgradeFlavor, agent, instant);
                 result.add(write(newHost, lock));
             }
         }
-
-        if (wantToRetire) { // Apply recursively if we're retiring
+        if (wantToRetire || op == HostOperation.cancel) { // Apply recursively if we're retiring, or cancelling
             List<Node> updatedNodes = performOn(list().childrenOf(host), (node, nodeLock) -> {
-                Node newNode = node.withWantToRetire(wantToRetire, wantToDeprovision, false, agent, instant);
+                Node newNode = node.withWantToRetire(wantToRetire, wantToDeprovision, false, false, agent, instant);
                 return write(newNode, nodeLock);
             });
             result.addAll(updatedNodes);
@@ -755,7 +774,6 @@ public class Nodes {
         if ( ! host.type().canRun(NodeType.tenant)) return false;
         if (host.status().wantToRetire()) return false;
         if (host.allocation().map(alloc -> alloc.membership().retired()).orElse(false)) return false;
-        if (suspended(host)) return false;
 
         if (dynamicProvisioning)
             return EnumSet.of(Node.State.active, Node.State.ready, Node.State.provisioned).contains(host.state());
@@ -889,7 +907,13 @@ public class Nodes {
         rebuild(true),
 
         /** Host is stopped and re-bootstrapped, data is preserved */
-        softRebuild(false);
+        softRebuild(false),
+
+        /** Host flavor should be upgraded, data is destroyed */
+        upgradeFlavor(true),
+
+        /** Attempt to cancel any ongoing operations. If the current operation has progressed too far, cancelling won't have any effect */
+        cancel(false);
 
         private final boolean needsRetirement;
 

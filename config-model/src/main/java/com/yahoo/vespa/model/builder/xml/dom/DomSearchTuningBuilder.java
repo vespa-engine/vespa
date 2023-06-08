@@ -66,8 +66,20 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 handleFeeding(e, t.searchNode);
             } else if (equals("removed-db", e)) {
                 handleRemovedDB(e, t.searchNode);
+            } else if (equals("lidspace", e)) {
+                handleLidSpace(e, t.searchNode);
             }
         }
+    }
+
+    private void handleLidSpace(Element spec, Tuning.SearchNode t) {
+        t.lidSpace = new Tuning.SearchNode.LidSpace();
+        for (Element e : XML.getChildren(spec)) {
+            if (equals("max-bloat-factor", e)) {
+                t.lidSpace.bloatFactor = asDouble(e);
+            }
+        }
+
     }
 
     private void handleRequestThreads(Element spec, Tuning.SearchNode sn) {
@@ -180,9 +192,9 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 Tuning.SearchNode.Index.Warmup warmup = sn.index.warmup;
                 for (Element e2 : XML.getChildren(e)) {
                     if (equals("time", e2)) {
-                        warmup.time = Double.valueOf(asString(e2));
+                        warmup.time = asDouble(e2);
                     } else if (equals("unpack", e2)) {
-                        warmup.unpack = Boolean.valueOf(asString(e2));
+                        warmup.unpack = Boolean.parseBoolean(asString(e2));
                     }
                 }
             }

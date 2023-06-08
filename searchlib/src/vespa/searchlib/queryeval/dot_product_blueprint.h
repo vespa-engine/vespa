@@ -26,6 +26,7 @@ public:
     FieldSpec getNextChildField(const FieldSpec &outer);
 
     // used by create visitor
+    void reserve(size_t num_children);
     void addTerm(Blueprint::UP term, int32_t weight);
 
     SearchIteratorUP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;

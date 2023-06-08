@@ -27,7 +27,7 @@ public class ArchiveResponse extends SlimeJsonResponse {
             archiveObject.setString("uri", entry.getValue());
         });
         archiveUris.accountArchiveUris().entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
+                .sorted()
                 .forEach(entry -> {
             Cursor archiveObject = archivesArray.addObject();
             archiveObject.setString("account", entry.getKey().value());

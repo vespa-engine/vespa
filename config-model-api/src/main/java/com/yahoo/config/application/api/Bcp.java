@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -87,6 +88,19 @@ public class Bcp {
     public static Bcp empty() { return empty; }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Bcp bcp = (Bcp) o;
+        return defaultDeadline.equals(bcp.defaultDeadline) && groups.equals(bcp.groups);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(defaultDeadline, groups);
+    }
+
+    @Override
     public String toString() {
         if (isEmpty()) return "empty BCP";
         return "BCP of " +
@@ -115,6 +129,19 @@ public class Bcp {
          * when a region becomes unreachable, which by default is Duration.ZERO.
          */
         public Duration deadline() { return deadline; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Group group = (Group) o;
+            return members.equals(group.members) && memberRegions.equals(group.memberRegions) && deadline.equals(group.deadline);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(members, memberRegions, deadline);
+        }
 
         @Override
         public String toString() {

@@ -25,7 +25,7 @@ import java.util.jar.JarFile;
  */
 @Mojo(name = "assemble-container-plugin", requiresDependencyResolution = ResolutionScope.COMPILE, threadSafe = true)
 public class AssembleContainerPluginMojo extends AbstractAssembleBundleMojo {
-    private static enum Dependencies {
+    private enum Dependencies {
         WITH, WITHOUT
     }
 

@@ -4,7 +4,6 @@
 
 #include <vespa/searchlib/util/file_with_header.h>
 #include <vespa/searchlib/util/fileutil.h>
-#include <cassert>
 
 namespace search {
 
@@ -25,11 +24,7 @@ public:
         return (_idxFile.data_size()) /sizeof(uint32_t);
     }
 
-    size_t getEnumCount() const {
-        size_t dataSize = _datFile.data_size();
-        assert((dataSize % sizeof(uint32_t)) == 0);
-        return dataSize / sizeof(uint32_t);
-    }
+    size_t getEnumCount() const;
 
     size_t getNumValues();
     int32_t getNextWeight() { return _weightReader.readHostOrder(); }

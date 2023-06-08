@@ -1,5 +1,6 @@
 package ai.vespa.embedding.huggingface;
 
+import ai.vespa.embedding.PoolingStrategy;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
@@ -13,8 +14,6 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.file.Paths;
 import java.util.List;
@@ -23,20 +22,17 @@ import java.util.Map;
 @Beta
 public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HuggingFaceEmbedder.class.getName());
-
     private final String inputIdsName;
     private final String attentionMaskName;
     private final String tokenTypeIdsName;
     private final String outputName;
-    private final int maxTokens;
     private final boolean normalize;
     private final HuggingFaceTokenizer tokenizer;
     private final OnnxEvaluator evaluator;
+    private final PoolingStrategy poolingStrategy;
 
     @Inject
     public HuggingFaceEmbedder(OnnxRuntime onnx, HuggingFaceEmbedderConfig config) {
-        maxTokens = config.transformerMaxTokens();
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
         tokenTypeIdsName = config.transformerTokenTypeIds();
@@ -45,7 +41,10 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         tokenizer = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
                 .addDefaultModel(Paths.get(config.tokenizerPath().toString()))
+                .setTruncation(true)
+                .setMaxLength(config.transformerMaxTokens())
                 .build();
+        poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());
         var onnxOpts = new OnnxEvaluatorOptions();
         if (config.transformerGpuDevice() >= 0)
             onnxOpts.setGpuDevice(config.transformerGpuDevice());
@@ -74,16 +73,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public List<Integer> embed(String s, Context context) {
-        var tokenIds = tokenizer.embed(s, context);
-
-        int tokensSize = tokenIds.size();
-
-        if (tokensSize > maxTokens) {
-            Integer lastElement = tokenIds.get(tokensSize - 1);
-            tokenIds = tokenIds.subList(0, maxTokens - 1);
-            tokenIds.add(lastElement);
-        }
-        return tokenIds;
+        return tokenizer.embed(s, context);
     }
 
     @Override
@@ -97,11 +87,11 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         var encoding = tokenizer.encode(s, context.getLanguage());
         Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1");
         Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1");
-        Tensor tokenTypeIds = createTensorRepresentation(encoding.typeIds(), "d1");
+        Tensor tokenTypeIds = tokenTypeIdsName.isEmpty() ? null : createTensorRepresentation(encoding.typeIds(), "d1");
 
 
         Map<String, Tensor> inputs;
-        if (tokenTypeIds.isEmpty()) {
+        if (tokenTypeIdsName.isEmpty() || tokenTypeIds.isEmpty()) {
             inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
                             attentionMaskName, attentionMask.expand("d0"));
         } else {
@@ -156,9 +146,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         return builder.build();
     }
 
-    private Tensor createAttentionMask(Tensor inputSequence) {
-        return inputSequence.map((x) -> 1);
-    }
 
 }
 

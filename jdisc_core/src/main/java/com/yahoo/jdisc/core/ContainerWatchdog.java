@@ -160,8 +160,15 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
         record ThreadDetails(Thread thread, Bundle bundle) {}
         List<ThreadDetails> staleThreads = new ArrayList<>();
         for (Thread t : threads) {
+            // Find threads with context classloader from an uninstalled bundle
+            Bundle b = isClassloaderForUninstalledBundle(t.getContextClassLoader()).orElse(null);
+            if (b != null) {
+                staleThreads.add(new ThreadDetails(t, b));
+                continue;
+            }
+
             // Find threads which are sub-classes of java.lang.Thread from an uninstalled bundle
-            Bundle b = hasClassloaderForUninstalledBundle(t).orElse(null);
+            b = hasClassloaderForUninstalledBundle(t).orElse(null);
             if (b != null) {
                 staleThreads.add(new ThreadDetails(t, b));
                 continue;
@@ -201,8 +208,12 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
     }
 
     private static Optional<Bundle> hasClassloaderForUninstalledBundle(Object o) {
-        if (o.getClass().getClassLoader() instanceof BundleWiringImpl.BundleClassLoader cl) {
-            Bundle b = cl.getBundle();
+        return isClassloaderForUninstalledBundle(o.getClass().getClassLoader());
+    }
+
+    private static Optional<Bundle> isClassloaderForUninstalledBundle(ClassLoader cl) {
+        if (cl instanceof BundleWiringImpl.BundleClassLoader bcl) {
+            Bundle b = bcl.getBundle();
             if (b.getState() == Bundle.UNINSTALLED) return Optional.of(b);
         }
         return Optional.empty();

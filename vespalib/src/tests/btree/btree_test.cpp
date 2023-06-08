@@ -2,7 +2,6 @@
 
 #include <string>
 #include <vespa/vespalib/btree/btreeroot.h>
-#include <vespa/vespalib/btree/btreebuilder.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreestore.h>
@@ -295,6 +294,12 @@ BTreeTest::assertMemoryUsage(const vespalib::MemoryUsage & exp, const vespalib::
     }
     EXPECT_EQ(exp.allocatedBytesOnHold(), act.allocatedBytesOnHold()) << (result = false, "");
     return result;
+}
+
+TEST_F(BTreeTest, control_iterator_size) {
+    EXPECT_EQ(120u,  sizeof(BTreeIteratorBase<uint32_t, uint32_t, NoAggregated>));
+    EXPECT_EQ(120u,  sizeof(BTreeIteratorBase<uint32_t, BTreeNoLeafData, NoAggregated>));
+    EXPECT_EQ(288u, sizeof(MyTree::Iterator));
 }
 
 TEST_F(BTreeTest, require_that_node_insert_works)

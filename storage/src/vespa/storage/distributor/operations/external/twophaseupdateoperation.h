@@ -139,6 +139,7 @@ private:
 
     UpdateMetricSet&                    _updateMetric;
     PersistenceOperationMetricSet&      _putMetric;
+    PersistenceOperationMetricSet&      _put_condition_probe_metrics;
     PersistenceOperationMetricSet&      _getMetric;
     PersistenceOperationMetricSet&      _metadata_get_metrics;
     std::shared_ptr<api::UpdateCommand> _updateCmd;

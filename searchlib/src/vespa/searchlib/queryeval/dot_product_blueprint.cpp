@@ -25,6 +25,13 @@ DotProductBlueprint::getNextChildField(const FieldSpec &outer)
 }
 
 void
+DotProductBlueprint::reserve(size_t num_children) {
+    _weights.reserve(num_children);
+    _terms.reserve(num_children);
+    _layout.reserve(num_children);
+}
+
+void
 DotProductBlueprint::addTerm(Blueprint::UP term, int32_t weight)
 {
     HitEstimate childEst = term->getState().estimate();
@@ -41,8 +48,7 @@ DotProductBlueprint::addTerm(Blueprint::UP term, int32_t weight)
 }
 
 SearchIterator::UP
-DotProductBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                                      bool) const
+DotProductBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool) const
 {
     assert(tfmda.size() == 1);
     assert(getState().numFields() == 1);

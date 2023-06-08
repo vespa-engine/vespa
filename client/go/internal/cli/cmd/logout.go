@@ -14,11 +14,11 @@ func newLogoutCmd(cli *CLI) *cobra.Command {
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			targetType, err := cli.config.targetType()
+			targetType, err := cli.targetType()
 			if err != nil {
 				return err
 			}
-			system, err := cli.system(targetType)
+			system, err := cli.system(targetType.name)
 			if err != nil {
 				return err
 			}

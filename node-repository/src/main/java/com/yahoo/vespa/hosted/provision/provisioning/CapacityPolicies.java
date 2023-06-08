@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -89,21 +90,23 @@ public class CapacityPolicies {
     }
 
     public NodeResources specifyFully(NodeResources resources, ClusterSpec clusterSpec, ApplicationId applicationId) {
-        if (resources.vcpuIsUnspecified())
-            resources = resources.withVcpu(defaultResources(clusterSpec, applicationId).vcpu());
-        if (resources.memoryGbIsUnspecified())
-            resources = resources.withMemoryGb(defaultResources(clusterSpec, applicationId).memoryGb());
-        if (resources.diskGbIsUnspecified())
-            resources = resources.withDiskGb(defaultResources(clusterSpec, applicationId).diskGb());
-        return resources;
+        return resources.withUnspecifiedNumbersFrom(defaultResources(clusterSpec, applicationId));
     }
 
     private NodeResources defaultResources(ClusterSpec clusterSpec, ApplicationId applicationId) {
         if (clusterSpec.type() == ClusterSpec.Type.admin) {
             Architecture architecture = adminClusterArchitecture(applicationId);
 
+            if (nodeRepository.exclusiveAllocation(clusterSpec)) {
+                return versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()));
+            }
+
             if (clusterSpec.id().value().equals("cluster-controllers")) {
                 return clusterControllerResources(clusterSpec, architecture).with(architecture);
+            }
+
+            if (clusterSpec.id().value().equals("logserver")) {
+                return logserverResources(architecture).with(architecture);
             }
 
             return (nodeRepository.exclusiveAllocation(clusterSpec)
@@ -112,10 +115,13 @@ public class CapacityPolicies {
                     .with(architecture);
         }
 
+        if (zone.environment() == Environment.dev && zone.system() == SystemName.cd) {
+            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 4, 50, 0.3)));
+        }
+
         if (clusterSpec.type() == ClusterSpec.Type.content) {
             return zone.cloud().dynamicProvisioning()
-                   ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2.0, 8, 50, 0.3),
-                                                   new Version(8, 75), new NodeResources(2, 16, 300, 0.3)))
+                   ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2, 16, 300, 0.3)))
                    : versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3)));
         }
         else {
@@ -126,15 +132,25 @@ public class CapacityPolicies {
     }
 
     private NodeResources clusterControllerResources(ClusterSpec clusterSpec, Architecture architecture) {
-        if (nodeRepository.exclusiveAllocation(clusterSpec)) {
-            return versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()));
-        }
-
         // 1.32 fits floor(8/1.32) = 6 cluster controllers on each 8Gb host, and each will have
         // 1.32-(0.7+0.6)*(1.32/8) = 1.1 Gb real memory given current taxes.
-        return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
-                                             new Version(8, 127, 11), new NodeResources(0.25, 1.5, 10, 0.3),
-                                             new Version(8, 129,  4), new NodeResources(0.25, 1.32, 10, 0.3)));
+        if (architecture == Architecture.x86_64)
+            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
+                                                 new Version(8, 129, 4), new NodeResources(0.25, 1.32, 10, 0.3)));
+        else
+            // arm64 nodes need more memory
+            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.50, 10, 0.3),
+                                                 new Version(8, 129, 4), new NodeResources(0.25, 1.32, 10, 0.3),
+                                                 new Version(8, 173, 5), new NodeResources(0.25, 1.50, 10, 0.3)));
+    }
+
+    private NodeResources logserverResources(Architecture architecture) {
+        if (zone.cloud().name().equals(CloudName.GCP))
+            return new NodeResources(1, 4, 50, 0.3);
+
+        return architecture == Architecture.arm64
+                ? new NodeResources(0.5, 2.5, 50, 0.3)
+                : new NodeResources(0.5, 2, 50, 0.3);
     }
 
     private Architecture adminClusterArchitecture(ApplicationId instance) {
@@ -148,14 +164,14 @@ public class CapacityPolicies {
                 .getValue();
     }
 
-    // The lowest amount resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
+    // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
     private NodeResources smallestExclusiveResources() {
         return (zone.cloud().name().equals(CloudName.GCP))
                 ? new NodeResources(1, 4, 50, 0.3)
                 : new NodeResources(0.5, 4, 50, 0.3);
     }
 
-    // The lowest amount resources that can be shared (i.e. a matching host flavor for this exists)
+    // The lowest amount of resources that can be shared (i.e. a matching host flavor for this exists)
     private NodeResources smallestSharedResources() {
         return (zone.cloud().name().equals(CloudName.GCP))
                 ? new NodeResources(1, 4, 50, 0.3)

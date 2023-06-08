@@ -26,6 +26,7 @@ public class ContainerModelEvaluation implements
         OnnxModelsConfig.Producer,
         RankingExpressionsConfig.Producer {
 
+    public final static String LINGUISTICS_BUNDLE_NAME = "linguistics-components";
     public final static String EVALUATION_BUNDLE_NAME = "model-evaluation";
     public final static String INTEGRATION_BUNDLE_NAME = "model-integration";
     public final static String ONNXRUNTIME_BUNDLE_NAME = "container-onnxruntime.jar";

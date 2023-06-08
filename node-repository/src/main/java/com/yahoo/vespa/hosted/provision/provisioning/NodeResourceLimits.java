@@ -27,13 +27,11 @@ public class NodeResourceLimits {
 
     /** Validates the resources applications ask for (which are in "advertised" resource space) */
     public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ApplicationId applicationId, ClusterSpec cluster) {
-        if (requested.isUnspecified()) return;
-
-        if (requested.vcpu() < minAdvertisedVcpu(applicationId, cluster))
+        if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(applicationId, cluster))
             illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(applicationId, cluster));
-        if (requested.memoryGb() < minAdvertisedMemoryGb(cluster))
+        if (! requested.memoryGbIsUnspecified() && requested.memoryGb() < minAdvertisedMemoryGb(cluster))
             illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster));
-        if (requested.diskGb() < minAdvertisedDiskGb(requested, cluster.isExclusive()))
+        if (! requested.diskGbIsUnspecified() && requested.diskGb() < minAdvertisedDiskGb(requested, cluster.isExclusive()))
             illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, cluster.isExclusive()));
     }
 

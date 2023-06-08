@@ -16,7 +16,7 @@ func TestStatusDeployCommand(t *testing.T) {
 }
 
 func TestStatusDeployCommandWithURLTarget(t *testing.T) {
-	assertDeployStatus("http://mydeploytarget:19071", []string{"-t", "http://mydeploytarget"}, t)
+	assertDeployStatus("http://mydeploytarget:19071", []string{"-t", "http://mydeploytarget:19071"}, t)
 }
 
 func TestStatusDeployCommandWithLocalTarget(t *testing.T) {
@@ -28,7 +28,7 @@ func TestStatusQueryCommand(t *testing.T) {
 }
 
 func TestStatusQueryCommandWithUrlTarget(t *testing.T) {
-	assertQueryStatus("http://mycontainertarget:8080", []string{"-t", "http://mycontainertarget"}, t)
+	assertQueryStatus("http://mycontainertarget:8080", []string{"-t", "http://mycontainertarget:8080"}, t)
 }
 
 func TestStatusQueryCommandWithLocalTarget(t *testing.T) {

@@ -25,6 +25,7 @@ import com.yahoo.config.application.api.TimeWindow;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -94,6 +95,7 @@ public class DeploymentSpecXmlReader {
     private static final String majorVersionAttribute = "major-version";
     private static final String globalServiceIdAttribute = "global-service-id";
     private static final String cloudAccountAttribute = "cloud-account";
+    private static final String hostTTLAttribute = "empty-host-ttl";
 
     private final boolean validate;
     private final Clock clock;
@@ -164,7 +166,8 @@ public class DeploymentSpecXmlReader {
                                   optionalIntegerAttribute(majorVersionAttribute, root),
                                   stringAttribute(athenzDomainAttribute, root).map(AthenzDomain::from),
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
-                                  stringAttribute(cloudAccountAttribute, root).map(CloudAccount::from),
+                                  readCloudAccounts(root),
+                                  stringAttribute(hostTTLAttribute, root).map(s -> toDuration(s, "empty host TTL")),
                                   applicationEndpoints,
                                   xmlForm,
                                   deprecatedElements);
@@ -203,7 +206,8 @@ public class DeploymentSpecXmlReader {
         int maxIdleHours = getWithFallback(instanceElement, parentTag, upgradeTag, "max-idle-hours", Integer::parseInt, 8);
         List<DeploymentSpec.ChangeBlocker> changeBlockers = readChangeBlockers(instanceElement, parentTag);
         Optional<AthenzService> athenzService = mostSpecificAttribute(instanceElement, athenzServiceAttribute).map(AthenzService::from);
-        Optional<CloudAccount> cloudAccount = mostSpecificAttribute(instanceElement, cloudAccountAttribute).map(CloudAccount::from);
+        Map<CloudName, CloudAccount> cloudAccounts = readCloudAccounts(instanceElement);
+        Optional<Duration> hostTTL = mostSpecificAttribute(instanceElement, hostTTLAttribute).map(s -> toDuration(s, "empty host TTL"));
         Notifications notifications = readNotifications(instanceElement, parentTag);
 
         // Values where there is no default
@@ -232,7 +236,8 @@ public class DeploymentSpecXmlReader {
                                                              changeBlockers,
                                                              Optional.ofNullable(prodAttributes.get(globalServiceIdAttribute)),
                                                              athenzService,
-                                                             cloudAccount,
+                                                             cloudAccounts,
+                                                             hostTTL,
                                                              notifications,
                                                              endpoints,
                                                              zoneEndpoints,
@@ -258,6 +263,7 @@ public class DeploymentSpecXmlReader {
     }
 
     // Consume the given tag as 0-N steps. 0 if it is not a step, >1 if it contains multiple nested steps that should be flattened
+    @SuppressWarnings("fallthrough")
     private List<Step> readNonInstanceSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag, Bcp defaultBcp) {
         Optional<AthenzService> athenzService = mostSpecificAttribute(stepTag, athenzServiceAttribute).map(AthenzService::from);
         Optional<String> testerFlavor = mostSpecificAttribute(stepTag, testerFlavorAttribute);
@@ -272,12 +278,10 @@ public class DeploymentSpecXmlReader {
             case testTag:
                 if (Stream.iterate(stepTag, Objects::nonNull, Node::getParentNode)
                           .anyMatch(node -> prodTag.equals(node.getNodeName()))) {
-                    // A production test
-                    return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim())));
+                    return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()), readHostTTL(stepTag))); // A production test
                 }
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccount(stepTag)));
-            case devTag, perfTag, stagingTag:
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccount(stepTag)));
+            case devTag, perfTag, stagingTag: // Intentional fallthrough from test tag.
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccounts(stepTag), readHostTTL(stepTag)));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag, defaultBcp).stream())
@@ -667,8 +671,13 @@ public class DeploymentSpecXmlReader {
 
     /** Returns the given non-blank attribute of tag as a string, if any */
     private static Optional<String> stringAttribute(String attributeName, Element tag) {
+        return stringAttribute(attributeName, tag, true);
+    }
+
+    /** Returns the given non-blank attribute of tag as a string, if any */
+    private static Optional<String> stringAttribute(String attributeName, Element tag, boolean ignoreBlanks) {
         String value = tag.getAttribute(attributeName);
-        return Optional.of(value).filter(s -> !s.isBlank());
+        return Optional.of(value).filter(s -> (tag.getAttributeNode(attributeName) != null && ! ignoreBlanks || ! s.isBlank()));
     }
 
     /** Returns the given non-blank attribute of tag or throw */
@@ -682,11 +691,27 @@ public class DeploymentSpecXmlReader {
                                           Optional<String> testerFlavor, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
                                 readActive(regionTag), athenzService, testerFlavor,
-                                readCloudAccount(regionTag));
+                                readCloudAccounts(regionTag), readHostTTL(regionTag));
     }
 
-    private Optional<CloudAccount> readCloudAccount(Element tag) {
-        return mostSpecificAttribute(tag, cloudAccountAttribute).map(CloudAccount::from);
+    private Map<CloudName, CloudAccount> readCloudAccounts(Element tag) {
+        return mostSpecificAttribute(tag, cloudAccountAttribute, false)
+                .map(value -> {
+                    Map<CloudName, CloudAccount> accounts = new HashMap<>();
+                    for (String part : value.split(",")) {
+                        CloudAccount account = CloudAccount.from(part);
+                        accounts.merge(account.cloudName(), account, (o, n) -> {
+                            throw illegal("both '" + o.account() + "' and '" + n.account() + "' " +
+                                          "are declared for cloud '" + o.cloudName() + "', in '" + value + "'");
+                        });
+                    }
+                    return accounts;
+                })
+                .orElse(Map.of());
+    }
+
+    private Optional<Duration> readHostTTL(Element tag) {
+        return mostSpecificAttribute(tag, hostTTLAttribute).map(s -> toDuration(s, "empty host TTL"));
     }
 
     private Optional<String> readGlobalServiceId(Element environmentTag) {
@@ -795,17 +820,22 @@ public class DeploymentSpecXmlReader {
     }
 
     /** Returns the given attribute from the given tag or its closest ancestor with the attribute. */
-    private static Optional<String> mostSpecificAttribute(Element tag, String attributeName) {
+    private static Optional<String> mostSpecificAttribute(Element tag, String attributeName, boolean ignoreBlanks) {
         return Stream.iterate(tag, Objects::nonNull, Node::getParentNode)
                      .filter(Element.class::isInstance)
                      .map(Element.class::cast)
-                     .flatMap(element -> stringAttribute(attributeName, element).stream())
+                     .flatMap(element -> stringAttribute(attributeName, element, ignoreBlanks).stream())
                      .findFirst();
     }
 
+    /** Returns the given attribute from the given tag or its closest ancestor with the attribute. */
+    private static Optional<String> mostSpecificAttribute(Element tag, String attributeName) {
+        return mostSpecificAttribute(tag, attributeName, true);
+    }
+
     /**
-     * Returns a string consisting of a number followed by "m" or "h" to a duration given in that unit,
-     * or zero duration if null of blank.
+     * Returns a string consisting of a number followed by "m", "h" or "d" to a duration given in that unit,
+     * or zero duration if null or blank.
      */
     private static Duration toDuration(String durationSpec, String sourceDescription) {
         try {
@@ -844,7 +874,7 @@ public class DeploymentSpecXmlReader {
         }
     }
 
-    private static void illegal(String message) {
+    private static IllegalArgumentException illegal(String message) {
         throw new IllegalArgumentException(message);
     }
 

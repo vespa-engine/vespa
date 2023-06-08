@@ -5,7 +5,7 @@
 
 namespace vespalib {
 
-GenerationHandler::GenerationHold::GenerationHold(void)
+GenerationHandler::GenerationHold::GenerationHold() noexcept
     : _refCount(1),
       _generation(0),
       _next(0)
@@ -16,13 +16,13 @@ GenerationHandler::GenerationHold::~GenerationHold() {
 }
 
 void
-GenerationHandler::GenerationHold::setValid() {
+GenerationHandler::GenerationHold::setValid() noexcept {
     assert(!valid(_refCount));
     _refCount.fetch_sub(1);
 }
 
 bool
-GenerationHandler::GenerationHold::setInvalid() {
+GenerationHandler::GenerationHold::setInvalid() noexcept {
     uint32_t refs = _refCount;
     assert(valid(refs));
     if (refs != 0) {
@@ -31,13 +31,8 @@ GenerationHandler::GenerationHold::setInvalid() {
     return _refCount.compare_exchange_strong(refs, 1, std::memory_order_seq_cst);
 }
 
-void
-GenerationHandler::GenerationHold::release() {
-    _refCount.fetch_sub(2);
-}
-
 GenerationHandler::GenerationHold *
-GenerationHandler::GenerationHold::acquire() {
+GenerationHandler::GenerationHold::acquire() noexcept {
     if (valid(_refCount.fetch_add(2))) {
         return this;
     } else {
@@ -47,7 +42,7 @@ GenerationHandler::GenerationHold::acquire() {
 }
 
 GenerationHandler::GenerationHold *
-GenerationHandler::GenerationHold::copy(GenerationHold *self) {
+GenerationHandler::GenerationHold::copy(GenerationHold *self) noexcept {
     if (self == nullptr) {
         return nullptr;
     } else {
@@ -58,39 +53,8 @@ GenerationHandler::GenerationHold::copy(GenerationHold *self) {
     }
 }
 
-uint32_t
-GenerationHandler::GenerationHold::getRefCount() const {
-    return _refCount / 2;
-}
-
-GenerationHandler::Guard::Guard()
-    : _hold(nullptr)
-{
-}
-
-GenerationHandler::Guard::Guard(GenerationHold *hold)
-    : _hold(hold->acquire())
-{
-}
-
-GenerationHandler::Guard::~Guard()
-{
-    cleanup();
-}
-
-GenerationHandler::Guard::Guard(const Guard & rhs)
-    : _hold(GenerationHold::copy(rhs._hold))
-{
-}
-
-GenerationHandler::Guard::Guard(Guard &&rhs)
-    : _hold(rhs._hold)
-{
-    rhs._hold = nullptr;
-}
-
 GenerationHandler::Guard &
-GenerationHandler::Guard::operator=(const Guard & rhs)
+GenerationHandler::Guard::operator=(const Guard & rhs) noexcept
 {
     if (&rhs != this) {
         cleanup();
@@ -100,7 +64,7 @@ GenerationHandler::Guard::operator=(const Guard & rhs)
 }
 
 GenerationHandler::Guard &
-GenerationHandler::Guard::operator=(Guard &&rhs)
+GenerationHandler::Guard::operator=(Guard &&rhs) noexcept
 {
     if (&rhs != this) {
         cleanup();

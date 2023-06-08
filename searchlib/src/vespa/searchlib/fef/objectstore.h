@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <cassert>
 
 namespace search::fef {
 
@@ -66,7 +65,6 @@ const T &
 as_value(const Anything &val) {
     using WrapperType = AnyWrapper<T>;
     const auto *wrapper = dynamic_cast<const WrapperType *>(&val);
-    assert(wrapper != nullptr);
     return wrapper->getValue();
 }
 

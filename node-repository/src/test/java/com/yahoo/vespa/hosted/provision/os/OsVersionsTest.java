@@ -622,7 +622,7 @@ public class OsVersionsTest {
             Optional<Version> wantedOsVersion = node.status().osVersion().wanted();
             assertFalse(node + " is not retiring", node.status().wantToRetire());
             assertTrue(node + " is rebuilding", node.status().wantToRebuild());
-            node = node.withWantToRetire(false, false, false, Agent.system,
+            node = node.withWantToRetire(false, false, false, false, Agent.system,
                                          tester.clock().instant());
             return node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(wantedOsVersion)));
         });

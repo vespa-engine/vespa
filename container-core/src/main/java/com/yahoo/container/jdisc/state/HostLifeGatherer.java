@@ -4,6 +4,7 @@ package com.yahoo.container.jdisc.state;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.yahoo.component.Vtag;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -41,6 +42,9 @@ public class HostLifeGatherer {
         metrics.put("uptime", upTime);
         metrics.put("alive", 1);
         jsonObject.set("metrics", metrics);
+        ObjectNode dimensions = jsonMapper.createObjectNode();
+        dimensions.put("vespaVersion", Vtag.currentVersion.toFullString());
+        jsonObject.set("dimensions", dimensions);
         return jsonObject;
     }
 

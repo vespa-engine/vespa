@@ -313,6 +313,23 @@ void FieldSearchSpecMap::buildSearcherMap(const StringFieldIdTMapT & fieldsInQue
     std::sort(fieldSearcherMap.begin(), fieldSearcherMap.end(), lesserField);
 }
 
+search::attribute::DistanceMetric
+FieldSearchSpecMap::get_distance_metric(const vespalib::string& name) const
+{
+    auto dm = search::attribute::DistanceMetric::Euclidean;
+    auto fid = _nameIdMap.fieldNo(name);
+    if (fid == vsm::StringFieldIdTMap::npos) {
+        return dm;
+    }
+    auto itr = _specMap.find(fid);
+    if (itr == _specMap.end()) {
+        return dm;
+    }
+    if (!itr->second.uses_nearest_neighbor_search_method()) {
+        return dm;
+    }
+    return vsm::NearestNeighborFieldSearcher::distance_metric_from_string(itr->second.get_arg1());
+}
 
 vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpecMap & df)
 {

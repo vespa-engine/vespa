@@ -1,6 +1,6 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-namespace=language.huggingface
+namespace=language.huggingface.config
 
 # The language a model is for, one of the language tags in com.yahoo.language.Language.
 # Use "unknown" for models to be used with any language.
@@ -9,3 +9,5 @@ model[].language string
 model[].path model
 
 addSpecialTokens bool default=true
+maxLength int default=-1
+truncation bool default=false

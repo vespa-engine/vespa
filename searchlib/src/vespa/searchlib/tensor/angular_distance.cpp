@@ -2,6 +2,7 @@
 
 #include "angular_distance.h"
 #include "temporary_vector_store.h"
+#include <numbers>
 
 using vespalib::typify_invoke;
 using vespalib::eval::TypifyCellType;
@@ -72,6 +73,12 @@ public:
         return distance;
     }
     double convert_threshold(double threshold) const override {
+        if (threshold < 0.0) {
+            return 0.0;
+        }
+        if (threshold > std::numbers::pi) {
+            return 2.0;
+        }
         double cosine_similarity = cos(threshold);
         return 1.0 - cosine_similarity;
     }

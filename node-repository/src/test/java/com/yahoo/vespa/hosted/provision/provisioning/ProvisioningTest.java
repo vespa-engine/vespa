@@ -86,7 +86,7 @@ public class ProvisioningTest {
 
         // deploy another application
         SystemState state1App2 = prepare(application2, 2, 2, 3, 3, defaultResources, tester);
-        assertFalse("Hosts to different apps are disjunct", state1App2.allHosts.removeAll(state1.allHosts));
+        assertFalse("Hosts to different apps are disjoint", state1App2.allHosts.removeAll(state1.allHosts));
         tester.activate(application2, state1App2.allHosts);
 
         // prepare twice
@@ -525,14 +525,14 @@ public class ProvisioningTest {
         tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 20),
                                                       resources(6, 3, 3, 15, 25)));
         tester.assertNodes("Allocation preserving resources within new limits",
-                           6, 2, 3, 8.0/4*21 / (6.0/2), 25,
+                           6, 2, 3, 14.57, 25,
                            app1, cluster1);
 
         // Widening window does not change allocation
         tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 1, 5, 15),
                                                       resources(8, 4, 4, 21, 30)));
         tester.assertNodes("Same allocation",
-                           6, 2, 3, 8.0/4*21 / (6.0/2), 25,
+                           6, 2, 3, 14.57, 25,
                            app1, cluster1);
 
         // Changing limits in opposite directions cause a mixture of min and max
@@ -679,6 +679,22 @@ public class ProvisioningTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
         tester.prepare(application, cluster, Capacity.from(new ClusterResources(5, 1, NodeResources.unspecified()), false, false));
         // No exception; Success
+    }
+
+    @Test
+    public void non_matching_resources_but_cannot_fail() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        tester.makeReadyHosts(4, defaultResources).activateTenantHosts();
+        ApplicationId application = ProvisioningTester.applicationId();
+        var cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
+        var hosts1 = tester.prepare(application, cluster, Capacity.from(new ClusterResources(4, 1, defaultResources), false, true));
+        tester.activate(application, hosts1);
+
+        var nonMatchingResources = defaultResources.withVcpu(defaultResources.vcpu() * 2);
+        var hosts2 = tester.prepare(application, cluster, Capacity.from(new ClusterResources(4, 1, nonMatchingResources), false, false));
+        assertEquals(hosts1, hosts2);
+        for (var host : hosts2)
+            assertFalse(host.membership().get().retired());
     }
 
     @Test

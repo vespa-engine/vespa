@@ -3,28 +3,27 @@ package com.yahoo.container.plugin.classanalysis;
 
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Base;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.ClassAnnotation;
-import com.yahoo.container.plugin.classanalysis.sampleclasses.InvisibleAnnotation;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Derived;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.DummyAnnotation;
-import com.yahoo.container.plugin.classanalysis.sampleclasses.InvisibleDummyAnnotation;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Fields;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Interface1;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Interface2;
-import com.yahoo.container.plugin.classanalysis.sampleclasses.RecordWithOverride;
-import com.yahoo.container.plugin.classanalysis.sampleclasses.SwitchStatement;
+import com.yahoo.container.plugin.classanalysis.sampleclasses.InvisibleAnnotation;
+import com.yahoo.container.plugin.classanalysis.sampleclasses.InvisibleDummyAnnotation;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.MethodAnnotation;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.MethodInvocation;
+import com.yahoo.container.plugin.classanalysis.sampleclasses.RecordWithOverride;
+import com.yahoo.container.plugin.classanalysis.sampleclasses.SwitchStatement;
 import com.yahoo.osgi.annotation.ExportPackage;
 import com.yahoo.osgi.annotation.Version;
 import org.junit.jupiter.api.Test;
 
 import javax.security.auth.login.LoginException;
-import java.awt.Image;
+import java.awt.*;
 import java.awt.image.ImagingOpException;
 import java.awt.image.Kernel;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.analyzeClass;
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.classFile;
@@ -133,7 +132,12 @@ public class AnalyzeClassTest {
     @Test
     void export_annotations_are_processed() {
         assertEquals(Optional.of(new ExportPackageAnnotation(3, 1, 4, "TEST_QUALIFIER-2")),
-                Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.package-info")).getExportPackage());
+                     Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.package-info")).getExportPackage());
+    }
+
+    @Test
+    void publicApi_annotations_are_processed() {
+        assertTrue(Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.package-info")).isPublicApi());
     }
 
     @Test

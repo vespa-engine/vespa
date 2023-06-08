@@ -60,7 +60,7 @@ public:
     unsigned int *getLevels(const char *name);
     void ensureComponent(const char *pattern);
 
-    static unsigned int *defaultLevels();
+    static unsigned int *defaultLevels() __attribute__((noinline));
 
     // make sure in-memory changes are synchronized to disk
     void flush();

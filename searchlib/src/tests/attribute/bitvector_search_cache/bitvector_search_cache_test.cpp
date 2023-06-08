@@ -9,8 +9,9 @@ using namespace search::attribute;
 
 using BitVectorSP = BitVectorSearchCache::BitVectorSP;
 using Entry = BitVectorSearchCache::Entry;
+using EntrySP = std::shared_ptr<Entry>;
 
-Entry::SP
+EntrySP
 makeEntry()
 {
     return std::make_shared<Entry>(IDocumentMetaStoreContext::IReadGuard::SP(), BitVector::create(5), 10);
@@ -18,8 +19,8 @@ makeEntry()
 
 struct Fixture {
     BitVectorSearchCache cache;
-    Entry::SP entry1;
-    Entry::SP entry2;
+    EntrySP entry1;
+    EntrySP entry2;
     Fixture()
         : cache(),
           entry1(makeEntry()),

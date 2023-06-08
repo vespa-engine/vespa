@@ -23,11 +23,11 @@ type Throttler interface {
 type dynamicThrottler struct {
 	minInflight    int64
 	maxInflight    int64
-	targetInflight int64
-	targetTimesTen int64
+	targetInflight atomic.Int64
+	targetTimesTen atomic.Int64
 
 	throughputs []float64
-	ok          int64
+	ok          atomic.Int64
 	sent        int64
 
 	start time.Time
@@ -39,23 +39,24 @@ func newThrottler(connections int, nowFunc func() time.Time) *dynamicThrottler {
 		minInflight = 16 * int64(connections)
 		maxInflight = 256 * minInflight // 4096 max streams per connection on the server side
 	)
-	return &dynamicThrottler{
-		minInflight:    minInflight,
-		maxInflight:    maxInflight,
-		targetInflight: 8 * minInflight,
-		targetTimesTen: 10 * maxInflight,
+	t := &dynamicThrottler{
+		minInflight: minInflight,
+		maxInflight: maxInflight,
 
 		throughputs: make([]float64, 128),
 
 		start: nowFunc(),
 		now:   nowFunc,
 	}
+	t.targetInflight.Store(8 * minInflight)
+	t.targetTimesTen.Store(10 * maxInflight)
+	return t
 }
 
 func NewThrottler(connections int) Throttler { return newThrottler(connections, time.Now) }
 
 func (t *dynamicThrottler) Sent() {
-	currentInflight := atomic.LoadInt64(&t.targetInflight)
+	currentInflight := t.targetInflight.Load()
 	t.sent++
 	if t.sent*t.sent*t.sent < 100*currentInflight*currentInflight {
 		return
@@ -64,7 +65,7 @@ func (t *dynamicThrottler) Sent() {
 	now := t.now()
 	elapsed := now.Sub(t.start)
 	t.start = now
-	currentThroughput := float64(atomic.SwapInt64(&t.ok, 0)) / float64(elapsed)
+	currentThroughput := float64(t.ok.Swap(0)) / float64(elapsed)
 
 	// Use buckets for throughput over inflight, along the log-scale, in [minInflight, maxInflight).
 	index := int(float64(len(t.throughputs)) * math.Log(max(1, min(255, float64(currentInflight)/float64(t.minInflight)))) / math.Log(256))
@@ -85,20 +86,20 @@ func (t *dynamicThrottler) Sent() {
 		}
 	}
 	target := int64((rand.Float64()*0.20 + 0.92) * choice) // Random walk, skewed towards increase
-	atomic.StoreInt64(&t.targetInflight, max(t.minInflight, min(t.maxInflight, target)))
+	t.targetInflight.Store(max(t.minInflight, min(t.maxInflight, target)))
 }
 
 func (t *dynamicThrottler) Success() {
-	atomic.AddInt64(&t.targetTimesTen, 1)
-	atomic.AddInt64(&t.ok, 1)
+	t.targetTimesTen.Add(1)
+	t.ok.Add(1)
 }
 
 func (t *dynamicThrottler) Throttled(inflight int64) {
-	atomic.StoreInt64(&t.targetTimesTen, max(inflight*5, t.minInflight*10))
+	t.targetTimesTen.Store(max(inflight*5, t.minInflight*10))
 }
 
 func (t *dynamicThrottler) TargetInflight() int64 {
-	staticTargetInflight := min(t.maxInflight, atomic.LoadInt64(&t.targetTimesTen)/10)
-	targetInflight := atomic.LoadInt64(&t.targetInflight)
+	staticTargetInflight := min(t.maxInflight, t.targetTimesTen.Load()/10)
+	targetInflight := t.targetInflight.Load()
 	return min(staticTargetInflight, targetInflight)
 }

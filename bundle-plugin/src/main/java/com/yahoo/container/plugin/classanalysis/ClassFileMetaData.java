@@ -14,12 +14,12 @@ public class ClassFileMetaData {
 
     private final String name;
     private final Set<String> referencedClasses;
-    private final Optional<ExportPackageAnnotation> exportPackage;
+    private final PackageInfo packageInfo;
 
-    public ClassFileMetaData(String name, Set<String> referencedClasses, Optional<ExportPackageAnnotation> exportPackage) {
+    public ClassFileMetaData(String name, Set<String> referencedClasses, PackageInfo packageInfo) {
         this.name = name;
         this.referencedClasses = referencedClasses;
-        this.exportPackage = exportPackage;
+        this.packageInfo = packageInfo;
     }
 
     public String getName() {
@@ -30,8 +30,16 @@ public class ClassFileMetaData {
         return referencedClasses;
     }
 
+    public PackageInfo packageInfo() {
+        return packageInfo;
+    }
+
     public Optional<ExportPackageAnnotation> getExportPackage() {
-        return exportPackage;
+        return packageInfo.exportPackage();
+    }
+
+    public boolean isPublicApi() {
+        return packageInfo.isPublicApi();
     }
 
 }

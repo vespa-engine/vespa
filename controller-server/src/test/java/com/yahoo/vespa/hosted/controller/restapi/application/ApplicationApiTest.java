@@ -1461,6 +1461,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .userIdentity(unauthorizedUser),
                 accessDenied,
                 403);
+
     }
 
     @Test
@@ -1624,7 +1625,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region(zone.region().value())
                 .build();
         app.submit(applicationPackage).deploy();
-        app.addInactiveRoutingPolicy(zone);
 
         // GET application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
@@ -1775,6 +1775,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         {"error-code":"BAD_REQUEST","message":"Application does not exist. Create application in Console first."}""", 400);
 
         assertFalse(tester.controller().applications().getApplication(appId).isPresent());
+    }
+
+    @Test
+    void only_build_job_can_submit() {
+        createTenantAndApplication();
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit/", POST)
+                                      .data(createApplicationSubmissionData(applicationPackageDefault, SCREWDRIVER_ID.value()))
+                                      .userIdentity(USER_ID),
+                              accessDenied,
+                              403);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit/", POST)
+                                      .data(createApplicationSubmissionData(applicationPackageDefault, SCREWDRIVER_ID.value()))
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
+                              "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}",
+                              200);
     }
 
     private static String serializeInstant(Instant i) {

@@ -73,7 +73,8 @@ public:
                                             operation_context(),
                                             getDistributorBucketSpace(),
                                             msg,
-                                            metrics().puts);
+                                            metrics().puts,
+                                            metrics().put_condition_probes);
         op->start(_sender);
     }
 

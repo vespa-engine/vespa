@@ -4,25 +4,20 @@
 
 #include "isearchcontext.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <memory>
 
 namespace proton::matching {
 
 class MatchContext {
     using IAttributeContext = search::attribute::IAttributeContext;
-    IAttributeContext::UP _attrCtx;
-    ISearchContext::UP    _searchCtx;
-
+    std::unique_ptr<IAttributeContext> _attrCtx;
+    std::unique_ptr<ISearchContext>    _searchCtx;
 public:
     using UP = std::unique_ptr<MatchContext>;
 
-    MatchContext(IAttributeContext::UP attrCtx, ISearchContext::UP searchCtx)
-        : _attrCtx(std::move(attrCtx)),
-          _searchCtx(std::move(searchCtx))
-    {
-        assert(_attrCtx);
-        assert(_searchCtx);
-    }
+    MatchContext() noexcept;
+    MatchContext(IAttributeContext::UP attrCtx, std::unique_ptr<ISearchContext> searchCtx) noexcept;
+    MatchContext(MatchContext &&) noexcept = default;
+    ~MatchContext();
 
     IAttributeContext &getAttributeContext() const { return *_attrCtx; }
     ISearchContext &getSearchContext() const { return *_searchCtx; }

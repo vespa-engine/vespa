@@ -20,11 +20,15 @@ struct HashState {
     const void       *self;
     clock::time_point now;
     uint64_t          key_hash;
-    HashState(const void *key, size_t key_len)
-        : self(this),
-          now(clock::now()),
-          key_hash(XXH64(key, key_len, 0)) {}
+    HashState(const void *key, size_t key_len) __attribute__((noinline));
 };
+
+HashState::HashState(const void *key, size_t key_len)
+    : self(this),
+      now(clock::now()),
+      key_hash(XXH64(key, key_len, 0))
+{
+}
 
 VESPA_THREAD_STACK_TAG(fnet_work_pool);
 

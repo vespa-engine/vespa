@@ -326,14 +326,15 @@ public class NodeSerializerTest {
     }
 
     @Test
-    public void want_to_rebuild() {
+    public void want_to_rebuild_and_upgrade_flavor() {
         Node node = nodeSerializer.fromJson(nodeSerializer.toJson(createNode()));
         assertFalse(node.status().wantToRebuild());
-        node = node.with(node.status().withWantToRetire(true, false, true));
+        node = node.with(node.status().withWantToRetire(true, false, true, true));
         node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertTrue(node.status().wantToRetire());
         assertFalse(node.status().wantToDeprovision());
         assertTrue(node.status().wantToRebuild());
+        assertTrue(node.status().wantToUpgradeFlavor());
     }
 
     @Test
@@ -476,13 +477,19 @@ public class NodeSerializerTest {
                 nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
         Node node = nodeSerializer.fromJson(nodeSerializer.toJson(builder.build()));
         assertFalse(node.exclusiveToApplicationId().isPresent());
+        assertFalse(node.hostTTL().isPresent());
         assertFalse(node.exclusiveToClusterType().isPresent());
 
         ApplicationId exclusiveToApp = ApplicationId.from("tenant1", "app1", "instance1");
         ClusterSpec.Type exclusiveToCluster = ClusterSpec.Type.admin;
-        node = builder.exclusiveToApplicationId(exclusiveToApp).exclusiveToClusterType(exclusiveToCluster).build();
+        node = builder.exclusiveToApplicationId(exclusiveToApp)
+                      .hostTTL(Duration.ofDays(1))
+                      .hostEmptyAt(clock.instant().minus(Duration.ofDays(1)).truncatedTo(MILLIS))
+                      .exclusiveToClusterType(exclusiveToCluster).build();
         node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertEquals(exclusiveToApp, node.exclusiveToApplicationId().get());
+        assertEquals(Duration.ofDays(1), node.hostTTL().get());
+        assertEquals(clock.instant().minus(Duration.ofDays(1)).truncatedTo(MILLIS), node.hostEmptyAt().get());
         assertEquals(exclusiveToCluster, node.exclusiveToClusterType().get());
     }
 

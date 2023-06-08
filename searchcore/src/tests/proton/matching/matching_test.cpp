@@ -394,10 +394,9 @@ struct MyWorld {
 
     SearchReply::UP performSearch(const SearchRequest & req, size_t threads) {
         Matcher::SP matcher = createMatcher();
-        SearchSession::OwnershipBundle owned_objects;
-        owned_objects.search_handler = std::make_shared<MySearchHandler>(matcher);
-        owned_objects.context = std::make_unique<MatchContext>(std::make_unique<MockAttributeContext>(),
-                                                               std::make_unique<FakeSearchContext>());
+        SearchSession::OwnershipBundle owned_objects({std::make_unique<MockAttributeContext>(),
+                                                      std::make_unique<FakeSearchContext>()},
+                                                     std::make_shared<MySearchHandler>(matcher));
         vespalib::SimpleThreadBundle threadBundle(threads);
         SearchReply::UP reply = matcher->match(req, threadBundle, searchContext, attributeContext,
                                                *sessionManager, metaStore, metaStore.getBucketDB(),

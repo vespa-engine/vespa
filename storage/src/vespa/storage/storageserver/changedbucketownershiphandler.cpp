@@ -28,6 +28,7 @@ ChangedBucketOwnershipHandler::ChangedBucketOwnershipHandler(
       _component(compReg, "changedbucketownershiphandler"),
       _metrics(),
       _configFetcher(std::make_unique<config::ConfigFetcher>(configUri.getContext())),
+      _state_sync_executor(1), // single thread for sequential task execution
       _stateLock(),
       _currentState(), // Not set yet, so ownership will not be valid
       _currentOwnership(std::make_shared<OwnershipState>(
@@ -98,7 +99,7 @@ ChangedBucketOwnershipHandler::Metrics::Metrics(metrics::MetricSet* owner)
       idealStateOpsAborted("ideal_state_ops_aborted", {}, "Number of outdated ideal state operations aborted", this),
       externalLoadOpsAborted("external_load_ops_aborted", {}, "Number of outdated external load operations aborted", this)
 {}
-ChangedBucketOwnershipHandler::Metrics::~Metrics() { }
+ChangedBucketOwnershipHandler::Metrics::~Metrics() = default;
 
 ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(const ContentBucketSpaceRepo &contentBucketSpaceRepo,
                                                               std::shared_ptr<const lib::ClusterStateBundle> state)
@@ -114,7 +115,7 @@ ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(const ContentBucke
 }
 
 
-ChangedBucketOwnershipHandler::OwnershipState::~OwnershipState() {}
+ChangedBucketOwnershipHandler::OwnershipState::~OwnershipState() = default;
 
 
 const lib::ClusterState&
@@ -235,18 +236,79 @@ ChangedBucketOwnershipHandler::makeLazyAbortPredicate(
                                             _component.getIndex()));
 }
 
-/*
- * If we go from:
- * 1) Not all down -> all distributors down
- *      - abort ops for _all_ buckets
- * 2) All distributors down -> not down
- *      - no-op, since down edge must have been handled first
- * 3) All down -> all down
- *      - no-op
- * 4) Some nodes down or up
- *      - abort ops for buckets that have changed ownership between
- *        current and new cluster state.
- */
+class ChangedBucketOwnershipHandler::ClusterStateSyncAndApplyTask
+    : public vespalib::Executor::Task
+{
+    ChangedBucketOwnershipHandler& _owner;
+    std::shared_ptr<api::SetSystemStateCommand> _command;
+public:
+    ClusterStateSyncAndApplyTask(ChangedBucketOwnershipHandler& owner,
+                                 std::shared_ptr<api::SetSystemStateCommand> command) noexcept
+        : _owner(owner),
+          _command(std::move(command))
+    {}
+
+    /*
+     * If we go from:
+     * 1) Not all down -> all distributors down
+     *      - abort ops for _all_ buckets
+     * 2) All distributors down -> not down
+     *      - no-op, since down edge must have been handled first
+     * 3) All down -> all down
+     *      - no-op
+     * 4) Some nodes down or up
+     *      - abort ops for buckets that have changed ownership between
+     *        current and new cluster state.
+     */
+    void run() override {
+        OwnershipState::CSP old_ownership;
+        OwnershipState::CSP new_ownership;
+        // Update the ownership state inspected by all bucket-mutating operations passing through
+        // this component so that messages from outdated distributors will be rejected. Note that
+        // this is best-effort; with our current multitude of RPC threads directly dispatching
+        // operations into the persistence provider, it's possible for a thread carrying an outdated
+        // operation to have already passed the barrier, but be preempted so that it will apply the
+        // op _after_ the abort step has completed.
+        {
+            std::lock_guard guard(_owner._stateLock);
+            old_ownership = _owner._currentOwnership;
+            _owner.setCurrentOwnershipWithStateNoLock(_command->getClusterStateBundle());
+            new_ownership = _owner._currentOwnership;
+        }
+        assert(new_ownership->valid());
+        // If we're going from not having a state to having a state, we per
+        // definition cannot possibly have gotten any load that needs aborting,
+        // as no such load is allowed through this component when this is the
+        // case.
+        if (!old_ownership->valid()) {
+            return _owner.sendDown(_command);
+        }
+
+        if (allDistributorsDownInState(old_ownership->getBaselineState())) {
+            LOG(debug, "No need to send aborts on transition '%s' -> '%s'",
+                old_ownership->getBaselineState().toString().c_str(),
+                new_ownership->getBaselineState().toString().c_str());
+            return _owner.sendDown(_command);;
+        }
+        _owner.logTransition(old_ownership->getBaselineState(), new_ownership->getBaselineState());
+
+        metrics::MetricTimer duration_timer;
+        auto predicate = _owner.makeLazyAbortPredicate(old_ownership, new_ownership);
+        auto abort_cmd = std::make_shared<AbortBucketOperationsCommand>(std::move(predicate));
+
+        // Will not return until all operation aborts have been performed
+        // on the lower level links, at which point it is safe to send down
+        // the SetSystemStateCommand.
+        _owner.sendDown(abort_cmd);
+        duration_timer.stop(_owner._metrics.averageAbortProcessingTime);
+
+        // Conflicting operations have been aborted and incoming conflicting operations
+        // are aborted inline; send down the state command actually making the state change
+        // visible on the content node.
+        _owner.sendDown(_command);
+    }
+};
+
 bool
 ChangedBucketOwnershipHandler::onSetSystemState(
         const std::shared_ptr<api::SetSystemStateCommand>& stateCmd)
@@ -255,47 +317,13 @@ ChangedBucketOwnershipHandler::onSetSystemState(
         LOG(debug, "Operation aborting is config-disabled");
         return false; // Early out.
     }
-    OwnershipState::CSP oldOwnership;
-    OwnershipState::CSP newOwnership;
-    // Get old state and update own current cluster state _before_ it is
-    // applied to the rest of the system. This helps ensure that no message
-    // can get through in the off-case that the lower level storage links
-    // don't apply the state immediately for some reason.
-    {
-        std::lock_guard guard(_stateLock);
-        oldOwnership = _currentOwnership;
-        setCurrentOwnershipWithStateNoLock(stateCmd->getClusterStateBundle());
-        newOwnership = _currentOwnership;
-    }
-    assert(newOwnership->valid());
-    // If we're going from not having a state to having a state, we per
-    // definition cannot possibly have gotten any load that needs aborting,
-    // as no such load is allowed through this component when this is the
-    // case.
-    if (!oldOwnership->valid()) {
-        return false;
-    }
-
-    if (allDistributorsDownInState(oldOwnership->getBaselineState())) {
-        LOG(debug, "No need to send aborts on transition '%s' -> '%s'",
-            oldOwnership->getBaselineState().toString().c_str(),
-            newOwnership->getBaselineState().toString().c_str());
-        return false;
-    }
-    logTransition(oldOwnership->getBaselineState(), newOwnership->getBaselineState());
-
-    metrics::MetricTimer durationTimer;
-    auto predicate(makeLazyAbortPredicate(oldOwnership, newOwnership));
-    AbortBucketOperationsCommand::SP cmd(
-            new AbortBucketOperationsCommand(std::move(predicate)));
-
-    // Will not return until all operation aborts have been performed
-    // on the lower level links, at which point it is safe to send down
-    // the SetSystemStateCommand.
-    sendDown(cmd);
-
-    durationTimer.stop(_metrics.averageAbortProcessingTime);
-    return false;
+    // Dispatch to background worker. This indirection is because operations such as lid-space compaction
+    // may cause the implicit operation abort waiting step to block the caller for a relatively long time.
+    // It is very important that the executor only has 1 thread, which means this has FIFO behavior.
+    [[maybe_unused]] auto rejected_task = _state_sync_executor.execute(std::make_unique<ClusterStateSyncAndApplyTask>(*this, stateCmd));
+    // If this fails, we have processed a message _after_ onClose has been called, which should not happen.
+    assert(!rejected_task);
+    return true;
 }
 
 /**
@@ -411,8 +439,7 @@ ChangedBucketOwnershipHandler::onDown(
         const std::shared_ptr<api::StorageMessage>& msg)
 {
     if (msg->getType() == api::MessageType::SETSYSTEMSTATE) {
-        return onSetSystemState(
-                std::static_pointer_cast<api::SetSystemStateCommand>(msg));
+        return onSetSystemState(std::static_pointer_cast<api::SetSystemStateCommand>(msg));
     }
     if (!isMutatingCommandAndNeedsChecking(*msg)) {
         return false;
@@ -449,6 +476,12 @@ ChangedBucketOwnershipHandler::onInternalReply(
 {
     // Just swallow reply, we don't do anything with it.
     return (reply->getType() == AbortBucketOperationsReply::ID);
+}
+
+void
+ChangedBucketOwnershipHandler::onClose()
+{
+    _state_sync_executor.shutdown().sync();
 }
 
 }

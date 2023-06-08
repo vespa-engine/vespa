@@ -23,9 +23,9 @@ public class TokenTypeTestCase {
     }
 
     @Test
-    public void requireThatOnlyAlphaNumericsAreIndexable() {
+    public void testIsIndexable() {
         for (TokenType type : TokenType.values()) {
-            if (type == TokenType.ALPHABETIC || type == TokenType.NUMERIC) {
+            if (type == TokenType.ALPHABETIC || type == TokenType.NUMERIC || type == TokenType.INDEXABLE_SYMBOL) {
                 assertTrue(type.isIndexable());
             } else {
                 assertFalse(type.isIndexable());

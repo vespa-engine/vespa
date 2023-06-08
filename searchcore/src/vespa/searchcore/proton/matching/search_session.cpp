@@ -18,12 +18,20 @@ SearchSession::SearchSession(const SessionId &id, vespalib::steady_time create_t
 
 void
 SearchSession::releaseEnumGuards() {
-    _owned_objects.context->releaseEnumGuards();
+    _owned_objects.context.releaseEnumGuards();
 }
 
 SearchSession::~SearchSession() = default;
 
-SearchSession::OwnershipBundle::OwnershipBundle() = default;
+SearchSession::OwnershipBundle::OwnershipBundle(MatchContext && match_context,
+                                                std::shared_ptr<const ISearchHandler> searchHandler) noexcept
+    : search_handler(std::move(searchHandler)),
+      context(std::move(match_context)),
+      feature_overrides(),
+      readGuard()
+{}
+
+SearchSession::OwnershipBundle::OwnershipBundle() noexcept = default;
 SearchSession::OwnershipBundle::~OwnershipBundle() = default;
 
 }

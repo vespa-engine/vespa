@@ -3,8 +3,8 @@
 #pragma once
 
 #include "countcompression.h"
-#include <limits>
 #include <vespa/vespalib/stllike/string.h>
+#include <cassert>
 
 namespace search::bitcompression {
 

@@ -99,23 +99,29 @@ public class GroupPreparer {
                 Version osVersion = nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
                 NodeAllocation.HostDeficit deficit = allocation.hostDeficit().get();
                 List<Node> hosts = new ArrayList<>();
-                Consumer<List<ProvisionedHost>> provisionedHostsConsumer = provisionedHosts -> {
-                    hosts.addAll(provisionedHosts.stream().map(ProvisionedHost::generateHost).toList());
+                Consumer<List<ProvisionedHost>> whenProvisioned = provisionedHosts -> {
+                    hosts.addAll(provisionedHosts.stream().map(host -> host.generateHost(requestedNodes.hostTTL())).toList());
                     nodeRepository.nodes().addNodes(hosts, Agent.application);
 
                     // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
                     List<NodeCandidate> candidates = provisionedHosts.stream()
                             .map(host -> NodeCandidate.createNewExclusiveChild(host.generateNode(),
-                                                                               host.generateHost()))
+                                                                               host.generateHost(requestedNodes.hostTTL())))
                             .toList();
                     allocation.offer(candidates);
                 };
-
                 try {
-                    hostProvisioner.get().provisionHosts(
-                            allocation.provisionIndices(deficit.count()), hostType, deficit.resources(), application,
-                            osVersion, sharing, Optional.of(cluster.type()), Optional.of(cluster.id()), requestedNodes.cloudAccount(),
-                            provisionedHostsConsumer);
+                    HostProvisionRequest request = new HostProvisionRequest(allocation.provisionIndices(deficit.count()),
+                                                                            hostType,
+                                                                            deficit.resources(),
+                                                                            application,
+                                                                            osVersion,
+                                                                            sharing,
+                                                                            Optional.of(cluster.type()),
+                                                                            Optional.of(cluster.id()),
+                                                                            requestedNodes.cloudAccount(),
+                                                                            deficit.dueToFlavorUpgrade());
+                    hostProvisioner.get().provisionHosts(request, whenProvisioned);
                 } catch (NodeAllocationException e) {
                     // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do
                     // not exist, we cannot remove them from ZK here because other nodes may already have been

@@ -112,7 +112,6 @@ public class MetricsManagerTest {
     }
 
     private void assertGlobalDimensions(Map<DimensionId, String> dimensions) {
-        assertTrue(dimensions.containsKey(VESPA_VERSION));
         assertEquals("value", dimensions.get(toDimensionId("global")));
         assertEquals("metric-dim", dimensions.get(toDimensionId("dim0")));
     }

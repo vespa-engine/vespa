@@ -3,12 +3,10 @@ package com.yahoo.vespa.clustercontroller.core.rpc;
 
 import com.yahoo.jrt.Acceptor;
 import com.yahoo.jrt.ErrorCode;
-import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
-import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
@@ -24,9 +22,9 @@ import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.MasterElectionHandler;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -122,19 +120,7 @@ public class RpcServer {
     }
 
     public void addMethods() {
-        Method m = new Method("getMaster", "", "is", this::queueRpcRequest);
-        m.methodDesc("Get index of current fleetcontroller master");
-        m.returnDesc(0, "masterindex", "The index of the current master according to this node, or -1 if there is none.");
-        m.returnDesc(1, "description", "A textual field, used for additional information, such as why there is no master.");
-        supervisor.addMethod(m);
-
-        m = new Method("getNodeList", "", "SS", this::queueRpcRequest);
-        m.methodDesc("Get list of connection-specs to all nodes in the system");
-        m.returnDesc(0, "distributors", "connection-spec of all distributor-nodes (empty string for unknown nodes)");
-        m.returnDesc(1, "storagenodes", "connection-spec of all storage-nodes, (empty string for unknown nodes)");
-        supervisor.addMethod(m);
-
-        m = new Method("getSystemState", "", "ss", this::queueRpcRequest);
+        Method m = new Method("getSystemState", "", "ss", this::queueRpcRequest);
         m.methodDesc("Get nodeState of all nodes and the system itself");
         m.returnDesc(0, "systemstate", "nodeState string of system");
         m.returnDesc(1, "nodestate", "nodeState-string for distributor and storage-nodes");
@@ -182,33 +168,10 @@ public class RpcServer {
                 handledAnyRequests = true;
             }
             try{
-                if (req.methodName().equals("getMaster")) {
-                    log.log(Level.FINE, "Resolving RPC getMaster request");
-                    Integer master = masterHandler.getMaster();
-                    String masterReason = masterHandler.getMasterReason();
-                    req.returnValues().add(new Int32Value(master == null ? -1 : master));
-                    req.returnValues().add(new StringValue(masterReason == null ? "No reason given" : masterReason));
-                    req.returnRequest();
-                    continue;
-                }
                 if (!masterHandler.isMaster()) {
                     throw new IllegalStateException("Refusing to answer RPC calls as we are not the master fleetcontroller.");
                 }
-                if (req.methodName().equals("getNodeList")) {
-                    log.log(Level.FINE, "Resolving RPC getNodeList request");
-                    List<String> slobrok = new ArrayList<>();
-                    List<String> rpc = new ArrayList<>();
-                    for(NodeInfo node : cluster.getNodeInfos()) {
-                        String s1 = node.getSlobrokAddress();
-                        String s2 = node.getRpcAddress();
-                        assert(s1 != null);
-                        slobrok.add(s1);
-                        rpc.add(s2 == null ? "" : s2);
-                    }
-                    req.returnValues().add(new StringArray(slobrok.toArray(new String[0])));
-                    req.returnValues().add(new StringArray(rpc.toArray(new String[0])));
-                    req.returnRequest();
-                } else if (req.methodName().equals("getSystemState")) {
+                if (req.methodName().equals("getSystemState")) {
                     log.log(Level.FINE, "Resolving RPC getSystemState request");
                     req.returnValues().add(new StringValue(""));
                     req.returnValues().add(new StringValue(systemState.toString(true)));

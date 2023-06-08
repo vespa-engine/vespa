@@ -3,51 +3,45 @@
 #include "bitvector_search_cache.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <mutex>
 
 namespace search::attribute {
 
-using BitVectorSP = BitVectorSearchCache::BitVectorSP;
-
 BitVectorSearchCache::BitVectorSearchCache()
     : _mutex(),
+      _size(0),
       _cache()
-{
-}
+{}
 
-BitVectorSearchCache::~BitVectorSearchCache()
-{
-}
+BitVectorSearchCache::~BitVectorSearchCache() = default;
 
 void
-BitVectorSearchCache::insert(const vespalib::string &term, Entry::SP entry)
+BitVectorSearchCache::insert(const vespalib::string &term, std::shared_ptr<Entry> entry)
 {
-    LockGuard guard(_mutex);
+    std::unique_lock guard(_mutex);
     _cache.insert(std::make_pair(term, std::move(entry)));
+    _size.store(_cache.size());
 }
 
-BitVectorSearchCache::Entry::SP
+std::shared_ptr<BitVectorSearchCache::Entry>
 BitVectorSearchCache::find(const vespalib::string &term) const
 {
-    LockGuard guard(_mutex);
-    auto itr = _cache.find(term);
-    if (itr != _cache.end()) {
-        return itr->second;
+    if (size() > 0ul) {
+        std::shared_lock guard(_mutex);
+        auto itr = _cache.find(term);
+        if (itr != _cache.end()) {
+            return itr->second;
+        }
     }
-    return Entry::SP();
-}
-
-size_t
-BitVectorSearchCache::size() const
-{
-    LockGuard guard(_mutex);
-    return _cache.size();
+    return {};
 }
 
 void
 BitVectorSearchCache::clear()
 {
-    LockGuard guard(_mutex);
+    std::unique_lock guard(_mutex);
     _cache.clear();
+    _size.store(0ul, std::memory_order_relaxed);
 }
 
 }

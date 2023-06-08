@@ -24,7 +24,6 @@ public class FleetControllerOptions {
     private final String clusterName;
     private final int fleetControllerIndex;
     private final int fleetControllerCount;
-    private final int stateGatherCount;
 
     private final String[] slobrokConnectionSpecs;
     private final int rpcPort;
@@ -132,7 +131,6 @@ public class FleetControllerOptions {
     private FleetControllerOptions(String clusterName,
                                    int fleetControllerIndex,
                                    int fleetControllerCount,
-                                   int stateGatherCount,
                                    String[] slobrokConnectionSpecs,
                                    int rpcPort,
                                    int httpPort,
@@ -174,14 +172,13 @@ public class FleetControllerOptions {
         this.clusterName = clusterName;
         this.fleetControllerIndex = fleetControllerIndex;
         this.fleetControllerCount = fleetControllerCount;
-        this.stateGatherCount = stateGatherCount;
         this.slobrokConnectionSpecs = slobrokConnectionSpecs;
         this.rpcPort = rpcPort;
         this.httpPort = httpPort;
         this.distributionBits = distributionBits;
         this.zooKeeperSessionTimeout = zooKeeperSessionTimeout;
         this.masterZooKeeperCooldownPeriod = masterZooKeeperCooldownPeriod;
-        this.zooKeeperServerAddress = zooKeeperServerAddress;
+        this.zooKeeperServerAddress = Objects.requireNonNull(zooKeeperServerAddress, "zooKeeperServerAddress cannot be null");
         this.maxTransitionTime = maxTransitionTime;
         this.maxInitProgressTime = maxInitProgressTime;
         this.maxPrematureCrashes = maxPrematureCrashes;
@@ -233,10 +230,6 @@ public class FleetControllerOptions {
 
     public int fleetControllerCount() {
         return fleetControllerCount;
-    }
-
-    public int stateGatherCount() {
-        return stateGatherCount;
     }
 
     public String[] slobrokConnectionSpecs() {
@@ -394,7 +387,6 @@ public class FleetControllerOptions {
         private String clusterName;
         private int index = 0;
         private int count = 1;
-        private int stateGatherCount = 2;
         private String[] slobrokConnectionSpecs;
         private int rpcPort = 0;
         private int httpPort = 0;
@@ -461,11 +453,6 @@ public class FleetControllerOptions {
 
         public Builder setCount(int count) {
             this.count = count;
-            return this;
-        }
-
-        public Builder setStateGatherCount(int stateGatherCount) {
-            this.stateGatherCount = stateGatherCount;
             return this;
         }
 
@@ -694,7 +681,6 @@ public class FleetControllerOptions {
             return new FleetControllerOptions(clusterName,
                                               index,
                                               count,
-                                              stateGatherCount,
                                               slobrokConnectionSpecs,
                                               rpcPort,
                                               httpPort,
@@ -740,7 +726,6 @@ public class FleetControllerOptions {
             builder.clusterName = options.clusterName;
             builder.index = options.fleetControllerIndex;
             builder.count = options.fleetControllerCount;
-            builder.stateGatherCount = options.stateGatherCount;
             builder.slobrokConnectionSpecs = options.slobrokConnectionSpecs;
             builder.rpcPort = options.rpcPort;
             builder.httpPort = options.httpPort;

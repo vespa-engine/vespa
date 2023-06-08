@@ -4,8 +4,8 @@ package com.yahoo.vespa.config.server.application;
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.model.api.ApplicationClusterInfo;
 import com.yahoo.config.model.api.HostInfo;
@@ -103,7 +103,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                         .filter(serviceInfo -> shouldCheckService(hostsToCheck, application, serviceInfo))
                                         .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 
-        log.log(Level.FINE, "Services to check for config convergence: " + servicesToCheck);
+        log.log(Level.FINE, () -> "Services to check for config convergence: " + servicesToCheck);
         return getServiceGenerations(servicesToCheck, timeoutPerService);
     }
 

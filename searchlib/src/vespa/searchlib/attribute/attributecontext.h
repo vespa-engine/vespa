@@ -21,12 +21,13 @@ private:
     using IAttributeFunctor = attribute::IAttributeFunctor;
 
     const IAttributeManager & _manager;
-    mutable AttributeMap              _attributes;
-    mutable AttributeMap              _enumAttributes;
-    mutable std::mutex                _cacheLock;
+    bool                      _mtSafe;
+    mutable AttributeMap      _attributes;
+    mutable AttributeMap      _enumAttributes;
+    mutable std::mutex        _cacheLock;
 
     const IAttributeVector *getAttribute(AttributeMap & map, const string & name, bool stableEnum) const;
-
+    const IAttributeVector *getAttributeMtSafe(AttributeMap & map, const string & name, bool stableEnum) const;
 public:
     AttributeContext(const IAttributeManager & manager);
     ~AttributeContext() override;
@@ -37,6 +38,7 @@ public:
     const attribute::IAttributeVector * getAttributeStableEnum(const string & name) const override;
     void getAttributeList(std::vector<const IAttributeVector *> & list) const override;
     void releaseEnumGuards() override;
+    void enableMultiThreadSafe() override { _mtSafe = true; }
 
     // Give acces to the underlying manager
     const IAttributeManager & getManager() const { return _manager; }

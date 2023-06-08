@@ -46,15 +46,6 @@ public class EventLogTest {
     }
 
     @Test
-    void testNullMetricReporter() {
-        initialize(null);
-
-        eventLog.addNodeOnlyEvent(nodeEvent, Level.INFO);
-
-        verifyNoMoreInteractions(metricUpdater);
-    }
-
-    @Test
     void testNoEventsDoNotThrowException() {
         initialize(metricUpdater);
         StringBuilder builder = new StringBuilder();

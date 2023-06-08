@@ -25,11 +25,10 @@ public class ContentCluster {
     private final String clusterName;
     private final ClusterInfo clusterInfo = new ClusterInfo();
     private final Map<Node, Long> nodeStartTimestamps = new TreeMap<>();
+    private final int maxNumberOfGroupsAllowedToBeDown;
 
     private int slobrokGenerationCount = 0;
     private Distribution distribution;
-
-    private final int maxNumberOfGroupsAllowedToBeDown;
 
     public ContentCluster(String clusterName, Collection<ConfiguredNode> configuredNodes, Distribution distribution) {
         this(clusterName, configuredNodes, distribution, -1);
@@ -45,7 +44,7 @@ public class ContentCluster {
                    int maxNumberOfGroupsAllowedToBeDown) {
         if (configuredNodes == null) throw new IllegalArgumentException("Nodes must be set");
         this.clusterName = clusterName;
-        this.distribution = distribution;
+        this.distribution = Objects.requireNonNull(distribution, "distribution must be non-null");
         setNodes(configuredNodes, new NodeListener() {});
         this.maxNumberOfGroupsAllowedToBeDown = maxNumberOfGroupsAllowedToBeDown;
     }

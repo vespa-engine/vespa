@@ -170,7 +170,10 @@ public class UpgraderTest {
         // --- Failing application is repaired by changing the application, causing confidence to move above 'high' threshold
         // Deploy application change
         default0.submit(applicationPackage("default"));
-        default0.deploy();
+        default0.runJob(systemTest)
+                .jobAborted(stagingTest) // New revision causes run with failing upgrade alone to be aborted.
+                .runJob(stagingTest)
+                .deploy();
 
         tester.controllerTester().computeVersionStatus();
         assertEquals(VespaVersion.Confidence.high, tester.controller().readVersionStatus().systemVersion().get().confidence());

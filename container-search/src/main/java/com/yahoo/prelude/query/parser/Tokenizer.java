@@ -107,7 +107,9 @@ public final class Tokenizer {
             if (i >= source.length()) break;
 
             int c = source.codePointAt(i);
-            if (characterClasses.isLetterOrDigit(c) || (c == '\'' && acceptApostropheAsWordCharacter(currentIndex))) {
+            if (characterClasses.isSymbol(c)) { // treat each symbol is a separate word
+                addToken(WORD, Character.toString(c), i, i + 1);
+            } else if (characterClasses.isLetterOrDigit(c) || (c == '\'' && acceptApostropheAsWordCharacter(currentIndex))) {
                 i = consumeWordOrNumber(i, currentIndex);
             } else if (Character.isWhitespace(c)) {
                 addToken(SPACE, " ", i, i + 1);

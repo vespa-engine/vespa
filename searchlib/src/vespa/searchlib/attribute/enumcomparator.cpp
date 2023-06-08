@@ -6,18 +6,6 @@
 namespace search {
 
 template <typename EntryT>
-EnumStoreComparator<EntryT>::EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value)
-    : ParentType(data_store, fallback_value)
-{
-}
-
-template <typename EntryT>
-EnumStoreComparator<EntryT>::EnumStoreComparator(const DataStoreType& data_store)
-    : ParentType(data_store)
-{
-}
-
-template <typename EntryT>
 bool
 EnumStoreComparator<EntryT>::equal_helper(const EntryT& lhs, const EntryT& rhs)
 {

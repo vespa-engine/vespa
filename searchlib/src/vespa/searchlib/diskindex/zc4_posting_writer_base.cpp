@@ -3,6 +3,7 @@
 #include "zc4_posting_writer_base.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/postinglistparams.h>
+#include <cassert>
 
 using search::index::PostingListCounts;
 using search::index::PostingListParams;

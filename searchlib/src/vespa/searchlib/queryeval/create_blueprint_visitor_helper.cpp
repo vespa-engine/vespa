@@ -75,13 +75,12 @@ CreateBlueprintVisitorHelper::handleNumberTermAsText(query::NumberTerm &n)
 template <typename WS, typename NODE>
 void
 CreateBlueprintVisitorHelper::createWeightedSet(std::unique_ptr<WS> bp, NODE &n) {
-    FieldSpecList fields;
+    bp->reserve(n.getNumTerms());
     for (size_t i = 0; i < n.getNumTerms(); ++i) {
-        fields.clear();
-        fields.add(bp->getNextChildField(_field));
         auto term = n.getAsString(i);
         query::SimpleStringTerm node(term.first, n.getView(), 0, term.second); // TODO Temporary
-        bp->addTerm(_searchable.createBlueprint(_requestContext, fields, node), term.second.percent());
+        FieldSpec field = bp->getNextChildField(_field);
+        bp->addTerm(_searchable.createBlueprint(_requestContext, field, node), term.second.percent());
     }
     setResult(std::move(bp));
 }

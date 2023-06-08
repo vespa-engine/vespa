@@ -34,7 +34,7 @@ class FileReferencesAndDownloadsMaintainer implements Runnable {
     private static final Logger log = Logger.getLogger(FileReferencesAndDownloadsMaintainer.class.getName());
     private static final File defaultUrlDownloadDir = UrlDownloadRpcServer.downloadDir;
     private static final File defaultFileReferencesDownloadDir = FileDownloader.defaultDownloadDirectory;
-    private static final Duration defaultDurationToKeepFiles = Duration.ofDays(21);
+    private static final Duration defaultDurationToKeepFiles = Duration.ofDays(30);
     private static final Duration interval = Duration.ofMinutes(1);
 
     private final ScheduledExecutorService executor =

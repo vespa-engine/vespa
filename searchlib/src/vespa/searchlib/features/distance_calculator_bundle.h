@@ -34,6 +34,7 @@ public:
     };
 private:
     std::vector<Element> _elems;
+    double _min_rawscore;
 
 public:
     DistanceCalculatorBundle(const fef::IQueryEnvironment& env,
@@ -46,6 +47,8 @@ public:
                              const vespalib::string& feature_name);
 
     const std::vector<Element>& elements() const { return _elems; }
+
+    double min_rawscore() const { return _min_rawscore; }
 
     static void prepare_shared_state(const fef::IQueryEnvironment& env,
                                      fef::IObjectStore& store,

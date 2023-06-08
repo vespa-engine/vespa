@@ -41,7 +41,7 @@ func (t *customTarget) Deployment() Deployment { return Deployment{} }
 func (t *customTarget) createService(name string) (*Service, error) {
 	switch name {
 	case DeployService, QueryService, DocumentService:
-		url, err := t.urlWithPort(name)
+		url, err := t.serviceURL(name, t.targetType)
 		if err != nil {
 			return nil, err
 		}
@@ -79,20 +79,21 @@ func (t *customTarget) PrintLog(options LogOptions) error {
 
 func (t *customTarget) CheckVersion(version version.Version) error { return nil }
 
-func (t *customTarget) urlWithPort(serviceName string) (string, error) {
+func (t *customTarget) serviceURL(name string, targetType string) (string, error) {
 	u, err := url.Parse(t.baseURL)
 	if err != nil {
 		return "", err
 	}
-	port := u.Port()
-	if port == "" {
-		switch serviceName {
+	if targetType == TargetLocal {
+		// Use same ports as the vespaengine/vespa container image
+		port := ""
+		switch name {
 		case DeployService:
 			port = "19071"
 		case QueryService, DocumentService:
 			port = "8080"
 		default:
-			return "", fmt.Errorf("unknown service: %s", serviceName)
+			return "", fmt.Errorf("unknown service: %s", name)
 		}
 		u.Host = u.Host + ":" + port
 	}

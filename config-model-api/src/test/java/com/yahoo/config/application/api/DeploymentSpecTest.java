@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.Endpoint.Level;
 import com.yahoo.config.application.api.Endpoint.Target;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -25,6 +26,7 @@ import java.time.ZoneId;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,6 +34,13 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
+import static com.yahoo.config.provision.CloudName.AWS;
+import static com.yahoo.config.provision.CloudName.GCP;
+import static com.yahoo.config.provision.Environment.dev;
+import static com.yahoo.config.provision.Environment.perf;
+import static com.yahoo.config.provision.Environment.prod;
+import static com.yahoo.config.provision.Environment.staging;
+import static com.yahoo.config.provision.Environment.test;
 import static com.yahoo.config.provision.zone.ZoneId.defaultId;
 import static com.yahoo.config.provision.zone.ZoneId.from;
 import static org.junit.Assert.assertEquals;
@@ -60,11 +69,11 @@ public class DeploymentSpecTest {
         assertEquals(specXml, spec.xmlForm());
         assertEquals(1, spec.requireInstance("default").steps().size());
         assertFalse(spec.majorVersion().isPresent());
-        assertTrue(spec.requireInstance("default").steps().get(0).concerns(Environment.test));
-        assertTrue(spec.requireInstance("default").concerns(Environment.test, Optional.empty()));
-        assertTrue(spec.requireInstance("default").concerns(Environment.test, Optional.of(RegionName.from("region1")))); // test steps specify no region
-        assertFalse(spec.requireInstance("default").concerns(Environment.staging, Optional.empty()));
-        assertFalse(spec.requireInstance("default").concerns(Environment.prod, Optional.empty()));
+        assertTrue(spec.requireInstance("default").steps().get(0).concerns(test));
+        assertTrue(spec.requireInstance("default").concerns(test, Optional.empty()));
+        assertTrue(spec.requireInstance("default").concerns(test, Optional.of(RegionName.from("region1")))); // test steps specify no region
+        assertFalse(spec.requireInstance("default").concerns(staging, Optional.empty()));
+        assertFalse(spec.requireInstance("default").concerns(prod, Optional.empty()));
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
@@ -97,10 +106,10 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals(1, spec.steps().size());
         assertEquals(1, spec.requireInstance("default").steps().size());
-        assertTrue(spec.requireInstance("default").steps().get(0).concerns(Environment.staging));
-        assertFalse(spec.requireInstance("default").concerns(Environment.test, Optional.empty()));
-        assertTrue(spec.requireInstance("default").concerns(Environment.staging, Optional.empty()));
-        assertFalse(spec.requireInstance("default").concerns(Environment.prod, Optional.empty()));
+        assertTrue(spec.requireInstance("default").steps().get(0).concerns(staging));
+        assertFalse(spec.requireInstance("default").concerns(test, Optional.empty()));
+        assertTrue(spec.requireInstance("default").concerns(staging, Optional.empty()));
+        assertFalse(spec.requireInstance("default").concerns(prod, Optional.empty()));
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
@@ -121,17 +130,17 @@ public class DeploymentSpecTest {
         assertEquals(1, spec.steps().size());
         assertEquals(2, spec.requireInstance("default").steps().size());
 
-        assertTrue(spec.requireInstance("default").steps().get(0).concerns(Environment.prod, Optional.of(RegionName.from("us-east1"))));
+        assertTrue(spec.requireInstance("default").steps().get(0).concerns(prod, Optional.of(RegionName.from("us-east1"))));
         assertFalse(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(0)).active());
 
-        assertTrue(spec.requireInstance("default").steps().get(1).concerns(Environment.prod, Optional.of(RegionName.from("us-west1"))));
+        assertTrue(spec.requireInstance("default").steps().get(1).concerns(prod, Optional.of(RegionName.from("us-west1"))));
         assertTrue(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(1)).active());
 
-        assertFalse(spec.requireInstance("default").concerns(Environment.test, Optional.empty()));
-        assertFalse(spec.requireInstance("default").concerns(Environment.staging, Optional.empty()));
-        assertTrue(spec.requireInstance("default").concerns(Environment.prod, Optional.of(RegionName.from("us-east1"))));
-        assertTrue(spec.requireInstance("default").concerns(Environment.prod, Optional.of(RegionName.from("us-west1"))));
-        assertFalse(spec.requireInstance("default").concerns(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
+        assertFalse(spec.requireInstance("default").concerns(test, Optional.empty()));
+        assertFalse(spec.requireInstance("default").concerns(staging, Optional.empty()));
+        assertTrue(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("us-east1"))));
+        assertTrue(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("us-west1"))));
+        assertFalse(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("no-such-region"))));
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
 
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.requireInstance("default").upgradePolicy());
@@ -293,7 +302,7 @@ public class DeploymentSpecTest {
         assertEquals(1, instance2.steps().size());
         assertEquals(1, instance2.zones().size());
 
-        assertTrue(instance2.steps().get(0).concerns(Environment.prod, Optional.of(RegionName.from("us-central1"))));
+        assertTrue(instance2.steps().get(0).concerns(prod, Optional.of(RegionName.from("us-central1"))));
     }
 
     @Test
@@ -322,25 +331,25 @@ public class DeploymentSpecTest {
         assertEquals(5, instance.steps().size());
         assertEquals(4, instance.zones().size());
 
-        assertTrue(instance.steps().get(0).concerns(Environment.test));
+        assertTrue(instance.steps().get(0).concerns(test));
 
-        assertTrue(instance.steps().get(1).concerns(Environment.staging));
+        assertTrue(instance.steps().get(1).concerns(staging));
 
-        assertTrue(instance.steps().get(2).concerns(Environment.prod, Optional.of(RegionName.from("us-east1"))));
+        assertTrue(instance.steps().get(2).concerns(prod, Optional.of(RegionName.from("us-east1"))));
         assertFalse(((DeploymentSpec.DeclaredZone)instance.steps().get(2)).active());
 
         assertTrue(instance.steps().get(3) instanceof DeploymentSpec.Delay);
         assertEquals(3 * 60 * 60 + 30 * 60, instance.steps().get(3).delay().getSeconds());
 
-        assertTrue(instance.steps().get(4).concerns(Environment.prod, Optional.of(RegionName.from("us-west1"))));
+        assertTrue(instance.steps().get(4).concerns(prod, Optional.of(RegionName.from("us-west1"))));
         assertTrue(((DeploymentSpec.DeclaredZone)instance.steps().get(4)).active());
 
-        assertTrue(instance.concerns(Environment.test, Optional.empty()));
-        assertTrue(instance.concerns(Environment.test, Optional.of(RegionName.from("region1")))); // test steps specify no region
-        assertTrue(instance.concerns(Environment.staging, Optional.empty()));
-        assertTrue(instance.concerns(Environment.prod, Optional.of(RegionName.from("us-east1"))));
-        assertTrue(instance.concerns(Environment.prod, Optional.of(RegionName.from("us-west1"))));
-        assertFalse(instance.concerns(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
+        assertTrue(instance.concerns(test, Optional.empty()));
+        assertTrue(instance.concerns(test, Optional.of(RegionName.from("region1")))); // test steps specify no region
+        assertTrue(instance.concerns(staging, Optional.empty()));
+        assertTrue(instance.concerns(prod, Optional.of(RegionName.from("us-east1"))));
+        assertTrue(instance.concerns(prod, Optional.of(RegionName.from("us-west1"))));
+        assertFalse(instance.concerns(prod, Optional.of(RegionName.from("no-such-region"))));
         assertFalse(instance.globalServiceId().isPresent());
     }
 
@@ -563,7 +572,7 @@ public class DeploymentSpecTest {
 
         DeploymentInstanceSpec instance = spec.instances().get(0);
         assertEquals("default", instance.name().value());
-        assertEquals("service", instance.athenzService(Environment.prod, RegionName.defaultName()).get().value());
+        assertEquals("service", instance.athenzService(prod, RegionName.defaultName()).get().value());
     }
 
     @Test
@@ -695,9 +704,9 @@ public class DeploymentSpecTest {
         List<DeploymentSpec.Step> innerParallelSteps = secondSerialSteps.get(2).steps();
         assertEquals(3, innerParallelSteps.size());
         assertEquals("prod.ap-northeast-1", innerParallelSteps.get(0).toString());
-        assertEquals("no-service", spec.requireInstance("instance").athenzService(Environment.prod, RegionName.from("ap-northeast-1")).get().value());
+        assertEquals("no-service", spec.requireInstance("instance").athenzService(prod, RegionName.from("ap-northeast-1")).get().value());
         assertEquals("prod.ap-southeast-2", innerParallelSteps.get(1).toString());
-        assertEquals("in-service", spec.requireInstance("instance").athenzService(Environment.prod, RegionName.from("ap-southeast-2")).get().value());
+        assertEquals("in-service", spec.requireInstance("instance").athenzService(prod, RegionName.from("ap-southeast-2")).get().value());
         assertEquals("tests for prod.aws-us-east-1a", innerParallelSteps.get(2).toString());
     }
 
@@ -956,7 +965,7 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("domain", spec.athenzDomain().get().value());
         assertEquals("service", spec.athenzService().get().value());
-        assertEquals("service", spec.requireInstance("instance1").athenzService(Environment.prod,
+        assertEquals("service", spec.requireInstance("instance1").athenzService(prod,
                                                                                 RegionName.from("us-west-1")).get().value());
     }
 
@@ -979,11 +988,11 @@ public class DeploymentSpecTest {
         assertEquals("domain", spec.athenzDomain().get().value());
         assertEquals("service", spec.athenzService().get().value());
 
-        assertEquals("prod-service", spec.requireInstance("instance1").athenzService(Environment.prod,
+        assertEquals("prod-service", spec.requireInstance("instance1").athenzService(prod,
                                                                                      RegionName.from("us-central-1")).get().value());
-        assertEquals("prod-service", spec.requireInstance("instance1").athenzService(Environment.prod,
+        assertEquals("prod-service", spec.requireInstance("instance1").athenzService(prod,
                                                                                      RegionName.from("us-west-1")).get().value());
-        assertEquals("prod-service", spec.requireInstance("instance1").athenzService(Environment.prod,
+        assertEquals("prod-service", spec.requireInstance("instance1").athenzService(prod,
                                                                                      RegionName.from("us-east-3")).get().value());
     }
 
@@ -1014,11 +1023,11 @@ public class DeploymentSpecTest {
                 """;
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("domain", spec.athenzDomain().get().value());
-        assertEquals("service", spec.requireInstance("instance1").athenzService(Environment.prod,
+        assertEquals("service", spec.requireInstance("instance1").athenzService(prod,
                                                                                 RegionName.from("us-west-1")).get().value());
-        assertEquals("service", spec.requireInstance("instance1").athenzService(Environment.prod,
+        assertEquals("service", spec.requireInstance("instance1").athenzService(prod,
                                                                                 RegionName.from("us-east-3")).get().value());
-        assertEquals("service", spec.requireInstance("instance2").athenzService(Environment.prod,
+        assertEquals("service", spec.requireInstance("instance2").athenzService(prod,
                                                                                 RegionName.from("us-east-3")).get().value());
     }
 
@@ -1036,7 +1045,7 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("domain", spec.athenzDomain().get().value());
         assertEquals(Optional.empty(), spec.athenzService());
-        assertEquals("service", spec.requireInstance("default").athenzService(Environment.prod, RegionName.from("us-west-1")).get().value());
+        assertEquals("service", spec.requireInstance("default").athenzService(prod, RegionName.from("us-west-1")).get().value());
     }
 
     @Test
@@ -1054,13 +1063,13 @@ public class DeploymentSpecTest {
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("service",
-                     spec.requireInstance("default").athenzService(Environment.test,
+                     spec.requireInstance("default").athenzService(test,
                                                                    RegionName.from("us-east-1")).get().value());
         assertEquals("staging-service",
-                     spec.requireInstance("default").athenzService(Environment.staging,
+                     spec.requireInstance("default").athenzService(staging,
                                                                    RegionName.from("us-north-1")).get().value());
         assertEquals("prod-service",
-                     spec.requireInstance("default").athenzService(Environment.prod,
+                     spec.requireInstance("default").athenzService(prod,
                                                                    RegionName.from("us-west-1")).get().value());
     }
 
@@ -1273,8 +1282,8 @@ public class DeploymentSpecTest {
 
         assertEquals(List.of(RegionName.from("us-east")), spec.requireInstance("default").endpoints().get(0).regions());
 
-        var zone = from(Environment.prod, RegionName.from("us-east"));
-        var testZone = from(Environment.test, RegionName.from("us-east"));
+        var zone = from(prod, RegionName.from("us-east"));
+        var testZone = from(test, RegionName.from("us-east"));
         assertEquals(ZoneEndpoint.defaultEndpoint,
                      spec.zoneEndpoint(InstanceName.from("custom"), zone, ClusterSpec.Id.from("bax")));
         assertEquals(ZoneEndpoint.defaultEndpoint,
@@ -1752,18 +1761,19 @@ public class DeploymentSpecTest {
     public void cloudAccount() {
         String r =
                 """
-                <deployment version='1.0' cloud-account='100000000000'>
+                <deployment version='1.0' cloud-account='100000000000,gcp:foobar'>
                     <instance id='alpha'>
                       <prod cloud-account='800000000000'>
                           <region>us-east-1</region>
                       </prod>
                     </instance>
                     <instance id='beta' cloud-account='200000000000'>
-                      <staging cloud-account='600000000000'/>
+                      <staging cloud-account='gcp:barbaz'/>
                       <perf cloud-account='700000000000'/>
                       <prod>
                           <region>us-west-1</region>
                           <region cloud-account='default'>us-west-2</region>
+                          <region cloud-account=''>us-west-3</region>
                       </prod>
                     </instance>
                     <instance id='main'>
@@ -1777,22 +1787,103 @@ public class DeploymentSpecTest {
                 </deployment>
                 """;
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(Optional.of(CloudAccount.from("100000000000")), spec.cloudAccount());
-        assertCloudAccount("800000000000", spec.requireInstance("alpha"), Environment.prod, "us-east-1");
-        assertCloudAccount("200000000000", spec.requireInstance("beta"), Environment.prod, "us-west-1");
-        assertCloudAccount("600000000000", spec.requireInstance("beta"), Environment.staging, "");
-        assertCloudAccount("700000000000", spec.requireInstance("beta"), Environment.perf, "");
-        assertCloudAccount("200000000000", spec.requireInstance("beta"), Environment.dev, "");
-        assertCloudAccount("300000000000", spec.requireInstance("main"), Environment.prod, "us-east-1");
-        assertCloudAccount("100000000000", spec.requireInstance("main"), Environment.prod, "eu-west-1");
-        assertCloudAccount("400000000000", spec.requireInstance("main"), Environment.dev, "");
-        assertCloudAccount("500000000000", spec.requireInstance("main"), Environment.test, "");
-        assertCloudAccount("100000000000", spec.requireInstance("main"), Environment.staging, "");
-        assertCloudAccount("default", spec.requireInstance("beta"), Environment.prod, "us-west-2");
+        assertEquals(Map.of(AWS, CloudAccount.from("100000000000"),
+                            GCP, CloudAccount.from("gcp:foobar")), spec.cloudAccounts());
+        assertCloudAccount("800000000000", spec, AWS, "alpha", prod,    "us-east-1");
+        assertCloudAccount("",             spec, GCP, "alpha", prod,    "us-east-1");
+        assertCloudAccount("200000000000", spec, AWS, "beta",  prod,    "us-west-1");
+        assertCloudAccount("",             spec, AWS, "beta",  staging, "default");
+        assertCloudAccount("gcp:barbaz",   spec, GCP, "beta",  staging, "default");
+        assertCloudAccount("700000000000", spec, AWS, "beta",  perf,    "default");
+        assertCloudAccount("200000000000", spec, AWS, "beta",  dev,     "default");
+        assertCloudAccount("300000000000", spec, AWS, "main",  prod,    "us-east-1");
+        assertCloudAccount("100000000000", spec, AWS, "main",  prod,    "eu-west-1");
+        assertCloudAccount("400000000000", spec, AWS, "main",  dev,     "default");
+        assertCloudAccount("500000000000", spec, AWS, "main",  test,    "default");
+        assertCloudAccount("100000000000", spec, AWS, "main",  staging, "default");
+        assertCloudAccount("default",      spec, AWS, "beta",  prod,    "us-west-2");
+        assertCloudAccount("",             spec, GCP, "beta",  prod,    "us-west-2");
+        assertCloudAccount("",             spec, AWS, "beta",  prod,    "us-west-3");
+        assertCloudAccount("",             spec, GCP, "beta",  prod,    "us-west-3");
     }
 
-    private void assertCloudAccount(String expected, DeploymentInstanceSpec instance, Environment environment, String region) {
-        assertEquals(Optional.of(expected).map(CloudAccount::from), instance.cloudAccount(environment, Optional.of(region).filter(s -> !s.isEmpty()).map(RegionName::from)));
+    @Test
+    public void hostTTL() {
+        String r =
+                """
+                <deployment version='1.0' cloud-account='100000000000' empty-host-ttl='1h'>
+                  <instance id='alpha'>
+                    <staging />
+                    <prod empty-host-ttl='1m'>
+                        <region>us-east</region>
+                        <region empty-host-ttl='2m'>us-west</region>
+                        <test>us-east</test>
+                        <test empty-host-ttl='3m'>us-west</test>
+                    </prod>
+                  </instance>
+                  <instance id='beta'>
+                    <staging empty-host-ttl='3d'/>
+                    <perf empty-host-ttl='4h'/>
+                    <prod>
+                        <region>us-east</region>
+                        <region empty-host-ttl='0d'>us-west</region>
+                    </prod>
+                  </instance>
+                  <instance id='gamma' empty-host-ttl='6h'>
+                    <dev empty-host-ttl='7d'/>
+                    <prod>
+                        <region>us-east</region>
+                    </prod>
+                  </instance>
+                </deployment>
+                """;
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(Map.of(AWS, CloudAccount.from("100000000000")), spec.cloudAccounts());
+
+        assertHostTTL(Duration.ofHours(1), spec, "alpha", test, null);
+        assertHostTTL(Duration.ofHours(1), spec, "alpha", staging, null);
+        assertHostTTL(Duration.ofHours(1), spec, "alpha", dev, null);
+        assertHostTTL(Duration.ofHours(1), spec, "alpha", perf, null);
+        assertHostTTL(Duration.ofMinutes(1), spec, "alpha", prod, "us-east");
+        assertHostTTL(Duration.ofMinutes(2), spec, "alpha", prod, "us-west");
+        assertEquals(Optional.of(Duration.ofMinutes(1)), spec.requireInstance("alpha").steps().stream()
+                                                           .filter(step -> step.concerns(prod, Optional.of(RegionName.from("us-east"))) && step.isTest())
+                                                           .findFirst().orElseThrow()
+                                                           .hostTTL());
+        assertEquals(Optional.of(Duration.ofMinutes(3)), spec.requireInstance("alpha").steps().stream()
+                                                             .filter(step -> step.concerns(prod, Optional.of(RegionName.from("us-west"))) && step.isTest())
+                                                             .findFirst().orElseThrow()
+                                                             .hostTTL());
+
+        assertHostTTL(Duration.ofHours(1), spec, "beta", test, null);
+        assertHostTTL(Duration.ofDays(3), spec, "beta", staging, null);
+        assertHostTTL(Duration.ofHours(1), spec, "beta", dev, null);
+        assertHostTTL(Duration.ofHours(4), spec, "beta", perf, null);
+        assertHostTTL(Duration.ofHours(1), spec, "beta", prod, "us-east");
+        assertHostTTL(Duration.ZERO, spec, "beta", prod, "us-west");
+
+        assertHostTTL(Duration.ofHours(6), spec, "gamma", test, null);
+        assertHostTTL(Duration.ofHours(6), spec, "gamma", staging, null);
+        assertHostTTL(Duration.ofDays(7), spec, "gamma", dev, null);
+        assertHostTTL(Duration.ofHours(6), spec, "gamma", perf, null);
+        assertHostTTL(Duration.ofHours(6), spec, "gamma", prod, "us-east");
+        assertHostTTL(Duration.ofHours(6), spec, "gamma", prod, "us-west");
+
+        assertHostTTL(Duration.ofHours(1), spec, "nope", test, null);
+        assertHostTTL(Duration.ofHours(1), spec, "nope", staging, null);
+        assertHostTTL(Duration.ofHours(1), spec, "nope", dev, null);
+        assertHostTTL(Duration.ofHours(1), spec, "nope", perf, null);
+        assertHostTTL(Duration.ofHours(1), spec, "nope", prod, "us-east");
+        assertHostTTL(Duration.ofHours(1), spec, "nope", prod, "us-west");
+    }
+
+    private void assertCloudAccount(String expected, DeploymentSpec spec, CloudName cloud, String instance, Environment environment, String region) {
+        assertEquals(CloudAccount.from(expected),
+                     spec.cloudAccount(cloud, InstanceName.from(instance), com.yahoo.config.provision.zone.ZoneId.from(environment, RegionName.from(region))));
+    }
+
+    private void assertHostTTL(Duration expected, DeploymentSpec spec, String instance, Environment environment, String region) {
+        assertEquals(Optional.of(expected), spec.hostTTL(InstanceName.from(instance), environment, region == null ? RegionName.defaultName() : RegionName.from(region)));
     }
 
     private static void assertInvalid(String deploymentSpec, String errorMessagePart) {

@@ -25,6 +25,7 @@ public class JobMetrics {
     public static final String abort = "deployment.abort";
     public static final String cancel = "deployment.cancel";
     public static final String success = "deployment.success";
+    public static final String quotaExceeded = "deployment.quotaExceeded";
 
     private final Metric metric;
 
@@ -61,6 +62,7 @@ public class JobMetrics {
             case cancelled -> cancel;
             case aborted -> abort;
             case success -> success;
+            case quotaExceeded -> quotaExceeded;
             default -> throw new IllegalArgumentException("Unexpected run status '" + status + "'");
         };
     }

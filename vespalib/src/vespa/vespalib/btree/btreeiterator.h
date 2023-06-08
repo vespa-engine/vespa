@@ -5,6 +5,7 @@
 #include "btreenode.h"
 #include "btreenodeallocator.h"
 #include "btreetraits.h"
+#include <cassert>
 
 namespace vespalib::btree {
 
@@ -35,137 +36,70 @@ class NodeElement
     using NodeType = NodeT;
     using KeyType = typename NodeType::KeyType;
     using DataType = typename NodeType::DataType;
-    const NodeType *_node;
-    uint32_t _idx;
+    uint64_t _nodeAndIdx;
 
-    NodeType *
-    getWNode() const
-    {
-        return const_cast<NodeType *>(_node);
-    }
+    NodeType * getWNode() const { return const_cast<NodeType *>(getNode()); }
+    static constexpr uint8_t NODE_BITS = 57;
+    static constexpr uint8_t IDX_BITS = 64 - NODE_BITS;
+    static constexpr uint64_t NODE_MASK = (1ul << NODE_BITS) - 1ul;
+    static constexpr uint64_t IDX_MASK = (1ul << IDX_BITS) - 1ul;
+    static constexpr uint8_t IDX_SHIFT = NODE_BITS;
+    static constexpr uint64_t IDX_ONE = 1ul << NODE_BITS;
 
+    static_assert((NodeType::maxSlots() + 1) < (1ul << IDX_BITS), "IDX can be out of bounds above 127");
 public:
-    NodeElement()
-        : _node(nullptr),
-          _idx(0u)
-    {
+    NodeElement() noexcept : _nodeAndIdx(0ul) { }
+    NodeElement(const NodeType *node, uint32_t idx) noexcept
+        : _nodeAndIdx(uint64_t(node) | uint64_t(idx) << IDX_SHIFT)
+    { }
+
+    void invalidate() noexcept { _nodeAndIdx = 0; }
+    void setNode(const NodeType *node) noexcept {
+        _nodeAndIdx = (_nodeAndIdx & ~NODE_MASK) | uint64_t(node);
+    }
+    const NodeType * getNode() const noexcept { return reinterpret_cast<const NodeType *>(_nodeAndIdx & NODE_MASK); }
+    void setIdx(uint32_t idx) noexcept {
+        _nodeAndIdx = (_nodeAndIdx & NODE_MASK) | (uint64_t(idx) << IDX_SHIFT);
+    }
+    uint32_t getIdx() const noexcept { return _nodeAndIdx >> IDX_SHIFT; }
+    void incIdx() noexcept { _nodeAndIdx += IDX_ONE; }
+    void decIdx() noexcept { _nodeAndIdx -= IDX_ONE; }
+
+    void setNodeAndIdx(const NodeType *node, uint32_t idx) noexcept {
+        _nodeAndIdx = uint64_t(node) | uint64_t(idx) << IDX_SHIFT;
     }
 
-    NodeElement(const NodeType *node, uint32_t idx)
-        : _node(node),
-          _idx(idx)
-    {
-    }
-
-    void
-    setNode(const NodeType *node)
-    {
-        _node = node;
-    }
-
-    const NodeType *
-    getNode() const
-    {
-        return _node;
-    }
-
-    void
-    setIdx(uint32_t idx)
-    {
-        _idx = idx;
-    }
-
-    uint32_t
-    getIdx() const
-    {
-        return _idx;
-    }
-
-    void
-    incIdx()
-    {
-        ++_idx;
-    }
-
-    void
-    decIdx()
-    {
-        --_idx;
-    }
-
-    void
-    setNodeAndIdx(const NodeType *node, uint32_t idx)
-    {
-        _node = node;
-        _idx = idx;
-    }
-
-    const KeyType &
-    getKey() const
-    {
-        return _node->getKey(_idx);
-    }
-
-    const DataType &
-    getData() const
-    {
-        return _node->getData(_idx);
-    }
-
+    const KeyType & getKey() const noexcept { return getNode()->getKey(getIdx()); }
+    const DataType & getData() const noexcept { return getNode()->getData(getIdx()); }
     // Only use during compaction when changing reference to moved value
-    DataType &getWData() { return getWNode()->getWData(_idx); }
-
-    bool
-    valid() const
-    {
-        return _node != nullptr;
+    DataType &getWData() noexcept { return getWNode()->getWData(getIdx()); }
+    bool valid() const noexcept { return _nodeAndIdx != 0; }
+    void adjustLeftVictimKilled() noexcept {
+        assert(getIdx() > 0);
+        decIdx();
     }
 
-    void
-    adjustLeftVictimKilled()
-    {
-        assert(_idx > 0);
-        --_idx;
+    void adjustSteal(uint32_t stolen) noexcept {
+        assert(getIdx() + stolen < getNode()->validSlots());
+        setIdx(getIdx() + stolen);
     }
 
-    void
-    adjustSteal(uint32_t stolen)
-    {
-        assert(_idx + stolen < _node->validSlots());
-        _idx += stolen;
-    }
-
-    void
-    adjustSplit(bool inRightSplit)
-    {
+    void adjustSplit(bool inRightSplit) noexcept {
         if (inRightSplit)
-            ++_idx;
+            incIdx();
     }
 
-    bool
-    adjustSplit(bool inRightSplit, const NodeType *splitNode)
-    {
+    bool adjustSplit(bool inRightSplit, const NodeType *splitNode) noexcept {
         adjustSplit(inRightSplit);
-        if (_idx >= _node->validSlots()) {
-            _idx -= _node->validSlots();
-            _node = splitNode;
+        if (getIdx() >= getNode()->validSlots()) {
+            setNodeAndIdx(splitNode, getIdx() - getNode()->validSlots());
             return true;
         }
         return false;
     }
 
-    void
-    swap(NodeElement &rhs)
-    {
-        std::swap(_node, rhs._node);
-        std::swap(_idx, rhs._idx);
-    }
-
-    bool
-    operator!=(const NodeElement &rhs) const
-    {
-        return _node != rhs._node ||
-            _idx != rhs._idx;
+    bool operator!=(const NodeElement &rhs) const noexcept {
+        return _nodeAndIdx != rhs._nodeAndIdx;
     }
 };
 
@@ -183,9 +117,7 @@ template <typename KeyT,
 class BTreeIteratorBase
 {
 protected:
-    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT,
-                                                 INTERNAL_SLOTS,
-                                                 LEAF_SLOTS>;
+    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>;
     using InternalNodeType = BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS>;
     using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS> ;
     using InternalNodeTypeRefPair = typename InternalNodeType::RefPair;
@@ -225,7 +157,6 @@ protected:
 
     // Temporary leaf node when iterating over short arrays
     std::unique_ptr<LeafNodeTempType> _compatLeafNode;
-
 private:
     /*
      * Find the next leaf node, called by operator++() as needed.
@@ -243,8 +174,7 @@ protected:
      *
      * @param pidx    Number of levels above leaf nodes to take into account.
      */
-    size_t
-    position(uint32_t pidx) const;
+    size_t position(uint32_t pidx) const;
 
     /**
      * Create iterator pointing to first element in the tree referenced
@@ -268,13 +198,12 @@ protected:
     /**
      * Default constructor.  Iterator is not associated with a tree.
      */
-    BTreeIteratorBase();
+    BTreeIteratorBase() noexcept;
 
     /**
      * Step iterator forwards. If at end then leave it at end.
      */
-    BTreeIteratorBase &
-    operator++() {
+    BTreeIteratorBase & operator++() {
         if (_leaf.getNode() == nullptr) {
             return *this;
         }
@@ -290,8 +219,7 @@ protected:
      * Step iterator backwards.  If at end then place it at last valid
      * position in tree (cf. rbegin())
      */
-    BTreeIteratorBase &
-    operator--();
+    BTreeIteratorBase & operator--();
 
     ~BTreeIteratorBase();
     BTreeIteratorBase(const BTreeIteratorBase &other);
@@ -311,9 +239,7 @@ protected:
      * from this iterator position to end of subtree.
      */
     template <typename FunctionType>
-    void
-    foreach_key_range_start(uint32_t level, FunctionType func) const
-    {
+    void foreach_key_range_start(uint32_t level, FunctionType func) const {
         if (level > 0u) {
             --level;
             foreach_key_range_start(level, func);
@@ -332,9 +258,7 @@ protected:
      * subtree before this iterator position).
      */
     template <typename FunctionType>
-    void
-    foreach_key_range_end(uint32_t level, FunctionType func) const
-    {
+    void foreach_key_range_end(uint32_t level, FunctionType func) const {
         if (level > 0u) {
             --level;
             auto &store = _allocator->getNodeStore();
@@ -348,8 +272,7 @@ protected:
     }
 public:
 
-    bool
-    operator==(const BTreeIteratorBase & rhs) const {
+    bool operator==(const BTreeIteratorBase & rhs) const {
         if (_leaf.getIdx() != rhs._leaf.getIdx()) {
             return false;
         }
@@ -367,83 +290,55 @@ public:
         return true;
     }
 
-    bool
-    operator!=(const BTreeIteratorBase & rhs) const
-    {
-        return !operator==(rhs);
-    }
+    bool operator!=(const BTreeIteratorBase & rhs) const { return !operator==(rhs); }
 
     /**
      * Swap iterator with the other.
      *
      * @param rhs  Other iterator.
      */
-    void
-    swap(BTreeIteratorBase & rhs);
+    void swap(BTreeIteratorBase & rhs);
 
     /**
      * Get key at current iterator location.
      */
-    const KeyType &
-    getKey() const
-    {
-        return _leaf.getKey();
-    }
+    const KeyType & getKey() const { return _leaf.getKey(); }
 
     /**
      * Get data at current iterator location.
      */
-    const DataType &
-    getData() const
-    {
-        return _leaf.getData();
-    }
+    const DataType & getData() const { return _leaf.getData(); }
 
     /**
      * Check if iterator is at a valid element, i.e. not at end.
      */
-    bool
-    valid() const
-    {
-        return _leaf.valid();
-    }
+    bool valid() const { return _leaf.valid(); }
 
     /**
      * Return the number of elements in the tree.
      */
-    size_t
-    size() const;
+    size_t size() const;
 
 
     /**
      * Return the current position in the tree.
      */
-    size_t
-    position() const
-    {
-        return position(_pathSize);
-    }
+    size_t position() const { return position(_pathSize); }
 
     /**
      * Return the distance between two positions in the tree.
      */
-    ssize_t
-    operator-(const BTreeIteratorBase &rhs) const;
+    ssize_t operator-(const BTreeIteratorBase &rhs) const;
 
     /**
      * Return if the tree has data or not (e.g. keys and data or only keys).
      */
-    static bool
-    hasData()
-    {
-        return LeafNodeType::hasData();
-    }
+    static bool hasData() { return LeafNodeType::hasData(); }
 
     /**
      * Move the iterator directly to end.  Used by findHelper method in BTree.
      */
-    void
-    setupEnd();
+    void setupEnd();
 
     /**
      * Setup iterator to be empty and not be associated with any tree.
@@ -453,50 +348,41 @@ public:
     /**
      * Move iterator to beyond last element in the current tree.
      */
-    void
-    end() __attribute__((noinline));
+    void end() __attribute__((noinline));
 
     /**
      * Move iterator to beyond last element in the given tree.
      *
      * @param rootRef    Reference to root of tree.
      */
-    void
-    end(BTreeNode::Ref rootRef);
+    void end(BTreeNode::Ref rootRef);
 
     /**
      * Move iterator to first element in the current tree.
      */
-    void
-    begin();
+    void begin();
 
     /**
      * Move iterator to first element in the given tree.
      *
      * @param rootRef    Reference to root of tree.
      */
-    void
-    begin(BTreeNode::Ref rootRef);
+    void begin(BTreeNode::Ref rootRef);
 
     /**
      * Move iterator to last element in the current tree.
      */
-    void
-    rbegin();
+    void rbegin();
 
     /*
      * Get aggregated values for the current tree.
      */
-    const AggrT &
-    getAggregated() const;
+    const AggrT & getAggregated() const;
 
-    bool
-    identical(const BTreeIteratorBase &rhs) const;
+    bool identical(const BTreeIteratorBase &rhs) const;
 
     template <typename FunctionType>
-    void
-    foreach_key(FunctionType func) const
-    {
+    void foreach_key(FunctionType func) const {
         if (_pathSize > 0) {
             _path[_pathSize - 1].getNode()->
                 foreach_key(_allocator->getNodeStore(), func);
@@ -511,9 +397,7 @@ public:
      * range [this iterator, end_itr)).
      */
     template <typename FunctionType>
-    void
-    foreach_key_range(const BTreeIteratorBase &end_itr, FunctionType func) const
-    {
+    void foreach_key_range(const BTreeIteratorBase &end_itr, FunctionType func) const {
         if (!valid()) {
             return;
         }
@@ -584,9 +468,7 @@ class BTreeConstIterator : public BTreeIteratorBase<KeyT, DataT, AggrT,
                                                     TraitsT::PATH_SIZE>
 {
 protected:
-    using ParentType = BTreeIteratorBase<KeyT,
-                                         DataT,
-                                         AggrT,
+    using ParentType = BTreeIteratorBase<KeyT, DataT, AggrT,
                                          TraitsT::INTERNAL_SLOTS,
                                          TraitsT::LEAF_SLOTS,
                                          TraitsT::PATH_SIZE>;
@@ -645,17 +527,12 @@ public:
     /**
      * Default constructor.  Iterator is not associated with a tree.
      */
-    BTreeConstIterator()
-        : ParentType()
-    {
-    }
+    BTreeConstIterator() noexcept : ParentType() { }
 
     /**
      * Step iterator forwards. If at end then leave it at end.
      */
-    BTreeConstIterator &
-    operator++()
-    {
+    BTreeConstIterator & operator++() {
         ParentType::operator++();
         return *this;
     }
@@ -664,9 +541,7 @@ public:
      * Step iterator backwards.  If at end then place it at last valid
      * position in tree (cf. rbegin())
      */
-    BTreeConstIterator &
-    operator--()
-    {
+    BTreeConstIterator & operator--() {
         ParentType::operator--();
         return *this;
     }
@@ -679,8 +554,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
-    void
-    lower_bound(const KeyType & key, CompareT comp = CompareT());
+    void lower_bound(const KeyType & key, CompareT comp = CompareT());
 
     /**
      * Position iterator at first position with a key that is greater
@@ -689,9 +563,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
-    void
-    lower_bound(BTreeNode::Ref rootRef,
-                const KeyType & key, CompareT comp = CompareT());
+    void lower_bound(BTreeNode::Ref rootRef, const KeyType & key, CompareT comp = CompareT());
 
     /**
      * Step iterator forwards until it is at a position with a key
@@ -704,8 +576,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
-    void
-    seek(const KeyType &key, CompareT comp = CompareT());
+    void seek(const KeyType &key, CompareT comp = CompareT());
 
     /**
      * Step iterator forwards until it is at a position with a key
@@ -717,8 +588,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
-    void
-    binarySeek(const KeyType &key, CompareT comp = CompareT());
+    void binarySeek(const KeyType &key, CompareT comp = CompareT());
 
     /**
      * Step iterator forwards until it is at a position with a key
@@ -730,8 +600,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
-    void
-    linearSeek(const KeyType &key, CompareT comp = CompareT());
+    void linearSeek(const KeyType &key, CompareT comp = CompareT());
 
     /**
      * Step iterator forwards until it is at a position with a key
@@ -744,8 +613,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
-    void
-    seekPast(const KeyType &key, CompareT comp = CompareT());
+    void seekPast(const KeyType &key, CompareT comp = CompareT());
 
     /**
      * Step iterator forwards until it is at a position with a key
@@ -757,8 +625,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
-    void
-    binarySeekPast(const KeyType &key, CompareT comp = CompareT());
+    void binarySeekPast(const KeyType &key, CompareT comp = CompareT());
 
     /**
      * Step iterator forwards until it is at a position with a key
@@ -770,8 +637,7 @@ public:
      * @param key       Key to search for
      * @param comp      Comparator for the tree ordering.
      */
-    void
-    linearSeekPast(const KeyType &key, CompareT comp = CompareT());
+    void linearSeekPast(const KeyType &key, CompareT comp = CompareT());
 
     /**
      * Validate the iterator as a valid iterator or positioned at
@@ -781,8 +647,7 @@ public:
      * @param rootRef  Reference to root of tree to operate on
      * @param comp     Comparator for the tree ordering.
      */
-    void
-    validate(BTreeNode::Ref rootRef, CompareT comp = CompareT());
+    void validate(BTreeNode::Ref rootRef, CompareT comp = CompareT());
 };
 
 
@@ -795,15 +660,10 @@ template <typename KeyT,
           typename AggrT = NoAggregated,
           typename CompareT = std::less<KeyT>,
           typename TraitsT = BTreeDefaultTraits>
-class BTreeIterator : public BTreeConstIterator<KeyT, DataT, AggrT,
-                                                CompareT, TraitsT>
+class BTreeIterator : public BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>
 {
 public:
-    using ParentType = BTreeConstIterator<KeyT,
-                                          DataT,
-                                          AggrT,
-                                          CompareT,
-                                          TraitsT>;
+    using ParentType = BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>;
     using NodeAllocatorType = typename ParentType::NodeAllocatorType;
     using InternalNodeType = typename ParentType::InternalNodeType;
     using LeafNodeType = typename ParentType::LeafNodeType;
@@ -844,40 +704,27 @@ public:
     {
     }
 
-    BTreeIterator()
-        : ParentType()
-    {
-    }
+    BTreeIterator() : ParentType() { }
 
-    BTreeIterator &
-    operator++()
-    {
+    BTreeIterator & operator++() {
         ParentType::operator++();
         return *this;
     }
 
-    BTreeIterator &
-    operator--()
-    {
+    BTreeIterator & operator--() {
         ParentType::operator--();
         return *this;
     }
 
-    NodeAllocatorType &
-    getAllocator() const
-    {
+    NodeAllocatorType & getAllocator() const {
         return const_cast<NodeAllocatorType &>(*_allocator);
     }
 
-    BTreeNode::Ref
-    moveFirstLeafNode(BTreeNode::Ref rootRef);
+    BTreeNode::Ref moveFirstLeafNode(BTreeNode::Ref rootRef);
 
-    void
-    moveNextLeafNode();
+    void moveNextLeafNode();
 
-    void
-    writeData(const DataType &data)
-    {
+    void writeData(const DataType &data) {
         _leaf.getWNode()->writeData(_leaf.getIdx(), data);
     }
 
@@ -889,8 +736,7 @@ public:
      * The new key must have the same semantic meaning as the old key.
      * Typically used when compacting data store containing keys.
      */
-    void
-    writeKey(const KeyType &key);
+    void writeKey(const KeyType &key);
 
     /**
      * Updata data at the current iterator position.  The tree should
@@ -900,71 +746,33 @@ public:
      * @param aggrCalc   Calculator for updating aggregated information.
      */
     template <class AggrCalcT>
-    void
-    updateData(const DataType &data, const AggrCalcT &aggrCalc);
+    void updateData(const DataType &data, const AggrCalcT &aggrCalc);
 
     /**
      * Thaw a path from the root node down the the current leaf node in
      * the current tree, allowing for updates to be performed without
      * disturbing the frozen version of the tree.
      */
-    BTreeNode::Ref
-    thaw(BTreeNode::Ref rootRef);
+    BTreeNode::Ref thaw(BTreeNode::Ref rootRef);
 
 private:
     /* Insert into empty tree */
     template <class AggrCalcT>
-    BTreeNode::Ref
-    insertFirst(const KeyType &key, const DataType &data,
-                const AggrCalcT &aggrCalc);
-
-    LeafNodeType *
-    getLeafNode() const
-    {
-        return _leaf.getWNode();
-    }
-
-    bool
-    setLeafNodeIdx(uint32_t idx, const LeafNodeType *splitLeafNode);
-
-    void
-    setLeafNodeIdx(uint32_t idx)
-    {
-        _leaf.setIdx(idx);
-    }
-
-    uint32_t
-    getLeafNodeIdx() const
-    {
-        return _leaf.getIdx();
-    }
-
-    uint32_t
-    getPathSize() const
-    {
-        return _pathSize;
-    }
-
-    PathElement &
-    getPath(uint32_t pidx)
-    {
-        return _path[pidx];
-    }
+    BTreeNode::Ref insertFirst(const KeyType &key, const DataType &data, const AggrCalcT &aggrCalc);
+    LeafNodeType * getLeafNode() const { return _leaf.getWNode(); }
+    bool setLeafNodeIdx(uint32_t idx, const LeafNodeType *splitLeafNode);
+    void setLeafNodeIdx(uint32_t idx) { _leaf.setIdx(idx); }
+    uint32_t getLeafNodeIdx() const { return _leaf.getIdx(); }
+    uint32_t getPathSize() const { return _pathSize; }
+    PathElement & getPath(uint32_t pidx) { return _path[pidx]; }
 
     template <class AggrCalcT>
-    BTreeNode::Ref
-    addLevel(BTreeNode::Ref rootRef, BTreeNode::Ref splitNodeRef,
-             bool inRightSplit, const AggrCalcT &aggrCalc);
+    BTreeNode::Ref addLevel(BTreeNode::Ref rootRef, BTreeNode::Ref splitNodeRef, bool inRightSplit, const AggrCalcT &aggrCalc);
 
-    BTreeNode::Ref
-    removeLevel(BTreeNode::Ref rootRef, InternalNodeType *rootNode);
+    BTreeNode::Ref removeLevel(BTreeNode::Ref rootRef, InternalNodeType *rootNode);
+    void removeLast(BTreeNode::Ref rootRef);
 
-    void
-    removeLast(BTreeNode::Ref rootRef);
-
-    void
-    adjustSteal(uint32_t level, bool leftVictimKilled, uint32_t stolen)
-    {
+    void adjustSteal(uint32_t level, bool leftVictimKilled, uint32_t stolen) {
         assert(_pathSize > level);
         if (leftVictimKilled) {
             _path[level].adjustLeftVictimKilled();

@@ -10,7 +10,6 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.language.wordpiece.WordPieceEmbedder;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
@@ -39,7 +38,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
     private final String attentionMaskName;
     private final String tokenTypeIdsName;
     private final String outputName;
-    private final String poolingStrategy;
+    private final PoolingStrategy poolingStrategy;
 
     private final WordPieceEmbedder tokenizer;
     private final OnnxEvaluator evaluator;
@@ -53,7 +52,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         attentionMaskName = config.transformerAttentionMask();
         tokenTypeIdsName = config.transformerTokenTypeIds();
         outputName = config.transformerOutput();
-        poolingStrategy = config.poolingStrategy().toString();
+        poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());
 
         OnnxEvaluatorOptions options = new OnnxEvaluatorOptions();
         options.setExecutionMode(config.onnxExecutionMode().toString());
@@ -124,20 +123,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
 
         Tensor tokenEmbeddings = outputs.get(outputName);
 
-        Tensor.Builder builder = Tensor.Builder.of(type);
-        if (poolingStrategy.equals("mean")) {  // average over tokens
-            Tensor summedEmbeddings = tokenEmbeddings.sum("d1");
-            Tensor summedAttentionMask = attentionMask.expand("d0").sum("d1");
-            Tensor averaged = summedEmbeddings.join(summedAttentionMask, (x, y) -> x / y);
-            for (int i = 0; i < type.dimensions().get(0).size().get(); i++) {
-                builder.cell(averaged.get(TensorAddress.of(0,i)), i);
-            }
-        } else {  // CLS - use first token
-            for (int i = 0; i < type.dimensions().get(0).size().get(); i++) {
-                builder.cell(tokenEmbeddings.get(TensorAddress.of(0,0,i)), i);
-            }
-        }
-        return builder.build();
+        return poolingStrategy.toSentenceEmbedding(type, tokenEmbeddings, attentionMask);
     }
 
     private List<Integer> embedWithSeparatorTokens(String text, Context context, int maxLength) {

@@ -56,6 +56,7 @@ import com.yahoo.vespa.hosted.controller.routing.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.jupiter.api.Test;
+
 import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
@@ -71,7 +72,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.SystemName.main;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devAwsUsEast2a;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devUsEast1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionAwsUsEast1a;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
@@ -1465,40 +1468,39 @@ public class ControllerTest {
     @Test
     void testCloudAccount() {
         DeploymentContext context = tester.newDeploymentContext();
-        ZoneId devZone = devUsEast1.zone();
-        ZoneId prodZone = productionUsWest1.zone();
-        String cloudAccount = "012345678912";
+        ZoneId devZone = devAwsUsEast2a.zone();
+        ZoneId prodZone = productionAwsUsEast1a.zone();
+        String cloudAccount = "aws:012345678912";
         var applicationPackage = new ApplicationPackageBuilder()
                 .cloudAccount(cloudAccount)
                 .region(prodZone.region())
                 .build();
 
         // Submission fails because cloud account is not declared for this tenant
-        assertEquals("cloud accounts [012345678912] are not valid for tenant tenant",
+        assertEquals("cloud accounts [aws:012345678912] are not valid for tenant tenant",
                      assertThrows(IllegalArgumentException.class,
                                   () -> context.submit(applicationPackage))
                              .getMessage());
-        assertEquals("cloud accounts [012345678912] are not valid for tenant tenant",
+        assertEquals("cloud accounts [aws:012345678912] are not valid for tenant tenant",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> context.runJob(devUsEast1, applicationPackage))
+                                  () -> context.runJob(devZone, applicationPackage))
                              .getMessage());
 
         // Deployment fails because zone is not configured in requested cloud account
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
-        assertEquals("Zone test.us-east-1 is not configured in requested cloud account '012345678912'",
+        assertEquals("Zone prod.aws-us-east-1a is not configured in requested cloud account 'aws:012345678912'",
                      assertThrows(IllegalArgumentException.class,
                                   () -> context.submit(applicationPackage))
                              .getMessage());
-        assertEquals("Zone dev.us-east-1 is not configured in requested cloud account '012345678912'",
+
+        context.runJob(devUsEast1, applicationPackage); // OK, because no special account is used.
+        assertEquals("Zone dev.aws-us-east-2a is not configured in requested cloud account 'aws:012345678912'",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> context.runJob(devUsEast1, applicationPackage))
+                                  () -> context.runJob(devZone, applicationPackage))
                              .getMessage());
 
         // Deployment to prod succeeds once all zones are configured in requested account
-        tester.controllerTester().zoneRegistry().configureCloudAccount(CloudAccount.from(cloudAccount),
-                                                                       systemTest.zone(),
-                                                                       stagingTest.zone(),
-                                                                       prodZone);
+        tester.controllerTester().zoneRegistry().configureCloudAccount(CloudAccount.from(cloudAccount), prodZone);
         context.submit(applicationPackage).deploy();
 
         // Dev zone is added as a configured zone and deployment succeeds
@@ -1506,19 +1508,24 @@ public class ControllerTest {
         context.runJob(devZone, applicationPackage);
 
         // All deployments use the custom account
-        for (var zoneId : List.of(systemTest.zone(), stagingTest.zone(), devZone, prodZone)) {
+        for (var zoneId : List.of(devZone, prodZone)) {
             assertEquals(cloudAccount, tester.controllerTester().configServer()
                                              .cloudAccount(context.deploymentIdIn(zoneId))
                                              .get().value());
+        }
+        // Tests are run in the default cloud, however, where the default cloud account is used
+        for (var zoneId : List.of(systemTest.zone(), stagingTest.zone())) {
+            assertEquals(Optional.empty(), tester.controllerTester().configServer()
+                                                 .cloudAccount(context.deploymentIdIn(zoneId)));
         }
     }
 
     @Test
     void testCloudAccountWithDefaultOverride() {
         var context = tester.newDeploymentContext();
-        var prodZone1 = productionUsEast3.zone();
+        var prodZone1 = productionAwsUsEast1a.zone();
         var prodZone2 = productionUsWest1.zone();
-        var cloudAccount = "012345678912";
+        var cloudAccount = "aws:012345678912";
         var application = new ApplicationPackageBuilder()
                 .cloudAccount(cloudAccount)
                 .region(prodZone1.region())

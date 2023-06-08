@@ -76,7 +76,7 @@ public:
      **/
     virtual TermFieldHandle getHandle(MatchDataDetails requested_details) const = 0;
 protected:
-    virtual ~ITermFieldData() {}
+    virtual ~ITermFieldData() = default;
 private:
     uint32_t    _fieldId;
     uint32_t    _matching_doc_count;

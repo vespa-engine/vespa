@@ -4,6 +4,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <cassert>
 
 namespace search::diskindex {
 

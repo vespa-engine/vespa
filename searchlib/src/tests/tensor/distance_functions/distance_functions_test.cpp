@@ -6,6 +6,7 @@
 #include <vespa/searchlib/tensor/distance_function_factory.h>
 #include <vespa/searchlib/tensor/mips_distance_transform.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <numbers>
 #include <vector>
 
 #include <vespa/log/log.h>
@@ -256,6 +257,21 @@ TEST(DistanceFunctionsTest, angular_gives_expected_score)
     EXPECT_DOUBLE_EQ(a26, computeAngularChecked(t(iv2), t(iv6)));
     EXPECT_DOUBLE_EQ(a36, computeAngularChecked(t(iv3), t(iv6)));
     EXPECT_DOUBLE_EQ(a66, computeAngularChecked(t(iv6), t(iv6)));
+}
+
+TEST(DistanceFunctionsTest, conversion_to_internal_distance_threshold_is_capped)
+{
+    AngularDistanceFunctionFactory<double> dff;
+    std::vector<double> p0{0.0, 0.0};
+    auto angular = dff.for_query_vector(t(p0));
+    // threshold < 0.0 is treated as threshold == 0.0
+    EXPECT_DOUBLE_EQ(0.0, angular->convert_threshold(-0.1));
+    EXPECT_DOUBLE_EQ(0.0, angular->convert_threshold(0.0));
+    EXPECT_LT(0.0, angular->convert_threshold(0.1));
+    // threshold > pi is treated as theshold == pi
+    EXPECT_GT(2.0, angular->convert_threshold(std::numbers::pi - 0.1));
+    EXPECT_DOUBLE_EQ(2.0, angular->convert_threshold(std::numbers::pi));
+    EXPECT_DOUBLE_EQ(2.0, angular->convert_threshold(4.0));
 }
 
 double computePrenormalizedAngularChecked(TypedCells a, TypedCells b) {
@@ -509,6 +525,22 @@ TEST(GeoDegreesTest, gives_expected_score)
     verify_geo_miles(g9_jfk, g9_jfk, 0);
 }
 
+TEST(GeoDegreesTest, conversion_to_internal_distance_threshold_is_capped)
+{
+    GeoDistanceFunctionFactory dff;
+    std::vector<double> p0{0.0, 0.0};
+    auto geo = dff.for_query_vector(t(p0));
+    // threshold < 0.0 is treated as theshold == 0.0
+    EXPECT_DOUBLE_EQ(0.0, geo->convert_threshold(-0.1));
+    EXPECT_DOUBLE_EQ(0.0, geo->convert_threshold(0.0));
+    EXPECT_LT(0.0, geo->convert_threshold(10.0));
+    // threshold > approx 20000 km is treated as threshold approx 20000 km
+    auto halfway = search::common::GeoGcd(-90.0, 0.0).km_great_circle_distance(90.0, 0.0);
+    EXPECT_GT(1.0, geo->convert_threshold(halfway - 10.0));
+    EXPECT_DOUBLE_EQ(1.0, geo->convert_threshold(halfway));
+    EXPECT_DOUBLE_EQ(1.0, geo->convert_threshold(halfway + 10.0));
+    EXPECT_DOUBLE_EQ(1.0, geo->convert_threshold(30000.0));
+}
 
 double computeTransformedMipsChecked(TypedCells a, TypedCells b, bool check_insert = true) {
     MipsDistanceFunctionFactory<float> flt_dff;

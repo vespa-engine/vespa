@@ -1,18 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostEvent;
 import com.yahoo.config.provision.NodeAllocationException;
-import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -39,35 +33,14 @@ public interface HostProvisioner {
     /**
      * Schedule provisioning of a given number of hosts.
      *
-     * @param provisionIndices list of unique provision indices which will be used to generate the node hostnames
-     *                         on the form of <code>[prefix][index].[domain]</code>
-     * @param hostType the host type to provision
-     * @param resources the resources needed per node - the provisioned host may be significantly larger
-     * @param applicationId id of the application that will own the provisioned host
-     * @param osVersion the OS version to use. If this version does not exist, implementations may choose a suitable
-     *                  fallback version.
-     * @param sharing puts requirements on sharing or exclusivity of the host to be provisioned.
-     * @param clusterType the cluster we are provisioning for, or empty if we are provisioning hosts
-     *                    to be shared by multiple cluster nodes
-     * @param clusterId the id of the cluster we are provisioning for, or empty if we are provisioning hosts
-     *                    to be shared by multiple cluster nodes
-     * @param cloudAccount the cloud account to use
-     * @param provisionedHostConsumer consumer of {@link ProvisionedHost}s describing the provisioned nodes,
-     *                                the {@link Node} returned from {@link ProvisionedHost#generateHost()} must be
-     *                                written to ZK immediately in case the config server goes down while waiting
-     *                                for the provisioning to finish.
+     * @param request         details of the host provision request.
+     * @param whenProvisioned consumer of {@link ProvisionedHost}s describing the provisioned nodes,
+     *                        the {@link Node} returned from {@link ProvisionedHost#generateHost} must be
+     *                        written to ZK immediately in case the config server goes down while waiting
+     *                        for the provisioning to finish.
      * @throws NodeAllocationException if the cloud provider cannot satisfy the request
      */
-    void provisionHosts(List<Integer> provisionIndices,
-                        NodeType hostType,
-                        NodeResources resources,
-                        ApplicationId applicationId,
-                        Version osVersion,
-                        HostSharing sharing,
-                        Optional<ClusterSpec.Type> clusterType,
-                        Optional<ClusterSpec.Id> clusterId,
-                        CloudAccount cloudAccount,
-                        Consumer<List<ProvisionedHost>> provisionedHostConsumer) throws NodeAllocationException;
+    void provisionHosts(HostProvisionRequest request, Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException;
 
     /**
      * Continue provisioning of given list of Nodes.
@@ -102,5 +75,8 @@ public interface HostProvisioner {
      * zone's default cloud account are always included.
      */
     List<HostEvent> hostEventsIn(List<CloudAccount> cloudAccounts);
+
+    /** Returns whether flavor for given host can be upgraded to a newer generation */
+    boolean canUpgradeFlavor(Node host, Node child);
 
 }

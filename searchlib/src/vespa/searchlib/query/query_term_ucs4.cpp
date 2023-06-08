@@ -38,17 +38,26 @@ QueryTermUCS4::fillUCS4() {
      * This is a 'dirty' optimisation, but this is done to avoid writing a lot of data and blow the cpu caches with something
      * you do not really need most of the time. That matters when qps is very high and query is wide, and hits are few.
      */
-    std::lock_guard guard(_globalMutex);
-    ucs4_t * ucs4 = _termUCS4.load(std::memory_order_relaxed);
-    if (ucs4 != nullptr) return ucs4;
-    ucs4 = new ucs4_t[_cachedTermLen + 1];
+    std::unique_ptr<ucs4_t[]> ucs4 = asUcs4();
+    ucs4_t * next = ucs4.get();
+    {
+        std::lock_guard guard(_globalMutex);
+        ucs4_t *prev = _termUCS4.load(std::memory_order_relaxed);
+        if (prev != nullptr) return prev;
+        _termUCS4.store(ucs4.release(), std::memory_order_relaxed);
+    }
+    return next;
+}
+
+std::unique_ptr<ucs4_t[]>
+QueryTermUCS4::asUcs4() const {
+    auto ucs4 = std::make_unique<ucs4_t[]>(_cachedTermLen + 1);
     vespalib::Utf8Reader r(getTermString());
     uint32_t i(0);
     while (r.hasMore()) {
         ucs4[i++] = r.getChar();
     }
     ucs4[_cachedTermLen] = 0;
-    _termUCS4.store(ucs4);
     return ucs4;
 }
 

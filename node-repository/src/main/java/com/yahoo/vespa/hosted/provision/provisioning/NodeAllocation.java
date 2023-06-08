@@ -31,6 +31,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Used to manage a list of nodes during the node reservation process to fulfill the nodespec.
@@ -59,8 +60,11 @@ class NodeAllocation {
     /** The number of already allocated nodes accepted and not retired */
     private int accepted = 0;
 
-    /** The number of already allocated nodes accepted and not retired and not needing resize */
-    private int acceptedWithoutResizingRetired = 0;
+    /** The number of already allocated nodes of compatible size */
+    private int acceptedAndCompatible = 0;
+
+    /** The number of already allocated nodes which can be made compatible*/
+    private int acceptedAndCompatibleOrResizable = 0;
 
     /** The number of nodes rejected because of clashing parentHostname */
     private int rejectedDueToClashingParentHost = 0;
@@ -73,7 +77,10 @@ class NodeAllocation {
     /** The number of nodes that just now was changed to retired */
     private int wasRetiredJustNow = 0;
 
-    /** The node indexes to verify uniqueness of each members index */
+    /** The number of nodes that just now was changed to retired to upgrade its host flavor */
+    private int wasRetiredDueToFlavorUpgrade = 0;
+
+    /** The node indexes to verify uniqueness of each member's index */
     private final Set<Integer> indexes = new HashSet<>();
 
     /** The next membership index to assign to a new node */
@@ -93,11 +100,11 @@ class NodeAllocation {
         this.nodeRepository = nodeRepository;
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.requiredHostFlavor = Optional.of(PermanentFlags.HOST_FLAVOR.bindTo(nodeRepository.flagSource())
-                        .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
-                        .with(FetchVector.Dimension.CLUSTER_TYPE, cluster.type().name())
-                        .with(FetchVector.Dimension.CLUSTER_ID, cluster.id().value())
-                        .value())
-                .filter(s -> !s.isBlank());
+                                                                        .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
+                                                                        .with(FetchVector.Dimension.CLUSTER_TYPE, cluster.type().name())
+                                                                        .with(FetchVector.Dimension.CLUSTER_ID, cluster.id().value())
+                                                                        .value())
+                                          .filter(s -> !s.isBlank());
     }
 
     /**
@@ -123,9 +130,8 @@ class NodeAllocation {
                 if (nodeRepository.zone().cloud().allowEnclave() && candidate.parent.isPresent() && ! candidate.parent.get().cloudAccount().equals(requestedNodes.cloudAccount())) continue; // wrong account
 
                 boolean resizeable = requestedNodes.considerRetiring() && candidate.isResizable;
-                boolean acceptToRetire = acceptToRetire(candidate);
 
-                if ((! saturated() && hasCompatibleResources(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire) {
+                if ((! saturated() && hasCompatibleResources(candidate) && requestedNodes.acceptable(candidate)) || acceptIncompatible(candidate)) {
                     candidate = candidate.withNode();
                     if (candidate.isValid())
                         acceptNode(candidate, shouldRetire(candidate, candidates), resizeable);
@@ -167,6 +173,7 @@ class NodeAllocation {
         if ( ! nodeResourceLimits.isWithinRealLimits(candidate, application, cluster)) return Retirement.outsideRealLimits;
         if (violatesParentHostPolicy(candidate)) return Retirement.violatesParentHostPolicy;
         if ( ! hasCompatibleResources(candidate)) return Retirement.incompatibleResources;
+        if (candidate.parent.map(node -> node.status().wantToUpgradeFlavor()).orElse(false)) return Retirement.violatesHostFlavorGeneration;
         if (candidate.wantToRetire()) return Retirement.hardRequest;
         if (candidate.preferToRetire() && candidate.replaceableBy(candidates)) return Retirement.softRequest;
         if (violatesExclusivity(candidate)) return Retirement.violatesExclusivity;
@@ -220,23 +227,27 @@ class NodeAllocation {
     /**
      * Returns whether this node should be accepted into the cluster even if it is not currently desired
      * (already enough nodes, or wrong resources, etc.).
-     * Such nodes will be marked retired during finalization of the list of accepted nodes.
+     * Such nodes will be marked retired during finalization of the list of accepted nodes when allowed.
      * The conditions for this are:
      *
-     * This is a stateful node. These must always be retired before being removed to allow the cluster to
+     * - We are forced to accept since we cannot remove gracefully (bootstrap).
+     *
+     * - This is a stateful node. These must always be retired before being removed to allow the cluster to
      * migrate away data.
      *
-     * This is a container node and it is not desired due to having the wrong flavor. In this case this
+     * - This is a container node and it is not desired due to having the wrong flavor. In this case this
      * will (normally) obtain for all the current nodes in the cluster and so retiring before removing must
      * be used to avoid removing all the current nodes at once, before the newly allocated replacements are
      * initialized. (In the other case, where a container node is not desired because we have enough nodes we
      * do want to remove it immediately to get immediate feedback on how the size reduction works out.)
      */
-    private boolean acceptToRetire(NodeCandidate candidate) {
+    private boolean acceptIncompatible(NodeCandidate candidate) {
         if (candidate.state() != Node.State.active) return false;
         if (! candidate.allocation().get().membership().cluster().group().equals(cluster.group())) return false;
         if (candidate.allocation().get().membership().retired()) return true; // don't second-guess if already retired
-        if (! requestedNodes.considerRetiring()) return false;
+
+        if ( ! requestedNodes.considerRetiring()) // the node is active and we are not allowed to remove gracefully, so keep
+            return true;
 
         return cluster.isStateful() ||
                (cluster.type() == ClusterSpec.Type.container && !hasCompatibleResources(candidate));
@@ -258,18 +269,24 @@ class NodeAllocation {
             // We want to allocate new nodes rather than unretiring with resize, so count without those
             // for the purpose of deciding when to stop accepting nodes (saturation)
             if (node.allocation().isEmpty()
-                || ! ( requestedNodes.needsResize(node) && node.allocation().get().membership().retired()))
-                acceptedWithoutResizingRetired++;
-
-            if (resizeable && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired())) {
-                node = resize(node);
+                || ! ( requestedNodes.needsResize(node) &&
+                       (node.allocation().get().membership().retired() || ! requestedNodes.considerRetiring()))) {
+                acceptedAndCompatible++;
             }
+            if (hasCompatibleResources(candidate))
+                acceptedAndCompatibleOrResizable++;
+
+            if (resizeable && ! ( node.allocation().isPresent() && node.allocation().get().membership().retired()))
+                node = resize(node);
 
             if (node.state() != Node.State.active) // reactivated node - wipe state that deactivated it
                 node = node.unretire().removable(false);
         } else if (retirement != Retirement.alreadyRetired) {
             LOG.info("Retiring " + node + " because " + retirement.description());
             ++wasRetiredJustNow;
+            if (retirement == Retirement.violatesHostFlavorGeneration) {
+                ++wasRetiredDueToFlavorUpgrade;
+            }
             node = node.retire(nodeRepository.clock().instant());
         }
         if ( ! node.allocation().get().membership().cluster().equals(cluster)) {
@@ -297,13 +314,13 @@ class NodeAllocation {
     }
 
     /** Returns true if no more nodes are needed in this list */
-    private boolean saturated() {
-        return requestedNodes.saturatedBy(acceptedWithoutResizingRetired);
+    public boolean saturated() {
+        return requestedNodes.saturatedBy(acceptedAndCompatible);
     }
 
     /** Returns true if the content of this list is sufficient to meet the request */
     boolean fulfilled() {
-        return requestedNodes.fulfilledBy(accepted());
+        return requestedNodes.fulfilledBy(acceptedAndCompatibleOrResizable());
     }
 
     /** Returns true if this allocation was already fulfilled and resulted in no new changes */
@@ -319,15 +336,19 @@ class NodeAllocation {
     /**
      * Returns {@link HostDeficit} describing the host deficit for the given {@link NodeSpec}.
      *
-     * @return empty if the requested spec is already fulfilled. Otherwise returns {@link HostDeficit} containing the
+     * @return empty if the requested spec is already fulfilled. Otherwise, returns {@link HostDeficit} containing the
      *         flavor and host count required to cover the deficit.
      */
     Optional<HostDeficit> hostDeficit() {
         if (nodeType().isHost()) {
             return Optional.empty(); // Hosts are provisioned as required by the child application
         }
+        int deficit = requestedNodes.fulfilledDeficitCount(acceptedAndCompatibleOrResizable());
+        // We can only require flavor upgrade if the entire deficit is caused by upgrades
+        boolean dueToFlavorUpgrade = deficit == wasRetiredDueToFlavorUpgrade;
         return Optional.of(new HostDeficit(requestedNodes.resources().orElseGet(NodeResources::unspecified),
-                                           requestedNodes.fulfilledDeficitCount(accepted())))
+                                           deficit,
+                                           dueToFlavorUpgrade))
                        .filter(hostDeficit -> hostDeficit.count() > 0);
     }
 
@@ -341,6 +362,7 @@ class NodeAllocation {
 
         // Infrastructure hosts have fixed indices, starting at 1
         Set<Integer> currentIndices = allNodes.nodeType(hostType)
+                                              .not().state(Node.State.deprovisioned)
                                               .hostnames()
                                               .stream()
                                               // TODO(mpolden): Use cluster index instead of parsing hostname, once all
@@ -354,7 +376,7 @@ class NodeAllocation {
                 indices.add(i);
             }
         }
-        // Ignore our own index as we should never try to provision ourself. This can happen in the following scenario:
+        // Ignore our own index as we should never try to provision ourselves. This can happen in the following scenario:
         // - cfg1 has been deprovisioned
         // - cfg2 has triggered provisioning of a new cfg1
         // - cfg1 is starting and redeploys its infrastructure application during bootstrap. A deficit is detected
@@ -379,8 +401,8 @@ class NodeAllocation {
      * @return the final list of nodes
      */
     List<Node> finalNodes() {
-        int wantToRetireCount = (int) nodes.values().stream().filter(NodeCandidate::wantToRetire).count();
-        int currentRetiredCount = (int) nodes.values().stream().filter(node -> node.allocation().get().membership().retired()).count();
+        int wantToRetireCount = (int) matching(NodeCandidate::wantToRetire).count();
+        int currentRetiredCount = (int) matching(node -> node.allocation().get().membership().retired()).count();
         int deltaRetiredCount = requestedNodes.idealRetiredCount(nodes.size(), wantToRetireCount, currentRetiredCount);
 
         if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0
@@ -415,29 +437,26 @@ class NodeAllocation {
             nodes.put(candidate.toNode().hostname(), candidate);
         }
 
-        return nodes.values().stream().map(n -> n.toNode()).toList();
+        return nodes.values().stream().map(NodeCandidate::toNode).toList();
     }
 
     List<Node> reservableNodes() {
         // Include already reserved nodes to extend reservation period and to potentially update their cluster spec.
         EnumSet<Node.State> reservableStates = EnumSet.of(Node.State.inactive, Node.State.ready, Node.State.reserved);
-        return nodesFilter(n -> ! n.isNew && reservableStates.contains(n.state()));
+        return matching(n -> ! n.isNew && reservableStates.contains(n.state())).toList();
     }
 
     List<Node> newNodes() {
-        return nodesFilter(n -> n.isNew);
+        return matching(node -> node.isNew).toList();
     }
 
-    private List<Node> nodesFilter(Predicate<NodeCandidate> predicate) {
-        return nodes.values().stream()
-                .filter(predicate)
-                .map(n -> n.toNode())
-                .toList();
+    private Stream<Node> matching(Predicate<NodeCandidate> predicate) {
+        return nodes.values().stream().filter(predicate).map(NodeCandidate::toNode);
     }
 
     /** Returns the number of nodes accepted this far */
-    private int accepted() {
-        if (nodeType() == NodeType.tenant) return accepted;
+    private int acceptedAndCompatibleOrResizable() {
+        if (nodeType() == NodeType.tenant) return acceptedAndCompatibleOrResizable;
         // Infrastructure nodes are always allocated by type. Count all nodes as accepted so that we never exceed
         // the wanted number of nodes for the type.
         return allNodes.nodeType(nodeType()).size();
@@ -487,10 +506,11 @@ class NodeAllocation {
         outsideRealLimits("node real resources is outside limits"),
         violatesParentHostPolicy("node violates parent host policy"),
         incompatibleResources("node resources are incompatible"),
-        hardRequest("node is requested to retire"),
-        softRequest("node is requested to retire (soft)"),
+        hardRequest("node is requested and required to retire"),
+        softRequest("node is requested to retire"),
         violatesExclusivity("node violates host exclusivity"),
         violatesHostFlavor("node violates host flavor"),
+        violatesHostFlavorGeneration("node violates host flavor generation"),
         none("");
 
         private final String description;
@@ -499,7 +519,7 @@ class NodeAllocation {
             this.description = description;
         }
 
-        /** Human readable description of this cause */
+        /** Human-readable description of this cause */
         public String description() {
             return description;
         }
@@ -507,27 +527,11 @@ class NodeAllocation {
     }
 
     /** A host deficit, the number of missing hosts, for a deployment */
-    static class HostDeficit {
-
-        private final NodeResources resources;
-        private final int count;
-
-        private HostDeficit(NodeResources resources, int count) {
-            this.resources = resources;
-            this.count = count;
-        }
-
-        NodeResources resources() {
-            return resources;
-        }
-
-        int count() {
-            return count;
-        }
+    record HostDeficit(NodeResources resources, int count, boolean dueToFlavorUpgrade) {
 
         @Override
         public String toString() {
-            return "deficit of " + count + " nodes with " + resources;
+            return "deficit of " + count + " nodes with " + resources + (dueToFlavorUpgrade ? ", due to flavor upgrade" : "");
         }
 
     }

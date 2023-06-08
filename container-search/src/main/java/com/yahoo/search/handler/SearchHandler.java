@@ -59,6 +59,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static java.io.InputStream.nullInputStream;
+
 /**
  * Handles search request.
  *
@@ -139,6 +141,8 @@ public class SearchHandler extends LoggingRequestHandler {
         this.numRequestsLeftToTrace = new AtomicLong(numQueriesToTraceOnDebugAfterStartup);
         metric.set(SEARCH_CONNECTIONS, 0.0d, null);
         this.zoneInfo = zoneInfo;
+
+        warmup();
     }
 
     Metric metric() { return metric; }
@@ -148,6 +152,20 @@ public class SearchHandler extends LoggingRequestHandler {
             return ((ThreadPoolExecutor) executor).getMaximumPoolSize();
         }
         return Integer.MAX_VALUE; // assume unbound
+    }
+
+    private void warmup() {
+        try {
+            handle(HttpRequest.createTestRequest("/search/" +
+                                                 "?timeout=2s" +
+                                                 "&ranking.profile=unranked" +
+                                                 "&yql=select+*+from+sources+*+where+true+limit+0;",
+                                                 com.yahoo.jdisc.http.HttpRequest.Method.GET,
+                                                 nullInputStream()));
+        }
+        catch (RuntimeException e) {
+            log.log(Level.INFO, "Exception warming up search handler", e);
+        }
     }
 
     @Override
@@ -280,9 +298,7 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     private Renderer<Result> toRendererCopy(ComponentSpecification format) {
-        Renderer<Result> renderer = executionFactory.rendererRegistry().getRenderer(format);
-        renderer = perRenderingCopy(renderer);
-        return renderer;
+        return perRenderingCopy(executionFactory.rendererRegistry().getRenderer(format));
     }
 
     private Tuple2<String, Chain<Searcher>> resolveChain(String explicitChainName) {

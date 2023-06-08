@@ -4,7 +4,6 @@
 
 #include <vespa/searchlib/util/comprfile.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <cassert>
 
 namespace vespalib {
 
@@ -1400,7 +1399,6 @@ public:
     const uint8_t *
     getByteCompr() const
     {
-        assert((_preRead & 7) == 0);
         return reinterpret_cast<const uint8_t *>(getCompr()) +
             (getBitOffset() >> 3);
     }

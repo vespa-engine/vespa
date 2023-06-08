@@ -195,6 +195,7 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_TRUE:
     case ParseItem::ITEM_FALSE:
         // no content
+        _currArity = 0;
         break;
     default:
         // Unknown item, so report that no more are available

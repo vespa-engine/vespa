@@ -2,15 +2,10 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -37,8 +32,8 @@ public class DirtyExpirerTest {
     }
 
     private void assertAllocationAfterExpiry(boolean dynamicProvisioning) {
-        Zone zone = new Zone(Cloud.builder().dynamicProvisioning(dynamicProvisioning).build(), SystemName.main, Environment.prod, RegionName.from("us-east"));
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
+        ProvisioningTester tester = new ProvisioningTester.Builder()
+                .dynamicProvisioning(dynamicProvisioning, true)
                 .hostProvisioner(dynamicProvisioning ? new MockHostProvisioner(List.of()) : null)
                 .build();
 

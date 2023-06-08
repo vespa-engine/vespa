@@ -10,7 +10,6 @@
 #include <vespa/searchcommon/common/dictionary_config.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
-#include <cassert>
 #include <optional>
 
 namespace search::attribute {
@@ -72,11 +71,7 @@ public:
         _distance_metric = value;
         return *this;
     }
-    Config& set_hnsw_index_params(const HnswIndexParams& params) {
-        assert(_distance_metric == params.distance_metric());
-        _hnsw_index_params = params;
-        return *this;
-    }
+    Config& set_hnsw_index_params(const HnswIndexParams& params);
     Config& clear_hnsw_index_params() {
         _hnsw_index_params.reset();
         return *this;

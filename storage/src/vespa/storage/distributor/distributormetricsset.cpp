@@ -16,11 +16,13 @@ BucketDbMetrics::~BucketDbMetrics() = default;
 DistributorMetricSet::DistributorMetricSet()
     : MetricSet("distributor", {{"distributor"}}, ""),
       puts("puts", this),
+      put_condition_probes("put_condition_probes", this),
       updates(this),
       update_puts("update_puts", this),
       update_gets("update_gets", this),
       update_metadata_gets("update_metadata_gets", this),
       removes("removes", this),
+      remove_condition_probes("remove_condition_probes", this),
       removelocations("removelocations", this),
       gets("gets", this),
       stats("stats", this),

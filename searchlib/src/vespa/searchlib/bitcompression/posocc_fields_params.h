@@ -4,7 +4,6 @@
 
 #include "posocc_field_params.h"
 #include <vector>
-#include <cassert>
 
 namespace search::bitcompression {
 
@@ -32,10 +31,7 @@ public:
         _fieldParams = _params.empty() ? nullptr : &_params[0];
     }
 
-    void assertCachedParamsRef() const {
-        assert(_numFields == _params.size());
-        assert(_fieldParams == (_params.empty() ? nullptr : &_params[0]));
-    }
+    void assertCachedParamsRef() const;
 
     uint32_t getNumFields() const { return _numFields; }
     const PosOccFieldParams *getFieldParams() const { return _fieldParams; }

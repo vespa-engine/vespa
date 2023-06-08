@@ -34,10 +34,6 @@ public:
     using DataStoreBase = datastore::DataStoreBase;
 
 private:
-    BTreeNodeAllocator(const BTreeNodeAllocator &rhs);
-
-    BTreeNodeAllocator & operator=(const BTreeNodeAllocator &rhs);
-
     NodeStore _nodeStore;
 
     using RefVector = vespalib::Array<BTreeNode::Ref>;
@@ -53,6 +49,8 @@ private:
     RefVector _leafHoldUntilFreeze;
 
 public:
+    BTreeNodeAllocator(const BTreeNodeAllocator &rhs) = delete;
+    BTreeNodeAllocator & operator=(const BTreeNodeAllocator &rhs) = delete;
     BTreeNodeAllocator();
     ~BTreeNodeAllocator();
 

@@ -5,7 +5,10 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
@@ -48,6 +51,7 @@ import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.of;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.production;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging_setup;
@@ -76,7 +80,7 @@ public class TestPackage {
     private final ApplicationPackageStream applicationPackageStream;
     private final X509Certificate certificate;
 
-    public TestPackage(Supplier<InputStream> inZip, boolean isPublicSystem, RunId id, Testerapp testerApp,
+    public TestPackage(Supplier<InputStream> inZip, boolean isPublicSystem, CloudName cloud, RunId id, Testerapp testerApp,
                        DeploymentSpec spec, Instant certificateValidFrom, Duration certificateValidDuration) {
         KeyPair keyPair;
         if (certificateValidFrom != null) {
@@ -128,10 +132,7 @@ public class TestPackage {
                                                                        testerApp)));
 
                 entries.put(deploymentFile,
-                            __ -> new ByteArrayInputStream(deploymentXml(id.tester(),
-                                                                         spec.athenzDomain(),
-                                                                         spec.requireInstance(id.application().instance())
-                                                                             .athenzService(id.type().zone().environment(), id.type().zone().region()))));
+                            __ -> new ByteArrayInputStream(deploymentXml(id.tester(), id.application().instance(), cloud, id.type().zone(), spec)));
 
                 if (certificate != null) {
                     entries.put("artifacts/key", __ -> new ByteArrayInputStream(KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8)));
@@ -297,13 +298,27 @@ public class TestPackage {
     }
 
     /** Returns a dummy deployment xml which sets up the service identity for the tester, if present. */
-    static byte[] deploymentXml(TesterId id, Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
+    static byte[] deploymentXml(TesterId id, InstanceName instance, CloudName cloud, ZoneId zone, DeploymentSpec original) {
+        Optional<AthenzDomain> athenzDomain = original.athenzDomain();
+        Optional<AthenzService> athenzService = original.requireInstance(instance)
+                                                        .athenzService(zone.environment(), zone.region());
+        Optional<CloudAccount> cloudAccount = Optional.of(original.cloudAccount(cloud, instance, zone))
+                                                      .filter(account -> ! account.isUnspecified());
+        Optional<Duration> hostTTL = (zone.environment().isProduction()
+                                      ? original.requireInstance(instance)
+                                                .steps().stream().filter(step -> step.isTest() && step.concerns(zone.environment(), Optional.of(zone.region())))
+                                                .findFirst().flatMap(Step::hostTTL)
+                                      : original.requireInstance(instance).hostTTL(zone.environment(), Optional.of(zone.region())))
+                .filter(__ -> cloudAccount.isPresent());
         String deploymentSpec =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
-                "<deployment version=\"1.0\" " +
-                athenzDomain.map(domain -> "athenz-domain=\"" + domain.value() + "\" ").orElse("") +
-                athenzService.map(service -> "athenz-service=\"" + service.value() + "\" ").orElse("") + ">" +
-                "  <instance id=\"" + id.id().instance().value() + "\" />" +
+                "<deployment version='1.0'" +
+                athenzDomain.map(domain -> " athenz-domain='" + domain.value() + "'").orElse("") +
+                athenzService.map(service -> " athenz-service='" + service.value() + "'").orElse("") +
+                cloudAccount.map(account -> " cloud-account='" + account.value() + "'").orElse("") +
+                hostTTL.map(ttl -> " empty-host-ttl='" + ttl.getSeconds() / 60 + "m'").orElse("") +
+                ">" +
+                "  <instance id='" + id.id().instance().value() + "' />" +
                 "</deployment>";
         return deploymentSpec.getBytes(UTF_8);
     }

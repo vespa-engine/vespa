@@ -29,6 +29,7 @@ master_zookeeper_cooldown_period double default=60.0
 ## If set to 1, only master will gather state. If set higher, others will
 ## also do so, prioritizing those fleetcontrollers likely to be the ones to
 ## take over if the master fails.
+# TODO: Deprecated, not used anymore, remove in Vespa 9
 state_gather_count int default=1
 
 ## Location of ZooKeeper servers

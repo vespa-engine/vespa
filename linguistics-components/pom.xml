@@ -89,6 +89,12 @@
       <scope>provided</scope>
       <classifier>no_aop</classifier>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>configdefinitions</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

@@ -30,7 +30,7 @@ private:
 public:
     RequiredPeerCredential() = default;
     RequiredPeerCredential(Field field, vespalib::string must_match_pattern);
-    RequiredPeerCredential(const RequiredPeerCredential &);
+    RequiredPeerCredential(const RequiredPeerCredential &) noexcept;
     RequiredPeerCredential & operator=(const RequiredPeerCredential &) = delete;
     RequiredPeerCredential(RequiredPeerCredential &&) noexcept;
     RequiredPeerCredential & operator=(RequiredPeerCredential &&) noexcept;

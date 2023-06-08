@@ -8,11 +8,9 @@
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/error.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/document/util/queue.h>
 #include <filesystem>
 #include <system_error>
 

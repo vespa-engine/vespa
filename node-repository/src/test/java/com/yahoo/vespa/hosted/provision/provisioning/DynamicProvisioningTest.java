@@ -3,10 +3,8 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
@@ -15,12 +13,10 @@ import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -31,6 +27,7 @@ import org.junit.Test;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -113,6 +110,55 @@ public class DynamicProvisioningTest {
         assertEquals(12, nodes.nodeType(NodeType.host).state(Node.State.active).size());
         assertEquals(12, nodes.nodeType(NodeType.tenant).state(Node.State.active).size());
         assertEquals(4, nodes.retired().size());
+    }
+
+    @Test
+    public void empty_exclusive_to_hosts_reused_iff_new_allocation_fits_perfectly() {
+        var tester = tester(true);
+
+        NodeResources highResources = new NodeResources(4, 80, 100, 1);
+        NodeResources lowResources = new NodeResources(2, 20, 50, 1);
+
+        ApplicationId application = ProvisioningTester.applicationId();
+        prepareAndActivate(application, clusterSpec("mycluster", true), 2, 1, highResources, tester);
+
+        // Total of 4 nodes should now be in node-repo, 2 active hosts and 2 active nodes.
+        assertEquals(4, tester.nodeRepository().nodes().list().size());
+        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+
+        // Redeploying the application causes no changes at all.
+        prepareAndActivate(application, clusterSpec("mycluster", true), 2, 1, highResources, tester);
+        assertEquals(4, tester.nodeRepository().nodes().list().size());
+        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
+
+        // Deploying with a smaller node flavour causes new, smaller hosts to be provisioned.
+        prepareAndActivate(application, clusterSpec("mycluster", true), 2, 1, lowResources, tester);
+
+        // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes, of which 2 are retired.
+        NodeList nodes = tester.nodeRepository().nodes().list();
+        assertEquals(8, nodes.size());
+        assertEquals(4, nodes.nodeType(NodeType.host).state(Node.State.active).size());
+        assertEquals(4, nodes.nodeType(NodeType.tenant).state(Node.State.active).size());
+        assertEquals(2, nodes.retired().size());
+
+        // Remove the child nodes, and redeploy with the original flavour. This should reuse the existing hosts.
+        tester.nodeRepository().database().writeTo(State.deprovisioned, nodes.retired().asList(), Agent.operator, Optional.empty());
+        tester.nodeRepository().nodes().list().state(State.deprovisioned).forEach(tester.nodeRepository().nodes()::forget);
+
+        // Total of 6 nodes should now be in node-repo, 4 active hosts and 2 active nodes.
+        nodes = tester.nodeRepository().nodes().list();
+        assertEquals(6, nodes.size());
+        assertEquals(4, nodes.nodeType(NodeType.host).state(Node.State.active).size());
+        assertEquals(2, nodes.nodeType(NodeType.tenant).state(Node.State.active).size());
+        assertEquals(0, nodes.retired().size());
+
+        // Deploy again with high resources.
+        prepareAndActivate(application, clusterSpec("mycluster", true), 2, 1, highResources, tester);
+        // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes.
+        nodes = tester.nodeRepository().nodes().list();
+        assertEquals(8, nodes.size());
+        assertEquals(4, nodes.nodeType(NodeType.host).state(Node.State.active).size());
+        assertEquals(4, nodes.nodeType(NodeType.tenant).state(Node.State.active).size());
     }
 
     @Test
@@ -199,7 +245,7 @@ public class DynamicProvisioningTest {
         List<Flavor> flavors = List.of(new Flavor("2x",
                                                   new NodeResources(2, 17, 200, 10, fast, remote)));
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone(false))
+        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
@@ -244,7 +290,8 @@ public class DynamicProvisioningTest {
         List<Flavor> flavors = List.of(new Flavor("x86", new NodeResources(2, 4, 50, 0.1, fast, local, Architecture.x86_64)),
                                        new Flavor("arm", new NodeResources(2, 4, 50, 0.1, fast, local, Architecture.arm64)));
         MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors);
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone(false))
+        ProvisioningTester tester = new ProvisioningTester.Builder()
+                .dynamicProvisioning(true, false)
                 .flavors(flavors)
                 .hostProvisioner(hostProvisioner)
                 .resourcesCalculator(0, 0)
@@ -287,7 +334,7 @@ public class DynamicProvisioningTest {
                                        new Flavor("2x", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
                                        new Flavor("4x", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)));
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone(false))
+        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
@@ -362,7 +409,7 @@ public class DynamicProvisioningTest {
                                        new Flavor("4x",  new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)),
                                        new Flavor("4xl", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, local)));
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone(false))
+        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
@@ -397,7 +444,7 @@ public class DynamicProvisioningTest {
                                        new Flavor("2xl", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
                                        new Flavor("4xl", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)));
 
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone(false))
+        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
                                                                     .nameResolver(nameResolver)
@@ -420,7 +467,7 @@ public class DynamicProvisioningTest {
     public void gpu_host()  {
         List<Flavor> flavors = List.of(new Flavor("gpu", new NodeResources(4, 16, 125, 10, fast, local,
                                                                            Architecture.x86_64, new NodeResources.GpuResources(1, 16))));
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone(false))
+        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)
                                                                     .flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors))
                                                                     .nameResolver(nameResolver)
@@ -433,17 +480,9 @@ public class DynamicProvisioningTest {
                        2, 1, resources);
     }
 
-    private Zone zone(boolean sharing) {
-        return new Zone(
-                Cloud.builder().dynamicProvisioning(true).allowHostSharing(sharing).build(),
-                SystemName.main,
-                Environment.prod,
-                RegionName.from("us-east"));
-    }
-
     private ProvisioningTester tester(boolean sharing) {
         var hostProvisioner = new MockHostProvisioner(new NodeFlavors(ProvisioningTester.createConfig()).getFlavors(), nameResolver, 0);
-        return new ProvisioningTester.Builder().zone(zone(sharing)).hostProvisioner(hostProvisioner).nameResolver(nameResolver).build();
+        return new ProvisioningTester.Builder().dynamicProvisioning(true, sharing).hostProvisioner(hostProvisioner).nameResolver(nameResolver).build();
     }
 
     private void prepareAndActivate(ApplicationId application, ClusterSpec clusterSpec, int nodes, int groups, NodeResources resources,

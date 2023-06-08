@@ -933,22 +933,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
     
     private static boolean applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
-        if (memoryPercentage == null || memoryPercentage.isEmpty()) return false;
-        memoryPercentage = memoryPercentage.trim();
-
-        if ( ! memoryPercentage.endsWith("%"))
-            throw new IllegalArgumentException("The memory percentage given for nodes in " + cluster +
-                                               " must be an integer percentage ending by the '%' sign");
-        memoryPercentage = memoryPercentage.substring(0, memoryPercentage.length()-1).trim();
-
         try {
+            if (memoryPercentage == null || memoryPercentage.isEmpty()) return false;
+            memoryPercentage = memoryPercentage.trim();
+            if ( ! memoryPercentage.endsWith("%"))
+                throw new IllegalArgumentException("Missing % sign");
+            memoryPercentage = memoryPercentage.substring(0, memoryPercentage.length()-1).trim();
             cluster.setMemoryPercentage(Integer.parseInt(memoryPercentage));
+            return true;
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("The memory percentage given for nodes in " + cluster +
-                                               " must be an integer percentage ending by the '%' sign");
+                                               " must be an integer percentage ending by the '%' sign", e);
         }
-        return true;
     }
 
     /** Allocate a container cluster without a nodes tag */
@@ -960,9 +957,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             int nodeCount = deployState.zone().environment().isProduction() ? 2 : 1;
             deployState.getDeployLogger().logApplicationPackage(Level.INFO, "Using " + nodeCount + " nodes in " + cluster);
             var nodesSpec = NodesSpecification.dedicated(nodeCount, context);
+            ClusterSpec.Id clusterId = ClusterSpec.Id.from(cluster.getName());
             var hosts = nodesSpec.provision(hostSystem,
                                             ClusterSpec.Type.container,
-                                            ClusterSpec.Id.from(cluster.getName()),
+                                            clusterId,
+                                            zoneEndpoint(context, clusterId),
                                             deployState.getDeployLogger(),
                                             false,
                                             context.clusterInfo().build());
@@ -1192,9 +1191,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                      DeploymentSpec spec) {
         spec.athenzDomain()
             .ifPresent(domain -> {
-                AthenzService service = spec.instance(app.getApplicationId().instance())
-                                            .flatMap(instanceSpec -> instanceSpec.athenzService(zone.environment(), zone.region()))
-                                            .or(spec::athenzService)
+                AthenzService service = spec.athenzService(app.getApplicationId().instance(), zone.environment(), zone.region())
                                             .orElseThrow(() -> new IllegalArgumentException("Missing Athenz service configuration in instance '" +
                                                                                             app.getApplicationId().instance() + "'"));
             String zoneDnsSuffix = zone.environment().value() + "-" + zone.region().value() + "." + athenzDnsSuffix;

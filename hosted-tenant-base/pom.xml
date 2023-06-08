@@ -33,6 +33,7 @@
 
     <properties>
         <vespaversion>${project.version}</vespaversion>
+        <bundle-plugin.failOnWarnings>false</bundle-plugin.failOnWarnings>
         <target_jdk_version>17</target_jdk_version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
@@ -260,6 +261,7 @@
                         <version>${vespaversion}</version>
                         <extensions>true</extensions>
                         <configuration>
+                            <failOnWarnings>${bundle-plugin.failOnWarnings}</failOnWarnings>
                             <!-- override default test bundle scope translation which translates 'test' to 'compile' -->
                             <!-- note: ordering affects how overrides are evaluated; put the most specific overrides first! -->
                             <testBundleScopeOverrides>

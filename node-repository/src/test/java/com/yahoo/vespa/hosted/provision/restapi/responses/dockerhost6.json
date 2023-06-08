@@ -6,8 +6,24 @@
   "hostname": "dockerhost6.yahoo.com",
   "flavor": "arm64",
   "cpuCores": 4.0,
-  "resources":{"vcpu":4.0,"memoryGb":32.0,"diskGb":1600.0,"bandwidthGbps":20.0,"diskSpeed":"fast","storageType":"remote","architecture":"arm64"},
-  "realResources":{"vcpu":4.0,"memoryGb":32.0,"diskGb":1600.0,"bandwidthGbps":20.0,"diskSpeed":"fast","storageType":"remote","architecture":"arm64"},
+  "resources": {
+    "vcpu": 4.0,
+    "memoryGb": 32.0,
+    "diskGb": 1600.0,
+    "bandwidthGbps": 20.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "arm64"
+  },
+  "realResources": {
+    "vcpu": 4.0,
+    "memoryGb": 32.0,
+    "diskGb": 1600.0,
+    "bandwidthGbps": 20.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "arm64"
+  },
   "environment": "BARE_METAL",
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
@@ -69,5 +85,5 @@
   ],
   "ipAddresses": [],
   "additionalIpAddresses": [],
-  "cloudAccount": "111222333444"
+  "cloudAccount": "aws:111222333444"
 }

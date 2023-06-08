@@ -357,10 +357,11 @@ TensorAttribute::onInitSave(vespalib::stringref fileName)
 {
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().
                                              takeGuard());
-    auto index_saver = (_index ? _index->make_saver() : std::unique_ptr<NearestNeighborIndexSaver>());
+    auto header = this->createAttributeHeader(fileName);
+    auto index_saver = (_index ? _index->make_saver(header.get_extra_tags()) : std::unique_ptr<NearestNeighborIndexSaver>());
     return std::make_unique<TensorAttributeSaver>
         (std::move(guard),
-         this->createAttributeHeader(fileName),
+         std::move(header),
          attribute::make_entry_ref_vector_snapshot(_refVector, getCommittedDocIdLimit()),
          _tensorStore,
          std::move(index_saver));

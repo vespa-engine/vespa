@@ -1,12 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.ModelReference;
+import com.yahoo.config.UrlReference;
+import com.yahoo.config.model.builder.xml.XmlHelper;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +34,19 @@ public class ModelIdResolver {
         models.put("flan-t5-base-decoder",  "https://data.vespa.oath.cloud/onnx_models/flan-t5-base-decoder-model.onnx");
         models.put("flan-t5-large-encoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-large-encoder-model.onnx");
         models.put("flan-t5-large-decoder", "https://data.vespa.oath.cloud/onnx_models/flan-t5-large-decoder-model.onnx");
+
+        models.put("multilingual-e5-base", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/model.onnx");
+        models.put("multilingual-e5-base-vocab", "https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/tokenizer.json");
+
+        models.put("e5-small-v2", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2/model.onnx");
+        models.put("e5-small-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-small-v2/tokenizer.json");
+
+        models.put("e5-base-v2", "https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx");
+        models.put("e5-base-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-base-v2/tokenizer.json");
+
+        models.put("e5-large-v2", "https://data.vespa.oath.cloud/onnx_models/e5-large-v2/model.onnx");
+        models.put("e5-large-v2-vocab", "https://data.vespa.oath.cloud/onnx_models/e5-large-v2/tokenizer.json");
+
         return Collections.unmodifiableMap(models);
     }
 
@@ -57,9 +75,34 @@ public class ModelIdResolver {
             value.removeAttribute("path");
         }
         else if ( ! value.hasAttribute("url") && ! value.hasAttribute("path")) {
-            throw new IllegalArgumentException(value.getTagName() + " is configured with only a 'model-id'. " +
-                                               "Add a 'path' or 'url' to deploy this outside Vespa Cloud");
+            throw onlyModelIdInHostedException(value.getTagName());
         }
+    }
+
+
+    public static ModelReference resolveToModelReference(Element elem, DeployState state) {
+        return resolveToModelReference(
+                elem.getTagName(), XmlHelper.getOptionalAttribute(elem, "model-id"),
+                XmlHelper.getOptionalAttribute(elem, "url"), XmlHelper.getOptionalAttribute(elem, "path"), state);
+    }
+
+    public static ModelReference resolveToModelReference(
+            String paramName, Optional<String> id, Optional<String> url, Optional<String> path, DeployState state) {
+        if (id.isEmpty()) return createModelReference(Optional.empty(), url, path, state);
+        else if (state.isHosted())
+            return createModelReference(id, Optional.of(modelIdToUrl(paramName, id.get())), Optional.empty(), state);
+        else if (url.isEmpty() && path.isEmpty()) throw onlyModelIdInHostedException(paramName);
+        else return createModelReference(id, url, path, state);
+    }
+
+    private static ModelReference createModelReference(Optional<String> id, Optional<String> url, Optional<String> path, DeployState state) {
+        var fileRef = path.map(p -> state.getFileRegistry().addFile(p));
+        return ModelReference.unresolved(id, url.map(UrlReference::valueOf), fileRef);
+    }
+
+    private static IllegalArgumentException onlyModelIdInHostedException(String paramName) {
+        return new IllegalArgumentException(paramName + " is configured with only a 'model-id'. " +
+                                             "Add a 'path' or 'url' to deploy this outside Vespa Cloud");
     }
 
     private static String modelIdToUrl(String valueName, String modelId) {

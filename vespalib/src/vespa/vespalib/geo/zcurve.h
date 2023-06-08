@@ -3,7 +3,6 @@
 #pragma once
 
 #include <cstdint>
-#include <cassert>
 #include <vector>
 
 namespace vespalib::geo {
@@ -163,30 +162,6 @@ public:
         Point(int32_t x_, int32_t y_) : x(x_), y(y_), z(encode(x_, y_)) {}
     };
 
-    /**
-     * An area defined by its upper left and lower right corners. The
-     * z-coordinates between these corners act as a spacial
-     * over-estimation of the actual area. These areas may never cross
-     * signed borders, since that would break the whole concept of
-     * hierarchical spatial partitioning.
-     **/
-    struct Area {
-        const Point min;
-        const Point max;
-        Area(const Area &rhs) = default;
-        Area(int32_t min_x, int32_t min_y,
-             int32_t max_x, int32_t max_y)
-            : min(min_x, min_y), max(max_x, max_y)
-        {
-            assert((min_x <= max_x) && ((min_x < 0) == (max_x < 0)));
-            assert((min_y <= max_y) && ((min_y < 0) == (max_y < 0)));
-        }
-        Area &operator=(Area &&rhs) { new ((void*)this) Area(rhs); return *this; }
-        int64_t size() const { return (static_cast<int64_t>(max.x) - min.x + 1) * (static_cast<int64_t>(max.y) - min.y + 1); }
-        int64_t estimate() const { return (max.z - min.z + 1); }
-        int64_t error() const { return estimate() - size(); }
-    };
-
     class Range
     {
     private:
@@ -212,11 +187,9 @@ public:
     static RangeVector find_ranges(int min_x, int min_y,
                                    int max_x, int max_y);
 
-    static int64_t
-    encodeSlow(int32_t x, int32_t y);
+    static int64_t encodeSlow(int32_t x, int32_t y);
 
-    static void
-    decodeSlow(int64_t enc, int32_t *xp, int32_t *yp);
+    static void decodeSlow(int64_t enc, int32_t *xp, int32_t *yp);
 };
 
 }

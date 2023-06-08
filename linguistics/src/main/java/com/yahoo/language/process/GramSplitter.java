@@ -88,46 +88,54 @@ public class GramSplitter {
         }
 
         private Gram findNext() {
-            // Skip to next word character
-            while (i < input.length() && !characterClasses.isLetterOrDigit(input.codePointAt(i))) {
+            // Skip to next indexable character
+            while (i < input.length() && !isIndexable(input.codePointAt(i))) {
                 i = input.next(i);
                 isFirstAfterSeparator = true;
             }
-            if (i >= input.length()) return null;
+            if (i >= input.length()) return null; // no indexable characters
 
-            UnicodeString gram = input.substring(i, n);
-            int nonWordChar = indexOfNonWordCodepoint(gram);
-            if (nonWordChar == 0) throw new RuntimeException("Programming error");
-
-            if (nonWordChar > 0)
-                gram = new UnicodeString(gram.toString().substring(0, nonWordChar));
-
+            int tokenStart = i;
+            UnicodeString gram = input.substring(tokenStart, n);
+            int tokenEnd = tokenEnd(gram);
+            gram = new UnicodeString(gram.toString().substring(0, tokenEnd));
             if (gram.codePointCount() == n) { // normal case: got a full length gram
                 Gram g = new Gram(i, gram.codePointCount());
                 i = input.next(i);
                 isFirstAfterSeparator = false;
                 return g;
             }
-            else { // gram is too short due either to a non-word separator or end of string
-                if (isFirstAfterSeparator) { // make a gram anyway
+            else { // gram is too short due either to being a symbol, being followed by a non-word separator, or end of string
+                if (isFirstAfterSeparator || ( gram.codePointCount() == 1 && characterClasses.isSymbol(gram.codePointAt(0)))) { // make a gram anyway
                     Gram g = new Gram(i, gram.codePointCount());
                     i = input.next(i);
                     isFirstAfterSeparator = false;
                     return g;
                 } else { // skip to next
-                    i = input.skip(gram.codePointCount() + 1, i);
+                    i = input.skip(gram.codePointCount(), i);
                     isFirstAfterSeparator = true;
                     return findNext();
                 }
             }
         }
 
-        private int indexOfNonWordCodepoint(UnicodeString s) {
-            for (int i = 0; i < s.length(); i = s.next(i)) {
+        private boolean isIndexable(int codepoint) {
+            if (characterClasses.isLetterOrDigit(codepoint)) return true;
+            if (characterClasses.isSymbol(codepoint)) return true;
+            return false;
+        }
+
+        /** Given a string s starting by an indexable character, return the position where that token should end. */
+        private int tokenEnd(UnicodeString s) {
+            if (characterClasses.isSymbol(s.codePointAt(0)))
+                return s.next(0); // symbols have length 1
+
+            int i = 0;
+            for (; i < s.length(); i = s.next(i)) {
                 if ( ! characterClasses.isLetterOrDigit(s.codePointAt(i)))
                     return i;
             }
-            return -1;
+            return i;
         }
 
         @Override

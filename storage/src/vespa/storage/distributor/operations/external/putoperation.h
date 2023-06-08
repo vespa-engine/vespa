@@ -28,6 +28,7 @@ public:
                  DistributorBucketSpace& bucketSpace,
                  std::shared_ptr<api::PutCommand> msg,
                  PersistenceOperationMetricSet& metric,
+                 PersistenceOperationMetricSet& condition_probe_metrics,
                  SequencingHandle sequencingHandle = SequencingHandle());
     ~PutOperation() override;
 
@@ -44,7 +45,7 @@ private:
     document::BucketId                 _doc_id_bucket_id;
     const DistributorNodeContext&      _node_ctx;
     DistributorStripeOperationContext& _op_ctx;
-    PersistenceOperationMetricSet&     _temp_metric;
+    PersistenceOperationMetricSet&     _condition_probe_metrics;
     DistributorBucketSpace&            _bucket_space;
     std::shared_ptr<CheckCondition>    _check_condition;
 

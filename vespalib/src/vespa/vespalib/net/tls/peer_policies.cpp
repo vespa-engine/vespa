@@ -122,7 +122,7 @@ RequiredPeerCredential::RequiredPeerCredential(Field field, vespalib::string mus
 {
 }
 
-RequiredPeerCredential::RequiredPeerCredential(const RequiredPeerCredential &) = default;
+RequiredPeerCredential::RequiredPeerCredential(const RequiredPeerCredential &) noexcept = default;
 RequiredPeerCredential::RequiredPeerCredential(RequiredPeerCredential &&) noexcept = default;
 RequiredPeerCredential & RequiredPeerCredential::operator=(RequiredPeerCredential &&) noexcept = default;
 RequiredPeerCredential::~RequiredPeerCredential() = default;

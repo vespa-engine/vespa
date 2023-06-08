@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.CertificateNotReadyException;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.ParentHostUnavailableException;
+import com.yahoo.config.provision.QuotaExceededException;
 import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -73,6 +74,8 @@ public class HttpHandler extends ThreadedHttpRequestHandler {
             return HttpErrorResponse.reindexingStatusUnavailable(getMessage(e, request));
         } catch (PreconditionFailedException e) {
             return HttpErrorResponse.preconditionFailed(getMessage(e, request));
+        } catch (QuotaExceededException e) {
+            return HttpErrorResponse.quotaExceeded(getMessage(e, request));
         } catch (Exception e) {
             log.log(Level.WARNING, "Unexpected exception handling a config server request", e);
             return HttpErrorResponse.internalServerError(getMessage(e, request));

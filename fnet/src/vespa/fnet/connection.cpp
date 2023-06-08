@@ -78,7 +78,7 @@ struct DoHandshakeWork : vespalib::Executor::Task {
 }
 
 
-FNET_Connection::ResolveHandler::ResolveHandler(FNET_Connection *conn)
+FNET_Connection::ResolveHandler::ResolveHandler(FNET_Connection *conn) noexcept
     : connection(conn),
       address()
 {

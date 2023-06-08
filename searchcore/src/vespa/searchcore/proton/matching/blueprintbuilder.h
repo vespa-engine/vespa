@@ -6,6 +6,8 @@
 #include <vespa/searchlib/query/tree/node.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 
+namespace search::queryeval { class IRequestContext; }
+
 namespace proton::matching {
 
 struct BlueprintBuilder {
@@ -14,9 +16,7 @@ struct BlueprintBuilder {
      * blueprint meta-data back into corresponding query tree nodes.
      */
     static search::queryeval::Blueprint::UP
-    build(const search::queryeval::IRequestContext & requestContext,
-          search::query::Node &node,
-          ISearchContext &context);
+    build(const search::queryeval::IRequestContext & requestContext, search::query::Node &node, ISearchContext &context);
 };
 
 }

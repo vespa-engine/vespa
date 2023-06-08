@@ -3,6 +3,7 @@
 #include "termnodes.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <charconv>
+#include <cassert>
 
 using vespalib::IllegalArgumentException;
 using vespalib::stringref;

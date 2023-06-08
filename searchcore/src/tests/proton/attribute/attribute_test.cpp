@@ -984,13 +984,8 @@ TEST_F(TwoPhasePutTest, handles_assign_update_as_two_phase_put_when_specified_fo
 ImportedAttributeVector::SP
 createImportedAttribute(const vespalib::string &name)
 {
-    auto result = ImportedAttributeVectorFactory::create(name,
-                                                         std::shared_ptr<ReferenceAttribute>(),
-                                                         std::shared_ptr<search::IDocumentMetaStoreContext>(),
-                                                         AttributeVector::SP(),
-                                                         std::shared_ptr<const search::IDocumentMetaStoreContext>(),
-                                                         true);
-    result->getSearchCache()->insert("foo", BitVectorSearchCache::Entry::SP());
+    auto result = ImportedAttributeVectorFactory::create(name, {}, {}, {}, {}, true);
+    result->getSearchCache()->insert("foo", {});
     return result;
 }
 

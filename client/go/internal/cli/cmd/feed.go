@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -164,7 +165,7 @@ func feedFiles(files []string, dispatcher *document.Dispatcher, cli *CLI) {
 }
 
 func dispatchFrom(r io.ReadCloser, dispatcher *document.Dispatcher, cli *CLI) {
-	dec := document.NewDecoder(r)
+	dec := document.NewDecoder(bufio.NewReaderSize(r, 1<<26)) // Buffer up to 64M of data at a time
 	defer r.Close()
 	for {
 		doc, err := dec.Decode()
@@ -244,7 +245,7 @@ type feedSummary struct {
 	RequestCount   int64  `json:"http.request.count"`
 	RequestBytes   int64  `json:"http.request.bytes"`
 	RequestRate    number `json:"http.request.MBps"`
-	ExceptionCount int64  `json:"http.exception.count"` // same as ErrorCount, for compatability with vespa-feed-client
+	ExceptionCount int64  `json:"http.exception.count"` // same as ErrorCount, for compatibility with vespa-feed-client output
 
 	ResponseCount      int64  `json:"http.response.count"`
 	ResponseBytes      int64  `json:"http.response.bytes"`
@@ -264,8 +265,8 @@ func mbps(bytes int64, duration time.Duration) float64 {
 func writeSummaryJSON(w io.Writer, stats document.Stats, duration time.Duration) error {
 	summary := feedSummary{
 		Seconds:       number(duration.Seconds()),
-		SuccessCount:  stats.Successes(),
-		SuccessRate:   number(float64(stats.Successes()) / math.Max(1, duration.Seconds())),
+		SuccessCount:  stats.Successful(),
+		SuccessRate:   number(float64(stats.Successful()) / math.Max(1, duration.Seconds())),
 		ErrorCount:    stats.Errors,
 		InflightCount: stats.Inflight,
 
@@ -277,7 +278,7 @@ func writeSummaryJSON(w io.Writer, stats document.Stats, duration time.Duration)
 		ResponseCount:      stats.Responses,
 		ResponseBytes:      stats.BytesRecv,
 		ResponseRate:       number(mbps(stats.BytesRecv, duration)),
-		ResponseErrorCount: stats.Responses - stats.Successes(),
+		ResponseErrorCount: stats.Unsuccessful(),
 		ResponseMinLatency: stats.MinLatency.Milliseconds(),
 		ResponseAvgLatency: stats.AvgLatency().Milliseconds(),
 		ResponseMaxLatency: stats.MaxLatency.Milliseconds(),

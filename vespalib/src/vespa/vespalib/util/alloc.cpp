@@ -284,12 +284,12 @@ AutoAllocator::getAllocator(size_t mmapLimit, size_t alignment) {
     return getAutoAllocator(availableAutoAllocators().first, mmapLimit, alignment);
 }
 
-MemoryAllocator::PtrAndSize
+PtrAndSize
 HeapAllocator::alloc(size_t sz) const {
     return salloc(sz);
 }
 
-MemoryAllocator::PtrAndSize
+PtrAndSize
 HeapAllocator::salloc(size_t sz) {
     return PtrAndSize((sz > 0) ? malloc(sz) : nullptr, sz);
 }
@@ -299,10 +299,10 @@ void HeapAllocator::free(PtrAndSize alloc) const {
 }
 
 void HeapAllocator::sfree(PtrAndSize alloc) {
-    if (alloc.first) { ::free(alloc.first); }
+    if (alloc.get()) { ::free(alloc.get()); }
 }
 
-MemoryAllocator::PtrAndSize
+PtrAndSize
 AlignedHeapAllocator::alloc(size_t sz) const {
     if (!sz) { return PtrAndSize(nullptr, 0); }
     void* ptr;
@@ -318,12 +318,12 @@ MMapAllocator::resize_inplace(PtrAndSize current, size_t newSize) const {
     return sresize_inplace(current, newSize);
 }
 
-MemoryAllocator::PtrAndSize
+PtrAndSize
 MMapAllocator::alloc(size_t sz) const {
     return salloc(sz, nullptr);
 }
 
-MemoryAllocator::PtrAndSize
+PtrAndSize
 MMapAllocator::salloc(size_t sz, void * wantedAddress)
 {
     void * buf(nullptr);
@@ -382,23 +382,23 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
 size_t
 MMapAllocator::sresize_inplace(PtrAndSize current, size_t newSize) {
     newSize = round_up_to_page_size(newSize);
-    if (newSize > current.second) {
+    if (newSize > current.size()) {
         return extend_inplace(current, newSize);
-    } else if (newSize < current.second) {
+    } else if (newSize < current.size()) {
         return shrink_inplace(current, newSize);
     } else {
-        return current.second;
+        return current.size();
     }
 }
 
 size_t
 MMapAllocator::extend_inplace(PtrAndSize current, size_t newSize) {
-    if (current.second == 0u) {
+    if (current.size() == 0u) {
         return 0u;
     }
-    PtrAndSize got = MMapAllocator::salloc(newSize - current.second, static_cast<char *>(current.first)+current.second);
-    if ((static_cast<const char *>(current.first) + current.second) == static_cast<const char *>(got.first)) {
-        return current.second + got.second;
+    PtrAndSize got = MMapAllocator::salloc(newSize - current.size(), static_cast<char *>(current.get())+current.size());
+    if ((static_cast<const char *>(current.get()) + current.size()) == static_cast<const char *>(got.get())) {
+        return current.size() + got.size();
     } else {
         MMapAllocator::sfree(got);
         return 0;
@@ -407,7 +407,7 @@ MMapAllocator::extend_inplace(PtrAndSize current, size_t newSize) {
 
 size_t
 MMapAllocator::shrink_inplace(PtrAndSize current, size_t newSize) {
-    PtrAndSize toUnmap(static_cast<char *>(current.first)+newSize, current.second - newSize);
+    PtrAndSize toUnmap(static_cast<char *>(current.get())+newSize, current.size() - newSize);
     sfree(toUnmap);
     return newSize;
 }
@@ -418,27 +418,27 @@ void MMapAllocator::free(PtrAndSize alloc) const {
 
 void MMapAllocator::sfree(PtrAndSize alloc)
 {
-    if (alloc.first != nullptr) {
-        int madvise_retval = madvise(alloc.first, alloc.second, MADV_DONTNEED);
+    if (alloc.get() != nullptr) {
+        int madvise_retval = madvise(alloc.get(), alloc.size(), MADV_DONTNEED);
         if (madvise_retval != 0) {
             std::error_code ec(errno, std::system_category());
             if (errno == EINVAL) {
-                LOG(debug, "madvise(%p, %lx)=%d, errno=%s", alloc.first, alloc.second, madvise_retval, ec.message().c_str());
+                LOG(debug, "madvise(%p, %lx)=%d, errno=%s", alloc.get(), alloc.size(), madvise_retval, ec.message().c_str());
             } else {
-                LOG(warning, "madvise(%p, %lx)=%d, errno=%s", alloc.first, alloc.second, madvise_retval, ec.message().c_str());
+                LOG(warning, "madvise(%p, %lx)=%d, errno=%s", alloc.get(), alloc.size(), madvise_retval, ec.message().c_str());
             }
         }
-        int munmap_retval = munmap(alloc.first, alloc.second);
+        int munmap_retval = munmap(alloc.get(), alloc.size());
         if (munmap_retval != 0) {
             std::error_code ec(errno, std::system_category());
-            LOG(warning, "munmap(%p, %lx)=%d, errno=%s", alloc.first, alloc.second, munmap_retval, ec.message().c_str());
+            LOG(warning, "munmap(%p, %lx)=%d, errno=%s", alloc.get(), alloc.size(), munmap_retval, ec.message().c_str());
             abort();
         }
-        if (alloc.second >= _G_MMapLogLimit) {
+        if (alloc.size() >= _G_MMapLogLimit) {
             std::lock_guard guard(_G_lock);
-            MMapInfo info = _G_HugeMappings[alloc.first];
-            assert(alloc.second == info._sz);
-            _G_HugeMappings.erase(alloc.first);
+            MMapInfo info = _G_HugeMappings[alloc.get()];
+            assert(alloc.size() == info._sz);
+            _G_HugeMappings.erase(alloc.get());
             LOG(info, "munmap %ld of size %ld", info._id, info._sz);
             LOG(info, "%ld mappings of accumulated size %ld", _G_HugeMappings.size(), sum(_G_HugeMappings));
         }
@@ -447,7 +447,7 @@ void MMapAllocator::sfree(PtrAndSize alloc)
 
 size_t
 AutoAllocator::resize_inplace(PtrAndSize current, size_t newSize) const {
-    if (useMMap(current.second) && useMMap(newSize)) {
+    if (useMMap(current.size()) && useMMap(newSize)) {
         newSize = roundUpToHugePages(newSize);
         return MMapAllocator::sresize_inplace(current, newSize);
     } else {
@@ -455,7 +455,7 @@ AutoAllocator::resize_inplace(PtrAndSize current, size_t newSize) const {
     }
 }
 
-MMapAllocator::PtrAndSize
+PtrAndSize
 AutoAllocator::alloc(size_t sz) const {
     if ( ! useMMap(sz)) {
         if (_alignment == 0) {
@@ -471,7 +471,7 @@ AutoAllocator::alloc(size_t sz) const {
 
 void
 AutoAllocator::free(PtrAndSize alloc) const {
-    if ( ! isMMapped(alloc.second)) {
+    if ( ! isMMapped(alloc.size())) {
         return HeapAllocator::sfree(alloc);
     } else {
         return MMapAllocator::sfree(alloc);
@@ -513,7 +513,7 @@ Alloc::resize_inplace(size_t newSize)
     }
     size_t extendedSize = _allocator->resize_inplace(_alloc, newSize);
     if (extendedSize >= newSize) {
-        _alloc.second = extendedSize;
+        _alloc = PtrAndSize(_alloc.get(), extendedSize);
         return true;
     }
     return false;
@@ -569,6 +569,14 @@ Alloc
 Alloc::alloc_with_allocator(const MemoryAllocator* allocator) noexcept
 {
     return Alloc(allocator);
+}
+
+PtrAndSize::PtrAndSize(void * ptr, size_t sz) noexcept
+    : _ptr(ptr), _sz(sz)
+{
+    constexpr uint8_t MAX_PTR_BITS = 57;
+    constexpr uint64_t MAX_PTR = 1ul << MAX_PTR_BITS;
+    assert((uint64_t(ptr) + sz) < MAX_PTR);
 }
 
 }

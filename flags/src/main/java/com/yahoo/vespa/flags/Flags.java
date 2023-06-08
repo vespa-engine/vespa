@@ -49,14 +49,14 @@ public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
     public static final UnboundBooleanFlag IPV6_IN_GCP = defineFeatureFlag(
-            "ipv6-in-gcp", true,
+            "ipv6-in-gcp", false,
             List.of("hakonhall"), "2023-05-15", "2023-06-15",
             "Provision GCP hosts with external IPv6 addresses",
             "Takes effect on the next host provisioning");
 
     public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
             "drop-caches", false,
-            List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-06-05",
+            List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-08-05",
             "Drop caches on tenant hosts",
             "Takes effect on next tick",
             ZONE_ID,
@@ -265,7 +265,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
             "enabled-horizon-dashboard", false,
-            List.of("olaa"), "2021-09-13", "2023-06-01",
+            List.of("olaa"), "2021-09-13", "2023-09-01",
             "Enable Horizon dashboard",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL
@@ -322,7 +322,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SEPARATE_METRIC_CHECK_CONFIG = defineFeatureFlag(
             "separate-metric-check-config", false,
-            List.of("olaa"), "2022-07-04", "2023-06-01",
+            List.of("olaa"), "2022-07-04", "2023-09-01",
             "Determines whether one metrics config check should be written per Vespa node",
             "Takes effect on next tick",
             HOSTNAME);
@@ -344,17 +344,10 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2023-06-01",
+            List.of("olaa"), "2022-09-23", "2023-09-01",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
             APPLICATION_ID);
-
-    public static final UnboundBooleanFlag CONSOLE_CSRF = defineFeatureFlag(
-            "console-csrf", false,
-            List.of("bjorncs", "tokle"), "2022-09-26", "2023-06-01",
-            "Enable CSRF token in console",
-            "Takes effect immediately",
-            CONSOLE_USER_EMAIL);
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
@@ -391,13 +384,13 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundBooleanFlag ALLOW_MORE_THAN_ONE_CONTENT_GROUP_DOWN = defineFeatureFlag(
-            "allow-more-than-one-content-group-down", false, List.of("hmusum"), "2023-04-14", "2023-06-14",
+            "allow-more-than-one-content-group-down", false, List.of("hmusum"), "2023-04-14", "2023-07-01",
             "Whether to enable possible configuration of letting more than one content group down",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag NEW_IDDOC_LAYOUT = defineFeatureFlag(
-            "new_iddoc_layout", false, List.of("tokle", "bjorncs", "olaa"), "2023-04-24", "2023-05-31",
+            "new_iddoc_layout", false, List.of("tokle", "bjorncs", "olaa"), "2023-04-24", "2023-06-30",
             "Whether to use new identity document layout",
             "Takes effect on node reboot",
             HOSTNAME, APPLICATION_ID, VESPA_VERSION);
@@ -408,17 +401,17 @@ public class Flags {
             "Takes effect on application deployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_VESPA_ALMA_LINUX_X86_64_AMI = defineFeatureFlag(
-            "use-vespa-alma-linux-x86_64-ami", false, List.of("hmusum"), "2023-05-04", "2023-07-01",
-            "Whether to use VESPA-ALMALINUX-8-* AMI for x86_64 architecture",
-            "Takes effect when provisioning new AWS hosts",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
-            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-06-01",
+            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-07-01",
             "Whether to enable the one program that should not be named",
             "Takes effect at next host-admin tick",
             ZONE_ID);
+
+    public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
+            "weighted-endpoint-record-ttl", List.of(), String.class, List.of("jonmv"), "2023-05-16", "2023-06-16",
+            "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
+            "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
+            "Takes effect at redeployment from controller");
 
     public static final UnboundBooleanFlag ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR = defineFeatureFlag(
             "enable-conditional-put-remove-write-repair", false,

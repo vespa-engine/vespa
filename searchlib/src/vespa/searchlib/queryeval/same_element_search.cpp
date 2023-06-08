@@ -6,6 +6,7 @@
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
 #include <functional>
+#include <cassert>
 
 using TFMD = search::fef::TermFieldMatchData;
 

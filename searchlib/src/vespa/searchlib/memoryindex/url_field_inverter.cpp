@@ -10,6 +10,7 @@
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <stdexcept>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".memoryindex.url_field_inverter");

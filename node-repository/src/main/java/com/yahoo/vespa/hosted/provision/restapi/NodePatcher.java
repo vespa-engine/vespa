@@ -63,6 +63,7 @@ public class NodePatcher {
     private static final String WANT_TO_RETIRE = "wantToRetire";
     private static final String WANT_TO_DEPROVISION = "wantToDeprovision";
     private static final String WANT_TO_REBUILD = "wantToRebuild";
+    private static final String WANT_TO_UPGRADE_FLAVOR = "wantToUpgradeFlavor";
     private static final String REPORTS = "reports";
     private static final Set<String> RECURSIVE_FIELDS = Set.of(WANT_TO_RETIRE, WANT_TO_DEPROVISION);
     private static final Set<String> IP_CONFIG_FIELDS = Set.of("ipAddresses",
@@ -223,12 +224,16 @@ public class NodePatcher {
             case WANT_TO_DEPROVISION:
             case WANT_TO_REBUILD:
                 // These needs to be handled as one, because certain combinations are not allowed.
-                return node.withWantToRetire(asOptionalBoolean(root.field(WANT_TO_RETIRE)).orElseGet(node.status()::wantToRetire),
+                return node.withWantToRetire(asOptionalBoolean(root.field(WANT_TO_RETIRE))
+                                                     .orElseGet(node.status()::wantToRetire),
                                              asOptionalBoolean(root.field(WANT_TO_DEPROVISION))
                                                      .orElseGet(node.status()::wantToDeprovision),
                                              asOptionalBoolean(root.field(WANT_TO_REBUILD))
                                                      .filter(want -> !applyingAsChild)
                                                      .orElseGet(node.status()::wantToRebuild),
+                                             asOptionalBoolean(root.field(WANT_TO_UPGRADE_FLAVOR))
+                                                     .filter(want -> !applyingAsChild)
+                                                     .orElseGet(node.status()::wantToUpgradeFlavor),
                                              Agent.operator,
                                              clock.instant());
             case REPORTS:
@@ -256,6 +261,10 @@ public class NodePatcher {
             case "exclusiveTo":
             case "exclusiveToApplicationId":
                 return node.withExclusiveToApplicationId(SlimeUtils.optionalString(value).map(ApplicationId::fromSerializedForm).orElse(null));
+            case "hostTTL":
+                return node.withHostTTL(SlimeUtils.optionalDuration(value).orElse(null));
+            case "hostEmptyAt":
+                return node.withHostEmptyAt(SlimeUtils.optionalInstant(value).orElse(null));
             case "exclusiveToClusterType":
                 return node.withExclusiveToClusterType(SlimeUtils.optionalString(value).map(ClusterSpec.Type::valueOf).orElse(null));
             case "switchHostname":

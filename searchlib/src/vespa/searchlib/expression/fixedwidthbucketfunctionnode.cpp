@@ -4,14 +4,13 @@
 #include "floatresultnode.h"
 #include "integerbucketresultnode.h"
 #include "floatbucketresultnode.h"
+#include "resultvector.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <stdexcept>
 #include <cmath>
 #include <limits>
 
-
-namespace search {
-namespace expression {
+namespace search::expression {
 
 IMPLEMENT_EXPRESSIONNODE(FixedWidthBucketFunctionNode, UnaryFunctionNode);
 
@@ -79,7 +78,7 @@ FixedWidthBucketFunctionNode::FloatBucketHandler::update(ResultNode &result, con
     bucket.setRange(from, to);
 }
 
-FixedWidthBucketFunctionNode::~FixedWidthBucketFunctionNode() {}
+FixedWidthBucketFunctionNode::~FixedWidthBucketFunctionNode() = default;
 
 void
 FixedWidthBucketFunctionNode::onPrepareResult()
@@ -87,20 +86,16 @@ FixedWidthBucketFunctionNode::onPrepareResult()
     const ExpressionNode &child = getArg();
     const ResultNode     &input = *child.getResult();
     if (input.getClass().inherits(IntegerResultNode::classId)) {
-        ResultNode::UP res(new IntegerBucketResultNode());
-        setResultType(std::move(res));
+        setResultType(std::make_unique<IntegerBucketResultNode>());
         _bucketHandler.reset(new IntegerBucketHandler(_width->getInteger()));
     } else if (input.getClass().inherits(FloatResultNode::classId)) {
-        ResultNode::UP res(new FloatBucketResultNode());
-        setResultType(std::move(res));
+        setResultType(std::make_unique<FloatBucketResultNode>());
         _bucketHandler.reset(new FloatBucketHandler(_width->getFloat()));
     } else if (input.getClass().inherits(IntegerResultNodeVector::classId)) {
-        ResultNode::UP res(new IntegerBucketResultNodeVector());
-        setResultType(std::move(res));
+        setResultType(std::make_unique<IntegerBucketResultNodeVector>());
         _bucketHandler.reset(new IntegerVectorBucketHandler(_width->getInteger()));
     } else if (input.getClass().inherits(FloatResultNodeVector::classId)) {
-        ResultNode::UP res(new FloatBucketResultNodeVector());
-        setResultType(std::move(res));
+        setResultType(std::make_unique<FloatBucketResultNodeVector>());
         _bucketHandler.reset(new FloatVectorBucketHandler(_width->getFloat()));
     } else {
         throw std::runtime_error(vespalib::make_string("cannot create appropriate bucket for type '%s'", input.getClass().name()));
@@ -129,7 +124,6 @@ FixedWidthBucketFunctionNode::onDeserialize(vespalib::Deserializer &is)
     return is >> _width;
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

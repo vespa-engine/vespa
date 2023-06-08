@@ -43,9 +43,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
-
 import static com.yahoo.prelude.querytransform.CJKSearcher.TERM_ORDER_RELAXATION;
-
 
 /**
  * Replaces query terms with their stems
@@ -111,9 +109,8 @@ public class StemmingSearcher extends Searcher {
 
     private Item replaceTerms(Query q, IndexFacts.Session indexFacts) {
         Language language = q.getModel().getParsingLanguage();
-        if (language == Language.UNKNOWN) {
-            return q.getModel().getQueryTree().getRoot();
-        }
+        if (language == Language.UNKNOWN) return q.getModel().getQueryTree().getRoot();
+
         StemContext context = new StemContext();
         context.isCJK = language.isCjk();
         context.language = language;
@@ -144,9 +141,8 @@ public class StemmingSearcher extends Searcher {
     }
 
     private Item scan(Item item, StemContext context) {
-        if (item == null) {
-            return null;
-        }
+        if (item == null) return null;
+
         boolean old = context.insidePhrase;
         if (item instanceof PhraseItem || item instanceof PhraseSegmentItem) {
             context.insidePhrase = true;
@@ -155,7 +151,6 @@ public class StemmingSearcher extends Searcher {
             item = checkBlock((BlockItem) item, context);
         } else if (item instanceof CompositeItem comp) {
             ListIterator<Item> i = comp.getItemIterator();
-
             while (i.hasNext()) {
                 Item original = i.next();
                 Item transformed = scan(original, context);
@@ -186,7 +181,7 @@ public class StemmingSearcher extends Searcher {
             if (i instanceof TermItem) {
                 return ((TermItem) i).getOrigin(); // this should always be the case
             } else {
-                getLogger().log(Level.WARNING, "Weird, BlockItem '" + b + "' was a composite containing " + 
+                getLogger().log(Level.WARNING, "BlockItem '" + b + "' was a composite containing " +
                                                   i.getClass().getName() + ", expected TermItem.");
             }
         }
@@ -198,24 +193,14 @@ public class StemmingSearcher extends Searcher {
         Item blockAsItem = (Item)current;
         CompositeItem composite;
         List<StemList> segments = linguistics.getStemmer().stem(current.stringValue(), index.getStemMode(), context.language);
+        if (segments.isEmpty()) return blockAsItem;
+
         String indexName = current.getIndexName();
         Substring substring = getOffsets(current);
-
         if (segments.size() == 1) {
-            getLogger().log(Level.FINE, () -> "Stem '"+current.stringValue()+"' mode "+index.getStemMode()
-                            +" and language '"+context.language+"' -> '"+segments.get(0)+"'");
             TaggableItem w = singleWordSegment(current, segments.get(0), index, substring, context.insidePhrase);
             setMetaData(current, context.reverseConnectivity, w);
-            return (Item) w;
-        } else if (getLogger().isLoggable(Level.FINE)) {
-            var buf = new StringBuilder();
-            buf.append("Stem '").append(current.stringValue());
-            buf.append("' mode ").append(index.getStemMode());
-            buf.append(" and language '").append(context.language).append("' ->");
-            for (StemList segment : segments) {
-                buf.append(" '").append(segment).append("'");
-            }
-            getLogger().log(Level.FINE, buf.toString());
+            return (Item)w;
         }
 
         if (context.isCJK)
@@ -224,7 +209,6 @@ public class StemmingSearcher extends Searcher {
             composite = chooseComposite(current, ((Item) current).getParent(), indexName);
 
         for (StemList segment : segments) {
-            getLogger().log(Level.FINE, () -> "Stem to multiple segments '"+segment+"'");
             TaggableItem w = singleWordSegment(current, segment, index, substring, context.insidePhrase);
 
             if (composite instanceof AndSegmentItem) {
@@ -242,7 +226,6 @@ public class StemmingSearcher extends Searcher {
             setSignificance(replacement, current);
             phraseSegmentConnectivity(current, context.reverseConnectivity, replacement);
         }
-
         return composite;
     }
 
@@ -372,8 +355,8 @@ public class StemmingSearcher extends Searcher {
             case PHRASE -> createPhraseSegment(current, indexName);
             case BOOLEAN_AND -> createAndSegment(current);
             default -> throw new IllegalArgumentException("Unknown segmenting rule: " + current.getSegmentingRule() +
-                    ". This is a bug in Vespa, as the implementation has gotten out of sync." +
-                    " Please create an issue.");
+                                                          ". This is a bug in Vespa, as the implementation has gotten out of sync." +
+                                                          " Please create an issue.");
         };
     }
 

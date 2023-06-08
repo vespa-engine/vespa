@@ -26,7 +26,7 @@ public class ExportPackageAnnotation {
         requireNonNegative(major, "major");
         requireNonNegative(minor, "minor");
         requireNonNegative(micro, "micro");
-        if (QUALIFIER_PATTERN.matcher(qualifier).matches() == false) {
+        if (! QUALIFIER_PATTERN.matcher(qualifier).matches()) {
             throw new IllegalArgumentException(
                     exportPackageError(String.format("qualifier must follow the format (alpha|digit|'_'|'-')* but was '%s'.", qualifier)));
         }

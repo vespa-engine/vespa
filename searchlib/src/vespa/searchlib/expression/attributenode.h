@@ -2,7 +2,6 @@
 #pragma once
 
 #include "functionnode.h"
-#include "resultvector.h"
 #include "attributeresult.h"
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>

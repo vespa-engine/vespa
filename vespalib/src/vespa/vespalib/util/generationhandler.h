@@ -28,20 +28,24 @@ public:
         // least significant bit is invalid flag
         std::atomic<uint32_t> _refCount;
 
-        static bool valid(uint32_t refCount) { return (refCount & 1) == 0u; }
+        static bool valid(uint32_t refCount) noexcept { return (refCount & 1) == 0u; }
     public:
         std::atomic<generation_t> _generation;
         GenerationHold *_next;	// next free element or next newer element.
 
-        GenerationHold();
+        GenerationHold() noexcept;
         ~GenerationHold();
 
-        void setValid();
-        bool setInvalid();
-        void release();
-        GenerationHold *acquire();
-        static GenerationHold *copy(GenerationHold *self);
-        uint32_t getRefCount() const;
+        void setValid() noexcept;
+        bool setInvalid() noexcept;
+        void release() noexcept {
+            _refCount.fetch_sub(2);
+        }
+        GenerationHold *acquire() noexcept;
+        static GenerationHold *copy(GenerationHold *self) noexcept;
+        uint32_t getRefCount() const noexcept {
+            return _refCount.load(std::memory_order_relaxed) / 2;
+        }
     };
 
     /**
@@ -50,22 +54,26 @@ public:
     class Guard {
     private:
         GenerationHold *_hold;
-        void cleanup() {
+        void cleanup() noexcept {
             if (_hold != nullptr) {
                 _hold->release();
                 _hold = nullptr;
             }
         }
     public:
-        Guard();
-        Guard(GenerationHold *hold); // hold is never nullptr
-        ~Guard();
-        Guard(const Guard & rhs);
-        Guard(Guard &&rhs);
-        Guard & operator=(const Guard & rhs);
-        Guard & operator=(Guard &&rhs);
+        Guard() noexcept : _hold(nullptr) { }
+        Guard(GenerationHold *hold) noexcept : _hold(hold->acquire()) { } // hold is never nullptr
+        ~Guard() { cleanup(); }
+        Guard(const Guard & rhs) noexcept : _hold(GenerationHold::copy(rhs._hold)) { }
+        Guard(Guard &&rhs) noexcept
+            : _hold(rhs._hold)
+        {
+            rhs._hold = nullptr;
+        }
+        Guard & operator=(const Guard & rhs) noexcept;
+        Guard & operator=(Guard &&rhs) noexcept;
 
-        bool valid() const {
+        bool valid() const noexcept {
             return _hold != nullptr;
         }
         generation_t getGeneration() const { return _hold->_generation.load(std::memory_order_relaxed); }
@@ -75,9 +83,9 @@ private:
     std::atomic<generation_t>     _generation;
     std::atomic<generation_t>     _oldest_used_generation;
     std::atomic<GenerationHold *> _last;      // Points to "current generation" entry
-    GenerationHold *_first;     // Points to "firstUsedGeneration" entry
-    GenerationHold *_free;      // List of free entries
-    uint32_t        _numHolds;  // Number of allocated generation hold entries
+    GenerationHold               *_first;     // Points to "firstUsedGeneration" entry
+    GenerationHold               *_free;      // List of free entries
+    uint32_t                      _numHolds;  // Number of allocated generation hold entries
 
     void set_generation(generation_t generation) noexcept { _generation.store(generation, std::memory_order_relaxed); }
 

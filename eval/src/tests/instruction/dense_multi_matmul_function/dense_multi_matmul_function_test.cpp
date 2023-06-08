@@ -42,8 +42,8 @@ void verify_optimized(const vespalib::string &expr, const FunInfo &details)
     CellTypeSpace stable_types(CellTypeUtils::list_stable_types(), 2);
     CellTypeSpace unstable_types(CellTypeUtils::list_unstable_types(), 2);
     EvalFixture::verify<FunInfo>(expr, {details}, CellTypeSpace(stable_types).same());
-    EvalFixture::verify<FunInfo>(expr, {}, CellTypeSpace(stable_types).different());
-    EvalFixture::verify<FunInfo>(expr, {}, unstable_types);
+    EvalFixture::verify<FunInfo>(expr, {}, CellTypeSpace(std::move(stable_types)).different());
+    EvalFixture::verify<FunInfo>(expr, {}, std::move(unstable_types));
 }
 
 void verify_not_optimized(const vespalib::string &expr) {

@@ -58,6 +58,7 @@ public class ApplicationSerializer {
     private static final String suggestedKey = "suggested";
     private static final String clusterInfoKey = "clusterInfo";
     private static final String bcpDeadlineKey = "bcpDeadline";
+    private static final String hostTTLKey = "hostTTL";
     private static final String bcpGroupInfoKey = "bcpGroupInfo";
     private static final String queryRateKey = "queryRateKey";
     private static final String growthRateHeadroomKey = "growthRateHeadroomKey";
@@ -234,12 +235,14 @@ public class ApplicationSerializer {
 
     private static void toSlime(ClusterInfo clusterInfo, Cursor clusterInfoObject) {
         clusterInfoObject.setLong(bcpDeadlineKey, clusterInfo.bcpDeadline().toMinutes());
+        if ( ! clusterInfo.hostTTL().isZero()) clusterInfoObject.setLong(hostTTLKey, clusterInfo.hostTTL().toMillis());
     }
 
     private static ClusterInfo clusterInfoFromSlime(Inspector clusterInfoObject) {
         if ( ! clusterInfoObject.valid()) return ClusterInfo.empty();
         ClusterInfo.Builder builder = new ClusterInfo.Builder();
         builder.bcpDeadline(Duration.ofMinutes(clusterInfoObject.field(bcpDeadlineKey).asLong()));
+        builder.hostTTL(Duration.ofMillis(clusterInfoObject.field(hostTTLKey).asLong()));
         return builder.build();
     }
 

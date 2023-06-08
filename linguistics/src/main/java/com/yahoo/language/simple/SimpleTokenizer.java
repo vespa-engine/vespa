@@ -57,7 +57,7 @@ public class SimpleTokenizer implements Tokenizer {
     }
 
     /** Tokenize the input, and apply the given transform to each token string. */
-    public Iterable<Token> tokenize(String input, Function<String, String> tokenProocessor) {
+    public Iterable<Token> tokenize(String input, Function<String, String> tokenProcessor) {
         if (input.isEmpty()) return List.of();
 
         List<Token> tokens = new ArrayList<>();
@@ -67,11 +67,11 @@ public class SimpleTokenizer implements Tokenizer {
         for (int prev = 0, next = Character.charCount(nextCode); next <= input.length(); ) {
             nextCode = next < input.length() ? input.codePointAt(next) : SPACE_CODE;
             TokenType nextType = SimpleTokenType.valueOf(nextCode);
-            if (!prevType.isIndexable() || !nextType.isIndexable()) {
+            if (isAtTokenBoundary(prevType, nextType)) {
                 String original = input.substring(prev, next);
                 tokens.add(new SimpleToken(original).setOffset(prev)
                                                     .setType(tokenType)
-                                                    .setTokenString(tokenProocessor.apply(original)));
+                                                    .setTokenString(tokenProcessor.apply(original)));
                 prev = next;
                 prevType = nextType;
                 tokenType = prevType;
@@ -82,6 +82,12 @@ public class SimpleTokenizer implements Tokenizer {
             next += Character.charCount(nextCode);
         }
         return tokens;
+    }
+
+    private boolean isAtTokenBoundary(TokenType prevType, TokenType nextType) {
+        // Always index each symbol as a token
+        if (prevType == TokenType.INDEXABLE_SYMBOL || nextType == TokenType.INDEXABLE_SYMBOL) return true;
+        return !prevType.isIndexable() || !nextType.isIndexable();
     }
 
     private TokenType determineType(TokenType tokenType, TokenType characterType) {

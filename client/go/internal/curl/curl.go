@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os/exec"
 	"runtime"
+	"sort"
 
 	"github.com/alessio/shellescape"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
@@ -61,6 +62,7 @@ func (c *Command) Args() []string {
 	if c.Method != "" {
 		args = append(args, "-X", c.Method)
 	}
+	sort.Slice(c.headers, func(i, j int) bool { return c.headers[i].key < c.headers[j].key })
 	for _, header := range c.headers {
 		args = append(args, "-H", header.key+": "+header.value)
 	}

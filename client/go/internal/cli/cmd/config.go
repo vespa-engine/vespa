@@ -329,7 +329,7 @@ func (c *Config) write() error {
 	return c.config.WriteFile(configFile)
 }
 
-func (c *Config) targetType() (string, error) {
+func (c *Config) targetOrURL() (string, error) {
 	targetType, ok := c.get(targetFlag)
 	if !ok {
 		return "", fmt.Errorf("target is unset")
@@ -515,7 +515,7 @@ func (c *Config) readAPIKey(cli *CLI, system vespa.System, tenantName string) ([
 		if _, err := os.Stat(c.authConfigPath()); err == nil {
 			return nil, nil // We have auth config, so we should prefer Auth0 over API key
 		}
-		cli.printWarning("Authenticating with API key. This is discouraged in non-CI environments", "Authenticate with 'vespa auth login' instead")
+		cli.printWarning("Authenticating with API key, intended for use in CI environments.", "Authenticate with 'vespa auth login' instead")
 	}
 	return os.ReadFile(c.apiKeyPath(tenantName))
 }

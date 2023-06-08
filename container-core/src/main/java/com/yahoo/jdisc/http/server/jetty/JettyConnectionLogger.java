@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Jetty integration for jdisc connection log ({@link ConnectionLog}).
@@ -136,6 +135,9 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             if (info == null) return; // Closed connection already handled
             if (connection instanceof HttpConnection) {
                 info.setHttpBytes(connection.getBytesIn(), connection.getBytesOut());
+            }
+            if (connection.getEndPoint() instanceof SslConnection.DecryptedEndPoint ssl) {
+                info.setSslBytes(ssl.getSslConnection().getBytesIn(), ssl.getSslConnection().getBytesOut());
             }
             if (!endpoint.isOpen()) {
                 info.setClosedAt(System.currentTimeMillis());
@@ -258,6 +260,8 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         private List<String> sslSubjectAlternativeNames;
         private String proxyProtocolVersion;
         private String httpProtocol;
+        private long sslBytesReceived = 0;
+        private long sslBytesSent = 0;
 
         private ConnectionInfo(UUID uuid, long createdAt, InetSocketAddress localAddress, InetSocketAddress peerAddress) {
             this.uuid = uuid;
@@ -330,6 +334,12 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
 
         synchronized ConnectionInfo setProxyProtocolVersion(String version) { this.proxyProtocolVersion = version; return this; }
 
+        synchronized ConnectionInfo setSslBytes(long received, long sent) {
+            this.sslBytesReceived = received;
+            this.sslBytesSent = sent;
+            return this;
+        }
+
         synchronized ConnectionLogEntry toLogEntry() {
             ConnectionLogEntry.Builder builder = ConnectionLogEntry.builder(uuid, Instant.ofEpochMilli(createdAt));
             if (closedAt > 0) {
@@ -399,6 +409,12 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             }
             if (proxyProtocolVersion != null) {
                 builder.withProxyProtocolVersion(proxyProtocolVersion);
+            }
+            if (sslBytesReceived > 0) {
+                builder.withSslBytesReceived(sslBytesReceived);
+            }
+            if (sslBytesSent > 0) {
+                builder.withSslBytesSent(sslBytesSent);
             }
             return builder.build();
         }

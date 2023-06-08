@@ -706,6 +706,8 @@ public class HttpServerTest {
         Assertions.assertThat(logEntry.sslSessionId()).hasValueSatisfying(sessionId -> Assertions.assertThat(sessionId).hasSize(64));
         Assertions.assertThat(logEntry.sslPeerNotBefore()).hasValue(Instant.EPOCH);
         Assertions.assertThat(logEntry.sslPeerNotAfter()).hasValue(Instant.EPOCH.plus(100_000, ChronoUnit.DAYS));
+        Assertions.assertThat(logEntry.sslBytesReceived()).hasValueSatisfying(value -> Assertions.assertThat(value).isGreaterThan(100000L));
+        Assertions.assertThat(logEntry.sslBytesSent()).hasValueSatisfying(value -> Assertions.assertThat(value).isGreaterThan(10000L));
     }
 
     @Test

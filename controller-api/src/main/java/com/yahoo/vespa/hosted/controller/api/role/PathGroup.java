@@ -21,6 +21,9 @@ enum PathGroup {
 
     /** Paths exclusive to operators (including read), used for system management. */
     classifiedOperator("/application/v4/notifications",
+                       "/routing/v1/",
+                       "/routing/v1/status/environment/{*}",
+                       "/routing/v1/inactive/environment/{*}",
                        "/configserver/v1/{*}",
                        "/deployment/v1/{*}"),
 
@@ -34,9 +37,6 @@ enum PathGroup {
              "/os/v1/{*}",
              "/provision/v2/{*}",
              "/zone/v2/{*}",
-             "/routing/v1/",
-             "/routing/v1/status/environment/{*}",
-             "/routing/v1/inactive/environment/{*}",
              "/state/v1/{*}",
              "/changemanagement/v1/{*}"),
 
@@ -139,8 +139,10 @@ enum PathGroup {
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{ignored}/suspended",
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{ignored}/service/{*}",
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{ignored}/global-rotation/{*}",
-                    "/application/v4/tenant/{tenant}/application/{application}/metering",
-                    "/routing/v1/inactive/tenant/{tenant}/application/{application}/instance/{ignored}/environment/prod/region/{region}"),
+                    "/application/v4/tenant/{tenant}/application/{application}/metering"),
+
+    applicationRouting(Matcher.tenant,
+                       Matcher.application, "/routing/v1/inactive/tenant/{tenant}/application/{application}/instance/{ignored}/environment/prod/region/{region}"),
 
     // TODO jonmv: remove
     /** Path used to restart development nodes. */

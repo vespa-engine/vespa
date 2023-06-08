@@ -71,13 +71,13 @@ import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.cancelled;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.invalidApplication;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.quotaExceeded;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
@@ -250,7 +250,7 @@ public class InternalStepRunner implements StepRunner {
                 case LOAD_BALANCER_NOT_READY, PARENT_HOST_NOT_READY -> {
                     logger.log(e.message()); // Consider splitting these messages in summary and details, on config server.
                     Instant someTimeAfterStart = startTime.plusSeconds(200);
-                    Instant inALittleWhile = controller.clock().instant().plusSeconds(90);
+                    Instant inALittleWhile = controller.clock().instant().plusSeconds(60);
                     controller.jobController().locked(id, run -> run.sleepingUntil(someTimeAfterStart.isAfter(inALittleWhile) ? someTimeAfterStart : inALittleWhile));
                     return result;
                 }
@@ -267,6 +267,10 @@ public class InternalStepRunner implements StepRunner {
                 case BAD_REQUEST -> {
                     logger.log(WARNING, e.getMessage());
                     return Optional.of(deploymentFailed);
+                }
+                case QUOTA_EXCEEDED -> {
+                    logger.log(WARNING, e.getMessage());
+                    return Optional.of(quotaExceeded);
                 }
             }
 
@@ -804,7 +808,7 @@ public class InternalStepRunner implements StepRunner {
         NotificationSource source = NotificationSource.from(run.id());
         Consumer<String> updater = msg -> controller.notificationsDb().setNotification(source, Notification.Type.deployment, Notification.Level.error, msg);
         switch (isRemoved ? success : run.status()) {
-            case aborted: return; // wait and see how the next run goes.
+            case aborted, cancelled: return; // wait and see how the next run goes.
             case noTests:
             case running:
             case success:
@@ -828,6 +832,9 @@ public class InternalStepRunner implements StepRunner {
             case error:
             case endpointCertificateTimeout:
                 break;
+            case quotaExceeded:
+                updater.accept("quota exceeded. Contact support to upgrade your plan.");
+                return;
             default:
                 logger.log(WARNING, "Don't know what to set console notification to for run status '" + run.status() + "'");
         }
@@ -905,6 +912,7 @@ public class InternalStepRunner implements StepRunner {
         TestPackage testPackage = new TestPackage(() -> controller.applications().applicationStore().streamTester(id.application().tenant(),
                                                                                                                   id.application().application(), revision),
                                                   controller.system().isPublic(),
+                                                  controller.zoneRegistry().get(id.type().zone()).getCloudName(),
                                                   id,
                                                   controller.controllerConfig().steprunner().testerapp(),
                                                   spec,

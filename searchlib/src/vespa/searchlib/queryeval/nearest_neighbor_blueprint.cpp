@@ -14,6 +14,8 @@ LOG_SETUP(".searchlib.queryeval.nearest_neighbor_blueprint");
 
 using vespalib::eval::Value;
 
+namespace vespalib { class Doom; }
+
 namespace search::queryeval {
 
 namespace {
@@ -40,7 +42,8 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
                                                    uint32_t explore_additional_hits,
                                                    double distance_threshold,
                                                    double global_filter_lower_limit,
-                                                   double global_filter_upper_limit)
+                                                   double global_filter_upper_limit,
+                                                   const vespalib::Doom& doom)
     : ComplexLeafBlueprint(field),
       _distance_calc(std::move(distance_calc)),
       _attr_tensor(_distance_calc->attribute_tensor()),
@@ -58,7 +61,8 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _global_filter(GlobalFilter::create()),
       _global_filter_set(false),
       _global_filter_hits(),
-      _global_filter_hit_ratio()
+      _global_filter_hit_ratio(),
+      _doom(doom)
 {
     if (distance_threshold < std::numeric_limits<double>::max()) {
         _distance_threshold = _distance_calc->function().convert_threshold(distance_threshold);
@@ -109,10 +113,10 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
     uint32_t k = _adjusted_target_hits;
     const auto &df = _distance_calc->function();
     if (_global_filter->is_active()) {
-        _found_hits = nns_index->find_top_k_with_filter(k, df, *_global_filter, k + _explore_additional_hits, _distance_threshold);
+        _found_hits = nns_index->find_top_k_with_filter(k, df, *_global_filter, k + _explore_additional_hits, _doom, _distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else {
-        _found_hits = nns_index->find_top_k(k, df, k + _explore_additional_hits, _distance_threshold);
+        _found_hits = nns_index->find_top_k(k, df, k + _explore_additional_hits, _doom, _distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K;
     }
 }

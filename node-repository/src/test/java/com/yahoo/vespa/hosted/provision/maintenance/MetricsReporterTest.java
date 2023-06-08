@@ -19,8 +19,11 @@ import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
+import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.vespa.hosted.provision.node.ClusterId;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -240,7 +243,7 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void non_active_metric() {
+    public void node_and_cluster_metrics() {
         ProvisioningTester tester = new ProvisioningTester.Builder().build();
         tester.makeReadyHosts(5, new NodeResources(64, 256, 2000, 10));
         tester.activateTenantHosts();
@@ -248,18 +251,36 @@ public class MetricsReporterTest {
         MetricsReporter metricsReporter = metricsReporter(metric, tester);
 
         // Application is deployed
-        ApplicationId application = ApplicationId.from("t1", "a1", "default");
-        Map<String, String> dimensions = Map.of("applicationId", application.toFullString());
+        ApplicationId applicationId = ApplicationId.from("t1", "a1", "default");
+        ClusterSpec clusterSpec = ProvisioningTester.contentClusterSpec();
         NodeResources resources = new NodeResources(2, 8, 100, 1);
-        List<Node> activeNodes = tester.deploy(application, ProvisioningTester.contentClusterSpec(), Capacity.from(new ClusterResources(4, 1, resources)));
+        Capacity capacity = Capacity.from(new ClusterResources(4, 1, resources));
+
+        List<Node> activeNodes = tester.deploy(applicationId, clusterSpec, capacity);
+        var application = tester.nodeRepository().applications().require(applicationId);
+        application = application.withCluster(clusterSpec.id(), false, capacity);
+        var cluster = application.cluster(clusterSpec.id()).get().withTarget(new Autoscaling(Autoscaling.Status.ideal,
+                                                                                             "test",
+                                                                                             Optional.empty(),
+                                                                                             tester.clock().instant(),
+                                                                                             Load.zero(),
+                                                                                             new Load(0.1, 0.2, 0.3),
+                                                                                             Autoscaling.Metrics.zero()));
+        tester.nodeRepository().applications().put(application.with(cluster), tester.nodeRepository().applications().lock(applicationId));
+
         metricsReporter.maintain();
+        Map<String, String> dimensions = Map.of("applicationId", applicationId.toFullString());
         assertEquals(0D, getMetric("nodes.nonActiveFraction", metric, dimensions));
         assertEquals(4, getMetric("nodes.active", metric, dimensions));
         assertEquals(0, getMetric("nodes.nonActive", metric, dimensions));
 
-        Map<String, String> clusterDimensions = Map.of("applicationId", application.toFullString(),
-                                                       "clusterid", ProvisioningTester.contentClusterSpec().id().value());
+
+        Map<String, String> clusterDimensions = Map.of("applicationId", applicationId.toFullString(),
+                                                       "clusterid", clusterSpec.id().value());
         assertEquals(1.392, getMetric("cluster.cost", metric, clusterDimensions));
+        assertEquals(0.1, getMetric("cluster.load.ideal.cpu", metric, clusterDimensions));
+        assertEquals(0.2, getMetric("cluster.load.ideal.memory", metric, clusterDimensions));
+        assertEquals(0.3, getMetric("cluster.load.ideal.disk", metric, clusterDimensions));
 
         // One node fails
         tester.fail(activeNodes.get(0).hostname());
@@ -269,7 +290,7 @@ public class MetricsReporterTest {
         assertEquals(1, getMetric("nodes.nonActive", metric, dimensions));
 
         // Cluster is removed
-        tester.deactivate(application);
+        tester.deactivate(applicationId);
         metricsReporter.maintain();
         assertEquals(1D, getMetric("nodes.nonActiveFraction", metric, dimensions).doubleValue(), Double.MIN_VALUE);
         assertEquals(0, getMetric("nodes.active", metric, dimensions));

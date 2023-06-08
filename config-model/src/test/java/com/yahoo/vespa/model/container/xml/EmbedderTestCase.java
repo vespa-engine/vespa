@@ -2,16 +2,26 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.config.InnerNode;
+import com.yahoo.config.ModelNode;
+import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.embedding.BertBaseEmbedderConfig;
+import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
+import com.yahoo.language.huggingface.config.HuggingFaceTokenizerConfig;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.component.BertEmbedder;
 import com.yahoo.vespa.model.container.component.Component;
+import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
+import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
+import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
@@ -30,55 +40,18 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class EmbedderTestCase {
 
-    private static final String BUNDLED_EMBEDDER_CLASS = "ai.vespa.embedding.BertBaseEmbedder";
-    private static final String BUNDLED_EMBEDDER_CONFIG = "embedding.bert-base-embedder";
-
-    @Test
-    void testBundledEmbedder_selfhosted() throws IOException, SAXException {
-        String input = "<component id='test' class='" + BUNDLED_EMBEDDER_CLASS + "' bundle='model-integration'>" +
-                       "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                       "    <transformerModel id='my_model_id' url='my-model-url' />" +
-                       "    <tokenizerVocab id='my_vocab_id' url='my-vocab-url' />" +
-                       "  </config>" +
-                       "</component>";
-        String component = "<component id='test' class='" + BUNDLED_EMBEDDER_CLASS + "' bundle='model-integration'>" +
-                           "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                           "    <transformerModel id='my_model_id' url='my-model-url' />" +
-                           "    <tokenizerVocab id='my_vocab_id' url='my-vocab-url' />" +
-                           "  </config>" +
-                           "</component>";
-        assertTransform(input, component, false);
-    }
-
-    @Test
-    void testBundledEmbedder_hosted() throws IOException, SAXException {
-        String input = "<component id='test' class='" + BUNDLED_EMBEDDER_CLASS + "' bundle='model-integration'>" +
-                       "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                       "    <transformerModel model-id='minilm-l6-v2' />" +
-                       "    <tokenizerVocab model-id='bert-base-uncased' path='ignored.txt'/>" +
-                       "  </config>" +
-                       "</component>";
-        String component = "<component id='test' class='" + BUNDLED_EMBEDDER_CLASS + "' bundle='model-integration'>" +
-                           "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                           "      <transformerModel model-id='minilm-l6-v2' url='https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx' />" +
-                           "      <tokenizerVocab model-id='bert-base-uncased' url='https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt' />" +
-                           "  </config>" +
-                           "</component>";
-        assertTransform(input, component, true);
-    }
-
     @Test
     void testApplicationComponentWithModelReference_hosted() throws IOException, SAXException {
-        String input = "<component id='test' class='ApplicationSpecificEmbedder' bundle='model-integration'>" +
-                       "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                       "    <transformerModel model-id='minilm-l6-v2' />" +
-                       "    <tokenizerVocab model-id='bert-base-uncased' />" +
+        String input = "<component id='test' class='ai.vespa.example.paragraph.ApplicationSpecificEmbedder' bundle='app'>" +
+                       "  <config name='ai.vespa.example.paragraph.sentence-embedder'>" +
+                       "    <model model-id='minilm-l6-v2' />" +
+                       "    <vocab model-id='bert-base-uncased' />" +
                        "  </config>" +
                        "</component>";
-        String component = "<component id='test' class='ApplicationSpecificEmbedder' bundle='model-integration'>" +
-                           "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                           "      <transformerModel  model-id='minilm-l6-v2' url='https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx' />" +
-                           "      <tokenizerVocab model-id='bert-base-uncased' url='https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt' />" +
+        String component = "<component id='test' class='ai.vespa.example.paragraph.ApplicationSpecificEmbedder' bundle='app'>" +
+                           "  <config name='ai.vespa.example.paragraph.sentence-embedder'>" +
+                           "      <model  model-id='minilm-l6-v2' url='https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx' />" +
+                           "      <vocab model-id='bert-base-uncased' url='https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt' />" +
                            "  </config>" +
                            "</component>";
         assertTransform(input, component, true);
@@ -86,42 +59,65 @@ public class EmbedderTestCase {
 
     @Test
     void testUnknownModelId_hosted() throws IOException, SAXException {
-        String embedder = "<component id='test' class='" + BUNDLED_EMBEDDER_CLASS + "'>" +
-                          "  <config name='" + BUNDLED_EMBEDDER_CONFIG + "'>" +
-                          "    <transformerModel model-id='my_model_id' />" +
-                          "    <tokenizerVocab model-id='my_vocab_id' />" +
+        String embedder = "<component id='test' class='ai.vespa.example.paragraph.ApplicationSpecificEmbedder'>" +
+                          "  <config name='ai.vespa.example.paragraph.sentence-embedder'>" +
+                          "    <model model-id='my_model_id' />" +
+                          "    <vocab model-id='my_vocab_id' />" +
                           "  </config>" +
                           "</component>";
         assertTransformThrows(embedder,
-                              "Unknown model id 'my_model_id' on 'transformerModel'",
+                              "Unknown model id 'my_model_id' on 'model'",
                               true);
     }
 
     @Test
-    void testApplicationPackageWithEmbedder_selfhosted() throws Exception  {
-        Path applicationDir = Path.fromString("src/test/cfg/application/embed/");
-        VespaModel model = loadModel(applicationDir, false);
-        ApplicationContainerCluster containerCluster = model.getContainerClusters().get("container");
-
-        Component<?, ?> transformer = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
-        ConfigPayloadBuilder config = transformer.getUserConfigs().get(new ConfigDefinitionKey("bert-base-embedder", "embedding"));
-        assertEquals("minilm-l6-v2 application-url \"\"", config.getObject("transformerModel").getValue());
-        assertEquals("\"\" \"\" files/vocab.txt", config.getObject("tokenizerVocab").getValue());
-        assertEquals("4", config.getObject("onnxIntraOpThreads").getValue());
+    void huggingfaceEmbedder_selfhosted() throws Exception {
+        var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), false);
+        var cluster = model.getContainerClusters().get("container");
+        var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);
+        assertEquals("my_input_ids", embedderCfg.transformerInputIds());
+        assertEquals("https://my/url/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
+        assertEquals("https://my/url/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
+        assertEquals(768, tokenizerCfg.maxLength());
     }
 
     @Test
-    void testApplicationPackageWithEmbedder_hosted() throws Exception  {
-        Path applicationDir = Path.fromString("src/test/cfg/application/embed/");
-        VespaModel model = loadModel(applicationDir, true);
-        ApplicationContainerCluster containerCluster = model.getContainerClusters().get("container");
+    void huggingfaceEmbedder_hosted() throws Exception {
+        var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), true);
+        var cluster = model.getContainerClusters().get("container");
+        var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);
+        assertEquals("my_input_ids", embedderCfg.transformerInputIds());
+        assertEquals("https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
+        assertEquals("https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
+        assertEquals(768, tokenizerCfg.maxLength());
+    }
 
-        Component<?, ?> transformer = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
-        ConfigPayloadBuilder config = transformer.getUserConfigs().get(new ConfigDefinitionKey("bert-base-embedder", "embedding"));
-        assertEquals("minilm-l6-v2 https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx \"\"",
-                     config.getObject("transformerModel").getValue());
-        assertEquals("\"\" \"\" files/vocab.txt", config.getObject("tokenizerVocab").getValue());
-        assertEquals("4", config.getObject("onnxIntraOpThreads").getValue());
+
+    @Test
+    void bertEmbedder_selfhosted() throws Exception {
+        var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), false);
+        var cluster = model.getContainerClusters().get("container");
+        var embedderCfg = assertBertEmbedderComponentPresent(cluster);
+        assertEquals("application-url", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        assertEquals("files/vocab.txt", modelReference(embedderCfg, "tokenizerVocab").path().orElseThrow().value());
+    }
+
+    @Test
+    void bertEmbedder_hosted() throws Exception {
+        var model = loadModel(Path.fromString("src/test/cfg/application/embed/"), true);
+        var cluster = model.getContainerClusters().get("container");
+        var embedderCfg = assertBertEmbedderComponentPresent(cluster);
+        assertEquals("https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx",
+                     modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        assertTrue(modelReference(embedderCfg, "tokenizerVocab").url().isEmpty());
+        assertEquals("files/vocab.txt", modelReference(embedderCfg, "tokenizerVocab").path().orElseThrow().value());
+    }
+
+    @Test
+    void passesXmlValidation() {
+        new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed/").create();
     }
 
     @Test
@@ -157,7 +153,7 @@ public class EmbedderTestCase {
             fail("Expected failure");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("transformerModel is configured with only a 'model-id'. Add a 'path' or 'url' to deploy this outside Vespa Cloud",
+            assertEquals("model is configured with only a 'model-id'. Add a 'path' or 'url' to deploy this outside Vespa Cloud",
                          Exceptions.toMessageString(e));
         }
     }
@@ -215,6 +211,41 @@ public class EmbedderTestCase {
     private Element createElement(String xml) throws IOException, SAXException {
         Document doc = XML.getDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
         return (Element) doc.getFirstChild();
+    }
+
+    private static HuggingFaceTokenizerConfig assertHuggingfaceTokenizerComponentPresent(ApplicationContainerCluster cluster) {
+        var hfTokenizer = (HuggingFaceTokenizer) cluster.getComponentsMap().get(new ComponentId("hf-tokenizer"));
+        assertEquals("com.yahoo.language.huggingface.HuggingFaceTokenizer", hfTokenizer.getClassId().getName());
+        var cfgBuilder = new HuggingFaceTokenizerConfig.Builder();
+        hfTokenizer.getConfig(cfgBuilder);
+        return cfgBuilder.build();
+    }
+
+    private static HuggingFaceEmbedderConfig assertHuggingfaceEmbedderComponentPresent(ApplicationContainerCluster cluster) {
+        var hfEmbedder = (HuggingFaceEmbedder) cluster.getComponentsMap().get(new ComponentId("hf-embedder"));
+        assertEquals("ai.vespa.embedding.huggingface.HuggingFaceEmbedder", hfEmbedder.getClassId().getName());
+        var cfgBuilder = new HuggingFaceEmbedderConfig.Builder();
+        hfEmbedder.getConfig(cfgBuilder);
+        return cfgBuilder.build();
+    }
+
+    private static BertBaseEmbedderConfig assertBertEmbedderComponentPresent(ApplicationContainerCluster cluster) {
+        var bertEmbedder = (BertEmbedder) cluster.getComponentsMap().get(new ComponentId("bert-embedder"));
+        assertEquals("ai.vespa.embedding.BertBaseEmbedder", bertEmbedder.getClassId().getName());
+        var cfgBuilder = new BertBaseEmbedderConfig.Builder();
+        bertEmbedder.getConfig(cfgBuilder);
+        return cfgBuilder.build();
+    }
+
+    // Ugly hack to read underlying model reference from config instance
+    private static ModelReference modelReference(InnerNode cfg, String name) {
+        try {
+            var f = cfg.getClass().getDeclaredField(name);
+            f.setAccessible(true);
+            return ((ModelNode) f.get(cfg)).getModelReference();
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

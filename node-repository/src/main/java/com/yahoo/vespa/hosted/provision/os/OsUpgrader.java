@@ -50,7 +50,7 @@ public abstract class OsUpgrader {
 
     /** The duration this leaves new nodes alone before scheduling any upgrade */
     private Duration gracePeriod() {
-        return Duration.ofDays(1);
+        return nodeRepository.zone().system().isCd() ? Duration.ofHours(4) : Duration.ofDays(1);
     }
 
 }

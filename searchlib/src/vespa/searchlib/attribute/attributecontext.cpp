@@ -30,11 +30,18 @@ AttributeContext::getAttribute(AttributeMap & map, const string & name, bool sta
     }
 }
 
-AttributeContext::AttributeContext(const IAttributeManager & manager) :
-    _manager(manager),
-    _attributes(),
-    _enumAttributes(),
-    _cacheLock()
+const IAttributeVector *
+AttributeContext::getAttributeMtSafe(AttributeMap &map, const string &name, bool stableEnum) const {
+    std::lock_guard<std::mutex> guard(_cacheLock);
+    return getAttribute(map, name, stableEnum);
+}
+
+AttributeContext::AttributeContext(const IAttributeManager & manager)
+    : _manager(manager),
+      _mtSafe(false),
+      _attributes(),
+      _enumAttributes(),
+      _cacheLock()
 { }
 
 AttributeContext::~AttributeContext() = default;
@@ -42,20 +49,26 @@ AttributeContext::~AttributeContext() = default;
 const IAttributeVector *
 AttributeContext::getAttribute(const string & name) const
 {
-    std::lock_guard<std::mutex> guard(_cacheLock);
-    return getAttribute(_attributes, name, false);
+    return _mtSafe
+        ? getAttributeMtSafe(_attributes, name, false)
+        : getAttribute(_attributes, name, false);
 }
 
 const IAttributeVector *
 AttributeContext::getAttributeStableEnum(const string & name) const
 {
-    std::lock_guard<std::mutex> guard(_cacheLock);
-    return getAttribute(_enumAttributes, name, true);
+    return _mtSafe
+           ? getAttributeMtSafe(_enumAttributes, name, true)
+           : getAttribute(_enumAttributes, name, true);
 }
 
 void AttributeContext::releaseEnumGuards() {
-    std::lock_guard<std::mutex> guard(_cacheLock);
-    _enumAttributes.clear();
+    if (_mtSafe) {
+        std::lock_guard<std::mutex> guard(_cacheLock);
+        _enumAttributes.clear();
+    } else {
+        _enumAttributes.clear();
+    }
 }
 
 void

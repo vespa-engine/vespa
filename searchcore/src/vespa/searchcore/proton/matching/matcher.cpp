@@ -63,7 +63,8 @@ struct StupidMetaStore : search::IDocumentMetaStore {
     void foreach(const search::IGidToLidMapperVisitor &) const override { }
 };
 
-size_t numThreads(size_t hits, size_t minHits) {
+size_t
+numThreads(size_t hits, size_t minHits) {
     return static_cast<size_t>(std::ceil(double(hits) / double(minHits)));
 }
 
@@ -74,16 +75,17 @@ public:
         _threadBundle(threadBundle),
         _maxThreads(std::min(maxThreads, static_cast<uint32_t>(threadBundle.size())))
     { }
-private:
     size_t size() const override { return _maxThreads; }
     void run(vespalib::Runnable* const* targets, size_t cnt) override {
         _threadBundle.run(targets, cnt);
     }
+private:
     vespalib::ThreadBundle &_threadBundle;
     const uint32_t          _maxThreads;
 };
 
-bool willNotNeedRanking(const SearchRequest & request, const GroupingContext & groupingContext) {
+bool
+willNotNeedRanking(const SearchRequest & request, const GroupingContext & groupingContext) {
     return (!groupingContext.needRanking() && (request.maxhits == 0))
            || (!request.sortSpec.empty() && (request.sortSpec.find("[rank]") == vespalib::string::npos));
 }
@@ -221,6 +223,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         }
         const Properties *feature_overrides = &request.propertiesMap.featureOverrides();
         if (shouldCacheSearchSession) {
+            // These should have been moved instead.
             owned_objects.feature_overrides = std::make_unique<Properties>(*feature_overrides);
             feature_overrides = owned_objects.feature_overrides.get();
         }
@@ -248,6 +251,9 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
         MatchMaster master;
         uint32_t numParts = NumSearchPartitions::lookup(rankProperties, _rankSetup->getNumSearchPartitions());
+        if (limitedThreadBundle.size() > 1) {
+            attrContext.enableMultiThreadSafe();
+        }
         ResultProcessor::Result::UP result = master.match(request.trace(), params, limitedThreadBundle, *mtf, rp,
                                                           _distributionKey, numParts);
         my_stats = MatchMaster::getStats(std::move(master));

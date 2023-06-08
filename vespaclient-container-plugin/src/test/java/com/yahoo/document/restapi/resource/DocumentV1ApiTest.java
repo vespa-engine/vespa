@@ -355,6 +355,7 @@ public class DocumentV1ApiTest {
                        {
                          "pathId": "/document/v1/space/music/docid",
                          "documents": [],
+                         "documentCount": 0,
                          "message": "failure?"
                        }""", response.readAll());
         assertEquals(200, response.getStatus());
@@ -383,7 +384,8 @@ public class DocumentV1ApiTest {
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?destinationCluster=content&selection=true&cluster=content&timeout=60", POST);
         assertSameJson("""
                        {
-                         "pathId": "/document/v1/space/music/docid"
+                         "pathId": "/document/v1/space/music/docid",
+                         "documentCount": 0
                        }""",
                        response.readAll());
         assertEquals(200, response.getStatus());
@@ -416,7 +418,8 @@ public class DocumentV1ApiTest {
                                       }""");
         assertSameJson("""
                        {
-                         "pathId": "/document/v1/space/music/docid"
+                         "pathId": "/document/v1/space/music/docid",
+                         "documentCount": 0
                        }""",
                        response.readAll());
         assertEquals(200, response.getStatus());
@@ -470,6 +473,7 @@ public class DocumentV1ApiTest {
         assertSameJson("""
                        {
                          "pathId": "/document/v1/space/music/docid",
+                         "documentCount": 0,
                          "message": "boom"
                        }""",
                        response.readAll());
@@ -511,6 +515,7 @@ public class DocumentV1ApiTest {
                        {
                          "pathId": "/document/v1/space/music/group/best%27",
                          "documents": [],
+                         "documentCount": 0,
                          "message": "error"
                        }""",
                        response.readAll());
@@ -949,6 +954,39 @@ public class DocumentV1ApiTest {
         assertEquals(1, metric.metrics().get("httpapi_not_found").get(Map.of()), 0);
         assertEquals(1, metric.metrics().get("httpapi_failed").get(Map.of()), 0);
         driver.close();
+    }
+
+    private void doTestVisitRequestWithParams(String httpReqParams, Consumer<VisitorParameters> paramChecker) {
+        try (var driver = new RequestHandlerTestDriver(handler)) {
+            access.expect(parameters -> {
+                paramChecker.accept(parameters);
+                parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "great success");
+            });
+            var response = driver.sendRequest("http://localhost/document/v1/?cluster=content&%s".formatted(httpReqParams));
+            assertSameJson("""
+                            {
+                              "pathId": "/document/v1/",
+                              "documents": [ ],
+                              "documentCount": 0
+                            }""",
+                    response.readAll());
+            assertEquals(200, response.getStatus());
+        }
+    }
+
+    @Test
+    public void visit_timestamp_ranges_can_be_open_in_both_ends() {
+        // Only specifying fromTimestamp; visit up to current time
+        doTestVisitRequestWithParams("fromTimestamp=1234", (params) -> {
+            assertEquals(params.getFromTimestamp(), 1234);
+            assertEquals(params.getToTimestamp(), 0); // Means "current wall clock time" when it hits storage
+        });
+
+        // Only specifying toTimestamp; visit all docs up to this time point
+        doTestVisitRequestWithParams("toTimestamp=2345", (params) -> {
+            assertEquals(params.getFromTimestamp(), 0); // The dawn of time(tm)
+            assertEquals(params.getToTimestamp(), 2345);
+        });
     }
 
     @Test

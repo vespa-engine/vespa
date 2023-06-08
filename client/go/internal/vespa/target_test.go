@@ -76,9 +76,9 @@ func TestCustomTarget(t *testing.T) {
 	assertServiceURL(t, "http://127.0.0.1:8080", lt, "document")
 
 	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42", TLSOptions{})
-	assertServiceURL(t, "http://192.0.2.42:19071", ct, "deploy")
-	assertServiceURL(t, "http://192.0.2.42:8080", ct, "query")
-	assertServiceURL(t, "http://192.0.2.42:8080", ct, "document")
+	assertServiceURL(t, "http://192.0.2.42", ct, "deploy")
+	assertServiceURL(t, "http://192.0.2.42", ct, "query")
+	assertServiceURL(t, "http://192.0.2.42", ct, "document")
 
 	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000", TLSOptions{})
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "deploy")

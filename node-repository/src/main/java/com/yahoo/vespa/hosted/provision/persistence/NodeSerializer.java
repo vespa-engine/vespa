@@ -88,7 +88,8 @@ public class NodeSerializer {
     private static final String wantToDeprovisionKey = "wantToDeprovision";
     private static final String wantToRebuildKey = "wantToRebuild";
     private static final String preferToRetireKey = "preferToRetire";
-    private static final String wantToFailKey = "wantToFailKey";
+    private static final String wantToFailKey = "wantToFailKey"; // TODO: This should be changed to 'wantToFail'
+    private static final String wantToUpgradeFlavorKey = "wantToUpgradeFlavor";
     private static final String osVersionKey = "osVersion";
     private static final String wantedOsVersionKey = "wantedOsVersion";
     private static final String firmwareCheckKey = "firmwareCheck";
@@ -96,6 +97,8 @@ public class NodeSerializer {
     private static final String modelNameKey = "modelName";
     private static final String reservedToKey = "reservedTo";
     private static final String exclusiveToApplicationIdKey = "exclusiveTo";
+    private static final String hostTTLKey = "hostTTL";
+    private static final String hostEmptyAtKey = "hostEmptyAt";
     private static final String exclusiveToClusterTypeKey = "exclusiveToClusterType";
     private static final String switchHostnameKey = "switchHostname";
     private static final String trustedCertificatesKey = "trustedCertificates";
@@ -182,6 +185,7 @@ public class NodeSerializer {
         object.setBool(wantToDeprovisionKey, node.status().wantToDeprovision());
         object.setBool(wantToFailKey, node.status().wantToFail());
         object.setBool(wantToRebuildKey, node.status().wantToRebuild());
+        object.setBool(wantToUpgradeFlavorKey, node.status().wantToUpgradeFlavor());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history().events(), object.setArray(historyKey));
         toSlime(node.history().log(), object.setArray(logKey));
@@ -194,6 +198,8 @@ public class NodeSerializer {
         node.modelName().ifPresent(modelName -> object.setString(modelNameKey, modelName));
         node.reservedTo().ifPresent(tenant -> object.setString(reservedToKey, tenant.value()));
         node.exclusiveToApplicationId().ifPresent(applicationId -> object.setString(exclusiveToApplicationIdKey, applicationId.serializedForm()));
+        node.hostTTL().ifPresent(hostTTL -> object.setLong(hostTTLKey, hostTTL.toMillis()));
+        node.hostEmptyAt().ifPresent(emptyAt -> object.setLong(hostEmptyAtKey, emptyAt.toEpochMilli()));
         node.exclusiveToClusterType().ifPresent(clusterType -> object.setString(exclusiveToClusterTypeKey, clusterType.name()));
         trustedCertificatesToSlime(node.trustedCertificates(), object.setArray(trustedCertificatesKey));
         if (!node.cloudAccount().isUnspecified()) {
@@ -292,6 +298,8 @@ public class NodeSerializer {
                         SlimeUtils.optionalString(object.field(modelNameKey)),
                         SlimeUtils.optionalString(object.field(reservedToKey)).map(TenantName::from),
                         SlimeUtils.optionalString(object.field(exclusiveToApplicationIdKey)).map(ApplicationId::fromSerializedForm),
+                        SlimeUtils.optionalDuration(object.field(hostTTLKey)),
+                        SlimeUtils.optionalInstant(object.field(hostEmptyAtKey)),
                         SlimeUtils.optionalString(object.field(exclusiveToClusterTypeKey)).map(ClusterSpec.Type::from),
                         SlimeUtils.optionalString(object.field(switchHostnameKey)),
                         trustedCertificatesFromSlime(object),
@@ -309,8 +317,9 @@ public class NodeSerializer {
                           object.field(wantToRebuildKey).asBool(),
                           object.field(preferToRetireKey).asBool(),
                           object.field(wantToFailKey).asBool(),
+                          object.field(wantToUpgradeFlavorKey).asBool(),
                           new OsVersion(versionFromSlime(object.field(osVersionKey)),
-                                        versionFromSlime(object.field(wantedOsVersionKey))),
+                                                       versionFromSlime(object.field(wantedOsVersionKey))),
                           SlimeUtils.optionalInstant(object.field(firmwareCheckKey)));
     }
 
@@ -482,6 +491,7 @@ public class NodeSerializer {
             case "SwitchRebalancer" -> Agent.SwitchRebalancer;
             case "HostEncrypter" -> Agent.HostEncrypter;
             case "ParkedExpirer" -> Agent.ParkedExpirer;
+            case "HostFlavorUpgrader" -> Agent.HostFlavorUpgrader;
             default -> throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
         };
     }
@@ -506,6 +516,7 @@ public class NodeSerializer {
             case SwitchRebalancer -> "SwitchRebalancer";
             case HostEncrypter -> "HostEncrypter";
             case ParkedExpirer -> "ParkedExpirer";
+            case HostFlavorUpgrader -> "HostFlavorUpgrader";
         };
     }
 

@@ -45,6 +45,9 @@ public enum RunStatus {
     cancelled,
 
     /** Run should be reset to its starting state. Used for production tests. */
-    reset
+    reset,
+
+    /** Deployment of the real application was rejected due to exceeding quota. */
+    quotaExceeded
 
 }

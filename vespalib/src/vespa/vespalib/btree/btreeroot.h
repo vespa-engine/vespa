@@ -13,10 +13,10 @@ namespace vespalib::btree {
 
 template <typename, typename, typename, size_t, size_t>
 class BTreeNodeAllocator;
-template <typename, typename, typename, size_t, size_t, class> class
-BTreeBuilder;
-template <typename, typename, typename, size_t, size_t, class> class
-BTreeAggregator;
+template <typename, typename, typename, size_t, size_t, class>
+class BTreeBuilder;
+template <typename, typename, typename, size_t, size_t, class>
+class BTreeAggregator;
 
 template <typename KeyT,
           typename DataT,
@@ -61,15 +61,14 @@ public:
         const NodeAllocatorType *const _allocator;
     public:
         using Iterator = ConstIterator;
-        FrozenView();
-        FrozenView(BTreeNode::Ref frozenRoot,
-                   const NodeAllocatorType & allocator);
-        ConstIterator find(const KeyType& key,
-                           CompareT comp = CompareT()) const;
-        ConstIterator lowerBound(const KeyType &key,
-                                 CompareT comp = CompareT()) const;
-        ConstIterator upperBound(const KeyType &key,
-                                 CompareT comp = CompareT()) const;
+        FrozenView() : _frozenRoot(BTreeNode::Ref()),_allocator(nullptr) {}
+        FrozenView(BTreeNode::Ref frozenRoot, const NodeAllocatorType & allocator)
+            : _frozenRoot(frozenRoot),
+              _allocator(&allocator)
+        {}
+        ConstIterator find(const KeyType& key, CompareT comp = CompareT()) const;
+        ConstIterator lowerBound(const KeyType &key, CompareT comp = CompareT()) const;
+        ConstIterator upperBound(const KeyType &key, CompareT comp = CompareT()) const;
         ConstIterator begin() const {
             return ConstIterator(_frozenRoot, *_allocator);
         }
@@ -78,7 +77,12 @@ public:
         }
 
         BTreeNode::Ref getRoot() const { return _frozenRoot; }
-        size_t size() const;
+        size_t size() const {
+            if (NodeAllocatorType::isValidRef(_frozenRoot)) {
+                return _allocator->validLeaves(_frozenRoot);
+            }
+            return 0u;
+        }
         const NodeAllocatorType &getAllocator() const { return *_allocator; }
 
         const AggrT &getAggregated() const {

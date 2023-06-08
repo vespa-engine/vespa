@@ -14,8 +14,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/goccy/go-json"
-
+	"github.com/go-json-experiment/json"
 	"github.com/klauspost/compress/gzip"
 
 	"github.com/vespa-engine/vespa/client/go/internal/build"
@@ -31,9 +30,6 @@ const (
 )
 
 var (
-	fieldsPrefix = []byte(`{"fields":`)
-	fieldsSuffix = []byte("}")
-
 	defaultHeaders http.Header = map[string][]string{
 		"User-Agent":   {fmt.Sprintf("Vespa CLI/%s", build.Version)},
 		"Content-Type": {"application/json; charset=utf-8"},
@@ -48,9 +44,9 @@ var (
 // Client represents a HTTP client for the /document/v1/ API.
 type Client struct {
 	options     ClientOptions
-	httpClients []countingHTTPClient
+	httpClients []*countingHTTPClient
 	now         func() time.Time
-	sendCount   int32
+	sendCount   atomic.Int32
 	gzippers    sync.Pool
 	buffers     sync.Pool
 	pending     chan *pendingDocument
@@ -69,13 +65,11 @@ type ClientOptions struct {
 
 type countingHTTPClient struct {
 	client   util.HTTPClient
-	inflight int64
+	inflight atomic.Int64
 }
 
-func (c *countingHTTPClient) addInflight(n int64) { atomic.AddInt64(&c.inflight, n) }
-
 func (c *countingHTTPClient) Do(req *http.Request, timeout time.Duration) (*http.Response, error) {
-	defer c.addInflight(-1)
+	defer c.inflight.Add(-1)
 	return c.client.Do(req, timeout)
 }
 
@@ -96,9 +90,9 @@ func NewClient(options ClientOptions, httpClients []util.HTTPClient) (*Client, e
 	if err != nil {
 		return nil, fmt.Errorf("invalid base url: %w", err)
 	}
-	countingClients := make([]countingHTTPClient, 0, len(httpClients))
+	countingClients := make([]*countingHTTPClient, 0, len(httpClients))
 	for _, client := range httpClients {
-		countingClients = append(countingClients, countingHTTPClient{client: client})
+		countingClients = append(countingClients, &countingHTTPClient{client: client})
 	}
 	nowFunc := options.NowFunc
 	if nowFunc == nil {
@@ -133,46 +127,38 @@ func writeQueryParam(sb *bytes.Buffer, start int, escape bool, k, v string) {
 	}
 }
 
-func writeRequestBody(w io.Writer, body []byte) error {
-	for _, b := range [][]byte{fieldsPrefix, body, fieldsSuffix} {
-		if _, err := w.Write(b); err != nil {
-			return err
-		}
+func (c *Client) writeDocumentPath(id Id, sb *bytes.Buffer) {
+	sb.WriteString(strings.TrimSuffix(c.options.BaseURL, "/"))
+	sb.WriteString("/document/v1/")
+	sb.WriteString(url.PathEscape(id.Namespace))
+	sb.WriteString("/")
+	sb.WriteString(url.PathEscape(id.Type))
+	if id.Number != nil {
+		sb.WriteString("/number/")
+		n := uint64(*id.Number)
+		sb.WriteString(strconv.FormatUint(n, 10))
+	} else if id.Group != "" {
+		sb.WriteString("/group/")
+		sb.WriteString(url.PathEscape(id.Group))
+	} else {
+		sb.WriteString("/docid")
 	}
-	return nil
+	sb.WriteString("/")
+	sb.WriteString(url.PathEscape(id.UserSpecific))
 }
 
 func (c *Client) methodAndURL(d Document, sb *bytes.Buffer) (string, string) {
 	httpMethod := ""
 	switch d.Operation {
 	case OperationPut:
-		httpMethod = "POST"
+		httpMethod = http.MethodPost
 	case OperationUpdate:
-		httpMethod = "PUT"
+		httpMethod = http.MethodPut
 	case OperationRemove:
-		httpMethod = "DELETE"
+		httpMethod = http.MethodDelete
 	}
 	// Base URL and path
-	sb.WriteString(c.options.BaseURL)
-	if !strings.HasSuffix(c.options.BaseURL, "/") {
-		sb.WriteString("/")
-	}
-	sb.WriteString("document/v1/")
-	sb.WriteString(url.PathEscape(d.Id.Namespace))
-	sb.WriteString("/")
-	sb.WriteString(url.PathEscape(d.Id.Type))
-	if d.Id.Number != nil {
-		sb.WriteString("/number/")
-		n := uint64(*d.Id.Number)
-		sb.WriteString(strconv.FormatUint(n, 10))
-	} else if d.Id.Group != "" {
-		sb.WriteString("/group/")
-		sb.WriteString(url.PathEscape(d.Id.Group))
-	} else {
-		sb.WriteString("/docid")
-	}
-	sb.WriteString("/")
-	sb.WriteString(url.PathEscape(d.Id.UserSpecific))
+	c.writeDocumentPath(d.Id, sb)
 	// Query part
 	queryStart := sb.Len()
 	if c.options.Timeout > 0 {
@@ -199,19 +185,19 @@ func (c *Client) methodAndURL(d Document, sb *bytes.Buffer) (string, string) {
 func (c *Client) leastBusyClient() *countingHTTPClient {
 	leastBusy := c.httpClients[0]
 	min := int64(math.MaxInt64)
-	next := atomic.AddInt32(&c.sendCount, 1)
+	next := c.sendCount.Add(1)
 	start := int(next) % len(c.httpClients)
 	for i := range c.httpClients {
 		j := (i + start) % len(c.httpClients)
 		client := c.httpClients[j]
-		inflight := atomic.LoadInt64(&client.inflight)
+		inflight := client.inflight.Load()
 		if inflight < min {
 			leastBusy = client
 			min = inflight
 		}
 	}
-	leastBusy.addInflight(1)
-	return &leastBusy
+	leastBusy.inflight.Add(1)
+	return leastBusy
 }
 
 func (c *Client) gzipWriter(w io.Writer) *gzip.Writer {
@@ -230,7 +216,7 @@ func (c *Client) preparePending() {
 	for pd := range c.pending {
 		pd.buf = c.buffer()
 		method, url := c.methodAndURL(pd.document, pd.buf)
-		pd.request, pd.err = c.createRequest(method, url, pd.document.Fields, pd.buf)
+		pd.request, pd.err = c.createRequest(method, url, pd.document.Body, pd.buf)
 		pd.prepared <- true
 	}
 }
@@ -260,24 +246,23 @@ func (c *Client) createRequest(method, url string, body []byte, buf *bytes.Buffe
 	if len(body) == 0 {
 		return newRequest(method, url, nil, false)
 	}
-	bodySize := len(fieldsPrefix) + len(body) + len(fieldsSuffix)
-	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && bodySize > 512)
-	buf.Grow(min(1024, bodySize))
+	useGzip := c.options.Compression == CompressionGzip || (c.options.Compression == CompressionAuto && len(body) > 512)
+	var r io.Reader
 	if useGzip {
+		buf.Grow(min(1024, len(body)))
 		zw := c.gzipWriter(buf)
 		defer c.gzippers.Put(zw)
-		if err := writeRequestBody(zw, body); err != nil {
+		if _, err := zw.Write(body); err != nil {
 			return nil, err
 		}
 		if err := zw.Close(); err != nil {
 			return nil, err
 		}
+		r = buf
 	} else {
-		if err := writeRequestBody(buf, body); err != nil {
-			return nil, err
-		}
+		r = bytes.NewReader(body)
 	}
-	return newRequest(method, url, buf, useGzip)
+	return newRequest(method, url, r, useGzip)
 }
 
 func (c *Client) clientTimeout() time.Duration {
@@ -290,33 +275,54 @@ func (c *Client) clientTimeout() time.Duration {
 // Send given document to the endpoint configured in this client.
 func (c *Client) Send(document Document) Result {
 	start := c.now()
-	result := Result{Id: document.Id, Stats: Stats{Requests: 1}}
+	result := Result{Id: document.Id}
 	req, buf, err := c.prepare(document)
 	defer c.buffers.Put(buf)
 	if err != nil {
 		return resultWithErr(result, err)
 	}
-	bodySize := buf.Len()
+	bodySize := len(document.Body)
+	if buf.Len() > 0 {
+		bodySize = buf.Len()
+	}
 	resp, err := c.leastBusyClient().Do(req, c.clientTimeout())
 	if err != nil {
 		return resultWithErr(result, err)
 	}
 	defer resp.Body.Close()
 	elapsed := c.now().Sub(start)
-	return resultWithResponse(resp, bodySize, result, elapsed, buf)
+	return c.resultWithResponse(resp, bodySize, result, elapsed, buf, false)
+}
+
+// Get retrieves document with given ID.
+func (c *Client) Get(id Id) Result {
+	start := c.now()
+	buf := c.buffer()
+	defer c.buffers.Put(buf)
+	c.writeDocumentPath(id, buf)
+	url := buf.String()
+	result := Result{Id: id}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return resultWithErr(result, err)
+	}
+	resp, err := c.leastBusyClient().Do(req, c.clientTimeout())
+	if err != nil {
+		return resultWithErr(result, err)
+	}
+	defer resp.Body.Close()
+	elapsed := c.now().Sub(start)
+	return c.resultWithResponse(resp, 0, result, elapsed, buf, true)
 }
 
 func resultWithErr(result Result, err error) Result {
-	result.Stats.Errors++
 	result.Status = StatusTransportFailure
 	result.Err = err
 	return result
 }
 
-func resultWithResponse(resp *http.Response, sentBytes int, result Result, elapsed time.Duration, buf *bytes.Buffer) Result {
+func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result Result, elapsed time.Duration, buf *bytes.Buffer, copyBody bool) Result {
 	result.HTTPStatus = resp.StatusCode
-	result.Stats.Responses++
-	result.Stats.ResponsesByCode = map[int]int64{resp.StatusCode: 1}
 	switch resp.StatusCode {
 	case 200:
 		result.Status = StatusSuccess
@@ -327,30 +333,28 @@ func resultWithResponse(resp *http.Response, sentBytes int, result Result, elaps
 	default:
 		result.Status = StatusTransportFailure
 	}
-	var body struct {
-		Message string          `json:"message"`
-		Trace   json.RawMessage `json:"trace"`
-	}
 	buf.Reset()
 	written, err := io.Copy(buf, resp.Body)
 	if err != nil {
-		result.Status = StatusVespaFailure
-		result.Err = err
+		result = resultWithErr(result, err)
 	} else {
-		if err := json.Unmarshal(buf.Bytes(), &body); err != nil {
-			result.Status = StatusVespaFailure
-			result.Err = fmt.Errorf("failed to decode json response: %w", err)
+		if result.Success() && c.options.TraceLevel > 0 {
+			var jsonResponse struct {
+				Trace json.RawValue `json:"trace"`
+			}
+			if err := json.Unmarshal(buf.Bytes(), &jsonResponse); err != nil {
+				result = resultWithErr(result, fmt.Errorf("failed to decode json response: %w", err))
+			} else {
+				result.Trace = string(jsonResponse.Trace)
+			}
+		}
+		if !result.Success() || copyBody {
+			result.Body = make([]byte, buf.Len())
+			copy(result.Body, buf.Bytes())
 		}
 	}
-	result.Message = body.Message
-	result.Trace = string(body.Trace)
-	result.Stats.BytesSent = int64(sentBytes)
-	result.Stats.BytesRecv = int64(written)
-	if !result.Success() {
-		result.Stats.Errors++
-	}
-	result.Stats.TotalLatency = elapsed
-	result.Stats.MinLatency = elapsed
-	result.Stats.MaxLatency = elapsed
+	result.Latency = elapsed
+	result.BytesSent = int64(sentBytes)
+	result.BytesRecv = int64(written)
 	return result
 }

@@ -6,6 +6,7 @@
 #include "hash_set_visited_tracker.h"
 #include "hnsw_index_loader.hpp"
 #include "hnsw_index_saver.h"
+#include "mips_distance_transform.h"
 #include "random_level_generator.h"
 #include "vector_bundle.h"
 #include <vespa/searchlib/attribute/address_space_components.h>
@@ -17,6 +18,7 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
+#include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
@@ -31,6 +33,7 @@ using search::StateExplorerUtils;
 using search::queryeval::GlobalFilter;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
+using vespalib::GenericHeader;
 
 namespace {
 
@@ -40,6 +43,29 @@ constexpr float alloc_grow_factor = 0.3;
 constexpr size_t max_level_array_size = 16;
 constexpr size_t max_link_array_size = 193;
 constexpr vespalib::duration MAX_COUNT_DURATION(100ms);
+
+const vespalib::string hnsw_max_squared_norm = "hnsw.max_squared_norm";
+
+void save_mips_max_distance(GenericHeader& header, DistanceFunctionFactory& dff) {
+    auto* mips_dff = dynamic_cast<MipsDistanceFunctionFactoryBase*>(&dff);
+    if (mips_dff != nullptr) {
+        auto& norm_store = mips_dff->get_max_squared_norm_store();
+        header.putTag(GenericHeader::Tag(hnsw_max_squared_norm, norm_store.get_max()));
+    }
+}
+
+void load_mips_max_distance(const GenericHeader& header, DistanceFunctionFactory& dff) {
+    auto* mips_dff = dynamic_cast<MipsDistanceFunctionFactoryBase*>(&dff);
+    if (mips_dff != nullptr) {
+        auto& norm_store = mips_dff->get_max_squared_norm_store();
+        if (header.hasTag(hnsw_max_squared_norm)) {
+            auto& tag = header.getTag(hnsw_max_squared_norm);
+            if (tag.getType() == GenericHeader::Tag::Type::TYPE_FLOAT) {
+                (void) norm_store.get_max(tag.asFloat());
+            }
+        }
+    }
+}
 
 bool has_link_to(vespalib::ConstArrayRef<uint32_t> links, uint32_t id) {
     for (uint32_t link : links) {
@@ -151,8 +177,9 @@ template <HnswIndexType type>
 bool
 HnswIndex<type>::have_closer_distance(HnswTraversalCandidate candidate, const HnswTraversalCandidateVector& result) const
 {
+    auto df = _distance_ff->for_insertion_vector(get_vector(candidate.nodeid));
     for (const auto & neighbor : result) {
-        double dist = calc_distance(candidate.nodeid, neighbor.nodeid);
+        double dist = calc_distance(*df, neighbor.nodeid);
         if (dist < candidate.distance) {
             return true;
         }
@@ -228,8 +255,9 @@ HnswIndex<type>::shrink_if_needed(uint32_t nodeid, uint32_t level)
     if (old_links.size() > max_links) {
         HnswTraversalCandidateVector neighbors;
         neighbors.reserve(old_links.size());
+        auto df = _distance_ff->for_insertion_vector(get_vector(nodeid));
         for (uint32_t neighbor_nodeid : old_links) {
-            double dist = calc_distance(nodeid, neighbor_nodeid);
+            double dist = calc_distance(*df, neighbor_nodeid);
             neighbors.emplace_back(neighbor_nodeid, dist);
         }
         auto split = select_neighbors(neighbors, max_links);
@@ -270,17 +298,6 @@ HnswIndex<type>::remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32
         if (id != remove_id) new_links.push_back(id);
     }
     _graph.set_link_array(remove_from, level, new_links);
-}
-
-
-template <HnswIndexType type>
-double
-HnswIndex<type>::calc_distance(uint32_t lhs_nodeid, uint32_t rhs_nodeid) const
-{
-    auto lhs = get_vector(lhs_nodeid);
-    auto df = _distance_ff->for_insertion_vector(lhs);
-    auto rhs = get_vector(rhs_nodeid);
-    return df->calc(rhs);
 }
 
 template <HnswIndexType type>
@@ -357,12 +374,19 @@ HnswIndex<type>::search_layer_helper(
         const BoundDistanceFunction &df,
         uint32_t neighbors_to_find,
         BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter,
-        uint32_t nodeid_limit, uint32_t estimated_visited_nodes) const
+        uint32_t nodeid_limit, const vespalib::Doom* const doom,
+        uint32_t estimated_visited_nodes) const
 {
     NearestPriQ candidates;
     GlobalFilterWrapper<type> filter_wrapper(filter);
     filter_wrapper.clamp_nodeid_limit(nodeid_limit);
     VisitedTracker visited(nodeid_limit, estimated_visited_nodes);
+    if (doom != nullptr && doom->soft_doom()) {
+        while (!best_neighbors.empty()) {
+            best_neighbors.pop();
+        }
+        return;
+    }
     for (const auto &entry : best_neighbors.peek()) {
         if (entry.nodeid >= nodeid_limit) {
             continue;
@@ -407,6 +431,9 @@ HnswIndex<type>::search_layer_helper(
                 }
             }
         }
+        if (doom != nullptr && doom->soft_doom()) {
+            break;
+        }
     }
 }
 
@@ -416,14 +443,15 @@ void
 HnswIndex<type>::search_layer(
         const BoundDistanceFunction &df,
         uint32_t neighbors_to_find,
-        BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter) const
+        BestNeighbors& best_neighbors, uint32_t level,
+        const vespalib::Doom* const doom, const GlobalFilter *filter) const
 {
     uint32_t nodeid_limit = _graph.nodes_size.load(std::memory_order_acquire);
     uint32_t estimated_visited_nodes = estimate_visited_nodes(level, nodeid_limit, neighbors_to_find, filter);
     if (estimated_visited_nodes >= nodeid_limit / 128) {
-        search_layer_helper<BitVectorVisitedTracker>(df, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, estimated_visited_nodes);
+        search_layer_helper<BitVectorVisitedTracker>(df, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, doom, estimated_visited_nodes);
     } else {
-        search_layer_helper<HashSetVisitedTracker>(df, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, estimated_visited_nodes);
+        search_layer_helper<HashSetVisitedTracker>(df, neighbors_to_find, best_neighbors, level, filter, nodeid_limit, doom, estimated_visited_nodes);
     }
 }
 
@@ -506,7 +534,7 @@ HnswIndex<type>::internal_prepare_add_node(PreparedAddDoc& op, TypedCells input_
     search_level = std::min(node_max_level, search_level);
     // Find neighbors of the added document in each level it should exist in.
     while (search_level >= 0) {
-        search_layer(*df, _cfg.neighbors_to_explore_at_construction(), best_neighbors, search_level);
+        search_layer(*df, _cfg.neighbors_to_explore_at_construction(), best_neighbors, search_level, nullptr);
         auto neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
         auto& links = connections[search_level];
         links.reserve(neighbors.used.size());
@@ -614,10 +642,14 @@ HnswIndex<type>::mutual_reconnect(const LinkArrayRef &cluster, uint32_t level)
     for (uint32_t i = 0; i + 1 < cluster.size(); ++i) {
         uint32_t n_id_1 = cluster[i];
         LinkArrayRef n_list_1 = _graph.get_link_array(n_id_1, level);
+        std::unique_ptr<BoundDistanceFunction> df;
         for (uint32_t j = i + 1; j < cluster.size(); ++j) {
             uint32_t n_id_2 = cluster[j];
             if (has_link_to(n_list_1, n_id_2)) continue;
-            pairs.emplace_back(n_id_1, n_id_2, calc_distance(n_id_1, n_id_2));
+            if (!df) {
+                df = _distance_ff->for_insertion_vector(get_vector(n_id_1));
+            }
+            pairs.emplace_back(n_id_1, n_id_2, calc_distance(*df, n_id_2));
         }
     }
     std::sort(pairs.begin(), pairs.end());
@@ -836,16 +868,18 @@ HnswIndex<type>::shrink_lid_space(uint32_t doc_id_limit)
 
 template <HnswIndexType type>
 std::unique_ptr<NearestNeighborIndexSaver>
-HnswIndex<type>::make_saver() const
+HnswIndex<type>::make_saver(GenericHeader& header) const
 {
+    save_mips_max_distance(header, distance_function_factory());
     return std::make_unique<HnswIndexSaver<type>>(_graph);
 }
 
 template <HnswIndexType type>
 std::unique_ptr<NearestNeighborIndexLoader>
-HnswIndex<type>::make_loader(FastOS_FileInterface& file)
+HnswIndex<type>::make_loader(FastOS_FileInterface& file, const vespalib::GenericHeader& header)
 {
     assert(get_entry_nodeid() == 0); // cannot load after index has data
+    load_mips_max_distance(header, distance_function_factory());
     using ReaderType = FileReader<uint32_t>;
     using LoaderType = HnswIndexLoader<ReaderType, type>;
     return std::make_unique<LoaderType>(_graph, _id_mapping, std::make_unique<ReaderType>(&file));
@@ -865,9 +899,10 @@ HnswIndex<type>::top_k_by_docid(
         uint32_t k,
         const BoundDistanceFunction &df,
         const GlobalFilter *filter, uint32_t explore_k,
+        const vespalib::Doom& doom,
         double distance_threshold) const
 {
-    SearchBestNeighbors candidates = top_k_candidates(df, std::max(k, explore_k), filter);
+    SearchBestNeighbors candidates = top_k_candidates(df, std::max(k, explore_k), filter, doom);
     auto result = candidates.get_neighbors(k, distance_threshold);
     std::sort(result.begin(), result.end(), NeighborsByDocId());
     return result;
@@ -879,9 +914,10 @@ HnswIndex<type>::find_top_k(
         uint32_t k,
         const BoundDistanceFunction &df,
         uint32_t explore_k,
+        const vespalib::Doom& doom,
         double distance_threshold) const
 {
-    return top_k_by_docid(k, df, nullptr, explore_k, distance_threshold);
+    return top_k_by_docid(k, df, nullptr, explore_k, doom, distance_threshold);
 }
 
 template <HnswIndexType type>
@@ -890,16 +926,18 @@ HnswIndex<type>::find_top_k_with_filter(
         uint32_t k,
         const BoundDistanceFunction &df,
         const GlobalFilter &filter, uint32_t explore_k,
+        const vespalib::Doom& doom,
         double distance_threshold) const
 {
-    return top_k_by_docid(k, df, &filter, explore_k, distance_threshold);
+    return top_k_by_docid(k, df, &filter, explore_k, doom, distance_threshold);
 }
 
 template <HnswIndexType type>
 typename HnswIndex<type>::SearchBestNeighbors
 HnswIndex<type>::top_k_candidates(
         const BoundDistanceFunction &df,
-        uint32_t k, const GlobalFilter *filter) const
+        uint32_t k, const GlobalFilter *filter,
+        const vespalib::Doom& doom) const
 {
     SearchBestNeighbors best_neighbors;
     auto entry = _graph.get_entry_node();
@@ -917,7 +955,7 @@ HnswIndex<type>::top_k_candidates(
         --search_level;
     }
     best_neighbors.push(entry_point);
-    search_layer(df, k, best_neighbors, 0, filter);
+    search_layer(df, k, best_neighbors, 0, &doom, filter);
     return best_neighbors;
 }
 
@@ -1000,7 +1038,7 @@ HnswIndex<type>::count_reachable_nodes() const
         visited[entry.nodeid] = true;
     }
     vespalib::steady_time doom = vespalib::steady_clock::now() + MAX_COUNT_DURATION;
-    while (search_level >= 0) {
+    while (search_level > 0) {
         for (uint32_t idx = 0; idx < found_links.size(); ++idx) {
             if (vespalib::steady_clock::now() > doom) {
                 return {found_links.size(), false};
@@ -1019,7 +1057,35 @@ HnswIndex<type>::count_reachable_nodes() const
         }
         --search_level;
     }
-    return {found_links.size(), true};
+    uint32_t found_cnt = found_links.size();
+    search::AllocatedBitVector visitNext(visited.size());
+    for (uint32_t nodeid : found_links) {
+        visitNext.setBit(nodeid);
+    }
+    bool runAnotherVisit = true;
+    while (runAnotherVisit) {
+        if (vespalib::steady_clock::now() > doom) {
+            return {found_cnt, false};
+        }
+        runAnotherVisit = false;
+        visitNext.foreach_truebit(
+                [&] (uint32_t nodeid) {
+                    // note: search_level == 0
+                    auto neighbors = _graph.acquire_link_array(nodeid, 0);
+                    for (uint32_t neighbor : neighbors) {
+                        if (neighbor >= visited.size() || visited[neighbor]) {
+                            continue;
+                        }
+                        ++found_cnt;
+                        visited[neighbor] = true;
+                        visitNext.setBit(neighbor);
+                        runAnotherVisit = true;
+                    }
+                    visitNext.clearBit(nodeid);
+                }
+            );
+    }
+    return {found_cnt, true};
 }
 
 template class HnswIndex<HnswIndexType::SINGLE>;

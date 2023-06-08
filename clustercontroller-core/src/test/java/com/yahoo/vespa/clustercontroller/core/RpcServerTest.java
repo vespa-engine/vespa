@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -33,7 +34,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -131,7 +131,7 @@ public class RpcServerTest extends FleetControllerTest {
         Set<ConfiguredNode> configuredNodes = new TreeSet<>();
         for (int i = 0; i < 10; i++)
             configuredNodes.add(new ConfiguredNode(i, false));
-        FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes);
+        FleetControllerOptions.Builder builder = defaultOptions(configuredNodes);
         builder.setMinRatioOfStorageNodesUp(0);
         builder.setMaxInitProgressTime(30000);
         builder.setStableStateTimePeriod(60000);
@@ -224,7 +224,7 @@ public class RpcServerTest extends FleetControllerTest {
         for (int i = 0; i < 4; i++)
             configuredNodes.add(new ConfiguredNode(i, false));
         configuredNodes.add(new ConfiguredNode(4, true)); // Last node is configured retired
-        FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
+        FleetControllerOptions.Builder builder = defaultOptions(configuredNodes)
                 .setMinRatioOfStorageNodesUp(0)
                 .setMaxInitProgressTime(30000)
                 .setStableStateTimePeriod(60000);
@@ -257,7 +257,7 @@ public class RpcServerTest extends FleetControllerTest {
             List<ConfiguredNode> configuredNodes = new ArrayList<>();
             for (int i = 0; i < 5; i++)
                 configuredNodes.add(new ConfiguredNode(i, false));
-            FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
+            FleetControllerOptions.Builder builder = defaultOptions(configuredNodes)
                     .setMaxInitProgressTime(30000)
                     .setStableStateTimePeriod(60000);
             setUpFleetController(timer, builder);
@@ -281,10 +281,8 @@ public class RpcServerTest extends FleetControllerTest {
                 configuredNodes.add(new ConfiguredNode(i, true));
             configuredNodes.add(new ConfiguredNode(5, false));
             configuredNodes.add(new ConfiguredNode(6, false));
-            FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
-                    .setSlobrokConnectionSpecs(this.options.slobrokConnectionSpecs())
-                    .setMaxInitProgressTime(30000)
-                    .setStableStateTimePeriod(60000);
+            var builder = FleetControllerOptions.Builder.copy(fleetController().getOptions())
+                    .setNodes(configuredNodes);
             fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:m .1.s:m .2.s:r .3.s:r .4.s:r");
         }
@@ -311,10 +309,8 @@ public class RpcServerTest extends FleetControllerTest {
             Set<ConfiguredNode> configuredNodes = new TreeSet<>();
             for (int i = 0; i < 7; i++)
                 configuredNodes.add(new ConfiguredNode(i, false));
-            FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
-                    .setSlobrokConnectionSpecs(this.options.slobrokConnectionSpecs())
-                    .setMaxInitProgressTime(30000)
-                    .setStableStateTimePeriod(60000);
+            var builder = FleetControllerOptions.Builder.copy(fleetController().getOptions())
+                    .setNodes(configuredNodes);
             fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:m .1.s:m");
         }
@@ -336,7 +332,7 @@ public class RpcServerTest extends FleetControllerTest {
             List<ConfiguredNode> configuredNodes = new ArrayList<>();
             for (int i = 0; i < 5; i++)
                 configuredNodes.add(new ConfiguredNode(i, false));
-            FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
+            FleetControllerOptions.Builder builder = defaultOptions(configuredNodes)
                     .setMaxInitProgressTime(30000)
                     .setStableStateTimePeriod(60000);
             options = builder.build();
@@ -349,10 +345,8 @@ public class RpcServerTest extends FleetControllerTest {
             Set<ConfiguredNode> configuredNodes = new TreeSet<>();
             for (int i = 0; i < 5; i++)
                 configuredNodes.add(new ConfiguredNode(i, false));
-            FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
-                    .setSlobrokConnectionSpecs(options.slobrokConnectionSpecs())
-                    .setMaxInitProgressTime(30000)
-                    .setStableStateTimePeriod(60000);
+            var builder = FleetControllerOptions.Builder.copy(fleetController().getOptions())
+                    .setNodes(configuredNodes);
             fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:5 storage:5");
         }
@@ -364,10 +358,8 @@ public class RpcServerTest extends FleetControllerTest {
                 configuredNodes.add(new ConfiguredNode(i, true));
             configuredNodes.add(new ConfiguredNode(5, false));
             configuredNodes.add(new ConfiguredNode(6, false));
-            FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
-                    .setSlobrokConnectionSpecs(options.slobrokConnectionSpecs())
-                    .setMaxInitProgressTime(30000)
-                    .setStableStateTimePeriod(60000);
+            var builder = FleetControllerOptions.Builder.copy(fleetController().getOptions())
+                    .setNodes(configuredNodes);
             fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:r .1.s:r .2.s:r .3.s:r .4.s:r");
         }
@@ -378,10 +370,8 @@ public class RpcServerTest extends FleetControllerTest {
                 configuredNodes.add(new ConfiguredNode(i, true));
             configuredNodes.add(new ConfiguredNode(5, false));
             configuredNodes.add(new ConfiguredNode(6, false));
-            FleetControllerOptions.Builder builder = defaultOptions("mycluster", configuredNodes)
-                    .setSlobrokConnectionSpecs(options.slobrokConnectionSpecs())
-                    .setMaxInitProgressTime(30000)
-                    .setStableStateTimePeriod(60000);
+            var builder = FleetControllerOptions.Builder.copy(fleetController().getOptions())
+                    .setNodes(configuredNodes);
             fleetController().updateOptions(builder.build());
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:r .1.s:r .2.s:r .3.s:r .4.s:r");
         }
@@ -411,7 +401,7 @@ public class RpcServerTest extends FleetControllerTest {
     void testSetNodeState() throws Exception {
         Set<Integer> nodeIndexes = new TreeSet<>(List.of(4, 6, 9, 10, 14, 16, 21, 22, 23, 25));
         Set<ConfiguredNode> configuredNodes = nodeIndexes.stream().map(i -> new ConfiguredNode(i, false)).collect(Collectors.toSet());
-        FleetControllerOptions.Builder options = defaultOptions("mycluster", configuredNodes);
+        FleetControllerOptions.Builder options = defaultOptions(configuredNodes);
         //options.setStorageDistribution(new Distribution(getDistConfig(nodeIndexes)));
         setUpFleetController(timer, options);
         setUpVdsNodes(timer, false, nodeIndexes);
@@ -470,69 +460,6 @@ public class RpcServerTest extends FleetControllerTest {
         assertEquals(ErrorCode.NONE, req.errorCode(), req.toString());
 
         waitForState("version:\\d+ distributor:10 storage:10 .9.s:m");
-    }
-
-    @Test
-    void testGetMaster() throws Exception {
-        FleetControllerOptions.Builder options = defaultOptions();
-        options.setStorageDistribution(new Distribution(Distribution.getDefaultDistributionConfig(2, 10)));
-        setUpFleetController(timer, options);
-        setUpVdsNodes(timer);
-        waitForStableSystem();
-
-        int rpcPort = fleetController().getRpcPort();
-        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
-        assertTrue(connection.isValid());
-
-        Request req = new Request("getMaster");
-        connection.invokeSync(req, timeout());
-        assertEquals(0, req.returnValues().get(0).asInt32(), req.toString());
-        assertEquals("All 1 nodes agree that 0 is current master.", req.returnValues().get(1).asString(), req.toString());
-
-        // Note that this feature is tested better in MasterElectionTest.testGetMaster as it has multiple fleetcontrollers
-    }
-
-    @Test
-    void testGetNodeList() throws Exception {
-        setUpFleetController(timer, defaultOptions(5));
-        final int nodeCount = 5;
-        setUpVdsNodes(timer, false, nodeCount);
-        waitForStableSystem();
-
-        assertTrue(nodes.get(0).isDistributor());
-        nodes.get(0).disconnect();
-        waitForState("version:\\d+ distributor:5 .0.s:d storage:5");
-
-        int rpcPort = fleetController().getRpcPort();
-        Target connection = supervisor.connect(new Spec("localhost", rpcPort));
-        assertTrue(connection.isValid());
-
-        Request req = new Request("getNodeList");
-        connection.invokeSync(req, timeout());
-        assertEquals(ErrorCode.NONE, req.errorCode(), req.errorMessage());
-        assertTrue(req.checkReturnTypes("SS"), req.toString());
-        String[] slobrok = req.returnValues().get(0).asStringArray().clone();
-        String[] rpc = req.returnValues().get(1).asStringArray().clone();
-
-        assertEquals(2 * nodeCount, slobrok.length);
-        assertEquals(2 * nodeCount, rpc.length);
-
-        // Verify that we can connect to all addresses returned.
-        for (int i = 0; i < 2 * nodeCount; ++i) {
-            if (slobrok[i].equals("storage/cluster.mycluster/distributor/0")) {
-                if (i < nodeCount && !"".equals(rpc[i])) {
-                    continue;
-                }
-                assertEquals("", rpc[i], slobrok[i]);
-                continue;
-            }
-            assertNotEquals("", rpc[i]);
-            Request req2 = new Request("getnodestate3");
-            req2.parameters().add(new StringValue("unknown"));
-            Target connection2 = supervisor.connect(new Spec(rpc[i]));
-            connection2.invokeSync(req2, timeout());
-            assertEquals(ErrorCode.NONE, req.errorCode(), req2.toString());
-        }
     }
 
     private Request setNodeState(String node, NodeState newNodeState, Target connection) {

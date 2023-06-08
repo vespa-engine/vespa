@@ -31,8 +31,9 @@ public class SimpleTokenType {
             case Character.MATH_SYMBOL:
             case Character.CURRENCY_SYMBOL:
             case Character.MODIFIER_SYMBOL:
-            case Character.OTHER_SYMBOL:
                 return TokenType.SYMBOL;
+            case Character.OTHER_SYMBOL:
+                return TokenType.INDEXABLE_SYMBOL;
 
             case Character.OTHER_NUMBER:
                 // "SUPERSCRIPT TWO",

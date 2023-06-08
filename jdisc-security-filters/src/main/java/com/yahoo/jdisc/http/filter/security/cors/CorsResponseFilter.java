@@ -8,9 +8,6 @@ import com.yahoo.jdisc.http.filter.RequestView;
 import com.yahoo.jdisc.http.filter.SecurityResponseFilter;
 import com.yahoo.yolean.chain.Provides;
 
-import java.util.Set;
-
-
 /**
  * @author gv
  * @author Tony Vaagenes
@@ -19,16 +16,16 @@ import java.util.Set;
 @Provides("CorsResponseFilter")
 public class CorsResponseFilter extends AbstractResource implements SecurityResponseFilter {
 
-    private final Set<String> allowedUrls;
+    private final CorsLogic cors;
 
     @Inject
     public CorsResponseFilter(CorsFilterConfig config) {
-        this.allowedUrls = Set.copyOf(config.allowedUrls());
+        this.cors = CorsLogic.forAllowedOrigins(config.allowedUrls());
     }
 
     @Override
     public void filter(DiscFilterResponse response, RequestView request) {
-        CorsLogic.createCorsResponseHeaders(request.getFirstHeader("Origin").orElse(null), allowedUrls)
+        cors.createCorsResponseHeaders(request.getFirstHeader("Origin").orElse(null))
                 .forEach(response::setHeader);
     }
 

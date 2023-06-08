@@ -103,7 +103,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, TestReport> testReport = new HashMap<>();
     private final Map<DeploymentId, CloudAccount> cloudAccounts = new HashMap<>();
     private final Map<DeploymentId, List<X509Certificate>> additionalCertificates = new HashMap<>();
-    private List<SearchNodeMetrics> searchnodeMetrics;
+    private List<SearchNodeMetrics> searchNodeMetrics;
 
     private Version lastPrepareVersion = null;
     private Consumer<ApplicationId> prepareException = null;
@@ -308,7 +308,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     public void setProtonMetrics(List<SearchNodeMetrics> searchnodeMetrics) {
-        this.searchnodeMetrics = searchnodeMetrics;
+        this.searchNodeMetrics = searchnodeMetrics;
     }
 
     public void deferLoadBalancerProvisioningIn(Set<Environment> environments) {
@@ -499,7 +499,15 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
         applications.remove(deployment);
         serviceStatus.remove(deployment);
-        removeLoadBalancers(deployment.applicationId(), deployment.zoneId());
+
+        // This simulates what a real config server does: It deactivates the LB. Actual removal happens in the background
+        loadBalancers.computeIfPresent(deployment.zoneId(), (k, old) ->
+                old.stream().map(lb -> lb.application().equals(deployment.applicationId())
+                           ? new LoadBalancer(lb.id(), lb.application(), lb.cluster(), lb.hostname(), lb.ipAddress(),
+                                              LoadBalancer.State.inactive, lb.dnsZone(), lb.cloudAccount(),
+                                              lb.service(), lb.isPublic())
+                           : lb)
+                   .collect(Collectors.toCollection(LinkedHashSet::new)));
     }
 
     @Override
@@ -509,7 +517,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public List<SearchNodeMetrics> getSearchNodeMetrics(DeploymentId deployment) {
-        return this.searchnodeMetrics;
+        return this.searchNodeMetrics;
     }
 
     @Override

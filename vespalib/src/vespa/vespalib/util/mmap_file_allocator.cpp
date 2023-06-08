@@ -42,7 +42,7 @@ MmapFileAllocator::alloc_area(size_t sz) const
     return offset;
 }
 
-MmapFileAllocator::PtrAndSize
+PtrAndSize
 MmapFileAllocator::alloc(size_t sz) const
 {
     if (sz == 0) {
@@ -72,23 +72,23 @@ MmapFileAllocator::alloc(size_t sz) const
 void
 MmapFileAllocator::free(PtrAndSize alloc) const
 {
-    if (alloc.second == 0) {
-        assert(alloc.first == nullptr);
+    if (alloc.size() == 0) {
+        assert(alloc.get() == nullptr);
         return; // empty allocation
     }
-    assert(alloc.first != nullptr);
+    assert(alloc.get() != nullptr);
     // Check that matching allocation is registered
-    auto itr = _allocations.find(alloc.first);
+    auto itr = _allocations.find(alloc.get());
     assert(itr != _allocations.end());
-    assert(itr->first == alloc.first);
-    assert(itr->second.size == alloc.second);
+    assert(itr->first == alloc.get());
+    assert(itr->second.size == alloc.size());
     auto offset = itr->second.offset;
     _allocations.erase(itr);
-    int retval = madvise(alloc.first, alloc.second, MADV_DONTNEED);
+    int retval = madvise(alloc.get(), alloc.size(), MADV_DONTNEED);
     assert(retval == 0);
-    retval = munmap(alloc.first, alloc.second);
+    retval = munmap(alloc.get(), alloc.size());
     assert(retval == 0);
-    _freelist.free(offset, alloc.second);
+    _freelist.free(offset, alloc.size());
 }
 
 size_t

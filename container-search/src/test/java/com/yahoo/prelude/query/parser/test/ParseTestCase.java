@@ -2580,4 +2580,16 @@ public class ParseTestCase {
     void testNoGrammar4() {
         tester.assertParsed("WEAKAND(100) foo bar baz one two 37", "foo -(bar baz \"one two\" 37)", Query.Type.TOKENIZE);
     }
+
+    @Test
+    void testEmojis() {
+        String emoji1 = "\uD83D\uDD2A"; // 🔪
+        String emoji2 = "\uD83D\uDE00"; // 😀
+
+        tester.assertParsed(emoji1, emoji1, Query.Type.ANY);
+        tester.assertParsed(emoji2, emoji2, Query.Type.ANY);
+        tester.assertParsed("AND " + emoji1 + " " + emoji2, emoji1 + emoji2, Query.Type.ANY);
+        tester.assertParsed("AND " + emoji1 + " foo " + emoji2, emoji1 + "foo" + emoji2, Query.Type.ANY);
+    }
+
 }

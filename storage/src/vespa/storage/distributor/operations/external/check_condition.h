@@ -114,7 +114,7 @@ public:
                    const documentapi::TestAndSetCondition& tas_condition,
                    const DistributorBucketSpace& bucket_space,
                    const DistributorNodeContext& node_ctx,
-                   PersistenceOperationMetricSet& metric,
+                   PersistenceOperationMetricSet& condition_probe_metrics,
                    uint32_t trace_level,
                    private_ctor_tag);
     ~CheckCondition();
@@ -135,10 +135,11 @@ public:
             const documentapi::TestAndSetCondition& tas_condition,
             const DistributorNodeContext& node_ctx,
             const DistributorStripeOperationContext& op_ctx,
-            PersistenceOperationMetricSet& metric,
+            PersistenceOperationMetricSet& condition_probe_metrics,
             uint32_t trace_level);
 private:
     [[nodiscard]] bool replica_set_changed_after_get_operation() const;
+    [[nodiscard]] bool distributor_no_longer_owns_bucket() const;
 
     void handle_internal_get_operation_reply(std::shared_ptr<api::StorageReply> reply);
 

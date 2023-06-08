@@ -65,4 +65,11 @@ Config::operator==(const Config &b) const
             _hnsw_index_params == b._hnsw_index_params;
 }
 
+Config&
+Config::set_hnsw_index_params(const HnswIndexParams& params) {
+    assert(_distance_metric == params.distance_metric());
+    _hnsw_index_params = params;
+    return *this;
+}
+
 }

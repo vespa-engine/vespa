@@ -39,50 +39,22 @@ public:
     using ConstIterator = typename TreeType::ConstIterator;
     using FrozenView = typename TreeType::FrozenView;
     using AggrCalcType = typename TreeType::AggrCalcType;
-private:
-    NodeAllocatorType   _alloc;
-    TreeType            _tree;
 
-    BTree(const BTree &rhs);
-
-    BTree &
-    operator=(BTree &rhs);
-
-public:
+    BTree(const BTree &rhs) = delete;
+    BTree & operator=(BTree &rhs) = delete;
     BTree();
     ~BTree();
 
     const NodeAllocatorType &getAllocator() const { return _alloc; }
     NodeAllocatorType &getAllocator() { return _alloc; }
-
-    void
-    disableFreeLists() {
-        _alloc.disableFreeLists();
-    }
-
-    void
-    disable_entry_hold_list()
-    {
-        _alloc.disable_entry_hold_list();
-    }
-
-    // Inherit doc from BTreeRoot
-    void clear() {
-        _tree.clear(_alloc);
-    }
-    void assign(Builder & rhs) {
-        _tree.assign(rhs, _alloc);
-    }
+    void disableFreeLists() { _alloc.disableFreeLists(); }
+    void disable_entry_hold_list() { _alloc.disable_entry_hold_list(); }
+    void clear() { _tree.clear(_alloc); }
+    void assign(Builder & rhs) { _tree.assign(rhs, _alloc); }
     bool insert(const KeyType & key, const DataType & data, CompareT comp = CompareT()) {
         return _tree.insert(key, data, _alloc, comp);
     }
-
-    void
-    insert(Iterator &itr,
-           const KeyType &key, const DataType &data)
-    {
-        _tree.insert(itr, key, data);
-    }
+    void insert(Iterator &itr, const KeyType &key, const DataType &data) { _tree.insert(itr, key, data); }
 
     Iterator find(const KeyType & key, CompareT comp = CompareT()) const {
         return _tree.find(key, _alloc, comp);
@@ -97,55 +69,23 @@ public:
         return _tree.remove(key, _alloc, comp);
     }
 
-    void
-    remove(Iterator &itr)
-    {
-        _tree.remove(itr);
-    }
-
-    Iterator begin() const {
-        return _tree.begin(_alloc);
-    }
-    FrozenView getFrozenView() const {
-        return _tree.getFrozenView(_alloc);
-    }
-    size_t size() const {
-        return _tree.size(_alloc);
-    }
-    vespalib::string toString() const {
-        return _tree.toString(_alloc);
-    }
-    bool isValid(CompareT comp = CompareT()) const {
-        return _tree.isValid(_alloc, comp);
-    }
-    bool isValidFrozen(CompareT comp = CompareT()) const {
-        return _tree.isValidFrozen(_alloc, comp);
-    }
-    size_t bitSize() const {
-        return _tree.bitSize(_alloc);
-    }
+    void remove(Iterator &itr) { _tree.remove(itr); }
+    Iterator begin() const { return _tree.begin(_alloc); }
+    FrozenView getFrozenView() const { return _tree.getFrozenView(_alloc); }
+    size_t size() const { return _tree.size(_alloc); }
+    vespalib::string toString() const { return _tree.toString(_alloc); }
+    bool isValid(CompareT comp = CompareT()) const { return _tree.isValid(_alloc, comp); }
+    bool isValidFrozen(CompareT comp = CompareT()) const { return _tree.isValidFrozen(_alloc, comp); }
+    size_t bitSize() const { return _tree.bitSize(_alloc); }
     size_t bitSize(BTreeNode::Ref node) const {
         return _tree.bitSize(node, _alloc);
     }
-    void setRoot(BTreeNode::Ref newRoot) {
-        _tree.setRoot(newRoot, _alloc);
-    }
-    BTreeNode::Ref getRoot() const {
-        return _tree.getRoot();
-    }
-    vespalib::MemoryUsage getMemoryUsage() const {
-        return _alloc.getMemoryUsage();
-    }
+    void setRoot(BTreeNode::Ref newRoot) { _tree.setRoot(newRoot, _alloc); }
+    BTreeNode::Ref getRoot() const { return _tree.getRoot(); }
+    vespalib::MemoryUsage getMemoryUsage() const { return _alloc.getMemoryUsage(); }
+    const AggrT & getAggregated() const { return _tree.getAggregated(_alloc); }
 
-    const AggrT &
-    getAggregated() const
-    {
-        return _tree.getAggregated(_alloc);
-    }
-
-    void
-    thaw(Iterator &itr)
-    {
+    void thaw(Iterator &itr) {
         assert(&itr.getAllocator() == &getAllocator());
         _tree.thaw(itr);
     }
@@ -153,18 +93,17 @@ public:
     void compact_worst(const datastore::CompactionStrategy& compaction_strategy);
 
     template <typename FunctionType>
-    void
-    foreach_key(FunctionType func) const
-    {
+    void foreach_key(FunctionType func) const {
         _alloc.getNodeStore().foreach_key(_tree.getRoot(), func);
     }
 
     template <typename FunctionType>
-    void
-    foreach(FunctionType func) const
-    {
+    void foreach(FunctionType func) const {
         _alloc.getNodeStore().foreach(_tree.getRoot(), func);
     }
+private:
+    NodeAllocatorType   _alloc;
+    TreeType            _tree;
 };
 
 }

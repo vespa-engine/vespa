@@ -19,7 +19,7 @@ struct IIndexMaintainerOperations {
     using IFieldLengthInspector = search::index::IFieldLengthInspector;
     using Schema = search::index::Schema;
     using SelectorArray = search::diskindex::SelectorArray;
-    virtual ~IIndexMaintainerOperations() {}
+    virtual ~IIndexMaintainerOperations() = default;
 
     /**
      * Creates a new memory index using the given schema.

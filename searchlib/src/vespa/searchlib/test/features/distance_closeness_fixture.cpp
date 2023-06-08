@@ -32,12 +32,13 @@ namespace {
 std::shared_ptr<TensorAttribute>
 create_tensor_attribute(const vespalib::string& attr_name,
                         const vespalib::string& tensor_type,
+                        DistanceMetric distance_metric,
                         bool direct_tensor,
                         uint32_t docid_limit)
 {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
     cfg.setTensorType(ValueType::from_spec(tensor_type));
-    cfg.set_distance_metric(DistanceMetric::Euclidean);
+    cfg.set_distance_metric(distance_metric);
     std::shared_ptr<TensorAttribute> result;
     if (cfg.tensorType().is_dense()) {
         result = std::make_shared<DenseTensorAttribute>(attr_name, cfg);
@@ -59,8 +60,9 @@ FeatureDumpFixture::~FeatureDumpFixture() = default;
 DistanceClosenessFixture::DistanceClosenessFixture(size_t fooCnt, size_t barCnt,
                                                    const Labels& labels,
                                                    const vespalib::string& featureName,
-                                                   const vespalib::string& query_tensor)
-    : DistanceClosenessFixture("tensor(x[2])", false, fooCnt, barCnt, labels, featureName, query_tensor)
+                                                   const vespalib::string& query_tensor,
+                                                   DistanceMetric distance_metric)
+    : DistanceClosenessFixture("tensor(x[2])", false, fooCnt, barCnt, labels, featureName, query_tensor, distance_metric)
 {
 }
 
@@ -69,7 +71,8 @@ DistanceClosenessFixture::DistanceClosenessFixture(const vespalib::string& tenso
                                                    size_t fooCnt, size_t barCnt,
                                                    const Labels& labels,
                                                    const vespalib::string& featureName,
-                                                   const vespalib::string& query_tensor)
+                                                   const vespalib::string& query_tensor,
+                                                   DistanceMetric distance_metric)
     : queryEnv(&indexEnv), rankSetup(factory, indexEnv),
       mdl(), match_data(), rankProgram(), fooHandles(), barHandles(),
       tensor_attr(),
@@ -96,7 +99,7 @@ DistanceClosenessFixture::DistanceClosenessFixture(const vespalib::string& tenso
         queryEnv.getTerms().push_back(term);
     }
     if (!query_tensor.empty()) {
-        tensor_attr = create_tensor_attribute("bar", tensor_type, direct_tensor, docid_limit);
+        tensor_attr = create_tensor_attribute("bar", tensor_type, distance_metric, direct_tensor, docid_limit);
         indexEnv.getAttributeMap().add(tensor_attr);
         search::fef::indexproperties::type::Attribute::set(indexEnv.getProperties(), "bar", tensor_type);
         set_query_tensor("qbar", "tensor(x[2])", TensorSpec::from_expr(query_tensor));

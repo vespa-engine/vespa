@@ -6,8 +6,7 @@
 namespace search::fef {
 
 MatchDataLayout::MatchDataLayout()
-    : _numTermFields(0),
-      _fieldIds()
+    : _fieldIds()
 {
 }
 
@@ -17,9 +16,8 @@ MatchDataLayout::~MatchDataLayout() = default;
 MatchData::UP
 MatchDataLayout::createMatchData() const
 {
-    assert(_numTermFields == _fieldIds.size());
-    auto md = std::make_unique<MatchData>(MatchData::params().numTermFields(_numTermFields));
-    for (size_t i = 0; i < _numTermFields; ++i) {
+    auto md = std::make_unique<MatchData>(MatchData::params().numTermFields(_fieldIds.size()));
+    for (size_t i = 0; i < _fieldIds.size(); ++i) {
         md->resolveTermField(i)->setFieldId(_fieldIds[i]);
     }
     return md;

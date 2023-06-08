@@ -6,8 +6,24 @@
   "hostname": "controller1.yahoo.com",
   "flavor": "default",
   "cpuCores": 2.0,
-  "resources":{"vcpu":2.0,"memoryGb":16.0,"diskGb":400.0,"bandwidthGbps":10.0,"diskSpeed":"fast","storageType":"remote","architecture":"x86_64"},
-  "realResources":{"vcpu":2.0,"memoryGb":16.0,"diskGb":400.0,"bandwidthGbps":10.0,"diskSpeed":"fast","storageType":"remote","architecture":"x86_64"},
+  "resources": {
+    "vcpu": 2.0,
+    "memoryGb": 16.0,
+    "diskGb": 400.0,
+    "bandwidthGbps": 10.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
+  "realResources": {
+    "vcpu": 2.0,
+    "memoryGb": 16.0,
+    "diskGb": 400.0,
+    "bandwidthGbps": 10.0,
+    "diskSpeed": "fast",
+    "storageType": "remote",
+    "architecture": "x86_64"
+  },
   "environment": "BARE_METAL",
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
@@ -31,9 +47,7 @@
       "agent": "operator"
     }
   ],
-  "ipAddresses": [
-    "127.0.0.1"
-  ],
+  "ipAddresses": ["127.0.0.1"],
   "additionalIpAddresses": [],
-  "cloudAccount":"111222333444"
+  "cloudAccount": "aws:111222333444"
 }

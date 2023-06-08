@@ -126,20 +126,24 @@ public class SlimeUtils {
         return Duration.ofMillis(field.asLong());
     }
 
+    public static boolean isPresent(Inspector field) {
+        return field.valid() && field.type() != Type.NIX;
+    }
+
     public static Optional<String> optionalString(Inspector inspector) {
-        return Optional.of(inspector.asString()).filter(s -> !s.isEmpty());
+        return Optional.of(inspector).filter(SlimeUtils::isPresent).map(Inspector::asString);
     }
 
     public static OptionalLong optionalLong(Inspector field) {
-        return field.valid() ? OptionalLong.of(field.asLong()) : OptionalLong.empty();
+        return isPresent(field) ? OptionalLong.of(field.asLong()) : OptionalLong.empty();
     }
 
     public static OptionalInt optionalInteger(Inspector field) {
-        return field.valid() ? OptionalInt.of((int) field.asLong()) : OptionalInt.empty();
+        return isPresent(field) ? OptionalInt.of((int) field.asLong()) : OptionalInt.empty();
     }
 
     public static OptionalDouble optionalDouble(Inspector field) {
-        return field.valid() ? OptionalDouble.of(field.asDouble()) : OptionalDouble.empty();
+        return isPresent(field) ? OptionalDouble.of(field.asDouble()) : OptionalDouble.empty();
     }
 
     public static Optional<Instant> optionalInstant(Inspector field) {

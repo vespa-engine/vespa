@@ -58,17 +58,19 @@ public class LoggerEntry {
     }
 
     public String toString() {
-        return serialize();
+        return serialize(false);
     }
 
-    public String serialize() {
+    public String serialize() { return serialize(true); }
+
+    public String serialize(boolean encodeBlob) {
         try {
             Slime slime = new Slime();
             Cursor root = slime.setObject();
 
             root.setLong("timestamp", timestamp == null ? 0 : timestamp);
             root.setString("query", queryString());
-            root.setString("blob", Base64.getEncoder().encodeToString(blob.array()));
+            root.setString("blob", encodeBlob? Base64.getEncoder().encodeToString(blob.array()) : Utf8.toString(blob.array()));
             root.setString("track", track());
 
             return Utf8.toString(SlimeUtils.toJsonBytes(slime));  // TODO

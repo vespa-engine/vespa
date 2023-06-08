@@ -60,6 +60,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new AutoscalingMaintainer(nodeRepository, deployer, metric, defaults.autoscalingInterval));
         maintainers.add(new ScalingSuggestionsMaintainer(nodeRepository, defaults.scalingSuggestionsInterval, metric));
         maintainers.add(new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer));
+        maintainers.add(new DeprovisionedExpirer(nodeRepository, defaults.deprovisionedExpiry, metric));
 
         provisionServiceProvider.getLoadBalancerService()
                                 .map(lbService -> new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric))
@@ -70,7 +71,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                         new HostDeprovisioner(nodeRepository, defaults.hostDeprovisionerInterval, metric, hostProvisioner),
                                         new HostResumeProvisioner(nodeRepository, defaults.hostResumeProvisionerInterval, metric, hostProvisioner),
                                         new HostRetirer(nodeRepository, defaults.hostRetirerInterval, metric, hostProvisioner),
-                                        new DiskReplacer(nodeRepository, defaults.diskReplacerInterval, metric, hostProvisioner)))
+                                        new DiskReplacer(nodeRepository, defaults.diskReplacerInterval, metric, hostProvisioner),
+                                        new HostFlavorUpgrader(nodeRepository, defaults.hostFlavorUpgraderInterval, metric, deployer, hostProvisioner))
+                                )
                                 .ifPresent(maintainers::addAll);
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintainButThrowOnException();
@@ -118,10 +121,14 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration scalingSuggestionsInterval;
         private final Duration switchRebalancerInterval;
         private final Duration hostRetirerInterval;
+        private final Duration hostFlavorUpgraderInterval;
+        private final Duration deprovisionedExpiry;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
         DefaultTimes(Zone zone, Deployer deployer) {
+            boolean isCdZone = zone.system().isCd();
+
             autoscalingInterval = Duration.ofMinutes(5);
             dynamicProvisionerInterval = Duration.ofMinutes(3);
             hostDeprovisionerInterval = Duration.ofMinutes(3);
@@ -137,7 +144,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
             expeditedChangeRedeployInterval = Duration.ofMinutes(3);
             // Vespa upgrade frequency is higher in CD so (de)activate OS upgrades more frequently as well
-            osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
+            osUpgradeActivatorInterval = isCdZone ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
             periodicRedeployInterval = Duration.ofMinutes(60);
             provisionedExpiry = zone.cloud().dynamicProvisioning() ? Duration.ofMinutes(40) : Duration.ofHours(4);
             rebalancerInterval = Duration.ofMinutes(120);
@@ -149,8 +156,11 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             switchRebalancerInterval = Duration.ofHours(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             hostRetirerInterval = Duration.ofMinutes(30);
+            hostFlavorUpgraderInterval = Duration.ofMinutes(30);
+            // CD (de)provisions hosts frequently. Expire deprovisioned ones earlier
+            deprovisionedExpiry = isCdZone ? Duration.ofDays(1) : Duration.ofDays(30);
 
-            if (zone.environment().isProduction() && ! zone.system().isCd()) {
+            if (zone.environment().isProduction() && ! isCdZone) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(15);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
@@ -159,8 +169,10 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 // long enough that nodes aren't reused immediately and delete can happen on all config servers
                 // with time enough to clean up even with ZK connection issues on config servers
                 inactiveExpiry = Duration.ofMinutes(1);
-                retiredInterval = Duration.ofMinutes(1);
                 dirtyExpiry = Duration.ofMinutes(30);
+                // Longer time in non-CD since we might end up with many deployments in a short time
+                // when retiring many hosts, e.g. when doing OS upgrades
+                retiredInterval = isCdZone ? Duration.ofMinutes(1) : Duration.ofMinutes(5);
                 retiredExpiry = Duration.ofDays(1);
             }
         }

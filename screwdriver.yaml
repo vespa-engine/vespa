@@ -366,6 +366,7 @@ jobs:
             echo "Must have valid Vespa version to continue (got VESPA_VERSION=$VESPA_VERSION)."
             return 1
           fi
+          VESPA_MAJOR=$(echo $VESPA_VERSION | cut -d. -f1)
       - install-dependencies: |
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
           dnf -y install docker-ce docker-ce-cli containerd.io
@@ -380,21 +381,16 @@ jobs:
           docker context use vespa-context
           docker buildx create --name vespa-builder --driver docker-container --use
           docker buildx inspect --bootstrap
-          docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
           docker buildx build \
                 --progress plain \
                 --load \
-                --platform linux/amd64,linux/arm64 \
+                --platform linux/amd64 \
                 --build-arg VESPA_BASE_IMAGE=el9 \
                 --build-arg VESPA_VERSION=$VESPA_VERSION \
                 --file Dockerfile  \
-                --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_VERSION \
-                --tag docker.io/vespaengine/$IMAGE_NAME:$VESPA_MAJOR \
-                --tag docker.io/vespaengine/$IMAGE_NAME:latest \
+                --tag vespaengine/$IMAGE_NAME:latest \
                 .
       - verify-container-image: |
-          # Trick to be able to use the documentation testing to verify the image built locally
-          buildah tag $IMAGE_NAME:$VESPA_VERSION vespaengine/vespa:latest
           # Run quick start guide
           $SD_SOURCE_DIR/screwdriver/test-quick-start-guide.sh
       - publish-image: |
@@ -447,8 +443,8 @@ jobs:
           now_epoch=`date "+%s"`
           echo "Now epoch: " $now_epoch
       - calculate-current-release-age: |
-          current_release_date=`curl -s 'https://repo1.maven.org/maven2/com/yahoo/vespa/parent/' | \
-            grep '^<a href="[0-9]' | awk '{print $4}' | sort | tail -1`
+          current_release_date=$(curl -sLf https://repo1.maven.org/maven2/com/yahoo/vespa/cloud-tenant-base/maven-metadata.xml | \
+          grep -oP "<lastUpdated>\K\w+" | cut -c 1-8)
           echo "Current release date: " $current_release_date
           current_release_epoch=`date -d "$current_release_date" "+%s"`
           echo "Current release epoch: " $current_release_epoch
@@ -460,8 +456,7 @@ jobs:
             exit 1
           fi
       - calculate-docker-image-age: |
-          image_date=`curl https://hub.docker.com/v2/repositories/vespaengine/vespa/ | \
-            python -m json.tool| grep last_updated | awk '{print $2}' | tr -d '",'`
+          image_date=$(curl -sLf https://hub.docker.com/v2/repositories/vespaengine/vespa/ | jq -re '.last_updated')
           echo "Docker image last_updated: " $image_date
           image_epoch=`date -d "$image_date" "+%s"`
           echo "Docker image epoch: " $image_epoch

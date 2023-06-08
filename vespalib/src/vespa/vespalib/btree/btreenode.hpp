@@ -4,6 +4,7 @@
 
 #include "btreenode.h"
 #include <algorithm>
+#include <cassert>
 
 namespace vespalib::btree {
 
@@ -74,9 +75,7 @@ upper_bound(uint32_t sidx, const KeyT & key, CompareT comp) const
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
-BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::insert(uint32_t idx,
-                                                  const KeyT &key,
-                                                  const DataT &data)
+BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::insert(uint32_t idx, const KeyT &key, const DataT &data)
 {
     assert(validSlots() < NodeType::maxSlots());
     assert(!getFrozen());
@@ -208,8 +207,7 @@ stealSomeFromRightNode(NodeType *victim)
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void
-BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanRange(uint32_t from,
-                                                      uint32_t to)
+BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanRange(uint32_t from, uint32_t to)
 {
     assert(from < to);
     assert(to <= validSlots());
@@ -366,7 +364,7 @@ BTreeInternalNode<KeyT, AggrT, NumSlots>::cleanFrozen()
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::
-BTreeLeafNode(const KeyDataType *smallArray, uint32_t arraySize)
+BTreeLeafNode(const KeyDataType *smallArray, uint32_t arraySize) noexcept
     : ParentType(LEAF_LEVEL)
 {
     assert(arraySize <= BTreeLeafNode::maxSlots());

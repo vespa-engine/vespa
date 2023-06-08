@@ -1219,10 +1219,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_4);
 
         getProperty(request, FROM_TIMESTAMP, unsignedLongParser).ifPresent(parameters::setFromTimestamp);
-        getProperty(request, TO_TIMESTAMP, unsignedLongParser).ifPresent(parameters::setToTimestamp);
-        if (Long.compareUnsigned(parameters.getFromTimestamp(), parameters.getToTimestamp()) > 0) {
-            throw new IllegalArgumentException("toTimestamp must be greater than, or equal to, fromTimestamp");
-        }
+        getProperty(request, TO_TIMESTAMP, unsignedLongParser).ifPresent(ts -> {
+            parameters.setToTimestamp(ts);
+            if (Long.compareUnsigned(parameters.getFromTimestamp(), parameters.getToTimestamp()) > 0) {
+                throw new IllegalArgumentException("toTimestamp must be greater than, or equal to, fromTimestamp");
+            }
+        });
 
         StorageCluster storageCluster = resolveCluster(cluster, clusters);
         parameters.setRoute(storageCluster.name());
@@ -1367,8 +1369,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         try (response) {
                             callback.onEnd(response);
 
-                            if (getVisitorStatistics() != null)
-                                response.writeDocumentCount(getVisitorStatistics().getDocumentsVisited());
+                            response.writeDocumentCount(getVisitorStatistics() == null ? 0 : getVisitorStatistics().getDocumentsVisited());
 
                             if (session.get() != null)
                                 response.writeTrace(session.get().getTrace());

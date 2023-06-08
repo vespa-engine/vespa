@@ -3,7 +3,6 @@ package document
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -37,13 +36,13 @@ func TestLeastBusyClient(t *testing.T) {
 		httpClients = append(httpClients, &mockHTTPClient{i, &httpClient})
 	}
 	client, _ := NewClient(ClientOptions{}, httpClients)
-	client.httpClients[0].addInflight(1)
-	client.httpClients[1].addInflight(1)
-	assertLeastBusy(t, 2, client)
+	client.httpClients[0].inflight.Add(1)
+	client.httpClients[1].inflight.Add(1)
 	assertLeastBusy(t, 2, client)
 	assertLeastBusy(t, 3, client)
-	client.httpClients[3].addInflight(1)
-	client.httpClients[1].addInflight(-1)
+	assertLeastBusy(t, 3, client)
+	client.httpClients[3].inflight.Add(1)
+	client.httpClients[1].inflight.Add(-1)
 	assertLeastBusy(t, 1, client)
 }
 
@@ -62,16 +61,16 @@ func TestClientSend(t *testing.T) {
 		method string
 		url    string
 	}{
-		{Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(`{"foo": "123"}`)},
+		{Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "123"}}`)},
 			"PUT",
 			"https://example.com:1337/document/v1/ns/type/docid/doc1?timeout=5000ms&create=true"},
-		{Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Fields: []byte(`{"foo": "456"}`)},
+		{Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "456"}}`)},
 			"PUT",
 			"https://example.com:1337/document/v1/ns/type/docid/doc2?timeout=5000ms"},
 		{Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationRemove},
 			"DELETE",
 			"https://example.com:1337/document/v1/ns/type/docid/doc3?timeout=5000ms"},
-		{Document{Condition: "foo", Id: mustParseId("id:ns:type::doc4"), Operation: OperationUpdate, Fields: []byte(`{"baz": "789"}`)},
+		{Document{Condition: "foo", Id: mustParseId("id:ns:type::doc4"), Operation: OperationUpdate, Body: []byte(`{"fields":{"baz": "789"}}`)},
 			"PUT",
 			"https://example.com:1337/document/v1/ns/type/docid/doc4?timeout=5000ms&condition=foo"},
 	}
@@ -86,43 +85,29 @@ func TestClientSend(t *testing.T) {
 	for i, tt := range tests {
 		doc := tt.in
 		wantRes := Result{
-			Id: doc.Id,
-			Stats: Stats{
-				Requests:     1,
-				Responses:    1,
-				TotalLatency: time.Second,
-				MinLatency:   time.Second,
-				MaxLatency:   time.Second,
-			},
+			Id:      doc.Id,
+			Latency: time.Second,
 		}
-		var wantBody bytes.Buffer
 		if i < 3 {
-			httpClient.NextResponseString(200, `{"message":"All good!"}`)
+			msg := `{"message":"All good!"}`
+			httpClient.NextResponseString(200, msg)
 			wantRes.Status = StatusSuccess
 			wantRes.HTTPStatus = 200
-			wantRes.Message = "All good!"
-			wantRes.Stats.ResponsesByCode = map[int]int64{200: 1}
-			wantRes.Stats.BytesRecv = 23
+			wantRes.BytesRecv = 23
 		} else {
-			httpClient.NextResponseString(502, `{"message":"Good bye, cruel world!"}`)
+			errMsg := `something went wront`
+			httpClient.NextResponseString(502, errMsg)
 			wantRes.Status = StatusVespaFailure
 			wantRes.HTTPStatus = 502
-			wantRes.Message = "Good bye, cruel world!"
-			wantRes.Stats.ResponsesByCode = map[int]int64{502: 1}
-			wantRes.Stats.Errors = 1
-			wantRes.Stats.BytesRecv = 36
-		}
-		if tt.method == http.MethodPut {
-			wantBody.WriteString(`{"fields":`)
-			wantBody.Write(doc.Fields)
-			wantBody.WriteString("}")
+			wantRes.Body = []byte(errMsg)
+			wantRes.BytesRecv = 20
 		}
 		res := client.Send(doc)
-		wantRes.Stats.BytesSent = int64(len(httpClient.LastBody))
+		wantRes.BytesSent = int64(len(httpClient.LastBody))
 		if !reflect.DeepEqual(res, wantRes) {
 			t.Fatalf("got result %+v, want %+v", res, wantRes)
 		}
-		stats.Add(res.Stats)
+		stats.Add(res)
 		r := httpClient.LastRequest
 		if r.Method != tt.method {
 			t.Errorf("got r.Method = %q, want %q", r.Method, tt.method)
@@ -133,8 +118,8 @@ func TestClientSend(t *testing.T) {
 		if r.URL.String() != tt.url {
 			t.Errorf("got r.URL = %q, want %q", r.URL, tt.url)
 		}
-		if !bytes.Equal(httpClient.LastBody, wantBody.Bytes()) {
-			t.Errorf("got r.Body = %q, want %q", string(httpClient.LastBody), wantBody.String())
+		if !bytes.Equal(httpClient.LastBody, doc.Body) {
+			t.Errorf("got r.Body = %q, want %q", string(httpClient.LastBody), doc.Body)
 		}
 	}
 	want := Stats{
@@ -144,16 +129,48 @@ func TestClientSend(t *testing.T) {
 			200: 3,
 			502: 1,
 		},
-		Errors:       1,
+		Errors:       0,
 		Inflight:     0,
 		TotalLatency: 4 * time.Second,
 		MinLatency:   time.Second,
 		MaxLatency:   time.Second,
 		BytesSent:    75,
-		BytesRecv:    105,
+		BytesRecv:    89,
 	}
 	if !reflect.DeepEqual(want, stats) {
 		t.Errorf("got %+v, want %+v", stats, want)
+	}
+}
+
+func TestClientGet(t *testing.T) {
+	httpClient := mock.HTTPClient{ReadBody: true}
+	client, _ := NewClient(ClientOptions{
+		BaseURL: "https://example.com:1337",
+		Timeout: time.Duration(5 * time.Second),
+	}, []util.HTTPClient{&httpClient})
+	clock := manualClock{t: time.Now(), tick: time.Second}
+	client.now = clock.now
+	doc := `{
+    "pathId": "/document/v1/mynamespace/music/docid/doc1",
+    "id": "id:mynamespace:music::doc1",
+    "fields": {
+        "artist": "Metallica",
+        "album": "Master of Puppets"
+    }
+}`
+	id := Id{Namespace: "mynamespace", Type: "music", UserSpecific: "doc1"}
+	httpClient.NextResponseString(200, doc)
+	result := client.Get(id)
+	want := Result{
+		Id:         id,
+		Body:       []byte(doc),
+		Status:     StatusSuccess,
+		HTTPStatus: 200,
+		Latency:    time.Second,
+		BytesRecv:  192,
+	}
+	if !reflect.DeepEqual(want, result) {
+		t.Errorf("got %+v, want %+v", result, want)
 	}
 }
 
@@ -164,9 +181,9 @@ func TestClientSendCompressed(t *testing.T) {
 		Timeout: time.Duration(5 * time.Second),
 	}, []util.HTTPClient{httpClient})
 
-	bigBody := fmt.Sprintf(`{"foo": "%s"}`, strings.Repeat("s", 512+1))
-	bigDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(bigBody)}
-	smallDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Fields: []byte(`{"foo": "s"}`)}
+	bigBody := fmt.Sprintf(`{"fields": {"foo": "%s"}}`, strings.Repeat("s", 512+1))
+	bigDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(bigBody)}
+	smallDoc := Document{Create: true, Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Body: []byte(`{"fields": {"foo": "s"}}`)}
 
 	var result Result
 	client.options.Compression = CompressionNone
@@ -198,8 +215,8 @@ func assertCompressedRequest(t *testing.T, want bool, result Result, client *moc
 	if gotEnc != wantEnc {
 		t.Errorf("got Content-Encoding=%q, want %q", gotEnc, wantEnc)
 	}
-	if result.Stats.BytesSent != int64(len(client.LastBody)) {
-		t.Errorf("got BytesSent=%d, want %d", result.Stats.BytesSent, len(client.LastBody))
+	if result.BytesSent != int64(len(client.LastBody)) {
+		t.Errorf("got BytesSent=%d, want %d", result.BytesSent, len(client.LastBody))
 	}
 	compressed := bytes.HasPrefix(client.LastBody, []byte{0x1f, 0x8b})
 	if compressed != want {
@@ -307,7 +324,7 @@ func benchmarkClientSend(b *testing.B, compression Compression, document Documen
 }
 
 func makeDocument(size int) Document {
-	return Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Fields: []byte(fmt.Sprintf(`{"foo": "%s"}`, randString(size)))}
+	return Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(fmt.Sprintf(`{"fields": {"foo": "%s"}}`, randString(size)))}
 }
 
 func BenchmarkClientSendSmallUncompressed(b *testing.B) {

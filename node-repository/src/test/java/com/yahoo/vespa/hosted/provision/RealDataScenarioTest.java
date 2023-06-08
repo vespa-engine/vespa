@@ -8,9 +8,11 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLock;
@@ -24,9 +26,12 @@ import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.hosted.provision.maintenance.SwitchRebalancer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
+import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NodeSerializer;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
+import com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.model.builder.xml.dom.DomConfigPayloadBuilder;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -37,20 +42,17 @@ import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-import static com.yahoo.config.provision.NodeResources.DiskSpeed.any;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
@@ -75,21 +77,15 @@ public class RealDataScenarioTest {
     @Ignore
     @Test
     public void test() {
-        ProvisioningTester tester = new ProvisioningTester.Builder()
-                .zone(new Zone(Cloud.builder().dynamicProvisioning(true).build(), SystemName.defaultSystem(), Environment.prod, RegionName.defaultName()))
-                .flavorsConfig(parseFlavors(Paths.get("/tmp/node-flavors.xml")))
-                .nameResolver(new DnsNameResolver())
-                .spareCount(1)
-                .build();
-        initFromZk(tester.nodeRepository(), Paths.get("/tmp/snapshot"));
+        ProvisioningTester tester = tester(SystemName.Public, CloudName.AWS, Environment.prod, parseFlavors(Path.of("/tmp/node-flavors.xml")));
+        initFromZk(tester.nodeRepository(), Path.of("/tmp/snapshot"));
 
         ApplicationId app = ApplicationId.from("tenant", "app", "default");
-        Version version = Version.fromString("7.123.4");
+        Version version = Version.fromString("8.123.4");
 
         Capacity[] capacities = new Capacity[]{
                 Capacity.from(new ClusterResources(1, 1, NodeResources.unspecified())),
-                /** TODO: Change to NodeResources.unspecified() when {@link (com.yahoo.vespa.flags.Flags).DEDICATED_CLUSTER_CONTROLLER_FLAVOR} is gone */
-                Capacity.from(new ClusterResources(3, 1, new NodeResources(0.25, 1.0, 10.0, 0.3, any))),
+                Capacity.from(new ClusterResources(3, 1, NodeResources.unspecified())),
                 Capacity.from(new ClusterResources(4, 1, new NodeResources(8, 16, 100, 0.3, fast, remote))),
                 Capacity.from(new ClusterResources(2, 1, new NodeResources(4, 8, 100, 0.3, fast, local)))
         };
@@ -125,10 +121,13 @@ public class RealDataScenarioTest {
         transaction.commit();
     }
 
-    private static FlavorsConfig parseFlavors(Path path) {
+    private static List<Flavor> parseFlavors(Path path) {
         try {
             var element = XmlHelper.getDocumentBuilder().parse(path.toFile()).getDocumentElement();
-            return ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(element)).toInstance(FlavorsConfig.class, "");
+            return ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(element)).toInstance(FlavorsConfig.class, "")
+                    .flavor().stream()
+                    .map(Flavor::new)
+                    .toList();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -136,21 +135,18 @@ public class RealDataScenarioTest {
 
     private static void initFromZk(NodeRepository nodeRepository, Path pathToZkSnapshot) {
         NodeSerializer nodeSerializer = new NodeSerializer(nodeRepository.flavors(), 1000);
-        AtomicReference<Node.State> state = new AtomicReference<>();
-        Pattern zkNodePathPattern = Pattern.compile(".?/provision/v1/([a-z]+)/[a-z0-9.-]+\\.(com|cloud).?");
+        AtomicBoolean nodeNext = new AtomicBoolean(false);
+        Pattern zkNodePathPattern = Pattern.compile(".?/provision/v1/nodes/[a-z0-9.-]+\\.(com|cloud).?");
         Consumer<String> consumer = input -> {
-            if (state.get() != null) {
+            if (nodeNext.get()) {
                 String json = input.substring(input.indexOf("{\""), input.lastIndexOf('}') + 1);
                 Node node = nodeSerializer.fromJson(json.getBytes(UTF_8));
-                nodeRepository.database().addNodesInState(List.of(node), state.get(), Agent.system);
-                state.set(null);
+                nodeRepository.database().addNodesInState(List.of(node), node.state(), Agent.system);
+                nodeNext.set(false);
             } else {
-                Matcher matcher = zkNodePathPattern.matcher(input);
-                if (!matcher.matches()) return;
-                String stateStr = matcher.group(1);
-                Node.State s = "deallocated".equals(stateStr) ? Node.State.inactive :
-                        "allocated".equals(stateStr) ? Node.State.active : Node.State.valueOf(stateStr);
-                state.set(s);
+                if (!zkNodePathPattern.matcher(input).matches()) return;
+                if (nodeNext.getAndSet(true))
+                    throw new IllegalStateException("Expected to find node JSON, but found another node path: " + input);
             }
         };
 
@@ -168,6 +164,20 @@ public class RealDataScenarioTest {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static ProvisioningTester tester(SystemName systemName, CloudName cloudName, Environment environment, List<Flavor> flavors) {
+        Cloud cloud = Cloud.builder().name(cloudName).dynamicProvisioning(cloudName != CloudName.YAHOO).build();
+        NameResolver nameResolver = cloudName == CloudName.YAHOO ? new DnsNameResolver() : new MockNameResolver().mockAnyLookup();
+        ProvisioningTester.Builder builder = new ProvisioningTester.Builder()
+                .zone(new Zone(cloud, systemName, environment, RegionName.defaultName()))
+                .flavors(flavors)
+                .nameResolver(nameResolver)
+                .spareCount(environment.isProduction() && !cloud.dynamicProvisioning() && !systemName.isCd() ? 1 : 0);
+        if (cloud.dynamicProvisioning())
+            builder.hostProvisioner(new MockHostProvisioner(flavors, (MockNameResolver) nameResolver, 0));
+
+        return builder.build();
     }
 
 }

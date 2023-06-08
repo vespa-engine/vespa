@@ -331,6 +331,7 @@ public:
     size_t childCnt() const { return _children.size(); }
     const Blueprint &getChild(size_t n) const { return *_children[n]; }
     Blueprint &getChild(size_t n) { return *_children[n]; }
+    void reserve(size_t sz) { _children.reserve(sz); }
     IntermediateBlueprint & insertChild(size_t n, Blueprint::UP child);
     IntermediateBlueprint &addChild(Blueprint::UP child);
     Blueprint::UP removeChild(size_t n);

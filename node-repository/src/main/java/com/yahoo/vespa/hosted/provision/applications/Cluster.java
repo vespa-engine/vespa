@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
+import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -197,35 +198,19 @@ public class Cluster {
         Duration totalDuration = Duration.ZERO;
         for (ScalingEvent event : scalingEvents()) {
             if (event.duration().isEmpty()) continue;
+            // Assume we have missed timely recording completion if it is longer than 4 days, so ignore
+            if ( ! event.duration().get().minus(Duration.ofDays(4)).isNegative()) continue;
+
             completedEventCount++;
-            // Assume we have missed timely recording completion if it is longer than 4 days
-            totalDuration = totalDuration.plus(maximum(Duration.ofDays(4), event.duration().get()));
+            totalDuration = totalDuration.plus(event.duration().get());
         }
-        if (completedEventCount == 0) { // Use defaults
-            if (clusterSpec.isStateful()) return Duration.ofHours(12);
-            return Duration.ofMinutes(10);
-        }
-        else {
-            Duration predictedDuration = totalDuration.dividedBy(completedEventCount);
-
-            if ( clusterSpec.isStateful() ) // TODO: Remove when we have reliable completion for content clusters
-                predictedDuration = minimum(Duration.ofHours(12), predictedDuration);
-
-            predictedDuration = minimum(Duration.ofMinutes(5), predictedDuration);
-
-            return predictedDuration;
-        }
+        if (completedEventCount == 0) return ClusterModel.minScalingDuration(clusterSpec);
+        return minimum(ClusterModel.minScalingDuration(clusterSpec), totalDuration.dividedBy(completedEventCount));
     }
 
     private static Duration minimum(Duration smallestAllowed, Duration duration) {
         if (duration.minus(smallestAllowed).isNegative())
             return smallestAllowed;
-        return duration;
-    }
-
-    private static Duration maximum(Duration largestAllowed, Duration duration) {
-        if ( ! duration.minus(largestAllowed).isNegative())
-            return largestAllowed;
         return duration;
     }
 

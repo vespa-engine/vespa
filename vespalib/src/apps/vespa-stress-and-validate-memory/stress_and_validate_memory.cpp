@@ -14,6 +14,7 @@
 std::atomic<bool> stopped = false;
 std::mutex log_mutex;
 using namespace vespalib;
+using vespalib::alloc::PtrAndSize;
 
 const char * description =
         "Runs stress test of memory by slowly growing a heap filled with 0.\n"
@@ -121,7 +122,6 @@ public:
     size_t make_and_load_alloc_per_thread();
     void random_write(unsigned int *seed);
 private:
-    using PtrAndSize = std::pair<void *, size_t>;
     const Config           & _cfg;
     mutable std::mutex       _mutex;
     alloc::MmapFileAllocator _allocator;
@@ -153,7 +153,7 @@ FileBackedMemory::make_and_load_alloc_per_thread() {
         std::lock_guard guard(_mutex);
         alloc = _allocator.alloc(cfg().alloc_size());
     }
-    memset(alloc.first, 0, cfg().alloc_size());
+    memset(alloc.get(), 0, cfg().alloc_size());
     std::lock_guard guard(_mutex);
     _allocations.push_back(std::move(alloc));
     return 1;
@@ -166,7 +166,7 @@ FileBackedMemory::random_write(unsigned int *seed) {
         std::lock_guard guard(_mutex);
         ptrAndSize = _allocations[rand_r(seed) % _allocations.size()];
     }
-    memset(ptrAndSize.first, rand_r(seed)%256, ptrAndSize.second);
+    memset(ptrAndSize.get(), rand_r(seed)%256, ptrAndSize.size());
 }
 
 void

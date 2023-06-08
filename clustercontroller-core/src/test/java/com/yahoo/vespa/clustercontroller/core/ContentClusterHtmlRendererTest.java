@@ -6,6 +6,7 @@ import com.google.common.collect.Sets;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRenderer;
+import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,14 +28,13 @@ public class ContentClusterHtmlRendererTest {
 
     @BeforeEach
     public void before() throws IOException {
-        final ClusterStateBundle stateBundle = ClusterStateBundle.ofBaselineOnly(
+        ClusterStateBundle stateBundle = ClusterStateBundle.ofBaselineOnly(
                 AnnotatedClusterState.withoutAnnotations(
                         ClusterState.stateFromString("version:34633 bits:24 distributor:211 storage:211")));
-        final EventLog eventLog = new EventLog(new FakeTimer(), null);
-
-        final VdsClusterHtmlRenderer.Table table = renderer.createNewClusterHtmlTable(clusterName, slobrokGeneration);
-
-        final ContentCluster contentCluster = mock(ContentCluster.class);
+        var metricUpdater = new MetricUpdater(new NoMetricReporter(), 0, clusterName);
+        EventLog eventLog = new EventLog(new FakeTimer(), metricUpdater);
+        VdsClusterHtmlRenderer.Table table = renderer.createNewClusterHtmlTable(clusterName, slobrokGeneration);
+        ContentCluster contentCluster = mock(ContentCluster.class);
 
         for (int x = 0; x < 10; x++) {
             NodeInfo nodeInfo = new DistributorNodeInfo(contentCluster, x, "dist " + x, null);
@@ -57,7 +57,7 @@ public class ContentClusterHtmlRendererTest {
                 eventLog,
                 "pathPrefix",
                 "name");
-        final StringBuilder stringBuilder = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
         table.addTable(stringBuilder, 34);
         result = stringBuilder.toString();
     }

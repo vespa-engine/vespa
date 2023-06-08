@@ -59,6 +59,8 @@ using OSMemory = MmapMemory;
 using SizeClassT = int;
 
 constexpr size_t ALWAYS_REUSE_LIMIT = 0x100000ul;
+constexpr uint8_t MAX_PTR_BITS = 57;  // Maximum number of bits a pointer can use (Intel IceLake)
+constexpr uint64_t MAX_PTR = 1ul << MAX_PTR_BITS;
 
 inline constexpr int
 msbIdx(uint64_t v) {

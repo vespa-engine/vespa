@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -8,6 +9,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -42,15 +44,23 @@ public class ClusterModel {
     static final double idealContainerDiskLoad = 0.95;
     static final double idealContentDiskLoad = 0.6;
 
+    // Memory for other processes running on the node (config-proxy, metrics-proxy).
+    // Keep in sync with config-model/NodeResourcesTuning.
+    static final double nodeMemoryOverheadGb = 0.7;
+
     // When a query is issued on a node the cost is the sum of a fixed cost component and a cost component
     // proportional to document count. We must account for this when comparing configurations with more or fewer nodes.
     // TODO: Measure this, and only take it into account with queries
     private static final double fixedCpuCostFraction = 0.1;
 
-    private final Zone zone;
+    private final NodeRepository nodeRepository;
     private final Application application;
     private final ClusterSpec clusterSpec;
     private final Cluster cluster;
+
+    private final CpuModel cpu = new CpuModel();
+    private final MemoryModel memory = new MemoryModel();
+    private final DiskModel disk = new DiskModel();
 
     /**
      * The current active nodes of this cluster, including retired,
@@ -69,14 +79,14 @@ public class ClusterModel {
     private Double maxQueryGrowthRate = null;
     private OptionalDouble averageQueryRate = null;
 
-    public ClusterModel(Zone zone,
+    public ClusterModel(NodeRepository nodeRepository,
                         Application application,
                         ClusterSpec clusterSpec,
                         Cluster cluster,
                         NodeList clusterNodes,
                         MetricsDb metricsDb,
                         Clock clock) {
-        this.zone = zone;
+        this.nodeRepository = nodeRepository;
         this.application = application;
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
@@ -88,7 +98,7 @@ public class ClusterModel {
         this.at = clock.instant();
     }
 
-    ClusterModel(Zone zone,
+    ClusterModel(NodeRepository nodeRepository,
                  Application application,
                  ClusterSpec clusterSpec,
                  Cluster cluster,
@@ -96,7 +106,7 @@ public class ClusterModel {
                  Duration scalingDuration,
                  ClusterTimeseries clusterTimeseries,
                  ClusterNodesTimeseries nodeTimeseries) {
-        this.zone = zone;
+        this.nodeRepository = nodeRepository;
         this.application = application;
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
@@ -111,10 +121,27 @@ public class ClusterModel {
 
     public Application application() { return application; }
     public ClusterSpec clusterSpec() { return clusterSpec; }
-    public Cluster cluster() { return cluster; }
+    private ClusterNodesTimeseries nodeTimeseries() { return nodeTimeseries; }
+    private ClusterTimeseries clusterTimeseries() { return clusterTimeseries; }
+
+    /** Returns the instant this model was created. */
+    public Instant at() { return at;}
 
     public boolean isEmpty() {
         return nodeTimeseries().isEmpty();
+    }
+
+    /** Returns the predicted duration of a rescaling of this cluster */
+    public Duration scalingDuration() { return scalingDuration; }
+
+    /** Returns the average of the peak load measurement in each dimension, from each node. */
+    public Load peakLoad() {
+        return nodeTimeseries().peakLoad();
+    }
+
+    /** Returns the relative load adjustment accounting for redundancy in this. */
+    public Load redundancyAdjustment() {
+        return loadWith(nodeCount(), groupCount());
     }
 
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */
@@ -147,17 +174,9 @@ public class ClusterModel {
         return true;
     }
 
-    /** Returns the predicted duration of a rescaling of this cluster */
-    public Duration scalingDuration() { return scalingDuration; }
-
-    /** Returns the average of the peak load measurement in each dimension, from each node. */
-    public Load peakLoad() {
-        return nodeTimeseries().peakLoad();
-    }
-
-    /** Returns the relative load adjustment accounting for redundancy in this. */
-    public Load redundancyAdjustment() {
-        return loadWith(nodeCount(), groupCount());
+    public static Duration minScalingDuration(ClusterSpec clusterSpec) {
+        if (clusterSpec.isStateful()) return Duration.ofHours(8);
+        return Duration.ofMinutes(5);
     }
 
     /**
@@ -178,8 +197,8 @@ public class ClusterModel {
 
             double queryCpu = queryCpuPerGroup * groupCount() / groups;
             double writeCpu = (double)groupSize() / groupSize;
-            return new Load(queryCpuFraction() * queryCpu + (1 - queryCpuFraction()) * writeCpu,
-                            (double)groupSize() / groupSize,
+            return new Load(cpu.queryFraction() * queryCpu + (1 - cpu.queryFraction()) * writeCpu,
+                            (1 - memory.fixedFraction()) * (double)groupSize() / groupSize + memory.fixedFraction() * 1,
                             (double)groupSize() / groupSize);
         }
         else {
@@ -192,7 +211,7 @@ public class ClusterModel {
      * if one of the nodes go down.
      */
     public Load idealLoad() {
-        var ideal = new Load(idealCpuLoad(), idealMemoryLoad(), idealDiskLoad()).divide(redundancyAdjustment());
+        var ideal = new Load(cpu.idealLoad(), memory.idealLoad(), disk.idealLoad()).divide(redundancyAdjustment());
         if ( !cluster.bcpGroupInfo().isEmpty() && cluster.bcpGroupInfo().queryRate() > 0) {
             // Since we have little local information, use information about query cost in other groups
 
@@ -214,18 +233,7 @@ public class ClusterModel {
     public Autoscaling.Metrics metrics() {
         return new Autoscaling.Metrics(averageQueryRate().orElse(0),
                                        growthRateHeadroom(),
-                                       cpuCostPerQuery().orElse(0));
-    }
-
-    /** Returns the instant this model was created. */
-    public Instant at() { return at;}
-
-    private OptionalDouble cpuCostPerQuery() {
-        if (averageQueryRate().isEmpty() || averageQueryRate().getAsDouble() == 0.0) return OptionalDouble.empty();
-        // TODO: Query rate should generally be sampled at the time where we see the peak resource usage
-        int fanOut = clusterSpec.type().isContainer() ? 1 : groupSize();
-        return OptionalDouble.of(peakLoad().cpu()  * queryCpuFraction() * fanOut * nodes.not().retired().first().get().resources().vcpu()
-                                 / averageQueryRate().getAsDouble() / groupCount());
+                                       cpu.costPerQuery().orElse(0));
     }
 
     private Load adjustQueryDependentIdealLoadByBcpGroupInfo(Load ideal) {
@@ -235,7 +243,7 @@ public class ClusterModel {
                                                                          : cluster.bcpGroupInfo().queryRate() )
                                          * cluster.bcpGroupInfo().growthRateHeadroom() * trafficShiftHeadroom();
         double neededTotalVcpPerGroup = cluster.bcpGroupInfo().cpuCostPerQuery() * targetQueryRateToHandle / groupCount() +
-                                        ( 1 - queryCpuFraction()) * idealCpuLoad() *
+                                        ( 1 - cpu.queryFraction()) * cpu.idealLoad() *
                                         (clusterSpec.type().isContainer() ? 1 : groupSize());
 
         double cpuAdjustment = neededTotalVcpPerGroup / currentClusterTotalVcpuPerGroup;
@@ -248,10 +256,6 @@ public class ClusterModel {
         if (lastCompletion.isEmpty()) return true; // Ongoing
         return lastCompletion.get().isAfter(clock.instant().minus(period));
     }
-
-    private ClusterNodesTimeseries nodeTimeseries() { return nodeTimeseries; }
-
-    private ClusterTimeseries clusterTimeseries() { return clusterTimeseries; }
 
     /**
      * Returns the predicted max query growth rate per minute as a fraction of the average traffic
@@ -302,20 +306,9 @@ public class ClusterModel {
         return nodes > 1 ? (groups == 1 ? 1 : groups - 1) : groups;
     }
 
-    /** Ideal cpu load must take the application traffic fraction into account. */
-    private double idealCpuLoad() {
-        double queryCpuFraction = queryCpuFraction();
-
-        // Assumptions: 1) Write load is not organic so we should not grow to handle more.
-        //                 (TODO: But allow applications to set their target write rate and size for that)
-        //              2) Write load does not change in BCP scenarios.
-        return queryCpuFraction * 1/growthRateHeadroom() * 1/trafficShiftHeadroom() * idealQueryCpuLoad +
-               (1 - queryCpuFraction) * idealWriteCpuLoad;
-    }
-
     /** Returns the headroom for growth during organic traffic growth as a multiple of current resources. */
     private double growthRateHeadroom() {
-        if ( ! zone.environment().isProduction()) return 1;
+        if ( ! nodeRepository.zone().environment().isProduction()) return 1;
         double growthRateHeadroom = 1 + maxQueryGrowthRate() * scalingDuration().toMinutes();
         // Cap headroom at 10% above the historical observed peak
         if (queryFractionOfMax() != 0)
@@ -329,7 +322,7 @@ public class ClusterModel {
      * as a multiple of current resources.
      */
     private double trafficShiftHeadroom() {
-        if ( ! zone.environment().isProduction()) return 1;
+        if ( ! nodeRepository.zone().environment().isProduction()) return 1;
         if (canRescaleWithinBcpDeadline()) return 1;
         double trafficShiftHeadroom;
         if (application.status().maxReadShare() == 0) // No traffic fraction data
@@ -350,50 +343,88 @@ public class ClusterModel {
         return ( (headroom -1 ) * Math.min(1, averageQueryRate().orElse(0) / queryRateGivingFullConfidence) ) + 1;
     }
 
-    /** The estimated fraction of cpu usage which goes to processing queries vs. writes */
-    private double queryCpuFraction() {
-        OptionalDouble writeRate = clusterTimeseries().writeRate(scalingDuration(), clock);
-        if (averageQueryRate().orElse(0) == 0 && writeRate.orElse(0) == 0) return queryCpuFraction(0.5);
-        return queryCpuFraction(averageQueryRate().orElse(0) / (averageQueryRate().orElse(0) + writeRate.orElse(0)));
-    }
+    private class CpuModel {
 
-    private double queryCpuFraction(double queryRateFraction) {
-        double relativeQueryCost = 9; // How much more expensive are queries than writes? TODO: Measure
-        double writeFraction = 1 - queryRateFraction;
-        return queryRateFraction * relativeQueryCost / (queryRateFraction * relativeQueryCost + writeFraction);
-    }
+        /** Ideal cpu load must take the application traffic fraction into account. */
+        double idealLoad() {
+            double queryCpuFraction = queryFraction();
 
-    private double idealMemoryLoad() {
-        if (clusterSpec.type().isContainer()) return idealContainerMemoryLoad;
-        if (clusterSpec.type() == ClusterSpec.Type.admin) return idealContainerMemoryLoad; // Not autoscaled, but ideal shown in console
-        return idealContentMemoryLoad;
-    }
-
-    private double idealDiskLoad() {
-        // Stateless clusters are not expected to consume more disk over time -
-        // if they do it is due to logs which will be rotated away right before the disk is full
-        return clusterSpec.isStateful() ? idealContentDiskLoad : idealContainerDiskLoad;
-    }
-
-    /**
-     * Create a cluster model if possible and logs a warning and returns empty otherwise.
-     * This is useful in cases where it's possible to continue without the cluster model,
-     * as QuestDb is known to temporarily fail during reading of data.
-     */
-    public static Optional<ClusterModel> create(Zone zone,
-                                                Application application,
-                                                ClusterSpec clusterSpec,
-                                                Cluster cluster,
-                                                NodeList clusterNodes,
-                                                MetricsDb metricsDb,
-                                                Clock clock) {
-        try {
-            return Optional.of(new ClusterModel(zone, application, clusterSpec, cluster, clusterNodes, metricsDb, clock));
+            // Assumptions: 1) Write load is not organic so we should not grow to handle more.
+            //                 (TODO: But allow applications to set their target write rate and size for that)
+            //              2) Write load does not change in BCP scenarios.
+            return queryCpuFraction * 1/growthRateHeadroom() * 1/trafficShiftHeadroom() * idealQueryCpuLoad +
+                   (1 - queryCpuFraction) * idealWriteCpuLoad;
         }
-        catch (Exception e) {
-            log.log(Level.WARNING, "Failed creating a cluster model for " + application + " " + cluster, e);
-            return Optional.empty();
+
+        OptionalDouble costPerQuery() {
+            if (averageQueryRate().isEmpty() || averageQueryRate().getAsDouble() == 0.0) return OptionalDouble.empty();
+            // TODO: Query rate should generally be sampled at the time where we see the peak resource usage
+            int fanOut = clusterSpec.type().isContainer() ? 1 : groupSize();
+            return OptionalDouble.of(peakLoad().cpu()  * cpu.queryFraction() * fanOut * nodes.not().retired().first().get().resources().vcpu()
+                                     / averageQueryRate().getAsDouble() / groupCount());
         }
+
+        /** The estimated fraction of cpu usage which goes to processing queries vs. writes */
+        double queryFraction() {
+            OptionalDouble writeRate = clusterTimeseries().writeRate(scalingDuration(), clock);
+            if (averageQueryRate().orElse(0) == 0 && writeRate.orElse(0) == 0) return queryFraction(0.5);
+            return queryFraction(averageQueryRate().orElse(0) / (averageQueryRate().orElse(0) + writeRate.orElse(0)));
+        }
+
+        double queryFraction(double queryRateFraction) {
+            double relativeQueryCost = 9; // How much more expensive are queries than writes? TODO: Measure
+            double writeFraction = 1 - queryRateFraction;
+            return queryRateFraction * relativeQueryCost / (queryRateFraction * relativeQueryCost + writeFraction);
+        }
+
+    }
+
+    private class MemoryModel {
+
+        double idealLoad() {
+            if (clusterSpec.type().isContainer()) return idealContainerMemoryLoad;
+            if (clusterSpec.type() == ClusterSpec.Type.admin) return idealContainerMemoryLoad; // Not autoscaled, but ideal shown in console
+            return idealContentMemoryLoad;
+        }
+
+        /**
+         * Returns the fraction of memory of the current allocation which is currently consumed by
+         * fixed data structures which take the same amount of space regardless of document volume.
+         */
+        double fixedFraction() {
+            if (clusterSpec().type().isContainer()) return 1.0;
+            double fixedMemory = nodeMemoryOverheadGb +
+                                 (averageReal() - nodeMemoryOverheadGb) * 0.05; // TODO: Measure actual content node usage
+            return fixedMemory / averageReal();
+        }
+
+        double averageReal() {
+            if (nodes.isEmpty()) { // we're estimating
+                var initialResources = new CapacityPolicies(nodeRepository).specifyFully(cluster.minResources().nodeResources(),
+                                                                                         clusterSpec,
+                                                                                         application.id());
+                return nodeRepository.resourcesCalculator().requestToReal(initialResources,
+                                                                          nodeRepository.exclusiveAllocation(clusterSpec),
+                                                                          false).memoryGb();
+            }
+            else {
+                return nodes.stream()
+                            .mapToDouble(node -> nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository).memoryGb())
+                            .average()
+                            .getAsDouble();
+            }
+        }
+
+    }
+
+    private class DiskModel {
+
+        double idealLoad() {
+            // Stateless clusters are not expected to consume more disk over time -
+            // if they do it is due to logs which will be rotated away right before the disk is full
+            return clusterSpec.isStateful() ? idealContentDiskLoad : idealContainerDiskLoad;
+        }
+
     }
 
 }

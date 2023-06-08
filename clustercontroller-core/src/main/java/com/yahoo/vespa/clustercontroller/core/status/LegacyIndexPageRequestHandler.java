@@ -81,7 +81,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
                 .append(" ]</font></p>\n");
         content.append("<table><tr><td>UTC time when creating this page:</td><td align=\"right\">").append(RealTimer.printDateNoMilliSeconds(currentTime, tz)).append("</td></tr>");
         content.append("<tr><td>Cluster controller uptime:</td><td align=\"right\">" + RealTimer.printDuration(currentTime - startedTime) + "</td></tr></table>");
-        if (masterElectionHandler.isAmongNthFirst(options.stateGatherCount())) {
+        if (masterElectionHandler.isFirstInLine()) {
             // Table overview of all the nodes
             writeHtmlState(cluster, content, timer, stateVersionTracker, options, eventLog);
             // Current cluster state and cluster state history
@@ -91,7 +91,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             writeHtmlState(content, options);
         }
         // State of master election
-        masterElectionHandler.writeHtmlState(content, options.stateGatherCount());
+        masterElectionHandler.writeHtmlState(content);
         // Overview of current config
         writeHtmlState(content, options);
         // Event log
@@ -223,13 +223,12 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
 
         sb.append("<tr><td><nobr>Cluster name</nobr></td><td align=\"right\">").append(options.clusterName()).append("</td></tr>");
         sb.append("<tr><td><nobr>Fleet controller index</nobr></td><td align=\"right\">").append(options.fleetControllerIndex()).append("/").append(options.fleetControllerCount()).append("</td></tr>");
-        sb.append("<tr><td><nobr>Number of fleetcontrollers gathering states from nodes</nobr></td><td align=\"right\">").append(options.stateGatherCount()).append("</td></tr>");
 
         sb.append("<tr><td><nobr>Slobrok connection spec</nobr></td><td align=\"right\">").append(slobrokspecs).append("</td></tr>");
         sb.append("<tr><td><nobr>RPC port</nobr></td><td align=\"right\">").append(options.rpcPort() == 0 ? "Pick random available" : options.rpcPort()).append("</td></tr>");
         sb.append("<tr><td><nobr>HTTP port</nobr></td><td align=\"right\">").append(options.httpPort() == 0 ? "Pick random available" : options.httpPort()).append("</td></tr>");
         sb.append("<tr><td><nobr>Master cooldown period</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.masterZooKeeperCooldownPeriod())).append("</td></tr>");
-        String zooKeeperAddress = (options.zooKeeperServerAddress() == null ? "Not using Zookeeper" : splitZooKeeperAddress(options.zooKeeperServerAddress()));
+        String zooKeeperAddress = splitZooKeeperAddress(options.zooKeeperServerAddress());
         sb.append("<tr><td><nobr>Zookeeper server address</nobr></td><td align=\"right\">").append(zooKeeperAddress).append("</td></tr>");
         sb.append("<tr><td><nobr>Zookeeper session timeout</nobr></td><td align=\"right\">").append(RealTimer.printDuration(options.zooKeeperSessionTimeout())).append("</td></tr>");
 

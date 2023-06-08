@@ -30,7 +30,7 @@ public:
     SearchContext(SearchContext&&) noexcept = default;
     SearchContext& operator=(const SearchContext&) = delete;
     SearchContext& operator=(SearchContext&&) noexcept = delete;
-    ~SearchContext() override;
+    ~SearchContext() override = default;
 
     unsigned int approximateHits() const override;
     std::unique_ptr<queryeval::SearchIterator> createIterator(fef::TermFieldMatchData* matchData, bool strict) override;
@@ -47,7 +47,10 @@ public:
     const AttributeVector& attribute() const { return _attr; }
 
 protected:
-    SearchContext(const AttributeVector& attr) noexcept;
+    SearchContext(const AttributeVector& attr) noexcept
+        : _attr(attr),
+          _plsc(nullptr)
+    {}
 
     const AttributeVector&                _attr;
     attribute::IPostingListSearchContext* _plsc;

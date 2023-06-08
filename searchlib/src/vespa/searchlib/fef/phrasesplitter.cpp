@@ -42,7 +42,6 @@ PhraseSplitter::update()
     for (const auto &copy_info : _phrase_splitter_query_env.get_copy_info()) {
         const TermFieldMatchData *src = _matchData->resolveTermField(copy_info.orig_handle);
         TermFieldMatchData *dst = resolveSplittedTermField(copy_info.split_handle);
-        assert(src != nullptr && dst != nullptr);
         copyTermFieldMatchData(*dst, *src, copy_info.offsetInPhrase);
     }
 

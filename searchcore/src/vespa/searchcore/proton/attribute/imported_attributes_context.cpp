@@ -14,8 +14,7 @@ using LockGuard = std::lock_guard<std::mutex>;
 namespace proton {
 
 const IAttributeVector *
-ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name, AttributeCache &attributes,
-                                               bool stableEnumGuard, const LockGuard &) const
+ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name, AttributeCache &attributes, bool stableEnumGuard) const
 {
     auto itr = attributes.find(name);
     if (itr != attributes.end()) {
@@ -31,15 +30,22 @@ ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name, Att
         } else {
             metaGuard = metaItr->second;
         }
-        auto insRes = attributes.emplace(name, result->makeReadGuard(std::move(metaGuard), stableEnumGuard));
+        auto insRes = attributes.insert(std::make_pair(name, result->makeReadGuard(std::move(metaGuard), stableEnumGuard)));
         return insRes.first->second->attribute();
     } else {
         return nullptr;
     }
 }
 
+const IAttributeVector *
+ImportedAttributesContext::getOrCacheAttributeMtSafe(const vespalib::string &name, AttributeCache &attributes, bool stableEnumGuard) const {
+    LockGuard guard(_cacheMutex);
+    return getOrCacheAttribute(name, attributes, stableEnumGuard);
+}
+
 ImportedAttributesContext::ImportedAttributesContext(const ImportedAttributesRepo &repo)
     : _repo(repo),
+      _mtSafe(false),
       _guardedAttributes(),
       _enumGuardedAttributes(),
       _metaStores(),
@@ -52,15 +58,17 @@ ImportedAttributesContext::~ImportedAttributesContext() = default;
 const IAttributeVector *
 ImportedAttributesContext::getAttribute(const vespalib::string &name) const
 {
-    LockGuard guard(_cacheMutex);
-    return getOrCacheAttribute(name, _guardedAttributes, false, guard);
+    return _mtSafe
+        ? getOrCacheAttributeMtSafe(name, _guardedAttributes, false)
+        : getOrCacheAttribute(name, _guardedAttributes, false);
 }
 
 const IAttributeVector *
 ImportedAttributesContext::getAttributeStableEnum(const vespalib::string &name) const
 {
-    LockGuard guard(_cacheMutex);
-    return getOrCacheAttribute(name, _enumGuardedAttributes, true, guard);
+    return _mtSafe
+           ? getOrCacheAttributeMtSafe(name, _enumGuardedAttributes, true)
+           : getOrCacheAttribute(name, _enumGuardedAttributes, true);
 }
 
 void
@@ -76,8 +84,12 @@ ImportedAttributesContext::getAttributeList(std::vector<const IAttributeVector *
 void
 ImportedAttributesContext::releaseEnumGuards()
 {
-    LockGuard guard(_cacheMutex);
-    _enumGuardedAttributes.clear();
+    if (_mtSafe) {
+        LockGuard guard(_cacheMutex);
+        _enumGuardedAttributes.clear();
+    } else {
+        _enumGuardedAttributes.clear();
+    }
 }
 
 void

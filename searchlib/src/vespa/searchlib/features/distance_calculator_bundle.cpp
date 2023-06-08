@@ -97,7 +97,8 @@ DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment&
                                                    uint32_t field_id,
                                                    const vespalib::string& feature_name)
 
-    : _elems()
+    : _elems(),
+      _min_rawscore(0.0)
 {
     _elems.reserve(env.getNumTerms());
     const auto* attr = resolve_attribute_for_field(env, field_id, feature_name);
@@ -107,6 +108,7 @@ DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment&
             const auto* term = env.getTerm(i);
             if (term->query_tensor_name().has_value() && (attr != nullptr)) {
                 _elems.emplace_back(handle, make_distance_calculator(env, *attr, term->query_tensor_name().value(), feature_name));
+                _min_rawscore = _elems.back().calc->function().min_rawscore();
             } else {
                 _elems.emplace_back(handle);
             }
@@ -118,7 +120,8 @@ DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment&
                                                    std::optional<uint32_t> field_id,
                                                    const vespalib::string& label,
                                                    const vespalib::string& feature_name)
-    : _elems()
+    : _elems(),
+      _min_rawscore(0.0)
 {
     const ITermData* term = util::getTermByLabel(env, label);
     if (term != nullptr) {
@@ -135,6 +138,7 @@ DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment&
                     const auto* attr = resolve_attribute_for_field(env, term_field.getFieldId(), feature_name);
                     if (attr != nullptr) {
                         calc = make_distance_calculator(env, *attr, term->query_tensor_name().value(), feature_name);
+                        _min_rawscore = calc->function().min_rawscore();
                     }
                 }
                 _elems.emplace_back(handle, std::move(calc));

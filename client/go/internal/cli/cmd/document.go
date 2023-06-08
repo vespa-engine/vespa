@@ -5,20 +5,149 @@
 package cmd
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/internal/curl"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
+	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
 
 func addDocumentFlags(cmd *cobra.Command, printCurl *bool, timeoutSecs *int) {
 	cmd.PersistentFlags().BoolVarP(printCurl, "verbose", "v", false, "Print the equivalent curl command for the document operation")
 	cmd.PersistentFlags().IntVarP(timeoutSecs, "timeout", "T", 60, "Timeout for the document request in seconds")
+}
+
+type serviceWithCurl struct {
+	curlCmdWriter io.Writer
+	bodyFile      string
+	service       *vespa.Service
+}
+
+func (s *serviceWithCurl) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
+	cmd, err := curl.RawArgs(request.URL.String())
+	if err != nil {
+		return nil, err
+	}
+	cmd.Method = request.Method
+	for k, vs := range request.Header {
+		for _, v := range vs {
+			cmd.Header(k, v)
+		}
+	}
+	if s.bodyFile != "" {
+		cmd.WithBodyFile(s.bodyFile)
+	}
+	cmd.Certificate = s.service.TLSOptions.CertificateFile
+	cmd.PrivateKey = s.service.TLSOptions.PrivateKeyFile
+	out := cmd.String() + "\n"
+	if _, err := io.WriteString(s.curlCmdWriter, out); err != nil {
+		return nil, err
+	}
+	return s.service.Do(request, timeout)
+}
+
+func documentClient(cli *CLI, timeoutSecs int, printCurl bool) (*document.Client, *serviceWithCurl, error) {
+	docService, err := documentService(cli)
+	if err != nil {
+		return nil, nil, err
+	}
+	service := &serviceWithCurl{curlCmdWriter: io.Discard, service: docService}
+	if printCurl {
+		service.curlCmdWriter = cli.Stderr
+	}
+	client, err := document.NewClient(document.ClientOptions{
+		Compression: document.CompressionAuto,
+		Timeout:     time.Duration(timeoutSecs) * time.Second,
+		BaseURL:     docService.BaseURL,
+		NowFunc:     time.Now,
+	}, []util.HTTPClient{service})
+	if err != nil {
+		return nil, nil, err
+	}
+	return client, service, nil
+}
+
+func sendOperation(op document.Operation, args []string, timeoutSecs int, printCurl bool, cli *CLI) error {
+	client, service, err := documentClient(cli, timeoutSecs, printCurl)
+	if err != nil {
+		return err
+	}
+	id := ""
+	filename := args[0]
+	if len(args) > 1 {
+		id = args[0]
+		filename = args[1]
+	}
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	doc, err := document.NewDecoder(f).Decode()
+	if errors.Is(err, document.ErrMissingId) {
+		if id == "" {
+			return fmt.Errorf("no document id given neither as argument or as a 'put', 'update' or 'remove' key in the JSON file")
+		}
+	} else if err != nil {
+		return err
+	}
+	if id != "" {
+		docId, err := document.ParseId(id)
+		if err != nil {
+			return err
+		}
+		doc.Id = docId
+	}
+	if op > -1 {
+		if id == "" && op != doc.Operation {
+			return fmt.Errorf("wanted document operation is %s, but JSON file specifies %s", op, doc.Operation)
+		}
+		doc.Operation = op
+	}
+	if doc.Body != nil {
+		service.bodyFile = f.Name()
+	}
+	result := client.Send(doc)
+	return printResult(cli, operationResult(false, doc, service.service, result), false)
+}
+
+func readDocument(id string, timeoutSecs int, printCurl bool, cli *CLI) error {
+	client, service, err := documentClient(cli, timeoutSecs, printCurl)
+	if err != nil {
+		return err
+	}
+	docId, err := document.ParseId(id)
+	if err != nil {
+		return err
+	}
+	result := client.Get(docId)
+	return printResult(cli, operationResult(true, document.Document{Id: docId}, service.service, result), true)
+}
+
+func operationResult(read bool, doc document.Document, service *vespa.Service, result document.Result) util.OperationResult {
+	bodyReader := bytes.NewReader(result.Body)
+	if result.HTTPStatus == 200 {
+		if read {
+			return util.SuccessWithPayload("Read "+doc.Id.String(), util.ReaderToJSON(bodyReader))
+		} else {
+			return util.Success(doc.Operation.String() + " " + doc.Id.String())
+		}
+	}
+	if result.HTTPStatus/100 == 4 {
+		return util.FailureWithPayload("Invalid document operation: Status "+strconv.Itoa(result.HTTPStatus), util.ReaderToJSON(bodyReader))
+	}
+	return util.FailureWithPayload(service.Description()+" at "+service.BaseURL+": Status "+strconv.Itoa(result.HTTPStatus), util.ReaderToJSON(bodyReader))
 }
 
 func newDocumentCmd(cli *CLI) *cobra.Command {
@@ -44,11 +173,7 @@ should be used instead of this.`,
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			service, err := documentService(cli)
-			if err != nil {
-				return err
-			}
-			return printResult(cli, vespa.Send(args[0], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
+			return sendOperation(-1, args, timeoutSecs, printCurl, cli)
 		},
 	}
 	addDocumentFlags(cmd, &printCurl, &timeoutSecs)
@@ -72,15 +197,7 @@ $ vespa document put id:mynamespace:music::a-head-full-of-dreams src/test/resour
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			service, err := documentService(cli)
-			if err != nil {
-				return err
-			}
-			if len(args) == 1 {
-				return printResult(cli, vespa.Put("", args[0], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
-			} else {
-				return printResult(cli, vespa.Put(args[0], args[1], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
-			}
+			return sendOperation(document.OperationPut, args, timeoutSecs, printCurl, cli)
 		},
 	}
 	addDocumentFlags(cmd, &printCurl, &timeoutSecs)
@@ -103,15 +220,7 @@ $ vespa document update id:mynamespace:music::a-head-full-of-dreams src/test/res
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			service, err := documentService(cli)
-			if err != nil {
-				return err
-			}
-			if len(args) == 1 {
-				return printResult(cli, vespa.Update("", args[0], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
-			} else {
-				return printResult(cli, vespa.Update(args[0], args[1], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
-			}
+			return sendOperation(document.OperationUpdate, args, timeoutSecs, printCurl, cli)
 		},
 	}
 	addDocumentFlags(cmd, &printCurl, &timeoutSecs)
@@ -134,14 +243,20 @@ $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			service, err := documentService(cli)
-			if err != nil {
-				return err
-			}
 			if strings.HasPrefix(args[0], "id:") {
-				return printResult(cli, vespa.RemoveId(args[0], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
+				client, service, err := documentClient(cli, timeoutSecs, printCurl)
+				if err != nil {
+					return err
+				}
+				id, err := document.ParseId(args[0])
+				if err != nil {
+					return err
+				}
+				doc := document.Document{Id: id, Operation: document.OperationRemove}
+				result := client.Send(doc)
+				return printResult(cli, operationResult(false, doc, service.service, result), false)
 			} else {
-				return printResult(cli, vespa.RemoveOperation(args[0], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), false)
+				return sendOperation(document.OperationRemove, args, timeoutSecs, printCurl, cli)
 			}
 		},
 	}
@@ -162,11 +277,7 @@ func newDocumentGetCmd(cli *CLI) *cobra.Command {
 		SilenceUsage:      true,
 		Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			service, err := documentService(cli)
-			if err != nil {
-				return err
-			}
-			return printResult(cli, vespa.Get(args[0], service, operationOptions(cli.Stderr, printCurl, timeoutSecs)), true)
+			return readDocument(args[0], timeoutSecs, printCurl, cli)
 		},
 	}
 	addDocumentFlags(cmd, &printCurl, &timeoutSecs)
@@ -179,17 +290,6 @@ func documentService(cli *CLI) (*vespa.Service, error) {
 		return nil, err
 	}
 	return cli.service(target, vespa.DocumentService, 0, cli.config.cluster())
-}
-
-func operationOptions(stderr io.Writer, printCurl bool, timeoutSecs int) vespa.OperationOptions {
-	curlOutput := io.Discard
-	if printCurl {
-		curlOutput = stderr
-	}
-	return vespa.OperationOptions{
-		CurlOutput: curlOutput,
-		Timeout:    time.Second * time.Duration(timeoutSecs),
-	}
 }
 
 func printResult(cli *CLI, result util.OperationResult, payloadOnlyOnSuccess bool) error {

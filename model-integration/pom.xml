@@ -81,6 +81,12 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>configdefinitions</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
       <scope>provided</scope>
@@ -128,6 +134,10 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
+        <configuration>
+          <!-- defines package 'com.yahoo.embedding' which is also defined in 'configdefinitions' -->
+          <suppressWarningOverlappingPackages>true</suppressWarningOverlappingPackages>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

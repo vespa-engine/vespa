@@ -451,7 +451,7 @@ namespace {
 class CombinedAttributeContext : public IAttributeContext {
 private:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
-    AttributeContext _ctx;
+    AttributeContext          _ctx;
     ImportedAttributesContext _importedCtx;
 
 public:
@@ -482,6 +482,10 @@ public:
     void releaseEnumGuards() override {
         _ctx.releaseEnumGuards();
         _importedCtx.releaseEnumGuards();
+    }
+    void enableMultiThreadSafe() override {
+        _ctx.enableMultiThreadSafe();
+        _importedCtx.enableMultiThreadSafe();
     }
     void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override {
         _ctx.asyncForAttribute(name, std::move(func));

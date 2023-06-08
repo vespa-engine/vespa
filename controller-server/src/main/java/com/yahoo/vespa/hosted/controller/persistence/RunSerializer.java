@@ -38,6 +38,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installatio
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.invalidApplication;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.quotaExceeded;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
@@ -345,6 +346,7 @@ class RunSerializer {
             case aborted                    -> "aborted";
             case cancelled                  -> "cancelled";
             case reset                      -> "reset";
+            case quotaExceeded              -> "quotaExceeded";
         };
     }
 
@@ -363,6 +365,7 @@ class RunSerializer {
             case "aborted"                    -> aborted;
             case "cancelled"                  -> cancelled;
             case "reset"                      -> reset;
+            case "quotaExceeded"              -> quotaExceeded;
             default -> throw new IllegalArgumentException("No run status defined by '" + status + "'!");
         };
     }

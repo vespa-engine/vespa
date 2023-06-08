@@ -11,7 +11,8 @@
           "diskGb": 20.0,
           "bandwidthGbps": 1.0,
           "diskSpeed": "slow",
-          "storageType": "remote"
+          "storageType": "remote",
+          "architecture": "any"
         },
         "cost": 0.11
       },
@@ -24,7 +25,8 @@
           "diskGb": 90.0,
           "bandwidthGbps": 1.0,
           "diskSpeed": "slow",
-          "storageType": "remote"
+          "storageType": "remote",
+          "architecture": "any"
         },
         "cost": 0.43
       },
@@ -40,7 +42,8 @@
           "diskGb": 50.0,
           "bandwidthGbps": 1.0,
           "diskSpeed": "slow",
-          "storageType": "remote"
+          "storageType": "remote",
+          "architecture": "any"
         },
         "cost": 0.22
       },
@@ -56,7 +59,8 @@
             "diskGb": 50.0,
             "bandwidthGbps": 1.0,
             "diskSpeed": "slow",
-            "storageType": "remote"
+            "storageType": "remote",
+            "architecture": "any"
           },
           "cost": 0.29
         },
@@ -98,7 +102,8 @@
               "diskGb": 0.0,
               "bandwidthGbps": 0.0,
               "diskSpeed": "fast",
-              "storageType": "any"
+              "storageType": "any",
+              "architecture": "any"
             },
             "cost": 0.0
           },
@@ -111,7 +116,8 @@
               "diskGb": 50.0,
               "bandwidthGbps": 1.0,
               "diskSpeed": "slow",
-              "storageType": "remote"
+              "storageType": "remote",
+              "architecture": "any"
             },
             "cost": 0.22
           },

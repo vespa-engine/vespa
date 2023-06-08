@@ -41,6 +41,52 @@ struct AddressExtractor : ObjectTraverser {
     }
 };
 
+struct SingleMappedExtractor : ObjectTraverser {
+    const vespalib::string &dimension;
+    TensorSpec &spec;
+    SingleMappedExtractor(const vespalib::string &dimension_in, TensorSpec &spec_in)
+        : dimension(dimension_in),
+          spec(spec_in)
+    {}
+    void field(const Memory &symbol, const Inspector &inspector) override {
+        vespalib::string label = symbol.make_string();
+        double value = inspector.asDouble();
+        TensorSpec::Address address;
+        address.emplace(dimension, label);
+        spec.add(address, value);
+    }
+};
+
+
+void decodeSingleMappedForm(const Inspector &root, const ValueType &value_type, TensorSpec &spec) {
+    auto extractor = SingleMappedExtractor(value_type.dimensions()[0].name, spec);
+    root.traverse(extractor);
+}
+
+void decodeSingleDenseForm(const Inspector &values, const ValueType &value_type, TensorSpec &spec) {
+    const auto &dimension = value_type.dimensions()[0].name;
+    for (size_t i = 0; i < values.entries(); ++i) {
+        TensorSpec::Address address;
+        address.emplace(dimension, TensorSpec::Label(i));
+        spec.add(address, values[i].asDouble());
+    }
+}
+
+void decodeLiteralForm(const Inspector &cells, const ValueType &value_type, TensorSpec &spec) {
+    std::set<vespalib::string> indexed;
+    for (const auto &dimension: value_type.dimensions()) {
+        if (dimension.is_indexed()) {
+            indexed.insert(dimension.name);
+        }
+    }
+    for (size_t i = 0; i < cells.entries(); ++i) {
+        TensorSpec::Address address;
+        AddressExtractor extractor(indexed, address);
+        cells[i]["address"].traverse(extractor);
+        spec.add(address, cells[i]["value"].asDouble());
+    }
+}
+
 void decode_json(const vespalib::string &path, Input &input, Slime &slime) {
     if (slime::JsonFormat::decode(input, slime) == 0) {
         LOG(warning, "file contains invalid json: %s", path.c_str());
@@ -90,19 +136,26 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
     }
     Slime slime;
     decode_json(path, slime);
-    std::set<vespalib::string> indexed;
-    for (const auto &dimension: value_type.dimensions()) {
-        if (dimension.is_indexed()) {
-            indexed.insert(dimension.name);
-        }
-    }
     TensorSpec spec(type);
-    const Inspector &cells = slime.get()["cells"];
-    for (size_t i = 0; i < cells.entries(); ++i) {
-        TensorSpec::Address address;
-        AddressExtractor extractor(indexed, address);
-        cells[i]["address"].traverse(extractor);
-        spec.add(address, cells[i]["value"].asDouble());
+    bool isSingleDenseType = value_type.is_dense() && (value_type.count_indexed_dimensions() == 1);
+    bool isSingleMappedType = value_type.is_sparse() && (value_type.count_mapped_dimensions() == 1);
+    const Inspector &root = slime.get();
+    const Inspector &cells = root["cells"];
+    const Inspector &values = root["values"];
+    if (cells.type().getId() == vespalib::slime::ARRAY::ID) {
+        decodeLiteralForm(cells, value_type, spec);
+    }
+    else if (cells.type().getId() == vespalib::slime::OBJECT::ID && isSingleMappedType) {
+        decodeSingleMappedForm(cells, value_type, spec);
+    }
+    else if (values.type().getId() == vespalib::slime::ARRAY::ID && isSingleDenseType) {
+        decodeSingleDenseForm(values, value_type, spec);
+    }
+    else if (root.type().getId() == vespalib::slime::OBJECT::ID && isSingleMappedType) {
+        decodeSingleMappedForm(root, value_type, spec);
+    }
+    else if (root.type().getId() == vespalib::slime::ARRAY::ID && isSingleDenseType) {
+        decodeSingleDenseForm(root, value_type, spec);
     }
     try {
         return std::make_unique<SimpleConstantValue>(value_from_spec(spec, _factory));

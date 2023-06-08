@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <cinttypes>
+#include <cassert>
 
 static uint64_t
 maxExpGolombVal(uint64_t kValue, uint64_t maxBits)

@@ -95,16 +95,21 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
     @Override
     public void shutdown() {
         super.shutdown();
-        deploymentExecutor.shutdownNow();
+        deploymentExecutor.shutdown();
     }
 
     @Override
     public void awaitShutdown() {
+        Instant deadline = clock().instant().plus(Duration.ofMinutes(1));
         super.awaitShutdown();
         try {
+            long remainder = Duration.between(clock().instant(), deadline).toMillis();
+            if (deploymentExecutor.isShutdown()) return;
+
             // Give deployments in progress some time to complete
-            if (!deploymentExecutor.awaitTermination(1, TimeUnit.MINUTES)) {
+            if (remainder < 0 || !deploymentExecutor.awaitTermination(remainder, TimeUnit.MILLISECONDS)) {
                 log.log(Level.WARNING, "Failed to shut down deployment executor within deadline");
+                deploymentExecutor.shutdownNow();
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

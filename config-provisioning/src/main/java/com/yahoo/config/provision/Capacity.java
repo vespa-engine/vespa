@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * A capacity request.
@@ -35,6 +35,8 @@ public final class Capacity {
         if (max.smallerThan(min))
             throw new IllegalArgumentException("The max capacity must be larger than the min capacity, but got min " +
                                                min + " and max " + max);
+        if (cloudAccount.isEmpty() && ! clusterInfo.hostTTL().isZero())
+            throw new IllegalArgumentException("Cannot set hostTTL without a custom cloud account");
         this.min = min;
         this.max = max;
         this.groupSize = groupSize;
@@ -105,22 +107,11 @@ public final class Capacity {
     }
 
     public static Capacity from(ClusterResources resources, boolean required, boolean canFail) {
-        return from(resources, required, canFail, NodeType.tenant);
+        return from(resources, required, canFail, Duration.ZERO);
     }
 
-    // TODO: Remove after March 2023
-    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail, Optional<CloudAccount> cloudAccount) {
-        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, ClusterInfo.empty());
-    }
-
-    // TODO: Remove after March 2023
-    public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail) {
-        return new Capacity(min, max, IntRange.empty(), required, canFail, NodeType.tenant, Optional.empty(), ClusterInfo.empty());
-    }
-
-    // TODO: Remove after March 2023
-    public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail, Optional<CloudAccount> cloudAccount) {
-        return new Capacity(min, max, IntRange.empty(), required, canFail, NodeType.tenant, cloudAccount, ClusterInfo.empty());
+    public static Capacity from(ClusterResources resources, boolean required, boolean canFail, Duration hostTTL) {
+        return from(resources, required, canFail, NodeType.tenant, hostTTL);
     }
 
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
@@ -128,13 +119,28 @@ public final class Capacity {
         return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, clusterInfo);
     }
 
-    /** Creates this from a node type */
-    public static Capacity fromRequiredNodeType(NodeType type) {
-        return from(new ClusterResources(0, 1, NodeResources.unspecified()), true, false, type);
+    // TODO: remove at some point, much later than March 2023 ... ?
+    public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail) {
+        return new Capacity(min, max, IntRange.empty(), required, canFail, NodeType.tenant, Optional.empty(), ClusterInfo.empty());
     }
 
-    private static Capacity from(ClusterResources resources, boolean required, boolean canFail, NodeType type) {
-        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, Optional.empty(), ClusterInfo.empty());
+    // TODO: remove at some point, much later than March 2023 ... ?
+    public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail, Optional<CloudAccount> cloudAccount) {
+        return new Capacity(min, max, IntRange.empty(), required, canFail, NodeType.tenant, cloudAccount, ClusterInfo.empty());
+    }
+
+    // TODO: remove at some point, much later than March 2023 ... ?
+    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail, Optional<CloudAccount> cloudAccount) {
+        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, ClusterInfo.empty());
+    }
+
+    /** Creates this from a node type */
+    public static Capacity fromRequiredNodeType(NodeType type) {
+        return from(new ClusterResources(0, 1, NodeResources.unspecified()), true, false, type, Duration.ZERO);
+    }
+
+    private static Capacity from(ClusterResources resources, boolean required, boolean canFail, NodeType type, Duration hostTTL) {
+        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, Optional.empty(), new ClusterInfo.Builder().hostTTL(hostTTL).build());
     }
 
 }

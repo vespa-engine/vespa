@@ -97,7 +97,7 @@ public final class HKDF {
      *             "as if random". May not be empty, use {@link #unsaltedExtractedFrom(byte[])}
      *             if unsalted extraction is desired (though this is not recommended).
      * @param ikm secret initial Input Keying Material value.
-     * @return a new HDFK instance ready for deriving keys based on the salt and IKM.
+     * @return a new HKDF instance ready for deriving keys based on the salt and IKM.
      */
     public static HKDF extractedFrom(byte[] salt, byte[] ikm) {
         validateExtractionParams(salt, ikm);
@@ -122,7 +122,7 @@ public final class HKDF {
 
           PRK = HMAC-Hash(salt, IKM)
         */
-        var mac = createKeyedHmacSha256(salt); // Note: HDFK is initially keyed on the salt, _not_ on ikm!
+        var mac = createKeyedHmacSha256(salt); // Note: HKDF is initially keyed on the salt, _not_ on ikm!
         mac.update(ikm);
         return new HKDF(/*PRK = */ mac.doFinal());
     }
@@ -133,7 +133,7 @@ public final class HKDF {
      * <p>Prefer using the salted {@link #extractedFrom(byte[], byte[])} method if possible.</p>
      *
      * @param ikm secret initial Input Keying Material value.
-     * @return a new HDFK instance ready for deriving keys based on the IKM and an all-zero salt.
+     * @return a new HKDF instance ready for deriving keys based on the IKM and an all-zero salt.
      */
     public static HKDF unsaltedExtractedFrom(byte[] ikm) {
         return extractedFrom(ALL_ZEROS_SALT, ikm);

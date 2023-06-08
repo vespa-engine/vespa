@@ -144,6 +144,7 @@ public interface ModelContext {
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
     interface Properties {
+
         FeatureFlags featureFlags();
         boolean multitenant();
         ApplicationId applicationId();

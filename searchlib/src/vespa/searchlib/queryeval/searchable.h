@@ -22,23 +22,12 @@ class FieldSpecList;
  **/
 class Searchable
 {
-protected:
-    /**
-     * Create a blueprint searching a single field.
-     *
-     * @return blueprint
-     * @param requestContext that belongs to the query
-     * @param field the field to search
-     * @param term the query tree term
-     **/
-    virtual std::unique_ptr<Blueprint> createBlueprint(const IRequestContext & requestContext,
-                                                       const FieldSpec &field,
-                                                       const search::query::Node &term) = 0;
-
 public:
     using SP = std::shared_ptr<Searchable>;
 
     Searchable() = default;
+    virtual ~Searchable() = default;
+
 
     /**
      * Create a blueprint searching a set of fields. The default
@@ -53,7 +42,17 @@ public:
     virtual std::unique_ptr<Blueprint> createBlueprint(const IRequestContext & requestContext,
                                                        const FieldSpecList &fields,
                                                        const search::query::Node &term);
-    virtual ~Searchable() = default;
+    /**
+     * Create a blueprint searching a single field.
+     *
+     * @return blueprint
+     * @param requestContext that belongs to the query
+     * @param field the field to search
+     * @param term the query tree term
+     **/
+    virtual std::unique_ptr<Blueprint> createBlueprint(const IRequestContext & requestContext,
+                                                       const FieldSpec &field,
+                                                       const search::query::Node &term) = 0;
 };
 
 }

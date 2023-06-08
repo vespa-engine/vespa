@@ -42,16 +42,13 @@ func (f *mockFeeder) Send(doc Document) Result {
 	} else {
 		f.documents = append(f.documents, doc)
 	}
-	if !result.Success() {
-		result.Stats.Errors = 1
-	}
 	return result
 }
 
 type mockCircuitBreaker struct{ state CircuitState }
 
 func (c *mockCircuitBreaker) Success()            {}
-func (c *mockCircuitBreaker) Error(err error)     {}
+func (c *mockCircuitBreaker) Failure()            {}
 func (c *mockCircuitBreaker) State() CircuitState { return c.state }
 
 func TestDispatcher(t *testing.T) {
@@ -61,8 +58,8 @@ func TestDispatcher(t *testing.T) {
 	breaker := NewCircuitBreaker(time.Second, 0)
 	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard, false)
 	docs := []Document{
-		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Fields: []byte(`{"foo": "123"}`)},
-		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Fields: []byte(`{"bar": "456"}`)},
+		{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields": {"foo": "123"}}`)},
+		{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut, Body: []byte(`{"fields": {"bar": "456"}}`)},
 	}
 	for _, d := range docs {
 		dispatcher.Enqueue(d)
@@ -135,7 +132,7 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	dispatcher.Close()
 	wantDocs := docs[:2]
 	assert.Equal(t, wantDocs, feeder.documents)
-	assert.Equal(t, int64(20), dispatcher.Stats().Errors)
+	assert.Equal(t, int64(20), dispatcher.Stats().Unsuccessful())
 
 	// Dispatching more documents for same ID succeed
 	feeder.failAfterN(0)
@@ -145,7 +142,7 @@ func TestDispatcherOrderingWithFailures(t *testing.T) {
 	dispatcher.Enqueue(Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationPut})
 	dispatcher.Enqueue(Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationPut})
 	dispatcher.Close()
-	assert.Equal(t, int64(20), dispatcher.Stats().Errors)
+	assert.Equal(t, int64(20), dispatcher.Stats().Unsuccessful())
 	assert.Equal(t, 6, len(feeder.documents))
 }
 
@@ -166,7 +163,7 @@ func TestDispatcherOrderingWithRetry(t *testing.T) {
 	}
 	dispatcher.Close()
 	assert.Equal(t, docs, feeder.documents)
-	assert.Equal(t, int64(5), dispatcher.Stats().Errors)
+	assert.Equal(t, int64(5), dispatcher.Stats().Unsuccessful())
 }
 
 func TestDispatcherOpenCircuit(t *testing.T) {
@@ -192,7 +189,7 @@ func BenchmarkDocumentDispatching(b *testing.B) {
 	throttler := newThrottler(8, clock.now)
 	breaker := NewCircuitBreaker(time.Second, 0)
 	dispatcher := NewDispatcher(feeder, throttler, breaker, io.Discard, false)
-	doc := Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Fields: []byte(`{"foo": "123"}`)}
+	doc := Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationPut, Body: []byte(`{"fields": {"foo": "123"}}`)}
 	b.ResetTimer() // ignore setup time
 
 	for n := 0; n < b.N; n++ {

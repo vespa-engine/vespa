@@ -281,7 +281,25 @@ public class ConstantTensorJsonValidatorTest {
                             "   }",
                             "}"));
         });
-        assertTrue(exception.getMessage().contains("Expected field name 'cells', got 'stats'"));
+        System.err.println("msg: " + exception.getMessage());
+        assertTrue(exception.getMessage().contains("Expected 'cells' or 'values', got 'stats'"));
+    }
+
+    @Test
+    void ensure_that_values_array_for_vector_works() {
+        validateTensorJson(
+                TensorType.fromSpec("tensor(x[5])"),
+                inputJsonToReader("[5,4.0,3.1,-2,-1.0]"));
+        validateTensorJson(
+                TensorType.fromSpec("tensor(x[5])"),
+                inputJsonToReader("{'values':[5,4.0,3.1,-2,-1.0]}"));
+    }
+
+    @Test
+    void ensure_that_simple_object_for_map_works() {
+        validateTensorJson(
+                TensorType.fromSpec("tensor(x{})"),
+                inputJsonToReader("{'cells':{'a':5,'b':4.0,'c':3.1,'d':-2,'e':-1.0}}"));
     }
 
 }

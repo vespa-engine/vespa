@@ -4,6 +4,9 @@
       "name": "AutoscalingMaintainer"
     },
     {
+      "name": "DeprovisionedExpirer"
+    },
+    {
       "name": "DirtyExpirer"
     },
     {

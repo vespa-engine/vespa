@@ -30,11 +30,13 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
 
 import static com.yahoo.vespa.config.server.application.CompressedApplicationInputStream.createFromCompressedStream;
 import static com.yahoo.vespa.config.server.http.Utils.checkThatTenantExists;
 import static com.yahoo.vespa.config.server.http.v2.SessionCreateHandler.validateDataAndHeader;
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
+import static java.util.logging.Level.WARNING;
 
 /**
  *  * The implementation of the /application/v2 API.
@@ -81,18 +83,22 @@ public class ApplicationApiHandler extends SessionHandler {
                 .map(contentType -> contentType.getMimeType().equalsIgnoreCase(MULTIPART_FORM_DATA))
                 .orElse(false);
         if (multipartRequest) {
+            Map<String, PartItem> parts = Map.of();
             try {
-                Map<String, PartItem> parts = new MultiPartFormParser(request).readParts();
+                parts = new MultiPartFormParser(request).readParts();
                 byte[] params;
                 try (InputStream part = parts.get(MULTIPART_PARAMS).data()) { params = part.readAllBytes(); }
-                log.log(Level.FINE, "Deploy parameters: [{0}]", new String(params, StandardCharsets.UTF_8));
+                log.log(FINE, "Deploy parameters: [{0}]", new String(params, StandardCharsets.UTF_8));
                 prepareParams = PrepareParams.fromJson(params, tenantName, zookeeperBarrierTimeout);
                 PartItem appPackagePart = parts.get(MULTIPART_APPLICATION_PACKAGE);
                 compressedStream = createFromCompressedStream(appPackagePart.data(), appPackagePart.contentType(), maxApplicationPackageSize);
             } catch (IOException e) {
                 // Multipart exception happens when controller abandons the request due to other exceptions while deploying.
-                log.log(e instanceof MultiPartFormParser.MultiPartException ? Level.INFO : Level.WARNING,
+                log.log(e instanceof MultiPartFormParser.MultiPartException ? INFO : WARNING,
                         "Unable to parse multipart in deploy from tenant '" + tenantName.value() + "': " + Exceptions.toMessageString(e));
+
+                var message = "Deploy request from '" + tenantName.value() + "' contains invalid data: " + e.getMessage();
+                log.log(INFO, message + ", parts: " + parts, e);
                 throw new BadRequestException("Deploy request from '" + tenantName.value() + "' contains invalid data: " + e.getMessage());
             }
         } else {
