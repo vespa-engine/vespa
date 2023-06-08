@@ -125,7 +125,7 @@ StripedBTreeLockableMap<T>::getAll(const BucketId& bucket, const char* clientId)
 }
 
 template <typename T>
-bool StripedBTreeLockableMap<T>::isConsistent(const StripedBTreeLockableMap::WrappedEntry& entry) {
+bool StripedBTreeLockableMap<T>::isConsistent(const StripedBTreeLockableMap::WrappedEntry& entry) const {
     return db_for(entry.getKey()).isConsistent(entry);
 }
 

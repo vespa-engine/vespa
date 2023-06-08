@@ -221,7 +221,7 @@ AsyncHandler::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTracker::
         (void) ignored;
         StorBucketDatabase &db(_env.getBucketDatabase(bucket.getBucketSpace()));
         StorBucketDatabase::WrappedEntry entry = db.get(bucket.getBucketId(), "onDeleteBucket");
-        if (entry.exist() && entry->getMetaCount() > 0) {
+        if (entry.exists() && entry->getMetaCount() > 0) {
             LOG(debug, "onDeleteBucket(%s): Bucket DB entry existed. Likely "
                        "active operation when delete bucket was queued. "
                        "Updating bucket database to keep it in sync with file. "
@@ -258,7 +258,7 @@ AsyncHandler::handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTrack
         if (tracker->checkForError(*response)) {
             StorBucketDatabase &db(_env.getBucketDatabase(bucket.getBucketSpace()));
             StorBucketDatabase::WrappedEntry entry = db.get(bucket.getBucketId(),"handleSetBucketState");
-            if (entry.exist()) {
+            if (entry.exists()) {
                 entry->info.setActive(newState == spi::BucketInfo::ACTIVE);
                 notifyGuard->notifyIfOwnershipChanged(cmd.getBucket(), cmd.getSourceIndex(), entry->info);
                 entry.write();

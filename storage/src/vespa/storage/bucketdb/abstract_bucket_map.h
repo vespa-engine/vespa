@@ -11,7 +11,6 @@
 #include <functional>
 #include <iosfwd>
 #include <map>
-#include <optional>
 
 namespace storage::bucketdb {
 
@@ -57,7 +56,7 @@ private:
             _map->unlock(_key);
             _map = nullptr;
         }
-        bool locked() const noexcept { return _map != nullptr; }
+        [[nodiscard]] bool locked() const noexcept { return _map != nullptr; }
         const key_type & key() const noexcept { return _key; }
     private:
         void cleanup() {
@@ -89,7 +88,6 @@ public:
               _clientId(clientId),
               _exists(false),
               _preExisted(false) {}
-        // TODO noexcept on these:
         WrappedEntry(WrappedEntry&&) noexcept = default;
         WrappedEntry& operator=(WrappedEntry&&) noexcept = default;
         ~WrappedEntry();
@@ -105,7 +103,7 @@ public:
         void write();
         void remove();
         void unlock();
-        [[nodiscard]] bool exist() const { return _exists; } // TODO rename to exists()
+        [[nodiscard]] bool exists() const { return _exists; }
         [[nodiscard]] bool preExisted() const { return _preExisted; }
         [[nodiscard]] bool locked() const { return _lockKeeper.locked(); }
         const key_type& getKey() const { return _lockKeeper.key(); };
@@ -171,7 +169,7 @@ public:
      * bucket to become inconsistent will require taking its lock, so by
      * requiring the lock to be provided here we avoid race conditions.
      */
-    virtual bool isConsistent(const WrappedEntry& entry) = 0; // TODO const
+    virtual bool isConsistent(const WrappedEntry& entry) const = 0;
 
     static constexpr uint32_t DEFAULT_CHUNK_SIZE = 1000;
 
@@ -185,16 +183,13 @@ public:
      *
      * Type erasure of functor needed due to virtual indirection.
      */
-    void for_each_chunked(std::function<Decision(uint64_t, const ValueT&)> func,
-                          const char* clientId,
-                          vespalib::duration yieldTime = 10us,
-                          uint32_t chunkSize = DEFAULT_CHUNK_SIZE)
+    void for_each_chunked(std::function<Decision(uint64_t, const ValueT&)> func, const char* clientId,
+                          vespalib::duration yieldTime = 10us, uint32_t chunkSize = DEFAULT_CHUNK_SIZE)
     {
         do_for_each_chunked(std::move(func), clientId, yieldTime, chunkSize);
     }
 
-    void for_each_mutable_unordered(std::function<Decision(uint64_t, ValueT&)> func,
-                                    const char* clientId)
+    void for_each_mutable_unordered(std::function<Decision(uint64_t, ValueT&)> func, const char* clientId)
     {
         do_for_each_mutable_unordered(std::move(func), clientId);
     }
@@ -217,14 +212,10 @@ public:
     virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
 private:
     virtual void unlock(const key_type& key) = 0; // Only for bucket lock guards
-    virtual void do_for_each_chunked(std::function<Decision(uint64_t, const ValueT&)> func,
-                                     const char* clientId,
-                                     vespalib::duration yieldTime,
-                                     uint32_t chunkSize) = 0;
-    virtual void do_for_each_mutable_unordered(std::function<Decision(uint64_t, ValueT&)> func,
-                                               const char* clientId) = 0;
-    virtual void do_for_each(std::function<Decision(uint64_t, const ValueT&)> func,
-                             const char* clientId) = 0;
+    virtual void do_for_each_chunked(std::function<Decision(uint64_t, const ValueT&)> func, const char* clientId,
+                                     vespalib::duration yieldTime, uint32_t chunkSize) = 0;
+    virtual void do_for_each_mutable_unordered(std::function<Decision(uint64_t, ValueT&)> func, const char* clientId) = 0;
+    virtual void do_for_each(std::function<Decision(uint64_t, const ValueT&)> func, const char* clientId) = 0;
     virtual std::unique_ptr<bucketdb::ReadGuard<ValueT>> do_acquire_read_guard() const = 0;
 };
 

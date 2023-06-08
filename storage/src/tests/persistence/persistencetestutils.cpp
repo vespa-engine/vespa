@@ -160,7 +160,7 @@ PersistenceTestUtils::getBucketStatus(const document::BucketId& id)
                     id, "foo"));
 
     ost << id << ": ";
-    if (!entry.exist()) {
+    if (!entry.exists()) {
         ost << "null";
     } else {
         ost << entry->getBucketInfo().getDocumentCount();
