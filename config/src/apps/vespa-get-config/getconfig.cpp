@@ -95,6 +95,7 @@ GetConfig::finiRPC()
 int
 GetConfig::main(int argc, char **argv)
 {
+    int retval = 1;
     bool debugging = false;
     int c = -1;
 
@@ -120,7 +121,6 @@ GetConfig::main(int argc, char **argv)
     int serverPort = 19090;
 
     while ((c = getopt(argc, argv, "a:n:v:g:i:jlm:c:t:V:w:r:s:p:dh")) != -1) {
-        int retval = 1;
         switch (c) {
         case 'a':
             schemaString = optarg;
@@ -178,7 +178,7 @@ GetConfig::main(int argc, char **argv)
 
     if (defName == nullptr || serverPort == 0) {
         usage(argv[0]);
-        return 1;
+        return retval;
     }
 
     if (strchr(defName, '.') != nullptr) {
@@ -244,6 +244,7 @@ GetConfig::main(int argc, char **argv)
     if (response->isError()) {
         fprintf(stderr, "error %d: %s\n",
                 response->errorCode(), response->errorMessage().c_str());
+        retval = 1;
     } else {
         response->fill();
         ConfigKey rKey(response->getKey());
@@ -271,9 +272,10 @@ GetConfig::main(int argc, char **argv)
                 printf("%s\n",  lines[j].c_str());
             }
         }
+        retval = 0;
     }
     finiRPC();
-    return 0;
+    return retval;
 }
 
 int main(int argc, char **argv) {
