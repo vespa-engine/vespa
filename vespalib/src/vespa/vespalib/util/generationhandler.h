@@ -39,7 +39,7 @@ public:
         void setValid() noexcept;
         bool setInvalid() noexcept;
         void release() noexcept {
-            _refCount.fetch_sub(2, std::memory_order_acq_rel);
+            _refCount.fetch_sub(2, std::memory_order_release);
         }
         GenerationHold *acquire() noexcept;
         static GenerationHold *copy(GenerationHold *self) noexcept;
