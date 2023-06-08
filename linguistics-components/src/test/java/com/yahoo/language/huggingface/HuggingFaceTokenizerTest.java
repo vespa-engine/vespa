@@ -16,6 +16,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.zip.GZIPInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 
 /**
@@ -88,8 +89,12 @@ class HuggingFaceTokenizerTest {
         String input = "what was the impact of the manhattan project";
         try (var tokenizerWithoutSpecialTokens = builder.addSpecialTokens(false).build();
              var tokenizerWithSpecialTokens = builder.addSpecialTokens(true).build()) {
-            assertMaxLengthRespected(maxLength, tokenizerWithoutSpecialTokens.encode(input));
-            assertMaxLengthRespected(maxLength, tokenizerWithSpecialTokens.encode(input));
+            var encodingWithoutSpecialTokens = tokenizerWithoutSpecialTokens.encode(input);
+            assertMaxLengthRespected(maxLength, encodingWithoutSpecialTokens);
+            assertNotEquals(101, encodingWithoutSpecialTokens.ids().get(0));
+            var encodingWithSpecialTokens = tokenizerWithSpecialTokens.encode(input);
+            assertMaxLengthRespected(maxLength, encodingWithSpecialTokens);
+            assertEquals(101, encodingWithSpecialTokens.ids().get(0));
         }
     }
 
