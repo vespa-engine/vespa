@@ -21,21 +21,21 @@ import java.util.Optional;
  */
 public class Analyze {
 
-    public static ClassFileMetaData analyzeClass(File classFile) {
-        return analyzeClass(classFile, null);
+    static ClassFileMetaData analyzeClass(File classFile) {
+        return analyzeClass(classFile, "", null);
     }
 
-    public static ClassFileMetaData analyzeClass(File classFile, ArtifactVersion artifactVersion) {
+    public static ClassFileMetaData analyzeClass(File classFile, String artifactGroupId, ArtifactVersion artifactVersion) {
         try {
-            return analyzeClass(new FileInputStream(classFile), artifactVersion);
+            return analyzeClass(new FileInputStream(classFile), artifactGroupId, artifactVersion);
         } catch (Exception e) {
             throw new RuntimeException("An error occurred when analyzing " + classFile.getPath(), e);
         }
     }
 
-    public static ClassFileMetaData analyzeClass(InputStream inputStream, ArtifactVersion artifactVersion) {
+    public static ClassFileMetaData analyzeClass(InputStream inputStream, String artifactGroupId, ArtifactVersion artifactVersion) {
         try {
-            AnalyzeClassVisitor visitor = new AnalyzeClassVisitor(artifactVersion);
+            AnalyzeClassVisitor visitor = new AnalyzeClassVisitor(artifactGroupId, artifactVersion);
             new ClassReader(inputStream).accept(visitor, ClassReader.SKIP_DEBUG);
             return visitor.result();
         } catch (IOException e) {

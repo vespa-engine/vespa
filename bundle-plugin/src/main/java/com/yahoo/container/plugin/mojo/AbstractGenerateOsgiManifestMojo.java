@@ -104,7 +104,7 @@ abstract class AbstractGenerateOsgiManifestMojo extends AbstractMojo {
         List<PackageTally> tallies = new ArrayList<>();
         for (var artifact : jarArtifacts) {
             try {
-                tallies.add(definedPackages(new JarFile(artifact.getFile()), artifactVersionOrNull(artifact.getVersion())));
+                tallies.add(definedPackages(new JarFile(artifact.getFile()), artifact.getGroupId(), artifactVersionOrNull(artifact.getVersion())));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -193,20 +193,21 @@ abstract class AbstractGenerateOsgiManifestMojo extends AbstractMojo {
         }
     }
 
-    private static PackageTally definedPackages(JarFile jarFile, ArtifactVersion version) throws MojoExecutionException {
+    private static PackageTally definedPackages(JarFile jarFile, String groupId, ArtifactVersion version) throws MojoExecutionException {
         List<ClassFileMetaData> analyzedClasses = new ArrayList<>();
         for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements();) {
             JarEntry entry = entries.nextElement();
             if (! entry.isDirectory() && entry.getName().endsWith(".class")) {
-                analyzedClasses.add(analyzeClass(jarFile, entry, version));
+                analyzedClasses.add(analyzeClass(jarFile, entry, groupId, version));
             }
         }
         return PackageTally.fromAnalyzedClassFiles(analyzedClasses);
     }
 
-    private static ClassFileMetaData analyzeClass(JarFile jarFile, JarEntry entry, ArtifactVersion version) throws MojoExecutionException {
+    private static ClassFileMetaData analyzeClass(JarFile jarFile, JarEntry entry,
+                                                  String groupId, ArtifactVersion version) throws MojoExecutionException {
         try {
-            return Analyze.analyzeClass(jarFile.getInputStream(entry), version);
+            return Analyze.analyzeClass(jarFile.getInputStream(entry), groupId, version);
         } catch (Exception e) {
             throw new MojoExecutionException(
                     String.format("While analyzing the class '%s' in jar file '%s'", entry.getName(), jarFile.getName()), e);

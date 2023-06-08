@@ -47,6 +47,7 @@
             </plugins>
         </pluginManagement>
     </build>
+
     <modules>
         <module>artifact-version-for-exports</module>
         <module>artifact-version-for-exports-dep</module>

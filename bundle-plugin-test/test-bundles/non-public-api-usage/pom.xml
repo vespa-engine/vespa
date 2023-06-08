@@ -11,6 +11,11 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
+
+  <!-- NOTE: uses a non-vespa Yahoo group id, to verify that exported packages are added
+             to the publicApi manifest header -->
+  <groupId>com.yahoo.test-bundles</groupId>
+
   <artifactId>non-public-api-usage</artifactId>
   <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>

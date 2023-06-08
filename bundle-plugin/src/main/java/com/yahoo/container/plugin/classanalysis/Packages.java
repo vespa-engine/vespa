@@ -45,11 +45,15 @@ public class Packages {
         var publicApi = allowed == null ? Set.of() : new HashSet<>(allowed);
 
         Set<String> yahooImports = imports.keySet().stream()
-                .filter(pkg -> pkg.startsWith("com.yahoo") || pkg.startsWith("ai.vespa."))
+                .filter(pkg -> isYahooPackage(pkg) || pkg.startsWith("ai.vespa."))
                 .collect(Collectors.toSet());
 
         List<String> disallowedImports = yahooImports.stream().collect(Collectors.groupingBy(publicApi::contains)).get(false);
         return disallowedImports == null ? List.of() : disallowedImports;
+    }
+
+    static boolean isYahooPackage(String packageName) {
+        return packageName.startsWith("com.yahoo.");
     }
 
     public static PackageMetaData analyzePackages(Set<ClassFileMetaData> allClasses) {

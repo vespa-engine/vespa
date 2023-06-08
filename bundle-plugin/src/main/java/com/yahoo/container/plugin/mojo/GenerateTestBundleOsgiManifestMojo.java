@@ -22,10 +22,10 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.yahoo.container.plugin.bundle.AnalyzeBundle.exportedPackagesAggregated;
-import static com.yahoo.container.plugin.util.TestBundleUtils.outputDirectory;
 import static com.yahoo.container.plugin.osgi.ExportPackages.exportsByPackageName;
 import static com.yahoo.container.plugin.osgi.ImportPackages.calculateImports;
 import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
+import static com.yahoo.container.plugin.util.TestBundleUtils.outputDirectory;
 
 /**
  * @author bjorncs
@@ -77,7 +77,7 @@ public class GenerateTestBundleOsgiManifestMojo extends AbstractGenerateOsgiMani
         return Stream.concat(allDescendantFiles(new File(project.getBuild().getOutputDirectory())),
                              allDescendantFiles(new File(project.getBuild().getTestOutputDirectory())))
                      .filter(file -> file.getName().endsWith(".class"))
-                     .map(classFile -> Analyze.analyzeClass(classFile, null))
+                     .map(classFile -> Analyze.analyzeClass(classFile, "", null))
                      .toList();
     }
 

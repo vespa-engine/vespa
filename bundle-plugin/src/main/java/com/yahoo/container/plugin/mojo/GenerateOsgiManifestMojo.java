@@ -258,7 +258,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         }
     }
 
-    private boolean isVespaInternalGroupId(String groupId) {
+    public static boolean isVespaInternalGroupId(String groupId) {
         return groupId.equals(VESPA_GROUP_ID)
                 || groupId.equals(VESPA_GROUP_ID + ".hosted")
                 || groupId.equals(VESPA_GROUP_ID + ".hosted.controller");
@@ -277,7 +277,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
         List<ClassFileMetaData> analyzedClasses = allDescendantFiles(outputDirectory)
                 .filter(file -> file.getName().endsWith(".class"))
-                .map(classFile -> Analyze.analyzeClass(classFile, artifactVersionOrNull(bundleVersion)))
+                .map(classFile -> Analyze.analyzeClass(classFile, project.getGroupId(), artifactVersionOrNull(bundleVersion)))
                 .toList();
 
         return PackageTally.fromAnalyzedClassFiles(analyzedClasses);

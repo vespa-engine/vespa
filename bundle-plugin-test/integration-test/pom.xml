@@ -57,7 +57,7 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.yahoo.vespa.bundle-plugin</groupId>
+      <groupId>com.yahoo.test-bundles</groupId>
       <artifactId>non-public-api-usage</artifactId>
       <classifier>bundle</classifier>
       <version>${project.version}</version>

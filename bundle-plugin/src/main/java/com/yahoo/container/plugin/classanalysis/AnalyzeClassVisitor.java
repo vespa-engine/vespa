@@ -18,6 +18,9 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.yahoo.container.plugin.classanalysis.Packages.isYahooPackage;
+import static com.yahoo.container.plugin.mojo.GenerateOsgiManifestMojo.isVespaInternalGroupId;
+
 /**
  * Picks up classes used in class files.
  *
@@ -27,14 +30,16 @@ import java.util.Set;
 class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
 
     private String name = null;
+    private final String groupId;
     private final Set<String> imports = new HashSet<>();
     private Optional<ExportPackageAnnotation> exportPackageAnnotation = Optional.empty();
     private boolean isPublicApi = false;
 
     private final Optional<ArtifactVersion> defaultExportPackageVersion;
 
-    AnalyzeClassVisitor(ArtifactVersion defaultExportPackageVersion) {
+    AnalyzeClassVisitor(String groupId, ArtifactVersion defaultExportPackageVersion) {
         super(Opcodes.ASM9);
+        this.groupId = groupId == null ? "" : groupId;
         this.defaultExportPackageVersion = Optional.ofNullable(defaultExportPackageVersion);
     }
 
@@ -152,6 +157,13 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
     @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
         if (ExportPackage.class.getName().equals(Type.getType(desc).getClassName())) {
+            // Non-vespa Yahoo artifacts get all exported 'com.yahoo' packages marked as publicApi,
+            // to avoid false positives when dependent bundles are scanned for usage of non-publicApi packages.
+            if (groupId.startsWith("com.yahoo.")
+                    && ! isVespaInternalGroupId(groupId)
+                    && isYahooPackage(Packages.packageName(name))) {
+                isPublicApi = true;
+            }
             return visitExportPackage();
         } if (PublicApi.class.getName().equals(Type.getType(desc).getClassName())) {
             isPublicApi = true;
