@@ -102,7 +102,8 @@ HuggingFaceTokenizer =
     element model { attribute language { xsd:string }? & ModelReference }+ &
     element special-tokens { xsd:boolean }? &
     element max-length { xsd:integer }? &
-    element truncation { xsd:boolean }?
+    element truncation { xsd:boolean }? &
+    element padding { xsd:boolean }?
 
 BertBaseEmbedder =
     attribute type { "bert-embedder" } &

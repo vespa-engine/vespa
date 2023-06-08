@@ -42,6 +42,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                 .addSpecialTokens(true)
                 .addDefaultModel(Paths.get(config.tokenizerPath().toString()))
                 .setTruncation(true)
+                .setPadding(false)
                 .setMaxLength(config.transformerMaxTokens())
                 .build();
         poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());

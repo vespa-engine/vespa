@@ -27,7 +27,10 @@ class HuggingFaceTokenizerTest {
 
     @Test
     void bert_tokenizer() throws IOException {
-        try (var tokenizer = createTokenizer(tmp, "bert-base-uncased")) {
+        try (var tokenizer = new HuggingFaceTokenizer.Builder()
+                .addSpecialTokens(false)
+                .addDefaultModel(decompressModelFile(tmp, "bert-base-uncased"))
+                .build()) {
             var tester = new EmbedderTester(tokenizer);
             tester.assertSegmented("what was the impact of the manhattan project",
                                    "what", "was", "the", "impact", "of", "the", "manhattan", "project");
@@ -41,7 +44,10 @@ class HuggingFaceTokenizerTest {
 
     @Test
     void tokenizes_using_paraphrase_multilingual_mpnet_base_v2() throws IOException {
-        try (var tokenizer = createTokenizer(tmp, "paraphrase-multilingual-mpnet-base-v2")) {
+        try (var tokenizer = new HuggingFaceTokenizer.Builder()
+                .addSpecialTokens(false)
+                .addDefaultModel(decompressModelFile(tmp, "paraphrase-multilingual-mpnet-base-v2"))
+                .build()) {
             var tester = new EmbedderTester(tokenizer);
             tester.assertSegmented("h", "▁h");
             tester.assertSegmented("he", "▁he");
@@ -87,18 +93,26 @@ class HuggingFaceTokenizerTest {
         }
     }
 
+    @Test
+    void disables_padding_by_default() throws IOException {
+        var builder = new HuggingFaceTokenizer.Builder()
+                .addDefaultModel(decompressModelFile(tmp, "bert-base-uncased"))
+                .addSpecialTokens(true).setMaxLength(16);
+        String input = "what was the impact of the manhattan project";
+        try (var tokenizerWithDefaultPadding = builder.build();
+            var tokenizerWithPaddingDisabled = builder.setPadding(false).build();
+            var tokenizerWithPaddingEnabled = builder.setPadding(true).build()) {
+            assertMaxLengthRespected(10, tokenizerWithDefaultPadding.encode(input));
+            assertMaxLengthRespected(10, tokenizerWithPaddingDisabled.encode(input));
+            assertMaxLengthRespected(16, tokenizerWithPaddingEnabled.encode(input));
+        }
+    }
+
     private static void assertMaxLengthRespected(int maxLength, Encoding encoding) {
         assertEquals(maxLength, encoding.ids().size());
         assertEquals(maxLength, encoding.tokens().size());
         assertEquals(maxLength, encoding.attentionMask().size());
         assertEquals(maxLength, encoding.typeIds().size());
-    }
-
-    private static HuggingFaceTokenizer createTokenizer(Path tmp, String model) throws IOException {
-        return new HuggingFaceTokenizer.Builder()
-                .addSpecialTokens(false)
-                .addDefaultModel(decompressModelFile(tmp, model))
-                .build();
     }
 
     private static Path decompressModelFile(Path tmp, String model) throws IOException {
