@@ -4,6 +4,9 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
+import org.eclipse.jetty.http2.server.HTTP2ServerConnection;
+import org.eclipse.jetty.http2.server.HTTP2ServerSession;
+import org.eclipse.jetty.server.HttpOutput;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -87,7 +90,15 @@ class ServletOutputStreamWriter {
             switch (state) {
                 case NOT_STARTED:
                     try {
-                        outputStream.setWriteListener(writeListener);
+                        // Experimental workaround for write listener not being invoked when the connection is closed
+                        if (outputStream instanceof HttpOutput out
+                                && out.getHttpChannel().getConnection() instanceof HTTP2ServerConnection conn
+                                && conn.getSession() instanceof HTTP2ServerSession session
+                                && (session.isStopping() || session.isStopped())) {
+                            throw new IOException("HTTP/2 session has stopped");
+                        } else {
+                            outputStream.setWriteListener(writeListener);
+                        }
                         state = State.WAITING_FOR_WRITE_POSSIBLE_CALLBACK;
                     } catch (Throwable t) {
                         registrationFailure = t;

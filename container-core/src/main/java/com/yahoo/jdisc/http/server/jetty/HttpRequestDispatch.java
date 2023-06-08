@@ -85,13 +85,13 @@ class HttpRequestDispatch {
             return;
         }
 
-        servletRequestReader.finishedFuture().whenComplete((__, t) -> {
+        var readCompleted = servletRequestReader.finishedFuture().whenComplete((__, t) -> {
             if (t != null) servletResponseController.trySendErrorResponse(t);
         });
-        servletResponseController.finishedFuture().whenComplete((__, t) -> {
+        var writeCompleted = servletResponseController.finishedFuture().whenComplete((__, t) -> {
             if (t != null) servletRequestReader.fail(t);
         });
-        CompletableFuture.allOf(servletRequestReader.finishedFuture(), servletResponseController.finishedFuture())
+        CompletableFuture.allOf(readCompleted, writeCompleted)
                 .whenComplete((r, t) -> {
                     if (t != null) requestCompletion.completeExceptionally(t);
                     else requestCompletion.complete(null);
