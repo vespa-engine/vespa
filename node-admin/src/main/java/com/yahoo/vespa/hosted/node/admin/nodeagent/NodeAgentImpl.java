@@ -428,7 +428,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private boolean noCpuCap(ZoneApi zone) {
-        return zone.getEnvironment() == Environment.dev;
+        return zone.getEnvironment() == Environment.dev || zone.getEnvironment().isTest();
     }
 
     private boolean downloadImageIfNeeded(NodeAgentContext context, Optional<Container> container) {
