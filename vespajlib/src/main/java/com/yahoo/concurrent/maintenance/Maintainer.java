@@ -117,7 +117,7 @@ public abstract class Maintainer implements Runnable {
         if (!force && !jobControl.isActive(name())) return;
         log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
 
-        double successFactorDeviation = 0;
+        double successFactorDeviation = -1;
         long startTime = clock.millis();
         try (var lock = jobControl.lockJob(name())) {
             successFactorDeviation = maintain();
