@@ -519,7 +519,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
      * in config and not remove it again if they reduce the node count.
      */
     public int distributionBits() {
-        if (zone.environment() == Environment.prod && ! zone.equals(Zone.defaultZone())) {
+        if (zoneEnvImplies16DistributionBits() && ! zone.equals(Zone.defaultZone())) {
             return 16;
         }
         else { // hosted test zone, or self-hosted system
@@ -527,6 +527,11 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             // self-hosted systems: should probably default to 16 bits, but the transition may cause problems
             return DistributionBitCalculator.getDistributionBits(getNodeCountPerGroup(), getDistributionMode());
         }
+    }
+
+    private boolean zoneEnvImplies16DistributionBits() {
+        // We want perf to behave like prod as much as possible.
+        return (zone.environment() == Environment.prod) || (zone.environment() == Environment.perf);
     }
 
     public boolean isHosted() {
