@@ -23,6 +23,7 @@ public class HuggingFaceTokenizer extends TypedComponent implements HuggingFaceT
     private final Boolean specialTokens;
     private final Integer maxLength;
     private final Boolean truncation;
+    private final Boolean padding;
 
     public HuggingFaceTokenizer(Element xml, DeployState state) {
         super("com.yahoo.language.huggingface.HuggingFaceTokenizer", LINGUISTICS_BUNDLE_NAME, xml);
@@ -33,6 +34,7 @@ public class HuggingFaceTokenizer extends TypedComponent implements HuggingFaceT
         specialTokens = getOptionalChildValue(xml, "special-tokens").map(Boolean::parseBoolean).orElse(null);
         maxLength = getOptionalChildValue(xml, "max-length").map(Integer::parseInt).orElse(null);
         truncation = getOptionalChildValue(xml, "truncation").map(Boolean::parseBoolean).orElse(null);
+        padding = getOptionalChildValue(xml, "padding").map(Boolean::parseBoolean).orElse(null);
     }
 
     @Override
@@ -43,5 +45,6 @@ public class HuggingFaceTokenizer extends TypedComponent implements HuggingFaceT
         if (specialTokens != null) builder.addSpecialTokens(specialTokens);
         if (maxLength != null) builder.maxLength(maxLength);
         if (truncation != null) builder.truncation(truncation);
+        if (padding != null) builder.padding(padding);
     }
 }

@@ -9,5 +9,6 @@ model[].language string
 model[].path model
 
 addSpecialTokens bool default=true
-maxLength int default=-1
-truncation bool default=false
+maxLength int default=512
+truncation bool default=true
+padding bool default=false
