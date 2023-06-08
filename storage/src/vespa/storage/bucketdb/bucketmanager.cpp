@@ -619,7 +619,7 @@ BucketManager::verifyAndUpdateLastModified(api::StorageCommand& cmd,
     {
         StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "BucketManager::verify"));
 
-        if (entry.exist()) {
+        if (entry.exists()) {
             prevLastModified = entry->info.getLastModified();
 
             if (lastModified > prevLastModified) {

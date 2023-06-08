@@ -338,7 +338,7 @@ OperationAbortingTest::getBucketInfoFromDB(const document::BucketId& id) const
 {
     StorBucketDatabase::WrappedEntry entry(
             _node->getStorageBucketDatabase().get(id, "foo", StorBucketDatabase::CREATE_IF_NONEXISTING));
-    assert(entry.exist());
+    assert(entry.exists());
     return entry->info;
 }
 

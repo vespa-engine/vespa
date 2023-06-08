@@ -191,7 +191,7 @@ PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket, const api:
     // Update bucket database
     StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(),
                                                                                           "env::updatebucketdb"));
-    if (entry.exist()) {
+    if (entry.exists()) {
         api::BucketInfo info = i;
 
         // Don't override last modified unless this is the first bucket

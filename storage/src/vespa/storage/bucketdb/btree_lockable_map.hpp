@@ -551,7 +551,7 @@ BTreeLockableMap<T>::getAll(const BucketId& bucket, const char* clientId) {
 }
 
 template <typename T>
-bool BTreeLockableMap<T>::isConsistent(const BTreeLockableMap::WrappedEntry& entry) {
+bool BTreeLockableMap<T>::isConsistent(const BTreeLockableMap::WrappedEntry& entry) const {
     std::lock_guard guard(_lock);
     uint64_t n_buckets = 0;
     _impl->template find_parents_self_and_children<ByConstRef>(entry.getBucketId(),

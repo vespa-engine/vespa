@@ -28,47 +28,68 @@ public:
     using size_type   = size_t;
     using BucketId    = document::BucketId;
     struct WrappedEntry;
-
+private:
     // Responsible for releasing lock in map when out of scope.
     class LockKeeper {
-        friend struct WrappedEntry;
-        AbstractBucketMap& _map;
-        key_type _key;
-        bool _locked;
-
-        LockKeeper(AbstractBucketMap& map, key_type key) noexcept
-            : _map(map), _key(key), _locked(true) {}
-        void unlock() { _map.unlock(_key); _locked = false; }
     public:
-        ~LockKeeper() { if (_locked) unlock(); }
+        LockKeeper() noexcept
+            : _map(nullptr), _key() {}
+        LockKeeper(AbstractBucketMap& map, key_type key) noexcept
+            : _map(&map), _key(key) {}
+        LockKeeper(LockKeeper && rhs) noexcept
+            : _map(rhs._map),
+              _key(rhs._key)
+        {
+            rhs._map = nullptr;
+        }
+        LockKeeper & operator=(LockKeeper && rhs) noexcept {
+            if (&rhs == this) return *this;
+            cleanup();
+            _map = rhs._map;
+            _key = rhs._key;
+            rhs._map = nullptr;
+            return *this;
+        }
+        ~LockKeeper() { cleanup(); }
+        AbstractBucketMap & map() { return *_map; }
+        void unlock() {
+            _map->unlock(_key);
+            _map = nullptr;
+        }
+        [[nodiscard]] bool locked() const noexcept { return _map != nullptr; }
+        const key_type & key() const noexcept { return _key; }
+    private:
+        void cleanup() {
+            if (_map) unlock();
+        }
+        AbstractBucketMap * _map;
+        key_type            _key;
     };
+public:
 
     struct WrappedEntry {
         WrappedEntry() noexcept
-            : _exists(false),
-              _preExisted(false),
-              _lockKeeper(),
+            : _lockKeeper(),
               _value(),
-              _clientId(nullptr)
+              _clientId(nullptr),
+              _exists(false),
+              _preExisted(false)
         {}
-        WrappedEntry(AbstractBucketMap& map,
-                     const key_type& key, const mapped_type& val,
-                     const char* clientId, bool preExisted_)
-            : _exists(true),
-              _preExisted(preExisted_),
-              _lockKeeper(new LockKeeper(map, key)),
+        WrappedEntry(AbstractBucketMap& map, const key_type& key, const mapped_type& val,
+                     const char* clientId, bool preExisted_) noexcept
+            : _lockKeeper(map, key),
               _value(val),
-              _clientId(clientId) {}
-        WrappedEntry(AbstractBucketMap& map, const key_type& key,
-                     const char* clientId)
-            : _exists(false),
-              _preExisted(false),
-              _lockKeeper(new LockKeeper(map, key)),
+              _clientId(clientId),
+              _exists(true),
+              _preExisted(preExisted_) {}
+        WrappedEntry(AbstractBucketMap& map, const key_type& key, const char* clientId) noexcept
+            : _lockKeeper(map, key),
               _value(),
-              _clientId(clientId) {}
-        // TODO noexcept on these:
-        WrappedEntry(WrappedEntry&&) = default;
-        WrappedEntry& operator=(WrappedEntry&&) = default;
+              _clientId(clientId),
+              _exists(false),
+              _preExisted(false) {}
+        WrappedEntry(WrappedEntry&&) noexcept = default;
+        WrappedEntry& operator=(WrappedEntry&&) noexcept = default;
         ~WrappedEntry();
 
         mapped_type* operator->() { return &_value; }
@@ -82,21 +103,20 @@ public:
         void write();
         void remove();
         void unlock();
-        [[nodiscard]] bool exist() const { return _exists; } // TODO rename to exists()
+        [[nodiscard]] bool exists() const { return _exists; }
         [[nodiscard]] bool preExisted() const { return _preExisted; }
-        [[nodiscard]] bool locked() const { return _lockKeeper.get(); }
-        const key_type& getKey() const { return _lockKeeper->_key; };
+        [[nodiscard]] bool locked() const { return _lockKeeper.locked(); }
+        const key_type& getKey() const { return _lockKeeper.key(); };
 
         BucketId getBucketId() const {
             return BucketId(BucketId::keyToBucketId(getKey()));
         }
     protected:
-        bool _exists;
-        bool _preExisted;
-        std::unique_ptr<LockKeeper> _lockKeeper;
+        LockKeeper  _lockKeeper;
         mapped_type _value;
         const char* _clientId;
-        friend class AbstractLockableMap;
+        bool        _exists;
+        bool        _preExisted;
     };
 
     struct LockId {
@@ -149,7 +169,7 @@ public:
      * bucket to become inconsistent will require taking its lock, so by
      * requiring the lock to be provided here we avoid race conditions.
      */
-    virtual bool isConsistent(const WrappedEntry& entry) = 0; // TODO const
+    virtual bool isConsistent(const WrappedEntry& entry) const = 0;
 
     static constexpr uint32_t DEFAULT_CHUNK_SIZE = 1000;
 
@@ -163,16 +183,13 @@ public:
      *
      * Type erasure of functor needed due to virtual indirection.
      */
-    void for_each_chunked(std::function<Decision(uint64_t, const ValueT&)> func,
-                          const char* clientId,
-                          vespalib::duration yieldTime = 10us,
-                          uint32_t chunkSize = DEFAULT_CHUNK_SIZE)
+    void for_each_chunked(std::function<Decision(uint64_t, const ValueT&)> func, const char* clientId,
+                          vespalib::duration yieldTime = 10us, uint32_t chunkSize = DEFAULT_CHUNK_SIZE)
     {
         do_for_each_chunked(std::move(func), clientId, yieldTime, chunkSize);
     }
 
-    void for_each_mutable_unordered(std::function<Decision(uint64_t, ValueT&)> func,
-                                    const char* clientId)
+    void for_each_mutable_unordered(std::function<Decision(uint64_t, ValueT&)> func, const char* clientId)
     {
         do_for_each_mutable_unordered(std::move(func), clientId);
     }
@@ -195,14 +212,10 @@ public:
     virtual void print(std::ostream& out, bool verbose, const std::string& indent) const = 0;
 private:
     virtual void unlock(const key_type& key) = 0; // Only for bucket lock guards
-    virtual void do_for_each_chunked(std::function<Decision(uint64_t, const ValueT&)> func,
-                                     const char* clientId,
-                                     vespalib::duration yieldTime,
-                                     uint32_t chunkSize) = 0;
-    virtual void do_for_each_mutable_unordered(std::function<Decision(uint64_t, ValueT&)> func,
-                                               const char* clientId) = 0;
-    virtual void do_for_each(std::function<Decision(uint64_t, const ValueT&)> func,
-                             const char* clientId) = 0;
+    virtual void do_for_each_chunked(std::function<Decision(uint64_t, const ValueT&)> func, const char* clientId,
+                                     vespalib::duration yieldTime, uint32_t chunkSize) = 0;
+    virtual void do_for_each_mutable_unordered(std::function<Decision(uint64_t, ValueT&)> func, const char* clientId) = 0;
+    virtual void do_for_each(std::function<Decision(uint64_t, const ValueT&)> func, const char* clientId) = 0;
     virtual std::unique_ptr<bucketdb::ReadGuard<ValueT>> do_acquire_read_guard() const = 0;
 };
 
@@ -217,25 +230,25 @@ AbstractBucketMap<ValueT>::WrappedEntry::~WrappedEntry() = default;
 
 template <typename ValueT>
 void AbstractBucketMap<ValueT>::WrappedEntry::write() {
-    assert(_lockKeeper->_locked);
+    assert(_lockKeeper.locked());
     assert(_value.verifyLegal());
     bool b;
-    _lockKeeper->_map.insert(_lockKeeper->_key, _value, _clientId, true, b);
-    _lockKeeper->unlock();
+    _lockKeeper.map().insert(_lockKeeper.key(), _value, _clientId, true, b);
+    _lockKeeper.unlock();
 }
 
 template <typename ValueT>
 void AbstractBucketMap<ValueT>::WrappedEntry::remove() {
-    assert(_lockKeeper->_locked);
+    assert(_lockKeeper.locked());
     assert(_exists);
-    _lockKeeper->_map.erase(_lockKeeper->_key, _clientId, true);
-    _lockKeeper->unlock();
+    _lockKeeper.map().erase(_lockKeeper.key(), _clientId, true);
+    _lockKeeper.unlock();
 }
 
 template <typename ValueT>
 void AbstractBucketMap<ValueT>::WrappedEntry::unlock() {
-    assert(_lockKeeper->_locked);
-    _lockKeeper->unlock();
+    assert(_lockKeeper.locked());
+    _lockKeeper.unlock();
 }
 
 }

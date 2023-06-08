@@ -189,7 +189,7 @@ MergeHandler::buildBucketInfoList(
         StorBucketDatabase& db(_env.getBucketDatabase(bucket.getBucketSpace()));
         StorBucketDatabase::WrappedEntry entry(
                 db.get(bucket.getBucketId(), "MergeHandler::buildBucketInfoList"));
-        if (entry.exist()) {
+        if (entry.exists()) {
             spi::BucketInfoResult infoResult(_spi.getBucketInfo(bucket));
 
             if (infoResult.getErrorCode() != spi::Result::ErrorType::NONE) {

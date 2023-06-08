@@ -62,7 +62,7 @@ bool
 FileStorTestFixture::bucketExistsInDb(const document::BucketId& bucket) const
 {
     StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bucket, "bucketExistsInDb"));
-    return entry.exist();
+    return entry.exists();
 }
 
 FileStorTestFixture::TestFileStorComponents::TestFileStorComponents(
