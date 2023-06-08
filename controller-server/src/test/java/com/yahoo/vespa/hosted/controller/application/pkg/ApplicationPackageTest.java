@@ -229,7 +229,7 @@ public class ApplicationPackageTest {
         assertEquals(content, unzip(zip));
         AngryStreams angry = new AngryStreams(zip);
 
-        ApplicationPackageStream identity = new ApplicationPackageStream(angry::stream);
+        ApplicationPackageStream identity = new ApplicationPackageStream(angry::stream, () -> __ -> true);
         InputStream lazy = new LazyInputStream(() -> new ByteArrayInputStream(identity.truncatedPackage().zippedContent()));
         assertEquals("must completely exhaust input before reading package",
                      assertThrows(IllegalStateException.class, identity::truncatedPackage).getMessage());
