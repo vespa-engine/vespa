@@ -101,15 +101,16 @@ class HuggingFaceTokenizerTest {
     @Test
     void disables_padding_by_default() throws IOException {
         var builder = new HuggingFaceTokenizer.Builder()
+                .setTruncation(true)
                 .addDefaultModel(decompressModelFile(tmp, "bert-base-uncased"))
-                .addSpecialTokens(true).setMaxLength(16);
+                .addSpecialTokens(true).setMaxLength(32);
         String input = "what was the impact of the manhattan project";
         try (var tokenizerWithDefaultPadding = builder.build();
             var tokenizerWithPaddingDisabled = builder.setPadding(false).build();
             var tokenizerWithPaddingEnabled = builder.setPadding(true).build()) {
             assertMaxLengthRespected(10, tokenizerWithDefaultPadding.encode(input));
             assertMaxLengthRespected(10, tokenizerWithPaddingDisabled.encode(input));
-            assertMaxLengthRespected(16, tokenizerWithPaddingEnabled.encode(input));
+            assertMaxLengthRespected(32, tokenizerWithPaddingEnabled.encode(input));
         }
     }
 

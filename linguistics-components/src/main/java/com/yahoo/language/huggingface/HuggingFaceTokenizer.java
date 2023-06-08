@@ -46,7 +46,7 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
                                        .optAddSpecialTokens(b.addSpecialTokens != null ? b.addSpecialTokens : true)
                                        .optTruncation(b.truncation != null ? b.truncation : true)
                                        .optMaxLength(b.maxLength != null ? b.maxLength : 512);
-                               if (b.padding != null && b.padding) hfb.optPadToMaxLength();
+                               if (b.padding != null && b.padding) hfb.optPadToMaxLength(); else hfb.optPadding(false);
                                return hfb.build();
                            }));
             });
