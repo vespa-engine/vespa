@@ -103,17 +103,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
         Map<String, Tensor> outputs = evaluator.evaluate(inputs);
         Tensor tokenEmbeddings = outputs.get(outputName);
-        Tensor.Builder builder = Tensor.Builder.of(tensorType);
-
-        // Mean pooling implementation
-        Tensor summedEmbeddings = tokenEmbeddings.sum("d1");
-        Tensor summedAttentionMask = attentionMask.expand("d0").sum("d1");
-        Tensor averaged = summedEmbeddings.join(summedAttentionMask, (x, y) -> x / y);
-        for (int i = 0; i < tensorType.dimensions().get(0).size().get(); i++) {
-            builder.cell(averaged.get(TensorAddress.of(0,i)), i);
-        }
-
-        Tensor result = builder.build();
+        var result = poolingStrategy.toSentenceEmbedding(tensorType, tokenEmbeddings, attentionMask);
         return normalize ? normalize(result, tensorType) : result;
     }
 
