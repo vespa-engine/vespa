@@ -34,6 +34,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
+import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -125,6 +126,14 @@ public class HostCapacityMaintainerTest {
         assertTrue("Host satisfying 16-24-100-1 is kept", tester.nodeRepository.nodes().node("host3").isPresent());
         assertTrue("New 48-128-1000-10 host added", tester.nodeRepository.nodes().node("host100").isPresent());
         assertTrue("New 48-128-1000-10 host added", tester.nodeRepository.nodes().node("host101").isPresent());
+
+        Instant deprovisionedAt = tester.nodeRepository.nodes().node("host2").get().history().event(History.Event.Type.deprovisioned).get().at();
+        tester.provisioningTester.clock().advance(Duration.ofSeconds(1));
+        tester.maintain();
+        assertEquals("Host moves to deprovisioned once", deprovisionedAt,
+                     tester.nodeRepository.nodes().node("host2").get().history()
+                                          .event(History.Event.Type.deprovisioned).get().at());
+
     }
 
     @Test

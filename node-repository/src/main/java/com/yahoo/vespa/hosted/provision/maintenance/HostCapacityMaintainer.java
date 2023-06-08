@@ -88,7 +88,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         // Group nodes by parent; no parent means it's a host.
         Map<Optional<String>, List<Node>> nodesByParent = provisionedSnapshot.stream().collect(groupingBy(Node::parentHostname));
 
-        // Find all hosts that we once thought were empty (first clouse), or whose children are now all removable (second clause).
+        // Find all hosts that we once thought were empty (first clause), or whose children are now all removable (second clause).
         List<Node> emptyHosts = nodesByParent.get(Optional.<String>empty()).stream()
                                              .filter(host ->    host.hostEmptyAt().isPresent()
                                                              || nodesByParent.getOrDefault(Optional.of(host.hostname()), List.of())
@@ -165,7 +165,8 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
     private static boolean canRemoveHost(Node host) {
         return switch (host.type()) {
             // TODO: Mark empty tenant hosts as wanttoretire & wanttodeprovision elsewhere, then handle as confighost here
-            case host -> host.state() != Node.State.parked || host.status().wantToDeprovision();
+            case host -> host.state() != Node.State.deprovisioned &&
+                         (host.state() != Node.State.parked || host.status().wantToDeprovision());
             case confighost, controllerhost -> canDeprovision(host);
             default -> false;
         };

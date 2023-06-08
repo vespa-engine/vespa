@@ -463,6 +463,9 @@ public class Nodes {
                         illegal("Could not set " + node + " active: Same cluster and index as " + currentActive);
                 }
             }
+            if (node.state() == Node.State.deprovisioned) {
+               illegal(node + " cannot be moved");
+            }
             if (forceDeprovision)
                 node = node.withWantToRetire(true, true, agent, clock.instant());
             if (toState == Node.State.deprovisioned) {
