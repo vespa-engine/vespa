@@ -135,6 +135,7 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -985,8 +986,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse devApplicationPackage(ApplicationId id, JobType type) {
         ZoneId zone = type.zone();
         RevisionId revision = controller.jobController().last(id, type).get().versions().targetRevision();
-        byte[] applicationPackage = controller.applications().applicationStore().get(new DeploymentId(id, zone), revision);
-        return new ZipResponse(id.toFullString() + "." + zone.value() + ".zip", applicationPackage);
+        try (InputStream applicationPackage = controller.applications().applicationStore().stream(new DeploymentId(id, zone), revision)) {
+            return new ZipResponse(id.toFullString() + "." + zone.value() + ".zip", applicationPackage);
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private HttpResponse devApplicationPackageDiff(RunId runId) {
@@ -1019,11 +1024,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
         RevisionId revision = RevisionId.forProduction(build);
         boolean tests = request.getBooleanProperty("tests");
-        byte[] applicationPackage = tests ?
-                controller.applications().applicationStore().getTester(tenantAndApplication.tenant(), tenantAndApplication.application(), revision) :
-                controller.applications().applicationStore().get(new DeploymentId(tenantAndApplication.defaultInstance(), ZoneId.defaultId()), revision);
         String filename = tenantAndApplication + (tests ? "-tests" : "-build") + revision.number() + ".zip";
-        return new ZipResponse(filename, applicationPackage);
+        InputStream applicationPackage = tests ?
+                controller.applications().applicationStore().streamTester(tenantAndApplication.tenant(), tenantAndApplication.application(), revision) :
+                controller.applications().applicationStore().stream(new DeploymentId(tenantAndApplication.defaultInstance(), ZoneId.defaultId()), revision);
+        try (applicationPackage) {
+            return new ZipResponse(filename, applicationPackage);
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private HttpResponse applicationPackageDiff(String tenant, String application, String number) {
