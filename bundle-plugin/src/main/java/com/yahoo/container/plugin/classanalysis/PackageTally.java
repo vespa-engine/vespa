@@ -8,7 +8,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,6 +44,14 @@ public class PackageTally {
     public Set<String> publicApiPackages() {
         return definedPackages.values().stream()
                 .filter(PackageInfo::isPublicApi)
+                .map(PackageInfo::name)
+                .collect(Collectors.toSet());
+    }
+
+    public Set<String> nonPublicApiExportedPackages() {
+        return definedPackages.values().stream()
+                .filter(pkgInfo -> pkgInfo.exportPackage().isPresent())
+                .filter(pkgInfo -> ! pkgInfo.isPublicApi())
                 .map(PackageInfo::name)
                 .collect(Collectors.toSet());
     }
