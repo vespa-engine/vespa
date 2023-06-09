@@ -7,9 +7,84 @@
 
 #include <vespa/vespalib/util/signalhandler.h>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <future>
 
 #include <vespa/log/log.h>
 LOG_SETUP("rpc_callback_server");
+
+/**
+ * Class keeping track of 'detached' threads in order to wait for
+ * their completion on program shutdown. Threads are not actually
+ * detached, but perform co-operative auto-joining on completion.
+ **/
+class AutoJoiner
+{
+private:
+    std::mutex              _lock;
+    std::condition_variable _cond;
+    bool                    _closed;
+    size_t                  _pending;
+    std::thread             _thread;
+    struct JoinGuard {
+        std::thread thread;
+        ~JoinGuard() {
+            if (thread.joinable()) {
+                assert(std::this_thread::get_id() != thread.get_id());
+                thread.join();
+            }
+        }
+    };
+    void notify_start() {
+        std::lock_guard guard(_lock);
+        if (!_closed) {
+            ++_pending;
+        } else {
+            throw std::runtime_error("no new threads allowed");
+        }
+    }
+    void notify_done(std::thread thread) {
+        JoinGuard join;
+        std::unique_lock guard(_lock);
+        join.thread = std::move(_thread);
+        _thread = std::move(thread);
+        if (--_pending == 0 && _closed) {
+            _cond.notify_all();
+        }
+    }
+    auto wrap_task(auto task, std::promise<std::thread> &promise) {
+        return [future = promise.get_future(), task = std::move(task), &owner = *this]() mutable
+               {
+                   auto thread = future.get();
+                   assert(std::this_thread::get_id() == thread.get_id());
+                   task();
+                   owner.notify_done(std::move(thread));
+               };
+    }
+public:
+    AutoJoiner() : _lock(), _cond(), _closed(false), _pending(0), _thread() {}
+    ~AutoJoiner() { close_and_wait(); }
+    void start(auto task) {
+        notify_start();
+        std::promise<std::thread> promise;
+        promise.set_value(std::thread(wrap_task(std::move(task), promise)));
+    };
+    void close_and_wait() {
+        JoinGuard join;
+        std::unique_lock guard(_lock);
+        _closed = true;
+        while (_pending > 0) {
+            _cond.wait(guard);
+        }
+        std::swap(join.thread, _thread);
+    }
+};
+
+AutoJoiner &auto_joiner() {
+    static AutoJoiner obj;
+    return obj;
+}
 
 struct RPC : public FRT_Invokable
 {
@@ -35,7 +110,7 @@ void
 RPC::CallBack(FRT_RPCRequest *req)
 {
     req->Detach();
-    std::thread(do_callback, req).detach();
+    auto_joiner().start([req]{ do_callback(req); });
 }
 
 void
@@ -53,6 +128,7 @@ class MyApp
 {
 public:
     int main(int argc, char **argv);
+    ~MyApp() { auto_joiner().close_and_wait(); }
 };
 
 int
