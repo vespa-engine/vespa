@@ -21,7 +21,7 @@ import java.util.Optional;
  */
 public class Analyze {
 
-    public static ClassFileMetaData analyzeClass(File classFile) {
+    static ClassFileMetaData analyzeClass(File classFile) {
         return analyzeClass(classFile, null);
     }
 
