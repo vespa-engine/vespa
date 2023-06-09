@@ -776,7 +776,7 @@ public class JobController {
                           ApplicationPackage previous;
                           try {
                               previous = new ApplicationPackage(controller.applications().applicationStore().get(deploymentId, prevVersion));
-                          } catch (IllegalArgumentException e) {
+                          } catch (RuntimeException e) {
                               return ApplicationPackageDiff.diffAgainstEmpty(applicationPackage);
                           }
                           return ApplicationPackageDiff.diff(previous, applicationPackage);
