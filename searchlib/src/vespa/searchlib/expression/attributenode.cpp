@@ -4,6 +4,7 @@
 #include "resultvector.h"
 #include "enumattributeresult.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <cassert>
 
 namespace search::expression {
 
@@ -85,13 +86,30 @@ createResult(const IAttributeVector * attribute)
     return std::make_unique<EnumAttributeResult>(enumRefs, attribute, 0);
 }
 
+template<typename T>
+std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<AttributeNode::Handler>>
+createSingle() {
+    return { std::make_unique<T>(), std::unique_ptr<AttributeNode::Handler>()};
+}
+
+template<typename T, typename H>
+std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<AttributeNode::Handler>>
+createMulti() {
+    auto result = std::make_unique<T>();
+    auto handler = std::make_unique<H>(*result);
+    return { std::move(result), std::move(handler)};
+}
+
 }
 
 AttributeNode::AttributeNode() :
     FunctionNode(),
     _scratchResult(std::make_unique<AttributeResult>()),
+    _index(nullptr),
+    _keepAliveForIndexLookups(),
     _hasMultiValue(false),
     _useEnumOptimization(false),
+    _needExecute(true),
     _handler(),
     _attributeName()
 {}
@@ -101,16 +119,22 @@ AttributeNode::~AttributeNode() = default;
 AttributeNode::AttributeNode(vespalib::stringref name) :
     FunctionNode(),
     _scratchResult(std::make_unique<AttributeResult>()),
+    _index(nullptr),
+    _keepAliveForIndexLookups(),
     _hasMultiValue(false),
     _useEnumOptimization(false),
+    _needExecute(true),
     _handler(),
     _attributeName(name)
 {}
 AttributeNode::AttributeNode(const IAttributeVector & attribute) :
     FunctionNode(),
     _scratchResult(createResult(&attribute)),
+    _index(nullptr),
+    _keepAliveForIndexLookups(),
     _hasMultiValue(attribute.hasMultiValue()),
     _useEnumOptimization(false),
+    _needExecute(true),
     _handler(),
     _attributeName(attribute.getName())
 {}
@@ -118,8 +142,11 @@ AttributeNode::AttributeNode(const IAttributeVector & attribute) :
 AttributeNode::AttributeNode(const AttributeNode & attribute) :
     FunctionNode(attribute),
     _scratchResult(attribute._scratchResult->clone()),
+    _index(nullptr),
+    _keepAliveForIndexLookups(),
     _hasMultiValue(attribute._hasMultiValue),
     _useEnumOptimization(attribute._useEnumOptimization),
+    _needExecute(true),
     _handler(),
     _attributeName(attribute._attributeName)
 {
@@ -136,105 +163,105 @@ AttributeNode::operator = (const AttributeNode & attr)
         _useEnumOptimization = attr._useEnumOptimization;
         _scratchResult.reset(attr._scratchResult->clone());
         _scratchResult->setDocId(0);
+        _handler.reset();
+        _index = nullptr;
+        _keepAliveForIndexLookups.reset();
+        _needExecute = true;
     }
     return *this;
+}
+
+std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<AttributeNode::Handler>>
+AttributeNode::createResultAndHandler(bool preserveAccurateTypes, const attribute::IAttributeVector & attribute) const {
+    BasicType::Type basicType = attribute.getBasicType();
+    if (attribute.isIntegerType()) {
+        if (_hasMultiValue) {
+            if (basicType == BasicType::BOOL) {
+                return createMulti<BoolResultNodeVector, IntegerHandler<BoolResultNodeVector>>();
+            } else if (preserveAccurateTypes) {
+                switch (basicType) {
+                    case BasicType::INT8:
+                        return createMulti<Int8ResultNodeVector, IntegerHandler<Int8ResultNodeVector>>();
+                    case BasicType::INT16:
+                        return createMulti<Int16ResultNodeVector, IntegerHandler<Int16ResultNodeVector>>();
+                    case BasicType::INT32:
+                        return createMulti<Int32ResultNodeVector, IntegerHandler<Int32ResultNodeVector>>();
+                    case BasicType::INT64:
+                        return createMulti<Int64ResultNodeVector, IntegerHandler<Int64ResultNodeVector>>();
+                    default:
+                        throw std::runtime_error("This is no valid integer attribute " + attribute.getName());
+                }
+            } else {
+                return createMulti<IntegerResultNodeVector, IntegerHandler<IntegerResultNodeVector>>();
+            }
+        } else {
+            if (basicType == BasicType::BOOL) {
+                return createSingle<BoolResultNode>();
+            } else if (preserveAccurateTypes) {
+                switch (basicType) {
+                    case BasicType::INT8:
+                        return createSingle<Int8ResultNode>();
+                    case BasicType::INT16:
+                        return createSingle<Int16ResultNode>();
+                    case BasicType::INT32:
+                        return createSingle<Int32ResultNode>();
+                    case BasicType::INT64:
+                        return createSingle<Int64ResultNode>();
+                    default:
+                        throw std::runtime_error("This is no valid integer attribute " + attribute.getName());
+                }
+            } else {
+                return createSingle<Int64ResultNode>();
+            }
+        }
+    } else if (attribute.isFloatingPointType()) {
+        if (_hasMultiValue) {
+            return createMulti<FloatResultNodeVector, FloatHandler>();
+        } else {
+            return createSingle<FloatResultNode>();
+        }
+    } else if (attribute.isStringType()) {
+        if (_hasMultiValue) {
+            if (_useEnumOptimization) {
+                return createMulti<EnumResultNodeVector, EnumHandler>();
+            } else {
+                return createMulti<StringResultNodeVector, StringHandler>();
+            }
+        } else {
+            if (_useEnumOptimization) {
+                return createSingle<EnumResultNode>();
+            } else {
+                return createSingle<StringResultNode>();
+            }
+        }
+    } else if (attribute.is_raw_type()) {
+        if (_hasMultiValue) {
+            throw std::runtime_error(make_string("Does not support multivalue raw attribute vector '%s'",
+                                                 attribute.getName().c_str()));
+        } else {
+            return createSingle<RawResultNode>();
+        }
+    } else {
+        throw std::runtime_error(make_string("Can not deduce correct resultclass for attribute vector '%s'",
+                                             attribute.getName().c_str()));
+    }
 }
 
 void
 AttributeNode::onPrepare(bool preserveAccurateTypes)
 {
-    const IAttributeVector * attribute = _scratchResult->getAttribute();
+    const IAttributeVector * attribute = getAttribute();
     if (attribute != nullptr) {
-        BasicType::Type basicType = attribute->getBasicType();
-        if (attribute->isIntegerType()) {
-            if (_hasMultiValue) {
-                if (basicType == BasicType::BOOL) {
-                    setResultType(std::make_unique<BoolResultNodeVector>());
-                    _handler = std::make_unique<IntegerHandler<BoolResultNodeVector>>(updateResult());
-                } else if (preserveAccurateTypes) {
-                    switch (basicType) {
-                      case BasicType::INT8:
-                        setResultType(std::make_unique<Int8ResultNodeVector>());
-                        _handler = std::make_unique<IntegerHandler<Int8ResultNodeVector>>(updateResult());
-                        break;
-                      case BasicType::INT16:
-                        setResultType(std::make_unique<Int16ResultNodeVector>());
-                        _handler = std::make_unique<IntegerHandler<Int16ResultNodeVector>>(updateResult());
-                        break;
-                      case BasicType::INT32:
-                        setResultType(std::make_unique<Int32ResultNodeVector>());
-                        _handler = std::make_unique<IntegerHandler<Int32ResultNodeVector>>(updateResult());
-                        break;
-                      case BasicType::INT64:
-                        setResultType(std::make_unique<Int64ResultNodeVector>());
-                        _handler = std::make_unique<IntegerHandler<Int64ResultNodeVector>>(updateResult());
-                        break;
-                      default:
-                        throw std::runtime_error("This is no valid integer attribute " + attribute->getName());
-                        break;
-                    }
-                } else {
-                    setResultType(std::make_unique<IntegerResultNodeVector>());
-                    _handler = std::make_unique<IntegerHandler<IntegerResultNodeVector>>(updateResult());
-                }
-            } else {
-                if (basicType == BasicType::BOOL) {
-                    setResultType(std::make_unique<BoolResultNode>());
-                } else if (preserveAccurateTypes) {
-                    switch (basicType) {
-                      case BasicType::INT8:
-                        setResultType(std::make_unique<Int8ResultNode>());
-                        break;
-                      case BasicType::INT16:
-                        setResultType(std::make_unique<Int16ResultNode>());
-                        break;
-                      case BasicType::INT32:
-                        setResultType(std::make_unique<Int32ResultNode>());
-                        break;
-                      case BasicType::INT64:
-                        setResultType(std::make_unique<Int64ResultNode>());
-                        break;
-                      default:
-                        throw std::runtime_error("This is no valid integer attribute " + attribute->getName());
-                        break;
-                    }
-                } else {
-                    setResultType(std::make_unique<Int64ResultNode>());
-                }
-            }
-        } else if (attribute->isFloatingPointType()) {
-            if (_hasMultiValue) {
-                setResultType(std::make_unique<FloatResultNodeVector>());
-                _handler = std::make_unique<FloatHandler>(updateResult());
-            } else {
-                setResultType(std::make_unique<FloatResultNode>());
-            }
-        } else if (attribute->isStringType()) {
-            if (_hasMultiValue) {
-                if (_useEnumOptimization) {
-                    setResultType(std::make_unique<EnumResultNodeVector>());
-                    _handler = std::make_unique<EnumHandler>(updateResult());
-                } else {
-                    setResultType(std::make_unique<StringResultNodeVector>());
-                    _handler = std::make_unique<StringHandler>(updateResult());
-                }
-            } else {
-                if (_useEnumOptimization) {
-                    setResultType(std::make_unique<EnumResultNode>());
-                } else {
-                    setResultType(std::make_unique<StringResultNode>());
-                }
-            }
-        } else if (attribute->is_raw_type()) {
-            if (_hasMultiValue) {
-                throw std::runtime_error(make_string("Does not support multivalue raw attribute vector '%s'",
-                                                     attribute->getName().c_str()));
-            } else {
-                setResultType(std::make_unique<RawResultNode>());
-            }
+        auto[result, handler] = createResultAndHandler(preserveAccurateTypes, *attribute);
+        _handler = std::move(handler);
+        if (_index == nullptr) {
+            setResultType(std::move(result));
         } else {
-            throw std::runtime_error(make_string("Can not deduce correct resultclass for attribute vector '%s'",
-                                                 attribute->getName().c_str()));
+            assert(_hasMultiValue);
+            assert(_handler);
+            setResultType(result->createBaseType());
+            assert(result->inherits(ResultNodeVector::classId));
+            _keepAliveForIndexLookups.reset(dynamic_cast<ResultNodeVector *>(result.release()));
         }
     }
 }
@@ -287,10 +314,24 @@ void AttributeNode::EnumHandler::handle(const AttributeResult & r)
     }
 }
 
+void
+AttributeNode::setDocId(DocId docId) {
+    _scratchResult->setDocId(docId);
+    _needExecute = true;
+}
+
 bool AttributeNode::onExecute() const
 {
     if (_handler) {
-        _handler->handle(*_scratchResult);
+        if (_needExecute) {
+            _handler->handle(*_scratchResult);
+            _needExecute = false;
+        }
+        if (_index != nullptr) {
+            assert(_hasMultiValue);
+            assert(_keepAliveForIndexLookups);
+            updateResult().set(_keepAliveForIndexLookups->get(_index->get()));
+        }
     } else {
         updateResult().set(*_scratchResult);
     }

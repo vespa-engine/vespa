@@ -149,21 +149,20 @@ ArithmeticTypeConversion::getType(const ResultNode & arg1, const ResultNode & ar
 {
     size_t baseTypeId = getType(getBaseType2(arg1), getBaseType2(arg2));
     size_t dimension = std::max(getDimension(arg1), getDimension(arg2));
-    ResultNode::UP result;
     if (dimension == 0) {
         return ResultNode::UP(static_cast<ResultNode *>(Identifiable::classFromId(baseTypeId)->create()));
     } else if (dimension == 1) {
         if (baseTypeId == Int64ResultNode::classId) {
-            result.reset(new IntegerResultNodeVector());
+            return std::make_unique<IntegerResultNodeVector>();
         } else if (baseTypeId == FloatResultNode::classId) {
-            result.reset(new FloatResultNodeVector());
+            return std::make_unique<FloatResultNodeVector>();
         } else {
             throw std::runtime_error("We can not handle anything but numbers.");
         }
     } else {
         throw std::runtime_error("We are not able to handle multidimensional arrays");
     }
-    return result;
+    return ResultNode::UP();
 }
 
 ResultNode::UP

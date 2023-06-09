@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "currentindex.h"
 #include "functionnode.h"
 #include "attributeresult.h"
 #include <vespa/vespalib/objects/objectoperation.h>
@@ -19,7 +20,7 @@ public:
     class Configure : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
     {
     public:
-        Configure(const search::attribute::IAttributeContext & attrCtx) : _attrCtx(attrCtx) { }
+        Configure(const attribute::IAttributeContext & attrCtx) : _attrCtx(attrCtx) { }
     private:
         void execute(vespalib::Identifiable &obj) override {
             static_cast<ExpressionNode &>(obj).wireAttributes(_attrCtx);
@@ -28,7 +29,7 @@ public:
         bool check(const vespalib::Identifiable &obj) const override {
             return obj.inherits(ExpressionNode::classId);
         }
-        const search::attribute::IAttributeContext & _attrCtx;
+        const attribute::IAttributeContext & _attrCtx;
     };
 
     class CleanupAttributeReferences : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
@@ -42,12 +43,12 @@ public:
     DECLARE_EXPRESSIONNODE(AttributeNode);
     AttributeNode();
     AttributeNode(vespalib::stringref name);
-    AttributeNode(const search::attribute::IAttributeVector & attribute);
+    AttributeNode(const attribute::IAttributeVector & attribute);
     AttributeNode(const AttributeNode & attribute);
     AttributeNode & operator = (const AttributeNode & attribute);
     ~AttributeNode() override;
-    void setDocId(DocId docId) const { _scratchResult->setDocId(docId); }
-    const search::attribute::IAttributeVector *getAttribute() const {
+    void setDocId(DocId docId);
+    const attribute::IAttributeVector *getAttribute() const {
         return _scratchResult ? _scratchResult->getAttribute() : nullptr;
     }
     const vespalib::string & getAttributeName() const { return _attributeName; }
@@ -62,21 +63,26 @@ public:
         virtual void handle(const AttributeResult & r) = 0;
     };
 private:
+    std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<Handler>>
+    createResultAndHandler(bool preserveAccurateType, const attribute::IAttributeVector & attribute) const;
     template <typename V> class IntegerHandler;
     class FloatHandler;
     class StringHandler;
     class EnumHandler;
 protected:
     virtual void cleanup();
-    void wireAttributes(const search::attribute::IAttributeContext & attrCtx) override;
+    void wireAttributes(const attribute::IAttributeContext & attrCtx) override;
     void onPrepare(bool preserveAccurateTypes) override;
     bool onExecute() const override;
 
-    std::unique_ptr<AttributeResult> _scratchResult;
-    bool                             _hasMultiValue;
-    bool                             _useEnumOptimization;
-    std::unique_ptr<Handler>         _handler;
-    vespalib::string                 _attributeName;
+    std::unique_ptr<AttributeResult>  _scratchResult;
+    const CurrentIndex               *_index;
+    std::unique_ptr<ResultNodeVector> _keepAliveForIndexLookups;
+    bool                              _hasMultiValue;
+    bool                              _useEnumOptimization;
+    mutable bool                      _needExecute;
+    std::unique_ptr<Handler>          _handler;
+    vespalib::string                  _attributeName;
 };
 
 }
