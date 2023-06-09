@@ -10,12 +10,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -105,21 +108,38 @@ public class BundleTest {
 
     @Test
     void require_that_manifest_contains_public_api_for_this_bundle_and_embedded_bundles() {
-        assertEquals("com.yahoo.test,com.yahoo.vespa.defaults", mainAttributes.getValue("X-JDisc-PublicApi-Package"));
+        var publicApiAttribute = mainAttributes.getValue("X-JDisc-PublicApi-Package");
+        assertNotNull(publicApiAttribute);
+        var publicApi = Arrays.stream(publicApiAttribute.split(",")).collect(Collectors.toSet());
+
+        var expected = List.of("ai.vespa.lib.public_api", "com.yahoo.lib.public_api", "com.yahoo.test");
+        assertEquals(expected.size(), publicApi.size());
+        expected.forEach(pkg -> assertTrue(publicApi.contains(pkg), "Public api did not contain %s".formatted(pkg)));
     }
+
+    @Test
+    void require_that_manifest_contains_non_public_api_for_this_bundle_and_embedded_bundles() {
+        var nonPublicApiAttribute = mainAttributes.getValue("X-JDisc-Non-PublicApi-Export-Package");
+        assertNotNull(nonPublicApiAttribute);
+        var nonPublicApi = Arrays.stream(nonPublicApiAttribute.split(",")).collect(Collectors.toSet());
+
+        var expected = List.of("ai.vespa.lib.non_public", "com.yahoo.lib.non_public", "com.yahoo.non_public");
+        assertEquals(expected.size(), nonPublicApi.size());
+        expected.forEach(pkg -> assertTrue(nonPublicApi.contains(pkg), "Non-public api did not contain %s".formatted(pkg)));
+   }
 
     @Test
     void require_that_manifest_contains_bundle_class_path() {
         String bundleClassPath = mainAttributes.getValue("Bundle-ClassPath");
         assertTrue(bundleClassPath.contains(".,"));
 
-        Pattern jrtPattern = Pattern.compile("dependencies/defaults" + snapshotOrVersionOrNone);
-        assertTrue(jrtPattern.matcher(bundleClassPath).find(), "Bundle class path did not contain 'defaults''.");
+        Pattern jrtPattern = Pattern.compile("dependencies/export-packages-lib" + snapshotOrVersionOrNone);
+        assertTrue(jrtPattern.matcher(bundleClassPath).find(), "Bundle class path did not contain 'export-packages-lib''.");
     }
 
     @Test
     void require_that_component_jar_file_contains_compile_artifacts() {
-        String requiredDep = "dependencies/defaults";
+        String requiredDep = "dependencies/export-packages-lib";
         Pattern depPattern = Pattern.compile(requiredDep + snapshotOrVersionOrNone);
         ZipEntry depEntry = null;
 
@@ -133,7 +153,7 @@ public class BundleTest {
                 }
             }
         }
-        assertNotNull(depEntry, "Component jar file did not contain 'defaults' dependency.");
+        assertNotNull(depEntry, "Component jar file did not contain 'export-packages-lib' dependency.");
     }
 
 

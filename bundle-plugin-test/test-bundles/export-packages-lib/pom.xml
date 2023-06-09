@@ -11,22 +11,10 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>main</artifactId>
+  <artifactId>export-packages-lib</artifactId>
   <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
-  <dependencies>
-    <dependency>
-      <groupId>com.yahoo.vespa.bundle-plugin</groupId>
-      <artifactId>export-packages-lib</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <!-- Added to verify that module-info.class can be handled by bundle-plugin without throwing an exception. -->
-      <groupId>javax.xml.bind</groupId>
-      <artifactId>jaxb-api</artifactId>
-      <version>2.3.0</version>
-    </dependency>
-  </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -34,13 +22,8 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
+          <!-- Must be an internal bundle to get manifest header for non-public export packages -->
           <bundleType>INTERNAL</bundleType>
-          <Import-Package>
-            manualImport.withoutVersion,
-            manualImport.withVersion;version="12.3.4",
-            multiple.packages.with.the.same.version1;multiple.packages.with.the.same.version2;version="[1,2)"
-          </Import-Package>
-          <WebInfUrl>/WEB-INF/web.xml</WebInfUrl>
         </configuration>
       </plugin>
     </plugins>

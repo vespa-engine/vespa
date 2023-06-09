@@ -58,6 +58,12 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa.bundle-plugin</groupId>
+      <artifactId>export-packages-lib</artifactId>
+      <classifier>bundle</classifier>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa.bundle-plugin</groupId>
       <artifactId>non-public-api-usage</artifactId>
       <classifier>bundle</classifier>
       <version>${project.version}</version>
