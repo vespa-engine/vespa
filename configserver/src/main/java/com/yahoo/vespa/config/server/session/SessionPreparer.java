@@ -24,6 +24,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Tags;
@@ -344,7 +345,8 @@ public class SessionPreparer {
                                   params.quota(),
                                   params.tenantSecretStores(),
                                   params.operatorCertificates(),
-                                  params.cloudAccount());
+                                  params.cloudAccount(),
+                                  params.dataplaneTokens());
             checkTimeout("write state to zookeeper");
         }
 
@@ -385,7 +387,8 @@ public class SessionPreparer {
                                        Optional<Quota> quota,
                                        List<TenantSecretStore> tenantSecretStores,
                                        List<X509Certificate> operatorCertificates,
-                                       Optional<CloudAccount> cloudAccount) {
+                                       Optional<CloudAccount> cloudAccount,
+                                       List<DataplaneToken> dataplaneTokens) {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
@@ -399,6 +402,7 @@ public class SessionPreparer {
             zooKeeperClient.writeTenantSecretStores(tenantSecretStores);
             zooKeeperClient.writeOperatorCertificates(operatorCertificates);
             zooKeeperClient.writeCloudAccount(cloudAccount);
+            zooKeeperClient.writeDataplaneTokens(dataplaneTokens);
         } catch (RuntimeException | IOException e) {
             zkDeployer.cleanup();
             throw new RuntimeException("Error preparing session", e);
