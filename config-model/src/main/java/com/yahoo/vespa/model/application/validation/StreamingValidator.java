@@ -65,7 +65,17 @@ public class StreamingValidator extends Validator {
         // attribute indexing ourselves (IntegerIndex2Attribute)
         if (sd.getDataType() instanceof NumericDataType) return;
         // Tensor fields are only searchable via nearest neighbor search, and match semantics are irrelevant.
-        if (sd.getDataType() instanceof TensorDataType) return;
+        if (sd.getDataType() instanceof TensorDataType) {
+            for (var fieldAttribute : sd.getAttributes().values()) {
+                if (fieldAttribute.hnswIndexParams().isPresent()) {
+                    logger.logApplicationPackage(Level.WARNING,
+                            "For streaming search cluster '" + sc.getClusterName() +
+                                    "', SD field '" + sd.getName() +
+                                    "': hnsw index is not relevant and not supported, ignoring setting");
+                }
+            }
+            return;
+        }
         logger.logApplicationPackage(Level.WARNING, "For streaming search cluster '" + sc.getClusterName() +
                                                     "', SD field '" + sd.getName() +
                                                     "': 'attribute' has same match semantics as 'index'.");
