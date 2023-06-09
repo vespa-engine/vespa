@@ -39,8 +39,8 @@ public class NonPublicApiDetectionTest {
         var usedNonPublicApi = Arrays.stream(nonPublicApiAttribute.split(",")).collect(Collectors.toSet());
 
         assertEquals(2, usedNonPublicApi.size());
-        assertTrue(usedNonPublicApi.contains("ai.vespa.http"));
-        assertTrue(usedNonPublicApi.contains("com.yahoo.io"));
+        assertTrue(usedNonPublicApi.contains("ai.vespa.lib.non_public"));
+        assertTrue(usedNonPublicApi.contains("com.yahoo.lib.non_public"));
     }
 
 }

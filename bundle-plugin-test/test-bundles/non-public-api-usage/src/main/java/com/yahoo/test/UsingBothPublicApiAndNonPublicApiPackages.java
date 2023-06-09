@@ -3,13 +3,12 @@ package com.yahoo.test;
 
 public class UsingBothPublicApiAndNonPublicApiPackages {
 
-    com.yahoo.vespa.defaults.Defaults publicFromDefaults = null;
+    ai.vespa.lib.non_public.Foo    non_public_ai_vespa = null;
 
-    com.yahoo.text.BooleanParser publicFromVespajlib = null;
+    ai.vespa.lib.public_api.Foo    public_ai_vespa = null;
 
+    com.yahoo.lib.non_public.Foo   non_public_com_yahoo = null;
 
-    ai.vespa.http.DomainName nonPublic1 = null;
-
-    com.yahoo.io.ByteWriter nonPublic2 = null;
+    com.yahoo.lib.public_api.Foo   public_com_yahoo = null;
 
 }
