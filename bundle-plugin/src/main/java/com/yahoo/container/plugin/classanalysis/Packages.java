@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Utility methods related to packages.
@@ -37,19 +36,17 @@ public class Packages {
     }
 
     /**
-     * Returns the imported Vespa packages that don't exist in the given set of allowed packages.
+     * Returns the imported packages that exist in the given set of disallowed packages.
      */
-    public static List<String> disallowedVespaImports(Map<String, ImportPackages.Import> imports, List<String> allowed) {
+    public static List<String> disallowedImports(Map<String, ImportPackages.Import> imports, List<String> disallowed) {
         if (imports == null || imports.isEmpty()) return List.of();
 
-        var publicApi = allowed == null ? Set.of() : new HashSet<>(allowed);
+        var importedSet = new HashSet<>(imports.keySet());
+        var disallowedSet = disallowed == null ? Set.of() : new HashSet<>(disallowed);
 
-        Set<String> yahooImports = imports.keySet().stream()
-                .filter(pkg -> pkg.startsWith("com.yahoo") || pkg.startsWith("ai.vespa."))
-                .collect(Collectors.toSet());
-
-        List<String> disallowedImports = yahooImports.stream().collect(Collectors.groupingBy(publicApi::contains)).get(false);
-        return disallowedImports == null ? List.of() : disallowedImports;
+        return importedSet.stream()
+                .filter(disallowedSet::contains)
+                .toList();
     }
 
     public static PackageMetaData analyzePackages(Set<ClassFileMetaData> allClasses) {

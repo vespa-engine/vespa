@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.container.plugin.bundle.AnalyzeBundle.exportedPackagesAggregated;
-import static com.yahoo.container.plugin.bundle.AnalyzeBundle.publicApiPackagesAggregated;
-import static com.yahoo.container.plugin.classanalysis.Packages.disallowedVespaImports;
+import static com.yahoo.container.plugin.bundle.AnalyzeBundle.nonPublicApiPackagesAggregated;
+import static com.yahoo.container.plugin.classanalysis.Packages.disallowedImports;
 import static com.yahoo.container.plugin.osgi.ExportPackages.exportsByPackageName;
 import static com.yahoo.container.plugin.osgi.ImportPackages.calculateImports;
 import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
@@ -95,7 +95,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
             List<Artifact> providedJarArtifacts = artifactSet.getJarArtifactsProvided();
             List<File> providedJarFiles = providedJarArtifacts.stream().map(Artifact::getFile).toList();
             List<Export> exportedPackagesFromProvidedJars = exportedPackagesAggregated(providedJarFiles);
-            List<String> publicApiPackagesFromProvidedJars = publicApiPackagesAggregated(providedJarFiles);
+            List<String> nonPublicApiPackagesFromProvidedJars = nonPublicApiPackagesAggregated(providedJarFiles);
 
             // Packages from Export-Package/PublicApi headers in provided scoped jars
             Set<String> exportedPackagesFromProvidedDeps = ExportPackages.packageNames(exportedPackagesFromProvidedJars);
@@ -125,7 +125,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                                                                      includedPackages.definedPackages(),
                                                                      exportsByPackageName(exportedPackagesFromProvidedJars));
 
-            List<String> nonPublicApiUsed = disallowedVespaImports(calculatedImports, publicApiPackagesFromProvidedJars);
+            List<String> nonPublicApiUsed = disallowedImports(calculatedImports, nonPublicApiPackagesFromProvidedJars);
             logNonPublicApiUsage(nonPublicApiUsed);
 
             Map<String, String> manifestContent = generateManifestContent(artifactSet.getJarArtifactsToInclude(), calculatedImports, includedPackages);
