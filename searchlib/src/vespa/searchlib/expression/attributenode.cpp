@@ -172,7 +172,7 @@ AttributeNode::operator = (const AttributeNode & attr)
 }
 
 std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<AttributeNode::Handler>>
-AttributeNode::createResultAndHandler(bool preserveAccurateTypes, const attribute::IAttributeVector & attribute) const {
+AttributeNode::createResultHandler(bool preserveAccurateTypes, const attribute::IAttributeVector & attribute) const {
     BasicType::Type basicType = attribute.getBasicType();
     if (attribute.isIntegerType()) {
         if (_hasMultiValue) {
@@ -246,7 +246,7 @@ AttributeNode::onPrepare(bool preserveAccurateTypes)
 {
     const IAttributeVector * attribute = getAttribute();
     if (attribute != nullptr) {
-        auto[result, handler] = createResultAndHandler(preserveAccurateTypes, *attribute);
+        auto[result, handler] = createResultHandler(preserveAccurateTypes, *attribute);
         _handler = std::move(handler);
         if (_index == nullptr) {
             setResultType(std::move(result));

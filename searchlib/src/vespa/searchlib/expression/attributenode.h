@@ -64,8 +64,8 @@ public:
         virtual void handle(const AttributeResult & r) = 0;
     };
 private:
-    std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<Handler>>
-    createResultAndHandler(bool preserveAccurateType, const attribute::IAttributeVector & attribute) const;
+    virtual std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<Handler>>
+    createResultHandler(bool preserveAccurateType, const attribute::IAttributeVector & attribute) const;
     template <typename V> class IntegerHandler;
     class FloatHandler;
     class StringHandler;

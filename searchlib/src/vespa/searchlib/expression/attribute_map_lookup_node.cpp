@@ -217,6 +217,15 @@ getUndefinedValue(BasicType::Type basicType)
     }
 }
 
+template <typename ResultNodeType>
+std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<AttributeNode::Handler>>
+prepareIntValues(std::unique_ptr<AttributeMapLookupNode::KeyHandler> keyHandler, const IAttributeVector &attribute, IAttributeVector::largeint_t undefinedValue)
+{
+    auto resultNode = std::make_unique<ResultNodeType>();
+    auto handler = std::make_unique<IntegerValueHandler<ResultNodeType>>(std::move(keyHandler), attribute, *resultNode, undefinedValue);
+    return { std::move(resultNode), std::move(handler) };
+}
+
 }
 
 AttributeMapLookupNode::AttributeMapLookupNode()
@@ -246,17 +255,8 @@ AttributeMapLookupNode::~AttributeMapLookupNode() = default;
 AttributeMapLookupNode &
 AttributeMapLookupNode::operator=(const AttributeMapLookupNode &rhs) = default;
 
-template <typename ResultNodeType>
-void
-AttributeMapLookupNode::prepareIntValues(std::unique_ptr<KeyHandler> keyHandler, const IAttributeVector &attribute, IAttributeVector::largeint_t undefinedValue)
-{
-    auto resultNode = std::make_unique<ResultNodeType>();
-    _handler = std::make_unique<IntegerValueHandler<ResultNodeType>>(std::move(keyHandler), attribute, *resultNode, undefinedValue);
-    setResultType(std::move(resultNode));
-}
-
 std::unique_ptr<AttributeMapLookupNode::KeyHandler>
-AttributeMapLookupNode::makeKeyHandlerHelper()
+AttributeMapLookupNode::makeKeyHandlerHelper() const
 {
     const IAttributeVector &attribute = *_keyAttribute;
     if (_keySourceAttribute != nullptr) {
@@ -285,7 +285,7 @@ AttributeMapLookupNode::makeKeyHandlerHelper()
 }
 
 std::unique_ptr<AttributeMapLookupNode::KeyHandler>
-AttributeMapLookupNode::makeKeyHandler()
+AttributeMapLookupNode::makeKeyHandler() const
 {
     try {
         return makeKeyHandlerHelper();
@@ -294,57 +294,49 @@ AttributeMapLookupNode::makeKeyHandler()
     }
 }
 
-void
-AttributeMapLookupNode::onPrepare(bool preserveAccurateTypes)
-{
+std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<AttributeNode::Handler>>
+AttributeMapLookupNode::createResultHandler(bool preserveAccurateTypes, const attribute::IAttributeVector & attribute) const {
     auto keyHandler = makeKeyHandler();
-    const IAttributeVector * attribute = _scratchResult->getAttribute();
-    if (attribute != nullptr) {
-        BasicType::Type basicType = attribute->getBasicType();
-        if (attribute->isIntegerType()) {
-            IAttributeVector::largeint_t undefinedValue = getUndefinedValue(basicType);
-            if (preserveAccurateTypes) {
-                switch (basicType) {
+    BasicType::Type basicType = attribute.getBasicType();
+    if (attribute.isIntegerType()) {
+        IAttributeVector::largeint_t undefinedValue = getUndefinedValue(basicType);
+        if (preserveAccurateTypes) {
+            switch (basicType) {
                 case BasicType::INT8:
-                    prepareIntValues<Int8ResultNode>(std::move(keyHandler), *attribute, undefinedValue);
-                    break;
+                    return prepareIntValues<Int8ResultNode>(std::move(keyHandler), attribute, undefinedValue);
                 case BasicType::INT16:
-                    prepareIntValues<Int16ResultNode>(std::move(keyHandler), *attribute, undefinedValue);
-                    break;
+                    return prepareIntValues<Int16ResultNode>(std::move(keyHandler), attribute, undefinedValue);
                 case BasicType::INT32:
-                    prepareIntValues<Int32ResultNode>(std::move(keyHandler), *attribute, undefinedValue);
-                    break;
+                    return prepareIntValues<Int32ResultNode>(std::move(keyHandler), attribute, undefinedValue);
                 case BasicType::INT64:
-                    prepareIntValues<Int64ResultNode>(std::move(keyHandler), *attribute, undefinedValue);
-                    break;
+                    return prepareIntValues<Int64ResultNode>(std::move(keyHandler), attribute, undefinedValue);
                 default:
-                    throw std::runtime_error("This is no valid integer attribute " + attribute->getName());
-                }
-            } else {
-                prepareIntValues<Int64ResultNode>(std::move(keyHandler), *attribute, undefinedValue);
-            }
-        } else if (attribute->isFloatingPointType()) {
-            auto resultNode = std::make_unique<FloatResultNode>();
-            _handler = std::make_unique<FloatValueHandler>(std::move(keyHandler), *attribute, *resultNode, getUndefined<double>());
-            setResultType(std::move(resultNode));
-        } else if (attribute->isStringType()) {
-            if (_useEnumOptimization) {
-                auto resultNode = std::make_unique<EnumResultNode>();
-                const StringAttribute & sattr = dynamic_cast<const StringAttribute &>(*attribute);
-                EnumHandle undefined(0);
-                bool found = attribute->findEnum(sattr.defaultValue(), undefined);
-                assert(found);
-                _handler = std::make_unique<EnumValueHandler>(std::move(keyHandler), *attribute, *resultNode, undefined);
-                setResultType(std::move(resultNode));
-            } else {
-                auto resultNode = std::make_unique<StringResultNode>();
-                _handler = std::make_unique<StringValueHandler>(std::move(keyHandler), *attribute, *resultNode, "");
-                setResultType(std::move(resultNode));
+                    throw std::runtime_error("This is no valid integer attribute " + attribute.getName());
             }
         } else {
-            throw std::runtime_error(vespalib::make_string("Can not deduce correct resultclass for attribute vector '%s'",
-                                                           attribute->getName().c_str()));
+            return prepareIntValues<Int64ResultNode>(std::move(keyHandler), attribute, undefinedValue);
         }
+    } else if (attribute.isFloatingPointType()) {
+        auto resultNode = std::make_unique<FloatResultNode>();
+        auto handler = std::make_unique<FloatValueHandler>(std::move(keyHandler), attribute, *resultNode, getUndefined<double>());
+        return { std::move(resultNode), std::move(handler) };
+    } else if (attribute.isStringType()) {
+        if (_useEnumOptimization) {
+            auto resultNode = std::make_unique<EnumResultNode>();
+            const StringAttribute & sattr = dynamic_cast<const StringAttribute &>(attribute);
+            EnumHandle undefined(0);
+            bool found = attribute.findEnum(sattr.defaultValue(), undefined);
+            assert(found);
+            auto handler = std::make_unique<EnumValueHandler>(std::move(keyHandler), attribute, *resultNode, undefined);
+            return { std::move(resultNode), std::move(handler) };
+        } else {
+            auto resultNode = std::make_unique<StringResultNode>();
+            auto handler = std::make_unique<StringValueHandler>(std::move(keyHandler), attribute, *resultNode, "");
+            return { std::move(resultNode), std::move(handler) };
+        }
+    } else {
+        throw std::runtime_error(vespalib::make_string("Can not deduce correct resultclass for attribute vector '%s'",
+                                                       attribute.getName().c_str()));
     }
 }
 
