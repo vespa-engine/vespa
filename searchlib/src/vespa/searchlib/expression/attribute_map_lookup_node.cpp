@@ -25,10 +25,7 @@ class AttributeMapLookupNode::KeyHandler
 protected:
     const IAttributeVector &_attribute;
 
-    KeyHandler(const IAttributeVector &attribute)
-        : _attribute(attribute)
-    {
-    }
+    KeyHandler(const IAttributeVector &attribute) noexcept : _attribute(attribute) { }
 public:
     static uint32_t noKeyIdx() { return std::numeric_limits<uint32_t>::max(); }
     virtual ~KeyHandler() = default;
@@ -40,15 +37,13 @@ namespace {
 class BadKeyHandler : public AttributeMapLookupNode::KeyHandler
 {
 public:
-    BadKeyHandler(const IAttributeVector &attribute)
-        : KeyHandler(attribute)
-    {
-    }
+    BadKeyHandler(const IAttributeVector &attribute) noexcept : KeyHandler(attribute) { }
     uint32_t handle(DocId) override { return noKeyIdx(); }
 };
 
 template <typename KeyType>
-KeyType convertKey(const IAttributeVector &, const vespalib::string &key)
+KeyType
+convertKey(const IAttributeVector &, const vespalib::string &key)
 {
     KeyType ret;
     vespalib::asciistream is(key);
@@ -57,13 +52,15 @@ KeyType convertKey(const IAttributeVector &, const vespalib::string &key)
 }
 
 template <>
-vespalib::string convertKey<vespalib::string>(const IAttributeVector &, const vespalib::string &key)
+vespalib::string
+convertKey<vespalib::string>(const IAttributeVector &, const vespalib::string &key)
 {
     return key;
 }
 
 template <>
-EnumHandle convertKey<EnumHandle>(const IAttributeVector &attribute, const vespalib::string &key)
+EnumHandle
+convertKey<EnumHandle>(const IAttributeVector &attribute, const vespalib::string &key)
 {
     EnumHandle ret;
     if (!attribute.findEnum(key.c_str(), ret)) {
@@ -83,8 +80,7 @@ public:
         : KeyHandler(attribute),
           _keys(),
           _key(convertKey<KeyType>(attribute, key))
-    {
-    }
+    { }
     ~KeyHandlerT() override;
     uint32_t handle(DocId docId) override {
         _keys.fill(_attribute, docId);
@@ -107,15 +103,13 @@ using EnumKeyHandler    = KeyHandlerT<EnumHandle>;
 
 template <typename T>
 bool
-matchingKey(T lhs, T rhs)
-{
+matchingKey(T lhs, T rhs) {
     return lhs == rhs;
 }
 
 template <>
 bool
-matchingKey<const char *>(const char *lhs, const char *rhs)
-{
+matchingKey<const char *>(const char *lhs, const char *rhs) {
     return (strcmp(lhs, rhs) == 0);
 }
 
@@ -130,8 +124,7 @@ public:
         : KeyHandler(attribute),
           _keySourceAttribute(keySourceAttribute),
           _keys()
-    {
-    }
+    { }
     ~IndirectKeyHandlerT() override;
     uint32_t handle(DocId docId) override {
         T key = T();
@@ -158,11 +151,10 @@ class ValueHandler : public AttributeNode::Handler
 protected:
     std::unique_ptr<AttributeMapLookupNode::KeyHandler> _keyHandler;
     const IAttributeVector &_attribute;
-    ValueHandler(std::unique_ptr<AttributeMapLookupNode::KeyHandler> keyHandler, const IAttributeVector &attribute)
+    ValueHandler(std::unique_ptr<AttributeMapLookupNode::KeyHandler> keyHandler, const IAttributeVector &attribute) noexcept
         : _keyHandler(std::move(keyHandler)),
           _attribute(attribute)
-    {
-    }
+    { }
 };
 
 template <typename T, typename ResultNodeType>
@@ -172,13 +164,12 @@ class ValueHandlerT : public ValueHandler
     ResultNodeType &_result;
     T _undefinedValue;
 public:
-    ValueHandlerT(std::unique_ptr<AttributeMapLookupNode::KeyHandler> keyHandler, const IAttributeVector &attribute, ResultNodeType &result, T undefinedValue)
+    ValueHandlerT(std::unique_ptr<AttributeMapLookupNode::KeyHandler> keyHandler, const IAttributeVector &attribute, ResultNodeType &result, T undefinedValue) noexcept
         : ValueHandler(std::move(keyHandler), attribute),
           _values(),
           _result(result),
           _undefinedValue(undefinedValue)
-    {
-    }
+    { }
     void handle(const AttributeResult & r) override {
         uint32_t docId = r.getDocId();
         uint32_t keyIdx  = _keyHandler->handle(docId);
@@ -199,7 +190,8 @@ using FloatValueHandler   = ValueHandlerT<double, FloatResultNode>;
 using StringValueHandler  = ValueHandlerT<const char *, StringResultNode>;
 using EnumValueHandler    = ValueHandlerT<EnumHandle, EnumResultNode>;
 
-const IAttributeVector *findAttribute(const search::attribute::IAttributeContext &attrCtx, bool useEnumOptimization, const vespalib::string &name)
+const IAttributeVector *
+findAttribute(const search::attribute::IAttributeContext &attrCtx, bool useEnumOptimization, const vespalib::string &name)
 {
     const IAttributeVector *attribute = useEnumOptimization ? attrCtx.getAttributeStableEnum(name) : attrCtx.getAttribute(name);
     if (attribute == nullptr) {
@@ -208,7 +200,8 @@ const IAttributeVector *findAttribute(const search::attribute::IAttributeContext
     return attribute;
 }
 
-IAttributeVector::largeint_t getUndefinedValue(BasicType::Type basicType)
+IAttributeVector::largeint_t
+getUndefinedValue(BasicType::Type basicType)
 {
     switch (basicType) {
     case BasicType::INT8:
@@ -234,8 +227,7 @@ AttributeMapLookupNode::AttributeMapLookupNode()
       _keySourceAttributeName(),
       _keyAttribute(nullptr),
       _keySourceAttribute(nullptr)
-{
-}
+{ }
 
 AttributeMapLookupNode::AttributeMapLookupNode(const AttributeMapLookupNode &) = default;
 
@@ -247,8 +239,7 @@ AttributeMapLookupNode::AttributeMapLookupNode(vespalib::stringref name, vespali
       _keySourceAttributeName(keySourceAttributeName),
       _keyAttribute(nullptr),
       _keySourceAttribute(nullptr)
-{
-}
+{ }
 
 AttributeMapLookupNode::~AttributeMapLookupNode() = default;
 
@@ -377,13 +368,15 @@ AttributeMapLookupNode::wireAttributes(const search::attribute::IAttributeContex
     }
 }
 
-Serializer & AttributeMapLookupNode::onSerialize(Serializer & os) const
+Serializer &
+AttributeMapLookupNode::onSerialize(Serializer & os) const
 {
     AttributeNode::onSerialize(os);
     return os << _keyAttributeName << _valueAttributeName << _key << _keySourceAttributeName;
 }
 
-Deserializer & AttributeMapLookupNode::onDeserialize(Deserializer & is)
+Deserializer &
+AttributeMapLookupNode::onDeserialize(Deserializer & is)
 {
     AttributeNode::onDeserialize(is);
     return is >> _keyAttributeName >> _valueAttributeName >> _key >> _keySourceAttributeName;

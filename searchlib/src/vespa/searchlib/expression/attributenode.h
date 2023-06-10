@@ -48,6 +48,7 @@ public:
     AttributeNode & operator = (const AttributeNode & attribute);
     ~AttributeNode() override;
     void setDocId(DocId docId);
+    void setCurrentIndex(const CurrentIndex * index) { _index = index; }
     const attribute::IAttributeVector *getAttribute() const {
         return _scratchResult ? _scratchResult->getAttribute() : nullptr;
     }

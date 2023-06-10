@@ -19,10 +19,10 @@ template <typename V>
 class AttributeNode::IntegerHandler : public AttributeNode::Handler
 {
 public:
-    IntegerHandler(ResultNode & result) noexcept :
-        Handler(),
-        _vector(((V &)result).getVector()),
-        _wVector()
+    IntegerHandler(ResultNode & result) noexcept
+        : Handler(),
+          _vector(((V &)result).getVector()),
+          _wVector()
     { }
     void handle(const AttributeResult & r) override;
 private:
@@ -33,10 +33,10 @@ private:
 class AttributeNode::FloatHandler : public AttributeNode::Handler
 {
 public:
-    FloatHandler(ResultNode & result) noexcept :
-        Handler(),
-        _vector(((FloatResultNodeVector &)result).getVector()),
-        _wVector()
+    FloatHandler(ResultNode & result) noexcept
+        : Handler(),
+          _vector(((FloatResultNodeVector &)result).getVector()),
+          _wVector()
     { }
     void handle(const AttributeResult & r) override;
 private:
@@ -47,10 +47,10 @@ private:
 class AttributeNode::StringHandler : public AttributeNode::Handler
 {
 public:
-    StringHandler(ResultNode & result) noexcept :
-        Handler(),
-        _vector(((StringResultNodeVector &)result).getVector()),
-        _wVector()
+    StringHandler(ResultNode & result) noexcept
+        : Handler(),
+          _vector(((StringResultNodeVector &)result).getVector()),
+          _wVector()
     { }
     void handle(const AttributeResult & r) override;
 private:
@@ -61,10 +61,10 @@ private:
 class AttributeNode::EnumHandler : public AttributeNode::Handler
 {
 public:
-    EnumHandler(ResultNode & result) noexcept :
-        Handler(),
-        _vector(((EnumResultNodeVector &)result).getVector()),
-        _wVector()
+    EnumHandler(ResultNode & result) noexcept
+        : Handler(),
+          _vector(((EnumResultNodeVector &)result).getVector()),
+          _wVector()
     { }
     void handle(const AttributeResult & r) override;
 private:
@@ -116,39 +116,40 @@ AttributeNode::AttributeNode() :
 
 AttributeNode::~AttributeNode() = default;
 
-AttributeNode::AttributeNode(vespalib::stringref name) :
-    FunctionNode(),
-    _scratchResult(std::make_unique<AttributeResult>()),
-    _index(nullptr),
-    _keepAliveForIndexLookups(),
-    _hasMultiValue(false),
-    _useEnumOptimization(false),
-    _needExecute(true),
-    _handler(),
-    _attributeName(name)
-{}
-AttributeNode::AttributeNode(const IAttributeVector & attribute) :
-    FunctionNode(),
-    _scratchResult(createResult(&attribute)),
-    _index(nullptr),
-    _keepAliveForIndexLookups(),
-    _hasMultiValue(attribute.hasMultiValue()),
-    _useEnumOptimization(false),
-    _needExecute(true),
-    _handler(),
-    _attributeName(attribute.getName())
+AttributeNode::AttributeNode(vespalib::stringref name)
+    : FunctionNode(),
+      _scratchResult(std::make_unique<AttributeResult>()),
+      _index(nullptr),
+      _keepAliveForIndexLookups(),
+      _hasMultiValue(false),
+      _useEnumOptimization(false),
+      _needExecute(true),
+      _handler(),
+      _attributeName(name)
 {}
 
-AttributeNode::AttributeNode(const AttributeNode & attribute) :
-    FunctionNode(attribute),
-    _scratchResult(attribute._scratchResult->clone()),
-    _index(nullptr),
-    _keepAliveForIndexLookups(),
-    _hasMultiValue(attribute._hasMultiValue),
-    _useEnumOptimization(attribute._useEnumOptimization),
-    _needExecute(true),
-    _handler(),
-    _attributeName(attribute._attributeName)
+AttributeNode::AttributeNode(const IAttributeVector & attribute)
+    : FunctionNode(),
+      _scratchResult(createResult(&attribute)),
+      _index(nullptr),
+      _keepAliveForIndexLookups(),
+      _hasMultiValue(attribute.hasMultiValue()),
+      _useEnumOptimization(false),
+      _needExecute(true),
+      _handler(),
+      _attributeName(attribute.getName())
+{}
+
+AttributeNode::AttributeNode(const AttributeNode & attribute)
+    : FunctionNode(attribute),
+      _scratchResult(attribute._scratchResult->clone()),
+      _index(nullptr),
+      _keepAliveForIndexLookups(),
+      _hasMultiValue(attribute._hasMultiValue),
+      _useEnumOptimization(attribute._useEnumOptimization),
+      _needExecute(true),
+      _handler(),
+      _attributeName(attribute._attributeName)
 {
     _scratchResult->setDocId(0);
 }
@@ -164,7 +165,6 @@ AttributeNode::operator = (const AttributeNode & attr)
         _scratchResult.reset(attr._scratchResult->clone());
         _scratchResult->setDocId(0);
         _handler.reset();
-        _index = nullptr;
         _keepAliveForIndexLookups.reset();
         _needExecute = true;
     }
@@ -215,24 +215,18 @@ AttributeNode::createResultAndHandler(bool preserveAccurateTypes, const attribut
             }
         }
     } else if (attribute.isFloatingPointType()) {
-        if (_hasMultiValue) {
-            return createMulti<FloatResultNodeVector, FloatHandler>();
-        } else {
-            return createSingle<FloatResultNode>();
-        }
+        return (_hasMultiValue)
+                ? createMulti<FloatResultNodeVector, FloatHandler>()
+                : createSingle<FloatResultNode>();
     } else if (attribute.isStringType()) {
         if (_hasMultiValue) {
-            if (_useEnumOptimization) {
-                return createMulti<EnumResultNodeVector, EnumHandler>();
-            } else {
-                return createMulti<StringResultNodeVector, StringHandler>();
-            }
+            return (_useEnumOptimization)
+                    ? createMulti<EnumResultNodeVector, EnumHandler>()
+                    : createMulti<StringResultNodeVector, StringHandler>();
         } else {
-            if (_useEnumOptimization) {
-                return createSingle<EnumResultNode>();
-            } else {
-                return createSingle<StringResultNode>();
-            }
+            return (_useEnumOptimization)
+                    ? createSingle<EnumResultNode>()
+                    : createSingle<StringResultNode>();
         }
     } else if (attribute.is_raw_type()) {
         if (_hasMultiValue) {
@@ -303,7 +297,8 @@ AttributeNode::StringHandler::handle(const AttributeResult & r)
     }
 }
 
-void AttributeNode::EnumHandler::handle(const AttributeResult & r)
+void
+AttributeNode::EnumHandler::handle(const AttributeResult & r)
 {
     size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
     _vector.resize(numValues);
@@ -320,17 +315,18 @@ AttributeNode::setDocId(DocId docId) {
     _needExecute = true;
 }
 
-bool AttributeNode::onExecute() const
+bool
+AttributeNode::onExecute() const
 {
     if (_handler) {
         if (_needExecute) {
             _handler->handle(*_scratchResult);
             _needExecute = false;
         }
-        if (_index != nullptr) {
+        if ((_index != nullptr) && !_keepAliveForIndexLookups->empty()) {
             assert(_hasMultiValue);
-            assert(_keepAliveForIndexLookups);
-            updateResult().set(_keepAliveForIndexLookups->get(_index->get()));
+            size_t idx = std::min(size_t(_index->get()), _keepAliveForIndexLookups->size() - 1);
+            updateResult().set(_keepAliveForIndexLookups->get(idx));
         }
     } else {
         updateResult().set(*_scratchResult);

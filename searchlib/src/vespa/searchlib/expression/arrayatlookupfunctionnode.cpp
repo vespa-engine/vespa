@@ -1,157 +1,97 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "arrayatlookupfunctionnode.h"
-#include "floatresultnode.h"
-#include "integerresultnode.h"
-#include "stringresultnode.h"
-#include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/objects/serializer.hpp>
+#include <vespa/vespalib/objects/deserializer.hpp>
 
 namespace search::expression {
 
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
-IMPLEMENT_EXPRESSIONNODE(ArrayAtLookup, UnaryFunctionNode);
+IMPLEMENT_EXPRESSIONNODE(ArrayAtLookup, AttributeNode);
 
 ArrayAtLookup::ArrayAtLookup() noexcept
-    : _attributeName(),
-      _attribute(nullptr),
-      _docId(0),
-      _basicAttributeType(BAT_STRING)
+    : AttributeNode(),
+      _currentIndex(),
+      _indexExpression()
 {
+    setCurrentIndex(&_currentIndex);
 }
 
 ArrayAtLookup::~ArrayAtLookup() = default;
+ArrayAtLookup & ArrayAtLookup::operator=(const ArrayAtLookup &rhs) = default;
 
-ArrayAtLookup::ArrayAtLookup(const vespalib::string &attribute, ExpressionNode::UP arg)
-    : UnaryFunctionNode(std::move(arg)),
-      _attributeName(attribute)
+ArrayAtLookup::ArrayAtLookup(const vespalib::string &attribute, ExpressionNode::UP indexExpr)
+    : AttributeNode(attribute),
+      _currentIndex(),
+      _indexExpression(std::move(indexExpr))
 {
+    setCurrentIndex(&_currentIndex);
 }
 
 ArrayAtLookup::ArrayAtLookup(const search::attribute::IAttributeVector &attr,
-                             ExpressionNode::UP indexArg)
-    : UnaryFunctionNode(std::move(indexArg)),
-      _attributeName(attr.getName()),
-      _attribute(&attr)
+                             ExpressionNode::UP indexExpr)
+    : AttributeNode(attr),
+      _currentIndex(),
+      _indexExpression(std::move(indexExpr))
 {
+    setCurrentIndex(&_currentIndex);
 }
 
-
-ArrayAtLookup::ArrayAtLookup(const ArrayAtLookup &rhs) :
-    UnaryFunctionNode(rhs),
-    _attributeName(rhs._attributeName),
-    _attribute(rhs._attribute),
-    _docId(0),
-    _basicAttributeType(rhs._basicAttributeType)
+ArrayAtLookup::ArrayAtLookup(const ArrayAtLookup &rhs)
+    : AttributeNode(rhs),
+      _currentIndex(),
+      _indexExpression(rhs._indexExpression)
 {
+    setCurrentIndex(&_currentIndex);
 }
 
-ArrayAtLookup & ArrayAtLookup::operator= (const ArrayAtLookup &rhs)
+bool
+ArrayAtLookup::onExecute() const
 {
-    if (this != &rhs) {
-        UnaryFunctionNode::operator =(rhs);
-        _attributeName = rhs._attributeName;
-        _attribute = rhs._attribute;
-        _docId = 0;
-        _basicAttributeType = rhs._basicAttributeType;
-    }
-    return *this;
-}
-
-void ArrayAtLookup::onPrepareResult()
-{
-    if (_attribute->isIntegerType()) {
-        _basicAttributeType = BAT_INT;
-        setResultType(std::make_unique<Int64ResultNode>());
-    } else if (_attribute->isFloatingPointType()) {
-        _basicAttributeType = BAT_FLOAT;
-        setResultType(std::make_unique<FloatResultNode>());
-    } else {
-        _basicAttributeType = BAT_STRING;
-        setResultType(std::make_unique<StringResultNode>());
-    }
-}
-
-bool ArrayAtLookup::onExecute() const
-{
-    getArg().execute();
-    int64_t idx = getArg().getResult()->getInteger();
-    // get attribute data
-    size_t numValues = _attribute->getValueCount(_docId);
-    if (idx < 0) {
-        idx = 0;
-    }
-    if (idx >= (int64_t)numValues) {
-        idx = numValues - 1;
-    }
-
-    if (_basicAttributeType == BAT_FLOAT) {
-        std::vector<search::attribute::IAttributeVector::WeightedFloat> wVector;
-        wVector.resize(numValues);
-        _attribute->get(_docId, &wVector[0], numValues);
-        std::vector<double> tmp;
-        tmp.resize(numValues);
-        for (size_t i = 0; i < numValues; ++i) {
-            tmp[i] = wVector[i].getValue();
-        }
-        double result = 0;
-        if (idx >= 0 && idx < (int64_t)numValues) {
-            result = tmp[idx];
-        }
-        static_cast<FloatResultNode &>(updateResult()).set(result);
-    } else if (_basicAttributeType == BAT_INT) {
-        std::vector<search::attribute::IAttributeVector::WeightedInt> wVector;
-        wVector.resize(numValues);
-        _attribute->get(_docId, &wVector[0], numValues);
-        std::vector<int64_t> tmp;
-        tmp.resize(numValues);
-        for (size_t i = 0; i < numValues; ++i) {
-            tmp[i] = wVector[i].getValue();
-        }
-        int64_t result = 0;
-        if (idx >= 0 && idx < (int64_t)numValues) {
-            result = tmp[idx];
-        }
-        static_cast<Int64ResultNode &>(updateResult()).set(result);
-    } else {
-        std::vector<search::attribute::IAttributeVector::WeightedString> wVector;
-        wVector.resize(numValues);
-        _attribute->get(_docId, &wVector[0], numValues);
-        std::vector<vespalib::string> tmp;
-        tmp.resize(numValues);
-        for (size_t i = 0; i < numValues; ++i) {
-            tmp[i] = wVector[i].getValue();
-        }
-        vespalib::string result;
-        if (idx >= 0 && idx < (int64_t)numValues) {
-            result = tmp[idx];
-        }
-        static_cast<StringResultNode &>(updateResult()).set(result);
-    }
+    _indexExpression->execute();
+    int64_t idx = _indexExpression->getResult()->getInteger();
+    _currentIndex.set(idx);
+    AttributeNode::onExecute();
     return true;
 }
 
-void ArrayAtLookup::wireAttributes(const search::attribute::IAttributeContext & attrCtx)
+Serializer &
+ArrayAtLookup::onSerialize(Serializer & os) const
 {
-    _attribute = attrCtx.getAttribute(_attributeName);
-    if (_attribute == nullptr) {
-        throw std::runtime_error(vespalib::make_string("Failed locating attribute vector '%s'", _attributeName.c_str()));
-    }
-}
-
-Serializer & ArrayAtLookup::onSerialize(Serializer & os) const
-{
-    UnaryFunctionNode::onSerialize(os);
+    FunctionNode::onSerialize(os);
+    std::vector<ExpressionNode::CP> args;
+    args.emplace_back(_indexExpression);
+    os << args;
     os << _attributeName;
     return os;
 }
 
-Deserializer & ArrayAtLookup::onDeserialize(Deserializer & is)
+Deserializer &
+ArrayAtLookup::onDeserialize(Deserializer & is)
 {
-    UnaryFunctionNode::onDeserialize(is);
+    FunctionNode::onDeserialize(is);
+    std::vector<ExpressionNode::CP> args;
+    is >> args;
+    _indexExpression = std::move(args[0]);
     is >> _attributeName;
     return is;
+}
+
+void
+ArrayAtLookup::visitMembers(vespalib::ObjectVisitor &visitor) const
+{
+    AttributeNode::visitMembers(visitor);
+    visit(visitor, "index", *_indexExpression);
+}
+
+void
+ArrayAtLookup::selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation)
+{
+    AttributeNode::selectMembers(predicate, operation);
+    if (_indexExpression) {
+        _indexExpression->selectMembers(predicate, operation);
+    }
 }
 
 }
