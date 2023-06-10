@@ -6,14 +6,14 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Returns the semantic rules config form a set of rule bases.
+ * Returns the semantic rules config from a set of rule bases.
  * Owned by a container cluster
  *
  * @author bratseth
  */
 public class SemanticRules implements Serializable, SemanticRulesConfig.Producer {
 
-    private List<RuleBase> ruleBases;
+    private final List<RuleBase> ruleBases;
 
     public SemanticRules(List<RuleBase> ruleBases) {
         this.ruleBases = ruleBases;
@@ -45,7 +45,6 @@ public class SemanticRules implements Serializable, SemanticRulesConfig.Producer
             ruleBaseBuilder.rules(rules);
             return ruleBaseBuilder;
         }
-
 
     }
 
