@@ -12,9 +12,7 @@ import com.yahoo.prelude.semantics.parser.ParseException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -62,11 +60,9 @@ public class SemanticRuleBuilder {
     private void ensureZeroOrOneDefaultRule(SemanticRulesConfig config) {
         String defaultName = null;
         for (SemanticRulesConfig.Rulebase ruleBase : config.rulebase()) {
-            if (defaultName != null && ruleBase.isdefault()) {
-                List<String> defaultRules = new ArrayList<>(List.of(defaultName, ruleBase.name()));
-                defaultRules.sort(String::compareTo);
-                throw new IllegalArgumentException("Rules " + defaultRules + " are both marked as the default rule, there can only be one");
-            }
+            if (defaultName != null && ruleBase.isdefault())
+                throw new IllegalArgumentException("Both '" + defaultName + "' and '" + ruleBase.name() +
+                                                    "' is marked as default rule, there can only be one");
             if (ruleBase.isdefault())
                 defaultName = ruleBase.name();
         }

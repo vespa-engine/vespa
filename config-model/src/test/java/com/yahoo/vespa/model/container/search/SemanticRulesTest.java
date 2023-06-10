@@ -60,7 +60,7 @@ public class SemanticRulesTest {
             new SemanticRuleBuilder().build(FilesApplicationPackage.fromFile(new File(rootWithDuplicateDefault)));
             fail("should fail with exception");
         } catch (Exception e) {
-            assertEquals("Rules [one, other] are both marked as the default rule, there can only be one", e.getMessage());
+            assertEquals("Both 'one' and 'other' is marked as default rule, there can only be one", e.getMessage());
         }
     }
 
