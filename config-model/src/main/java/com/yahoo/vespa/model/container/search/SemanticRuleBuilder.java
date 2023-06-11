@@ -25,7 +25,7 @@ import java.util.Map;
 // TODO: Move into SemanticRules
 public class SemanticRuleBuilder {
 
-    /** Build the set of semantic rules for an application package and validates them */
+    /** Builds the semantic rules for an application package and validates them */
     public SemanticRules build(ApplicationPackage applicationPackage) {
         var ruleFiles = applicationPackage.getFiles(ApplicationPackage.RULES_DIR, "sr");
         var rules = new SemanticRules(ruleFiles.stream().map(this::toRuleBaseConfigView).toList());
@@ -73,7 +73,7 @@ public class SemanticRuleBuilder {
     }
 
     static Map<String, RuleBase> toMap(SemanticRulesConfig config) throws ParseException, IOException {
-        RuleImporter ruleImporter = new RuleImporter(config, new SimpleLinguistics());
+        RuleImporter ruleImporter = new RuleImporter(config, true, new SimpleLinguistics());
         Map<String, RuleBase> ruleBaseMap = new HashMap<>();
         for (SemanticRulesConfig.Rulebase ruleBaseConfig : config.rulebase()) {
             RuleBase ruleBase = ruleImporter.importConfig(ruleBaseConfig);
