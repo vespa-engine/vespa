@@ -3,6 +3,7 @@
 namespace=prelude.semantics
 
 # Whether we should use these rule bases in pre-Vespa 2.2 compatibility mode
+# TODO: Unused, remove in Vespa 9
 compatibility bool default=false
 
 # The name of a rule base
