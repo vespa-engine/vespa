@@ -220,7 +220,7 @@ void Grouping::aggregate(const RankedHit * rankedHit, unsigned int len)
     preAggregate(isOrdered);
     HitsAggregationResult::SetOrdered pred;
     select(pred, pred);
-    if (_clock == NULL) {
+    if (_clock == nullptr) {
         aggregateWithoutClock(rankedHit, getMaxN(len));
     } else {
         aggregateWithClock(rankedHit, getMaxN(len));
@@ -231,14 +231,14 @@ void Grouping::aggregate(const RankedHit * rankedHit, unsigned int len)
 void Grouping::aggregate(const RankedHit * rankedHit, unsigned int len, const BitVector * bVec)
 {
     preAggregate(false);
-    if (_clock == NULL) {
+    if (_clock == nullptr) {
         aggregateWithoutClock(rankedHit, getMaxN(len));
     } else {
         aggregateWithClock(rankedHit, getMaxN(len));
     }
-    if (bVec != NULL) {
+    if (bVec != nullptr) {
         unsigned int sz(bVec->size());
-        if (_clock == NULL) {
+        if (_clock == nullptr) {
             if (getTopN() > 0) {
                 for(DocId d(bVec->getFirstTrueBit()), i(0), m(getMaxN(sz)); (d < sz) && (i < m); d = bVec->getNextTrueBit(d+1), i++) {
                     aggregate(d, 0.0);
@@ -291,12 +291,12 @@ void Grouping::sortById()
 
 void Grouping::configureStaticStuff(const ConfigureStaticParams & params)
 {
-    if (params._attrCtx != NULL) {
+    if (params._attrCtx != nullptr) {
         AttributeNode::Configure confAttr(*params._attrCtx);
         select(confAttr, confAttr);
     }
 
-    if (params._docType != NULL) {
+    if (params._docType != nullptr) {
         DocumentAccessorNode::Configure confDoc(*params._docType);
         select(confDoc, confDoc);
     }
