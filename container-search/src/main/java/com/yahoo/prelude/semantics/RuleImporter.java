@@ -1,18 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics;
 
+import com.yahoo.io.IOUtils;
+import com.yahoo.language.Linguistics;
+import com.yahoo.prelude.semantics.parser.ParseException;
+import com.yahoo.prelude.semantics.parser.SemanticsParser;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.Arrays;
-import java.util.List;
-
-import com.yahoo.io.IOUtils;
-import com.yahoo.language.Linguistics;
-import com.yahoo.prelude.semantics.parser.ParseException;
-import com.yahoo.prelude.semantics.parser.SemanticsParser;
 
 /**
  * Imports rule bases from various sources.
@@ -22,10 +20,10 @@ import com.yahoo.prelude.semantics.parser.SemanticsParser;
 // Uses the JavaCC-generated parser to read rule bases.
 // This is an intermediate between the parser and the rule base being loaded
 // on implementation of some directives, for example, it knows where to find
-// rule bases included into others, while neither the rule base or the parser knows.
+// rule bases included into others, while neither the rule base nor the parser knows.
 public class RuleImporter {
 
-    /** If this is set, imported rule bases are looked up in this config otherwise, they are looked up as files. */
+    /** If this is set, imported rule bases are looked up in this config, otherwise they are looked up as files. */
     private final SemanticRulesConfig config;
 
     /** Ignore requests to read automata files. Useful to validate rule bases without having automatas present. */
@@ -34,7 +32,7 @@ public class RuleImporter {
     /** Ignore requests to include files. Useful to validate rule bases one by one in config. */
     private final boolean ignoreIncludes;
 
-    private Linguistics linguistics;
+    private final Linguistics linguistics;
 
     /** Create a rule importer which will read from file */
     public RuleImporter(Linguistics linguistics) {
@@ -108,22 +106,6 @@ public class RuleImporter {
         }
     }
 
-    /** Imports all the rule files (files ending by "sr") in the given directory */
-    public List<RuleBase> importDir(String ruleBaseDir) throws IOException, ParseException {
-        File ruleBaseDirFile = new File(ruleBaseDir);
-        if ( ! ruleBaseDirFile.exists())
-            throw new IOException("Rule base dir '" + ruleBaseDirFile.getAbsolutePath() + "' does not exist");
-        File[] files = ruleBaseDirFile.listFiles();
-        Arrays.sort(files);
-        List<RuleBase> ruleBases = new java.util.ArrayList<>();
-        for (File file : files) {
-            if ( ! file.getName().endsWith(".sr")) continue;
-            RuleBase base = importFile(file.getAbsolutePath());
-            ruleBases.add(base);
-        }
-        return ruleBases;
-    }
-
     /** Read and include a rule base in another */
     public void include(String ruleBaseName, RuleBase ruleBase) throws java.io.IOException, ParseException {
         if (ignoreIncludes) return;
@@ -137,7 +119,7 @@ public class RuleImporter {
         ruleBase.include(include);
     }
 
-    /** Returns an unitialized rule base */
+    /** Returns an uninitialized rule base */
     private RuleBase privateImportFromDirectory(String ruleBaseName, RuleBase ruleBase) throws IOException, ParseException {
         String includeDir = new File(ruleBase.getSource()).getParentFile().getAbsolutePath();
         if (!ruleBaseName.endsWith(".sr"))
@@ -148,7 +130,7 @@ public class RuleImporter {
         return privateImportFile(importFile.getPath(), null);
     }
 
-    /** Returns an unitialized rule base */
+    /** Returns an uninitialized rule base */
     private RuleBase privateImportFromConfig(String ruleBaseName) throws ParseException {
         SemanticRulesConfig.Rulebase ruleBaseConfig = findRuleBaseConfig(config,ruleBaseName);
         if (ruleBaseConfig == null)
@@ -159,10 +141,9 @@ public class RuleImporter {
     }
 
     private SemanticRulesConfig.Rulebase findRuleBaseConfig(SemanticRulesConfig config, String ruleBaseName) {
-        for (Object aRulebase : config.rulebase()) {
-            SemanticRulesConfig.Rulebase ruleBaseConfig = (SemanticRulesConfig.Rulebase)aRulebase;
-            if (ruleBaseConfig.name().equals(ruleBaseName))
-                return ruleBaseConfig;
+        for (SemanticRulesConfig.Rulebase ruleBase : config.rulebase()) {
+            if (ruleBase.name().equals(ruleBaseName))
+                return ruleBase;
         }
         return null;
     }
@@ -180,39 +161,28 @@ public class RuleImporter {
         return fileName.substring(0, lastDotIndex);
     }
 
-    public RuleBase importString(String string, String automataFile) throws IOException, ParseException {
+    public RuleBase importString(String string, String automataFile) throws ParseException {
         return importString(string, automataFile, null, null);
     }
 
-    public RuleBase importString(String string, String automataFile, String sourceName) throws IOException, ParseException {
-        return importString(string, automataFile, sourceName, null);
-    }
-
-    public RuleBase importString(String string, String automataFile, RuleBase ruleBase) throws IOException, ParseException {
-        return importString(string, automataFile, null, ruleBase);
-    }
-
-    public RuleBase importString(String string, String automataFile, String sourceName, RuleBase ruleBase) throws IOException, ParseException {
+    public RuleBase importString(String string, String automataFile, String sourceName, RuleBase ruleBase) throws ParseException {
         return importFromReader(new StringReader(string), sourceName, automataFile, ruleBase);
     }
 
-    public RuleBase importConfig(SemanticRulesConfig.Rulebase ruleBaseConfig) throws IOException, ParseException {
+    public RuleBase importConfig(SemanticRulesConfig.Rulebase ruleBaseConfig) throws ParseException {
         RuleBase ruleBase = privateImportConfig(ruleBaseConfig);
         ruleBase.initialize();
         return ruleBase;
     }
 
-    /** Imports an unitialized rule base */
+    /** Imports an uninitialized rule base */
     public RuleBase privateImportConfig(SemanticRulesConfig.Rulebase ruleBaseConfig) throws ParseException {
         if (config == null) throw new IllegalStateException("Must initialize with config if importing from config");
         RuleBase ruleBase = new RuleBase(ruleBaseConfig.name());
         return privateImportFromReader(new StringReader(ruleBaseConfig.rules()),
-                                       "semantic-rules.cfg",
-                                       ruleBaseConfig.automata(),ruleBase);
-    }
-
-    public RuleBase importFromReader(Reader reader, String sourceInfo, String automataFile) throws ParseException {
-        return importFromReader(reader, sourceInfo, automataFile, null);
+                                       ruleBaseConfig.name(),
+                                       ruleBaseConfig.automata(),
+                                       ruleBase);
     }
 
     /**
@@ -230,27 +200,28 @@ public class RuleImporter {
         return ruleBase;
     }
 
-    /** Returns an unitialized rule base */
-    public RuleBase privateImportFromReader(Reader reader, String sourceName, String automataFile, RuleBase ruleBase) throws ParseException {
+    /** Returns an uninitialized rule base */
+    public RuleBase privateImportFromReader(Reader reader, String inputSourceName, String automataFile, RuleBase ruleBase) throws ParseException {
+        var sourceName = (inputSourceName == null ? "anonymous" : inputSourceName);
         try {
             if (ruleBase == null)
-                ruleBase = new RuleBase(sourceName == null ? "anonymous" : sourceName);
+                ruleBase = new RuleBase(sourceName);
             ruleBase.setSource(sourceName.replace('\\', '/'));
             new SemanticsParser(reader, linguistics).semanticRules(ruleBase, this);
             if (automataFile != null && !automataFile.isEmpty())
                 ruleBase.setAutomataFile(automataFile.replace('\\', '/'));
             return ruleBase;
         } catch (Throwable t) { // also catches token mgr errors
-            ParseException p = new ParseException("Could not parse '" + shortenPath(sourceName) + "'");
+            ParseException p = new ParseException("Could not parse rule '" + shortenPath(sourceName) + "'");
             p.initCause(t);
             throw p;
         }
     }
 
     /**
-     * Snips what's in from of rules/ if "rules/" is present in the string
+     * Snips what's in front of rules/ if "rules/" is present in the string
      * to avoid displaying details about where application content is copied
-     * (if rules/ is present, these rules are read from an applicatino package)
+     * (if rules/ is present, these rules are read from an application package)
      */
     private static String shortenPath(String path) {
         int rulesIndex = path.indexOf("rules/");

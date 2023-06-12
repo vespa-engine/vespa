@@ -50,7 +50,7 @@ public class SemanticRulesTest {
             new SemanticRuleBuilder().build(FilesApplicationPackage.fromFile(new File(rootWithErrors)));
             fail("should fail with exception");
         } catch (Exception e) {
-            assertEquals("com.yahoo.prelude.semantics.parser.ParseException: Could not parse 'semantic-rules.cfg'", e.getMessage());
+            assertEquals("com.yahoo.prelude.semantics.parser.ParseException: Could not parse rule 'invalid'", e.getMessage());
         }
     }
 
