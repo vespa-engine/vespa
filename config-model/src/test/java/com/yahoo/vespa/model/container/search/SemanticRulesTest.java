@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import static com.yahoo.vespa.model.container.search.SemanticRules.SemanticRuleBuilder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
