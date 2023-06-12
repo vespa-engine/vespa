@@ -20,18 +20,6 @@ print(std::ostream& out, bool, const std::string&) const
     out << info;
 }
 
-bool StorageBucketInfo::operator==(const StorageBucketInfo& ) const {
-    return true;
-}
-
-bool StorageBucketInfo::operator!=(const StorageBucketInfo& b) const {
-    return !(*this == b);
-}
-
-bool StorageBucketInfo::operator<(const StorageBucketInfo& ) const {
-    return false;
-}
-
 std::ostream&
 operator<<(std::ostream& out, const StorageBucketInfo& info) {
     info.print(out, false, "");

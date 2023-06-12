@@ -39,11 +39,6 @@ public:
     BTreeLockableMap();
     ~BTreeLockableMap() override;
 
-    bool operator==(const BTreeLockableMap& other) const;
-    bool operator!=(const BTreeLockableMap& other) const {
-        return ! (*this == other);
-    }
-    bool operator<(const BTreeLockableMap& other) const;
     size_t size() const noexcept override;
     size_t getMemoryUsage() const noexcept override;
     vespalib::MemoryUsage detailed_memory_usage() const noexcept override;
