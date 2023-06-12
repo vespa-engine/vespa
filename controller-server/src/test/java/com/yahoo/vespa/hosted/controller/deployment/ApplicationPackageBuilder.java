@@ -173,6 +173,10 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder region(String regionName, String cloudAccount) {
+        return region(RegionName.from(regionName), cloudAccount);
+    }
+
     public ApplicationPackageBuilder region(RegionName regionName, String cloudAccount) {
         prodBody.append("      <region ")
                 .append("cloud-account=\"")
