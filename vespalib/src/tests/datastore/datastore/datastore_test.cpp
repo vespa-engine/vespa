@@ -87,7 +87,7 @@ public:
         while (sizes.size() < bufs) {
             RefType iRef = (_type.getArraySize() == 1) ?
                            (_store.template allocator<DataType>(_typeId).alloc().ref) :
-                           (_store.template allocator<DataType>(_typeId).allocArray().ref);
+                           (_store.template allocator<DataType>(_typeId).allocArray(_type.getArraySize()).ref);
             int bufferId = iRef.bufferId();
             if (bufferId != prevBufferId) {
                 if (prevBufferId >= 0) {
@@ -126,7 +126,7 @@ public:
         while (buffers.size() < bufs) {
             RefType iRef = (_type.getArraySize() == 1) ?
                            (_store.template allocator<DataType>(_typeId).alloc().ref) :
-                           (_store.template allocator<DataType>(_typeId).allocArray().ref);
+                           (_store.template allocator<DataType>(_typeId).allocArray(_type.getArraySize()).ref);
             int buffer_id = iRef.bufferId();
             if (buffers.empty() || buffers.back() != buffer_id) {
                 buffers.push_back(buffer_id);
