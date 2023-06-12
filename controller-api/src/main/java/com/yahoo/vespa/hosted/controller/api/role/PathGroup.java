@@ -267,7 +267,10 @@ enum PathGroup {
             "/application/v4/tenant/{tenant}/access/managed/operator"),
 
     /** Path used for email verification */
-    emailVerification("/user/v1/email/verify");
+    emailVerification("/user/v1/email/verify"),
+
+    /** Path used for dataplane token */
+    dataplaneToken(Matcher.tenant,"/application/v4/tenant/{tenant}/token", "/application/v4/tenant/{tenant}/token/{ignored}");
 
     final List<String> pathSpecs;
     final List<Matcher> matchers;

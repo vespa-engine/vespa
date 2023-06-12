@@ -73,6 +73,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalanc
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneToken;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPrint;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -257,6 +261,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/info/contacts")) return withCloudTenant(path.get("tenant"), this::tenantInfoContacts);
         if (path.matches("/application/v4/tenant/{tenant}/notifications")) return notifications(request, Optional.of(path.get("tenant")), false);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/token")) return listTokens(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/compile-version")) return compileVersion(path.get("tenant"), path.get("application"), request.getProperty("allowMajor"));
@@ -327,6 +332,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/key")) return addDeveloperKey(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/token/{tokenid}")) return generateToken(path.get("tenant"), path.get("tokenid"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), "default", false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), "default", true, request);
@@ -373,6 +379,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/archive-access/aws")) return removeAwsArchiveAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/archive-access/gcp")) return removeGcpArchiveAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return deleteSecretStore(path.get("tenant"), path.get("name"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/token/{tokenid}")) return deleteToken(path.get("tenant"), path.get("tokenid"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return removeAllProdDeployments(path.get("tenant"), path.get("application"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", "all");
@@ -901,6 +908,41 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         propertyEquals(request, "level", Notification.Level::valueOf, Optional.of(notification.level())))
                 .forEach(notification -> toSlime(notificationsArray.addObject(), notification, includeTenantFieldInResponse, excludeMessages));
         return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse listTokens(String tenant, HttpRequest request) {
+        List<DataplaneTokenVersions> dataplaneTokenVersions = controller.dataplaneTokenService().listTokens(TenantName.from(tenant));
+        Slime slime = new Slime();
+        Cursor tokensArray = slime.setObject().setArray("tokens");
+        for (DataplaneTokenVersions token : dataplaneTokenVersions) {
+            Cursor tokenObject = tokensArray.addObject();
+            tokenObject.setString("id", token.tokenId().value());
+            Cursor fingerprintsArray = tokenObject.setArray("fingerprints");
+            for (DataplaneTokenVersions.Version tokenVersion : token.tokenVersions()) {
+                Cursor fingerprintObject = fingerprintsArray.addObject();
+                fingerprintObject.setString("value", tokenVersion.fingerPrint().value());
+                fingerprintObject.setString("created-at", tokenVersion.creationTime().toString());
+                fingerprintObject.setString("author", tokenVersion.author());
+            }
+        }
+        return new SlimeJsonResponse(slime);
+    }
+
+
+    private HttpResponse generateToken(String tenant, String tokenid, HttpRequest request) {
+        DataplaneToken token = controller.dataplaneTokenService().generateToken(TenantName.from(tenant), TokenId.of(tokenid), request.getJDiscRequest().getUserPrincipal());
+        Slime slime = new Slime();
+        Cursor tokenObject = slime.setObject();
+        tokenObject.setString("id", token.tokenId().value());
+        tokenObject.setString("token", token.tokenValue());
+        tokenObject.setString("fingerprint", token.fingerPrint().value());
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse deleteToken(String tenant, String tokenid, HttpRequest request) {
+        String fingerprint = Optional.ofNullable(request.getProperty("fingerprint")).orElseThrow(() -> new IllegalArgumentException("Cannot delete token without fingerprint"));
+        controller.dataplaneTokenService().deleteToken(TenantName.from(tenant), TokenId.of(tokenid), FingerPrint.of(fingerprint));
+        return new MessageResponse("Token version deleted");
     }
 
     private static <T> boolean propertyEquals(HttpRequest request, String property, Function<String, T> mapper, Optional<T> value) {

@@ -59,7 +59,8 @@ public enum RoleDefinition {
               Policy.paymentInstrumentRead,
               Policy.paymentInstrumentDelete,
               Policy.billingInformationRead,
-              Policy.secretStoreOperations),
+              Policy.secretStoreOperations,
+              Policy.dataplaneToken),
 
     /** Developer for manual deployments for a tenant */
     hostedDeveloper(Policy.developmentDeployment),
