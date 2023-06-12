@@ -372,7 +372,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag NODE_ADMIN_TENANT_SERVICE_REGISTRY = defineFeatureFlag(
             "node-admin-tenant-service-registry", false,
-            List.of("olaa"), "2023-04-12", "2023-06-12",
+            List.of("olaa"), "2023-04-12", "2023-08-01",
             "Whether AthenzCredentialsMaintainer in node-admin should create tenant service identity certificate",
             "Takes effect on next tick",
             ZONE_ID, HOSTNAME, VESPA_VERSION, APPLICATION_ID
