@@ -292,16 +292,9 @@ public class RoutingPolicies {
 
         // If all targets are configured OUT, all targets are kept IN. We do this because otherwise removing 100% of
         // the ALIAS records would cause the application endpoint to stop resolving entirely (NXDOMAIN).
-        for (var kv : targetsByEndpoint.entrySet()) {
-            Endpoint endpoint = kv.getKey();
-            Set<Target> activeTargets = kv.getValue();
-            if (!activeTargets.isEmpty()) {
-                continue;
-            }
-            Set<Target> inactiveTargets = inactiveTargetsByEndpoint.get(endpoint);
-            activeTargets.addAll(inactiveTargets);
-            inactiveTargets.clear();
-        }
+        targetsByEndpoint.forEach((endpoint, targets) -> {
+            if (targets.isEmpty()) targets.addAll(inactiveTargetsByEndpoint.remove(endpoint));
+        });
 
         targetsByEndpoint.forEach((applicationEndpoint, targets) -> {
             // Where multiple zones are permitted, they all have the same routing policy, and nameServiceForwarder (below).
