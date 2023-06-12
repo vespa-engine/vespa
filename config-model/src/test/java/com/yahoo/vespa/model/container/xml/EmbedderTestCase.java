@@ -77,9 +77,10 @@ public class EmbedderTestCase {
         var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);
         assertEquals("my_input_ids", embedderCfg.transformerInputIds());
         assertEquals("https://my/url/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        assertEquals(1024, embedderCfg.transformerMaxTokens());
         var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
         assertEquals("https://my/url/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
-        assertEquals(768, tokenizerCfg.maxLength());
+        assertEquals(-1, tokenizerCfg.maxLength());
     }
 
     @Test
@@ -89,9 +90,10 @@ public class EmbedderTestCase {
         var embedderCfg = assertHuggingfaceEmbedderComponentPresent(cluster);
         assertEquals("my_input_ids", embedderCfg.transformerInputIds());
         assertEquals("https://data.vespa.oath.cloud/onnx_models/e5-base-v2/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
+        assertEquals(1024, embedderCfg.transformerMaxTokens());
         var tokenizerCfg = assertHuggingfaceTokenizerComponentPresent(cluster);
         assertEquals("https://data.vespa.oath.cloud/onnx_models/multilingual-e5-base/tokenizer.json", modelReference(tokenizerCfg.model().get(0), "path").url().orElseThrow().value());
-        assertEquals(768, tokenizerCfg.maxLength());
+        assertEquals(-1, tokenizerCfg.maxLength());
     }
 
 

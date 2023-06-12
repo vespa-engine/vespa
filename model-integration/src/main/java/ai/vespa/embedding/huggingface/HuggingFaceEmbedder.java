@@ -18,9 +18,14 @@ import com.yahoo.tensor.TensorType;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
+
+import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGEST_FIRST;
 
 @Beta
 public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
+
+    private static final Logger log = Logger.getLogger(HuggingFaceEmbedder.class.getName());
 
     private final String inputIdsName;
     private final String attentionMaskName;
@@ -38,13 +43,21 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         tokenTypeIdsName = config.transformerTokenTypeIds();
         outputName = config.transformerOutput();
         normalize = config.normalize();
-        tokenizer = new HuggingFaceTokenizer.Builder()
+        var tokenizerPath = Paths.get(config.tokenizerPath().toString());
+        var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
-                .addDefaultModel(Paths.get(config.tokenizerPath().toString()))
-                .setTruncation(true)
-                .setPadding(false)
-                .setMaxLength(config.transformerMaxTokens())
-                .build();
+                .addDefaultModel(tokenizerPath)
+                .setPadding(false);
+        var info = HuggingFaceTokenizer.getModelInfo(tokenizerPath);
+        log.fine(() -> "'%s' has info '%s'".formatted(tokenizerPath, info));
+        if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
+            // Force truncation to max token vector length accepted by model if tokenizer.json contains no valid truncation configuration
+            int maxLength = info.maxLength() > 0 && info.maxLength() <= config.transformerMaxTokens()
+                    ? info.maxLength()
+                    : config.transformerMaxTokens();
+            builder.setTruncation(true).setMaxLength(maxLength);
+        }
+        this.tokenizer = builder.build();
         poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());
         var onnxOpts = new OnnxEvaluatorOptions();
         if (config.transformerGpuDevice() >= 0)
