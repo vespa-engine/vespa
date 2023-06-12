@@ -234,9 +234,7 @@ Fixture::makeNode(const vespalib::string &attributeName, bool useEnumOptimizatio
     } else {
         node = makeAttributeMapLookupNode(attributeName);
     }
-    if (useEnumOptimization) {
-        node->useEnumOptimization();
-    }
+    node->enableEnumOptimization(useEnumOptimization);
     AttributeNode::Configure configure(context);
     node->select(configure, configure);
     node->prepare(preserveAccurateTypes);

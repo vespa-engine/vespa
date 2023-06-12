@@ -271,7 +271,7 @@ AttributeMapLookupNode::makeKeyHandlerHelper() const
             return std::make_unique<BadKeyHandler>(attribute);
         }
     }
-    if (attribute.hasEnum() && _useEnumOptimization) {
+    if (attribute.hasEnum() && useEnumOptimization()) {
         return std::make_unique<EnumKeyHandler>(attribute, _key);
     } else if (attribute.isIntegerType()) {
         return std::make_unique<IntegerKeyHandler>(attribute, _key);
@@ -321,7 +321,7 @@ AttributeMapLookupNode::createResultHandler(bool preserveAccurateTypes, const at
         auto handler = std::make_unique<FloatValueHandler>(std::move(keyHandler), attribute, *resultNode, getUndefined<double>());
         return { std::move(resultNode), std::move(handler) };
     } else if (attribute.isStringType()) {
-        if (_useEnumOptimization) {
+        if (useEnumOptimization()) {
             auto resultNode = std::make_unique<EnumResultNode>();
             const StringAttribute & sattr = dynamic_cast<const StringAttribute &>(attribute);
             EnumHandle undefined(0);
@@ -351,10 +351,10 @@ AttributeMapLookupNode::cleanup()
 void
 AttributeMapLookupNode::wireAttributes(const search::attribute::IAttributeContext &attrCtx)
 {
-    auto valueAttribute = findAttribute(attrCtx, _useEnumOptimization, _valueAttributeName);
-    _hasMultiValue = false;
-    _scratchResult = std::make_unique<AttributeResult>(valueAttribute, 0);
-    _keyAttribute = findAttribute(attrCtx, _useEnumOptimization, _keyAttributeName);
+    auto valueAttribute = findAttribute(attrCtx, useEnumOptimization(), _valueAttributeName);
+    setHasMultiValue(false);
+    setScratchResult(std::make_unique<AttributeResult>(valueAttribute, 0));
+    _keyAttribute = findAttribute(attrCtx, useEnumOptimization(), _keyAttributeName);
     if (!_keySourceAttributeName.empty()) {
         _keySourceAttribute = findAttribute(attrCtx, false, _keySourceAttributeName);
     }
