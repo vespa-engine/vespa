@@ -29,7 +29,9 @@ public class ZipResponse extends HttpResponse {
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
-        zipContent.transferTo(outputStream);
+        try (zipContent) {
+            zipContent.transferTo(outputStream);
+        }
     }
 
 }
