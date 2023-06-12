@@ -59,7 +59,7 @@ public:
 
     class Value {
     public:
-        Value();
+        Value() noexcept;
         Value(const Value & rhs);
         Value & operator =(const Value & rhs);
         Value(Value &&) noexcept;
@@ -94,21 +94,21 @@ public:
         void partialCopy(const Value & rhs);
         VESPA_DLL_LOCAL Group * groupSingle(const ResultNode & selectResult, HitRank rank, const GroupingLevel & level);
 
-        GroupList groups() const { return _children; }
+        GroupList groups() const noexcept { return _children; }
         void addChild(Group * child);
-        uint32_t getAggrSize()    const { return _packedLength & 0xffff; }
-        uint32_t getExprSize()    const { return (_packedLength >> 16) & 0x0f; }
-        uint32_t getOrderBySize() const { return (_packedLength >> 20) & 0x0f; }
-        uint32_t getChildrenSize()   const { return _childrenLength; }
-        uint32_t getExpr(uint32_t i) const { return getAggrSize() + i; }
-        int32_t getOrderBy(uint32_t i) const {
+        uint32_t getAggrSize()    const noexcept { return _packedLength & 0xffff; }
+        uint32_t getExprSize()    const noexcept { return (_packedLength >> 16) & 0x0f; }
+        uint32_t getOrderBySize() const noexcept { return (_packedLength >> 20) & 0x0f; }
+        uint32_t getChildrenSize()   const noexcept { return _childrenLength; }
+        uint32_t getExpr(uint32_t i) const noexcept { return getAggrSize() + i; }
+        int32_t getOrderBy(uint32_t i) const noexcept {
             int32_t v((_orderBy[i/2] >> (4*(i%2))) & 0x0f);
             return (v & 0x8) ? -(v&0x7) : v;
         }
 
-        const AggregationResult & getAggregationResult(size_t i) const { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
-        AggregationResult & getAggregationResult(size_t i) { return static_cast<AggregationResult &>(*_aggregationResults[i]); }
-        const Group & getChild(size_t i) const { return *_children[i]; }
+        const AggregationResult & getAggregationResult(size_t i) const noexcept { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
+        AggregationResult & getAggregationResult(size_t i) noexcept { return static_cast<AggregationResult &>(*_aggregationResults[i]); }
+        const Group & getChild(size_t i) const noexcept { return *_children[i]; }
 
         template <typename Doc>
         void collect(const Doc & docId, HitRank rank);
@@ -121,13 +121,13 @@ public:
         void setOrderBySize(uint32_t v);
         void setChildrenSize(uint32_t v) { _childrenLength = v; }
         AggregationResult * getAggr(size_t i) { return static_cast<AggregationResult *>(_aggregationResults[i].get()); }
-        const AggregationResult & getAggr(size_t i) const { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
-        const ExpressionNode::CP & getAggrCP(size_t i) const { return _aggregationResults[i]; }
-        const ExpressionNode::CP & getExprCP(size_t i) const { return _aggregationResults[getExpr(i)]; }
-        ExpressionNode & expr(size_t i)  { return *_aggregationResults[getExpr(i)]; }
-        const ExpressionNode & expr(size_t i)  const { return *_aggregationResults[getExpr(i)]; }
-        size_t getAllChildrenSize() const { return std::max(static_cast<size_t>(getChildrenSize()), _childInfo._allChildren); }
-        void setOrderBy(uint32_t i, int32_t v) {
+        const AggregationResult & getAggr(size_t i) const noexcept { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
+        const ExpressionNode::CP & getAggrCP(size_t i) const noexcept { return _aggregationResults[i]; }
+        const ExpressionNode::CP & getExprCP(size_t i) const noexcept { return _aggregationResults[getExpr(i)]; }
+        ExpressionNode & expr(size_t i)  noexcept { return *_aggregationResults[getExpr(i)]; }
+        const ExpressionNode & expr(size_t i)  const noexcept { return *_aggregationResults[getExpr(i)]; }
+        size_t getAllChildrenSize() const noexcept { return std::max(static_cast<size_t>(getChildrenSize()), _childInfo._allChildren); }
+        void setOrderBy(uint32_t i, int32_t v) noexcept {
             if (v < 0) {
                 v = -v;
                 v = v | 0x8;
@@ -164,25 +164,25 @@ public:
     DECLARE_IDENTIFIABLE_NS2(search, aggregation, Group);
     DECLARE_NBO_SERIALIZE;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    Group();
+    Group() noexcept;
     Group(const Group & rhs);
     Group & operator =(const Group & rhs);
     Group(Group &&) noexcept = default;
     Group & operator = (Group &&) noexcept = default;
-    ~Group();
+    ~Group() override;
 
     int cmpId(const Group &rhs) const { return _id->cmpFast(*rhs._id); }
     int cmpRank(const Group &rhs) const;
     Group & setRank(RawRank r);
     Group & updateRank(RawRank r);
-    RawRank getRank() const { return _rank; }
+    RawRank getRank() const noexcept { return _rank; }
 
     Group * groupSingle(const ResultNode & result, HitRank rank, const GroupingLevel & level) {
         return _aggr.groupSingle(result, rank, level);
     }
 
-    bool hasId() const { return static_cast<bool>(_id); }
-    const ResultNode &getId() const { return *_id; }
+    bool hasId() const noexcept { return static_cast<bool>(_id); }
+    const ResultNode &getId() const noexcept { return *_id; }
 
     Group unchain() const { return *this; }
 
@@ -206,16 +206,16 @@ public:
     Group &addChild(const Group &child) { _aggr.addChild(new Group(child)); return *this; }
     Group &addChild(Group::UP child) { _aggr.addChild(child.release()); return *this; }
 
-    GroupList groups()               const { return _aggr.groups(); }
-    uint32_t getAggrSize()           const { return _aggr.getAggrSize(); }
-    uint32_t getOrderBySize()        const { return _aggr.getOrderBySize(); }
-    uint32_t getExpr(uint32_t i)     const { return _aggr.getExpr(i); }
-    int32_t  getOrderBy(uint32_t i)  const { return _aggr.getOrderBy(i); }
-    uint32_t getChildrenSize()       const { return _aggr.getChildrenSize(); }
-    const Group & getChild(size_t i) const { return _aggr.getChild(i); }
+    GroupList groups()               const noexcept { return _aggr.groups(); }
+    uint32_t getAggrSize()           const noexcept { return _aggr.getAggrSize(); }
+    uint32_t getOrderBySize()        const noexcept { return _aggr.getOrderBySize(); }
+    uint32_t getExpr(uint32_t i)     const noexcept { return _aggr.getExpr(i); }
+    int32_t  getOrderBy(uint32_t i)  const noexcept { return _aggr.getOrderBy(i); }
+    uint32_t getChildrenSize()       const noexcept { return _aggr.getChildrenSize(); }
+    const Group & getChild(size_t i) const noexcept { return _aggr.getChild(i); }
 
-    const AggregationResult & getAggregationResult(size_t i) const { return _aggr.getAggregationResult(i); }
-    AggregationResult &       getAggregationResult(size_t i)       { return _aggr.getAggregationResult(i); }
+    const AggregationResult & getAggregationResult(size_t i) const noexcept { return _aggr.getAggregationResult(i); }
+    AggregationResult &       getAggregationResult(size_t i)       noexcept { return _aggr.getAggregationResult(i); }
 
     /**
      * Prunes this tree, keeping only the nodes found in another

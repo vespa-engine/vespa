@@ -53,21 +53,23 @@ private:
     NameList _listByName;
 };
 
-Register::Register() :
-    _listById(),
-    _listByName()
+Register::Register()
+    : _listById(),
+      _listByName()
 { }
 
 Register::~Register() = default;
 
-bool Register::erase(Identifiable::RuntimeClass * c)
+bool
+Register::erase(Identifiable::RuntimeClass * c)
 {
     _listById.erase(c);
     _listByName.erase(c);
     return true;
 }
 
-bool Register::append(Identifiable::RuntimeClass * c)
+bool
+Register::append(Identifiable::RuntimeClass * c)
 {
     bool ok((_listById.find(c) == _listById.end()) && ((_listByName.find(c) == _listByName.end())));
     if (ok) {
@@ -77,13 +79,15 @@ bool Register::append(Identifiable::RuntimeClass * c)
     return ok;
 }
 
-const Identifiable::RuntimeClass * Register::classFromId(unsigned id) const
+const Identifiable::RuntimeClass *
+Register::classFromId(unsigned id) const
 {
     IdList::const_iterator it(_listById.find<uint32_t>(id));
     return  (it != _listById.end()) ? *it : nullptr;
 }
 
-const Identifiable::RuntimeClass * Register::classFromName(const char *name) const
+const Identifiable::RuntimeClass *
+Register::classFromName(const char *name) const
 {
     NameList::const_iterator it(_listByName.find<const char *>(name));
     return  (it != _listByName.end()) ? *it : nullptr;
@@ -107,8 +111,8 @@ Identifiable::classFromName(const char * name) {
     return _register->classFromName(name);
 }
 
-Identifiable::RuntimeClass::RuntimeClass(RuntimeInfo * info_) :
-    _rt(info_)
+Identifiable::RuntimeClass::RuntimeClass(RuntimeInfo * info_)
+    : _rt(info_)
 {
     if (_rt->_factory) {
         Identifiable::UP tmp(create());
@@ -127,7 +131,8 @@ Identifiable::RuntimeClass::RuntimeClass(RuntimeInfo * info_) :
     }
     if (! _register->append(this)) {
         const RuntimeClass * old = _register->classFromId(id());
-        throw std::runtime_error(make_string("Duplicate Identifiable object(%s, %s, %d) being registered. Choose a unique id. Object (%s, %s, %d) is using it.", name(), info(), id(), old->name(), old->info(), old->id()));
+        throw std::runtime_error(make_string("Duplicate Identifiable object(%s, %s, %d) being registered. Choose a unique id. Object (%s, %s, %d) is using it.",
+                                             name(), info(), id(), old->name(), old->info(), old->id()));
     }
 }
 
@@ -142,35 +147,40 @@ Identifiable::RuntimeClass::~RuntimeClass()
     }
 }
 
-bool Identifiable::RuntimeClass::inherits(unsigned cid) const
+bool
+Identifiable::RuntimeClass::inherits(unsigned cid) const
 {
     const RuntimeInfo *cur;
     for (cur = _rt; (cur != &Identifiable::_RTInfo) && cid != cur->_id; cur = cur->_base) { }
     return (cid == cur->_id);
 }
 
-Serializer & operator << (Serializer & os, const Identifiable & obj)
+Serializer &
+operator << (Serializer & os, const Identifiable & obj)
 {
     os.put(obj.getClass().id());
     obj.serialize(os);
     return os;
 }
 
-nbostream & operator << (nbostream & os, const Identifiable & obj)
+nbostream &
+operator << (nbostream & os, const Identifiable & obj)
 {
     NBOSerializer nos(os);
     nos << obj;
     return os;
 }
 
-nbostream & operator >> (nbostream & is, Identifiable & obj)
+nbostream &
+operator >> (nbostream & is, Identifiable & obj)
 {
     NBOSerializer nis(is);
     nis >> obj;
     return is;
 }
 
-Deserializer & operator >> (Deserializer & os, Identifiable & obj)
+Deserializer &
+operator >> (Deserializer & os, Identifiable & obj)
 {
     uint32_t cid(0);
     os.get(cid);
@@ -178,15 +188,14 @@ Deserializer & operator >> (Deserializer & os, Identifiable & obj)
         obj.deserialize(os);
     } else {
         throw std::runtime_error(make_string("Failed deserializing %s : Received cid %d(%0x) != %d(%0x)",
-                                                       obj.getClass().name(),
-                                                       cid, cid,
-                                                       obj.getClass().id(), obj.getClass().id()));
+                                             obj.getClass().name(), cid, cid, obj.getClass().id(), obj.getClass().id()));
         //Should mark as failed
     }
     return os;
 }
 
-Identifiable::UP Identifiable::create(Deserializer & is)
+Identifiable::UP
+Identifiable::create(Deserializer & is)
 {
     uint32_t cid(0);
     is.get(cid);
@@ -231,7 +240,8 @@ Identifiable::asString() const
     return dumper.toString();
 }
 
-int Identifiable::onCmp(const Identifiable& b) const
+int
+Identifiable::onCmp(const Identifiable& b) const
 {
     int diff(0);
     nbostream as, bs;
@@ -271,22 +281,26 @@ Identifiable::selectMembers(const ObjectPredicate &predicate, ObjectOperation &o
     (void) operation;
 }
 
-Serializer & Identifiable::serialize(Serializer & os) const
+Serializer &
+Identifiable::serialize(Serializer & os) const
 {
     return os.put(*this);
 }
 
-Deserializer & Identifiable::deserialize(Deserializer & is)
+Deserializer &
+Identifiable::deserialize(Deserializer & is)
 {
     return is.get(*this);
 }
 
-Serializer & Identifiable::onSerialize(Serializer & os) const
+Serializer &
+Identifiable::onSerialize(Serializer & os) const
 {
     return os;
 }
 
-Deserializer & Identifiable::onDeserialize(Deserializer & is)
+Deserializer &
+Identifiable::onDeserialize(Deserializer & is)
 {
     return is;
 }

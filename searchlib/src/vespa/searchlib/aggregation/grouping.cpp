@@ -24,8 +24,9 @@ namespace search::aggregation {
 
 namespace {
 
-void selectGroups(const vespalib::ObjectPredicate &p, vespalib::ObjectOperation &op,
-                  Group &group, uint32_t first, uint32_t last, uint32_t curr)
+void
+selectGroups(const vespalib::ObjectPredicate &p, vespalib::ObjectOperation &op,
+             Group &group, uint32_t first, uint32_t last, uint32_t curr)
 {
     if (curr > last) {
         return;
@@ -100,12 +101,11 @@ public:
     }
 };
 
-
 } // namespace search::aggregation::<unnamed>
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, Grouping, vespalib::Identifiable);
 
-Grouping::Grouping()
+Grouping::Grouping() noexcept
     : _id(0),
       _valid(true),
       _all(false),
@@ -167,7 +167,8 @@ Grouping::preAggregate(bool isOrdered)
     _root.preAggregate();
 }
 
-void Grouping::aggregate(DocId from, DocId to)
+void
+Grouping::aggregate(DocId from, DocId to)
 {
     preAggregate(false);
     if (to > from) {
@@ -178,7 +179,8 @@ void Grouping::aggregate(DocId from, DocId to)
     postProcess();
 }
 
-void Grouping::postProcess()
+void
+Grouping::postProcess()
 {
     postAggregate();
     postMerge();
@@ -202,19 +204,22 @@ void Grouping::postProcess()
     sortById();
 }
 
-void Grouping::aggregateWithoutClock(const RankedHit * rankedHit, unsigned int len) {
+void
+Grouping::aggregateWithoutClock(const RankedHit * rankedHit, unsigned int len) {
     for(unsigned int i(0); i < len; i++) {
         aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
     }
 }
 
-void Grouping::aggregateWithClock(const RankedHit * rankedHit, unsigned int len) {
+void
+Grouping::aggregateWithClock(const RankedHit * rankedHit, unsigned int len) {
     for(unsigned int i(0); (i < len) && !hasExpired(); i++) {
         aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
     }
 }
 
-void Grouping::aggregate(const RankedHit * rankedHit, unsigned int len)
+void
+Grouping::aggregate(const RankedHit * rankedHit, unsigned int len)
 {
     bool isOrdered(! needResort());
     preAggregate(isOrdered);
@@ -228,7 +233,8 @@ void Grouping::aggregate(const RankedHit * rankedHit, unsigned int len)
     postProcess();
 }
 
-void Grouping::aggregate(const RankedHit * rankedHit, unsigned int len, const BitVector * bVec)
+void
+Grouping::aggregate(const RankedHit * rankedHit, unsigned int len, const BitVector * bVec)
 {
     preAggregate(false);
     if (_clock == nullptr) {
@@ -263,33 +269,39 @@ void Grouping::aggregate(const RankedHit * rankedHit, unsigned int len, const Bi
     postProcess();
 }
 
-void Grouping::aggregate(DocId docId, HitRank rank)
+void
+Grouping::aggregate(DocId docId, HitRank rank)
 {
     _root.aggregate(*this, 0, docId, rank);
 }
 
-void Grouping::aggregate(const document::Document & doc, HitRank rank)
+void
+Grouping::aggregate(const document::Document & doc, HitRank rank)
 {
     _root.aggregate(*this, 0, doc, rank);
 }
 
-void Grouping::convertToGlobalId(const search::IDocumentMetaStore &metaStore)
+void
+Grouping::convertToGlobalId(const search::IDocumentMetaStore &metaStore)
 {
     GlobalIdConverter conv(metaStore);
     select(conv, conv);
 }
 
-void Grouping::postAggregate()
+void
+Grouping::postAggregate()
 {
     _root.postAggregate();
 }
 
-void Grouping::sortById()
+void
+Grouping::sortById()
 {
     _root.sortById();
 }
 
-void Grouping::configureStaticStuff(const ConfigureStaticParams & params)
+void
+Grouping::configureStaticStuff(const ConfigureStaticParams & params)
 {
     if (params._attrCtx != nullptr) {
         AttributeNode::Configure confAttr(*params._attrCtx);
@@ -307,13 +319,15 @@ void Grouping::configureStaticStuff(const ConfigureStaticParams & params)
     select(aggrConf, aggrConf);
 }
 
-void Grouping::cleanupAttributeReferences()
+void
+Grouping::cleanupAttributeReferences()
 {
     AttributeNode::CleanupAttributeReferences cleanupAttr;
     select(cleanupAttr, cleanupAttr);
 }
 
-void Grouping::cleanTemporary()
+void
+Grouping::cleanTemporary()
 {
     for (GroupingLevel & level : _levels) {
         if (level.getExpression().getRoot()->inherits(FunctionNode::classId)) {
@@ -322,7 +336,8 @@ void Grouping::cleanTemporary()
     }
 }
 
-bool Grouping::needResort() const
+bool
+Grouping::needResort() const
 {
     bool resort(_root.needResort());
     for (GroupingLevelList::const_iterator it(_levels.begin()), mt(_levels.end()); !resort && (it != mt); ++it) {
@@ -332,13 +347,15 @@ bool Grouping::needResort() const
 }
 
 
-Serializer & Grouping::onSerialize(Serializer & os) const
+Serializer &
+Grouping::onSerialize(Serializer & os) const
 {
     LOG(spam, "Grouping = %s", asString().c_str());
     return os << _id << _valid << _all << _topN << _firstLevel << _lastLevel << _levels << _root;
 }
 
-Deserializer & Grouping::onDeserialize(Deserializer & is)
+Deserializer &
+Grouping::onDeserialize(Deserializer & is)
 {
     is >> _id >> _valid >> _all >> _topN >> _firstLevel >> _lastLevel >> _levels >> _root;
     LOG(spam, "Grouping = %s", asString().c_str());
