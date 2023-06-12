@@ -1,7 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "arrayatlookupfunctionnode.h"
-#include <vespa/vespalib/objects/serializer.hpp>
-#include <vespa/vespalib/objects/deserializer.hpp>
 
 namespace search::expression {
 
@@ -59,10 +57,10 @@ ArrayAtLookup::onExecute() const
 Serializer &
 ArrayAtLookup::onSerialize(Serializer & os) const
 {
+    // Here we are doing a dirty skipping AttributeNode in the inheritance.
+    // This is due to refactoring and the need to keep serialization the same.
     FunctionNode::onSerialize(os);
-    std::vector<ExpressionNode::CP> args;
-    args.emplace_back(_indexExpression);
-    os << args;
+    os << uint32_t(1u) << _indexExpression; // Simulating a single element vector.
     os << _attributeName;
     return os;
 }
@@ -70,10 +68,15 @@ ArrayAtLookup::onSerialize(Serializer & os) const
 Deserializer &
 ArrayAtLookup::onDeserialize(Deserializer & is)
 {
+    // See comment in onSerialize method.
     FunctionNode::onDeserialize(is);
-    std::vector<ExpressionNode::CP> args;
-    is >> args;
-    _indexExpression = std::move(args[0]);
+    uint32_t count(0);
+    is >> count;
+    if (count > 0) {
+        is >> _indexExpression;
+    } else {
+        _indexExpression.reset();
+    }
     is >> _attributeName;
     return is;
 }
