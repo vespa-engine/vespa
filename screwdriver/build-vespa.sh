@@ -12,7 +12,7 @@ export MALLOC_ARENA_MAX=1
 export MAVEN_OPTS="-Xss1m -Xms128m -Xmx2g"
 export VESPA_MAVEN_EXTRA_OPTS="${VESPA_MAVEN_EXTRA_OPTS:+${VESPA_MAVEN_EXTRA_OPTS} }--no-snapshot-updates --batch-mode --threads ${NUM_THREADS}"
 
-ccache --max-size=1600M
+ccache --max-size=20G
 ccache --set-config=compression=true
 ccache -p
 
