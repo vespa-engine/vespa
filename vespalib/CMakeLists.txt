@@ -147,7 +147,6 @@ vespa_define_module(
     src/tests/require
     src/tests/runnable_pair
     src/tests/rusage
-    src/tests/rw_spin_lock
     src/tests/sequencedtaskexecutor
     src/tests/sha1
     src/tests/shared_operation_throttler
