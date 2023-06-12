@@ -18,7 +18,7 @@ namespace vespalib::datastore {
 class ArrayStoreTypeMapper
 {
 protected:
-    std::vector<size_t> _array_sizes;
+    std::vector<uint32_t> _array_sizes;
 public:
     ArrayStoreTypeMapper();
     ~ArrayStoreTypeMapper();
