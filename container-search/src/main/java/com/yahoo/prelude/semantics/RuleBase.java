@@ -114,7 +114,7 @@ public class RuleBase {
      * of the given rule base - it can not be subsequently used for any purpose
      * (including accessing).</p>
      *
-     * <p>Each rule base will only be included by the first include directive enountered
+     * <p>Each rule base will only be included by the first include directive encountered
      * for that rule base.</p>
      */
     public void include(RuleBase include) {
