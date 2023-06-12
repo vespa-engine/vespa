@@ -986,12 +986,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse devApplicationPackage(ApplicationId id, JobType type) {
         ZoneId zone = type.zone();
         RevisionId revision = controller.jobController().last(id, type).get().versions().targetRevision();
-        try (InputStream applicationPackage = controller.applications().applicationStore().stream(new DeploymentId(id, zone), revision)) {
-            return new ZipResponse(id.toFullString() + "." + zone.value() + ".zip", applicationPackage);
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return new ZipResponse(id.toFullString() + "." + zone.value() + ".zip",
+                               controller.applications().applicationStore().stream(new DeploymentId(id, zone), revision));
     }
 
     private HttpResponse devApplicationPackageDiff(RunId runId) {
@@ -1028,12 +1024,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         InputStream applicationPackage = tests ?
                 controller.applications().applicationStore().streamTester(tenantAndApplication.tenant(), tenantAndApplication.application(), revision) :
                 controller.applications().applicationStore().stream(new DeploymentId(tenantAndApplication.defaultInstance(), ZoneId.defaultId()), revision);
-        try (applicationPackage) {
-            return new ZipResponse(filename, applicationPackage);
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return new ZipResponse(filename, applicationPackage);
     }
 
     private HttpResponse applicationPackageDiff(String tenant, String application, String number) {
