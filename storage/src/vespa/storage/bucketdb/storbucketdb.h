@@ -70,7 +70,7 @@ public:
      * Returns true iff bucket has no superbuckets or sub-buckets in the
      * database. Usage assumption is that any operation that can cause the
      * bucket to become inconsistent will require taking its lock, so by
-     * requiring the lock to be provided here we avoid race conditions.q
+     * requiring the lock to be provided here we avoid race conditions.
      */
     bool isConsistent(const WrappedEntry& entry);
 
