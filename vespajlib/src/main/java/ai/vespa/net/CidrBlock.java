@@ -20,7 +20,7 @@ import java.util.Objects;
  */
 public class CidrBlock {
 
-    private final BigInteger ipAddressBits;
+    private final BigInteger addressInteger;
     private final int prefixLength;
     private final int addressLength;
 
@@ -42,19 +42,19 @@ public class CidrBlock {
         if (prefixLength > addressLength) throw new IllegalArgumentException(
                 String.format("Prefix size (%s) cannot be longer than address length (%s)", prefixLength, addressLength));
 
-        this.ipAddressBits = inetAddressToBits(address, prefixLength);
+        this.addressInteger = inetAddressToBigInteger(address);
     }
 
     /** For internal use only, does not validate */
-    private CidrBlock(BigInteger ipAddressBits, int prefixLength, int addressLength) {
-        this.ipAddressBits = ipAddressBits;
+    private CidrBlock(BigInteger addressInteger, int prefixLength, int addressLength) {
+        this.addressInteger = addressInteger;
         this.prefixLength = prefixLength;
         this.addressLength = addressLength;
     }
 
     /** @return The first IP address in this CIDR block */
     public InetAddress getInetAddress() {
-        return bitsToInetAddress(ipAddressBits, addressLength);
+        return bitsToInetAddress(addressInteger, addressLength);
     }
 
     /** @return the number of bits in the network mask */
@@ -62,27 +62,48 @@ public class CidrBlock {
         return prefixLength;
     }
 
+    private int suffixLength() { return addressLength - prefixLength; }
+
     public boolean isIpv6() {
         return addressLength == 128;
     }
 
+    /** @return true iff the address is in this CIDR network. */
+    public boolean contains(InetAddress address) {
+        BigInteger addressInteger = new CidrBlock(address).addressInteger;
+        return firstAddressInteger().compareTo(addressInteger) <= 0 &&
+               addressInteger.compareTo(lastAddressInteger()) <= 0;
+    }
+
+    private BigInteger firstAddressInteger() {
+        return addressInteger.shiftRight(suffixLength()).shiftLeft(suffixLength());
+    }
+
+    private BigInteger lastAddressInteger() {
+        return addressInteger.or(suffixMask());
+    }
+
+    private BigInteger suffixMask() {
+        return BigInteger.ONE.shiftLeft(suffixLength()).subtract(BigInteger.ONE);
+    }
+
     /** Returns a copy of this resized to the given newPrefixLength */
     public CidrBlock resize(int newPrefixLength) {
-        return new CidrBlock(ipAddressBits, newPrefixLength, addressLength);
+        return new CidrBlock(addressInteger, newPrefixLength, addressLength);
     }
 
     public CidrBlock clearLeastSignificantBits(int bits) {
-        return new CidrBlock(ipAddressBits.shiftRight(bits).shiftLeft(bits), prefixLength, addressLength);
+        return new CidrBlock(firstAddressInteger(), prefixLength, addressLength);
     }
 
     /** @return a copy of this CIDR block with the host identifier bits cleared */
     public CidrBlock clearHostIdentifier() {
-        return clearLeastSignificantBits(addressLength - prefixLength);
+        return clearLeastSignificantBits(suffixLength());
     }
 
     /** Return the byte at the given offset.  0 refers to the most significant byte of the address. */
     public int getByte(int byteOffset) {
-        return ipAddressBits.shiftRight(addressLength - 8 * (byteOffset + 1)).and(BigInteger.valueOf(0xFF)).intValueExact();
+        return addressInteger.shiftRight(addressLength - 8 * (byteOffset + 1)).and(BigInteger.valueOf(0xFF)).intValueExact();
     }
 
     /** Set the byte at the given offset to 'n'.  0 refers to the most significant byte of the address. */
@@ -100,7 +121,7 @@ public class CidrBlock {
     }
 
     private CidrBlock addByteRaw(int byteOffset, int n) {
-        BigInteger bit = ipAddressBits.add(BigInteger.valueOf(n).shiftLeft(addressLength - 8 * (byteOffset + 1)));
+        BigInteger bit = addressInteger.add(BigInteger.valueOf(n).shiftLeft(addressLength - 8 * (byteOffset + 1)));
         return new CidrBlock(bit, prefixLength, addressLength);
     }
 
@@ -108,7 +129,7 @@ public class CidrBlock {
         if (this.isIpv6() != other.isIpv6()) return false;
 
         int ignoreLastNBits = addressLength - Math.min(this.prefixLength(), other.prefixLength());
-        return this.ipAddressBits.shiftRight(ignoreLastNBits).equals(other.ipAddressBits.shiftRight(ignoreLastNBits));
+        return this.addressInteger.shiftRight(ignoreLastNBits).equals(other.addressInteger.shiftRight(ignoreLastNBits));
     }
 
     /** @return the .arpa address for this CIDR block, does not include bit outside the prefix */
@@ -116,11 +137,11 @@ public class CidrBlock {
         StringBuilder recordPtr = new StringBuilder(75);
         int segmentWidth = isIpv6() ? 4 : 8;
 
-        int start = addressLength - prefixLength - (segmentWidth - (prefixLength % segmentWidth)) % segmentWidth;
+        int start = suffixLength() - (segmentWidth - (prefixLength % segmentWidth)) % segmentWidth;
         for (int i = start; i < addressLength; i += segmentWidth) {
-            int segment = ipAddressBits.shiftRight(i)
-                    .and(BigInteger.ONE.shiftLeft(segmentWidth).subtract(BigInteger.ONE))
-                    .intValueExact();
+            int segment = addressInteger.shiftRight(i)
+                                        .and(BigInteger.ONE.shiftLeft(segmentWidth).subtract(BigInteger.ONE))
+                                        .intValueExact();
 
             recordPtr.append(isIpv6() ? Integer.toHexString(segment) : segment).append(".");
         }
@@ -131,9 +152,9 @@ public class CidrBlock {
     /** @return iterable over all CIDR blocks of the same prefix size, from the current one and up */
     public Iterable<CidrBlock> iterableCidrs() {
         return () -> new Iterator<>() {
-            private final BigInteger increment = BigInteger.ONE.shiftLeft(addressLength - prefixLength);
+            private final BigInteger increment = BigInteger.ONE.shiftLeft(suffixLength());
             private final BigInteger maxValue = BigInteger.ONE.shiftLeft(addressLength).subtract(increment);
-            private BigInteger current = ipAddressBits;
+            private BigInteger current = addressInteger;
 
             public boolean hasNext() {
                 return current.compareTo(maxValue) < 0;
@@ -150,8 +171,8 @@ public class CidrBlock {
 
     public Iterable<InetAddress> iterableIps() {
         return () -> new Iterator<>() {
-            private final BigInteger maxValue = ipAddressBits.or(BigInteger.ONE.shiftLeft(addressLength - prefixLength).subtract(BigInteger.ONE));
-            private BigInteger current = ipAddressBits;
+            private final BigInteger maxValue = lastAddressInteger();
+            private BigInteger current = addressInteger;
 
             public boolean hasNext() {
                 return current.compareTo(maxValue) <= 0;
@@ -172,12 +193,12 @@ public class CidrBlock {
         if (o == null || getClass() != o.getClass()) return false;
         CidrBlock cidrBlock = (CidrBlock) o;
         return prefixLength == cidrBlock.prefixLength &&
-               Objects.equals(ipAddressBits, cidrBlock.ipAddressBits);
+               Objects.equals(addressInteger, cidrBlock.addressInteger);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ipAddressBits, prefixLength);
+        return Objects.hash(addressInteger, prefixLength);
     }
 
     @Override
@@ -201,7 +222,7 @@ public class CidrBlock {
         return new CidrBlock(inetAddress, prefixSize);
     }
 
-    private static BigInteger inetAddressToBits(byte[] address, int prefix) {
+    private static BigInteger inetAddressToBigInteger(byte[] address) {
         BigInteger bit = BigInteger.ZERO;
         for (byte b : address)
             bit = bit.shiftLeft(8).add(BigInteger.valueOf(b & 0xFF));

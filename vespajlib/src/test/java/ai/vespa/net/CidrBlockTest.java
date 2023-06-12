@@ -7,6 +7,7 @@ import com.google.common.net.InetAddresses;
 import ai.vespa.net.CidrBlock;
 import org.junit.Test;
 
+import java.net.InetAddress;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -146,5 +147,19 @@ public class CidrBlockTest {
         assertEquals("ab63:aca:dcdc:e2a8:1fb4:542:b80d:f7c3/24", ipv6Block.setByte(0, 0xab).asString());
         assertEquals("de63:aca:dcdc:e2a8:1fb4:542:b80d:f7c4/24", ipv6Block.addByte(15, 1).asString());
         assertEquals("de63:aca:dcdc:e2a8:1fb4:542:b80d:f7fe/24", ipv6Block.setByte(15, 0xfe).asString());
+    }
+
+    @Test
+    public void testContainment() {
+        CidrBlock block = CidrBlock.fromString("1234:5678::/32");
+        assertFalse(block.contains(toInetAddress("1234:5677:ffff:ffff:ffff:ffff:ffff:ffff")));
+        assertTrue( block.contains(toInetAddress("1234:5678:0000:0000:0000:0000:0000:0000")));
+        assertTrue( block.contains(toInetAddress("1234:5678:0000:0000:0000:0000:0000:0001")));
+        assertTrue( block.contains(toInetAddress("1234:5678:ffff:ffff:ffff:ffff:ffff:ffff")));
+        assertFalse(block.contains(toInetAddress("1234:5679:0000:0000:0000:0000:0000:0001")));
+    }
+
+    private InetAddress toInetAddress(String address) {
+        return InetAddresses.forString(address);
     }
 }
