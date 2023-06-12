@@ -18,10 +18,10 @@ public class DataplaneTokenSerializerTest {
     public void testSerialization() {
         List<DataplaneToken> tokens = List.of(
                 new DataplaneToken("id1",
-                                   List.of(new DataplaneToken.TokenValue("id1_fingerPrint1", "id1_checkaccesshash1"))),
+                                   List.of(new DataplaneToken.Version("id1_fingerPrint1", "id1_checkaccesshash1"))),
                 new DataplaneToken("id2",
-                                   List.of(new DataplaneToken.TokenValue("id2_fingerPrint1", "id2_checkaccesshash1"),
-                                           new DataplaneToken.TokenValue("id3_fingerPrint1", "id3_checkaccesshash1"))));
+                                   List.of(new DataplaneToken.Version("id2_fingerPrint1", "id2_checkaccesshash1"),
+                                           new DataplaneToken.Version("id3_fingerPrint1", "id3_checkaccesshash1"))));
         Slime slime = DataplaneTokenSerializer.toSlime(tokens);
         List<DataplaneToken> deserialized = DataplaneTokenSerializer.fromSlime(slime.get());
         assertEquals(tokens, deserialized);

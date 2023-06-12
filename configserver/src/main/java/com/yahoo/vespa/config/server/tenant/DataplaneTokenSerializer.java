@@ -17,7 +17,7 @@ import java.util.List;
 public class DataplaneTokenSerializer {
 
     private static final String ID_FIELD = "id";
-    private static final String VALUES_FIELD = "values";
+    private static final String VERSIONS_FIELD = "versions";
     private static final String FINGERPRINT_FIELD = "fingerPrint";
     private static final String CHECKACCESSHASH_FIELD = "checkAccessHash";
 
@@ -31,15 +31,15 @@ public class DataplaneTokenSerializer {
 
     private static DataplaneToken tokenFromSlime(Inspector object) {
         String id = object.field(ID_FIELD).asString();
-        List<DataplaneToken.TokenValue> values = SlimeUtils.entriesStream(object.field(VALUES_FIELD))
+        List<DataplaneToken.Version> versions = SlimeUtils.entriesStream(object.field(VERSIONS_FIELD))
                 .filter(Inspector::valid)
                 .map(DataplaneTokenSerializer::tokenValue)
                 .toList();
-        return new DataplaneToken(id, values);
+        return new DataplaneToken(id, versions);
     }
 
-    private static DataplaneToken.TokenValue tokenValue(Inspector inspector) {
-        return new DataplaneToken.TokenValue(
+    private static DataplaneToken.Version tokenValue(Inspector inspector) {
+        return new DataplaneToken.Version(
                 inspector.field(FINGERPRINT_FIELD).asString(),
                 inspector.field(CHECKACCESSHASH_FIELD).asString());
     }
@@ -50,9 +50,9 @@ public class DataplaneTokenSerializer {
         for (DataplaneToken token : dataplaneTokens) {
             Cursor cursor = root.addObject();
             cursor.setString(ID_FIELD, token.tokenId());
-            Cursor values = cursor.setArray(VALUES_FIELD);
-            token.tokenValues().forEach(v -> {
-                Cursor val = values.addObject();
+            Cursor versions = cursor.setArray(VERSIONS_FIELD);
+            token.versions().forEach(v -> {
+                Cursor val = versions.addObject();
                 val.setString(FINGERPRINT_FIELD, v.fingerprint());
                 val.setString(CHECKACCESSHASH_FIELD, v.checkAccessHash());
             });
