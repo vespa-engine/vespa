@@ -16,15 +16,6 @@ struct StorageBucketInfo {
     const api::BucketInfo& getBucketInfo() const noexcept { return info; }
     bool verifyLegal() const noexcept { return true; }
     uint32_t getMetaCount() const noexcept { return info.getMetaCount(); }
-    bool operator == (const StorageBucketInfo &) const noexcept {
-        return true;
-    }
-    bool operator != (const StorageBucketInfo & rhs) const noexcept {
-        return !(*this == rhs);
-    }
-    bool operator < (const StorageBucketInfo &) const noexcept {
-        return false;
-    }
 };
 
 std::ostream& operator<<(std::ostream& out, const StorageBucketInfo& info);
