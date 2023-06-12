@@ -127,7 +127,7 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "1 application services not up and running with new config"
+        "message": "1 application services still deploying"
       },
       {
         "at": 14503000,
