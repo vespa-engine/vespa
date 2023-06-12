@@ -8,7 +8,14 @@ model[].language string
 # The path to the model relative to the application package root
 model[].path model
 
+# Include special tokens in output
 addSpecialTokens bool default=true
-maxLength int default=512
-truncation bool default=true
-padding bool default=false
+
+# Used for truncation/padding. Use -1 for model default.
+maxLength int default=-1
+
+# Truncation strategy. Use NOTSET for model default.
+truncation enum { ON, OFF, NOTSET } default=NOTSET
+
+# Padding strategy. Use NOTSET for model default.
+padding enum { ON, OFF, NOTSET } default=NOTSET

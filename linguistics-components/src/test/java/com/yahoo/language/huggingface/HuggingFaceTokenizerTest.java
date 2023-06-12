@@ -99,7 +99,7 @@ class HuggingFaceTokenizerTest {
     }
 
     @Test
-    void disables_padding_by_default() throws IOException {
+    void pads_to_max_length() throws IOException {
         var builder = new HuggingFaceTokenizer.Builder()
                 .setTruncation(true)
                 .addDefaultModel(decompressModelFile(tmp, "bert-base-uncased"))
@@ -112,6 +112,13 @@ class HuggingFaceTokenizerTest {
             assertMaxLengthRespected(10, tokenizerWithPaddingDisabled.encode(input));
             assertMaxLengthRespected(32, tokenizerWithPaddingEnabled.encode(input));
         }
+    }
+
+    @Test
+    void provides_model_info() throws IOException {
+        var expected = new ModelInfo(ModelInfo.TruncationStrategy.LONGEST_FIRST, ModelInfo.PaddingStrategy.LONGEST, 128, 0, 0);
+        var actual = HuggingFaceTokenizer.getModelInfo(decompressModelFile(tmp, "paraphrase-multilingual-mpnet-base-v2"));
+        assertEquals(expected, actual);
     }
 
     private static void assertMaxLengthRespected(int maxLength, Encoding encoding) {
