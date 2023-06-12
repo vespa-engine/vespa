@@ -1697,7 +1697,7 @@
     "methods" : [
       "public void <init>()",
       "public abstract boolean visit(com.yahoo.prelude.query.Item)",
-      "public abstract void onExit()"
+      "public void onExit()"
     ],
     "fields" : [ ]
   },
@@ -8086,6 +8086,36 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.schema.Cluster$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public com.yahoo.search.schema.Cluster$Builder setStreaming(boolean)",
+      "public com.yahoo.search.schema.Cluster$Builder addSchema(java.lang.String)",
+      "public com.yahoo.search.schema.Cluster build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.Cluster" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public java.lang.String name()",
+      "public boolean isStreaming()",
+      "public java.util.Set schemas()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.schema.DocumentSummary$Builder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -8169,6 +8199,148 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.schema.Field$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public com.yahoo.search.schema.Field$Builder addAlias(java.lang.String)",
+      "public com.yahoo.search.schema.Field$Builder setAttribute(boolean)",
+      "public com.yahoo.search.schema.Field$Builder setIndex(boolean)",
+      "public com.yahoo.search.schema.Field build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.Field$TensorFieldType" : {
+    "superClass" : "com.yahoo.search.schema.Field$Type",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.tensor.TensorType)",
+      "public com.yahoo.tensor.TensorType tensorType()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.Field$Type$Kind" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.search.schema.Field$Type$Kind[] values()",
+      "public static com.yahoo.search.schema.Field$Type$Kind valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind ANNOTATIONREFERENCE",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind ARRAY",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind BOOL",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind BYTE",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind DOUBLE",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind FLOAT",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind INT",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind LONG",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind MAP",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind POSITION",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind PREDICATE",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind RAW",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind REFERENCE",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind STRING",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind STRUCT",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind TENSOR",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind URL",
+      "public static final enum com.yahoo.search.schema.Field$Type$Kind WEIGHTEDSET"
+    ]
+  },
+  "com.yahoo.search.schema.Field$Type" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public com.yahoo.search.schema.Field$Type$Kind kind()",
+      "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.Field" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.search.schema.FieldInfo"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.schema.Field$Builder)",
+      "public java.lang.String name()",
+      "public com.yahoo.search.schema.Field$Type type()",
+      "public java.util.Set aliases()",
+      "public boolean isAttribute()",
+      "public boolean isIndex()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.FieldInfo" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.lang.String name()",
+      "public abstract com.yahoo.search.schema.Field$Type type()",
+      "public abstract boolean isAttribute()",
+      "public abstract boolean isIndex()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.FieldSet$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public com.yahoo.search.schema.FieldSet$Builder addField(java.lang.String)",
+      "public com.yahoo.search.schema.FieldSet build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.FieldSet" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.search.schema.FieldInfo"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public java.lang.String name()",
+      "public com.yahoo.search.schema.Field$Type type()",
+      "public boolean isAttribute()",
+      "public boolean isIndex()",
+      "public java.util.Set fieldNames()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.schema.RankProfile$Builder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -8210,6 +8382,8 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String)",
+      "public com.yahoo.search.schema.Schema$Builder add(com.yahoo.search.schema.Field)",
+      "public com.yahoo.search.schema.Schema$Builder add(com.yahoo.search.schema.FieldSet)",
       "public com.yahoo.search.schema.Schema$Builder add(com.yahoo.search.schema.RankProfile)",
       "public com.yahoo.search.schema.Schema$Builder add(com.yahoo.search.schema.DocumentSummary)",
       "public com.yahoo.search.schema.Schema build()"
@@ -8224,8 +8398,10 @@
     ],
     "methods" : [
       "public java.lang.String name()",
+      "public java.util.Map fields()",
       "public java.util.Map rankProfiles()",
       "public java.util.Map documentSummaries()",
+      "public java.util.Optional fieldInfo(java.lang.String)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -8239,6 +8415,8 @@
       "public"
     ],
     "methods" : [
+      "public boolean isStreaming()",
+      "public java.util.Optional fieldInfo(java.lang.String)",
       "public com.yahoo.tensor.TensorType rankProfileInput(java.lang.String, java.lang.String)"
     ],
     "fields" : [ ]
@@ -8250,9 +8428,10 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig)",
-      "public void <init>(java.util.List, java.util.Map)",
+      "public void <init>(com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig)",
+      "public void <init>(java.util.List, java.util.List)",
       "public java.util.Map schemas()",
+      "public java.util.Map clusters()",
       "public com.yahoo.search.schema.SchemaInfo$Session newSession(com.yahoo.search.Query)",
       "public static com.yahoo.search.schema.SchemaInfo empty()",
       "public boolean equals(java.lang.Object)",

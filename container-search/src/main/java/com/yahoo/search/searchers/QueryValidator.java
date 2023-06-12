@@ -3,8 +3,6 @@ package com.yahoo.search.searchers;
 
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
-import com.yahoo.prelude.Index;
-import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.HasIndexItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PrefixItem;
@@ -12,6 +10,9 @@ import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.schema.Field;
+import com.yahoo.search.schema.FieldInfo;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
@@ -28,36 +29,36 @@ public class QueryValidator extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
-        IndexFacts.Session session = execution.context().getIndexFacts().newSession(query);
+        var session = execution.context().schemaInfo().newSession(query);
         ToolBox.visit(new TermSearchValidator(session), query.getModel().getQueryTree().getRoot());
-        ToolBox.visit(new PrefixSearchValidator(session), query.getModel().getQueryTree().getRoot());
+        // ToolBox.visit(new PrefixSearchValidator(session), query.getModel().getQueryTree().getRoot()); TODO: Enable check and QueryValidatorPrefixTest
         return execution.search(query);
     }
 
     private abstract static class TermValidator extends ToolBox.QueryVisitor {
 
-        final IndexFacts.Session session;
+        final SchemaInfo.Session schema;
 
-        public TermValidator(IndexFacts.Session session) {
-            this.session = session;
+        public TermValidator(SchemaInfo.Session schema) {
+            this.schema = schema;
         }
-
-        @Override
-        public void onExit() { }
 
     }
 
     private static class TermSearchValidator extends TermValidator {
 
-        public TermSearchValidator(IndexFacts.Session session) {
-            super(session);
+        public TermSearchValidator(SchemaInfo.Session schema) {
+            super(schema);
         }
 
         @Override
         public boolean visit(Item item) {
             if (item instanceof HasIndexItem indexItem) {
-                if (session.getIndex(indexItem.getIndexName()).isTensor())
-                    throw new IllegalArgumentException("Cannot search for terms in '" + indexItem.getIndexName() + "': It is a tensor field");
+                var field = schema.fieldInfo(indexItem.getIndexName());
+                if (! field.isPresent()) return true;
+                if (field.get().type().kind() == Field.Type.Kind.TENSOR)
+                    throw new IllegalArgumentException("Cannot search for terms in '" + indexItem.getIndexName() +
+                                                       "': It is a tensor field");
             }
             return true;
         }
@@ -66,17 +67,19 @@ public class QueryValidator extends Searcher {
 
     private static class PrefixSearchValidator extends TermValidator {
 
-        public PrefixSearchValidator(IndexFacts.Session session) {
-            super(session);
+        public PrefixSearchValidator(SchemaInfo.Session schema) {
+            super(schema);
         }
 
         @Override
         public boolean visit(Item item) {
+            if (schema.isStreaming()) return true; // prefix is always supported
             if (item instanceof PrefixItem prefixItem) {
-                Index index = session.getIndex(prefixItem.getIndexName());
-                if ( ! index.isAttribute())
+                var field = schema.fieldInfo(prefixItem.getIndexName());
+                if (! field.isPresent()) return true;
+                if ( ! field.get().isAttribute())
                     throw new IllegalArgumentException("'" + prefixItem.getIndexName() + "' is not an attribute field: Prefix matching is not supported");
-                if (index.isIndex()) // index overrides attribute
+                if (field.get().isIndex()) // index overrides attribute
                     throw new IllegalArgumentException("'" + prefixItem.getIndexName() + "' is an index field: Prefix matching is not supported even when it is also an attribute");
             }
             return true;

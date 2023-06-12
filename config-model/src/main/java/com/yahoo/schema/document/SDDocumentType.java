@@ -216,7 +216,7 @@ public class SDDocumentType implements Cloneable {
         return f;
     }
 
-    public void addField(Field field) {
+    public Field addField(Field field) {
     	verifyInheritance(field);
         for (Iterator<Field> i = docType.fieldIteratorThisTypeOnly(); i.hasNext(); ) {
             if (field.getName().equalsIgnoreCase((i.next()).getName())) {
@@ -224,6 +224,7 @@ public class SDDocumentType implements Cloneable {
             }
         }
         docType.addField(field);
+        return field;
     }
 
     /** Parse-time inheritance check. */

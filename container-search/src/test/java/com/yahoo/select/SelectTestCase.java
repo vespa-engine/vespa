@@ -76,9 +76,8 @@ public class SelectTestCase {
                 "my.nested.title:madonna");
     }
 
-
     @Test
-    void testOr() throws Exception {
+    void testOr() {
         ObjectNode json_two_or = jsonMapper.createObjectNode();
         ObjectNode json_three_or = jsonMapper.createObjectNode();
         ArrayNode contains1 = jsonMapper.createArrayNode().add("title").add("madonna");
@@ -100,7 +99,7 @@ public class SelectTestCase {
     }
 
     @Test
-    void testAnd() throws Exception {
+    void testAnd() {
         ObjectNode json_two_and = jsonMapper.createObjectNode();
         ObjectNode json_three_and = jsonMapper.createObjectNode();
         ArrayNode contains1 = jsonMapper.createArrayNode().add("title").add("madonna");

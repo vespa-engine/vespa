@@ -129,7 +129,7 @@ public class FastSearcherTestCase {
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
                 documentDb,
-                new SchemaInfo(List.of(schema.build()), Map.of()));
+                new SchemaInfo(List.of(schema.build()), List.of()));
         Query q = new Query("?query=foo");
         Result result = doSearch(backend, q, 0, 10);
         assertFalse(backend.summaryNeedsQuery(q));
@@ -210,7 +210,7 @@ public class FastSearcherTestCase {
     private SchemaInfo schemaInfo(String schemaName) {
         var schema = new Schema.Builder(schemaName);
         schema.add(new RankProfile.Builder("default").build());
-        return new SchemaInfo(List.of(schema.build()),  Map.of());
+        return new SchemaInfo(List.of(schema.build()),  List.of());
     }
 
 }

@@ -240,7 +240,7 @@ public class VdsStreamingSearcherTestCase {
                 new SummaryParameters("default"),
                 new ClusterParams("clusterName"),
                 new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("test")).build(),
-                new SchemaInfo(List.of(schema.build()), Map.of()));
+                new SchemaInfo(List.of(schema.build()), List.of()));
 
         // Magic query values are used to trigger specific behaviors from mock visitor.
         checkError(searcher, "/?query=noselection",

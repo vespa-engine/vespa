@@ -6,10 +6,7 @@ import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Translation between schema info configuration and schema objects.
@@ -47,14 +44,15 @@ class SchemaInfoConfigurer {
         return builder.build();
     }
 
-    static Map<String, List<String>> toClusters(QrSearchersConfig config) {
-        Map<String, List<String>> clusters = new HashMap<>();
+    static List<Cluster> toClusters(QrSearchersConfig config) {
+        List<Cluster> clusters = new ArrayList<>();
         for (int i = 0; i < config.searchcluster().size(); ++i) {
-            List<String> schemas = new ArrayList<>();
             String clusterName = config.searchcluster(i).name();
-            for (int j = 0; j < config.searchcluster(i).searchdef().size(); ++j)
-                schemas.add(config.searchcluster(i).searchdef(j));
-            clusters.put(clusterName, schemas);
+            var clusterInfo = new Cluster.Builder(clusterName);
+            clusterInfo.setStreaming(config.searchcluster(i).indexingmode() == QrSearchersConfig.Searchcluster.Indexingmode.Enum.STREAMING);
+            for (var schemaDef : config.searchcluster(i).searchdef())
+                clusterInfo.addSchema(schemaDef);
+            clusters.add(clusterInfo.build());
         }
         return clusters;
     }

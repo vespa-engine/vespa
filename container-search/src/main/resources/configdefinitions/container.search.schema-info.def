@@ -4,7 +4,18 @@ namespace=search.config
 ## The name of this schema
 schema[].name string
 
-## The name of the summary class
+## Information about a schema field (currently incomplete)
+schema[].field[].name string
+schema[].field[].type string
+schema[].field[].alias[] string
+schema[].field[].attribute bool
+schema[].field[].index bool
+
+## Field sets
+schema[].fieldset[].name string
+schema[].fieldset[].field[] string
+
+## Information about a summary class
 schema[].summaryclass[].name string
 ## The name of a field in the summary class
 schema[].summaryclass[].fields[].name string

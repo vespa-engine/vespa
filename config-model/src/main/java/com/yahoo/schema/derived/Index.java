@@ -16,11 +16,11 @@ public class Index {
     /** The index type enumeration */
     public static class Type {
 
-        public static final Type TEXT=new Type("text");
-        public static final Type INT64=new Type("long");
-        public static final Type BOOLEANTREE=new Type("booleantree");
+        public static final Type TEXT = new Type("text");
+        public static final Type INT64 = new Type("long");
+        public static final Type BOOLEANTREE = new Type("booleantree");
 
-        private String name;
+        private final String name;
 
         private Type(String name) {
             this.name=name;
