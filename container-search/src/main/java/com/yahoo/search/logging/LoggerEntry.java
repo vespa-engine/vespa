@@ -84,7 +84,7 @@ public class LoggerEntry {
 
         var timestamp = slime.get().field("timestamp").asLong();
         var query = new Query(slime.get().field("query").asString());
-        var blob = slime.get().field("blob").asString();
+        var blob = Base64.getDecoder().decode(slime.get().field("blob").asString());
         var track = slime.get().field("track").asString();
 
         return new LoggerEntry(new Builder().timestamp(timestamp).query(query).blob(blob).track(track));
@@ -136,6 +136,10 @@ public class LoggerEntry {
 
         public boolean send() {
             return logger.send(new LoggerEntry(this));
+        }
+
+        LoggerEntry build() {
+            return new LoggerEntry(this);
         }
 
     }
