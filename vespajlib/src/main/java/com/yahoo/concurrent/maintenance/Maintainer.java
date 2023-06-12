@@ -97,13 +97,18 @@ public abstract class Maintainer implements Runnable {
     /**
      * Called once each time this maintenance job should run.
      *
-     * @return the degree to which the run was deviated from the successFactorBaseline - a number between -1 (no success), to 0 (complete success).
+     * @return the degree to which the run successFactor deviated from the successFactorBaseline
+     *             - a number between -1 (no success), to 0 (complete success) measured against the
+     *             successFactorBaseline, or higher if the success factor is higher than the successFactorBaseline.
+     *         The default successFactorBaseline is 1.0.
+     *         If a maintainer is expected to fail sometimes, the successFactorBaseline should be set to a lower value.
+     *
      *         Note that this indicates whether something is wrong, so e.g. if the call did nothing because it should do
      *         nothing, 0.0 should be returned.
      */
     protected abstract double maintain();
 
-    /** Convenience methods to convert attempts and failures into a success factor, and return   */
+    /** Convenience methods to convert attempts and failures into a success factor deviation from the baseline, and return   */
     protected final double asSuccessFactorDeviation(int attempts, int failures) {
         double factor = attempts == 0 ? 1.0 : 1 - (double)failures / attempts;
         return new BigDecimal(factor - successFactorBaseline).setScale(2, RoundingMode.HALF_UP).doubleValue();
@@ -117,7 +122,7 @@ public abstract class Maintainer implements Runnable {
         if (!force && !jobControl.isActive(name())) return;
         log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
 
-        double successFactorDeviation = 0;
+        double successFactorDeviation = -1;
         long startTime = clock.millis();
         try (var lock = jobControl.lockJob(name())) {
             successFactorDeviation = maintain();
