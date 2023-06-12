@@ -16,11 +16,12 @@ ArrayStoreTypeMapper::~ArrayStoreTypeMapper() = default;
 uint32_t
 ArrayStoreTypeMapper::get_type_id(size_t array_size) const
 {
-    assert(!_array_sizes.empty());
-    auto result = std::lower_bound(_array_sizes.begin() + 1, _array_sizes.end(), array_size);
-    if (result == _array_sizes.end()) {
+    assert(_array_sizes.size() >= 2u);
+    if (array_size > _array_sizes.back()) {
         return 0; // type id 0 uses buffer type for large arrays
     }
+    auto result = std::lower_bound(_array_sizes.begin() + 1, _array_sizes.end(), array_size);
+    assert(result < _array_sizes.end());
     return result - _array_sizes.begin();
 }
 
