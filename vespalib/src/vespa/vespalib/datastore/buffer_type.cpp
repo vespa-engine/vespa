@@ -26,12 +26,14 @@ BufferTypeBase::CleanContext::extraBytesCleaned(size_t value)
     _extraHoldBytes.store(extra_hold_bytes - value, std::memory_order_relaxed);
 }
 
-BufferTypeBase::BufferTypeBase(uint32_t arraySize,
+BufferTypeBase::BufferTypeBase(uint32_t entry_size_in,
+                               uint32_t arraySize,
                                uint32_t min_entries,
                                uint32_t max_entries,
                                uint32_t num_entries_for_new_buffer,
                                float allocGrowFactor) noexcept
-    : _arraySize(arraySize),
+    : _entry_size(entry_size_in),
+      _arraySize(arraySize),
       _min_entries(std::min(min_entries, max_entries)),
       _max_entries(max_entries),
       _num_entries_for_new_buffer(std::min(num_entries_for_new_buffer, max_entries)),
@@ -43,10 +45,11 @@ BufferTypeBase::BufferTypeBase(uint32_t arraySize,
 {
 }
 
-BufferTypeBase::BufferTypeBase(uint32_t arraySize,
+BufferTypeBase::BufferTypeBase(uint32_t entry_size_in,
+                               uint32_t arraySize,
                                uint32_t min_entries,
                                uint32_t max_entries) noexcept
-    : BufferTypeBase(arraySize, min_entries, max_entries, 0u, DEFAULT_ALLOC_GROW_FACTOR)
+    : BufferTypeBase(entry_size_in, arraySize, min_entries, max_entries, 0u, DEFAULT_ALLOC_GROW_FACTOR)
 {
 }
 
