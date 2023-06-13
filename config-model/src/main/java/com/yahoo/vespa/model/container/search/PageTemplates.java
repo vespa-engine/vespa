@@ -20,11 +20,8 @@ import java.util.List;
  */
 public class PageTemplates implements Serializable, PageTemplatesConfig.Producer {
 
-    private List<String> pages = new ArrayList<>();
+    private final List<String> pages = new ArrayList<>();
     
-    /** The number of pages in this, for reporting */
-    //private int pages=0;
-
     /** Validates page templates in an application package. The passed readers will be closed. */
     public static void validate(ApplicationPackage applicationPackage) {
         List<NamedReader> pageTemplateFiles=null;
