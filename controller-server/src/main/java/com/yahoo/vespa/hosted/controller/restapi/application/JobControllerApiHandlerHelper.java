@@ -361,7 +361,15 @@ class JobControllerApiHandlerHelper {
                                                                      "/job/" + job.type().jobName()).normalize();
                 stepObject.setString("url", baseUriForJob.toString());
                 stepObject.setString("environment", job.type().environment().value());
-                if ( ! job.type().environment().isTest()) stepObject.setString("region", job.type().zone().value());
+                if ( ! job.type().environment().isTest()) {
+                    stepObject.setString("region", job.type().zone().value());
+                    var deployment = application.require(job.application().instance()).deployments().get(job.type().zone());
+                    var cloudAccount = deployment == null ? null : deployment.cloudAccount();
+                    if (cloudAccount != null && controller.zoneRegistry().isExternal(cloudAccount)) {
+                        var enclaveObject = stepObject.setObject("enclave");
+                        enclaveObject.setString("cloudAccount", cloudAccount.value());
+                    }
+                }
 
                 if (job.type().isProduction() && job.type().isDeployment()) {
                     status.deploymentFor(job).ifPresent(deployment -> {

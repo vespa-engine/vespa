@@ -2,9 +2,13 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -25,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
@@ -196,6 +201,24 @@ public class JobControllerApiHandlerHelperTest {
         tester.controller().jobController().deploy(tester.instance().id(), productionUsWest1, Optional.empty(), applicationPackage, true, true);
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root/")),
                 "jobs-direct-deployment.json");
+    }
+
+    @Test
+    void testEnclave() {
+        var cloudAccount = CloudAccount.from("aws:123456789012");
+        var applicationPackage = new ApplicationPackageBuilder()
+                .stagingTest()
+                .systemTest()
+                .region("aws-us-east-1c", cloudAccount.value())
+                .build();
+        var tester = new DeploymentTester(new ControllerTester(SystemName.Public));
+        tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount.value()), String.class);
+        tester.controllerTester().zoneRegistry().configureCloudAccount(cloudAccount, ZoneId.from("prod.aws-us-east-1c"));
+
+        var app = tester.newDeploymentContext();
+        app.submit(applicationPackage).deploy();
+
+        assertResponse(JobControllerApiHandlerHelper.overviewResponse(tester.controller(), app.application().id(), URI.create("https://some.url:43/root/")), "overview-enclave.json");
     }
 
     private void assertResponse(HttpResponse response, String fileName) {
