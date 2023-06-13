@@ -52,10 +52,9 @@ public:
     const attribute::IAttributeVector *getAttribute() const {
         return _scratchResult ? _scratchResult->getAttribute() : nullptr;
     }
-    const vespalib::string & getAttributeName() const { return _attributeName; }
+    const vespalib::string & getAttributeName() const noexcept { return _attributeName; }
 
-    void useEnumOptimization(bool use=true) { _useEnumOptimization = use; }
-    bool hasMultiValue() const { return _hasMultiValue; }
+    void enableEnumOptimization(bool enable) noexcept { _useEnumOptimization = enable; }
 public:
     class Handler
     {
@@ -64,17 +63,14 @@ public:
         virtual void handle(const AttributeResult & r) = 0;
     };
 private:
-    std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<Handler>>
-    createResultAndHandler(bool preserveAccurateType, const attribute::IAttributeVector & attribute) const;
+    virtual std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<Handler>>
+    createResultHandler(bool preserveAccurateType, const attribute::IAttributeVector & attribute) const;
     template <typename V> class IntegerHandler;
     class FloatHandler;
     class StringHandler;
     class EnumHandler;
-protected:
-    virtual void cleanup();
     void wireAttributes(const attribute::IAttributeContext & attrCtx) override;
-    void onPrepare(bool preserveAccurateTypes) override;
-    bool onExecute() const override;
+    void onPrepare(bool preserveAccurateTypes) final;
 
     std::unique_ptr<AttributeResult>  _scratchResult;
     const CurrentIndex               *_index;
@@ -83,6 +79,16 @@ protected:
     bool                              _useEnumOptimization;
     mutable bool                      _needExecute;
     std::unique_ptr<Handler>          _handler;
+protected:
+    void setHasMultiValue(bool has) noexcept { _hasMultiValue = has; }
+    [[nodiscard]] bool useEnumOptimization() const noexcept { return _useEnumOptimization; }
+    [[nodiscard]] bool hasMultiValue() const noexcept { return _hasMultiValue; }
+
+    void setScratchResult(std::unique_ptr<AttributeResult> result) noexcept {
+        _scratchResult = std::move(result);
+    }
+    virtual void cleanup();
+    bool onExecute() const override;
     vespalib::string                  _attributeName;
 };
 
