@@ -296,7 +296,7 @@ HeapAllocator::salloc(size_t sz) {
     }
     void * ptr = malloc(sz);
     if (ptr == nullptr) {
-        throw IllegalArgumentException(make_string("malloc(%zu) failed with error '%s'", sz, getLastErrorString().c_str()));
+        throw OOMException(make_string("malloc(%zu) failed with error '%s'", sz, getLastErrorString().c_str()));
     }
     return PtrAndSize(ptr, sz);
 }
