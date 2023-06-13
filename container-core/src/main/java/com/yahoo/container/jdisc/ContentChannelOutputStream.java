@@ -84,7 +84,7 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
      */
     @Override
     public void write(byte[] b) throws IOException {
-            nonCopyingWrite(Arrays.copyOf(b, b.length));
+        nonCopyingWrite(Arrays.copyOf(b, b.length));
     }
 
     /**
@@ -142,10 +142,13 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
     }
 
     private class LoggingCompletionHandler implements CompletionHandler {
+
         private final CompletionHandler nested;
+
         LoggingCompletionHandler(CompletionHandler nested) {
             this.nested = nested;
         }
+
         @Override
         public void completed() {
             if (nested != null) {

@@ -100,7 +100,7 @@ public interface IncomingData<DATATYPE extends Data> {
      */
     final class NullIncomingData<DATATYPE extends Data> implements IncomingData<DATATYPE> {
 
-        private DataList<DATATYPE> owner;
+        private final DataList<DATATYPE> owner;
         private final ImmediateFuture<DATATYPE> completionFuture;
 
         public NullIncomingData(DataList<DATATYPE> owner) {

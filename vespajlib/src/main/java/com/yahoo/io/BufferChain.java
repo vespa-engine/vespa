@@ -127,7 +127,7 @@ public final class BufferChain {
     }
 
     public void flush() throws IOException {
-        for (final ByteBuffer b : buffers) {
+        for (ByteBuffer b : buffers) {
             endpoint.send(b);
         }
         buffers.clear();

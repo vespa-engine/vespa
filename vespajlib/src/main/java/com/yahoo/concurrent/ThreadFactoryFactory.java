@@ -11,6 +11,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ThreadFactoryFactory {
 
+    static private final Map<String, PooledFactory> factory = new HashMap<>();
+
     static public synchronized ThreadFactory getThreadFactory(String name) {
         PooledFactory p = factory.get(name);
         if (p == null) {
@@ -30,16 +32,21 @@ public class ThreadFactoryFactory {
     }
 
     private static class PooledFactory {
+
+        private final String name;
+        private final AtomicInteger poolId = new AtomicInteger(1);
+
         private static class Factory implements ThreadFactory {
+
             final ThreadGroup group;
             final AtomicInteger threadNumber = new AtomicInteger(1);
             final String namePrefix;
             final boolean isDaemon;
 
             @SuppressWarnings("removal")
-            Factory(final String name, boolean isDaemon) {
+            Factory(String name, boolean isDaemon) {
                 this.isDaemon = isDaemon;
-                final SecurityManager s = System.getSecurityManager();
+                SecurityManager s = System.getSecurityManager();
                 group = (s != null)
                         ? s.getThreadGroup()
                         : Thread.currentThread().getThreadGroup();
@@ -47,8 +54,8 @@ public class ThreadFactoryFactory {
             }
 
             @Override
-            public Thread newThread(final Runnable r) {
-                final Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
                 if (t.isDaemon() != isDaemon) {
                     t.setDaemon(isDaemon);
                 }
@@ -58,16 +65,15 @@ public class ThreadFactoryFactory {
                 return t;
             }
         }
+
         PooledFactory(String name) {
             this.name = name;
         }
+
         ThreadFactory getFactory(boolean isDaemon) {
             return new Factory(name + "-" + poolId.getAndIncrement() + "-thread-", isDaemon);
-
         }
-        private final String name;
-        private final AtomicInteger poolId = new AtomicInteger(1);
+
     }
-    static private final Map<String, PooledFactory> factory = new HashMap<>();
 
 }
