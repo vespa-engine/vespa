@@ -147,7 +147,7 @@
       {
         "at": 1600000000000,
         "type": "info",
-        "message": "1 application services upgrading"
+        "message": "1 application services still deploying"
       },
       {
         "at": 1600000000000,
@@ -172,7 +172,7 @@
       {
         "at": 1600000000000,
         "type": "info",
-        "message": "1 application services upgrading"
+        "message": "1 application services still deploying"
       },
       {
         "at": 1600000000000,
@@ -197,7 +197,7 @@
       {
         "at": 1600000000000,
         "type": "info",
-        "message": "1 application services upgrading"
+        "message": "1 application services still deploying"
       },
       {
         "at": 1600000000000,
@@ -222,7 +222,7 @@
       {
         "at": 1600000000000,
         "type": "info",
-        "message": "1 application services upgrading"
+        "message": "1 application services still deploying"
       },
       {
         "at": 1600000000000,
@@ -247,7 +247,7 @@
       {
         "at": 1600000000000,
         "type": "info",
-        "message": "1 application services upgrading"
+        "message": "1 application services still deploying"
       },
       {
         "at": 1600000000000,
@@ -272,7 +272,7 @@
       {
         "at": 1600000000000,
         "type": "info",
-        "message": "1 application services upgrading"
+        "message": "1 application services still deploying"
       },
       {
         "at": 1600000000000,
