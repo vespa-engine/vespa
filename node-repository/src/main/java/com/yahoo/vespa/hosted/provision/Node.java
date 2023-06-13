@@ -654,8 +654,12 @@ public final class Node implements Nodelike {
 
         /**
          * This node should not currently be used.
-         * This state follows the same rules as failed except that it will never be automatically moved out of
-         * this state.
+         *
+         * This state follows the same rules as failed, except that it will never be automatically moved out of
+         * this state. While a host will never move out of this state, it can still be deprovisioned, as requested by
+         * its {@link Status} flags.
+         *
+         * When an {@link Agent#operator} moves a node to this state, all its status flags will be cleared.
          */
         parked,
 

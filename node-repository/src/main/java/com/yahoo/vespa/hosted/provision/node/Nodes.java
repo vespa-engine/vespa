@@ -466,8 +466,15 @@ public class Nodes {
             if (node.state() == Node.State.deprovisioned) {
                illegal(node + " cannot be moved");
             }
+            // Clear all retirement flags when parked by operator
+            Instant now = clock.instant();
+            if (toState == Node.State.parked && agent == Agent.operator) {
+                if (forceDeprovision) illegal("Cannot force deprovisioning when agent is " + Agent.operator);
+                node = node.withWantToRetire(false, false, false, false, agent, now)
+                           .withPreferToRetire(false, agent, now);
+            }
             if (forceDeprovision)
-                node = node.withWantToRetire(true, true, agent, clock.instant());
+                node = node.withWantToRetire(true, true, agent, now);
             if (toState == Node.State.deprovisioned) {
                 node = node.with(IP.Config.EMPTY);
             }
