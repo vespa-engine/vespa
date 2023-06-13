@@ -16,7 +16,6 @@ import com.yahoo.processing.response.Streamed;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayDeque;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -591,7 +590,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
 
         @Override
         public List<Data> asList() {
-            return Collections.singletonList(trueTopLevel);
+            return List.of(trueTopLevel);
         }
 
         @Override
