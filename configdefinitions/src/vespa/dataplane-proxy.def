@@ -7,9 +7,3 @@ port                int
 # Server certificate and key to be used when creating server socket
 serverCertificate   string
 serverKey           string
-
-# The mTLS endpoint SNI header to route to Jdisc using L4
-mTlsEndpoint        string
-
-# The endpoint SNI header supporting token authentication
-tokenEndpoint       string

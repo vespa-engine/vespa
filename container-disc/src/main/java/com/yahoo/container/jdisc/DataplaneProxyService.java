@@ -51,8 +51,6 @@ public class DataplaneProxyService extends AbstractComponent {
                               credentialsProvider.keyFile(),
                               serverCertificateFile,
                               serverKeyFile,
-                              URI.create(config.mTlsEndpoint()),
-                              URI.create(config.tokenEndpoint()),
                               config.port(),
                               PREFIX
                       ));
@@ -141,8 +139,6 @@ public class DataplaneProxyService extends AbstractComponent {
             Path clientKey,
             Path serverCert,
             Path serverKey,
-            URI mTlsEndpoint,
-            URI tokenEndpoint,
             int vespaPort,
             String prefix) {
 
@@ -152,8 +148,6 @@ public class DataplaneProxyService extends AbstractComponent {
             nginxTemplate = replace(nginxTemplate, "client_key", clientKey.toString());
             nginxTemplate = replace(nginxTemplate, "server_cert", serverCert.toString());
             nginxTemplate = replace(nginxTemplate, "server_key", serverKey.toString());
-            nginxTemplate = replace(nginxTemplate, "mtls_endpoint", mTlsEndpoint.getHost());
-            nginxTemplate = replace(nginxTemplate, "token_endpoint", tokenEndpoint.getHost());
             nginxTemplate = replace(nginxTemplate, "vespa_port", Integer.toString(vespaPort));
             nginxTemplate = replace(nginxTemplate, "prefix", prefix);
 
