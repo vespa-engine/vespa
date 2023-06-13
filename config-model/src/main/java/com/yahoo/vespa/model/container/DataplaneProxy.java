@@ -10,16 +10,12 @@ public class DataplaneProxy extends SimpleComponent implements DataplaneProxyCon
     private final Integer port;
     private final String serverCertificate;
     private final String serverKey;
-    private final String mTlsEndpoint;
-    private final String tokenEndpoint;
 
-    public DataplaneProxy(Integer port, String serverCertificate, String serverKey, String mTlsEndpoint, String tokenEndpoint) {
+    public DataplaneProxy(Integer port, String serverCertificate, String serverKey) {
         super(DataplaneProxyConfigurator.class.getName());
         this.port = port;
         this.serverCertificate = serverCertificate;
         this.serverKey = serverKey;
-        this.mTlsEndpoint = mTlsEndpoint;
-        this.tokenEndpoint = tokenEndpoint;
     }
 
     @Override
@@ -27,8 +23,6 @@ public class DataplaneProxy extends SimpleComponent implements DataplaneProxyCon
         builder.port(port);
         builder.serverCertificate(serverCertificate);
         builder.serverKey(serverKey);
-        builder.mTlsEndpoint(mTlsEndpoint);
-        builder.tokenEndpoint(tokenEndpoint);
     }
 
 }

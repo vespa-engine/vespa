@@ -602,19 +602,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
                 cluster.addSimpleComponent(DataplaneProxyCredentials.class);
                 cluster.addSimpleComponent(DataplaneProxyService.class);
-                var mTlsEndpoint = cluster.endpoints()
-                        .stream()
-                        .filter(endpoint -> endpoint.scope().equals(ApplicationClusterEndpoint.Scope.zone))
-                        .findFirst()
-                        .map(endpoint -> endpoint.dnsName().value())
-                        .orElseThrow();
 
                 var dataplaneProxy = new DataplaneProxy(
                         getDataplanePort(deployState),
                         endpointCertificateSecrets.certificate(),
-                        endpointCertificateSecrets.key(),
-                        mTlsEndpoint,
-                        "token." + mTlsEndpoint);
+                        endpointCertificateSecrets.key());
                 cluster.addComponent(dataplaneProxy);
             }
             connectorFactory = authorizeClient
