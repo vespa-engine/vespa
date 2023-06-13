@@ -1,8 +1,10 @@
 package com.yahoo.container.plugin.mojo;
 
-import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.File;
+
+import static com.yahoo.container.plugin.mojo.ApplicationMojo.ignoredFilesFilter;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -10,6 +12,12 @@ import static org.junit.Assert.assertTrue;
  * @author jonmv
  */
 public class ApplicationMojoTest {
+
+    @Test
+    public void it_does_not_include_files_to_be_ignored() {
+        var dsStore = new File("target/classes/.DS_Store");
+        assertFalse(ignoredFilesFilter().accept(dsStore));
+    }
 
     @Test
     public void testRegex() {
