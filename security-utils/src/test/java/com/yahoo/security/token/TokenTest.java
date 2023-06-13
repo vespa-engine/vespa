@@ -131,4 +131,20 @@ public class TokenTest {
         assertEquals("f566dbec641aa64723dd19124afe6c96a821638f9b59f46bbe14f61c3704b32a", t3_h.toHexString());
     }
 
+    @Test
+    void token_fingerprints_and_check_hashes_can_be_constructed_from_hex() {
+        var domain = TokenDomain.of("fingerprint domain", "check domain");
+        var token = Token.of(domain, "my_token");
+
+        var fingerprintHex = token.fingerprint().toHexString();
+        assertEquals(token.fingerprint(), TokenFingerprint.ofHex(fingerprintHex));
+
+        var fingerprintDelimitedHex = token.fingerprint().toDelimitedHexString();
+        assertEquals(token.fingerprint(), TokenFingerprint.ofHex(fingerprintDelimitedHex));
+
+        var checkHash = TokenCheckHash.of(token, 32);
+        var checkHashHex = checkHash.toHexString();
+        assertEquals(checkHash, TokenCheckHash.ofHex(checkHashHex));
+    }
+
 }

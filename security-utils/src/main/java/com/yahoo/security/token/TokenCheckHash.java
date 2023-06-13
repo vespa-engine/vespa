@@ -4,6 +4,7 @@ package com.yahoo.security.token;
 import java.util.Arrays;
 
 import static com.yahoo.security.ArrayUtils.hex;
+import static com.yahoo.security.ArrayUtils.unhex;
 
 /**
  * A token check hash represents a hash derived from a token in such a way that
@@ -42,5 +43,7 @@ public record TokenCheckHash(byte[] hashBytes) {
     public static TokenCheckHash ofRawBytes(byte[] hashBytes) {
         return new TokenCheckHash(Arrays.copyOf(hashBytes, hashBytes.length));
     }
+
+    public static TokenCheckHash ofHex(String hex) { return ofRawBytes(unhex(hex)); }
 
 }

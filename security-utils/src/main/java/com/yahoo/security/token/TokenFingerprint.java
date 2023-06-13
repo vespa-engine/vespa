@@ -57,4 +57,9 @@ public record TokenFingerprint(byte[] hashBytes) {
         return new TokenFingerprint(Arrays.copyOf(hashBytes, hashBytes.length));
     }
 
+    public static TokenFingerprint ofHex(String hex) {
+        var format = hex.contains(":") ? HexFormat.ofDelimiter(":") : HexFormat.of();
+        return ofRawBytes(format.parseHex(hex));
+    }
+
 }
