@@ -422,8 +422,8 @@ public class HostCapacityMaintainerTest {
         tester.nodeRepository().nodes().setRemovable(NodeList.of(hostToRemove.get()), true);
         tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
         tester.prepareAndActivateInfraApplication(hostApp, hostType);
-        tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(nodeToRemove.get().hostname(), Agent.operator, "Readied by host-admin");
-        tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(hostToRemove.get().hostname(), Agent.operator, "Readied by host-admin");
+        tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(nodeToRemove.get().hostname(), Agent.nodeAdmin, "Readied by host-admin");
+        tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(hostToRemove.get().hostname(), Agent.nodeAdmin, "Readied by host-admin");
         assertEquals(2, tester.nodeRepository().nodes().list().nodeType(hostType.childNodeType()).state(Node.State.active).size());
         assertSame("Node moves to expected state", Node.State.parked, nodeToRemove.get().state());
         assertSame("Host moves to parked", Node.State.parked, hostToRemove.get().state());
@@ -512,7 +512,7 @@ public class HostCapacityMaintainerTest {
     }
 
     @Test
-    public void deprovision_node_when_no_allocation_and_past_TTL() {
+    public void deprovision_node_when_no_allocation_and_past_ttl() {
         var tester = new DynamicProvisioningTester();
         ManualClock clock = (ManualClock) tester.nodeRepository.clock();
         tester.hostProvisioner.with(Behaviour.failProvisioning);
@@ -530,7 +530,7 @@ public class HostCapacityMaintainerTest {
         assertEquals(Optional.empty(), tester.nodeRepository.nodes().node(host1.hostname()).get().hostEmptyAt());
 
         // Child is set to deprovision, but turns active
-        tester.nodeRepository.nodes().park(host11.hostname(), true, Agent.operator, "not good");
+        tester.nodeRepository.nodes().park(host11.hostname(), true, Agent.system, "not good");
         tester.nodeRepository.nodes().reactivate(host11.hostname(), Agent.operator, "all good");
         assertTrue(tester.nodeRepository.nodes().node(host11.hostname()).get().status().wantToDeprovision());
         assertEquals(State.active, tester.nodeRepository.nodes().node(host11.hostname()).get().state());
@@ -539,7 +539,7 @@ public class HostCapacityMaintainerTest {
         assertEquals(Optional.empty(), tester.nodeRepository.nodes().node(host1.hostname()).get().hostEmptyAt());
 
         // Child is parked, to make the host effectively empty
-        tester.nodeRepository.nodes().park(host11.hostname(), true, Agent.operator, "not good");
+        tester.nodeRepository.nodes().park(host11.hostname(), true, Agent.system, "not good");
         tester.maintain();
         assertFalse(tester.nodeRepository.nodes().node(host1.hostname()).get().status().wantToDeprovision());
         assertEquals(Optional.of(clock.instant().truncatedTo(ChronoUnit.MILLIS)),

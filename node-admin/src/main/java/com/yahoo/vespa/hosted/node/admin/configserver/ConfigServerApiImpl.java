@@ -245,7 +245,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                 .setDefaultRequestConfig(DEFAULT_REQUEST_CONFIG)
                 .disableAutomaticRetries()
                 .disableConnectionState() // Share connections between subsequent requests.
-                .setUserAgent("node-admin")
+                .setUserAgent("node-admin") // Node-repository depends on this value to identify agent of node-admin/host-admin requests
                 .setConnectionManager(cm)
                 .build();
     }
