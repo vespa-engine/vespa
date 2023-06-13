@@ -12,10 +12,13 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.container.plugin.BundleTest.findBundleJar;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
+ * Tests for a USER bundle that imports non-PublicApi packages.
+ *
  * @author gjoranv
  */
 public class NonPublicApiDetectionTest {
@@ -43,4 +46,10 @@ public class NonPublicApiDetectionTest {
         assertTrue(usedNonPublicApi.contains("com.yahoo.lib.non_public"));
     }
 
+    @Test
+    void vespa_version_is_added_to_manifest() {
+        var vespaVersionAttribute = mainAttributes.getValue("X-JDisc-Vespa-Build-Version");
+        assertNotNull(vespaVersionAttribute);
+        assertNotEquals("", vespaVersionAttribute);
+    }
 }

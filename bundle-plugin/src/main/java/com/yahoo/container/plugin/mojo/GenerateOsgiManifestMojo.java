@@ -111,7 +111,11 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
             logDebugPackageSets(exportedPackagesFromProvidedJars, includedPackages);
 
-            if (hasJdiscCoreProvided(providedJarArtifacts)) {
+            Optional<Artifact> jdiscCore = providedJarArtifacts.stream()
+                    .filter(artifact -> artifact.getArtifactId().equals("jdisc_core"))
+                    .findAny();
+
+            if (jdiscCore.isPresent()) {
                 // jdisc_core being provided guarantees that log output does not contain its exported packages
                 logMissingPackages(exportedPackagesFromProvidedDeps, projectPackages, compileJarsPackages, includedPackages);
             } else if (! suppressWarningMissingImportPackages) {
@@ -131,7 +135,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
             Map<String, String> manifestContent = generateManifestContent(artifactSet.getJarArtifactsToInclude(), calculatedImports, includedPackages);
             addAdditionalManifestProperties(manifestContent);
             addManifestPropertiesForInternalBundles(manifestContent, includedPackages);
-            addManifestPropertiesForUserBundles(manifestContent, nonPublicApiUsed);
+            addManifestPropertiesForUserBundles(manifestContent, jdiscCore, nonPublicApiUsed);
 
             createManifestFile(Paths.get(project.getBuild().getOutputDirectory()), manifestContent);
         } catch (Exception e) {
@@ -170,8 +174,13 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         addIfNotEmpty(manifestContent, "X-JDisc-Non-PublicApi-Export-Package", nonPublicApi(includedPackages));
     }
 
-    private void addManifestPropertiesForUserBundles(Map<String, String> manifestContent, List<String> nonPublicApiUsed) {
+    private void addManifestPropertiesForUserBundles(Map<String, String> manifestContent,
+                                                     Optional<Artifact> jdiscCore,
+                                                     List<String> nonPublicApiUsed) {
         if (effectiveBundleType() != BundleType.USER) return;
+
+        jdiscCore.ifPresent(
+                artifact -> addIfNotEmpty(manifestContent, "X-JDisc-Vespa-Build-Version", artifact.getVersion()));
         addIfNotEmpty(manifestContent, "X-JDisc-Non-PublicApi-Import-Package", String.join(",", nonPublicApiUsed));
     }
 
@@ -195,10 +204,6 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
             getLog().debug("Exported packages of dependencies = " + exportedPackagesFromProvidedJars.stream()
                     .map(e -> "(" + e.getPackageNames().toString() + ", " + e.version().orElse("")).collect(Collectors.joining(", ")));
         }
-    }
-
-    private boolean hasJdiscCoreProvided(List<Artifact> providedArtifacts) {
-        return providedArtifacts.stream().anyMatch(artifact -> artifact.getArtifactId().equals("jdisc_core"));
     }
 
     private void logMissingPackages(Set<String> exportedPackagesFromProvidedJars,
