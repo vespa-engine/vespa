@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * Marker interface for use with the BufferChain data store.
+ * For use with the BufferChain data store.
  *
  * @author Steinar Knutsen
  */
