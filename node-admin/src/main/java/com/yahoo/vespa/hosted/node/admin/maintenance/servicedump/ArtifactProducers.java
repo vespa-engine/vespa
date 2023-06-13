@@ -49,7 +49,8 @@ class ArtifactProducers {
                 new JvmDumper.Jstat(),
                 new JvmDumper.Jstack(),
                 new PmapReporter(),
-                new VespaLogDumper(sleeper));
+                new VespaLogDumper(sleeper),
+                new ZooKeeperSnapshotDumper());
         var aliases =
                 Map.of(
                         "jvm-dump",

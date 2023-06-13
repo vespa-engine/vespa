@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 
+import static com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.ServiceDumpReport.DumpOptions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -112,8 +113,7 @@ class VespaServiceDumperImplTest {
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
         TestTimer timer = new TestTimer(Instant.ofEpochMilli(1600001000000L));
-        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(
-                nodeRepository, List.of("jvm-jfr"), new ServiceDumpReport.DumpOptions(null, null, null));
+        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, List.of("jvm-jfr"));
 
         VespaServiceDumper reporter = new VespaServiceDumperImpl(
                 ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, timer);
@@ -137,6 +137,43 @@ class VespaServiceDumperImplTest {
 
         List<URI> expectedUris = List.of(
                 URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/recording.jfr.zst"));
+        assertSyncedFiles(context, syncClient, expectedUris);
+    }
+
+    @Test
+    void invokes_zookeeper_backup_command_when_generating_snapshot() {
+        // Setup mocks
+        ContainerOperations operations = mock(ContainerOperations.class);
+        when(operations.executeCommandInContainer(any(), any(), any()))
+                .thenReturn(new CommandResult(null, 0, "12345"))
+                .thenReturn(new CommandResult(null, 0, ""))
+                .thenReturn(new CommandResult(null, 0, ""));
+        SyncClient syncClient = createSyncClientMock();
+        NodeRepoMock nodeRepository = new NodeRepoMock();
+        TestTimer timer = new TestTimer(Instant.ofEpochMilli(1600001000000L));
+        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, List.of("zookeeper-snapshot"));
+
+        VespaServiceDumper reporter = new VespaServiceDumperImpl(
+                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, timer);
+        NodeAgentContextImpl context = NodeAgentContextImpl.builder(nodeSpec)
+                .fileSystem(fileSystem)
+                .build();
+        reporter.processServiceDumpRequest(context);
+
+        verify(operations).executeCommandInContainer(
+                context,
+                context.users().vespa(),
+                "bash",
+                "-c",
+                "/opt/vespa/bin/vespa-backup-zk-data.sh -o /opt/vespa/var/tmp/vespa-service-dump-1600000000000/zookeeper-snapshot.tgz -k -f");
+
+        String expectedJson = "{\"createdMillis\":1600000000000,\"startedAt\":1600001000000,\"completedAt\":1600001000000," +
+                "\"location\":\"s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/\"," +
+                "\"configId\":\"default/container.1\",\"artifacts\":[\"zookeeper-snapshot\"],\"dumpOptions\":{}}";
+        assertReportEquals(nodeRepository, expectedJson);
+
+        List<URI> expectedUris = List.of(
+                URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/zookeeper-snapshot.tgz"));
         assertSyncedFiles(context, syncClient, expectedUris);
     }
 
@@ -198,8 +235,11 @@ class VespaServiceDumperImplTest {
         assertReportEquals(nodeRepository, expectedJson);
     }
 
-    private static NodeSpec createNodeSpecWithDumpRequest(NodeRepoMock repository, List<String> artifacts,
-                                                          ServiceDumpReport.DumpOptions options) {
+    private static NodeSpec createNodeSpecWithDumpRequest(NodeRepoMock repository, List<String> artifacts) {
+        return createNodeSpecWithDumpRequest(repository, artifacts, new DumpOptions(null, null, null));
+    }
+
+    private static NodeSpec createNodeSpecWithDumpRequest(NodeRepoMock repository, List<String> artifacts, DumpOptions options) {
         ServiceDumpReport request = ServiceDumpReport.createRequestReport(
                 Instant.ofEpochMilli(1600000000000L), null, "default/container.1", artifacts, options);
         NodeSpec spec = NodeSpec.Builder
