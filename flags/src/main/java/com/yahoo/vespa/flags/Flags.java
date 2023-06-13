@@ -414,7 +414,7 @@ public class Flags {
             "Takes effect at redeployment from controller");
 
     public static final UnboundBooleanFlag ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR = defineFeatureFlag(
-            "enable-conditional-put-remove-write-repair", false,
+            "enable-conditional-put-remove-write-repair", true,
             List.of("vekterli", "havardpe"), "2023-05-10", "2023-07-01",
             "If set, a conditional Put or Remove operation for a document in an inconsistent bucket " +
             "will initiate a write-repair that evaluates the condition across all mutually inconsistent " +
