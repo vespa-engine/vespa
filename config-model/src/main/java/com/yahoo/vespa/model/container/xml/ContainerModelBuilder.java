@@ -602,21 +602,23 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
                 cluster.addSimpleComponent(DataplaneProxyCredentials.class);
                 cluster.addSimpleComponent(DataplaneProxyService.class);
-                var mTlsEndpoint = cluster.endpoints()
-                        .stream()
-                        .filter(endpoint -> endpoint.scope().equals(ApplicationClusterEndpoint.Scope.zone))
-                        .findFirst()
-                        .map(endpoint -> endpoint.dnsName().value())
-                        .orElseThrow();
 
-                var dataplaneProxy = new DataplaneProxy(
-                        getDataplanePort(deployState),
-                        endpointCertificateSecrets.certificate(),
-                        endpointCertificateSecrets.key(),
-                        mTlsEndpoint,
-                        "token." + mTlsEndpoint);
-                cluster.addComponent(dataplaneProxy);
+                deployState.getProperties().zoneDnsSuffixes().stream().findFirst().ifPresent(dnsSuffix -> {
+                    var mTlsEndpoint = ApplicationClusterEndpoint.DnsName.sharedL4NameFrom(
+                            deployState.zone().system(),
+                            cluster.id(),
+                            deployState.getProperties().applicationId(),
+                            dnsSuffix);
+                    var dataplaneProxy = new DataplaneProxy(
+                            getDataplanePort(deployState),
+                            endpointCertificateSecrets.certificate(),
+                            endpointCertificateSecrets.key(),
+                            mTlsEndpoint.value(),
+                            "token." + mTlsEndpoint.value());
+                    cluster.addComponent(dataplaneProxy);
+                });
             }
+
             connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
                     serverName, endpointCertificateSecrets, X509CertificateUtils.toPem(clientCertificates),
