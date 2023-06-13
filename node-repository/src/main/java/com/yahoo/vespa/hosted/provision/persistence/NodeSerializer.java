@@ -475,6 +475,7 @@ public class NodeSerializer {
             case "operator" -> Agent.operator;
             case "application" -> Agent.application;
             case "system" -> Agent.system;
+            case "nodeAdmin" -> Agent.nodeAdmin;
             case "DirtyExpirer" -> Agent.DirtyExpirer;
             case "DynamicProvisioningMaintainer", "HostCapacityMaintainer" -> Agent.HostCapacityMaintainer;
             case "HostResumeProvisioner" -> Agent.HostResumeProvisioner;
@@ -500,6 +501,7 @@ public class NodeSerializer {
             case operator -> "operator";
             case application -> "application";
             case system -> "system";
+            case nodeAdmin -> "nodeAdmin";
             case DirtyExpirer -> "DirtyExpirer";
             case HostCapacityMaintainer -> "DynamicProvisioningMaintainer";
             case HostResumeProvisioner -> "HostResumeProvisioner";

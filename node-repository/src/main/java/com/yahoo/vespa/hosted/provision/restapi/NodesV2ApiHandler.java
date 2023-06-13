@@ -139,28 +139,28 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         Path path = new Path(request.getUri());
         // Check paths to disallow illegal state changes
         if (path.matches("/nodes/v2/state/ready/{hostname}")) {
-            nodeRepository.nodes().markNodeAvailableForNewAllocation(path.get("hostname"), Agent.operator, "Readied through the nodes/v2 API");
+            nodeRepository.nodes().markNodeAvailableForNewAllocation(path.get("hostname"), agent(request), "Readied through the nodes/v2 API");
             return new MessageResponse("Moved " + path.get("hostname") + " to " + Node.State.ready);
         }
         else if (path.matches("/nodes/v2/state/failed/{hostname}")) {
-            var failedOrMarkedNodes = NodeList.copyOf(nodeRepository.nodes().failOrMarkRecursively(path.get("hostname"), Agent.operator, "Failed through the nodes/v2 API"));
+            var failedOrMarkedNodes = NodeList.copyOf(nodeRepository.nodes().failOrMarkRecursively(path.get("hostname"), agent(request), "Failed through the nodes/v2 API"));
             return new MessageResponse("Moved " + hostnamesAsString(failedOrMarkedNodes.state(Node.State.failed).asList()) + " to " + Node.State.failed +
                                        " and marked " + hostnamesAsString(failedOrMarkedNodes.failing().asList()) + " as wantToFail");
         }
         else if (path.matches("/nodes/v2/state/parked/{hostname}")) {
-            List<Node> parkedNodes = nodeRepository.nodes().parkRecursively(path.get("hostname"), Agent.operator, "Parked through the nodes/v2 API");
+            List<Node> parkedNodes = nodeRepository.nodes().parkRecursively(path.get("hostname"), agent(request), "Parked through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(parkedNodes) + " to " + Node.State.parked);
         }
         else if (path.matches("/nodes/v2/state/dirty/{hostname}")) {
-            List<Node> dirtiedNodes = nodeRepository.nodes().deallocateRecursively(path.get("hostname"), Agent.operator, "Dirtied through the nodes/v2 API");
+            List<Node> dirtiedNodes = nodeRepository.nodes().deallocateRecursively(path.get("hostname"), agent(request), "Dirtied through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(dirtiedNodes) + " to " + Node.State.dirty);
         }
         else if (path.matches("/nodes/v2/state/active/{hostname}")) {
-            nodeRepository.nodes().reactivate(path.get("hostname"), Agent.operator, "Reactivated through nodes/v2 API");
+            nodeRepository.nodes().reactivate(path.get("hostname"), agent(request), "Reactivated through nodes/v2 API");
             return new MessageResponse("Moved " + path.get("hostname") + " to " + Node.State.active);
         }
         else if (path.matches("/nodes/v2/state/breakfixed/{hostname}")) {
-            List<Node> breakfixedNodes = nodeRepository.nodes().breakfixRecursively(path.get("hostname"), Agent.operator, "Breakfixed through the nodes/v2 API");
+            List<Node> breakfixedNodes = nodeRepository.nodes().breakfixRecursively(path.get("hostname"), agent(request), "Breakfixed through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(breakfixedNodes) + " to " + Node.State.breakfixed);
         }
 
@@ -218,7 +218,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
             return new MessageResponse("Scheduled reboot of " + rebootCount + " matching nodes");
         }
         if (path.matches("/nodes/v2/node")) {
-            int addedNodes = addNodes(toSlime(request));
+            int addedNodes = addNodes(request);
             return new MessageResponse("Added " + addedNodes + " nodes to the provisioned state");
         }
         if (path.matches("/nodes/v2/maintenance/run/{job}")) return runJob(path.get("job"));
@@ -261,9 +261,9 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         }
     }
 
-    public int addNodes(Inspector inspector) {
-        List<Node> nodes = createNodesFromSlime(inspector);
-        return nodeRepository.nodes().addNodes(nodes, Agent.operator).size();
+    public int addNodes(HttpRequest request) {
+        List<Node> nodes = createNodesFromSlime(toSlime(request));
+        return nodeRepository.nodes().addNodes(nodes, agent(request)).size();
     }
 
     private Inspector toSlime(HttpRequest request) {
@@ -486,6 +486,10 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
             applicationObject.setDouble("unutilizedCost", applicationStats.unutilizedCost());
         }
         return new SlimeJsonResponse(slime);
+    }
+
+    private static Agent agent(HttpRequest request) {
+        return "node-admin".equalsIgnoreCase(request.getHeader("User-Agent")) ? Agent.nodeAdmin : Agent.operator;
     }
 
     private static void toSlime(Load load, Cursor object) {
