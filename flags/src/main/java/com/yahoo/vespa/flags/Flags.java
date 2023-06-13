@@ -251,14 +251,14 @@ public class Flags {
 
     public static final UnboundStringFlag SYSTEM_MEMORY_HIGH = defineStringFlag(
             "system-memory-high", "",
-            List.of("baldersheim"), "2023-02-14", "2023-06-13",
+            List.of("baldersheim"), "2023-02-14", "2023-12-31",
             "The value to write to /sys/fs/cgroup/system.slice/memory.high, if non-empty.",
             "Takes effect on next tick.",
             ZONE_ID, NODE_TYPE);
 
     public static final UnboundStringFlag SYSTEM_MEMORY_MAX = defineStringFlag(
             "system-memory-max", "",
-            List.of("baldersheim"), "2023-02-14", "2023-06-13",
+            List.of("baldersheim"), "2023-02-14", "2023-12-31",
             "The value to write to /sys/fs/cgroup/system.slice/memory.max, if non-empty.",
             "Takes effect on next tick.",
             ZONE_ID, NODE_TYPE);
