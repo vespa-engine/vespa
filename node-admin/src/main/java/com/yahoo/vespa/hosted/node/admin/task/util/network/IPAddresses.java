@@ -32,6 +32,7 @@ import java.util.stream.Stream;
  * @author smorgrav
  */
 public interface IPAddresses {
+    CidrBlock gcpInternalBlock = CidrBlock.fromString("2600:2d00::/32");
 
     InetAddress[] getAddresses(String hostname);
 
@@ -57,7 +58,6 @@ public interface IPAddresses {
      * @throws ConvergenceException if multiple addresses are found
      */
     default Optional<Inet6Address> getIPv6Address(String hostname) {
-        CidrBlock gcpInternalBlock = CidrBlock.fromString("2600:2d00::/32");
         List<Inet6Address> ipv6addresses = Stream.of(getAddresses(hostname))
                 .filter(Inet6Address.class::isInstance)
                 .filter(inetAddress -> !inetAddress.isLoopbackAddress())
