@@ -63,7 +63,7 @@ public class ExecutionFactory extends AbstractComponent {
                             Executor executor) {
         this(chainsConfig,
              indexInfo,
-             new SchemaInfo(indexInfo, schemaInfo, clusters),
+             new SchemaInfo(schemaInfo, clusters),
              clusters,
              searchers,
              specialTokens,

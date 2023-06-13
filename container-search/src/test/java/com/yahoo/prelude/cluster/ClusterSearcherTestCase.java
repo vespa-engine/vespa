@@ -277,7 +277,7 @@ public class ClusterSearcherTestCase {
                     schemaBuilder.add(new RankProfile.Builder("testprofile").build());
                 schemas.add(schemaBuilder.build());
             }
-            return new Execution(cluster, Execution.Context.createContextStub(new SchemaInfo(schemas, Map.of())));
+            return new Execution(cluster, Execution.Context.createContextStub(new SchemaInfo(schemas, List.of())));
         } finally {
             cluster.deconstruct();
         }
@@ -462,7 +462,7 @@ public class ClusterSearcherTestCase {
                                    qrSearchersConfig.build(),
                                    clusterConfig.build(),
                                    documentDbConfig.build(),
-                                   new SchemaInfo(List.of(schema.build()), Map.of()),
+                                   new SchemaInfo(List.of(schema.build()), List.of()),
                                    dispatchers,
                                    null,
                                    vipStatus,

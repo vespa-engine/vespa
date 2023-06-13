@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.schema;
 
-import java.util.ArrayList;
+import com.yahoo.api.annotations.Beta;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -15,6 +15,7 @@ import java.util.Objects;
  *
  * @author bratseth
  */
+@Beta
 public class DocumentSummary {
 
     private final String name;

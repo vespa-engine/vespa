@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * An index definition in a search definition.
+ * An index definition in a schema.
  * Two indices are equal if they have the same name and the same settings, except
  * alias settings (which are excluded).
  *

@@ -168,7 +168,7 @@ public class SelectParser implements Parser {
         Inspector inspector = SlimeUtils.jsonToSlime(this.query.getSelect().getWhereString()).get();
         if (inspector.field("error_message").valid()) {
             throw new IllegalInputException("Illegal query: " + inspector.field("error_message").asString() +
-                                     " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
+                                            " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
         }
 
         try {
@@ -186,32 +186,15 @@ public class SelectParser implements Parser {
         inspector.traverse((ObjectTraverser) (key, value) -> {
             String type = (FUNCTION_CALLS.contains(key)) ? CALL : key;
             switch (type) {
-                case AND:
-                    item[0] = buildAnd(key, value);
-                    break;
-                case AND_NOT:
-                    item[0] = buildNotAnd(key, value);
-                    break;
-                case OR:
-                    item[0] = buildOr(key, value);
-                    break;
-                case EQ:
-                    item[0] = buildEquals(key, value);
-                    break;
-                case RANGE:
-                    item[0] = buildRange(key, value);
-                    break;
-                case CONTAINS:
-                    item[0] = buildTermSearch(key, value);
-                    break;
-                case MATCHES:
-                    item[0] = buildRegExpSearch(key, value);
-                    break;
-                case CALL:
-                    item[0] = buildFunctionCall(key, value);
-                    break;
-                default:
-                    throw newUnexpectedArgumentException(key, AND, CALL, CONTAINS, EQ, OR, RANGE, AND_NOT);
+                case AND -> item[0] = buildAnd(key, value);
+                case AND_NOT -> item[0] = buildNotAnd(key, value);
+                case OR -> item[0] = buildOr(key, value);
+                case EQ -> item[0] = buildEquals(key, value);
+                case RANGE -> item[0] = buildRange(key, value);
+                case CONTAINS -> item[0] = buildTermSearch(key, value);
+                case MATCHES -> item[0] = buildRegExpSearch(key, value);
+                case CALL -> item[0] = buildFunctionCall(key, value);
+                default -> throw newUnexpectedArgumentException(key, AND, CALL, CONTAINS, EQ, OR, RANGE, AND_NOT);
             }
         });
         return item[0];

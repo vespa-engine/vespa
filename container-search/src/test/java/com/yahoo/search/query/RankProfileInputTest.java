@@ -5,6 +5,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.search.Query;
+import com.yahoo.search.schema.Cluster;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
@@ -259,9 +260,9 @@ public class RankProfileInputTest {
                                          .addInput("query(myTensor1)", TensorType.fromSpec("tensor(a{},b{})"))
                                          .build())
                             .build());
-        Map<String, List<String>> clusters = new HashMap<>();
-        clusters.put("ab", List.of("a", "b"));
-        clusters.put("a", List.of("a"));
+        List<Cluster> clusters = new ArrayList<>();
+        clusters.add(new Cluster.Builder("ab").addSchema("a").addSchema("b").build());
+        clusters.add(new Cluster.Builder("a").addSchema("a").build());
         return new SchemaInfo(schemas, clusters);
     }
 
