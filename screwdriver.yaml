@@ -55,7 +55,7 @@ jobs:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
-      screwdriver.cd/timeout: 60
+      screwdriver.cd/timeout: 90
       screwdriver.cd/buildPeriodically: H 4 * * *
 
     environment:
