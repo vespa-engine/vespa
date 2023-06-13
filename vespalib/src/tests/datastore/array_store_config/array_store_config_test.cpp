@@ -24,9 +24,9 @@ struct Fixture
             size_t smallPageSize,
             size_t min_num_entries_for_new_buffer)
         : cfg(ArrayStoreConfig::optimizeForHugePage(maxSmallArrayTypeId,
-                                                    [](size_t type_id) noexcept { return type_id; },
+                                                    [](size_t type_id) noexcept { return type_id * sizeof(int); },
                                                     hugePageSize, smallPageSize,
-                                                    sizeof(int), EntryRefType::offsetSize(),
+                                                    EntryRefType::offsetSize(),
                                                     min_num_entries_for_new_buffer,
                                                     ALLOC_GROW_FACTOR)) { }
     void assertSpec(uint32_t type_id, uint32_t num_entries_for_new_buffer) {

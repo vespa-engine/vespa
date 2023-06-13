@@ -229,10 +229,9 @@ ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSma
                                                                   float allocGrowFactor)
 {
     return ArrayStoreConfig::optimizeForHugePage(mapper.get_max_small_array_type_id(maxSmallArrayTypeId),
-                                                 [&](uint32_t type_id) noexcept { return mapper.get_array_size(type_id); },
+                                                 [&](uint32_t type_id) noexcept { return mapper.get_entry_size(type_id); },
                                                  hugePageSize,
                                                  smallPageSize,
-                                                 sizeof(ElemT),
                                                  RefT::offsetSize(),
                                                  min_num_entries_for_new_buffer,
                                                  allocGrowFactor);
