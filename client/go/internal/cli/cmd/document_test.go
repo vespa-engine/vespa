@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"strconv"
 	"testing"
@@ -100,6 +101,10 @@ func TestDocumentPutServerError(t *testing.T) {
 	assertDocumentServerError(t, 501, "Server error")
 }
 
+func TestDocumentPutTransportError(t *testing.T) {
+	assertDocumentTransportError(t, "Transport error")
+}
+
 func TestDocumentGet(t *testing.T) {
 	assertDocumentGet([]string{"document", "get", "id:mynamespace:music::a-head-full-of-dreams"},
 		"id:mynamespace:music::a-head-full-of-dreams", t)
@@ -170,6 +175,19 @@ func assertDocumentGet(arguments []string, documentId string, t *testing.T) {
 	expectedPath, _ := vespa.IdToURLPath(documentId)
 	assert.Equal(t, documentURL+"/document/v1/"+expectedPath, client.LastRequest.URL.String())
 	assert.Equal(t, "GET", client.LastRequest.Method)
+}
+
+func assertDocumentTransportError(t *testing.T, errorMessage string) {
+	client := &mock.HTTPClient{}
+	client.NextResponseError(fmt.Errorf(errorMessage))
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+	assert.NotNil(t, cli.Run("document", "put",
+		"id:mynamespace:music::a-head-full-of-dreams",
+		"testdata/A-Head-Full-of-Dreams-Put.json"))
+	assert.Equal(t,
+		"Error: "+errorMessage+"\n",
+		stderr.String())
 }
 
 func assertDocumentError(t *testing.T, status int, errorMessage string) {

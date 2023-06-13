@@ -71,8 +71,15 @@ func (d *Dispatcher) logResult(doc Document, result Result, retry bool) {
 		return
 	}
 	var msg strings.Builder
-	msg.WriteString("feed: got status ")
-	msg.WriteString(strconv.Itoa(result.HTTPStatus))
+	msg.WriteString("feed: got ")
+	if result.Err != nil {
+		msg.WriteString("error \"")
+		msg.WriteString(result.Err.Error())
+		msg.WriteString("\"")
+	} else {
+		msg.WriteString("status ")
+		msg.WriteString(strconv.Itoa(result.HTTPStatus))
+	}
 	msg.WriteString(" (")
 	if result.Body != nil {
 		msg.Write(result.Body)

@@ -136,6 +136,9 @@ func readDocument(id string, timeoutSecs int, printCurl bool, cli *CLI) error {
 }
 
 func operationResult(read bool, doc document.Document, service *vespa.Service, result document.Result) util.OperationResult {
+	if result.Err != nil {
+		return util.Failure(result.Err.Error())
+	}
 	bodyReader := bytes.NewReader(result.Body)
 	if result.HTTPStatus == 200 {
 		if read {
