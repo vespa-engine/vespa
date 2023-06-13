@@ -59,7 +59,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private final ApplicationRepository applicationRepository;
     private final RpcServer server;
-    private final VersionState versionState;
+    protected final VersionState versionState;
     private final StateMonitor stateMonitor;
     private final VipStatus vipStatus;
     private final ConfigserverConfig configserverConfig;
@@ -133,7 +133,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                         + versionState.currentVersion() + ". Redeploying all applications");
             try {
                 redeployAllApplications();
-                versionState.saveNewVersion();
+                versionState.storeCurrentVersion();
                 log.log(Level.FINE, "All applications redeployed successfully");
             } catch (Exception e) {
                 log.log(Level.SEVERE, "Redeployment of applications failed", e);

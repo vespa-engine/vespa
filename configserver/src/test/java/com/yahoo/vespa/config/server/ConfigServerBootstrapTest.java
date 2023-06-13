@@ -23,17 +23,18 @@ import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
+import com.yahoo.vespa.config.server.version.VespaVersion;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +48,7 @@ import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedMode
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Ulf Lilleengen
@@ -70,6 +72,7 @@ public class ConfigServerBootstrapTest {
         // Take a host away so that there are too few for the application, to verify we can still bootstrap
         provisioner.allocations().values().iterator().next().remove(0);
         Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY);
+        assertTrue(bootstrap.isUpgraded());
         assertEquals(List.of("ApplicationPackageMaintainer", "TenantsMaintainer"),
                      bootstrap.configServerMaintenance().maintainers().stream()
                               .map(Maintainer::name)
@@ -105,6 +108,7 @@ public class ConfigServerBootstrapTest {
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
         Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_FILE);
+        assertTrue(bootstrap.isUpgraded());
         assertTrue(bootstrap.vipStatus().isInRotation()); // default is in rotation when using status file
 
         bootstrap.doStart();
@@ -130,6 +134,7 @@ public class ConfigServerBootstrapTest {
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
         Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY);
+        assertTrue(bootstrap.isUpgraded());
         assertFalse(bootstrap.vipStatus().isInRotation());
         // Call method directly, to be sure that it is finished redeploying all applications and we can check status
         bootstrap.doStart();
@@ -143,8 +148,6 @@ public class ConfigServerBootstrapTest {
         bootstrap.deconstruct();
     }
 
-    // Tests that we do not try to create the config model version stored in zookeeper when not on hosted vespa, since
-    // we are then only able to create the latest version
     @Test
     public void testBootstrapNonHostedOneConfigModel() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfigNonHosted(temporaryFolder);
@@ -168,6 +171,7 @@ public class ConfigServerBootstrapTest {
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
         Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY);
+        assertTrue(bootstrap.isUpgraded());
         bootstrap.doStart();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         assertTrue(rpcServer.isServingConfigRequests());
@@ -175,9 +179,52 @@ public class ConfigServerBootstrapTest {
         waitUntil(() -> bootstrap.vipStatus().isInRotation(), "failed waiting for server to be in rotation");
     }
 
+    @Test
+    public void testBootstrapBetweenVersions() throws Exception {
+        ConfigserverConfig configserverConfig = createConfigserverConfigNonHosted(temporaryFolder);
+        String oldVespaVersion = "8.100.1";
+        Curator curator = new MockCurator();
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .modelFactory(DeployTester.createModelFactory(Version.fromString(oldVespaVersion)))
+                .configserverConfig(configserverConfig)
+                .curator(curator)
+                .build();
+        RpcServer rpcServer = createRpcServer(configserverConfig);
+
+        // Upgrade between two versions not too far apart, should work
+        Version versionToUpgradeTo = Version.fromString("8.110.1");
+        Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY, versionToUpgradeTo);
+        bootstrap.versionState().storeVersion("8.100.1");
+        bootstrap.doStart();
+
+        assertUpgradeFails("8.100.1", "8.131.1", tester, rpcServer,
+                           "Cannot upgrade from 8.100.1 to 8.131.1. Please upgrade to an intermediate version first, the interval between the two versions is too large.");
+        assertUpgradeFails("7.99.1", "8.100.1", tester, rpcServer,
+                           "Cannot upgrade directly from 7.99.1 to 8.100.1 (new major version). Please upgrade to 7.594.36 first.");
+        assertUpgradeFails("7.594.36", "8.121.1", tester, rpcServer,
+                           "Cannot upgrade from 7.594.36 to 8.121.1. Please upgrade to an intermediate version first, the interval between the two versions is too large.");
+        assertUpgradeFails("6.11.11", "8.121.1", tester, rpcServer,
+                           "Cannot upgrade from 6.11.11 to 8.121.1 (upgrade across 2 major versions not supported). Please upgrade to 7.594.36 first.");
+    }
+
+    private void assertUpgradeFails(String from, String to, DeployTester tester, RpcServer rpcServer, String expected) throws IOException {
+        Version versionToUpgradeTo = Version.fromString(to);
+        Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY, versionToUpgradeTo);
+        bootstrap.versionState().storeVersion(from);
+        try {
+            bootstrap.doStart();
+            fail("Expected bootstrap to fail");
+        } catch (RuntimeException e) {
+            assertEquals(expected, e.getMessage());
+        }
+    }
+
     private Bootstrapper createBootstrapper(DeployTester tester, RpcServer rpcServer, VipStatusMode vipStatusMode) throws IOException {
-        VersionState versionState = createVersionState(tester.curator());
-        assertTrue(versionState.isUpgraded());
+        return createBootstrapper(tester, rpcServer, vipStatusMode, new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro));
+    }
+
+    private Bootstrapper createBootstrapper(DeployTester tester, RpcServer rpcServer, VipStatusMode vipStatusMode, Version version) throws IOException {
+        VersionState versionState = createVersionState(tester.curator(), version);
 
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
@@ -229,7 +276,7 @@ public class ConfigServerBootstrapTest {
     }
 
     private List<Host> createHosts(String vespaVersion) {
-        return Arrays.asList(createHost("host1", vespaVersion), createHost("host2", vespaVersion), createHost("host3", vespaVersion));
+        return List.of(createHost("host1", vespaVersion), createHost("host2", vespaVersion), createHost("host3", vespaVersion));
     }
 
     private Host createHost(String hostname, String version) {
@@ -244,8 +291,8 @@ public class ConfigServerBootstrapTest {
                              new NullMetric());
     }
 
-    private VersionState createVersionState(Curator curator) throws IOException {
-        return new VersionState(temporaryFolder.newFile(), curator);
+    private VersionState createVersionState(Curator curator, Version vespaVersion) throws IOException {
+        return new VersionState(temporaryFolder.newFile(), curator, vespaVersion, true);
     }
 
     public static class MockRpcServer extends com.yahoo.vespa.config.server.rpc.MockRpcServer {
@@ -286,12 +333,16 @@ public class ConfigServerBootstrapTest {
 
         @Override
         public void start() {
-            // Do nothing, avoids bootstrapping apps in constructor, use doBootstrap() below to really bootstrap apps
+            // Do nothing, avoids bootstrapping apps in constructor, use doStart() below to really bootstrap apps
         }
 
         public void doStart() {
             super.start();
         }
+
+        public VersionState versionState() { return versionState; }
+
+        public boolean isUpgraded() { return versionState.isUpgraded(); }
 
     }
 
