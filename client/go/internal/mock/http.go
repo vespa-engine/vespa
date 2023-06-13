@@ -14,6 +14,9 @@ type HTTPClient struct {
 	// The responses to return for future requests. Once a response is consumed, it's removed from this slice.
 	nextResponses []HTTPResponse
 
+	// The error to return for the next request. If non-nil, this error is returned before any responses in nextResponses.
+	nextError error
+
 	// LastRequest is the last HTTP request made through this.
 	LastRequest *http.Request
 
@@ -48,7 +51,16 @@ func (c *HTTPClient) NextResponse(response HTTPResponse) {
 	c.nextResponses = append(c.nextResponses, response)
 }
 
+func (c *HTTPClient) NextResponseError(err error) {
+	c.nextError = err
+}
+
 func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
+	if c.nextError != nil {
+		err := c.nextError
+		c.nextError = nil
+		return nil, err
+	}
 	response := HTTPResponse{Status: 200}
 	if len(c.nextResponses) > 0 {
 		response = c.nextResponses[0]
