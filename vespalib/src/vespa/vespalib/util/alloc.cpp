@@ -291,7 +291,14 @@ HeapAllocator::alloc(size_t sz) const {
 
 PtrAndSize
 HeapAllocator::salloc(size_t sz) {
-    return PtrAndSize((sz > 0) ? malloc(sz) : nullptr, sz);
+    if (sz == 0) {
+        return PtrAndSize(nullptr, sz);
+    }
+    void * ptr = malloc(sz);
+    if (ptr == nullptr) {
+        throw OOMException(make_string("malloc(%zu) failed with error '%s'", sz, getLastErrorString().c_str()));
+    }
+    return PtrAndSize(ptr, sz);
 }
 
 void HeapAllocator::free(PtrAndSize alloc) const {
