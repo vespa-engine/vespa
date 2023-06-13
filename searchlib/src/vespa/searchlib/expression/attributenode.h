@@ -70,7 +70,7 @@ private:
     class StringHandler;
     class EnumHandler;
     void wireAttributes(const attribute::IAttributeContext & attrCtx) override;
-    void onPrepare(bool preserveAccurateTypes) override;
+    void onPrepare(bool preserveAccurateTypes) final;
 
     std::unique_ptr<AttributeResult>  _scratchResult;
     const CurrentIndex               *_index;
