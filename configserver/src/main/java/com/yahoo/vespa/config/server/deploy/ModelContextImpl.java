@@ -21,6 +21,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
@@ -385,6 +386,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> zoneDnsSuffixes;
         private final List<String> environmentVariables;
         private final Optional<CloudAccount> cloudAccount;
+        private final List<DataplaneToken> dataplaneTokens;
         private final boolean allowUserFilters;
         private final Duration endpointConnectionTtl;
 
@@ -402,7 +404,8 @@ public class ModelContextImpl implements ModelContext {
                           List<TenantSecretStore> tenantSecretStores,
                           SecretStore secretStore,
                           List<X509Certificate> operatorCertificates,
-                          Optional<CloudAccount> cloudAccount) {
+                          Optional<CloudAccount> cloudAccount,
+                          List<DataplaneToken> dataplaneTokens) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId, modelVersion);
             this.applicationId = applicationId;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
@@ -436,6 +439,7 @@ public class ModelContextImpl implements ModelContext {
             this.endpointConnectionTtl = Duration.ofSeconds(
                     PermanentFlags.ENDPOINT_CONNECTION_TTL.bindTo(flagSource)
                             .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value());
+            this.dataplaneTokens = dataplaneTokens;
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -523,6 +527,11 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public Optional<CloudAccount> cloudAccount() {
             return cloudAccount;
+        }
+
+        @Override
+        public List<DataplaneToken> dataplaneTokens() {
+            return dataplaneTokens;
         }
 
         @Override public boolean allowUserFilters() { return allowUserFilters; }

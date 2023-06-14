@@ -12,6 +12,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
@@ -151,6 +152,10 @@ public abstract class Session implements Comparable<Session>  {
         sessionZooKeeperClient.writeCloudAccount(cloudAccount);
     }
 
+    public void setDataplaneTokens(List<DataplaneToken> dataplaneTokens) {
+        sessionZooKeeperClient.writeDataplaneTokens(dataplaneTokens);
+    }
+
     /** Returns application id read from ZooKeeper. Will throw RuntimeException if not found */
     public ApplicationId getApplicationId() { return sessionZooKeeperClient.readApplicationId(); }
 
@@ -191,6 +196,10 @@ public abstract class Session implements Comparable<Session>  {
 
     public Optional<CloudAccount> getCloudAccount() {
         return sessionZooKeeperClient.readCloudAccount();
+    }
+
+    public List<DataplaneToken> getDataplaneTokens() {
+        return sessionZooKeeperClient.readDataplaneTokens();
     }
 
     private Transaction createSetStatusTransaction(Status status) {
