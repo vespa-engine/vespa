@@ -27,6 +27,13 @@ DynamicArrayBufferType<ElemT>::calc_entry_size(size_t array_size) noexcept
 }
 
 template <typename ElemT>
+size_t
+DynamicArrayBufferType<ElemT>::calc_array_size(size_t entry_size) noexcept
+{
+    return (entry_size - sizeof(uint32_t)) / sizeof(ElemType);
+}
+
+template <typename ElemT>
 void
 DynamicArrayBufferType<ElemT>::destroy_entries(void* buffer, EntryCount num_entries)
 {

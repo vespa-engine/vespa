@@ -37,7 +37,7 @@ ArrayStoreDynamicTypeMapper<ElemT>::setup_array_sizes(uint32_t max_buffer_type_i
                     dynamic_arrays = true;
                 }
                 entry_size = DynamicBufferType::calc_entry_size(array_size);
-                array_size = (entry_size - sizeof(uint32_t)) / sizeof(ElemT);
+                array_size = DynamicBufferType::calc_array_size(entry_size);
             } else {
                 entry_size = array_size * sizeof(ElemT);
             }

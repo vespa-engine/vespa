@@ -39,6 +39,7 @@ public:
     void initialize_reserved_entries(void* buffer, EntryCount reserved_entries) override;
     void clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext cleanCxt) override;
     static size_t calc_entry_size(size_t array_size) noexcept;
+    static size_t calc_array_size(size_t entry_size) noexcept;
     static ElemType* get_entry(void* buffer, size_t offset, uint32_t entry_size) noexcept { return reinterpret_cast<ElemType*>(static_cast<char*>(buffer) + offset * entry_size); }
     static const ElemType* get_entry(const void* buffer, size_t offset, uint32_t entry_size) noexcept { return reinterpret_cast<const ElemType*>(static_cast<const char*>(buffer) + offset * entry_size); }
     static uint32_t get_dynamic_array_size(const void *buffer, uint32_t entry_size) noexcept { return *reinterpret_cast<const uint32_t*>(static_cast<const char*>(buffer) + entry_size - sizeof(uint32_t)); }
