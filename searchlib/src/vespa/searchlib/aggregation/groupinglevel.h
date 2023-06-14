@@ -59,6 +59,8 @@ private:
             : SingleValueGrouper(grouping, level),
               _currentIndex(currentIndex)
         { }
+        MultiValueGrouper(const MultiValueGrouper &) = default; //TODO Try to remove
+        MultiValueGrouper & operator=(const MultiValueGrouper &) = delete;
     private:
         template<typename Doc>
         void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
