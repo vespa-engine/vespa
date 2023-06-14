@@ -489,8 +489,7 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
     }
 
     private static Agent agent(HttpRequest request) {
-        // TODO(mpolden): Return node-admin agent here when serialization change has rolled out everywhere
-        return Agent.operator;
+        return "node-admin".equalsIgnoreCase(request.getHeader("User-Agent")) ? Agent.nodeAdmin : Agent.operator;
     }
 
     private static void toSlime(Load load, Cursor object) {
