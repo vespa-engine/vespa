@@ -14,6 +14,17 @@ template <typename EntryT> class LargeArrayBufferType;
 /*
  * This class provides mapping between type ids and array sizes needed for
  * storing values.
+ *
+ * Type ids [1;max_static_array_buffer_type_id] use SmallBufferType,
+ * containing small arrays where buffer type specifies array size.
+ *
+ * Type ids [max_static_array_buffer_type_id+1;max_buffer_type_id] use
+ * DynamicBufferType, containing medium sized arrays where the same
+ * buffer type handles a range of array sizes and actual array size is
+ * also stored in the entry.
+ *
+ * Type id 0 uses LargeBufferType, which handles any array size but uses
+ * heap allocation.
  */
 template <typename ElemT>
 class ArrayStoreDynamicTypeMapper : public vespalib::datastore::ArrayStoreTypeMapper
