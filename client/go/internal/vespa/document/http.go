@@ -17,7 +17,6 @@ import (
 	"github.com/go-json-experiment/json"
 	"github.com/klauspost/compress/gzip"
 
-	"github.com/vespa-engine/vespa/client/go/internal/build"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
@@ -27,18 +26,6 @@ const (
 	CompressionAuto Compression = iota
 	CompressionNone
 	CompressionGzip
-)
-
-var (
-	defaultHeaders http.Header = map[string][]string{
-		"User-Agent":   {fmt.Sprintf("Vespa CLI/%s", build.Version)},
-		"Content-Type": {"application/json; charset=utf-8"},
-	}
-	gzipHeaders http.Header = map[string][]string{
-		"User-Agent":       {fmt.Sprintf("Vespa CLI/%s", build.Version)},
-		"Content-Type":     {"application/json; charset=utf-8"},
-		"Content-Encoding": {"gzip"},
-	}
 )
 
 // Client represents a HTTP client for the /document/v1/ API.
@@ -233,10 +220,9 @@ func newRequest(method, url string, body io.Reader, gzipped bool) (*http.Request
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if gzipped {
-		req.Header = gzipHeaders
-	} else {
-		req.Header = defaultHeaders
+		req.Header.Set("Content-Encoding", "gzip")
 	}
 	return req, nil
 }

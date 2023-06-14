@@ -3,6 +3,7 @@ package document
 import (
 	"bytes"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -112,8 +113,11 @@ func TestClientSend(t *testing.T) {
 		if r.Method != tt.method {
 			t.Errorf("got r.Method = %q, want %q", r.Method, tt.method)
 		}
-		if !reflect.DeepEqual(r.Header, defaultHeaders) {
-			t.Errorf("got r.Header = %v, want %v", r.Header, defaultHeaders)
+		var headers http.Header = map[string][]string{
+			"Content-Type": {"application/json; charset=utf-8"},
+		}
+		if !reflect.DeepEqual(r.Header, headers) {
+			t.Errorf("got r.Header = %v, want %v", r.Header, headers)
 		}
 		if r.URL.String() != tt.url {
 			t.Errorf("got r.URL = %q, want %q", r.URL, tt.url)
