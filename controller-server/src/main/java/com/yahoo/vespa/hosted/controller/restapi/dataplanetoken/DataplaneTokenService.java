@@ -30,7 +30,8 @@ public class DataplaneTokenService {
 
     private static final String TOKEN_PREFIX = "vespa_cloud_";
     private static final byte[] FINGERPRINT_CONTEXT = new byte[0];
-    private static final int TOKEN_BYTES = 16;
+    private static final int TOKEN_BYTES = 32;
+    private static final int CHECK_HASH_BYTES = 32;
 
 
     private final Controller controller;
@@ -58,7 +59,7 @@ public class DataplaneTokenService {
     public DataplaneToken generateToken(TenantName tenantName, TokenId tokenId, Principal principal) {
         TokenDomain tokenDomain = new TokenDomain(FINGERPRINT_CONTEXT, tenantName.value().getBytes(StandardCharsets.UTF_8));
         Token token = TokenGenerator.generateToken(tokenDomain, TOKEN_PREFIX, TOKEN_BYTES);
-        TokenCheckHash checkHash = TokenCheckHash.of(token, TOKEN_BYTES);
+        TokenCheckHash checkHash = TokenCheckHash.of(token, CHECK_HASH_BYTES);
         DataplaneTokenVersions.Version newTokenVersion = new DataplaneTokenVersions.Version(
                 FingerPrint.of(token.fingerprint().toDelimitedHexString()),
                 checkHash.toHexString(),
