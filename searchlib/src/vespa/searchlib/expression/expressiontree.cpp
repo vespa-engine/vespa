@@ -4,7 +4,6 @@
 #include "documentaccessornode.h"
 #include "relevancenode.h"
 #include "interpolatedlookupfunctionnode.h"
-#include "arrayatlookupfunctionnode.h"
 #include "attributenode.h"
 
 namespace search::expression {
@@ -28,8 +27,7 @@ ExpressionTree::ExpressionTree() :
     _attributeNodes(),
     _documentAccessorNodes(),
     _relevanceNodes(),
-    _interpolatedLookupNodes(),
-    _arrayAtLookupNodes()
+    _interpolatedLookupNodes()
 {
     prepare(false);
 }
@@ -39,8 +37,7 @@ ExpressionTree::ExpressionTree(const ExpressionNode &root) :
     _attributeNodes(),
     _documentAccessorNodes(),
     _relevanceNodes(),
-    _interpolatedLookupNodes(),
-    _arrayAtLookupNodes()
+    _interpolatedLookupNodes()
 {
     prepare(false);
 }
@@ -84,7 +81,6 @@ ExpressionTree::onPrepare(bool preserveAccurateTypes)
         gather(_documentAccessorNodes).from(*_root);
         gather(_relevanceNodes).from(*_root);
         gather(_interpolatedLookupNodes).from(*_root);
-        gather(_arrayAtLookupNodes).from(*_root);
     }
 }
 
@@ -94,8 +90,7 @@ ExpressionTree::ExpressionTree(ExpressionNode::UP root) :
     _attributeNodes(),
     _documentAccessorNodes(),
     _relevanceNodes(),
-    _interpolatedLookupNodes(),
-    _arrayAtLookupNodes()
+    _interpolatedLookupNodes()
 {
     prepare(false);
 }
@@ -106,8 +101,7 @@ ExpressionTree::ExpressionTree(const ExpressionTree & rhs) :
     _attributeNodes(),
     _documentAccessorNodes(),
     _relevanceNodes(),
-    _interpolatedLookupNodes(),
-    _arrayAtLookupNodes()
+    _interpolatedLookupNodes()
 {
     prepare(false);
 }
@@ -138,7 +132,6 @@ ExpressionTree::swap(ExpressionTree & e)
     _documentAccessorNodes.swap(e._documentAccessorNodes);
     _relevanceNodes.swap(e._relevanceNodes);
     _interpolatedLookupNodes.swap(e._interpolatedLookupNodes);
-    _arrayAtLookupNodes.swap(_arrayAtLookupNodes);
 }
 
 ExpressionTree::~ExpressionTree() = default;
@@ -158,9 +151,6 @@ ExpressionTree::execute(const document::Document & doc, HitRank rank) const
 struct DocIdSetter {
     DocId _docId;
     void operator() (InterpolatedLookup *node) {
-        node->setDocId(_docId);
-    }
-    void operator() (ArrayAtLookup *node) {
         node->setDocId(_docId);
     }
     void operator() (AttributeNode *node) {
@@ -186,7 +176,6 @@ ExpressionTree::execute(DocId docId, HitRank rank) const
     std::for_each(_attributeNodes.cbegin(), _attributeNodes.cend(), setDocId);
     std::for_each(_relevanceNodes.cbegin(), _relevanceNodes.cend(), setHitRank);
     std::for_each(_interpolatedLookupNodes.cbegin(), _interpolatedLookupNodes.cend(), setDocId);
-    std::for_each(_arrayAtLookupNodes.cbegin(), _arrayAtLookupNodes.cend(), setDocId);
 
     return _root->execute();
 }
