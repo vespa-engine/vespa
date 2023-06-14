@@ -98,12 +98,16 @@ Email = element email {
 Test = element test {
    attribute athenz-service { xsd:string }? &
    attribute tester-flavor { xsd:string }? &
+   attribute cloud-account { xsd:string }? &
+   attribute empty-host-ttl { xsd:string }? &
    text
 }
 
 Staging = element staging {
    attribute athenz-service { xsd:string }? &
    attribute tester-flavor { xsd:string }? &
+   attribute cloud-account { xsd:string }? &
+   attribute empty-host-ttl { xsd:string }? &
    text
 }
 
