@@ -54,11 +54,11 @@ template <typename ElemT>
 std::vector<size_t>
 TestBase<ElemT>::get_entry_sizes(uint32_t num_entry_sizes)
 {
-    std::vector<size_t> array_sizes;
+    std::vector<size_t> entry_sizes;
     for (uint32_t type_id = 1; type_id <= num_entry_sizes; ++type_id) {
-        array_sizes.emplace_back(_mapper.get_entry_size(type_id));
+        entry_sizes.emplace_back(_mapper.get_entry_size(type_id));
     }
-    return array_sizes;
+    return entry_sizes;
 }
 
 template <typename ElemT>
