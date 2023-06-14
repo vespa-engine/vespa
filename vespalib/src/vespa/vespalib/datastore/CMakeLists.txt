@@ -16,6 +16,7 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     compaction_strategy.cpp
     datastore.cpp
     datastorebase.cpp
+    dynamic_array_buffer_type.cpp
     entry_ref_filter.cpp
     entryref.cpp
     fixed_size_hash_map.cpp
