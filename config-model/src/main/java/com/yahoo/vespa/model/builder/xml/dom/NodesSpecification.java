@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.logging.Level;
 
 /**
  * A common utility class to represent a requirement for nodes during model building.
@@ -289,7 +290,25 @@ public class NodesSpecification {
                                          .loadBalancerSettings(zoneEndpoint)
                                          .stateful(stateful)
                                          .build();
+        logInsufficientDiskResources(clusterId, clusterType, logger);
         return hostSystem.allocateHosts(cluster, Capacity.from(min, max, groupSize, required, canFail, cloudAccount, info), logger);
+    }
+
+    /** Log a message if requested disk may not fit core/heap dumps */
+    private void logInsufficientDiskResources(ClusterSpec.Id clusterId, ClusterSpec.Type clusterType, DeployLogger deployLogger) {
+        NodeResources resources = min.nodeResources();
+        if (resources.diskGbIsUnspecified() || resources.memoryGbIsUnspecified()) return;
+        double minDiskGb = resources.memoryGb() * switch (clusterType) {
+            case combined, content -> 3;
+            case container -> 2;
+            default -> 0; // No constraint on other types
+        };
+        if (resources.diskGb() < minDiskGb) {
+            deployLogger.logApplicationPackage(Level.WARNING, "Requested disk (" + resources.diskGb() +
+                                                              "Gb) in " + clusterId + " is not large enough to fit " +
+                                                              "core/heap dumps. Minimum recommended disk resources " +
+                                                              "is " + minDiskGb + "Gb");
+        }
     }
 
     private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {
