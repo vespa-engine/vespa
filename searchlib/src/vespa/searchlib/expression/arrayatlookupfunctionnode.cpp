@@ -93,7 +93,7 @@ ArrayAtLookup::selectMembers(const vespalib::ObjectPredicate & predicate, vespal
 {
     AttributeNode::selectMembers(predicate, operation);
     if (_indexExpression) {
-        _indexExpression->selectMembers(predicate, operation);
+        _indexExpression->select(predicate, operation);
     }
 }
 
