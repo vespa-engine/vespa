@@ -129,7 +129,7 @@ func assertDocumentSend(arguments []string, expectedOperation string, expectedMe
 		}
 	}
 	if verbose {
-		expectedCurl := "curl -X " + expectedMethod + " -H 'Content-Type: application/json; charset=utf-8' -H 'User-Agent: Vespa CLI/0.0.0-devel'"
+		expectedCurl := "curl -X " + expectedMethod + " -H 'Content-Type: application/json; charset=utf-8'"
 		if expectedPayloadFile != "" {
 			expectedCurl += " --data-binary @" + expectedPayloadFile
 		}
