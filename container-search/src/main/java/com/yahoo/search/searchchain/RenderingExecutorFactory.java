@@ -18,7 +18,7 @@ class RenderingExecutorFactory {
     private final int availableProcessors;
 
     public RenderingExecutorFactory() {
-        this.maxQueuedRenderingTasksPerProcessor = 100;
+        this.maxQueuedRenderingTasksPerProcessor = 500;
         this.availableProcessors = Runtime.getRuntime().availableProcessors();
     }
 
