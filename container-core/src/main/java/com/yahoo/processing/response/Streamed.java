@@ -8,7 +8,6 @@ package com.yahoo.processing.response;
  * must be deferred until the list is complete.
  *
  * @author  bratseth
- * @since   5.1.19
  */
 public interface Streamed {
 
@@ -16,6 +15,6 @@ public interface Streamed {
      * Returns false if the data in this list can not be returned until it is completed.
      * Default: true, meaning eager streaming of the data is permissible.
      */
-    public boolean isStreamed();
+    boolean isStreamed();
 
 }

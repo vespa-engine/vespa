@@ -8,11 +8,10 @@ package com.yahoo.processing.response;
  * in which it completes rather than in the order in which it is added to the list.
  *
  * @author  bratseth
- * @since   5.1.19
  */
 public interface Ordered {
 
     /** Returns false if the data in this list can be returned in any order. Default: true, meaning the order matters */
-    public boolean isOrdered();
+    boolean isOrdered();
 
 }
