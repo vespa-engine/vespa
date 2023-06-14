@@ -101,7 +101,6 @@
         <module>model-integration</module>
         <module>node-repository</module>
         <module>node-admin</module>
-        <module>openai-client</module>
         <module>opennlp-linguistics</module>
         <module>orchestrator-restapi</module>
         <module>orchestrator</module>
