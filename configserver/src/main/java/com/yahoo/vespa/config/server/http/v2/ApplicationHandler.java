@@ -68,7 +68,6 @@ import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
-
 /**
  * Operations on applications (delete, wait for config convergence, restart, application content etc.)
  *
@@ -393,18 +392,16 @@ public class ApplicationHandler extends HttpHandler {
     static class HttpServiceResponse extends JSONResponse {
 
         public static HttpServiceResponse createResponse(ConfigConvergenceChecker.ServiceResponse serviceResponse, String hostAndPort, URI uri) {
-            switch (serviceResponse.status) {
-                case ok:
-                    return createOkResponse(uri, hostAndPort, serviceResponse.wantedGeneration, serviceResponse.currentGeneration, serviceResponse.converged);
-                case hostNotFound:
-                    return createHostNotFoundInAppResponse(uri, hostAndPort, serviceResponse.wantedGeneration);
-                case notFound:
-                    return createNotFoundResponse(uri, hostAndPort, serviceResponse.wantedGeneration, serviceResponse.errorMessage.orElse(""));
-                case error:
-                    return createErrorResponse(uri, hostAndPort, serviceResponse.wantedGeneration, serviceResponse.errorMessage.orElse(""));
-                default:
-                    throw new IllegalArgumentException("Unknown status " + serviceResponse.status);
-            }
+            return switch (serviceResponse.status) {
+                case ok ->
+                        createOkResponse(uri, hostAndPort, serviceResponse.wantedGeneration, serviceResponse.currentGeneration, serviceResponse.converged);
+                case hostNotFound ->
+                        createHostNotFoundInAppResponse(uri, hostAndPort, serviceResponse.wantedGeneration);
+                case notFound ->
+                        createNotFoundResponse(uri, hostAndPort, serviceResponse.wantedGeneration, serviceResponse.errorMessage.orElse(""));
+                case error ->
+                        createErrorResponse(uri, hostAndPort, serviceResponse.wantedGeneration, serviceResponse.errorMessage.orElse(""));
+            };
         }
 
         private HttpServiceResponse(int status, URI uri, String hostname, Long wantedGeneration) {
