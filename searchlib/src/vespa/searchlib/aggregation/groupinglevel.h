@@ -3,6 +3,7 @@
 
 #include "group.h"
 #include <vespa/searchlib/expression/aggregationrefnode.h>
+#include <vespa/searchlib/expression/currentindex.h>
 
 namespace search::aggregation {
 
@@ -20,6 +21,7 @@ private:
     using ResultNode = expression::ResultNode;
     using ExpressionNode = expression::ExpressionNode;
     using ExpressionTree = expression::ExpressionTree;
+    using CurrentIndex = expression::CurrentIndex;
     class Grouper {
     public:
         virtual ~Grouper() = default;
@@ -53,7 +55,12 @@ private:
     };
     class MultiValueGrouper : public SingleValueGrouper {
     public:
-        MultiValueGrouper(const Grouping * grouping, uint32_t level) noexcept : SingleValueGrouper(grouping, level) { }
+        MultiValueGrouper(CurrentIndex * currentIndex, const Grouping * grouping, uint32_t level) noexcept
+            : SingleValueGrouper(grouping, level),
+              _currentIndex(currentIndex)
+        { }
+        MultiValueGrouper(const MultiValueGrouper &) = default; //TODO Try to remove
+        MultiValueGrouper & operator=(const MultiValueGrouper &) = delete;
     private:
         template<typename Doc>
         void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
@@ -64,11 +71,13 @@ private:
             groupDoc(g, result, doc, rank);
         }
         MultiValueGrouper * clone() const override { return new MultiValueGrouper(*this); }
+        CurrentIndex *_currentIndex;
     };
     int64_t        _maxGroups;
     int64_t        _precision;
     bool           _isOrdered;
     bool           _frozen;
+    CurrentIndex   _currentIndex;
     ExpressionTree _classify;
     Group          _collect;
 
