@@ -19,8 +19,8 @@ template <typename ElemT>
 DynamicArrayBufferType<ElemT>::~DynamicArrayBufferType() = default;
 
 template <typename ElemT>
-uint32_t
-DynamicArrayBufferType<ElemT>::calc_entry_size(uint32_t array_size) noexcept
+size_t
+DynamicArrayBufferType<ElemT>::calc_entry_size(size_t array_size) noexcept
 {
     Aligner aligner(std::max(alignof(uint32_t), alignof(ElemType)));
     return aligner.align(sizeof(ElemType) * array_size + sizeof(uint32_t));
