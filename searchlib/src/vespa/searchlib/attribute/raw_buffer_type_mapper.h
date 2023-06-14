@@ -26,6 +26,7 @@ public:
     RawBufferTypeMapper();
     RawBufferTypeMapper(uint32_t max_small_buffer_type_id, double grow_factor);
     ~RawBufferTypeMapper();
+    size_t get_entry_size(uint32_t type_id) const { return get_array_size(type_id); }
 };
 
 }

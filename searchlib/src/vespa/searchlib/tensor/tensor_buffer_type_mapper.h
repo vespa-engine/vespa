@@ -26,6 +26,7 @@ public:
     ~TensorBufferTypeMapper();
 
     TensorBufferOperations& get_tensor_buffer_operations() const noexcept { return *_ops; }
+    size_t get_entry_size(uint32_t type_id) const { return get_array_size(type_id); }
 };
 
 }

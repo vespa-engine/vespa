@@ -73,10 +73,9 @@ public:
      * Generate a config that is optimized for the given memory huge page size.
      */
     static ArrayStoreConfig optimizeForHugePage(uint32_t maxSmallArrayTypeId,
-                                                std::function<size_t(uint32_t)> type_id_to_array_size,
+                                                std::function<size_t(uint32_t)> type_id_to_entry_size,
                                                 size_t hugePageSize,
                                                 size_t smallPageSize,
-                                                size_t elem_size,
                                                 size_t maxEntryRefOffset,
                                                 size_t min_num_entries_for_new_buffer,
                                                 float allocGrowFactor);
