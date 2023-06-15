@@ -2,6 +2,10 @@
 namespace=jdisc.http.filter.security.cloud.config
 
 legacyMode bool default=false
+tokenContext string default=""
 clients[].id string
 clients[].permissions[] string
 clients[].certificates[] string
+clients[].tokens[].id string
+clients[].tokens[].fingerprints[] string
+clients[].tokens[].checkAccessHashes[] string

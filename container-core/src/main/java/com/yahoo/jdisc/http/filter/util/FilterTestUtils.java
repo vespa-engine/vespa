@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter.util;
 
+import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.Request;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import static com.yahoo.jdisc.http.HttpRequest.Version.HTTP_1_1;
+import static com.yahoo.jdisc.http.server.jetty.AccessLoggingRequestHandler.CONTEXT_KEY_ACCESS_LOG_ENTRY;
 
 /**
  * Test helper for {@link SecurityRequestFilter}/{@link SecurityResponseFilter}.
@@ -54,6 +56,7 @@ public class FilterTestUtils {
         private final Map<String, String> headers = new TreeMap<>();
         private Version version = HTTP_1_1;
         private SocketAddress remoteAddress;
+        private AccessLogEntry accessLogEntry;
         private final List<Cookie> cookies = new ArrayList<>();
 
         private RequestBuilder() {}
@@ -73,12 +76,14 @@ public class FilterTestUtils {
         public RequestBuilder withRemoteAddress(SocketAddress address) { this.remoteAddress = address; return this; }
         public RequestBuilder withCookie(String cookie) { cookies.addAll(Cookie.fromCookieHeader(cookie)); return this; }
         public RequestBuilder withCookie(Cookie cookie) { cookies.add(cookie); return this; }
+        public RequestBuilder withAccessLogEntry(AccessLogEntry entry) { this.accessLogEntry = entry; return this; }
 
         public DiscFilterRequest build() {
             var httpReq = HttpRequest.newServerRequest(
                     new DummyContainer(clock), uri, method, version, remoteAddress, clock.millis(), clock.millis());
             var filterReq = new DiscFilterRequest(httpReq);
             filterReq.setUserPrincipal(principal);
+            filterReq.setAttribute(CONTEXT_KEY_ACCESS_LOG_ENTRY, accessLogEntry != null ? accessLogEntry : new AccessLogEntry());
             attributes.forEach(filterReq::setAttribute);
             filterReq.setAttribute(RequestUtils.JDISC_REQUEST_X509CERT, certificates.toArray(X509Certificate[]::new));
             headers.forEach(filterReq::addHeader);
