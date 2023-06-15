@@ -77,26 +77,29 @@ BlobSet::get(uint32_t lid) const
 }
 
 CompressedBlobSet::CompressedBlobSet() noexcept
-    : _compression(CompressionConfig::Type::LZ4),
-      _positions(),
-      _buffer()
+    : _positions(),
+      _buffer(),
+      _used(0),
+      _compression(CompressionConfig::Type::LZ4)
 { }
 
 CompressedBlobSet::~CompressedBlobSet() = default;
 
 CompressedBlobSet::CompressedBlobSet(CompressionConfig compression, BlobSet uncompressed)
-    : _compression(compression.type),
-      _positions(uncompressed.stealPositions()),
-      _buffer()
+    : _positions(uncompressed.stealPositions()),
+      _buffer(),
+      _used(0),
+      _compression(compression.type)
 {
     if ( ! _positions.empty() ) {
         DataBuffer compressed;
         ConstBufferRef org = uncompressed.getBuffer();
         _compression = vespalib::compression::compress(compression, org, compressed, false);
-        _buffer = std::make_shared<vespalib::MallocPtr>(compressed.getDataLen());
-        memcpy(*_buffer, compressed.getData(), compressed.getDataLen());
+        _used = compressed.getDataLen();
+        _buffer = std::make_shared<Alloc>(Alloc::alloc(_used));
+        memcpy(_buffer->get(), compressed.getData(), _used);
     } else {
-        _buffer = std::make_shared<vespalib::MallocPtr>();
+        _buffer = std::make_shared<Alloc>();
     }
 }
 
@@ -108,13 +111,13 @@ CompressedBlobSet::getBlobSet() const
     DataBuffer uncompressed(0, 1, Alloc::alloc(0, 16 * MemoryAllocator::HUGEPAGE_SIZE));
     if ( ! _positions.empty() ) {
         decompress(_compression, getBufferSize(_positions),
-                   ConstBufferRef(_buffer->c_str(), _buffer->size()), uncompressed, false);
+                   ConstBufferRef(_buffer->get(), _used), uncompressed, false);
     }
     return BlobSet(_positions, std::move(uncompressed).stealBuffer());
 }
 
 size_t
-CompressedBlobSet::byteSize() const {
+CompressedBlobSet::bytesAllocated() const {
     return _positions.capacity() * sizeof(BlobSet::Positions::value_type) + _buffer->size();
 }
 
@@ -137,7 +140,7 @@ VisitCollector::visit(uint32_t lid, ConstBufferRef buf) {
 }
 
 struct ByteSize {
-    size_t operator() (const CompressedBlobSet & arg) const noexcept { return arg.byteSize(); }
+    size_t operator() (const CompressedBlobSet & arg) const noexcept { return arg.bytesAllocated(); }
 };
 
 }
