@@ -17,14 +17,14 @@ using vespalib::DataBuffer;
 using vespalib::alloc::Alloc;
 using vespalib::alloc::MemoryAllocator;
 
-KeySet::KeySet(uint32_t key) :
-    _keys()
+KeySet::KeySet(uint32_t key)
+    : _keys()
 {
     _keys.push_back(key);
 }
 
-KeySet::KeySet(const IDocumentStore::LidVector &keys) :
-    _keys(keys)
+KeySet::KeySet(const IDocumentStore::LidVector &keys)
+    : _keys(keys)
 {
     std::sort(_keys.begin(), _keys.end());
 }
@@ -34,24 +34,25 @@ KeySet::contains(const KeySet &rhs) const {
     return std::includes(_keys.begin(), _keys.end(), rhs._keys.begin(), rhs._keys.end());
 }
 
-BlobSet::BlobSet() :
-    _positions(),
-    _buffer(Alloc::alloc(0, 16 * MemoryAllocator::HUGEPAGE_SIZE), 0)
+BlobSet::BlobSet()
+    : _positions(),
+      _buffer(Alloc::alloc(0, 16 * MemoryAllocator::HUGEPAGE_SIZE), 0)
 { }
 
 BlobSet::~BlobSet() = default;
 
 namespace {
 
-size_t getBufferSize(const BlobSet::Positions & p) {
+size_t
+getBufferSize(const BlobSet::Positions & p) {
     return p.empty() ? 0 : p.back().offset() + p.back().size();
 }
 
 }
 
-BlobSet::BlobSet(const Positions & positions, Alloc && buffer) :
-    _positions(positions),
-    _buffer(std::move(buffer), getBufferSize(_positions))
+BlobSet::BlobSet(Positions positions, Alloc && buffer) noexcept
+    : _positions(std::move(positions)),
+      _buffer(std::move(buffer), getBufferSize(_positions))
 {
 }
 
@@ -74,20 +75,19 @@ BlobSet::get(uint32_t lid) const
     return buf;
 }
 
-CompressedBlobSet::CompressedBlobSet() :
-    _compression(CompressionConfig::Type::LZ4),
-    _positions(),
-    _buffer()
+CompressedBlobSet::CompressedBlobSet() noexcept
+    : _compression(CompressionConfig::Type::LZ4),
+      _positions(),
+      _buffer()
 {
 }
 
 CompressedBlobSet::~CompressedBlobSet() = default;
 
-
-CompressedBlobSet::CompressedBlobSet(CompressionConfig compression, const BlobSet & uncompressed) :
-    _compression(compression.type),
-    _positions(uncompressed.getPositions()),
-    _buffer()
+CompressedBlobSet::CompressedBlobSet(CompressionConfig compression, BlobSet uncompressed)
+    : _compression(compression.type),
+      _positions(uncompressed.stealPositions()),
+      _buffer()
 {
     if ( ! _positions.empty() ) {
         DataBuffer compressed;
@@ -113,7 +113,8 @@ CompressedBlobSet::getBlobSet() const
     return BlobSet(_positions, std::move(uncompressed).stealBuffer());
 }
 
-size_t CompressedBlobSet::size() const {
+size_t
+CompressedBlobSet::byteSize() const {
     return _positions.capacity() * sizeof(BlobSet::Positions::value_type) + _buffer->size();
 }
 
@@ -122,13 +123,10 @@ namespace {
 class VisitCollector : public IBufferVisitor
 {
 public:
-    VisitCollector() :
-        _blobSet()
-    { }
+    VisitCollector(BlobSet & blobSet) : _blobSet(blobSet) { }
     void visit(uint32_t lid, ConstBufferRef buf) override;
-    const BlobSet & getBlobSet() const { return _blobSet; }
 private:
-    BlobSet _blobSet;
+    BlobSet & _blobSet;
 };
 
 void
@@ -142,9 +140,11 @@ VisitCollector::visit(uint32_t lid, ConstBufferRef buf) {
 
 bool
 VisitCache::BackingStore::read(const KeySet &key, CompressedBlobSet &blobs) const {
-    VisitCollector collector;
+    BlobSet blobSet;
+    blobSet.reserve(key.getKeys().size());
+    VisitCollector collector(blobSet);
     _backingStore.read(key.getKeys(), collector);
-    blobs = CompressedBlobSet(_compression.load(std::memory_order_relaxed), collector.getBlobSet());
+    blobs = CompressedBlobSet(_compression.load(std::memory_order_relaxed), std::move(blobSet));
     return ! blobs.empty();
 }
 
@@ -237,8 +237,7 @@ VisitCache::Cache::removeKey(uint32_t subKey) {
     auto cacheGuard = getGuard();
     const auto foundLid = _lid2Id.find(subKey);
     if (foundLid != _lid2Id.end()) {
-        K keySet = _id2KeySet[foundLid->second];
-        invalidate(cacheGuard, keySet);
+        invalidate(cacheGuard, _id2KeySet[foundLid->second]);
     }
 }
 

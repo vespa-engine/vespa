@@ -19,7 +19,7 @@ namespace search::docstore {
  **/
 class KeySet {
 public:
-    KeySet() : _keys() { }
+    KeySet() noexcept : _keys() { }
     KeySet(uint32_t key);
     explicit KeySet(const IDocumentStore::LidVector &keys);
     uint32_t hash() const noexcept { return _keys.empty() ? 0 : _keys[0]; }
@@ -51,12 +51,14 @@ public:
 
     using Positions = std::vector<LidPosition>;
     BlobSet();
-    BlobSet(const Positions & positions, vespalib::alloc::Alloc && buffer);
-    BlobSet(BlobSet &&) = default;
-    BlobSet &operator = (BlobSet &&) = default;
+    BlobSet(Positions positions, vespalib::alloc::Alloc && buffer) noexcept;
+    BlobSet(BlobSet &&) noexcept = default;
+    BlobSet &operator = (BlobSet &&) noexcept = default;
     ~BlobSet();
+    void reserve(size_t elems) { _positions.reserve(elems);}
     void append(uint32_t lid, vespalib::ConstBufferRef blob);
     const Positions & getPositions() const { return _positions; }
+    Positions && stealPositions() { return std::move(_positions); }
     vespalib::ConstBufferRef get(uint32_t lid) const;
     vespalib::ConstBufferRef getBuffer() const { return vespalib::ConstBufferRef(_buffer.data(), _buffer.size()); }
 private:
@@ -73,14 +75,14 @@ private:
 class CompressedBlobSet {
 public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
-    CompressedBlobSet();
-    CompressedBlobSet(CompressionConfig compression, const BlobSet & uncompressed);
-    CompressedBlobSet(CompressedBlobSet && rhs) = default;
-    CompressedBlobSet & operator=(CompressedBlobSet && rhs) = default;
+    CompressedBlobSet() noexcept;
+    CompressedBlobSet(CompressionConfig compression, BlobSet uncompressed);
+    CompressedBlobSet(CompressedBlobSet && rhs) noexcept = default;
+    CompressedBlobSet & operator=(CompressedBlobSet && rhs) noexcept = default;
     CompressedBlobSet(const CompressedBlobSet & rhs) = default;
     CompressedBlobSet & operator=(const CompressedBlobSet & rhs) = default;
     ~CompressedBlobSet();
-    size_t size() const;
+    size_t byteSize() const;
     bool empty() const { return _positions.empty(); }
     BlobSet getBlobSet() const;
 private:
@@ -129,11 +131,15 @@ private:
         std::atomic<CompressionConfig>  _compression;
     };
 
+    struct ByteSize {
+        size_t operator() (const CompressedBlobSet & arg) const noexcept { return arg.byteSize(); }
+    };
+
     using CacheParams = vespalib::CacheParam<
                             vespalib::LruParam<KeySet, CompressedBlobSet>,
                             BackingStore,
                             vespalib::zero<KeySet>,
-                            vespalib::size<CompressedBlobSet>
+                            ByteSize
                         >;
 
     /**

@@ -437,7 +437,8 @@ DocumentStore::getFileChunkStats() const
     return _backingStore.getFileChunkStats();
 }
 
-CacheStats DocumentStore::getCacheStats() const {
+CacheStats
+DocumentStore::getCacheStats() const {
     CacheStats visitStats = _visitCache->getCacheStats();
     CacheStats singleStats = _cache->get_stats();
     singleStats.add_extra_misses(_uncached_lookups.load(std::memory_order_relaxed));
