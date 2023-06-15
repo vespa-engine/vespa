@@ -58,19 +58,14 @@ public class ApplicationId implements Comparable<ApplicationId> {
         return new ApplicationId(TenantName.from(tenant), ApplicationName.from(application), InstanceName.from(instance));
     }
 
-    public static ApplicationId fromSerializedForm(String idString) {
-        return fromIdString(idString, ":");
-    }
+    public static ApplicationId fromSerializedForm(String idString) { return fromIdString(idString, ":"); }
 
-    public static ApplicationId fromFullString(String idString) {
-        return fromIdString(idString, "\\.");
-    }
+    public static ApplicationId fromFullString(String idString) { return fromIdString(idString, "."); }
 
     private static ApplicationId fromIdString(String idString, String splitCharacter) {
-        String[] parts = idString.split(splitCharacter);
-        String unescapedSplitCharacter = splitCharacter.equals("\\.") ? "." : splitCharacter;
+        String[] parts = idString.split(Pattern.quote(splitCharacter));
         String errorMessage = "Application ids must be on the form tenant" +
-                unescapedSplitCharacter + "application" + unescapedSplitCharacter + "instance, but was " + idString;
+                splitCharacter + "application" + splitCharacter + "instance, but was " + idString;
         if (parts.length < 3)
             throw new IllegalArgumentException(errorMessage);
         // TODO: Throw exception when we have verified no-one is abusing this with more than 3 parts in id string
