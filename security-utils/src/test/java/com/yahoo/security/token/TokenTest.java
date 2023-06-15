@@ -6,16 +6,17 @@ import org.junit.jupiter.api.Test;
 import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TokenTest {
 
-    private static final TokenDomain TEST_DOMAIN = TokenDomain.of("my fingerprint", "my check hash");
+    private static final TokenDomain TEST_DOMAIN = TokenDomain.of("my check hash");
 
     @Test
     void tokens_are_equality_comparable() {
-        var td1 = TokenDomain.of("fingerprint 1", "hash 1");
-        var td2 = TokenDomain.of("fingerprint 2", "hash 2");
+        var td1 = TokenDomain.of("hash 1");
+        var td2 = TokenDomain.of("hash 2");
 
         var td1_t1 = Token.of(td1, "foo");
         var td1_t2 = Token.of(td1, "foo");
@@ -53,28 +54,29 @@ public class TokenTest {
     }
 
     @Test
-    void token_fingerprint_considers_entire_token_string_and_domain() {
-        var td = TokenDomain.of("my fingerprint", "my check hash");
+    void token_fingerprint_considers_entire_token_string() {
+        var td = TokenDomain.of("my check hash");
         var t1 = Token.of(td, "kittens_123456789");
         var t2 = Token.of(td, "puppies_123456789");
-        assertEquals("563487a25ae28bc64ed804244bce70de", t1.fingerprint().toHexString());
-        assertEquals("4b63155af536346d49a52300f5d65364", t2.fingerprint().toHexString());
+        var t3 = Token.of(td, "puppies_1234567890");
+        assertEquals("4c7e222f923b459e19eae17f8d565fe8", t1.fingerprint().toHexString());
+        assertEquals("59796927954fdd710c483177cb6e2b27", t2.fingerprint().toHexString());
+        assertEquals("daae1353ab47e0fe9244d3c5a7c31724", t3.fingerprint().toHexString());
+    }
 
-        var td2 = TokenDomain.of("my fingerprint 2", "my check hash");
-        var t3 = Token.of(td2, "kittens_123456789");
-        assertEquals("201890b5e18e69c364ca09f3c7a00f8e", t3.fingerprint().toHexString());
-
-        // Only the _fingerprint_ context should matter
-        var td3 = TokenDomain.of("my fingerprint 2", "my check hash 2");
-        var t4 = Token.of(td3, "kittens_123456789");
-        assertEquals("201890b5e18e69c364ca09f3c7a00f8e", t4.fingerprint().toHexString());
+    @Test
+    void token_fingerprint_is_independent_of_token_domain() {
+        var td = TokenDomain.of("my check hash 2");
+        var t = Token.of(td, "kittens_123456789");
+        // Same as with domain 'my check hash'
+        assertEquals("4c7e222f923b459e19eae17f8d565fe8", t.fingerprint().toHexString());
     }
 
     @Test
     void fingerprint_is_printed_with_delimiters_by_default() {
         var t = Token.of(TEST_DOMAIN, "bar");
         var fp = t.fingerprint();
-        assertEquals("7c:47:14:4e:5d:c6:84:7a:5d:20:08:6d:bd:17:70:00", fp.toString());
+        assertEquals("3f:2a:3b:64:09:74:c6:56:45:72:d2:a0:66:b8:60:b8", fp.toString());
     }
 
     @Test
@@ -85,15 +87,15 @@ public class TokenTest {
         // If we generate with different lengths, hashes will differ by definition, but that wouldn't
         // really tell us anything about whether the hashes are actually derived differently.
         var hash = TokenCheckHash.of(t, TokenFingerprint.FINGERPRINT_BYTES);
-        assertEquals("532e4e09d54f96f41a4482eff044b9a2", fp.toHexString());
+        assertEquals("ee01a269abe96ffffe25f49a6be08189", fp.toHexString());
         assertEquals("f0f56b46df55f73eccb9409c203b02c7", hash.toHexString());
     }
 
     @Test
     void different_check_hash_domains_give_different_outputs() {
-        var d1 = TokenDomain.of("my fingerprint", "domain: 1");
-        var d2 = TokenDomain.of("my fingerprint", "domain: 2");
-        var d3 = TokenDomain.of("my fingerprint", "domain: 3");
+        var d1 = TokenDomain.of("domain: 1");
+        var d2 = TokenDomain.of("domain: 2");
+        var d3 = TokenDomain.of("domain: 3");
         assertEquals("cc0c504b52bfd9b0a9cdb1651c0f3515", TokenCheckHash.of(Token.of(d1, "foo"), 16).toHexString());
         assertEquals("a27c7fc350699c71bc456a86bd571479", TokenCheckHash.of(Token.of(d2, "foo"), 16).toHexString());
         assertEquals("119cc7046689e6de796fd4005aaab6dc", TokenCheckHash.of(Token.of(d3, "foo"), 16).toHexString());
@@ -102,38 +104,38 @@ public class TokenTest {
     @Test
     void token_stringification_does_not_contain_raw_secret() {
         var t = Token.of(TEST_DOMAIN, "foo");
-        assertEquals("Token(fingerprint: 53:2e:4e:09:d5:4f:96:f4:1a:44:82:ef:f0:44:b9:a2, " +
-                           "domain: 'my fingerprint'/'my check hash')",
+        assertEquals("Token(fingerprint: ee:01:a2:69:ab:e9:6f:ff:fe:25:f4:9a:6b:e0:81:89, " +
+                           "domain: 'my check hash')",
                      t.toString());
     }
 
     @Test
     void token_fingerprints_and_check_hashes_are_stable() {
-        var d1 = TokenDomain.of("my fingerprint: 1", "domain: 1");
-        var d2 = TokenDomain.of("my fingerprint: 2", "domain: 2");
+        var d1 = TokenDomain.of("domain: 1");
+        var d2 = TokenDomain.of("domain: 2");
 
         var t1 = Token.of(d1, "my_token_1");
-        assertEquals("e029edf4b9061a82b45fdf5cf1507804", t1.fingerprint().toHexString());
-        assertEquals("e029edf4b9061a82b45fdf5cf1507804", TokenFingerprint.of(t1).toHexString());
+        assertEquals("3117c3a6e5481f08fc51233da828efe8", t1.fingerprint().toHexString());
+        assertEquals("3117c3a6e5481f08fc51233da828efe8", TokenFingerprint.of(t1).toHexString());
         var t1_h1 = TokenCheckHash.of(t1, 32);
         var t1_h2 = TokenCheckHash.of(t1, 16);
         assertEquals("65da02dbed156442d85c93caf930217488916082936d17fef29137dc12110062", t1_h1.toHexString());
         assertEquals("65da02dbed156442d85c93caf9302174", t1_h2.toHexString()); // same prefix, just truncated
 
         var t2 = Token.of(d1, "my_token_2");
-        assertEquals("f1b9f90e996ec16125fec41ebc0c46a9", t2.fingerprint().toHexString());
+        assertEquals("1bfe7e2e81e8fa10aaabdd19f151be23", t2.fingerprint().toHexString());
         var t2_h = TokenCheckHash.of(t2, 32);
         assertEquals("8f3695492c3fd977b44067580ad57e87883317973e7c09cd859666da8edbd42f", t2_h.toHexString());
 
         var t3 = Token.of(d2, "my_token_1"); // Different domain
-        assertEquals("90960354d1a6e5ec316117da72c31792", t3.fingerprint().toHexString());
+        assertEquals("3117c3a6e5481f08fc51233da828efe8", t3.fingerprint().toHexString());
         var t3_h = TokenCheckHash.of(t3, 32);
         assertEquals("f566dbec641aa64723dd19124afe6c96a821638f9b59f46bbe14f61c3704b32a", t3_h.toHexString());
     }
 
     @Test
     void token_fingerprints_and_check_hashes_can_be_constructed_from_hex() {
-        var domain = TokenDomain.of("fingerprint domain", "check domain");
+        var domain = TokenDomain.of("check domain");
         var token = Token.of(domain, "my_token");
 
         var fingerprintHex = token.fingerprint().toHexString();
@@ -145,6 +147,11 @@ public class TokenTest {
         var checkHash = TokenCheckHash.of(token, 32);
         var checkHashHex = checkHash.toHexString();
         assertEquals(checkHash, TokenCheckHash.ofHex(checkHashHex));
+    }
+
+    @Test
+    void cannot_create_token_domains_equal_to_fingerprint_context() {
+        assertThrows(IllegalArgumentException.class, () -> new TokenDomain(TokenFingerprint.FINGERPRINT_CONTEXT));
     }
 
 }

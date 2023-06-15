@@ -29,7 +29,6 @@ import java.util.stream.Stream;
 public class DataplaneTokenService {
 
     private static final String TOKEN_PREFIX = "vespa_cloud_";
-    private static final byte[] FINGERPRINT_CONTEXT = new byte[0];
     private static final int TOKEN_BYTES = 32;
     private static final int CHECK_HASH_BYTES = 32;
 
@@ -57,7 +56,7 @@ public class DataplaneTokenService {
      * @return a DataplaneToken containing the secret generated token
      */
     public DataplaneToken generateToken(TenantName tenantName, TokenId tokenId, Principal principal) {
-        TokenDomain tokenDomain = new TokenDomain(FINGERPRINT_CONTEXT, tenantName.value().getBytes(StandardCharsets.UTF_8));
+        TokenDomain tokenDomain = TokenDomain.of(tenantName.value());
         Token token = TokenGenerator.generateToken(tokenDomain, TOKEN_PREFIX, TOKEN_BYTES);
         TokenCheckHash checkHash = TokenCheckHash.of(token, CHECK_HASH_BYTES);
         DataplaneTokenVersions.Version newTokenVersion = new DataplaneTokenVersions.Version(

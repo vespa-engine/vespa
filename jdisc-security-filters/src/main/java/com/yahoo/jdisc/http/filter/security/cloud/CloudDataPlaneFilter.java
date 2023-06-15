@@ -63,7 +63,7 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
 
     CloudDataPlaneFilter(CloudDataPlaneFilterConfig cfg, X509Certificate reverseProxyCert) {
         this.legacyMode = cfg.legacyMode();
-        this.tokenDomain = new TokenDomain(new byte[0], cfg.tokenContext().getBytes(StandardCharsets.UTF_8));
+        this.tokenDomain = TokenDomain.of(cfg.tokenContext());
         if (legacyMode) {
             allowedClients = List.of();
             log.fine(() -> "Legacy mode enabled");
