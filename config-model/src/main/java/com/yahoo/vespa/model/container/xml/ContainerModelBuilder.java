@@ -530,14 +530,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .flatMap(Arrays::stream)
                 .toList();
 
-        List<X509Certificate> x509Certificates = XML.getChildren(clientElement, "certificate").stream()
-                .map(certElem -> Path.fromString(certElem.getAttribute("file")))
-                .map(path -> app.getFile(path))
-                .filter(ApplicationFile::exists)
-                .map(this::getCertificates)
-                .flatMap(Collection::stream)
+        var certificates = XML.getChildren(clientElement, "certificate").stream()
+                .flatMap(certElem -> {
+                    var file = app.getFile(Path.fromString(certElem.getAttribute("file")));
+                    if (!file.exists()) {
+                        throw new IllegalArgumentException("Certificate file '%s' for client '%s' does not exist"
+                                                                   .formatted(file.getPath().getRelative(), id));
+                    }
+                    return getCertificates(file).stream();
+                })
                 .toList();
-        return new Client(id, permissions, x509Certificates);
+        return new Client(id, permissions, certificates);
     }
 
     private List<X509Certificate> getCertificates(ApplicationFile file) {
