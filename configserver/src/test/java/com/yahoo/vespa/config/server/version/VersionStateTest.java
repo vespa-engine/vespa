@@ -33,14 +33,14 @@ public class VersionStateTest {
         VersionState state = createVersionState();
         assertEquals(unknownVersion, state.storedVersion());
         assertTrue(state.isUpgraded());
-        state.saveNewVersion();
+        state.storeCurrentVersion();
         assertFalse(state.isUpgraded());
 
-        state.saveNewVersion("badversion");
+        state.storeVersion("badversion");
         assertEquals(unknownVersion, state.storedVersion());
         assertTrue(state.isUpgraded());
 
-        state.saveNewVersion("5.0.0");
+        state.storeVersion("5.0.0");
         assertEquals(new Version(5, 0, 0), state.storedVersion());
         assertTrue(state.isUpgraded());
 
@@ -50,12 +50,12 @@ public class VersionStateTest {
         assertTrue(state.isUpgraded());
 
         // Save new version, remove version in file, should find version in ZooKeeper
-        state.saveNewVersion("6.0.0");
+        state.storeVersion("6.0.0");
         Files.delete(state.versionFile().toPath());
         assertEquals(new Version(6, 0, 0), state.storedVersion());
         assertTrue(state.isUpgraded());
 
-        state.saveNewVersion();
+        state.storeCurrentVersion();
         assertEquals(state.currentVersion(), state.storedVersion());
         assertFalse(state.isUpgraded());
     }
@@ -64,7 +64,7 @@ public class VersionStateTest {
     public void serverdbfile() throws IOException {
         File dbDir = tempDir.newFolder();
         VersionState state = new VersionState(new ConfigserverConfig.Builder().configServerDBDir(dbDir.getAbsolutePath()).build(), curator);
-        state.saveNewVersion();
+        state.storeCurrentVersion();
         File versionFile = new File(dbDir, "vespa_version");
         assertTrue(versionFile.exists());
         Version stored = Version.fromString(IOUtils.readFile(versionFile));
@@ -72,7 +72,7 @@ public class VersionStateTest {
     }
 
     private VersionState createVersionState() throws IOException {
-        return new VersionState(tempDir.newFile(), curator);
+        return new VersionState(tempDir.newFile(), curator, true);
     }
 
 }
