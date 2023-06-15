@@ -14,12 +14,10 @@ import static com.yahoo.config.provision.ApplicationId.global;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Ulf Lilleengen
  * @author vegard
- * @since 5.1
  */
 public class ApplicationIdTest {
 
@@ -82,33 +80,19 @@ public class ApplicationIdTest {
 
     @Test
     void require_that_invalid_idstring_throws_exception() {
-        try {
-            ApplicationId.fromSerializedForm("foo:baz");
-            fail("Expected to fail");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Application ids must be on the form tenant:application:instance, but was foo:baz", e.getMessage());
-        }
-        try {
-            ApplicationId.fromSerializedForm("foo.baz");
-            fail("Expected to fail");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Application ids must be on the form tenant:application:instance, but was foo.baz", e.getMessage());
-        }
+        var e = assertThrows(IllegalArgumentException.class, () -> ApplicationId.fromSerializedForm("foo:baz"));
+        assertEquals("Application ids must be on the form tenant:application:instance, but was foo:baz", e.getMessage());
+
+        e = assertThrows(IllegalArgumentException.class, () -> ApplicationId.fromFullString("foo.baz"));
+        assertEquals("Application ids must be on the form tenant.application.instance, but was foo.baz", e.getMessage());
 
         // TODO: Add when we throw exception on strings with too many parts
         /*
-        try {
-            ApplicationId.fromSerializedForm("foo:baz:bar:xyzzy");
-            fail("Expected to fail");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Application ids must be on the form tenant:application:instance, but was foo:baz:bar:xyzzy", e.getMessage());
-        }
-        try {
-            ApplicationId.fromSerializedForm("foo.baz:bar:xyzzy");
-            fail("Expected to fail");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Application ids must be on the form tenant:application:instance, but was foo.baz.bar.xyzzy", e.getMessage());
-        }
+        e = assertThrows(IllegalArgumentException.class, () -> ApplicationId.fromSerializedForm("foo:baz:bar:xyzzy"));
+        assertEquals("Application ids must be on the form tenant:application:instance, but was foo:baz:bar:xyzzy", e.getMessage());
+
+        e = assertThrows(IllegalArgumentException.class, () -> ApplicationId.fromFullString("foo.baz.bar.xyzzy"));
+        assertEquals("Application ids must be on the form tenant.application.instance, but was foo.baz.bar.xyzzy", e.getMessage());
          */
     }
 

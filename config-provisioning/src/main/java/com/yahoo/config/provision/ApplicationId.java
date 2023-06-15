@@ -68,8 +68,9 @@ public class ApplicationId implements Comparable<ApplicationId> {
 
     private static ApplicationId fromIdString(String idString, String splitCharacter) {
         String[] parts = idString.split(splitCharacter);
+        String unescapedSplitCharacter = splitCharacter.equals("\\.") ? "." : splitCharacter;
         String errorMessage = "Application ids must be on the form tenant" +
-                splitCharacter + "application" + splitCharacter + "instance, but was " + idString;
+                unescapedSplitCharacter + "application" + unescapedSplitCharacter + "instance, but was " + idString;
         if (parts.length < 3)
             throw new IllegalArgumentException(errorMessage);
         // TODO: Throw exception when we have verified no-one is abusing this with more than 3 parts in id string
