@@ -50,26 +50,32 @@
               "coolingDownUntil": 1600022201500
             },
             {
-              "name": "production-us-west-1"
+              "name": "production-aws-us-east-1a"
             }
           ],
           "allRuns": {
-            "production-us-west-1": {
+            "production-aws-us-east-1a": {
               "success": {
                 "number": 1,
                 "start": 1600000000000,
                 "end": 1600000000000,
-                "status": "success"
+                "status": "success",
+                "enclave": {
+                  "cloudAccount": "aws:123456789012"
+                }
               }
             }
           },
           "upgradeRuns": {
-            "production-us-west-1": {
+            "production-aws-us-east-1a": {
               "success": {
                 "number": 1,
                 "start": 1600000000000,
                 "end": 1600000000000,
-                "status": "success"
+                "status": "success",
+                "enclave": {
+                  "cloudAccount": "aws:123456789012"
+                }
               }
             }
           }
@@ -198,7 +204,7 @@
               "pending": "platform"
             },
             {
-              "name": "production-us-west-1",
+              "name": "production-aws-us-east-1a",
               "pending": "platform"
             }
           ],

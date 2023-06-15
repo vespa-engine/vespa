@@ -221,9 +221,6 @@
       "url": "https://some.url:43/instance/default/job/production-aws-us-east-1c",
       "environment": "prod",
       "region": "prod.aws-us-east-1c",
-      "enclave": {
-        "cloudAccount": "aws:123456789012"
-      },
       "currentPlatform": "6.1.0",
       "currentApplication": {
         "build": 1,
@@ -232,6 +229,9 @@
         "commit": "commit1"
       },
       "toRun": [ ],
+      "enclave": {
+        "cloudAccount": "aws:123456789012"
+      },
       "runs": [
         {
           "id": 1,

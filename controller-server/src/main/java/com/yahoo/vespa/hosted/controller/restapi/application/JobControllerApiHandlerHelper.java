@@ -15,6 +15,7 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
@@ -22,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
@@ -363,12 +365,6 @@ class JobControllerApiHandlerHelper {
                 stepObject.setString("environment", job.type().environment().value());
                 if ( ! job.type().environment().isTest()) {
                     stepObject.setString("region", job.type().zone().value());
-                    var deployment = application.require(job.application().instance()).deployments().get(job.type().zone());
-                    var cloudAccount = deployment == null ? null : deployment.cloudAccount();
-                    if (cloudAccount != null && controller.zoneRegistry().isExternal(cloudAccount)) {
-                        var enclaveObject = stepObject.setObject("enclave");
-                        enclaveObject.setString("cloudAccount", cloudAccount.value());
-                    }
                 }
 
                 if (job.type().isProduction() && job.type().isDeployment()) {
@@ -394,6 +390,12 @@ class JobControllerApiHandlerHelper {
                     Cursor runObject = toRunArray.addObject();
                     toSlime(runObject.setObject("versions"), versions.versions(), application);
                 }
+
+                if ( ! jobStatus.runs().isEmpty())
+                    controller.applications().decideCloudAccountOf(new DeploymentId(job.application(),
+                                                                                    jobStatus.runs().lastEntry().getValue().id().job().type().zone()), // Urgh, must use a job with actual zone.
+                                                                   status.application().deploymentSpec())
+                              .ifPresent(cloudAccount -> stepObject.setObject("enclave").setString("cloudAccount", cloudAccount.value()));
 
                 toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), application, 10, baseUriForJob);
             }
