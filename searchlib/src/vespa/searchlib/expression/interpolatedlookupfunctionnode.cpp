@@ -10,66 +10,39 @@ namespace search::expression {
 using vespalib::Serializer;
 using vespalib::Deserializer;
 
-IMPLEMENT_EXPRESSIONNODE(InterpolatedLookup, UnaryFunctionNode);
+IMPLEMENT_EXPRESSIONNODE(InterpolatedLookup, AttributeNode);
 
 InterpolatedLookup::InterpolatedLookup() noexcept
-    : _attribute(nullptr),
-      _docId(0)
+    : AttributeNode(),
+      _lookupExpression()
 {
 }
 
 InterpolatedLookup::~InterpolatedLookup() = default;
 
 InterpolatedLookup::InterpolatedLookup(const vespalib::string &attribute, ExpressionNode::UP arg)
-    : UnaryFunctionNode(std::move(arg)),
-      _attributeName(attribute),
-      _attribute(0),
-      _docId(0)
+    : AttributeNode(attribute),
+      _lookupExpression(std::move(arg))
 {
 }
 
-InterpolatedLookup::InterpolatedLookup(const attribute::IAttributeVector &attr, ExpressionNode::UP lookupArg)
-    : UnaryFunctionNode(std::move(lookupArg)),
-      _attributeName(attr.getName()),
-      _attribute(&attr),
-      _docId(0)
+InterpolatedLookup::InterpolatedLookup(const attribute::IAttributeVector &attr, ExpressionNode::UP arg)
+    : AttributeNode(attr),
+      _lookupExpression(std::move(arg))
 {
 }
 
 
-InterpolatedLookup::InterpolatedLookup(const InterpolatedLookup &rhs) :
-    UnaryFunctionNode(rhs),
-    _attributeName(rhs._attributeName),
-    _attribute(rhs._attribute),
-    _docId(0)
-{
-}
-
-InterpolatedLookup &
-InterpolatedLookup::operator= (const InterpolatedLookup &rhs)
-{
-    if (this != &rhs) {
-        UnaryFunctionNode::operator =(rhs);
-        _attributeName = rhs._attributeName;
-        _attribute = rhs._attribute;
-        _docId = 0;
-    }
-    return *this;
-}
-
-void
-InterpolatedLookup::onPrepareResult()
-{
-    setResultType(std::make_unique<FloatResultNode>());
-}
+InterpolatedLookup::InterpolatedLookup(const InterpolatedLookup &rhs) = default;
+InterpolatedLookup & InterpolatedLookup::operator= (const InterpolatedLookup &rhs) = default;
 
 namespace {
 
 double
-simpleInterpolate(size_t sz, std::vector<double> v, double lookup) {
-    if (sz == 0 || lookup < v[0])
+simpleInterpolate(const std::vector<double> & v, double lookup) {
+    if (v.empty() || lookup < v[0])
         return 0;
-    for (size_t i = 1; i < sz; ++i) {
+    for (size_t i = 1; i < v.size(); ++i) {
         if (lookup < v[i]) {
             double total = v[i] - v[i - 1];
             double above = lookup - v[i - 1];
@@ -78,39 +51,50 @@ simpleInterpolate(size_t sz, std::vector<double> v, double lookup) {
             return result;
         }
     }
-    return sz - 1;
+    return v.size() - 1;
 }
 
-}
-
-bool
-InterpolatedLookup::onExecute() const
-{
-    getArg().execute();
-    double lookup = getArg().getResult()->getFloat();
-    // get attribute data
-    size_t numValues = _attribute->getValueCount(_docId);
-    std::vector<double> valueVector;
-    valueVector.resize(numValues);
-    _attribute->get(_docId, valueVector.data(), numValues);
-    double result = simpleInterpolate(numValues, valueVector, lookup);
-    static_cast<FloatResultNode &>(updateResult()).set(result);
-    return true;
-}
+class InterpolateHandler : public AttributeNode::Handler {
+public:
+    InterpolateHandler(FloatResultNode & result, const ExpressionNode * lookupExpression) noexcept
+        : AttributeNode::Handler(),
+          _lookupExpression(lookupExpression),
+          _result(result),
+          _values()
+    { }
+    void handle(const AttributeResult & r) override;
+private:
+    const ExpressionNode *_lookupExpression;
+    FloatResultNode      &_result;
+    std::vector<double>   _values;
+};
 
 void
-InterpolatedLookup::wireAttributes(const search::attribute::IAttributeContext & attrCtx)
-{
-    _attribute = attrCtx.getAttribute(_attributeName);
-    if (_attribute == nullptr) {
-        throw std::runtime_error(vespalib::make_string("Failed locating attribute vector '%s'", _attributeName.c_str()));
-    }
+InterpolateHandler::handle(const AttributeResult &r) {
+    _lookupExpression->execute();
+    double lookup = _lookupExpression->getResult()->getFloat();
+    size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
+    _values.resize(numValues);
+    r.getAttribute()->get(r.getDocId(), _values.data(), _values.size());
+    _result.set(simpleInterpolate(_values, lookup));
+}
+
+}
+
+std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<AttributeNode::Handler>>
+InterpolatedLookup::createResultHandler(bool, const attribute::IAttributeVector &) const {
+    auto result = std::make_unique<FloatResultNode>();
+    auto handler = std::make_unique<InterpolateHandler>(*result, _lookupExpression.get());
+    return { std::move(result), std::move(handler) };
 }
 
 Serializer &
 InterpolatedLookup::onSerialize(Serializer & os) const
 {
-    UnaryFunctionNode::onSerialize(os);
+    // Here we are doing a dirty skipping AttributeNode in the inheritance.
+    // This is due to refactoring and the need to keep serialization the same.
+    FunctionNode::onSerialize(os);
+    os << uint32_t(1u) << _lookupExpression; // Simulating a single element vector.
     os << _attributeName;
     return os;
 }
@@ -118,9 +102,33 @@ InterpolatedLookup::onSerialize(Serializer & os) const
 Deserializer &
 InterpolatedLookup::onDeserialize(Deserializer & is)
 {
-    UnaryFunctionNode::onDeserialize(is);
+    // See comment in onSerialize method.
+    FunctionNode::onDeserialize(is);
+    uint32_t count(0);
+    is >> count;
+    if (count > 0) {
+        is >> _lookupExpression;
+    } else {
+        _lookupExpression.reset();
+    }
     is >> _attributeName;
     return is;
+}
+
+void
+InterpolatedLookup::visitMembers(vespalib::ObjectVisitor &visitor) const
+{
+    AttributeNode::visitMembers(visitor);
+    visit(visitor, "index", *_lookupExpression);
+}
+
+void
+InterpolatedLookup::selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation)
+{
+    AttributeNode::selectMembers(predicate, operation);
+    if (_lookupExpression) {
+        _lookupExpression->select(predicate, operation);
+    }
 }
 
 }

@@ -73,7 +73,6 @@ private:
     AttributeNodeList         _attributeNodes;
     DocumentAccessorNodeList  _documentAccessorNodes;
     RelevanceNodeList         _relevanceNodes;
-    InterpolatedLookupList    _interpolatedLookupNodes;
 };
 
 }
