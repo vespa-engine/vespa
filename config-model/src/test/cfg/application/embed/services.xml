@@ -30,7 +30,7 @@
       <max-tokens>512</max-tokens>
       <transformer-input-ids>my_input_ids</transformer-input-ids>
       <transformer-attention-mask>my_attention_mask</transformer-attention-mask>
-      <transformer-token-type-ids>my_token_type_ids</transformer-token-type-ids>
+      <transformer-token-type-ids/>
       <transformer-output>my_output</transformer-output>
       <transformer-start-sequence-token>101</transformer-start-sequence-token>
       <transformer-end-sequence-token>102</transformer-end-sequence-token>

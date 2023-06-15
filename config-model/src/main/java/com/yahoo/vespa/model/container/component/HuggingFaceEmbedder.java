@@ -11,7 +11,7 @@ import org.w3c.dom.Element;
 import java.util.Optional;
 
 import static com.yahoo.config.model.builder.xml.XmlHelper.getOptionalChild;
-import static com.yahoo.config.model.builder.xml.XmlHelper.getOptionalChildValue;
+import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 
 
@@ -40,17 +40,17 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
         vocab = getOptionalChild(xml, "tokenizer-model")
                 .map(elem -> ModelIdResolver.resolveToModelReference(elem, state))
                 .orElseGet(() -> resolveDefaultVocab(transformerModelElem, state));
-        maxTokens = getOptionalChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
-        transformerInputIds = getOptionalChildValue(xml, "transformer-input-ids").orElse(null);
-        transformerAttentionMask = getOptionalChildValue(xml, "transformer-attention-mask").orElse(null);
-        transformerTokenTypeIds = getOptionalChildValue(xml, "transformer-token-type-ids").orElse(null);
-        transformerOutput = getOptionalChildValue(xml, "transformer-output").orElse(null);
-        normalize = getOptionalChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
-        onnxExecutionMode = getOptionalChildValue(xml, "onnx-execution-mode").orElse(null);
-        onnxInteropThreads = getOptionalChildValue(xml, "onnx-interop-threads").map(Integer::parseInt).orElse(null);
-        onnxIntraopThreads = getOptionalChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null);
-        onnxGpuDevice = getOptionalChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).orElse(null);
-        poolingStrategy = getOptionalChildValue(xml, "pooling-strategy").orElse(null);
+        maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
+        transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
+        transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
+        transformerTokenTypeIds = getChildValue(xml, "transformer-token-type-ids").orElse(null);
+        transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
+        normalize = getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
+        onnxExecutionMode = getChildValue(xml, "onnx-execution-mode").orElse(null);
+        onnxInteropThreads = getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt).orElse(null);
+        onnxIntraopThreads = getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null);
+        onnxGpuDevice = getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).orElse(null);
+        poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
     }
 
     private static ModelReference resolveDefaultVocab(Element model, DeployState state) {
