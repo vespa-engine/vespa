@@ -23,8 +23,10 @@ import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -47,6 +49,7 @@ import static com.yahoo.jdisc.http.server.jetty.AccessLoggingRequestHandler.CONT
 public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
 
     private static final Logger log = Logger.getLogger(CloudDataPlaneFilter.class.getName());
+    static final int CHECK_HASH_BYTES = 32;
 
     private final boolean legacyMode;
     private final List<Client> allowedClients;
@@ -100,14 +103,15 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
                     throw new IllegalArgumentException(
                             "Client '%s' contains invalid X.509 certificate PEM: %s".formatted(c.id(), e.toString()), e);
                 }
-                clients.add(new Client(c.id(), permissions, certs, List.of()));
+                clients.add(new Client(c.id(), permissions, certs, Map.of()));
                 hasClientRequiringCertificate = true;
             } else {
-                var tokens = new ArrayList<TokenVersion>();
+                var tokens = new HashMap<TokenCheckHash, TokenVersion>();
                 for (var token : c.tokens()) {
                     for (int version = 0; version < token.checkAccessHashes().size(); version++) {
-                        tokens.add(TokenVersion.of(
-                                token.id(), token.fingerprints().get(version), token.checkAccessHashes().get(version)));
+                        var tokenVersion = TokenVersion.of(
+                                token.id(), token.fingerprints().get(version), token.checkAccessHashes().get(version));
+                        tokens.put(tokenVersion.accessHash(), tokenVersion);
                     }
                 }
                 // Add reverse proxy certificate as required certificate for client definition
@@ -147,7 +151,7 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
             return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Forbidden"));
         }
         var clientCert = certs.get(0);
-        var requestTokenHash = requestToken(req).orElse(null);
+        var requestTokenHash = requestTokenHash(req).orElse(null);
         var clientIds = new TreeSet<String>();
         var permissions = new TreeSet<Permission>();
         var matchedTokens = new HashSet<TokenVersion>();
@@ -155,8 +159,8 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
             if (!c.permissions().contains(permission)) continue;
             if (!c.certificates().contains(clientCert)) continue;
             if (!c.tokens().isEmpty()) {
-                var matchedToken = c.tokens().stream()
-                        .filter(t -> t.accessHash().equals(requestTokenHash)).findAny().orElse(null);
+                if (requestTokenHash == null) continue;
+                var matchedToken  = c.tokens().get(requestTokenHash);
                 if (matchedToken == null) continue;
                 matchedTokens.add(matchedToken);
             }
@@ -180,11 +184,11 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
         return Optional.empty();
     }
 
-    private Optional<TokenCheckHash> requestToken(DiscFilterRequest req) {
+    private Optional<TokenCheckHash> requestTokenHash(DiscFilterRequest req) {
         return Optional.ofNullable(req.getHeader("Authorization"))
                 .filter(h -> h.startsWith("Bearer "))
                 .map(t -> t.substring("Bearer ".length()).trim())
-                .map(t -> TokenCheckHash.of(Token.of(tokenDomain, t), 32));
+                .map(t -> TokenCheckHash.of(Token.of(tokenDomain, t), CHECK_HASH_BYTES));
     }
 
     private static void addAccessLogEntry(DiscFilterRequest req, String key, String value) {
@@ -225,7 +229,10 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
         }
     }
 
-    private record Client(String id, EnumSet<Permission> permissions, List<X509Certificate> certificates, List<TokenVersion> tokens) {
-        Client { permissions = EnumSet.copyOf(permissions); certificates = List.copyOf(certificates); tokens = List.copyOf(tokens); }
+    private record Client(String id, EnumSet<Permission> permissions, List<X509Certificate> certificates,
+                          Map<TokenCheckHash, TokenVersion> tokens) {
+        Client {
+            permissions = EnumSet.copyOf(permissions); certificates = List.copyOf(certificates); tokens = Map.copyOf(tokens);
+        }
     }
 }

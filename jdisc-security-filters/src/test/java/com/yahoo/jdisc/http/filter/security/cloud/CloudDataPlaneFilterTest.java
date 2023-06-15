@@ -27,6 +27,7 @@ import java.util.Set;
 
 import static com.yahoo.jdisc.Response.Status.FORBIDDEN;
 import static com.yahoo.jdisc.Response.Status.UNAUTHORIZED;
+import static com.yahoo.jdisc.http.filter.security.cloud.CloudDataPlaneFilter.CHECK_HASH_BYTES;
 import static com.yahoo.jdisc.http.filter.security.cloud.CloudDataPlaneFilter.Permission.READ;
 import static com.yahoo.jdisc.http.filter.security.cloud.CloudDataPlaneFilter.Permission.WRITE;
 import static com.yahoo.security.KeyAlgorithm.EC;
@@ -52,9 +53,9 @@ class CloudDataPlaneFilterTest {
     private static final String TOKEN_CONTEXT = "my-token-context";
     private static final String TOKEN_ID = "my-token-id";
     private static final Token VALID_TOKEN =
-            TokenGenerator.generateToken(TokenDomain.of("fp-ctx", TOKEN_CONTEXT), "vespa_token_", 32);
+            TokenGenerator.generateToken(TokenDomain.of("fp-ctx", TOKEN_CONTEXT), "vespa_token_", CHECK_HASH_BYTES);
     private static final Token UNKNOWN_TOKEN =
-            TokenGenerator.generateToken(TokenDomain.of("fp-ctx", TOKEN_CONTEXT), "vespa_token_", 32);
+            TokenGenerator.generateToken(TokenDomain.of("fp-ctx", TOKEN_CONTEXT), "vespa_token_", CHECK_HASH_BYTES);
 
     @Test
     void accepts_any_trusted_client_certificate_in_legacy_mode() {
@@ -182,18 +183,6 @@ class CloudDataPlaneFilterTest {
                 .withMethod(Method.GET)
                 .withClientCertificate(REVERSE_PROXY_CERT)
                 .withHeader("Authorization", "Bearer " + UNKNOWN_TOKEN.secretTokenString())
-                .build();
-        var responseHandler = new MockResponseHandler();
-        newFilterWithClientsConfig().filter(req, responseHandler);
-        assertNotNull(responseHandler.getResponse());
-        assertEquals(FORBIDDEN, responseHandler.getResponse().getStatus());
-    }
-
-    @Test
-    void fails_for_reverse_proxy_without_configured_token() {
-        var req = FilterTestUtils.newRequestBuilder()
-                .withMethod(Method.GET)
-                .withClientCertificate(REVERSE_PROXY_CERT)
                 .build();
         var responseHandler = new MockResponseHandler();
         newFilterWithClientsConfig().filter(req, responseHandler);

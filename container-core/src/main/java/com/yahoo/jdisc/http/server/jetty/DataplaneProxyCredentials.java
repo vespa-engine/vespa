@@ -50,9 +50,7 @@ public class DataplaneProxyCredentials extends AbstractComponent {
         }
     }
 
-    /*
-     * Returns true if credentials should be regenerated.
-     *
+    /**
      * @return old certificate if credentials should not be regenerated, empty otherwise.
      */
     private Optional<X509Certificate> regenerateCredentials(Path certificateFile, Path keyFile) {
@@ -65,7 +63,7 @@ public class DataplaneProxyCredentials extends AbstractComponent {
             if (!X509CertificateUtils.privateKeyMatchesPublicKey(privateKey, x509Certificate.getPublicKey())) return Optional.empty();
             return Optional.of(x509Certificate);
         } catch (IOException e) {
-            // Some exception occured, assume credentials corrupted and requires a new pair.
+            // Some exception occurred, assume credentials corrupted and requires a new pair.
             log.log(Level.WARNING, "Failed to load credentials: %s".formatted(e.getMessage()));
             log.log(Level.FINE, e.toString(), e);
             return Optional.empty();
