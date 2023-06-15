@@ -55,9 +55,9 @@ private:
     using generation_t = vespalib::GenerationHandler::generation_t;
 
     void initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
-    EntryRef addSmallArray(const ConstArrayRef &array);
+    EntryRef addSmallArray(ConstArrayRef array);
     EntryRef allocate_small_array(size_t array_size);
-    EntryRef addLargeArray(const ConstArrayRef &array);
+    EntryRef addLargeArray(ConstArrayRef array);
     EntryRef allocate_large_array(size_t array_size);
     ConstArrayRef getSmallArray(RefT ref, size_t arraySize) const {
         const ElemT *buf = _store.template getEntryArray<ElemT>(ref, arraySize);
@@ -72,7 +72,7 @@ public:
     ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, TypeMapper&& mapper);
     ~ArrayStore() override;
-    EntryRef add(const ConstArrayRef &array);
+    EntryRef add(ConstArrayRef array);
     ConstArrayRef get(EntryRef ref) const {
         if (!ref.valid()) [[unlikely]] {
             return ConstArrayRef();

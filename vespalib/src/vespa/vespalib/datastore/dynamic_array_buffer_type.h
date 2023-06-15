@@ -3,6 +3,8 @@
 #pragma once
 
 #include "buffer_type.h"
+#include "array_store_config.h"
+#include <memory>
 
 namespace vespalib::datastore {
 
@@ -20,6 +22,8 @@ namespace vespalib::datastore {
 template <typename ElemT>
 class DynamicArrayBufferType : public BufferTypeBase
 {
+    using AllocSpec = ArrayStoreConfig::AllocSpec;
+    std::shared_ptr<alloc::MemoryAllocator> _memory_allocator;
 public:
     using ElemType = ElemT;
 protected:
@@ -29,15 +33,20 @@ protected:
 public:
     DynamicArrayBufferType(const DynamicArrayBufferType &rhs) = delete;
     DynamicArrayBufferType & operator=(const DynamicArrayBufferType &rhs) = delete;
-    DynamicArrayBufferType(DynamicArrayBufferType && rhs) noexcept = default;
+    DynamicArrayBufferType(DynamicArrayBufferType&& rhs) noexcept;
     DynamicArrayBufferType & operator=(DynamicArrayBufferType && rhs) noexcept = default;
-    DynamicArrayBufferType(uint32_t array_size, uint32_t min_entries, uint32_t max_entries,
-                           uint32_t num_entries_for_new_buffer, float allocGrowFactor) noexcept;
+    DynamicArrayBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator) noexcept;
+    template <typename TypeMapper>
+    DynamicArrayBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, TypeMapper&) noexcept
+        : DynamicArrayBufferType(array_size, spec, std::move(memory_allocator))
+    {
+    }
     ~DynamicArrayBufferType() override;
     void destroy_entries(void* buffer, EntryCount num_entries) override;
     void fallback_copy(void* new_buffer, const void* old_buffer, EntryCount num_entries) override;
     void initialize_reserved_entries(void* buffer, EntryCount reserved_entries) override;
     void clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext cleanCxt) override;
+    const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
     static size_t calc_entry_size(size_t array_size) noexcept;
     static size_t calc_array_size(size_t entry_size) noexcept;
     static ElemType* get_entry(void* buffer, size_t offset, uint32_t entry_size) noexcept { return reinterpret_cast<ElemType*>(static_cast<char*>(buffer) + offset * entry_size); }

@@ -4,6 +4,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <ostream>
 
+using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::BufferTypeBase;
 using vespalib::datastore::DynamicArrayBufferType;
 using vespalib::datastore::EntryCount;
@@ -125,7 +126,7 @@ protected:
 
 DynamicArrayBufferTypeTest::DynamicArrayBufferTypeTest()
     : testing::Test(),
-      _buffer_type(3, 0, 10, 0, 0.2),
+      _buffer_type(3, ArrayStoreConfig::AllocSpec(0, 10, 0, 0.2), {}),
       _entry_size(_buffer_type.entry_size()),
       _buf_size(2 * _entry_size),
       _buf(std::make_unique<char[]>(_buf_size))
@@ -143,7 +144,7 @@ template <typename ElemT>
 uint32_t
 DynamicArrayBufferTypeTest::get_entry_size(uint32_t array_size)
 {
-    DynamicArrayBufferType<ElemT> my_buffer_type(array_size, 0, 10, 0, 0.2);
+    DynamicArrayBufferType<ElemT> my_buffer_type(array_size, ArrayStoreConfig::AllocSpec(0, 10, 0, 0.2), {});
     return my_buffer_type.entry_size();
 }
 
