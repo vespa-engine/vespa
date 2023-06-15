@@ -5,7 +5,10 @@ import com.yahoo.cloud.config.ApplicationIdConfig;
 
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import static java.util.logging.Level.SEVERE;
 
 /**
  * A complete, immutable identification of an application instance.
@@ -15,6 +18,8 @@ import java.util.regex.Pattern;
  * @author bratseth
  */
 public class ApplicationId implements Comparable<ApplicationId> {
+
+    private static final Logger log = Logger.getLogger(ApplicationId.class.getName());
 
     static final Pattern namePattern = Pattern.compile("[a-zA-Z0-9_-]{1,256}");
 
@@ -53,19 +58,20 @@ public class ApplicationId implements Comparable<ApplicationId> {
         return new ApplicationId(TenantName.from(tenant), ApplicationName.from(application), InstanceName.from(instance));
     }
 
-    public static ApplicationId fromSerializedForm(String idString) {
-        String[] parts = idString.split(":");
+    public static ApplicationId fromSerializedForm(String idString) { return fromIdString(idString, ":"); }
+
+    public static ApplicationId fromFullString(String idString) { return fromIdString(idString, "."); }
+
+    private static ApplicationId fromIdString(String idString, String splitCharacter) {
+        String[] parts = idString.split(Pattern.quote(splitCharacter));
+        String errorMessage = "Application ids must be on the form tenant" +
+                splitCharacter + "application" + splitCharacter + "instance, but was " + idString;
         if (parts.length < 3)
-            throw new IllegalArgumentException("Application ids must be on the form tenant:application:instance, but was " + idString);
-
-        return from(parts[0], parts[1], parts[2]);
-    }
-
-    public static ApplicationId fromFullString(String idString) {
-        String[] parts = idString.split("\\.");
-        if (parts.length < 3)
-            throw new IllegalArgumentException("Application ids must be on the form tenant.application.instance, but was " + idString);
-
+            throw new IllegalArgumentException(errorMessage);
+        // TODO: Throw exception when we have verified no-one is abusing this with more than 3 parts in id string
+        // Include code in require_that_invalid_idstring_throws_exception() in ApplicationIdTest to test this
+        if (parts.length > 3)
+            log.log(SEVERE, errorMessage);
         return from(parts[0], parts[1], parts[2]);
     }
 
