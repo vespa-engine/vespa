@@ -29,7 +29,7 @@ public class YamasResponse extends HttpResponse {
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
-        YamasJsonUtil.toJson(metrics, outputStream, true);
+        YamasJsonUtil.toJson(metrics, outputStream, false);
     }
 
 }

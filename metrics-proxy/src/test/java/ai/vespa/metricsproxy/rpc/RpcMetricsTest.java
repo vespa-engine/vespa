@@ -167,7 +167,6 @@ public class RpcMetricsTest {
             }
         }
 
-        verifyStatusMessage(metrics.get(metrics.size() - 1));
     }
 
     private void verfiyMetricsFromServiceObject(VespaService service) {
@@ -264,14 +263,6 @@ public class RpcMetricsTest {
             return "";
         }
         return returnValue;
-    }
-
-    private static void verifyStatusMessage(JsonNode jsonObject) {
-        assertEquals(0, jsonObject.get("status_code").intValue());
-        assertNotNull(jsonObject.get("status_msg"));
-        assertNotNull(jsonObject.get("application"));
-        assertNotNull(jsonObject.get("routing"));
-        assertEquals(4, jsonObject.size());
     }
 
 }

@@ -16,7 +16,6 @@ public class MetricGatherer {
     static List<JsonNode> getAdditionalMetrics() {
         FileWrapper fileWrapper = new FileWrapper();
         List<JsonNode> packetList = new ArrayList<>();
-        packetList.add(CoredumpGatherer.gatherCoredumpMetrics(fileWrapper));
         if (System.getProperty("os.name").contains("nux"))
             packetList.add(HostLifeGatherer.getHostLifePacket(fileWrapper));
         return packetList;
