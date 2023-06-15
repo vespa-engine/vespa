@@ -26,32 +26,34 @@ import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
  * never be made to match, be it accidentally or deliberately.
  * </p>
  */
-public record TokenDomain(byte[] fingerprintContext, byte[] checkHashContext) {
+public record TokenDomain(byte[] checkHashContext) {
+
+    public TokenDomain {
+        if (Arrays.equals(checkHashContext, TokenFingerprint.FINGERPRINT_CONTEXT)) {
+            throw new IllegalArgumentException("Fingerprint and check hash contexts can not be equal");
+        }
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TokenDomain that = (TokenDomain) o;
-        return Arrays.equals(fingerprintContext, that.fingerprintContext) &&
-                Arrays.equals(checkHashContext, that.checkHashContext);
+        return Arrays.equals(checkHashContext, that.checkHashContext);
     }
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(fingerprintContext);
-        result = 31 * result + Arrays.hashCode(checkHashContext);
-        return result;
+        return Arrays.hashCode(checkHashContext);
     }
 
     @Override
     public String toString() {
-        return "'%s'/'%s'".formatted(fromUtf8Bytes(fingerprintContext), fromUtf8Bytes(checkHashContext));
+        return "'%s'".formatted(fromUtf8Bytes(checkHashContext));
     }
 
-    public static TokenDomain of(String fingerprintContext, String checkHashContext) {
-        return new TokenDomain(toUtf8Bytes(fingerprintContext),
-                               toUtf8Bytes(checkHashContext));
+    public static TokenDomain of(String checkHashContext) {
+        return new TokenDomain(toUtf8Bytes(checkHashContext));
     }
 
 }

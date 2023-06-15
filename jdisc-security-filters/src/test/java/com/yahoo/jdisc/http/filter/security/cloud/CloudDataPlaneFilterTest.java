@@ -53,9 +53,9 @@ class CloudDataPlaneFilterTest {
     private static final String TOKEN_CONTEXT = "my-token-context";
     private static final String TOKEN_ID = "my-token-id";
     private static final Token VALID_TOKEN =
-            TokenGenerator.generateToken(TokenDomain.of("fp-ctx", TOKEN_CONTEXT), "vespa_token_", CHECK_HASH_BYTES);
+            TokenGenerator.generateToken(TokenDomain.of(TOKEN_CONTEXT), "vespa_token_", CHECK_HASH_BYTES);
     private static final Token UNKNOWN_TOKEN =
-            TokenGenerator.generateToken(TokenDomain.of("fp-ctx", TOKEN_CONTEXT), "vespa_token_", CHECK_HASH_BYTES);
+            TokenGenerator.generateToken(TokenDomain.of(TOKEN_CONTEXT), "vespa_token_", CHECK_HASH_BYTES);
 
     @Test
     void accepts_any_trusted_client_certificate_in_legacy_mode() {
