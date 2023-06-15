@@ -104,9 +104,15 @@ public record RoutingPolicy(RoutingPolicyId id,
     }
 
     /** Returns the zone endpoints of this */
-    public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod) {
+    public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod, boolean includeTokenEndpoint) {
         DeploymentId deployment = new DeploymentId(id.owner(), id.zone());
-        return List.of(endpoint(routingMethod).target(id.cluster(), deployment).in(system));
+        Endpoint zoneEndpoint = endpoint(routingMethod).target(id.cluster(), deployment).in(system);
+        if (includeTokenEndpoint) {
+            Endpoint tokenEndpoint = endpoint(routingMethod).target(id.cluster(), deployment).tokenEndpoint().in(system);
+            return List.of(zoneEndpoint, tokenEndpoint);
+        } else {
+            return List.of(zoneEndpoint);
+        }
     }
 
     /** Returns the region endpoint of this */
