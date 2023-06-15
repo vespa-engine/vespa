@@ -4,27 +4,40 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.component.chain.model.ChainedComponentModel;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudDataPlaneFilterConfig;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.security.token.TokenDomain;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.http.Client;
 import com.yahoo.vespa.model.container.http.Filter;
 
+import java.util.Collection;
 import java.util.List;
+
+import static com.yahoo.security.ArrayUtils.concat;
+import static com.yahoo.security.ArrayUtils.fromUtf8Bytes;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 class CloudDataPlaneFilter extends Filter implements CloudDataPlaneFilterConfig.Producer {
 
     private static final String CLASS = "com.yahoo.jdisc.http.filter.security.cloud.CloudDataPlaneFilter";
     private static final String BUNDLE = "jdisc-security-filters";
 
-    private final ApplicationContainerCluster cluster;
-    private final boolean legacyMode;
+    private final Collection<Client> clients;
+    private final boolean clientsLegacyMode;
+    private final String tokenContext;
 
-    CloudDataPlaneFilter(ApplicationContainerCluster cluster, boolean legacyMode) {
+    CloudDataPlaneFilter(ApplicationContainerCluster cluster, DeployState state) {
         super(model());
-        this.cluster = cluster;
-        this.legacyMode = legacyMode;
+        this.clients = List.copyOf(cluster.getClients());
+        this.clientsLegacyMode = cluster.clientsLegacyMode();
+        // Token domain must be identical to the domain used for generating the tokens
+        this.tokenContext = fromUtf8Bytes(TokenDomain.of(fromUtf8Bytes(concat(
+                "Vespa Cloud tenant data plane:".getBytes(UTF_8),
+                state.getProperties().applicationId().tenant().value().getBytes(UTF_8)))).checkHashContext());
     }
 
     private static ChainedComponentModel model() {
@@ -36,18 +49,26 @@ class CloudDataPlaneFilter extends Filter implements CloudDataPlaneFilterConfig.
 
     @Override
     public void getConfig(CloudDataPlaneFilterConfig.Builder builder) {
-        if (legacyMode) {
+        if (clientsLegacyMode) {
             builder.legacyMode(true);
         } else {
-            List<Client> clients = cluster.getClients();
-            builder.legacyMode(false);
-            List<CloudDataPlaneFilterConfig.Clients.Builder> clientsList = clients.stream()
+            var clientsCfg = clients.stream()
                     .map(x -> new CloudDataPlaneFilterConfig.Clients.Builder()
                             .id(x.id())
                             .certificates(X509CertificateUtils.toPem(x.certificates()))
+                            .tokens(tokensConfig(x.tokens()))
                             .permissions(x.permissions()))
                     .toList();
-            builder.clients(clientsList);
+            builder.clients(clientsCfg).legacyMode(false).tokenContext(tokenContext);
         }
+    }
+
+    private static List<CloudDataPlaneFilterConfig.Clients.Tokens.Builder> tokensConfig(Collection<DataplaneToken> tokens) {
+        return tokens.stream()
+                .map(token -> new CloudDataPlaneFilterConfig.Clients.Tokens.Builder()
+                        .id(token.tokenId())
+                        .fingerprints(token.versions().stream().map(DataplaneToken.Version::fingerprint).toList())
+                        .checkAccessHashes(token.versions().stream().map(DataplaneToken.Version::checkAccessHash).toList()))
+                .toList();
     }
 }

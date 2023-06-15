@@ -140,9 +140,11 @@ Clients = element clients {
 Client = element client {
     ComponentId &
     attribute permissions { string } &
-    element certificate {
-        attribute file { string }
-    }+
+    (
+        element certificate { attribute file { string } }+
+    |
+        element token { attribute id { string } }+
+    )
 }
 
 # SEARCH:

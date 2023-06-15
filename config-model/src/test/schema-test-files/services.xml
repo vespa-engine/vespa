@@ -218,6 +218,13 @@
         <certificate file="security/file1.pem" />
         <certificate file="security/file2.pem" />
       </client>
+      <client id="client3" permissions="read">
+        <token id="my-token-1" />
+        <token id="my-token-2" />
+      </client>
+      <client id="client4" permissions="write">
+        <token id="my-token-3" />
+      </client>
     </clients>
 
     <document-processing>

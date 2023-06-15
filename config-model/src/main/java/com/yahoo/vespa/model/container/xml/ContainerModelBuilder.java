@@ -29,6 +29,7 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
@@ -121,6 +122,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -471,7 +473,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         var dataplanePort = getDataplanePort(deployState);
         // Setup secure filter chain
         var secureChain = new HttpFilterChain("cloud-data-plane-secure", HttpFilterChain.Type.SYSTEM);
-        secureChain.addInnerComponent(new CloudDataPlaneFilter(cluster, cluster.clientsLegacyMode()));
+        secureChain.addInnerComponent(new CloudDataPlaneFilter(cluster, deployState));
         cluster.getHttp().getFilterChains().add(secureChain);
         // Set cloud data plane filter as default request filter chain for data plane connector
         cluster.getHttp().getHttpServer().orElseThrow().getConnectorFactories().stream()
@@ -505,15 +507,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element clientsElement = XML.getChild(spec, "clients");
         boolean legacyMode = false;
         if (clientsElement == null) {
-            Client defaultClient = new Client("default",
-                                              List.of(),
-                                              getCertificates(app.getFile(Path.fromString("security/clients.pem"))));
-            clients = List.of(defaultClient);
+            clients = List.of(new Client(
+                    "default", List.of(), getCertificates(app.getFile(Path.fromString("security/clients.pem"))), List.of()));
             legacyMode = true;
         } else {
             clients = XML.getChildren(clientsElement, "client").stream()
-                    .map(this::getClient)
+                    .flatMap(elem -> getClient(elem, deployState).stream())
                     .toList();
+            boolean atLeastOneClientWithCertificate = clients.stream().anyMatch(client -> !client.certificates().isEmpty());
+            if (!atLeastOneClientWithCertificate)
+                throw new IllegalArgumentException("At least one client must require a certificate");
         }
 
         List<X509Certificate> operatorAndTesterCertificates = deployState.getProperties().operatorCertificates();
@@ -522,9 +525,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.setClients(legacyMode, clients);
     }
 
-    private Client getClient(Element clientElement) {
-        String id = XML.attribute("id", clientElement).orElseThrow();
-        if (id.startsWith("_")) throw new IllegalArgumentException("Invalid client id '%s', id cannot start with '_'".formatted(id));
+    private Optional<Client> getClient(Element clientElement, DeployState state) {
+        String clientId = XML.attribute("id", clientElement).orElseThrow();
+        if (clientId.startsWith("_")) throw new IllegalArgumentException("Invalid client id '%s', id cannot start with '_'".formatted(clientId));
         List<String> permissions = XML.attribute("permissions", clientElement)
                 .map(p -> p.split(",")).stream()
                 .flatMap(Arrays::stream)
@@ -535,12 +538,43 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     var file = app.getFile(Path.fromString(certElem.getAttribute("file")));
                     if (!file.exists()) {
                         throw new IllegalArgumentException("Certificate file '%s' for client '%s' does not exist"
-                                                                   .formatted(file.getPath().getRelative(), id));
+                                                                   .formatted(file.getPath().getRelative(), clientId));
                     }
                     return getCertificates(file).stream();
                 })
                 .toList();
-        return new Client(id, permissions, certificates);
+        // A client cannot use both tokens and certificates
+        if (!certificates.isEmpty()) return Optional.of(new Client(clientId, permissions, certificates, List.of()));
+
+        var knownTokens = state.getProperties().dataplaneTokens().stream()
+                .collect(Collectors.toMap(DataplaneToken::tokenId, Function.identity()));
+
+        var referencedTokens = XML.getChildren(clientElement, "token").stream()
+                .map(elem -> {
+                    var tokenId = elem.getAttribute("id");
+                    var token = knownTokens.get(tokenId);
+                    if (token == null)
+                        throw new IllegalArgumentException(
+                                "Token '%s' for client '%s' does not exist".formatted(tokenId, clientId));
+                    return token;
+                })
+                .filter(token -> {
+                    boolean empty = token.versions().isEmpty();
+                    if (empty)
+                        log.logApplicationPackage(
+                                WARNING, "Token '%s' for client '%s' has no activate versions"
+                                        .formatted(token.tokenId(), clientId));
+                    return !empty;
+                })
+                .toList();
+
+        // Don't include 'client' that refers to token without versions
+        if (referencedTokens.isEmpty()) {
+            log.log(Level.INFO, "Skipping client '%s' as it does not refer to any activate tokens".formatted(clientId));
+            return Optional.empty();
+        }
+
+        return Optional.of(new Client(clientId, permissions, List.of(), referencedTokens));
     }
 
     private List<X509Certificate> getCertificates(ApplicationFile file) {

@@ -31,9 +31,9 @@ public class CertificateRemovalChangeValidatorTest {
     void validate() {
         Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
 
-        Client c1 = new Client("c1", List.of(), List.of(certificate("cn=c1")));
-        Client c2 = new Client("c2", List.of(), List.of(certificate("cn=c2")));
-        Client c3 = new Client("c3", List.of(), List.of(certificate("cn=c3")));
+        Client c1 = new Client("c1", List.of(), List.of(certificate("cn=c1")), List.of());
+        Client c2 = new Client("c2", List.of(), List.of(certificate("cn=c2")), List.of());
+        Client c3 = new Client("c3", List.of(), List.of(certificate("cn=c3")), List.of());
         Client internal = Client.internalClient(List.of(certificate("cn=internal")));
 
         CertificateRemovalChangeValidator validator = new CertificateRemovalChangeValidator();
