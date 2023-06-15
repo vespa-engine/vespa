@@ -191,25 +191,54 @@ public class ConfigServerBootstrapTest {
                 .build();
         RpcServer rpcServer = createRpcServer(configserverConfig);
 
-        // Upgrade between two versions not too far apart, should work
-        Version versionToUpgradeTo = Version.fromString("8.110.1");
-        Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY, versionToUpgradeTo);
-        bootstrap.versionState().storeVersion("8.100.1");
-        bootstrap.doStart();
+        assertUpgradeWorks("7,.594.36", "8.110.1", tester, rpcServer);
+        assertUpgradeWorks("8.100.1", "8.110.1", tester, rpcServer);
 
         assertUpgradeFails("8.100.1", "8.131.1", tester, rpcServer,
-                           "Cannot upgrade from 8.100.1 to 8.131.1. Please upgrade to an intermediate version first, the interval between the two versions is too large.");
+                           "Cannot upgrade from 8.100.1 to 8.131.1. Please upgrade to an older version first, " +
+                                   "the interval between the two versions is too large (> 30 releases)." +
+                                   " Setting VESPA_SKIP_UPGRADE_CHECK=true will skip this check at your own risk," +
+                                   " see https://vespa.ai/releases.html#versions");
         assertUpgradeFails("7.99.1", "8.100.1", tester, rpcServer,
-                           "Cannot upgrade directly from 7.99.1 to 8.100.1 (new major version). Please upgrade to 7.594.36 first.");
+                           "Cannot upgrade from 7.99.1 to 8.100.1 (new major version). Please upgrade to 7.594.36 first." +
+                                   " Setting VESPA_SKIP_UPGRADE_CHECK=true will skip this check at your own risk," +
+                                   " see https://vespa.ai/releases.html#versions");
         assertUpgradeFails("7.594.36", "8.121.1", tester, rpcServer,
-                           "Cannot upgrade from 7.594.36 to 8.121.1. Please upgrade to an intermediate version first, the interval between the two versions is too large.");
+                           "Cannot upgrade from 7.594.36 to 8.121.1. Please upgrade to an older version first," +
+                                   " the interval between the two versions is too large (> 30 releases)." +
+                                   " Setting VESPA_SKIP_UPGRADE_CHECK=true will skip this check at your own risk," +
+                                   " see https://vespa.ai/releases.html#versions");
         assertUpgradeFails("6.11.11", "8.121.1", tester, rpcServer,
-                           "Cannot upgrade from 6.11.11 to 8.121.1 (upgrade across 2 major versions not supported). Please upgrade to 7.594.36 first.");
+                           "Cannot upgrade from 6.11.11 to 8.121.1 (upgrade across 2 major versions not supported)." +
+                                   " Please upgrade to 7.594.36 first." +
+                                   " Setting VESPA_SKIP_UPGRADE_CHECK=true will skip this check at your own risk," +
+                                   " see https://vespa.ai/releases.html#versions");
+
+        Version versionToUpgradeTo = Version.fromString("8.131.1");
+        boolean skipUpgradeCheck = true;
+        VersionState versionState = createVersionState(tester.curator(), versionToUpgradeTo, skipUpgradeCheck);
+        assertUpgradeWorks("7.594.36", tester, rpcServer, versionState);
+        assertUpgradeWorks("8.100.1", tester, rpcServer, versionState);
+    }
+
+    private void assertUpgradeWorks(String from, String to, DeployTester tester, RpcServer rpcServer) throws IOException {
+        Version versionToUpgradeTo = Version.fromString(to);
+        VersionState versionState = createVersionState(tester.curator(), versionToUpgradeTo);
+        Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY, versionState);
+        bootstrap.versionState().storeVersion(from);
+        bootstrap.doStart();
+    }
+
+    private void assertUpgradeWorks(String from, DeployTester tester, RpcServer rpcServer, VersionState versionState) {
+        Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY, versionState);
+        bootstrap.versionState().storeVersion(from);
+        bootstrap.doStart();
     }
 
     private void assertUpgradeFails(String from, String to, DeployTester tester, RpcServer rpcServer, String expected) throws IOException {
         Version versionToUpgradeTo = Version.fromString(to);
-        Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY, versionToUpgradeTo);
+        VersionState versionState = createVersionState(tester.curator(), versionToUpgradeTo);
+        Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY, versionState);
         bootstrap.versionState().storeVersion(from);
         try {
             bootstrap.doStart();
@@ -220,12 +249,14 @@ public class ConfigServerBootstrapTest {
     }
 
     private Bootstrapper createBootstrapper(DeployTester tester, RpcServer rpcServer, VipStatusMode vipStatusMode) throws IOException {
-        return createBootstrapper(tester, rpcServer, vipStatusMode, new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro));
+        Version versionToUpgradeTo = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
+        return createBootstrapper(tester,rpcServer, vipStatusMode, createVersionState(tester.curator(), versionToUpgradeTo));
     }
 
-    private Bootstrapper createBootstrapper(DeployTester tester, RpcServer rpcServer, VipStatusMode vipStatusMode, Version version) throws IOException {
-        VersionState versionState = createVersionState(tester.curator(), version);
-
+    private Bootstrapper createBootstrapper(DeployTester tester,
+                                            RpcServer rpcServer,
+                                            VipStatusMode vipStatusMode,
+                                            VersionState versionState) {
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
         return new Bootstrapper(tester.applicationRepository(),
@@ -292,7 +323,13 @@ public class ConfigServerBootstrapTest {
     }
 
     private VersionState createVersionState(Curator curator, Version vespaVersion) throws IOException {
-        return new VersionState(temporaryFolder.newFile(), curator, vespaVersion, true);
+        return new VersionState(temporaryFolder.newFile(), curator, vespaVersion, false);
+    }
+
+    private VersionState createVersionState(Curator curator,
+                                            Version vespaVersion,
+                                            boolean throwIfUpgradeBetweenVersionsTooFarApart) throws IOException {
+        return new VersionState(temporaryFolder.newFile(), curator, vespaVersion, throwIfUpgradeBetweenVersionsTooFarApart);
     }
 
     public static class MockRpcServer extends com.yahoo.vespa.config.server.rpc.MockRpcServer {

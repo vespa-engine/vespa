@@ -72,7 +72,7 @@ public class VersionStateTest {
     }
 
     private VersionState createVersionState() throws IOException {
-        return new VersionState(tempDir.newFile(), curator, false);
+        return new VersionState(tempDir.newFile(), curator, true);
     }
 
 }

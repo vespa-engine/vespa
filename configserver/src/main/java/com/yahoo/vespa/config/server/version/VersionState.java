@@ -37,30 +37,30 @@ public class VersionState {
     private final File versionFile;
     private final Curator curator;
     private final Version currentVersion;
-    private final boolean throwIfUpgradeBetweenVersionsTooFarApart;
+    private final boolean skipUpgradeCheck;
 
     @Inject
     public VersionState(ConfigserverConfig config, Curator curator) {
         this(new File(Defaults.getDefaults().underVespaHome(config.configServerDBDir()), "vespa_version"),
              curator,
-             config.hostedVespa());
+             Boolean.parseBoolean(Optional.ofNullable(System.getenv("VESPA_SKIP_UPGRADE_CHECK")).orElse("false")));
     }
 
-    public VersionState(File versionFile, Curator curator, boolean throwIfUpgradeBetweenVersionsTooFarApart) {
+    public VersionState(File versionFile, Curator curator, boolean skipUpgradeCheck) {
         this(versionFile,
              curator,
              new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro),
-             throwIfUpgradeBetweenVersionsTooFarApart);
+             skipUpgradeCheck);
     }
 
     public VersionState(File versionFile,
                         Curator curator,
                         Version currentVersion,
-                        boolean throwIfUpgradeBetweenVersionsTooFarApart) {
+                        boolean skipUpgradeCheck) {
         this.versionFile = versionFile;
         this.curator = curator;
         this.currentVersion = currentVersion;
-        this.throwIfUpgradeBetweenVersionsTooFarApart = throwIfUpgradeBetweenVersionsTooFarApart;
+        this.skipUpgradeCheck = skipUpgradeCheck;
     }
 
     public boolean isUpgraded() {
@@ -123,27 +123,34 @@ public class VersionState {
         int storedVersionMinor = storedVersion.getMinor();
         int currentVersionMajor = currentVersion.getMajor();
         int currentVersionMinor = currentVersion.getMinor();
-
         boolean sameMajor = storedVersionMajor == currentVersionMajor;
         boolean differentMajor = !sameMajor;
+
+        String message = "Cannot upgrade from " + storedVersion + " to " + currentVersion();
         if (storedVersionMajor < latestVersionOnPreviousMajor.getMajor())
-            logOrThrow("Cannot upgrade from " + storedVersion + " to " + currentVersion() +
-                               " (upgrade across 2 major versions not supported). Please upgrade to " + latestVersionOnPreviousMajor.toFullString() + " first.");
+            logOrThrow(message + " (upgrade across 2 major versions not supported). Please upgrade to " +
+                               latestVersionOnPreviousMajor.toFullString() + " first." +
+                               " Setting VESPA_SKIP_UPGRADE_CHECK=true will skip this check at your own risk," +
+                               " see https://vespa.ai/releases.html#versions");
         else if (sameMajor && (currentVersionMinor - storedVersionMinor > allowedMinorVersionInterval))
-            logOrThrow("Cannot upgrade from " + storedVersion + " to " + currentVersion() +
-                               ". Please upgrade to an intermediate version first, the interval between the two versions is too large.");
+            logOrThrow(message + ". Please upgrade to an older version first, the interval between the two versions is too large (> " + allowedMinorVersionInterval + " releases)." +
+                               " Setting VESPA_SKIP_UPGRADE_CHECK=true will skip this check at your own risk," +
+                               " see https://vespa.ai/releases.html#versions");
         else if (differentMajor && storedVersionMinor < latestVersionOnPreviousMajor.getMinor())
-            logOrThrow("Cannot upgrade directly from " + storedVersion + " to " + currentVersion() + " (new major version). Please upgrade to " + latestVersionOnPreviousMajor.toFullString() + " first.");
+            logOrThrow(message + " (new major version). Please upgrade to " + latestVersionOnPreviousMajor.toFullString() + " first." +
+                               " Setting VESPA_SKIP_UPGRADE_CHECK=true will skip this check at your own risk," +
+                               " see https://vespa.ai/releases.html#versions");
         else if (differentMajor && currentVersionMinor > allowedMinorVersionInterval)
-            logOrThrow("Cannot upgrade from " + storedVersion + " to " + currentVersion() +
-                               ". Please upgrade to an intermediate version first, the interval between the two versions is too large.");
+            logOrThrow(message + ". Please upgrade to an older version first, the interval between the two versions is too large (> " + allowedMinorVersionInterval + " releases)." +
+                               " Setting VESPA_SKIP_UPGRADE_CHECK=true will skip this check at your own risk," +
+                               " see https://vespa.ai/releases.html#versions");
     }
 
     private void logOrThrow(String message) {
-        if (throwIfUpgradeBetweenVersionsTooFarApart)
-            throw new RuntimeException(message);
-        else
+        if (skipUpgradeCheck)
             log.log(WARNING, message);
+        else
+            throw new RuntimeException(message);
     }
 
 }
