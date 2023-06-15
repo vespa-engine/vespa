@@ -36,6 +36,12 @@ import static com.yahoo.jdisc.http.filter.security.cloud.CloudDataPlaneFilter.Pe
 import static com.yahoo.jdisc.http.server.jetty.AccessLoggingRequestHandler.CONTEXT_KEY_ACCESS_LOG_ENTRY;
 
 /**
+ * Data plane filter for Cloud
+ * <p>
+ * Legacy mode is the original mode of configuring mTLS where <code>&lt;clients&gt;</code> is not configured in services.xml
+ * and trusted certificate authorities are listed in <code>security/clients.pem</code>.
+ * </p>
+ *
  * @author bjorncs
  */
 public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
@@ -71,11 +77,15 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
     private static List<Client> parseClients(CloudDataPlaneFilterConfig cfg, X509Certificate reverseProxyCert) {
         Set<String> ids = new HashSet<>();
         List<Client> clients = new ArrayList<>(cfg.clients().size());
+        boolean hasClientRequiringCertificate = false;
+        if (cfg.clients().isEmpty()) throw new IllegalArgumentException("Empty clients configuration");
         for (var c : cfg.clients()) {
             if (ids.contains(c.id()))
                 throw new IllegalArgumentException("Clients definition has duplicate id '%s'".formatted(c.id()));
             if (!c.certificates().isEmpty() && !c.tokens().isEmpty())
                 throw new IllegalArgumentException("Client '%s' has both certificate and token configured".formatted(c.id()));
+            if (c.certificates().isEmpty() && c.tokens().isEmpty())
+                throw new IllegalArgumentException("Client '%s' has neither certificate nor token configured".formatted(c.id()));
             if (!c.tokens().isEmpty() && reverseProxyCert == null)
                 throw new IllegalArgumentException(
                         "Client '%s' has token configured but reverse proxy certificate is missing".formatted(c.id()));
@@ -91,6 +101,7 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
                             "Client '%s' contains invalid X.509 certificate PEM: %s".formatted(c.id(), e.toString()), e);
                 }
                 clients.add(new Client(c.id(), permissions, certs, List.of()));
+                hasClientRequiringCertificate = true;
             } else {
                 var tokens = new ArrayList<TokenVersion>();
                 for (var token : c.tokens()) {
@@ -103,7 +114,8 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
                 clients.add(new Client(c.id(), permissions, List.of(reverseProxyCert), tokens));
             }
         }
-        if (clients.isEmpty()) throw new IllegalArgumentException("Empty clients configuration");
+        if (!hasClientRequiringCertificate)
+            throw new IllegalArgumentException("At least one client must require a certificate");
         log.fine(() -> "Configured clients with ids %s".formatted(ids));
         return clients;
     }
