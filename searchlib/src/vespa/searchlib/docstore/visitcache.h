@@ -3,14 +3,10 @@
 #pragma once
 
 #include "idocumentstore.h"
-#include <vespa/vespalib/stllike/cache.h>
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/document/util/bytebuffer.h>
 
 namespace search::docstore {
 
@@ -100,26 +96,27 @@ class VisitCache {
 public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
     VisitCache(IDataStore &store, size_t cacheSize, CompressionConfig compression);
+    ~VisitCache();
 
     CompressedBlobSet read(const IDocumentStore::LidVector & keys) const;
     void remove(uint32_t key);
     void invalidate(uint32_t key) { remove(key); }
 
     vespalib::CacheStats getCacheStats() const;
-    vespalib::MemoryUsage getStaticMemoryUsage() const { return _cache->getStaticMemoryUsage(); }
+    vespalib::MemoryUsage getStaticMemoryUsage() const;
     void reconfigure(size_t cacheSize, CompressionConfig compression);
-private:
+
     /**
-     * This implments the interface the cache uses when it has a cache miss.
-     * It wraps an IDataStore. Given a set of lids it will visit all objects
-     * and compress them as a complete set to maximize compression rate.
-     * As this is a readonly cache the write/erase methods are noops.
-     */
+ * This implments the interface the cache uses when it has a cache miss.
+ * It wraps an IDataStore. Given a set of lids it will visit all objects
+ * and compress them as a complete set to maximize compression rate.
+ * As this is a readonly cache the write/erase methods are noops.
+ */
     class BackingStore {
     public:
-        BackingStore(IDataStore &store, CompressionConfig compression) :
-            _backingStore(store),
-            _compression(compression)
+        BackingStore(IDataStore &store, CompressionConfig compression)
+            : _backingStore(store),
+              _compression(compression)
         { }
         bool read(const KeySet &key, CompressedBlobSet &blobs) const;
         void write(const KeySet &, const CompressedBlobSet &) { }
@@ -130,44 +127,9 @@ private:
         IDataStore        &_backingStore;
         std::atomic<CompressionConfig>  _compression;
     };
+private:
 
-    struct ByteSize {
-        size_t operator() (const CompressedBlobSet & arg) const noexcept { return arg.byteSize(); }
-    };
-
-    using CacheParams = vespalib::CacheParam<
-                            vespalib::LruParam<KeySet, CompressedBlobSet>,
-                            BackingStore,
-                            vespalib::zero<KeySet>,
-                            ByteSize
-                        >;
-
-    /**
-     * This extends the default thread safe cache implementation so that
-     * it will correctly invalidate the cached sets when objects are removed/updated.
-     * It will also detect the addition of new objects to any of the sets upon first
-     * usage of the set and then invalidate and perform fresh visit of the backing store.
-     */
-    class Cache : public vespalib::cache<CacheParams> {
-    public:
-        Cache(BackingStore & b, size_t maxBytes);
-        ~Cache() override;
-        CompressedBlobSet readSet(const KeySet & keys);
-        void removeKey(uint32_t key);
-        vespalib::MemoryUsage getStaticMemoryUsage() const override;
-    private:
-        void locateAndInvalidateOtherSubsets(const UniqueLock & cacheGuard, const KeySet & keys);
-        using IdSet = vespalib::hash_set<uint64_t>;
-        using Parent = vespalib::cache<CacheParams>;
-        using LidUniqueKeySetId = vespalib::hash_map<uint32_t, uint64_t>;
-        using IdKeySetMap = vespalib::hash_map<uint64_t, KeySet>;
-        IdSet findSetsContaining(const UniqueLock &, const KeySet & keys) const;
-        void onInsert(const K & key) override;
-        void onRemove(const K & key) override;
-        LidUniqueKeySetId _lid2Id;
-        IdKeySetMap       _id2KeySet;
-    };
-
+    class Cache;
     BackingStore            _store;
     std::unique_ptr<Cache>  _cache;
 };

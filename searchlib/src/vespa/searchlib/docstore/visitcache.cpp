@@ -2,12 +2,14 @@
 
 #include "visitcache.h"
 #include "ibucketizer.h"
-#include <vespa/vespalib/stllike/cache.hpp>
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/stllike/cache.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/util/memory_allocator.h>
-#include <algorithm>
+#include <vespa/vespalib/stllike/cache.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search::docstore {
 
@@ -53,8 +55,7 @@ getBufferSize(const BlobSet::Positions & p) {
 BlobSet::BlobSet(Positions positions, Alloc && buffer) noexcept
     : _positions(std::move(positions)),
       _buffer(std::move(buffer), getBufferSize(_positions))
-{
-}
+{ }
 
 void
 BlobSet::append(uint32_t lid, ConstBufferRef blob) {
@@ -79,8 +80,7 @@ CompressedBlobSet::CompressedBlobSet() noexcept
     : _compression(CompressionConfig::Type::LZ4),
       _positions(),
       _buffer()
-{
-}
+{ }
 
 CompressedBlobSet::~CompressedBlobSet() = default;
 
@@ -136,7 +136,44 @@ VisitCollector::visit(uint32_t lid, ConstBufferRef buf) {
     }
 }
 
+struct ByteSize {
+    size_t operator() (const CompressedBlobSet & arg) const noexcept { return arg.byteSize(); }
+};
+
 }
+
+using CacheParams = vespalib::CacheParam<
+        vespalib::LruParam<KeySet, CompressedBlobSet>,
+        VisitCache::BackingStore,
+        vespalib::zero<KeySet>,
+        ByteSize
+>;
+
+/**
+ * This extends the default thread safe cache implementation so that
+ * it will correctly invalidate the cached sets when objects are removed/updated.
+ * It will also detect the addition of new objects to any of the sets upon first
+ * usage of the set and then invalidate and perform fresh visit of the backing store.
+ */
+class VisitCache::Cache : public vespalib::cache<CacheParams> {
+public:
+    Cache(BackingStore & b, size_t maxBytes);
+    ~Cache() override;
+    CompressedBlobSet readSet(const KeySet & keys);
+    void removeKey(uint32_t key);
+    vespalib::MemoryUsage getStaticMemoryUsage() const override;
+private:
+    void locateAndInvalidateOtherSubsets(const UniqueLock & cacheGuard, const KeySet & keys);
+    using IdSet = vespalib::hash_set<uint64_t>;
+    using Parent = vespalib::cache<CacheParams>;
+    using LidUniqueKeySetId = vespalib::hash_map<uint32_t, uint64_t>;
+    using IdKeySetMap = vespalib::hash_map<uint64_t, KeySet>;
+    IdSet findSetsContaining(const UniqueLock &, const KeySet & keys) const;
+    void onInsert(const K & key) override;
+    void onRemove(const K & key) override;
+    LidUniqueKeySetId _lid2Id;
+    IdKeySetMap       _id2KeySet;
+};
 
 bool
 VisitCache::BackingStore::read(const KeySet &key, CompressedBlobSet &blobs) const {
@@ -157,8 +194,9 @@ VisitCache::BackingStore::reconfigure(CompressionConfig compression) {
 VisitCache::VisitCache(IDataStore &store, size_t cacheSize, CompressionConfig compression) :
     _store(store, compression),
     _cache(std::make_unique<Cache>(_store, cacheSize))
-{
-}
+{ }
+
+VisitCache::~VisitCache() = default;
 
 void
 VisitCache::reconfigure(size_t cacheSize, CompressionConfig compression) {
@@ -166,6 +204,10 @@ VisitCache::reconfigure(size_t cacheSize, CompressionConfig compression) {
     _cache->setCapacityBytes(cacheSize);
 }
 
+vespalib::MemoryUsage
+VisitCache::getStaticMemoryUsage() const {
+    return _cache->getStaticMemoryUsage();
+}
 
 VisitCache::Cache::IdSet
 VisitCache::Cache::findSetsContaining(const UniqueLock &, const KeySet & keys) const {
