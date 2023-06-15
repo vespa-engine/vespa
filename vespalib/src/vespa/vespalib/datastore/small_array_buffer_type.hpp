@@ -14,6 +14,9 @@ SmallArrayBufferType<ElemT>::SmallArrayBufferType(uint32_t array_size, const All
 }
 
 template <typename ElemT>
+SmallArrayBufferType<ElemT>::SmallArrayBufferType(SmallArrayBufferType&&) noexcept = default;
+
+template <typename ElemT>
 SmallArrayBufferType<ElemT>::~SmallArrayBufferType() = default;
 
 template <typename ElemT>

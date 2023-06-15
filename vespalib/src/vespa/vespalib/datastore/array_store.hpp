@@ -74,7 +74,7 @@ ArrayStore<ElemT, RefT, TypeMapperT>::~ArrayStore()
 
 template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<ElemT, RefT, TypeMapperT>::add(const ConstArrayRef &array)
+ArrayStore<ElemT, RefT, TypeMapperT>::add(ConstArrayRef array)
 {
     if (array.size() == 0) {
         return EntryRef();
@@ -102,7 +102,7 @@ ArrayStore<ElemT, RefT, TypeMapperT>::allocate(size_t array_size)
 
 template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<ElemT, RefT, TypeMapperT>::addSmallArray(const ConstArrayRef &array)
+ArrayStore<ElemT, RefT, TypeMapperT>::addSmallArray(ConstArrayRef array)
 {
     uint32_t typeId = _mapper.get_type_id(array.size());
     using NoOpReclaimer = DefaultReclaimer<ElemT>;
@@ -119,7 +119,7 @@ ArrayStore<ElemT, RefT, TypeMapperT>::allocate_small_array(size_t array_size)
 
 template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<ElemT, RefT, TypeMapperT>::addLargeArray(const ConstArrayRef &array)
+ArrayStore<ElemT, RefT, TypeMapperT>::addLargeArray(ConstArrayRef array)
 {
     using NoOpReclaimer = DefaultReclaimer<LargeArray>;
     auto handle = _store.template freeListAllocator<LargeArray, NoOpReclaimer>(_largeArrayTypeId)
