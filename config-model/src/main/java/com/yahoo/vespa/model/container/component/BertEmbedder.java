@@ -8,8 +8,8 @@ import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.vespa.model.container.xml.ModelIdResolver;
 import org.w3c.dom.Element;
 
-import static com.yahoo.config.model.builder.xml.XmlHelper.getOptionalChildValue;
 import static com.yahoo.text.XML.getChild;
+import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 
 /**
@@ -37,18 +37,18 @@ public class BertEmbedder extends TypedComponent implements BertBaseEmbedderConf
         super("ai.vespa.embedding.BertBaseEmbedder", INTEGRATION_BUNDLE_NAME, xml);
         model = ModelIdResolver.resolveToModelReference(getChild(xml, "transformer-model"), state);
         vocab = ModelIdResolver.resolveToModelReference(getChild(xml, "tokenizer-vocab"), state);
-        maxTokens = getOptionalChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
-        transformerInputIds = getOptionalChildValue(xml, "transformer-input-ids").orElse(null);
-        transformerAttentionMask = getOptionalChildValue(xml, "transformer-attention-mask").orElse(null);
-        transformerTokenTypeIds = getOptionalChildValue(xml, "transformer-token-type-ids").orElse(null);
-        transformerOutput = getOptionalChildValue(xml, "transformer-output").orElse(null);
-        tranformerStartSequenceToken = getOptionalChildValue(xml, "transformer-start-sequence-token").map(Integer::parseInt).orElse(null);
-        transformerEndSequenceToken = getOptionalChildValue(xml, "transformer-end-sequence-token").map(Integer::parseInt).orElse(null);
-        poolingStrategy = getOptionalChildValue(xml, "pooling-strategy").orElse(null);
-        onnxExecutionMode = getOptionalChildValue(xml, "onnx-execution-mode").orElse(null);
-        onnxInteropThreads = getOptionalChildValue(xml, "onnx-interop-threads").map(Integer::parseInt).orElse(null);
-        onnxIntraopThreads = getOptionalChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null);
-        onnxGpuDevice = getOptionalChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).orElse(null);
+        maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
+        transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
+        transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
+        transformerTokenTypeIds = getChildValue(xml, "transformer-token-type-ids").orElse(null);
+        transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
+        tranformerStartSequenceToken = getChildValue(xml, "transformer-start-sequence-token").map(Integer::parseInt).orElse(null);
+        transformerEndSequenceToken = getChildValue(xml, "transformer-end-sequence-token").map(Integer::parseInt).orElse(null);
+        poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
+        onnxExecutionMode = getChildValue(xml, "onnx-execution-mode").orElse(null);
+        onnxInteropThreads = getChildValue(xml, "onnx-interop-threads").map(Integer::parseInt).orElse(null);
+        onnxIntraopThreads = getChildValue(xml, "onnx-intraop-threads").map(Integer::parseInt).orElse(null);
+        onnxGpuDevice = getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).orElse(null);
     }
 
     @Override

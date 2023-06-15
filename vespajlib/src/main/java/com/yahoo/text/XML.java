@@ -333,6 +333,13 @@ public class XML {
         return (getChildren(e, name).size() >= 1) ? getChildren(e, name).get(0) : null;
     }
 
+    /** @return the value of child with the given name, empty string if no value, or empty if no child with name */
+    public static Optional<String> getChildValue(Element e, String name) {
+        var child = getChild(e, name);
+        if (child == null) return Optional.empty();
+        return Optional.of(getValue(child));
+    }
+
     /**
      * Returns the path to the given xml node, where each node name is separated by the given separator string.
      *
