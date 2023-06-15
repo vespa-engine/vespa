@@ -233,7 +233,6 @@ public class RoutingController {
                                        .on(Port.tls())
                                        .in(controller.system());
             endpointDnsNames.add(endpoint.dnsName());
-            if (endpoint.scope() == Scope.application) endpointDnsNames.add(endpoint.legacyRegionalDnsName());
         }
         return Collections.unmodifiableList(endpointDnsNames);
     }
@@ -313,8 +312,8 @@ public class RoutingController {
                     new Record(Record.Type.CNAME, RecordName.from(endpoint.dnsName()), RecordData.fqdn(vipHostname)),
                     Priority.normal,
                     Optional.of(application.get().id()));
-            controller.nameServiceForwarder().createRecord(
-                    new Record(Record.Type.CNAME, RecordName.from(endpoint.legacyRegionalDnsName()), RecordData.fqdn(vipHostname)),
+            controller.nameServiceForwarder().removeRecords(
+                    Record.Type.CNAME, RecordName.from(endpoint.legacyRegionalDnsName()),
                     Priority.normal,
                     Optional.of(application.get().id()));
         }
@@ -329,7 +328,7 @@ public class RoutingController {
                 if (matchingTarget.isEmpty()) throw new IllegalStateException("No target found routing to " + deployment + " in " + endpoint);
                 containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
                                                              asString(Endpoint.Scope.application),
-                                                             List.of(endpoint.dnsName(), endpoint.legacyRegionalDnsName()),
+                                                             List.of(endpoint.dnsName()),
                                                              OptionalInt.of(matchingTarget.get().weight()),
                                                              endpoint.routingMethod()));
             }
