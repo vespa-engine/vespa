@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -270,11 +269,7 @@ public class EndpointCertificatesTest {
                 "a1.t1.g.vespa-app.cloud",
                 "*.a1.t1.g.vespa-app.cloud",
                 "a1.t1.a.vespa-app.cloud",
-                "a1.t1.aws-us-west-2a.r.vespa-app.cloud",
-                "a1.t1.aws-us-east-1c.r.vespa-app.cloud",
                 "*.a1.t1.a.vespa-app.cloud",
-                "*.a1.t1.aws-us-west-2a.r.vespa-app.cloud",
-                "*.a1.t1.aws-us-east-1c.r.vespa-app.cloud",
                 "a1.t1.aws-us-east-1c.z.vespa-app.cloud",
                 "*.a1.t1.aws-us-east-1c.z.vespa-app.cloud",
                 "a1.t1.us-east-1.test.z.vespa-app.cloud",

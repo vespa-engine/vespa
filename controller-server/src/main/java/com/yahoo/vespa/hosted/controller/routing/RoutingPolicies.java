@@ -309,14 +309,14 @@ public class RoutingPolicies {
             if ( ! aliasTargets.isEmpty()) {
                 nameServiceForwarderIn(targetZone).createAlias(
                         RecordName.from(applicationEndpoint.dnsName()), aliasTargets, Priority.normal, owner);
-                nameServiceForwarderIn(targetZone).createAlias(
-                        RecordName.from(applicationEndpoint.legacyRegionalDnsName()), aliasTargets, Priority.normal, owner);
+                nameServiceForwarderIn(targetZone).removeRecords(Type.ALIAS, RecordName.from(applicationEndpoint.legacyRegionalDnsName()),
+                                                                 Priority.normal, owner);
             }
             if ( ! directTargets.isEmpty()) {
                 nameServiceForwarderIn(targetZone).createDirect(
                         RecordName.from(applicationEndpoint.dnsName()), directTargets, Priority.normal, owner);
-                nameServiceForwarderIn(targetZone).createDirect(
-                        RecordName.from(applicationEndpoint.legacyRegionalDnsName()), directTargets, Priority.normal, owner);
+                nameServiceForwarderIn(targetZone).removeRecords(Type.DIRECT, RecordName.from(applicationEndpoint.legacyRegionalDnsName()),
+                                                                 Priority.normal, owner);
             }
         });
         inactiveTargetsByEndpoint.forEach((applicationEndpoint, targets) -> {
@@ -328,6 +328,7 @@ public class RoutingPolicies {
                                                                  target.data(),
                                                                  Priority.normal,
                                                                  owner);
+                // TODO(mpolden): Remove this and legacy name support in Endpoint after 2023-06-22
                 nameServiceForwarderIn(targetZone).removeRecords(target.type(),
                                                                  RecordName.from(applicationEndpoint.legacyRegionalDnsName()),
                                                                  target.data(),
