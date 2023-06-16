@@ -9,17 +9,12 @@ import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudDataPlaneFilterConfig;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.security.token.TokenDomain;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.http.Client;
 import com.yahoo.vespa.model.container.http.Filter;
 
 import java.util.Collection;
 import java.util.List;
-
-import static com.yahoo.security.ArrayUtils.concat;
-import static com.yahoo.security.ArrayUtils.fromUtf8Bytes;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 class CloudDataPlaneFilter extends Filter implements CloudDataPlaneFilterConfig.Producer {
 
@@ -35,9 +30,8 @@ class CloudDataPlaneFilter extends Filter implements CloudDataPlaneFilterConfig.
         this.clients = List.copyOf(cluster.getClients());
         this.clientsLegacyMode = cluster.clientsLegacyMode();
         // Token domain must be identical to the domain used for generating the tokens
-        this.tokenContext = fromUtf8Bytes(TokenDomain.of(fromUtf8Bytes(concat(
-                "Vespa Cloud tenant data plane:".getBytes(UTF_8),
-                state.getProperties().applicationId().tenant().value().getBytes(UTF_8)))).checkHashContext());
+        this.tokenContext = "Vespa Cloud tenant data plane:%s"
+                .formatted(state.getProperties().applicationId().tenant().value());
     }
 
     private static ChainedComponentModel model() {

@@ -20,10 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static com.yahoo.security.ArrayUtils.concat;
-import static com.yahoo.security.ArrayUtils.fromUtf8Bytes;
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
  * Service to list, generate and delete data plane tokens
  *
@@ -59,10 +55,7 @@ public class DataplaneTokenService {
      * @return a DataplaneToken containing the secret generated token
      */
     public DataplaneToken generateToken(TenantName tenantName, TokenId tokenId, Principal principal) {
-        TokenDomain tokenDomain = TokenDomain.of(
-                fromUtf8Bytes(
-                        concat("Vespa Cloud tenant data plane:".getBytes(UTF_8),
-                               tenantName.value().getBytes(UTF_8))));
+        TokenDomain tokenDomain = TokenDomain.of("Vespa Cloud tenant data plane:%s".formatted(tenantName.value()));
         Token token = TokenGenerator.generateToken(tokenDomain, TOKEN_PREFIX, TOKEN_BYTES);
         TokenCheckHash checkHash = TokenCheckHash.of(token, CHECK_HASH_BYTES);
         DataplaneTokenVersions.Version newTokenVersion = new DataplaneTokenVersions.Version(
