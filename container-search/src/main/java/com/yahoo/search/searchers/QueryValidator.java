@@ -31,7 +31,7 @@ public class QueryValidator extends Searcher {
     public Result search(Query query, Execution execution) {
         var session = execution.context().schemaInfo().newSession(query);
         ToolBox.visit(new TermSearchValidator(session), query.getModel().getQueryTree().getRoot());
-        // ToolBox.visit(new PrefixSearchValidator(session), query.getModel().getQueryTree().getRoot()); TODO: Enable check and QueryValidatorPrefixTest
+        ToolBox.visit(new PrefixSearchValidator(session), query.getModel().getQueryTree().getRoot());
         return execution.search(query);
     }
 

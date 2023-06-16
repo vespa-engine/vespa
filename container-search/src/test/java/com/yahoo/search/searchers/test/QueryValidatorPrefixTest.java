@@ -9,7 +9,6 @@ import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchers.QueryValidator;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
 
 import java.util.List;
 
@@ -21,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class QueryValidatorPrefixTest {
 
-    @Disabled
     @Test
     void testPrefixRequiresAttribute() {
         var indexing = new Cluster.Builder("indexing").addSchema("test1").build();
