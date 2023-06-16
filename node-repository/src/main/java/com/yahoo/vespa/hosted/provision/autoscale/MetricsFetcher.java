@@ -1,11 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ApplicationId;
 
-import java.time.Instant;
-import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -21,5 +18,7 @@ public interface MetricsFetcher {
      * @param application the application to fetch metrics from
      */
     CompletableFuture<MetricsResponse> fetchMetrics(ApplicationId application);
+
+    void deconstruct();
 
 }
