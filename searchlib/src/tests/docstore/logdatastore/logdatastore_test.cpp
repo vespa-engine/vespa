@@ -368,13 +368,13 @@ TEST("test visit cache does not cache empty ones and is able to access some back
     IDataStore & datastore = store.getStore();
 
     VisitCache visitCache(datastore, 100000, CompressionConfig::Type::LZ4);
-    EXPECT_EQUAL(12u, visitCache.read({1}).byteSize());
+    EXPECT_EQUAL(12u, visitCache.read({1}).bytesAllocated());
     EXPECT_TRUE(visitCache.read({1}).empty());
     datastore.write(1,1, A7, 7);
-    EXPECT_EQUAL(12u, visitCache.read({2}).byteSize());
+    EXPECT_EQUAL(12u, visitCache.read({2}).bytesAllocated());
     CompressedBlobSet cbs = visitCache.read({1});
     EXPECT_FALSE(cbs.empty());
-    EXPECT_EQUAL(19u, cbs.byteSize());
+    EXPECT_EQUAL(19u, cbs.bytesAllocated());
     BlobSet bs(cbs.getBlobSet());
     EXPECT_EQUAL(7u, bs.get(1).size());
     EXPECT_EQUAL(0, strncmp(A7, bs.get(1).c_str(), 7));

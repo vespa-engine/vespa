@@ -4,7 +4,6 @@
 
 #include "idocumentstore.h"
 #include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
@@ -78,13 +77,15 @@ public:
     CompressedBlobSet(const CompressedBlobSet & rhs) = default;
     CompressedBlobSet & operator=(const CompressedBlobSet & rhs) = default;
     ~CompressedBlobSet();
-    size_t byteSize() const;
+    size_t bytesAllocated() const;
     bool empty() const { return _positions.empty(); }
     BlobSet getBlobSet() const;
 private:
-    CompressionConfig::Type _compression;
+    using Alloc = vespalib::alloc::Alloc;
     BlobSet::Positions      _positions;
-    std::shared_ptr<vespalib::MallocPtr> _buffer;
+    std::shared_ptr<Alloc>  _buffer;
+    uint32_t                 _used;
+    CompressionConfig::Type _compression;
 };
 
 /**
