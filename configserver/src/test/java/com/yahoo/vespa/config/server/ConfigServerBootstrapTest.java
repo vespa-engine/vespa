@@ -191,7 +191,7 @@ public class ConfigServerBootstrapTest {
                 .build();
         RpcServer rpcServer = createRpcServer(configserverConfig);
 
-        assertUpgradeWorks("7,.594.36", "8.110.1", tester, rpcServer);
+        assertUpgradeWorks("7.594.36", "8.110.1", tester, rpcServer);
         assertUpgradeWorks("8.100.1", "8.110.1", tester, rpcServer);
 
         assertUpgradeFails("8.100.1", "8.131.1", tester, rpcServer,
