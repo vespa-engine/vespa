@@ -121,7 +121,7 @@ ArrayStore<ElemT, RefT, TypeMapperT>::allocate(size_t array_size)
         uint32_t type_id = _mapper.get_type_id(array_size);
         if constexpr (has_dynamic_buffer_type) {
             if (_mapper.is_dynamic_buffer(type_id)) [[unlikely]] {
-                    return allocate_dynamic_array<typename TypeMapper::DynamicBufferType>(array_size, type_id);
+                return allocate_dynamic_array<typename TypeMapper::DynamicBufferType>(array_size, type_id);
             }
         }
         return allocate_small_array(type_id);
