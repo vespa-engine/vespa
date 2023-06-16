@@ -1545,7 +1545,7 @@ public class ControllerTest {
         DeploymentId deployment = context.deploymentIdIn(ZoneId.from("prod", "us-west-1"));
         DeploymentData deploymentData = new DeploymentData(deployment.applicationId(), deployment.zoneId(), InputStream::nullInputStream, Version.fromString("6.1"),
                                                            Set.of(), Optional::empty, Optional.empty(), Optional.empty(),
-                                                           Quota::unlimited, List.of(), List.of(), Optional::empty, false);
+                                                           Quota::unlimited, List.of(), List.of(), Optional::empty, List.of(),false);
         tester.configServer().deploy(deploymentData);
         assertTrue(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
         tester.controller().applications().deactivate(deployment.applicationId(), deployment.zoneId());

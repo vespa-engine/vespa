@@ -10,6 +10,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.yolean.concurrent.Memoized;
 
@@ -42,6 +43,7 @@ public class DeploymentData {
     private final List<TenantSecretStore> tenantSecretStores;
     private final List<X509Certificate> operatorCertificates;
     private final Supplier<Optional<CloudAccount>> cloudAccount;
+    private final List<DataplaneTokenVersions> dataPlaneTokens;
     private final boolean dryRun;
 
     public DeploymentData(ApplicationId instance, ZoneId zone, Supplier<InputStream> applicationPackage, Version platform,
@@ -53,6 +55,7 @@ public class DeploymentData {
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
                           Supplier<Optional<CloudAccount>> cloudAccount,
+                          List<DataplaneTokenVersions> dataPlaneTokens,
                           boolean dryRun) {
         this.instance = requireNonNull(instance);
         this.zone = requireNonNull(zone);
@@ -66,6 +69,7 @@ public class DeploymentData {
         this.tenantSecretStores = List.copyOf(requireNonNull(tenantSecretStores));
         this.operatorCertificates = List.copyOf(requireNonNull(operatorCertificates));
         this.cloudAccount = new Memoized<>(requireNonNull(cloudAccount));
+        this.dataPlaneTokens = dataPlaneTokens;
         this.dryRun = dryRun;
     }
 
@@ -115,6 +119,10 @@ public class DeploymentData {
 
     public Optional<CloudAccount> cloudAccount() {
         return cloudAccount.get();
+    }
+
+    public List<DataplaneTokenVersions> dataPlaneTokens() {
+        return dataPlaneTokens;
     }
 
     public boolean isDryRun() {
