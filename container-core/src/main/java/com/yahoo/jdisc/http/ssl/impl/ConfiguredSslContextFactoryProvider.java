@@ -111,13 +111,16 @@ public class ConfiguredSslContextFactoryProvider implements SslProvider {
     private static boolean hasNeither(String a, String b) { return a.isBlank() && b.isBlank(); }
 
     Optional<String> getCaCertificates(ConnectorConfig.Ssl sslConfig) {
+        var sb = new StringBuilder();
+        if (sslConfig.caCertificateFile().isBlank() && sslConfig.caCertificate().isBlank()) return Optional.empty();
         if (!sslConfig.caCertificate().isBlank()) {
-            return Optional.of(sslConfig.caCertificate());
-        } else if (!sslConfig.caCertificateFile().isBlank()) {
-            return Optional.of(readToString(sslConfig.caCertificateFile()));
-        } else {
-            return Optional.empty();
+            sb.append(sslConfig.caCertificate());
         }
+        if (!sslConfig.caCertificateFile().isBlank()) {
+            if (sb.length() > 0) sb.append('\n');
+            sb.append(readToString(sslConfig.caCertificateFile()));
+        }
+        return Optional.of(sb.toString());
     }
 
     private static String getPrivateKey(ConnectorConfig.Ssl config) {
