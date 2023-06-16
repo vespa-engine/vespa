@@ -28,6 +28,8 @@ public:
     FreeListRawAllocator(DataStoreBase &store, uint32_t typeId);
 
     HandleType alloc(size_t num_entries);
+    template <typename BufferType>
+    HandleType alloc_dynamic_array(size_t array_size);
 };
 
 }

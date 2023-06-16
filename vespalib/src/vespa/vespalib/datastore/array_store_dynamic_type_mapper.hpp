@@ -11,6 +11,13 @@
 namespace vespalib::datastore {
 
 template <typename ElemT>
+ArrayStoreDynamicTypeMapper<ElemT>::ArrayStoreDynamicTypeMapper()
+    : ArrayStoreTypeMapper(),
+      _max_static_array_buffer_type_id(0)
+{
+}
+
+template <typename ElemT>
 ArrayStoreDynamicTypeMapper<ElemT>::ArrayStoreDynamicTypeMapper(uint32_t max_buffer_type_id, double grow_factor)
     : ArrayStoreTypeMapper(),
       _max_static_array_buffer_type_id(0)

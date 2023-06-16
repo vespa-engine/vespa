@@ -140,6 +140,7 @@ public:
     uint32_t getArraySize() const { return _arraySize; }
     BufferState * get_state_relaxed() { return _state.load(std::memory_order_relaxed); }
     const BufferState * get_state_acquire() const { return _state.load(std::memory_order_acquire); }
+    uint32_t get_entry_size() const { return get_state_acquire()->getTypeHandler()->entry_size(); }
     void setTypeId(uint32_t typeId) { _typeId = typeId; }
     void setArraySize(uint32_t arraySize) { _arraySize = arraySize; }
     void set_state(BufferState * state) { _state.store(state, std::memory_order_release); }
