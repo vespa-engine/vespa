@@ -86,14 +86,11 @@ public class ApplicationIdTest {
         e = assertThrows(IllegalArgumentException.class, () -> ApplicationId.fromFullString("foo.baz"));
         assertEquals("Application ids must be on the form tenant.application.instance, but was foo.baz", e.getMessage());
 
-        // TODO: Add when we throw exception on strings with too many parts
-        /*
         e = assertThrows(IllegalArgumentException.class, () -> ApplicationId.fromSerializedForm("foo:baz:bar:xyzzy"));
         assertEquals("Application ids must be on the form tenant:application:instance, but was foo:baz:bar:xyzzy", e.getMessage());
 
         e = assertThrows(IllegalArgumentException.class, () -> ApplicationId.fromFullString("foo.baz.bar.xyzzy"));
         assertEquals("Application ids must be on the form tenant.application.instance, but was foo.baz.bar.xyzzy", e.getMessage());
-         */
     }
 
     @Test
