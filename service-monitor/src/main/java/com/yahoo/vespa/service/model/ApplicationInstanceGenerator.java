@@ -28,7 +28,6 @@ import com.yahoo.vespa.service.monitor.ServiceStatusProvider;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -61,16 +60,10 @@ public class ApplicationInstanceGenerator {
         return toApplicationInstanceReference(applicationInfo.getApplicationId(), zone);
     }
 
-    static ApplicationInstanceReference toApplicationInstanceReference(ApplicationId applicationId, Zone zone) {
+    public static ApplicationInstanceReference toApplicationInstanceReference(ApplicationId applicationId, Zone zone) {
         TenantId tenantId = new TenantId(applicationId.tenant().toString());
         ApplicationInstanceId applicationInstanceId = toApplicationInstanceId(applicationId, zone);
         return new ApplicationInstanceReference(tenantId, applicationInstanceId);
-    }
-
-    public boolean containsHostname(HostName hostname) {
-        return applicationInfo.getModel().getHosts().stream()
-                .map(HostInfo::getHostname)
-                .anyMatch(hostnameString -> Objects.equals(hostnameString, hostname.s()));
     }
 
     public ApplicationInstance makeApplicationInstanceLimitedTo(

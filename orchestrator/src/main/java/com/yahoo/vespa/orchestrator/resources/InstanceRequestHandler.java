@@ -98,7 +98,7 @@ public class InstanceRequestHandler extends RestApiRequestHandler<InstanceReques
         ApplicationInstanceReference instanceId = parseInstanceId(instanceIdString);
 
         ApplicationInstance applicationInstance
-                = serviceMonitor.getApplication(instanceId)
+                = serviceMonitor.getApplication(OrchestratorUtil.toApplicationId(instanceId))
                 .orElseThrow(RestApiException.NotFound::new);
 
         HostInfos hostInfos = statusService.getHostInfosByApplicationResolver().apply(applicationInstance.reference());

@@ -153,14 +153,6 @@ public class DummyServiceMonitor implements ServiceMonitor, AntiServiceMonitor {
     }
 
     @Override
-    public Optional<ApplicationInstance> getApplication(ApplicationInstanceReference reference) {
-        for (ApplicationInstance app : apps) {
-            if (app.reference().equals(reference)) return Optional.of(app);
-        }
-        return Optional.empty();
-    }
-
-    @Override
     public CriticalRegion disallowDuperModelLockAcquisition(String regionDescription) {
         return () -> {};
     }

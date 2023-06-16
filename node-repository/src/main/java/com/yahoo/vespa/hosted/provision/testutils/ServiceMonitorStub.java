@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -62,7 +63,7 @@ public class ServiceMonitorStub implements ServiceMonitor {
 
     @Override
     public ServiceModel getServiceModelSnapshot() {
-        return new ServiceModel(getAllApplicationInstances());
+        return new ServiceModel(getAllApplicationInstances(), Zone.defaultZone());
     }
 
     private Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances() {
