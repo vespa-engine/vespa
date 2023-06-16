@@ -210,7 +210,7 @@ org.sonatype.sisu:sisu-guice:2.1.7:noaop
 org.sonatype.sisu:sisu-inject-bean:1.4.2
 org.sonatype.sisu:sisu-inject-plexus:1.4.2
 org.tukaani:xz:1.8
-org.xerial.snappy:snappy-java:1.1.7
+org.xerial.snappy:snappy-java:1.1.10.1
 software.amazon.ion:ion-java:1.0.2
 xerces:xercesImpl:2.12.2
 xml-apis:xml-apis:1.4.01
