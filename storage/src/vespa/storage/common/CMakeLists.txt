@@ -2,7 +2,6 @@
 vespa_add_library(storage_common OBJECT
     SOURCES
     bucket_stripe_utils.cpp
-    bucketmessages.cpp
     content_bucket_space.cpp
     content_bucket_space_repo.cpp
     distributorcomponent.cpp

@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 #include <vespa/storage/common/storagelink.h>
-#include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storageapi/message/internal.h>
 
 namespace storage {

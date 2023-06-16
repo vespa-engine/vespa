@@ -2,7 +2,6 @@
 
 #include "messagebucket.h"
 #include "statusmessages.h"
-#include "bucketmessages.h"
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -60,10 +59,6 @@ getStorageMessageBucket(const api::StorageMessage& msg)
             return static_cast<const GetIterCommand&>(msg).getBucket();
         case CreateIteratorCommand::ID:
             return static_cast<const CreateIteratorCommand&>(msg).getBucket();
-        case ReadBucketList::ID:
-            return static_cast<const ReadBucketList&>(msg).getBucket();
-        case ReadBucketInfo::ID:
-            return static_cast<const ReadBucketInfo&>(msg).getBucket();
         case RecheckBucketInfoCommand::ID:
             return static_cast<const RecheckBucketInfoCommand&>(msg).getBucket();
         case RunTaskCommand::ID:

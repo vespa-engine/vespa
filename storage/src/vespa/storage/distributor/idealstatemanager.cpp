@@ -8,7 +8,6 @@
 #include "distributor_bucket_space.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/storage/common/bucketmessages.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/assert.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
