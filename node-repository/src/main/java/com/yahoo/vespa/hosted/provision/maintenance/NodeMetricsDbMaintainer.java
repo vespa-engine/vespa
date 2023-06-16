@@ -62,6 +62,12 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
         }
     }
 
+    @Override
+    public void shutdown() {
+        super.shutdown();
+        metricsFetcher.deconstruct();
+    }
+
     private void handleResponse(MetricsResponse response,
                                 Throwable exception,
                                 MutableInteger failures,
