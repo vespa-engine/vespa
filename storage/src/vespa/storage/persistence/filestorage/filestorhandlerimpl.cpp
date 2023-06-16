@@ -6,7 +6,6 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
-#include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/persistence/asynchandler.h>
@@ -666,7 +665,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
                 }
             }
             break;
-        case ReadBucketInfo::ID:
         case RecheckBucketInfoCommand::ID:
         {
             LOG(debug, "While remapping load for bucket %s for reason %u, "

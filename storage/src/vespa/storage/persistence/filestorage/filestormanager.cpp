@@ -4,7 +4,6 @@
 #include "filestorhandlerimpl.h"
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
-#include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
@@ -753,21 +752,6 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
         shared_ptr<DestroyIteratorCommand> cmd(std::static_pointer_cast<DestroyIteratorCommand>(msg));
         _provider->destroyIterator(cmd->getIteratorId());
         msg->getTrace().addChild(context.steal_trace());
-        return true;
-    }
-    case ReadBucketList::ID:
-    {
-        shared_ptr<ReadBucketList> cmd(std::static_pointer_cast<ReadBucketList>(msg));
-        handlePersistenceMessage(cmd);
-        return true;
-    }
-    case ReadBucketInfo::ID:
-    {
-        shared_ptr<ReadBucketInfo> cmd(std::static_pointer_cast<ReadBucketInfo>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
-        if (entry.exists()) {
-            handlePersistenceMessage(cmd);
-        }
         return true;
     }
     case RecheckBucketInfoCommand::ID:

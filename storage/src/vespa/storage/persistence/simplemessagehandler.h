@@ -4,7 +4,6 @@
 
 #include "types.h"
 #include "messages.h"
-#include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storageapi/message/persistence.h>
 
 namespace document { class BucketIdFactory; }
@@ -28,8 +27,6 @@ public:
     MessageTrackerUP handleRevert(api::RevertCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleCreateIterator(CreateIteratorCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleGetIter(GetIterCommand& cmd, MessageTrackerUP tracker) const;
-    MessageTrackerUP handleReadBucketList(ReadBucketList& cmd, MessageTrackerUP tracker) const;
-    MessageTrackerUP handleReadBucketInfo(ReadBucketInfo& cmd, MessageTrackerUP tracker) const;
 private:
     MessageTrackerUP handle_conditional_get(api::GetCommand& cmd, MessageTrackerUP tracker) const;
 
