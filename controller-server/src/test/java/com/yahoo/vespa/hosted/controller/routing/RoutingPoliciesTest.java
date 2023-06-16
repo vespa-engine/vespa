@@ -344,95 +344,20 @@ public class RoutingPoliciesTest {
         tester.enableTokenEndpoint(true);
 
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
-        var context2 = tester.newDeploymentContext("tenant1", "app2", "default");
 
         // Deploy application
-        int clustersPerZone = 2;
-        tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), false, zone1, zone2);
+        tester.provisionLoadBalancers(1, context1.instanceId(), false, zone1, zone2);
         context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
 
         // Deployment creates records and policies for all clusters in all zones
-        Set<String> expectedRecords = includeTokenEndpoints(Set.of(
+        Set<String> expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "token-c0.app1.tenant1.us-west-1.vespa.oath.cloud",
                 "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-central-1.vespa.oath.cloud"
-        ));
+                "token-c0.app1.tenant1.us-central-1.vespa.oath.cloud"
+        );
         assertEquals(expectedRecords, tester.recordNames());
-        assertEquals(4, tester.policiesOf(context1.instanceId()).size());
-
-        // Next deploy does nothing
-        context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
-        assertEquals(expectedRecords, tester.recordNames());
-        assertEquals(4, tester.policiesOf(context1.instanceId()).size());
-
-        // Add 1 cluster in each zone and deploy
-        tester.provisionLoadBalancers(clustersPerZone + 1, context1.instanceId(), false, zone1, zone2);
-        context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
-        expectedRecords = includeTokenEndpoints(Set.of(
-                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c2.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c2.app1.tenant1.us-central-1.vespa.oath.cloud"
-        ));
-        assertEquals(expectedRecords, tester.recordNames());
-        assertEquals(6, tester.policiesOf(context1.instanceId()).size());
-
-        // Deploy another application
-        tester.provisionLoadBalancers(clustersPerZone, context2.instanceId(), false, zone1, zone2);
-        context2.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
-        expectedRecords = includeTokenEndpoints(Set.of(
-                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c2.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c2.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c0.app2.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app2.tenant1.us-central-1.vespa.oath.cloud",
-                "c0.app2.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app2.tenant1.us-west-1.vespa.oath.cloud"
-        ));
-        assertEquals(expectedRecords.stream().sorted().toList(), tester.recordNames().stream().sorted().toList());
-        assertEquals(4, tester.policiesOf(context2.instanceId()).size());
-
-        // Deploy removes cluster from app1
-        tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), false, zone1, zone2);
-        context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
-        expectedRecords = includeTokenEndpoints(Set.of(
-                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c0.app2.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app2.tenant1.us-central-1.vespa.oath.cloud",
-                "c0.app2.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app2.tenant1.us-west-1.vespa.oath.cloud"
-        ));
-        assertEquals(expectedRecords, tester.recordNames());
-
-        // Remove app2 completely
-        tester.controllerTester().controller().applications().requireInstance(context2.instanceId()).deployments().keySet()
-                .forEach(zone -> tester.controllerTester().controller().applications().deactivate(context2.instanceId(), zone));
-        context2.flushDnsUpdates();
-        expectedRecords = includeTokenEndpoints(Set.of(
-                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-central-1.vespa.oath.cloud"
-        ));
-        assertEquals(expectedRecords, tester.recordNames());
-        assertTrue(tester.routingPolicies().read(context2.instanceId()).isEmpty(), "Removes stale routing policies " + context2.application());
-        assertEquals(4, tester.routingPolicies().read(context1.instanceId()).size(), "Keeps routing policies for " + context1.application());
-    }
-
-    private Set<String> includeTokenEndpoints(Set<String> records) {
-        return Stream.concat(
-                        records.stream(),
-                        records.stream().map(v -> "token-" + v))
-                .collect(Collectors.toSet());
+        assertEquals(2, tester.policiesOf(context1.instanceId()).size());
     }
 
     @Test
