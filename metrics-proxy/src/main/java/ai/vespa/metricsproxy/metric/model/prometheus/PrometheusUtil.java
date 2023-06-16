@@ -57,14 +57,6 @@ public class PrometheusUtil {
                     sampleList.add(new Sample(metricName, labels, labelValues, metric.getValue().doubleValue(), packet.timestamp * 1000));
                 }
             }
-            // convert status message to 0,1 metric
-            var firstPacket = packets.get(0);
-            String statusMetricName = serviceName + "_status";
-            // MetricsPacket status 0 means OK, but it's the opposite in Prometheus.
-            double statusMetricValue = (firstPacket.statusCode == 0) ? 1.0 : 0.0;
-            List<Sample> sampleList = singletonList(new Sample(statusMetricName, emptyList(), emptyList(),
-                                                               statusMetricValue, firstPacket.timestamp * 1000));
-            metricFamilySamples.add(new MetricFamilySamples(statusMetricName, Collector.Type.UNTYPED, "status of service", sampleList));
         }));
 
         return new PrometheusModel(metricFamilySamples);

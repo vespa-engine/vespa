@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class YamasJsonModelTest {
 
-    private static final String EXPECTED_JSON = "{\"metrics\":[{\"status_code\":0,\"timestamp\":1400047900,\"application\":\"vespa.searchnode\",\"metrics\":{\"cpu\":55.5555555555555,\"memory_virt\":22222222222,\"memory_rss\":5555555555},\"dimensions\":{\"applicationName\":\"app\",\"tenantName\":\"tenant\",\"metrictype\":\"system\",\"instance\":\"searchnode\",\"applicationInstance\":\"default\",\"clustername\":\"cluster\"},\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}},\"status_msg\":\"Data collected successfully\"}]}";
+    private static final String EXPECTED_JSON = "{\"metrics\":[{\"timestamp\":1400047900,\"application\":\"vespa.searchnode\",\"metrics\":{\"cpu\":55.5555555555555,\"memory_virt\":22222222222,\"memory_rss\":5555555555},\"dimensions\":{\"applicationName\":\"app\",\"tenantName\":\"tenant\",\"metrictype\":\"system\",\"instance\":\"searchnode\",\"applicationInstance\":\"default\",\"clustername\":\"cluster\"},\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}}}]}";
 
     @Test
     public void array_definition_creates_correct_json() throws IOException {
@@ -69,7 +69,7 @@ public class YamasJsonModelTest {
         assertEquals(5.555555555E9, metricsPacket.metrics().get(toMetricId("memory_rss")).doubleValue(), 0.1d); //Not using custom double rendrer
 
         // Serialize and verify
-        String string = YamasJsonUtil.toJson(List.of(metricsPacket), true);
+        String string = YamasJsonUtil.toJson(List.of(metricsPacket), false);
         assertEquals(EXPECTED_JSON, string);
     }
 

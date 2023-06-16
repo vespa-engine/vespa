@@ -107,7 +107,7 @@ public class YamasJsonUtil {
         for (int i = 0; i < metrics.size() - 1; i++) {
             toJson(metrics.get(i), generator, addStatus);
         }
-        toJson(metrics.get(metrics.size() - 1), generator, true);
+        toJson(metrics.get(metrics.size() - 1), generator, addStatus);
         generator.writeEndArray();
         generator.writeEndObject();
         generator.close();

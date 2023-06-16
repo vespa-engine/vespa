@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class YamasHandlerTest extends HttpHandlerTestBase {
@@ -48,8 +49,9 @@ public class YamasHandlerTest extends HttpHandlerTestBase {
     }
 
     @Test
-    public void value_response_contains_coredump_metric() {
-        assertTrue(valuesResponse.contains("\"application\":\"system-coredumps-processing\",\"routing\":{\"yamas\":{\"namespaces\":[\"Vespa\"]}}"));
+    public void value_response_does_not_contain_status() {
+        assertFalse(valuesResponse.contains("status_code"));
+        assertFalse(valuesResponse.contains("status_msg"));
     }
 
 }

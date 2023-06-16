@@ -52,7 +52,7 @@ public class YamasHandler extends HttpHandlerBase {
                         NodeDimensions nodeDimensions) {
         super(executor);
         valuesFetcher = new ValuesFetcher(metricsManager, vespaServices, metricsConsumers);
-        this.nodeMetricGatherer = new NodeMetricGatherer(metricsManager, vespaServices, applicationDimensions, nodeDimensions);
+        this.nodeMetricGatherer = new NodeMetricGatherer(metricsManager, applicationDimensions, nodeDimensions);
         this.metricsConsumers = metricsConsumers;
     }
 
