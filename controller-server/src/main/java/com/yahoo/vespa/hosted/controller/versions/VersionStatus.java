@@ -190,7 +190,7 @@ public record VersionStatus(List<VespaVersion> versions, int currentMajor) {
                 if (nodes.isEmpty()) continue;
                 boolean configConverged = application.configConvergedIn(zone.getId(), controller, Optional.empty());
                 if (!configConverged) {
-                    log.log(Level.WARNING, "Config for " + application.id() + " in " + zone.getId() +
+                    log.log(Level.INFO, "Config for " + application.id() + " in " + zone.getId() +
                                               " has not converged");
                 }
                 for (var node : nodes) {
