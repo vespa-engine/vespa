@@ -123,10 +123,7 @@ public class LoggerEntry {
         }
 
         public Builder blob(String blob) {
-            byte[] bytes = Utf8.toBytes(blob);
-            this.blob = ByteBuffer.allocate(bytes.length);
-            this.blob.put(bytes);
-            return this;
+            return this.blob(Utf8.toBytes(blob));
         }
 
         public Builder track(String track) {
