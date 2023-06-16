@@ -45,10 +45,11 @@ public class Endpoint {
     private final Scope scope;
     private final boolean legacy;
     private final RoutingMethod routingMethod;
+    private boolean tokenEndpoint;
 
     private Endpoint(TenantAndApplicationId application, Optional<InstanceName> instanceName, EndpointId id,
                      ClusterSpec.Id cluster, URI url, URI legacyRegionalUrl, List<Target> targets, Scope scope, Port port, boolean legacy,
-                     RoutingMethod routingMethod, boolean certificateName) {
+                     RoutingMethod routingMethod, boolean certificateName, boolean tokenEndpoint) {
         Objects.requireNonNull(application, "application must be non-null");
         Objects.requireNonNull(instanceName, "instanceName must be non-null");
         Objects.requireNonNull(cluster, "cluster must be non-null");
@@ -66,6 +67,7 @@ public class Endpoint {
         this.scope = requireScope(scope, routingMethod);
         this.legacy = legacy;
         this.routingMethod = routingMethod;
+        this.tokenEndpoint = tokenEndpoint;
     }
 
     /**
@@ -353,6 +355,10 @@ public class Endpoint {
         return targets;
     }
 
+    public boolean isTokenEndpoint() {
+        return tokenEndpoint;
+    }
+
     /** An endpoint's scope */
     public enum Scope {
 
@@ -477,6 +483,7 @@ public class Endpoint {
         private RoutingMethod routingMethod = RoutingMethod.sharedLayer4;
         private boolean legacy = false;
         private boolean certificateName = false;
+        private boolean tokenEndpoint = false;
 
         private EndpointBuilder(TenantAndApplicationId application, Optional<InstanceName> instance) {
             this.application = Objects.requireNonNull(application);
@@ -544,6 +551,11 @@ public class Endpoint {
             return this;
         }
 
+        public EndpointBuilder tokenEndpoint() {
+            this.tokenEndpoint = true;
+            return this;
+        }
+
         /** Sets the port of this */
         public EndpointBuilder on(Port port) {
             this.port = port;
@@ -576,7 +588,8 @@ public class Endpoint {
             if (routingMethod.isDirect() && !port.isDefault()) {
                 throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
             }
-            URI url = createUrl(endpointOrClusterAsString(endpointId, cluster),
+            String prefix = tokenEndpoint ? "token-" : "";
+            URI url = createUrl(prefix + endpointOrClusterAsString(endpointId, cluster),
                                 Objects.requireNonNull(application, "application must be non-null"),
                                 Objects.requireNonNull(instance, "instance must be non-null"),
                                 Objects.requireNonNull(targets, "targets must be non-null"),
@@ -604,7 +617,8 @@ public class Endpoint {
                                 port,
                                 legacy,
                                 routingMethod,
-                                certificateName);
+                                certificateName,
+                                tokenEndpoint);
         }
 
         private Scope requireUnset(Scope scope) {

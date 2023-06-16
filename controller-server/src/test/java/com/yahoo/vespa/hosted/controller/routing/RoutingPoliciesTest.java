@@ -16,6 +16,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -52,7 +53,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -333,6 +336,28 @@ public class RoutingPoliciesTest {
         assertEquals(expectedRecords, tester.recordNames());
         assertTrue(tester.routingPolicies().read(context2.instanceId()).isEmpty(), "Removes stale routing policies " + context2.application());
         assertEquals(4, tester.routingPolicies().read(context1.instanceId()).size(), "Keeps routing policies for " + context1.application());
+    }
+
+    @Test
+    void zone_token_endpoints() {
+        var tester = new RoutingPoliciesTester();
+        tester.enableTokenEndpoint(true);
+
+        var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
+
+        // Deploy application
+        tester.provisionLoadBalancers(1, context1.instanceId(), false, zone1, zone2);
+        context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+
+        // Deployment creates records and policies for all clusters in all zones
+        Set<String> expectedRecords = Set.of(
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "token-c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "token-c0.app1.tenant1.us-central-1.vespa.oath.cloud"
+        );
+        assertEquals(expectedRecords, tester.recordNames());
+        assertEquals(2, tester.policiesOf(context1.instanceId()).size());
     }
 
     @Test
@@ -1107,6 +1132,10 @@ public class RoutingPoliciesTest {
                          .map(Record::data)
                          .map(RecordData::asString)
                          .toList();
+        }
+
+        void enableTokenEndpoint(boolean enabled) {
+            tester.controllerTester().flagSource().withBooleanFlag(Flags.ENABLE_DATAPLANE_PROXY.id(), enabled);
         }
 
         /** Assert that an application endpoint points to given targets and weights */
