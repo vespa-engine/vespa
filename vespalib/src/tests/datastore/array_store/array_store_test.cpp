@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/datastore/array_store.hpp>
+#include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.hpp>
+#include <vespa/vespalib/datastore/dynamic_array_buffer_type.hpp>
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -27,38 +29,57 @@ namespace {
 
 constexpr float ALLOC_GROW_FACTOR = 0.2;
 
+template <typename ElemT>
+class MyArrayStoreSimpleTypeMapper : public ArrayStoreSimpleTypeMapper<ElemT> {
+public:
+    MyArrayStoreSimpleTypeMapper(uint32_t, double)
+        : ArrayStoreSimpleTypeMapper<ElemT>()
+    {
+    }
+};
+
 }
 
-template <typename TestT, typename ElemT, typename RefT = EntryRefT<19> >
+template <typename TestT, typename ElemT, typename RefT = EntryRefT<19>, typename TypeMapper = ArrayStoreDynamicTypeMapper<ElemT>>
 struct ArrayStoreTest : public TestT
 {
     using EntryRefType = RefT;
-    using ArrayStoreType = ArrayStore<ElemT, RefT>;
+    using ArrayStoreType = ArrayStore<ElemT, RefT, TypeMapper>;
     using LargeArray = typename ArrayStoreType::LargeArray;
     using ConstArrayRef = typename ArrayStoreType::ConstArrayRef;
     using ElemVector = std::vector<ElemT>;
     using value_type = ElemT;
     using ReferenceStore = vespalib::hash_map<EntryRef, ElemVector>;
+    using TypeMapperType = TypeMapper;
+    static constexpr bool simple_type_mapper = std::is_same_v<TypeMapperType,ArrayStoreSimpleTypeMapper<ElemT>>;
+    using TypeMapperWrappedType = std::conditional_t<simple_type_mapper,MyArrayStoreSimpleTypeMapper<ElemT>,TypeMapperType>;
 
     AllocStats     stats;
+    TypeMapperWrappedType type_mapper;
     ArrayStoreType store;
     ReferenceStore refStore;
     generation_t generation;
     bool add_using_allocate;
-    ArrayStoreTest(uint32_t maxSmallArraySize = 3, bool enable_free_lists = true, bool add_using_allocate_in = false)
-        : store(ArrayStoreConfig(maxSmallArraySize,
+    double type_mapper_grow_factor;
+    ArrayStoreTest(uint32_t maxSmallArraySize = 3, bool enable_free_lists = true, bool add_using_allocate_in = false, double type_mapper_grow_factor_in = 2.0)
+        : type_mapper(maxSmallArraySize, type_mapper_grow_factor_in),
+          store(ArrayStoreConfig(maxSmallArraySize,
                                  ArrayStoreConfig::AllocSpec(16, RefT::offsetSize(), 8_Ki,
                                                              ALLOC_GROW_FACTOR)).enable_free_lists(enable_free_lists),
-                std::make_unique<MemoryAllocatorObserver>(stats)),
+                std::make_unique<MemoryAllocatorObserver>(stats),
+                TypeMapperType(type_mapper)),
           refStore(),
           generation(1),
-          add_using_allocate(add_using_allocate_in)
+          add_using_allocate(add_using_allocate_in),
+          type_mapper_grow_factor(type_mapper_grow_factor_in)
     {}
     explicit ArrayStoreTest(const ArrayStoreConfig &storeCfg)
-        : store(storeCfg, std::make_unique<MemoryAllocatorObserver>(stats)),
+        : type_mapper(storeCfg.maxSmallArrayTypeId(), 2.0),
+          store(storeCfg, std::make_unique<MemoryAllocatorObserver>(stats), TypeMapperType(type_mapper)),
           refStore(),
           generation(1),
-          add_using_allocate(false)
+          add_using_allocate(false),
+          type_mapper_grow_factor(2.0)
     {}
     ~ArrayStoreTest() override;
     void assertAdd(const ElemVector &input) {
@@ -163,38 +184,77 @@ struct ArrayStoreTest : public TestT
     }
     size_t elem_size() const { return sizeof(ElemT); }
     size_t largeArraySize() const { return sizeof(LargeArray); }
+    bool simple_buffers() const { return simple_type_mapper || type_mapper_grow_factor == 1.0; }
 };
 
-template <typename TestT, typename ElemT, typename RefT>
-ArrayStoreTest<TestT, ElemT, RefT>::~ArrayStoreTest() = default;
+template <typename TestT, typename ElemT, typename RefT, typename TypeMapper>
+ArrayStoreTest<TestT, ElemT, RefT, TypeMapper>::~ArrayStoreTest() = default;
 
-template <typename TestT, typename ElemT, typename RefT>
+template <typename TestT, typename ElemT, typename RefT, typename TypeMapper>
 size_t
-ArrayStoreTest<TestT, ElemT, RefT>::reference_store_count(EntryRef ref) const
+ArrayStoreTest<TestT, ElemT, RefT, TypeMapper>::reference_store_count(EntryRef ref) const
 {
     return refStore.count(ref);
 }
 
-struct TestParam {
-    bool add_using_allocate;
-    TestParam(bool add_using_allocate_in) : add_using_allocate(add_using_allocate_in) {}
+struct SimpleTypeMapperAdd {
+    using TypeMapper = ArrayStoreSimpleTypeMapper<uint32_t>;
+    static constexpr bool add_using_allocate = false;
+    static constexpr double type_mapper_grow_factor = 1.0;
 };
 
-std::ostream& operator<<(std::ostream& os, const TestParam& param)
-{
-    os << (param.add_using_allocate ? "add_using_allocate" : "basic_add");
-    return os;
-}
-
-using NumberStoreTestWithParam = ArrayStoreTest<testing::TestWithParam<TestParam>, uint32_t>;
-
-struct NumberStoreTest : public NumberStoreTestWithParam {
-   NumberStoreTest() : NumberStoreTestWithParam(3, true, GetParam().add_using_allocate) {}
+struct SimpleTypeMapperAllocate {
+    using TypeMapper = ArrayStoreSimpleTypeMapper<uint32_t>;
+    static constexpr bool add_using_allocate = true;
+    static constexpr double type_mapper_grow_factor = 1.0;
 };
 
-struct NumberStoreFreeListsDisabledTest : public NumberStoreTestWithParam {
-    NumberStoreFreeListsDisabledTest() : NumberStoreTestWithParam(3, false, GetParam().add_using_allocate) {}
+struct DynamicTypeMapperAddGrow1 {
+    using TypeMapper = ArrayStoreDynamicTypeMapper<uint32_t>;
+    static constexpr bool add_using_allocate = false;
+    static constexpr double type_mapper_grow_factor = 1.0;
 };
+
+struct DynamicTypeMapperAllocateGrow1 {
+    using TypeMapper = ArrayStoreDynamicTypeMapper<uint32_t>;
+    static constexpr bool add_using_allocate = true;
+    static constexpr double type_mapper_grow_factor = 1.0;
+};
+
+struct DynamicTypeMapperAddGrow2 {
+    using TypeMapper = ArrayStoreDynamicTypeMapper<uint32_t>;
+    static constexpr bool add_using_allocate = false;
+    static constexpr double type_mapper_grow_factor = 2.0;
+};
+
+struct DynamicTypeMapperAllocateGrow2 {
+    using TypeMapper = ArrayStoreDynamicTypeMapper<uint32_t>;
+    static constexpr bool add_using_allocate = true;
+    static constexpr double type_mapper_grow_factor = 2.0;
+};
+
+template <typename TypeMapper>
+using NumberStoreTestWithParam = ArrayStoreTest<testing::Test, uint32_t, EntryRefT<19>, TypeMapper>;
+
+template <typename Param>
+struct NumberStoreTest : public NumberStoreTestWithParam<typename Param::TypeMapper> {
+    using Parent = NumberStoreTestWithParam<typename Param::TypeMapper>;
+    NumberStoreTest() : Parent(3, true, Param::add_using_allocate, Param::type_mapper_grow_factor) {}
+};
+
+template <typename Param>
+struct NumberStoreFreeListsDisabledTest : public NumberStoreTestWithParam<typename Param::TypeMapper> {
+    using Parent = NumberStoreTestWithParam<typename Param::TypeMapper>;
+    NumberStoreFreeListsDisabledTest() : Parent(3, false, Param::add_using_allocate, Param::type_mapper_grow_factor) {}
+};
+
+using NumberStoreTestTypes = testing::Types<SimpleTypeMapperAdd, SimpleTypeMapperAllocate,
+                                            DynamicTypeMapperAddGrow1, DynamicTypeMapperAllocateGrow1,
+                                            DynamicTypeMapperAddGrow2, DynamicTypeMapperAllocateGrow2>;
+
+TYPED_TEST_SUITE(NumberStoreTest, NumberStoreTestTypes);
+
+TYPED_TEST_SUITE(NumberStoreFreeListsDisabledTest, NumberStoreTestTypes);
 
 using NumberStoreBasicTest = ArrayStoreTest<testing::Test, uint32_t>;
 using StringStoreTest = ArrayStoreTest<testing::Test, std::string>;
@@ -206,32 +266,54 @@ TEST(BasicStoreTest, test_with_trivial_and_non_trivial_types)
     EXPECT_FALSE(vespalib::can_skip_destruction<StringStoreTest::value_type>);
 }
 
-INSTANTIATE_TEST_SUITE_P(NumberStoreMultiTest,
-                         NumberStoreTest,
-                         testing::Values(TestParam(false), TestParam(true)),
-                         testing::PrintToStringParamName());
-
-INSTANTIATE_TEST_SUITE_P(NumberStoreFreeListsDisabledMultiTest,
-                         NumberStoreFreeListsDisabledTest,
-                         testing::Values(TestParam(false), TestParam(true)),
-                         testing::PrintToStringParamName());
-
-TEST_P(NumberStoreTest, control_static_sizes) {
+TYPED_TEST(NumberStoreTest, control_static_sizes) {
     static constexpr size_t sizeof_deque = vespalib::datastore::DataStoreBase::sizeof_entry_ref_hold_list_deque;
-    EXPECT_EQ(416u + sizeof_deque, sizeof(store));
-    EXPECT_EQ(240u + sizeof_deque, sizeof(NumberStoreTest::ArrayStoreType::DataStoreType));
-    EXPECT_EQ(112u, sizeof(NumberStoreTest::ArrayStoreType::SmallBufferType));
-    MemoryUsage usage = store.getMemoryUsage();
-    EXPECT_EQ(202140u, usage.allocatedBytes());
-    EXPECT_EQ(197680u, usage.usedBytes());
+    if constexpr (TestFixture::simple_type_mapper) {
+        EXPECT_EQ(416u + sizeof_deque, sizeof(this->store));
+    } else {
+        EXPECT_EQ(464u + sizeof_deque, sizeof(this->store));
+    }
+    EXPECT_EQ(240u + sizeof_deque, sizeof(typename TestFixture::ArrayStoreType::DataStoreType));
+    EXPECT_EQ(112u, sizeof(typename TestFixture::ArrayStoreType::SmallBufferType));
+    MemoryUsage usage = this->store.getMemoryUsage();
+    if (this->simple_buffers()) {
+        EXPECT_EQ(202140u, usage.allocatedBytes());
+        EXPECT_EQ(197680u, usage.usedBytes());
+    } else {
+        EXPECT_EQ(202388u, usage.allocatedBytes());
+        EXPECT_EQ(197568u, usage.usedBytes());
+    }
 }
 
-TEST_P(NumberStoreTest, add_and_get_small_arrays_of_trivial_type)
+TYPED_TEST(NumberStoreTest, control_type_mapper)
 {
-    assertAdd({});
-    assertAdd({1});
-    assertAdd({2,3});
-    assertAdd({3,4,5});
+    if constexpr (TestFixture::simple_type_mapper) {
+        GTEST_SKIP() << "Skipping test due to using simple type mapper";
+    } else {
+        EXPECT_EQ(3, this->type_mapper.get_max_small_array_type_id(1000));
+        EXPECT_FALSE(this->type_mapper.is_dynamic_buffer(0));
+        EXPECT_FALSE(this->type_mapper.is_dynamic_buffer(1));
+        EXPECT_EQ(1, this->type_mapper.get_array_size(1));
+        EXPECT_FALSE(this->type_mapper.is_dynamic_buffer(2));
+        EXPECT_EQ(2, this->type_mapper.get_array_size(2));
+        if (this->type_mapper_grow_factor == 1.0) {
+            EXPECT_FALSE(this->type_mapper.is_dynamic_buffer(3));
+            EXPECT_EQ(3, this->type_mapper.get_array_size(3));
+            EXPECT_EQ(0, this->type_mapper.count_dynamic_buffer_types(3));
+        } else {
+            EXPECT_TRUE(this->type_mapper.is_dynamic_buffer(3));
+            EXPECT_EQ(4, this->type_mapper.get_array_size(3));
+            EXPECT_EQ(1, this->type_mapper.count_dynamic_buffer_types(3));
+        }
+    }
+}
+
+TYPED_TEST(NumberStoreTest, add_and_get_small_arrays_of_trivial_type)
+{
+    this->assertAdd({});
+    this->assertAdd({1});
+    this->assertAdd({2,3});
+    this->assertAdd({3,4,5});
 }
 
 TEST_F(StringStoreTest, add_and_get_small_arrays_of_non_trivial_type)
@@ -242,60 +324,60 @@ TEST_F(StringStoreTest, add_and_get_small_arrays_of_non_trivial_type)
     assertAdd({"ddd", "eeee", "fffff"});
 }
 
-TEST_P(NumberStoreTest, add_and_get_large_arrays_of_simple_type)
+TYPED_TEST(NumberStoreTest, add_and_get_large_arrays_of_simple_type)
 {
-    assertAdd({1,2,3,4});
-    assertAdd({2,3,4,5,6});
+    this->assertAdd({1,2,3,4,5});
+    this->assertAdd({2,3,4,5,6,7});
 }
 
 TEST_F(StringStoreTest, add_and_get_large_arrays_of_non_trivial_type)
 {
-    assertAdd({"aa", "bb", "cc", "dd"});
-    assertAdd({"ddd", "eee", "ffff", "gggg", "hhhh"});
+    assertAdd({"aa", "bb", "cc", "dd", "ee"});
+    assertAdd({"ddd", "eee", "ffff", "gggg", "hhhh", "iiii"});
 }
 
-TEST_P(NumberStoreTest, entries_are_put_on_hold_when_a_small_array_is_removed)
+TYPED_TEST(NumberStoreTest, entries_are_put_on_hold_when_a_small_array_is_removed)
 {
-    EntryRef ref = add({1,2,3});
-    assertBufferState(ref, MemStats().used(1).hold(0));
-    store.remove(ref);
-    assertBufferState(ref, MemStats().used(1).hold(1));
+    EntryRef ref = this->add({1,2,3});
+    this->assertBufferState(ref, MemStats().used(1).hold(0));
+    this->store.remove(ref);
+    this->assertBufferState(ref, MemStats().used(1).hold(1));
 }
 
-TEST_P(NumberStoreTest, entries_are_put_on_hold_when_a_large_array_is_removed)
+TYPED_TEST(NumberStoreTest, entries_are_put_on_hold_when_a_large_array_is_removed)
 {
-    EntryRef ref = add({1,2,3,4});
+    EntryRef ref = this->add({1,2,3,4,5});
     // Note: The first buffer has the first element reserved -> we expect 2 elements used here.
-    assertBufferState(ref, MemStats().used(2).hold(0).dead(1));
-    store.remove(ref);
-    assertBufferState(ref, MemStats().used(2).hold(1).dead(1));
+    this->assertBufferState(ref, MemStats().used(2).hold(0).dead(1));
+    this->store.remove(ref);
+    this->assertBufferState(ref, MemStats().used(2).hold(1).dead(1));
 }
 
-TEST_P(NumberStoreTest, small_arrays_are_allocated_from_free_lists_when_enabled) {
-    assert_ref_reused({1,2,3}, {4,5,6}, true);
+TYPED_TEST(NumberStoreTest, small_arrays_are_allocated_from_free_lists_when_enabled) {
+    this->assert_ref_reused({1,2,3}, {4,5,6}, true);
 }
 
-TEST_P(NumberStoreTest, large_arrays_are_allocated_from_free_lists_when_enabled) {
-    assert_ref_reused({1,2,3,4}, {5,6,7,8}, true);
+TYPED_TEST(NumberStoreTest, large_arrays_are_allocated_from_free_lists_when_enabled) {
+    this->assert_ref_reused({1,2,3,4,5}, {5,6,7,8,9}, true);
 }
 
-TEST_P(NumberStoreFreeListsDisabledTest, small_arrays_are_NOT_allocated_from_free_lists_when_disabled) {
-    assert_ref_reused({1,2,3}, {4,5,6}, false);
+TYPED_TEST(NumberStoreFreeListsDisabledTest, small_arrays_are_NOT_allocated_from_free_lists_when_disabled) {
+    this->assert_ref_reused({1,2,3}, {4,5,6}, false);
 }
 
-TEST_P(NumberStoreFreeListsDisabledTest, large_arrays_are_NOT_allocated_from_free_lists_when_disabled) {
-    assert_ref_reused({1,2,3,4}, {5,6,7,8}, false);
+TYPED_TEST(NumberStoreFreeListsDisabledTest, large_arrays_are_NOT_allocated_from_free_lists_when_disabled) {
+    this->assert_ref_reused({1,2,3,4,5}, {5,6,7,8,9}, false);
 }
 
-TEST_P(NumberStoreTest, track_size_of_large_array_allocations_with_free_lists_enabled) {
-    EntryRef ref = add({1,2,3,4});
-    assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(16));
-    remove({1,2,3,4});
-    assert_buffer_stats(ref, TestBufferStats().used(2).hold(1).dead(1).extra_hold(16).extra_used(16));
-    reclaim_memory();
-    assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(2).extra_used(0));
-    add({5,6,7,8,9});
-    assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(20));
+TYPED_TEST(NumberStoreTest, track_size_of_large_array_allocations_with_free_lists_enabled) {
+    EntryRef ref = this->add({1,2,3,4,5});
+    this->assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(20));
+    this->remove({1,2,3,4,5});
+    this->assert_buffer_stats(ref, TestBufferStats().used(2).hold(1).dead(1).extra_hold(20).extra_used(20));
+    this->reclaim_memory();
+    this->assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(2).extra_used(0));
+    this->add({5,6,7,8,9,10});
+    this->assert_buffer_stats(ref, TestBufferStats().used(2).hold(0).dead(1).extra_used(24));
 }
 
 TEST_F(SmallOffsetNumberStoreTest, new_underlying_buffer_is_allocated_when_current_is_full)
@@ -361,7 +443,8 @@ TEST_F(NumberStoreTwoSmallBufferTypesTest, buffer_with_most_dead_space_is_compac
 
 namespace {
 
-void testCompaction(NumberStoreTest &f, bool compactMemory, bool compactAddressSpace)
+template <typename Fixture>
+void testCompaction(Fixture &f, bool compactMemory, bool compactAddressSpace)
 {
     EntryRef size1Ref = f.add({1});
     EntryRef size2Ref = f.add({2,2});
@@ -422,52 +505,53 @@ void testCompaction(NumberStoreTest &f, bool compactMemory, bool compactAddressS
 
 }
 
-TEST_P(NumberStoreTest, compactWorst_selects_on_only_memory) {
-    testCompaction(*this, true, false);
+TYPED_TEST(NumberStoreTest, compactWorst_selects_on_only_memory) {
+    testCompaction<typename TestFixture::Parent>(*this, true, false);
 }
 
-TEST_P(NumberStoreTest, compactWorst_selects_on_only_address_space) {
-    testCompaction(*this, false, true);
+TYPED_TEST(NumberStoreTest, compactWorst_selects_on_only_address_space) {
+    testCompaction<typename TestFixture::Parent>(*this, false, true);
 }
 
-TEST_P(NumberStoreTest, compactWorst_selects_on_both_memory_and_address_space) {
-    testCompaction(*this, true, true);
+TYPED_TEST(NumberStoreTest, compactWorst_selects_on_both_memory_and_address_space) {
+    testCompaction<typename TestFixture::Parent>(*this, true, true);
 }
 
-TEST_P(NumberStoreTest, compactWorst_selects_on_neither_memory_nor_address_space) {
-    testCompaction(*this, false, false);
+TYPED_TEST(NumberStoreTest, compactWorst_selects_on_neither_memory_nor_address_space) {
+    testCompaction<typename TestFixture::Parent>(*this, false, false);
 }
 
-TEST_P(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_small_arrays)
+TYPED_TEST(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_small_arrays)
 {
-    MemStats exp(store.getMemoryUsage());
-    add({1,2,3});
-    assertMemoryUsage(exp.used(elem_size() * 3));
-    remove({1,2,3});
-    assertMemoryUsage(exp.hold(elem_size() * 3));
-    reclaim_memory();
-    assertMemoryUsage(exp.holdToDead(elem_size() * 3));
+    MemStats exp(this->store.getMemoryUsage());
+    this->add({1,2,3});
+    uint32_t exp_entry_size = this->simple_buffers() ? (this->elem_size() * 3) : (this->elem_size() * 4 + 4);
+    this->assertMemoryUsage(exp.used(exp_entry_size));
+    this->remove({1,2,3});
+    this->assertMemoryUsage(exp.hold(exp_entry_size));
+    this->reclaim_memory();
+    this->assertMemoryUsage(exp.holdToDead(exp_entry_size));
 }
 
-TEST_P(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_large_arrays)
+TYPED_TEST(NumberStoreTest, used_onHold_and_dead_memory_usage_is_tracked_for_large_arrays)
 {
-    MemStats exp(store.getMemoryUsage());
-    add({1,2,3,4});
-    assertMemoryUsage(exp.used(largeArraySize() + elem_size() * 4));
-    remove({1,2,3,4});
-    assertMemoryUsage(exp.hold(largeArraySize() + elem_size() * 4));
-    reclaim_memory();
-    assertMemoryUsage(exp.decUsed(elem_size() * 4).decHold(largeArraySize() + elem_size() * 4).
-            dead(largeArraySize()));
+    MemStats exp(this->store.getMemoryUsage());
+    this->add({1,2,3,4,5});
+    this->assertMemoryUsage(exp.used(this->largeArraySize() + this->elem_size() * 5));
+    this->remove({1,2,3,4,5});
+    this->assertMemoryUsage(exp.hold(this->largeArraySize() + this->elem_size() * 5));
+    this->reclaim_memory();
+    this->assertMemoryUsage(exp.decUsed(this->elem_size() * 5).decHold(this->largeArraySize() + this->elem_size() * 5).
+            dead(this->largeArraySize()));
 }
 
-TEST_P(NumberStoreTest, address_space_usage_is_ratio_between_used_arrays_and_number_of_possible_arrays)
+TYPED_TEST(NumberStoreTest, address_space_usage_is_ratio_between_used_arrays_and_number_of_possible_arrays)
 {
-    add({2,2});
-    add({3,3,3});
+    this->add({2,2});
+    this->add({3,3,3});
     // 1 array is reserved (buffer 0, offset 0).
-    EXPECT_EQ(3u, store.addressSpaceUsage().used());
-    EXPECT_EQ(1u, store.addressSpaceUsage().dead());
+    EXPECT_EQ(3u, this->store.addressSpaceUsage().used());
+    EXPECT_EQ(1u, this->store.addressSpaceUsage().dead());
     size_t fourgig = (1ull << 32);
     /*
      * Expected limit is sum of allocated arrays for active buffers and
@@ -479,14 +563,18 @@ TEST_P(NumberStoreTest, address_space_usage_is_ratio_between_used_arrays_and_num
      *   16 * 3 * sizeof(int) = 192 -> 256.
      *   allocated elements = 256 / sizeof(int) = 64.
      *   limit = 64 / 3 = 21.
+     *
+     * For dynamic buffer 3, we have 16 * 5 * sizeof(int) => 320 -> 512
+     * limit = 512 / (5 * 4) = 25
      */
-    size_t expLimit = fourgig - 4 * NumberStoreTest::EntryRefType::offsetSize() + 3 * 16 + 21;
-    EXPECT_EQ(static_cast<double>(2)/ expLimit, store.addressSpaceUsage().usage());
-    EXPECT_EQ(expLimit, store.addressSpaceUsage().limit());
+    size_t type_id_3_entries = this->simple_buffers() ? 21 : 25;
+    size_t expLimit = fourgig - 4 * TestFixture::EntryRefType::offsetSize() + 3 * 16 + type_id_3_entries;
+    EXPECT_EQ(static_cast<double>(2)/ expLimit, this->store.addressSpaceUsage().usage());
+    EXPECT_EQ(expLimit, this->store.addressSpaceUsage().limit());
 }
 
-struct ByteStoreTest : public ArrayStoreTest<testing::Test, uint8_t> {
-    ByteStoreTest() : ArrayStoreTest<testing::Test, uint8_t>(ByteStoreTest::ArrayStoreType::
+struct ByteStoreTest : public ArrayStoreTest<testing::Test, uint8_t, EntryRefT<19>, ArrayStoreSimpleTypeMapper<uint8_t>> {
+    ByteStoreTest() : ArrayStoreTest<testing::Test, uint8_t, EntryRefT<19>, ArrayStoreSimpleTypeMapper<uint8_t>>(ByteStoreTest::ArrayStoreType::
                                               optimizedConfigForHugePage(1023,
                                                                          vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                                          vespalib::alloc::MemoryAllocator::PAGE_SIZE,
@@ -503,9 +591,9 @@ TEST_F(ByteStoreTest, offset_in_EntryRefT_is_within_bounds_when_allocating_memor
     assertStoreContent();
 }
 
-TEST_P(NumberStoreTest, provided_memory_allocator_is_used)
+TYPED_TEST(NumberStoreTest, provided_memory_allocator_is_used)
 {
-    EXPECT_EQ(AllocStats(4, 0), stats);
+    EXPECT_EQ(AllocStats(4, 0), this->stats);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

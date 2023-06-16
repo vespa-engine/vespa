@@ -29,6 +29,8 @@ public:
         return alloc(num_entries, 0);
     }
     HandleType alloc(size_t num_entries, size_t extra_entries);
+    template <typename BufferType>
+    HandleType alloc_dynamic_array(size_t array_size);
 };
 
 }

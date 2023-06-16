@@ -15,6 +15,7 @@
 #include "large_array_buffer_type.h"
 #include "small_array_buffer_type.h"
 #include <vespa/vespalib/util/array.h>
+#include <type_traits>
 
 namespace vespalib::datastore {
 
@@ -43,6 +44,22 @@ public:
     using RefType = RefT;
     using SmallBufferType = typename TypeMapperT::SmallBufferType;
     using TypeMapper = TypeMapperT;
+    struct no_vector { };
+
+    template <class, class = void>
+    struct check_dynamic_buffer_type_member {
+        static constexpr bool value = false;
+        using vector_type = no_vector;
+    };
+
+    template <class T>
+    struct check_dynamic_buffer_type_member<T, std::void_t<typename T::DynamicBufferType>> {
+        static constexpr bool value = true;
+        using vector_type = std::vector<typename T::DynamicBufferType>;
+    };
+
+    static constexpr bool has_dynamic_buffer_type = check_dynamic_buffer_type_member<TypeMapper>::value;
+    using DynamicBufferTypeVector = check_dynamic_buffer_type_member<TypeMapper>::vector_type;
 private:
     uint32_t                     _largeArrayTypeId;
     uint32_t                     _maxSmallArrayTypeId;
@@ -50,18 +67,30 @@ private:
     DataStoreType                _store;
     TypeMapper                   _mapper;
     std::vector<SmallBufferType> _smallArrayTypes;
+    [[no_unique_address]] DynamicBufferTypeVector _dynamicArrayTypes;
     LargeBufferType              _largeArrayType;
     CompactionSpec               _compaction_spec;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
+    BufferTypeBase* initArrayType(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, uint32_t type_id);
     void initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
-    EntryRef addSmallArray(ConstArrayRef array);
-    EntryRef allocate_small_array(size_t array_size);
+    EntryRef addSmallArray(ConstArrayRef array, uint32_t type_id);
+    EntryRef allocate_small_array(uint32_t type_id);
+    template <typename BufferType>
+    EntryRef add_dynamic_array(ConstArrayRef array, uint32_t type_id);
+    template <typename BufferType>
+    EntryRef  allocate_dynamic_array(size_t array_size, uint32_t type_id);
     EntryRef addLargeArray(ConstArrayRef array);
     EntryRef allocate_large_array(size_t array_size);
     ConstArrayRef getSmallArray(RefT ref, size_t arraySize) const {
         const ElemT *buf = _store.template getEntryArray<ElemT>(ref, arraySize);
         return ConstArrayRef(buf, arraySize);
+    }
+    template <typename BufferType>
+    ConstArrayRef get_dynamic_array(const void* buffer, size_t offset, uint32_t entry_size) const {
+        auto entry = BufferType::get_entry(buffer, offset, entry_size);
+        auto size = BufferType::get_dynamic_array_size(entry, entry_size);
+        return ConstArrayRef(entry, size);
     }
     ConstArrayRef getLargeArray(RefT ref) const {
         const LargeArray *buf = _store.template getEntry<LargeArray>(ref);
@@ -80,6 +109,11 @@ public:
         RefT internalRef(ref);
         const BufferAndMeta & bufferAndMeta = _store.getBufferMeta(internalRef.bufferId());
         if (bufferAndMeta.getTypeId() != _largeArrayTypeId) [[likely]] {
+            if constexpr (has_dynamic_buffer_type) {
+                if (_mapper.is_dynamic_buffer(bufferAndMeta.getTypeId())) [[unlikely]] {
+                        return get_dynamic_array<typename TypeMapper::DynamicBufferType>(bufferAndMeta.get_buffer_acquire(), internalRef.offset(), bufferAndMeta.get_entry_size());
+                 }
+            }
             return getSmallArray(internalRef, bufferAndMeta.getArraySize());
         } else {
             return getLargeArray(internalRef);

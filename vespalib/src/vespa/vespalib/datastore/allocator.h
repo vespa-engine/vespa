@@ -31,6 +31,8 @@ public:
 
     HandleType allocArray(ConstArrayRef array);
     HandleType allocArray();
+    template <typename BufferType>
+    HandleType alloc_dynamic_array(ConstArrayRef array);
 };
 
 }

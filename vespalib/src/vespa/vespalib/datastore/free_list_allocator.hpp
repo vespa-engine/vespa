@@ -96,5 +96,25 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray()
     return HandleType(ref, buf);
 }
 
+template <typename EntryT, typename RefT, typename ReclaimerT>
+template <typename BufferType>
+typename Allocator<EntryT, RefT>::HandleType
+FreeListAllocator<EntryT, RefT, ReclaimerT>::alloc_dynamic_array(ConstArrayRef array)
+{
+    auto& free_list = _store.getFreeList(_typeId);
+    if (free_list.empty()) {
+        return ParentType::template alloc_dynamic_array<BufferType>(array);
+    }
+    RefT ref = free_list.pop_entry();
+    assert(_store.getBufferState(ref.bufferId()).getArraySize() >= array.size());
+    auto entry_size = _store.get_entry_size(_typeId);
+    EntryT* buf = BufferType::get_entry(_store.getBuffer(ref.bufferId()), ref.offset(), entry_size);
+    for (size_t i = 0; i < array.size(); ++i) {
+        *(buf + i) = array[i];
+    }
+    BufferType::set_dynamic_array_size(buf, entry_size, array.size());
+    return HandleType(ref, buf);
+}
+
 }
 
