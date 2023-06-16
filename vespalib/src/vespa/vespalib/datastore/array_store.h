@@ -20,15 +20,27 @@
 namespace vespalib::datastore {
 
 /**
- * Datastore for storing arrays of type ElemT that is accessed via a 32-bit EntryRef.
+ * Datastore for storing arrays of type ElemT that is accessed via a 32-bit
+ * EntryRef.
  *
- * The default EntryRef type uses 19 bits for offset (524288 values) and 13 bits for buffer id (8192 buffers).
+ * The default EntryRef type uses 19 bits for offset (524288 values) and 13
+ * bits for buffer id (8192 buffers).
  *
- * Buffer type ids [1,maxSmallArrayTypeId] are used to allocate small arrays in datastore buffers.
- * The default type mapper uses a 1-to-1 mapping between type id and array size.
- * Buffer type id 0 is used to heap allocate large arrays as vespalib::Array instances.
+ * Buffer type ids [1,maxSmallArrayTypeId] are used to allocate small
+ * arrays in datastore buffers.
  *
- * The max value of maxSmallArrayTypeId is (2^bufferBits - 1).
+ * The simple type mapper (ArrayStoreSimpleTypeMapper) uses a 1-to-1
+ * mapping between type id and array size.
+ *
+ * If the type mapper has defined a DynamicBufferType type
+ * (e.g. ArrayStoreDynamicTypeMapper) then the last part of the buffer type
+ * ids range might be for dynamic buffers where maximum array size can
+ * grow exponentially as buffer type id increases.
+ *
+ * Buffer type id 0 is used to heap allocate large arrays as
+ * vespalib::Array instances.
+ *
+ * The max value of maxSmallArrayTypeId is (2^(bufferBits - 3) - 1).
  */
 template <typename ElemT, typename RefT = EntryRefT<19>, typename TypeMapperT = ArrayStoreSimpleTypeMapper<ElemT> >
 class ArrayStore : public ICompactable
