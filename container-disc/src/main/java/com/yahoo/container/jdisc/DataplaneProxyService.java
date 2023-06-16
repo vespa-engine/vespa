@@ -99,7 +99,7 @@ public class DataplaneProxyService extends AbstractComponent {
         try {
             Process stopCommand = new ProcessBuilder().command(
                     "nginx",
-                    "-s", "reload"
+                    "-s", "stop"
             ).start();
             int exitCode = stopCommand.waitFor();
             if (exitCode != 0) {
