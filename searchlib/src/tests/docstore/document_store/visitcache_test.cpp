@@ -62,7 +62,7 @@ TEST("require that BlobSet can be built") {
     a.append(9, B("bbbbb",5));
     verifyAB(a);
     CompressionConfig cfg(CompressionConfig::LZ4);
-    CompressedBlobSet ca(cfg, a);
+    CompressedBlobSet ca(cfg, std::move(a));
     BlobSet b = ca.getBlobSet();
     verifyAB(b);
 }
