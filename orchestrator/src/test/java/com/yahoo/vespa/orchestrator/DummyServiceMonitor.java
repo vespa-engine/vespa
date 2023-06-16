@@ -2,6 +2,7 @@
 package com.yahoo.vespa.orchestrator;
 
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -24,6 +25,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.orchestrator.OrchestratorUtil.toApplicationInstanceReference;
 
 /**
  * A hardcoded set of applications with one storage cluster with two nodes each.
@@ -138,6 +141,19 @@ public class DummyServiceMonitor implements ServiceMonitor, AntiServiceMonitor {
     public Set<ApplicationInstanceReference> getAllApplicationInstanceReferences() {
         return apps.stream().map(a ->
                 new ApplicationInstanceReference(a.tenantId(),a.applicationInstanceId())).collect(Collectors.toSet());
+    }
+
+    @Override
+    public Optional<ApplicationInstance> getApplication(ApplicationId applicationId) {
+        return apps.stream()
+                .filter(instance -> {
+                    try {
+                        return instance.reference().equals(toApplicationInstanceReference(applicationId, this));
+                    } catch (ApplicationIdNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .findFirst();
     }
 
     @Override

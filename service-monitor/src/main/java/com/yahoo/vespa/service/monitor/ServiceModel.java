@@ -49,10 +49,6 @@ public class ServiceModel {
         return applicationsByReference;
     }
 
-    public Optional<ApplicationInstance> getApplicationInstance(ApplicationInstanceReference reference) {
-        return Optional.ofNullable(applicationsByReference.get(reference));
-    }
-
     public Optional<ApplicationInstance> getApplicationInstance(ApplicationId applicationId) {
         return Optional.ofNullable(applicationsByReference.get(toApplicationInstanceReference(applicationId, zone)));
     }
