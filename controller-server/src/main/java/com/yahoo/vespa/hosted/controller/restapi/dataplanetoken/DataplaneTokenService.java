@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.FingerPr
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.List;
 import java.util.Objects;
@@ -56,7 +55,7 @@ public class DataplaneTokenService {
      * @return a DataplaneToken containing the secret generated token
      */
     public DataplaneToken generateToken(TenantName tenantName, TokenId tokenId, Principal principal) {
-        TokenDomain tokenDomain = TokenDomain.of(tenantName.value());
+        TokenDomain tokenDomain = TokenDomain.of("Vespa Cloud tenant data plane:%s".formatted(tenantName.value()));
         Token token = TokenGenerator.generateToken(tokenDomain, TOKEN_PREFIX, TOKEN_BYTES);
         TokenCheckHash checkHash = TokenCheckHash.of(token, CHECK_HASH_BYTES);
         DataplaneTokenVersions.Version newTokenVersion = new DataplaneTokenVersions.Version(

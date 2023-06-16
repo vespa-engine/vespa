@@ -11,12 +11,14 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -85,6 +87,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean allowUserFilters = true;
     private boolean allowMoreThanOneContentGroupDown = false;
     private boolean enableConditionalPutRemoveWriteRepair = false;
+    private List<DataplaneToken> dataplaneTokens;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -144,6 +147,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean enableGlobalPhase() { return true; } // Enable global-phase by default for unit tests only
     @Override public boolean allowMoreThanOneContentGroupDown(ClusterSpec.Id id) { return allowMoreThanOneContentGroupDown; }
     @Override public boolean enableConditionalPutRemoveWriteRepair() { return enableConditionalPutRemoveWriteRepair; }
+    @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -383,6 +387,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
 
     public TestProperties setAllowUserFilters(boolean b) { this.allowUserFilters = b; return this; }
+
+    public TestProperties setDataplaneTokens(Collection<DataplaneToken> tokens) {
+        this.dataplaneTokens = List.copyOf(tokens);
+        return this;
+    }
 
     public static class Spec implements ConfigServerSpec {
 
