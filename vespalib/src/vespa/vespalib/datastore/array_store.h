@@ -71,7 +71,7 @@ public:
     };
 
     static constexpr bool has_dynamic_buffer_type = check_dynamic_buffer_type_member<TypeMapper>::value;
-    using DynamicBufferTypeVector = check_dynamic_buffer_type_member<TypeMapper>::vector_type;
+    using DynamicBufferTypeVector = typename check_dynamic_buffer_type_member<TypeMapper>::vector_type;
 private:
     uint32_t                     _largeArrayTypeId;
     uint32_t                     _maxSmallArrayTypeId;
