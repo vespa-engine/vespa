@@ -108,7 +108,7 @@ if (VESPA_USE_SANITIZER)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-sanitize=vptr")
     endif()
 endif()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} ${CXX_SPECIFIC_WARN_OPTS} -std=c++2a -fdiagnostics-color=auto ${EXTRA_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} ${CXX_SPECIFIC_WARN_OPTS} -fdiagnostics-color=auto ${EXTRA_CXX_FLAGS}")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ")
 else()
@@ -147,9 +147,8 @@ SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -rdynamic" )
 
 message("-- CMAKE_SHARED_LINKER_FLAGS is ${CMAKE_SHARED_LINKER_FLAGS}")
 
-# Use C++ 17
-# TODO renable when cmake 3.8 is out.
-# set(CMAKE_CXX_STANDARD 17)
+# Use C++ 20
+set(CMAKE_CXX_STANDARD 20)
 
 # Always build shared libs if not explicitly specified
 set(BUILD_SHARED_LIBS ON)
