@@ -246,7 +246,7 @@ void* __libc_memalign(size_t align, size_t s)        __THROW __attribute__((leaf
 void* __libc_memalign(size_t align, size_t s)        __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("memalign");
 #endif
 
-int   __posix_memalign(void** r, size_t a, size_t s) __THROW __nonnull((1)) ALIAS("posix_memalign");
+int   __posix_memalign(void** r, size_t a, size_t s) __THROW __nonnull((1)) ALIAS("posix_memalign") __attribute((leaf));
 
 #if __GLIBC_PREREQ(2, 33)
 struct mallinfo2 __libc_mallinfo2()                  __THROW  ALIAS("mallinfo2");
