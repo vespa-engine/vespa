@@ -52,4 +52,6 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VER
   set_source_files_properties(${BISON_DocSelParser_OUTPUTS} PROPERTIES COMPILE_OPTIONS "-Wno-unused-but-set-variable;-Wno-deprecated-copy-with-user-provided-copy")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set_source_files_properties(${BISON_DocSelParser_OUTPUTS} PROPERTIES COMPILE_OPTIONS "-Wno-deprecated-copy-with-user-provided-copy")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  set_source_files_properties(${BISON_DocSelParser_OUTPUTS} PROPERTIES COMPILE_OPTIONS "-Wno-unused-but-set-variable")
 endif()
