@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
-import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -55,36 +54,48 @@ public class NodeRepositoryTest {
     @Test
     public void test_ip_conflicts() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
-        ((MockNameResolver) tester.nodeRepository().nameResolver()).addRecord("host1", "1.2.3.4")
-                                                                   .addRecord("host2", "1.2.3.4")
-                                                                   .addRecord("host3", "1.2.3.4");
-        tester.addHost("id1", "host1", "default", NodeType.host);
+        IP.Config ipConfig = IP.Config.of(Set.of("1.2.3.4", "10.2.3.4"), Set.of("1.2.3.4", "10.2.3.4"));
+        IP.Config publicIpConfig = IP.Config.of(Set.of("1.2.3.4"), Set.of("1.2.3.4"));
+        IP.Config privateIpConfig = IP.Config.of(Set.of("10.2.3.4"), Set.of("10.2.3.4"));
 
-        IP.Config ipConfig = IP.Config.of(Set.of("1.2.3.4"), Set.of("1.2.3.4"));
+        Node host1 = Node.create("id1", ipConfig, "host1", tester.nodeFlavors().getFlavorOrThrow("default"), NodeType.host)
+                               .build();
+        tester.nodeRepository().nodes().addNodes(List.of(host1), Agent.system);
 
-        Node host2 = Node.create("id2", ipConfig, "host2", tester.nodeFlavors().getFlavorOrThrow("default"), NodeType.host)
-                         .build();
+        Node publicHost2 = Node.create("id2", publicIpConfig, "host2", tester.nodeFlavors().getFlavorOrThrow("default"), NodeType.host)
+                               .build();
 
-        Node enclaveHost2 = Node.create("id2", ipConfig, "host2", tester.nodeFlavors().getFlavorOrThrow("default"), NodeType.host)
-                        .cloudAccount(CloudAccount.from("gcp:foo-bar-baz"))
-                        .build();
+        Node publicEnclaveHost2 = Node.create("id2", publicIpConfig, "host2", tester.nodeFlavors().getFlavorOrThrow("default"), NodeType.host)
+                                      .cloudAccount(CloudAccount.from("gcp:foo-bar-baz"))
+                                      .build();
 
-        Node enclaveHost3 = Node.create("id3", ipConfig, "host3", tester.nodeFlavors().getFlavorOrThrow("default"), NodeType.host)
-                                .cloudAccount(CloudAccount.from("gcp:foo-bar-baz"))
-                                .build();
-
+        // Public IP conflicts inside an account are not allowed
         assertEquals("Cannot assign [1.2.3.4] to host2: [1.2.3.4] already assigned to host1",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> tester.nodeRepository().nodes().addNodes(List.of(host2), Agent.system))
+                                  () -> tester.nodeRepository().nodes().addNodes(List.of(publicHost2), Agent.system))
                              .getMessage());
 
-        tester.nodeRepository().nodes().addNodes(List.of(enclaveHost2), Agent.system);
-
-        assertEquals("Cannot assign [1.2.3.4] to host3: [1.2.3.4] already assigned to host2",
+        // Public IP conflicts across accounts are not allowed
+        assertEquals("Cannot assign [1.2.3.4] to host2: [1.2.3.4] already assigned to host1",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> tester.nodeRepository().nodes().addNodes(List.of(enclaveHost3), Agent.system))
+                                  () -> tester.nodeRepository().nodes().addNodes(List.of(publicEnclaveHost2), Agent.system))
                              .getMessage());
 
+        Node privateHost2 = Node.create("id2", privateIpConfig, "host2", tester.nodeFlavors().getFlavorOrThrow("default"), NodeType.host)
+                                .build();
+
+        Node privateEnclaveHost2 = Node.create("id2", privateIpConfig, "host2", tester.nodeFlavors().getFlavorOrThrow("default"), NodeType.host)
+                                       .cloudAccount(CloudAccount.from("gcp:foo-bar-baz"))
+                                       .build();
+
+        // Private IP conflicts inside accounts are not allowed
+        assertEquals("Cannot assign [10.2.3.4] to host2: [10.2.3.4] already assigned to host1",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.nodeRepository().nodes().addNodes(List.of(privateHost2), Agent.system))
+                             .getMessage());
+
+        // Private IP conflicts across accounts are allowed
+        tester.nodeRepository().nodes().addNodes(List.of(privateEnclaveHost2), Agent.system);
     }
 
     @Test

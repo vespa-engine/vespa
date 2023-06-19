@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.node;
 
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.UnsignedBytes;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -17,16 +16,17 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.NodeType.confighost;
 import static com.yahoo.config.provision.NodeType.controllerhost;
 import static com.yahoo.config.provision.NodeType.proxyhost;
+import static java.util.function.Predicate.not;
 
 /**
  * This handles IP address configuration and allocation.
@@ -109,11 +109,12 @@ public record IP() {
          * @throws IllegalArgumentException if there are IP conflicts with existing nodes
          */
         public static List<Node> verify(List<Node> nodes, LockedNodeList allNodes) {
-            Map<CloudAccount, NodeList> sortedNodes = allNodes.sortedBy(Comparator.comparing(Node::hostname)).groupingBy(Node::cloudAccount);
+            NodeList sortedNodes = allNodes.sortedBy(Comparator.comparing(Node::hostname));
             for (var node : nodes) {
-                for (var other : sortedNodes.getOrDefault(node.cloudAccount(), NodeList.of())) {
+                for (var other : sortedNodes) {
                     if (node.equals(other)) continue;
                     if (canAssignIpOf(other, node)) continue;
+                    Predicate<String> sharedIpSpace = other.cloudAccount().equals(node.cloudAccount()) ? __ -> true : IP::isPublic;
 
                     var addresses = new HashSet<>(node.ipConfig().primary());
                     var otherAddresses = new HashSet<>(other.ipConfig().primary());
@@ -121,6 +122,7 @@ public record IP() {
                         addresses.addAll(node.ipConfig().pool().asSet());
                         otherAddresses.addAll(other.ipConfig().pool().asSet());
                     }
+                    otherAddresses.removeIf(not(sharedIpSpace));
                     otherAddresses.retainAll(addresses);
                     if (!otherAddresses.isEmpty())
                         throw new IllegalArgumentException("Cannot assign " + addresses + " to " + node.hostname() +
@@ -428,6 +430,12 @@ public record IP() {
     /** Returns whether given string is an IPv6 address */
     public static boolean isV6(String ipAddress) {
         return ipAddress.contains(":");
+    }
+
+    /** Returns whether given string is a public IP address */
+    public static boolean isPublic(String ip) {
+        InetAddress address = parse(ip);
+        return ! address.isLoopbackAddress() && ! address.isLinkLocalAddress() && ! address.isSiteLocalAddress();
     }
 
 }
