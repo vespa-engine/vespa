@@ -49,7 +49,7 @@ class CloudDataPlaneFilter extends Filter implements CloudDataPlaneFilterConfig.
             var clientsCfg = clients.stream()
                     .map(x -> new CloudDataPlaneFilterConfig.Clients.Builder()
                             .id(x.id())
-                            .certificates(X509CertificateUtils.toPem(x.certificates()))
+                            .certificates(x.certificates().stream().map(X509CertificateUtils::toPem).toList())
                             .tokens(tokensConfig(x.tokens()))
                             .permissions(x.permissions()))
                     .toList();
