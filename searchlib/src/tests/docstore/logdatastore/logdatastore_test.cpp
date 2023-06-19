@@ -565,7 +565,7 @@ TEST("Control static memory usage") {
     IDocumentStore &ds = vcs.getStore();
     vespalib::MemoryUsage usage = ds.getMemoryUsage();
     constexpr size_t mutex_size = sizeof(std::mutex) * 2 * (113 + 1); // sizeof(std::mutex) is platform dependent
-    EXPECT_EQUAL(74572 + mutex_size, usage.allocatedBytes());
+    EXPECT_EQUAL(74716 + mutex_size, usage.allocatedBytes());
     EXPECT_EQUAL(944u + mutex_size, usage.usedBytes());
 }
 

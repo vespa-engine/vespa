@@ -61,9 +61,7 @@ cache<P>::getStaticMemoryUsage() const {
     MemoryUsage usage;
     auto cacheGuard = getGuard();
     usage.incAllocatedBytes(sizeof(*this));
-    usage.incAllocatedBytes(Lru::capacity()*sizeof(typename Lru::value_type));
     usage.incUsedBytes(sizeof(*this));
-    usage.incUsedBytes(Lru::size()*sizeof(typename Lru::value_type));
     return usage;
 }
 
