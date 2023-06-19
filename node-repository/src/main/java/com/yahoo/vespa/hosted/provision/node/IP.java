@@ -3,7 +3,11 @@ package com.yahoo.vespa.hosted.provision.node;
 
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.UnsignedBytes;
+import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -13,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.persistence.NameResolver.RecordType;
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -394,9 +399,35 @@ public record IP() {
         }
     }
 
+    public enum DnsRecordType { FORWARD, PUBLIC_FORWARD, REVERSE }
+
+    public static Set<DnsRecordType> dnsRecordTypesFor(String hostAddress, NodeType hostType, CloudName cloudName, boolean exclave) {
+        if (cloudName == CloudName.AWS)
+            return exclave ?
+                   EnumSet.of(DnsRecordType.FORWARD, DnsRecordType.PUBLIC_FORWARD) :
+                   EnumSet.of(DnsRecordType.FORWARD, DnsRecordType.PUBLIC_FORWARD, DnsRecordType.REVERSE);
+
+        if (cloudName == CloudName.GCP) {
+            if (exclave) {
+                return isV6(hostAddress) ?
+                       EnumSet.of(DnsRecordType.FORWARD, DnsRecordType.PUBLIC_FORWARD) :
+                       EnumSet.noneOf(DnsRecordType.class);
+            } else {
+                return hostType == confighost && isV6(hostAddress) ?
+                       EnumSet.of(DnsRecordType.FORWARD, DnsRecordType.REVERSE, DnsRecordType.PUBLIC_FORWARD) :
+                       EnumSet.of(DnsRecordType.FORWARD, DnsRecordType.REVERSE);
+            }
+        }
+
+        throw new IllegalArgumentException("Does not manage DNS for cloud " + cloudName);
+    }
+
     /** Verify DNS configuration of given hostname and IP address */
-    public static void verifyDns(String hostname, String ipAddress, NameResolver resolver, boolean hasForward, boolean hasPtr) {
-        if (hasForward) {
+    public static void verifyDns(String hostname, String ipAddress, NodeType nodeType, NameResolver resolver,
+                                 CloudAccount cloudAccount, Zone zone) {
+        Set<DnsRecordType> recordTypes = dnsRecordTypesFor(ipAddress, nodeType, zone.cloud().name(), cloudAccount.isEnclave(zone));
+
+        if (recordTypes.contains(DnsRecordType.FORWARD)) {
             RecordType recordType = isV6(ipAddress) ? RecordType.AAAA : RecordType.A;
             Set<String> addresses = resolver.resolve(hostname, recordType);
             if (!addresses.equals(Set.of(ipAddress)))
@@ -404,7 +435,7 @@ public record IP() {
                                                    ", but got " + addresses);
         }
 
-        if (hasPtr) {
+        if (recordTypes.contains(DnsRecordType.REVERSE)) {
             Optional<String> reverseHostname = resolver.resolveHostname(ipAddress);
             if (reverseHostname.isEmpty())
                 throw new IllegalArgumentException(ipAddress + " did not resolve to a hostname");
