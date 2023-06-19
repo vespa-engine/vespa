@@ -51,25 +51,20 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
 
     static final String APPLICATION_KEY = "application";
     static final String TIMESTAMP_KEY   = "timestamp";
-    static final String STATUS_CODE_KEY = "status_code";
-    static final String STATUS_MSG_KEY  = "status_msg";
     static final String METRICS_KEY     = "metrics";
     static final String DIMENSIONS_KEY  = "dimensions";
 
     static final String PACKET_SEPARATOR = "\n\n";
 
-    private final StateMonitor monitor;
     private final Timer timer;
     private final SnapshotProvider snapshotProvider;
     private final String applicationName;
     private final String hostDimension;
 
     @Inject
-    public MetricsPacketsHandler(StateMonitor monitor,
-                                 Timer timer,
+    public MetricsPacketsHandler(Timer timer,
                                  ComponentRegistry<SnapshotProvider> snapshotProviders,
                                  MetricsPacketsHandlerConfig config) {
-        this.monitor = monitor;
         this.timer = timer;
         snapshotProvider = getSnapshotProviderOrThrow(snapshotProviders);
         applicationName = config.application();
@@ -105,7 +100,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
                 return buildPrometheusOutput();
             }
 
-            String output = jsonToString(getStatusPacket()) + getAllMetricsPackets() + "\n";
+            String output = getAllMetricsPackets() + "\n";
             return output.getBytes(StandardCharsets.UTF_8);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction.", e);
@@ -117,7 +112,6 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     private byte[] getMetricsArray() throws JsonProcessingException {
         ObjectNode root = jsonMapper.createObjectNode();
         ArrayNode jsonArray = jsonMapper.createArrayNode();
-        jsonArray.add(getStatusPacket());
         getPacketsForSnapshot(getSnapshot(), applicationName, timer.currentTimeMillis())
                 .forEach(jsonArray::add);
         MetricGatherer.getAdditionalMetrics().forEach(jsonArray::add);
@@ -133,19 +127,6 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
         return PrometheusHelper.buildPrometheusOutput(getSnapshot(), applicationName, timer.currentTimeMillis());
     }
 
-    /**
-     * Exactly one status packet is added to the response.
-     */
-    private JsonNode getStatusPacket() {
-        ObjectNode packet = jsonMapper.createObjectNode();
-        packet.put(APPLICATION_KEY, applicationName);
-
-        StateMonitor.Status status = monitor.status();
-        packet.put(STATUS_CODE_KEY, status.ordinal());
-        packet.put(STATUS_MSG_KEY, status.name());
-        return packet;
-    }
-
     private static String jsonToString(JsonNode jsonObject) throws JsonProcessingException {
         return jsonMapper.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(jsonObject);
@@ -154,9 +135,11 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     private String getAllMetricsPackets() throws JsonProcessingException {
         StringBuilder ret = new StringBuilder();
         List<JsonNode> metricsPackets = getPacketsForSnapshot(getSnapshot(), applicationName, timer.currentTimeMillis());
+        String delimiter = "";
         for (JsonNode packet : metricsPackets) {
-            ret.append(PACKET_SEPARATOR); // For legibility and parsing in unit tests
+            ret.append(delimiter); // For legibility and parsing in unit tests
             ret.append(jsonToString(packet));
+            delimiter = PACKET_SEPARATOR;
         }
         return ret.toString();
     }

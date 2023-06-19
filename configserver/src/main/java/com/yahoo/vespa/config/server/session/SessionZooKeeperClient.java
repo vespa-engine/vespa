@@ -14,6 +14,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
@@ -27,6 +28,7 @@ import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.filedistribution.AddFileInterface;
 import com.yahoo.vespa.config.server.filedistribution.MockFileManager;
 import com.yahoo.vespa.config.server.tenant.CloudAccountSerializer;
+import com.yahoo.vespa.config.server.tenant.DataplaneTokenSerializer;
 import com.yahoo.vespa.config.server.tenant.OperatorCertificateSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
@@ -69,6 +71,7 @@ public class SessionZooKeeperClient {
     private static final String TENANT_SECRET_STORES_PATH = "tenantSecretStores";
     private static final String OPERATOR_CERTIFICATES_PATH = "operatorCertificates";
     private static final String CLOUD_ACCOUNT_PATH = "cloudAccount";
+    private static final String DATAPLANE_TOKENS_PATH = "dataplaneTokens";
 
     private final Curator curator;
     private final TenantName tenantName;
@@ -110,8 +113,8 @@ public class SessionZooKeeperClient {
             Optional<byte[]> data = curator.getData(sessionStatusPath);
             return data.map(d -> Session.Status.parse(Utf8.toString(d))).orElse(Session.Status.UNKNOWN);
         } catch (Exception e) {
-            log.log(Level.INFO, "Failed to read session status at " + sessionStatusPath.getAbsolute() +
-                    ", will assume session has been removed: ", e);
+            log.log(Level.INFO, "Failed to read session status from " + sessionStatusPath.getAbsolute() +
+                    ", returning session status 'unknown'");
             return Session.Status.UNKNOWN;
         }
     }
@@ -214,6 +217,10 @@ public class SessionZooKeeperClient {
 
     private Path cloudAccountPath() {
         return sessionPath.append(CLOUD_ACCOUNT_PATH);
+    }
+
+    private Path dataplaneTokensPath() {
+        return sessionPath.append(DATAPLANE_TOKENS_PATH);
     }
 
     public void writeVespaVersion(Version version) {
@@ -335,6 +342,18 @@ public class SessionZooKeeperClient {
         return curator.getData(cloudAccountPath()).map(SlimeUtils::jsonToSlime).map(slime -> CloudAccountSerializer.fromSlime(slime.get()));
     }
 
+    public void writeDataplaneTokens(List<DataplaneToken> dataplaneTokens) {
+        byte[] data = uncheck(() -> SlimeUtils.toJsonBytes(DataplaneTokenSerializer.toSlime(dataplaneTokens)));
+        curator.set(dataplaneTokensPath(), data);
+    }
+
+    public List<DataplaneToken> readDataplaneTokens() {
+        return curator.getData(dataplaneTokensPath())
+                .map(SlimeUtils::jsonToSlime)
+                .map(slime -> DataplaneTokenSerializer.fromSlime(slime.get()))
+                .orElse(List.of());
+    }
+
     /**
      * Create necessary paths atomically for a new session.
      *
@@ -352,5 +371,4 @@ public class SessionZooKeeperClient {
     private static Path getSessionPath(TenantName tenantName, long sessionId) {
         return TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId));
     }
-
 }

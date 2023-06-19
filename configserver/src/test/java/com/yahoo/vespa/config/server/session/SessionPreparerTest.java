@@ -16,6 +16,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.CertificateNotReadyException;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -358,6 +359,25 @@ public class SessionPreparerTest {
         ModelContext modelContext = modelFactory.getModelContext();
         Optional<CloudAccount> accountFromModel = modelContext.properties().cloudAccount();
         assertEquals(Optional.of(expected), accountFromModel);
+    }
+
+    @Test
+    public void require_that_dataplane_tokens_are_written() throws Exception {
+        TestModelFactory modelFactory = new TestModelFactory(version123);
+        preparer = createPreparer(new ModelFactoryRegistry(List.of(modelFactory)), HostProvisionerProvider.empty());
+        ApplicationId applicationId = applicationId("test");
+        List<DataplaneToken> expected = List.of(new DataplaneToken("id", List.of(new DataplaneToken.Version("f1", "ch1"))));
+        PrepareParams params = new PrepareParams.Builder().applicationId(applicationId)
+                .dataplaneTokens(expected)
+                .build();
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+
+        SessionZooKeeperClient zkClient = createSessionZooKeeperClient();
+        assertEquals(expected, zkClient.readDataplaneTokens());
+
+        ModelContext modelContext = modelFactory.getModelContext();
+        List<DataplaneToken> tokensFromModel = modelContext.properties().dataplaneTokens();
+        assertEquals(expected, tokensFromModel);
     }
 
     private List<ContainerEndpoint> readContainerEndpoints(ApplicationId applicationId) {

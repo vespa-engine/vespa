@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.network;
 
+import ai.vespa.net.CidrBlock;
 import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 
@@ -31,6 +32,7 @@ import java.util.stream.Stream;
  * @author smorgrav
  */
 public interface IPAddresses {
+    CidrBlock gcpInternalBlock = CidrBlock.fromString("2600:2d00::/32");
 
     InetAddress[] getAddresses(String hostname);
 
@@ -62,6 +64,7 @@ public interface IPAddresses {
                 .map(Inet6Address.class::cast)
                 .filter(inetAddress -> !inetAddress.isLinkLocalAddress())
                 .filter(inetAddress -> !inetAddress.isSiteLocalAddress())
+                .filter(inet6Address -> !gcpInternalBlock.contains(inet6Address))
                 .toList();
 
         if (ipv6addresses.size() <= 1) return ipv6addresses.stream().findFirst();

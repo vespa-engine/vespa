@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 import com.yahoo.container.jdisc.HttpResponse;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
@@ -13,9 +14,9 @@ import java.io.OutputStream;
  */
 public class ZipResponse extends HttpResponse {
 
-    private final byte[] zipContent;
+    private final InputStream zipContent;
 
-    public ZipResponse(String filename, byte[] zipContent) {
+    public ZipResponse(String filename, InputStream zipContent) {
         super(200);
         this.zipContent = zipContent;
         this.headers().add("Content-Disposition", "attachment; filename=\"" + filename + "\"");
@@ -28,7 +29,9 @@ public class ZipResponse extends HttpResponse {
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
-        outputStream.write(zipContent);
+        try (zipContent) {
+            zipContent.transferTo(outputStream);
+        }
     }
 
 }

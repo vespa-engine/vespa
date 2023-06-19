@@ -237,18 +237,24 @@ public class NodesV2ApiTest {
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
 
-        // park and remove host
+        // Park and remove host
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/parked/dockerhost1.yahoo.com",
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved dockerhost1.yahoo.com to parked\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
                        "{\"message\":\"Removed dockerhost1.yahoo.com\"}");
-        // ... and then forget it completely
+
+        // Host marked for rebuild cannot be forgotten
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   Utf8.toBytes("{\"wantToRebuild\": true, \"wantToRetire\": true}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                           new byte[0], Request.Method.DELETE),
                               400,
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"deprovisioned host dockerhost1.yahoo.com is rebuilding and cannot be forgotten\"}");
+
+        // Forget host completely
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    Utf8.toBytes("{\"wantToRebuild\": false}"), Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");

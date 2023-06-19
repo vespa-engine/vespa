@@ -39,8 +39,8 @@ public:
     BufferTypeBase & operator=(const BufferTypeBase &rhs) = delete;
     BufferTypeBase(BufferTypeBase &&rhs) noexcept = default;
     BufferTypeBase & operator=(BufferTypeBase &&rhs) noexcept = default;
-    BufferTypeBase(uint32_t arraySize, uint32_t min_entries, uint32_t max_entries) noexcept;
-    BufferTypeBase(uint32_t arraySize, uint32_t min_entries, uint32_t max_entries,
+    BufferTypeBase(uint32_t entry_size_in, uint32_t arraySize, uint32_t min_entries, uint32_t max_entries) noexcept;
+    BufferTypeBase(uint32_t entry_size_in, uint32_t arraySize, uint32_t min_entries, uint32_t max_entries,
                    uint32_t num_entries_for_new_buffer, float allocGrowFactor) noexcept;
     virtual ~BufferTypeBase();
     virtual void destroy_entries(void *buffer, EntryCount num_entries) = 0;
@@ -56,9 +56,9 @@ public:
      * Initialize reserved elements at start of buffer.
      */
     virtual void initialize_reserved_entries(void *buffer, EntryCount reserved_entries) = 0;
-    virtual size_t entry_size() const = 0; // Size of entry measured in bytes
+    size_t entry_size() const noexcept { return _entry_size; }
     virtual void clean_hold(void *buffer, size_t offset, EntryCount num_entries, CleanContext cleanCtx) = 0;
-    size_t getArraySize() const { return _arraySize; }
+    size_t getArraySize() const noexcept { return _arraySize; }
     virtual void on_active(uint32_t bufferId, std::atomic<EntryCount>* used_entries, std::atomic<EntryCount>* dead_entries, void* buffer);
     void on_hold(uint32_t buffer_id, const std::atomic<EntryCount>* used_entries, const std::atomic<EntryCount>* dead_entries);
     virtual void on_free(EntryCount used_entries);
@@ -112,7 +112,8 @@ protected:
         bool empty() const { return _counts.empty(); }
     };
 
-    uint32_t _arraySize;  // Number of elements in an allocation unit
+    uint32_t _entry_size;   // Number of bytes in an allocation unit
+    uint32_t _arraySize;    // Number of elements in an allocation unit
     uint32_t _min_entries;  // Minimum number of entries to allocate in a buffer
     uint32_t _max_entries;  // Maximum number of entries to allocate in a buffer
     // Number of entries needed before allocating a new buffer instead of just resizing the first one
@@ -150,7 +151,6 @@ public:
     void fallback_copy(void *newBuffer, const void *oldBuffer, EntryCount num_entries) override;
     void initialize_reserved_entries(void *buffer, EntryCount reserved_entries) override;
     void clean_hold(void *buffer, size_t offset, EntryCount num_entries, CleanContext cleanCxt) override;
-    size_t entry_size() const override { return sizeof(ElemType) * _arraySize; }
 };
 
 extern template class BufferType<char>;

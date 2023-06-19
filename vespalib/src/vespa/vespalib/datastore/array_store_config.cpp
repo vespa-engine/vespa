@@ -46,10 +46,9 @@ alignToSmallPageSize(size_t value, size_t minLimit, size_t smallPageSize)
 
 ArrayStoreConfig
 ArrayStoreConfig::optimizeForHugePage(uint32_t maxSmallArrayTypeId,
-                                      std::function<size_t(uint32_t)> type_id_to_array_size,
+                                      std::function<size_t(uint32_t)> type_id_to_entry_size,
                                       size_t hugePageSize,
                                       size_t smallPageSize,
-                                      size_t elem_size,
                                       size_t maxEntryRefOffset,
                                       size_t min_num_entries_for_new_buffer,
                                       float allocGrowFactor)
@@ -57,8 +56,8 @@ ArrayStoreConfig::optimizeForHugePage(uint32_t maxSmallArrayTypeId,
     AllocSpecVector allocSpecs;
     allocSpecs.emplace_back(0, maxEntryRefOffset, min_num_entries_for_new_buffer, allocGrowFactor); // large array spec;
     for (uint32_t type_id = 1; type_id <= maxSmallArrayTypeId; ++type_id) {
-        size_t arraySize = type_id_to_array_size(type_id);
-        size_t num_entries_for_new_buffer = hugePageSize / (elem_size * arraySize);
+        size_t entry_size = type_id_to_entry_size(type_id);
+        size_t num_entries_for_new_buffer = hugePageSize / entry_size;
         num_entries_for_new_buffer = capToLimits(num_entries_for_new_buffer, min_num_entries_for_new_buffer, maxEntryRefOffset);
         num_entries_for_new_buffer = alignToSmallPageSize(num_entries_for_new_buffer, min_num_entries_for_new_buffer, smallPageSize);
         allocSpecs.emplace_back(0, maxEntryRefOffset, num_entries_for_new_buffer, allocGrowFactor);

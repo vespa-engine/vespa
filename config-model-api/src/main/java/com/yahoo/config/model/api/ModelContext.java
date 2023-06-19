@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
@@ -190,6 +191,8 @@ public interface ModelContext {
         default boolean allowUserFilters() { return true; }
 
         default Duration endpointConnectionTtl() { return Duration.ZERO; }
+
+        default List<DataplaneToken> dataplaneTokens() { return List.of(); }
 
     }
 

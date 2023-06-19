@@ -629,6 +629,9 @@ public class ContentClusterTest extends ContentBaseTest {
         ContentCluster prodWith16Bits = createWithZone(xml, new Zone(Environment.prod, RegionName.from("us-east-3")));
         assertDistributionBitsInConfig(prodWith16Bits, 16);
 
+        ContentCluster perfWith16Bits = createWithZone(xml, new Zone(Environment.perf, RegionName.from("us-east-3")));
+        assertDistributionBitsInConfig(perfWith16Bits, 16);
+
         ContentCluster stagingNot16Bits = createWithZone(xml, new Zone(Environment.staging, RegionName.from("us-east-3")));
         assertDistributionBitsInConfig(stagingNot16Bits, 8);
     }

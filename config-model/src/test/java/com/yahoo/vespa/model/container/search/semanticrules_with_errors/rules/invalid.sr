@@ -1,0 +1,7 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Stopwords
+[stopword] -> ;
+[stopword] :- and, or, the, what, why, how;
+
+# Synonyms, with wrong character at end of line
+[bill] :- Bill, bill, William:

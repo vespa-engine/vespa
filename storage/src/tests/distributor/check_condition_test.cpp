@@ -242,7 +242,20 @@ TEST_F(CheckConditionTest, check_fails_if_replica_set_changed_between_start_and_
     });
 }
 
-TEST_F(CheckConditionTest, check_fails_if_bucket_ownership_changed_between_start_and_completion) {
+TEST_F(CheckConditionTest, check_fails_if_bucket_ownership_changed_between_start_and_completion_pending_transition_case) {
+    test_cond_with_2_gets_sent([&](auto& cond) {
+        cond.handle_reply(_sender, make_matched_reply(0));
+        simulate_set_pending_cluster_state("version:2 storage:1 distributor:1 .0.s:d"); // technically, no distributors own anything
+        cond.handle_reply(_sender, make_matched_reply(1));
+    }, [&](auto& outcome) {
+        EXPECT_FALSE(outcome.matched_condition());
+        EXPECT_FALSE(outcome.not_found());
+        EXPECT_TRUE(outcome.failed());
+        EXPECT_EQ(outcome.error_code().getResult(), api::ReturnCode::BUCKET_NOT_FOUND);
+    });
+}
+
+TEST_F(CheckConditionTest, check_fails_if_bucket_ownership_changed_between_start_and_completion_completed_transition_case) {
     test_cond_with_2_gets_sent([&](auto& cond) {
         cond.handle_reply(_sender, make_matched_reply(0));
         enable_cluster_state("version:2 storage:1 distributor:1 .0.s:d"); // technically, no distributors own anything

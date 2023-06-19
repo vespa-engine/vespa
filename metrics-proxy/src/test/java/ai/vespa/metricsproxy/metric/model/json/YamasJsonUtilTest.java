@@ -31,15 +31,6 @@ public class YamasJsonUtilTest {
     private static ArrayNode metrics(List<MetricsPacket> packets, boolean addStatus) throws IOException {
         return (ArrayNode) jsonMapper.readTree(YamasJsonUtil.toJson(packets, addStatus)).get("metrics");
     }
-    @Test
-    public void json_model_gets_null_status_by_default() throws IOException {
-        ArrayNode json = metrics(List.of(new MetricsPacket.Builder(toServiceId("foo")).build(),
-                new MetricsPacket.Builder(toServiceId("bar")).build()), false);
-        assertFalse(json.get(0).has("status_code"));
-        assertFalse(json.get(0).has("status_msg"));
-        assertTrue(json.get(1).has("status_code"));
-        assertTrue(json.get(1).has("status_msg"));
-    }
 
     @Test
     public void status_is_included_in_json_model_when_explicitly_asked_for() throws IOException {

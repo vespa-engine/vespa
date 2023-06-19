@@ -184,11 +184,13 @@ public:
      */
     virtual void reclaim_entry_refs(generation_t oldest_used_gen) = 0;
 
+    uint32_t get_entry_size(uint32_t type_id) { return _typeHandlers[type_id]->entry_size(); }
+
+    void* getBuffer(uint32_t bufferId) { return _buffers[bufferId].get_buffer_relaxed(); }
+
 protected:
     DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t max_entries);
     virtual ~DataStoreBase();
-
-    void* getBuffer(uint32_t bufferId) { return _buffers[bufferId].get_buffer_relaxed(); }
 
     struct EntryRefHoldElem {
         EntryRef ref;

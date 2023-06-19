@@ -41,11 +41,11 @@ public:
     DECLARE_IDENTIFIABLE_NS2(search, aggregation, Grouping);
     DECLARE_NBO_SERIALIZE;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    Grouping();
+    Grouping() noexcept;
     Grouping(const Grouping &);
     Grouping & operator = (const Grouping &);
-    Grouping(Grouping &&) = default;
-    Grouping & operator = (Grouping &&) = default;
+    Grouping(Grouping &&) noexcept = default;
+    Grouping & operator = (Grouping &&) noexcept = default;
     ~Grouping() override;
 
     Grouping unchain() const { return *this; }
@@ -61,19 +61,19 @@ public:
     Grouping &setClock(const vespalib::Clock * clock) { _clock = clock; return *this; }
     Grouping &setTimeOfDoom(vespalib::steady_time timeOfDoom) { _timeOfDoom = timeOfDoom; return *this; }
 
-    unsigned int getId()     const { return _id; }
-    bool valid()             const { return _valid; }
-    bool getAll()            const { return _all; }
-    int64_t getTopN()        const { return _topN; }
-    size_t getMaxN(size_t n) const { return std::min(n, static_cast<size_t>(getTopN())); }
-    uint32_t getFirstLevel() const { return _firstLevel; }
-    uint32_t getLastLevel()  const { return _lastLevel; }
-    const GroupingLevelList &getLevels() const { return _levels; }
-    const Group &getRoot()   const { return _root; }
+    unsigned int getId()     const noexcept { return _id; }
+    bool valid()             const noexcept { return _valid; }
+    bool getAll()            const noexcept { return _all; }
+    int64_t getTopN()        const noexcept { return _topN; }
+    size_t getMaxN(size_t n) const noexcept { return std::min(n, static_cast<size_t>(getTopN())); }
+    uint32_t getFirstLevel() const noexcept { return _firstLevel; }
+    uint32_t getLastLevel()  const noexcept { return _lastLevel; }
+    const GroupingLevelList &getLevels() const noexcept { return _levels; }
+    const Group &getRoot()   const noexcept { return _root; }
     bool needResort() const;
 
-    GroupingLevelList &levels() { return _levels; }
-    Group &root() { return _root; }
+    GroupingLevelList &levels() noexcept { return _levels; }
+    Group &root() noexcept { return _root; }
 
     void selectMembers(const vespalib::ObjectPredicate &predicate,
                        vespalib::ObjectOperation &operation) override;

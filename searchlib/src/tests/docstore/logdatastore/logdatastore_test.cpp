@@ -368,13 +368,13 @@ TEST("test visit cache does not cache empty ones and is able to access some back
     IDataStore & datastore = store.getStore();
 
     VisitCache visitCache(datastore, 100000, CompressionConfig::Type::LZ4);
-    EXPECT_EQUAL(0u, visitCache.read({1}).size());
+    EXPECT_EQUAL(12u, visitCache.read({1}).bytesAllocated());
     EXPECT_TRUE(visitCache.read({1}).empty());
     datastore.write(1,1, A7, 7);
-    EXPECT_EQUAL(0u, visitCache.read({2}).size());
+    EXPECT_EQUAL(12u, visitCache.read({2}).bytesAllocated());
     CompressedBlobSet cbs = visitCache.read({1});
     EXPECT_FALSE(cbs.empty());
-    EXPECT_EQUAL(19u, cbs.size());
+    EXPECT_EQUAL(19u, cbs.bytesAllocated());
     BlobSet bs(cbs.getBlobSet());
     EXPECT_EQUAL(7u, bs.get(1).size());
     EXPECT_EQUAL(0, strncmp(A7, bs.get(1).c_str(), 7));
@@ -664,14 +664,14 @@ TEST("test that the integrated visit cache works.") {
     vcs.remove(17);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 97, BASE_SZ-671));
     vcs.verifyVisit({7,9,17,19,67,88,89}, {7,9,19,67,88,89}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 105, 98, BASE_SZ-89));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 105, 98, BASE_SZ-70));
 
     vcs.verifyVisit({41, 42}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 106, 99, BASE_SZ+215));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 106, 99, BASE_SZ+230));
     vcs.verifyVisit({43, 44}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 107, 100, BASE_SZ+520));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 107, 100, BASE_SZ+540));
     vcs.verifyVisit({41, 42, 43, 44}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 108, 99, BASE_SZ+340));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 108, 99, BASE_SZ+360));
 }
 
 TEST("testWriteRead") {

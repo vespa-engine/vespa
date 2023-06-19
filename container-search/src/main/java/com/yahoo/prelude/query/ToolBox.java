@@ -27,8 +27,9 @@ public final class ToolBox {
         /**
          * Invoked when all sub-items have been visited, or immediately after
          * visit() if there are no sub-items or visit() returned false.
+         * This default implementation does nothing.
          */
-        public abstract void onExit();
+        public void onExit() {}
 
     }
 

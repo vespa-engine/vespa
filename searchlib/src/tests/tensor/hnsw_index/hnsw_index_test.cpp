@@ -855,6 +855,17 @@ TEST_F(HnswMultiIndexTest, docid_with_empty_tensor_can_be_removed)
     this->remove_document(1);
 }
 
+TEST_F(HnswMultiIndexTest, docid_with_empty_tensor_can_be_removed_after_restart)
+{
+    this->init(false);
+    this->vectors.set(1, {});
+    this->add_document(1);
+    auto data = this->save_index();
+    this->init(false);
+    this->load_index(data);
+    this->remove_document(1);
+}
+
 TEST(LevelGeneratorTest, gives_various_levels)
 {
     InvLogLevelGenerator generator(4);

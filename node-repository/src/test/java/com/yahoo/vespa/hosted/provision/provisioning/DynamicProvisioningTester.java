@@ -158,7 +158,7 @@ public class DynamicProvisioningTester {
                               List.of()); // Remove scaling events
         cluster = cluster.with(ScalingEvent.create(cluster.minResources(), cluster.minResources(),
                                                    0,
-                                                   clock().instant().minus(Duration.ofDays(1).minus(duration))).withCompletion(clock().instant().minus(Duration.ofDays(1))));
+                                                   clock().instant().minus(Duration.ofDays(1).plus(duration))).withCompletion(clock().instant().minus(Duration.ofDays(1))));
         application = application.with(cluster);
         nodeRepository().applications().put(application, nodeRepository().applications().lock(applicationId));
     }

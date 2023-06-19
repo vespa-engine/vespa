@@ -102,9 +102,10 @@ class MaintenanceDeployment implements Closeable {
             return Optional.empty();
         } catch (RuntimeException e) {
             metric.add(ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_FAILURE.baseName(), 1, metric.createContext(Map.of()));
-            log.log(Level.WARNING, "Exception on maintenance deploy of " + application, e);
             if (throwOnFailure) {
                 throw e;
+            } else {
+                log.log(Level.WARNING, "Exception on maintenance deploy of " + application, e);
             }
             return Optional.empty();
         }

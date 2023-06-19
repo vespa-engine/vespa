@@ -63,7 +63,7 @@ public class ExecutionFactory extends AbstractComponent {
                             Executor executor) {
         this(chainsConfig,
              indexInfo,
-             new SchemaInfo(indexInfo, schemaInfo, clusters),
+             new SchemaInfo(schemaInfo, clusters),
              clusters,
              searchers,
              specialTokens,
@@ -86,7 +86,7 @@ public class ExecutionFactory extends AbstractComponent {
         this.schemaInfo = schemaInfo;
         this.specialTokens = new SpecialTokenRegistry(specialTokens);
         this.linguistics = linguistics;
-        this.renderingExecutor = createRenderingExecutor();
+        this.renderingExecutor = new RenderingExecutorFactory().createExecutor();
         this.rendererRegistry = new RendererRegistry(renderers.allComponents(), renderingExecutor);
         this.executor = executor != null ? executor : Executors.newSingleThreadExecutor();
     }
@@ -149,15 +149,6 @@ public class ExecutionFactory extends AbstractComponent {
                                     new SimpleLinguistics(),
                                     new ComponentRegistry<>(),
                                     null);
-    }
-
-    private static ThreadPoolExecutor createRenderingExecutor() {
-        int threadCount = Runtime.getRuntime().availableProcessors();
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(threadCount, threadCount, 1L, TimeUnit.SECONDS,
-                                                             new LinkedBlockingQueue<>(),
-                                                             ThreadFactoryFactory.getThreadFactory("common-rendering"));
-        executor.prestartAllCoreThreads();
-        return executor;
     }
 
 }

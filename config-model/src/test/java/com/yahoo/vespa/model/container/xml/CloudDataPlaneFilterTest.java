@@ -6,6 +6,7 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -36,12 +37,14 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -85,6 +88,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
         CloudDataPlaneFilterConfig.Clients client = clients.get(0);
         assertEquals("foo", client.id());
         assertIterableEquals(List.of("read", "write"), client.permissions());
+        assertTrue(client.tokens().isEmpty());
         assertIterableEquals(List.of(X509CertificateUtils.toPem(certificate)), client.certificates());
 
         ConnectorConfig connectorConfig = connectorConfig();
@@ -115,6 +119,42 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
         var caCerts = X509CertificateUtils.certificateListFromPem(connectorConfig.ssl().caCertificate());
         assertEquals(1, caCerts.size());
         assertEquals(List.of(certificate), caCerts);
+    }
+
+    @Test
+    void generates_correct_config_for_tokens() throws IOException {
+        var certFile = securityFolder.resolve("foo.pem");
+        var clusterElem = DomBuilderTest.parse(
+                """ 
+                        <container version='1.0'>
+                          <clients>
+                            <client id="foo" permissions="read,write">
+                                <certificate file="%s"/>
+                            </client>
+                            <client id="bar" permissions="read">
+                                <token id="my-token"/>
+                            </client>
+                          </clients>
+                        </container>
+                        """
+                        .formatted(applicationFolder.toPath().relativize(certFile).toString()));
+        createCertificate(certFile);
+        buildModel(clusterElem);
+
+        var cfg = root.getConfig(CloudDataPlaneFilterConfig.class, cloudDataPlaneFilterConfigId);
+        var tokenClient = cfg.clients().stream().filter(c -> c.id().equals("bar")).findAny().orElse(null);
+        assertNotNull(tokenClient);
+        assertEquals(List.of("read"), tokenClient.permissions());
+        assertTrue(tokenClient.certificates().isEmpty());
+        var expectedTokenCfg = tokenConfig(
+                "my-token", List.of("myfingerprint1", "myfingerprint2"), List.of("myaccesshash1", "myaccesshash2"));
+        assertEquals(List.of(expectedTokenCfg), tokenClient.tokens());
+    }
+
+    private static CloudDataPlaneFilterConfig.Clients.Tokens tokenConfig(
+            String id, Collection<String> fingerprints, Collection<String> accessCheckHashes) {
+        return new CloudDataPlaneFilterConfig.Clients.Tokens.Builder()
+                .id(id).fingerprints(fingerprints).checkAccessHashes(accessCheckHashes).build();
     }
 
     @Test
@@ -189,6 +229,9 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
                 .properties(
                         new TestProperties()
                                 .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))
+                                .setDataplaneTokens(List.of(new DataplaneToken("my-token", List.of(
+                                        new DataplaneToken.Version("myfingerprint1", "myaccesshash1"),
+                                        new DataplaneToken.Version("myfingerprint2", "myaccesshash2")))))
                                 .setHostedVespa(true))
                 .zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()))
                 .build();

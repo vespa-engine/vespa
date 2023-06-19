@@ -53,7 +53,7 @@ GroupingManager::init(const IAttributeContext &attrCtx)
 
                 if (en.inherits(AttributeNode::classId)) {
                     AttributeNode & an = static_cast<AttributeNode &>(en);
-                    an.useEnumOptimization();
+                    an.enableEnumOptimization(true);
                 }
             }
             ConfigureStaticParams stuff(&attrCtx, nullptr);

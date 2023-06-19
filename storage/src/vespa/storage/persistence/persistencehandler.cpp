@@ -100,10 +100,6 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
             auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
             return _simpleHandler.handleCreateIterator(static_cast<CreateIteratorCommand&>(msg), std::move(tracker));
         }
-        case ReadBucketList::ID:
-            return _simpleHandler.handleReadBucketList(static_cast<ReadBucketList&>(msg), std::move(tracker));
-        case ReadBucketInfo::ID:
-            return _simpleHandler.handleReadBucketInfo(static_cast<ReadBucketInfo&>(msg), std::move(tracker));
         case RecheckBucketInfoCommand::ID:
             return _splitJoinHandler.handleRecheckBucketInfo(static_cast<RecheckBucketInfoCommand&>(msg), std::move(tracker));
         case RunTaskCommand::ID:

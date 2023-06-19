@@ -17,14 +17,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>defaults</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>vespajlib</artifactId>
+      <groupId>com.yahoo.vespa.bundle-plugin</groupId>
+      <artifactId>export-packages-lib</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

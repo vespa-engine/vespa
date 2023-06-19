@@ -193,10 +193,10 @@ Group::visitMembers(vespalib::ObjectVisitor &visitor) const {
     _aggr.visitMembers(visitor);
 }
 
-Group::Group() :
-    _id(),
-    _rank(0),
-    _aggr()
+Group::Group() noexcept
+    : _id(),
+      _rank(0),
+      _aggr()
 { }
 
 Group::Group(const Group & rhs) = default;
@@ -641,7 +641,7 @@ Group::Value::visitMembers(vespalib::ObjectVisitor &visitor) const {
     visit(visitor, "tag",                   _tag);
 }
 
-Group::Value::Value() :
+Group::Value::Value() noexcept :
     _aggregationResults(nullptr),
     _children(nullptr),
     _childInfo(),

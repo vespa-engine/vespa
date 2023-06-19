@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
 import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,12 +36,14 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
 import static com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiTest.createApplicationSubmissionData;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -460,6 +463,39 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
         assertTrue(tester.controller().applications().getApplication(TenantAndApplicationId.from(tenantName, application)).isPresent());
+    }
+
+    @Test
+    void dataplane_token_test() {
+        tester.assertResponse(request("/application/v4/tenant/scoober/token", GET)
+                                      .roles(Role.developer(tenantName)),
+                              "{\"tokens\":[]}", 200);
+
+        String regexGenerateToken = "\\{\"id\":\"myTokenId\",\"token\":\"vespa_cloud_.*\",\"fingerprint\":\".*\"}";
+        tester.assertResponse(request("/application/v4/tenant/scoober/token/myTokenId", POST).roles(Role.developer(tenantName)),
+                       (response) -> Assertions.assertThat(new String(response.getBody(), UTF_8)).matches(Pattern.compile(regexGenerateToken)),
+                       200);
+
+        String regexListTokens = "\\{\"tokens\":\\[\\{\"id\":\"myTokenId\",\"fingerprints\":\\[\\{\"value\":\".*\",\"created-at\":\".*\",\"author\":\"user@test\"}]}]}";
+        tester.assertResponse(request("/application/v4/tenant/scoober/token", GET)
+                                      .roles(Role.developer(tenantName)),
+                              (response) -> Assertions.assertThat(new String(response.getBody(), UTF_8)).matches(Pattern.compile(regexListTokens)),
+                              200);
+
+        // Rejects invalid tokenIds on create
+        tester.assertResponse(request("/application/v4/tenant/scoober/token/foo+bar", POST).roles(Role.developer(tenantName)),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"tokenId must match '[A-Za-z][A-Za-z0-9_-]{0,59}', but got: 'foo bar'\"}",
+                              400);
+
+        // Rejects invalid tokenIds on delete
+        tester.assertResponse(request("/application/v4/tenant/scoober/token/foo+bar?fingerprint=ab:cd", DELETE).roles(Role.developer(tenantName)),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"tokenId must match '[A-Za-z][A-Za-z0-9_-]{0,59}', but got: 'foo bar'\"}",
+                              400);
+
+        // Rejects invalid fingerprints on delete
+        tester.assertResponse(request("/application/v4/tenant/scoober/token/tokenid?fingerprint=ab:cdef", DELETE).roles(Role.developer(tenantName)),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"fingerPrint must match '([a-f0-9]{2}:)+[a-f0-9]{2}', but got: 'ab:cdef'\"}",
+                              400);
     }
 
     private ApplicationPackageBuilder prodBuilder() {

@@ -3,8 +3,11 @@ package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -34,6 +37,10 @@ public class DeploymentApiTest extends ControllerContainerTest {
     void testDeploymentApi() {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         DeploymentTester deploymentTester = new DeploymentTester(new ControllerTester(tester));
+
+        CloudAccount cloudAccount = CloudAccount.from("aws:123456789012");
+        deploymentTester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount.value()), String.class);
+        deploymentTester.controllerTester().zoneRegistry().configureCloudAccount(cloudAccount, ZoneId.from("prod.aws-us-east-1a"));
         Version version = Version.fromString("4.9");
         deploymentTester.controllerTester().upgradeSystem(version);
         ApplicationPackage multiInstancePackage = new ApplicationPackageBuilder()
@@ -41,7 +48,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
                 .region("us-west-1")
                 .build();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .region("us-west-1")
+                .region("aws-us-east-1a", cloudAccount.value())
                 .build();
         ApplicationPackage emptyPackage = new ApplicationPackageBuilder().instances("default")
                 .allow(ValidationId.deploymentRemoval)

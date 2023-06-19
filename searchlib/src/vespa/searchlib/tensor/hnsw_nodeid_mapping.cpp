@@ -82,14 +82,18 @@ HnswNodeidMapping::allocate_ids(uint32_t docid, uint32_t subspaces)
 vespalib::ConstArrayRef<uint32_t>
 HnswNodeidMapping::get_ids(uint32_t docid) const
 {
-    assert(docid < _refs.size());
+    if (docid >= _refs.size()) {
+        return {};
+    }
     return _nodeids.get(_refs[docid]);
 }
 
 void
 HnswNodeidMapping::free_ids(uint32_t docid)
 {
-    assert(docid < _refs.size());
+    if (docid >= _refs.size()) {
+        return;
+    }
     EntryRef ref = _refs[docid];
     if (!ref.valid()) {
         return;

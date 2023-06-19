@@ -209,7 +209,8 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                params.tenantSecretStores(),
                                                secretStore,
                                                params.operatorCertificates(),
-                                               params.cloudAccount());
+                                               params.cloudAccount(),
+                                               params.dataplaneTokens());
     }
 
     /** The result of preparing a single model version */

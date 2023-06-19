@@ -156,7 +156,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                zkClient.readTenantSecretStores(),
                                                secretStore,
                                                zkClient.readOperatorCertificates(),
-                                               zkClient.readCloudAccount());
+                                               zkClient.readCloudAccount(),
+                                               zkClient.readDataplaneTokens());
     }
 
 }

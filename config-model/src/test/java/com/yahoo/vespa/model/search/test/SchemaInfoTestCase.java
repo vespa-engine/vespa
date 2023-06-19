@@ -1,6 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search.test;
 
+import com.yahoo.document.DataType;
+import com.yahoo.schema.Index;
+import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.SDField;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.model.VespaModel;
@@ -13,10 +17,116 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class SchemaInfoTestCase {
 
+    @Test
+    void testFieldWithAliasExporting() {
+        var schemaInfoTester = new SchemaInfoTester();
+        var schema = schemaInfoTester.createSchema("test");
+        var field = (SDField)schema.getDocument().addField(new SDField("f1", DataType.STRING));
+        field.getAliasToName().put("alias1", "f1");
+        field.getAliasToName().put("alias2", "f1");
+        assertEquals("""
+    schema[0].name "test"
+    schema[0].field[0].name "f1"
+    schema[0].field[0].type "string"
+    schema[0].field[0].alias[0] "alias1"
+    schema[0].field[0].alias[1] "alias2"
+    schema[0].field[0].attribute false
+    schema[0].field[0].index false
+    schema[0].summaryclass[0].name "default"
+    schema[0].summaryclass[0].fields[0].name "documentid"
+    schema[0].summaryclass[0].fields[0].type "longstring"
+    schema[0].summaryclass[0].fields[0].dynamic false""",
+        schemaInfoTester.schemaInfoConfig(schema));
+    }
+
+    @Test
+    void testFieldsetExporting() {
+        var schemaInfoTester = new SchemaInfoTester();
+        var schema = schemaInfoTester.createSchema("test");
+        schema.getDocument().addField(new SDField("f1", DataType.STRING));
+        schema.getDocument().addField(new SDField("f2", DataType.STRING));
+        schema.fieldSets().addUserFieldSetItem("fs1", "f1");
+        schema.fieldSets().addUserFieldSetItem("fs1", "f2");
+        schema.fieldSets().addUserFieldSetItem("fs2", "f1");
+        assertEquals("""
+    schema[0].name "test"
+    schema[0].field[0].name "f1"
+    schema[0].field[0].type "string"
+    schema[0].field[0].attribute false
+    schema[0].field[0].index false
+    schema[0].field[1].name "f2"
+    schema[0].field[1].type "string"
+    schema[0].field[1].attribute false
+    schema[0].field[1].index false
+    schema[0].fieldset[0].name "fs1"
+    schema[0].fieldset[0].field[0] "f1"
+    schema[0].fieldset[0].field[1] "f2"
+    schema[0].fieldset[1].name "fs2"
+    schema[0].fieldset[1].field[0] "f1"
+    schema[0].summaryclass[0].name "default"
+    schema[0].summaryclass[0].fields[0].name "documentid"
+    schema[0].summaryclass[0].fields[0].type "longstring"
+    schema[0].summaryclass[0].fields[0].dynamic false""",
+                     schemaInfoTester.schemaInfoConfig(schema));
+    }
+
+    @Test
+    void testFieldWithIndexExporting() {
+        var schemaInfoTester = new SchemaInfoTester();
+        var schema = schemaInfoTester.createSchema("test");
+        var field = (SDField)schema.getDocument().addField(new SDField("f1", DataType.STRING));
+        var index = field.addIndex(new Index("f1Index"));
+        index.addAlias("a1");
+        index.addAlias("a2");
+        assertEquals("""
+    schema[0].name "test"
+    schema[0].field[0].name "f1"
+    schema[0].field[0].type "string"
+    schema[0].field[0].attribute false
+    schema[0].field[0].index false
+    schema[0].field[1].name "f1Index"
+    schema[0].field[1].type "string"
+    schema[0].field[1].alias[0] "a1"
+    schema[0].field[1].alias[1] "a2"
+    schema[0].field[1].attribute false
+    schema[0].field[1].index true
+    schema[0].summaryclass[0].name "default"
+    schema[0].summaryclass[0].fields[0].name "documentid"
+    schema[0].summaryclass[0].fields[0].type "longstring"
+    schema[0].summaryclass[0].fields[0].dynamic false""",
+                     schemaInfoTester.schemaInfoConfig(schema));
+    }
+
+    @Test
+    void testFieldWithAttributeExporting() {
+        var schemaInfoTester = new SchemaInfoTester();
+        var schema = schemaInfoTester.createSchema("test");
+        var field = (SDField)schema.getDocument().addField(new SDField("f1", DataType.STRING));
+        var attribute = field.addAttribute(new Attribute("f1Attribute", field.getDataType()));
+        attribute.getAliases().add("a1");
+        attribute.getAliases().add("a2");
+        assertEquals("""
+    schema[0].name "test"
+    schema[0].field[0].name "f1"
+    schema[0].field[0].type "string"
+    schema[0].field[0].attribute false
+    schema[0].field[0].index false
+    schema[0].field[1].name "f1Attribute"
+    schema[0].field[1].type "string"
+    schema[0].field[1].alias[0] "a1"
+    schema[0].field[1].alias[1] "a2"
+    schema[0].field[1].attribute true
+    schema[0].field[1].index false
+    schema[0].summaryclass[0].name "default"
+    schema[0].summaryclass[0].fields[0].name "documentid"
+    schema[0].summaryclass[0].fields[0].type "longstring"
+    schema[0].summaryclass[0].fields[0].dynamic false""",
+                     schemaInfoTester.schemaInfoConfig(schema));
+    }
+
     /** Schema-info should contain all schemas, independent of clusters. */
     @Test
     void requireThatSchemaInfoIsAvailable() {
-        List.of(1.0, 2.0, 3.0).toArray(new Double[3]);
         String inputs =
                 "  rank-profile inputs {" +
                         "    inputs {" +

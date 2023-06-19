@@ -53,7 +53,7 @@ public abstract class Renderer<RESPONSE extends Response> extends AbstractCompon
      * @return a {@link CompletableFuture} containing a boolean where true indicates a successful rendering
      */
     public abstract CompletableFuture<Boolean> renderResponse(OutputStream stream, RESPONSE response,
-                                                     Execution execution, Request request);
+                                                              Execution execution, Request request);
 
     /**
      * Name of the output encoding, if applicable.

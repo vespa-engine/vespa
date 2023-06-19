@@ -216,7 +216,11 @@ enum Policy {
 
     emailVerification(Privilege.grant(Action.create)
                         .on(PathGroup.emailVerification)
-                        .in(SystemName.PublicCd, SystemName.Public));
+                        .in(SystemName.PublicCd, SystemName.Public)),
+
+    dataplaneToken(Privilege.grant(Action.all())
+                           .on(PathGroup.dataplaneToken)
+                           .in(SystemName.PublicCd, SystemName.Public));
 
     private final Set<Privilege> privileges;
 

@@ -39,12 +39,15 @@ public:
         void setValid() noexcept;
         bool setInvalid() noexcept;
         void release() noexcept {
-            _refCount.fetch_sub(2);
+            _refCount.fetch_sub(2, std::memory_order_release);
         }
         GenerationHold *acquire() noexcept;
         static GenerationHold *copy(GenerationHold *self) noexcept;
         uint32_t getRefCount() const noexcept {
             return _refCount.load(std::memory_order_relaxed) / 2;
+        }
+        uint32_t getRefCountAcqRel() noexcept {
+            return _refCount.fetch_add(0, std::memory_order_acq_rel) / 2;
         }
     };
 

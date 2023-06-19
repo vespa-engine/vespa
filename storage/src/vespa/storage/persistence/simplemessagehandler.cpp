@@ -131,29 +131,6 @@ SimpleMessageHandler::handleGetIter(GetIterCommand& cmd, MessageTracker::UP trac
 }
 
 MessageTracker::UP
-SimpleMessageHandler::handleReadBucketList(ReadBucketList& cmd, MessageTracker::UP tracker) const
-{
-    tracker->setMetric(_env._metrics.readBucketList);
-
-    spi::BucketIdListResult result(_spi.listBuckets(cmd.getBucketSpace()));
-    if (tracker->checkForError(result)) {
-        auto reply = std::make_shared<ReadBucketListReply>(cmd);
-        result.getList().swap(reply->getBuckets());
-        tracker->setReply(reply);
-    }
-
-    return tracker;
-}
-
-MessageTracker::UP
-SimpleMessageHandler::handleReadBucketInfo(ReadBucketInfo& cmd, MessageTracker::UP tracker) const
-{
-    tracker->setMetric(_env._metrics.readBucketInfo);
-    _env.updateBucketDatabase(cmd.getBucket(), _env.getBucketInfo(cmd.getBucket()));
-    return tracker;
-}
-
-MessageTracker::UP
 SimpleMessageHandler::handleCreateIterator(CreateIteratorCommand& cmd, MessageTracker::UP tracker) const
 {
     tracker->setMetric(_env._metrics.createIterator);

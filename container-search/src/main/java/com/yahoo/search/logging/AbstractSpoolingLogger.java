@@ -2,6 +2,7 @@
 package com.yahoo.search.logging;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
+
 import java.io.IOException;
 import java.time.Clock;
 import java.util.concurrent.RejectedExecutionException;
@@ -44,7 +45,7 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
 
     @Override
     public boolean send(LoggerEntry entry) {
-        log.log(Level.INFO, "Sending");
+        log.log(Level.FINE, "Sending entry " + entry + " to spooler");
         try {
             executor.execute(() -> spooler.write(entry));
         } catch (RejectedExecutionException e) {

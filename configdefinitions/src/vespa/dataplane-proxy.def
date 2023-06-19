@@ -1,0 +1,9 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=cloud.config
+
+# The port Jdisc will be listening on
+port                int
+
+# Server certificate and key to be used when creating server socket
+serverCertificate   string
+serverKey           string

@@ -120,18 +120,10 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
             public void visit(String name, Object value) {
                 if (name != null) {
                     switch (name) {
-                    case "major":
-                        major = (int) value;
-                        break;
-                    case "minor":
-                        minor = (int) value;
-                        break;
-                    case "micro":
-                        micro = (int) value;
-                        break;
-                    case "qualifier":
-                        qualifier = (String) value;
-                        break;
+                        case "major" -> major = (int) value;
+                        case "minor" -> minor = (int) value;
+                        case "micro" -> micro = (int) value;
+                        case "qualifier" -> qualifier = (String) value;
                     }
                 }
             }

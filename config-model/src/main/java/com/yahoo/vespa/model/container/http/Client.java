@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http;
 
+import com.yahoo.config.provision.DataplaneToken;
+
 import java.security.cert.X509Certificate;
 import java.util.List;
 
@@ -10,19 +12,22 @@ import java.util.List;
  * @author mortent
  */
 public class Client {
-    private String id;
-    private List<String> permissions;
-    private List<X509Certificate> certificates;
-    private boolean internal;
+    private final String id;
+    private final List<String> permissions;
+    private final List<X509Certificate> certificates;
+    private final List<DataplaneToken> tokens;
+    private final boolean internal;
 
-    public Client(String id, List<String> permissions, List<X509Certificate> certificates) {
-        this(id, permissions, certificates, false);
+    public Client(String id, List<String> permissions, List<X509Certificate> certificates, List<DataplaneToken> tokens) {
+        this(id, permissions, certificates, tokens, false);
     }
 
-    private Client(String id, List<String> permissions, List<X509Certificate> certificates, boolean internal) {
+    private Client(String id, List<String> permissions, List<X509Certificate> certificates, List<DataplaneToken> tokens,
+                   boolean internal) {
         this.id = id;
-        this.permissions = permissions;
-        this.certificates = certificates;
+        this.permissions = List.copyOf(permissions);
+        this.certificates = List.copyOf(certificates);
+        this.tokens = List.copyOf(tokens);
         this.internal = internal;
     }
 
@@ -38,11 +43,13 @@ public class Client {
         return certificates;
     }
 
+    public List<DataplaneToken> tokens() { return tokens; }
+
     public boolean internal() {
         return internal;
     }
 
     public static Client internalClient(List<X509Certificate> certificates) {
-        return new Client("_internal", List.of("read","write"), certificates, true);
+        return new Client("_internal", List.of("read","write"), certificates, List.of(), true);
     }
 }

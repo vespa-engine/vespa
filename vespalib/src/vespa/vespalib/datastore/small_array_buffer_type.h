@@ -21,7 +21,7 @@ class SmallArrayBufferType : public BufferType<ElemT>
 public:
     SmallArrayBufferType(const SmallArrayBufferType&) = delete;
     SmallArrayBufferType& operator=(const SmallArrayBufferType&) = delete;
-    SmallArrayBufferType(SmallArrayBufferType&&) noexcept = default;
+    SmallArrayBufferType(SmallArrayBufferType&&) noexcept;
     SmallArrayBufferType& operator=(SmallArrayBufferType&&) noexcept = default;
     SmallArrayBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator) noexcept;
     template <typename TypeMapper>

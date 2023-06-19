@@ -22,13 +22,12 @@ private:
     const IAttributeVector *_keyAttribute;
     const IAttributeVector *_keySourceAttribute;
 
-    template <typename ResultNodeType>
-    void prepareIntValues(std::unique_ptr<KeyHandler> keyHandler, const IAttributeVector &attribute, IAttributeVector::largeint_t undefinedValue);
-    std::unique_ptr<KeyHandler> makeKeyHandlerHelper();
-    std::unique_ptr<KeyHandler> makeKeyHandler();
+    std::unique_ptr<KeyHandler> makeKeyHandlerHelper() const;
+    std::unique_ptr<KeyHandler> makeKeyHandler() const;
     void cleanup() override;
     void wireAttributes(const search::attribute::IAttributeContext & attrCtx) override;
-    void onPrepare(bool preserveAccurateTypes) override;
+    std::pair<std::unique_ptr<ResultNode>, std::unique_ptr<Handler>>
+    createResultHandler(bool preserveAccurateType, const attribute::IAttributeVector & attribute) const override;
 public:
     DECLARE_NBO_SERIALIZE;
     DECLARE_EXPRESSIONNODE(AttributeMapLookupNode);

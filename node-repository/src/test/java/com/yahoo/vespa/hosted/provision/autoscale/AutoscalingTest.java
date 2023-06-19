@@ -636,12 +636,11 @@ public class AutoscalingTest {
         Duration timeAdded = fixture.loader().addLoadMeasurements(100, t -> t == 0 ? 200.0 : 100.0, t -> 0.0);
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.25, 200);
-
         fixture.tester().assertResources("Scale up since we assume we need 2x cpu for growth when no scaling time data",
                                          8, 1, 1.6,  7.4, 29.0,
                                          fixture.autoscale());
 
-        fixture.setScalingDuration(Duration.ofMinutes(5));
+        fixture.setScalingDuration(Duration.ofHours(8));
         fixture.tester().clock().advance(Duration.ofDays(2));
         timeAdded = fixture.loader().addLoadMeasurements(100, t -> 100.0 + (t < 50 ? t : 100 - t), t -> 0.0);
         fixture.tester.clock().advance(timeAdded.negated());
@@ -650,7 +649,7 @@ public class AutoscalingTest {
                                          8, 1, 1.2,   7.4, 29.0,
                                          fixture.autoscale());
 
-        fixture.setScalingDuration(Duration.ofMinutes(60));
+        fixture.setScalingDuration(Duration.ofHours(8));
         fixture.tester().clock().advance(Duration.ofDays(2));
         timeAdded = fixture.loader().addLoadMeasurements(100,
                                                          t -> 100.0 + (t < 50 ? t * t * t : 125000 - (t - 49) * (t - 49) * (t - 49)),
@@ -717,8 +716,8 @@ public class AutoscalingTest {
         timeAdded = fixture.loader().addLoadMeasurements(100, t -> t == 0 ? 200.0 : 100.0, t-> 0.0);
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.4, 200);
-        fixture.tester().assertResources("Query only -> largest possible",
-                                         8, 1, 2.5,  7.4, 29.0,
+        fixture.tester().assertResources("Query only -> larger",
+                                         8, 1, 2.1,  7.4, 29.0,
                                          fixture.autoscale());
 
         fixture.tester().clock().advance(Duration.ofDays(2));

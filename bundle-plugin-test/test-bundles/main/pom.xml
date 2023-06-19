@@ -16,8 +16,8 @@
   <packaging>container-plugin</packaging>
   <dependencies>
     <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>defaults</artifactId>
+      <groupId>com.yahoo.vespa.bundle-plugin</groupId>
+      <artifactId>export-packages-lib</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

@@ -252,7 +252,7 @@ TYPED_TEST(LockableMapTest, iterating) {
         EXPECT_EQ(A(4, 8, 0), *map.get(11, "foo"));
         EXPECT_EQ(A(1, 4, 3), *map.get(16, "foo"));
         auto entry = map.get(14, "foo");
-        EXPECT_FALSE(entry.exist());
+        EXPECT_FALSE(entry.exists());
     }
 }
 
@@ -742,7 +742,7 @@ TYPED_TEST(LockableMapTest, get_without_auto_create_does_not_implicitly_lock_buc
     BucketId id(16, 0x00001);
 
     auto entry = map.get(id.toKey(), "foo", false);
-    EXPECT_FALSE(entry.exist());
+    EXPECT_FALSE(entry.exists());
     EXPECT_FALSE(entry.preExisted());
     EXPECT_FALSE(entry.locked());
 }
@@ -752,7 +752,7 @@ TYPED_TEST(LockableMapTest, get_with_auto_create_returns_default_constructed_ent
     BucketId id(16, 0x00001);
 
     auto entry = map.get(id.toKey(), "foo", true);
-    EXPECT_TRUE(entry.exist());
+    EXPECT_TRUE(entry.exists());
     EXPECT_FALSE(entry.preExisted());
     EXPECT_TRUE(entry.locked());
     EXPECT_EQ(*entry, A());
@@ -761,7 +761,7 @@ TYPED_TEST(LockableMapTest, get_with_auto_create_returns_default_constructed_ent
 
     // Should now exist
     entry = map.get(id.toKey(), "foo", true);
-    EXPECT_TRUE(entry.exist());
+    EXPECT_TRUE(entry.exists());
     EXPECT_TRUE(entry.preExisted());
     EXPECT_TRUE(entry.locked());
     EXPECT_EQ(*entry, A(1, 2, 3));
@@ -777,6 +777,11 @@ TYPED_TEST(LockableMapTest, entry_changes_not_visible_if_write_not_invoked_on_gu
 
     entry = map.get(id.toKey(), "foo", true);
     EXPECT_EQ(*entry, A());
+}
+
+TYPED_TEST(LockableMapTest, track_sizes) {
+    TypeParam map;
+    EXPECT_EQ(48ul, sizeof(typename TypeParam::WrappedEntry));
 }
 
 } // storage

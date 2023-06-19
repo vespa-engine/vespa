@@ -240,7 +240,7 @@ TEST_F("testWithRelevance", AttributeFixture()) {
         r *= 0.1;
         TEST_STATE(vespalib::make_string("i=%d", i).c_str());
         EXPECT_TRUE(et.execute(0, HitRank(r)));
-        EXPECT_EQUAL(expect0[i], et.getResult()->getFloat());
+        EXPECT_EQUAL(et.getResult()->getFloat(), expect0[i]);
     }
 
     EXPECT_TRUE(et.execute(0, HitRank(f1.doc0attr[2])));

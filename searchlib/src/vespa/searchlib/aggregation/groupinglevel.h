@@ -3,6 +3,7 @@
 
 #include "group.h"
 #include <vespa/searchlib/expression/aggregationrefnode.h>
+#include <vespa/searchlib/expression/currentindex.h>
 
 namespace search::aggregation {
 
@@ -20,17 +21,18 @@ private:
     using ResultNode = expression::ResultNode;
     using ExpressionNode = expression::ExpressionNode;
     using ExpressionTree = expression::ExpressionTree;
+    using CurrentIndex = expression::CurrentIndex;
     class Grouper {
     public:
-        virtual ~Grouper() { }
+        virtual ~Grouper() = default;
         virtual void group(Group & group, const ResultNode & result, DocId doc, HitRank rank) const = 0;
         virtual void group(Group & group, const ResultNode & result, const document::Document & doc, HitRank rank) const = 0;
         virtual Grouper * clone() const = 0;
     protected:
-        Grouper(const Grouping * grouping, uint32_t level);
-        bool  hasNext() const { return _hasNext; }
-        bool   doNext() const { return _doNext; }
-        bool  hasNext(size_t level) const;
+        Grouper(const Grouping * grouping, uint32_t level) noexcept;
+        bool  hasNext() const noexcept { return _hasNext; }
+        bool   doNext() const noexcept { return _doNext; }
+        bool  hasNext(size_t level) const noexcept;
         const Grouping * _grouping;
         uint32_t   _level;
         bool       _frozen;
@@ -39,7 +41,7 @@ private:
     };
     class SingleValueGrouper : public Grouper {
     public:
-        SingleValueGrouper(const Grouping * grouping, uint32_t level) : Grouper(grouping, level) { }
+        SingleValueGrouper(const Grouping * grouping, uint32_t level) noexcept : Grouper(grouping, level) { }
     protected:
         template<typename Doc>
         void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
@@ -53,7 +55,12 @@ private:
     };
     class MultiValueGrouper : public SingleValueGrouper {
     public:
-        MultiValueGrouper(const Grouping * grouping, uint32_t level) : SingleValueGrouper(grouping, level) { }
+        MultiValueGrouper(CurrentIndex * currentIndex, const Grouping * grouping, uint32_t level) noexcept
+            : SingleValueGrouper(grouping, level),
+              _currentIndex(currentIndex)
+        { }
+        MultiValueGrouper(const MultiValueGrouper &) = default; //TODO Try to remove
+        MultiValueGrouper & operator=(const MultiValueGrouper &) = delete;
     private:
         template<typename Doc>
         void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
@@ -64,17 +71,19 @@ private:
             groupDoc(g, result, doc, rank);
         }
         MultiValueGrouper * clone() const override { return new MultiValueGrouper(*this); }
+        CurrentIndex *_currentIndex;
     };
     int64_t        _maxGroups;
     int64_t        _precision;
     bool           _isOrdered;
     bool           _frozen;
+    CurrentIndex   _currentIndex;
     ExpressionTree _classify;
     Group          _collect;
 
     vespalib::CloneablePtr<Grouper>    _grouper;
 public:
-    GroupingLevel();
+    GroupingLevel() noexcept;
     GroupingLevel(GroupingLevel &&) noexcept = default;
     GroupingLevel & operator =(GroupingLevel &&) noexcept = default;
     GroupingLevel(const GroupingLevel &);
@@ -101,10 +110,10 @@ public:
     GroupingLevel &addOrderBy(ExpressionNode::UP orderBy, bool ascending) { _collect.addOrderBy(std::move(orderBy), ascending); return *this; }
     bool needResort() const { return _collect.needResort(); }
 
-    int64_t getMaxGroups() const { return _maxGroups; }
-    int64_t getPrecision() const { return _precision; }
-    bool        isFrozen() const { return _frozen; }
-    bool    allowMoreGroups(size_t sz) const { return (!_frozen && (!_isOrdered || (sz < (uint64_t)_precision))); }
+    int64_t getMaxGroups() const noexcept { return _maxGroups; }
+    int64_t getPrecision() const noexcept { return _precision; }
+    bool        isFrozen() const noexcept { return _frozen; }
+    bool    allowMoreGroups(size_t sz) const noexcept { return (!_frozen && (!_isOrdered || (sz < (uint64_t)_precision))); }
     const ExpressionTree & getExpression() const { return _classify; }
     ExpressionTree & getExpression() { return _classify; }
     const       Group &getGroupPrototype() const { return _collect; }

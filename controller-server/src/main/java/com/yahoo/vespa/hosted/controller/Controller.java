@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.notification.Notifier;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
+import com.yahoo.vespa.hosted.controller.restapi.dataplanetoken.DataplaneTokenService;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccessControl;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
@@ -40,7 +41,6 @@ import com.yahoo.yolean.concurrent.Sleeper;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,7 +51,6 @@ import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -91,6 +90,7 @@ public class Controller extends AbstractComponent {
     private final SupportAccessControl supportAccessControl;
     private final Notifier notifier;
     private final MailVerifier mailVerifier;
+    private final DataplaneTokenService dataplaneTokenService;
 
     /**
      * Creates a controller 
@@ -132,6 +132,7 @@ public class Controller extends AbstractComponent {
         notificationsDb = new NotificationsDb(this);
         supportAccessControl = new SupportAccessControl(this);
         mailVerifier = new MailVerifier(serviceRegistry.zoneRegistry().dashboardUrl(), tenantController, serviceRegistry.mailer(), curator, clock);
+        dataplaneTokenService = new DataplaneTokenService(this);
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), serviceRegistry.controllerVersion());
@@ -356,5 +357,9 @@ public class Controller extends AbstractComponent {
 
     public MailVerifier mailVerifier() {
         return mailVerifier;
+    }
+
+    public DataplaneTokenService dataplaneTokenService() {
+        return dataplaneTokenService;
     }
 }

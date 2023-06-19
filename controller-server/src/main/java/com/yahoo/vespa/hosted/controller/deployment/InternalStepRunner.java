@@ -356,7 +356,7 @@ public class InternalStepRunner implements StepRunner {
             if (summary.upgradingOs() > 0)
                 logger.log(summary.upgradingOs() + " nodes upgrading OS");
             if (summary.needNewConfig() > 0)
-                logger.log(summary.needNewConfig() + " application services upgrading");
+                logger.log(summary.needNewConfig() + " application services still deploying");
         }
         if (summary.converged()) {
             controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(null));

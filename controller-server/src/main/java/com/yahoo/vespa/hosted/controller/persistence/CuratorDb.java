@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBuckets;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
@@ -101,6 +102,7 @@ public class CuratorDb {
     private static final Path notificationsRoot = root.append("notifications");
     private static final Path supportAccessRoot = root.append("supportAccess");
     private static final Path mailVerificationRoot = root.append("mailVerification");
+    private static final Path dataPlaneTokenRoot = root.append("dataplaneTokens");
 
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
@@ -727,6 +729,16 @@ public class CuratorDb {
         curator.delete(mailVerificationPath(pendingMailVerification.getVerificationCode()));
     }
 
+    // -------------- Date plane tokens ---------------------------------------
+
+    public void writeDataplaneTokens(TenantName tenantName, List<DataplaneTokenVersions> dataplaneTokenVersions) {
+        curator.set(dataplaneTokenPath(tenantName), asJson(DataplaneTokenSerializer.toSlime(dataplaneTokenVersions)));
+    }
+
+    public List<DataplaneTokenVersions> readDataplaneTokens(TenantName tenantName) {
+        return readSlime(dataplaneTokenPath(tenantName)).map(DataplaneTokenSerializer::fromSlime).orElse(List.of());
+    }
+
     // -------------- Paths ---------------------------------------------------
 
     private static Path upgradesPerMinutePath() {
@@ -829,6 +841,10 @@ public class CuratorDb {
 
     private static Path mailVerificationPath(String verificationCode) {
         return mailVerificationRoot.append(verificationCode);
+    }
+
+    private static Path dataplaneTokenPath(TenantName tenantName) {
+        return dataPlaneTokenRoot.append(tenantName.value());
     }
 
 }

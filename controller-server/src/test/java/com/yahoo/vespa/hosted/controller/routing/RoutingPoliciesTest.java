@@ -16,6 +16,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -34,6 +35,8 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
+import com.yahoo.vespa.hosted.controller.dns.RemoveRecords;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.jupiter.api.Test;
@@ -50,12 +53,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author mortent
@@ -116,6 +122,16 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context1.instanceId(), EndpointId.of("r0"), 0, zone1, zone2, zone3);
         tester.assertTargets(context1.instanceId(), EndpointId.of("r1"), 0, zone1);
         tester.assertTargets(context1.instanceId(), EndpointId.of("r2"), 1, zone1, zone2, zone3);
+
+        // Ensure test deployment only updates endpoints of which it is a member
+        context1.submit(applicationPackage2)
+               .runJob(DeploymentContext.systemTest);
+        NameServiceQueue queue = tester.controllerTester().controller().curator().readNameServiceQueue();
+        assertEquals(List.of(new RemoveRecords(Optional.of(TenantAndApplicationId.from(context1.instanceId())),
+                                               Record.Type.CNAME,
+                                               RecordName.from("app1.tenant1.us-east-1.test.vespa.oath.cloud"))),
+                     queue.requests());
+        context1.completeRollout();
 
         // Another application is deployed with a single cluster and global endpoint
         var endpoint4 = "r0.app2.tenant1.global.vespa.oath.cloud";
@@ -309,10 +325,7 @@ public class RoutingPoliciesTest {
 
         // Remove app2 completely
         tester.controllerTester().controller().applications().requireInstance(context2.instanceId()).deployments().keySet()
-              .forEach(zone -> {
-                  tester.controllerTester().configServer().removeLoadBalancers(context2.instanceId(), zone);
-                  tester.controllerTester().controller().applications().deactivate(context2.instanceId(), zone);
-              });
+              .forEach(zone -> tester.controllerTester().controller().applications().deactivate(context2.instanceId(), zone));
         context2.flushDnsUpdates();
         expectedRecords = Set.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
@@ -323,6 +336,28 @@ public class RoutingPoliciesTest {
         assertEquals(expectedRecords, tester.recordNames());
         assertTrue(tester.routingPolicies().read(context2.instanceId()).isEmpty(), "Removes stale routing policies " + context2.application());
         assertEquals(4, tester.routingPolicies().read(context1.instanceId()).size(), "Keeps routing policies for " + context1.application());
+    }
+
+    @Test
+    void zone_token_endpoints() {
+        var tester = new RoutingPoliciesTester();
+        tester.enableTokenEndpoint(true);
+
+        var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
+
+        // Deploy application
+        tester.provisionLoadBalancers(1, context1.instanceId(), false, zone1, zone2);
+        context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+
+        // Deployment creates records and policies for all clusters in all zones
+        Set<String> expectedRecords = Set.of(
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "token-c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "token-c0.app1.tenant1.us-central-1.vespa.oath.cloud"
+        );
+        assertEquals(expectedRecords, tester.recordNames());
+        assertEquals(2, tester.policiesOf(context1.instanceId()).size());
     }
 
     @Test
@@ -573,15 +608,15 @@ public class RoutingPoliciesTest {
 
         // Status details is stored in policy
         var policy1 = tester.routingPolicies().read(context.deploymentIdIn(zone1)).first().get();
-        assertEquals(RoutingStatus.Value.out, policy1.status().routingStatus().value());
-        assertEquals(RoutingStatus.Agent.tenant, policy1.status().routingStatus().agent());
-        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().routingStatus().changedAt());
+        assertEquals(RoutingStatus.Value.out, policy1.routingStatus().value());
+        assertEquals(RoutingStatus.Agent.tenant, policy1.routingStatus().agent());
+        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.routingStatus().changedAt());
 
         // Other zone remains in
         var policy2 = tester.routingPolicies().read(context.deploymentIdIn(zone2)).first().get();
-        assertEquals(RoutingStatus.Value.in, policy2.status().routingStatus().value());
-        assertEquals(RoutingStatus.Agent.system, policy2.status().routingStatus().agent());
-        assertEquals(Instant.EPOCH, policy2.status().routingStatus().changedAt());
+        assertEquals(RoutingStatus.Value.in, policy2.routingStatus().value());
+        assertEquals(RoutingStatus.Agent.system, policy2.routingStatus().agent());
+        assertEquals(Instant.EPOCH, policy2.routingStatus().changedAt());
 
         // Next deployment does not affect status
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
@@ -598,9 +633,9 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context.instanceId(), EndpointId.of("r1"), 0, zone1, zone2);
 
         policy1 = tester.routingPolicies().read(context.deploymentIdIn(zone1)).first().get();
-        assertEquals(RoutingStatus.Value.in, policy1.status().routingStatus().value());
-        assertEquals(RoutingStatus.Agent.tenant, policy1.status().routingStatus().agent());
-        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().routingStatus().changedAt());
+        assertEquals(RoutingStatus.Value.in, policy1.routingStatus().value());
+        assertEquals(RoutingStatus.Agent.tenant, policy1.routingStatus().agent());
+        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.routingStatus().changedAt());
 
         // Deployment is set out through a new deployment.xml
         var applicationPackage2 = applicationPackageBuilder()
@@ -652,8 +687,7 @@ public class RoutingPoliciesTest {
         for (var context : contexts) {
             var policies = tester.routingPolicies().read(context.instanceId());
             assertTrue(policies.asList().stream()
-                            .map(RoutingPolicy::status)
-                            .map(RoutingPolicy.Status::routingStatus)
+                            .map(RoutingPolicy::routingStatus)
                             .map(RoutingStatus::value)
                             .allMatch(status -> status == RoutingStatus.Value.in),
                     "Global routing status for policy remains " + RoutingStatus.Value.in);
@@ -734,37 +768,47 @@ public class RoutingPoliciesTest {
         context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone2);
 
-        // Setting other deployment out implicitly sets all deployments in. Weight is set to zero, but that has no
-        // impact on routing decisions when the weight sum is zero
-        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone2), RoutingStatus.Value.out,
-                RoutingStatus.Agent.tenant);
+        // Setting remaining deployment out is rejected
+        try {
+            tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone2), RoutingStatus.Value.out,
+                                                      RoutingStatus.Agent.tenant);
+        } catch (IllegalArgumentException e) {
+            assertEquals("Cannot deactivate routing for tenant1.app1 in prod.us-central-1 as it's the last remaining active deployment in endpoint https://r0.app1.tenant1.global.vespa.oath.cloud/ [scope=global, legacy=false, routingMethod=exclusive]", e.getMessage());
+        }
         context.flushDnsUpdates();
-        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, ImmutableMap.of(zone1, 0L, zone2, 0L));
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone2);
 
-        // One inactive deployment is put back in. Global DNS record now points to the only active deployment
+        // Inactive deployment is put back in. Global DNS record now points to all deployments
         tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone1), RoutingStatus.Value.in,
                 RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
+
+        // One deployment is deactivated again
+        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone2), RoutingStatus.Value.out,
+                                                  RoutingStatus.Agent.tenant);
+        context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1);
 
-        // Setting zone (containing active deployment) out puts all deployments in
+        // Operator deactivates routing for entire zone where deployment only has that zone activated. This does not
+        // change status for the deployment as it's the only one left
         tester.routingPolicies().setRoutingStatus(zone1, RoutingStatus.Value.out);
         context.flushDnsUpdates();
         assertEquals(RoutingStatus.Value.out, tester.routingPolicies().read(zone1).routingStatus().value());
-        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, ImmutableMap.of(zone1, 0L, zone2, 0L));
-
-        // Setting zone back in removes the currently inactive deployment
-        tester.routingPolicies().setRoutingStatus(zone1, RoutingStatus.Value.in);
-        context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1);
 
-        // Inactive deployment is set in
+        // Inactive deployment is set in which allows the zone-wide status to take effect
         tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone2), RoutingStatus.Value.in,
                 RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
         for (var policy : tester.routingPolicies().read(context.instanceId())) {
-            assertSame(RoutingStatus.Value.in, policy.status().routingStatus().value());
+            assertSame(RoutingStatus.Value.in, policy.routingStatus().value());
         }
+        tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone2);
+
+        // Zone-wide status is changed to in
+        tester.routingPolicies().setRoutingStatus(zone1, RoutingStatus.Value.in);
+        context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
     }
 
@@ -794,8 +838,15 @@ public class RoutingPoliciesTest {
             tester.provisionLoadBalancers(2, mainInstance, zone);
         }
 
+        // Application endpoints are not created until production jobs run
+        betaContext.submit(applicationPackage)
+                   .runJob(DeploymentContext.systemTest);
+        assertEquals(Set.of("beta.app1.tenant1.us-east-1.test.vespa.oath.cloud"), tester.recordNames());
+        betaContext.runJob(DeploymentContext.stagingTest);
+        assertEquals(Set.of("beta.app1.tenant1.us-east-3.staging.vespa.oath.cloud"), tester.recordNames());
+
         // Deploy both instances
-        betaContext.submit(applicationPackage).deploy();
+        betaContext.completeRollout();
 
         // Application endpoint points to both instances with correct weights
         DeploymentId betaZone5 = betaContext.deploymentIdIn(zone5);
@@ -849,6 +900,15 @@ public class RoutingPoliciesTest {
                          .readDeclaredEndpointsOf(application)
                          .named(EndpointId.of("a1"), Endpoint.Scope.application).isEmpty(),
                 "Endpoint removed");
+
+        // Ensure test deployment only updates endpoint of which it is a member
+        betaContext.submit(applicationPackage)
+                   .runJob(DeploymentContext.systemTest);
+        NameServiceQueue queue = tester.controllerTester().controller().curator().readNameServiceQueue();
+        assertEquals(List.of(new RemoveRecords(Optional.of(TenantAndApplicationId.from(betaContext.instanceId())),
+                                               Record.Type.CNAME,
+                                               RecordName.from("beta.app1.tenant1.us-east-1.test.vespa.oath.cloud"))),
+                             queue.requests());
     }
 
     @Test
@@ -894,15 +954,17 @@ public class RoutingPoliciesTest {
         // Changing routing status for remaining deployments adds back all deployments, because removing all deployments
         // puts all IN
         tester.routingPolicies().setRoutingStatus(betaZone1, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
-        tester.routingPolicies().setRoutingStatus(mainZone2, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
-        betaContext.flushDnsUpdates();
-        tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
-                             Map.of(betaZone1, 2,
-                                    mainZone1, 8,
-                                    mainZone2, 9));
+        try {
+            tester.routingPolicies().setRoutingStatus(mainZone2, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Cannot deactivate routing for tenant1.app1.main in prod.south as it's the last remaining active deployment in endpoint https://a0.app1.tenant1.a.vespa.oath.cloud/ [scope=application, legacy=false, routingMethod=exclusive]",
+                         e.getMessage());
+        }
 
-        // Activating main deployment allows us to deactivate the beta deployment
+        // Re-activating one zone allows us to take out another
         tester.routingPolicies().setRoutingStatus(mainZone1, RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(mainZone2, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
         betaContext.flushDnsUpdates();
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
                              Map.of(mainZone1, 8));
@@ -1070,6 +1132,10 @@ public class RoutingPoliciesTest {
                          .map(Record::data)
                          .map(RecordData::asString)
                          .toList();
+        }
+
+        void enableTokenEndpoint(boolean enabled) {
+            tester.controllerTester().flagSource().withBooleanFlag(Flags.ENABLE_DATAPLANE_PROXY.id(), enabled);
         }
 
         /** Assert that an application endpoint points to given targets and weights */

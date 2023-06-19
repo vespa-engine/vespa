@@ -261,14 +261,14 @@ public class QueryTestCase {
     @Test
     void testNoneHitsNegativeOffsetValue() {
         assertQueryError(
-                "?query=test&hits=(none)&offset=-10",
+                "?query=test&hits=(none)",
                 "Could not set 'hits' to '(none)': '(none)' is not a valid integer");
     }
 
     @Test
     void testFeedbackIsTransferredToResult() {
         assertQueryError(
-                "?query=test&hits=(none)&offset=-10",
+                "?query=test&hits=(none)",
                 "Could not set 'hits' to '(none)': '(none)' is not a valid integer");
     }
 

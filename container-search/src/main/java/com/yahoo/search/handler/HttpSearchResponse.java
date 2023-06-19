@@ -91,8 +91,7 @@ public class HttpSearchResponse extends ExtendedResponse {
 
     @Override
     public void render(OutputStream output, ContentChannel networkChannel, CompletionHandler handler) throws IOException {
-        if (rendererCopy instanceof AsynchronousSectionedRenderer) {
-            AsynchronousSectionedRenderer<Result> renderer = (AsynchronousSectionedRenderer<Result>) rendererCopy;
+        if (rendererCopy instanceof AsynchronousSectionedRenderer<Result> renderer) {
             renderer.setNetworkWiring(networkChannel, handler);
         }
         try {

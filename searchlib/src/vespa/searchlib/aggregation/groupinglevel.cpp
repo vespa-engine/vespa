@@ -12,14 +12,15 @@ using vespalib::Deserializer;
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, GroupingLevel, vespalib::Identifiable);
 
-GroupingLevel::GroupingLevel() :
-    _maxGroups(-1),
-    _precision(-1),
-    _isOrdered(false),
-    _frozen(false),
-    _classify(),
-    _collect(),
-    _grouper(nullptr)
+GroupingLevel::GroupingLevel() noexcept
+    : _maxGroups(-1),
+      _precision(-1),
+      _isOrdered(false),
+      _frozen(false),
+      _currentIndex(),
+      _classify(),
+      _collect(),
+      _grouper(nullptr)
 { }
 
 GroupingLevel::~GroupingLevel() = default;
@@ -48,28 +49,31 @@ GroupingLevel::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "collect",   _collect);
 }
 
-void GroupingLevel::selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation)
+void
+GroupingLevel::selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation)
 {
     _classify.select(predicate, operation);
     _collect.select(predicate, operation);
 }
 
-GroupingLevel::Grouper::Grouper(const Grouping * grouping, uint32_t level) :
-    _grouping(grouping),
-    _level(level),
-    _frozen(_level < _grouping->getFirstLevel()),
-    _hasNext(_level < _grouping->getLevels().size()),
-    _doNext(_level < _grouping->getLastLevel())
+GroupingLevel::Grouper::Grouper(const Grouping * grouping, uint32_t level) noexcept
+    : _grouping(grouping),
+      _level(level),
+      _frozen(_level < _grouping->getFirstLevel()),
+      _hasNext(_level < _grouping->getLevels().size()),
+      _doNext(_level < _grouping->getLastLevel())
 {
 }
 
-bool GroupingLevel::Grouper::hasNext(size_t level) const
+bool
+GroupingLevel::Grouper::hasNext(size_t level) const noexcept
 {
     return level < _grouping->getLevels().size();
 }
 
 template<typename Doc>
-void GroupingLevel::SingleValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
+void
+GroupingLevel::SingleValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
 {
     Group * next = g.groupSingle(result, rank, _grouping->getLevels()[_level]);
     if ((next != nullptr) && doNext()) { // do next level ?
@@ -78,21 +82,24 @@ void GroupingLevel::SingleValueGrouper::groupDoc(Group & g, const ResultNode & r
 }
 
 template<typename Doc>
-void GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
+void
+GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
 {
     const ResultNodeVector & rv(static_cast<const ResultNodeVector &>(result));
     for (size_t i(0), m(rv.size()); i < m; i++) {
         const ResultNode & sr(rv.get(i));
+        _currentIndex->set(i);
         SingleValueGrouper::groupDoc(g, sr, doc, rank);
     }
 }
 
-void GroupingLevel::prepare(const Grouping * grouping, uint32_t level, bool isOrdered_)
+void
+GroupingLevel::prepare(const Grouping * grouping, uint32_t level, bool isOrdered_)
 {
     _isOrdered = isOrdered_;
     _frozen = level < grouping->getFirstLevel();
     if (_classify.getResult()->inherits(ResultNodeVector::classId)) {
-       _grouper.reset(new MultiValueGrouper(grouping, level));
+       _grouper.reset(new MultiValueGrouper(&_currentIndex, grouping, level));
     } else {
        _grouper.reset(new SingleValueGrouper(grouping, level));
     }

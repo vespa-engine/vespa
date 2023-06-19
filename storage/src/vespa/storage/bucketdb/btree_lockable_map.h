@@ -39,11 +39,6 @@ public:
     BTreeLockableMap();
     ~BTreeLockableMap() override;
 
-    bool operator==(const BTreeLockableMap& other) const;
-    bool operator!=(const BTreeLockableMap& other) const {
-        return ! (*this == other);
-    }
-    bool operator<(const BTreeLockableMap& other) const;
     size_t size() const noexcept override;
     size_t getMemoryUsage() const noexcept override;
     vespalib::MemoryUsage detailed_memory_usage() const noexcept override;
@@ -69,7 +64,7 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     EntryMap getContained(const BucketId& bucketId, const char* clientId) override;
     EntryMap getAll(const BucketId& bucketId, const char* clientId) override;
-    bool isConsistent(const WrappedEntry& entry) override;
+    bool isConsistent(const WrappedEntry& entry) const override;
     void showLockClients(vespalib::asciistream & out) const override;
 
 private:

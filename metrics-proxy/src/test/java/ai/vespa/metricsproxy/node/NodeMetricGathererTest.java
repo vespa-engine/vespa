@@ -30,8 +30,6 @@ public class NodeMetricGathererTest {
         MetricsPacket packet = builders.remove(0).build();
 
         assertEquals("host_life", packet.service.id);
-        assertEquals(0, packet.statusCode);
-        assertEquals("OK", packet.statusMessage);
         assertEquals(123, packet.timestamp);
         assertEquals(12l, packet.metrics().get(MetricId.toMetricId("uptime")));
         assertEquals(1l, packet.metrics().get(MetricId.toMetricId("alive")));
@@ -41,8 +39,6 @@ public class NodeMetricGathererTest {
     private JsonNode generateHostLifePacket() {
 
         ObjectNode jsonObject = jsonMapper.createObjectNode();
-        jsonObject.put("status_code", 0);
-        jsonObject.put("status_msg", "OK");
         jsonObject.put("timestamp", 123);
         jsonObject.put("application", "host_life");
         ObjectNode metrics = jsonMapper.createObjectNode();

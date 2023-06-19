@@ -12,8 +12,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * Superclass of expiry tasks which moves nodes from some state to the dirty state.
- * These jobs runs at least every 25 minutes.
+ * Base class for maintenance of nodes that linger in a particular state too long.
  *
  * @author bratseth
  */
@@ -61,6 +60,6 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
     }
 
     /** Implement this callback to take action to expire these nodes */
-    protected abstract void expire(List<Node> node);
+    protected abstract void expire(List<Node> expired);
 
 }

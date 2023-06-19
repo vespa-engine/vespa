@@ -74,7 +74,7 @@ public class YqlFieldAndSourceTestCase {
                                                                      .addField(FIELD2, "string").build())
               .add((new DocumentSummary.Builder(SORTABLE_ATTRIBUTES_SUMMARY_CLASS).addField(FIELD2, "string").build()))
               .add((new DocumentSummary.Builder(THIRD_OPTION).addField(FIELD3, "string").build()));
-        return new SchemaInfo(List.of(schema.build()), Map.of());
+        return new SchemaInfo(List.of(schema.build()), List.of());
     }
 
     @AfterEach

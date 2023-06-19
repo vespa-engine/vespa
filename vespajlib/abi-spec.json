@@ -3375,6 +3375,7 @@
       "public static java.util.Optional attribute(java.lang.String, org.w3c.dom.Element)",
       "public static java.lang.String getValue(org.w3c.dom.Element)",
       "public static org.w3c.dom.Element getChild(org.w3c.dom.Element, java.lang.String)",
+      "public static java.util.Optional getChildValue(org.w3c.dom.Element, java.lang.String)",
       "public static java.lang.String getNodePath(org.w3c.dom.Node, java.lang.String)",
       "public static boolean isName(java.lang.CharSequence)"
     ],
@@ -4006,6 +4007,33 @@
     ],
     "methods" : [
       "public abstract java.util.List complete(ai.vespa.llm.completion.Prompt)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.client.openai.OpenAiClient$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public ai.vespa.llm.client.openai.OpenAiClient$Builder model(java.lang.String)",
+      "public ai.vespa.llm.client.openai.OpenAiClient$Builder temperature(double)",
+      "public ai.vespa.llm.client.openai.OpenAiClient build()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.client.openai.OpenAiClient" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "ai.vespa.llm.LanguageModel"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt)"
     ],
     "fields" : [ ]
   },

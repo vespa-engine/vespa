@@ -46,7 +46,10 @@ public class EffectiveServicesMojo extends AbstractVespaDeploymentMojo {
         ZoneId zone = zoneOf(environment, region);
         Path output = Paths.get(outputDirectory).resolve("services-" + zone.environment().value() + "-" + zone.region().value() + ".xml");
         Files.write(output, effectiveServices(services, zone, InstanceName.from(instance), Tags.fromString(tags)).getBytes(StandardCharsets.UTF_8));
-        getLog().info("Effective services for " + zone + " written to " + output);
+        getLog().info("Effective services for " + zone +
+                      ", instance " + instance +
+                      ( tags.isEmpty() ? "" : ", tags " + tags ) +
+                      " written to " + output);
     }
 
     static String effectiveServices(File servicesFile, ZoneId zone, InstanceName instance, Tags tags) throws Exception {

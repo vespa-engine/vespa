@@ -74,7 +74,7 @@ func (t *customTarget) Service(name string, timeout time.Duration, sessionOrRunI
 }
 
 func (t *customTarget) PrintLog(options LogOptions) error {
-	return fmt.Errorf("log access is only supported on cloud: run vespa-logfmt on the admin node instead")
+	return fmt.Errorf("log access is only supported on cloud: run vespa-logfmt on the admin node instead, or export from a container image (here named 'vespa') using docker exec vespa vespa-logfmt")
 }
 
 func (t *customTarget) CheckVersion(version version.Version) error { return nil }

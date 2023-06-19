@@ -1713,21 +1713,6 @@ TEST_F(FileStorManagerTest, set_bucket_active_state) {
         StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bid, "foo"));
         EXPECT_TRUE(entry->info.isActive());
     }
-    // Trigger bucket info to be read back into the database
-    {
-        auto cmd = std::make_shared<ReadBucketInfo>(makeDocumentBucket(bid));
-        top.sendDown(cmd);
-        top.waitForMessages(1, _waitTime);
-        ASSERT_EQ(1, top.getNumReplies());
-        auto reply = std::dynamic_pointer_cast<ReadBucketInfoReply>(top.getReply(0));
-        top.reset();
-        ASSERT_TRUE(reply.get());
-    }
-    // Should not have lost active flag
-    {
-        StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bid, "foo"));
-        EXPECT_TRUE(entry->info.isActive());
-    }
 
     {
         auto cmd = std::make_shared<api::SetBucketStateCommand>(
@@ -1803,7 +1788,7 @@ TEST_F(FileStorManagerTest, GetBucketDiff_implicitly_creates_bucket) {
     EXPECT_EQ(api::ReturnCode(api::ReturnCode::OK), reply->getResult());
     {
         StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bid, "foo"));
-        ASSERT_TRUE(entry.exist());
+        ASSERT_TRUE(entry.exists());
         EXPECT_TRUE(entry->info.isReady());
     }
 }
@@ -1826,7 +1811,7 @@ TEST_F(FileStorManagerTest, merge_bucket_implicitly_creates_bucket) {
     ASSERT_SINGLE_REPLY(api::GetBucketDiffCommand, diffCmd, top, _waitTime);
     {
         StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bid, "foo"));
-        ASSERT_TRUE(entry.exist());
+        ASSERT_TRUE(entry.exists());
         EXPECT_TRUE(entry->info.isReady());
     }
 }
@@ -1848,7 +1833,7 @@ TEST_F(FileStorManagerTest, newly_created_bucket_is_ready) {
     EXPECT_EQ(api::ReturnCode(api::ReturnCode::OK), reply->getResult());
     {
         StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bid, "foo"));
-        ASSERT_TRUE(entry.exist());
+        ASSERT_TRUE(entry.exists());
         EXPECT_TRUE(entry->info.isReady());
         EXPECT_FALSE(entry->info.isActive());
     }
@@ -1870,7 +1855,7 @@ TEST_F(FileStorManagerTest, create_bucket_sets_active_flag_in_database_and_reply
     EXPECT_EQ(api::ReturnCode(api::ReturnCode::OK), reply->getResult());
     {
         StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bid, "foo"));
-        ASSERT_TRUE(entry.exist());
+        ASSERT_TRUE(entry.exists());
         EXPECT_TRUE(entry->info.isReady());
         EXPECT_TRUE(entry->info.isActive());
     }

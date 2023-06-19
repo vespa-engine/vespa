@@ -136,4 +136,64 @@ TEST("testThatMultipleRemoveOnOverflowIsFine") {
     EXPECT_EQUAL(2924u, cache.sizeBytes());
 }
 
+class ExtendedCache : public cache< CacheParam<P, B> > {
+public:
+    ExtendedCache(BackingStore & b, size_t maxBytes)
+        : cache<CacheParam<P, B>>(b, maxBytes),
+          _insert_count(0),
+          _remove_count(0)
+    {}
+    size_t _insert_count;
+    size_t _remove_count;
+private:
+    void onRemove(const K &) override {
+        _remove_count++;
+    }
+
+    void onInsert(const K &) override {
+        _insert_count++;
+    }
+};
+
+TEST("testOnInsertonRemoveCalledWhenFull") {
+    B m;
+    ExtendedCache cache(m, 200);
+    EXPECT_EQUAL(0u, cache._insert_count);
+    EXPECT_EQUAL(0u, cache._remove_count);
+    cache.write(1, "15 bytes string");
+    EXPECT_EQUAL(1u, cache.size());
+    EXPECT_EQUAL(80u, cache.sizeBytes());
+    EXPECT_EQUAL(1u, cache._insert_count);
+    EXPECT_EQUAL(0u, cache._remove_count);
+    cache.write(2, "16 bytes stringg");
+    EXPECT_EQUAL(2u, cache.size());
+    EXPECT_EQUAL(160u, cache.sizeBytes());
+    EXPECT_EQUAL(2u, cache._insert_count);
+    EXPECT_EQUAL(0u, cache._remove_count);
+    cache.write(3, "17 bytes stringgg");
+    EXPECT_EQUAL(3u, cache.size());
+    EXPECT_EQUAL(240u, cache.sizeBytes());
+    EXPECT_EQUAL(3u, cache._insert_count);
+    EXPECT_EQUAL(0u, cache._remove_count);
+    EXPECT_TRUE(cache.hasKey(1));
+    cache.write(4, "18 bytes stringggg");
+    EXPECT_EQUAL(3u, cache.size());
+    EXPECT_EQUAL(240u, cache.sizeBytes());
+    EXPECT_EQUAL(4u, cache._insert_count);
+    EXPECT_EQUAL(1u, cache._remove_count);
+    EXPECT_FALSE(cache.hasKey(1));
+    cache.invalidate(2);
+    EXPECT_EQUAL(2u, cache.size());
+    EXPECT_EQUAL(160u, cache.sizeBytes());
+    EXPECT_EQUAL(4u, cache._insert_count);
+    EXPECT_EQUAL(2u, cache._remove_count);
+    EXPECT_FALSE(cache.hasKey(2));
+    cache.invalidate(3);
+    EXPECT_EQUAL(1u, cache.size());
+    EXPECT_EQUAL(80u, cache.sizeBytes());
+    EXPECT_EQUAL(4u, cache._insert_count);
+    EXPECT_EQUAL(3u, cache._remove_count);
+    EXPECT_FALSE(cache.hasKey(3));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

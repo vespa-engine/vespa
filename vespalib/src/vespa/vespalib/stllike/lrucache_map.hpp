@@ -204,9 +204,7 @@ lrucache_map<P>::removeOld() {
              (_tail != _head) && removeOldest(*last);
              last = & HashTable::getByInternalIndex(_tail))
         {
-            _tail = last->second._prev;
-            HashTable::getByInternalIndex(_tail).second._next = LinkedValueBase::npos;
-            HashTable::erase(*this, HashTable::hash(last->first), HashTable::find(last->first));
+            erase(last->first);
         }
     }
 }

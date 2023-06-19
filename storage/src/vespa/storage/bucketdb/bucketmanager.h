@@ -11,7 +11,6 @@
 #include "storbucketdb.h"
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/storage/bucketdb/config-stor-bucketdb.h>
-#include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/storagelinkqueued.h>
 #include <vespa/storageapi/message/bucket.h>

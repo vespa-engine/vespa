@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HexFormat;
 
 import static com.yahoo.security.ArrayUtils.hex;
+import static com.yahoo.security.ArrayUtils.toUtf8Bytes;
 
 /**
  * <p>A token fingerprint represents an opaque sequence of bytes that is expected
@@ -21,6 +22,7 @@ public record TokenFingerprint(byte[] hashBytes) {
 
     public static final int FINGERPRINT_BITS  = 128;
     public static final int FINGERPRINT_BYTES = FINGERPRINT_BITS / 8;
+    public static final byte[] FINGERPRINT_CONTEXT = toUtf8Bytes("Vespa token fingerprint");
 
     @Override
     public boolean equals(Object o) {
@@ -50,11 +52,16 @@ public record TokenFingerprint(byte[] hashBytes) {
     }
 
     public static TokenFingerprint of(Token token) {
-        return new TokenFingerprint(token.toDerivedBytes(FINGERPRINT_BYTES, token.domain().fingerprintContext()));
+        return new TokenFingerprint(token.toDerivedBytes(FINGERPRINT_BYTES, FINGERPRINT_CONTEXT));
     }
 
     public static TokenFingerprint ofRawBytes(byte[] hashBytes) {
         return new TokenFingerprint(Arrays.copyOf(hashBytes, hashBytes.length));
+    }
+
+    public static TokenFingerprint ofHex(String hex) {
+        var format = hex.contains(":") ? HexFormat.ofDelimiter(":") : HexFormat.of();
+        return ofRawBytes(format.parseHex(hex));
     }
 
 }

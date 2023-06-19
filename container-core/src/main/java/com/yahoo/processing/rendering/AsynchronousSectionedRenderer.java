@@ -16,7 +16,6 @@ import com.yahoo.processing.response.Streamed;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayDeque;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -143,7 +142,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
     }
 
     /**
-     * Create an renderer using the specified executor instead of the default one which should be used for production.
+     * Create a renderer using the specified executor instead of the default one which should be used for production.
      * Using a custom executor is useful for tests to avoid creating new threads for each renderer registry.
      * 
      * @param executor the executor to use or null to use the default executor suitable for production
@@ -226,7 +225,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
         this.response = response;
         this.stream = stream;
         this.execution = execution;
-        DataListListener parentOfTopLevelListener = new DataListListener(new ParentOfTopLevel(request,response.data()), null);
+        DataListListener parentOfTopLevelListener = new DataListListener(new ParentOfTopLevel(request, response.data()), null);
         dataListListenerStack.addFirst(parentOfTopLevelListener);
         success = new CompletableFuture<>();
         try {
@@ -264,13 +263,13 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
 
     /**
      * How deep into the tree of nested data lists the callback currently is.
-     * beginList() is invoked after this this is increased, and endList() is
+     * beginList() is invoked after this is increased, and endList() is
      * invoked before it is decreased.
      *
      * @return an integer of 1 or above
      */
     public int getRecursionLevel() {
-        return dataListListenerStack.size()-1;
+        return dataListListenerStack.size() - 1;
     }
 
     /**
@@ -406,7 +405,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
 
         /** Renders a list. */
         private void renderDataList(DataList list) throws IOException {
-            final boolean ordered = isOrdered(list);
+            boolean ordered = isOrdered(list);
             if (list.asList() == null) {
                 logger.log(Level.WARNING, "DataList.asList() returned null, indicating it is closed. " +
                                           "This is likely caused by adding the same list multiple " +
@@ -565,9 +564,9 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
      */
     private static class ParentOfTopLevel extends AbstractDataList {
 
-        private DataList trueTopLevel;
+        private final DataList trueTopLevel;
 
-        public ParentOfTopLevel(Request request,DataList trueTopLevel) {
+        public ParentOfTopLevel(Request request, DataList trueTopLevel) {
             super(request);
             this.trueTopLevel = trueTopLevel;
             freeze();
@@ -585,13 +584,13 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
 
         @Override
         public Data get(int index) {
-            if (index>0) throw new IndexOutOfBoundsException();
+            if (index > 0) throw new IndexOutOfBoundsException();
             return trueTopLevel;
         }
 
         @Override
         public List<Data> asList() {
-            return Collections.<Data>singletonList(trueTopLevel);
+            return List.of(trueTopLevel);
         }
 
         @Override

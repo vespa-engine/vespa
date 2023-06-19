@@ -11,6 +11,7 @@ public enum Agent {
     operator, // A hosted Vespa operator. Some logic recognizes these events.
     application, // An application package change deployment
     system, // An unspecified system agent
+    nodeAdmin, // A hosted Vespa node
 
     // Specific system agents:
     NodeFailer,

@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -16,10 +17,13 @@ import com.yahoo.restapi.UriBuilder;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.DelayCause;
@@ -178,7 +182,7 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                       if (stepStatus != null) { // Instance may not have any steps, i.e. an empty deployment spec has been submitted
                           Readiness platformReadiness = stepStatus.blockedUntil(Change.of(statistics.version()));
                           if (platformReadiness.cause() == DelayCause.changeBlocked)
-                                     instanceObject.setLong("blockedUntil", platformReadiness.at().toEpochMilli());
+                              instanceObject.setLong("blockedUntil", platformReadiness.at().toEpochMilli());
                       }
                       instanceObject.setString("upgradePolicy", toString(status.application().deploymentSpec().instance(instance.instance())
                                                                                .map(DeploymentInstanceSpec::upgradePolicy)
@@ -213,10 +217,13 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                       runs.forEach((type, rs) -> {
                           Cursor runObject = allRunsObject.setObject(type.jobName());
                           Cursor upgradeObject = upgradeRunsObject.setObject(type.jobName());
+                          CloudAccount cloudAccount = controller.applications().decideCloudAccountOf(new DeploymentId(instance, type.zone()),
+                                                                                                     status.application().deploymentSpec())
+                                                                .orElse(null);
                           for (RunInfo run : rs) {
-                              toSlime(runObject, run.run);
+                              toSlime(runObject, run.run, cloudAccount);
                               if (run.upgrade)
-                                  toSlime(upgradeObject, run.run);
+                                  toSlime(upgradeObject, run.run, cloudAccount);
                           }
                       });
                   });
@@ -227,13 +234,14 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private void toSlime(Cursor jobObject, Run run) {
+    private void toSlime(Cursor jobObject, Run run, CloudAccount cloudAccount) {
         String key = run.hasFailed() ? "failing" : run.hasEnded() ? "success" : "running";
         Cursor runObject = jobObject.setObject(key);
         runObject.setLong("number", run.id().number());
         runObject.setLong("start", run.start().toEpochMilli());
         run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
         runObject.setString("status", nameOf(run.status()));
+        if (cloudAccount != null) runObject.setObject("enclave").setString("cloudAccount", cloudAccount.value());
     }
 
     private void toSlime(Cursor object, ApplicationId id, HttpRequest request) {

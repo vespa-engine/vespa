@@ -4,12 +4,10 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.flags.DoubleFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
@@ -44,6 +42,10 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextSupplier.ContextSupplierInterruptedException;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.STARTING;
@@ -415,20 +417,14 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private ContainerResources getContainerResources(NodeAgentContext context) {
-        double cpuCap = noCpuCap(context.zone()) ?
-                0 :
-                context.vcpuOnThisHost() * containerCpuCap
-                        .with(FetchVector.Dimension.APPLICATION_ID, context.node().owner().map(ApplicationId::serializedForm))
-                        .with(FetchVector.Dimension.CLUSTER_ID, context.node().membership().map(NodeMembership::clusterId))
-                        .with(FetchVector.Dimension.CLUSTER_TYPE, context.node().membership().map(membership -> membership.type().value()))
-                        .with(FetchVector.Dimension.HOSTNAME, context.node().hostname())
-                        .value();
+        double cpuCap = context.vcpuOnThisHost() * containerCpuCap
+                               .with(APPLICATION_ID, context.node().owner().map(ApplicationId::serializedForm))
+                               .with(CLUSTER_ID, context.node().membership().map(NodeMembership::clusterId))
+                               .with(CLUSTER_TYPE, context.node().membership().map(membership -> membership.type().value()))
+                               .with(HOSTNAME, context.node().hostname())
+                               .value();
 
         return ContainerResources.from(cpuCap, context.vcpuOnThisHost(), context.node().memoryGb());
-    }
-
-    private boolean noCpuCap(ZoneApi zone) {
-        return zone.getEnvironment() == Environment.dev;
     }
 
     private boolean downloadImageIfNeeded(NodeAgentContext context, Optional<Container> container) {

@@ -81,6 +81,7 @@
             <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
             <Bundle-Version>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</Bundle-Version>
             <Export-Package>com.yahoo.security.*;version=1.0.0;-noimport:=true</Export-Package>
+            <X-JDisc-Non-PublicApi-Export-Package>com.yahoo.security,com.yahoo.security.tls</X-JDisc-Non-PublicApi-Export-Package>
             <_nouses>true</_nouses> <!-- Don't include 'uses' directives for package exports -->
             <_fixupmessages>"Classes found in the wrong directory"</_fixupmessages> <!-- Hide warnings for bouncycastle multi-release jars -->
           </instructions>

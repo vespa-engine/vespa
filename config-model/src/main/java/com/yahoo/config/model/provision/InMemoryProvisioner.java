@@ -233,13 +233,8 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     // Minimal capacity policies
     private NodeResources decideResources(NodeResources resources) {
-        if (resources.vcpuIsUnspecified())
-            resources = resources.withVcpu(defaultNodeResources.vcpu());
-        if (resources.memoryGbIsUnspecified())
-            resources = resources.withMemoryGb(defaultNodeResources.memoryGb());
-        if (resources.diskGbIsUnspecified())
-            resources = resources.withDiskGb(defaultNodeResources.diskGb());
-        return resources;
+        if (defaultNodeResources.isUnspecified()) return resources;
+        return resources.withUnspecifiedNumbersFrom(defaultNodeResources);
     }
 
     private List<HostSpec> allocateHostGroup(ClusterSpec clusterGroup, NodeResources requestedResourcesOrUnspecified,

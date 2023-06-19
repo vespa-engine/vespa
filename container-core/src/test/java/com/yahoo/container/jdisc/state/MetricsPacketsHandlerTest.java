@@ -15,8 +15,6 @@ import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.APPLICATION_
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.DIMENSIONS_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.METRICS_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.PACKET_SEPARATOR;
-import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.STATUS_CODE_KEY;
-import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.STATUS_MSG_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.TIMESTAMP_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,30 +33,17 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
     public void setupHandler() {
         metricsPacketsHandlerConfig = new MetricsPacketsHandlerConfig(new MetricsPacketsHandlerConfig.Builder()
                                                                               .application(APPLICATION_NAME).hostname(HOST_DIMENSION));
-        metricsPacketsHandler = new MetricsPacketsHandler(monitor, timer, snapshotProviderRegistry, metricsPacketsHandlerConfig);
+        metricsPacketsHandler = new MetricsPacketsHandler(timer, snapshotProviderRegistry, metricsPacketsHandlerConfig);
         testDriver = new RequestHandlerTestDriver(metricsPacketsHandler);
-    }
-
-    @Test
-    void status_packet_is_returned_prior_to_first_snapshot() throws Exception {
-        String response = requestAsString("http://localhost/metrics-packets");
-
-        List<JsonNode> packets = toJsonPackets(response);
-        assertEquals(1, packets.size());
-
-        JsonNode statusPacket = packets.get(0);
-        assertEquals(APPLICATION_NAME, statusPacket.get(APPLICATION_KEY).asText(), statusPacket.toString());
-        assertEquals(0, statusPacket.get(STATUS_CODE_KEY).asInt(), statusPacket.toString());
-        assertEquals("up", statusPacket.get(STATUS_MSG_KEY).asText(), statusPacket.toString());
     }
 
     @Test
     void metrics_are_included_after_snapshot() throws Exception {
         createSnapshotWithCountMetric("counter", 1, null);
         List<JsonNode> packets = incrementTimeAndGetJsonPackets();
-        assertEquals(2, packets.size());
+        assertEquals(1, packets.size());
 
-        JsonNode counterPacket = packets.get(1);
+        JsonNode counterPacket = packets.get(0);
         assertCountMetric(counterPacket, "counter.count", 1);
     }
 
@@ -66,7 +51,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
     void metadata_is_included_in_each_metrics_packet() throws Exception {
         createSnapshotWithCountMetric("counter", 1, null);
         List<JsonNode> packets = incrementTimeAndGetJsonPackets();
-        JsonNode counterPacket = packets.get(1);
+        JsonNode counterPacket = packets.get(0);
 
         assertTrue(counterPacket.has(TIMESTAMP_KEY));
         assertTrue(counterPacket.has(APPLICATION_KEY));
@@ -77,7 +62,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
     void timestamp_resolution_is_in_seconds() throws Exception {
         createSnapshotWithCountMetric("counter", 1, null);
         List<JsonNode> packets = incrementTimeAndGetJsonPackets();
-        JsonNode counterPacket = packets.get(1);
+        JsonNode counterPacket = packets.get(0);
 
         assertEquals(SNAPSHOT_INTERVAL / 1000L, counterPacket.get(TIMESTAMP_KEY).asLong());
     }
@@ -90,7 +75,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         snapshotProvider.setSnapshot(snapshot);
 
         List<JsonNode> packets = incrementTimeAndGetJsonPackets();
-        JsonNode gaugeMetric = packets.get(1).get(METRICS_KEY);
+        JsonNode gaugeMetric = packets.get(0).get(METRICS_KEY);
 
         assertEquals(0.2, gaugeMetric.get("gauge.last").asDouble(), 0.1);
         assertEquals(0.2, gaugeMetric.get("gauge.average").asDouble(), 0.1);
@@ -103,7 +88,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         createSnapshotWithCountMetric("counter", 1, context);
 
         List<JsonNode> packets = incrementTimeAndGetJsonPackets();
-        JsonNode counterPacket = packets.get(1);
+        JsonNode counterPacket = packets.get(0);
 
         assertTrue(counterPacket.has(DIMENSIONS_KEY));
         JsonNode dimensions = counterPacket.get(DIMENSIONS_KEY);
@@ -119,8 +104,8 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         snapshotProvider.setSnapshot(snapshot);
 
         List<JsonNode> packets = incrementTimeAndGetJsonPackets();
-        assertEquals(2, packets.size());
-        JsonNode countersPacket = packets.get(1);
+        assertEquals(1, packets.size());
+        JsonNode countersPacket = packets.get(0);
 
         assertEquals("value1", countersPacket.get(DIMENSIONS_KEY).get("dim1").asText());
         assertCountMetric(countersPacket, "counter1.count", 1);
@@ -137,7 +122,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         snapshotProvider.setSnapshot(snapshot);
 
         List<JsonNode> packets = incrementTimeAndGetJsonPackets();
-        assertEquals(3, packets.size());
+        assertEquals(2, packets.size());
     }
 
     @Test
@@ -150,7 +135,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         snapshotProvider.setSnapshot(snapshot);
 
         var packets = incrementTimeAndGetJsonPackets();
-        assertEquals(3, packets.size());
+        assertEquals(2, packets.size());
 
         packets.forEach(packet -> {
             if (!packet.has(DIMENSIONS_KEY)) return;

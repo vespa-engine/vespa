@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storagelink.h"
-#include "bucketmessages.h"
+#include <vespa/storageapi/messageapi/storagecommand.h>
+#include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <sstream>
 #include <cassert>

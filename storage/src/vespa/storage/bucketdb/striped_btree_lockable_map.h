@@ -60,7 +60,7 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     EntryMap getContained(const BucketId& bucketId, const char* clientId) override;
     EntryMap getAll(const BucketId& bucketId, const char* clientId) override;
-    bool isConsistent(const WrappedEntry& entry) override;
+    bool isConsistent(const WrappedEntry& entry) const override;
     void showLockClients(vespalib::asciistream & out) const override;
 
 private:

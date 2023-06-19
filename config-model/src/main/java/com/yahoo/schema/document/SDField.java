@@ -556,8 +556,9 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
     }
 
     /** Adds an explicit index defined in this field */
-    public void addIndex(Index index) {
-        indices.put(index.getName(),index);
+    public Index addIndex(Index index) {
+        indices.put(index.getName(), index);
+        return index;
     }
 
     /**
@@ -624,13 +625,14 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
         return attributes.get(getName());
     }
 
-    public void addAttribute(Attribute attribute) {
+    public Attribute addAttribute(Attribute attribute) {
         String name = attribute.getName();
         if (name == null || "".equals(name)) {
             name = getName();
             attribute.setName(name);
         }
         attributes.put(attribute.getName(),attribute);
+        return attribute;
     }
 
     /**

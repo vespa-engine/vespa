@@ -16,10 +16,11 @@ class StorBucketDatabase {
     std::unique_ptr<bucketdb::AbstractBucketMap<bucketdb::StorageBucketInfo>> _impl;
 public:
     using Entry        = bucketdb::StorageBucketInfo;
-    using key_type     = bucketdb::AbstractBucketMap<Entry>::key_type;
-    using Decision     = bucketdb::AbstractBucketMap<Entry>::Decision;
-    using WrappedEntry = bucketdb::AbstractBucketMap<Entry>::WrappedEntry;
-    using EntryMap     = bucketdb::AbstractBucketMap<Entry>::EntryMap;
+    using BucketMap    = bucketdb::AbstractBucketMap<Entry>;
+    using key_type     = BucketMap::key_type;
+    using Decision     = BucketMap::Decision;
+    using WrappedEntry = BucketMap::WrappedEntry;
+    using EntryMap     = BucketMap::EntryMap;
     using BucketId     = document::BucketId;
 
     enum Flag {
@@ -29,8 +30,7 @@ public:
 
     explicit StorBucketDatabase(const ContentBucketDbOptions&);
 
-    void insert(const document::BucketId&, const bucketdb::StorageBucketInfo&,
-                const char* clientId);
+    void insert(const document::BucketId&, const Entry&, const char* clientId);
 
     bool erase(const document::BucketId&, const char* clientId);
 
@@ -57,16 +57,12 @@ public:
      * thread between each such such to allow other threads to get a chance
      * at acquiring a bucket lock.
      */
-    void for_each_chunked(std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
-                          const char* clientId,
-                          vespalib::duration yieldTime = 10us,
-                          uint32_t chunkSize = bucketdb::AbstractBucketMap<bucketdb::StorageBucketInfo>::DEFAULT_CHUNK_SIZE);
+    void for_each_chunked(std::function<Decision(uint64_t, const Entry &)> func, const char* clientId,
+                          vespalib::duration yieldTime = 10us, uint32_t chunkSize = BucketMap::DEFAULT_CHUNK_SIZE);
 
-    void for_each_mutable_unordered(std::function<Decision(uint64_t, bucketdb::StorageBucketInfo&)> func,
-                                    const char* clientId);
+    void for_each_mutable_unordered(std::function<Decision(uint64_t, Entry &)> func, const char* clientId);
 
-    void for_each(std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
-                  const char* clientId);
+    void for_each(std::function<Decision(uint64_t, const Entry &)> func, const char* clientId);
 
     [[nodiscard]] std::unique_ptr<bucketdb::ReadGuard<Entry>> acquire_read_guard() const;
 

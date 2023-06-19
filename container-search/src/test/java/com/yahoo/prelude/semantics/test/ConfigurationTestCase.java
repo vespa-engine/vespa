@@ -2,14 +2,12 @@
 package com.yahoo.prelude.semantics.test;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.RuleBaseException;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.prelude.semantics.SemanticSearcher;
 import com.yahoo.search.Query;
-import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
@@ -25,17 +23,12 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
 public class ConfigurationTestCase {
 
-    private static final String root="src/test/java/com/yahoo/prelude/semantics/test/rulebases/";
-
     private static final SemanticSearcher searcher;
-    private static final SemanticRulesConfig semanticRulesConfig;
 
     static {
-        semanticRulesConfig = new ConfigGetter<>(SemanticRulesConfig.class).getConfig("file:" + root + "semantic-rules.cfg");
-        searcher = new SemanticSearcher(semanticRulesConfig, new SimpleLinguistics());
+        searcher = new SemanticSearcher(config(), new SimpleLinguistics());
     }
 
     protected void assertSemantics(String result, String input, String baseName) {
@@ -55,7 +48,7 @@ public class ConfigurationTestCase {
         RuleBase parent = searcher.getRuleBase("parent");
         assertNotNull(parent);
         assertEquals("parent", parent.getName());
-        assertEquals("semantic-rules.cfg", parent.getSource());
+        assertEquals("parent", parent.getSource());
     }
 
     @Test
@@ -119,10 +112,10 @@ public class ConfigurationTestCase {
         assertSemantics("WEAKAND(100) skoda car",     "skoda cars", "parent");
     }
 
-    private Result doSearch(Searcher searcher, Query query, int offset, int hits) {
+    private void doSearch(Searcher searcher, Query query, int offset, int hits) {
         query.setOffset(offset);
         query.setHits(hits);
-        return createExecution(searcher).search(query);
+        createExecution(searcher).search(query);
     }
 
     private Execution createExecution(Searcher searcher) {
@@ -133,6 +126,31 @@ public class ConfigurationTestCase {
         List<Searcher> searchers = new ArrayList<>();
         searchers.add(topOfChain);
         return new Chain<>(searchers);
+    }
+
+    private static SemanticRulesConfig config() {
+
+        // Create config to make sure rules are valid, config is validated in call to toMap() below
+        var builder = new SemanticRulesConfig.Builder();
+
+        List<SemanticRulesConfig.Rulebase.Builder> rules = new ArrayList<>();
+        rules.add(create("child1", "vw -> audi;\n\n@include(parent.sr)\n\nvehiclebrand:audi -> vehiclebrand:skoda;\n\n"));
+        rules.add(create("child2", "@include(parent)\n\nvehiclebrand:vw -> vehiclebrand:audi;\n\n[brand] :- @super, skoda;\n\n\n"));
+        rules.add(create("cjk", "?? -> ???;\n@default\n"));
+        rules.add(create("grandchild", "@include(child1.sr)\n@include(child2.sr)\n\ncausesphrase -> \"a produced phrase\";\n"));
+        rules.add(create("grandfather", "[vehicle] :- car, motorcycle, bus;\n\ncars -> car;\n"));
+        rules.add(create("grandmother", "vehiclebrand:bmw +> expensivetv;\n"));
+        rules.add(create("parent", "@include(grandfather.sr)\n\n[brand] [vehicle] -> vehiclebrand:[brand];\n\n@include(grandmother.sr)\n\n[brand] :- alfa, audi, bmw;\n"));
+
+        builder.rulebase(rules);
+        return builder.build();
+    }
+
+    private static SemanticRulesConfig.Rulebase.Builder create(String name, String rules) {
+        var ruleBaseBuilder = new SemanticRulesConfig.Rulebase.Builder();
+        ruleBaseBuilder.name(name);
+        ruleBaseBuilder.rules(rules);
+        return ruleBaseBuilder;
     }
 
 }

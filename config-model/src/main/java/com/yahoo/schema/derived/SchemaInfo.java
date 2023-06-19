@@ -1,7 +1,21 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.derived;
 
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.PrimitiveDataType;
+import com.yahoo.document.ReferenceDataType;
+import com.yahoo.document.StructuredDataType;
+import com.yahoo.document.TensorDataType;
+import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.document.annotation.AnnotationReferenceDataType;
+import com.yahoo.documentmodel.NewDocumentReferenceDataType;
+import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.FieldSet;
+import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.schema.Index;
 import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
@@ -9,6 +23,7 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -52,9 +67,77 @@ public final class SchemaInfo extends Derived implements SchemaInfoConfig.Produc
     public void getConfig(SchemaInfoConfig.Builder builder) {
         var schemaBuilder = new SchemaInfoConfig.Schema.Builder();
         schemaBuilder.name(schema.getName());
+        addFieldsConfig(schemaBuilder);
+        addFieldSetConfig(schemaBuilder);
         addSummaryConfig(schemaBuilder);
         addRankProfilesConfig(schemaBuilder);
         builder.schema(schemaBuilder);
+    }
+
+    private void addFieldsConfig(SchemaInfoConfig.Schema.Builder schemaBuilder) {
+        for (var field : schema.allFieldsList()) {
+            addFieldConfig(field, schemaBuilder);
+            for (var index : field.getIndices().values()) {
+                if ( ! index.getName().equals(field.getName())) // additional index
+                    addFieldConfig(index, field.getDataType(), schemaBuilder);
+            }
+            for (var attribute : field.getAttributes().values()) {
+                if ( ! attribute.getName().equals(field.getName())) // additional attribute
+                    addFieldConfig(attribute, field.getDataType(), schemaBuilder);
+            }
+        }
+    }
+
+    private void addFieldConfig(ImmutableSDField field, SchemaInfoConfig.Schema.Builder schemaBuilder) {
+        var fieldBuilder = new SchemaInfoConfig.Schema.Field.Builder();
+        fieldBuilder.name(field.getName());
+        fieldBuilder.type(toTypeSpec(field.getDataType()));
+        for (var alias : field.getAliasToName().entrySet()) {
+            if (alias.getValue().equals(field.getName()))
+                fieldBuilder.alias(alias.getKey());
+        }
+        fieldBuilder.attribute(field.doesAttributing());
+        fieldBuilder.index(field.doesIndexing());
+        schemaBuilder.field(fieldBuilder);
+    }
+
+    // TODO: Make fields and indexes 1-1 so that this can be removed
+    private void addFieldConfig(Index index, DataType type, SchemaInfoConfig.Schema.Builder schemaBuilder) {
+        var fieldBuilder = new SchemaInfoConfig.Schema.Field.Builder();
+        fieldBuilder.name(index.getName());
+        fieldBuilder.type(toTypeSpec(type));
+        for (Iterator<String> i = index.aliasIterator(); i.hasNext(); )
+            fieldBuilder.alias(i.next());
+        fieldBuilder.attribute(false);
+        fieldBuilder.index(true);
+        schemaBuilder.field(fieldBuilder);
+    }
+
+    // TODO: Make fields and attributes 1-1 so that this can be removed
+    private void addFieldConfig(Attribute attribute, DataType type, SchemaInfoConfig.Schema.Builder schemaBuilder) {
+        var fieldBuilder = new SchemaInfoConfig.Schema.Field.Builder();
+        fieldBuilder.name(attribute.getName());
+        fieldBuilder.type(toTypeSpec(type));
+        for (var alias : attribute.getAliases())
+            fieldBuilder.alias(alias);
+        fieldBuilder.attribute(true);
+        fieldBuilder.index(false);
+        schemaBuilder.field(fieldBuilder);
+    }
+
+    private void addFieldSetConfig(SchemaInfoConfig.Schema.Builder schemaBuilder) {
+        for (var fieldSet : schema.fieldSets().builtInFieldSets().values())
+            addFieldSetConfig(fieldSet, schemaBuilder);
+        for (var fieldSet : schema.fieldSets().userFieldSets().values())
+            addFieldSetConfig(fieldSet, schemaBuilder);
+    }
+
+    private void addFieldSetConfig(FieldSet fieldSet, SchemaInfoConfig.Schema.Builder schemaBuilder) {
+        var fieldSetBuilder = new SchemaInfoConfig.Schema.Fieldset.Builder();
+        fieldSetBuilder.name(fieldSet.getName());
+        for (String fieldName : fieldSet.getFieldNames())
+            fieldSetBuilder.field(fieldName);
+        schemaBuilder.fieldset(fieldSetBuilder);
     }
 
     private void addSummaryConfig(SchemaInfoConfig.Schema.Builder schemaBuilder) {
@@ -86,6 +169,29 @@ public final class SchemaInfo extends Derived implements SchemaInfoConfig.Produc
             }
             schemaBuilder.rankprofile(rankProfileConfig);
         }
+    }
+
+    /** Returns this type as a spec on the form following "field [name] type " in schemas. */
+    private String toTypeSpec(DataType dataType) {
+        if (dataType instanceof PrimitiveDataType)
+            return dataType.getName();
+        if (dataType instanceof AnnotationReferenceDataType annotationType)
+            return "annotationreference<" + annotationType.getAnnotationType().getName() + ">";
+        if (dataType instanceof ArrayDataType arrayType)
+            return "array<" + toTypeSpec(arrayType.getNestedType()) + ">";
+        if (dataType instanceof MapDataType mapType)
+            return "map<" + toTypeSpec(mapType.getKeyType()) + "," + toTypeSpec(mapType.getValueType()) + ">";
+        if (dataType instanceof ReferenceDataType referenceType)
+            return "reference<" + toTypeSpec(referenceType.getTargetType()) + ">";
+        if (dataType instanceof NewDocumentReferenceDataType referenceType)
+            return "reference<" + toTypeSpec(referenceType.getTargetType()) + ">";
+        if (dataType instanceof StructuredDataType structType)
+            return structType.getName();
+        if (dataType instanceof TensorDataType tensorType)
+            return tensorType.getTensorType().toString();
+        if (dataType instanceof WeightedSetDataType weightedSetDataType)
+            return "weightedset<" + toTypeSpec(weightedSetDataType.getNestedType()) + ">";
+        throw new IllegalArgumentException("Unknown data type " + dataType + " class " + dataType.getClass());
     }
 
     /** A store of a *small* (in memory) amount of rank profile info. */

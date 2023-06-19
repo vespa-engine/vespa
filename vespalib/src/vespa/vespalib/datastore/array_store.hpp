@@ -16,17 +16,35 @@
 namespace vespalib::datastore {
 
 template <typename ElemT, typename RefT, typename TypeMapperT>
+BufferTypeBase*
+ArrayStore<ElemT, RefT, TypeMapperT>::initArrayType(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, uint32_t type_id)
+{
+    const AllocSpec &spec = cfg.spec_for_type_id(type_id);
+    size_t array_size = _mapper.get_array_size(type_id);
+    if constexpr (has_dynamic_buffer_type) {
+        if (_mapper.is_dynamic_buffer(type_id)) {
+            return &_dynamicArrayTypes.emplace_back(array_size, spec, std::move(memory_allocator), _mapper);
+        }
+    }
+    return &_smallArrayTypes.emplace_back(array_size, spec, std::move(memory_allocator), _mapper);
+}
+
+template <typename ElemT, typename RefT, typename TypeMapperT>
 void
 ArrayStore<ElemT, RefT, TypeMapperT>::initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator)
 {
     _largeArrayTypeId = _store.addType(&_largeArrayType);
     assert(_largeArrayTypeId == 0);
     _smallArrayTypes.reserve(_maxSmallArrayTypeId);
+    if constexpr (has_dynamic_buffer_type) {
+        auto dynamic_buffer_types = _mapper.count_dynamic_buffer_types(_maxSmallArrayTypeId);
+        _smallArrayTypes.reserve(_maxSmallArrayTypeId - dynamic_buffer_types);
+        _dynamicArrayTypes.reserve(dynamic_buffer_types);
+     } else {
+        _smallArrayTypes.reserve(_maxSmallArrayTypeId);
+    }
     for (uint32_t type_id = 1; type_id <= _maxSmallArrayTypeId; ++type_id) {
-        const AllocSpec &spec = cfg.spec_for_type_id(type_id);
-        size_t arraySize = _mapper.get_array_size(type_id);
-        _smallArrayTypes.emplace_back(arraySize, spec, memory_allocator, _mapper);
-        uint32_t act_type_id = _store.addType(&_smallArrayTypes.back());
+        uint32_t act_type_id = _store.addType(initArrayType(cfg, memory_allocator, type_id));
         assert(type_id == act_type_id);
     }
 }
@@ -74,13 +92,19 @@ ArrayStore<ElemT, RefT, TypeMapperT>::~ArrayStore()
 
 template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<ElemT, RefT, TypeMapperT>::add(const ConstArrayRef &array)
+ArrayStore<ElemT, RefT, TypeMapperT>::add(ConstArrayRef array)
 {
     if (array.size() == 0) {
         return EntryRef();
     }
     if (array.size() <= _maxSmallArraySize) {
-        return addSmallArray(array);
+        uint32_t type_id = _mapper.get_type_id(array.size());
+        if constexpr (has_dynamic_buffer_type) {
+            if (_mapper.is_dynamic_buffer(type_id)) [[unlikely]] {
+                    return add_dynamic_array<typename TypeMapper::DynamicBufferType>(array, type_id);
+            }
+        }
+        return addSmallArray(array, type_id);
     } else {
         return addLargeArray(array);
     }
@@ -94,7 +118,13 @@ ArrayStore<ElemT, RefT, TypeMapperT>::allocate(size_t array_size)
         return EntryRef();
     }
     if (array_size <= _maxSmallArraySize) {
-        return allocate_small_array(array_size);
+        uint32_t type_id = _mapper.get_type_id(array_size);
+        if constexpr (has_dynamic_buffer_type) {
+            if (_mapper.is_dynamic_buffer(type_id)) [[unlikely]] {
+                return allocate_dynamic_array<typename TypeMapper::DynamicBufferType>(array_size, type_id);
+            }
+        }
+        return allocate_small_array(type_id);
     } else {
         return allocate_large_array(array_size);
     }
@@ -102,24 +132,39 @@ ArrayStore<ElemT, RefT, TypeMapperT>::allocate(size_t array_size)
 
 template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<ElemT, RefT, TypeMapperT>::addSmallArray(const ConstArrayRef &array)
+ArrayStore<ElemT, RefT, TypeMapperT>::addSmallArray(ConstArrayRef array, uint32_t type_id)
 {
-    uint32_t typeId = _mapper.get_type_id(array.size());
     using NoOpReclaimer = DefaultReclaimer<ElemT>;
-    return _store.template freeListAllocator<ElemT, NoOpReclaimer>(typeId).allocArray(array).ref;
+    return _store.template freeListAllocator<ElemT, NoOpReclaimer>(type_id).allocArray(array).ref;
 }
 
 template <typename ElemT, typename RefT, typename TypeMapperT>
 EntryRef
-ArrayStore<ElemT, RefT, TypeMapperT>::allocate_small_array(size_t array_size)
+ArrayStore<ElemT, RefT, TypeMapperT>::allocate_small_array(uint32_t type_id)
 {
-    uint32_t type_id = _mapper.get_type_id(array_size);
     return _store.template freeListRawAllocator<ElemT>(type_id).alloc(1).ref;
 }
 
 template <typename ElemT, typename RefT, typename TypeMapperT>
+template <typename BufferType>
 EntryRef
-ArrayStore<ElemT, RefT, TypeMapperT>::addLargeArray(const ConstArrayRef &array)
+ArrayStore<ElemT, RefT, TypeMapperT>::add_dynamic_array(ConstArrayRef array, uint32_t type_id)
+{
+    using NoOpReclaimer = DefaultReclaimer<ElemT>;
+    return _store.template freeListAllocator<ElemT, NoOpReclaimer>(type_id).template alloc_dynamic_array<BufferType>(array).ref;
+}
+
+template <typename ElemT, typename RefT, typename TypeMapperT>
+template <typename BufferType>
+EntryRef
+ArrayStore<ElemT, RefT, TypeMapperT>::allocate_dynamic_array(size_t array_size, uint32_t type_id)
+{
+    return _store.template freeListRawAllocator<ElemT>(type_id).template alloc_dynamic_array<BufferType>(array_size).ref;
+}
+
+template <typename ElemT, typename RefT, typename TypeMapperT>
+EntryRef
+ArrayStore<ElemT, RefT, TypeMapperT>::addLargeArray(ConstArrayRef array)
 {
     using NoOpReclaimer = DefaultReclaimer<LargeArray>;
     auto handle = _store.template freeListAllocator<LargeArray, NoOpReclaimer>(_largeArrayTypeId)
@@ -229,10 +274,9 @@ ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSma
                                                                   float allocGrowFactor)
 {
     return ArrayStoreConfig::optimizeForHugePage(mapper.get_max_small_array_type_id(maxSmallArrayTypeId),
-                                                 [&](uint32_t type_id) noexcept { return mapper.get_array_size(type_id); },
+                                                 [&](uint32_t type_id) noexcept { return mapper.get_entry_size(type_id); },
                                                  hugePageSize,
                                                  smallPageSize,
-                                                 sizeof(ElemT),
                                                  RefT::offsetSize(),
                                                  min_num_entries_for_new_buffer,
                                                  allocGrowFactor);

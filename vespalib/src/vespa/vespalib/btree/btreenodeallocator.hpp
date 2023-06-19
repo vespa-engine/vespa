@@ -209,10 +209,6 @@ freeze()
             }
             _leafToFreeze.clear();
         }
-
-        // Tree node freezes must be visible before tree freezes to
-        // ensure that readers see a frozen world
-        std::atomic_thread_fence(std::memory_order_release);
     }
 
     // Freeze trees.
@@ -222,8 +218,6 @@ freeze()
             i->freeze(*this);
         }
         _treeToFreeze.clear();
-        // Tree freezes must be visible before held nodes are freed
-        std::atomic_thread_fence(std::memory_order_release);
     }
 
 

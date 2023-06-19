@@ -50,7 +50,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag IPV6_IN_GCP = defineFeatureFlag(
             "ipv6-in-gcp", false,
-            List.of("hakonhall"), "2023-05-15", "2023-06-15",
+            List.of("hakonhall"), "2023-05-15", "2023-07-15",
             "Provision GCP hosts with external IPv6 addresses",
             "Takes effect on the next host provisioning");
 
@@ -251,14 +251,14 @@ public class Flags {
 
     public static final UnboundStringFlag SYSTEM_MEMORY_HIGH = defineStringFlag(
             "system-memory-high", "",
-            List.of("baldersheim"), "2023-02-14", "2023-06-13",
+            List.of("baldersheim"), "2023-02-14", "2023-12-31",
             "The value to write to /sys/fs/cgroup/system.slice/memory.high, if non-empty.",
             "Takes effect on next tick.",
             ZONE_ID, NODE_TYPE);
 
     public static final UnboundStringFlag SYSTEM_MEMORY_MAX = defineStringFlag(
             "system-memory-max", "",
-            List.of("baldersheim"), "2023-02-14", "2023-06-13",
+            List.of("baldersheim"), "2023-02-14", "2023-12-31",
             "The value to write to /sys/fs/cgroup/system.slice/memory.max, if non-empty.",
             "Takes effect on next tick.",
             ZONE_ID, NODE_TYPE);
@@ -372,19 +372,19 @@ public class Flags {
 
     public static final UnboundBooleanFlag NODE_ADMIN_TENANT_SERVICE_REGISTRY = defineFeatureFlag(
             "node-admin-tenant-service-registry", false,
-            List.of("olaa"), "2023-04-12", "2023-06-12",
+            List.of("olaa"), "2023-04-12", "2023-08-01",
             "Whether AthenzCredentialsMaintainer in node-admin should create tenant service identity certificate",
             "Takes effect on next tick",
             ZONE_ID, HOSTNAME, VESPA_VERSION, APPLICATION_ID
     );
 
     public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
-            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-06-13",
+            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-07-13",
             "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
             HOSTNAME);
 
     public static final UnboundBooleanFlag ALLOW_MORE_THAN_ONE_CONTENT_GROUP_DOWN = defineFeatureFlag(
-            "allow-more-than-one-content-group-down", false, List.of("hmusum"), "2023-04-14", "2023-07-01",
+            "allow-more-than-one-content-group-down", false, List.of("hmusum"), "2023-04-14", "2023-08-15",
             "Whether to enable possible configuration of letting more than one content group down",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -402,19 +402,19 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
-            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-07-01",
+            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-08-15",
             "Whether to enable the one program that should not be named",
             "Takes effect at next host-admin tick",
             ZONE_ID);
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
-            "weighted-endpoint-record-ttl", List.of(), String.class, List.of("jonmv"), "2023-05-16", "2023-06-16",
+            "weighted-endpoint-record-ttl", List.of(), String.class, List.of("jonmv"), "2023-05-16", "2023-09-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundBooleanFlag ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR = defineFeatureFlag(
-            "enable-conditional-put-remove-write-repair", false,
+            "enable-conditional-put-remove-write-repair", true,
             List.of("vekterli", "havardpe"), "2023-05-10", "2023-07-01",
             "If set, a conditional Put or Remove operation for a document in an inconsistent bucket " +
             "will initiate a write-repair that evaluates the condition across all mutually inconsistent " +

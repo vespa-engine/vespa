@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -14,10 +12,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.OptionalDouble;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A cluster with its associated metrics which allows prediction about its future behavior.
@@ -26,8 +21,6 @@ import java.util.logging.Logger;
  * @author bratseth
  */
 public class ClusterModel {
-
-    private static final Logger log = Logger.getLogger(ClusterModel.class.getName());
 
     /** Containers typically use more cpu right after generation change, so discard those metrics */
     public static final Duration warmupDuration = Duration.ofMinutes(7);
@@ -175,7 +168,7 @@ public class ClusterModel {
     }
 
     public static Duration minScalingDuration(ClusterSpec clusterSpec) {
-        if (clusterSpec.isStateful()) return Duration.ofHours(8);
+        if (clusterSpec.isStateful()) return Duration.ofHours(6);
         return Duration.ofMinutes(5);
     }
 

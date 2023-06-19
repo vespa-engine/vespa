@@ -55,7 +55,7 @@ public class MaintainerTest {
 
         // Maintainer throws
         maintainer.throwOnNextRun(new RuntimeException()).run();
-        assertEquals(0, jobMetrics.successFactor, delta);
+        assertEquals(-1, jobMetrics.successFactor, delta);
 
         // Maintainer recovers
         maintainer.throwOnNextRun(null).run();
@@ -64,7 +64,7 @@ public class MaintainerTest {
 
         // Lock exception is treated as a failure
         maintainer.throwOnNextRun(new UncheckedTimeoutException()).run();
-        assertEquals(0, jobMetrics.successFactor, delta);
+        assertEquals(-1, jobMetrics.successFactor, delta);
     }
 
     private static class TestJobMetrics extends JobMetrics {

@@ -213,6 +213,7 @@ public class NodeResources {
     public boolean vcpuIsUnspecified() { return vcpu == 0; }
     public boolean memoryGbIsUnspecified() { return memoryGb == 0; }
     public boolean diskGbIsUnspecified() { return diskGb == 0; }
+    public boolean bandwidthGbpsIsUnspecified() { return bandwidthGbps == 0; }
 
     /** Returns the standard cost of these resources, in dollars per hour */
     public double cost() {
@@ -265,6 +266,19 @@ public class NodeResources {
         ensureSpecified();
         if (this.gpuResources.equals(gpuResources)) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, gpuResources);
+    }
+
+    public NodeResources withUnspecifiedNumbersFrom(NodeResources fullySpecified) {
+        var resources = this;
+        if (resources.vcpuIsUnspecified())
+            resources = resources.withVcpu(fullySpecified.vcpu());
+        if (resources.memoryGbIsUnspecified())
+            resources = resources.withMemoryGb(fullySpecified.memoryGb());
+        if (resources.diskGbIsUnspecified())
+            resources = resources.withDiskGb(fullySpecified.diskGb());
+        if (resources.bandwidthGbpsIsUnspecified())
+            resources = resources.withBandwidthGbps(fullySpecified.bandwidthGbps());
+        return resources;
     }
 
     /** Returns this with disk speed, storage type and architecture set to any */
@@ -461,7 +475,7 @@ public class NodeResources {
             throw new IllegalStateException("Cannot perform this on unspecified resources");
     }
 
-    // Returns squared euclidean distance of the relevant numerical values of two node resources
+    // Returns squared Euclidean distance of the relevant numerical values of two node resources
     public double distanceTo(NodeResources other) {
         if ( ! this.diskSpeed().compatibleWith(other.diskSpeed())) return Double.MAX_VALUE;
         if ( ! this.storageType().compatibleWith(other.storageType())) return Double.MAX_VALUE;

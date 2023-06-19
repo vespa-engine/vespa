@@ -83,17 +83,14 @@ public class SchemaInfoTester {
                                          .addInput("query(myTensor1)", TensorType.fromSpec("tensor(a{},b{})"))
                                          .build())
                             .build());
-        Map<String, List<String>> clusters = new HashMap<>();
-        clusters.put("ab", List.of("a", "b"));
-        clusters.put("a", List.of("a"));
+        List<Cluster> clusters = new ArrayList<>();
+        clusters.add(new Cluster.Builder("ab").addSchema("a").addSchema("b").build());
+        clusters.add(new Cluster.Builder("a").addSchema("a").setStreaming(true).build());
         return new SchemaInfo(schemas, clusters);
     }
 
     /** Creates the same schema info as createSchemaInfo from config objects. */
     static SchemaInfo createSchemaInfoFromConfig() {
-
-        var indexInfoConfig = new IndexInfoConfig.Builder();
-
         var rankProfileCommon = new SchemaInfoConfig.Schema.Rankprofile.Builder();
         rankProfileCommon.name("commonProfile");
         rankProfileCommon.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})"));
@@ -141,7 +138,7 @@ public class SchemaInfoTester {
 
         schemaInfoInfoConfig.schema(schemaB);
 
-        // ----- Info about which schemas are in which clusters
+        // ----- Info about clusters
         var qrSearchersConfig = new QrSearchersConfig.Builder();
         var clusterAB = new QrSearchersConfig.Searchcluster.Builder();
         clusterAB.name("ab");
@@ -149,10 +146,11 @@ public class SchemaInfoTester {
         qrSearchersConfig.searchcluster(clusterAB);
         var clusterA = new QrSearchersConfig.Searchcluster.Builder();
         clusterA.name("a");
+        clusterA.indexingmode(QrSearchersConfig.Searchcluster.Indexingmode.Enum.STREAMING);
         clusterA.searchdef("a");
         qrSearchersConfig.searchcluster(clusterA);
 
-        return new SchemaInfo(indexInfoConfig.build(), schemaInfoInfoConfig.build(), qrSearchersConfig.build());
+        return new SchemaInfo(schemaInfoInfoConfig.build(), qrSearchersConfig.build());
     }
 
 }

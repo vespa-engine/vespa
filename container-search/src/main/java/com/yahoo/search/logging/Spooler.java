@@ -38,6 +38,7 @@ public class Spooler {
     private static final int defaultMaxEntriesPerFile = 100;
     // Maximum delay between first write to a file and when we should close file and move it for further processing
     static final Duration maxDelayAfterFirstWrite = Duration.ofSeconds(5);
+    private static final int maxFilesToRead = 50;
 
     private Path processingPath;
     private Path readyPath;
@@ -89,7 +90,7 @@ public class Spooler {
         }
         log.log(Level.FINE, "Files in ready path: " + files.size());
 
-        List<File> fileList = getFiles(files, 50); // TODO
+        List<File> fileList = getFiles(files);
         if ( ! fileList.isEmpty()) {
             processFiles(fileList, transport);
         }
@@ -125,8 +126,15 @@ public class Spooler {
             } catch (Exception e) {
                 handleFailure(f);
             } finally {
-                if (success && keepSuccessFiles) {
-                    moveProcessedFile(f, successesPath);
+                if (success) {
+                    if (keepSuccessFiles)
+                        moveProcessedFile(f, successesPath);
+                    else
+                        try {
+                            Files.delete(f.toPath());
+                        } catch (IOException e) {
+                            log.log(Level.WARNING, "Unable to delete file " + f, e);
+                        }
                 }
             }
         }
@@ -138,6 +146,8 @@ public class Spooler {
         if (failCount > maxFailures) {
             log.log(Level.WARNING, "Unable to process file " + file + " after trying " + maxFailures + " times, moving it to " + failuresPath);
             moveProcessedFile(file, failuresPath);
+        } else {
+            log.log(Level.INFO, "Unable to process file " + file + " after trying " + maxFailures + " times, will retry");
         }
     }
 
@@ -156,8 +166,8 @@ public class Spooler {
     public Path successesPath() { return successesPath; }
     public Path failuresPath() { return failuresPath; }
 
-    List<File> getFiles(List<Path> files, int count) {
-        Validation.requireAtLeast(count, "count must be a positive number", 1);
+    List<File> getFiles(List<Path> files) {
+        Validation.requireAtLeast(maxFilesToRead, "count must be a positive number", 1);
         List<File> fileList = new ArrayList<>();
 
         for (Path p : files) {
@@ -167,7 +177,7 @@ public class Spooler {
             }
 
             // Grab only some files
-            if (fileList.size() > count) {
+            if (fileList.size() > maxFilesToRead) {
                 break;
             }
         }

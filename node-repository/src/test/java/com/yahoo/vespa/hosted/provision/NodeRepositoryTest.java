@@ -17,6 +17,7 @@ import java.util.function.Predicate;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -285,6 +286,24 @@ public class NodeRepositoryTest {
         Node node = tester.nodeRepository().nodes().list().first().get();
         assertEquals("host1", node.hostname());
         assertEquals(Node.State.breakfixed, node.state());
+    }
+
+    @Test
+    public void parking_by_operator_cancels_retirement() {
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+        String hostname = "host1";
+        tester.addHost(hostname, hostname, "default", NodeType.host);
+        tester.nodeRepository().nodes().deprovision(hostname, Agent.system, tester.clock().instant());
+
+        Node host1 = tester.nodeRepository().nodes().node(hostname).get();
+        assertTrue(host1.status().wantToRetire());
+        assertTrue(host1.status().wantToDeprovision());
+
+        tester.nodeRepository().nodes().park(hostname, false, Agent.operator, getClass().getSimpleName());
+        host1 = tester.nodeRepository().nodes().node(hostname).get();
+        assertFalse(host1.status().wantToRetire());
+        assertFalse(host1.status().wantToDeprovision());
+        assertSame(Node.State.parked, host1.state());
     }
 
     private static Set<String> filterNodes(NodeRepositoryTester tester, Predicate<Node> filter) {

@@ -3,14 +3,9 @@
 #pragma once
 
 #include "idocumentstore.h"
-#include <vespa/vespalib/stllike/cache.h>
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/alloc.h>
-#include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/document/util/bytebuffer.h>
 
 namespace search::docstore {
 
@@ -19,7 +14,7 @@ namespace search::docstore {
  **/
 class KeySet {
 public:
-    KeySet() : _keys() { }
+    KeySet() noexcept : _keys() { }
     KeySet(uint32_t key);
     explicit KeySet(const IDocumentStore::LidVector &keys);
     uint32_t hash() const noexcept { return _keys.empty() ? 0 : _keys[0]; }
@@ -51,12 +46,14 @@ public:
 
     using Positions = std::vector<LidPosition>;
     BlobSet();
-    BlobSet(const Positions & positions, vespalib::alloc::Alloc && buffer);
-    BlobSet(BlobSet &&) = default;
-    BlobSet &operator = (BlobSet &&) = default;
+    BlobSet(Positions positions, vespalib::alloc::Alloc && buffer) noexcept;
+    BlobSet(BlobSet &&) noexcept = default;
+    BlobSet &operator = (BlobSet &&) noexcept = default;
     ~BlobSet();
+    void reserve(size_t elems) { _positions.reserve(elems);}
     void append(uint32_t lid, vespalib::ConstBufferRef blob);
     const Positions & getPositions() const { return _positions; }
+    Positions && stealPositions() { return std::move(_positions); }
     vespalib::ConstBufferRef get(uint32_t lid) const;
     vespalib::ConstBufferRef getBuffer() const { return vespalib::ConstBufferRef(_buffer.data(), _buffer.size()); }
 private:
@@ -73,20 +70,22 @@ private:
 class CompressedBlobSet {
 public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
-    CompressedBlobSet();
-    CompressedBlobSet(CompressionConfig compression, const BlobSet & uncompressed);
-    CompressedBlobSet(CompressedBlobSet && rhs) = default;
-    CompressedBlobSet & operator=(CompressedBlobSet && rhs) = default;
+    CompressedBlobSet() noexcept;
+    CompressedBlobSet(CompressionConfig compression, BlobSet uncompressed);
+    CompressedBlobSet(CompressedBlobSet && rhs) noexcept = default;
+    CompressedBlobSet & operator=(CompressedBlobSet && rhs) noexcept = default;
     CompressedBlobSet(const CompressedBlobSet & rhs) = default;
     CompressedBlobSet & operator=(const CompressedBlobSet & rhs) = default;
     ~CompressedBlobSet();
-    size_t size() const;
+    size_t bytesAllocated() const;
     bool empty() const { return _positions.empty(); }
     BlobSet getBlobSet() const;
 private:
-    CompressionConfig::Type _compression;
+    using Alloc = vespalib::alloc::Alloc;
     BlobSet::Positions      _positions;
-    std::shared_ptr<vespalib::MallocPtr> _buffer;
+    std::shared_ptr<Alloc>  _buffer;
+    uint32_t                 _used;
+    CompressionConfig::Type _compression;
 };
 
 /**
@@ -98,26 +97,27 @@ class VisitCache {
 public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
     VisitCache(IDataStore &store, size_t cacheSize, CompressionConfig compression);
+    ~VisitCache();
 
     CompressedBlobSet read(const IDocumentStore::LidVector & keys) const;
     void remove(uint32_t key);
     void invalidate(uint32_t key) { remove(key); }
 
     vespalib::CacheStats getCacheStats() const;
-    vespalib::MemoryUsage getStaticMemoryUsage() const { return _cache->getStaticMemoryUsage(); }
+    vespalib::MemoryUsage getStaticMemoryUsage() const;
     void reconfigure(size_t cacheSize, CompressionConfig compression);
-private:
+
     /**
-     * This implments the interface the cache uses when it has a cache miss.
-     * It wraps an IDataStore. Given a set of lids it will visit all objects
-     * and compress them as a complete set to maximize compression rate.
-     * As this is a readonly cache the write/erase methods are noops.
-     */
+ * This implments the interface the cache uses when it has a cache miss.
+ * It wraps an IDataStore. Given a set of lids it will visit all objects
+ * and compress them as a complete set to maximize compression rate.
+ * As this is a readonly cache the write/erase methods are noops.
+ */
     class BackingStore {
     public:
-        BackingStore(IDataStore &store, CompressionConfig compression) :
-            _backingStore(store),
-            _compression(compression)
+        BackingStore(IDataStore &store, CompressionConfig compression)
+            : _backingStore(store),
+              _compression(compression)
         { }
         bool read(const KeySet &key, CompressedBlobSet &blobs) const;
         void write(const KeySet &, const CompressedBlobSet &) { }
@@ -128,40 +128,9 @@ private:
         IDataStore        &_backingStore;
         std::atomic<CompressionConfig>  _compression;
     };
+private:
 
-    using CacheParams = vespalib::CacheParam<
-                            vespalib::LruParam<KeySet, CompressedBlobSet>,
-                            BackingStore,
-                            vespalib::zero<KeySet>,
-                            vespalib::size<CompressedBlobSet>
-                        >;
-
-    /**
-     * This extends the default thread safe cache implementation so that
-     * it will correctly invalidate the cached sets when objects are removed/updated.
-     * It will also detect the addition of new objects to any of the sets upon first
-     * usage of the set and then invalidate and perform fresh visit of the backing store.
-     */
-    class Cache : public vespalib::cache<CacheParams> {
-    public:
-        Cache(BackingStore & b, size_t maxBytes);
-        ~Cache() override;
-        CompressedBlobSet readSet(const KeySet & keys);
-        void removeKey(uint32_t key);
-        vespalib::MemoryUsage getStaticMemoryUsage() const override;
-    private:
-        void locateAndInvalidateOtherSubsets(const UniqueLock & cacheGuard, const KeySet & keys);
-        using IdSet = vespalib::hash_set<uint64_t>;
-        using Parent = vespalib::cache<CacheParams>;
-        using LidUniqueKeySetId = vespalib::hash_map<uint32_t, uint64_t>;
-        using IdKeySetMap = vespalib::hash_map<uint64_t, KeySet>;
-        IdSet findSetsContaining(const UniqueLock &, const KeySet & keys) const;
-        void onInsert(const K & key) override;
-        void onRemove(const K & key) override;
-        LidUniqueKeySetId _lid2Id;
-        IdKeySetMap       _id2KeySet;
-    };
-
+    class Cache;
     BackingStore            _store;
     std::unique_ptr<Cache>  _cache;
 };

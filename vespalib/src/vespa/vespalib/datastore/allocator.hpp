@@ -68,5 +68,30 @@ Allocator<EntryT, RefT>::allocArray()
     return HandleType(ref, buf);
 }
 
+template <typename EntryT, typename RefT>
+template <typename BufferType>
+typename Allocator<EntryT, RefT>::HandleType
+Allocator<EntryT, RefT>::alloc_dynamic_array(ConstArrayRef array)
+{
+    _store.ensure_buffer_capacity(_typeId, 1);
+    uint32_t buffer_id = _store.primary_buffer_id(_typeId);
+    BufferState &state = _store.getBufferState(buffer_id);
+    assert(state.isActive());
+    auto max_array_size = state.getArraySize();
+    assert(max_array_size >= array.size());
+    RefT ref(state.size(), buffer_id);
+    auto entry_size = _store.get_entry_size(_typeId);
+    EntryT* buf = BufferType::get_entry(_store.getBuffer(ref.bufferId()), ref.offset(), entry_size);
+    for (size_t i = 0; i < array.size(); ++i) {
+        new (static_cast<void *>(buf + i)) EntryT(array[i]);
+    }
+    for (size_t i = array.size(); i < max_array_size; ++i) {
+        new (static_cast<void *>(buf + i)) EntryT();
+    }
+    BufferType::set_dynamic_array_size(buf, entry_size, array.size());
+     state.stats().pushed_back(1);
+    return HandleType(ref, buf);
+}
+
 }
 

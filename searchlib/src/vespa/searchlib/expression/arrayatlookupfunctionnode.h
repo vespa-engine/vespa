@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "unaryfunctionnode.h"
+#include "attributenode.h"
 
 namespace search::attribute {
     class IAttributeVector;
@@ -10,7 +10,7 @@ namespace search::attribute {
 
 namespace search::expression {
 
-class ArrayAtLookup : public UnaryFunctionNode
+class ArrayAtLookup : public AttributeNode
 {
 public:
     DECLARE_EXPRESSIONNODE(ArrayAtLookup);
@@ -22,20 +22,12 @@ public:
     ArrayAtLookup(const search::attribute::IAttributeVector &attr, ExpressionNode::UP indexArg);
     ArrayAtLookup(const ArrayAtLookup &rhs);
     ArrayAtLookup & operator= (const ArrayAtLookup &rhs);
-    void setDocId(DocId docId) { _docId = docId; }
-private:
     bool onExecute() const override;
-    void onPrepareResult() override;
-    void wireAttributes(const search::attribute::IAttributeContext &attrCtx) override;
-
-    enum BasicAttributeType {
-        BAT_INT, BAT_FLOAT, BAT_STRING
-    };
-
-    vespalib::string                            _attributeName;
-    const search::attribute::IAttributeVector * _attribute;
-    DocId                                       _docId;
-    BasicAttributeType                          _basicAttributeType;
+    void visitMembers(vespalib::ObjectVisitor & visitor) const override;
+    void selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation) override;
+private:
+    mutable CurrentIndex _currentIndex;
+    ExpressionNode::CP   _indexExpression;
 };
 
 }

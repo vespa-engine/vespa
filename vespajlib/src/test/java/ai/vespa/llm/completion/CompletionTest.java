@@ -1,8 +1,5 @@
 package ai.vespa.llm.completion;
 
-import ai.vespa.llm.completion.Completion;
-import ai.vespa.llm.completion.Prompt;
-import ai.vespa.llm.completion.StringPrompt;
 import ai.vespa.llm.test.MockLanguageModel;
 import org.junit.jupiter.api.Test;
 

@@ -31,7 +31,7 @@ public class ZoneRoutingPolicySerializer {
 
     public ZoneRoutingPolicy fromSlime(ZoneId zone, Slime slime) {
         var root = slime.get();
-        return new ZoneRoutingPolicy(zone, routingPolicySerializer.globalRoutingFromSlime(root.field(GLOBAL_ROUTING_FIELD)));
+        return new ZoneRoutingPolicy(zone, routingPolicySerializer.routingStatusFromSlime(root.field(GLOBAL_ROUTING_FIELD)));
     }
 
     public Slime toSlime(ZoneRoutingPolicy policy) {

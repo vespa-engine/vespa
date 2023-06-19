@@ -1,0 +1,280 @@
+{
+  "tenant": "tenant",
+  "application": "application",
+  "projectId": 1000,
+  "steps": [
+    {
+      "type": "instance",
+      "dependencies": [ ],
+      "declared": true,
+      "instance": "default",
+      "readyAt": 0,
+      "deploying": { },
+      "latestVersions": {
+        "platform": {
+          "platform": "6.1.0",
+          "at": 1600000000000,
+          "upgrade": false,
+          "available": [
+            {
+              "platform": "6.1.0",
+              "upgrade": false
+            }
+          ],
+          "blockers": [ ]
+        },
+        "application": {
+          "application": {
+            "build": 1,
+            "compileVersion": "6.1.0",
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
+          },
+          "at": 1000,
+          "upgrade": false,
+          "available": [
+            {
+              "application": {
+                "build": 1,
+                "compileVersion": "6.1.0",
+                "sourceUrl": "repository1/tree/commit1",
+                "commit": "commit1"
+              }
+            }
+          ],
+          "blockers": [ ]
+        }
+      },
+      "delayCause": null
+    },
+    {
+      "type": "test",
+      "dependencies": [ ],
+      "declared": true,
+      "instance": "default",
+      "readyAt": 0,
+      "jobName": "staging-test",
+      "url": "https://some.url:43/instance/default/job/staging-test",
+      "environment": "staging",
+      "toRun": [ ],
+      "runs": [
+        {
+          "id": 1,
+          "url": "https://some.url:43/instance/default/job/staging-test/run/1",
+          "start": 1600000000000,
+          "end": 1600000000000,
+          "status": "success",
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {
+              "build": 1,
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
+            }
+          },
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployInitialReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installInitialReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startStagingSetup",
+              "status": "succeeded"
+            },
+            {
+              "name": "endStagingSetup",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ]
+        }
+      ],
+      "delayCause": null
+    },
+    {
+      "type": "test",
+      "dependencies": [ ],
+      "declared": true,
+      "instance": "default",
+      "readyAt": 0,
+      "jobName": "system-test",
+      "url": "https://some.url:43/instance/default/job/system-test",
+      "environment": "test",
+      "toRun": [ ],
+      "runs": [
+        {
+          "id": 1,
+          "url": "https://some.url:43/instance/default/job/system-test/run/1",
+          "start": 1600000000000,
+          "end": 1600000000000,
+          "status": "success",
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {
+              "build": 1,
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
+            }
+          },
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ]
+        }
+      ],
+      "delayCause": null
+    },
+    {
+      "type": "deployment",
+      "dependencies": [
+        0,
+        1,
+        2
+      ],
+      "declared": true,
+      "instance": "default",
+      "readyAt": 1600000000000,
+      "jobName": "production-aws-us-east-1c",
+      "url": "https://some.url:43/instance/default/job/production-aws-us-east-1c",
+      "environment": "prod",
+      "region": "prod.aws-us-east-1c",
+      "currentPlatform": "6.1.0",
+      "currentApplication": {
+        "build": 1,
+        "compileVersion": "6.1.0",
+        "sourceUrl": "repository1/tree/commit1",
+        "commit": "commit1"
+      },
+      "toRun": [ ],
+      "enclave": {
+        "cloudAccount": "aws:123456789012"
+      },
+      "runs": [
+        {
+          "id": 1,
+          "url": "https://some.url:43/instance/default/job/production-aws-us-east-1c/run/1",
+          "start": 1600000000000,
+          "end": 1600000000000,
+          "status": "success",
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {
+              "build": 1,
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
+            }
+          },
+          "steps": [
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ]
+        }
+      ],
+      "delayCause": null
+    }
+  ],
+  "builds": [
+    {
+      "build": 1,
+      "compileVersion": "6.1.0",
+      "sourceUrl": "repository1/tree/commit1",
+      "commit": "commit1",
+      "deployable": true,
+      "submittedAt": 1600000000000
+    }
+  ]
+}

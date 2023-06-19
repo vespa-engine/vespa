@@ -43,7 +43,7 @@ public class RoutingPolicySerializerTest {
                                                  Optional.of("zone1"),
                                                  Set.of(),
                                                  Set.of(),
-                                                 new RoutingPolicy.Status(true, RoutingStatus.DEFAULT),
+                                                 RoutingStatus.DEFAULT,
                                                  false),
                                new RoutingPolicy(id2,
                                                  Optional.of(HostName.of("long-and-ugly-name-2")),
@@ -51,10 +51,9 @@ public class RoutingPolicySerializerTest {
                                                  Optional.empty(),
                                                  instanceEndpoints,
                                                  Set.of(),
-                                                 new RoutingPolicy.Status(false,
-                                                                          new RoutingStatus(RoutingStatus.Value.out,
-                                                                                            RoutingStatus.Agent.tenant,
-                                                                                            Instant.ofEpochSecond(123))),
+                                                 new RoutingStatus(RoutingStatus.Value.out,
+                                                                   RoutingStatus.Agent.tenant,
+                                                                   Instant.ofEpochSecond(123)),
                                                  true),
                                new RoutingPolicy(id1,
                                                  Optional.empty(),
@@ -62,7 +61,7 @@ public class RoutingPolicySerializerTest {
                                                  Optional.of("zone2"),
                                                  instanceEndpoints,
                                                  applicationEndpoints,
-                                                 new RoutingPolicy.Status(true, RoutingStatus.DEFAULT),
+                                                 RoutingStatus.DEFAULT,
                                                  true));
         var serialized = serializer.fromSlime(owner, serializer.toSlime(policies));
         assertEquals(policies.size(), serialized.size());
@@ -75,7 +74,7 @@ public class RoutingPolicySerializerTest {
             assertEquals(expected.dnsZone(), actual.dnsZone());
             assertEquals(expected.instanceEndpoints(), actual.instanceEndpoints());
             assertEquals(expected.applicationEndpoints(), actual.applicationEndpoints());
-            assertEquals(expected.status(), actual.status());
+            assertEquals(expected.routingStatus(), actual.routingStatus());
             assertEquals(expected.isPublic(), actual.isPublic());
         }
     }

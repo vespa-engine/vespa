@@ -9,6 +9,7 @@ namespace search::attribute {
 
 
 /**
+ * TODO Use SmallVector instead
  * This class is wrapping an array of type T and is used to hold the
  * attribute vector content for a given document. The values stored for the
  * given document in the attribute vector is copied into the array wrapped
@@ -24,15 +25,13 @@ private:
     T * _dynamicBuf;
     uint32_t _size;
     uint32_t _capacity;
-
-    AttributeContent(const AttributeContent & rhs);
-    AttributeContent & operator=(const AttributeContent & rhs);
-
 public:
+    AttributeContent(const AttributeContent & rhs) = delete;
+    AttributeContent & operator=(const AttributeContent & rhs) = delete;
     /**
      * Creates a new object with an initial capacity of 16 without dynamic allocation.
      **/
-    AttributeContent() :
+    AttributeContent() noexcept :
         _dynamicBuf(nullptr),
         _size(0),
         _capacity(16)
@@ -52,7 +51,7 @@ public:
      *
      * @return iterator
      **/
-    const T * begin() const {
+    const T * begin() const noexcept {
         if (_dynamicBuf != nullptr) {
             return _dynamicBuf;
         }
@@ -64,7 +63,7 @@ public:
      *
      * @return iterator
      **/
-    const T * end() const {
+    const T * end() const noexcept {
         return begin() + _size;
     }
 
@@ -74,7 +73,7 @@ public:
      * @return read-only reference to the element
      * @param idx position into the underlying data
      **/
-    const T & operator[](uint32_t idx) const {
+    const T & operator[](uint32_t idx) const noexcept {
         return *(begin() + idx);
     }
 
@@ -83,25 +82,21 @@ public:
      *
      * @return number of elements used
      **/
-    uint32_t size() const {
-        return _size;
-    }
+    uint32_t size() const noexcept { return _size; }
 
     /**
      * Returns the number of elements allocated in the underlying data array.
      *
      * @return number of elements allocated
      **/
-    uint32_t capacity() const {
-        return _capacity;
-    }
+    uint32_t capacity() const noexcept { return _capacity; }
 
     /**
      * Returns a read/write pointer to the underlying data array.
      *
      * @return read/write pointer.
      **/
-    T * data() {
+    T * data() noexcept {
         if (_dynamicBuf != nullptr) {
             return _dynamicBuf;
         }
@@ -113,7 +108,7 @@ public:
      *
      * @param n number of elements used
      **/
-    void setSize(uint32_t n) {
+    void setSize(uint32_t n) noexcept {
         _size = n;
     }
 
@@ -141,8 +136,7 @@ public:
      * @param attribute the attribute vector
      * @param docId the docId
      **/
-    void fill(const IAttributeVector & attribute, IAttributeVector::DocId docId)
-    {
+    void fill(const IAttributeVector & attribute, IAttributeVector::DocId docId) {
         uint32_t count = attribute.get(docId, data(), capacity());
         while (count > capacity()) {
             allocate(count);

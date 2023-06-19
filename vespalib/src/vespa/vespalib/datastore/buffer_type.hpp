@@ -8,13 +8,13 @@ namespace vespalib::datastore {
 
 template <typename ElemT, typename EmptyT>
 BufferType<ElemT, EmptyT>::BufferType(uint32_t arraySize, uint32_t min_entries, uint32_t max_entries) noexcept
-    : BufferTypeBase(arraySize, min_entries, max_entries)
+    : BufferTypeBase(arraySize * sizeof(ElemT), arraySize, min_entries, max_entries)
 { }
 
 template <typename ElemT, typename EmptyT>
 BufferType<ElemT, EmptyT>::BufferType(uint32_t arraySize, uint32_t min_entries, uint32_t max_entries,
                                   uint32_t num_entries_for_new_buffer, float allocGrowFactor) noexcept
-    : BufferTypeBase(arraySize, min_entries, max_entries, num_entries_for_new_buffer, allocGrowFactor)
+    : BufferTypeBase(arraySize * sizeof(ElemT), arraySize, min_entries, max_entries, num_entries_for_new_buffer, allocGrowFactor)
 { }
 
 template <typename ElemT, typename EmptyT>

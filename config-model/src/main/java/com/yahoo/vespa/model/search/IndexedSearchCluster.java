@@ -43,7 +43,7 @@ public class IndexedSearchCluster extends SearchCluster
         DispatchNodesConfig.Producer,
         ConfigInstance.Producer {
 
-    private IndexingDocproc indexingDocproc;
+    private final IndexingDocproc indexingDocproc;
     private Tuning tuning;
     private SearchCoverage searchCoverage;
 

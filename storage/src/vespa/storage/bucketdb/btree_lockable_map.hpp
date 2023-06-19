@@ -92,52 +92,6 @@ size_t BTreeLockableMap<T>::LockWaiters::insert(const LockId & lid) {
 }
 
 template <typename T>
-bool BTreeLockableMap<T>::operator==(const BTreeLockableMap& other) const {
-    std::lock_guard guard(_lock);
-    std::lock_guard guard2(other._lock);
-    if (_impl->size() != other._impl->size()) {
-        return false;
-    }
-    auto lhs = _impl->begin();
-    auto rhs = other._impl->begin();
-    for (; lhs.valid(); ++lhs, ++rhs) {
-        assert(rhs.valid());
-        if (lhs.getKey() != rhs.getKey()) {
-            return false;
-        }
-        if (_impl->const_value_ref_from_valid_iterator(lhs)
-            != other._impl->const_value_ref_from_valid_iterator(rhs))
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-template <typename T>
-bool BTreeLockableMap<T>::operator<(const BTreeLockableMap& other) const {
-    std::lock_guard guard(_lock);
-    std::lock_guard guard2(other._lock);
-    auto lhs = _impl->begin();
-    auto rhs = other._impl->begin();
-    for (; lhs.valid() && rhs.valid(); ++lhs, ++rhs) {
-        if (lhs.getKey() != rhs.getKey()) {
-            return (lhs.getKey() < rhs.getKey());
-        }
-        if (_impl->const_value_ref_from_valid_iterator(lhs)
-            != other._impl->const_value_ref_from_valid_iterator(rhs))
-        {
-            return (_impl->const_value_ref_from_valid_iterator(lhs)
-                    < other._impl->const_value_ref_from_valid_iterator(rhs));
-        }
-    }
-    if (lhs.valid() == rhs.valid()) {
-        return false; // All keys are equal in maps of equal size.
-    }
-    return rhs.valid(); // Rhs still valid, lhs is not; ergo lhs is "less".
-}
-
-template <typename T>
 size_t BTreeLockableMap<T>::size() const noexcept {
     std::lock_guard guard(_lock);
     return _impl->size();
@@ -551,7 +505,7 @@ BTreeLockableMap<T>::getAll(const BucketId& bucket, const char* clientId) {
 }
 
 template <typename T>
-bool BTreeLockableMap<T>::isConsistent(const BTreeLockableMap::WrappedEntry& entry) {
+bool BTreeLockableMap<T>::isConsistent(const BTreeLockableMap::WrappedEntry& entry) const {
     std::lock_guard guard(_lock);
     uint64_t n_buckets = 0;
     _impl->template find_parents_self_and_children<ByConstRef>(entry.getBucketId(),

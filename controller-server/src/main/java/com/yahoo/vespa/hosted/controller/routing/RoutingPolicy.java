@@ -28,19 +28,19 @@ public record RoutingPolicy(RoutingPolicyId id,
                             Optional<String> dnsZone,
                             Set<EndpointId> instanceEndpoints,
                             Set<EndpointId> applicationEndpoints,
-                            Status status,
+                            RoutingStatus routingStatus,
                             boolean isPublic) {
 
     /** DO NOT USE. Public for serialization purposes */
     public RoutingPolicy(RoutingPolicyId id, Optional<DomainName> canonicalName, Optional<String> ipAddress, Optional<String> dnsZone,
-                         Set<EndpointId> instanceEndpoints, Set<EndpointId> applicationEndpoints, Status status, boolean isPublic) {
+                         Set<EndpointId> instanceEndpoints, Set<EndpointId> applicationEndpoints, RoutingStatus routingStatus, boolean isPublic) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.ipAddress = Objects.requireNonNull(ipAddress, "ipAddress must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.instanceEndpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(instanceEndpoints, "instanceEndpoints must be non-null"));
         this.applicationEndpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(applicationEndpoints, "applicationEndpoints must be non-null"));
-        this.status = Objects.requireNonNull(status, "status must be non-null");
+        this.routingStatus = Objects.requireNonNull(routingStatus, "status must be non-null");
         this.isPublic = isPublic;
 
         if (canonicalName.isEmpty() == ipAddress.isEmpty())
@@ -82,9 +82,9 @@ public record RoutingPolicy(RoutingPolicyId id,
         return applicationEndpoints;
     }
 
-    /** Returns the status of this */
-    public Status status() {
-        return status;
+    /** Return status of routing */
+    public RoutingStatus routingStatus() {
+        return routingStatus;
     }
 
     /** Returns whether this has a load balancer which is available from public internet. */
@@ -98,15 +98,21 @@ public record RoutingPolicy(RoutingPolicyId id,
                id.zone().equals(deployment.zoneId());
     }
 
-    /** Returns a copy of this with status set to given status */
-    public RoutingPolicy with(Status status) {
-        return new RoutingPolicy(id, canonicalName, ipAddress, dnsZone, instanceEndpoints, applicationEndpoints, status, isPublic);
+    /** Returns a copy of this with routing status set to given status */
+    public RoutingPolicy with(RoutingStatus routingStatus) {
+        return new RoutingPolicy(id, canonicalName, ipAddress, dnsZone, instanceEndpoints, applicationEndpoints, routingStatus, isPublic);
     }
 
     /** Returns the zone endpoints of this */
-    public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod) {
+    public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod, boolean includeTokenEndpoint) {
         DeploymentId deployment = new DeploymentId(id.owner(), id.zone());
-        return List.of(endpoint(routingMethod).target(id.cluster(), deployment).in(system));
+        Endpoint zoneEndpoint = endpoint(routingMethod).target(id.cluster(), deployment).in(system);
+        if (includeTokenEndpoint) {
+            Endpoint tokenEndpoint = endpoint(routingMethod).target(id.cluster(), deployment).tokenEndpoint().in(system);
+            return List.of(zoneEndpoint, tokenEndpoint);
+        } else {
+            return List.of(zoneEndpoint);
+        }
     }
 
     /** Returns the region endpoint of this */
@@ -140,30 +146,4 @@ public record RoutingPolicy(RoutingPolicyId id,
                        .on(Port.fromRoutingMethod(routingMethod))
                        .routingMethod(routingMethod);
     }
-
-    /** The status of a routing policy */
-    public record Status(boolean active, RoutingStatus routingStatus) {
-
-        /** DO NOT USE. Public for serialization purposes */
-        public Status {
-            Objects.requireNonNull(routingStatus, "routingStatus must be non-null");
-        }
-
-        /** Returns whether this is considered active according to the load balancer status */
-        public boolean isActive() {
-            return active;
-        }
-
-        /** Return status of routing */
-        public RoutingStatus routingStatus() {
-            return routingStatus;
-        }
-
-        /** Returns a copy of this with routing status changed */
-        public Status with(RoutingStatus routingStatus) {
-            return new Status(active, routingStatus);
-        }
-
-    }
-
 }

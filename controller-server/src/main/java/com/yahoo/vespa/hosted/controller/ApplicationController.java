@@ -41,6 +41,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Deployment
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.DeploymentResult.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
+import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
@@ -677,9 +678,10 @@ public class ApplicationController {
                 operatorCertificates = Stream.concat(operatorCertificates.stream(), testerCertificate.stream()).toList();
             }
             Supplier<Optional<CloudAccount>> cloudAccount = () -> decideCloudAccountOf(deployment, applicationPackage.truncatedPackage().deploymentSpec());
+            List<DataplaneTokenVersions> dataplaneTokenVersions = controller.dataplaneTokenService().listTokens(application.tenant());
             DeploymentData deploymentData = new DeploymentData(application, zone, applicationPackage::zipStream, platform,
                     endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
-                    deploymentQuota, tenantSecretStores, operatorCertificates, cloudAccount, dryRun);
+                    deploymentQuota, tenantSecretStores, operatorCertificates, cloudAccount, dataplaneTokenVersions, dryRun);
             ConfigServer.PreparedApplication preparedApplication = configServer.deploy(deploymentData);
 
             return new DeploymentDataAndResult(deploymentData, preparedApplication.deploymentResult());

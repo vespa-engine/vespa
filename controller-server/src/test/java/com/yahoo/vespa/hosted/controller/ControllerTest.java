@@ -727,15 +727,15 @@ public class ControllerTest {
         // Expected container endpoints are passed to each deployment
         Map<DeploymentId, Map<List<String>, Integer>> deploymentEndpoints = Map.of(
                 new DeploymentId(beta, east3), Map.of(),
-                new DeploymentId(main, east3), Map.of(List.of("e.app1.tenant1.a.vespa.oath.cloud", "e.app1.tenant1.us-east-3-r.vespa.oath.cloud"), 3),
-                new DeploymentId(beta, west1), Map.of(List.of("d.app1.tenant1.a.vespa.oath.cloud", "d.app1.tenant1.us-west-1-r.vespa.oath.cloud"), 3),
-                new DeploymentId(main, west1), Map.of(List.of("d.app1.tenant1.a.vespa.oath.cloud", "d.app1.tenant1.us-west-1-r.vespa.oath.cloud"), 7),
-                new DeploymentId(beta, east1a), Map.of(List.of("a.app1.tenant1.a.vespa.oath.cloud", "a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"), 2,
-                                                       List.of("b.app1.tenant1.a.vespa.oath.cloud", "b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"), 1),
-                new DeploymentId(main, east1a), Map.of(List.of("a.app1.tenant1.a.vespa.oath.cloud", "a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"), 8,
-                                                       List.of("b.app1.tenant1.a.vespa.oath.cloud", "b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"), 1),
-                new DeploymentId(beta, east1b), Map.of(List.of("c.app1.tenant1.a.vespa.oath.cloud", "c.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud"), 4),
-                new DeploymentId(main, east1b), Map.of(List.of("a.app1.tenant1.a.vespa.oath.cloud", "a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"), 1)
+                new DeploymentId(main, east3), Map.of(List.of("e.app1.tenant1.a.vespa.oath.cloud"), 3),
+                new DeploymentId(beta, west1), Map.of(List.of("d.app1.tenant1.a.vespa.oath.cloud"), 3),
+                new DeploymentId(main, west1), Map.of(List.of("d.app1.tenant1.a.vespa.oath.cloud"), 7),
+                new DeploymentId(beta, east1a), Map.of(List.of("a.app1.tenant1.a.vespa.oath.cloud"), 2,
+                                                       List.of("b.app1.tenant1.a.vespa.oath.cloud"), 1),
+                new DeploymentId(main, east1a), Map.of(List.of("a.app1.tenant1.a.vespa.oath.cloud"), 8,
+                                                       List.of("b.app1.tenant1.a.vespa.oath.cloud"), 1),
+                new DeploymentId(beta, east1b), Map.of(List.of("c.app1.tenant1.a.vespa.oath.cloud"), 4),
+                new DeploymentId(main, east1b), Map.of(List.of("a.app1.tenant1.a.vespa.oath.cloud"), 1)
         );
         deploymentEndpoints.forEach((deployment, endpoints) -> {
             Set<ContainerEndpoint> expected = endpoints.entrySet().stream()
@@ -787,30 +787,6 @@ public class ControllerTest {
                                                      RecordData.from("vip.prod.us-west-1.")),
                                           new Record(Record.Type.CNAME,
                                                      RecordName.from("e.app1.tenant1.a.vespa.oath.cloud"),
-                                                     RecordData.from("vip.prod.us-east-3.")),
-                                          new Record(Record.Type.ALIAS,
-                                                     RecordName.from("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
-                                                     RecordData.from("weighted/lb-0--tenant1.app1.beta--prod.aws-us-east-1a/dns-zone-1/prod.aws-us-east-1a/2")),
-                                          new Record(Record.Type.ALIAS,
-                                                     RecordName.from("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
-                                                     RecordData.from("weighted/lb-0--tenant1.app1.main--prod.aws-us-east-1a/dns-zone-1/prod.aws-us-east-1a/8")),
-                                          new Record(Record.Type.ALIAS,
-                                                     RecordName.from("a.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
-                                                     RecordData.from("weighted/lb-0--tenant1.app1.main--prod.aws-us-east-1b/dns-zone-1/prod.aws-us-east-1b/1")),
-                                          new Record(Record.Type.ALIAS,
-                                                     RecordName.from("b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
-                                                     RecordData.from("weighted/lb-0--tenant1.app1.beta--prod.aws-us-east-1a/dns-zone-1/prod.aws-us-east-1a/1")),
-                                          new Record(Record.Type.ALIAS,
-                                                     RecordName.from("b.app1.tenant1.aws-us-east-1a-r.vespa.oath.cloud"),
-                                                     RecordData.from("weighted/lb-0--tenant1.app1.main--prod.aws-us-east-1a/dns-zone-1/prod.aws-us-east-1a/1")),
-                                          new Record(Record.Type.ALIAS,
-                                                     RecordName.from("c.app1.tenant1.aws-us-east-1b-r.vespa.oath.cloud"),
-                                                     RecordData.from("weighted/lb-0--tenant1.app1.beta--prod.aws-us-east-1b/dns-zone-1/prod.aws-us-east-1b/4")),
-                                          new Record(Record.Type.CNAME,
-                                                     RecordName.from("d.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
-                                                     RecordData.from("vip.prod.us-west-1.")),
-                                          new Record(Record.Type.CNAME,
-                                                     RecordName.from("e.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
                                                      RecordData.from("vip.prod.us-east-3.")))),
                      new TreeSet<>(records));
         List<String> endpointDnsNames = tester.controller().routing().declaredEndpointsOf(context.application())
@@ -1569,7 +1545,7 @@ public class ControllerTest {
         DeploymentId deployment = context.deploymentIdIn(ZoneId.from("prod", "us-west-1"));
         DeploymentData deploymentData = new DeploymentData(deployment.applicationId(), deployment.zoneId(), InputStream::nullInputStream, Version.fromString("6.1"),
                                                            Set.of(), Optional::empty, Optional.empty(), Optional.empty(),
-                                                           Quota::unlimited, List.of(), List.of(), Optional::empty, false);
+                                                           Quota::unlimited, List.of(), List.of(), Optional::empty, List.of(),false);
         tester.configServer().deploy(deploymentData);
         assertTrue(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
         tester.controller().applications().deactivate(deployment.applicationId(), deployment.zoneId());

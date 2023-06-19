@@ -146,7 +146,7 @@ public final class JobType implements Comparable<JobType> {
                 case "dev": return dev(parts[1]);
                 case "perf": return perf(parts[1]);
             }
-        throw new IllegalArgumentException("job names must be 'system-test', 'staging-test', or <test|environment>-<region>, but got: " + jobName);
+        throw new IllegalArgumentException("job name must be 'system-test', 'staging-test', or <production|test|dev|perf>-<region>, but got: " + jobName);
     }
 
     public static List<JobType> allIn(ZoneRegistry zones) {

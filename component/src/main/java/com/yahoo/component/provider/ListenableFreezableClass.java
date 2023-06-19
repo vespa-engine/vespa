@@ -29,13 +29,13 @@ public class ListenableFreezableClass extends FreezableClass implements Listenab
     /** Adds a listener which will be invoked when this has become frozen. */
     @Override
     public void addFreezeListener(Runnable runnable, Executor executor) {
-        executionList.add(runnable,executor);
+        executionList.add(runnable, executor);
     }
 
     /** Clones this. The clone is <i>not</i> frozen and has no listeners. */
     @Override
     public ListenableFreezableClass clone() {
-        ListenableFreezableClass clone=(ListenableFreezableClass)super.clone();
+        ListenableFreezableClass clone = (ListenableFreezableClass)super.clone();
         clone.executionList = new ExecutionList();
         return clone;
     }

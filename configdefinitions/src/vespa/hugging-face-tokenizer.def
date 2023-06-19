@@ -1,0 +1,21 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+namespace=language.huggingface.config
+
+# The language a model is for, one of the language tags in com.yahoo.language.Language.
+# Use "unknown" for models to be used with any language.
+model[].language string
+# The path to the model relative to the application package root
+model[].path model
+
+# Include special tokens in output
+addSpecialTokens bool default=true
+
+# Used for truncation/padding. Use -1 for model default.
+maxLength int default=-1
+
+# Truncation strategy. Use NOTSET for model default.
+truncation enum { ON, OFF, NOTSET } default=NOTSET
+
+# Padding strategy. Use NOTSET for model default.
+padding enum { ON, OFF, NOTSET } default=NOTSET

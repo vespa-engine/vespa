@@ -57,7 +57,7 @@ DeactivateBucketsTest::is_active(const document::BucketId& bucket) const
 {
     StorBucketDatabase::WrappedEntry entry(
             _node->getStorageBucketDatabase().get(bucket, "foo"));
-    assert(entry.exist());
+    assert(entry.exists());
     return entry->info.isActive();
 }
 

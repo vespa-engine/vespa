@@ -68,14 +68,11 @@ private:
     using DocumentAccessorNodeList = std::vector<DocumentAccessorNode *>;
     using RelevanceNodeList = std::vector<RelevanceNode *>;
     using InterpolatedLookupList = std::vector<InterpolatedLookup *>;
-    using ArrayAtLookupList = std::vector<ArrayAtLookup *>;
 
     ExpressionNode::CP        _root;
     AttributeNodeList         _attributeNodes;
     DocumentAccessorNodeList  _documentAccessorNodes;
     RelevanceNodeList         _relevanceNodes;
-    InterpolatedLookupList    _interpolatedLookupNodes;
-    ArrayAtLookupList         _arrayAtLookupNodes;
 };
 
 }

@@ -65,10 +65,12 @@ vespa_define_module(
     src/tests/data/smart_buffer
     src/tests/datastore/array_store
     src/tests/datastore/array_store_config
+    src/tests/datastore/array_store_dynamic_type_mapper
     src/tests/datastore/buffer_stats
     src/tests/datastore/buffer_type
     src/tests/datastore/compact_buffer_candidates
     src/tests/datastore/datastore
+    src/tests/datastore/dynamic_array_buffer_type
     src/tests/datastore/fixed_size_hash_map
     src/tests/datastore/free_list
     src/tests/datastore/sharded_hash_map

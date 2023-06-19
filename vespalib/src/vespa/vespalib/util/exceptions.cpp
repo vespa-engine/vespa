@@ -55,8 +55,8 @@ ExceptionWithPayload::ExceptionWithPayload(ExceptionWithPayload &&) noexcept = d
 ExceptionWithPayload & ExceptionWithPayload::operator = (ExceptionWithPayload &&) noexcept = default;
 ExceptionWithPayload::~ExceptionWithPayload() = default;
 
-SilenceUncaughtException::SilenceUncaughtException(const std::exception & e) :
-    _oldTerminate(std::set_terminate(silent_terminate))
+SilenceUncaughtException::SilenceUncaughtException(const std::exception & e)
+    : _oldTerminate(std::set_terminate(silent_terminate))
 {
     std::lock_guard<std::mutex> guard(_G_silence_mutex);
     _G_what = e.what();

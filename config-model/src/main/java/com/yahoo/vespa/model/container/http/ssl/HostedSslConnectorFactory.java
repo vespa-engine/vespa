@@ -33,9 +33,9 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     public static HostedSslConnectorFactory withProvidedCertificate(
             String serverName, EndpointCertificateSecrets endpointCertificateSecrets, boolean enforceHandshakeClientAuth,
             Collection<String> tlsCiphersOverride, boolean enableProxyProtocolMixedMode, int port,
-            Duration endpointConnectionTtl) {
-        ConfiguredDirectSslProvider sslProvider = createConfiguredDirectSslProvider(
-                serverName, endpointCertificateSecrets, DEFAULT_HOSTED_TRUSTSTORE, /*tlsCaCertificates*/null, enforceHandshakeClientAuth);
+            Duration endpointConnectionTtl, boolean enableTokenSupport) {
+        CloudSslProvider sslProvider = createConfiguredDirectSslProvider(
+                serverName, endpointCertificateSecrets, DEFAULT_HOSTED_TRUSTSTORE, /*tlsCaCertificates*/null, enforceHandshakeClientAuth, enableTokenSupport);
         return new HostedSslConnectorFactory(sslProvider, false, enforceHandshakeClientAuth, tlsCiphersOverride,
                                              enableProxyProtocolMixedMode, port, endpointConnectionTtl);
     }
@@ -46,9 +46,9 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     public static HostedSslConnectorFactory withProvidedCertificateAndTruststore(
             String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificates,
             Collection<String> tlsCiphersOverride, boolean enableProxyProtocolMixedMode, int port,
-            Duration endpointConnectionTtl) {
-        ConfiguredDirectSslProvider sslProvider = createConfiguredDirectSslProvider(
-                serverName, endpointCertificateSecrets, /*tlsCaCertificatesPath*/null, tlsCaCertificates, false);
+            Duration endpointConnectionTtl, boolean enableTokenSupport) {
+        CloudSslProvider sslProvider = createConfiguredDirectSslProvider(
+                serverName, endpointCertificateSecrets, /*tlsCaCertificatesPath*/null, tlsCaCertificates, false, enableTokenSupport);
         return new HostedSslConnectorFactory(sslProvider, true, false, tlsCiphersOverride, enableProxyProtocolMixedMode,
                                              port, endpointConnectionTtl);
     }
@@ -74,16 +74,17 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         this.endpointConnectionTtl = endpointConnectionTtl;
     }
 
-    private static ConfiguredDirectSslProvider createConfiguredDirectSslProvider(
-            String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificatesPath, String tlsCaCertificates, boolean enforceHandshakeClientAuth) {
+    private static CloudSslProvider createConfiguredDirectSslProvider(
+            String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificatesPath, String tlsCaCertificates, boolean enforceHandshakeClientAuth, boolean enableTokenSupport) {
         var clientAuthentication = enforceHandshakeClientAuth ? ClientAuth.Enum.NEED_AUTH : ClientAuth.Enum.WANT_AUTH;
-        return new ConfiguredDirectSslProvider(
+        return new CloudSslProvider(
                 serverName,
                 endpointCertificateSecrets.key(),
                 endpointCertificateSecrets.certificate(),
                 tlsCaCertificatesPath,
                 tlsCaCertificates,
-                clientAuthentication);
+                clientAuthentication,
+                enableTokenSupport);
     }
 
     @Override

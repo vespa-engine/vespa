@@ -11,12 +11,14 @@ using namespace search::expression;
 
 namespace search::aggregation {
 
-bool AttributeNodeReplacer::check(const vespalib::Identifiable &obj) const
+bool
+AttributeNodeReplacer::check(const vespalib::Identifiable &obj) const
 {
     return obj.getClass().inherits(GroupingLevel::classId) || obj.getClass().inherits(AggregationResult::classId) || obj.getClass().inherits(MultiArgFunctionNode::classId);
 }
 
-void AttributeNodeReplacer::execute(vespalib::Identifiable &obj)
+void
+AttributeNodeReplacer::execute(vespalib::Identifiable &obj)
 {
     if (obj.getClass().inherits(GroupingLevel::classId)) {
         GroupingLevel & g(static_cast<GroupingLevel &>(obj));

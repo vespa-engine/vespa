@@ -60,21 +60,9 @@ public class PrometheusHandlerTest extends HttpHandlerTestBase {
     }
 
     @Test
-    public void response_contains_node_status() {
-        assertTrue(valuesResponse.contains("vespa_node_status 1.0"));
-    }
-
-    @Test
     public void response_contains_node_metrics() {
         String cpu = getLine(valuesResponse, CPU_METRIC + "{");
         assertTrue(cpu.contains("} 12.345"));   // metric value
-        assertTrue(cpu.contains("{vespaVersion="));
-    }
-
-    @Test
-    public void response_contains_service_status() {
-        assertTrue(valuesResponse.contains("vespa_dummy_status 1.0"));
-        assertTrue(valuesResponse.contains("vespa_down_service_status 0.0"));
     }
 
     @Test

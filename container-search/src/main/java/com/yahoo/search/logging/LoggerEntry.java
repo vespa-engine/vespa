@@ -58,17 +58,19 @@ public class LoggerEntry {
     }
 
     public String toString() {
-        return serialize();
+        return serialize(false);
     }
 
-    public String serialize() {
+    public String serialize() { return serialize(true); }
+
+    public String serialize(boolean encodeBlob) {
         try {
             Slime slime = new Slime();
             Cursor root = slime.setObject();
 
             root.setLong("timestamp", timestamp == null ? 0 : timestamp);
             root.setString("query", queryString());
-            root.setString("blob", Base64.getEncoder().encodeToString(blob.array()));
+            root.setString("blob", encodeBlob? Base64.getEncoder().encodeToString(blob.array()) : Utf8.toString(blob.array()));
             root.setString("track", track());
 
             return Utf8.toString(SlimeUtils.toJsonBytes(slime));  // TODO
@@ -82,7 +84,7 @@ public class LoggerEntry {
 
         var timestamp = slime.get().field("timestamp").asLong();
         var query = new Query(slime.get().field("query").asString());
-        var blob = slime.get().field("blob").asString();
+        var blob = Base64.getDecoder().decode(slime.get().field("blob").asString());
         var track = slime.get().field("track").asString();
 
         return new LoggerEntry(new Builder().timestamp(timestamp).query(query).blob(blob).track(track));
@@ -121,10 +123,7 @@ public class LoggerEntry {
         }
 
         public Builder blob(String blob) {
-            byte[] bytes = Utf8.toBytes(blob);
-            this.blob = ByteBuffer.allocate(bytes.length);
-            this.blob.put(bytes);
-            return this;
+            return this.blob(Utf8.toBytes(blob));
         }
 
         public Builder track(String track) {
@@ -134,6 +133,10 @@ public class LoggerEntry {
 
         public boolean send() {
             return logger.send(new LoggerEntry(this));
+        }
+
+        LoggerEntry build() {
+            return new LoggerEntry(this);
         }
 
     }

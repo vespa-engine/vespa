@@ -13,6 +13,9 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -71,6 +74,7 @@ public class RoutingController {
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
+    private final BooleanFlag createTokenEndpoint;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -78,6 +82,7 @@ public class RoutingController {
         this.rotationRepository = new RotationRepository(Objects.requireNonNull(rotationsConfig, "rotationsConfig must be non-null"),
                                                          controller.applications(),
                                                          controller.curator());
+        this.createTokenEndpoint = Flags.ENABLE_DATAPLANE_PROXY.bindTo(controller.flagSource());
     }
 
     /** Create a routing context for given deployment */
@@ -109,12 +114,12 @@ public class RoutingController {
 
     /** Read and return zone-scoped endpoints for given deployment */
     public EndpointList readEndpointsOf(DeploymentId deployment) {
+        boolean addTokenEndpoint = createTokenEndpoint.with(FetchVector.Dimension.APPLICATION_ID, deployment.applicationId().serializedForm()).value();
         Set<Endpoint> endpoints = new LinkedHashSet<>();
         // To discover the cluster name for a zone-scoped endpoint, we need to read routing policies
         for (var policy : routingPolicies.read(deployment)) {
-            if (!policy.status().isActive()) continue;
             RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(policy.id().zone());
-            endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod));
+            endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod, addTokenEndpoint));
             endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
         }
         return EndpointList.copyOf(endpoints);
@@ -234,7 +239,6 @@ public class RoutingController {
                                        .on(Port.tls())
                                        .in(controller.system());
             endpointDnsNames.add(endpoint.dnsName());
-            if (endpoint.scope() == Scope.application) endpointDnsNames.add(endpoint.legacyRegionalDnsName());
         }
         return Collections.unmodifiableList(endpointDnsNames);
     }
@@ -314,8 +318,8 @@ public class RoutingController {
                     new Record(Record.Type.CNAME, RecordName.from(endpoint.dnsName()), RecordData.fqdn(vipHostname)),
                     Priority.normal,
                     Optional.of(application.get().id()));
-            controller.nameServiceForwarder().createRecord(
-                    new Record(Record.Type.CNAME, RecordName.from(endpoint.legacyRegionalDnsName()), RecordData.fqdn(vipHostname)),
+            controller.nameServiceForwarder().removeRecords(
+                    Record.Type.CNAME, RecordName.from(endpoint.legacyRegionalDnsName()),
                     Priority.normal,
                     Optional.of(application.get().id()));
         }
@@ -330,7 +334,7 @@ public class RoutingController {
                 if (matchingTarget.isEmpty()) throw new IllegalStateException("No target found routing to " + deployment + " in " + endpoint);
                 containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
                                                              asString(Endpoint.Scope.application),
-                                                             List.of(endpoint.dnsName(), endpoint.legacyRegionalDnsName()),
+                                                             List.of(endpoint.dnsName()),
                                                              OptionalInt.of(matchingTarget.get().weight()),
                                                              endpoint.routingMethod()));
             }

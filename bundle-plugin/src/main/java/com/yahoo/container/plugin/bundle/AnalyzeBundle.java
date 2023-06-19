@@ -12,9 +12,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
 
 /**
  * Static utilities for analyzing jar files.
@@ -45,18 +43,18 @@ public class AnalyzeBundle {
         }
     }
 
-    public static List<String> publicApiPackagesAggregated(Collection<File> jarFiles) {
+    public static List<String> nonPublicApiPackagesAggregated(Collection<File> jarFiles) {
         return jarFiles.stream()
-                .map(AnalyzeBundle::publicApiPackages)
+                .map(AnalyzeBundle::nonPublicApiPackages)
                 .flatMap(List::stream)
                 .distinct()
                 .toList();
     }
 
-    static List<String> publicApiPackages(File jarFile) {
+    private static List<String> nonPublicApiPackages(File jarFile) {
         var manifest = getOsgiManifest(jarFile);
         if (manifest == null) return Collections.emptyList();
-        return getMainAttributeValue(manifest, "X-JDisc-PublicApi-Package")
+        return getMainAttributeValue(manifest, "X-JDisc-Non-PublicApi-Export-Package")
                 .map(s -> Arrays.asList(s.split(",")))
                 .orElseGet(ArrayList::new);
     }

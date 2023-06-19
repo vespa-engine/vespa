@@ -115,7 +115,7 @@ public class Reconfigurer extends AbstractComponent {
                 Duration delay = backoff.delay(attempt);
                 now = Instant.now();
                 if (now.isBefore(end)) {
-                    log.log(Level.WARNING, "Reconfiguration attempt " + attempt + " failed. Retrying in " + delay +
+                    log.log(Level.INFO, "Reconfiguration attempt " + attempt + " failed. Retrying in " + delay +
                                            ", time left " + Duration.between(now, end) + ": " + Exceptions.toMessageString(e));
                     sleeper.sleep(delay);
                 }

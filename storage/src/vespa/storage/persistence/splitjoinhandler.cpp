@@ -132,7 +132,7 @@ SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& cmd, MessageTracker
             target.first.remove();
         }
     }
-    if (sourceEntry.exist()) {
+    if (sourceEntry.exists()) {
         if (ownershipChanged) {
             notifyGuard.notifyAlways(cmd.getBucket(), sourceEntry->getBucketInfo());
         }
@@ -154,7 +154,7 @@ SplitJoinHandler::handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd, Message
         StorBucketDatabase::WrappedEntry entry(
                 _env.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "handleRecheckBucketInfo"));
 
-        if (entry.exist()) {
+        if (entry.exists()) {
             api::BucketInfo prevInfo(entry->getBucketInfo());
 
             if (!(prevInfo == info)) {
@@ -214,7 +214,7 @@ SplitJoinHandler::handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTracker
         // Remove source from bucket db.
         StorBucketDatabase::WrappedEntry entry =
                 _env.getBucketDatabase(srcBucket.getBucketSpace()).get(srcBucket.getBucketId(), "join-remove-source");
-        if (entry.exist()) {
+        if (entry.exists()) {
             lastModified = std::max(lastModified, entry->info.getLastModified());
             entry.remove();
         }

@@ -2,6 +2,10 @@
 package com.yahoo.container.plugin.mojo;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.NameFileFilter;
+import org.apache.commons.io.filefilter.NotFileFilter;
+import org.apache.commons.io.filefilter.OrFileFilter;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.plugin.AbstractMojo;
@@ -12,10 +16,10 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +29,8 @@ import java.util.List;
  */
 @Mojo(name = "packageApplication", defaultPhase = LifecyclePhase.PACKAGE, threadSafe = true)
 public class ApplicationMojo extends AbstractMojo {
+
+    private static final List<String> IGNORED_FILES = List.of(".DS_Store");
 
     @Parameter(defaultValue = "${project}", readonly = true)
     protected MavenProject project;
@@ -125,11 +131,19 @@ public class ApplicationMojo extends AbstractMojo {
     private void copyApplicationPackage(File applicationPackage, File applicationDestination) throws MojoExecutionException {
         if (applicationPackage.exists()) {
             try {
-                FileUtils.copyDirectory(applicationPackage, applicationDestination);
+                FileUtils.copyDirectory(applicationPackage, applicationDestination, ignoredFilesFilter());
             } catch (IOException e) {
                 throw new MojoExecutionException("Failed copying applicationPackage", e);
             }
         }
+    }
+
+    static FileFilter ignoredFilesFilter() {
+        var ioFileFilters = IGNORED_FILES.stream()
+                .map(NameFileFilter::new)
+                .map(IOFileFilter.class::cast)
+                .toList();
+        return new NotFileFilter(new OrFileFilter(ioFileFilters));
     }
 
     private void copyModuleBundles(File moduleDir, File componentsDir) throws MojoExecutionException {

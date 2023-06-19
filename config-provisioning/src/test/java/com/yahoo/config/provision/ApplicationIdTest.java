@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * @author Ulf Lilleengen
  * @author vegard
- * @since 5.1
  */
 public class ApplicationIdTest {
 
@@ -81,9 +80,17 @@ public class ApplicationIdTest {
 
     @Test
     void require_that_invalid_idstring_throws_exception() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            ApplicationId.fromSerializedForm("foo:baz");
-        });
+        var e = assertThrows(IllegalArgumentException.class, () -> ApplicationId.fromSerializedForm("foo:baz"));
+        assertEquals("Application ids must be on the form tenant:application:instance, but was foo:baz", e.getMessage());
+
+        e = assertThrows(IllegalArgumentException.class, () -> ApplicationId.fromFullString("foo.baz"));
+        assertEquals("Application ids must be on the form tenant.application.instance, but was foo.baz", e.getMessage());
+
+        e = assertThrows(IllegalArgumentException.class, () -> ApplicationId.fromSerializedForm("foo:baz:bar:xyzzy"));
+        assertEquals("Application ids must be on the form tenant:application:instance, but was foo:baz:bar:xyzzy", e.getMessage());
+
+        e = assertThrows(IllegalArgumentException.class, () -> ApplicationId.fromFullString("foo.baz.bar.xyzzy"));
+        assertEquals("Application ids must be on the form tenant.application.instance, but was foo.baz.bar.xyzzy", e.getMessage());
     }
 
     @Test
