@@ -431,7 +431,7 @@ public record IP() {
     public static void verifyDns(String hostname, String ipAddress, NodeType nodeType, NameResolver resolver,
                                  CloudAccount cloudAccount, Zone zone) {
         boolean ipv6 = isV6(ipAddress);
-        Set<DnsRecordType> recordTypes = dnsRecordTypesFor(ipv6, nodeType, zone.cloud().name(), cloudAccount.isEnclave(zone));
+        Set<DnsRecordType> recordTypes = dnsRecordTypesFor(ipv6, nodeType, zone.cloud().name(), cloudAccount.isExclave(zone));
 
         if (recordTypes.contains(DnsRecordType.FORWARD)) {
             RecordType recordType = ipv6 ? RecordType.AAAA : RecordType.A;

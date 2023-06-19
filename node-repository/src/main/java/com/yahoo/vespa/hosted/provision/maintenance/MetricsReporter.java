@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 import com.yahoo.vespa.hosted.provision.persistence.CacheStats;
@@ -196,7 +195,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
             boolean converged = currentVersion.isPresent() &&
                     currentVersion.get().equals(wantedVersion);
             metric.set(ConfigServerMetrics.WANT_TO_CHANGE_VESPA_VERSION.baseName(), converged ? 0 : 1, context);
-            if (node.cloudAccount().isEnclave(nodeRepository().zone())) {
+            if (node.cloudAccount().isExclave(nodeRepository().zone())) {
                 metric.set(ConfigServerMetrics.HAS_WIRE_GUARD_KEY.baseName(), node.wireguardPubKey().isPresent() ? 1 : 0, context);
             }
         } else {
