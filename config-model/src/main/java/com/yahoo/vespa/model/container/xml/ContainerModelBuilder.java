@@ -627,16 +627,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             // Set up component to generate proxy cert if token support is enabled
             if (enableTokenSupport) {
-                var tokenChain = new HttpFilterChain("cloud-data-plane-token", HttpFilterChain.Type.SYSTEM);
-                tokenChain.addInnerComponent(new Filter(
-                        new ChainedComponentModel(
-                                new BundleInstantiationSpecification(
-                                        new ComponentSpecification("com.yahoo.jdisc.http.filter.security.misc.BlockingRequestFilter"),
-                                        null, new ComponentSpecification("jdisc-security-filters")),
-                                Dependencies.emptyDependencies())));
-
-                cluster.getHttp().getFilterChains().add(tokenChain);
-
                 cluster.addSimpleComponent(DataplaneProxyCredentials.class);
                 cluster.addSimpleComponent(DataplaneProxyService.class);
 
