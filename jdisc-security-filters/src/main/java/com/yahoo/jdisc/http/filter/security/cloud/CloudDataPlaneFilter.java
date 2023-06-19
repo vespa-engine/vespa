@@ -18,7 +18,6 @@ import com.yahoo.security.token.TokenCheckHash;
 import com.yahoo.security.token.TokenDomain;
 import com.yahoo.security.token.TokenFingerprint;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -98,7 +97,8 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
             if (!c.certificates().isEmpty()) {
                 List<X509Certificate> certs;
                 try {
-                    certs = c.certificates().stream().map(X509CertificateUtils::fromPem).toList();
+                    certs = c.certificates().stream()
+                            .flatMap(pem -> X509CertificateUtils.certificateListFromPem(pem).stream()).toList();
                 } catch (Exception e) {
                     throw new IllegalArgumentException(
                             "Client '%s' contains invalid X.509 certificate PEM: %s".formatted(c.id(), e.toString()), e);

@@ -88,6 +88,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
         CloudDataPlaneFilterConfig.Clients client = clients.get(0);
         assertEquals("foo", client.id());
         assertIterableEquals(List.of("read", "write"), client.permissions());
+        assertTrue(client.tokens().isEmpty());
         assertIterableEquals(List.of(X509CertificateUtils.toPem(certificate)), client.certificates());
 
         ConnectorConfig connectorConfig = connectorConfig();
@@ -144,6 +145,7 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
         var tokenClient = cfg.clients().stream().filter(c -> c.id().equals("bar")).findAny().orElse(null);
         assertNotNull(tokenClient);
         assertEquals(List.of("read"), tokenClient.permissions());
+        assertTrue(tokenClient.certificates().isEmpty());
         var expectedTokenCfg = tokenConfig(
                 "my-token", List.of("myfingerprint1", "myfingerprint2"), List.of("myaccesshash1", "myaccesshash2"));
         assertEquals(List.of(expectedTokenCfg), tokenClient.tokens());
