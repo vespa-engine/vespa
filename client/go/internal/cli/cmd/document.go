@@ -160,8 +160,8 @@ func newDocumentCmd(cli *CLI) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "document json-file",
-		Short: "Issue a document operation to Vespa",
-		Long: `Issue a document operation to Vespa.
+		Short: "Issue a single document operation to Vespa",
+		Long: `Issue a single document operation to Vespa.
 
 The operation must be on the format documented in
 https://docs.vespa.ai/en/reference/document-json-format.html#document-operations
