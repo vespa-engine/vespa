@@ -27,12 +27,10 @@ public class DataplaneProxyServiceTest {
 
     @Test
     public void starts_and_reloads_if_no_errors() throws IOException {
-        DataplaneProxyService.ProxyCommands proxyCommands = Mockito.mock(DataplaneProxyService.ProxyCommands.class);
         DataplaneProxyService service = dataplaneProxyService(proxyCommands);
 
         assertEquals(DataplaneProxyService.NginxState.INITIALIZING, service.state());
         service.reconfigure(proxyConfig(), credentials(fileSystem));
-        assertEquals(DataplaneProxyService.NginxState.STARTING, service.state());
 
         // Simulate executor next tick
         service.startOrReloadNginx();
@@ -40,32 +38,27 @@ public class DataplaneProxyServiceTest {
 
         // Trigger reload by recreating the proxy config (generates new server cert)
         service.reconfigure(proxyConfig(), credentials(fileSystem));
-        assertEquals(DataplaneProxyService.NginxState.RELOAD_REQUIRED, service.state());
-
         service.startOrReloadNginx();
         assertEquals(DataplaneProxyService.NginxState.RUNNING, service.state());
     }
 
     @Test
     public void retries_startup_errors() throws IOException {
-        DataplaneProxyService.ProxyCommands proxyCommands = Mockito.mock(DataplaneProxyService.ProxyCommands.class);
         Mockito.doThrow(new RuntimeException("IO error")).doNothing().when(proxyCommands).start(any());
         DataplaneProxyService service = dataplaneProxyService(proxyCommands);
 
         assertEquals(DataplaneProxyService.NginxState.INITIALIZING, service.state());
         service.reconfigure(proxyConfig(), credentials(fileSystem));
-        assertEquals(DataplaneProxyService.NginxState.STARTING, service.state());
 
         // Start nginx,
         service.startOrReloadNginx();
-        assertEquals(DataplaneProxyService.NginxState.STARTING, service.state());
+        assertEquals(DataplaneProxyService.NginxState.INITIALIZING, service.state());
         service.startOrReloadNginx();
         assertEquals(DataplaneProxyService.NginxState.RUNNING, service.state());
     }
 
     @Test
     public void retries_reload_errors() throws IOException {
-        DataplaneProxyService.ProxyCommands proxyCommands = Mockito.mock(DataplaneProxyService.ProxyCommands.class);
         Mockito.doThrow(new RuntimeException("IO error")).doNothing().when(proxyCommands).reload();
         DataplaneProxyService service = dataplaneProxyService(proxyCommands);
 
@@ -76,7 +69,6 @@ public class DataplaneProxyServiceTest {
 
         // Trigger reload, verifies 2nd attempt succeeds
         service.reconfigure(proxyConfig(), credentials(fileSystem));
-        assertEquals(DataplaneProxyService.NginxState.RELOAD_REQUIRED, service.state());
         service.startOrReloadNginx();
         assertEquals(DataplaneProxyService.NginxState.RELOAD_REQUIRED, service.state());
         service.startOrReloadNginx();

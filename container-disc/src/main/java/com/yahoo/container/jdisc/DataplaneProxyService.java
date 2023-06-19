@@ -11,12 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.Duration;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,8 +35,12 @@ public class DataplaneProxyService extends AbstractComponent {
     private final ScheduledThreadPoolExecutor executorService;
     private final Path root;
 
-    enum NginxState {INITIALIZING, STARTING, RUNNING, RELOAD_REQUIRED, CONFIG_CHANGE_IN_PROGRESS, STOPPED};
+    enum NginxState {INITIALIZING, RUNNING, RELOAD_REQUIRED};
     private NginxState state;
+
+    private DataplaneProxyConfig cfg;
+    private Path proxyCredentialsCert;
+    private Path proxyCredentialsKey;
 
 
     @Inject
@@ -63,36 +63,10 @@ public class DataplaneProxyService extends AbstractComponent {
     }
 
     public void reconfigure(DataplaneProxyConfig config, DataplaneProxyCredentials credentialsProvider) {
-        NginxState prevState = state;
-        changeState(NginxState.CONFIG_CHANGE_IN_PROGRESS);
-        try {
-
-            String serverCert = config.serverCertificate();
-            String serverKey = config.serverKey();
-
-            boolean configChanged = false;
-            configChanged |= writeFile(serverCertificateFile, serverCert);
-            configChanged |= writeFile(serverKeyFile, serverKey);
-            configChanged |= writeFile(nginxConf,
-                      nginxConfig(
-                              configTemplate,
-                              credentialsProvider.certificateFile(),
-                              credentialsProvider.keyFile(),
-                              serverCertificateFile,
-                              serverKeyFile,
-                              config.port(),
-                              root
-                      ));
-            if (prevState == NginxState.INITIALIZING) {
-                changeState(NginxState.STARTING);
-            } else if (configChanged && prevState == NginxState.RUNNING) {
-                changeState(NginxState.RELOAD_REQUIRED);
-            } else {
-                changeState(prevState);
-            }
-        } catch (IOException e) {
-            changeState(prevState);
-            throw new RuntimeException("Error reconfiguring data plane proxy", e);
+        synchronized (this) {
+            this.cfg = config;
+            this.proxyCredentialsCert = credentialsProvider.certificateFile();
+            this.proxyCredentialsKey = credentialsProvider.keyFile();
         }
     }
 
@@ -101,9 +75,46 @@ public class DataplaneProxyService extends AbstractComponent {
     }
 
     void startOrReloadNginx() {
-        if (state == NginxState.CONFIG_CHANGE_IN_PROGRESS) {
-            return;
-        } else if (state == NginxState.STARTING) {
+        DataplaneProxyConfig config;
+        Path proxyCredentialsCert;
+        Path proxyCredentialsKey;
+        synchronized (this) {
+            config = cfg;
+            proxyCredentialsCert = this.proxyCredentialsCert;
+            proxyCredentialsKey = this.proxyCredentialsKey;
+            this.cfg = null;
+            this.proxyCredentialsCert = null;
+            this.proxyCredentialsKey = null;
+        }
+
+        boolean configChanged = false;
+        if (config != null) {
+            try {
+
+                String serverCert = config.serverCertificate();
+                String serverKey = config.serverKey();
+
+                configChanged |= writeFile(serverCertificateFile, serverCert);
+                configChanged |= writeFile(serverKeyFile, serverKey);
+                configChanged |= writeFile(nginxConf,
+                                           nginxConfig(
+                                                   configTemplate,
+                                                   proxyCredentialsCert,
+                                                   proxyCredentialsKey,
+                                                   serverCertificateFile,
+                                                   serverKeyFile,
+                                                   config.port(),
+                                                   root
+                                           ));
+                if (configChanged && state == NginxState.RUNNING) {
+                    changeState(NginxState.RELOAD_REQUIRED);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Error reconfiguring data plane proxy", e);
+            }
+        }
+
+        if (state == NginxState.INITIALIZING) {
             try {
                 proxyCommands.start(nginxConf);
                 changeState(NginxState.RUNNING);
@@ -131,7 +142,6 @@ public class DataplaneProxyService extends AbstractComponent {
         }
         try {
             proxyCommands.stop();
-            changeState(NginxState.STOPPED);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed shutting down nginx");
         }
