@@ -92,7 +92,6 @@ vespa_define_module(
     src/tests/attribute/postinglist
     src/tests/attribute/postinglistattribute
     src/tests/attribute/raw_attribute
-    src/tests/attribute/raw_buffer_type_mapper
     src/tests/attribute/reference_attribute
     src/tests/attribute/save_target
     src/tests/attribute/searchable

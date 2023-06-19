@@ -111,7 +111,6 @@ vespa_add_library(searchlib_attribute OBJECT
     raw_buffer_store.cpp
     raw_buffer_store_reader.cpp
     raw_buffer_store_writer.cpp
-    raw_buffer_type_mapper.cpp
     raw_multi_value_read_view.cpp
     readerbase.cpp
     reference_attribute.cpp
