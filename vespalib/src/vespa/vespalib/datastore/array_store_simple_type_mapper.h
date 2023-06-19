@@ -24,7 +24,7 @@ public:
     uint32_t get_type_id(size_t array_size) const noexcept { return array_size; }
     size_t get_array_size(uint32_t type_id) const noexcept { return type_id; }
     size_t get_entry_size(uint32_t type_id) const noexcept { return get_array_size(type_id) * sizeof(ElemT); }
-    static uint32_t get_max_small_array_type_id(uint32_t max_small_array_type_id) noexcept { return max_small_array_type_id; }
+    static uint32_t get_max_type_id(uint32_t max_type_id) noexcept { return max_type_id; }
 };
 
 }

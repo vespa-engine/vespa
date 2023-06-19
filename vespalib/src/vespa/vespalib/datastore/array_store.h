@@ -26,7 +26,7 @@ namespace vespalib::datastore {
  * The default EntryRef type uses 19 bits for offset (524288 values) and 13
  * bits for buffer id (8192 buffers).
  *
- * Buffer type ids [1,maxSmallArrayTypeId] are used to allocate small
+ * Buffer type ids [1,max_type_id] are used to allocate small
  * arrays in datastore buffers.
  *
  * The simple type mapper (ArrayStoreSimpleTypeMapper) uses a 1-to-1
@@ -40,7 +40,7 @@ namespace vespalib::datastore {
  * Buffer type id 0 is used to heap allocate large arrays as
  * vespalib::Array instances.
  *
- * The max value of maxSmallArrayTypeId is (2^(bufferBits - 3) - 1).
+ * The max value of max_type_id is (2^(bufferBits - 3) - 1).
  */
 template <typename ElemT, typename RefT = EntryRefT<19>, typename TypeMapperT = ArrayStoreSimpleTypeMapper<ElemT> >
 class ArrayStore : public ICompactable
@@ -74,7 +74,7 @@ public:
     using DynamicBufferTypeVector = typename check_dynamic_buffer_type_member<TypeMapper>::vector_type;
 private:
     uint32_t                     _largeArrayTypeId;
-    uint32_t                     _maxSmallArrayTypeId;
+    uint32_t                     _max_type_id;
     size_t                       _maxSmallArraySize;
     DataStoreType                _store;
     TypeMapper                   _mapper;
@@ -193,13 +193,13 @@ public:
 
     const TypeMapper& get_mapper() const noexcept { return _mapper; }
 
-    static ArrayStoreConfig optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
+    static ArrayStoreConfig optimizedConfigForHugePage(uint32_t max_type_id,
                                                        size_t hugePageSize,
                                                        size_t smallPageSize,
                                                        size_t min_num_entries_for_new_buffer,
                                                        float allocGrowFactor);
 
-    static ArrayStoreConfig optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
+    static ArrayStoreConfig optimizedConfigForHugePage(uint32_t max_type_id,
                                                        const TypeMapper& mapper,
                                                        size_t hugePageSize,
                                                        size_t smallPageSize,

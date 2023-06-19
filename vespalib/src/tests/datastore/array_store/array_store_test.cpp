@@ -74,7 +74,7 @@ struct ArrayStoreTest : public TestT
           type_mapper_grow_factor(type_mapper_grow_factor_in)
     {}
     explicit ArrayStoreTest(const ArrayStoreConfig &storeCfg)
-        : type_mapper(storeCfg.maxSmallArrayTypeId(), 2.0),
+        : type_mapper(storeCfg.max_type_id(), 2.0),
           store(storeCfg, std::make_unique<MemoryAllocatorObserver>(stats), TypeMapperType(type_mapper)),
           refStore(),
           generation(1),
@@ -290,7 +290,7 @@ TYPED_TEST(NumberStoreTest, control_type_mapper)
     if constexpr (TestFixture::simple_type_mapper) {
         GTEST_SKIP() << "Skipping test due to using simple type mapper";
     } else {
-        EXPECT_EQ(3, this->type_mapper.get_max_small_array_type_id(1000));
+        EXPECT_EQ(3, this->type_mapper.get_max_type_id(1000));
         EXPECT_FALSE(this->type_mapper.is_dynamic_buffer(0));
         EXPECT_FALSE(this->type_mapper.is_dynamic_buffer(1));
         EXPECT_EQ(1, this->type_mapper.get_array_size(1));

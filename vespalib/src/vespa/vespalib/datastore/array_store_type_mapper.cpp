@@ -33,10 +33,10 @@ ArrayStoreTypeMapper::get_array_size(uint32_t type_id) const
 }
 
 uint32_t
-ArrayStoreTypeMapper::get_max_small_array_type_id(uint32_t max_small_array_type_id) const noexcept
+ArrayStoreTypeMapper::get_max_type_id(uint32_t max_type_id) const noexcept
 {
     auto clamp_type_id = _array_sizes.size() - 1;
-    return (clamp_type_id < max_small_array_type_id) ? clamp_type_id : max_small_array_type_id;
+    return (clamp_type_id < max_type_id) ? clamp_type_id : max_type_id;
 }
 
 }

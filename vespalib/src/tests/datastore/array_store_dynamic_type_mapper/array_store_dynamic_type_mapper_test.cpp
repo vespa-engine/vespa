@@ -111,7 +111,7 @@ uint32_t
 TestBase<ElemT>::calc_max_buffer_type_id(double grow_factor)
 {
     ArrayStoreDynamicTypeMapper<ElemT> mapper(1000, grow_factor);
-    return mapper.get_max_small_array_type_id(1000);
+    return mapper.get_max_type_id(1000);
 }
 
 using ArrayStoreDynamicTypeMapperCharTest = TestBase<char>;

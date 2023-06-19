@@ -12,7 +12,7 @@ using vespalib::datastore::EntryRef;
 
 namespace {
 
-constexpr uint32_t max_small_array_type_id = 64;
+constexpr uint32_t max_type_id = 64;
 constexpr size_t min_num_arrays_for_new_buffer = 512_Ki;
 constexpr float alloc_grow_factor = 0.3;
 
@@ -46,7 +46,7 @@ HnswNodeidMapping::HnswNodeidMapping()
     : _refs(1),
       _grow_strategy(16, 1.0, 0, 0), // These are the same parameters as the default in rcuvector.h
       _nodeid_limit(1), // Starting with nodeid=1 matches that we also start with docid=1.
-      _nodeids(NodeidStore::optimizedConfigForHugePage(max_small_array_type_id,
+      _nodeids(NodeidStore::optimizedConfigForHugePage(max_type_id,
                                                        vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                        vespalib::alloc::MemoryAllocator::PAGE_SIZE,
                                                        min_num_arrays_for_new_buffer,
