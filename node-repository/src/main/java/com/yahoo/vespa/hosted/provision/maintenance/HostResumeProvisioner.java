@@ -78,14 +78,23 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
 
     /** Verify DNS configuration of given node */
     private void verifyDns(Node node, IP.Config ipConfig) {
-        for (var ipAddress : ipConfig.primary()) {
-            IP.verifyDns(node.hostname(), ipAddress, nodeRepository().nameResolver(), verifyPtr(node, ipAddress));
+        boolean exclave = node.cloudAccount().isEnclave(nodeRepository().zone());
+        boolean gcp = nodeRepository().zone().cloud().name().equals(CloudName.GCP);
+        for (String ipAddress : ipConfig.primary()) {
+            IP.verifyDns(node.hostname(), ipAddress, nodeRepository().nameResolver(),
+                         hasForwardRecord(exclave, gcp, ipAddress),
+                         hasReverseRecord(exclave, gcp, ipAddress));
         }
     }
 
-    private boolean verifyPtr(Node node, String address) {
-        if (node.cloudAccount().isEnclave(nodeRepository().zone())) return false;
-        if (nodeRepository().zone().cloud().name().equals(CloudName.GCP) && IP.isV6(address)) return false;
+    public static boolean hasForwardRecord(boolean exclave, boolean gcp, String address) {
+        if (exclave && gcp && IP.isV4(address)) return false;
+        return true;
+    }
+
+    public static boolean hasReverseRecord(boolean exclave, boolean gcp, String address) {
+        if (exclave) return false;
+        if (gcp && IP.isV6(address)) return false;
         return true;
     }
 

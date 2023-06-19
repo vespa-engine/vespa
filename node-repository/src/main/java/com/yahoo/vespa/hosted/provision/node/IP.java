@@ -395,12 +395,14 @@ public record IP() {
     }
 
     /** Verify DNS configuration of given hostname and IP address */
-    public static void verifyDns(String hostname, String ipAddress, NameResolver resolver, boolean hasPtr) {
-        RecordType recordType = isV6(ipAddress) ? RecordType.AAAA : RecordType.A;
-        Set<String> addresses = resolver.resolve(hostname, recordType);
-        if (!addresses.equals(Set.of(ipAddress)))
-            throw new IllegalArgumentException("Expected " + hostname + " to resolve to " + ipAddress +
-                                               ", but got " + addresses);
+    public static void verifyDns(String hostname, String ipAddress, NameResolver resolver, boolean hasForward, boolean hasPtr) {
+        if (hasForward) {
+            RecordType recordType = isV6(ipAddress) ? RecordType.AAAA : RecordType.A;
+            Set<String> addresses = resolver.resolve(hostname, recordType);
+            if (!addresses.equals(Set.of(ipAddress)))
+                throw new IllegalArgumentException("Expected " + hostname + " to resolve to " + ipAddress +
+                                                   ", but got " + addresses);
+        }
 
         if (hasPtr) {
             Optional<String> reverseHostname = resolver.resolveHostname(ipAddress);
