@@ -380,7 +380,7 @@ public class OrchestratorImpl implements Orchestrator {
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         ApplicationInstanceReference reference = OrchestratorUtil.toApplicationInstanceReference(appId, serviceMonitor);
 
-        ApplicationInstance application = serviceMonitor.getApplication(appId)
+        ApplicationInstance application = serviceMonitor.getApplication(reference)
                 .orElseThrow(ApplicationIdNotFoundException::new);
 
         try (ApplicationLock lock = statusService.lockApplication(context, reference)) {
@@ -412,7 +412,7 @@ public class OrchestratorImpl implements Orchestrator {
     @Override
     public boolean isQuiescent(ApplicationId id) {
         try {
-            ApplicationInstance application = serviceMonitor.getApplication(id)
+            ApplicationInstance application = serviceMonitor.getApplication(OrchestratorUtil.toApplicationInstanceReference(id, serviceMonitor))
                                                             .orElseThrow(ApplicationIdNotFoundException::new);
 
             List<ServiceCluster> contentClusters = application.serviceClusters().stream()

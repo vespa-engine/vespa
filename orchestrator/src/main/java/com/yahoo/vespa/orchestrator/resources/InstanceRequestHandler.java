@@ -7,7 +7,6 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.restapi.RestApi;
@@ -28,7 +27,6 @@ import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.service.manager.MonitorManager;
 import com.yahoo.vespa.service.manager.UnionMonitorManager;
-import com.yahoo.vespa.service.model.ApplicationInstanceGenerator;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.vespa.service.monitor.SlobrokApi;
 
@@ -56,21 +54,18 @@ public class InstanceRequestHandler extends RestApiRequestHandler<InstanceReques
     private final SlobrokApi slobrokApi;
     private final MonitorManager rootManager;
     private final ServiceMonitor serviceMonitor;
-    private final Zone zone;
 
     @Inject
     public InstanceRequestHandler(ThreadedHttpRequestHandler.Context context,
                                   ServiceMonitor serviceMonitor,
                                   StatusService statusService,
                                   SlobrokApi slobrokApi,
-                                  UnionMonitorManager rootManager,
-                                  Zone zone) {
+                                  UnionMonitorManager rootManager) {
         super(context, InstanceRequestHandler::createRestApiDefinition);
         this.statusService = statusService;
         this.slobrokApi = slobrokApi;
         this.rootManager = rootManager;
         this.serviceMonitor = serviceMonitor;
-        this.zone = zone;
     }
 
     private static RestApi createRestApiDefinition(InstanceRequestHandler self) {
@@ -94,19 +89,16 @@ public class InstanceRequestHandler extends RestApiRequestHandler<InstanceReques
                 .build();
     }
 
-    private List<ApplicationId> getAllInstances(RestApi.RequestContext context) {
-        return serviceMonitor.getAllApplicationInstanceReferences().stream()
-                .map(OrchestratorUtil::toApplicationId)
-                .sorted()
-                .toList();
+    private List<ApplicationInstanceReference> getAllInstances(RestApi.RequestContext context) {
+        return serviceMonitor.getAllApplicationInstanceReferences().stream().sorted().toList();
     }
 
     private InstanceStatusResponse getInstance(RestApi.RequestContext context) {
         String instanceIdString = context.pathParameters().getStringOrThrow("instanceId");
-        ApplicationInstanceReference instanceId = getApplicationInstanceReference(instanceIdString);
+        ApplicationInstanceReference instanceId = parseInstanceId(instanceIdString);
 
         ApplicationInstance applicationInstance
-                = serviceMonitor.getApplication(OrchestratorUtil.toApplicationId(instanceId))
+                = serviceMonitor.getApplication(instanceId)
                 .orElseThrow(RestApiException.NotFound::new);
 
         HostInfos hostInfos = statusService.getHostInfosByApplicationResolver().apply(applicationInstance.reference());
@@ -121,19 +113,6 @@ public class InstanceRequestHandler extends RestApiRequestHandler<InstanceReques
         return InstanceStatusResponse.create(applicationInstance, hostStatusMap);
     }
 
-    // Gets ApplicationInstanceReference when string might be an ApplicationId (tenant:application:instance) or
-    // an ApplicationInstanceReference (tenant:application:instance:environment:region:instance).
-    // TODO: Accept only strings on the form tenant:application:instance when all users have been
-    // updated and return ApplicationId instead of ApplicationInstanceReference.
-    private ApplicationInstanceReference getApplicationInstanceReference(String instanceIdString) {
-        try {
-            ApplicationId applicationId = ApplicationId.fromSerializedForm(instanceIdString);
-            return ApplicationInstanceGenerator.toApplicationInstanceReference(applicationId, zone);
-        } catch (IllegalArgumentException e) {
-            return parseInstanceId(instanceIdString);
-        }
-    }
-
     private WireHostInfo hostInfoToWire(HostInfo hostInfo) {
         String hostStatusString = hostInfo.status().asString();
         String suspendedSinceUtcOrNull = hostInfo.suspendedSince().map(Instant::toString).orElse(null);
@@ -143,7 +122,7 @@ public class InstanceRequestHandler extends RestApiRequestHandler<InstanceReques
     private List<SlobrokEntryResponse> getSlobrokEntries(RestApi.RequestContext context) {
         String instanceId = context.pathParameters().getStringOrThrow("instanceId");
         String pattern = context.queryParameters().getString("pattern").orElse(null);
-        ApplicationInstanceReference reference = getApplicationInstanceReference(instanceId);
+        ApplicationInstanceReference reference = parseInstanceId(instanceId);
         ApplicationId applicationId = OrchestratorUtil.toApplicationId(reference);
 
         if (pattern == null) {
@@ -161,7 +140,7 @@ public class InstanceRequestHandler extends RestApiRequestHandler<InstanceReques
         String clusterIdString = context.queryParameters().getStringOrThrow("clusterId");
         String serviceTypeString = context.queryParameters().getStringOrThrow("serviceType");
         String configIdString = context.queryParameters().getStringOrThrow("configId");
-        ApplicationInstanceReference reference = getApplicationInstanceReference(instanceId);
+        ApplicationInstanceReference reference = parseInstanceId(instanceId);
         ApplicationId applicationId = OrchestratorUtil.toApplicationId(reference);
 
         ClusterId clusterId = new ClusterId(clusterIdString);

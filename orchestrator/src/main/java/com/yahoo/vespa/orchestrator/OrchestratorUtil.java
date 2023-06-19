@@ -14,10 +14,13 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -88,6 +91,7 @@ public class OrchestratorUtil {
     }
 
     public static ApplicationId toApplicationId(ApplicationInstanceReference appRef) {
+
         String appNameStr = appRef.asString();
         String[] appNameParts = appNameStr.split(":");
 
@@ -95,8 +99,8 @@ public class OrchestratorUtil {
         // Assume here that first two are tenant and application name.
         if (appNameParts.length == 2) {
             return ApplicationId.from(TenantName.from(appNameParts[0]),
-                                      ApplicationName.from(appNameParts[1]),
-                                      InstanceName.defaultName());
+                    ApplicationName.from(appNameParts[1]),
+                    InstanceName.defaultName());
         }
 
         // Other normal application should have 5 parts.
@@ -105,8 +109,8 @@ public class OrchestratorUtil {
         }
 
         return ApplicationId.from(TenantName.from(appNameParts[0]),
-                                  ApplicationName.from(appNameParts[1]),
-                                  InstanceName.from(appNameParts[4]));
+                ApplicationName.from(appNameParts[1]),
+                InstanceName.from(appNameParts[4]));
     }
 
 }
