@@ -12,7 +12,7 @@ MultiValueMapping<ElemT,RefT>::MultiValueMapping(const vespalib::datastore::Arra
                                                   const vespalib::GrowStrategy &gs,
                                                   std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator)
   : MultiValueMappingBase(gs, ArrayStore::getGenerationHolderLocation(_store), memory_allocator),
-    _store(storeCfg, std::move(memory_allocator))
+    _store(storeCfg, std::move(memory_allocator), ArrayStoreTypeMapper(storeCfg.maxSmallArrayTypeId(), array_store_grow_factor))
 {
 }
 
@@ -65,14 +65,15 @@ MultiValueMapping<ElemT, RefT>::getAddressSpaceUsage() const {
 
 template <typename ElemT, typename RefT>
 vespalib::datastore::ArrayStoreConfig
-MultiValueMapping<ElemT, RefT>::optimizedConfigForHugePage(size_t maxSmallArraySize,
+MultiValueMapping<ElemT, RefT>::optimizedConfigForHugePage(size_t max_type_id,
                                                              size_t hugePageSize,
                                                              size_t smallPageSize,
                                                              size_t min_num_entries_for_new_buffer,
                                                              float allocGrowFactor,
                                                              bool enable_free_lists)
 {
-    auto result = ArrayStore::optimizedConfigForHugePage(maxSmallArraySize, hugePageSize, smallPageSize, min_num_entries_for_new_buffer, allocGrowFactor);
+    ArrayStoreTypeMapper mapper(max_type_id, array_store_grow_factor);
+    auto result = ArrayStore::optimizedConfigForHugePage(max_type_id, mapper, hugePageSize, smallPageSize, min_num_entries_for_new_buffer, allocGrowFactor);
     result.enable_free_lists(enable_free_lists);
     return result;
 }

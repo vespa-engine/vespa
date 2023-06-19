@@ -4,6 +4,8 @@
 
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/array_store.h>
+#include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.h>
+#include <vespa/vespalib/datastore/dynamic_array_buffer_type.h>
 #include <vespa/vespalib/util/address_space.h>
 
 namespace search::attribute {
@@ -16,7 +18,8 @@ class MultiValueMappingReadView
 {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using Indices = vespalib::ConstArrayRef<AtomicEntryRef>;
-    using ArrayStore = vespalib::datastore::ArrayStore<ElemT, RefT>;
+    using ArrayStoreTypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<ElemT>;
+    using ArrayStore = vespalib::datastore::ArrayStore<ElemT, RefT, ArrayStoreTypeMapper>;
 
     Indices           _indices;
     const ArrayStore* _store;
