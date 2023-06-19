@@ -5,6 +5,8 @@
 #include "multi_value_mapping_base.h"
 #include "multi_value_mapping_read_view.h"
 #include <vespa/vespalib/datastore/array_store.h>
+#include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.h>
+#include <vespa/vespalib/datastore/dynamic_array_buffer_type.h>
 #include <vespa/vespalib/util/address_space.h>
 
 namespace search::attribute {
@@ -19,9 +21,13 @@ public:
     using MultiValueType = ElemT;
     using RefType = RefT;
     using ReadView = MultiValueMappingReadView<ElemT, RefT>;
+
+    static constexpr double array_store_grow_factor = 1.03;
+    static constexpr uint32_t array_store_max_type_id = 300;
 private:
     using ArrayRef = vespalib::ArrayRef<ElemT>;
-    using ArrayStore = vespalib::datastore::ArrayStore<ElemT, RefT>;
+    using ArrayStoreTypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<ElemT>;
+    using ArrayStore = vespalib::datastore::ArrayStore<ElemT, RefT, ArrayStoreTypeMapper>;
     using generation_t = vespalib::GenerationHandler::generation_t;
     using ConstArrayRef = vespalib::ConstArrayRef<ElemT>;
 
@@ -70,7 +76,7 @@ public:
     void set_compaction_spec(vespalib::datastore::CompactionSpec compaction_spec) noexcept { _store.set_compaction_spec(compaction_spec); }
 
 
-    static vespalib::datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
+    static vespalib::datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t max_type_id,
                                                                   size_t hugePageSize,
                                                                   size_t smallPageSize,
                                                                   size_t min_num_entries_for_new_buffer,
