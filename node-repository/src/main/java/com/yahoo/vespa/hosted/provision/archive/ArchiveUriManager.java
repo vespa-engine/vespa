@@ -42,7 +42,7 @@ public class ArchiveUriManager {
         if (node.allocation().isEmpty()) return Optional.empty();
         ApplicationId app = node.allocation().get().owner();
 
-        return Optional.ofNullable(node.cloudAccount().isEnclave(zone) ?
+        return Optional.ofNullable(node.cloudAccount().isExclave(zone) ?
                 archiveUris.get().accountArchiveUris().get(node.cloudAccount()) :
                 archiveUris.get().tenantArchiveUris().get(app.tenant()))
                 .map(uri -> {
@@ -68,7 +68,7 @@ public class ArchiveUriManager {
 
     /** Set (or remove, if archiveURI is empty) archive URI to use for given account */
     public void setArchiveUri(CloudAccount account, Optional<String> archiveUri) {
-        if (!account.isEnclave(zone) || account.isUnspecified())
+        if (!account.isExclave(zone) || account.isUnspecified())
             throw new IllegalArgumentException("Cannot set archive URI for non-enclave account: " + account);
         setArchiveUri(au -> au.with(account, archiveUri));
     }

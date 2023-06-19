@@ -44,8 +44,8 @@ public class CloudAccount implements Comparable<CloudAccount> {
         return this.equals(empty);
     }
 
-    /** Returns true if this is an enclave account. */
-    public boolean isEnclave(Zone zone) {
+    /** Returns true if this is an exclave account. */
+    public boolean isExclave(Zone zone) {
         return !isUnspecified() &&
                zone.system().isPublic() &&
                !equals(zone.cloud().account());
