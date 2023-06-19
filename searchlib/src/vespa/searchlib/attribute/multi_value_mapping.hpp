@@ -12,7 +12,7 @@ MultiValueMapping<ElemT,RefT>::MultiValueMapping(const vespalib::datastore::Arra
                                                   const vespalib::GrowStrategy &gs,
                                                   std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator)
   : MultiValueMappingBase(gs, ArrayStore::getGenerationHolderLocation(_store), memory_allocator),
-    _store(storeCfg, std::move(memory_allocator), ArrayStoreTypeMapper(storeCfg.maxSmallArrayTypeId(), array_store_grow_factor))
+    _store(storeCfg, std::move(memory_allocator), ArrayStoreTypeMapper(storeCfg.max_type_id(), array_store_grow_factor))
 {
 }
 

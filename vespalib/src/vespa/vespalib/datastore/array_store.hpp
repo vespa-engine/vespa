@@ -35,15 +35,15 @@ ArrayStore<ElemT, RefT, TypeMapperT>::initArrayTypes(const ArrayStoreConfig &cfg
 {
     _largeArrayTypeId = _store.addType(&_largeArrayType);
     assert(_largeArrayTypeId == 0);
-    _smallArrayTypes.reserve(_maxSmallArrayTypeId);
+    _smallArrayTypes.reserve(_max_type_id);
     if constexpr (has_dynamic_buffer_type) {
-        auto dynamic_buffer_types = _mapper.count_dynamic_buffer_types(_maxSmallArrayTypeId);
-        _smallArrayTypes.reserve(_maxSmallArrayTypeId - dynamic_buffer_types);
+        auto dynamic_buffer_types = _mapper.count_dynamic_buffer_types(_max_type_id);
+        _smallArrayTypes.reserve(_max_type_id - dynamic_buffer_types);
         _dynamicArrayTypes.reserve(dynamic_buffer_types);
      } else {
-        _smallArrayTypes.reserve(_maxSmallArrayTypeId);
+        _smallArrayTypes.reserve(_max_type_id);
     }
-    for (uint32_t type_id = 1; type_id <= _maxSmallArrayTypeId; ++type_id) {
+    for (uint32_t type_id = 1; type_id <= _max_type_id; ++type_id) {
         uint32_t act_type_id = _store.addType(initArrayType(cfg, memory_allocator, type_id));
         assert(type_id == act_type_id);
     }
@@ -59,8 +59,8 @@ template <typename ElemT, typename RefT, typename TypeMapperT>
 ArrayStore<ElemT, RefT, TypeMapperT>::ArrayStore(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator,
                                                   TypeMapper&& mapper)
     : _largeArrayTypeId(0),
-      _maxSmallArrayTypeId(cfg.maxSmallArrayTypeId()),
-      _maxSmallArraySize(mapper.get_array_size(_maxSmallArrayTypeId)),
+      _max_type_id(cfg.max_type_id()),
+      _maxSmallArraySize(mapper.get_array_size(_max_type_id)),
       _store(),
       _mapper(std::move(mapper)),
       _smallArrayTypes(),
@@ -249,14 +249,14 @@ ArrayStore<ElemT, RefT, TypeMapperT>::bufferState(EntryRef ref)
 
 template <typename ElemT, typename RefT, typename TypeMapperT>
 ArrayStoreConfig
-ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
-                                                                  size_t hugePageSize,
-                                                                  size_t smallPageSize,
-                                                                  size_t min_num_entries_for_new_buffer,
-                                                                  float allocGrowFactor)
+ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t max_type_id,
+                                                                 size_t hugePageSize,
+                                                                 size_t smallPageSize,
+                                                                 size_t min_num_entries_for_new_buffer,
+                                                                 float allocGrowFactor)
 {
     TypeMapper mapper;
-    return optimizedConfigForHugePage(maxSmallArrayTypeId,
+    return optimizedConfigForHugePage(max_type_id,
                                       mapper,
                                       hugePageSize,
                                       smallPageSize,
@@ -266,14 +266,14 @@ ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSma
 
 template <typename ElemT, typename RefT, typename TypeMapperT>
 ArrayStoreConfig
-ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t maxSmallArrayTypeId,
+ArrayStore<ElemT, RefT, TypeMapperT>::optimizedConfigForHugePage(uint32_t max_type_id,
                                                                   const TypeMapper& mapper,
                                                                   size_t hugePageSize,
                                                                   size_t smallPageSize,
                                                                   size_t min_num_entries_for_new_buffer,
                                                                   float allocGrowFactor)
 {
-    return ArrayStoreConfig::optimizeForHugePage(mapper.get_max_small_array_type_id(maxSmallArrayTypeId),
+    return ArrayStoreConfig::optimizeForHugePage(mapper.get_max_type_id(max_type_id),
                                                  [&](uint32_t type_id) noexcept { return mapper.get_entry_size(type_id); },
                                                  hugePageSize,
                                                  smallPageSize,

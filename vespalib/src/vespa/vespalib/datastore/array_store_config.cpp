@@ -5,11 +5,11 @@
 
 namespace vespalib::datastore {
 
-ArrayStoreConfig::ArrayStoreConfig(uint32_t maxSmallArrayTypeId, const AllocSpec &defaultSpec)
+ArrayStoreConfig::ArrayStoreConfig(uint32_t max_type_id, const AllocSpec &defaultSpec)
     : _allocSpecs(),
       _enable_free_lists(false)
 {
-    for (uint32_t type_id = 0; type_id < (maxSmallArrayTypeId + 1); ++type_id) {
+    for (uint32_t type_id = 0; type_id < (max_type_id + 1); ++type_id) {
         _allocSpecs.push_back(defaultSpec);
     }
 }
@@ -45,7 +45,7 @@ alignToSmallPageSize(size_t value, size_t minLimit, size_t smallPageSize)
 }
 
 ArrayStoreConfig
-ArrayStoreConfig::optimizeForHugePage(uint32_t maxSmallArrayTypeId,
+ArrayStoreConfig::optimizeForHugePage(uint32_t max_type_id,
                                       std::function<size_t(uint32_t)> type_id_to_entry_size,
                                       size_t hugePageSize,
                                       size_t smallPageSize,
@@ -55,7 +55,7 @@ ArrayStoreConfig::optimizeForHugePage(uint32_t maxSmallArrayTypeId,
 {
     AllocSpecVector allocSpecs;
     allocSpecs.emplace_back(0, maxEntryRefOffset, min_num_entries_for_new_buffer, allocGrowFactor); // large array spec;
-    for (uint32_t type_id = 1; type_id <= maxSmallArrayTypeId; ++type_id) {
+    for (uint32_t type_id = 1; type_id <= max_type_id; ++type_id) {
         size_t entry_size = type_id_to_entry_size(type_id);
         size_t num_entries_for_new_buffer = hugePageSize / entry_size;
         num_entries_for_new_buffer = capToLimits(num_entries_for_new_buffer, min_num_entries_for_new_buffer, maxEntryRefOffset);

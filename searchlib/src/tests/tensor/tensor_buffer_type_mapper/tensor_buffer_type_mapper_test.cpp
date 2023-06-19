@@ -153,7 +153,7 @@ TEST_P(TensorBufferTypeMapperTest, large_arrays_grows_exponentially)
 TEST_P(TensorBufferTypeMapperTest, avoid_array_size_overflow)
 {
     TensorBufferTypeMapper mapper(400, 2.0, &_ops);
-    EXPECT_GE(30, mapper.get_max_small_array_type_id(1000));
+    EXPECT_GE(30, mapper.get_max_type_id(1000));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

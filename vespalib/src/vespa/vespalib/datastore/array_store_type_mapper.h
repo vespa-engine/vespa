@@ -25,7 +25,7 @@ public:
 
     uint32_t get_type_id(size_t array_size) const;
     size_t get_array_size(uint32_t type_id) const;
-    uint32_t get_max_small_array_type_id(uint32_t max_small_array_type_id) const noexcept;
+    uint32_t get_max_type_id(uint32_t max_type_id) const noexcept;
 };
 
 }
