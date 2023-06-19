@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
@@ -172,19 +171,7 @@ func prodDeploy(pkgDir string, t *testing.T) {
 	assert.Nil(t, cli.Run("config", "set", "application", app.String()))
 	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
 	assert.Nil(t, cli.Run("auth", "api-key"))
-	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
-
-	// Remove certificate as it's not required for submission (but it must be part of the application package)
-	if path, err := cli.config.privateKeyPath(app, vespa.TargetCloud); err == nil {
-		os.RemoveAll(path)
-	} else {
-		require.Nil(t, err)
-	}
-	if path, err := cli.config.certificatePath(app, vespa.TargetCloud); err == nil {
-		os.RemoveAll(path)
-	} else {
-		require.Nil(t, err)
-	}
+	assert.Nil(t, cli.Run("auth", "cert", "--no-add"))
 
 	// Zipping requires relative paths, so must let command run from pkgDir, then reset cwd for subsequent tests.
 	if cwd, err := os.Getwd(); err != nil {
@@ -198,11 +185,11 @@ func prodDeploy(pkgDir string, t *testing.T) {
 
 	stdout.Reset()
 	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
-	assert.Nil(t, cli.Run("prod", "deploy"))
+	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert"))
 	assert.Contains(t, stdout.String(), "Success: Deployed")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 	stdout.Reset()
-	assert.Nil(t, cli.Run("prod", "submit")) // old variant also works
+	assert.Nil(t, cli.Run("prod", "submit", "--add-cert")) // old variant also works
 	assert.Contains(t, stdout.String(), "Success: Deployed")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
@@ -218,7 +205,7 @@ func TestProdDeployWithJava(t *testing.T) {
 	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))
 	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
 	assert.Nil(t, cli.Run("auth", "api-key"))
-	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
+	assert.Nil(t, cli.Run("auth", "cert", "--no-add"))
 
 	// Copy an application package pre-assembled with mvn package
 	testAppDir := filepath.Join("testdata", "applications", "withDeployment", "target")
@@ -229,7 +216,7 @@ func TestProdDeployWithJava(t *testing.T) {
 
 	stdout.Reset()
 	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
-	assert.Nil(t, cli.Run("prod", "submit", pkgDir))
+	assert.Nil(t, cli.Run("prod", "deploy", pkgDir))
 	assert.Contains(t, stdout.String(), "Success: Deployed")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
@@ -245,7 +232,7 @@ func TestProdDeployInvalidZip(t *testing.T) {
 	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))
 	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
 	assert.Nil(t, cli.Run("auth", "api-key"))
-	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
+	assert.Nil(t, cli.Run("auth", "cert", "--no-add"))
 
 	// Copy an invalid application package containing relative file names
 	testAppDir := filepath.Join("testdata", "applications", "withInvalidEntries", "target")
@@ -254,7 +241,7 @@ func TestProdDeployInvalidZip(t *testing.T) {
 	testZipFile := filepath.Join(testAppDir, "application-test.zip")
 	copyFile(t, filepath.Join(pkgDir, "target", "application-test.zip"), testZipFile)
 
-	assert.NotNil(t, cli.Run("prod", "submit", pkgDir))
+	assert.NotNil(t, cli.Run("prod", "deploy", pkgDir))
 	assert.Equal(t, "Error: found invalid path inside zip: ../../../../../../../tmp/foo\n", stderr.String())
 }
 

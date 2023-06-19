@@ -105,8 +105,7 @@ func New(stdout, stderr io.Writer, environment []string) (*CLI, error) {
 		Short: "The command-line tool for Vespa.ai",
 		Long: `The command-line tool for Vespa.ai.
 
-Use it on Vespa instances running locally, remotely or in the cloud.
-Prefer web service API's to this in production.
+Use it on Vespa instances running locally, remotely or in Vespa Cloud.
 
 Vespa documentation: https://docs.vespa.ai
 
@@ -298,6 +297,26 @@ func (c *CLI) printWarning(msg interface{}, hints ...string) {
 	fmt.Fprintln(c.Stderr, color.YellowString("Warning:"), msg)
 	for _, hint := range hints {
 		fmt.Fprintln(c.Stderr, color.CyanString("Hint:"), hint)
+	}
+}
+
+func (c *CLI) confirm(question string) (bool, error) {
+	if !c.isTerminal() {
+		return false, fmt.Errorf("terminal is not interactive")
+	}
+	for {
+		var answer string
+		fmt.Fprintf(c.Stdout, "%s [Y/n] ", question)
+		fmt.Fscanln(c.Stdin, &answer)
+		answer = strings.TrimSpace(strings.ToLower(answer))
+		switch answer {
+		case "y", "":
+			return true, nil
+		case "n":
+			return false, nil
+		default:
+			c.printErr(fmt.Errorf("please answer 'Y' or 'n'"))
+		}
 	}
 }
 

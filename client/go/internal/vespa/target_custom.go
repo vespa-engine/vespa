@@ -36,7 +36,7 @@ func (t *customTarget) Type() string { return t.targetType }
 
 func (t *customTarget) IsCloud() bool { return false }
 
-func (t *customTarget) Deployment() Deployment { return Deployment{} }
+func (t *customTarget) Deployment() Deployment { return DefaultDeployment }
 
 func (t *customTarget) createService(name string) (*Service, error) {
 	switch name {

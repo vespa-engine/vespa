@@ -89,10 +89,10 @@ func newVisitCmd(cli *CLI) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "visit",
-		Short: "Visit and print all documents in a vespa cluster",
-		Long: `Run visiting to retrieve all documents.
+		Short: "Visit and print all documents in a Vespa cluster",
+		Long: `Visit and print all documents in a Vespa cluster.
 
-By default prints each document received on its own line (JSON-L format).
+By default prints each document received on its own line (JSONL format).
 `,
 		Example: `$ vespa visit # get documents from any cluster
 $ vespa visit --content-cluster search # get documents from cluster named "search"

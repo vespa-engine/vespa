@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/pkg/browser"
@@ -46,7 +45,10 @@ func newLoginCmd(cli *CLI) *cobra.Command {
 
 			log.Printf("Your Device Confirmation code is: %s\n", state.UserCode)
 
-			auto_open := confirm(cli, "Automatically open confirmation page in your default browser?")
+			auto_open, err := cli.confirm("Automatically open confirmation page in your default browser?")
+			if err != nil {
+				return err
+			}
 
 			if auto_open {
 				log.Printf("Opened link in your browser: %s\n", state.VerificationURI)
@@ -88,24 +90,5 @@ func newLoginCmd(cli *CLI) *cobra.Command {
 			}
 			return err
 		},
-	}
-}
-
-func confirm(cli *CLI, question string) bool {
-	for {
-		var answer string
-
-		fmt.Fprintf(cli.Stdout, "%s [Y/n] ", question)
-		fmt.Fscanln(cli.Stdin, &answer)
-
-		answer = strings.TrimSpace(strings.ToLower(answer))
-
-		if answer == "y" || answer == "" {
-			return true
-		} else if answer == "n" {
-			return false
-		} else {
-			log.Printf("Please answer Y or N.\n")
-		}
 	}
 }
