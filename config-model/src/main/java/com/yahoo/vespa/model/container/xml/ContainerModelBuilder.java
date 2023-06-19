@@ -527,7 +527,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private Optional<Client> getClient(Element clientElement, DeployState state) {
         String clientId = XML.attribute("id", clientElement).orElseThrow();
-        if (clientId.startsWith("_")) throw new IllegalArgumentException("Invalid client id '%s', id cannot start with '_'".formatted(clientId));
+        if (clientId.startsWith("_"))
+            throw new IllegalArgumentException("Invalid client id '%s', id cannot start with '_'".formatted(clientId));
         List<String> permissions = XML.attribute("permissions", clientElement)
                 .map(p -> p.split(",")).stream()
                 .flatMap(Arrays::stream)
@@ -554,15 +555,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     var tokenId = elem.getAttribute("id");
                     var token = knownTokens.get(tokenId);
                     if (token == null)
-                        throw new IllegalArgumentException(
-                                "Token '%s' for client '%s' does not exist".formatted(tokenId, clientId));
+                        log.logApplicationPackage(
+                                WARNING, "Token '%s' for client '%s' does not exist".formatted(tokenId, clientId));
                     return token;
                 })
                 .filter(token -> {
+                    if (token == null) return false;
                     boolean empty = token.versions().isEmpty();
                     if (empty)
                         log.logApplicationPackage(
-                                WARNING, "Token '%s' for client '%s' has no activate versions"
+                                WARNING, "Token '%s' for client '%s' has no active versions"
                                         .formatted(token.tokenId(), clientId));
                     return !empty;
                 })
@@ -622,21 +624,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .map(clientAuth -> clientAuth == AccessControl.ClientAuthentication.need)
                     .orElse(false);
 
-            // TODO (mortent): Implement token support in model
-            boolean enableTokenSupport = deployState.featureFlags().enableDataplaneProxy();
+            boolean enableTokenSupport = deployState.featureFlags().enableDataplaneProxy()
+                    && cluster.getClients().stream().anyMatch(c -> !c.tokens().isEmpty());
 
             // Set up component to generate proxy cert if token support is enabled
             if (enableTokenSupport) {
-                var tokenChain = new HttpFilterChain("cloud-data-plane-token", HttpFilterChain.Type.SYSTEM);
-                tokenChain.addInnerComponent(new Filter(
-                        new ChainedComponentModel(
-                                new BundleInstantiationSpecification(
-                                        new ComponentSpecification("com.yahoo.jdisc.http.filter.security.misc.BlockingRequestFilter"),
-                                        null, new ComponentSpecification("jdisc-security-filters")),
-                                Dependencies.emptyDependencies())));
-
-                cluster.getHttp().getFilterChains().add(tokenChain);
-
                 cluster.addSimpleComponent(DataplaneProxyCredentials.class);
                 cluster.addSimpleComponent(DataplaneProxyService.class);
 
@@ -646,6 +638,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         endpointCertificateSecrets.key());
                 cluster.addComponent(dataplaneProxy);
             }
+
             connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
                     serverName, endpointCertificateSecrets, X509CertificateUtils.toPem(clientCertificates),
