@@ -49,13 +49,13 @@ public record VespaVersion(Version version,
         if (nonCanaryApplicationsBroken(statistics.version(), failingOnThis, productionOnThis))
             return Confidence.broken;
 
-        // 'low' unless all canary applications are upgraded
-        if (productionOnThis.with(UpgradePolicy.canary).size() < all.withProductionDeployment().with(UpgradePolicy.canary).size())
+        // 'low' unless all unpinned canary applications are upgraded
+        if (productionOnThis.with(UpgradePolicy.canary).unpinned().size() < all.withProductionDeployment().with(UpgradePolicy.canary).unpinned().size())
             return Confidence.low;
 
-        // 'high' if 90% of all default upgrade applications upgraded
-        if (productionOnThis.with(UpgradePolicy.defaultPolicy).groupingBy(TenantAndApplicationId::from).size() >=
-            all.withProductionDeployment().with(UpgradePolicy.defaultPolicy).groupingBy(TenantAndApplicationId::from).size() * 0.9)
+        // 'high' if 90% of all unpinned default upgrade applications upgraded
+        if (productionOnThis.with(UpgradePolicy.defaultPolicy).unpinned().groupingBy(TenantAndApplicationId::from).size() >=
+            all.withProductionDeployment().with(UpgradePolicy.defaultPolicy).unpinned().groupingBy(TenantAndApplicationId::from).size() * 0.9)
             return Confidence.high;
 
         return Confidence.normal;
