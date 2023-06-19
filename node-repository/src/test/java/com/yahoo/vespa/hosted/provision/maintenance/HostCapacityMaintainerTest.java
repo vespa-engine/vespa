@@ -380,7 +380,7 @@ public class HostCapacityMaintainerTest {
             default -> throw new IllegalArgumentException("Unexpected config server host like node type: " + hostType);
         }
 
-        Cloud cloud = Cloud.builder().dynamicProvisioning(true).build();
+        Cloud cloud = Cloud.builder().name(CloudName.AWS).dynamicProvisioning(true).build();
         DynamicProvisioningTester dynamicProvisioningTester = new DynamicProvisioningTester(cloud, new MockNameResolver().mockAnyLookup());
         ProvisioningTester tester = dynamicProvisioningTester.provisioningTester;
         dynamicProvisioningTester.hostProvisioner.setHostFlavor("default");
@@ -686,7 +686,7 @@ public class HostCapacityMaintainerTest {
         private final InfraDeployerImpl infraDeployer;
 
         public DynamicProvisioningTester() {
-            this(Cloud.builder().dynamicProvisioning(true).build(), new MockNameResolver());
+            this(Cloud.builder().name(CloudName.AWS).dynamicProvisioning(true).build(), new MockNameResolver());
         }
 
         public DynamicProvisioningTester(Cloud cloud, MockNameResolver nameResolver) {

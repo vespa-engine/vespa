@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -38,7 +39,7 @@ public class HostResumeProvisionerTest {
 
     private final List<Flavor> flavors = FlavorConfigBuilder.createDummies("default").getFlavors();
     private final MockNameResolver nameResolver = new MockNameResolver();
-    private final Zone zone = new Zone(Cloud.builder().dynamicProvisioning(true).allowHostSharing(false).build(),
+    private final Zone zone = new Zone(Cloud.builder().name(CloudName.AWS).dynamicProvisioning(true).allowHostSharing(false).build(),
                                        SystemName.defaultSystem(),
                                        Environment.dev,
                                        RegionName.defaultName());
