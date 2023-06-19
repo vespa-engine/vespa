@@ -401,7 +401,8 @@ public record IP() {
 
     public enum DnsRecordType { FORWARD, PUBLIC_FORWARD, REVERSE }
 
-    public static Set<DnsRecordType> dnsRecordTypesFor(String hostAddress, NodeType hostType, CloudName cloudName, boolean exclave) {
+    /** Returns the set of DNS record types for a host and its children and the given version (ipv6), host type, etc. */
+    public static Set<DnsRecordType> dnsRecordTypesFor(boolean ipv6, NodeType hostType, CloudName cloudName, boolean exclave) {
         if (cloudName == CloudName.AWS)
             return exclave ?
                    EnumSet.of(DnsRecordType.FORWARD, DnsRecordType.PUBLIC_FORWARD) :
@@ -409,11 +410,11 @@ public record IP() {
 
         if (cloudName == CloudName.GCP) {
             if (exclave) {
-                return isV6(hostAddress) ?
+                return ipv6 ?
                        EnumSet.of(DnsRecordType.FORWARD, DnsRecordType.PUBLIC_FORWARD) :
                        EnumSet.noneOf(DnsRecordType.class);
             } else {
-                return hostType == confighost && isV6(hostAddress) ?
+                return hostType == confighost && ipv6 ?
                        EnumSet.of(DnsRecordType.FORWARD, DnsRecordType.REVERSE, DnsRecordType.PUBLIC_FORWARD) :
                        EnumSet.of(DnsRecordType.FORWARD, DnsRecordType.REVERSE);
             }
@@ -425,10 +426,11 @@ public record IP() {
     /** Verify DNS configuration of given hostname and IP address */
     public static void verifyDns(String hostname, String ipAddress, NodeType nodeType, NameResolver resolver,
                                  CloudAccount cloudAccount, Zone zone) {
-        Set<DnsRecordType> recordTypes = dnsRecordTypesFor(ipAddress, nodeType, zone.cloud().name(), cloudAccount.isEnclave(zone));
+        boolean ipv6 = isV6(ipAddress);
+        Set<DnsRecordType> recordTypes = dnsRecordTypesFor(ipv6, nodeType, zone.cloud().name(), cloudAccount.isEnclave(zone));
 
         if (recordTypes.contains(DnsRecordType.FORWARD)) {
-            RecordType recordType = isV6(ipAddress) ? RecordType.AAAA : RecordType.A;
+            RecordType recordType = ipv6 ? RecordType.AAAA : RecordType.A;
             Set<String> addresses = resolver.resolve(hostname, recordType);
             if (!addresses.equals(Set.of(ipAddress)))
                 throw new IllegalArgumentException("Expected " + hostname + " to resolve to " + ipAddress +
