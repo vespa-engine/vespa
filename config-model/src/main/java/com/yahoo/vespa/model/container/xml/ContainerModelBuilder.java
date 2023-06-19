@@ -624,8 +624,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .map(clientAuth -> clientAuth == AccessControl.ClientAuthentication.need)
                     .orElse(false);
 
-            // TODO (mortent): Implement token support in model
-            boolean enableTokenSupport = deployState.featureFlags().enableDataplaneProxy();
+            boolean enableTokenSupport = deployState.featureFlags().enableDataplaneProxy()
+                    && cluster.getClients().stream().anyMatch(c -> !c.tokens().isEmpty());
 
             // Set up component to generate proxy cert if token support is enabled
             if (enableTokenSupport) {
