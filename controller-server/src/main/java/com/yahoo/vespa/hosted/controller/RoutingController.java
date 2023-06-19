@@ -318,10 +318,6 @@ public class RoutingController {
                     new Record(Record.Type.CNAME, RecordName.from(endpoint.dnsName()), RecordData.fqdn(vipHostname)),
                     Priority.normal,
                     Optional.of(application.get().id()));
-            controller.nameServiceForwarder().removeRecords(
-                    Record.Type.CNAME, RecordName.from(endpoint.legacyRegionalDnsName()),
-                    Priority.normal,
-                    Optional.of(application.get().id()));
         }
         Map<ClusterSpec.Id, EndpointList> applicationEndpointsByCluster = applicationEndpoints.groupingBy(Endpoint::cluster);
         for (var kv : applicationEndpointsByCluster.entrySet()) {
