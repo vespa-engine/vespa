@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.node;
 
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.UnsignedBytes;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -16,6 +17,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -107,9 +109,9 @@ public record IP() {
          * @throws IllegalArgumentException if there are IP conflicts with existing nodes
          */
         public static List<Node> verify(List<Node> nodes, LockedNodeList allNodes) {
-            NodeList sortedNodes = allNodes.sortedBy(Comparator.comparing(Node::hostname));
+            Map<CloudAccount, NodeList> sortedNodes = allNodes.sortedBy(Comparator.comparing(Node::hostname)).groupingBy(Node::cloudAccount);
             for (var node : nodes) {
-                for (var other : sortedNodes) {
+                for (var other : sortedNodes.getOrDefault(node.cloudAccount(), NodeList.of())) {
                     if (node.equals(other)) continue;
                     if (canAssignIpOf(other, node)) continue;
 

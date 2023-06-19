@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -18,6 +20,7 @@ import java.util.function.Predicate;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -47,6 +50,41 @@ public class NodeRepositoryTest {
 
         assertEquals(4, tester.nodeRepository().nodes().list().size());
         assertEquals(2, tester.nodeRepository().nodes().list(Node.State.deprovisioned).size());
+    }
+
+    @Test
+    public void test_ip_conflicts() {
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+        ((MockNameResolver) tester.nodeRepository().nameResolver()).addRecord("host1", "1.2.3.4")
+                                                                   .addRecord("host2", "1.2.3.4")
+                                                                   .addRecord("host3", "1.2.3.4");
+        tester.addHost("id1", "host1", "default", NodeType.host);
+
+        IP.Config ipConfig = IP.Config.of(Set.of("1.2.3.4"), Set.of("1.2.3.4"));
+
+        Node host2 = Node.create("id2", ipConfig, "host2", tester.nodeFlavors().getFlavorOrThrow("default"), NodeType.host)
+                         .build();
+
+        Node enclaveHost2 = Node.create("id2", ipConfig, "host2", tester.nodeFlavors().getFlavorOrThrow("default"), NodeType.host)
+                        .cloudAccount(CloudAccount.from("gcp:foo-bar-baz"))
+                        .build();
+
+        Node enclaveHost3 = Node.create("id3", ipConfig, "host3", tester.nodeFlavors().getFlavorOrThrow("default"), NodeType.host)
+                                .cloudAccount(CloudAccount.from("gcp:foo-bar-baz"))
+                                .build();
+
+        assertEquals("Cannot assign [1.2.3.4] to host2: [1.2.3.4] already assigned to host1",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.nodeRepository().nodes().addNodes(List.of(host2), Agent.system))
+                             .getMessage());
+
+        tester.nodeRepository().nodes().addNodes(List.of(enclaveHost2), Agent.system);
+
+        assertEquals("Cannot assign [1.2.3.4] to host3: [1.2.3.4] already assigned to host2",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.nodeRepository().nodes().addNodes(List.of(enclaveHost3), Agent.system))
+                             .getMessage());
+
     }
 
     @Test
