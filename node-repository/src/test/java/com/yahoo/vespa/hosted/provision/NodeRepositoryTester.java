@@ -55,6 +55,7 @@ public class NodeRepositoryTester {
     
     public NodeRepository nodeRepository() { return nodeRepository; }
     public MockCurator curator() { return curator; }
+    public NodeFlavors nodeFlavors() { return nodeFlavors; }
     
     public List<Node> getNodes(NodeType type, Node.State ... inState) {
         return nodeRepository.nodes().list(inState).nodeType(type).asList();

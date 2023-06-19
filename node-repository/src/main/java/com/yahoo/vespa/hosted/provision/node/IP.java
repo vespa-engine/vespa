@@ -19,12 +19,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.NodeType.confighost;
 import static com.yahoo.config.provision.NodeType.controllerhost;
 import static com.yahoo.config.provision.NodeType.proxyhost;
+import static java.util.function.Predicate.not;
 
 /**
  * This handles IP address configuration and allocation.
@@ -112,6 +114,7 @@ public record IP() {
                 for (var other : sortedNodes) {
                     if (node.equals(other)) continue;
                     if (canAssignIpOf(other, node)) continue;
+                    Predicate<String> sharedIpSpace = other.cloudAccount().equals(node.cloudAccount()) ? __ -> true : IP::isPublic;
 
                     var addresses = new HashSet<>(node.ipConfig().primary());
                     var otherAddresses = new HashSet<>(other.ipConfig().primary());
@@ -119,6 +122,7 @@ public record IP() {
                         addresses.addAll(node.ipConfig().pool().asSet());
                         otherAddresses.addAll(other.ipConfig().pool().asSet());
                     }
+                    otherAddresses.removeIf(not(sharedIpSpace));
                     otherAddresses.retainAll(addresses);
                     if (!otherAddresses.isEmpty())
                         throw new IllegalArgumentException("Cannot assign " + addresses + " to " + node.hostname() +
@@ -426,6 +430,12 @@ public record IP() {
     /** Returns whether given string is an IPv6 address */
     public static boolean isV6(String ipAddress) {
         return ipAddress.contains(":");
+    }
+
+    /** Returns whether given string is a public IP address */
+    public static boolean isPublic(String ip) {
+        InetAddress address = parse(ip);
+        return ! address.isLoopbackAddress() && ! address.isLinkLocalAddress() && ! address.isSiteLocalAddress();
     }
 
 }
