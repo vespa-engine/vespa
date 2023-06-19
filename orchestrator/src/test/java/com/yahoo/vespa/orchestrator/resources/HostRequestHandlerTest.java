@@ -2,7 +2,6 @@
 package com.yahoo.vespa.orchestrator.resources;
 
 import com.yahoo.concurrent.UncheckedTimeoutException;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequestBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Metric;
@@ -92,7 +91,7 @@ class HostRequestHandlerTest {
     }
 
     private static final ServiceMonitor alwaysEmptyServiceMonitor = new ServiceMonitor() {
-        private final ServiceModel emptyServiceModel = new ServiceModel(Map.of(), Zone.defaultZone());
+        private final ServiceModel emptyServiceModel = new ServiceModel(Map.of());
 
         @Override
         public ServiceModel getServiceModelSnapshot() {

@@ -2,8 +2,6 @@
 package com.yahoo.vespa.service.monitor;
 
 import com.yahoo.config.model.api.ApplicationInfo;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -17,8 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.yahoo.vespa.service.model.ApplicationInstanceGenerator.toApplicationInstanceReference;
 
 /**
  * The service model is the union of the duper model and the service monitor, and presented
@@ -35,22 +31,20 @@ import static com.yahoo.vespa.service.model.ApplicationInstanceGenerator.toAppli
 public class ServiceModel {
 
     private final Map<ApplicationInstanceReference, ApplicationInstance> applicationsByReference;
-    private final Zone zone;
 
     private Map<HostName, ApplicationInstance> applicationsByHostName = null;
     private Map<HostName, List<ServiceInstance>> servicesByHostName = null;
 
-    public ServiceModel(Map<ApplicationInstanceReference, ApplicationInstance> applicationsByReference, Zone zone) {
-        this.applicationsByReference = Map.copyOf(applicationsByReference);
-        this.zone = zone;
+    public ServiceModel(Map<ApplicationInstanceReference, ApplicationInstance> applicationsByReference) {
+        this.applicationsByReference = Collections.unmodifiableMap(Map.copyOf(applicationsByReference));
     }
 
     public Map<ApplicationInstanceReference, ApplicationInstance> getAllApplicationInstances() {
         return applicationsByReference;
     }
 
-    public Optional<ApplicationInstance> getApplicationInstance(ApplicationId applicationId) {
-        return Optional.ofNullable(applicationsByReference.get(toApplicationInstanceReference(applicationId, zone)));
+    public Optional<ApplicationInstance> getApplicationInstance(ApplicationInstanceReference reference) {
+        return Optional.ofNullable(applicationsByReference.get(reference));
     }
 
     public Optional<ApplicationInstance> getApplication(HostName hostname) {
