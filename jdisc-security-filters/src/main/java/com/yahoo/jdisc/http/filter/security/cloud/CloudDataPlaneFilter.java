@@ -103,6 +103,8 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
                     throw new IllegalArgumentException(
                             "Client '%s' contains invalid X.509 certificate PEM: %s".formatted(c.id(), e.toString()), e);
                 }
+                if (certs.isEmpty()) throw new IllegalArgumentException(
+                        "Client '%s' certificate PEM contains no valid X.509 entries".formatted(c.id()));
                 clients.add(new Client(c.id(), permissions, certs, Map.of()));
                 hasClientRequiringCertificate = true;
             } else {
