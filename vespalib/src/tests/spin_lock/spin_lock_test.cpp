@@ -77,8 +77,8 @@ template <typename T> size_t thread_safety_loop(T &lock, MyState &state, size_t 
             state.update();
         }
     }
-    auto t1 = steady_clock::now();
     TEST_BARRIER();
+    auto t1 = steady_clock::now();
     if (thread_id == 0) {
         auto t2 = steady_clock::now();
         size_t total_ms = count_ms(t2 - t0);
