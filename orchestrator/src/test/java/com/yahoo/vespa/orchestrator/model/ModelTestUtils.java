@@ -74,7 +74,7 @@ class ModelTestUtils {
     private final Map<ApplicationInstanceReference, ApplicationInstance> applications = new HashMap<>();
     private final ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
     private final Map<HostName, HostStatus> hostStatusMap = new HashMap<>();
-    private final ServiceMonitor serviceMonitor = () -> new ServiceModel(applications);
+    private final ServiceMonitor serviceMonitor = () -> new ServiceModel(applications, Zone.defaultZone());
     private final StatusService statusService = new ZkStatusService(
             new MockCurator(),
             mock(Metric.class),

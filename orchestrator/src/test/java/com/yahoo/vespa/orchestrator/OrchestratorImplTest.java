@@ -413,7 +413,7 @@ public class OrchestratorImplTest {
         HostName hostName = new HostName("my.host");
         HostName ccHost = new HostName("cc.host");
         TenantId tenantId = new TenantId("tenant");
-        ApplicationInstanceId applicationInstanceId = new ApplicationInstanceId("app:env:region:instance");
+        ApplicationInstanceId applicationInstanceId = new ApplicationInstanceId("app:prod:default:instance");
         ApplicationInstanceReference reference = new ApplicationInstanceReference(tenantId, applicationInstanceId);
         ApplicationId id = ApplicationId.from("tenant", "app", "instance");
 
@@ -442,7 +442,7 @@ public class OrchestratorImplTest {
                                                                                              ccHost,
                                                                                              ServiceStatus.UP)))));
 
-        ServiceMonitor serviceMonitor = () -> new ServiceModel(Map.of(reference, applicationInstance));
+        ServiceMonitor serviceMonitor = () -> new ServiceModel(Map.of(reference, applicationInstance), zone);
 
         ClusterControllerClientFactory clusterControllerClientFactory = mock(ClusterControllerClientFactory.class);
         ClusterControllerClient fooClient = mock(ClusterControllerClient.class);
@@ -508,7 +508,7 @@ public class OrchestratorImplTest {
                                                hostName,
                                                ServiceStatus.NOT_CHECKED)))));
 
-        ServiceMonitor serviceMonitor = () -> new ServiceModel(Map.of(reference, applicationInstance));
+        ServiceMonitor serviceMonitor = () -> new ServiceModel(Map.of(reference, applicationInstance), zone);
 
         orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone),
                                                                   clusterControllerClientFactory,

@@ -41,7 +41,7 @@ public class ModelGenerator {
                                 .makeApplicationInstance(serviceStatusProvider))
                         .collect(Collectors.toMap(ApplicationInstance::reference, Function.identity()));
 
-        return new ServiceModel(applicationInstances);
+        return new ServiceModel(applicationInstances, zone);
     }
 
     public Set<ApplicationInstanceReference> toApplicationInstanceReferenceSet(List<ApplicationInfo> infos) {

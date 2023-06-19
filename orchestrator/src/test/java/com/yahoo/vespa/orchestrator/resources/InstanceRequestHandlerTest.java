@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator.resources;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpRequestBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -17,6 +18,9 @@ import com.yahoo.vespa.orchestrator.restapi.wire.SlobrokEntryResponse;
 import com.yahoo.vespa.service.manager.UnionMonitorManager;
 import com.yahoo.vespa.service.monitor.SlobrokApi;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -31,18 +35,20 @@ import static org.mockito.Mockito.when;
  */
 class InstanceRequestHandlerTest {
 
-    private static final String APPLICATION_INSTANCE_REFERENCE = "tenant:app:prod:us-west-1:instance";
+    private static final String APPLICATION_INSTANCE_REFERENCE_LONG = "tenant:app:prod:us-west-1:instance";
+    private static final String APPLICATION_INSTANCE_REFERENCE = "tenant:app:instance";
     private static final ApplicationId APPLICATION_ID = ApplicationId.from(
             "tenant", "app", "instance");
     private static final List<Mirror.Entry> ENTRIES = Arrays.asList(
             new Mirror.Entry("name1", "tcp/spec:1"),
             new Mirror.Entry("name2", "tcp/spec:2"));
     private static final ClusterId CLUSTER_ID = new ClusterId("cluster-id");
+    private static final Zone zone = Zone.defaultZone();
 
     private final SlobrokApi slobrokApi = mock(SlobrokApi.class);
     private final UnionMonitorManager rootManager = mock(UnionMonitorManager.class);
     private final RestApiTestDriver testDriver =
-            RestApiTestDriver.newBuilder(ctx -> new InstanceRequestHandler(ctx, null, null, slobrokApi, rootManager))
+            RestApiTestDriver.newBuilder(ctx -> new InstanceRequestHandler(ctx, null, null, slobrokApi, rootManager, zone))
                     .build();
 
     @Test
@@ -55,16 +61,16 @@ class InstanceRequestHandlerTest {
         testGetSlobrokEntriesWith(null, InstanceRequestHandler.DEFAULT_SLOBROK_PATTERN);
     }
 
-    @Test
-    void testGetServiceStatusInfo() {
+    @ParameterizedTest
+    @ValueSource(strings = { APPLICATION_INSTANCE_REFERENCE, APPLICATION_INSTANCE_REFERENCE_LONG })
+    void testGetServiceStatusInfo(String reference) {
         ServiceType serviceType = new ServiceType("serviceType");
         ConfigId configId = new ConfigId("configId");
         ServiceStatus serviceStatus = ServiceStatus.UP;
         when(rootManager.getStatus(APPLICATION_ID, CLUSTER_ID, serviceType, configId))
                 .thenReturn(new ServiceStatusInfo(serviceStatus));
 
-
-        String uriPath = String.format("/orchestrator/v1/instances/%s/serviceStatusInfo", APPLICATION_INSTANCE_REFERENCE);
+        String uriPath = String.format("/orchestrator/v1/instances/%s/serviceStatusInfo", reference);
         HttpRequest request = HttpRequestBuilder.create(GET, uriPath)
                 .withQueryParameter("clusterId", CLUSTER_ID.s())
                 .withQueryParameter("serviceType", serviceType.s())
@@ -79,9 +85,10 @@ class InstanceRequestHandlerTest {
         assertEquals(serviceStatus, actualServiceStatus);
     }
 
-    @Test
-    void testBadRequest() {
-        String uriPath = String.format("/orchestrator/v1/instances/%s/serviceStatusInfo", APPLICATION_INSTANCE_REFERENCE);
+    @ParameterizedTest
+    @ValueSource(strings = { APPLICATION_INSTANCE_REFERENCE, APPLICATION_INSTANCE_REFERENCE_LONG })
+    void testBadRequest(String reference) {
+        String uriPath = String.format("/orchestrator/v1/instances/%s/serviceStatusInfo", reference);
         HttpRequest request = HttpRequestBuilder.create(GET, uriPath)
                 .withQueryParameter("clusterId", CLUSTER_ID.s())
                 .build();
@@ -89,12 +96,11 @@ class InstanceRequestHandlerTest {
         assertEquals(400, response.getStatus());
     }
 
-    private void testGetSlobrokEntriesWith(String pattern, String expectedLookupPattern)
-            throws Exception{
+    private void testGetSlobrokEntriesWith(String pattern, String expectedLookupPattern) throws Exception {
         when(slobrokApi.lookup(APPLICATION_ID, expectedLookupPattern))
                 .thenReturn(ENTRIES);
 
-        String uriPath = String.format("/orchestrator/v1/instances/%s/slobrok", APPLICATION_INSTANCE_REFERENCE);
+        String uriPath = String.format("/orchestrator/v1/instances/%s/slobrok", APPLICATION_INSTANCE_REFERENCE_LONG);
         var builder = HttpRequestBuilder.create(GET, uriPath);
         if (pattern != null) {
             builder.withQueryParameter("pattern", pattern);

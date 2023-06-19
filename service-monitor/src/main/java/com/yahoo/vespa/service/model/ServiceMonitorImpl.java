@@ -81,8 +81,8 @@ public class ServiceMonitorImpl implements ServiceMonitor, AntiServiceMonitor {
     }
 
     @Override
-    public Optional<ApplicationInstance> getApplication(ApplicationInstanceReference reference) {
-        return getApplicationInfo(reference)
+    public Optional<ApplicationInstance> getApplication(ApplicationId applicationId) {
+        return getApplicationInfo(applicationId)
                 .map(applicationInfo -> modelGenerator.toApplicationInstance(applicationInfo, serviceStatusProvider));
     }
 
@@ -108,8 +108,7 @@ public class ServiceMonitorImpl implements ServiceMonitor, AntiServiceMonitor {
         return duperModelManager.disallowDuperModelLockAcquisition(regionDescription);
     }
 
-    private Optional<ApplicationInfo> getApplicationInfo(ApplicationInstanceReference reference) {
-        ApplicationId applicationId = ApplicationInstanceGenerator.toApplicationId(reference);
+    private Optional<ApplicationInfo> getApplicationInfo(ApplicationId applicationId) {
         return duperModelManager.getApplicationInfo(applicationId);
     }
 
