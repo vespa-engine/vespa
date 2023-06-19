@@ -4,9 +4,7 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -18,8 +16,8 @@ import (
 
 func newCertCmd(cli *CLI) *cobra.Command {
 	var (
-		noApplicationPackage bool
-		overwriteCertificate bool
+		skipApplicationPackage bool
+		overwriteCertificate   bool
 	)
 	cmd := &cobra.Command{
 		Use:   "cert",
@@ -60,11 +58,12 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return doCert(cli, overwriteCertificate, noApplicationPackage, args)
+			return doCert(cli, overwriteCertificate, skipApplicationPackage, args)
 		},
 	}
 	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
-	cmd.Flags().BoolVarP(&noApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
+	// TODO(mpolden): Stop adding certificate to application package and remove this flag
+	cmd.Flags().BoolVarP(&skipApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
 	cmd.MarkPersistentFlagRequired(applicationFlag)
 	return cmd
 }
@@ -95,17 +94,10 @@ $ vespa auth cert add -a my-tenant.my-app.my-instance path/to/application/packag
 	return cmd
 }
 
-func doCert(cli *CLI, overwriteCertificate, noApplicationPackage bool, args []string) error {
+func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []string) error {
 	app, err := cli.config.application()
 	if err != nil {
 		return err
-	}
-	var pkg vespa.ApplicationPackage
-	if !noApplicationPackage {
-		pkg, err = cli.applicationPackageFrom(args, false)
-		if err != nil {
-			return err
-		}
 	}
 	targetType, err := cli.targetType()
 	if err != nil {
@@ -122,11 +114,6 @@ func doCert(cli *CLI, overwriteCertificate, noApplicationPackage bool, args []st
 
 	if !overwriteCertificate {
 		hint := "Use -f flag to force overwriting"
-		if !noApplicationPackage {
-			if pkg.HasCertificate() {
-				return errHint(fmt.Errorf("application package %s already contains a certificate", pkg.Path), hint)
-			}
-		}
 		if util.PathExists(privateKeyFile) {
 			return errHint(fmt.Errorf("private key %s already exists", color.CyanString(privateKeyFile)), hint)
 		}
@@ -134,26 +121,10 @@ func doCert(cli *CLI, overwriteCertificate, noApplicationPackage bool, args []st
 			return errHint(fmt.Errorf("certificate %s already exists", color.CyanString(certificateFile)), hint)
 		}
 	}
-	if !noApplicationPackage {
-		if pkg.IsZip() {
-			hint := "Try running 'mvn clean' before 'vespa auth cert', and then 'mvn package'"
-			return errHint(fmt.Errorf("cannot add certificate to compressed application package %s", pkg.Path), hint)
-		}
-	}
 
 	keyPair, err := vespa.CreateKeyPair()
 	if err != nil {
 		return err
-	}
-	var pkgCertificateFile string
-	if !noApplicationPackage {
-		pkgCertificateFile = filepath.Join(pkg.Path, "security", "clients.pem")
-		if err := os.MkdirAll(filepath.Dir(pkgCertificateFile), 0755); err != nil {
-			return fmt.Errorf("could not create security directory: %w", err)
-		}
-		if err := keyPair.WriteCertificateFile(pkgCertificateFile, overwriteCertificate); err != nil {
-			return fmt.Errorf("could not write certificate to application package: %w", err)
-		}
 	}
 	if err := keyPair.WriteCertificateFile(certificateFile, overwriteCertificate); err != nil {
 		return fmt.Errorf("could not write certificate: %w", err)
@@ -161,64 +132,75 @@ func doCert(cli *CLI, overwriteCertificate, noApplicationPackage bool, args []st
 	if err := keyPair.WritePrivateKeyFile(privateKeyFile, overwriteCertificate); err != nil {
 		return fmt.Errorf("could not write private key: %w", err)
 	}
-	if !noApplicationPackage {
-		cli.printSuccess("Certificate written to ", color.CyanString(pkgCertificateFile))
-	}
 	cli.printSuccess("Certificate written to ", color.CyanString(certificateFile))
 	cli.printSuccess("Private key written to ", color.CyanString(privateKeyFile))
+	if !skipApplicationPackage {
+		return doCertAdd(cli, overwriteCertificate, args)
+	}
 	return nil
 }
 
 func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
-	app, err := cli.config.application()
-	if err != nil {
-		return err
-	}
 	pkg, err := cli.applicationPackageFrom(args, false)
 	if err != nil {
 		return err
 	}
-	targetType, err := cli.targetType()
+	target, err := cli.target(targetOptions{})
 	if err != nil {
 		return err
 	}
-	certificateFile, err := cli.config.certificatePath(app, targetType.name)
+	if pkg.HasCertificate() && !overwriteCertificate {
+		return errHint(fmt.Errorf("application package %s already contains a certificate", pkg.Path), "Use -f flag to force overwriting")
+	}
+	return maybeCopyCertificate(true, false, cli, target, pkg)
+}
+
+func maybeCopyCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pkg vespa.ApplicationPackage) error {
+	if pkg.IsZip() && !ignoreZip {
+		hint := "Try running 'mvn clean', then 'vespa auth cert add' and finally 'mvn package'"
+		return errHint(fmt.Errorf("cannot add certificate to compressed application package: %s", pkg.Path), hint)
+	}
+	if force {
+		return copyCertificate(cli, target, pkg)
+	}
+	if pkg.HasCertificate() {
+		return nil
+	}
+	if cli.isTerminal() {
+		cli.printWarning("Application package does not contain " + color.CyanString("security/clients.pem") + ", which is required for deployments to Vespa Cloud")
+		ok, err := cli.confirm("Do you want to copy the certificate of application " + color.GreenString(target.Deployment().Application.String()) + " into this application package?")
+		if err != nil {
+			return err
+		}
+		if ok {
+			return copyCertificate(cli, target, pkg)
+		}
+	}
+	return errHint(fmt.Errorf("deployment to Vespa Cloud requires certificate in application package"),
+		"See https://cloud.vespa.ai/en/security/guide",
+		"Pass --add-cert to use the certificate of the current application")
+}
+
+func copyCertificate(cli *CLI, target vespa.Target, pkg vespa.ApplicationPackage) error {
+	tlsOptions, err := cli.config.readTLSOptions(target.Deployment().Application, target.Type())
 	if err != nil {
 		return err
 	}
-
-	if pkg.IsZip() {
-		hint := "Try running 'mvn clean' before 'vespa auth cert add', and then 'mvn package'"
-		return errHint(fmt.Errorf("unable to add certificate to compressed application package: %s", pkg.Path), hint)
+	hint := "Try generating the certificate with 'vespa auth cert'"
+	if tlsOptions.CertificateFile == "" {
+		return errHint(fmt.Errorf("no certificate exists for "+target.Deployment().Application.String()), hint)
 	}
-
-	pkgCertificateFile := filepath.Join(pkg.Path, "security", "clients.pem")
-	if err := os.MkdirAll(filepath.Dir(pkgCertificateFile), 0755); err != nil {
+	data, err := os.ReadFile(tlsOptions.CertificateFile)
+	if err != nil {
+		return errHint(fmt.Errorf("could not read certificate file: %w", err))
+	}
+	dstPath := filepath.Join(pkg.Path, "security", "clients.pem")
+	if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
 		return fmt.Errorf("could not create security directory: %w", err)
 	}
-	src, err := os.Open(certificateFile)
-	if errors.Is(err, os.ErrNotExist) {
-		return errHint(fmt.Errorf("there is not key pair generated for application '%s'", app), "Try running 'vespa auth cert' to generate it")
-	} else if err != nil {
-		return fmt.Errorf("could not open certificate file: %w", err)
+	err = util.AtomicWriteFile(dstPath, data)
+	if err == nil {
+		cli.printSuccess("Copied certificate from ", tlsOptions.CertificateFile, " to ", dstPath)
 	}
-	defer src.Close()
-	flags := os.O_CREATE | os.O_RDWR
-	if overwriteCertificate {
-		flags |= os.O_TRUNC
-	} else {
-		flags |= os.O_EXCL
-	}
-	dst, err := os.OpenFile(pkgCertificateFile, flags, 0755)
-	if errors.Is(err, os.ErrExist) {
-		return errHint(fmt.Errorf("application package %s already contains a certificate", pkg.Path), "Use -f flag to force overwriting")
-	} else if err != nil {
-		return fmt.Errorf("could not open application certificate file for writing: %w", err)
-	}
-	if _, err := io.Copy(dst, src); err != nil {
-		return fmt.Errorf("could not copy certificate file to application: %w", err)
-	}
-
-	cli.printSuccess("Certificate written to ", color.CyanString(pkgCertificateFile))
-	return nil
+	return err
 }

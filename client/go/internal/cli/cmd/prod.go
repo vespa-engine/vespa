@@ -103,7 +103,8 @@ https://cloud.vespa.ai/en/reference/deployment`,
 }
 
 func newProdDeployCmd(cli *CLI) *cobra.Command {
-	return &cobra.Command{
+	copyCert := false
+	cmd := &cobra.Command{
 		Use:     "deploy",
 		Aliases: []string{"submit"}, // TODO: Remove in Vespa 9
 		Short:   "Deploy an application to production",
@@ -145,6 +146,9 @@ $ vespa prod deploy`,
 			if err != nil {
 				return err
 			}
+			if err := maybeCopyCertificate(copyCert, true, cli, target, pkg); err != nil {
+				return err
+			}
 			if err := vespa.Submit(opts); err != nil {
 				return fmt.Errorf("could not deploy application: %w", err)
 			} else {
@@ -155,6 +159,8 @@ $ vespa prod deploy`,
 			return nil
 		},
 	}
+	cmd.Flags().BoolVarP(&copyCert, "add-cert", "A", false, `Copy certificate of the configured application to the current application package`)
+	return cmd
 }
 
 func writeWithBackup(stdout io.Writer, pkg vespa.ApplicationPackage, filename, contents string) error {

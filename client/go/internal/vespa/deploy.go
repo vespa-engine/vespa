@@ -21,7 +21,11 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 )
 
-var DefaultApplication = ApplicationID{Tenant: "default", Application: "application", Instance: "default"}
+var (
+	DefaultApplication = ApplicationID{Tenant: "default", Application: "application", Instance: "default"}
+	DefaultZone        = ZoneID{Environment: "prod", Region: "default"}
+	DefaultDeployment  = Deployment{Application: DefaultApplication, Zone: DefaultZone}
+)
 
 type ApplicationID struct {
 	Tenant      string

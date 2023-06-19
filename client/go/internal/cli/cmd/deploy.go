@@ -20,6 +20,7 @@ func newDeployCmd(cli *CLI) *cobra.Command {
 	var (
 		logLevelArg string
 		versionArg  string
+		copyCert    bool
 	)
 	cmd := &cobra.Command{
 		Use:   "deploy [application-directory]",
@@ -67,16 +68,18 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 				}
 				opts.Version = version
 			}
-
+			if target.Type() == vespa.TargetCloud {
+				if err := maybeCopyCertificate(copyCert, true, cli, target, pkg); err != nil {
+					return err
+				}
+			}
 			var result vespa.PrepareResult
-			err = cli.spinner(cli.Stderr, "Uploading application package ...", func() error {
+			if err := cli.spinner(cli.Stderr, "Uploading application package ...", func() error {
 				result, err = vespa.Deploy(opts)
 				return err
-			})
-			if err != nil {
+			}); err != nil {
 				return err
 			}
-
 			log.Println()
 			if opts.Target.IsCloud() {
 				cli.printSuccess("Triggered deployment of ", color.CyanString(pkg.Path), " with run ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
@@ -97,6 +100,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 	}
 	cmd.Flags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
 	cmd.Flags().StringVarP(&versionArg, "version", "V", "", `Override the Vespa runtime version to use in Vespa Cloud`)
+	cmd.Flags().BoolVarP(&copyCert, "add-cert", "A", false, `Copy certificate of the configured application to the current application package`)
 	return cmd
 }
 

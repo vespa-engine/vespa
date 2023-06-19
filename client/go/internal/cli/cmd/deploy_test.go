@@ -5,13 +5,61 @@
 package cmd
 
 import (
+	"bytes"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
+
+func TestDeployCloud(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+
+	cli, stdout, stderr := newTestCLI(t, "CI=true", "NO_COLOR=true")
+	httpClient := &mock.HTTPClient{}
+	httpClient.NextResponseString(200, `ok`)
+	cli.httpClient = httpClient
+
+	app := vespa.ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}
+	assert.Nil(t, cli.Run("config", "set", "application", app.String()))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", "--no-add"))
+
+	stderr.Reset()
+	require.NotNil(t, cli.Run("deploy", pkgDir))
+	certError := `Error: deployment to Vespa Cloud requires certificate in application package
+Hint: See https://cloud.vespa.ai/en/security/guide
+Hint: Pass --add-cert to use the certificate of the current application
+`
+	assert.Equal(t, certError, stderr.String())
+
+	require.Nil(t, cli.Run("deploy", "--add-cert", pkgDir))
+	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
+
+	// Answer interactive certificate copy prompt
+	stdout.Reset()
+	stderr.Reset()
+	cli.isTerminal = func() bool { return true }
+	pkgDir2 := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir2, false, false)
+
+	var buf bytes.Buffer
+	buf.WriteString("wat\nthe\nfck\nn\n")
+	cli.Stdin = &buf
+	require.NotNil(t, cli.Run("deploy", "--add-cert=false", pkgDir2))
+	warning := "Warning: Application package does not contain security/clients.pem, which is required for deployments to Vespa Cloud\n"
+	assert.Equal(t, warning+strings.Repeat("Error: please answer 'Y' or 'n'\n", 3)+certError, stderr.String())
+	buf.WriteString("y\n")
+	require.Nil(t, cli.Run("deploy", "--add-cert=false", pkgDir2))
+	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
+}
 
 func TestPrepareZip(t *testing.T) {
 	assertPrepare("testdata/applications/withTarget/target/application.zip",
@@ -42,7 +90,7 @@ func TestDeployZipWithURLTargetArgument(t *testing.T) {
 	assertDeployRequestMade("http://target:19071", client, t)
 }
 
-func TestDeployZipWitLocalTargetArgument(t *testing.T) {
+func TestDeployZipWithLocalTargetArgument(t *testing.T) {
 	assertDeploy("testdata/applications/withTarget/target/application.zip",
 		[]string{"deploy", "testdata/applications/withTarget/target/application.zip", "-t", "local"}, t)
 }

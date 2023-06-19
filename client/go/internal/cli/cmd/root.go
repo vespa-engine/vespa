@@ -301,6 +301,26 @@ func (c *CLI) printWarning(msg interface{}, hints ...string) {
 	}
 }
 
+func (c *CLI) confirm(question string) (bool, error) {
+	if !c.isTerminal() {
+		return false, fmt.Errorf("terminal is not interactive")
+	}
+	for {
+		var answer string
+		fmt.Fprintf(c.Stdout, "%s [Y/n] ", question)
+		fmt.Fscanln(c.Stdin, &answer)
+		answer = strings.TrimSpace(strings.ToLower(answer))
+		switch answer {
+		case "y", "":
+			return true, nil
+		case "n":
+			return false, nil
+		default:
+			c.printErr(fmt.Errorf("please answer 'Y' or 'n'"))
+		}
+	}
+}
+
 // target creates a target according the configuration of this CLI and given opts.
 func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
 	targetType, err := c.targetType()
