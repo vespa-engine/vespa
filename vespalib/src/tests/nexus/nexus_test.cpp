@@ -7,7 +7,7 @@
 using namespace vespalib::test;
 
 TEST(NexusTest, run_void_tasks) {
-    std::atomic<size_t> value;
+    std::atomic<size_t> value = 0;
     auto task = [&value](Nexus &) {
                     value.fetch_add(1, std::memory_order_relaxed);
                 };
@@ -19,7 +19,7 @@ TEST(NexusTest, run_void_tasks) {
 }
 
 TEST(NexusTest, run_value_tasks_select_thread_0) {
-    std::atomic<size_t> value;
+    std::atomic<size_t> value = 0;
     auto task = [&value](Nexus &ctx) {
                     value.fetch_add(1, std::memory_order_relaxed);
                     return ctx.thread_id() + 5;
@@ -30,7 +30,7 @@ TEST(NexusTest, run_value_tasks_select_thread_0) {
 }
 
 TEST(NexusTest, run_value_tasks_merge_results) {
-    std::atomic<size_t> value;
+    std::atomic<size_t> value = 0;
     auto task = [&value](Nexus &) {
                     return value.fetch_add(1, std::memory_order_relaxed) + 1;
                 };
@@ -40,6 +40,12 @@ TEST(NexusTest, run_value_tasks_merge_results) {
 }
 
 TEST(NexusTest, run_inline_voted_loop) {
+    // Each thread wants to run a loop <thread_id> times, but the loop
+    // condition is a vote between all threads. After 3 iterations,
+    // threads 0,1,2,3 vote to exit while threads 4,5,6,7,8 vote to
+    // continue. After 4 iterations, threads 0,1,2,3,4 vote to exit
+    // while threads 5,6,7,8 vote to continue. The result is that all
+    // threads end up doing the loop exactly 4 times.
     auto res = Nexus(9).run([](Nexus &ctx) {
                                 size_t times = 0;
                                 for (size_t i = 0; ctx.vote(i < ctx.thread_id()); ++i) {
