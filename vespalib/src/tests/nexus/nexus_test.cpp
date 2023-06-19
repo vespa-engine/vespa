@@ -67,7 +67,7 @@ TEST(NexusTest, example_multi_threaded_unit_test) {
     int a = 0;
     int b = 0;
     auto work = [&](Nexus &ctx) {
-        EXPECT_EQ(ctx.num_threads(2));
+        EXPECT_EQ(ctx.num_threads(), 2);
         if (ctx.thread_id() == 0) {
             a = 5;
             ctx.barrier();
