@@ -6,6 +6,7 @@ import com.yahoo.vespa.model.container.docproc.DocprocChain;
  * Utility class to track configuration for which indexing docproc to use by a search cluster.
  */
 public class IndexingDocproc {
+
     private String clusterName; // The name of the docproc cluster to run indexing, by config.
     private String chainName;
 
@@ -65,4 +66,5 @@ public class IndexingDocproc {
         chainName = null;
         chain = null;
     }
+
 }

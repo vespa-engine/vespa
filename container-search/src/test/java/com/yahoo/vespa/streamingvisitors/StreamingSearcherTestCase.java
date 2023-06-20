@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author Ulf Carlin
  */
-public class VdsStreamingSearcherTestCase {
+public class StreamingSearcherTestCase {
 
     public static final String USERDOC_ID_PREFIX = "id:namespace:mytype:n=1:userspecific";
     public static final String GROUPDOC_ID_PREFIX = "id:namespace:mytype:g=group1:userspecific";
@@ -98,7 +98,7 @@ public class VdsStreamingSearcherTestCase {
                 groupings.add(new Grouping());
             } else if (queryString.compareTo("match_features") == 0) {
                 addResults(USERDOC_ID_PREFIX, 1, false);
-                var matchFeatures = new MatchFeatureData(Arrays.asList("my_feature")).addHit();
+                var matchFeatures = new MatchFeatureData(List.of("my_feature")).addHit();
                 matchFeatures.set(0, 7.0);
                 hits.get(0).setMatchFeatures(matchFeatures);
             }
@@ -161,7 +161,7 @@ public class VdsStreamingSearcherTestCase {
         }
     }
 
-    private static Result executeQuery(VdsStreamingSearcher searcher, Query query) {
+    private static Result executeQuery(StreamingSearcher searcher, Query query) {
         Execution execution = new Execution(Execution.Context.createContextStub());
         return searcher.doSearch2(query, execution);
     }
@@ -184,7 +184,7 @@ public class VdsStreamingSearcherTestCase {
         return queries;
     }
 
-    private static void checkError(VdsStreamingSearcher searcher, String queryString, String message, String detailedMessage) {
+    private static void checkError(StreamingSearcher searcher, String queryString, String message, String detailedMessage) {
         for (Query query : generateTestQueries(queryString)) {
             Result result = executeQuery(searcher, query);
             assertNotNull(result.hits().getError());
@@ -197,7 +197,7 @@ public class VdsStreamingSearcherTestCase {
         }
     }
 
-    private static void checkSearch(VdsStreamingSearcher searcher, String queryString, int hitCount, String idPrefix) {
+    private static void checkSearch(StreamingSearcher searcher, String queryString, int hitCount, String idPrefix) {
         for (Query query : generateTestQueries(queryString)) {
             Result result = executeQuery(searcher, query);
             assertNull(result.hits().getError());
@@ -215,11 +215,11 @@ public class VdsStreamingSearcherTestCase {
         }
     }
 
-    private static void checkGrouping(VdsStreamingSearcher searcher, String queryString, int hitCount) {
+    private static void checkGrouping(StreamingSearcher searcher, String queryString, int hitCount) {
         checkSearch(searcher, queryString, hitCount, null);
     }
 
-    private static void checkMatchFeatures(VdsStreamingSearcher searcher) {
+    private static void checkMatchFeatures(StreamingSearcher searcher) {
         String queryString = "/?streaming.selection=true&query=match_features";
         Result result = executeQuery(searcher, new Query(queryString));
         assertNull(result.hits().getError());
@@ -232,7 +232,7 @@ public class VdsStreamingSearcherTestCase {
     @Test
     void testBasics() {
         MockVisitorFactory factory = new MockVisitorFactory();
-        VdsStreamingSearcher searcher = new VdsStreamingSearcher(factory);
+        StreamingSearcher searcher = new StreamingSearcher(factory);
 
         var schema = new Schema.Builder("test");
         schema.add(new com.yahoo.search.schema.DocumentSummary.Builder("default").build());
@@ -281,25 +281,25 @@ public class VdsStreamingSearcherTestCase {
         String groupId2 = "id:namespace:mytype:g=group2:userspecific";
         String badId = "unknowscheme:namespace:something";
 
-        assertTrue(VdsStreamingSearcher.verifyDocId(userId1, generalQuery, true));
+        assertTrue(StreamingSearcher.verifyDocId(userId1, generalQuery, true));
 
-        assertTrue(VdsStreamingSearcher.verifyDocId(userId1, generalQuery, false));
-        assertTrue(VdsStreamingSearcher.verifyDocId(userId2, generalQuery, false));
-        assertTrue(VdsStreamingSearcher.verifyDocId(groupId1, generalQuery, false));
-        assertTrue(VdsStreamingSearcher.verifyDocId(groupId2, generalQuery, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(badId, generalQuery, false));
+        assertTrue(StreamingSearcher.verifyDocId(userId1, generalQuery, false));
+        assertTrue(StreamingSearcher.verifyDocId(userId2, generalQuery, false));
+        assertTrue(StreamingSearcher.verifyDocId(groupId1, generalQuery, false));
+        assertTrue(StreamingSearcher.verifyDocId(groupId2, generalQuery, false));
+        assertFalse(StreamingSearcher.verifyDocId(badId, generalQuery, false));
 
-        assertTrue(VdsStreamingSearcher.verifyDocId(userId1, user1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(userId2, user1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(groupId1, user1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(groupId2, user1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(badId, user1Query, false));
+        assertTrue(StreamingSearcher.verifyDocId(userId1, user1Query, false));
+        assertFalse(StreamingSearcher.verifyDocId(userId2, user1Query, false));
+        assertFalse(StreamingSearcher.verifyDocId(groupId1, user1Query, false));
+        assertFalse(StreamingSearcher.verifyDocId(groupId2, user1Query, false));
+        assertFalse(StreamingSearcher.verifyDocId(badId, user1Query, false));
 
-        assertFalse(VdsStreamingSearcher.verifyDocId(userId1, group1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(userId2, group1Query, false));
-        assertTrue(VdsStreamingSearcher.verifyDocId(groupId1, group1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(groupId2, group1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(badId, group1Query, false));
+        assertFalse(StreamingSearcher.verifyDocId(userId1, group1Query, false));
+        assertFalse(StreamingSearcher.verifyDocId(userId2, group1Query, false));
+        assertTrue(StreamingSearcher.verifyDocId(groupId1, group1Query, false));
+        assertFalse(StreamingSearcher.verifyDocId(groupId2, group1Query, false));
+        assertFalse(StreamingSearcher.verifyDocId(badId, group1Query, false));
     }
 
     private static class TraceFixture {
@@ -309,13 +309,13 @@ public class VdsStreamingSearcherTestCase {
         TracingOptions options;
 
         MockVisitorFactory factory;
-        VdsStreamingSearcher searcher;
+        StreamingSearcher searcher;
 
         private TraceFixture(Long firstTimestamp, Long... additionalTimestamps) {
             clock = MockUtils.mockedClockReturning(firstTimestamp, additionalTimestamps);
             options = new TracingOptions(sampler, exporter, clock, 8, 2.0);
             factory = new MockVisitorFactory();
-            searcher = new VdsStreamingSearcher(factory, options);
+            searcher = new StreamingSearcher(factory, options);
         }
 
         private TraceFixture() {

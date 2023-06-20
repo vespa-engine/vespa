@@ -102,7 +102,7 @@ public class AsyncExecution {
     }
 
     /**
-     * Does an async search, note that the query argument cannot simultaneously
+     * Does an async search. Note that the query argument cannot simultaneously
      * be used to execute any other searches, a clone() must be made of the
      * query for each async execution if the same query is to be used in more
      * than one.

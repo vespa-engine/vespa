@@ -18,13 +18,14 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class MetricsSearcherTestCase {
 
-    private MetricsSearcher metricsSearcher = new MetricsSearcher();
-    private MockBackend backend = new MockBackend();
-    private Chain<Searcher> chain = new Chain<>(metricsSearcher, backend);
-    private Execution.Context context = Execution.Context.createContextStub();
-    private MetricsSearcher.Stats expStatsLt1 = new MetricsSearcher.Stats();
+    private final MetricsSearcher metricsSearcher = new MetricsSearcher();
+    private final MockBackend backend = new MockBackend();
+    private final Chain<Searcher> chain = new Chain<>(metricsSearcher, backend);
+    private final Execution.Context context = Execution.Context.createContextStub();
+    private final MetricsSearcher.Stats expStatsLt1 = new MetricsSearcher.Stats();
+    private final MetricsSearcher.Stats expStatsLt2 = new MetricsSearcher.Stats();
+
     private static final String LOADTYPE1 = "lt1";
-    private MetricsSearcher.Stats expStatsLt2 = new MetricsSearcher.Stats();
     private static final String LOADTYPE2 = "lt2";
 
     private void verifySearch(String metricParam, String message, String detailedMessage) {
@@ -97,8 +98,9 @@ public class MetricsSearcherTestCase {
     }
 
     private static class MockBackend extends Searcher {
+
         private int sequenceNumber = 0;
-        private VisitorStatistics visitorStats = new VisitorStatistics();
+        private final VisitorStatistics visitorStats = new VisitorStatistics();
         private boolean implicitlyCreateContext = true;
 
         private MockBackend() {
@@ -132,9 +134,9 @@ public class MetricsSearcherTestCase {
 
         private void assignContextProperties(Query query, String loadType) {
             if (loadType != null && loadType.equals(LOADTYPE1)) {
-                query.getContext(true).setProperty(VdsStreamingSearcher.STREAMING_STATISTICS, visitorStats);
+                query.getContext(true).setProperty(StreamingSearcher.STREAMING_STATISTICS, visitorStats);
             } else {
-                query.getContext(true).setProperty(VdsStreamingSearcher.STREAMING_STATISTICS, null);
+                query.getContext(true).setProperty(StreamingSearcher.STREAMING_STATISTICS, null);
             }
         }
     }
