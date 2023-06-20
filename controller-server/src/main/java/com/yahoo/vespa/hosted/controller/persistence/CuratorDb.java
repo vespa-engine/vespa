@@ -14,13 +14,17 @@ import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.transaction.CuratorOperations;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBuckets;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -122,6 +126,7 @@ public class CuratorDb {
     private final RetriggerEntrySerializer retriggerEntrySerializer = new RetriggerEntrySerializer();
     private final NotificationsSerializer notificationsSerializer = new NotificationsSerializer();
     private final DnsChallengeSerializer dnsChallengeSerializer = new DnsChallengeSerializer();
+    private final PooledCertificateSerializer pooledCertificateSerializer = new PooledCertificateSerializer();
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -746,21 +751,22 @@ public class CuratorDb {
 
     // -------------- Endpoint certificate pool -------------------------------
 
-    public void addToCertificatePool(String s, EndpointCertificateMetadata metadata, String pool) {
-        curator.set(certificatePoolRoot.append(pool).append(s), asJson(EndpointCertificateMetadataSerializer.toSlime(metadata)));
+    public void writePooledCertificate(PooledCertificate certificate) {
+        curator.set(certificatePoolRoot.append(certificate.id()), asJson(pooledCertificateSerializer.toSlime(certificate)));
     }
 
-    public void removeFromCertificatePool(String s, String pool) {
-        curator.delete(certificatePoolRoot.append(pool).append(s));
+    public Optional<PooledCertificate> readPooledCertificate(String id) {
+        return readSlime(certificatePoolRoot.append(id)).map(pooledCertificateSerializer::fromSlime);
     }
 
-    public Map<String, EndpointCertificateMetadata> readCertificatePool(String pool) {
-        List<String> children = curator.getChildren(certificatePoolRoot.append(pool));
-        return children.stream()
-                .collect(Collectors.toMap(Function.identity(),
-                        name -> EndpointCertificateMetadataSerializer.fromJsonString(
-                                new String(
-                                        curator.getData(certificatePoolRoot.append(pool).append(name)).orElseThrow()))));
+    public void removePooledCertificate(PooledCertificate certificate, NestedTransaction transaction) {
+        Path path = certificatePoolRoot.append(certificate.id());
+        CuratorTransaction curatorTransaction = CuratorTransaction.from(CuratorOperations.delete(path.toString()), curator);
+        transaction.add(curatorTransaction);
+    }
+
+    public List<PooledCertificate> readPooledCertificates() {
+        return curator.getChildren(certificatePoolRoot).stream().flatMap(id -> readPooledCertificate(id).stream()).toList();
     }
 
     // -------------- Paths ---------------------------------------------------

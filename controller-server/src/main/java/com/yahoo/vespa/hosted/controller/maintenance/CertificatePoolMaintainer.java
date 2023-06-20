@@ -12,11 +12,11 @@ import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,9 +25,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.random.RandomGenerator;
-
-import static com.yahoo.vespa.hosted.controller.maintenance.CertificatePoolMaintainer.State.ready;
-import static com.yahoo.vespa.hosted.controller.maintenance.CertificatePoolMaintainer.State.requested;
+import java.util.stream.Collectors;
 
 /**
  * Manages pool of ready-to-use randomized endpoint certificates
@@ -62,11 +60,10 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
     protected double maintain() {
         try {
             moveRequestedCertsToReady();
-
+            List<PooledCertificate> certificatePool = curator.readPooledCertificates();
             // So we can alert if the pool goes too low
-            metric.set("preprovisioned.endpoint.certificates", pool(ready).size(), metric.createContext(Map.of()));
-
-            if (pool(ready).size() + pool(requested).size() < certPoolSize.value()) {
+            metric.set("preprovisioned.endpoint.certificates", certificatePool.stream().filter(c -> c.state() == PooledCertificate.State.ready).count(), metric.createContext(Map.of()));
+            if (certificatePool.size() < certPoolSize.value()) {
                 provisionRandomizedCertificate();
             }
         } catch (Exception e) {
@@ -77,22 +74,20 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
     }
 
     private void moveRequestedCertsToReady() {
-        for (var cert : pool(requested).entrySet()) {
-            try {
-                OptionalInt maxKeyVersion = secretStore.listSecretVersions(cert.getValue().keyName()).stream().mapToInt(i -> i).max();
-                OptionalInt maxCertVersion = secretStore.listSecretVersions(cert.getValue().certName()).stream().mapToInt(i -> i).max();
-
-                if (maxKeyVersion.isPresent() && maxCertVersion.equals(maxKeyVersion)) {
-                    try (Mutex lock = controller.curator().lockCertificatePool()) {
-                        curator.removeFromCertificatePool(cert.getKey(), requested.name());
-                        curator.addToCertificatePool(cert.getKey(), cert.getValue(), ready.name());
-
-                        log.log(Level.INFO, "Randomized endpoint cert %s now ready for use".formatted(cert.getKey()));
+        try (Mutex lock = controller.curator().lockCertificatePool()) {
+            for (PooledCertificate pooledCert : curator.readPooledCertificates()) {
+                if (pooledCert.state() == PooledCertificate.State.ready) continue;
+                try {
+                    OptionalInt maxKeyVersion = secretStore.listSecretVersions(pooledCert.certificate().keyName()).stream().mapToInt(i -> i).max();
+                    OptionalInt maxCertVersion = secretStore.listSecretVersions(pooledCert.certificate().certName()).stream().mapToInt(i -> i).max();
+                    if (maxKeyVersion.isPresent() && maxCertVersion.equals(maxKeyVersion)) {
+                        curator.writePooledCertificate(pooledCert.withState(PooledCertificate.State.ready));
+                        log.log(Level.INFO, "Randomized endpoint cert %s now ready for use".formatted(pooledCert.id()));
                     }
+                } catch (SecretNotFoundException s) {
+                    // Likely because the certificate is very recently provisioned - ignore till next time - should we log?
+                    log.log(Level.INFO, "Could not yet read secrets for randomized endpoint cert %s - maybe next time ...".formatted(pooledCert.id()));
                 }
-            } catch (SecretNotFoundException s) {
-                // Likely because the certificate is very recently provisioned - ignore till next time - should we log?
-                log.log(Level.INFO, "Could not yet read secrets for randomized endpoint cert %s - maybe next time ...".formatted(cert.getKey()));
             }
         }
     }
@@ -102,15 +97,10 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
         requested
     }
 
-    private Map<String, EndpointCertificateMetadata> pool(State pool) {
-        return curator.readCertificatePool(pool.name());
-    }
-
     private void provisionRandomizedCertificate() {
         try (Mutex lock = controller.curator().lockCertificatePool()) {
-            HashSet<String> existingNames = new HashSet<>();
-            existingNames.addAll(pool(ready).keySet());
-            existingNames.addAll(pool(requested).keySet());
+            Set<String> existingNames = controller.curator().readPooledCertificates().stream().map(PooledCertificate::id).collect(Collectors.toSet());
+
             curator.readAllEndpointCertificateMetadata().values().stream()
                     .map(EndpointCertificateMetadata::randomizedId)
                     .forEach(id -> id.ifPresent(existingNames::add));
@@ -128,7 +118,8 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
                             Optional.empty())
                     .withRandomizedId(id);
 
-            curator.addToCertificatePool(id, f, requested.name());
+            PooledCertificate certificate = new PooledCertificate(f, PooledCertificate.State.requested);
+            curator.writePooledCertificate(certificate);
         }
     }
 

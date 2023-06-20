@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.EndpointSecretManager;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -35,9 +34,6 @@ import java.util.OptionalInt;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate.*;
 
 /**
  * Updates refreshed endpoint certificates and triggers redeployment, and deletes unused certificates.
@@ -179,10 +175,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
 
         List<String> leafRequestIds = storedEndpointCertificateMetadata.values().stream().flatMap(m -> m.leafRequestId().stream()).toList();
         List<String> rootRequestIds = storedEndpointCertificateMetadata.values().stream().map(EndpointCertificateMetadata::rootRequestId).toList();
-        List<String> certPoolIds = Stream.concat(
-                        curator.readCertificatePool(State.requested.name()).values().stream(),
-                        curator.readCertificatePool(State.ready.name()).values().stream())
-                .map(EndpointCertificateMetadata::leafRequestId).flatMap(Optional::stream).toList();
+        List<String> certPoolIds = curator.readPooledCertificates().stream().map(p -> p.certificate().leafRequestId()).flatMap(Optional::stream).toList();
 
         var managedIds = new HashSet<String>();
         managedIds.addAll(leafRequestIds);

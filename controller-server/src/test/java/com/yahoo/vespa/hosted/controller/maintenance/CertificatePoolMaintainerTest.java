@@ -13,11 +13,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Random;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate.State.requested;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author andreer
@@ -55,6 +51,6 @@ public class CertificatePoolMaintainerTest {
 
     private void assertNumCerts(int n) {
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
-        assertEquals(n, tester.curator().readCertificatePool(requested.name()).entrySet().size());
+        assertEquals(n, tester.curator().readPooledCertificates().size());
     }
 }

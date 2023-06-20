@@ -101,14 +101,17 @@ public class EndpointCertificates {
             // TODO andreer: Assign randomized certs on application level, separately for manual deployments
             if (useRandomizedCert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().toFullString()).value()) {
                 try (Mutex lock = controller.curator().lockCertificatePool()) {
-                    EndpointCertificateMetadata randomized = curator.readCertificatePool(State.ready.name()).values().stream()
-                            .min(Comparator.comparingLong(EndpointCertificateMetadata::lastRequested)).orElseThrow(() -> {
+                    EndpointCertificateMetadata randomized = curator.readPooledCertificates().stream()
+                                                                    .filter(pooledCert -> pooledCert.state() == State.ready)
+                                                                    .map(PooledCertificate::certificate)
+                                                                    .min(Comparator.comparingLong(EndpointCertificateMetadata::lastRequested)).orElseThrow(() -> {
                                 var message = "No endpoint certificate available for deployment";
                                 log.log(Level.WARNING, message + " when deploying " + instance.id());
                                 return new RuntimeException(message);
                             });
-                    curator.removeFromCertificatePool(randomized.randomizedId().orElseThrow(), State.ready.name());
-                    curator.writeEndpointCertificateMetadata(instance.id(), randomized);
+                    // TODO: Remove from pool and assign to application in a transaction
+                    //curator.removeFromCertificatePool(randomized.randomizedId().orElseThrow(), State.ready.name());
+                    //curator.writeEndpointCertificateMetadata(instance.id(), randomized);
                     return Optional.of(randomized);
                 }
             }
