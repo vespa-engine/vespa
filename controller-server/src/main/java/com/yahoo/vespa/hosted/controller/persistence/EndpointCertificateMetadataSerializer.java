@@ -43,6 +43,11 @@ public class EndpointCertificateMetadataSerializer {
     public static Slime toSlime(EndpointCertificateMetadata metadata) {
         Slime slime = new Slime();
         Cursor object = slime.setObject();
+        toSlime(metadata, object);
+        return slime;
+    }
+
+    public static void toSlime(EndpointCertificateMetadata metadata, Cursor object) {
         object.setString(keyNameField, metadata.keyName());
         object.setString(certNameField, metadata.certName());
         object.setLong(versionField, metadata.version());
@@ -55,8 +60,6 @@ public class EndpointCertificateMetadataSerializer {
         metadata.expiry().ifPresent(expiry -> object.setLong(expiryField, expiry));
         metadata.lastRefreshed().ifPresent(refreshTime -> object.setLong(lastRefreshedField, refreshTime));
         metadata.randomizedId().ifPresent(randomizedId -> object.setString(randomizedIdField, randomizedId));
-
-        return slime;
     }
 
     public static EndpointCertificateMetadata fromSlime(Inspector inspector) {

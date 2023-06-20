@@ -136,4 +136,5 @@ public record EndpointCertificateMetadata(String keyName, String certName, int v
                 this.lastRefreshed,
                 this.randomizedId);
     }
+
 }
