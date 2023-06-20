@@ -97,8 +97,6 @@ public class EndpointCertificates {
         if (currentCertificateMetadata.isEmpty()) {
 
             if (use_randomized_cert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().toFullString()).value()) {
-                // TODO andreer: also need to skip or modify validation for these certs
-
                 try (Mutex lock = controller.curator().lockCertificatePool()) {
                     EndpointCertificateMetadata randomized = curator.readCertificatePool("ready_to_use").values().stream()
                             .min(Comparator.comparingLong(EndpointCertificateMetadata::lastRequested)).orElseThrow(() -> {
@@ -121,7 +119,11 @@ public class EndpointCertificates {
         }
 
         // Re-provision certificate if it is missing SANs for the zone we are deploying to
-        var requiredSansForZone = controller.routing().certificateDnsNames(deployment, deploymentSpec);
+        // Skip this validation for now if the cert has a randomized id
+        var requiredSansForZone = currentCertificateMetadata.get().randomizedId().isEmpty() ?
+                controller.routing().certificateDnsNames(deployment, deploymentSpec) :
+                List.<String>of();
+
         if (!currentCertificateMetadata.get().requestedDnsSans().containsAll(requiredSansForZone)) {
             var reprovisionedCertificateMetadata =
                     provisionEndpointCertificate(deployment, currentCertificateMetadata, deploymentSpec)
