@@ -376,6 +376,7 @@ public class Nodes {
         Predicate<Node> nodeInConfig = (node) -> hostIpConfig.contains(node.hostname());
         performOn(nodeInConfig, (node, lock) -> {
             IP.Config ipConfig = hostIpConfig.require(node.hostname());
+            log.info("Setting IP config for " + node.hostname() + " to " + ipConfig);
             return write(node.with(ipConfig), lock);
         });
     }
