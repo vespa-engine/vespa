@@ -92,11 +92,6 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
         }
     }
 
-    public enum State {
-        ready,
-        requested
-    }
-
     private void provisionRandomizedCertificate() {
         try (Mutex lock = controller.curator().lockCertificatePool()) {
             Set<String> existingNames = controller.curator().readPooledCertificates().stream().map(PooledCertificate::id).collect(Collectors.toSet());
