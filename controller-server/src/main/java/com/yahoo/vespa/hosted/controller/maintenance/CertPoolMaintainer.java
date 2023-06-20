@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -115,14 +114,6 @@ public class CertPoolMaintainer extends ControllerMaintainer {
         return curator.readCertificatePool(pool.name());
     }
 
-    private Optional<EndpointCertificateMetadata> getOne() {
-        try (Mutex lock = controller.curator().lockCertificatePool()) {
-            // TODO andreer: Make sure in unit test that this is always the oldest cert, to avoid staleness
-            return pool(ready_to_use).values().stream()
-                    .min(Comparator.comparingLong(EndpointCertificateMetadata::lastRequested));
-        }
-    }
-
     private void provisionRandomizedCertificate() {
         try (Mutex lock = controller.curator().lockCertificatePool()) {
             HashSet<String> existingNames = new HashSet<>();
@@ -136,13 +127,14 @@ public class CertPoolMaintainer extends ControllerMaintainer {
             while (existingNames.contains(s)) s = randomIdentifier();
 
             EndpointCertificateMetadata f = endpointCertificateProvider.requestCaSignedCertificate(
-                    ApplicationId.from("randomized", "endpoint", s), // TODO andreer: remove applicationId from this interface
-                    List.of(
-                            "*.%s.z%s".formatted(s, dnsSuffix),
-                            "*.%s.g%s".formatted(s, dnsSuffix),
-                            "*.%s.a%s".formatted(s, dnsSuffix)
-                    ),
-                    Optional.empty());
+                            ApplicationId.from("randomized", "endpoint", s), // TODO andreer: remove applicationId from this interface
+                            List.of(
+                                    "*.%s.z%s".formatted(s, dnsSuffix),
+                                    "*.%s.g%s".formatted(s, dnsSuffix),
+                                    "*.%s.a%s".formatted(s, dnsSuffix)
+                            ),
+                            Optional.empty())
+                    .withRandomizedId(s);
 
             curator.addToCertificatePool(s, f, requested.name());
         }
