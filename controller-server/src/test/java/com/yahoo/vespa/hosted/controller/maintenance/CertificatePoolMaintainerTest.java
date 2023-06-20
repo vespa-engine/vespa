@@ -4,10 +4,14 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata.DnsNameStatus;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Random;
 
 import static com.yahoo.vespa.hosted.controller.maintenance.CertPoolMaintainer.CertificatePool.requested;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,7 +26,7 @@ public class CertificatePoolMaintainerTest {
 
     private final ControllerTester tester = new ControllerTester();
     private final SecretStoreMock secretStore = (SecretStoreMock) tester.controller().secretStore();
-    private final CertPoolMaintainer maintainer = new CertPoolMaintainer(tester.controller(), new MockMetric(), Duration.ofHours(1));
+    private final CertPoolMaintainer maintainer = new CertPoolMaintainer(tester.controller(), new MockMetric(), Duration.ofHours(1), new Random(4));
 
     @Test
     void new_certs_are_requested_until_limit() {
@@ -31,6 +35,22 @@ public class CertificatePoolMaintainerTest {
         assertNumCerts(2);
         assertNumCerts(3);
         assertNumCerts(3);
+    }
+
+    @Test
+    void cert_contains_expected_names() {
+        tester.flagSource().withIntFlag(Flags.CERT_POOL_SIZE.id(), 1);
+        assertNumCerts(1);
+        EndpointCertificateMock endpointCertificateProvider = (EndpointCertificateMock) tester.controller().serviceRegistry().endpointCertificateProvider();
+
+        var metadata = endpointCertificateProvider.listCertificates().get(0);
+
+        assertEquals(
+                List.of(
+                        new DnsNameStatus("*.c8868d4e.z.vespa.oath.cloud", "done"),
+                        new DnsNameStatus("*.c8868d4e.g.vespa.oath.cloud", "done"),
+                        new DnsNameStatus("*.c8868d4e.a.vespa.oath.cloud", "done")
+                ), metadata.dnsNames());
     }
 
     private void assertNumCerts(int n) {

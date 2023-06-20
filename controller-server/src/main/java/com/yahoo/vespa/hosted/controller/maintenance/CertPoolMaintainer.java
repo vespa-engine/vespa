@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.random.RandomGenerator;
 
 import static com.yahoo.vespa.hosted.controller.maintenance.CertPoolMaintainer.CertificatePool.ready_to_use;
 import static com.yahoo.vespa.hosted.controller.maintenance.CertPoolMaintainer.CertificatePool.requested;
@@ -38,8 +39,8 @@ import static com.yahoo.vespa.hosted.controller.maintenance.CertPoolMaintainer.C
 public class CertPoolMaintainer extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(CertPoolMaintainer.class.getName());
-    private static final SecureRandom secureRandom = new SecureRandom();
 
+    private final RandomGenerator random;
     private final Clock clock;
     private final CuratorDb curator;
     private final SecretStore secretStore;
@@ -51,6 +52,10 @@ public class CertPoolMaintainer extends ControllerMaintainer {
 
     @Inject
     public CertPoolMaintainer(Controller controller, Metric metric, Duration interval) {
+        this(controller, metric, interval, new SecureRandom());
+    }
+
+    public CertPoolMaintainer(Controller controller, Metric metric, Duration interval, RandomGenerator rng) {
         super(controller, interval);
         this.controller = controller;
         this.clock = controller.clock();
@@ -60,6 +65,7 @@ public class CertPoolMaintainer extends ControllerMaintainer {
         this.endpointCertificateProvider = controller.serviceRegistry().endpointCertificateProvider();
         this.metric = metric;
         this.dnsSuffix = Endpoint.dnsSuffix(controller.system());
+        this.random = rng;
     }
 
     protected double maintain() {
@@ -132,9 +138,9 @@ public class CertPoolMaintainer extends ControllerMaintainer {
             EndpointCertificateMetadata f = endpointCertificateProvider.requestCaSignedCertificate(
                     ApplicationId.from("randomized", "endpoint", s), // TODO andreer: remove applicationId from this interface
                     List.of(
-                            "*.%s.z.%s".formatted(s, dnsSuffix),
-                            "*.%s.g.%s".formatted(s, dnsSuffix),
-                            "*.%s.a.%s".formatted(s, dnsSuffix)
+                            "*.%s.z%s".formatted(s, dnsSuffix),
+                            "*.%s.g%s".formatted(s, dnsSuffix),
+                            "*.%s.a%s".formatted(s, dnsSuffix)
                     ),
                     Optional.empty());
 
@@ -142,12 +148,12 @@ public class CertPoolMaintainer extends ControllerMaintainer {
         }
     }
 
-    private static String randomIdentifier() {
+    private String randomIdentifier() {
         String alphabet = "abcdef0123456789";
         StringBuilder sb = new StringBuilder();
-        sb.append(alphabet.charAt(secureRandom.nextInt(6))); // start with letter
+        sb.append(alphabet.charAt(random.nextInt(6))); // start with letter
         for (int i = 0; i < 7; i++) {
-            sb.append(alphabet.charAt(secureRandom.nextInt(alphabet.length())));
+            sb.append(alphabet.charAt(random.nextInt(alphabet.length())));
         }
         return sb.toString();
     }
