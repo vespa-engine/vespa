@@ -290,7 +290,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .isBootstrap(isBootstrap)
                     .force(force)
                     .waitForResourcesInPrepare(waitForResourcesInPrepare)
-                    .tenantSecretStores(session.getTenantSecretStores());
+                    .tenantSecretStores(session.getTenantSecretStores())
+                    .dataplaneTokens(session.getDataplaneTokens());
             session.getDockerImageRepository().ifPresent(params::dockerImageRepository);
             session.getAthenzDomain().ifPresent(params::athenzDomain);
             session.getCloudAccount().ifPresent(params::cloudAccount);

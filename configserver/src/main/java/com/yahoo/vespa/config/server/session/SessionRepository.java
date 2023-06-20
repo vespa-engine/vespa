@@ -283,6 +283,7 @@ public class SessionRepository {
         session.setTenantSecretStores(existingSession.getTenantSecretStores());
         session.setOperatorCertificates(existingSession.getOperatorCertificates());
         session.setCloudAccount(existingSession.getCloudAccount());
+        session.setDataplaneTokens(existingSession.getDataplaneTokens());
         return session;
     }
 
