@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.security.SecureRandom;
-import java.time.Clock;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
@@ -40,7 +39,6 @@ public class CertPoolMaintainer extends ControllerMaintainer {
     private static final Logger log = Logger.getLogger(CertPoolMaintainer.class.getName());
 
     private final RandomGenerator random;
-    private final Clock clock;
     private final CuratorDb curator;
     private final SecretStore secretStore;
     private final EndpointCertificateProvider endpointCertificateProvider;
@@ -57,7 +55,6 @@ public class CertPoolMaintainer extends ControllerMaintainer {
     public CertPoolMaintainer(Controller controller, Metric metric, Duration interval, RandomGenerator rng) {
         super(controller, interval);
         this.controller = controller;
-        this.clock = controller.clock();
         this.secretStore = controller.secretStore();
         this.certPoolSize = Flags.CERT_POOL_SIZE.bindTo(controller.flagSource());
         this.curator = controller.curator();
