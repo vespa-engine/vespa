@@ -95,7 +95,7 @@ public class EndpointCertificates {
         DeploymentId deployment = new DeploymentId(instance.id(), zone);
 
         if (currentCertificateMetadata.isEmpty()) {
-
+            // TODO andreer: Assign randomized certs on application level, separately for manual deployments
             if (use_randomized_cert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().toFullString()).value()) {
                 try (Mutex lock = controller.curator().lockCertificatePool()) {
                     EndpointCertificateMetadata randomized = curator.readCertificatePool("ready_to_use").values().stream()
