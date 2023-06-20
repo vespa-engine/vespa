@@ -13,7 +13,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Random;
 
-import static com.yahoo.vespa.hosted.controller.maintenance.CertificatePoolMaintainer.CertificatePool.requested;
+import static com.yahoo.vespa.hosted.controller.maintenance.CertificatePoolMaintainer.State.requested;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;

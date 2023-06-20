@@ -26,8 +26,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.random.RandomGenerator;
 
-import static com.yahoo.vespa.hosted.controller.maintenance.CertificatePoolMaintainer.CertificatePool.ready_to_use;
-import static com.yahoo.vespa.hosted.controller.maintenance.CertificatePoolMaintainer.CertificatePool.requested;
+import static com.yahoo.vespa.hosted.controller.maintenance.CertificatePoolMaintainer.State.ready;
+import static com.yahoo.vespa.hosted.controller.maintenance.CertificatePoolMaintainer.State.requested;
 
 /**
  * Manages pool of ready-to-use randomized endpoint certificates
@@ -69,9 +69,9 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
             moveRequestedCertsToReady();
 
             // So we can alert if the pool goes too low
-            metric.set("preprovisioned.endpoint.certificates", pool(ready_to_use).size(), metric.createContext(Map.of()));
+            metric.set("preprovisioned.endpoint.certificates", pool(ready).size(), metric.createContext(Map.of()));
 
-            if (pool(ready_to_use).size() + pool(requested).size() < certPoolSize.value()) {
+            if (pool(ready).size() + pool(requested).size() < certPoolSize.value()) {
                 provisionRandomizedCertificate();
             }
         } catch (Exception e) {
@@ -90,7 +90,7 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
                 if (maxKeyVersion.isPresent() && maxCertVersion.equals(maxKeyVersion)) {
                     try (Mutex lock = controller.curator().lockCertificatePool()) {
                         curator.removeFromCertificatePool(cert.getKey(), requested.name());
-                        curator.addToCertificatePool(cert.getKey(), cert.getValue(), ready_to_use.name());
+                        curator.addToCertificatePool(cert.getKey(), cert.getValue(), ready.name());
 
                         log.log(Level.INFO, "Randomized endpoint cert %s now ready for use".formatted(cert.getKey()));
                     }
@@ -102,19 +102,19 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
         }
     }
 
-    enum CertificatePool {
-        ready_to_use,
+    public enum State {
+        ready,
         requested
     }
 
-    private Map<String, EndpointCertificateMetadata> pool(CertificatePool pool) {
+    private Map<String, EndpointCertificateMetadata> pool(State pool) {
         return curator.readCertificatePool(pool.name());
     }
 
     private void provisionRandomizedCertificate() {
         try (Mutex lock = controller.curator().lockCertificatePool()) {
             HashSet<String> existingNames = new HashSet<>();
-            existingNames.addAll(pool(ready_to_use).keySet());
+            existingNames.addAll(pool(ready).keySet());
             existingNames.addAll(pool(requested).keySet());
             curator.readAllEndpointCertificateMetadata().values().stream()
                     .map(EndpointCertificateMetadata::randomizedId)

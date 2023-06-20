@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidator;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
+import com.yahoo.vespa.hosted.controller.maintenance.CertificatePoolMaintainer.State;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
@@ -98,13 +99,13 @@ public class EndpointCertificates {
             // TODO andreer: Assign randomized certs on application level, separately for manual deployments
             if (useRandomizedCert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().toFullString()).value()) {
                 try (Mutex lock = controller.curator().lockCertificatePool()) {
-                    EndpointCertificateMetadata randomized = curator.readCertificatePool("ready_to_use").values().stream()
+                    EndpointCertificateMetadata randomized = curator.readCertificatePool(State.ready.name()).values().stream()
                             .min(Comparator.comparingLong(EndpointCertificateMetadata::lastRequested)).orElseThrow(() -> {
                                 var message = "No endpoint certificate available for deployment";
                                 log.log(Level.WARNING, message + " when deploying " + instance.id());
                                 return new RuntimeException(message);
                             });
-                    curator.removeFromCertificatePool(randomized.randomizedId().orElseThrow(), "ready_to_use");
+                    curator.removeFromCertificatePool(randomized.randomizedId().orElseThrow(), State.ready.name());
                     curator.writeEndpointCertificateMetadata(instance.id(), randomized);
                     return Optional.of(randomized);
                 }
