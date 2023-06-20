@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.Random;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
@@ -46,7 +47,7 @@ public class EndpointCertificateMaintainerTest {
     private final ControllerTester tester = new ControllerTester();
     private final SecretStoreMock secretStore = (SecretStoreMock) tester.controller().secretStore();
     private final EndpointCertificateMaintainer maintainer = new EndpointCertificateMaintainer(tester.controller(), Duration.ofHours(1));
-    private final CertificatePoolMaintainer certificatePoolMaintainer = new CertificatePoolMaintainer(tester.controller(), new MockMetric(), Duration.ofHours(1));
+    private final CertificatePoolMaintainer certificatePoolMaintainer = new CertificatePoolMaintainer(tester.controller(), new MockMetric(), Duration.ofHours(1), new Random(4));
     private final EndpointCertificateMetadata exampleMetadata = new EndpointCertificateMetadata("keyName", "certName", 0, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty(), Optional.empty());
 
     @Test

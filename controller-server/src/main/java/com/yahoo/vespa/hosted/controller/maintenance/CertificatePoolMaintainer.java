@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
@@ -15,13 +15,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.random.RandomGenerator;
@@ -47,13 +47,8 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
     private final IntFlag certPoolSize;
     private final String dnsSuffix;
 
-    @Inject
-    public CertificatePoolMaintainer(Controller controller, Metric metric, Duration interval) {
-        this(controller, metric, interval, new SecureRandom());
-    }
-
-    public CertificatePoolMaintainer(Controller controller, Metric metric, Duration interval, RandomGenerator rng) {
-        super(controller, interval);
+    public CertificatePoolMaintainer(Controller controller, Metric metric, Duration interval, RandomGenerator random) {
+        super(controller, interval, null, Set.of(SystemName.Public, SystemName.PublicCd));
         this.controller = controller;
         this.secretStore = controller.secretStore();
         this.certPoolSize = Flags.CERT_POOL_SIZE.bindTo(controller.flagSource());
@@ -61,7 +56,7 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
         this.endpointCertificateProvider = controller.serviceRegistry().endpointCertificateProvider();
         this.metric = metric;
         this.dnsSuffix = Endpoint.dnsSuffix(controller.system());
-        this.random = rng;
+        this.random = random;
     }
 
     protected double maintain() {
@@ -120,20 +115,20 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
                     .map(EndpointCertificateMetadata::randomizedId)
                     .forEach(id -> id.ifPresent(existingNames::add));
 
-            String s = generateRandomId();
-            while (existingNames.contains(s)) s = generateRandomId();
+            String id = generateRandomId();
+            while (existingNames.contains(id)) id = generateRandomId();
 
             EndpointCertificateMetadata f = endpointCertificateProvider.requestCaSignedCertificate(
-                            ApplicationId.from("randomized", "endpoint", s), // TODO andreer: remove applicationId from this interface
+                            ApplicationId.from("randomized", "endpoint", id), // TODO andreer: remove applicationId from this interface
                             List.of(
-                                    "*.%s.z%s".formatted(s, dnsSuffix),
-                                    "*.%s.g%s".formatted(s, dnsSuffix),
-                                    "*.%s.a%s".formatted(s, dnsSuffix)
+                                    "*.%s.z%s".formatted(id, dnsSuffix),
+                                    "*.%s.g%s".formatted(id, dnsSuffix),
+                                    "*.%s.a%s".formatted(id, dnsSuffix)
                             ),
                             Optional.empty())
-                    .withRandomizedId(s);
+                    .withRandomizedId(id);
 
-            curator.addToCertificatePool(s, f, requested.name());
+            curator.addToCertificatePool(id, f, requested.name());
         }
     }
 
