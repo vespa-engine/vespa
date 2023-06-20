@@ -94,7 +94,7 @@ public class ApplicationApiHandler extends SessionHandler {
                 compressedStream = createFromCompressedStream(appPackagePart.data(), appPackagePart.contentType(), maxApplicationPackageSize);
             } catch (IOException e) {
                 // Multipart exception happens when controller abandons the request due to other exceptions while deploying.
-                log.log(e instanceof MultiPartFormParser.MultiPartException ? INFO : WARNING,
+                log.log(e instanceof MultiPartFormParser.MultiPartException ? FINE : WARNING,
                         "Unable to parse multipart in deploy from tenant '" + tenantName.value() + "': " + Exceptions.toMessageString(e));
 
                 var message = "Deploy request from '" + tenantName.value() + "' contains invalid data: " + e.getMessage();
