@@ -51,7 +51,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.SortedMap;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.canary;
@@ -99,12 +101,18 @@ class JobControllerApiHandlerHelper {
     }
 
     /** Returns a response with the runs for the given job type. */
-    static HttpResponse runResponse(Application application, Map<RunId, Run> runs, Optional<String> limitStr, URI baseUriForJobType) {
+    static HttpResponse runResponse(Controller controller, JobId id, Optional<String> limitStr, URI baseUriForJobType) {
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
+        Application application = controller.applications().requireApplication(TenantAndApplicationId.from(id.application()));
+        NavigableMap<RunId, Run> runs = controller.jobController().runs(id).descendingMap();
 
         int limit = limitStr.map(Integer::parseInt).orElse(Integer.MAX_VALUE);
         toSlime(cursor.setArray("runs"), runs.values(), application, limit, baseUriForJobType);
+        controller.applications().decideCloudAccountOf(new DeploymentId(id.application(),
+                                                                        runs.lastEntry().getValue().id().job().type().zone()), // Urgh, must use a job with actual zone.
+                                                       application.deploymentSpec())
+                  .ifPresent(cloudAccount -> cursor.setObject("enclave").setString("cloudAccount", cloudAccount.value()));
 
         return new SlimeJsonResponse(slime);
     }
