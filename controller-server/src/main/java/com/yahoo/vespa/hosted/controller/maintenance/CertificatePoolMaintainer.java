@@ -120,8 +120,8 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
                     .map(EndpointCertificateMetadata::randomizedId)
                     .forEach(id -> id.ifPresent(existingNames::add));
 
-            String s = randomIdentifier();
-            while (existingNames.contains(s)) s = randomIdentifier();
+            String s = generateRandomId();
+            while (existingNames.contains(s)) s = generateRandomId();
 
             EndpointCertificateMetadata f = endpointCertificateProvider.requestCaSignedCertificate(
                             ApplicationId.from("randomized", "endpoint", s), // TODO andreer: remove applicationId from this interface
@@ -137,7 +137,7 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
         }
     }
 
-    private String randomIdentifier() {
+    private String generateRandomId() {
         String alphabet = "abcdef0123456789";
         StringBuilder sb = new StringBuilder();
         sb.append(alphabet.charAt(random.nextInt(6))); // start with letter
