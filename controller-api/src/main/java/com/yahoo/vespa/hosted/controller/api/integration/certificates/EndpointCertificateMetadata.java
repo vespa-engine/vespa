@@ -12,25 +12,10 @@ import java.util.Optional;
  * @author andreer
  */
 public record EndpointCertificateMetadata(String keyName, String certName, int version, long lastRequested,
-                                          String rootRequestId, Optional<String> leafRequestId,
+                                          String rootRequestId, // The id of the first request made for this certificate. Should not change.
+                                          Optional<String> leafRequestId, // The id of the last known request made for this certificate. Changes on refresh, may be outdated!
                                           List<String> requestedDnsSans, String issuer, Optional<Long> expiry,
                                           Optional<Long> lastRefreshed, Optional<String> randomizedId) {
-
-    /**
-     * @return The request id of the first request made for this certificate. Should not change.
-     */
-    @Override
-    public String rootRequestId() {
-        return rootRequestId;
-    }
-
-    /**
-     * @return The request id of the last known request made for this certificate. Changes on refresh, may be outdated!
-     */
-    @Override
-    public Optional<String> leafRequestId() {
-        return leafRequestId;
-    }
 
     public EndpointCertificateMetadata withRandomizedId(String randomizedId) {
         return new EndpointCertificateMetadata(
