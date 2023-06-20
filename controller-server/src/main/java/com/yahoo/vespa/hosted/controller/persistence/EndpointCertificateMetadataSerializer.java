@@ -9,7 +9,6 @@ import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -22,7 +21,7 @@ import java.util.stream.IntStream;
  */
 public class EndpointCertificateMetadataSerializer {
 
-    // WARNING: Since there are multiple servers in a ZooKeeper cluster and they upgrade one by one
+    // WARNING: Since there are multiple servers in a ZooKeeper cluster, and they upgrade one by one
     //          (and rewrite all nodes on startup), changes to the serialized format must be made
     //          such that what is serialized on version N+1 can be read by version N:
     //          - ADDING FIELDS: Always ok
@@ -39,6 +38,7 @@ public class EndpointCertificateMetadataSerializer {
     private final static String issuerField = "issuer";
     private final static String expiryField = "expiry";
     private final static String lastRefreshedField = "lastRefreshed";
+    private final static String randomizedIdField = "randomizedId";
 
     public static Slime toSlime(EndpointCertificateMetadata metadata) {
         Slime slime = new Slime();
@@ -54,6 +54,7 @@ public class EndpointCertificateMetadataSerializer {
         object.setString(issuerField, metadata.issuer());
         metadata.expiry().ifPresent(expiry -> object.setLong(expiryField, expiry));
         metadata.lastRefreshed().ifPresent(refreshTime -> object.setLong(lastRefreshedField, refreshTime));
+        metadata.randomizedId().ifPresent(randomizedId -> object.setString(randomizedIdField, randomizedId));
 
         return slime;
     }
@@ -77,6 +78,9 @@ public class EndpointCertificateMetadataSerializer {
                         Optional.empty(),
                 inspector.field(lastRefreshedField).valid() ?
                         Optional.of(inspector.field(lastRefreshedField).asLong()) :
+                        Optional.empty(),
+                inspector.field(randomizedIdField).valid() ?
+                        Optional.of(inspector.field(randomizedIdField).asString()) :
                         Optional.empty());
     }
 

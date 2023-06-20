@@ -176,7 +176,7 @@ public class EndpointCertificatesTest {
                         "*.default.default.global.vespa.oath.cloud",
                         "default.default.aws-us-east-1a.vespa.oath.cloud",
                         "*.default.default.aws-us-east-1a.vespa.oath.cloud"),
-                "", Optional.empty(), Optional.empty()));
+                "", Optional.empty(), Optional.empty(), Optional.empty()));
         secretStore.setSecret(testKeyName, KeyUtils.toPem(testKeyPair.getPrivate()), 7);
         secretStore.setSecret(testCertName, X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 7);
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
@@ -188,7 +188,7 @@ public class EndpointCertificatesTest {
 
     @Test
     void reprovisions_certificate_when_necessary() {
-        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty()));
+        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), 0);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 0);
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
@@ -201,7 +201,7 @@ public class EndpointCertificatesTest {
     void reprovisions_certificate_with_added_sans_when_deploying_to_new_zone() {
         ZoneId testZone = ZoneId.from("prod.ap-northeast-1");
 
-        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "original-request-uuid", Optional.of("leaf-request-uuid"), expectedSans, "mockCa", Optional.empty(), Optional.empty()));
+        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "original-request-uuid", Optional.of("leaf-request-uuid"), expectedSans, "mockCa", Optional.empty(), Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), -1);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), -1);
 

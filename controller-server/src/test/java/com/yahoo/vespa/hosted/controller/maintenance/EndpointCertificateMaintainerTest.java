@@ -5,6 +5,8 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.jdisc.test.MockMetric;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
@@ -44,7 +46,8 @@ public class EndpointCertificateMaintainerTest {
     private final ControllerTester tester = new ControllerTester();
     private final SecretStoreMock secretStore = (SecretStoreMock) tester.controller().secretStore();
     private final EndpointCertificateMaintainer maintainer = new EndpointCertificateMaintainer(tester.controller(), Duration.ofHours(1));
-    private final EndpointCertificateMetadata exampleMetadata = new EndpointCertificateMetadata("keyName", "certName", 0, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty());
+    private final CertPoolMaintainer certPoolMaintainer = new CertPoolMaintainer(tester.controller(), new MockMetric(), Duration.ofHours(1));
+    private final EndpointCertificateMetadata exampleMetadata = new EndpointCertificateMetadata("keyName", "certName", 0, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty(), Optional.empty());
 
     @Test
     void old_and_unused_cert_is_deleted() {
@@ -160,5 +163,16 @@ public class EndpointCertificateMaintainerTest {
 
         assertTrue(endpointCertificateProvider.dnsNamesOf(unknown).isEmpty());
         assertTrue(endpointCertificateProvider.listCertificates().isEmpty());
+    }
+
+    @Test
+    void cert_pool_is_not_deleted() {
+        EndpointCertificateMock endpointCertificateProvider = (EndpointCertificateMock) tester.controller().serviceRegistry().endpointCertificateProvider();
+
+        tester.flagSource().withIntFlag(Flags.CERT_POOL_SIZE.id(), 3);
+        assertEquals(0.0, certPoolMaintainer.maintain(), 0.0000001);
+        assertEquals(0.0, maintainer.maintain(), 0.0000001);
+
+        assertNotEquals(List.of(), endpointCertificateProvider.listCertificates());
     }
 }

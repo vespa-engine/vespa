@@ -24,8 +24,9 @@ public class EndpointCertificateMetadata {
     private final String issuer;
     private final Optional<Long> expiry;
     private final Optional<Long> lastRefreshed;
+    private final Optional<String> randomizedId;
 
-    public EndpointCertificateMetadata(String keyName, String certName, int version, long lastRequested, String rootRequestId, Optional<String> leafRequestId, List<String> requestedDnsSans, String issuer, Optional<Long> expiry, Optional<Long> lastRefreshed) {
+    public EndpointCertificateMetadata(String keyName, String certName, int version, long lastRequested, String rootRequestId, Optional<String> leafRequestId, List<String> requestedDnsSans, String issuer, Optional<Long> expiry, Optional<Long> lastRefreshed, Optional<String> randomizedId) {
         this.keyName = keyName;
         this.certName = certName;
         this.version = version;
@@ -36,6 +37,7 @@ public class EndpointCertificateMetadata {
         this.issuer = issuer;
         this.expiry = expiry;
         this.lastRefreshed = lastRefreshed;
+        this.randomizedId = randomizedId;
     }
 
     public String keyName() {
@@ -84,6 +86,10 @@ public class EndpointCertificateMetadata {
         return lastRefreshed;
     }
 
+    public Optional<String> randomizedId() {
+        return randomizedId;
+    }
+
     public EndpointCertificateMetadata withKeyName(String keyName) {
         return new EndpointCertificateMetadata(
                 keyName,
@@ -95,7 +101,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                this.lastRefreshed);
+                this.lastRefreshed,
+                this.randomizedId);
     }
 
     public EndpointCertificateMetadata withCertName(String certName) {
@@ -109,7 +116,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                this.lastRefreshed);
+                this.lastRefreshed,
+                this.randomizedId);
     }
 
     public EndpointCertificateMetadata withVersion(int version) {
@@ -123,7 +131,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                this.lastRefreshed);
+                this.lastRefreshed,
+                this.randomizedId);
     }
 
     public EndpointCertificateMetadata withLastRequested(long lastRequested) {
@@ -137,7 +146,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                this.lastRefreshed);
+                this.lastRefreshed,
+                this.randomizedId);
     }
 
     public EndpointCertificateMetadata withLastRefreshed(long lastRefreshed) {
@@ -151,7 +161,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                Optional.of(lastRefreshed));
+                Optional.of(lastRefreshed),
+                this.randomizedId);
     }
 
     public EndpointCertificateMetadata withRootRequestId(String rootRequestId) {
@@ -165,7 +176,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                lastRefreshed);
+                this.lastRefreshed,
+                this.randomizedId);
     }
 
     public EndpointCertificateMetadata withLeafRequestId(Optional<String> leafRequestId) {
@@ -179,7 +191,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                lastRefreshed);
+                this.lastRefreshed,
+                this.randomizedId);
     }
 
     @Override
@@ -195,6 +208,7 @@ public class EndpointCertificateMetadata {
                 ", issuer=" + issuer +
                 ", expiry=" + expiry +
                 ", lastRefreshed=" + lastRefreshed +
+                ", randomizedId=" + randomizedId +
                 '}';
     }
 
@@ -212,12 +226,13 @@ public class EndpointCertificateMetadata {
                 requestedDnsSans.equals(that.requestedDnsSans) &&
                 issuer.equals(that.issuer) &&
                 expiry.equals(that.expiry) &&
-                lastRefreshed.equals(that.lastRefreshed);
+                lastRefreshed.equals(that.lastRefreshed) &&
+                randomizedId.equals(that.randomizedId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(keyName, certName, version, lastRequested, rootRequestId, leafRequestId, requestedDnsSans, issuer, expiry, lastRefreshed);
+        return Objects.hash(keyName, certName, version, lastRequested, rootRequestId, leafRequestId, requestedDnsSans, issuer, expiry, lastRefreshed, randomizedId);
     }
 
 }

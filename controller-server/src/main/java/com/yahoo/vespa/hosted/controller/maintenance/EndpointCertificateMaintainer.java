@@ -34,6 +34,7 @@ import java.util.OptionalInt;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Updates refreshed endpoint certificates and triggers redeployment, and deletes unused certificates.
@@ -175,9 +176,18 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
 
         List<String> leafRequestIds = storedEndpointCertificateMetadata.values().stream().flatMap(m -> m.leafRequestId().stream()).toList();
         List<String> rootRequestIds = storedEndpointCertificateMetadata.values().stream().map(EndpointCertificateMetadata::rootRequestId).toList();
+        List<String> certPoolIds = Stream.concat(
+                        curator.readCertificatePool(CertPoolMaintainer.CertificatePool.requested.name()).values().stream(),
+                        curator.readCertificatePool(CertPoolMaintainer.CertificatePool.ready_to_use.name()).values().stream())
+                .map(EndpointCertificateMetadata::leafRequestId).flatMap(Optional::stream).toList();
+
+        var managedIds = new HashSet<String>();
+        managedIds.addAll(leafRequestIds);
+        managedIds.addAll(rootRequestIds);
+        managedIds.addAll(certPoolIds);
 
         for (var providerCertificateMetadata : endpointCertificateMetadata) {
-            if (!rootRequestIds.contains(providerCertificateMetadata.requestId()) && !leafRequestIds.contains(providerCertificateMetadata.requestId())) {
+            if (!managedIds.contains(providerCertificateMetadata.requestId())) {
 
                 // It could just be a refresh we're not aware of yet. See if it matches the cert/keyname of any known cert
                 EndpointCertificateDetails unknownCertDetails = endpointCertificateProvider.certificateDetails(providerCertificateMetadata.requestId());

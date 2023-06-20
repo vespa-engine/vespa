@@ -245,7 +245,7 @@ public class Endpoint {
     }
 
     /** Returns the DNS suffix used for endpoints in given system */
-    private static String dnsSuffix(SystemName system) {
+    public static String dnsSuffix(SystemName system) {
         return switch (system) {
             case cd -> CD_OATH_DNS_SUFFIX;
             case main -> MAIN_OATH_DNS_SUFFIX;

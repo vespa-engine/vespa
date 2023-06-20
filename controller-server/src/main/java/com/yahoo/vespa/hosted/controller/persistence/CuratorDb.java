@@ -103,6 +103,7 @@ public class CuratorDb {
     private static final Path supportAccessRoot = root.append("supportAccess");
     private static final Path mailVerificationRoot = root.append("mailVerification");
     private static final Path dataPlaneTokenRoot = root.append("dataplaneTokens");
+    private static final Path certificatePoolRoot = root.append("certificatePool");
 
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
@@ -246,6 +247,10 @@ public class CuratorDb {
 
     public Mutex lockPendingMailVerification(String verificationCode) {
         return curator.lock(lockRoot.append("pendingMailVerification").append(verificationCode), defaultLockTimeout);
+    }
+
+    public Mutex lockCertificatePool() {
+        return curator.lock(lockRoot.append("certificatePool"), defaultLockTimeout);
     }
 
     // -------------- Helpers ------------------------------------------
@@ -737,6 +742,25 @@ public class CuratorDb {
 
     public List<DataplaneTokenVersions> readDataplaneTokens(TenantName tenantName) {
         return readSlime(dataplaneTokenPath(tenantName)).map(DataplaneTokenSerializer::fromSlime).orElse(List.of());
+    }
+
+    // -------------- Endpoint certificate pool -------------------------------
+
+    public void addToCertificatePool(String s, EndpointCertificateMetadata metadata, String pool) {
+        curator.set(certificatePoolRoot.append(pool).append(s), asJson(EndpointCertificateMetadataSerializer.toSlime(metadata)));
+    }
+
+    public void removeFromCertificatePool(String s, String pool) {
+        curator.delete(certificatePoolRoot.append(pool).append(s));
+    }
+
+    public Map<String, EndpointCertificateMetadata> readCertificatePool(String pool) {
+        List<String> children = curator.getChildren(certificatePoolRoot.append(pool));
+        return children.stream()
+                .collect(Collectors.toMap(Function.identity(),
+                        name -> EndpointCertificateMetadataSerializer.fromJsonString(
+                                new String(
+                                        curator.getData(certificatePoolRoot.append(pool).append(name)).orElseThrow()))));
     }
 
     // -------------- Paths ---------------------------------------------------

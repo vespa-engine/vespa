@@ -6,6 +6,9 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.Text;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -44,10 +47,12 @@ public class EndpointCertificates {
     private final Clock clock;
     private final EndpointCertificateProvider certificateProvider;
     private final EndpointCertificateValidator certificateValidator;
+    private final BooleanFlag use_randomized_cert;
 
     public EndpointCertificates(Controller controller, EndpointCertificateProvider certificateProvider,
                                 EndpointCertificateValidator certificateValidator) {
         this.controller = controller;
+        this.use_randomized_cert = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
         this.curator = controller.curator();
         this.clock = controller.clock();
         this.certificateProvider = certificateProvider;
@@ -88,6 +93,15 @@ public class EndpointCertificates {
         DeploymentId deployment = new DeploymentId(instance.id(), zone);
 
         if (currentCertificateMetadata.isEmpty()) {
+
+            if (use_randomized_cert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().toFullString()).value()) {
+                // TODO andreer: return a randomized cert from new store / maintainer!!!
+                // also need to skip or modify validation for these certs
+                EndpointCertificateMetadata randomized = new EndpointCertificateMetadata("lol", "k", 0, 0, "id", Optional.of("id"), List.of(), "digicert", Optional.of(System.currentTimeMillis() / 1000L), Optional.empty(), Optional.empty());
+                curator.writeEndpointCertificateMetadata(instance.id(), randomized);
+                return Optional.of(randomized);
+            }
+
             var provisionedCertificateMetadata = provisionEndpointCertificate(deployment, Optional.empty(), deploymentSpec);
             // We do not verify the certificate if one has never existed before - because we do not want to
             // wait for it to be available before we deploy. This allows the config server to start

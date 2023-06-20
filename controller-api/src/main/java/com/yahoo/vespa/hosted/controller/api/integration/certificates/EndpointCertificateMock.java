@@ -41,7 +41,7 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
         String requestId = UUID.randomUUID().toString();
         int version = currentMetadata.map(c -> currentMetadata.get().version()+1).orElse(0);
         EndpointCertificateMetadata metadata = new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", version, 0,
-                currentMetadata.map(EndpointCertificateMetadata::rootRequestId).orElse(requestId), Optional.of(requestId), dnsNames, "mockCa", Optional.of(inAnHour), Optional.of(epochSecond));
+                currentMetadata.map(EndpointCertificateMetadata::rootRequestId).orElse(requestId), Optional.of(requestId), dnsNames, "mockCa", Optional.of(inAnHour), Optional.of(epochSecond), Optional.of("randomish"));
         currentMetadata.ifPresent(c -> providerMetadata.remove(c.leafRequestId().orElseThrow()));
         providerMetadata.put(requestId, metadata);
         return metadata;
