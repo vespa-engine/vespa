@@ -37,8 +37,16 @@ public class DataplaneProxyCredentials extends AbstractComponent {
 
     @Inject
     public DataplaneProxyCredentials() {
-        certificateFile = Paths.get(Defaults.getDefaults().underVespaHome("tmp/proxy_cert.pem"));
-        keyFile = Paths.get(Defaults.getDefaults().underVespaHome("tmp/proxy_key.pem"));
+        this(
+                Paths.get(Defaults.getDefaults().underVespaHome("tmp/proxy_cert.pem")),
+                Paths.get(Defaults.getDefaults().underVespaHome("tmp/proxy_key.pem"))
+        );
+    }
+
+    public DataplaneProxyCredentials(Path certificateFile, Path keyFile){
+        this.certificateFile = certificateFile;
+        this.keyFile = keyFile;
+
         var existing = regenerateCredentials(certificateFile, keyFile).orElse(null);
         if (existing == null) {
             X509CertificateWithKey selfSigned = X509CertificateUtils.createSelfSigned("cn=vespa dataplane proxy", Duration.ofDays(30));
@@ -48,6 +56,7 @@ public class DataplaneProxyCredentials extends AbstractComponent {
         } else {
             this.certificate = existing;
         }
+
     }
 
     /**
