@@ -35,8 +35,9 @@ public class DataplaneProxyService extends AbstractComponent {
     private final ScheduledThreadPoolExecutor executorService;
     private final Path root;
 
-    enum NginxState {INITIALIZING, RUNNING, RELOAD_REQUIRED};
+    enum NginxState {INITIALIZING, RUNNING, RELOAD_REQUIRED, STOPPED};
     private NginxState state;
+    private NginxState wantedState;
 
     private DataplaneProxyConfig cfg;
     private Path proxyCredentialsCert;
@@ -52,14 +53,14 @@ public class DataplaneProxyService extends AbstractComponent {
         this.root = root;
         this.proxyCommands = proxyCommands;
         changeState(NginxState.INITIALIZING);
+        wantedState = NginxState.RUNNING;
         configTemplate = root.resolve("conf/nginx/nginx.conf.template");
         serverCertificateFile = root.resolve("conf/nginx/server_cert.pem");
         serverKeyFile = root.resolve("conf/nginx/server_key.pem");
         nginxConf = root.resolve("conf/nginx/nginx.conf");
 
         executorService = new ScheduledThreadPoolExecutor(1);
-        executorService.scheduleAtFixedRate(this::startOrReloadNginx, reloadPeriodMinutes, reloadPeriodMinutes, TimeUnit.MINUTES);
-
+        executorService.scheduleAtFixedRate(this::converge, reloadPeriodMinutes, reloadPeriodMinutes, TimeUnit.MINUTES);
     }
 
     public void reconfigure(DataplaneProxyConfig config, DataplaneProxyCredentials credentialsProvider) {
@@ -70,11 +71,11 @@ public class DataplaneProxyService extends AbstractComponent {
         }
     }
 
-    private synchronized void changeState(NginxState newState) {
+    private void changeState(NginxState newState) {
         state = newState;
     }
 
-    void startOrReloadNginx() {
+    void converge() {
         DataplaneProxyConfig config;
         Path proxyCredentialsCert;
         Path proxyCredentialsKey;
@@ -86,14 +87,13 @@ public class DataplaneProxyService extends AbstractComponent {
             this.proxyCredentialsCert = null;
             this.proxyCredentialsKey = null;
         }
-
-        boolean configChanged = false;
         if (config != null) {
             try {
 
                 String serverCert = config.serverCertificate();
                 String serverKey = config.serverKey();
 
+                boolean configChanged = false;
                 configChanged |= writeFile(serverCertificateFile, serverCert);
                 configChanged |= writeFile(serverKeyFile, serverKey);
                 configChanged |= writeFile(nginxConf,
@@ -113,37 +113,46 @@ public class DataplaneProxyService extends AbstractComponent {
                 throw new RuntimeException("Error reconfiguring data plane proxy", e);
             }
         }
-
-        if (state == NginxState.INITIALIZING) {
-            try {
-                proxyCommands.start(nginxConf);
-                changeState(NginxState.RUNNING);
-            } catch (Exception e) {
-                logger.log(Level.INFO, "Failed to start nginx, will retry");
+        if (wantedState == NginxState.RUNNING) {
+            boolean nginxRunning = proxyCommands.isRunning();
+            if (!nginxRunning) {
+                try {
+                    proxyCommands.start(nginxConf);
+                    changeState(wantedState);
+                } catch (Exception e) {
+                    logger.log(Level.INFO, "Failed to start nginx, will retry");
+                }
+            } else if (nginxRunning && state == NginxState.RELOAD_REQUIRED) {
+                try {
+                    proxyCommands.reload();
+                    changeState(wantedState);
+                } catch (Exception e) {
+                    logger.log(Level.INFO, "Failed to reconfigure nginx, will retry.");
+                }
             }
-        } else if (state == NginxState.RELOAD_REQUIRED){
-            try {
-                proxyCommands.reload();
-                changeState(NginxState.RUNNING);
-            } catch (Exception e) {
-                logger.log(Level.INFO, "Failed to reconfigure nginx, will retry.");
+        } else if (wantedState == NginxState.STOPPED) {
+            if (proxyCommands.isRunning()) {
+                try {
+                    proxyCommands.stop();
+                    changeState(wantedState);
+                    executorService.shutdownNow();
+                } catch (Exception e) {
+                    logger.log(Level.INFO, "Failed to stop nginx, will retry");
+                }
             }
+        } else {
+            logger.warning("Unknown state " + wantedState);
         }
     }
 
     @Override
     public void deconstruct() {
         super.deconstruct();
+        wantedState = NginxState.STOPPED;
         try {
-            executorService.shutdownNow();
-            executorService.awaitTermination(1, TimeUnit.MINUTES);
+            executorService.awaitTermination(5, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "Error shutting down proxy reload thread");
-        }
-        try {
-            proxyCommands.stop();
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed shutting down nginx");
         }
     }
 
@@ -153,7 +162,6 @@ public class DataplaneProxyService extends AbstractComponent {
      */
     private boolean writeFile(Path file, String contents) throws IOException {
         Path tempPath = file.getParent().resolve(file.getFileName().toString() + ".new");
-//        Path tempPath = Paths.get(file.toFile().getAbsolutePath() + ".new");
         Files.createDirectories(tempPath.getParent());
         Files.writeString(tempPath, contents);
 
@@ -199,10 +207,15 @@ public class DataplaneProxyService extends AbstractComponent {
         return state;
     }
 
+    NginxState wantedState() {
+        return wantedState;
+    }
+
     public interface ProxyCommands {
         void start(Path configFile);
         void stop();
         void reload();
+        boolean isRunning();
     }
 
     public static class NginxProxyCommands implements ProxyCommands {
@@ -254,6 +267,13 @@ public class DataplaneProxyService extends AbstractComponent {
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException("Could not start nginx", e);
             }
+        }
+
+        @Override
+        public boolean isRunning() {
+            return ProcessHandle.allProcesses()
+                    .map(ProcessHandle::info)
+                    .anyMatch(info -> info.command().orElse("").endsWith("nginx"));
         }
     }
 }
