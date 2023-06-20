@@ -49,12 +49,12 @@ public class EndpointCertificates {
     private final Clock clock;
     private final EndpointCertificateProvider certificateProvider;
     private final EndpointCertificateValidator certificateValidator;
-    private final BooleanFlag use_randomized_cert;
+    private final BooleanFlag useRandomizedCert;
 
     public EndpointCertificates(Controller controller, EndpointCertificateProvider certificateProvider,
                                 EndpointCertificateValidator certificateValidator) {
         this.controller = controller;
-        this.use_randomized_cert = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
+        this.useRandomizedCert = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
         this.curator = controller.curator();
         this.clock = controller.clock();
         this.certificateProvider = certificateProvider;
@@ -96,7 +96,7 @@ public class EndpointCertificates {
 
         if (currentCertificateMetadata.isEmpty()) {
             // TODO andreer: Assign randomized certs on application level, separately for manual deployments
-            if (use_randomized_cert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().toFullString()).value()) {
+            if (useRandomizedCert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().toFullString()).value()) {
                 try (Mutex lock = controller.curator().lockCertificatePool()) {
                     EndpointCertificateMetadata randomized = curator.readCertificatePool("ready_to_use").values().stream()
                             .min(Comparator.comparingLong(EndpointCertificateMetadata::lastRequested)).orElseThrow(() -> {
