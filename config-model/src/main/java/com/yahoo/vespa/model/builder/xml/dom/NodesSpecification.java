@@ -304,6 +304,7 @@ public class NodesSpecification {
             default -> 0; // No constraint on other types
         };
         if (resources.diskGb() < minDiskGb) {
+            // TODO(mpolden): Consider enforcing this on Vespa 9
             deployLogger.logApplicationPackage(Level.WARNING, "Requested disk (" + resources.diskGb() +
                                                               "Gb) in " + clusterId + " is not large enough to fit " +
                                                               "core/heap dumps. Minimum recommended disk resources " +
