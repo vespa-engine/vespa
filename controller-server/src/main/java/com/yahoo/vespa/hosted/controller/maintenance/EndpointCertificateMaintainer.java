@@ -177,8 +177,8 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         List<String> leafRequestIds = storedEndpointCertificateMetadata.values().stream().flatMap(m -> m.leafRequestId().stream()).toList();
         List<String> rootRequestIds = storedEndpointCertificateMetadata.values().stream().map(EndpointCertificateMetadata::rootRequestId).toList();
         List<String> certPoolIds = Stream.concat(
-                        curator.readCertificatePool(CertPoolMaintainer.CertificatePool.requested.name()).values().stream(),
-                        curator.readCertificatePool(CertPoolMaintainer.CertificatePool.ready_to_use.name()).values().stream())
+                        curator.readCertificatePool(CertificatePoolMaintainer.CertificatePool.requested.name()).values().stream(),
+                        curator.readCertificatePool(CertificatePoolMaintainer.CertificatePool.ready_to_use.name()).values().stream())
                 .map(EndpointCertificateMetadata::leafRequestId).flatMap(Optional::stream).toList();
 
         var managedIds = new HashSet<String>();

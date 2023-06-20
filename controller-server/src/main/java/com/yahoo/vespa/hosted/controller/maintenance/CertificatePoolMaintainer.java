@@ -26,17 +26,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.random.RandomGenerator;
 
-import static com.yahoo.vespa.hosted.controller.maintenance.CertPoolMaintainer.CertificatePool.ready_to_use;
-import static com.yahoo.vespa.hosted.controller.maintenance.CertPoolMaintainer.CertificatePool.requested;
+import static com.yahoo.vespa.hosted.controller.maintenance.CertificatePoolMaintainer.CertificatePool.ready_to_use;
+import static com.yahoo.vespa.hosted.controller.maintenance.CertificatePoolMaintainer.CertificatePool.requested;
 
 /**
  * Manages pool of ready-to-use randomized endpoint certificates
  *
  * @author andreer
  */
-public class CertPoolMaintainer extends ControllerMaintainer {
+public class CertificatePoolMaintainer extends ControllerMaintainer {
 
-    private static final Logger log = Logger.getLogger(CertPoolMaintainer.class.getName());
+    private static final Logger log = Logger.getLogger(CertificatePoolMaintainer.class.getName());
 
     private final RandomGenerator random;
     private final CuratorDb curator;
@@ -48,11 +48,11 @@ public class CertPoolMaintainer extends ControllerMaintainer {
     private final String dnsSuffix;
 
     @Inject
-    public CertPoolMaintainer(Controller controller, Metric metric, Duration interval) {
+    public CertificatePoolMaintainer(Controller controller, Metric metric, Duration interval) {
         this(controller, metric, interval, new SecureRandom());
     }
 
-    public CertPoolMaintainer(Controller controller, Metric metric, Duration interval, RandomGenerator rng) {
+    public CertificatePoolMaintainer(Controller controller, Metric metric, Duration interval, RandomGenerator rng) {
         super(controller, interval);
         this.controller = controller;
         this.secretStore = controller.secretStore();

@@ -13,7 +13,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Random;
 
-import static com.yahoo.vespa.hosted.controller.maintenance.CertPoolMaintainer.CertificatePool.requested;
+import static com.yahoo.vespa.hosted.controller.maintenance.CertificatePoolMaintainer.CertificatePool.requested;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -26,7 +26,7 @@ public class CertificatePoolMaintainerTest {
 
     private final ControllerTester tester = new ControllerTester();
     private final SecretStoreMock secretStore = (SecretStoreMock) tester.controller().secretStore();
-    private final CertPoolMaintainer maintainer = new CertPoolMaintainer(tester.controller(), new MockMetric(), Duration.ofHours(1), new Random(4));
+    private final CertificatePoolMaintainer maintainer = new CertificatePoolMaintainer(tester.controller(), new MockMetric(), Duration.ofHours(1), new Random(4));
 
     @Test
     void new_certs_are_requested_until_limit() {

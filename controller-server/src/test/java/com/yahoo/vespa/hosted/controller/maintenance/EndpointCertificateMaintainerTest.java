@@ -46,7 +46,7 @@ public class EndpointCertificateMaintainerTest {
     private final ControllerTester tester = new ControllerTester();
     private final SecretStoreMock secretStore = (SecretStoreMock) tester.controller().secretStore();
     private final EndpointCertificateMaintainer maintainer = new EndpointCertificateMaintainer(tester.controller(), Duration.ofHours(1));
-    private final CertPoolMaintainer certPoolMaintainer = new CertPoolMaintainer(tester.controller(), new MockMetric(), Duration.ofHours(1));
+    private final CertificatePoolMaintainer certificatePoolMaintainer = new CertificatePoolMaintainer(tester.controller(), new MockMetric(), Duration.ofHours(1));
     private final EndpointCertificateMetadata exampleMetadata = new EndpointCertificateMetadata("keyName", "certName", 0, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty(), Optional.empty());
 
     @Test
@@ -170,7 +170,7 @@ public class EndpointCertificateMaintainerTest {
         EndpointCertificateMock endpointCertificateProvider = (EndpointCertificateMock) tester.controller().serviceRegistry().endpointCertificateProvider();
 
         tester.flagSource().withIntFlag(Flags.CERT_POOL_SIZE.id(), 3);
-        assertEquals(0.0, certPoolMaintainer.maintain(), 0.0000001);
+        assertEquals(0.0, certificatePoolMaintainer.maintain(), 0.0000001);
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
 
         assertNotEquals(List.of(), endpointCertificateProvider.listCertificates());
