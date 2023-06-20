@@ -20,9 +20,9 @@ class Aligner {
 public:
     explicit constexpr Aligner() = default;
     explicit constexpr Aligner(size_t); // Never used but must be declared
-    static size_t align(size_t unaligned) noexcept { return (unaligned + alignment_v - 1) & (- alignment_v); }
-    static size_t pad(size_t unaligned) noexcept { return (- unaligned & (alignment_v - 1)); }
-    static size_t alignment() noexcept { return alignment_v; }
+    static constexpr size_t align(size_t unaligned) noexcept { return (unaligned + alignment_v - 1) & (- alignment_v); }
+    static constexpr size_t pad(size_t unaligned) noexcept { return (- unaligned & (alignment_v - 1)); }
+    static constexpr size_t alignment() noexcept { return alignment_v; }
 };
 
 /*
@@ -37,9 +37,9 @@ public:
         : _alignment(alignment_)
     {
     }
-    size_t align(size_t unaligned) const noexcept { return (unaligned + _alignment - 1) & (- _alignment); }
-    size_t pad(size_t unaligned) const noexcept { return (- unaligned & (_alignment - 1)); }
-    size_t alignment() const noexcept { return _alignment; }
+    constexpr size_t align(size_t unaligned) const noexcept { return (unaligned + _alignment - 1) & (- _alignment); }
+    constexpr size_t pad(size_t unaligned) const noexcept { return (- unaligned & (_alignment - 1)); }
+    constexpr size_t alignment() const noexcept { return _alignment; }
 };
 
 }
