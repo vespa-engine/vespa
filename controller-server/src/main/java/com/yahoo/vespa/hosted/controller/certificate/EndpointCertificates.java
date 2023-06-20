@@ -106,6 +106,7 @@ public class EndpointCertificates {
                                 log.log(Level.WARNING, message + " when deploying " + instance.id());
                                 return new RuntimeException(message);
                             });
+                    curator.removeFromCertificatePool(randomized.randomizedId().orElseThrow(), "ready_to_use");
                     curator.writeEndpointCertificateMetadata(instance.id(), randomized);
                     return Optional.of(randomized);
                 }
