@@ -286,11 +286,11 @@ public class JobController {
 
     private Optional<InputStream> getVespaLogsFromLogserver(Run run, long fromMillis, boolean tester) {
         return deploymentCompletedAt(run, tester).map(at ->
-                                                              controller.serviceRegistry().configServer().getLogs(new DeploymentId(tester ? run.id().tester().id() : run.id().application(),
-                                                                                                                                   run.id().type().zone()),
-                                                                                                                  Map.of("from", Long.toString(Math.max(fromMillis, at.toEpochMilli())),
-                                                                                                                         "to", Long.toString(run.end().orElse(controller.clock().instant()).toEpochMilli()))));
-    }
+                controller.serviceRegistry().configServer().getLogs(new DeploymentId(tester ? run.id().tester().id() : run.id().application(),
+                                                                                     run.id().type().zone()),
+                                                                    Map.of("from", Long.toString(Math.max(fromMillis, at.toEpochMilli())),
+                                                                           "to", Long.toString(run.end().orElse(controller.clock().instant()).toEpochMilli()))));
+}
 
     /** Fetches any new test log entries, and records the id of the last of these, for continuation. */
     public void updateTestLog(RunId id) {

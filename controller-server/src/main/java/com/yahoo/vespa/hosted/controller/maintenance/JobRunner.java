@@ -47,7 +47,7 @@ public class JobRunner extends ControllerMaintainer {
 
     @Override
     protected double maintain() {
-        jobs.active().forEach(this::advance);
+        executors.execute(() -> jobs.active().forEach(this::advance));
         jobs.collectGarbage();
         return 1.0;
     }
