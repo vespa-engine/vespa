@@ -165,6 +165,7 @@ public:
     CompressedBlobSet readSet(const KeySet & keys);
     void removeKey(uint32_t key);
     vespalib::MemoryUsage getStaticMemoryUsage() const override;
+    CacheStats get_stats() const override;
 private:
     void locateAndInvalidateOtherSubsets(const UniqueLock & cacheGuard, const KeySet & keys);
     using IdSet = vespalib::hash_set<uint64_t>;
@@ -267,7 +268,8 @@ VisitCache::remove(uint32_t key) {
 
 CacheStats
 VisitCache::getCacheStats() const {
-    return _cache->get_stats();
+    CacheStats stats = _cache->get_stats();
+    return stats;
 }
 
 VisitCache::Cache::Cache(BackingStore & b, size_t maxBytes) :
@@ -306,19 +308,21 @@ VisitCache::Cache::onRemove(const K & key) {
 vespalib::MemoryUsage
 VisitCache::Cache::getStaticMemoryUsage() const {
     vespalib::MemoryUsage usage = Parent::getStaticMemoryUsage();
-    auto cacheGuard = getGuard();
     size_t baseSelf = sizeof(_lid2Id) + sizeof(_id2KeySet);
     usage.incAllocatedBytes(baseSelf);
-    usage.incAllocatedBytes(_lid2Id.capacity() * sizeof(LidUniqueKeySetId::value_type));
-    usage.incAllocatedBytes(_id2KeySet.capacity() * sizeof(IdKeySetMap::value_type));
     usage.incUsedBytes(baseSelf);
-    usage.incUsedBytes(_lid2Id.size() * sizeof(LidUniqueKeySetId::value_type));
-    usage.incUsedBytes(_id2KeySet.size() * sizeof(IdKeySetMap::value_type));
-    for (const auto & entry: _id2KeySet) {
-        usage.incAllocatedBytes(entry.second.getKeys().capacity() * sizeof(uint32_t));
-        usage.incUsedBytes(entry.second.getKeys().size() * sizeof(uint32_t));
-    }
     return usage;
+}
+
+CacheStats
+VisitCache::Cache::get_stats() const {
+    CacheStats stats = Parent::get_stats();
+    stats.memory_used += _lid2Id.capacity() * sizeof(LidUniqueKeySetId::value_type);
+    stats.memory_used += _id2KeySet.capacity() * sizeof(IdKeySetMap::value_type);
+    for (const auto & entry: _id2KeySet) {
+        stats.memory_used = entry.second.getKeys().capacity() * sizeof(uint32_t);
+    }
+    return stats;
 }
 
 }
