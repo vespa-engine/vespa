@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.Text;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
@@ -21,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -95,11 +97,18 @@ public class EndpointCertificates {
         if (currentCertificateMetadata.isEmpty()) {
 
             if (use_randomized_cert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().toFullString()).value()) {
-                // TODO andreer: return a randomized cert from new store / maintainer!!!
-                // also need to skip or modify validation for these certs
-                EndpointCertificateMetadata randomized = new EndpointCertificateMetadata("lol", "k", 0, 0, "id", Optional.of("id"), List.of(), "digicert", Optional.of(System.currentTimeMillis() / 1000L), Optional.empty(), Optional.empty());
-                curator.writeEndpointCertificateMetadata(instance.id(), randomized);
-                return Optional.of(randomized);
+                // TODO andreer: also need to skip or modify validation for these certs
+
+                try (Mutex lock = controller.curator().lockCertificatePool()) {
+                    EndpointCertificateMetadata randomized = curator.readCertificatePool("ready_to_use").values().stream()
+                            .min(Comparator.comparingLong(EndpointCertificateMetadata::lastRequested)).orElseThrow(() -> {
+                                var message = "No endpoint certificate available for deployment";
+                                log.log(Level.WARNING, message + " when deploying " + instance.id());
+                                return new RuntimeException(message);
+                            });
+                    curator.writeEndpointCertificateMetadata(instance.id(), randomized);
+                    return Optional.of(randomized);
+                }
             }
 
             var provisionedCertificateMetadata = provisionEndpointCertificate(deployment, Optional.empty(), deploymentSpec);
