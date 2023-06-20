@@ -7,6 +7,7 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.MissingUnitEx
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.OperationNotSupportedForUnitException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class UnitPathResolver<T> {
@@ -22,10 +23,10 @@ public class UnitPathResolver<T> {
 
     public static abstract class AbstractVisitor<T> implements Visitor<T> {
 
-        private final String[] path;
+        private final List<String> path;
         private final String failureMessage;
 
-        public AbstractVisitor(String[] path, String failureMessage) {
+        public AbstractVisitor(List<String> path, String failureMessage) {
             this.path = path;
             this.failureMessage = failureMessage;
         }
@@ -46,41 +47,41 @@ public class UnitPathResolver<T> {
         this.fleetControllers = new HashMap<>(fleetControllers);
     }
 
-    public RemoteClusterControllerTaskScheduler resolveFleetController(String[] path) throws StateRestApiException {
-        if (path.length == 0) return null;
-        RemoteClusterControllerTaskScheduler fc = fleetControllers.get(path[0]);
+    public RemoteClusterControllerTaskScheduler resolveFleetController(List<String> path) throws StateRestApiException {
+        if (path.size() == 0) return null;
+        RemoteClusterControllerTaskScheduler fc = fleetControllers.get(path.get(0));
         if (fc == null) {
             throw new MissingUnitException(path, 0);
         }
         return fc;
     }
 
-    public Request<? extends T> visit(String[] path, Visitor<T> visitor) throws StateRestApiException {
-        if (path.length == 0) {
+    public Request<? extends T> visit(List<String> path, Visitor<T> visitor) throws StateRestApiException {
+        if (path.size() == 0) {
             return visitor.visitGlobal();
         }
-        RemoteClusterControllerTaskScheduler fc = fleetControllers.get(path[0]);
+        RemoteClusterControllerTaskScheduler fc = fleetControllers.get(path.get(0));
         if (fc == null) throw new MissingUnitException(path, 0);
-        Id.Cluster cluster = new Id.Cluster(path[0]);
-        if (path.length == 1) {
+        Id.Cluster cluster = new Id.Cluster(path.get(0));
+        if (path.size() == 1) {
             return visitor.visitCluster(cluster);
         }
         Id.Service service;
         try{
-            service = new Id.Service(cluster, NodeType.get(path[1]));
+            service = new Id.Service(cluster, NodeType.get(path.get(1)));
         } catch (IllegalArgumentException e) {
             throw new MissingUnitException(path, 1);
         }
-        if (path.length == 2) {
+        if (path.size() == 2) {
             return visitor.visitService(service);
         }
         Id.Node node;
         try{
-            node = new Id.Node(service, Integer.valueOf(path[2]));
+            node = new Id.Node(service, Integer.parseInt(path.get(2)));
         } catch (NumberFormatException e) {
             throw new MissingUnitException(path, 2);
         }
-        if (path.length == 3) {
+        if (path.size() == 3) {
             return visitor.visitNode(node);
         }
         throw new MissingUnitException(path, 4);

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -36,18 +37,18 @@ public abstract class StateRestApiTest {
     Map<Integer, ClusterControllerStateRestAPI.Socket> ccSockets;
 
     public static class StateRequest implements UnitStateRequest {
-        private final String[] path;
+        private final List<String> path;
         private final int recursive;
 
         StateRequest(String req, int recursive) {
-            path = req.isEmpty() ? new String[0] : req.split("/");
+            path = req.isEmpty() ? List.of() : List.of(req.split("/"));
             this.recursive = recursive;
         }
         @Override
         public int getRecursiveLevels() { return recursive;
         }
         @Override
-        public String[] getUnitPath() { return path; }
+        public List<String> getUnitPath() { return path; }
     }
 
     protected void setUp(boolean dontInitializeNode2) {

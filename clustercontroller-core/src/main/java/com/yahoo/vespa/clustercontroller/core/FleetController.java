@@ -2,7 +2,6 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.document.FixedBucketSpaces;
-import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -22,10 +21,9 @@ import com.yahoo.vespa.clustercontroller.core.status.LegacyIndexPageRequestHandl
 import com.yahoo.vespa.clustercontroller.core.status.LegacyNodePageRequestHandler;
 import com.yahoo.vespa.clustercontroller.core.status.NodeHealthRequestHandler;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
-import java.io.FileNotFoundException;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -37,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -508,43 +505,6 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         }
     }
 
-    public StatusPageResponse fetchStatusPage(StatusPageServer.HttpRequest httpRequest) {
-        verifyInControllerThread();
-        StatusPageResponse.ResponseCode responseCode;
-        String message;
-        final String hiddenMessage;
-        try {
-            StatusPageServer.RequestHandler handler = statusRequestRouter.resolveHandler(httpRequest);
-            if (handler == null) {
-                throw new FileNotFoundException("No handler found for request: " + httpRequest.getPath());
-            }
-            return handler.handle(httpRequest);
-        } catch (FileNotFoundException e) {
-            responseCode = StatusPageResponse.ResponseCode.NOT_FOUND;
-            message = e.getMessage();
-            hiddenMessage = "";
-        } catch (Exception e) {
-            responseCode = StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR;
-            message = "Internal Server Error";
-            hiddenMessage = ExceptionUtils.getStackTraceAsString(e);
-            context.log(logger, Level.FINE, () -> "Unknown exception thrown for request " + httpRequest.getRequest() + ": " + hiddenMessage);
-        }
-
-        TimeZone tz = TimeZone.getTimeZone("UTC");
-        long currentTime = timer.getCurrentTimeInMillis();
-        StatusPageResponse response = new StatusPageResponse();
-        StringBuilder content = new StringBuilder();
-        response.setContentType("text/html");
-        response.setResponseCode(responseCode);
-        content.append("<!-- Answer to request ").append(httpRequest.getRequest()).append(" -->\n");
-        content.append("<p>UTC time when creating this page: ").append(RealTimer.printDateNoMilliSeconds(currentTime, tz)).append("</p>");
-        response.writeHtmlHeader(content, message);
-        response.writeHtmlFooter(content, hiddenMessage);
-        response.writeContent(content.toString());
-
-        return response;
-    }
-
     public void tick() throws Exception {
         synchronized (monitor) {
             boolean didWork;
@@ -635,7 +595,8 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     private boolean processAnyPendingStatusPageRequest() {
         StatusPageServer.HttpRequest statusRequest = statusPageServer.getCurrentHttpRequest();
         if (statusRequest != null) {
-            statusPageServer.answerCurrentStatusRequest(fetchStatusPage(statusRequest));
+            verifyInControllerThread();
+            statusPageServer.fetchStatusPage(statusRequest, statusRequestRouter, timer);
             return true;
         }
         return false;

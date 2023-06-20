@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * Metric reporter wrapper to add component name prefix and common dimensions.
- */
 package com.yahoo.vespa.clustercontroller.utils.util;
 
 import java.util.Map;
 import java.util.TreeMap;
 
+/**
+ * Metric reporter wrapper to add component name prefix and common dimensions.
+ */
 public class ComponentMetricReporter implements MetricReporter {
 
     private final MetricReporter impl;

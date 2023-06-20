@@ -1,14 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.status;
 
+import com.yahoo.exception.ExceptionUtils;
+import com.yahoo.vespa.clustercontroller.core.RealTimer;
+import com.yahoo.vespa.clustercontroller.core.Timer;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequest;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequestHandler;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpResult;
+
+import java.io.FileNotFoundException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,6 +48,46 @@ public class StatusHandler implements HttpRequestHandler {
                 return r;
             }
         }
+
+        public void fetchStatusPage(StatusPageServer.HttpRequest httpRequest,
+                                    StatusPageServer.PatternRequestRouter statusRequestRouter,
+                                    Timer timer) {
+            StatusPageResponse.ResponseCode responseCode;
+            String message;
+            final String hiddenMessage;
+            try {
+                StatusPageServer.RequestHandler handler = statusRequestRouter.resolveHandler(httpRequest);
+                if (handler == null) {
+                    throw new FileNotFoundException("No handler found for request: " + httpRequest.getPath());
+                }
+                answerCurrentStatusRequest(handler.handle(httpRequest));
+                return;
+            } catch (FileNotFoundException e) {
+                responseCode = StatusPageResponse.ResponseCode.NOT_FOUND;
+                message = e.getMessage();
+                hiddenMessage = "";
+            } catch (Exception e) {
+                responseCode = StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR;
+                message = "Internal Server Error";
+                hiddenMessage = ExceptionUtils.getStackTraceAsString(e);
+            }
+
+            TimeZone tz = TimeZone.getTimeZone("UTC");
+            long currentTime = timer.getCurrentTimeInMillis();
+            StatusPageResponse response = new StatusPageResponse();
+            StringBuilder content = new StringBuilder();
+            response.setContentType("text/html");
+            response.setResponseCode(responseCode);
+            content.append("<!-- Answer to request ").append(httpRequest.getRequest()).append(" -->\n");
+            content.append("<p>UTC time when creating this page: ").append(RealTimer.printDateNoMilliSeconds(currentTime, tz)).append("</p>");
+            response.writeHtmlHeader(content, message);
+            response.writeHtmlFooter(content, hiddenMessage);
+            response.writeContent(content.toString());
+
+
+            answerCurrentStatusRequest(response);
+        }
+
         public void answerCurrentStatusRequest(StatusPageResponse r) {
             synchronized (answerMonitor) {
                 response = r;

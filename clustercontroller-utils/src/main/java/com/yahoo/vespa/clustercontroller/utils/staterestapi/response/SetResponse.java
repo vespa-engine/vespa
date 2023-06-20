@@ -24,7 +24,7 @@ public class SetResponse {
     public boolean getWasModified() { return wasModified; }
 
     /**
-     * Human readable reason.
+     * Human-readable reason.
      *
      * @return reason as string
      */
