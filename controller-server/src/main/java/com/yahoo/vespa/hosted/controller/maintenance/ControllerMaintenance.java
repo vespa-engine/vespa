@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
 import java.util.Collections;
@@ -84,7 +85,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new BillingDatabaseMaintainer(controller, intervals.billingDatabaseMaintainer));
         maintainers.add(new MeteringMonitorMaintainer(controller, intervals.meteringMonitorMaintainer, controller.serviceRegistry().resourceDatabase(), metric));
         maintainers.add(new EnclaveAccessMaintainer(controller, intervals.defaultInterval));
-        maintainers.add(new CertificatePoolMaintainer(controller, metric, intervals.certificatePoolMaintainer, new Random()));
+        maintainers.add(new CertificatePoolMaintainer(controller, metric, intervals.certificatePoolMaintainer, new SecureRandom()));
     }
 
     public Upgrader upgrader() { return upgrader; }
