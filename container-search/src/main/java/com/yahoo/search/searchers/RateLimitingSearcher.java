@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 
@@ -60,7 +61,7 @@ public class RateLimitingSearcher extends Searcher {
     public static final CompoundName idDimensionKey = CompoundName.from("rate.idDimension");
     public static final CompoundName dryRunKey = CompoundName.from("rate.dryRun");
 
-    private static final String requestsOverQuotaMetricName = "requestsOverQuota";
+    private static final String requestsOverQuotaMetricName = ContainerMetrics.REQUESTS_OVER_QUOTA.baseName();
 
     /** Used to divide quota by nodes. Assumption: All nodes get the same share of traffic. */
     private final int nodeCount;
