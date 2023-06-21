@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate;
+import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.EndpointSecretManager;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -201,9 +201,9 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
 
         List<String> leafRequestIds = assignedCertificates.stream().map(AssignedCertificate::certificate).flatMap(m -> m.leafRequestId().stream()).toList();
         List<String> rootRequestIds = assignedCertificates.stream().map(AssignedCertificate::certificate).map(EndpointCertificateMetadata::rootRequestId).toList();
-        List<PooledCertificate> pooledCertificates = curator.readPooledCertificates();
-        List<String> certPoolRootIds = pooledCertificates.stream().map(p -> p.certificate().leafRequestId()).flatMap(Optional::stream).toList();
-        List<String> certPoolLeafIds = pooledCertificates.stream().map(p -> p.certificate().rootRequestId()).toList();
+        List<UnassignedCertificate> unassignedCertificates = curator.readUnassignedCertificates();
+        List<String> certPoolRootIds = unassignedCertificates.stream().map(p -> p.certificate().leafRequestId()).flatMap(Optional::stream).toList();
+        List<String> certPoolLeafIds = unassignedCertificates.stream().map(p -> p.certificate().rootRequestId()).toList();
 
         var managedIds = new HashSet<String>();
         managedIds.addAll(leafRequestIds);

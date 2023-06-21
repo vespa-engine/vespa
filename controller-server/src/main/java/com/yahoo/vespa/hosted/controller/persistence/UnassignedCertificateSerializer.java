@@ -4,29 +4,29 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate;
+import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 
 /**
  * @author mpolden
  */
-public class PooledCertificateSerializer {
+public class UnassignedCertificateSerializer {
 
     private static final String stateKey = "state";
     private static final String certificateKey = "certificate";
 
-    public Slime toSlime(PooledCertificate pooledCertificate) {
+    public Slime toSlime(UnassignedCertificate unassignedCertificate) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        root.setString(stateKey, pooledCertificate.state().name());
-        EndpointCertificateMetadataSerializer.toSlime(pooledCertificate.certificate(), root.setObject(certificateKey));
+        root.setString(stateKey, unassignedCertificate.state().name());
+        EndpointCertificateMetadataSerializer.toSlime(unassignedCertificate.certificate(), root.setObject(certificateKey));
         return slime;
     }
 
-    public PooledCertificate fromSlime(Slime slime) {
+    public UnassignedCertificate fromSlime(Slime slime) {
         Cursor root = slime.get();
-        PooledCertificate.State state = PooledCertificate.State.valueOf(root.field(stateKey).asString());
+        UnassignedCertificate.State state = UnassignedCertificate.State.valueOf(root.field(stateKey).asString());
         EndpointCertificateMetadata certificate = EndpointCertificateMetadataSerializer.fromSlime(root.field(certificateKey));
-        return new PooledCertificate(certificate, state);
+        return new UnassignedCertificate(certificate, state);
     }
 
 }

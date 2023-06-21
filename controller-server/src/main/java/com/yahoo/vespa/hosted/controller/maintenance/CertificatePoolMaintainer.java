@@ -14,7 +14,7 @@ import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate;
+import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -67,9 +67,9 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
     protected double maintain() {
         try {
             moveRequestedCertsToReady();
-            List<PooledCertificate> certificatePool = curator.readPooledCertificates();
+            List<UnassignedCertificate> certificatePool = curator.readUnassignedCertificates();
             // So we can alert if the pool goes too low
-            metric.set("preprovisioned.endpoint.certificates", certificatePool.stream().filter(c -> c.state() == PooledCertificate.State.ready).count(), metric.createContext(Map.of()));
+            metric.set("preprovisioned.endpoint.certificates", certificatePool.stream().filter(c -> c.state() == UnassignedCertificate.State.ready).count(), metric.createContext(Map.of()));
             if (certificatePool.size() < certPoolSize.value()) {
                 provisionRandomizedCertificate();
             }
@@ -82,18 +82,18 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
 
     private void moveRequestedCertsToReady() {
         try (Mutex lock = controller.curator().lockCertificatePool()) {
-            for (PooledCertificate pooledCert : curator.readPooledCertificates()) {
-                if (pooledCert.state() == PooledCertificate.State.ready) continue;
+            for (UnassignedCertificate cert : curator.readUnassignedCertificates()) {
+                if (cert.state() == UnassignedCertificate.State.ready) continue;
                 try {
-                    OptionalInt maxKeyVersion = secretStore.listSecretVersions(pooledCert.certificate().keyName()).stream().mapToInt(i -> i).max();
-                    OptionalInt maxCertVersion = secretStore.listSecretVersions(pooledCert.certificate().certName()).stream().mapToInt(i -> i).max();
+                    OptionalInt maxKeyVersion = secretStore.listSecretVersions(cert.certificate().keyName()).stream().mapToInt(i -> i).max();
+                    OptionalInt maxCertVersion = secretStore.listSecretVersions(cert.certificate().certName()).stream().mapToInt(i -> i).max();
                     if (maxKeyVersion.isPresent() && maxCertVersion.equals(maxKeyVersion)) {
-                        curator.writePooledCertificate(pooledCert.withState(PooledCertificate.State.ready));
-                        log.log(Level.INFO, "Randomized endpoint cert %s now ready for use".formatted(pooledCert.id()));
+                        curator.writeUnassignedCertificate(cert.withState(UnassignedCertificate.State.ready));
+                        log.log(Level.INFO, "Randomized endpoint cert %s now ready for use".formatted(cert.id()));
                     }
                 } catch (SecretNotFoundException s) {
                     // Likely because the certificate is very recently provisioned - ignore till next time - should we log?
-                    log.log(Level.INFO, "Could not yet read secrets for randomized endpoint cert %s - maybe next time ...".formatted(pooledCert.id()));
+                    log.log(Level.INFO, "Could not yet read secrets for randomized endpoint cert %s - maybe next time ...".formatted(cert.id()));
                 }
             }
         }
@@ -101,7 +101,7 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
 
     private void provisionRandomizedCertificate() {
         try (Mutex lock = controller.curator().lockCertificatePool()) {
-            Set<String> existingNames = controller.curator().readPooledCertificates().stream().map(PooledCertificate::id).collect(Collectors.toSet());
+            Set<String> existingNames = controller.curator().readUnassignedCertificates().stream().map(UnassignedCertificate::id).collect(Collectors.toSet());
 
             curator.readAssignedCertificates().stream()
                    .map(AssignedCertificate::certificate)
@@ -123,8 +123,8 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
                             useAlternateCertProvider.value())
                     .withRandomizedId(id);
 
-            PooledCertificate certificate = new PooledCertificate(f, PooledCertificate.State.requested);
-            curator.writePooledCertificate(certificate);
+            UnassignedCertificate certificate = new UnassignedCertificate(f, UnassignedCertificate.State.requested);
+            curator.writeUnassignedCertificate(certificate);
         }
     }
 

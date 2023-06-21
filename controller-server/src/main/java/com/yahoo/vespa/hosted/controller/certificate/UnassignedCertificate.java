@@ -1,17 +1,19 @@
-package com.yahoo.vespa.hosted.controller.api.integration.certificates;
+package com.yahoo.vespa.hosted.controller.certificate;
+
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 
 /**
  * An unassigned certificate, which exists in a pre-provisioned pool of certificates. Once assigned to an application,
- * the pooled certificate is removed from the pool.
+ * the certificate is removed from the pool.
  *
  * @param certificate Details of the certificate
  * @param state Current state of this
  *
  * @author andreer
  */
-public record PooledCertificate(EndpointCertificateMetadata certificate, PooledCertificate.State state) {
+public record UnassignedCertificate(EndpointCertificateMetadata certificate, UnassignedCertificate.State state) {
 
-    public PooledCertificate {
+    public UnassignedCertificate {
         if (certificate.randomizedId().isEmpty()) {
             throw new IllegalArgumentException("randomizedId must be set for a pooled certificate");
         }
@@ -21,8 +23,8 @@ public record PooledCertificate(EndpointCertificateMetadata certificate, PooledC
         return certificate.randomizedId().get();
     }
 
-    public PooledCertificate withState(State state) {
-        return new PooledCertificate(certificate, state);
+    public UnassignedCertificate withState(State state) {
+        return new UnassignedCertificate(certificate, state);
     }
 
     public enum State {

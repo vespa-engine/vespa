@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidatorImpl;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -293,40 +292,40 @@ public class EndpointCertificatesTest {
     public void assign_certificate_from_pool() {
         tester.flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
         try {
-            addCertificateToPool("pool-cert-1", PooledCertificate.State.requested);
+            addCertificateToPool("pool-cert-1", UnassignedCertificate.State.requested);
             endpointCertificates.getMetadata(instance, prodZone, DeploymentSpec.empty);
             fail("Expected exception as certificate is not ready");
         } catch (IllegalArgumentException ignored) {}
 
         { // prod
             String certId = "pool-cert-1";
-            addCertificateToPool(certId, PooledCertificate.State.ready);
+            addCertificateToPool(certId, UnassignedCertificate.State.ready);
             Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, prodZone, DeploymentSpec.empty);
             assertEquals(certId, endpointCertificateMetadata.get().randomizedId().get());
             assertEquals(certId, tester.curator().readEndpointCertificateMetadata(TenantAndApplicationId.from(instance.id()), Optional.empty()).get().randomizedId().get(), "Certificate is assigned at application-level");
-            assertTrue(tester.controller().curator().readPooledCertificate(certId).isEmpty(), "Certificate is removed from pool");
+            assertTrue(tester.controller().curator().readUnassignedCertificate(certId).isEmpty(), "Certificate is removed from pool");
         }
 
         { // dev
             String certId = "pool-cert-2";
-            addCertificateToPool(certId, PooledCertificate.State.ready);
+            addCertificateToPool(certId, UnassignedCertificate.State.ready);
             ZoneId devZone = tester.zoneRegistry().zones().all().routingMethod(RoutingMethod.exclusive).in(Environment.dev).zones().stream().findFirst().orElseThrow().getId();
             Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, devZone, DeploymentSpec.empty);
             assertEquals(certId, endpointCertificateMetadata.get().randomizedId().get());
             assertEquals(certId, tester.curator().readEndpointCertificateMetadata(instance.id()).get().randomizedId().get(), "Certificate is assigned at instance-level");
-            assertTrue(tester.controller().curator().readPooledCertificate(certId).isEmpty(), "Certificate is removed from pool");
+            assertTrue(tester.controller().curator().readUnassignedCertificate(certId).isEmpty(), "Certificate is removed from pool");
         }
     }
 
-    private void addCertificateToPool(String id, PooledCertificate.State state) {
+    private void addCertificateToPool(String id, UnassignedCertificate.State state) {
         EndpointCertificateMetadata cert = new EndpointCertificateMetadata(testKeyName, testCertName, 1, 0,
                                                                            "request-id",
                                                                            Optional.of("leaf-request-uuid"),
                                                                            List.of("name1", "name2"),
                                                                            "", Optional.empty(),
                                                                            Optional.empty(), Optional.of(id));
-        PooledCertificate pooledCert = new PooledCertificate(cert, state);
-        tester.controller().curator().writePooledCertificate(pooledCert);
+        UnassignedCertificate pooledCert = new UnassignedCertificate(cert, state);
+        tester.controller().curator().writeUnassignedCertificate(pooledCert);
     }
 
 }

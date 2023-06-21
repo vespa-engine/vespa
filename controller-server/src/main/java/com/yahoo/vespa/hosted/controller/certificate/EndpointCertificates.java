@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidator;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -37,7 +36,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate.*;
+import static com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate.*;
 
 /**
  * Looks up stored endpoint certificate metadata, provisions new certificates if none is found,
@@ -113,14 +112,14 @@ public class EndpointCertificates {
             return updated;
         }
         try (Mutex lock = controller.curator().lockCertificatePool()) {
-            Optional<PooledCertificate> candidate = curator.readPooledCertificates().stream()
-                                                           .filter(pc -> pc.state() == State.ready)
-                                                           .min(Comparator.comparingLong(pc -> pc.certificate().lastRequested()));
+            Optional<UnassignedCertificate> candidate = curator.readUnassignedCertificates().stream()
+                                                               .filter(pc -> pc.state() == State.ready)
+                                                               .min(Comparator.comparingLong(pc -> pc.certificate().lastRequested()));
             if (candidate.isEmpty()) {
                 throw new IllegalArgumentException("No endpoint certificate available in pool, for deployment of " + instance.id() + " in " + zone);
             }
             try (NestedTransaction transaction = new NestedTransaction()) {
-                curator.removePooledCertificate(candidate.get(), transaction);
+                curator.removeUnassignedCertificate(candidate.get(), transaction);
                 curator.writeEndpointCertificateMetadata(application, instanceName,
                                                          candidate.get().certificate(), transaction);
                 transaction.commit();

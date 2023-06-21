@@ -52,6 +52,6 @@ public class CertificatePoolMaintainerTest {
 
     private void assertNumCerts(int n) {
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
-        assertEquals(n, tester.curator().readPooledCertificates().size());
+        assertEquals(n, tester.curator().readUnassignedCertificates().size());
     }
 }
