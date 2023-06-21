@@ -175,6 +175,7 @@ public class CuratorDb {
             return writtenNodes;
         }
     }
+
     public Node writeTo(Node.State toState, Node node, Agent agent, Optional<String> reason) {
         return writeTo(toState, Collections.singletonList(node), agent, reason).get(0);
     }
@@ -190,6 +191,12 @@ public class CuratorDb {
      * @param  transaction the transaction to which write operations are added by this
      * @return the nodes in their state as it will be written if committed
      */
+    public List<Node> writeTo(Node.State toState, List<Node> nodes,
+                              Agent agent, Optional<String> reason,
+                              ApplicationTransaction transaction) {
+        return writeTo(toState, nodes, agent, reason, transaction.nested());
+    }
+
     public List<Node> writeTo(Node.State toState, List<Node> nodes,
                               Agent agent, Optional<String> reason,
                               NestedTransaction transaction) {

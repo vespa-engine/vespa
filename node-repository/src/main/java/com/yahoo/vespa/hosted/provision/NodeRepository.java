@@ -229,7 +229,7 @@ public class NodeRepository extends AbstractComponent {
                    applicationNodes.asList(),
                    Agent.system,
                    Optional.of("Application is removed"),
-                   transaction.nested());
+                   transaction);
         applications.remove(transaction);
     }
 

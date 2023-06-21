@@ -218,7 +218,7 @@ public class Nodes {
     }
 
     /** Activate nodes. This method does <b>not</b> lock the node repository. */
-    public List<Node> activate(List<Node> nodes, NestedTransaction transaction) {
+    public List<Node> activate(List<Node> nodes, ApplicationTransaction transaction) {
         return db.writeTo(Node.State.active, nodes, Agent.application, Optional.empty(), transaction);
     }
 
@@ -239,7 +239,7 @@ public class Nodes {
      */
     public List<Node> deactivate(List<Node> nodes, ApplicationTransaction transaction) {
         if ( ! zone.environment().isProduction() || zone.system().isCd())
-            return deallocate(nodes, Agent.application, "Deactivated by application", transaction.nested());
+            return deallocate(nodes, Agent.application, "Deactivated by application", transaction);
 
         NodeList nodeList = NodeList.copyOf(nodes);
         NodeList stateless = nodeList.stateless();
@@ -247,9 +247,9 @@ public class Nodes {
         NodeList statefulToInactive  = stateful.not().reusable();
         NodeList statefulToDirty = stateful.reusable();
         List<Node> written = new ArrayList<>();
-        written.addAll(deallocate(stateless.asList(), Agent.application, "Deactivated by application", transaction.nested()));
-        written.addAll(deallocate(statefulToDirty.asList(), Agent.application, "Deactivated by application (recycled)", transaction.nested()));
-        written.addAll(db.writeTo(Node.State.inactive, statefulToInactive.asList(), Agent.application, Optional.empty(), transaction.nested()));
+        written.addAll(deallocate(stateless.asList(), Agent.application, "Deactivated by application", transaction));
+        written.addAll(deallocate(statefulToDirty.asList(), Agent.application, "Deactivated by application (recycled)", transaction));
+        written.addAll(db.writeTo(Node.State.inactive, statefulToInactive.asList(), Agent.application, Optional.empty(), transaction));
         return written;
     }
 
@@ -311,11 +311,11 @@ public class Nodes {
         return deallocated;
     }
 
-    public List<Node> deallocate(List<Node> nodes, Agent agent, String reason, NestedTransaction transaction) {
-        return nodes.stream().map(node -> deallocate(node, agent, reason, transaction)).toList();
+    public List<Node> deallocate(List<Node> nodes, Agent agent, String reason, ApplicationTransaction transaction) {
+        return nodes.stream().map(node -> deallocate(node, agent, reason, transaction.nested())).toList();
     }
 
-    public Node deallocate(Node node, Agent agent, String reason, NestedTransaction transaction) {
+    private Node deallocate(Node node, Agent agent, String reason, NestedTransaction transaction) {
         if (parkOnDeallocationOf(node, agent)) {
             return park(node.hostname(), false, agent, reason, transaction);
         } else {
