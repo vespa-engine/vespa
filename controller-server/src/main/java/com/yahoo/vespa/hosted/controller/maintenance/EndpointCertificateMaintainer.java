@@ -148,7 +148,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                     if (Optional.of(storedMetaData).equals(curator.readEndpointCertificateMetadata(applicationId))) {
                         log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
                                 + " has not been requested in a month and app has no deployments, deleting from provider, ZK and secret store");
-                        endpointCertificateProvider.deleteCertificate(applicationId, storedMetaData.rootRequestId());
+                        endpointCertificateProvider.deleteCertificate(storedMetaData.rootRequestId());
                         curator.deleteEndpointCertificateMetadata(applicationId);
                         endpointSecretManager.deleteSecret(storedMetaData.certName());
                         endpointSecretManager.deleteSecret(storedMetaData.keyName());
@@ -212,7 +212,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                         log.log(Level.INFO, String.format("Deleting unmaintained certificate with request_id %s and SANs %s",
                                 providerCertificateMetadata.requestId(),
                                 providerCertificateMetadata.dnsNames().stream().map(d -> d.dnsName).collect(Collectors.joining(", "))));
-                        endpointCertificateProvider.deleteCertificate(ApplicationId.fromSerializedForm("applicationid:is:unknown"), providerCertificateMetadata.requestId());
+                        endpointCertificateProvider.deleteCertificate(providerCertificateMetadata.requestId());
                     }
                 }
             }

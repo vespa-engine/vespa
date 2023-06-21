@@ -122,8 +122,7 @@ public class EndpointCertificateMaintainerTest {
         tester.clock().advance(Duration.ofDays(3));
         secretStore.setSecret(originalMetadata.keyName(), "foo", 1);
         secretStore.setSecret(originalMetadata.certName(), "bar", 1);
-        tester.controller().serviceRegistry().endpointCertificateProvider().requestCaSignedCertificate(appId, originalMetadata.requestedDnsSans(), Optional.of(originalMetadata));
-
+        tester.controller().serviceRegistry().endpointCertificateProvider().requestCaSignedCertificate(appId.toFullString(), originalMetadata.requestedDnsSans(), Optional.of(originalMetadata), "rsa_2048", false);
         // We should now pick up the new key and cert version + uuid, but not force trigger deployment yet
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
         deploymentContext.assertNotRunning(productionUsWest1);
@@ -158,11 +157,11 @@ public class EndpointCertificateMaintainerTest {
         EndpointCertificateMock endpointCertificateProvider = (EndpointCertificateMock) tester.controller().serviceRegistry().endpointCertificateProvider();
 
         ApplicationId unknown = ApplicationId.fromSerializedForm("applicationid:is:unknown");
-        endpointCertificateProvider.requestCaSignedCertificate(unknown, List.of("a", "b", "c"), Optional.empty()); // Unknown to controller!
+        var metadata = endpointCertificateProvider.requestCaSignedCertificate("something", List.of("a", "b", "c"), Optional.empty(), "rsa_2048", false);// Unknown to controller!
 
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
 
-        assertTrue(endpointCertificateProvider.dnsNamesOf(unknown).isEmpty());
+        assertTrue(endpointCertificateProvider.dnsNamesOf(metadata.rootRequestId()).isEmpty());
         assertTrue(endpointCertificateProvider.listCertificates().isEmpty());
     }
 
