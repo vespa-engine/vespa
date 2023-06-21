@@ -28,12 +28,12 @@ private:
     size_t _thread_id;
     Nexus(vote_t &vote, size_t thread_id) noexcept
       : _vote(vote), _thread_id(thread_id) {}
+    ~Nexus();
+public:
     Nexus(Nexus &&) = delete;
     Nexus(const Nexus &) = delete;
     Nexus &operator=(Nexus &&) = delete;
     Nexus &operator=(const Nexus &) = delete;
-    ~Nexus();
-public:
     size_t num_threads() const noexcept { return _vote.size(); }
     size_t thread_id() const noexcept { return _thread_id; }
     bool vote(bool my_vote) { return _vote(my_vote); }
