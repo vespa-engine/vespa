@@ -69,7 +69,7 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
         return matching(new HashSet<>(others.asList())::contains);
     }
 
-    /** Returns the union of the two lists. */
+    /** Returns the concatenation of the two lists. */
     public ListType and(ListType others) {
         return constructor.apply(Stream.concat(items.stream(), others.asList().stream()).toList(), false);
     }

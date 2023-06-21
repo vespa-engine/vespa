@@ -43,6 +43,7 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
         for (Node host : hosts) {
             NodeList children = allNodes.childrenOf(host);
             try {
+                log.log(Level.INFO, "Provisioning " + host.hostname() + " with " + children.size() + " children");
                 HostIpConfig hostIpConfig = hostProvisioner.provision(host, children.asSet());
                 setIpConfig(host, children, hostIpConfig);
             } catch (IllegalArgumentException | IllegalStateException e) {
