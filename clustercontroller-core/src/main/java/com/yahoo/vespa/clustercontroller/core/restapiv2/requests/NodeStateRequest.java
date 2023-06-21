@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
+import ai.vespa.metrics.StorageMetrics;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.Metrics;
@@ -46,17 +47,17 @@ public class NodeStateRequest extends Request<Response.NodeResponse> {
     }
 
     private static void fillInMetricValue(String name, Metrics.Value value, Response.NodeResponse result) {
-        if (name.equals("vds.datastored.alldisks.docs")) {
+        if (name.equals(StorageMetrics.VDS_DATASTORED_ALLDISKS_DOCS.baseName())) {
             if (value.getLast() == null) {
                 return;
             }
             result.addMetric("unique-document-count", value.getLast());
-        } else if (name.equals("vds.datastored.alldisks.bytes")) {
+        } else if (name.equals(StorageMetrics.VDS_DATASTORED_ALLDISKS_BYTES.baseName())) {
             if (value.getLast() == null) {
                 return;
             }
             result.addMetric("unique-document-total-size", value.getLast());
-        } else if (name.equals("vds.datastored.alldisks.buckets")) {
+        } else if (name.equals(StorageMetrics.VDS_DATASTORED_ALLDISKS_BUCKETS.baseName())) {
             if (value.getLast() == null) {
                 return;
             }
