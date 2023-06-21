@@ -917,10 +917,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         for (DataplaneTokenVersions token : dataplaneTokenVersions) {
             Cursor tokenObject = tokensArray.addObject();
             tokenObject.setString("id", token.tokenId().value());
-            Cursor fingerprintsArray = tokenObject.setArray("fingerprints");
+            Cursor fingerprintsArray = tokenObject.setArray("versions");
             for (DataplaneTokenVersions.Version tokenVersion : token.tokenVersions()) {
                 Cursor fingerprintObject = fingerprintsArray.addObject();
-                fingerprintObject.setString("value", tokenVersion.fingerPrint().value());
+                fingerprintObject.setString("fingerprint", tokenVersion.fingerPrint().value());
                 fingerprintObject.setString("created-at", tokenVersion.creationTime().toString());
                 fingerprintObject.setString("author", tokenVersion.author());
             }
