@@ -27,7 +27,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * @author Ulf Carlin<
+ * @author Ulf Carlin
  */
 public class StreamingVisitorTest {
 
