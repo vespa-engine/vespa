@@ -88,7 +88,7 @@ Allocator<EntryT, RefT>::alloc_dynamic_array(ConstArrayRef array)
     for (size_t i = array.size(); i < max_array_size; ++i) {
         new (static_cast<void *>(buf + i)) EntryT();
     }
-    BufferType::set_dynamic_array_size(buf, entry_size, array.size());
+    BufferType::set_dynamic_array_size(buf, array.size());
      state.stats().pushed_back(1);
     return HandleType(ref, buf);
 }

@@ -3,8 +3,6 @@
 #pragma once
 
 #include "dynamic_array_buffer_type.h"
-#include "aligner.h"
-#include <algorithm>
 #include <cassert>
 
 namespace vespalib::datastore {
@@ -26,15 +24,14 @@ template <typename ElemT>
 size_t
 DynamicArrayBufferType<ElemT>::calc_entry_size(size_t array_size) noexcept
 {
-    Aligner aligner(std::max(alignof(uint32_t), alignof(ElemType)));
-    return aligner.align(sizeof(ElemType) * array_size + sizeof(uint32_t));
+    return EntryMinAligner::align(sizeof(ElemType) * array_size + entry_bias);
 }
 
 template <typename ElemT>
 size_t
 DynamicArrayBufferType<ElemT>::calc_array_size(size_t entry_size) noexcept
 {
-    return (entry_size - sizeof(uint32_t)) / sizeof(ElemType);
+    return (entry_size - entry_bias) / sizeof(ElemType);
 }
 
 template <typename ElemT>
@@ -59,7 +56,7 @@ DynamicArrayBufferType<ElemT>::fallback_copy(void* new_buffer, const void* old_b
     for (uint32_t entry_idx = 0; entry_idx < num_entries; ++entry_idx) {
         auto d = get_entry(new_buffer, entry_idx);
         auto s = get_entry(old_buffer, entry_idx);
-        set_dynamic_array_size(d, entry_size(), get_dynamic_array_size(s, entry_size()));
+        set_dynamic_array_size(d, get_dynamic_array_size(s));
         for (uint32_t elem_idx = 0; elem_idx < array_size; ++elem_idx) {
             new (static_cast<void*>(d)) ElemType(*s);
             ++s;
@@ -76,7 +73,7 @@ DynamicArrayBufferType<ElemT>::initialize_reserved_entries(void* buffer, EntryCo
     const auto& empty = empty_entry();
     for (uint32_t entry_idx = 0; entry_idx < reserved_entries; ++entry_idx) {
         auto e = get_entry(buffer, entry_idx);
-        set_dynamic_array_size(e, entry_size(), 0);
+        set_dynamic_array_size(e, 0);
         for (uint32_t elem_idx = 0; elem_idx < array_size; ++elem_idx) {
             new (static_cast<void*>(e)) ElemType(empty);
             ++e;
@@ -92,7 +89,7 @@ DynamicArrayBufferType<ElemT>::clean_hold(void* buffer, size_t offset, EntryCoun
     const auto& empty = empty_entry();
     for (uint32_t entry_idx = 0; entry_idx < num_entries; ++entry_idx) {
         auto e = get_entry(buffer, offset + entry_idx);
-        auto array_size = get_dynamic_array_size(e, entry_size());
+        auto array_size = get_dynamic_array_size(e);
         assert(array_size <= max_array_size);
         for (uint32_t elem_idx = 0; elem_idx < array_size; ++elem_idx) {
             *e = empty;
