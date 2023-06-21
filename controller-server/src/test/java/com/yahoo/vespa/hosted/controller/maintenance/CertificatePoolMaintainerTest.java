@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class CertificatePoolMaintainerTest {
 
     private final ControllerTester tester = new ControllerTester();
-    private final SecretStoreMock secretStore = (SecretStoreMock) tester.controller().secretStore();
     private final CertificatePoolMaintainer maintainer = new CertificatePoolMaintainer(tester.controller(), new MockMetric(), Duration.ofHours(1), new Random(4));
 
     @Test
@@ -47,6 +46,9 @@ public class CertificatePoolMaintainerTest {
                         new DnsNameStatus("*.c8868d4e.g.vespa.oath.cloud", "done"),
                         new DnsNameStatus("*.c8868d4e.a.vespa.oath.cloud", "done")
                 ), metadata.dnsNames());
+
+        assertEquals("vespa.tls.preprovisioned.c8868d4e-cert", endpointCertificateProvider.certificateDetails(metadata.requestId()).cert_key_keyname());
+        assertEquals("vespa.tls.preprovisioned.c8868d4e-key", endpointCertificateProvider.certificateDetails(metadata.requestId()).private_key_keyname());
     }
 
     private void assertNumCerts(int n) {

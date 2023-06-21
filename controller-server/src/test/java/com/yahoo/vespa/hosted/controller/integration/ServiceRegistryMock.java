@@ -69,7 +69,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MemoryNameService memoryNameService = new MemoryNameService();
     private final MockVpcEndpointService vpcEndpointService = new MockVpcEndpointService(clock, memoryNameService);
     private final MockMailer mockMailer = new MockMailer();
-    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock(clock);
+    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
     private final EndpointCertificateValidatorMock endpointCertificateValidatorMock = new EndpointCertificateValidatorMock();
     private final MockContactRetriever mockContactRetriever = new MockContactRetriever();
     private final MockIssueHandler mockIssueHandler = new MockIssueHandler();

@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.certificates;
 
 import com.yahoo.config.provision.ApplicationId;
 
-import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,11 +19,6 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
 
     private final Map<ApplicationId, List<String>> dnsNames = new HashMap<>();
     private final Map<String, EndpointCertificateMetadata> providerMetadata = new HashMap<>();
-    private final Clock clock;
-
-    public EndpointCertificateMock(Clock clock) {
-        this.clock = clock;
-    }
 
     public List<String> dnsNamesOf(ApplicationId application) {
         return Collections.unmodifiableList(dnsNames.getOrDefault(application, List.of()));
@@ -49,7 +43,7 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
     @Override
     public EndpointCertificateMetadata requestCaSignedCertificate(String key, List<String> dnsNames, Optional<EndpointCertificateMetadata> currentMetadata, String algo, boolean useAlternativeProvider) {
         this.dnsNames.put(ApplicationId.defaultId(), dnsNames);
-        String endpointCertificatePrefix = "vespa.tls.preprovisioned.key";
+        String endpointCertificatePrefix = "vespa.tls.%s".formatted(key);
         long epochSecond = Instant.now().getEpochSecond();
         long inAnHour = epochSecond + 3600;
         String requestId = UUID.randomUUID().toString();
