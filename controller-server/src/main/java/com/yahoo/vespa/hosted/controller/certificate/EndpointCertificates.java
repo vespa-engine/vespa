@@ -182,7 +182,7 @@ public class EndpointCertificates {
         log.log(Level.INFO, String.format("Requesting new endpoint certificate from Cameo for application %s", deployment.applicationId().serializedForm()));
         String algo = this.endpointCertificateAlgo.with(FetchVector.Dimension.APPLICATION_ID, deployment.applicationId().serializedForm()).value();
         boolean useAlternativeProvider = useAlternateCertProvider.with(FetchVector.Dimension.APPLICATION_ID, deployment.applicationId().serializedForm()).value();
-        String keyPrefix = deployment.applicationId().serializedForm();
+        String keyPrefix = deployment.applicationId().toFullString();
         var t0 = Instant.now();
         EndpointCertificateMetadata endpointCertificateMetadata = certificateProvider.requestCaSignedCertificate(keyPrefix, List.copyOf(requiredNames), currentMetadata, algo, useAlternativeProvider);
         var t1 = Instant.now();
