@@ -38,7 +38,7 @@ public:
         ThreadPool pool;
         using result_t = std::decay_t<decltype(entry(std::declval<Nexus&>()))>;
         constexpr bool is_void = std::same_as<result_t, void>;
-        using stored_t = std::conditional<is_void, std::monostate, result_t>::type;
+        using stored_t = std::conditional_t<is_void, std::monostate, result_t>;
         std::mutex lock;
         std::optional<stored_t> result;
         auto handle_result = [&](stored_t thread_result) noexcept {
