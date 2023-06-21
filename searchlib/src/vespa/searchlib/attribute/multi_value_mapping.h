@@ -74,6 +74,8 @@ public:
     bool has_free_lists_enabled() const { return _store.has_free_lists_enabled(); }
     // Set compaction spec. Only used by unit tests.
     void set_compaction_spec(vespalib::datastore::CompactionSpec compaction_spec) noexcept { _store.set_compaction_spec(compaction_spec); }
+    // Get type mapper. Only used by unit tests.
+    const ArrayStoreTypeMapper &get_mapper() const noexcept { return _store.get_mapper(); }
 
 
     static vespalib::datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t max_type_id,
