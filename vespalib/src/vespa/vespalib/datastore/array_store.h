@@ -101,7 +101,7 @@ private:
     template <typename BufferType>
     ConstArrayRef get_dynamic_array(const void* buffer, size_t offset, uint32_t entry_size) const {
         auto entry = BufferType::get_entry(buffer, offset, entry_size);
-        auto size = BufferType::get_dynamic_array_size(entry, entry_size);
+        auto size = BufferType::get_dynamic_array_size(entry);
         return ConstArrayRef(entry, size);
     }
     ConstArrayRef getLargeArray(RefT ref) const {
@@ -122,7 +122,7 @@ public:
         const BufferAndMeta & bufferAndMeta = _store.getBufferMeta(internalRef.bufferId());
         if (bufferAndMeta.getTypeId() != _largeArrayTypeId) [[likely]] {
             if constexpr (has_dynamic_buffer_type) {
-                if (_mapper.is_dynamic_buffer(bufferAndMeta.getTypeId())) [[unlikely]] {
+                if (_mapper.is_dynamic_buffer(bufferAndMeta.getTypeId())) {
                         return get_dynamic_array<typename TypeMapper::DynamicBufferType>(bufferAndMeta.get_buffer_acquire(), internalRef.offset(), bufferAndMeta.get_entry_size());
                  }
             }

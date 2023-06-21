@@ -163,7 +163,7 @@ std::vector<int>
 DynamicArrayBufferTypeTest::get_vector(const void* buffer, uint32_t offset)
 {
     auto e = BufferType::get_entry(buffer, offset, _entry_size);
-    auto array_size = BufferType::get_dynamic_array_size(e, _entry_size);
+    auto array_size = BufferType::get_dynamic_array_size(e);
     EXPECT_GE(_buffer_type.getArraySize(), array_size);
     return get_vector(buffer, offset, array_size);
 }
@@ -179,7 +179,7 @@ void
 DynamicArrayBufferTypeTest::write_entry1()
 {
     auto e1 = BufferType::get_entry(_buf.get(), 1, _entry_size);
-    BufferType::set_dynamic_array_size(e1, _entry_size, 2);
+    BufferType::set_dynamic_array_size(e1, 2);
     new (static_cast<void *>(e1)) WrapInt32(42);
     new (static_cast<void *>(e1 + 1)) WrapInt32(47);
     new (static_cast<void *>(e1 + 2)) WrapInt32(49); // Not cleaned by clean_hold

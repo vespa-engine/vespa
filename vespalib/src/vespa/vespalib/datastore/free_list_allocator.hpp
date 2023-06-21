@@ -112,7 +112,7 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::alloc_dynamic_array(ConstArrayRef a
     for (size_t i = 0; i < array.size(); ++i) {
         *(buf + i) = array[i];
     }
-    BufferType::set_dynamic_array_size(buf, entry_size, array.size());
+    BufferType::set_dynamic_array_size(buf, array.size());
     return HandleType(ref, buf);
 }
 

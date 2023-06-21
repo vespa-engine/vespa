@@ -41,7 +41,7 @@ RawAllocator<EntryT, RefT>::alloc_dynamic_array(size_t array_size)
     RefT ref(state.size(), buffer_id);
     auto entry_size = _store.get_entry_size(_typeId);
     EntryT* buffer = BufferType::get_entry(_store.getBuffer(ref.bufferId()), ref.offset(), entry_size);
-    BufferType::set_dynamic_array_size(buffer, entry_size, array_size);
+    BufferType::set_dynamic_array_size(buffer, array_size);
     state.stats().pushed_back(1);
     return HandleType(ref, buffer);
 }
