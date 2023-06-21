@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher.STREAMING_STATISTICS;
+import static com.yahoo.vespa.streamingvisitors.StreamingSearcher.STREAMING_STATISTICS;
 
 /**
  * Generates mail-specific query metrics.

@@ -44,7 +44,7 @@ import java.util.logging.Logger;
  * @author  baldersheim
  * @author  Ulf Carlin
  */
-public class VdsStreamingSearcher extends VespaBackEndSearcher {
+public class StreamingSearcher extends VespaBackEndSearcher {
 
     private static final CompoundName streamingUserid = CompoundName.from("streaming.userid");
     private static final CompoundName streamingGroupname = CompoundName.from("streaming.groupname");
@@ -53,60 +53,40 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
     static final String STREAMING_STATISTICS = "streaming.statistics";
     private final VisitorFactory visitorFactory;
     private final TracingOptions tracingOptions;
-    private static final Logger log = Logger.getLogger(VdsStreamingSearcher.class.getName());
+    private static final Logger log = Logger.getLogger(StreamingSearcher.class.getName());
 
     private Route route;
+
     /** The configId used to access the searchcluster. */
     private String searchClusterName = null;
     private String documentType;
+
     /** The route to the storage cluster. */
     private String storageClusterRouteSpec = null;
 
+    StreamingSearcher(VisitorFactory visitorFactory) {
+        this.visitorFactory = visitorFactory;
+        tracingOptions = TracingOptions.DEFAULT;
+    }
+
+    StreamingSearcher(VisitorFactory visitorFactory, TracingOptions tracingOptions) {
+        this.visitorFactory = visitorFactory;
+        this.tracingOptions = tracingOptions;
+    }
+
+    public StreamingSearcher(VespaDocumentAccess access) {
+        this(new VespaVisitorFactory(access));
+    }
+
     private String getSearchClusterName() { return searchClusterName; }
     private String getStorageClusterRouteSpec() { return storageClusterRouteSpec; }
-    public final void setSearchClusterName(String clusterName) {
-        this.searchClusterName = clusterName;
-    }
+    public final void setSearchClusterName(String clusterName) { this.searchClusterName = clusterName; }
     public final void setDocumentType(String documentType) {
         this.documentType = documentType;
     }
 
     public final void setStorageClusterRouteSpec(String storageClusterRouteSpec) {
         this.storageClusterRouteSpec = storageClusterRouteSpec;
-    }
-
-    private static class VespaVisitorFactory implements VdsVisitor.VisitorSessionFactory, VisitorFactory {
-
-        private final VespaDocumentAccess access;
-
-        private VespaVisitorFactory(VespaDocumentAccess access) {
-            this.access = access;
-        }
-
-        @Override
-        public VisitorSession createVisitorSession(VisitorParameters params) throws ParseException {
-            return access.createVisitorSession(params);
-        }
-
-        @Override
-        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
-            return new VdsVisitor(query, searchCluster, route, documentType, this, traceLevelOverride);
-        }
-
-    }
-
-    public VdsStreamingSearcher(VespaDocumentAccess access) {
-        this(new VespaVisitorFactory(access));
-    }
-
-    VdsStreamingSearcher(VisitorFactory visitorFactory) {
-        this.visitorFactory = visitorFactory;
-        tracingOptions = TracingOptions.DEFAULT;
-    }
-
-    VdsStreamingSearcher(VisitorFactory visitorFactory, TracingOptions tracingOptions) {
-        this.visitorFactory = visitorFactory;
-        this.tracingOptions = tracingOptions;
     }
 
     @Override
@@ -128,15 +108,12 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
     private static int documentSelectionQueryParameterCount(Query query) {
         int paramCount = 0;
-        if (query.properties().getString(streamingUserid) != null) {
+        if (query.properties().getString(streamingUserid) != null)
             paramCount++;
-        }
-        if (query.properties().getString(streamingGroupname) != null) {
+        if (query.properties().getString(streamingGroupname) != null)
             paramCount++;
-        }
-        if (query.properties().getString(streamingSelection) != null) {
+        if (query.properties().getString(streamingSelection) != null)
             paramCount++;
-        }
         return paramCount;
     }
 
@@ -154,17 +131,18 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
     @Override
     public Result doSearch2(Query query, Execution execution) {
-        if (query.getTimeLeft() <= 0) {
+        if (query.getTimeLeft() <= 0)
             return new Result(query, ErrorMessage.createTimeout(String.format("No time left for searching (timeout=%d)", query.getTimeout())));
-        }
 
         initializeMissingQueryFields(query);
         if (documentSelectionQueryParameterCount(query) != 1) {
             return new Result(query, ErrorMessage.createBackendCommunicationError("Streaming search needs one and " +
-                    "only one of these query parameters to be set: streaming.userid, streaming.groupname, " +
-                    "streaming.selection"));
+                                                                                  "only one of these query parameters to be set: " +
+                                                                                  "streaming.userid, streaming.groupname, or " +
+                                                                                  "streaming.selection"));
         }
-        query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + documentType, 4);
+        if (query.getTrace().isTraceable(4))
+            query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + documentType, 4);
         long timeStartedNanos = tracingOptions.getClock().nanoTimeNow();
         int effectiveTraceLevel = inferEffectiveQueryTraceLevel(query);
 
@@ -172,17 +150,17 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         try {
             visitor.doSearch();
         } catch (ParseException e) {
-            return new Result(query, ErrorMessage.createBackendCommunicationError(
-                    "Failed to parse document selection string: " + e.getMessage() + "'."));
+            return new Result(query, ErrorMessage.createBackendCommunicationError("Failed to parse document selection string: " +
+                                                                                  e.getMessage() + "'."));
         } catch (TokenMgrException e) {
-            return new Result(query, ErrorMessage.createBackendCommunicationError(
-                    "Failed to tokenize document selection string: " + e.getMessage() + "'."));
+            return new Result(query, ErrorMessage.createBackendCommunicationError("Failed to tokenize document selection string: " +
+                                                                                  e.getMessage() + "'."));
         } catch (TimeoutException e) {
             double elapsedMillis = durationInMillisFromNanoTime(timeStartedNanos);
             if ((effectiveTraceLevel > 0) && timeoutBadEnoughToBeReported(query, elapsedMillis)) {
                 tracingOptions.getTraceExporter().maybeExport(() -> new TraceDescription(visitor.getTrace(),
-                        String.format("Trace of %s which timed out after %.3g seconds",
-                                      query.toString(), elapsedMillis / 1000.0)));
+                                                                                         String.format("Trace of %s which timed out after %.3g seconds",
+                                                                                                       query, elapsedMillis / 1000.0)));
             }
             return new Result(query, ErrorMessage.createTimeout(e.getMessage()));
         } catch (InterruptedException | IllegalArgumentException e) {
@@ -229,8 +207,8 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         Map<String, DocumentSummary.Summary> summaryMap = visitor.getSummaryMap();
 
         lazyTrace(query, 7, "total hit count = ", visitor.getTotalHitCount(),
-                ", returned hit count = ", hits.size(), ", summary count = ",
-                summaryMap.size());
+                  ", returned hit count = ", hits.size(), ", summary count = ",
+                  summaryMap.size());
 
         VisitorStatistics stats = visitor.getStatistics();
         result.setTotalHitCount(visitor.getTotalHitCount());
@@ -255,8 +233,8 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
                 DocsumPacket dp = new DocsumPacket(summary.getSummary());
                 summaryPackets[index] = dp;
             } else {
-                return new Result(query, ErrorMessage.createBackendCommunicationError(
-                        "Did not find summary for hit with document id " + hit.getDocId()));
+                return new Result(query, ErrorMessage.createBackendCommunicationError("Did not find summary for hit with document id " +
+                                                                                      hit.getDocId()));
             }
 
             index++;
@@ -291,7 +269,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
         if (skippedHits > 0) {
             getLogger().info("skipping " + skippedHits + " hits for query: " + result.getQuery());
-            result.hits().addError(com.yahoo.search.result.ErrorMessage.createTimeout("Missing hit summary data for " + skippedHits + " hits"));
+            result.hits().addError(ErrorMessage.createTimeout("Missing hit summary data for " + skippedHits + " hits"));
         }
 
         return result;
@@ -325,8 +303,8 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
     }
 
     static boolean verifyDocId(String id, Query query, boolean skippedEarlierResult) {
-        String expUserId = query.properties().getString(streamingUserid);
-        String expGroupName = query.properties().getString(streamingGroupname);
+        String expectedUserId = query.properties().getString(streamingUserid);
+        String expectedGroupName = query.properties().getString(streamingGroupname);
 
         Level logLevel = Level.SEVERE;
         if (skippedEarlierResult) {
@@ -341,7 +319,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
             return false;
         }
 
-        if (expUserId != null) {
+        if (expectedUserId != null) {
             long userId;
 
             if (docId.getScheme().hasNumber()) {
@@ -350,12 +328,12 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
                 log.log(logLevel, "Got result with wrong scheme  in document ID (" + id + ") for " + query);
                 return false;
             }
-            if (new BigInteger(expUserId).longValue() != userId) {
-                log.log(logLevel, "Got result with wrong user ID (expected " + expUserId + ") in document ID (" +
-                         id + ") for " + query);
+            if (new BigInteger(expectedUserId).longValue() != userId) {
+                log.log(logLevel, "Got result with wrong user ID (expected " + expectedUserId + ") in document ID (" +
+                                  id + ") for " + query);
                 return false;
             }
-        } else if (expGroupName != null) {
+        } else if (expectedGroupName != null) {
             String groupName;
 
             if (docId.getScheme().hasGroup()) {
@@ -364,9 +342,9 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
                 log.log(logLevel, "Got result with wrong scheme  in document ID (" + id + ") for " + query);
                 return false;
             }
-            if (!expGroupName.equals(groupName)) {
-                log.log(logLevel, "Got result with wrong group name (expected " + expGroupName + ") in document ID (" +
-                        id + ") for " + query);
+            if (!expectedGroupName.equals(groupName)) {
+                log.log(logLevel, "Got result with wrong group name (expected " + expectedGroupName + ") in document ID (" +
+                                  id + ") for " + query);
                 return false;
             }
         }
@@ -377,4 +355,25 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         // TODO add a real pong
         return new Pong();
     }
+
+    private static class VespaVisitorFactory implements StreamingVisitor.VisitorSessionFactory, VisitorFactory {
+
+        private final VespaDocumentAccess access;
+
+        private VespaVisitorFactory(VespaDocumentAccess access) {
+            this.access = access;
+        }
+
+        @Override
+        public VisitorSession createVisitorSession(VisitorParameters params) throws ParseException {
+            return access.createVisitorSession(params);
+        }
+
+        @Override
+        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
+            return new StreamingVisitor(query, searchCluster, route, documentType, this, traceLevelOverride);
+        }
+
+    }
+
 }

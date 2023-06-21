@@ -39,7 +39,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
- * A visitor data handler that performs a query in VDS with the
+ * A visitor data handler that performs a query in a content cluster with the
  * searchvisitor visitor plugin. It collects and merges hits (sorted
  * descending on rank), summaries (sorted on document id), and
  * groupings. The resulting data can be fetched when the query has
@@ -47,7 +47,7 @@ import java.util.logging.Level;
  *
  * @author Ulf Carlin
  */
-class VdsVisitor extends VisitorDataHandler implements Visitor {
+class StreamingVisitor extends VisitorDataHandler implements Visitor {
 
     private static final CompoundName streamingUserid = CompoundName.from("streaming.userid");
     private static final CompoundName streamingGroupname = CompoundName.from("streaming.groupname");
@@ -59,7 +59,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
 
     protected static final int MAX_BUCKETS_PER_VISITOR = 1024;
 
-    private static final Logger log = Logger.getLogger(VdsVisitor.class.getName());
+    private static final Logger log = Logger.getLogger(StreamingVisitor.class.getName());
     private final VisitorParameters params = new VisitorParameters("");
     private List<SearchResult.Hit> hits = new ArrayList<>();
     private int totalHitCount = 0;
@@ -75,9 +75,9 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         VisitorSession createVisitorSession(VisitorParameters params) throws ParseException;
     }
 
-    public VdsVisitor(Query query, String searchCluster, Route route,
-                      String documentType, VisitorSessionFactory visitorSessionFactory,
-                      int traceLevelOverride)
+    public StreamingVisitor(Query query, String searchCluster, Route route,
+                            String documentType, VisitorSessionFactory visitorSessionFactory,
+                            int traceLevelOverride)
     {
         this.query = query;
         this.visitorSessionFactory = visitorSessionFactory;
@@ -97,21 +97,18 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
 
     private static String createSelectionString(String documentType, String selection) {
         if ((selection == null) || selection.isEmpty()) return documentType;
-
-        StringBuilder sb = new StringBuilder(documentType);
-        sb.append(" and ( ").append(selection).append(" )");
-        return sb.toString();
+        return documentType + " and ( " + selection + " )";
     }
 
     private String createQuerySelectionString() {
-        String s = query.properties().getString(streamingUserid);
-        if (s != null) {
-            return "id.user==" + s;
-        }
-        s = query.properties().getString(streamingGroupname);
-        if (s != null) {
-            return "id.group==\"" + s + "\"";
-        }
+        String userId = query.properties().getString(streamingUserid);
+        if (userId != null)
+            return "id.user==" + userId;
+
+        String groupId = query.properties().getString(streamingGroupname);
+        if (groupId != null)
+            return "id.group==\"" + groupId + "\"";
+
         return query.properties().getString(streamingSelection);
     }
 
@@ -139,7 +136,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         params.setMaxPending(Integer.MAX_VALUE);
         params.setMaxBucketsPerVisitor(MAX_BUCKETS_PER_VISITOR);
         params.setTraceLevel(inferSessionTraceLevel(query));
-
 
         String maxbuckets = query.properties().getString(streamingMaxbucketspervisitor);
         if (maxbuckets != null) {
@@ -215,6 +211,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     }
 
     private static class EncodedData {
+
         private Object returned;
         private byte[] encoded;
 
@@ -230,27 +227,23 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         public byte[] getEncodedData(){
             return encoded;
         }
+
     }
 
     private static void encodeQueryData(Query query, int code, EncodedData ed){
         ByteBuffer buf = ByteBuffer.allocate(1024);
         while (true) {
             try {
-                switch(code){
-                    case 0:
-                        ed.setReturned(query.getModel().getQueryTree().getRoot().encode(buf));
-                        break;
-                    case 1:
-                        ed.setReturned(QueryEncoder.encodeAsProperties(query, buf));
-                        break;
-                    case 2:
-                        throw new IllegalArgumentException("old aggregation no longer exists!");
-                    case 3:
+                switch (code) {
+                    case 0 -> ed.setReturned(query.getModel().getQueryTree().getRoot().encode(buf));
+                    case 1 -> ed.setReturned(QueryEncoder.encodeAsProperties(query, buf));
+                    case 2 -> throw new IllegalArgumentException("old aggregation no longer exists!");
+                    case 3 -> {
                         if (query.getRanking().getSorting() != null)
                             ed.setReturned(query.getRanking().getSorting().encode(buf));
                         else
                             ed.setReturned(0);
-                        break;
+                    }
                 }
                 buf.flip();
                 break;
@@ -269,9 +262,10 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         VisitorSession session = visitorSessionFactory.createVisitorSession(params);
         try {
             if ( ! session.waitUntilDone(query.getTimeout())) {
-                log.log(Level.FINE, () -> "Visitor returned from waitUntilDone without being completed for " + query + " with selection " + params.getDocumentSelection());
+                log.log(Level.FINE, () -> "StreamingVisitor returned from waitUntilDone without being completed for " + query +
+                                          " with selection " + params.getDocumentSelection());
                 session.abort();
-                throw new TimeoutException("Query timed out in " + VdsStreamingSearcher.class.getName());
+                throw new TimeoutException("Query timed out in " + StreamingSearcher.class.getName());
             }
         } finally {
             session.destroy();
@@ -281,7 +275,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         }
 
         if (params.getControlHandler().getResult().code == VisitorControlHandler.CompletionCode.SUCCESS) {
-            log.log(Level.FINE, () -> "VdsVisitor completed successfully for " + query + " with selection " + params.getDocumentSelection());
+            log.log(Level.FINE, () -> "StreamingVisitor completed successfully for " + query + " with selection " + params.getDocumentSelection());
         } else {
             throw new IllegalArgumentException("Query failed: " +
                                                params.getControlHandler().getResult().code + ": " +
@@ -299,7 +293,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         if (m instanceof QueryResultMessage qm) {
             onQueryResult(qm.getResult(), qm.getSummary());
         } else {
-            throw new UnsupportedOperationException("Received unsupported message " + m + ". VdsVisitor can only accept query result messages.");
+            throw new UnsupportedOperationException("Received unsupported message " + m +
+                                                    ". StreamingVisitor can only accept query result messages.");
         }
         ack(token);
     }
@@ -314,38 +309,30 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         handleSummary(summary);
     }
 
-    private void handleSearchResult(SearchResult sr) {
-        final int hitCountTotal = sr.getTotalHitCount();
-        final int hitCount = sr.getHitCount();
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, "Got SearchResult with " + hitCountTotal + " in total and " + hitCount + " hits in real for query with selection " + params.getDocumentSelection());
-        }
+    private void handleSearchResult(SearchResult result) {
+        log.log(Level.FINE, () -> "Got SearchResult with " + result.getTotalHitCount() +
+                                  " in total and " + result.getHitCount() +
+                                  " hits in real for query with selection " + params.getDocumentSelection());
 
-        List<SearchResult.Hit> newHits = new ArrayList<>(hitCount);
-        for (int i = 0; i < hitCount; i++) {
-            SearchResult.Hit hit = sr.getHit(i);
-            newHits.add(hit);
-        }
+        List<SearchResult.Hit> newHits = new ArrayList<>(result.getHitCount());
+        for (int i = 0; i < result.getHitCount(); i++)
+            newHits.add(result.getHit(i));
+
         synchronized (this) {
-            totalHitCount += hitCountTotal;
+            totalHitCount += result.getTotalHitCount();
             hits = ListMerger.mergeIntoArrayList(hits, newHits, query.getOffset() + query.getHits());
         }
 
-        Map<Integer, byte []> newGroupingMap = sr.getGroupingList();
+        Map<Integer, byte[]> newGroupingMap = result.getGroupingList();
         mergeGroupingMaps(newGroupingMap);
     }
 
     private void mergeGroupingMaps(Map<Integer, byte []> newGroupingMap) {
-        if (log.isLoggable(Level.FINEST)) {
-            log.log(Level.FINEST, "mergeGroupingMaps: newGroupingMap = " + newGroupingMap);
-        }
-        for(Integer key : newGroupingMap.keySet()) {
-            byte [] value = newGroupingMap.get(key);
-
+        log.log(Level.FINEST, () -> "mergeGroupingMaps: newGroupingMap = " + newGroupingMap);
+        for (Integer key : newGroupingMap.keySet()) {
+            byte[] value = newGroupingMap.get(key);
+            log.log(Level.FINEST, () ->"Received group with key " + key + " and size " + value.length);
             Grouping newGrouping = new Grouping();
-            if (log.isLoggable(Level.FINEST)) {
-                log.log(Level.FINEST, "Received group with key " + key + " and size " + value.length);
-            }
             BufferSerializer buf = new BufferSerializer( new GrowableByteBuffer(ByteBuffer.wrap(value)) );
             newGrouping.deserialize(buf);
             if (buf.getBuf().hasRemaining()) {
@@ -366,9 +353,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
 
     private void handleSummary(DocumentSummary ds) {
         int summaryCount = ds.getSummaryCount();
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, "Got DocumentSummary with " + summaryCount + " summaries for query with selection " + params.getDocumentSelection());
-        }
+        log.log(Level.FINE, () -> "Got DocumentSummary with " + summaryCount + " summaries for query with selection " +
+                                  params.getDocumentSelection());
         synchronized (summaryMap) {
             for (int i = 0; i < summaryCount; i++) {
                 DocumentSummary.Summary summary = ds.getSummary(i);

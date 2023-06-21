@@ -24,7 +24,7 @@ import com.yahoo.search.ranking.GlobalPhaseRanker;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher;
+import com.yahoo.vespa.streamingvisitors.StreamingSearcher;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
@@ -98,8 +98,8 @@ public class ClusterSearcher extends Searcher {
 
         String uniqueServerId = UUID.randomUUID().toString();
         if (searchClusterConfig.indexingmode() == STREAMING) {
-            server = vdsCluster(uniqueServerId, searchClusterIndex,
-                                searchClusterConfig, docSumParams, documentDbConfig, schemaInfo, access);
+            server = streamingCluster(uniqueServerId, searchClusterIndex,
+                                      searchClusterConfig, docSumParams, documentDbConfig, schemaInfo, access);
             vipStatus.addToRotation(server.getName());
         } else {
             server = searchDispatch(searchClusterIndex, searchClusterName, uniqueServerId,
@@ -136,18 +136,18 @@ public class ClusterSearcher extends Searcher {
         return new FastSearcher(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
     }
 
-    private static VdsStreamingSearcher vdsCluster(String serverId,
-                                                   int searchclusterIndex,
-                                                   QrSearchersConfig.Searchcluster searchClusterConfig,
-                                                   SummaryParameters docSumParams,
-                                                   DocumentdbInfoConfig documentdbInfoConfig,
-                                                   SchemaInfo schemaInfo,
-                                                   VespaDocumentAccess access) {
-        if (searchClusterConfig.searchdef().size() != 1) {
-            throw new IllegalArgumentException("Search clusters in streaming search shall only contain a single schema : " + searchClusterConfig.searchdef());
-        }
+    private static StreamingSearcher streamingCluster(String serverId,
+                                                      int searchclusterIndex,
+                                                      QrSearchersConfig.Searchcluster searchClusterConfig,
+                                                      SummaryParameters docSumParams,
+                                                      DocumentdbInfoConfig documentdbInfoConfig,
+                                                      SchemaInfo schemaInfo,
+                                                      VespaDocumentAccess access) {
+        if (searchClusterConfig.searchdef().size() != 1)
+            throw new IllegalArgumentException("Streaming search clusters can only contain a single schema but got " +
+                                               searchClusterConfig.searchdef());
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
-        VdsStreamingSearcher searcher = new VdsStreamingSearcher(access);
+        StreamingSearcher searcher = new StreamingSearcher(access);
         searcher.setSearchClusterName(searchClusterConfig.rankprofiles().configid());
         searcher.setDocumentType(searchClusterConfig.searchdef(0));
         searcher.setStorageClusterRouteSpec(searchClusterConfig.storagecluster().routespec());

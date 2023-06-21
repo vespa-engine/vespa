@@ -20,15 +20,16 @@ import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
+ * @author Ulf Carlin
  */
-public class VdsVisitorTestCase {
+public class StreamingVisitorTest {
 
     private SearchResult createSR(String docId, double rank) {
         BufferSerializer serializer = new BufferSerializer();
@@ -149,7 +150,7 @@ public class VdsVisitorTestCase {
             queryString.append("&location=").append(qa.location);
         }
         if (qa.sortSpec != null) {
-            queryString.append("&sorting=").append(URLEncoder.encode(qa.sortSpec, "UTF-8"));
+            queryString.append("&sorting=").append(URLEncoder.encode(qa.sortSpec, StandardCharsets.UTF_8));
         }
         if (qa.rankProperties != null) {
             queryString.append("&").append(qa.rankProperties);
@@ -162,7 +163,7 @@ public class VdsVisitorTestCase {
             queryString.append("&streaming.groupname=").append(qa.groupName);
         }
         if (qa.selection != null) {
-            queryString.append("&streaming.selection=").append(URLEncoder.encode(qa.selection, "UTF-8"));
+            queryString.append("&streaming.selection=").append(URLEncoder.encode(qa.selection, StandardCharsets.UTF_8));
         }
         if (qa.from != 0) {
             queryString.append("&streaming.fromtimestamp=").append(qa.from);
@@ -209,7 +210,7 @@ public class VdsVisitorTestCase {
         if (qa.maxBucketsPerVisitor != 0) {
             assertEquals(qa.maxBucketsPerVisitor, params.getMaxBucketsPerVisitor());
         } else {
-            assertEquals(VdsVisitor.MAX_BUCKETS_PER_VISITOR, params.getMaxBucketsPerVisitor());
+            assertEquals(StreamingVisitor.MAX_BUCKETS_PER_VISITOR, params.getMaxBucketsPerVisitor());
         }
 
         // Verify parameters based only on query
@@ -267,17 +268,17 @@ public class VdsVisitorTestCase {
 
     @Test
     void testGetQueryFlags() {
-        assertEquals(0x00028000, VdsVisitor.getQueryFlags(new Query("/?query=test")));
-        assertEquals(0x00028080, VdsVisitor.getQueryFlags(new Query("/?query=test&hitcountestimate=true")));
-        assertEquals(0x00068000, VdsVisitor.getQueryFlags(new Query("/?query=test&rankfeatures=true")));
-        assertEquals(0x00068080, VdsVisitor.getQueryFlags(new Query("/?query=test&hitcountestimate=true&rankfeatures=true")));
+        assertEquals(0x00028000, StreamingVisitor.getQueryFlags(new Query("/?query=test")));
+        assertEquals(0x00028080, StreamingVisitor.getQueryFlags(new Query("/?query=test&hitcountestimate=true")));
+        assertEquals(0x00068000, StreamingVisitor.getQueryFlags(new Query("/?query=test&rankfeatures=true")));
+        assertEquals(0x00068080, StreamingVisitor.getQueryFlags(new Query("/?query=test&hitcountestimate=true&rankfeatures=true")));
 
         Query query = new Query("/?query=test");
-        assertEquals(0x00028000, VdsVisitor.getQueryFlags(query));
+        assertEquals(0x00028000, StreamingVisitor.getQueryFlags(query));
         query.setNoCache(true);
-        assertEquals(0x00038000, VdsVisitor.getQueryFlags(query));
+        assertEquals(0x00038000, StreamingVisitor.getQueryFlags(query));
         query.getRanking().setFreshness("now");
-        assertEquals(0x0003a000, VdsVisitor.getQueryFlags(query));
+        assertEquals(0x0003a000, StreamingVisitor.getQueryFlags(query));
     }
 
     @Test
@@ -321,7 +322,7 @@ public class VdsVisitorTestCase {
     }
 
     private void verifyVisitorOk(MockVisitorSessionFactory factory, QueryArguments qa, Route route, String searchCluster) throws Exception {
-        VdsVisitor visitor = new VdsVisitor(buildQuery(qa), searchCluster, route, "mytype", factory, 0);
+        StreamingVisitor visitor = new StreamingVisitor(buildQuery(qa), searchCluster, route, "mytype", factory, 0);
         visitor.doSearch();
         verifyVisitorParameters(factory.getParams(), qa, searchCluster, "mytype", route);
         supplyResults(visitor);
@@ -329,10 +330,10 @@ public class VdsVisitorTestCase {
     }
 
     private void verifyVisitorFails(MockVisitorSessionFactory factory, QueryArguments qa, Route route, String searchCluster) throws Exception {
-        VdsVisitor visitor = new VdsVisitor(buildQuery(qa), searchCluster, route, "mytype", factory, 0);
+        StreamingVisitor visitor = new StreamingVisitor(buildQuery(qa), searchCluster, route, "mytype", factory, 0);
         try {
             visitor.doSearch();
-            assertTrue(false, "Visitor did not fail");
+            fail("Visitor did not fail");
         } catch (TimeoutException te) {
             assertTrue(factory.timeoutQuery, "Got TimeoutException unexpectedly");
         } catch (IllegalArgumentException iae) {
@@ -340,20 +341,20 @@ public class VdsVisitorTestCase {
         }
     }
 
-    private void supplyResults(VdsVisitor visitor) {
+    private void supplyResults(StreamingVisitor visitor) {
         AckToken ackToken = null;
         visitor.onMessage(createQRM("id:ns:type::0", 0.3), ackToken);
         visitor.onMessage(createQRM("id:ns:type::1", 1.0), ackToken);
         visitor.onMessage(createQRM("id:ns:type::2", 0.5), ackToken);
         try {
             visitor.onMessage(createM(), ackToken);
-            assertTrue(false, "Unsupported message did not cause exception");
+            fail("Unsupported message did not cause exception");
         } catch (UnsupportedOperationException uoe) {
-            assertTrue(uoe.getMessage().contains("VdsVisitor can only accept query result messages"));
+            assertTrue(uoe.getMessage().contains("StreamingVisitor can only accept query result messages"));
         }
     }
 
-    private void verifyResults(QueryArguments qa, VdsVisitor visitor) {
+    private void verifyResults(QueryArguments qa, StreamingVisitor visitor) {
         assertEquals(6, visitor.getTotalHitCount());
         assertEquals(Math.min(3 - qa.offset, qa.hits), visitor.getHits().size());
         assertEquals(3, visitor.getSummaryMap().size());
@@ -373,7 +374,7 @@ public class VdsVisitorTestCase {
                 assertEquals("id:ns:type::0", hit.getDocId());
                 assertEquals(0.3, hit.getRank(), 0.01);
             } else {
-                assertTrue(false, "Got too many hits");
+                fail("Got too many hits");
             }
             DocumentSummary.Summary summary = visitor.getSummaryMap().get(hit.getDocId());
             assertNotNull(summary, "Did not find summary for " + hit.getDocId());
@@ -381,9 +382,10 @@ public class VdsVisitorTestCase {
     }
 
     private static class MockVisitorSession implements VisitorSession {
-        private VisitorParameters params;
-        private boolean timeoutQuery = false;
-        private boolean failQuery = false;
+
+        private final VisitorParameters params;
+        private final boolean timeoutQuery;
+        private final boolean failQuery;
 
         public MockVisitorSession(VisitorParameters params, boolean timeoutQuery, boolean failQuery) {
             this.params = params;
@@ -444,7 +446,8 @@ public class VdsVisitorTestCase {
         }
     }
 
-    private static class MockVisitorSessionFactory implements VdsVisitor.VisitorSessionFactory {
+    private static class MockVisitorSessionFactory implements StreamingVisitor.VisitorSessionFactory {
+
         private VisitorParameters params;
         private boolean timeoutQuery = false;
         private boolean failQuery = false;

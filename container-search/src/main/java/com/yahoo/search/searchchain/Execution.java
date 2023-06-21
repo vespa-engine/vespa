@@ -471,7 +471,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
      */
     @SuppressWarnings("unchecked")
     private Execution(Chain<? extends Processor> searchChain, Context context, int searcherIndex) {
-        // Create a new Execution which is placed in the context of the execution of the given Context if any
+        // Create a new Execution which is placed in the context of the execution of the given Context if any.
         // "if any" because a context may, or may not, belong to an execution.
         // This is decided at the creation time of the Context - Context instances which do not belong
         // to an execution plays the role of data carriers between executions.

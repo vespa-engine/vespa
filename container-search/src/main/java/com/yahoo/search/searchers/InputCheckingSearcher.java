@@ -44,7 +44,7 @@ public class InputCheckingSearcher extends Searcher {
     private final Counter repeatedTermsInPhraseRejections;
     private static final Logger log = Logger.getLogger(InputCheckingSearcher.class.getName());
     private final int MAX_REPEATED_CONSECUTIVE_TERMS_IN_PHRASE = 5;
-    private final int MAX_REPEATED_TERMS_IN_PHRASE=10;
+    private final int MAX_REPEATED_TERMS_IN_PHRASE = 10;
 
     public InputCheckingSearcher(MetricReceiver metrics) {
         utfRejections = metrics.declareCounter("double_encoded_utf8_rejections");
@@ -70,12 +70,10 @@ public class InputCheckingSearcher extends Searcher {
     }
 
     private void checkPhrases(Item queryItem) {
-        if (queryItem instanceof PhraseItem) {
-            PhraseItem phrase = (PhraseItem) queryItem;
+        if (queryItem instanceof PhraseItem phrase) {
             repeatedConsecutiveTermsInPhraseCheck(phrase);
             repeatedTermsInPhraseCheck(phrase);
-        } else  if (queryItem instanceof CompositeItem) {
-            CompositeItem asComposite = (CompositeItem) queryItem;
+        } else  if (queryItem instanceof CompositeItem asComposite) {
             for (ListIterator<Item> i = asComposite.getItemIterator(); i.hasNext();) {
                 checkPhrases(i.next());
             }
@@ -88,8 +86,7 @@ public class InputCheckingSearcher extends Searcher {
             int repeatedCount = 0;
             for (int i = 0; i < phrase.getItemCount(); ++i) {
                 Item item = phrase.getItem(i);
-                if (item instanceof TermItem) {
-                    TermItem term = (TermItem) item;
+                if (item instanceof TermItem term) {
                     String current = term.getIndexedString();
                     if (prev != null) {
                         if (prev.equals(current)) {
@@ -123,8 +120,7 @@ public class InputCheckingSearcher extends Searcher {
             Map<String, Count> repeatedCount = new HashMap<>();
             for (int i = 0; i < phrase.getItemCount(); ++i) {
                 Item item = phrase.getItem(i);
-                if (item instanceof TermItem) {
-                    TermItem term = (TermItem) item;
+                if (item instanceof TermItem term) {
                     String current = term.getIndexedString();
                     Count count = repeatedCount.get(current);
                     if (count != null) {
@@ -179,15 +175,13 @@ public class InputCheckingSearcher extends Searcher {
     }
 
     private int countSingleCharacterUserTerms(Item queryItem) {
-        if (queryItem instanceof CompositeItem) {
+        if (queryItem instanceof CompositeItem asComposite) {
             int sum = 0;
-            CompositeItem asComposite = (CompositeItem) queryItem;
             for (ListIterator<Item> i = asComposite.getItemIterator(); i.hasNext();) {
                 sum += countSingleCharacterUserTerms(i.next());
             }
             return sum;
-        } else if (queryItem instanceof WordItem) {
-            WordItem word = (WordItem) queryItem;
+        } else if (queryItem instanceof WordItem word) {
             return (word.isFromQuery() && word.stringValue().length() == 1) ? 1 : 0;
         } else {
             return 0;
