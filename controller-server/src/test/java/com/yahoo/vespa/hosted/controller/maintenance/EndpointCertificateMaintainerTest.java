@@ -16,6 +16,8 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -52,23 +54,23 @@ public class EndpointCertificateMaintainerTest {
 
     @Test
     void old_and_unused_cert_is_deleted() {
-        tester.curator().writeEndpointCertificateMetadata(ApplicationId.defaultId(), exampleMetadata);
+        tester.curator().writeAssignedCertificate(assignedCertificate(ApplicationId.defaultId(), exampleMetadata));
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
-        assertTrue(tester.curator().readEndpointCertificateMetadata(ApplicationId.defaultId()).isEmpty());
+        assertTrue(tester.curator().readAssignedCertificate(ApplicationId.defaultId()).isEmpty());
     }
 
     @Test
     void unused_but_recently_used_cert_is_not_deleted() {
         EndpointCertificateMetadata recentlyRequestedCert = exampleMetadata.withLastRequested(tester.clock().instant().minusSeconds(3600).getEpochSecond());
-        tester.curator().writeEndpointCertificateMetadata(ApplicationId.defaultId(), recentlyRequestedCert);
+        tester.curator().writeAssignedCertificate(assignedCertificate(ApplicationId.defaultId(), recentlyRequestedCert));
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
-        assertEquals(Optional.of(recentlyRequestedCert), tester.curator().readEndpointCertificateMetadata(ApplicationId.defaultId()));
+        assertEquals(Optional.of(recentlyRequestedCert), tester.curator().readAssignedCertificate(ApplicationId.defaultId()).map(AssignedCertificate::certificate));
     }
 
     @Test
     void refreshed_certificate_is_updated() {
         EndpointCertificateMetadata recentlyRequestedCert = exampleMetadata.withLastRequested(tester.clock().instant().minusSeconds(3600).getEpochSecond());
-        tester.curator().writeEndpointCertificateMetadata(ApplicationId.defaultId(), recentlyRequestedCert);
+        tester.curator().writeAssignedCertificate(assignedCertificate(ApplicationId.defaultId(), recentlyRequestedCert));
 
         secretStore.setSecret(exampleMetadata.keyName(), "foo", 1);
         secretStore.setSecret(exampleMetadata.certName(), "bar", 1);
@@ -77,7 +79,7 @@ public class EndpointCertificateMaintainerTest {
 
         var updatedCert = Optional.of(recentlyRequestedCert.withLastRefreshed(tester.clock().instant().getEpochSecond()).withVersion(1));
 
-        assertEquals(updatedCert, tester.curator().readEndpointCertificateMetadata(ApplicationId.defaultId()));
+        assertEquals(updatedCert, tester.curator().readAssignedCertificate(ApplicationId.defaultId()).map(AssignedCertificate::certificate));
     }
 
     @Test
@@ -95,7 +97,7 @@ public class EndpointCertificateMaintainerTest {
         deploymentContext.submit(applicationPackage).runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1);
 
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
-        var metadata = tester.curator().readEndpointCertificateMetadata(appId).orElseThrow();
+        var metadata = tester.curator().readAssignedCertificate(appId).orElseThrow().certificate();
         tester.controller().serviceRegistry().endpointCertificateProvider().certificateDetails(metadata.rootRequestId()); // cert should not be deleted, the app is deployed!
     }
 
@@ -111,24 +113,24 @@ public class EndpointCertificateMaintainerTest {
 
         DeploymentContext deploymentContext = deploymentTester.newDeploymentContext("tenant", "application", "default");
         deploymentContext.submit(applicationPackage).runJob(systemTest).runJob(stagingTest).runJob(productionUsWest1);
-        var originalMetadata = tester.curator().readEndpointCertificateMetadata(appId).orElseThrow();
+        var assignedCertificate = tester.curator().readAssignedCertificate(appId).orElseThrow();
 
         // cert should not be deleted, the app is deployed!
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
-        assertEquals(tester.curator().readEndpointCertificateMetadata(appId), Optional.of(originalMetadata));
-        tester.controller().serviceRegistry().endpointCertificateProvider().certificateDetails(originalMetadata.rootRequestId());
+        assertEquals(tester.curator().readAssignedCertificate(appId), Optional.of(assignedCertificate));
+        tester.controller().serviceRegistry().endpointCertificateProvider().certificateDetails(assignedCertificate.certificate().rootRequestId());
 
         // This simulates a cert refresh performed 3 days later
         tester.clock().advance(Duration.ofDays(3));
-        secretStore.setSecret(originalMetadata.keyName(), "foo", 1);
-        secretStore.setSecret(originalMetadata.certName(), "bar", 1);
-        tester.controller().serviceRegistry().endpointCertificateProvider().requestCaSignedCertificate(appId.toFullString(), originalMetadata.requestedDnsSans(), Optional.of(originalMetadata), "rsa_2048", false);
+        secretStore.setSecret(assignedCertificate.certificate().keyName(), "foo", 1);
+        secretStore.setSecret(assignedCertificate.certificate().certName(), "bar", 1);
+        tester.controller().serviceRegistry().endpointCertificateProvider().requestCaSignedCertificate(appId.toFullString(), assignedCertificate.certificate().requestedDnsSans(), Optional.of(assignedCertificate.certificate()), "rsa_2048", false);
         // We should now pick up the new key and cert version + uuid, but not force trigger deployment yet
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
         deploymentContext.assertNotRunning(productionUsWest1);
-        var updatedMetadata = tester.curator().readEndpointCertificateMetadata(appId).orElseThrow();
-        assertNotEquals(originalMetadata.leafRequestId().orElseThrow(), updatedMetadata.leafRequestId().orElseThrow());
-        assertEquals(updatedMetadata.version(), originalMetadata.version() + 1);
+        var updatedMetadata = tester.curator().readAssignedCertificate(appId).orElseThrow().certificate();
+        assertNotEquals(assignedCertificate.certificate().leafRequestId().orElseThrow(), updatedMetadata.leafRequestId().orElseThrow());
+        assertEquals(updatedMetadata.version(), assignedCertificate.certificate().version() + 1);
 
         // after another 4 days, we should force trigger deployment if it hasn't already happened
         tester.clock().advance(Duration.ofDays(4).plusSeconds(1));
@@ -175,4 +177,9 @@ public class EndpointCertificateMaintainerTest {
 
         assertNotEquals(List.of(), endpointCertificateProvider.listCertificates());
     }
+
+    private static AssignedCertificate assignedCertificate(ApplicationId instance, EndpointCertificateMetadata certificate) {
+        return new AssignedCertificate(TenantAndApplicationId.from(instance), Optional.of(instance.instance()), certificate);
+    }
+
 }

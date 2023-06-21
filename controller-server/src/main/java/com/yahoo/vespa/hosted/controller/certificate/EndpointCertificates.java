@@ -105,11 +105,11 @@ public class EndpointCertificates {
         // certificate because application endpoints can span instances
         Optional<InstanceName> instanceName = zone.environment().isManuallyDeployed() ? Optional.of(instance.name()) : Optional.empty();
         TenantAndApplicationId application = TenantAndApplicationId.from(instance.id());
-        Optional<EndpointCertificateMetadata> currentCertificateMetadata = curator.readEndpointCertificateMetadata(application, instanceName);
-        if (currentCertificateMetadata.isPresent()) {
-            EndpointCertificateMetadata updated = currentCertificateMetadata.get().withLastRequested(clock.instant().getEpochSecond());
-            curator.writeEndpointCertificateMetadata(instance.id(), updated);
-            return updated;
+        Optional<AssignedCertificate> assignedCertificate = curator.readAssignedCertificate(application, instanceName);
+        if (assignedCertificate.isPresent()) {
+            AssignedCertificate updated = assignedCertificate.get().with(assignedCertificate.get().certificate().withLastRequested(clock.instant().getEpochSecond()));
+            curator.writeAssignedCertificate(updated);
+            return updated.certificate();
         }
         try (Mutex lock = controller.curator().lockCertificatePool()) {
             Optional<UnassignedCertificate> candidate = curator.readUnassignedCertificates().stream()
@@ -120,8 +120,8 @@ public class EndpointCertificates {
             }
             try (NestedTransaction transaction = new NestedTransaction()) {
                 curator.removeUnassignedCertificate(candidate.get(), transaction);
-                curator.writeEndpointCertificateMetadata(application, instanceName,
-                                                         candidate.get().certificate(), transaction);
+                curator.writeAssignedCertificate(new AssignedCertificate(application, instanceName, candidate.get().certificate()),
+                                                 transaction);
                 transaction.commit();
                 return candidate.get().certificate();
             }
@@ -132,22 +132,24 @@ public class EndpointCertificates {
         if (useRandomizedCert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().toFullString()).value()) {
             return Optional.of(assignFromPool(instance, zone));
         }
-        Optional<EndpointCertificateMetadata> currentCertificateMetadata = curator.readEndpointCertificateMetadata(TenantAndApplicationId.from(instance.id()), Optional.of(instance.id().instance()));
+        Optional<AssignedCertificate> assignedCertificate = curator.readAssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.of(instance.id().instance()));
         DeploymentId deployment = new DeploymentId(instance.id(), zone);
 
-        if (currentCertificateMetadata.isEmpty()) {
+        if (assignedCertificate.isEmpty()) {
             var provisionedCertificateMetadata = provisionEndpointCertificate(deployment, Optional.empty(), deploymentSpec);
             // We do not verify the certificate if one has never existed before - because we do not want to
             // wait for it to be available before we deploy. This allows the config server to start
             // provisioning nodes ASAP, and the risk is small for a new deployment.
-            curator.writeEndpointCertificateMetadata(instance.id(), provisionedCertificateMetadata);
+            curator.writeAssignedCertificate(new AssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.of(instance.id().instance()), provisionedCertificateMetadata));
             return Optional.of(provisionedCertificateMetadata);
         } else {
-            curator.writeEndpointCertificateMetadata(instance.id(), currentCertificateMetadata.get().withLastRequested(clock.instant().getEpochSecond()));
+            AssignedCertificate updated = assignedCertificate.get().with(assignedCertificate.get().certificate().withLastRequested(clock.instant().getEpochSecond()));
+            curator.writeAssignedCertificate(updated);
         }
 
         // Re-provision certificate if it is missing SANs for the zone we are deploying to
         // Skip this validation for now if the cert has a randomized id
+        Optional<EndpointCertificateMetadata> currentCertificateMetadata = assignedCertificate.map(AssignedCertificate::certificate);
         var requiredSansForZone = currentCertificateMetadata.get().randomizedId().isEmpty() ?
                 controller.routing().certificateDnsNames(deployment, deploymentSpec) :
                 List.<String>of();
@@ -156,7 +158,7 @@ public class EndpointCertificates {
             var reprovisionedCertificateMetadata =
                     provisionEndpointCertificate(deployment, currentCertificateMetadata, deploymentSpec)
                             .withRootRequestId(currentCertificateMetadata.get().rootRequestId()); // We're required to keep the original request ID
-            curator.writeEndpointCertificateMetadata(instance.id(), reprovisionedCertificateMetadata);
+            curator.writeAssignedCertificate(assignedCertificate.get().with(reprovisionedCertificateMetadata));
             // Verification is unlikely to succeed in this case, as certificate must be available first - controller will retry
             certificateValidator.validate(reprovisionedCertificateMetadata, instance.id().serializedForm(), zone, requiredSansForZone);
             return Optional.of(reprovisionedCertificateMetadata);

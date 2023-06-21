@@ -94,15 +94,19 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                         .withLastRefreshed(clock.instant().getEpochSecond());
 
                 try (Mutex lock = lock(assignedCertificate.application())) {
-                    if (Optional.of(assignedCertificate.certificate()).equals(curator.readEndpointCertificateMetadata(assignedCertificate.application(), assignedCertificate.instance()))) {
+                    if (unchanged(assignedCertificate, lock)) {
                         try (NestedTransaction transaction = new NestedTransaction()) {
-                            curator.writeEndpointCertificateMetadata(assignedCertificate.application(), assignedCertificate.instance(), refreshedCertificateMetadata, transaction); // Certificate not validated here, but on deploy.
+                            curator.writeAssignedCertificate(assignedCertificate.with(refreshedCertificateMetadata), transaction); // Certificate not validated here, but on deploy.
                             transaction.commit();
                         }
                     }
                 }
             }
         });
+    }
+
+    private boolean unchanged(AssignedCertificate assignedCertificate, @SuppressWarnings("unused") Mutex lock) {
+        return Optional.of(assignedCertificate).equals(curator.readAssignedCertificate(assignedCertificate.application(), assignedCertificate.instance()));
     }
 
     record EligibleJob(Deployment deployment, ApplicationId applicationId, JobType job) {}
@@ -169,11 +173,11 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
             var lastRequested = Instant.ofEpochSecond(certificate.lastRequested());
             if (lastRequested.isBefore(oneMonthAgo) && hasNoDeployments(assignedCertificate.application())) {
                 try (Mutex lock = lock(assignedCertificate.application())) {
-                    if (Optional.of(certificate).equals(curator.readEndpointCertificateMetadata(assignedCertificate.application(), assignedCertificate.instance()))) {
+                    if (unchanged(assignedCertificate, lock)) {
                         log.log(Level.INFO, "Cert for app " + asString(assignedCertificate.application(), assignedCertificate.instance())
                                 + " has not been requested in a month and app has no deployments, deleting from provider, ZK and secret store");
                         endpointCertificateProvider.deleteCertificate(certificate.rootRequestId());
-                        curator.deleteEndpointCertificateMetadata(assignedCertificate.application(), assignedCertificate.instance());
+                        curator.removeAssignedCertificate(assignedCertificate.application(), assignedCertificate.instance());
                         endpointSecretManager.deleteSecret(certificate.certName());
                         endpointSecretManager.deleteSecret(certificate.keyName());
                     }
@@ -218,15 +222,15 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                 EndpointCertificateDetails unknownCertDetails = endpointCertificateProvider.certificateDetails(providerCertificateMetadata.requestId());
                 boolean matchFound = false;
                 for (AssignedCertificate assignedCertificate : assignedCertificates) {
-                    EndpointCertificateMetadata storedAppMetadata = assignedCertificate.certificate();
-                    if (storedAppMetadata.certName().equals(unknownCertDetails.cert_key_keyname())) {
+                    if (assignedCertificate.certificate().certName().equals(unknownCertDetails.cert_key_keyname())) {
                         matchFound = true;
                         try (Mutex lock = lock(assignedCertificate.application())) {
-                            if (Optional.of(storedAppMetadata).equals(curator.readEndpointCertificateMetadata(assignedCertificate.application(), assignedCertificate.instance()))) {
+                            if (unchanged(assignedCertificate, lock)) {
                                 log.log(Level.INFO, "Cert for app " + asString(assignedCertificate.application(), assignedCertificate.instance())
                                         + " has a new leafRequestId " + unknownCertDetails.request_id() + ", updating in ZK");
                                 try (NestedTransaction transaction = new NestedTransaction()) {
-                                    curator.writeEndpointCertificateMetadata(assignedCertificate.application(), assignedCertificate.instance(), storedAppMetadata.withLeafRequestId(Optional.of(unknownCertDetails.request_id())), transaction);
+                                    EndpointCertificateMetadata updated = assignedCertificate.certificate().withLeafRequestId(Optional.of(unknownCertDetails.request_id()));
+                                    curator.writeAssignedCertificate(assignedCertificate.with(updated), transaction);
                                     transaction.commit();
                                 }
                             }

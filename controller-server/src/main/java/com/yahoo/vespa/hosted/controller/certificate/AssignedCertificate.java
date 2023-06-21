@@ -16,4 +16,9 @@ import java.util.Optional;
 public record AssignedCertificate(TenantAndApplicationId application,
                                   Optional<InstanceName> instance,
                                   EndpointCertificateMetadata certificate) {
+
+    public AssignedCertificate with(EndpointCertificateMetadata certificate) {
+        return new AssignedCertificate(application, instance, certificate);
+    }
+
 }

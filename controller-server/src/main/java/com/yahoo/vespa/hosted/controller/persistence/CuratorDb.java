@@ -25,8 +25,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBuckets;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
-import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -35,6 +33,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
+import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntry;
 import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntrySerializer;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -609,37 +608,34 @@ public class CuratorDb {
 
     // -------------- Application endpoint certificates ----------------------------
 
-    public void writeEndpointCertificateMetadata(ApplicationId instance, EndpointCertificateMetadata endpointCertificateMetadata) {
+    public void writeAssignedCertificate(AssignedCertificate certificate) {
         try (NestedTransaction transaction = new NestedTransaction()) {
-            writeEndpointCertificateMetadata(TenantAndApplicationId.from(instance),
-                                             Optional.of(instance.instance()),
-                                             endpointCertificateMetadata,
-                                             transaction);
+            writeAssignedCertificate(certificate, transaction);
             transaction.commit();
         }
     }
 
-    public void writeEndpointCertificateMetadata(TenantAndApplicationId application, Optional<InstanceName> instance,
-                                                 EndpointCertificateMetadata endpointCertificateMetadata,
-                                                 NestedTransaction transaction) {
-        Path path = endpointCertificatePath(application, instance);
+    public void writeAssignedCertificate(AssignedCertificate certificate, NestedTransaction transaction) {
+        Path path = endpointCertificatePath(certificate.application(), certificate.instance());
         curator.create(path);
         CuratorOperation operation = CuratorOperations.setData(path.getAbsolute(),
-                                                               asJson(EndpointCertificateMetadataSerializer.toSlime(endpointCertificateMetadata)));
+                                                               asJson(EndpointCertificateMetadataSerializer.toSlime(certificate.certificate())));
         transaction.add(CuratorTransaction.from(operation, curator));
     }
 
-    public void deleteEndpointCertificateMetadata(TenantAndApplicationId application, Optional<InstanceName> instanceName) {
+    public void removeAssignedCertificate(TenantAndApplicationId application, Optional<InstanceName> instanceName) {
         curator.delete(endpointCertificatePath(application, instanceName));
     }
 
     // TODO(mpolden): Remove this. Caller should make an explicit decision to read certificate for a particular instance
-    public Optional<EndpointCertificateMetadata> readEndpointCertificateMetadata(ApplicationId applicationId) {
-        return readEndpointCertificateMetadata(TenantAndApplicationId.from(applicationId), Optional.of(applicationId.instance()));
+    public Optional<AssignedCertificate> readAssignedCertificate(ApplicationId applicationId) {
+        return readAssignedCertificate(TenantAndApplicationId.from(applicationId), Optional.of(applicationId.instance()));
     }
 
-    public Optional<EndpointCertificateMetadata> readEndpointCertificateMetadata(TenantAndApplicationId application, Optional<InstanceName> instance) {
-        return readSlime(endpointCertificatePath(application, instance)).map(Slime::get).map(EndpointCertificateMetadataSerializer::fromSlime);
+    public Optional<AssignedCertificate> readAssignedCertificate(TenantAndApplicationId application, Optional<InstanceName> instance) {
+        return readSlime(endpointCertificatePath(application, instance)).map(Slime::get)
+                                                                        .map(EndpointCertificateMetadataSerializer::fromSlime)
+                                                                        .map(cert -> new AssignedCertificate(application, instance, cert));
     }
 
     public List<AssignedCertificate> readAssignedCertificates() {
@@ -655,9 +651,9 @@ public class CuratorDb {
                 application = TenantAndApplicationId.fromSerialized(value);
                 instanceName = Optional.empty();
             }
-            Optional<EndpointCertificateMetadata> certificate = readEndpointCertificateMetadata(application, instanceName);
-            if (certificate.isEmpty()) continue; // Deleted while reading
-            certificates.add(new AssignedCertificate(application, instanceName, certificate.get()));
+            Optional<AssignedCertificate> assigned = readAssignedCertificate(application, instanceName);
+            if (assigned.isEmpty()) continue; // Deleted while reading
+            certificates.add(assigned.get());
         }
         return certificates;
     }
@@ -873,12 +869,8 @@ public class CuratorDb {
         return controllerRoot.append(hostname);
     }
 
-    private static Path endpointCertificatePath(ApplicationId instance) {
-        return endpointCertificatePath(TenantAndApplicationId.from(instance), Optional.of(instance.instance()));
-    }
-
     private static Path endpointCertificatePath(TenantAndApplicationId application, Optional<InstanceName> instance) {
-        String id = instance.map(i -> application.instance(i).serializedForm())
+        String id = instance.map(name -> application.instance(name).serializedForm())
                             .orElseGet(application::serialized);
         return endpointCertificateRoot.append(id);
     }

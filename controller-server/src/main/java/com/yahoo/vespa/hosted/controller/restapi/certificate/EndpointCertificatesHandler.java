@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.EndpointCertificateMetadataSerializer;
 
@@ -77,21 +78,21 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
             throw new IllegalArgumentException("Cannot re-request certificate. " + instanceId + " is assigned certificate from a pool");
         }
         try (var lock = curator.lock(TenantAndApplicationId.from(applicationId))) {
-            EndpointCertificateMetadata endpointCertificateMetadata = curator.readEndpointCertificateMetadata(applicationId)
-                    .orElseThrow(() -> new RestApiException.NotFound("No certificate found for application " + applicationId.serializedForm()));
+            AssignedCertificate assignedCertificate = curator.readAssignedCertificate(applicationId)
+                                                             .orElseThrow(() -> new RestApiException.NotFound("No certificate found for application " + applicationId.serializedForm()));
 
             String algo = this.endpointCertificateAlgo.with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             boolean useAlternativeProvider = useAlternateCertProvider.with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             String keyPrefix = applicationId.toFullString();
 
             EndpointCertificateMetadata reRequestedMetadata = endpointCertificateProvider.requestCaSignedCertificate(
-                    keyPrefix, endpointCertificateMetadata.requestedDnsSans(),
+                    keyPrefix, assignedCertificate.certificate().requestedDnsSans(),
                     ignoreExistingMetadata ?
                             Optional.empty() :
-                            Optional.of(endpointCertificateMetadata),
+                            Optional.of(assignedCertificate.certificate()),
                     algo, useAlternativeProvider);
 
-            curator.writeEndpointCertificateMetadata(applicationId, reRequestedMetadata);
+            curator.writeAssignedCertificate(assignedCertificate.with(reRequestedMetadata));
 
             return new StringResponse(EndpointCertificateMetadataSerializer.toSlime(reRequestedMetadata).toString());
         }
