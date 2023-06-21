@@ -47,6 +47,21 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
     }
 
     @Override
+    public EndpointCertificateMetadata requestCaSignedCertificate(String key, List<String> dnsNames, Optional<EndpointCertificateMetadata> currentMetadata, String algo, boolean useAlternativeProvider) {
+        this.dnsNames.put(ApplicationId.defaultId(), dnsNames);
+        String endpointCertificatePrefix = "vespa.tls.preprovisioned.key";
+        long epochSecond = Instant.now().getEpochSecond();
+        long inAnHour = epochSecond + 3600;
+        String requestId = UUID.randomUUID().toString();
+        int version = currentMetadata.map(c -> currentMetadata.get().version()+1).orElse(0);
+        EndpointCertificateMetadata metadata = new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", version, 0,
+                currentMetadata.map(EndpointCertificateMetadata::rootRequestId).orElse(requestId), Optional.of(requestId), dnsNames, "mockCa", Optional.of(inAnHour), Optional.of(epochSecond), Optional.empty());
+        currentMetadata.ifPresent(c -> providerMetadata.remove(c.leafRequestId().orElseThrow()));
+        providerMetadata.put(requestId, metadata);
+        return metadata;
+    }
+
+    @Override
     public List<EndpointCertificateRequestMetadata> listCertificates() {
 
         return providerMetadata.values().stream()

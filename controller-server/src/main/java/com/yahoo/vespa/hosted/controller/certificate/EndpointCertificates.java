@@ -10,6 +10,8 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -53,11 +55,15 @@ public class EndpointCertificates {
     private final EndpointCertificateProvider certificateProvider;
     private final EndpointCertificateValidator certificateValidator;
     private final BooleanFlag useRandomizedCert;
+    private final BooleanFlag useAlternateCertProvider;
+    private final StringFlag endpointCertificateAlgo;
 
     public EndpointCertificates(Controller controller, EndpointCertificateProvider certificateProvider,
                                 EndpointCertificateValidator certificateValidator) {
         this.controller = controller;
         this.useRandomizedCert = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
+        this.useAlternateCertProvider = PermanentFlags.USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER.bindTo(controller.flagSource());
+        this.endpointCertificateAlgo = PermanentFlags.ENDPOINT_CERTIFICATE_ALGORITHM.bindTo(controller.flagSource());
         this.curator = controller.curator();
         this.clock = controller.clock();
         this.certificateProvider = certificateProvider;
@@ -173,7 +179,15 @@ public class EndpointCertificates {
                      .filter(currentNames::containsAll)
                      .forEach(requiredNames::addAll);
 
-        return certificateProvider.requestCaSignedCertificate(deployment.applicationId(), List.copyOf(requiredNames), currentMetadata);
+        log.log(Level.INFO, String.format("Requesting new endpoint certificate from Cameo for application %s", deployment.applicationId().serializedForm()));
+        String algo = this.endpointCertificateAlgo.with(FetchVector.Dimension.APPLICATION_ID, deployment.applicationId().serializedForm()).value();
+        boolean useAlternativeProvider = useAlternateCertProvider.with(FetchVector.Dimension.APPLICATION_ID, deployment.applicationId().serializedForm()).value();
+        String keyPrefix = deployment.applicationId().serializedForm();
+        var t0 = Instant.now();
+        EndpointCertificateMetadata endpointCertificateMetadata = certificateProvider.requestCaSignedCertificate(keyPrefix, List.copyOf(requiredNames), currentMetadata, algo, useAlternativeProvider);
+        var t1 = Instant.now();
+        log.log(Level.INFO, String.format("Endpoint certificate request for application %s returned after %s", deployment.applicationId().serializedForm(), Duration.between(t0, t1)));
+        return endpointCertificateMetadata;
     }
 
 }

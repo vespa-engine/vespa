@@ -1,14 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
@@ -44,12 +46,16 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
     private final Controller controller;
     private final IntFlag certPoolSize;
     private final String dnsSuffix;
+    private final StringFlag endpointCertificateAlgo;
+    private final BooleanFlag useAlternateCertProvider;
 
     public CertificatePoolMaintainer(Controller controller, Metric metric, Duration interval, RandomGenerator random) {
         super(controller, interval, null, Set.of(SystemName.Public, SystemName.PublicCd));
         this.controller = controller;
         this.secretStore = controller.secretStore();
         this.certPoolSize = Flags.CERT_POOL_SIZE.bindTo(controller.flagSource());
+        this.useAlternateCertProvider = PermanentFlags.USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER.bindTo(controller.flagSource());
+        this.endpointCertificateAlgo = PermanentFlags.ENDPOINT_CERTIFICATE_ALGORITHM.bindTo(controller.flagSource());
         this.curator = controller.curator();
         this.endpointCertificateProvider = controller.serviceRegistry().endpointCertificateProvider();
         this.metric = metric;
@@ -104,13 +110,15 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
             while (existingNames.contains(id)) id = generateRandomId();
 
             EndpointCertificateMetadata f = endpointCertificateProvider.requestCaSignedCertificate(
-                            ApplicationId.from("randomized", "endpoint", id), // TODO andreer: remove applicationId from this interface
+                            "preprovisioned.%s".formatted(id),
                             List.of(
                                     "*.%s.z%s".formatted(id, dnsSuffix),
                                     "*.%s.g%s".formatted(id, dnsSuffix),
                                     "*.%s.a%s".formatted(id, dnsSuffix)
                             ),
-                            Optional.empty())
+                            Optional.empty(),
+                            endpointCertificateAlgo.value(),
+                            useAlternateCertProvider.value())
                     .withRandomizedId(id);
 
             PooledCertificate certificate = new PooledCertificate(f, PooledCertificate.State.requested);

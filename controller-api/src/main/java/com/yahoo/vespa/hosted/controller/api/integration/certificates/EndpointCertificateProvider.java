@@ -16,6 +16,8 @@ public interface EndpointCertificateProvider  {
 
     EndpointCertificateMetadata requestCaSignedCertificate(ApplicationId applicationId, List<String> dnsNames, Optional<EndpointCertificateMetadata> currentMetadata);
 
+    EndpointCertificateMetadata requestCaSignedCertificate(String endpointCertificatePrefix, List<String> dnsNames, Optional<EndpointCertificateMetadata> currentMetadata, String algo, boolean useAlternativeProvider);
+
     List<EndpointCertificateRequestMetadata> listCertificates();
 
     void deleteCertificate(ApplicationId applicationId, String requestId);
