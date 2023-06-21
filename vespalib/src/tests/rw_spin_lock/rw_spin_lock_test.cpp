@@ -187,7 +187,7 @@ BenchmarkResult benchmark_ns(auto &&work, size_t num_threads = 1) {
         }
         return result;
     };
-    return Nexus(num_threads).run(entry);
+    return Nexus::run(num_threads, entry);
 }
 
 //-----------------------------------------------------------------------------
@@ -283,7 +283,7 @@ void benchmark_lock() {
         for (size_t num_threads: {8, 4, 2, 1}) {
             if (bench || (bp == 9999 && num_threads == 8)) {
                 Meets meets(num_threads);
-                Nexus(num_threads).run([&](Nexus &ctx) {
+                Nexus::run(num_threads, [&](Nexus &ctx) {
                     thread_safety_loop(ctx, *lock, *state, meets, bp);
                 });
             }

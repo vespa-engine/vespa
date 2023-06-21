@@ -11,10 +11,9 @@ TEST(NexusTest, run_void_tasks) {
     auto task = [&value](Nexus &) {
                     value.fetch_add(1, std::memory_order_relaxed);
                 };
-    Nexus ctx(10);
-    ctx.run(task);
+    Nexus::run(10, task);
     EXPECT_EQ(value, 10);
-    ctx.run(task);
+    Nexus::run(10, task);
     EXPECT_EQ(value, 20);
 }
 
@@ -24,8 +23,7 @@ TEST(NexusTest, run_value_tasks_select_thread_0) {
                     value.fetch_add(1, std::memory_order_relaxed);
                     return ctx.thread_id() + 5;
                 };
-    Nexus ctx(10);
-    EXPECT_EQ(ctx.run(task), 5);
+    EXPECT_EQ(Nexus::run(10, task), 5);
     EXPECT_EQ(value, 10);
 }
 
@@ -34,8 +32,7 @@ TEST(NexusTest, run_value_tasks_merge_results) {
     auto task = [&value](Nexus &) {
                     return value.fetch_add(1, std::memory_order_relaxed) + 1;
                 };
-    Nexus ctx(10);
-    EXPECT_EQ(ctx.run(task, Nexus::merge_sum()), 55);
+    EXPECT_EQ(Nexus::run(10, task, Nexus::merge_sum()), 55);
     EXPECT_EQ(value, 10);
 }
 
@@ -46,25 +43,23 @@ TEST(NexusTest, run_inline_voted_loop) {
     // continue. After 4 iterations, threads 0,1,2,3,4 vote to exit
     // while threads 5,6,7,8 vote to continue. The result is that all
     // threads end up doing the loop exactly 4 times.
-    auto res = Nexus(9).run([](Nexus &ctx) {
-                                size_t times = 0;
-                                for (size_t i = 0; ctx.vote(i < ctx.thread_id()); ++i) {
-                                    ++times;
-                                }
-                                return times;
-                            }, [](auto a, auto b){ EXPECT_EQ(a, b); return a; });
+    auto res = Nexus::run(9, [](Nexus &ctx) {
+                                 size_t times = 0;
+                                 for (size_t i = 0; ctx.vote(i < ctx.thread_id()); ++i) {
+                                     ++times;
+                                 }
+                                 return times;
+                             }, [](auto a, auto b){ EXPECT_EQ(a, b); return a; });
     EXPECT_EQ(res, 4);
 }
 
 TEST(NexusTest, run_return_type_decay) {
     int value = 3;
     auto task = [&](Nexus &)->int&{ return value; };
-    Nexus ctx(3);
-    auto res = ctx.run(task);
+    auto res = Nexus::run(3, task);
     EXPECT_EQ(res, 3);
-    EXPECT_EQ(std::addressof(value), std::addressof(task(ctx)));
-    using task_res_t = decltype(task(ctx));
-    using run_res_t = decltype(ctx.run(task));
+    using task_res_t = decltype(task(std::declval<Nexus&>()));
+    using run_res_t = decltype(Nexus::run(3, task));
     static_assert(std::same_as<task_res_t, int&>);
     static_assert(std::same_as<run_res_t, int>);
 }
@@ -84,7 +79,7 @@ TEST(NexusTest, example_multi_threaded_unit_test) {
             EXPECT_EQ(a, 5);
         }
     };
-    Nexus(2).run(work);
+    Nexus::run(2, work);
     EXPECT_EQ(a, 5);
     EXPECT_EQ(b, 7);
 }
