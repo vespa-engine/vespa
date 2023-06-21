@@ -61,9 +61,9 @@ struct ArrayStoreTest : public TestT
     generation_t generation;
     bool add_using_allocate;
     double type_mapper_grow_factor;
-    ArrayStoreTest(uint32_t maxSmallArraySize = 3, bool enable_free_lists = true, bool add_using_allocate_in = false, double type_mapper_grow_factor_in = 2.0)
-        : type_mapper(maxSmallArraySize, type_mapper_grow_factor_in),
-          store(ArrayStoreConfig(maxSmallArraySize,
+    ArrayStoreTest(uint32_t max_type_id = 3, bool enable_free_lists = true, bool add_using_allocate_in = false, double type_mapper_grow_factor_in = 2.0)
+        : type_mapper(max_type_id, type_mapper_grow_factor_in),
+          store(ArrayStoreConfig(max_type_id,
                                  ArrayStoreConfig::AllocSpec(16, RefT::offsetSize(), 8_Ki,
                                                              ALLOC_GROW_FACTOR)).enable_free_lists(enable_free_lists),
                 std::make_unique<MemoryAllocatorObserver>(stats),
