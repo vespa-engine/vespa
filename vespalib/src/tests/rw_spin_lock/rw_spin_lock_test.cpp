@@ -159,10 +159,21 @@ double measure_ns(auto &work) {
 struct BenchmarkResult {
     double cost_ns;
     double range_ns;
-    BenchmarkResult()
-      : cost_ns(std::numeric_limits<double>::max()), range_ns(0.0) {}
-    BenchmarkResult(double cost_ns_in, double range_ns_in)
-      : cost_ns(cost_ns_in), range_ns(range_ns_in) {}
+    size_t threads;
+    BenchmarkResult(size_t num_threads)
+      : cost_ns(std::numeric_limits<double>::max()), range_ns(0.0), threads(num_threads) {}
+    void report(vespalib::string desc) {
+        if (threads == 1) {
+            fprintf(stderr, "%s: cost_ns: %g\n",
+                    desc.c_str(), cost_ns);
+        } else {
+            fprintf(stderr, "%s: cost_ns: %g, range_ns: %g (%zu threads)\n",
+                    desc.c_str(), cost_ns, range_ns, threads);
+        }
+    }
+    void report(vespalib::string name, vespalib::string desc) {
+        report(name + "(" + desc + ")");
+    }
 };
 
 struct Meets {
@@ -175,7 +186,7 @@ BenchmarkResult benchmark_ns(auto &&work, size_t num_threads = 1) {
     Meets meets(num_threads);
     auto entry = [&](Nexus &ctx) {
         Timer timer;
-        BenchmarkResult result;
+        BenchmarkResult result(ctx.num_threads());
         for (bool once_more = true; ctx.vote(once_more); once_more = (timer.elapsed() < budget)) {
             auto my_ns = measure_ns(work);
             auto cost_ns = meets.avg(my_ns);
@@ -197,19 +208,16 @@ void estimate_cost() {
     T lock;
     auto name = getClassName(lock);
     static_assert(basic_lockable<T>);
-    fprintf(stderr, "%s exclusive lock/unlock: %g ns\n", name.c_str(),
-            benchmark_ns([&lock]{ lock.lock(); lock.unlock(); }).cost_ns);
+    benchmark_ns([&lock]{ lock.lock(); lock.unlock(); }).report(name, "exclusive lock/unlock");
     if constexpr (shared_lockable<T>) {
-        fprintf(stderr, "%s shared lock/unlock: %g ns\n", name.c_str(),
-                benchmark_ns([&lock]{ lock.lock_shared(); lock.unlock_shared(); }).cost_ns);
+        benchmark_ns([&lock]{ lock.lock_shared(); lock.unlock_shared(); }).report(name, "shared lock/unlock");
     }
     if constexpr (can_upgrade<T>) {
         auto guard = std::shared_lock(lock);
-        fprintf(stderr, "%s upgrade/downgrade: %g ns\n", name.c_str(),
-                benchmark_ns([&lock]{
-                                 assert(lock.try_convert_read_to_write());
-                                 lock.convert_write_to_read();
-                             }).cost_ns);
+        benchmark_ns([&lock]{
+                         assert(lock.try_convert_read_to_write());
+                         lock.convert_write_to_read();
+                     }).report(name, "upgrade/downgrade");
     }
 }
 
@@ -270,9 +278,9 @@ TEST(RWSpinLockTest, different_guards_work_with_rw_spin_lock) {
 TEST(RWSpinLockTest, estimate_basic_costs) {
     Rnd rnd(123);
     MyState state;
-    fprintf(stderr, "   rnd cost: %8.2f ns\n", benchmark_ns([&]{ rnd(50); }).cost_ns);
-    fprintf(stderr, "  peek cost: %8.2f ns\n", benchmark_ns([&]{ (void) state.peek(); }).cost_ns);
-    fprintf(stderr, "update cost: %8.2f ns\n", benchmark_ns([&]{ (void) state.update(); }).cost_ns);
+    benchmark_ns([&]{ rnd(50); })              .report("   rnd cost");
+    benchmark_ns([&]{ (void) state.peek(); })  .report("  peek cost");
+    benchmark_ns([&]{ (void) state.update(); }).report("update cost");
 }
 
 template <typename T>
@@ -300,6 +308,85 @@ TEST(RWSpinLockTest, benchmark_rw_spin_lock) { benchmark_lock<RWSpinLock>(); }
 TEST(RWSpinLockTest, benchmark_shared_mutex) { benchmark_lock<std::shared_mutex>(); }
 TEST(RWSpinLockTest, benchmark_mutex)        { benchmark_lock<std::mutex>(); }
 TEST(RWSpinLockTest, benchmark_spin_lock)    { benchmark_lock<SpinLock>(); }
+
+struct MyRefCnt {
+    std::atomic<uint32_t> value;
+    void fetch_add() noexcept {
+        value.fetch_add(1, std::memory_order_acquire);
+    }
+    void fetch_sub() noexcept {
+        value.fetch_sub(1, std::memory_order_release);
+    };
+    void cmp_add_guess() noexcept {
+        uint32_t expected = 0;
+        uint32_t desired = 1;
+        while (!value.compare_exchange_weak(expected, desired,
+                                            std::memory_order_acquire,
+                                            std::memory_order_relaxed))
+        {
+            desired = expected + 1;
+        }
+    }
+    void cmp_sub_guess() noexcept {
+        uint32_t expected = 1;
+        uint32_t desired = 0;
+        while (!value.compare_exchange_weak(expected, desired,
+                                            std::memory_order_release,
+                                            std::memory_order_relaxed))
+        {
+            desired = expected - 1;
+        }
+    }
+    void cmp_add_load() noexcept {
+        uint32_t expected = value.load(std::memory_order_relaxed);
+        uint32_t desired = expected + 1;
+        while (!value.compare_exchange_weak(expected, desired,
+                                            std::memory_order_acquire,
+                                            std::memory_order_relaxed))
+        {
+            desired = expected + 1;
+        }
+    }
+    void cmp_sub_load() noexcept {
+        uint32_t expected = value.load(std::memory_order_relaxed);
+        uint32_t desired = expected - 1;
+        while (!value.compare_exchange_weak(expected, desired,
+                                            std::memory_order_release,
+                                            std::memory_order_relaxed))
+        {
+            desired = expected - 1;
+        }
+    }
+};
+
+TEST(RWSpinLockTest, benchmark_compare_exchange_vs_fetch_add_sub) {
+    if (!bench) {
+        fprintf(stderr, "[ SKIPPED  ] this test is only run in benchmarking mode\n");
+        return;
+    }
+    MyRefCnt value;
+    auto fetch_add = [&value]{ value.fetch_add(); };
+    auto fetch_sub = [&value]{ value.fetch_sub(); };
+    auto cmp_add_guess = [&value]{ value.cmp_add_guess(); };
+    auto cmp_sub_guess = [&value]{ value.cmp_sub_guess(); };
+    auto cmp_add_load = [&value]{ value.cmp_add_load(); };
+    auto cmp_sub_load = [&value]{ value.cmp_sub_load(); };
+
+    auto do_fetch = [&]{ fetch_add(); fetch_sub(); };
+    auto do_cmp_guess = [&]{ cmp_add_guess(); cmp_sub_guess(); };
+    auto do_cmp_load = [&]{ cmp_add_load(); cmp_sub_load(); };
+
+    auto do_4_fetch = [&]{ run_loop<4>(fetch_add); run_loop<4>(fetch_sub); };
+    auto do_4_cmp_guess = [&]{ run_loop<4>(cmp_add_guess); run_loop<4>(cmp_sub_guess); };
+    auto do_4_cmp_load = [&]{ run_loop<4>(cmp_add_load); run_loop<4>(cmp_sub_load); };
+
+    benchmark_ns(do_fetch, 4).report("fetch_add -> fetch_sub");
+    benchmark_ns(do_cmp_guess, 4).report("cmp_add_guess -> cmp_sub_guess");
+    benchmark_ns(do_cmp_load, 4).report("cmp_add_load -> cmp_sub_load");
+    benchmark_ns(do_4_fetch, 4).report("4fetch_add -> 4fetch_sub");
+    benchmark_ns(do_4_cmp_guess, 4).report("4cmp_add_guess -> 4cmp_sub_guess");
+    benchmark_ns(do_4_cmp_load, 4).report("4cmp_add_load -> 4cmp_sub_load");
+}
 
 TEST(RWSpinLockTest, estimate_single_threaded_costs) {
     estimate_cost<DummyLock>();
