@@ -77,7 +77,7 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
 
             String algo = this.endpointCertificateAlgo.with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             boolean useAlternativeProvider = useAlternateCertProvider.with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            String keyPrefix = applicationId.serializedForm();
+            String keyPrefix = applicationId.toFullString();
 
             EndpointCertificateMetadata reRequestedMetadata = endpointCertificateProvider.requestCaSignedCertificate(
                     keyPrefix, endpointCertificateMetadata.requestedDnsSans(),
