@@ -37,4 +37,8 @@ public record HostIpConfig(Map<String, IP.Config> ipConfigByHostname) {
         return this.equals(EMPTY);
     }
 
+    @Override
+    public String toString() {
+        return ipConfigByHostname.toString();
+    }
 }
