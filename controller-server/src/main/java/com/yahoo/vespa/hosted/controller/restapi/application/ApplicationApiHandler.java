@@ -921,7 +921,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             for (DataplaneTokenVersions.Version tokenVersion : token.tokenVersions()) {
                 Cursor fingerprintObject = fingerprintsArray.addObject();
                 fingerprintObject.setString("fingerprint", tokenVersion.fingerPrint().value());
-                fingerprintObject.setString("created-at", tokenVersion.creationTime().toString());
+                fingerprintObject.setString("created", tokenVersion.creationTime().toString());
                 fingerprintObject.setString("author", tokenVersion.author());
             }
         }

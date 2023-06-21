@@ -476,7 +476,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                        (response) -> Assertions.assertThat(new String(response.getBody(), UTF_8)).matches(Pattern.compile(regexGenerateToken)),
                        200);
 
-        String regexListTokens = "\\{\"tokens\":\\[\\{\"id\":\"myTokenId\",\"versions\":\\[\\{\"fingerprint\":\".*\",\"created-at\":\".*\",\"author\":\"user@test\"}]}]}";
+        String regexListTokens = "\\{\"tokens\":\\[\\{\"id\":\"myTokenId\",\"versions\":\\[\\{\"fingerprint\":\".*\",\"created\":\".*\",\"author\":\"user@test\"}]}]}";
         tester.assertResponse(request("/application/v4/tenant/scoober/token", GET)
                                       .roles(Role.developer(tenantName)),
                               (response) -> Assertions.assertThat(new String(response.getBody(), UTF_8)).matches(Pattern.compile(regexListTokens)),
