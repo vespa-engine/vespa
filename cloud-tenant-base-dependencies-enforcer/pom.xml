@@ -22,7 +22,7 @@
         <!-- MUST BE KEPT IN SYNC WITH parent/pom.xml -->
         <athenz.version>1.11.28</athenz.version>
 
-        <bouncycastle.version>1.73</bouncycastle.version>
+        <bouncycastle.version>1.74</bouncycastle.version>
         <commons-codec.version>1.15</commons-codec.version>
         <felix.version>7.0.1</felix.version>
         <httpclient5.version>5.2.1</httpclient5.version>
