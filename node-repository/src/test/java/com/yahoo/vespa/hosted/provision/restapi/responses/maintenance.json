@@ -4,9 +4,6 @@
       "name": "AutoscalingMaintainer"
     },
     {
-      "name": "CertificatePoolMaintainer"
-    },
-    {
       "name": "DeprovisionedExpirer"
     },
     {
