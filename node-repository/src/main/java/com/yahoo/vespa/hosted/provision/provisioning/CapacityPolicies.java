@@ -98,7 +98,9 @@ public class CapacityPolicies {
             Architecture architecture = adminClusterArchitecture(applicationId);
 
             if (nodeRepository.exclusiveAllocation(clusterSpec)) {
-                return versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()));
+                var resources = smallestExclusiveResources();
+                return versioned(clusterSpec, Map.of(new Version(0), resources,
+                                                     new Version(8, 182, 12), resources.with(architecture)));
             }
 
             if (clusterSpec.id().value().equals("cluster-controllers")) {
@@ -109,10 +111,7 @@ public class CapacityPolicies {
                 return logserverResources(architecture).with(architecture);
             }
 
-            return (nodeRepository.exclusiveAllocation(clusterSpec)
-                    ? versioned(clusterSpec, Map.of(new Version(0), smallestExclusiveResources()))
-                    : versioned(clusterSpec, Map.of(new Version(0), smallestSharedResources())))
-                    .with(architecture);
+            return versioned(clusterSpec, Map.of(new Version(0), smallestSharedResources())).with(architecture);
         }
 
         if (zone.environment() == Environment.dev && zone.system() == SystemName.cd) {
