@@ -57,8 +57,8 @@ public:
     static size_t calc_array_size(size_t entry_size) noexcept;
     static ElemType* get_entry(void* buffer, size_t offset, uint32_t entry_size) noexcept { return reinterpret_cast<ElemType*>(static_cast<char*>(buffer) + offset * entry_size + entry_bias); }
     static const ElemType* get_entry(const void* buffer, size_t offset, uint32_t entry_size) noexcept { return reinterpret_cast<const ElemType*>(static_cast<const char*>(buffer) + offset * entry_size + entry_bias); }
-    static uint32_t get_dynamic_array_size(const void *buffer) noexcept { return *(static_cast<const uint32_t*>(buffer) - 1); }
-    static void set_dynamic_array_size(void *buffer, uint32_t array_size) noexcept { *(static_cast<uint32_t*>(buffer) - 1) = array_size; }
+    static uint32_t get_dynamic_array_size(const ElemType* buffer) noexcept { return *(reinterpret_cast<const uint32_t*>(buffer) - 1); }
+    static void set_dynamic_array_size(ElemType* buffer, uint32_t array_size) noexcept { *(reinterpret_cast<uint32_t*>(buffer) - 1) = array_size; }
 };
 
 extern template class DynamicArrayBufferType<char>;
