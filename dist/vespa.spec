@@ -90,7 +90,7 @@ BuildRequires: llvm-devel
 BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: vespa-openssl-devel >= 1.1.1o-1
 %define _use_vespa_openssl 1
-BuildRequires: vespa-gtest = 1.11.0
+BuildRequires: vespa-gtest = 1.13.0
 %define _use_vespa_gtest 1
 BuildRequires: vespa-lz4-devel >= 1.9.4-1
 BuildRequires: vespa-onnxruntime-devel = 1.13.1
@@ -192,7 +192,7 @@ Requires: unzip
 Requires: zlib
 Requires: zstd
 %if 0%{?el8}
-Requires: vespa-gtest = 1.11.0
+Requires: vespa-gtest = 1.13.0
 %endif
 %if 0%{?el9}
 Requires: gtest
