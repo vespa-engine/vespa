@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
@@ -102,9 +103,10 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
         try (Mutex lock = controller.curator().lockCertificatePool()) {
             Set<String> existingNames = controller.curator().readPooledCertificates().stream().map(PooledCertificate::id).collect(Collectors.toSet());
 
-            curator.readAllEndpointCertificateMetadata().values().stream()
-                    .map(EndpointCertificateMetadata::randomizedId)
-                    .forEach(id -> id.ifPresent(existingNames::add));
+            curator.readAssignedCertificates().stream()
+                   .map(AssignedCertificate::certificate)
+                   .map(EndpointCertificateMetadata::randomizedId)
+                   .forEach(id -> id.ifPresent(existingNames::add));
 
             String id = generateRandomId();
             while (existingNames.contains(id)) id = generateRandomId();

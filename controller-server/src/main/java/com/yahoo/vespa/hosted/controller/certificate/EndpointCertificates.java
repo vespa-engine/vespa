@@ -4,9 +4,11 @@ package com.yahoo.vespa.hosted.controller.certificate;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.Text;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
@@ -20,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidator;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.PooledCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
@@ -74,13 +77,12 @@ public class EndpointCertificates {
     public Optional<EndpointCertificateMetadata> getMetadata(Instance instance, ZoneId zone, DeploymentSpec deploymentSpec) {
         Instant start = clock.instant();
         Optional<EndpointCertificateMetadata> metadata = getOrProvision(instance, zone, deploymentSpec);
-        metadata.ifPresent(m -> curator.writeEndpointCertificateMetadata(instance.id(), m.withLastRequested(clock.instant().getEpochSecond())));
         Duration duration = Duration.between(start, clock.instant());
         if (duration.toSeconds() > 30)
             log.log(Level.INFO, Text.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
 
         if (controller.zoneRegistry().zones().all().in(CloudName.GCP).ids().contains(zone)) { // Until CKMS is available from GCP
-            if(metadata.isPresent()) {
+            if (metadata.isPresent()) {
                 // Validate metadata before copying cert to GCP. This will ensure we don't bug out on the first deployment, but will take more time
                 certificateValidator.validate(metadata.get(), instance.id().serializedForm(), zone, controller.routing().certificateDnsNames(new DeploymentId(instance.id(), zone), deploymentSpec));
                 var m = metadata.get();
@@ -99,35 +101,50 @@ public class EndpointCertificates {
         return metadata;
     }
 
+    private EndpointCertificateMetadata assignFromPool(Instance instance, ZoneId zone) {
+        // Assign certificate per instance only in manually deployed environments. In other environments, we share the
+        // certificate because application endpoints can span instances
+        Optional<InstanceName> instanceName = zone.environment().isManuallyDeployed() ? Optional.of(instance.name()) : Optional.empty();
+        TenantAndApplicationId application = TenantAndApplicationId.from(instance.id());
+        Optional<EndpointCertificateMetadata> currentCertificateMetadata = curator.readEndpointCertificateMetadata(application, instanceName);
+        if (currentCertificateMetadata.isPresent()) {
+            EndpointCertificateMetadata updated = currentCertificateMetadata.get().withLastRequested(clock.instant().getEpochSecond());
+            curator.writeEndpointCertificateMetadata(instance.id(), updated);
+            return updated;
+        }
+        try (Mutex lock = controller.curator().lockCertificatePool()) {
+            Optional<PooledCertificate> candidate = curator.readPooledCertificates().stream()
+                                                           .filter(pc -> pc.state() == State.ready)
+                                                           .min(Comparator.comparingLong(pc -> pc.certificate().lastRequested()));
+            if (candidate.isEmpty()) {
+                throw new IllegalArgumentException("No endpoint certificate available in pool, for deployment of " + instance.id() + " in " + zone);
+            }
+            try (NestedTransaction transaction = new NestedTransaction()) {
+                curator.removePooledCertificate(candidate.get(), transaction);
+                curator.writeEndpointCertificateMetadata(application, instanceName,
+                                                         candidate.get().certificate(), transaction);
+                transaction.commit();
+                return candidate.get().certificate();
+            }
+        }
+    }
+
     private Optional<EndpointCertificateMetadata> getOrProvision(Instance instance, ZoneId zone, DeploymentSpec deploymentSpec) {
-        Optional<EndpointCertificateMetadata> currentCertificateMetadata = curator.readEndpointCertificateMetadata(instance.id());
+        if (useRandomizedCert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().toFullString()).value()) {
+            return Optional.of(assignFromPool(instance, zone));
+        }
+        Optional<EndpointCertificateMetadata> currentCertificateMetadata = curator.readEndpointCertificateMetadata(TenantAndApplicationId.from(instance.id()), Optional.of(instance.id().instance()));
         DeploymentId deployment = new DeploymentId(instance.id(), zone);
 
         if (currentCertificateMetadata.isEmpty()) {
-            // TODO andreer: Assign randomized certs on application level, separately for manual deployments
-            if (useRandomizedCert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().toFullString()).value()) {
-                try (Mutex lock = controller.curator().lockCertificatePool()) {
-                    EndpointCertificateMetadata randomized = curator.readPooledCertificates().stream()
-                                                                    .filter(pooledCert -> pooledCert.state() == State.ready)
-                                                                    .map(PooledCertificate::certificate)
-                                                                    .min(Comparator.comparingLong(EndpointCertificateMetadata::lastRequested)).orElseThrow(() -> {
-                                var message = "No endpoint certificate available for deployment";
-                                log.log(Level.WARNING, message + " when deploying " + instance.id());
-                                return new RuntimeException(message);
-                            });
-                    // TODO: Remove from pool and assign to application in a transaction
-                    //curator.removeFromCertificatePool(randomized.randomizedId().orElseThrow(), State.ready.name());
-                    //curator.writeEndpointCertificateMetadata(instance.id(), randomized);
-                    return Optional.of(randomized);
-                }
-            }
-
             var provisionedCertificateMetadata = provisionEndpointCertificate(deployment, Optional.empty(), deploymentSpec);
             // We do not verify the certificate if one has never existed before - because we do not want to
             // wait for it to be available before we deploy. This allows the config server to start
             // provisioning nodes ASAP, and the risk is small for a new deployment.
             curator.writeEndpointCertificateMetadata(instance.id(), provisionedCertificateMetadata);
             return Optional.of(provisionedCertificateMetadata);
+        } else {
+            curator.writeEndpointCertificateMetadata(instance.id(), currentCertificateMetadata.get().withLastRequested(clock.instant().getEpochSecond()));
         }
 
         // Re-provision certificate if it is missing SANs for the zone we are deploying to

@@ -9,6 +9,9 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * @author andreer
+ */
 public class EndpointCertificateMetadataSerializerTest {
 
     private final EndpointCertificateMetadata sampleWithOptionalFieldsSet =

@@ -90,4 +90,5 @@ public class EndpointCertificateMetadataSerializer {
     public static EndpointCertificateMetadata fromJsonString(String zkData) {
         return fromSlime(SlimeUtils.jsonToSlime(zkData).get());
     }
+
 }

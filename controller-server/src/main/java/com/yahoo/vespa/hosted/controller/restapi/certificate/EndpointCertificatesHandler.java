@@ -8,6 +8,7 @@ import com.yahoo.restapi.RestApiException;
 import com.yahoo.restapi.StringResponse;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -40,6 +41,7 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
     private final CuratorDb curator;
     private final BooleanFlag useAlternateCertProvider;
     private final StringFlag endpointCertificateAlgo;
+    private final BooleanFlag useRandomizedCert;
 
     public EndpointCertificatesHandler(Executor executor, ServiceRegistry serviceRegistry, CuratorDb curator, Controller controller) {
         super(executor);
@@ -47,6 +49,7 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
         this.curator = curator;
         this.useAlternateCertProvider = PermanentFlags.USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER.bindTo(controller.flagSource());
         this.endpointCertificateAlgo = PermanentFlags.ENDPOINT_CERTIFICATE_ALGORITHM.bindTo(controller.flagSource());
+        this.useRandomizedCert = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
     }
 
     public HttpResponse handle(HttpRequest request) {
@@ -70,7 +73,9 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
 
     public StringResponse reRequestEndpointCertificateFor(String instanceId, boolean ignoreExistingMetadata) {
         ApplicationId applicationId = ApplicationId.fromFullString(instanceId);
-
+        if (useRandomizedCert.with(FetchVector.Dimension.APPLICATION_ID, instanceId).value()) {
+            throw new IllegalArgumentException("Cannot re-request certificate. " + instanceId + " is assigned certificate from a pool");
+        }
         try (var lock = curator.lock(TenantAndApplicationId.from(applicationId))) {
             EndpointCertificateMetadata endpointCertificateMetadata = curator.readEndpointCertificateMetadata(applicationId)
                     .orElseThrow(() -> new RestApiException.NotFound("No certificate found for application " + applicationId.serializedForm()));
