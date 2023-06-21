@@ -305,10 +305,12 @@ public class Nodes {
      * Use this to clean newly provisioned nodes or to recycle failed nodes which have been repaired or put on hold.
      */
     public Node deallocate(Node node, Agent agent, String reason) {
-        NestedTransaction transaction = new NestedTransaction();
-        Node deallocated = deallocate(node, agent, reason, transaction);
-        transaction.commit();
-        return deallocated;
+        try (NodeMutex locked = lockAndGetRequired(node)) {
+            NestedTransaction transaction = new NestedTransaction();
+            Node deallocated = deallocate(locked.node(), agent, reason, transaction);
+            transaction.commit();
+            return deallocated;
+        }
     }
 
     public List<Node> deallocate(List<Node> nodes, Agent agent, String reason, ApplicationTransaction transaction) {
@@ -388,10 +390,12 @@ public class Nodes {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node park(String hostname, boolean forceDeprovision, Agent agent, String reason) {
-        NestedTransaction transaction = new NestedTransaction();
-        Node parked = park(hostname, forceDeprovision, agent, reason, transaction);
-        transaction.commit();
-        return parked;
+        try (NodeMutex locked = lockAndGetRequired(hostname)) {
+            NestedTransaction transaction = new NestedTransaction();
+            Node parked = park(hostname, forceDeprovision, agent, reason, transaction);
+            transaction.commit();
+            return parked;
+        }
     }
 
     private Node park(String hostname, boolean forceDeprovision, Agent agent, String reason, NestedTransaction transaction) {
@@ -817,9 +821,7 @@ public class Nodes {
                     return Optional.empty();
                 }
 
-                if (node.type() != NodeType.tenant ||
-                        Objects.equals(freshNode.get().allocation().map(Allocation::owner),
-                                       staleNode.allocation().map(Allocation::owner))) {
+                if (applicationIdForLock(freshNode.get()).equals(applicationIdForLock(staleNode))) {
                     NodeMutex nodeMutex = new NodeMutex(freshNode.get(), lockToClose);
                     lockToClose = null;
                     return Optional.of(nodeMutex);
