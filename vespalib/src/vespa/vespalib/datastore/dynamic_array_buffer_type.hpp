@@ -116,4 +116,11 @@ DynamicArrayBufferType<ElemT>::get_memory_allocator() const
     return _memory_allocator.get();
 }
 
+template <typename ElemT>
+bool
+DynamicArrayBufferType<ElemT>::is_dynamic_array_buffer_type() const noexcept
+{
+    return true;
+}
+
 }

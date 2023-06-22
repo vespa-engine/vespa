@@ -28,7 +28,7 @@ protected:
             const auto &meta = _store.getBufferMeta(iRef.bufferId());
             auto type_id = meta.getTypeId();
             if (type_id != 0) {
-                return reinterpret_cast<const UniqueStoreSmallStringEntry *>(_store.template getEntryArray<char>(iRef, meta.getArraySize()))->value();
+                return reinterpret_cast<const UniqueStoreSmallStringEntry *>(_store.template getEntryArray<char>(iRef, meta.get_array_size()))->value();
             } else {
                 return _store.template getEntry<WrappedExternalEntryType>(iRef)->value().c_str();
             }

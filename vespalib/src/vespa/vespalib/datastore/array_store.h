@@ -126,7 +126,7 @@ public:
                         return get_dynamic_array<typename TypeMapper::DynamicBufferType>(bufferAndMeta.get_buffer_acquire(), internalRef.offset(), bufferAndMeta.get_entry_size());
                  }
             }
-            return getSmallArray(internalRef, bufferAndMeta.getArraySize());
+            return getSmallArray(internalRef, bufferAndMeta.get_array_size());
         } else {
             return getLargeArray(internalRef);
         }

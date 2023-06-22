@@ -117,6 +117,12 @@ BufferTypeBase::get_memory_allocator() const
     return nullptr;
 }
 
+bool
+BufferTypeBase::is_dynamic_array_buffer_type() const noexcept
+{
+    return false;
+}
+
 void
 BufferTypeBase::clamp_max_entries(uint32_t max_entries)
 {
