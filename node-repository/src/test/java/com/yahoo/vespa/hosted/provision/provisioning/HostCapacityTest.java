@@ -45,7 +45,7 @@ public class HostCapacityTest {
         doAnswer(invocation -> ((Flavor)invocation.getArguments()[0]).resources()).when(hostResourcesCalculator).advertisedResourcesOf(any());
 
         // Create flavors
-        NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
+        NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker");
 
         // Create hosts
         host1 = Node.create("host1", IP.Config.of(Set.of("::1"), createIps(2, 4), List.of()), "host1", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();

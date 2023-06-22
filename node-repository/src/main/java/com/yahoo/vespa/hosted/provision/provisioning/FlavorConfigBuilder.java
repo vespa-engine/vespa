@@ -5,11 +5,17 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provisioning.FlavorsConfig;
 
+import static com.yahoo.config.provision.Flavor.Type.BARE_METAL;
+import static com.yahoo.config.provision.Flavor.Type.DOCKER_CONTAINER;
 import static com.yahoo.config.provision.NodeResources.Architecture;
+import static com.yahoo.config.provision.NodeResources.Architecture.arm64;
+import static com.yahoo.config.provision.NodeResources.Architecture.x86_64;
 
 /**
  * Simplifies creation of a node-repository config containing flavors.
  * This is needed because the config builder API is inconvenient.
+ *
+ * Note: Flavors added will have fast disk and remote storage unless explicitly specified.
  *
  * @author bratseth
  */
@@ -27,7 +33,7 @@ public class FlavorConfigBuilder {
                                                   double disk,
                                                   double bandwidth,
                                                   Flavor.Type type) {
-        return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type, Architecture.x86_64, 0, 0);
+        return addFlavor(flavorName, cpu, mem, disk, bandwidth, true, true, type, x86_64, 0, 0);
     }
 
     public FlavorsConfig.Flavor.Builder addFlavor(String flavorName,
@@ -69,31 +75,20 @@ public class FlavorConfigBuilder {
 
     /** Convenience method which creates a node flavors instance from a list of flavor names */
     public static NodeFlavors createDummies(String... flavors) {
-
-        FlavorConfigBuilder flavorConfigBuilder = new FlavorConfigBuilder();
+        FlavorConfigBuilder builder = new FlavorConfigBuilder();
         for (String flavorName : flavors) {
-            if (flavorName.equals("docker"))
-                flavorConfigBuilder.addFlavor(flavorName, 1., 30., 20., 1.5, Flavor.Type.DOCKER_CONTAINER);
-            else if (flavorName.equals("docker2"))
-                flavorConfigBuilder.addFlavor(flavorName, 2.,  40., 40., 0.5, Flavor.Type.DOCKER_CONTAINER);
-            else if (flavorName.equals("host"))
-                flavorConfigBuilder.addFlavor(flavorName, 7., 100., 120., 5, Flavor.Type.BARE_METAL);
-            else if (flavorName.equals("host2"))
-                flavorConfigBuilder.addFlavor(flavorName, 16, 24, 100, 1, Flavor.Type.BARE_METAL);
-            else if (flavorName.equals("host3"))
-                flavorConfigBuilder.addFlavor(flavorName, 24, 64, 100, 10, Flavor.Type.BARE_METAL);
-            else if (flavorName.equals("host4"))
-                flavorConfigBuilder.addFlavor(flavorName, 48, 128, 1000, 10, Flavor.Type.BARE_METAL);
-            else if (flavorName.equals("devhost"))
-                flavorConfigBuilder.addFlavor(flavorName, 4.,  80., 100, 10, Flavor.Type.BARE_METAL);
-            else if (flavorName.equals("arm64"))
-                flavorConfigBuilder.addFlavor(flavorName,2.,  30., 20., 3, Flavor.Type.BARE_METAL, Architecture.arm64);
-            else if (flavorName.equals("gpu"))
-                flavorConfigBuilder.addFlavor(flavorName,4,  16, 125, 10, true, false, Flavor.Type.BARE_METAL, Architecture.x86_64, 1, 16);
-            else
-                flavorConfigBuilder.addFlavor(flavorName, 1.,  30., 20., 3, Flavor.Type.BARE_METAL);
+            switch (flavorName) {
+                case "docker" -> builder.addFlavor(flavorName, 1., 30., 20., 1.5, DOCKER_CONTAINER);
+                case "host" -> builder.addFlavor(flavorName, 7., 100., 120., 5, BARE_METAL);
+                case "host2" -> builder.addFlavor(flavorName, 16, 24, 100, 1, BARE_METAL);
+                case "host3" -> builder.addFlavor(flavorName, 24, 64, 100, 10, BARE_METAL);
+                case "host4" -> builder.addFlavor(flavorName, 48, 128, 1000, 10, BARE_METAL);
+                case "arm64" -> builder.addFlavor(flavorName, 2., 30., 20., 3, BARE_METAL, arm64);
+                case "gpu" -> builder.addFlavor(flavorName, 4, 16, 125, 10, true, false, BARE_METAL, x86_64, 1, 16);
+                default -> builder.addFlavor(flavorName, 1., 30., 20., 3, BARE_METAL);
+            }
         }
-        return new NodeFlavors(flavorConfigBuilder.build());
+        return new NodeFlavors(builder.build());
     }
 
 }
