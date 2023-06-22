@@ -70,6 +70,7 @@ public class ApplicationMojo extends AbstractMojo {
             vespaversion = project.getPlugin("com.yahoo.vespa:vespa-application-maven-plugin").getVersion();
 
         Version compileVersion = Version.from(vespaversion);
+        if (compileVersion.isSnapshot()) return;
 
         MavenProject current = project;
         while (current.getParent() != null && current.getParent().getParentArtifact() != null)
