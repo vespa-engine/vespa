@@ -30,9 +30,9 @@ public enum HostedNodeAdminMetrics implements VespaMetrics {
     NET_IN_BYTES("net.in.bytes", Unit.BYTE, "Network bytes received (rxBytes) (COUNT metric)"),
     NET_IN_ERROR("net.in.errors", Unit.FAILURE, "Network receive errors (rxErrors)"),
     NET_IN_DROPPED("net.in.dropped", Unit.PACKET, "Inbound network packets dropped (rxDropped)"),
-    NET_OUT_BYTES("net.in.bytes", Unit.BYTE, "Network bytes sent (txBytes) (COUNT metric)"),
-    NET_OUT_ERROR("net.in.errors", Unit.FAILURE, "Network send errors (txErrors)"),
-    NET_OUT_DROPPED("net.in.dropped", Unit.PACKET, "Outbound network packets dropped (txDropped)"),
+    NET_OUT_BYTES("net.out.bytes", Unit.BYTE, "Network bytes sent (txBytes) (COUNT metric)"),
+    NET_OUT_ERROR("net.out.errors", Unit.FAILURE, "Network send errors (txErrors)"),
+    NET_OUT_DROPPED("net.out.dropped", Unit.PACKET, "Outbound network packets dropped (txDropped)"),
     BANDWIDTH_LIMIT("bandwidth.limit", Unit.BYTE_PER_SECOND, "Available network bandwidth");
 
     private final String name;
@@ -58,4 +58,3 @@ public enum HostedNodeAdminMetrics implements VespaMetrics {
     }
 
 }
-
