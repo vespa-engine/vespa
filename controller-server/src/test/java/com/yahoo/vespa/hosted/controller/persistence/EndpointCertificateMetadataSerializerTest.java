@@ -9,13 +9,16 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * @author andreer
+ */
 public class EndpointCertificateMetadataSerializerTest {
 
     private final EndpointCertificateMetadata sampleWithOptionalFieldsSet =
-            new EndpointCertificateMetadata("keyName", "certName", 1, 0, "rootRequestId", Optional.of("leafRequestId"), List.of("SAN1", "SAN2"), "issuer", java.util.Optional.of(1628000000L), Optional.of(1612000000L));
+            new EndpointCertificateMetadata("keyName", "certName", 1, 0, "rootRequestId", Optional.of("leafRequestId"), List.of("SAN1", "SAN2"), "issuer", java.util.Optional.of(1628000000L), Optional.of(1612000000L), Optional.empty());
 
     private final EndpointCertificateMetadata sampleWithoutOptionalFieldsSet =
-            new EndpointCertificateMetadata("keyName", "certName", 1, 0, "rootRequestId", Optional.empty(), List.of("SAN1", "SAN2"), "issuer", Optional.empty(), Optional.empty());
+            new EndpointCertificateMetadata("keyName", "certName", 1, 0, "rootRequestId", Optional.empty(), List.of("SAN1", "SAN2"), "issuer", Optional.empty(), Optional.empty(), Optional.empty());
 
     @Test
     void serialize_with_optional_fields() {

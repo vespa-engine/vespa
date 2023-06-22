@@ -9,7 +9,6 @@ import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -22,7 +21,7 @@ import java.util.stream.IntStream;
  */
 public class EndpointCertificateMetadataSerializer {
 
-    // WARNING: Since there are multiple servers in a ZooKeeper cluster and they upgrade one by one
+    // WARNING: Since there are multiple servers in a ZooKeeper cluster, and they upgrade one by one
     //          (and rewrite all nodes on startup), changes to the serialized format must be made
     //          such that what is serialized on version N+1 can be read by version N:
     //          - ADDING FIELDS: Always ok
@@ -39,10 +38,16 @@ public class EndpointCertificateMetadataSerializer {
     private final static String issuerField = "issuer";
     private final static String expiryField = "expiry";
     private final static String lastRefreshedField = "lastRefreshed";
+    private final static String randomizedIdField = "randomizedId";
 
     public static Slime toSlime(EndpointCertificateMetadata metadata) {
         Slime slime = new Slime();
         Cursor object = slime.setObject();
+        toSlime(metadata, object);
+        return slime;
+    }
+
+    public static void toSlime(EndpointCertificateMetadata metadata, Cursor object) {
         object.setString(keyNameField, metadata.keyName());
         object.setString(certNameField, metadata.certName());
         object.setLong(versionField, metadata.version());
@@ -54,8 +59,7 @@ public class EndpointCertificateMetadataSerializer {
         object.setString(issuerField, metadata.issuer());
         metadata.expiry().ifPresent(expiry -> object.setLong(expiryField, expiry));
         metadata.lastRefreshed().ifPresent(refreshTime -> object.setLong(lastRefreshedField, refreshTime));
-
-        return slime;
+        metadata.randomizedId().ifPresent(randomizedId -> object.setString(randomizedIdField, randomizedId));
     }
 
     public static EndpointCertificateMetadata fromSlime(Inspector inspector) {
@@ -77,10 +81,14 @@ public class EndpointCertificateMetadataSerializer {
                         Optional.empty(),
                 inspector.field(lastRefreshedField).valid() ?
                         Optional.of(inspector.field(lastRefreshedField).asLong()) :
+                        Optional.empty(),
+                inspector.field(randomizedIdField).valid() ?
+                        Optional.of(inspector.field(randomizedIdField).asString()) :
                         Optional.empty());
     }
 
     public static EndpointCertificateMetadata fromJsonString(String zkData) {
         return fromSlime(SlimeUtils.jsonToSlime(zkData).get());
     }
+
 }

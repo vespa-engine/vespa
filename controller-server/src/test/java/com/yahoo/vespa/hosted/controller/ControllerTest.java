@@ -38,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -940,7 +941,7 @@ public class ControllerTest {
 
     @Test
     void testDeploySelectivelyProvisionsCertificate() {
-        Function<Instance, Optional<EndpointCertificateMetadata>> certificate = (application) -> tester.controller().curator().readEndpointCertificateMetadata(application.id());
+        Function<Instance, Optional<EndpointCertificateMetadata>> certificate = (application) -> tester.controller().curator().readAssignedCertificate(application.id()).map(AssignedCertificate::certificate);
 
         // Create app1
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
@@ -964,7 +965,7 @@ public class ControllerTest {
                                                 (zone.environment() == Environment.prod ? "" :  "." + zone.environment().value()) +
                                                 ".vespa.oath.cloud")))
                         .collect(Collectors.toUnmodifiableSet()),
-                Set.copyOf(tester.controllerTester().serviceRegistry().endpointCertificateMock().dnsNamesOf(context1.instanceId())));
+                Set.copyOf(tester.controllerTester().serviceRegistry().endpointCertificateMock().dnsNamesOf(cert.get().rootRequestId())));
 
         // Next deployment reuses certificate
         context1.submit(applicationPackage).deploy();

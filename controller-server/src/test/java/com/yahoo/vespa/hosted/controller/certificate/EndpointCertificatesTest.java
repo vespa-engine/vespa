@@ -17,11 +17,13 @@ import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidatorImpl;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
@@ -45,6 +47,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author andreer
@@ -55,7 +58,7 @@ public class EndpointCertificatesTest {
     private final SecretStoreMock secretStore = new SecretStoreMock();
     private final CuratorDb mockCuratorDb = tester.curator();
     private final ManualClock clock = tester.clock();
-    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock(new ManualClock());
+    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
     private final EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);
     private final EndpointCertificates endpointCertificates = new EndpointCertificates(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
     private final KeyPair testKeyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 192);
@@ -103,15 +106,15 @@ public class EndpointCertificatesTest {
         return x509CertificateBuilder.build();
     }
 
-    private final Instance testInstance = new Instance(ApplicationId.defaultId());
+    private final Instance instance = new Instance(ApplicationId.defaultId());
     private final String testKeyName = "testKeyName";
     private final String testCertName = "testCertName";
-    private ZoneId testZone;
+    private ZoneId prodZone;
 
     @BeforeEach
     public void setUp() {
         tester.zoneRegistry().exclusiveRoutingIn(tester.zoneRegistry().zones().all().zones());
-        testZone = tester.zoneRegistry().zones().all().routingMethod(RoutingMethod.exclusive).in(Environment.prod).zones().stream().findFirst().orElseThrow().getId();
+        prodZone = tester.zoneRegistry().zones().all().routingMethod(RoutingMethod.exclusive).in(Environment.prod).zones().stream().findFirst().orElseThrow().getId();
         clock.setInstant(Instant.EPOCH);
         testCertificate = makeTestCert(expectedSans);
         testCertificate2 = makeTestCert(expectedCombinedSans);
@@ -120,7 +123,7 @@ public class EndpointCertificatesTest {
     @Test
     void provisions_new_certificate_in_dev() {
         ZoneId testZone = tester.zoneRegistry().zones().all().routingMethod(RoutingMethod.exclusive).in(Environment.dev).zones().stream().findFirst().orElseThrow().getId();
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, testZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
@@ -130,7 +133,7 @@ public class EndpointCertificatesTest {
 
     @Test
     void provisions_new_certificate_in_prod() {
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, prodZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
@@ -160,7 +163,7 @@ public class EndpointCertificatesTest {
                 "default.default.us-east-3.staging.z.vespa-app.cloud",
                 "*.default.default.us-east-3.staging.z.vespa-app.cloud"
         );
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, prodZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
@@ -170,16 +173,16 @@ public class EndpointCertificatesTest {
 
     @Test
     void reuses_stored_certificate_metadata() {
-        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, 7, 0, "request_id", Optional.of("leaf-request-uuid"),
-                List.of("vt2ktgkqme5zlnp4tj4ttyor7fj3v7q5o.vespa.oath.cloud",
+        mockCuratorDb.writeAssignedCertificate(assignedCertificate(instance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, 7, 0, "request_id", Optional.of("leaf-request-uuid"),
+                                                                                              List.of("vt2ktgkqme5zlnp4tj4ttyor7fj3v7q5o.vespa.oath.cloud",
                         "default.default.global.vespa.oath.cloud",
                         "*.default.default.global.vespa.oath.cloud",
                         "default.default.aws-us-east-1a.vespa.oath.cloud",
                         "*.default.default.aws-us-east-1a.vespa.oath.cloud"),
-                "", Optional.empty(), Optional.empty()));
+                                                                                              "", Optional.empty(), Optional.empty(), Optional.empty())));
         secretStore.setSecret(testKeyName, KeyUtils.toPem(testKeyPair.getPrivate()), 7);
         secretStore.setSecret(testCertName, X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 7);
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, prodZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(testKeyName, endpointCertificateMetadata.get().keyName());
         assertEquals(testCertName, endpointCertificateMetadata.get().certName());
@@ -188,30 +191,30 @@ public class EndpointCertificatesTest {
 
     @Test
     void reprovisions_certificate_when_necessary() {
-        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty()));
+        mockCuratorDb.writeAssignedCertificate(assignedCertificate(instance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "root-request-uuid", Optional.of("leaf-request-uuid"), List.of(), "issuer", Optional.empty(), Optional.empty(), Optional.empty())));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), 0);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 0);
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, prodZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(0, endpointCertificateMetadata.get().version());
-        assertEquals(endpointCertificateMetadata, mockCuratorDb.readEndpointCertificateMetadata(testInstance.id()));
+        assertEquals(endpointCertificateMetadata, mockCuratorDb.readAssignedCertificate(instance.id()).map(AssignedCertificate::certificate));
     }
 
     @Test
     void reprovisions_certificate_with_added_sans_when_deploying_to_new_zone() {
         ZoneId testZone = ZoneId.from("prod.ap-northeast-1");
 
-        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "original-request-uuid", Optional.of("leaf-request-uuid"), expectedSans, "mockCa", Optional.empty(), Optional.empty()));
+        mockCuratorDb.writeAssignedCertificate(assignedCertificate(instance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "original-request-uuid", Optional.of("leaf-request-uuid"), expectedSans, "mockCa", Optional.empty(), Optional.empty(), Optional.empty())));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), -1);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), -1);
 
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), 0);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate2) + X509CertificateUtils.toPem(testCertificate2), 0);
 
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, testZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(0, endpointCertificateMetadata.get().version());
-        assertEquals(endpointCertificateMetadata, mockCuratorDb.readEndpointCertificateMetadata(testInstance.id()));
+        assertEquals(endpointCertificateMetadata, mockCuratorDb.readAssignedCertificate(instance.id()).map(AssignedCertificate::certificate));
         assertEquals("original-request-uuid", endpointCertificateMetadata.get().rootRequestId());
         assertNotEquals(Optional.of("leaf-request-uuid"), endpointCertificateMetadata.get().leafRequestId());
         assertEquals(Set.copyOf(expectedCombinedSans), Set.copyOf(endpointCertificateMetadata.get().requestedDnsSans()));
@@ -233,7 +236,7 @@ public class EndpointCertificatesTest {
         );
 
         ZoneId testZone = tester.zoneRegistry().zones().all().in(Environment.staging).zones().stream().findFirst().orElseThrow().getId();
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, deploymentSpec);
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, testZone, deploymentSpec);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
@@ -283,6 +286,50 @@ public class EndpointCertificatesTest {
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.t1.a1.*-cert"));
         assertEquals(0, endpointCertificateMetadata.get().version());
         assertEquals(expectedSans, endpointCertificateMetadata.get().requestedDnsSans().stream().sorted().toList());
+    }
+
+    @Test
+    public void assign_certificate_from_pool() {
+        tester.flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
+        try {
+            addCertificateToPool("pool-cert-1", UnassignedCertificate.State.requested);
+            endpointCertificates.getMetadata(instance, prodZone, DeploymentSpec.empty);
+            fail("Expected exception as certificate is not ready");
+        } catch (IllegalArgumentException ignored) {}
+
+        { // prod
+            String certId = "pool-cert-1";
+            addCertificateToPool(certId, UnassignedCertificate.State.ready);
+            Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, prodZone, DeploymentSpec.empty);
+            assertEquals(certId, endpointCertificateMetadata.get().randomizedId().get());
+            assertEquals(certId, tester.curator().readAssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.empty()).get().certificate().randomizedId().get(), "Certificate is assigned at application-level");
+            assertTrue(tester.controller().curator().readUnassignedCertificate(certId).isEmpty(), "Certificate is removed from pool");
+        }
+
+        { // dev
+            String certId = "pool-cert-2";
+            addCertificateToPool(certId, UnassignedCertificate.State.ready);
+            ZoneId devZone = tester.zoneRegistry().zones().all().routingMethod(RoutingMethod.exclusive).in(Environment.dev).zones().stream().findFirst().orElseThrow().getId();
+            Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, devZone, DeploymentSpec.empty);
+            assertEquals(certId, endpointCertificateMetadata.get().randomizedId().get());
+            assertEquals(certId, tester.curator().readAssignedCertificate(instance.id()).get().certificate().randomizedId().get(), "Certificate is assigned at instance-level");
+            assertTrue(tester.controller().curator().readUnassignedCertificate(certId).isEmpty(), "Certificate is removed from pool");
+        }
+    }
+
+    private void addCertificateToPool(String id, UnassignedCertificate.State state) {
+        EndpointCertificateMetadata cert = new EndpointCertificateMetadata(testKeyName, testCertName, 1, 0,
+                                                                           "request-id",
+                                                                           Optional.of("leaf-request-uuid"),
+                                                                           List.of("name1", "name2"),
+                                                                           "", Optional.empty(),
+                                                                           Optional.empty(), Optional.of(id));
+        UnassignedCertificate pooledCert = new UnassignedCertificate(cert, state);
+        tester.controller().curator().writeUnassignedCertificate(pooledCert);
+    }
+
+    private static AssignedCertificate assignedCertificate(ApplicationId instance, EndpointCertificateMetadata certificate) {
+        return new AssignedCertificate(TenantAndApplicationId.from(instance), Optional.of(instance.instance()), certificate);
     }
 
 }

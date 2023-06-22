@@ -11,11 +11,13 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -83,6 +85,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new BillingDatabaseMaintainer(controller, intervals.billingDatabaseMaintainer));
         maintainers.add(new MeteringMonitorMaintainer(controller, intervals.meteringMonitorMaintainer, controller.serviceRegistry().resourceDatabase(), metric));
         maintainers.add(new EnclaveAccessMaintainer(controller, intervals.defaultInterval));
+        maintainers.add(new CertificatePoolMaintainer(controller, metric, intervals.certificatePoolMaintainer, new SecureRandom()));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -143,6 +146,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration userManagementMaintainer;
         private final Duration billingDatabaseMaintainer;
         private final Duration meteringMonitorMaintainer;
+        private final Duration certificatePoolMaintainer;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -178,6 +182,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.userManagementMaintainer = duration(12, HOURS);
             this.billingDatabaseMaintainer = duration(5, MINUTES);
             this.meteringMonitorMaintainer = duration(30, MINUTES);
+            this.certificatePoolMaintainer = duration(15, MINUTES);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {

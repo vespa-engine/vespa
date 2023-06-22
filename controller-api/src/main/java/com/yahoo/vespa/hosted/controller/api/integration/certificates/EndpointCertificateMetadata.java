@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.certificates;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -12,76 +11,25 @@ import java.util.Optional;
  *
  * @author andreer
  */
-public class EndpointCertificateMetadata {
+public record EndpointCertificateMetadata(String keyName, String certName, int version, long lastRequested,
+                                          String rootRequestId, // The id of the first request made for this certificate. Should not change.
+                                          Optional<String> leafRequestId, // The id of the last known request made for this certificate. Changes on refresh, may be outdated!
+                                          List<String> requestedDnsSans, String issuer, Optional<Long> expiry,
+                                          Optional<Long> lastRefreshed, Optional<String> randomizedId) {
 
-    private final String keyName;
-    private final String certName;
-    private final int version;
-    private final long lastRequested;
-    private final String rootRequestId;
-    private final Optional<String> leafRequestId;
-    private final List<String> requestedDnsSans;
-    private final String issuer;
-    private final Optional<Long> expiry;
-    private final Optional<Long> lastRefreshed;
-
-    public EndpointCertificateMetadata(String keyName, String certName, int version, long lastRequested, String rootRequestId, Optional<String> leafRequestId, List<String> requestedDnsSans, String issuer, Optional<Long> expiry, Optional<Long> lastRefreshed) {
-        this.keyName = keyName;
-        this.certName = certName;
-        this.version = version;
-        this.lastRequested = lastRequested;
-        this.rootRequestId = rootRequestId;
-        this.leafRequestId = leafRequestId;
-        this.requestedDnsSans = requestedDnsSans;
-        this.issuer = issuer;
-        this.expiry = expiry;
-        this.lastRefreshed = lastRefreshed;
-    }
-
-    public String keyName() {
-        return keyName;
-    }
-
-    public String certName() {
-        return certName;
-    }
-
-    public int version() {
-        return version;
-    }
-
-    public long lastRequested() {
-        return lastRequested;
-    }
-
-    /**
-     * @return The request id of the first request made for this certificate. Should not change.
-     */
-    public String rootRequestId() {
-        return rootRequestId;
-    }
-
-    /**
-     * @return The request id of the last known request made for this certificate. Changes on refresh, may be outdated!
-     */
-    public Optional<String> leafRequestId() {
-        return leafRequestId;
-    }
-
-    public List<String> requestedDnsSans() {
-        return requestedDnsSans;
-    }
-
-    public String issuer() {
-        return issuer;
-    }
-
-    public Optional<Long> expiry() {
-        return expiry;
-    }
-
-    public Optional<Long> lastRefreshed() {
-        return lastRefreshed;
+    public EndpointCertificateMetadata withRandomizedId(String randomizedId) {
+        return new EndpointCertificateMetadata(
+                this.keyName,
+                this.certName,
+                this.version,
+                this.lastRequested,
+                this.rootRequestId,
+                this.leafRequestId,
+                this.requestedDnsSans,
+                this.issuer,
+                this.expiry,
+                this.lastRefreshed,
+                Optional.of(randomizedId));
     }
 
     public EndpointCertificateMetadata withKeyName(String keyName) {
@@ -95,7 +43,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                this.lastRefreshed);
+                this.lastRefreshed,
+                this.randomizedId);
     }
 
     public EndpointCertificateMetadata withCertName(String certName) {
@@ -109,7 +58,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                this.lastRefreshed);
+                this.lastRefreshed,
+                this.randomizedId);
     }
 
     public EndpointCertificateMetadata withVersion(int version) {
@@ -123,7 +73,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                this.lastRefreshed);
+                this.lastRefreshed,
+                this.randomizedId);
     }
 
     public EndpointCertificateMetadata withLastRequested(long lastRequested) {
@@ -137,7 +88,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                this.lastRefreshed);
+                this.lastRefreshed,
+                this.randomizedId);
     }
 
     public EndpointCertificateMetadata withLastRefreshed(long lastRefreshed) {
@@ -151,7 +103,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                Optional.of(lastRefreshed));
+                Optional.of(lastRefreshed),
+                this.randomizedId);
     }
 
     public EndpointCertificateMetadata withRootRequestId(String rootRequestId) {
@@ -165,7 +118,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                lastRefreshed);
+                this.lastRefreshed,
+                this.randomizedId);
     }
 
     public EndpointCertificateMetadata withLeafRequestId(Optional<String> leafRequestId) {
@@ -179,45 +133,8 @@ public class EndpointCertificateMetadata {
                 this.requestedDnsSans,
                 this.issuer,
                 this.expiry,
-                lastRefreshed);
-    }
-
-    @Override
-    public String toString() {
-        return "EndpointCertificateMetadata{" +
-                "keyName='" + keyName + '\'' +
-                ", certName='" + certName + '\'' +
-                ", version=" + version +
-                ", lastRequested=" + lastRequested +
-                ", rootRequestId=" + rootRequestId +
-                ", leafRequestId=" + leafRequestId +
-                ", requestedDnsSans=" + requestedDnsSans +
-                ", issuer=" + issuer +
-                ", expiry=" + expiry +
-                ", lastRefreshed=" + lastRefreshed +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        EndpointCertificateMetadata that = (EndpointCertificateMetadata) o;
-        return version == that.version &&
-                lastRequested == that.lastRequested &&
-                keyName.equals(that.keyName) &&
-                certName.equals(that.certName) &&
-                rootRequestId.equals(that.rootRequestId) &&
-                leafRequestId.equals(that.leafRequestId) &&
-                requestedDnsSans.equals(that.requestedDnsSans) &&
-                issuer.equals(that.issuer) &&
-                expiry.equals(that.expiry) &&
-                lastRefreshed.equals(that.lastRefreshed);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(keyName, certName, version, lastRequested, rootRequestId, leafRequestId, requestedDnsSans, issuer, expiry, lastRefreshed);
+                this.lastRefreshed,
+                this.randomizedId);
     }
 
 }

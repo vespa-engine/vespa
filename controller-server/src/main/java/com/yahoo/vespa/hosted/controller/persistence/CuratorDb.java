@@ -8,19 +8,23 @@ import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.transaction.CuratorOperation;
+import com.yahoo.vespa.curator.transaction.CuratorOperations;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBuckets;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -28,6 +32,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
+import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
+import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntry;
 import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntrySerializer;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -52,7 +58,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -103,6 +108,7 @@ public class CuratorDb {
     private static final Path supportAccessRoot = root.append("supportAccess");
     private static final Path mailVerificationRoot = root.append("mailVerification");
     private static final Path dataPlaneTokenRoot = root.append("dataplaneTokens");
+    private static final Path certificatePoolRoot = root.append("certificatePool");
 
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
@@ -121,6 +127,7 @@ public class CuratorDb {
     private final RetriggerEntrySerializer retriggerEntrySerializer = new RetriggerEntrySerializer();
     private final NotificationsSerializer notificationsSerializer = new NotificationsSerializer();
     private final DnsChallengeSerializer dnsChallengeSerializer = new DnsChallengeSerializer();
+    private final UnassignedCertificateSerializer unassignedCertificateSerializer = new UnassignedCertificateSerializer();
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -246,6 +253,10 @@ public class CuratorDb {
 
     public Mutex lockPendingMailVerification(String verificationCode) {
         return curator.lock(lockRoot.append("pendingMailVerification").append(verificationCode), defaultLockTimeout);
+    }
+
+    public Mutex lockCertificatePool() {
+        return curator.lock(lockRoot.append("certificatePool"), defaultLockTimeout);
     }
 
     // -------------- Helpers ------------------------------------------
@@ -597,27 +608,54 @@ public class CuratorDb {
 
     // -------------- Application endpoint certificates ----------------------------
 
-    public void writeEndpointCertificateMetadata(ApplicationId applicationId, EndpointCertificateMetadata endpointCertificateMetadata) {
-        curator.set(endpointCertificatePath(applicationId), asJson(EndpointCertificateMetadataSerializer.toSlime(endpointCertificateMetadata)));
-    }
-
-    public void deleteEndpointCertificateMetadata(ApplicationId applicationId) {
-        curator.delete(endpointCertificatePath(applicationId));
-    }
-
-    public Optional<EndpointCertificateMetadata> readEndpointCertificateMetadata(ApplicationId applicationId) {
-        return curator.getData(endpointCertificatePath(applicationId)).map(String::new).map(EndpointCertificateMetadataSerializer::fromJsonString);
-    }
-
-    public Map<ApplicationId, EndpointCertificateMetadata> readAllEndpointCertificateMetadata() {
-        Map<ApplicationId, EndpointCertificateMetadata> allEndpointCertificateMetadata = new HashMap<>();
-
-        for (String appIdString : curator.getChildren(endpointCertificateRoot)) {
-            ApplicationId applicationId = ApplicationId.fromSerializedForm(appIdString);
-            Optional<EndpointCertificateMetadata> endpointCertificateMetadata = readEndpointCertificateMetadata(applicationId);
-            allEndpointCertificateMetadata.put(applicationId, endpointCertificateMetadata.orElseThrow());
+    public void writeAssignedCertificate(AssignedCertificate certificate) {
+        try (NestedTransaction transaction = new NestedTransaction()) {
+            writeAssignedCertificate(certificate, transaction);
+            transaction.commit();
         }
-        return allEndpointCertificateMetadata;
+    }
+
+    public void writeAssignedCertificate(AssignedCertificate certificate, NestedTransaction transaction) {
+        Path path = endpointCertificatePath(certificate.application(), certificate.instance());
+        curator.create(path);
+        CuratorOperation operation = CuratorOperations.setData(path.getAbsolute(),
+                                                               asJson(EndpointCertificateMetadataSerializer.toSlime(certificate.certificate())));
+        transaction.add(CuratorTransaction.from(operation, curator));
+    }
+
+    public void removeAssignedCertificate(TenantAndApplicationId application, Optional<InstanceName> instanceName) {
+        curator.delete(endpointCertificatePath(application, instanceName));
+    }
+
+    // TODO(mpolden): Remove this. Caller should make an explicit decision to read certificate for a particular instance
+    public Optional<AssignedCertificate> readAssignedCertificate(ApplicationId applicationId) {
+        return readAssignedCertificate(TenantAndApplicationId.from(applicationId), Optional.of(applicationId.instance()));
+    }
+
+    public Optional<AssignedCertificate> readAssignedCertificate(TenantAndApplicationId application, Optional<InstanceName> instance) {
+        return readSlime(endpointCertificatePath(application, instance)).map(Slime::get)
+                                                                        .map(EndpointCertificateMetadataSerializer::fromSlime)
+                                                                        .map(cert -> new AssignedCertificate(application, instance, cert));
+    }
+
+    public List<AssignedCertificate> readAssignedCertificates() {
+        List<AssignedCertificate> certificates = new ArrayList<>();
+        for (String value : curator.getChildren(endpointCertificateRoot)) {
+            final TenantAndApplicationId application;
+            final Optional<InstanceName> instanceName;
+            if (value.split(":").length == 3) {
+                ApplicationId instance = ApplicationId.fromSerializedForm(value);
+                application = TenantAndApplicationId.from(instance);
+                instanceName = Optional.of(instance.instance());
+            } else {
+                application = TenantAndApplicationId.fromSerialized(value);
+                instanceName = Optional.empty();
+            }
+            Optional<AssignedCertificate> assigned = readAssignedCertificate(application, instanceName);
+            if (assigned.isEmpty()) continue; // Deleted while reading
+            certificates.add(assigned.get());
+        }
+        return certificates;
     }
 
     // -------------- Metering view refresh times ----------------------------
@@ -739,6 +777,26 @@ public class CuratorDb {
         return readSlime(dataplaneTokenPath(tenantName)).map(DataplaneTokenSerializer::fromSlime).orElse(List.of());
     }
 
+    // -------------- Endpoint certificate pool -------------------------------
+
+    public void writeUnassignedCertificate(UnassignedCertificate certificate) {
+        curator.set(certificatePoolPath(certificate.id()), asJson(unassignedCertificateSerializer.toSlime(certificate)));
+    }
+
+    public Optional<UnassignedCertificate> readUnassignedCertificate(String id) {
+        return readSlime(certificatePoolPath(id)).map(unassignedCertificateSerializer::fromSlime);
+    }
+
+    public void removeUnassignedCertificate(UnassignedCertificate certificate, NestedTransaction transaction) {
+        Path path = certificatePoolPath(certificate.id());
+        CuratorTransaction curatorTransaction = CuratorTransaction.from(CuratorOperations.delete(path.getAbsolute()), curator);
+        transaction.add(curatorTransaction);
+    }
+
+    public List<UnassignedCertificate> readUnassignedCertificates() {
+        return curator.getChildren(certificatePoolRoot).stream().flatMap(id -> readUnassignedCertificate(id).stream()).toList();
+    }
+
     // -------------- Paths ---------------------------------------------------
 
     private static Path upgradesPerMinutePath() {
@@ -811,8 +869,10 @@ public class CuratorDb {
         return controllerRoot.append(hostname);
     }
 
-    private static Path endpointCertificatePath(ApplicationId id) {
-        return endpointCertificateRoot.append(id.serializedForm());
+    private static Path endpointCertificatePath(TenantAndApplicationId application, Optional<InstanceName> instance) {
+        String id = instance.map(name -> application.instance(name).serializedForm())
+                            .orElseGet(application::serialized);
+        return endpointCertificateRoot.append(id);
     }
 
     private static Path meteringRefreshPath() {
@@ -845,6 +905,10 @@ public class CuratorDb {
 
     private static Path dataplaneTokenPath(TenantName tenantName) {
         return dataPlaneTokenRoot.append(tenantName.value());
+    }
+
+    private static Path certificatePoolPath(String id) {
+        return certificatePoolRoot.append(id);
     }
 
 }
