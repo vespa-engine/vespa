@@ -16,6 +16,7 @@ import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
@@ -41,11 +42,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.provision.restapi.NodePatcher.DROP_DOCUMENTS_REPORT;
 import static java.util.Comparator.comparing;
@@ -236,8 +237,7 @@ public class Nodes {
      * @param reusable move the node directly to {@link Node.State#dirty} after removal
      */
     public void setRemovable(NodeList nodes, boolean reusable) {
-        performOn(nodes, (node, mutex) -> write(node.with(node.allocation().get().removable(true, reusable)),
-                                                mutex));
+        performOn(nodes, (node, mutex) -> write(node.with(node.allocation().get().removable(true, reusable)), mutex));
     }
 
     /**
@@ -275,25 +275,29 @@ public class Nodes {
         return performOn(NodeList.copyOf(nodes), (node, lock) -> deallocate(node, agent, reason));
     }
 
-    // TODO: take recursive lock
     public List<Node> deallocateRecursively(String hostname, Agent agent, String reason) {
         Node nodeToDirty = node(hostname).orElseThrow(() -> new NoSuchNodeException("Could not deallocate " + hostname + ": Node not found"));
+        List<Node> nodesToDirty = new ArrayList<>();
+        try (RecursiveNodeMutexes locked = lockAndGetRecursively(hostname, Optional.empty())) {
+            for (NodeMutex child : locked.children())
+                if (child.node().state() != Node.State.dirty)
+                    nodesToDirty.add(child.node());
 
-        List<Node> nodesToDirty =
-                (nodeToDirty.type().isHost() ?
-                 Stream.concat(list().childrenOf(hostname).asList().stream(), Stream.of(nodeToDirty)) :
-                 Stream.of(nodeToDirty)).filter(node -> node.state() != Node.State.dirty).toList();
-        List<String> hostnamesNotAllowedToDirty = nodesToDirty.stream()
-                                                              .filter(node -> node.state() != Node.State.provisioned)
-                                                              .filter(node -> node.state() != Node.State.failed)
-                                                              .filter(node -> node.state() != Node.State.parked)
-                                                              .filter(node -> node.state() != Node.State.breakfixed)
-                                                              .map(Node::hostname).toList();
-        if ( ! hostnamesNotAllowedToDirty.isEmpty())
-            illegal("Could not deallocate " + nodeToDirty + ": " +
-                    hostnamesNotAllowedToDirty + " are not in states [provisioned, failed, parked, breakfixed]");
+            if (locked.parent().node().state() != State.dirty)
+                nodesToDirty.add(locked.parent().node());
 
-        return nodesToDirty.stream().map(node -> deallocate(node, agent, reason)).toList();
+            List<String> hostnamesNotAllowedToDirty = nodesToDirty.stream()
+                                                                  .filter(node -> node.state() != Node.State.provisioned)
+                                                                  .filter(node -> node.state() != Node.State.failed)
+                                                                  .filter(node -> node.state() != Node.State.parked)
+                                                                  .filter(node -> node.state() != Node.State.breakfixed)
+                                                                  .map(Node::hostname).toList();
+            if ( ! hostnamesNotAllowedToDirty.isEmpty())
+                illegal("Could not deallocate " + nodeToDirty + ": " +
+                        hostnamesNotAllowedToDirty + " are not in states [provisioned, failed, parked, breakfixed]");
+
+            return nodesToDirty.stream().map(node -> deallocate(node, agent, reason)).toList();
+        }
     }
 
     /**
@@ -352,7 +356,6 @@ public class Nodes {
      */
     public List<Node> failOrMarkRecursively(String hostname, Agent agent, String reason) {
         List<Node> changed = new ArrayList<>();
-        // TODO: consider whether we can instead fail all unfailed children until none remain, with single locks.
         try (RecursiveNodeMutexes nodes = lockAndGetRecursively(hostname, Optional.empty())) {
             for (NodeMutex child : nodes.children())
                 changed.add(failOrMark(child.node(), agent, reason, child));
@@ -678,7 +681,6 @@ public class Nodes {
         return decommission(hostname, upgrade ? HostOperation.upgradeFlavor : HostOperation.cancel, agent, instant);
     }
 
-    // TODO: use recursive lock
     private List<Node> decommission(String hostname, HostOperation op, Agent agent, Instant instant) {
         Optional<NodeMutex> nodeMutex = lockAndGet(hostname);
         if (nodeMutex.isEmpty()) return List.of();
@@ -727,8 +729,8 @@ public class Nodes {
         return db.writeTo(nodes, Agent.system, Optional.empty());
     }
 
-    private List<Node> performOn(Predicate<Node> filter, BiFunction<Node, Mutex, Node> action) {
-        return performOn(list().matching(filter), action);
+    public List<Node> performOn(Predicate<Node> filter, BiFunction<Node, Mutex, Node> action) {
+        return performOn(list(), filter, action);
     }
 
     /**
@@ -737,16 +739,35 @@ public class Nodes {
      * @param action the action to perform
      * @return the set of nodes on which the action was performed, as they became as a result of the operation
      */
-    // TODO: make public, with changed API, and apply filter after reading nodes under lock
-    private List<Node> performOn(NodeList nodes, BiFunction<Node, Mutex, Node> action) {
+    public List<Node> performOn(NodeList nodes, BiFunction<Node, Mutex, Node> action) {
+        return performOn(nodes, __ -> true, action);
+    }
+
+    public List<Node> performOn(NodeList nodes, Predicate<Node> filter, BiFunction<Node, Mutex, Node> action) {
         List<Node> resultingNodes = new ArrayList<>();
         nodes.stream().collect(groupingBy(Nodes::applicationIdForLock))
              .forEach((applicationId, nodeList) -> { // Grouped only to reduce number of lock acquire/release cycles.
                  try (NodeMutexes locked = lockAndGetAll(nodeList, Optional.empty())) {
                      for (NodeMutex node : locked.nodes())
-                         resultingNodes.add(action.apply(node.node(), node));
+                         if (filter.test(node.node()))
+                             resultingNodes.add(action.apply(node.node(), node));
                  }
              });
+        return resultingNodes;
+    }
+
+    public List<Node> performOnRecursively(NodeList parents, Predicate<RecursiveNodeMutexes> filter, Function<RecursiveNodeMutexes, List<Node>> action) {
+        for (Node node : parents)
+            if (node.parentHostname().isPresent())
+                throw new IllegalArgumentException(node + " is not a parent host");
+
+        List<Node> resultingNodes = new ArrayList<>();
+        for (Node parent : parents) {
+            try (RecursiveNodeMutexes locked = lockAndGetRecursively(parent.hostname(), Optional.empty())) {
+                if (filter.test(locked))
+                    resultingNodes.addAll(action.apply(locked));
+            }
+        }
         return resultingNodes;
     }
 
