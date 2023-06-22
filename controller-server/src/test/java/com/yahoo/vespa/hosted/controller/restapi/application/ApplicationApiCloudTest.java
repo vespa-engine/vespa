@@ -498,6 +498,25 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                               400);
     }
 
+    @Test
+    void dataplane_token_endpoint_test() {
+        ControllerTester wrapped = new ControllerTester(tester);
+        wrapped.upgradeSystem(Version.fromString("7.1"));
+        new DeploymentTester(wrapped).newDeploymentContext(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()))
+                .submit()
+                .deploy();
+
+        tester.assertResponse(request("/application/v4/tenant/scoober/application/albums/environment/prod/region/aws-us-east-1c/instance/default", GET)
+                                      .roles(Role.reader(tenantName)),
+                              new File("deployment-cloud.json"));
+
+        tester.assertResponse(request("/application/v4/tenant/scoober/archive-access/aws", DELETE).roles(Role.administrator(tenantName)),
+                              "{\"message\":\"AWS archive access role removed for tenant scoober.\"}", 200);
+        tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
+                              (response) -> assertFalse(response.getBodyAsString().contains("archiveAccessRole")),
+                              200);
+    }
+
     private ApplicationPackageBuilder prodBuilder() {
         return new ApplicationPackageBuilder()
                 .withoutAthenzIdentity()

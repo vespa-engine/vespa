@@ -1889,6 +1889,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setString("scope", endpointScopeString(endpoint.scope()));
         object.setString("routingMethod", routingMethodString(endpoint.routingMethod()));
         object.setBool("legacy", endpoint.legacy());
+        object.setString("authMethod", endpoint.isTokenEndpoint() ? "token" : "mtls");
     }
 
     private void toSlime(Cursor response, DeploymentId deploymentId, Deployment deployment, HttpRequest request) {
