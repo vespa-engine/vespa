@@ -258,21 +258,9 @@ public class Nodes {
      * transaction commits.
      */
     public List<Node> fail(List<Node> nodes, ApplicationTransaction transaction) {
-        return fail(nodes, Agent.application, "Failed by application", transaction.nested());
-    }
-
-    public List<Node> fail(List<Node> nodes, Agent agent, String reason) {
-        NestedTransaction transaction = new NestedTransaction();
-        nodes = fail(nodes, agent, reason, transaction);
-        transaction.commit();
-        return nodes;
-    }
-
-    private List<Node> fail(List<Node> nodes, Agent agent, String reason, NestedTransaction transaction) {
-        nodes = nodes.stream()
-                     .map(n -> n.withWantToFail(false, agent, clock.instant()))
-                     .toList();
-        return db.writeTo(Node.State.failed, nodes, agent, Optional.of(reason), transaction);
+        return db.writeTo(Node.State.failed,
+                          nodes.stream().map(n -> n.withWantToFail(false, Agent.application, clock.instant())).toList(),
+                          Agent.application, Optional.of("Failed by application"), transaction);
     }
 
     /** Move nodes to the dirty state */
