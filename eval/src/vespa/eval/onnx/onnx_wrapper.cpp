@@ -184,7 +184,7 @@ public:
 };
 Ort::AllocatorWithDefaultOptions OnnxString::_alloc;
 
-std::vector<Onnx::DimSize> make_dimensions(const Ort::TensorTypeAndShapeInfo &tensor_info) {
+std::vector<Onnx::DimSize> make_dimensions(const Ort::ConstTensorTypeAndShapeInfo &tensor_info) {
     std::vector<const char *> symbolic_sizes(tensor_info.GetDimensionsCount(), nullptr);
     tensor_info.GetSymbolicDimensions(symbolic_sizes.data(), symbolic_sizes.size());
     auto shape = tensor_info.GetShape();

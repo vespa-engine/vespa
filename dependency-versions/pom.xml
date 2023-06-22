@@ -104,7 +104,7 @@
         <mockito.vespa.version>4.0.0</mockito.vespa.version>
         <netty.vespa.version>4.1.94.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.61.Final</netty-tcnative.vespa.version>
-        <onnxruntime.vespa.version>1.13.1</onnxruntime.vespa.version>
+        <onnxruntime.vespa.version>1.15.1</onnxruntime.vespa.version>
         <opennlp.vespa.version>1.9.3</opennlp.vespa.version>
         <opentest4j.vespa.version>1.2.0</opentest4j.vespa.version>
         <org.json.vespa.version>20230227</org.json.vespa.version>
