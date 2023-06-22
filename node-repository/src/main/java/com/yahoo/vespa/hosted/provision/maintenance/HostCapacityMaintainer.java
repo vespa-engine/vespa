@@ -106,7 +106,8 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                     attempts++;
 
                     // Any hosts that are no longer empty should be marked as such, and excluded from removal.
-                    if (someChildrenCannotBeDeprovisioned(currentNodesByParent, host) && host.hostEmptyAt().isPresent()) {
+                    if (currentNodesByParent.getOrDefault(Optional.of(host.hostname()), List.of()).stream().anyMatch(n -> ! canDeprovision(n))
+                                    && host.hostEmptyAt().isPresent()) {
                         nodeRepository().nodes().write(host.withHostEmptyAt(null), lock);
                     }
                     // If the host is still empty, we can mark it as empty now, or mark it for removal if it has already expired.
@@ -302,10 +303,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
 
     private static boolean allChildrenCanBeDeprovisioned(Map<Optional<String>, List<Node>> nodesByParent, Node host) {
         return getChildren(nodesByParent, host).stream().allMatch(HostCapacityMaintainer::canDeprovision);
-    }
-
-    private static boolean someChildrenCannotBeDeprovisioned(Map<Optional<String>, List<Node>> nodesByParent, Node host) {
-        return  ! allChildrenCanBeDeprovisioned(nodesByParent, host);
     }
 
 }
