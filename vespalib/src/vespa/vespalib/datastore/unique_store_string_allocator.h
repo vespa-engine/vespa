@@ -117,7 +117,7 @@ public:
         auto &state = _store.getBufferMeta(iRef.bufferId());
         auto type_id = state.getTypeId();
         if (type_id != 0) {
-            return *reinterpret_cast<const UniqueStoreEntryBase *>(_store.template getEntryArray<char>(iRef, state.getArraySize()));
+            return *reinterpret_cast<const UniqueStoreEntryBase *>(_store.template getEntryArray<char>(iRef, state.get_array_size()));
         } else {
             return *_store.template getEntry<WrappedExternalEntryType>(iRef);
         }
@@ -127,7 +127,7 @@ public:
         auto &state = _store.getBufferMeta(iRef.bufferId());
         auto type_id = state.getTypeId();
         if (type_id != 0) {
-            return reinterpret_cast<const UniqueStoreSmallStringEntry *>(_store.template getEntryArray<char>(iRef, state.getArraySize()))->value();
+            return reinterpret_cast<const UniqueStoreSmallStringEntry *>(_store.template getEntryArray<char>(iRef, state.get_array_size()))->value();
         } else {
             return _store.template getEntry<WrappedExternalEntryType>(iRef)->value().c_str();
         }

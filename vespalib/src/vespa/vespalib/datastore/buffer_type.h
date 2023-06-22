@@ -64,6 +64,7 @@ public:
     virtual void on_free(EntryCount used_entries);
     void resume_primary_buffer(uint32_t buffer_id, std::atomic<EntryCount>* used_entries, std::atomic<EntryCount>* dead_entries);
     virtual const alloc::MemoryAllocator* get_memory_allocator() const;
+    virtual bool is_dynamic_array_buffer_type() const noexcept;
 
     /**
      * Calculate number of entries to allocate for new buffer given how many free entries are needed.

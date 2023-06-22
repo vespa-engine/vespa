@@ -137,24 +137,28 @@ public:
     void* get_buffer_relaxed() noexcept { return _buffer.load(std::memory_order_relaxed); }
     const void* get_buffer_acquire() const noexcept { return _buffer.load(std::memory_order_acquire); }
     uint32_t getTypeId() const { return _typeId; }
-    uint32_t getArraySize() const { return _arraySize; }
+    uint32_t get_array_size() const { return _array_size; }
     BufferState * get_state_relaxed() { return _state.load(std::memory_order_relaxed); }
     const BufferState * get_state_acquire() const { return _state.load(std::memory_order_acquire); }
-    uint32_t get_entry_size() const { return get_state_acquire()->getTypeHandler()->entry_size(); }
+    uint32_t get_entry_size() const noexcept { return _entry_size; }
     void setTypeId(uint32_t typeId) { _typeId = typeId; }
-    void setArraySize(uint32_t arraySize) { _arraySize = arraySize; }
+    void set_array_size(uint32_t arraySize) { _array_size = arraySize; }
+    void set_entry_size(uint32_t entry_size) noexcept { _entry_size = entry_size; }
     void set_state(BufferState * state) { _state.store(state, std::memory_order_release); }
 private:
     BufferAndMeta(void* buffer, BufferState * state, uint32_t typeId, uint32_t arraySize)
         : _buffer(buffer),
           _state(state),
           _typeId(typeId),
-          _arraySize(arraySize)
+          _array_size(arraySize)
     { }
     std::atomic<void*>        _buffer;
     std::atomic<BufferState*> _state;
     uint32_t                  _typeId;
-    uint32_t                  _arraySize;
+    union {
+        uint32_t _array_size; // Valid unless buffer type is dynamic array buffer type
+        uint32_t _entry_size; // Valid if buffer type is dynamic array buffer type
+    };
 };
 
 }
