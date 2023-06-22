@@ -12,7 +12,8 @@
       "url": "https://albums.scoober.aws-us-east-1c.z.vespa-app.cloud/",
       "scope": "zone",
       "routingMethod": "exclusive",
-      "legacy": false
+      "legacy": false,
+      "authMethod": "mtls"
     }
   ],
   "clusters": "http://localhost:8080/application/v4/tenant/scoober/application/albums/instance/default/environment/prod/region/aws-us-east-1c/clusters",

@@ -61,7 +61,8 @@
                 "url": "https://instance1.application1.tenant1.us-east-1.dev.vespa.oath.cloud/",
                 "scope": "zone",
                 "routingMethod": "sharedLayer4",
-                "legacy": false
+                "legacy": false,
+                "authMethod": "mtls"
               }
             ],
             "clusters": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/dev/region/us-east-1/clusters",
@@ -105,7 +106,8 @@
                 "url": "https://instance1.application1.tenant1.us-central-1.vespa.oath.cloud/",
                 "scope": "zone",
                 "routingMethod": "sharedLayer4",
-                "legacy": false
+                "legacy": false,
+                "authMethod": "mtls"
               },
               {
                 "cluster": "foo",
@@ -113,7 +115,8 @@
                 "url": "https://instance1.application1.tenant1.global.vespa.oath.cloud/",
                 "scope": "global",
                 "routingMethod": "sharedLayer4",
-                "legacy": false
+                "legacy": false,
+                "authMethod": "mtls"
               },
               {
                 "cluster": "foo",
@@ -121,7 +124,8 @@
                 "url": "https://a0.application1.tenant1.a.vespa.oath.cloud/",
                 "scope": "application",
                 "routingMethod": "sharedLayer4",
-                "legacy": false
+                "legacy": false,
+                "authMethod": "mtls"
               }
             ],
             "clusters": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/clusters",
