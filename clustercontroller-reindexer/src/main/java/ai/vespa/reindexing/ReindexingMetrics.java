@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.reindexing;
 
-import ai.vespa.metrics.ClusterControllerMetrics;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.jdisc.Metric;
 
@@ -28,7 +27,7 @@ class ReindexingMetrics {
 
     void dump(Reindexing reindexing) {
         reindexing.status().forEach((type, status) -> {
-            metric.set(ClusterControllerMetrics.REINDEXING_PROGRESS.baseName(),
+            metric.set("reindexing.progress",
                        status.progress().map(ProgressToken::percentFinished).map(percentage -> percentage * 1e-2)
                              .orElse(status.state() == SUCCESSFUL ? 1.0 : 0.0),
                        metric.createContext(Map.of("clusterid", cluster, "documenttype", type.getName())));

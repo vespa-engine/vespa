@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
-import ai.vespa.metrics.ContainerMetrics;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -290,7 +289,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         Tuple latencySeconds = new Tuple(NULL_DIMENSIONS, "latencySeconds", null);
         for (Map.Entry<MetricDimensions, MetricSet> entry : snapshot) {
             MetricSet metricSet = entry.getValue();
-            MetricValue val = metricSet.get(ContainerMetrics.SERVER_TOTAL_SUCCESFUL_RESPONSE_LATENCY.baseName());
+            MetricValue val = metricSet.get("serverTotalSuccessfulResponseLatency");
             if (val instanceof GaugeMetric gauge) {
                 latencySeconds.add(GaugeMetric.newInstance(gauge.getLast() / 1000,
                                                            gauge.getMax() / 1000,
@@ -298,7 +297,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
                                                            gauge.getSum() / 1000,
                                                            gauge.getCount()));
             }
-            requestsPerSecond.add(metricSet.get(ContainerMetrics.SERVER_NUM_SUCCESSFUL_RESPONSES.baseName()));
+            requestsPerSecond.add(metricSet.get("serverNumSuccessfulResponses"));
         }
         List<Tuple> lst = new ArrayList<>();
         if (requestsPerSecond.val != null) {

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
-import ai.vespa.metrics.ContainerMetrics;
 import ai.vespa.cloud.ZoneInfo;
 import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.collections.Tuple2;
@@ -82,7 +81,7 @@ public class SearchHandler extends LoggingRequestHandler {
     private static final CompoundName FORCE_TIMESTAMPS = CompoundName.from("trace.timestamps");
 
     /** Event name for number of connections to the search subsystem */
-    private static final String SEARCH_CONNECTIONS = ContainerMetrics.SEARCH_CONNECTIONS.baseName();
+    private static final String SEARCH_CONNECTIONS = "search_connections";
     static final String RENDER_LATENCY_METRIC = ContainerMetrics.JDISC_RENDER_LATENCY.baseName();
     static final String MIME_DIMENSION = "mime";
     static final String RENDERER_DIMENSION = "renderer";

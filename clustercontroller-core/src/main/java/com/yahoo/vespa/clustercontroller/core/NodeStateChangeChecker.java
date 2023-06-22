@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import ai.vespa.metrics.StorageMetrics;
 import com.yahoo.lang.MutableBoolean;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -45,7 +44,7 @@ import static java.util.logging.Level.FINE;
 public class NodeStateChangeChecker {
 
     private static final Logger log = Logger.getLogger(NodeStateChangeChecker.class.getName());
-    private static final String BUCKETS_METRIC_NAME = StorageMetrics.VDS_DATASTORED_BUCKET_SPACE_BUCKETS_TOTAL.baseName();
+    private static final String BUCKETS_METRIC_NAME = "vds.datastored.bucket_space.buckets_total";
     private static final Map<String, String> BUCKETS_METRIC_DIMENSIONS = Map.of("bucketSpace", "default");
 
     private final int requiredRedundancy;
