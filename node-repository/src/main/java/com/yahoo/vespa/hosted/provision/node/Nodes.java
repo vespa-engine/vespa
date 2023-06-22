@@ -739,36 +739,14 @@ public class Nodes {
      */
     // TODO: make public, with changed API, and apply filter after reading nodes under lock
     private List<Node> performOn(NodeList nodes, BiFunction<Node, Mutex, Node> action) {
-        List<Node> unallocatedNodes = new ArrayList<>();
-        ListMap<ApplicationId, Node> allocatedNodes = new ListMap<>();
-
-        // Group matching nodes by the lock needed
-        for (Node node : nodes) {
-            Optional<ApplicationId> applicationId = applicationIdForLock(node);
-            if (applicationId.isPresent())
-                allocatedNodes.put(applicationId.get(), node);
-            else
-                unallocatedNodes.add(node);
-        }
-
-        // Perform operation while holding appropriate lock
         List<Node> resultingNodes = new ArrayList<>();
-        try (Mutex lock = lockUnallocated()) {
-            for (Node node : unallocatedNodes) {
-                Optional<Node> currentNode = db.readNode(node.hostname()); // Re-read while holding lock
-                if (currentNode.isEmpty()) continue;
-                resultingNodes.add(action.apply(currentNode.get(), lock));
-            }
-        }
-        for (Map.Entry<ApplicationId, List<Node>> applicationNodes : allocatedNodes.entrySet()) {
-            try (Mutex lock = applications.lock(applicationNodes.getKey())) {
-                for (Node node : applicationNodes.getValue()) {
-                    Optional<Node> currentNode = db.readNode(node.hostname());  // Re-read while holding lock
-                    if (currentNode.isEmpty()) continue;
-                    resultingNodes.add(action.apply(currentNode.get(), lock));
-                }
-            }
-        }
+        nodes.stream().collect(groupingBy(Nodes::applicationIdForLock))
+             .forEach((applicationId, nodeList) -> { // Grouped only to reduce number of lock acquire/release cycles.
+                 try (NodeMutexes locked = lockAndGetAll(nodeList, Optional.empty())) {
+                     for (NodeMutex node : locked.nodes())
+                         resultingNodes.add(action.apply(node.node(), node));
+                 }
+             });
         return resultingNodes;
     }
 
