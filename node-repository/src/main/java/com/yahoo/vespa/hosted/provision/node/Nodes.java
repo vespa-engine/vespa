@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
-import com.yahoo.collections.ListMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
@@ -31,12 +30,16 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -45,6 +48,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.provision.restapi.NodePatcher.DROP_DOCUMENTS_REPORT;
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
 
 /**
  * The nodes in the node repo and their state transitions
@@ -268,6 +274,7 @@ public class Nodes {
         return performOn(NodeList.copyOf(nodes), (node, lock) -> deallocate(node, agent, reason));
     }
 
+    // TODO: take recursive lock
     public List<Node> deallocateRecursively(String hostname, Agent agent, String reason) {
         Node nodeToDirty = node(hostname).orElseThrow(() -> new NoSuchNodeException("Could not deallocate " + hostname + ": Node not found"));
 
@@ -289,7 +296,7 @@ public class Nodes {
     }
 
     /**
-     * Set a node dirty  or parked, allowed if it is in the provisioned, inactive, failed or parked state.
+     * Set a node dirty or parked, allowed if it is in the provisioned, inactive, failed or parked state.
      * Use this to clean newly provisioned nodes or to recycle failed nodes which have been repaired or put on hold.
      */
     public Node deallocate(Node node, Agent agent, String reason) {
@@ -305,6 +312,7 @@ public class Nodes {
         return nodes.stream().map(node -> deallocate(node, agent, reason, transaction.nested())).toList();
     }
 
+    // Be sure to hold the right lock!
     private Node deallocate(Node node, Agent agent, String reason, NestedTransaction transaction) {
         if (parkOnDeallocationOf(node, agent)) {
             return park(node.hostname(), false, agent, reason, transaction);
@@ -660,6 +668,7 @@ public class Nodes {
         return decommission(hostname, upgrade ? HostOperation.upgradeFlavor : HostOperation.cancel, agent, instant);
     }
 
+    // TODO: use recursive lock
     private List<Node> decommission(String hostname, HostOperation op, Agent agent, Instant instant) {
         Optional<NodeMutex> nodeMutex = lockAndGet(hostname);
         if (nodeMutex.isEmpty()) return List.of();
@@ -718,6 +727,7 @@ public class Nodes {
      * @param action the action to perform
      * @return the set of nodes on which the action was performed, as they became as a result of the operation
      */
+    // TODO: make public, with changed API, and apply filter after reading nodes under lock
     private List<Node> performOn(NodeList nodes, BiFunction<Node, Mutex, Node> action) {
         List<Node> unallocatedNodes = new ArrayList<>();
         ListMap<ApplicationId, Node> allocatedNodes = new ListMap<>();
@@ -868,6 +878,152 @@ public class Nodes {
 
     private Node requireNode(String hostname) {
         return node(hostname).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + hostname + "'"));
+    }
+
+    /** Locks the children of the given node, the node itself, and finally takes the unallocated lock. */
+    public RecursiveNodeMutexes lockAndGetRecursively(String hostname, Optional<Duration> timeout) {
+        Set<Node> children = new HashSet<>(list().childrenOf(hostname).asList());
+        Optional<Node> node = node(hostname);
+
+        int attempts = 5; // We'll retry locking the whole list of children this many times, in case new children appear.
+        for (int attempt = 0; attempt < attempts; attempt++) {
+            NodeMutexes mutexes = null;
+            Mutex unallocatedLock = null;
+            try {
+                // First, we lock all the children, and the host; then we take the allocation lock to ensure our snapshot is valid.
+                if (node.isEmpty() && ! children.isEmpty())
+                    throw new IllegalStateException("Node '" + hostname + "' was not found, but it has children: " + children);
+
+                List<Node> nodes = new ArrayList<>(children.size() + 1);
+                nodes.addAll(children);
+                node.ifPresent(nodes::add);
+                mutexes = lockAndGetAll(nodes, timeout);
+                unallocatedLock = timeout.map(db::lockInactive).orElseGet(db::lockInactive);
+                RecursiveNodeMutexes recursive = new RecursiveNodeMutexes(hostname, mutexes, unallocatedLock);
+                Set<Node> freshChildren = recursive.children.stream().map(NodeMutex::node).collect(Collectors.toSet());
+                Optional<Node> freshNode = recursive.parent.map(NodeMutex::node);
+                if (children.equals(freshChildren) && node.equals(freshNode)) {
+                    // No new nodes have appeared, and none will now, so we have a consistent snapshot.
+                    mutexes = null;
+                    unallocatedLock = null;
+                    return recursive;
+                }
+                else {
+                    // New nodes have appeared, so we need to let go of the locks and try again with the new set of nodes.
+                    children = freshChildren;
+                    node = freshNode;
+                }
+            }
+            finally {
+                if (unallocatedLock != null) unallocatedLock.close();
+                if (mutexes != null) mutexes.close();
+            }
+        }
+        throw new IllegalStateException("giving up (after " + attempts + " attempts) fetching an up to " +
+                                        "date recursive node set under lock for node " + hostname);
+    }
+
+    /** Locks all nodes in the given list, in a universal order, and returns the locks and nodes required. */
+    public NodeMutexes lockAndRequireAll(Collection<Node> nodes, Optional<Duration> timeout) {
+        return lockAndGetAll(nodes, timeout, true);
+    }
+
+    /** Locks all nodes in the given list, in a universal order, and returns the locks and nodes acquired. */
+    public NodeMutexes lockAndGetAll(Collection<Node> nodes, Optional<Duration> timeout) {
+        return lockAndGetAll(nodes, timeout, false);
+    }
+
+    /** Locks all nodes in the given list, in a universal order, and returns the locks and nodes. */
+    private NodeMutexes lockAndGetAll(Collection<Node> nodes, Optional<Duration> timeout, boolean required) {
+        Comparator<Node> universalOrder = (a, b) -> {
+            Optional<ApplicationId> idA = applicationIdForLock(a);
+            Optional<ApplicationId> idB = applicationIdForLock(b);
+            if (idA.isPresent() != idB.isPresent()) return idA.isPresent() ? -1 : 1;    // Allocated nodes first.
+            if (a.type() != b.type()) return a.type().compareTo(b.type());              // Tenant nodes first among those.
+            if ( ! idA.equals(idB)) return idA.get().compareTo(idB.get());              // Sort primarily by tenant owner id.
+            return a.hostname().compareTo(b.hostname());                                // Sort secondarily by hostname.
+        };
+        NavigableSet<NodeMutex> locked = new TreeSet<>(comparing(NodeMutex::node, universalOrder));
+        NavigableSet<Node> unlocked = new TreeSet<>(universalOrder);
+        unlocked.addAll(nodes);
+        try {
+            int attempts = 10; // We'll accept getting the wrong lock at most this many times before giving up.
+            for (int attempt = 0; attempt < attempts; ) {
+                if (unlocked.isEmpty()) {
+                    NodeMutexes mutexes = new NodeMutexes(List.copyOf(locked));
+                    locked.clear();
+                    return mutexes;
+                }
+
+                // If the first node is now earlier in lock order than some other locks we have, we need to close those and re-acquire them.
+                Node next = unlocked.pollFirst();
+                Set<NodeMutex> outOfOrder = locked.tailSet(new NodeMutex(next, () -> { }), false);
+                NodeMutexes.close(outOfOrder.iterator());
+                for (NodeMutex node : outOfOrder) unlocked.add(node.node());
+                outOfOrder.clear();
+
+                Mutex lock = lock(next, timeout);
+                try {
+                    Optional<Node> fresh = node(next.hostname());
+                    if (fresh.isEmpty()) {
+                        if (required) throw new NoSuchNodeException("No node with hostname '" + next.hostname() + "'");
+                        continue; // Node is gone; skip to close lock.
+                    }
+
+                    if (applicationIdForLock(fresh.get()).equals(applicationIdForLock(next))) {
+                        // We held the right lock, so this node is ours now.
+                        locked.add(new NodeMutex(fresh.get(), lock));
+                        lock = null;
+                    }
+                    else {
+                        // We held the wrong lock, and need to try again.
+                        ++attempt;
+                        unlocked.add(fresh.get());
+                    }
+                }
+                finally {
+                    // If we didn't hold the right lock, we must close the wrong one before we continue.
+                    if (lock != null) lock.close();
+                }
+            }
+            throw new IllegalStateException("giving up (after " + attempts + " extra attempts) to lock nodes: " +
+                                            nodes.stream().map(Node::hostname).collect(joining(", ")));
+        }
+        finally {
+            // If we didn't manage to lock all nodes, we must close the ones we did lock before we throw.
+            new NodeMutexes(List.copyOf(locked)).close();
+        }
+    }
+
+    /** A node with their locks, acquired in a universal order. */
+    public record NodeMutexes(List<NodeMutex> nodes) implements AutoCloseable {
+        @Override public void close() { close(nodes.iterator()); }
+        private static void close(Iterator<NodeMutex> nodes) {
+            if (nodes.hasNext()) try (NodeMutex node = nodes.next()) { close(nodes); }
+        }
+    }
+
+    /** A parent node, all its children, their locks acquired in a universal order, and then the unallocated lock. */
+    public class RecursiveNodeMutexes implements AutoCloseable {
+
+        private final String hostname;
+        private final NodeMutexes nodes;
+        private final Mutex unallocatedLock;
+        private final List<NodeMutex> children;
+        private final Optional<NodeMutex> parent;
+
+        public RecursiveNodeMutexes(String hostname, NodeMutexes nodes, Mutex unallocatedLock) {
+            this.hostname = hostname;
+            this.nodes = nodes;
+            this.unallocatedLock = unallocatedLock;
+            this.children = nodes.nodes().stream().filter(node -> ! node.node().hostname().equals(hostname)).toList();
+            this.parent = nodes.nodes().stream().filter(node -> node.node().hostname().equals(hostname)).findFirst();
+        }
+
+        public List<NodeMutex> children() { return children; }
+        public NodeMutex parent() { return parent.orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + hostname + "'")); }
+        public NodeMutexes nodes() { return nodes; }
+        @Override public void close() { try (nodes; unallocatedLock) { } }
     }
 
     /** Returns the application ID that should be used for locking when modifying this node */
