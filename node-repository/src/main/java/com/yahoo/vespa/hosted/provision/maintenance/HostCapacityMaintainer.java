@@ -191,7 +191,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                 throw new IllegalStateException("Have provisioned " + numProvisions + " times but there's still deficit: aborting");
             }
 
-            System.out.println("nodesPlusProvisioned before: " + nodesPlusProvisioned);
             nodesPlusProvisioned.addAll(provisionHosts(deficit.get().count(), toNodeResources(deficit.get())));
             System.out.println("nodesPlusProvisioned after: " + nodesPlusProvisioned);
         }
