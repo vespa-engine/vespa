@@ -6,10 +6,8 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.restapi.wire.WireHostInfo;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 /*
  * @author andreer
@@ -33,16 +31,6 @@ public class InstanceStatusResponse {
     @JsonProperty("applicationInstance")
     public ApplicationInstance applicationInstance() {
         return applicationInstance;
-    }
-
-    @JsonProperty("hostStates")
-    public Map<HostName, String> hostStates() {
-        // TODO: Remove this once all clients have been moved to hostStatus.
-        return hostInfos.entrySet().stream()
-                .collect(Collectors.toMap(
-                        entry -> entry.getKey(),
-                        entry -> entry.getValue().hostStatus()
-                ));
     }
 
     @JsonProperty("hostInfos")
