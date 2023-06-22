@@ -85,16 +85,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
     }
 
     private double markForRemoval(List<Node> provisionedSnapshot) {
-        // Group nodes by parent; no parent means it's a host.
-        Map<Optional<String>, List<Node>> nodesByParent = provisionedSnapshot.stream().collect(groupingBy(Node::parentHostname));
-
-        // Find all hosts that we once thought were empty (first clause), or whose children are now all removable (second clause).
-        List<Node> emptyHosts = nodesByParent.get(Optional.<String>empty()).stream()
-                                             .filter(host ->    host.hostEmptyAt().isPresent()
-                                                             || nodesByParent.getOrDefault(Optional.of(host.hostname()), List.of())
-                                                                             .stream().allMatch(HostCapacityMaintainer::canDeprovision))
-                                             .toList();
-
+        List<Node> emptyHosts = findEmptyOrRemovableHosts(provisionedSnapshot);
         if (emptyHosts.isEmpty()) return 1;
 
         int attempts = 0, success = 0;
@@ -108,7 +99,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                 // Re-read all nodes under lock and compute the candidates for removal. The actual nodes we want
                 // to mark for removal is the intersection with typeEmptyHosts, which excludes the preprovisioned hosts.
                 Map<Optional<String>, List<Node>> currentNodesByParent = nodeRepository().nodes().list().stream().collect(groupingBy(Node::parentHostname));
-                List<Node> candidateHosts = new ArrayList<>(currentNodesByParent.get(Optional.<String>empty()));
+                List<Node> candidateHosts = new ArrayList<>(getHosts(currentNodesByParent));
                 candidateHosts.retainAll(typeEmptyHosts);
 
                 for (Node host : candidateHosts) {
@@ -203,7 +194,9 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                 throw new IllegalStateException("Have provisioned " + numProvisions + " times but there's still deficit: aborting");
             }
 
+            System.out.println("nodesPlusProvisioned before: " + nodesPlusProvisioned);
             nodesPlusProvisioned.addAll(provisionHosts(deficit.get().count(), toNodeResources(deficit.get())));
+            System.out.println("nodesPlusProvisioned after: " + nodesPlusProvisioned);
         }
     }
 
@@ -289,4 +282,21 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         return new NodeResources(clusterCapacity.vcpu(), clusterCapacity.memoryGb(), clusterCapacity.diskGb(),
                 clusterCapacity.bandwidthGbps());
     }
+
+    private static List<Node> findEmptyOrRemovableHosts(List<Node> provisionedSnapshot) {
+        // Group nodes by parent; no parent means it's a host.
+        var nodesByParent = provisionedSnapshot.stream().collect(groupingBy(Node::parentHostname));
+
+        // Find all hosts that we once thought were empty (first clause), or whose children are now all removable (second clause).
+        return getHosts(nodesByParent).stream()
+                .filter(host ->    host.hostEmptyAt().isPresent()
+                        || nodesByParent.getOrDefault(Optional.of(host.hostname()), List.of())
+                        .stream().allMatch(HostCapacityMaintainer::canDeprovision))
+                .toList();
+    }
+
+    private static List<Node> getHosts(Map<Optional<String>, List<Node>> nodesByParent) {
+        return nodesByParent.get(Optional.<String>empty());
+    }
+
 }
