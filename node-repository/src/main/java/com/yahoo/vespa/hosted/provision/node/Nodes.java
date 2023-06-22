@@ -154,7 +154,7 @@ public class Nodes {
             if (existing.isPresent())
                 throw new IllegalStateException("Cannot add " + node + ": A node with this name already exists");
         }
-        return db.addNodesInState(nodes.asList(), Node.State.reserved, Agent.system);
+        return db.addNodesInState(nodes, Node.State.reserved, Agent.system);
     }
 
     /**
@@ -163,7 +163,8 @@ public class Nodes {
      * with the history of that node.
      */
     public List<Node> addNodes(List<Node> nodes, Agent agent) {
-        try (Mutex lock = lockUnallocated()) {
+        try (NodeMutexes existingNodesLocks = lockAndGetAll(nodes, Optional.empty());
+             Mutex allocationLock = lockUnallocated()) {
             List<Node> nodesToAdd =  new ArrayList<>();
             List<Node> nodesToRemove = new ArrayList<>();
             for (int i = 0; i < nodes.size(); i++) {
@@ -200,7 +201,7 @@ public class Nodes {
             }
             NestedTransaction transaction = new NestedTransaction();
             db.removeNodes(nodesToRemove, transaction);
-            List<Node> resultingNodes = db.addNodesInState(IP.Config.verify(nodesToAdd, list(lock)), Node.State.provisioned, agent, transaction);
+            List<Node> resultingNodes = db.addNodesInState(IP.Config.verify(nodesToAdd, list(allocationLock)), Node.State.provisioned, agent, transaction);
             transaction.commit();
             return resultingNodes;
         }

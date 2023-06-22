@@ -9,6 +9,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
@@ -45,7 +46,7 @@ public class ProvisionedExpirerTest {
         var nodes = IntStream.range(0, 15)
                              .mapToObj(i -> Node.create("id-" + i, "host-" + i, new Flavor(NodeResources.unspecified()), Node.State.provisioned, NodeType.host).build())
                              .toList();
-        tester.nodeRepository().database().addNodesInState(nodes, Node.State.provisioned, Agent.system);
+        tester.nodeRepository().database().addNodesInState(new LockedNodeList(nodes, () -> { }), Node.State.provisioned, Agent.system);
     }
 
 }

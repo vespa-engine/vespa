@@ -115,6 +115,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
                 nodesToRecycle.add(candidate);
             }
         }
+        // TODO: consider locked nodes, and perform on directly
         nodeRepository.nodes().deallocate(nodesToRecycle, Agent.FailedExpirer, "Expired by FailedExpirer");
     }
 

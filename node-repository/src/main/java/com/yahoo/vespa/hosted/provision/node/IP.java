@@ -113,7 +113,7 @@ public record IP() {
          *
          * @throws IllegalArgumentException if there are IP conflicts with existing nodes
          */
-        public static List<Node> verify(List<Node> nodes, LockedNodeList allNodes) {
+        public static LockedNodeList verify(List<Node> nodes, LockedNodeList allNodes) {
             NodeList sortedNodes = allNodes.sortedBy(Comparator.comparing(Node::hostname));
             for (var node : nodes) {
                 for (var other : sortedNodes) {
@@ -135,7 +135,7 @@ public record IP() {
                                                            other.hostname());
                 }
             }
-            return nodes;
+            return allNodes.childList(nodes);
         }
 
         /** Returns whether IP address of existing node can be assigned to node */
@@ -152,7 +152,7 @@ public record IP() {
         }
 
         public static Node verify(Node node, LockedNodeList allNodes) {
-            return verify(List.of(node), allNodes).get(0);
+            return verify(List.of(node), allNodes).asList().get(0);
         }
 
     }

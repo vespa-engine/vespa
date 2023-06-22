@@ -27,6 +27,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -722,7 +723,7 @@ public class HostCapacityMaintainerTest {
                     createNode("host4", Optional.empty(), NodeType.host, Node.State.provisioned, null),
                     createNode("host4-1", Optional.of("host4"), NodeType.tenant, Node.State.reserved, tenantApp),
                     createNode("host4-2", Optional.of("host4"), NodeType.tenant, Node.State.reserved, tenantApp))
-                .forEach(node -> nodeRepository.database().addNodesInState(List.of(node), node.state(), Agent.system));
+                .forEach(node -> nodeRepository.database().addNodesInState(new LockedNodeList(List.of(node), () -> { }), node.state(), Agent.system));
             return this;
         }
 
@@ -744,7 +745,7 @@ public class HostCapacityMaintainerTest {
 
         private Node addNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state, ApplicationId application, Duration hostTTL) {
             Node node = createNode(hostname, parentHostname, nodeType, state, application, hostTTL);
-            return nodeRepository.database().addNodesInState(List.of(node), node.state(), Agent.system).get(0);
+            return nodeRepository.database().addNodesInState(new LockedNodeList(List.of(node), () -> { }), node.state(), Agent.system).get(0);
         }
 
         private Node createNode(String hostname, Optional<String> parentHostname, NodeType nodeType,

@@ -141,7 +141,7 @@ public class RealDataScenarioTest {
             if (nodeNext.get()) {
                 String json = input.substring(input.indexOf("{\""), input.lastIndexOf('}') + 1);
                 Node node = nodeSerializer.fromJson(json.getBytes(UTF_8));
-                nodeRepository.database().addNodesInState(List.of(node), node.state(), Agent.system);
+                nodeRepository.database().addNodesInState(new LockedNodeList(List.of(node), () -> { }), node.state(), Agent.system);
                 nodeNext.set(false);
             } else {
                 if (!zkNodePathPattern.matcher(input).matches()) return;

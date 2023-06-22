@@ -18,6 +18,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.archive.ArchiveUris;
@@ -105,7 +106,7 @@ public class CuratorDb {
     }
 
     /** Adds a set of nodes. Rollbacks/fails transaction if any node is not in the expected state. */
-    public List<Node> addNodesInState(List<Node> nodes, Node.State expectedState, Agent agent, NestedTransaction transaction) {
+    public List<Node> addNodesInState(LockedNodeList nodes, Node.State expectedState, Agent agent, NestedTransaction transaction) {
         CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
             if (node.state() != expectedState)
@@ -116,10 +117,10 @@ public class CuratorDb {
             curatorTransaction.add(CuratorOperations.create(nodePath(node).getAbsolute(), serialized));
         }
         transaction.onCommitted(() -> nodes.forEach(node -> log.log(Level.INFO, "Added " + node)));
-        return nodes;
+        return new ArrayList<>(nodes.asList());
     }
 
-    public List<Node> addNodesInState(List<Node> nodes, Node.State expectedState, Agent agent) {
+    public List<Node> addNodesInState(LockedNodeList nodes, Node.State expectedState, Agent agent) {
         NestedTransaction transaction = new NestedTransaction();
         List<Node> writtenNodes = addNodesInState(nodes, expectedState, agent, transaction);
         transaction.commit();
