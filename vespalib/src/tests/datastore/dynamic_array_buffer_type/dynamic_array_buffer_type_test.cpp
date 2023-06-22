@@ -120,20 +120,23 @@ protected:
 
     BufferType              _buffer_type;
     size_t                  _entry_size;
+    size_t                  _buffer_underflow_size;
     size_t                  _buf_size;
-    std::unique_ptr<char[]> _buf;
+    std::unique_ptr<char[]> _buf_alloc;
+    char*                   _buf;
 };
 
 DynamicArrayBufferTypeTest::DynamicArrayBufferTypeTest()
     : testing::Test(),
       _buffer_type(3, ArrayStoreConfig::AllocSpec(0, 10, 0, 0.2), {}),
       _entry_size(_buffer_type.entry_size()),
+      _buffer_underflow_size(BufferType::buffer_underflow_size),
       _buf_size(2 * _entry_size),
-      _buf(std::make_unique<char[]>(_buf_size))
+      _buf_alloc(std::make_unique<char[]>(_buf_size + _buffer_underflow_size)),
+      _buf(_buf_alloc.get() + _buffer_underflow_size)
 {
     // Call initialize_reserved_entries to force construction of empty element
-    _buffer_type.initialize_reserved_entries(_buf.get(), 1);
-    memset(_buf.get(), 55, _buf_size);
+    _buffer_type.initialize_reserved_entries(_buf, 1);
     // Reset counts after empty element has been constructed
     counts = Counts();
 }
@@ -178,7 +181,7 @@ DynamicArrayBufferTypeTest::get_max_vector(const void* buffer, uint32_t offset)
 void
 DynamicArrayBufferTypeTest::write_entry1()
 {
-    auto e1 = BufferType::get_entry(_buf.get(), 1, _entry_size);
+    auto e1 = BufferType::get_entry(_buf, 1, _entry_size);
     BufferType::set_dynamic_array_size(e1, 2);
     new (static_cast<void *>(e1)) WrapInt32(42);
     new (static_cast<void *>(e1 + 1)) WrapInt32(47);
@@ -204,46 +207,47 @@ TEST_F(DynamicArrayBufferTypeTest, entry_size_is_calculated)
 
 TEST_F(DynamicArrayBufferTypeTest, initialize_reserved_entries)
 {
-    _buffer_type.initialize_reserved_entries(_buf.get(), 2);
-    EXPECT_EQ((std::vector<int>{}), get_vector(_buf.get(), 0));
-    EXPECT_EQ((std::vector<int>{}), get_vector(_buf.get(), 1));
-    EXPECT_EQ((std::vector<int>{0, 0, 0}), get_max_vector(_buf.get(), 0));
-    EXPECT_EQ((std::vector<int>{0, 0, 0}), get_max_vector(_buf.get(), 1));
+    _buffer_type.initialize_reserved_entries(_buf, 2);
+    EXPECT_EQ((std::vector<int>{}), get_vector(_buf, 0));
+    EXPECT_EQ((std::vector<int>{}), get_vector(_buf, 1));
+    EXPECT_EQ((std::vector<int>{0, 0, 0}), get_max_vector(_buf, 0));
+    EXPECT_EQ((std::vector<int>{0, 0, 0}), get_max_vector(_buf, 1));
     EXPECT_EQ(Counts(0, 0, 6, 0, 0), counts);
 }
 
 TEST_F(DynamicArrayBufferTypeTest, fallback_copy)
 {
-    _buffer_type.initialize_reserved_entries(_buf.get(), 1);
+    _buffer_type.initialize_reserved_entries(_buf, 1);
     write_entry1();
     EXPECT_EQ(Counts(0, 3, 3, 0, 0), counts);
-    auto buf2 = std::make_unique<char[]>(_buf_size);
-    _buffer_type.fallback_copy(buf2.get(), _buf.get(), 2);
-    EXPECT_EQ((std::vector<int>{}), get_vector(buf2.get(), 0));
-    EXPECT_EQ((std::vector<int>{42, 47}), get_vector(buf2.get(), 1));
-    EXPECT_EQ((std::vector<int>{0, 0, 0}), get_max_vector(buf2.get(), 0));
-    EXPECT_EQ((std::vector<int>{42, 47, 49}), get_max_vector(buf2.get(), 1));
+    auto buf2_alloc = std::make_unique<char[]>(_buf_size + _buffer_underflow_size);
+    char* buf2 = buf2_alloc.get() + _buffer_underflow_size;
+    _buffer_type.fallback_copy(buf2, _buf, 2);
+    EXPECT_EQ((std::vector<int>{}), get_vector(buf2, 0));
+    EXPECT_EQ((std::vector<int>{42, 47}), get_vector(buf2, 1));
+    EXPECT_EQ((std::vector<int>{0, 0, 0}), get_max_vector(buf2, 0));
+    EXPECT_EQ((std::vector<int>{42, 47, 49}), get_max_vector(buf2, 1));
     EXPECT_EQ(Counts(0, 3, 9, 0, 0), counts);
 }
 
 TEST_F(DynamicArrayBufferTypeTest, destroy_entries)
 {
-    _buffer_type.initialize_reserved_entries(_buf.get(), 2);
+    _buffer_type.initialize_reserved_entries(_buf, 2);
     write_entry1();
-    _buffer_type.destroy_entries(_buf.get(), 2);
+    _buffer_type.destroy_entries(_buf, 2);
     EXPECT_EQ(Counts(0, 3, 6, 6, 0), counts);
 }
 
 TEST_F(DynamicArrayBufferTypeTest, clean_hold)
 {
-    _buffer_type.initialize_reserved_entries(_buf.get(), 1);
+    _buffer_type.initialize_reserved_entries(_buf, 1);
     write_entry1();
     MyCleanContext clean_context;
-    _buffer_type.clean_hold(_buf.get(), 1, 1, clean_context);
-    EXPECT_EQ((std::vector<int>{0, 0}), get_vector(_buf.get(), 1));
-    EXPECT_EQ((std::vector<int>{0, 0, 49}), get_max_vector(_buf.get(), 1));
+    _buffer_type.clean_hold(_buf, 1, 1, clean_context);
+    EXPECT_EQ((std::vector<int>{0, 0}), get_vector(_buf, 1));
+    EXPECT_EQ((std::vector<int>{0, 0, 49}), get_max_vector(_buf, 1));
     EXPECT_EQ(Counts(0, 3, 3, 0, 2), counts);
-    _buffer_type.clean_hold(_buf.get(), 0, 2, clean_context);
+    _buffer_type.clean_hold(_buf, 0, 2, clean_context);
     EXPECT_EQ(Counts(0, 3, 3, 0, 4), counts);
 }
 

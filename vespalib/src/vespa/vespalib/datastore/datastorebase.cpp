@@ -59,7 +59,8 @@ DataStoreBase::FallbackHold::FallbackHold(size_t bytesSize, BufferState::Alloc &
 
 DataStoreBase::FallbackHold::~FallbackHold()
 {
-    _typeHandler->destroy_entries(_buffer.get(), _used_entries);
+    auto buffer_underflow_size = _typeHandler->buffer_underflow_size();
+    _typeHandler->destroy_entries(static_cast<char *>(_buffer.get()) + buffer_underflow_size, _used_entries);
 }
 
 class DataStoreBase::BufferHold : public GenerationHeldBase {
