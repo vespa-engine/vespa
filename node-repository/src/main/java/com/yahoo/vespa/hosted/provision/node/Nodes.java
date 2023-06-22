@@ -163,7 +163,7 @@ public class Nodes {
      * with the history of that node.
      */
     public List<Node> addNodes(List<Node> nodes, Agent agent) {
-        try (NodeMutexes existingNodesLocks = lockAndGetAll(nodes, Optional.empty());
+        try (NodeMutexes existingNodesLocks = lockAndGetAll(nodes, Optional.empty()); // Locks for any existing nodes we may remove.
              Mutex allocationLock = lockUnallocated()) {
             List<Node> nodesToAdd =  new ArrayList<>();
             List<Node> nodesToRemove = new ArrayList<>();
@@ -338,7 +338,9 @@ public class Nodes {
     }
 
     public Node fail(String hostname, boolean forceDeprovision, Agent agent, String reason) {
-        return move(hostname, Node.State.failed, agent, forceDeprovision, Optional.of(reason));
+        try (NodeMutex lock = lockAndGetRequired(hostname)) {
+            return move(hostname, Node.State.failed, agent, forceDeprovision, Optional.of(reason), lock);
+        }
     }
 
     /**
@@ -349,14 +351,17 @@ public class Nodes {
      * @return all the nodes that were changed by this request
      */
     public List<Node> failOrMarkRecursively(String hostname, Agent agent, String reason) {
-        NodeList children = list().childrenOf(hostname);
-        List<Node> changed = performOn(children, (node, lock) -> failOrMark(node, agent, reason, lock));
+        List<Node> changed = new ArrayList<>();
+        // TODO: consider whether we can instead fail all unfailed children until none remain, with single locks.
+        try (RecursiveNodeMutexes nodes = lockAndGetRecursively(hostname, Optional.empty())) {
+            for (NodeMutex child : nodes.children())
+                changed.add(failOrMark(child.node(), agent, reason, child));
 
-        if (children.state(Node.State.active).isEmpty())
-            changed.add(move(hostname, Node.State.failed, agent, false, Optional.of(reason)));
-        else
-            changed.addAll(performOn(NodeList.of(node(hostname).orElseThrow()), (node, lock) -> failOrMark(node, agent, reason, lock)));
-
+            if (changed.stream().noneMatch(child -> child.state() == Node.State.active))
+                changed.add(move(hostname, Node.State.failed, agent, false, Optional.of(reason), nodes.parent()));
+            else
+                changed.add(failOrMark(nodes.parent().node(), agent, reason, nodes.parent()));
+        }
         return changed;
     }
 
@@ -366,7 +371,7 @@ public class Nodes {
             write(node, lock);
             return node;
         } else {
-            return move(node.hostname(), Node.State.failed, agent, false, Optional.of(reason));
+            return move(node.hostname(), Node.State.failed, agent, false, Optional.of(reason), lock);
         }
     }
 
@@ -415,36 +420,38 @@ public class Nodes {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node reactivate(String hostname, Agent agent, String reason) {
-        return move(hostname, Node.State.active, agent, false, Optional.of(reason));
+        try (NodeMutex lock = lockAndGetRequired(hostname)) {
+            return move(hostname, Node.State.active, agent, false, Optional.of(reason), lock);
+        }
     }
 
     /**
      * Moves a host to breakfixed state, removing any children.
      */
     public List<Node> breakfixRecursively(String hostname, Agent agent, String reason) {
-        Node node = requireNode(hostname);
-        try (Mutex lock = lockUnallocated()) {
-            requireBreakfixable(node);
+        try (RecursiveNodeMutexes locked = lockAndGetRecursively(hostname, Optional.empty())) {
+            requireBreakfixable(locked.parent().node());
             NestedTransaction transaction = new NestedTransaction();
-            List<Node> removed = removeChildren(node, false, transaction);
-            removed.add(move(node.hostname(), Node.State.breakfixed, agent, false, Optional.of(reason), transaction));
+            removeChildren(locked, false, transaction);
+            move(hostname, Node.State.breakfixed, agent, false, Optional.of(reason), transaction);
             transaction.commit();
-            return removed;
+            return locked.nodes().nodes().stream().map(NodeMutex::node).toList();
         }
     }
 
     private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, Optional<String> reason) {
-        NestedTransaction transaction = new NestedTransaction();
-        List<Node> moved = list().childrenOf(hostname).asList().stream()
-                                 .map(child -> move(child.hostname(), toState, agent, false, reason, transaction))
-                                 .collect(Collectors.toCollection(ArrayList::new));
-        moved.add(move(hostname, toState, agent, false, reason, transaction));
-        transaction.commit();
-        return moved;
+        try (RecursiveNodeMutexes locked = lockAndGetRecursively(hostname, Optional.empty())) {
+            List<Node> moved = new ArrayList<>();
+            NestedTransaction transaction = new NestedTransaction();
+            for (NodeMutex node : locked.nodes().nodes())
+                moved.add(move(node.node().hostname(), toState, agent, false, reason, transaction));
+            transaction.commit();
+            return moved;
+        }
     }
 
     /** Move a node to given state */
-    private Node move(String hostname, Node.State toState, Agent agent, boolean forceDeprovision, Optional<String> reason) {
+    private Node move(String hostname, Node.State toState, Agent agent, boolean forceDeprovision, Optional<String> reason, Mutex lock) {
         NestedTransaction transaction = new NestedTransaction();
         Node moved = move(hostname, toState, agent, forceDeprovision, reason, transaction);
         transaction.commit();
@@ -453,8 +460,7 @@ public class Nodes {
 
     /** Move a node to given state as part of a transaction */
     private Node move(String hostname, Node.State toState, Agent agent, boolean forceDeprovision, Optional<String> reason, NestedTransaction transaction) {
-        // TODO: Work out a safe lock acquisition strategy for moves. Lock is only held while adding operations to
-        //       transaction, but lock must also be held while committing
+        // TODO: This lock is already held here, but we still need to read the node. Perhaps change to requireNode(hostname) later.
         try (NodeMutex lock = lockAndGetRequired(hostname)) {
             Node node = lock.node();
             if (toState == Node.State.active) {
@@ -523,17 +529,18 @@ public class Nodes {
     }
 
     public List<Node> removeRecursively(Node node, boolean force) {
-        try (Mutex lock = lockUnallocated()) {
-            requireRemovable(node, false, force);
+        try (RecursiveNodeMutexes locked = lockAndGetRecursively(node.hostname(), Optional.empty())) {
+            requireRemovable(locked.parent().node(), false, force);
             NestedTransaction transaction = new NestedTransaction();
             List<Node> removed;
-            if (!node.type().isHost()) {
+            if ( ! node.type().isHost()) {
                 removed = List.of(node);
                 db.removeNodes(removed, transaction);
-            } else {
-                removed = removeChildren(node, force, transaction);
+            }
+            else {
+                removeChildren(locked, force, transaction);
                 move(node.hostname(), Node.State.deprovisioned, Agent.system, false, Optional.empty(), transaction);
-                removed.add(node);
+                removed = locked.nodes().nodes().stream().map(NodeMutex::node).toList();
             }
             transaction.commit();
             return removed;
@@ -542,20 +549,22 @@ public class Nodes {
 
     /** Forgets a deprovisioned node. This removes all traces of the node in the node repository. */
     public void forget(Node node) {
-        if (node.state() != Node.State.deprovisioned)
-            throw new IllegalArgumentException(node + " must be deprovisioned before it can be forgotten");
-        if (node.status().wantToRebuild())
-            throw new IllegalArgumentException(node + " is rebuilding and cannot be forgotten");
-        NestedTransaction transaction = new NestedTransaction();
-        db.removeNodes(List.of(node), transaction);
-        transaction.commit();
+        try (NodeMutex locked = lockAndGetRequired(node.hostname())) {
+            if (node.state() != Node.State.deprovisioned)
+                throw new IllegalArgumentException(node + " must be deprovisioned before it can be forgotten");
+            if (node.status().wantToRebuild())
+                throw new IllegalArgumentException(node + " is rebuilding and cannot be forgotten");
+            NestedTransaction transaction = new NestedTransaction();
+            db.removeNodes(List.of(node), transaction);
+            transaction.commit();
+        }
     }
 
-    private List<Node> removeChildren(Node node, boolean force, NestedTransaction transaction) {
-        List<Node> children = list().childrenOf(node).asList();
+    private void removeChildren(RecursiveNodeMutexes nodes, boolean force, NestedTransaction transaction) {
+        if (nodes.children().isEmpty()) return;
+        List<Node> children = nodes.children().stream().map(NodeMutex::node).toList();
         children.forEach(child -> requireRemovable(child, true, force));
         db.removeNodes(children, transaction);
-        return new ArrayList<>(children);
     }
 
     /**
@@ -881,7 +890,17 @@ public class Nodes {
         return node(hostname).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + hostname + "'"));
     }
 
-    /** Locks the children of the given node, the node itself, and finally takes the unallocated lock. */
+    /**
+     * Locks the children of the given node, the node itself, and finally takes the unallocated lock.
+     * <br>
+     * When taking multiple locks, it's crucial that we always take them in the same order, to avoid deadlocks.
+     * We want to take the most contended locks last, so that we don't block other operations for longer than necessary.
+     * This method does that, by first taking the locks for any children the given node may have, and then the node itself.
+     * (This is enforced by taking host locks after tenant node locks, in {@link #lockAndGetAll(Collection, Optional)}.)
+     * Finally, the allocation lock is taken, to ensure no new children are added while we hold this snapshot.
+     * Unfortunately, since that lock is taken last, we may detect new nodes after taking it, and then we have to retry.
+     * Closing the returned {@link RecursiveNodeMutexes} will release all the locks, and the locks should not be closed elsewhere.
+     */
     public RecursiveNodeMutexes lockAndGetRecursively(String hostname, Optional<Duration> timeout) {
         Set<Node> children = new HashSet<>(list().childrenOf(hostname).asList());
         Optional<Node> node = node(hostname);
@@ -1005,7 +1024,7 @@ public class Nodes {
     }
 
     /** A parent node, all its children, their locks acquired in a universal order, and then the unallocated lock. */
-    public class RecursiveNodeMutexes implements AutoCloseable {
+    public static class RecursiveNodeMutexes implements AutoCloseable {
 
         private final String hostname;
         private final NodeMutexes nodes;
