@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -37,7 +38,14 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
 
     @Override
     protected double maintain() {
-        NodeList allNodes = nodeRepository().nodes().list();
+        NodeList allNodes;
+        // Host and child nodes are written in separate transactions, but both are written while holding the
+        // unallocated lock. Hold the unallocated lock while reading nodes to ensure we get all the children
+        // of newly provisioned hosts.
+        try (Mutex ignored = nodeRepository().nodes().lockUnallocated()) {
+            allNodes = nodeRepository().nodes().list();
+        }
+
         NodeList hosts = allNodes.state(Node.State.provisioned).nodeType(NodeType.host, NodeType.confighost, NodeType.controllerhost);
         int failures = 0;
         for (Node host : hosts) {
