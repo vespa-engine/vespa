@@ -32,7 +32,7 @@ public:
 
     static constexpr size_t entry_min_align = std::max(alignof(uint32_t), alignof(ElemT));
     using EntryMinAligner = Aligner<entry_min_align>;
-    static constexpr uint32_t buffer_underflow_size = 64u;
+    static constexpr uint32_t dynamic_array_buffer_underflow_size = 64u;
 protected:
     static const ElemType& empty_entry() noexcept;
     ElemType* get_entry(void *buffer, size_t offset) noexcept { return get_entry(buffer, offset, entry_size()); }

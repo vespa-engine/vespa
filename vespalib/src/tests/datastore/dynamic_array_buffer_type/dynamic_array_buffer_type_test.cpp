@@ -130,7 +130,7 @@ DynamicArrayBufferTypeTest::DynamicArrayBufferTypeTest()
     : testing::Test(),
       _buffer_type(3, ArrayStoreConfig::AllocSpec(0, 10, 0, 0.2), {}),
       _entry_size(_buffer_type.entry_size()),
-      _buffer_underflow_size(BufferType::buffer_underflow_size),
+      _buffer_underflow_size(_buffer_type.buffer_underflow_size()),
       _buf_size(2 * _entry_size),
       _buf_alloc(std::make_unique<char[]>(_buf_size + _buffer_underflow_size)),
       _buf(_buf_alloc.get() + _buffer_underflow_size)
