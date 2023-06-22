@@ -110,7 +110,7 @@ public:
      */
     bool hasKey(const K & key) const;
 
-    CacheStats get_stats() const;
+    virtual CacheStats get_stats() const;
 
     size_t          getHit() const { return _hit.load(std::memory_order_relaxed); }
     size_t         getMiss() const { return _miss.load(std::memory_order_relaxed); }
