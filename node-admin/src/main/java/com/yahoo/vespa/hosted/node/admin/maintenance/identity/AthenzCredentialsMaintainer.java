@@ -83,7 +83,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private final ServiceIdentityProvider hostIdentityProvider;
     private final IdentityDocumentClient identityDocumentClient;
     private final BooleanFlag tenantServiceIdentityFlag;
-    private final BooleanFlag useNewIdentityDocumentLayout;
 
     // Used as an optimization to ensure ZTS is not DDoS'ed on continuously failing refresh attempts
     private final Map<ContainerName, Instant> lastRefreshAttempt = new ConcurrentHashMap<>();
@@ -105,7 +104,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 new AthenzIdentityVerifier(Set.of(configServerInfo.getConfigServerIdentity())));
         this.timer = timer;
         this.tenantServiceIdentityFlag = Flags.NODE_ADMIN_TENANT_SERVICE_REGISTRY.bindTo(flagSource);
-        this.useNewIdentityDocumentLayout = Flags.NEW_IDDOC_LAYOUT.bindTo(flagSource);
     }
 
     public boolean converge(NodeAgentContext context) {
@@ -449,16 +447,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     Get the document version to ask for
      */
     private int documentVersion(NodeAgentContext context) {
-        var version = context.node().currentVespaVersion()
-                .orElse(context.node().wantedVespaVersion().orElse(Version.emptyVersion));
-        var appId = context.node().owner().orElse(ApplicationId.defaultId());
-        return useNewIdentityDocumentLayout
-                .with(FetchVector.Dimension.HOSTNAME, context.hostname().value())
-                .with(FetchVector.Dimension.VESPA_VERSION, version.toFullString())
-                .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
-                .value()
-                ? SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION
-                : SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION;
+        return SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION;
     }
 
     private List<String> getRoleList(NodeAgentContext context) {
