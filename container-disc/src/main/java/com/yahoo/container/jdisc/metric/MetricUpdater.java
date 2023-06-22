@@ -2,6 +2,7 @@
 package com.yahoo.container.jdisc.metric;
 
 import ai.vespa.metrics.ContainerMetrics;
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.Metric;
@@ -141,7 +142,7 @@ public class MetricUpdater extends AbstractComponent {
                     "home", System.getProperty("java.home"),
                     "vendor", System.getProperty("java.vm.vendor"),
                     "arch", System.getProperty("os.arch")));
-            metric.set("jdisc.jvm", Runtime.version().feature(), ctx);
+            metric.set(ContainerMetrics.JDISC_JVM.baseName(), Runtime.version().feature(), ctx);
         }
 
         private void tlsMetrics() {

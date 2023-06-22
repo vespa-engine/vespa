@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import ai.vespa.metrics.DistributorMetrics;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
@@ -135,13 +136,13 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
     @Override
     public void getConfig(MetricsmanagerConfig.Builder builder) {
         ContentCluster.getMetricBuilder("log", builder).
-                addedmetrics("vds.distributor.docsstored").
-                addedmetrics("vds.distributor.bytesstored").
-                addedmetrics("vds.idealstate.delete_bucket.done_ok").
-                addedmetrics("vds.idealstate.merge_bucket.done_ok").
-                addedmetrics("vds.idealstate.split_bucket.done_ok").
-                addedmetrics("vds.idealstate.join_bucket.done_ok").
-                addedmetrics("vds.idealstate.buckets_rechecking");
+                addedmetrics(DistributorMetrics.VDS_DISTRIBUTOR_DOCSSTORED.baseName()).
+                addedmetrics(DistributorMetrics.VDS_DISTRIBUTOR_BYTESSTORED.baseName()).
+                addedmetrics(DistributorMetrics.VDS_IDEALSTATE_DELETE_BUCKET_DONE_OK.baseName()).
+                addedmetrics(DistributorMetrics.VDS_IDEALSTATE_MERGE_BUCKET_DONE_OK.baseName()).
+                addedmetrics(DistributorMetrics.VDS_IDEALSTATE_SPLIT_BUCKET_DONE_OK.baseName()).
+                addedmetrics(DistributorMetrics.VDS_IDEALSTATE_JOIN_BUCKET_DONE_OK.baseName()).
+                addedmetrics(DistributorMetrics.VDS_IDEALSTATE_BUCKETS_RECHECKING.baseName());
     }
 
     @Override

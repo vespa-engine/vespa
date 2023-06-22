@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerStats;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Counter;
@@ -80,9 +81,9 @@ public class NodeAdminImpl implements NodeAdmin {
                 new Dimensions(Map.of("src", "node-agents")));
 
         this.procMeminfoReader = procMeminfoReader;
-        this.jvmHeapUsed = metrics.declareGauge("mem.heap.used");
-        this.jvmHeapFree = metrics.declareGauge("mem.heap.free");
-        this.jvmHeapTotal = metrics.declareGauge("mem.heap.total");
+        this.jvmHeapUsed = metrics.declareGauge(ContainerMetrics.MEM_HEAP_USED.baseName());
+        this.jvmHeapFree = metrics.declareGauge(ContainerMetrics.MEM_HEAP_FREE.baseName());
+        this.jvmHeapTotal = metrics.declareGauge(ContainerMetrics.MEM_HEAP_TOTAL.baseName());
         this.containerCount = metrics.declareGauge("container.count");
         this.metrics = metrics;
     }

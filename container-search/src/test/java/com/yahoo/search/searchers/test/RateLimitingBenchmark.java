@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers.test;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.metrics.simple.Bucket;
@@ -114,7 +115,7 @@ public class RateLimitingBenchmark {
 
     private int rejectedRequests(int id) {
         Point context = metric.pointBuilder().set("id", toClientId(id)).build();
-        UntypedMetric rejectedRequestsMetric = metricSnapshot.getMapForMetric("requestsOverQuota").get(context);
+        UntypedMetric rejectedRequestsMetric = metricSnapshot.getMapForMetric(ContainerMetrics.REQUESTS_OVER_QUOTA.baseName()).get(context);
         if (rejectedRequestsMetric == null) return 0;
         return (int)rejectedRequestsMetric.getCount();
     }

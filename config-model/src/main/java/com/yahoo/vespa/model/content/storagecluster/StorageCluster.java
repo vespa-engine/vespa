@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.storagecluster;
 
+import ai.vespa.metrics.StorageMetrics;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.core.StorIntegritycheckerConfig;
 import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
@@ -75,24 +76,24 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
     @Override
     public void getConfig(MetricsmanagerConfig.Builder builder) {
         ContentCluster.getMetricBuilder("fleetcontroller", builder).
-                addedmetrics("vds.datastored.alldisks.docs").
-                addedmetrics("vds.datastored.alldisks.bytes").
-                addedmetrics("vds.datastored.alldisks.buckets").
-                addedmetrics("vds.datastored.bucket_space.buckets_total");
+                addedmetrics(StorageMetrics.VDS_DATASTORED_ALLDISKS_DOCS.baseName()).
+                addedmetrics(StorageMetrics.VDS_DATASTORED_ALLDISKS_BYTES.baseName()).
+                addedmetrics(StorageMetrics.VDS_DATASTORED_ALLDISKS_BUCKETS.baseName()).
+                addedmetrics(StorageMetrics.VDS_DATASTORED_BUCKET_SPACE_BUCKETS_TOTAL.baseName());
 
         ContentCluster.getMetricBuilder("log", builder).
                 addedmetrics("vds.filestor.allthreads.put").
                 addedmetrics("vds.filestor.allthreads.get").
                 addedmetrics("vds.filestor.allthreads.remove").
                 addedmetrics("vds.filestor.allthreads.update").
-                addedmetrics("vds.datastored.alldisks.docs").
-                addedmetrics("vds.datastored.alldisks.bytes").
-                addedmetrics("vds.filestor.queuesize").
-                addedmetrics("vds.filestor.averagequeuewait").
-                addedmetrics("vds.visitor.cv_queuewaittime").
-                addedmetrics("vds.visitor.allthreads.averagequeuewait").
-                addedmetrics("vds.visitor.allthreads.averagevisitorlifetime").
-                addedmetrics("vds.visitor.allthreads.created");
+                addedmetrics(StorageMetrics.VDS_DATASTORED_ALLDISKS_DOCS.baseName()).
+                addedmetrics(StorageMetrics.VDS_DATASTORED_ALLDISKS_BYTES.baseName()).
+                addedmetrics(StorageMetrics.VDS_FILESTOR_QUEUESIZE.baseName()).
+                addedmetrics(StorageMetrics.VDS_FILESTOR_AVERAGEQUEUEWAIT.baseName()).
+                addedmetrics(StorageMetrics.VDS_VISITOR_CV_QUEUEWAITTIME.baseName()).
+                addedmetrics(StorageMetrics.VDS_VISITOR_ALLTHREADS_AVERAGEQUEUEWAIT.baseName()).
+                addedmetrics(StorageMetrics.VDS_VISITOR_ALLTHREADS_AVERAGEVISITORLIFETIME.baseName()).
+                addedmetrics(StorageMetrics.VDS_VISITOR_ALLTHREADS_CREATED.baseName());
     }
 
     public String getClusterName() {
