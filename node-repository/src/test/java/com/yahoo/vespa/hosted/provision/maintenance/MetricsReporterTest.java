@@ -182,7 +182,7 @@ public class MetricsReporterTest {
 
     @Test
     public void container_metrics() {
-        NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
+        NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker");
         ProvisioningTester tester = new ProvisioningTester.Builder().flavors(nodeFlavors.getFlavors()).build();
         NodeRepository nodeRepository = tester.nodeRepository();
 
