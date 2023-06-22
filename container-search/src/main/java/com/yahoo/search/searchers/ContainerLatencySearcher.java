@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers;
 
-import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.metrics.simple.Gauge;
 import com.yahoo.metrics.simple.Point;
@@ -22,7 +21,7 @@ public class ContainerLatencySearcher extends Searcher {
     private final Gauge latencyGauge;
 
     public ContainerLatencySearcher(MetricReceiver metrics) {
-        latencyGauge = metrics.declareGauge(ContainerMetrics.QUERY_CONTAINER_LATENCY.baseName());
+        latencyGauge = metrics.declareGauge("query_container_latency");
     }
 
     @Override
