@@ -317,6 +317,7 @@ VisitCache::Cache::getStaticMemoryUsage() const {
 CacheStats
 VisitCache::Cache::get_stats() const {
     CacheStats stats = Parent::get_stats();
+    auto cacheGuard = getGuard();
     stats.memory_used += _lid2Id.capacity() * sizeof(LidUniqueKeySetId::value_type);
     stats.memory_used += _id2KeySet.capacity() * sizeof(IdKeySetMap::value_type);
     for (const auto & entry: _id2KeySet) {
