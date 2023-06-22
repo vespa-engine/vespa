@@ -192,7 +192,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             }
 
             nodesPlusProvisioned.addAll(provisionHosts(deficit.get().count(), toNodeResources(deficit.get())));
-            System.out.println("nodesPlusProvisioned after: " + nodesPlusProvisioned);
         }
     }
 
