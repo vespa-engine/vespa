@@ -275,8 +275,13 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
     }
 
     private static NodeResources toNodeResources(ClusterCapacity clusterCapacity) {
-        return new NodeResources(clusterCapacity.vcpu(), clusterCapacity.memoryGb(), clusterCapacity.diskGb(),
-                clusterCapacity.bandwidthGbps());
+        return new NodeResources(clusterCapacity.vcpu(),
+                                 clusterCapacity.memoryGb(),
+                                 clusterCapacity.diskGb(),
+                                 clusterCapacity.bandwidthGbps(),
+                                 NodeResources.DiskSpeed.valueOf(clusterCapacity.diskSpeed()),
+                                 NodeResources.StorageType.valueOf(clusterCapacity.storageType()),
+                                 NodeResources.Architecture.valueOf(clusterCapacity.architecture()));
     }
 
     private static List<Node> findEmptyOrRemovableHosts(List<Node> provisionedSnapshot) {
