@@ -9,7 +9,7 @@ namespace vespalib::datastore {
 
 template <typename ElemT>
 DynamicArrayBufferType<ElemT>::DynamicArrayBufferType(uint32_t array_size, const AllocSpec& spec, std::shared_ptr<alloc::MemoryAllocator> memory_allocator) noexcept
-    : BufferTypeBase(calc_entry_size(array_size), array_size, spec.min_entries_in_buffer, spec.max_entries_in_buffer, spec.num_entries_for_new_buffer, spec.allocGrowFactor),
+    : BufferTypeBase(calc_entry_size(array_size), dynamic_array_buffer_underflow_size, array_size, spec.min_entries_in_buffer, spec.max_entries_in_buffer, spec.num_entries_for_new_buffer, spec.allocGrowFactor),
       _memory_allocator(std::move(memory_allocator))
 {
 }
@@ -24,14 +24,15 @@ template <typename ElemT>
 size_t
 DynamicArrayBufferType<ElemT>::calc_entry_size(size_t array_size) noexcept
 {
-    return EntryMinAligner::align(sizeof(ElemType) * array_size + entry_bias);
+    auto entry_size = EntryMinAligner::align(sizeof(ElemType) * array_size + sizeof(uint32_t));
+    return entry_size;
 }
 
 template <typename ElemT>
 size_t
 DynamicArrayBufferType<ElemT>::calc_array_size(size_t entry_size) noexcept
 {
-    return (entry_size - entry_bias) / sizeof(ElemType);
+    return (entry_size - sizeof(uint32_t)) / sizeof(ElemType);
 }
 
 template <typename ElemT>

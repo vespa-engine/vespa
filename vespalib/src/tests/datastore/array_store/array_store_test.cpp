@@ -280,7 +280,7 @@ TYPED_TEST(NumberStoreTest, control_static_sizes) {
         EXPECT_EQ(202140u, usage.allocatedBytes());
         EXPECT_EQ(197680u, usage.usedBytes());
     } else {
-        EXPECT_EQ(202388u, usage.allocatedBytes());
+        EXPECT_EQ(202328u, usage.allocatedBytes());
         EXPECT_EQ(197568u, usage.usedBytes());
     }
 }
@@ -564,10 +564,10 @@ TYPED_TEST(NumberStoreTest, address_space_usage_is_ratio_between_used_arrays_and
      *   allocated elements = 256 / sizeof(int) = 64.
      *   limit = 64 / 3 = 21.
      *
-     * For dynamic buffer 3, we have 16 * 5 * sizeof(int) => 320 -> 512
-     * limit = 512 / (5 * 4) = 25
+     * For dynamic buffer 3, we have 16 * 5 * sizeof(int) => 320 -> 512 - 64
+     * limit = (512 -64) / (5 * 4) = 22
      */
-    size_t type_id_3_entries = this->simple_buffers() ? 21 : 25;
+    size_t type_id_3_entries = this->simple_buffers() ? 21 : 22;
     size_t expLimit = fourgig - 4 * TestFixture::EntryRefType::offsetSize() + 3 * 16 + type_id_3_entries;
     EXPECT_EQ(static_cast<double>(2)/ expLimit, this->store.addressSpaceUsage().usage());
     EXPECT_EQ(expLimit, this->store.addressSpaceUsage().limit());

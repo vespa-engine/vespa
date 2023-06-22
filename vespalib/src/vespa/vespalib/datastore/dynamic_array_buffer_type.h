@@ -26,12 +26,13 @@ class DynamicArrayBufferType : public BufferTypeBase
 {
     using AllocSpec = ArrayStoreConfig::AllocSpec;
     std::shared_ptr<alloc::MemoryAllocator> _memory_allocator;
+
 public:
     using ElemType = ElemT;
 
     static constexpr size_t entry_min_align = std::max(alignof(uint32_t), alignof(ElemT));
     using EntryMinAligner = Aligner<entry_min_align>;
-    static constexpr size_t entry_bias = EntryMinAligner::align(sizeof(uint32_t));
+    static constexpr uint32_t dynamic_array_buffer_underflow_size = 64u;
 protected:
     static const ElemType& empty_entry() noexcept;
     ElemType* get_entry(void *buffer, size_t offset) noexcept { return get_entry(buffer, offset, entry_size()); }
@@ -55,8 +56,8 @@ public:
     const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
     static size_t calc_entry_size(size_t array_size) noexcept;
     static size_t calc_array_size(size_t entry_size) noexcept;
-    static ElemType* get_entry(void* buffer, size_t offset, uint32_t entry_size) noexcept { return reinterpret_cast<ElemType*>(static_cast<char*>(buffer) + offset * entry_size + entry_bias); }
-    static const ElemType* get_entry(const void* buffer, size_t offset, uint32_t entry_size) noexcept { return reinterpret_cast<const ElemType*>(static_cast<const char*>(buffer) + offset * entry_size + entry_bias); }
+    static ElemType* get_entry(void* buffer, size_t offset, uint32_t entry_size) noexcept { return reinterpret_cast<ElemType*>(static_cast<char*>(buffer) + offset * entry_size); }
+    static const ElemType* get_entry(const void* buffer, size_t offset, uint32_t entry_size) noexcept { return reinterpret_cast<const ElemType*>(static_cast<const char*>(buffer) + offset * entry_size); }
     static uint32_t get_dynamic_array_size(const ElemType* buffer) noexcept { return *(reinterpret_cast<const uint32_t*>(buffer) - 1); }
     static void set_dynamic_array_size(ElemType* buffer, uint32_t array_size) noexcept { *(reinterpret_cast<uint32_t*>(buffer) - 1) = array_size; }
     bool is_dynamic_array_buffer_type() const noexcept override;

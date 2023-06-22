@@ -48,6 +48,8 @@ private:
     bool               _disable_entry_hold_list : 1;
     bool               _compacting : 1;
 
+    static void *get_buffer(Alloc& buffer, uint32_t buffer_underflow_size) noexcept { return static_cast<char *>(buffer.get()) + buffer_underflow_size; }
+    void *get_buffer(uint32_t buffer_underflow_size) noexcept { return get_buffer(_buffer, buffer_underflow_size); }
 public:
     /**
      * TODO: Check if per-buffer free lists are useful, or if

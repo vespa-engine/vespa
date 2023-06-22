@@ -64,13 +64,14 @@ calc_allocation(uint32_t bufferId,
 {
     size_t alloc_entries = typeHandler.calc_entries_to_alloc(bufferId, free_entries_needed, resizing);
     size_t entry_size = typeHandler.entry_size();
-    size_t allocBytes = roundUpToMatchAllocator(alloc_entries * entry_size);
-    size_t maxAllocBytes = typeHandler.get_max_entries() * entry_size;
+    auto buffer_underflow_size = typeHandler.buffer_underflow_size();
+    size_t allocBytes = roundUpToMatchAllocator(alloc_entries * entry_size + buffer_underflow_size);
+    size_t maxAllocBytes = typeHandler.get_max_entries() * entry_size + buffer_underflow_size;
     if (allocBytes > maxAllocBytes) {
         // Ensure that allocated bytes does not exceed the maximum handled by this type.
         allocBytes = maxAllocBytes;
     }
-    size_t adjusted_alloc_entries = allocBytes / entry_size;
+    size_t adjusted_alloc_entries = (allocBytes - buffer_underflow_size) / entry_size;
     return AllocResult(adjusted_alloc_entries, allocBytes);
 }
 
@@ -102,7 +103,8 @@ BufferState::on_active(uint32_t bufferId, uint32_t typeId,
     _buffer = (allocator != nullptr) ? Alloc::alloc_with_allocator(allocator) : Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE);
     _buffer.create(alloc.bytes).swap(_buffer);
     assert(_buffer.get() != nullptr || alloc.entries == 0u);
-    buffer.store(_buffer.get(), std::memory_order_release);
+    auto buffer_underflow_size = typeHandler->buffer_underflow_size();
+    buffer.store(get_buffer(buffer_underflow_size), std::memory_order_release);
     _stats.set_alloc_entries(alloc.entries);
     _typeHandler.store(typeHandler, std::memory_order_release);
     assert(typeId <= std::numeric_limits<uint16_t>::max());
@@ -117,28 +119,30 @@ void
 BufferState::onHold(uint32_t buffer_id)
 {
     assert(getState() == State::ACTIVE);
-    assert(getTypeHandler() != nullptr);
+    auto type_handler = getTypeHandler();
+    assert(type_handler != nullptr);
     _state.store(State::HOLD, std::memory_order_release);
     _compacting = false;
     assert(_stats.dead_entries() <= size());
     assert(_stats.hold_entries() <= (size() - _stats.dead_entries()));
     _stats.set_dead_entries(0);
     _stats.set_hold_entries(size());
-    getTypeHandler()->on_hold(buffer_id, &_stats.used_entries_ref(), &_stats.dead_entries_ref());
+    type_handler->on_hold(buffer_id, &_stats.used_entries_ref(), &_stats.dead_entries_ref());
     _free_list.disable();
 }
 
 void
 BufferState::onFree(std::atomic<void*>& buffer)
 {
-    assert(buffer.load(std::memory_order_relaxed) == _buffer.get());
     assert(getState() == State::HOLD);
-    assert(_typeHandler != nullptr);
+    auto type_handler = getTypeHandler();
+    assert(type_handler != nullptr);
+    assert(buffer.load(std::memory_order_relaxed) == get_buffer(type_handler->buffer_underflow_size()));
     assert(_stats.dead_entries() <= size());
     assert(_stats.hold_entries() == (size() - _stats.dead_entries()));
-    getTypeHandler()->destroy_entries(buffer, size());
+    type_handler->destroy_entries(buffer, size());
     Alloc::alloc().swap(_buffer);
-    getTypeHandler()->on_free(size());
+    type_handler->on_free(size());
     buffer.store(nullptr, std::memory_order_release);
     _stats.clear();
     _state.store(State::FREE, std::memory_order_release);
@@ -200,9 +204,11 @@ BufferState::free_entries(EntryRef ref, size_t num_entries, size_t ref_offset)
     }
     _stats.inc_dead_entries(num_entries);
     _stats.dec_hold_entries(num_entries);
-    getTypeHandler()->clean_hold(_buffer.get(), ref_offset, num_entries,
-                                 BufferTypeBase::CleanContext(_stats.extra_used_bytes_ref(),
-                                                              _stats.extra_hold_bytes_ref()));
+    auto type_handler = getTypeHandler();
+    auto buffer_underflow_size = type_handler->buffer_underflow_size();
+    type_handler->clean_hold(get_buffer(buffer_underflow_size), ref_offset, num_entries,
+                            BufferTypeBase::CleanContext(_stats.extra_used_bytes_ref(),
+                                                         _stats.extra_hold_bytes_ref()));
 }
 
 void
@@ -212,17 +218,19 @@ BufferState::fallback_resize(uint32_t bufferId,
                             Alloc &holdBuffer)
 {
     assert(getState() == State::ACTIVE);
-    assert(_typeHandler != nullptr);
+    auto type_handler = getTypeHandler();
+    assert(type_handler != nullptr);
     assert(holdBuffer.get() == nullptr);
-    AllocResult alloc = calc_allocation(bufferId, *_typeHandler, free_entries_needed, true);
+    auto buffer_underflow_size = type_handler->buffer_underflow_size();
+    AllocResult alloc = calc_allocation(bufferId, *type_handler, free_entries_needed, true);
     assert(alloc.entries >= size() + free_entries_needed);
     assert(alloc.entries > capacity());
     Alloc newBuffer = _buffer.create(alloc.bytes);
-    getTypeHandler()->fallback_copy(newBuffer.get(), buffer.load(std::memory_order_relaxed), size());
+    type_handler->fallback_copy(get_buffer(newBuffer, buffer_underflow_size), buffer.load(std::memory_order_relaxed), size());
     holdBuffer.swap(_buffer);
     std::atomic_thread_fence(std::memory_order_release);
     _buffer = std::move(newBuffer);
-    buffer.store(_buffer.get(), std::memory_order_release);
+    buffer.store(get_buffer(buffer_underflow_size), std::memory_order_release);
     _stats.set_alloc_entries(alloc.entries);
 }
 
