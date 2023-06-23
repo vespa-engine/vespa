@@ -172,11 +172,11 @@ public class HttpServerTest {
         driver.client()
                 .newGet("/status.html").addHeader("Host", "localhost").addHeader("Host", "vespa.ai").execute()
                 .expectStatusCode(is(BAD_REQUEST)).expectContent(containsString("reason: Duplicate Host Header"));
-        assertTrue(driver.close());
         var aggregator = ResponseMetricAggregator.getBean(driver.server());
         var metric = waitForStatistics(aggregator);
         assertEquals(400, metric.dimensions.statusCode);
         assertEquals("GET", metric.dimensions.method);
+        assertTrue(driver.close());
     }
 
     @Test
