@@ -2,8 +2,13 @@
 #pragma once
 
 #include "threadlist.h"
+#include <malloc.h>
 
 namespace vespamalloc {
+
+namespace {
+    const char * VESPA_MALLOC_MMAP_THRESHOLD = "VESPA_MALLOC_MMAP_THRESHOLD";
+}
 
 template <typename MemBlockPtrT, typename ThreadStatT>
 ThreadListT<MemBlockPtrT, ThreadStatT>::ThreadListT(AllocPool & allocPool, MMapPool & mmapPool) :
@@ -13,8 +18,14 @@ ThreadListT<MemBlockPtrT, ThreadStatT>::ThreadListT(AllocPool & allocPool, MMapP
     _allocPool(allocPool),
     _mmapPool(mmapPool)
 {
+    const char * mmapThresholdS = getenv(VESPA_MALLOC_MMAP_THRESHOLD);
+    int mmapThreshold = (mmapThresholdS != nullptr)
+            ? strtol(mmapThresholdS, nullptr, 0)
+            : MMAP_LIMIT_DEFAULT;
     for (size_t i = 0; i < getMaxNumThreads(); i++) {
-        _threadVector[i].setPool(_allocPool, _mmapPool);
+        auto & thread = _threadVector[i];
+        thread.setPool(_allocPool, _mmapPool);
+        thread.mallopt(M_MMAP_THRESHOLD, mmapThreshold);
     }
 }
 
