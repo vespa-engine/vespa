@@ -26,21 +26,18 @@ public class InstanceInformation {
         public URI url;
         public String scope;
         public RoutingMethod routingMethod;
-        public String auth;
 
         @JsonCreator
         public Endpoint(@JsonProperty("cluster") String cluster ,
                         @JsonProperty("tls") boolean tls,
                         @JsonProperty("url") URI url,
                         @JsonProperty("scope") String scope,
-                        @JsonProperty("routingMethod") RoutingMethod routingMethod,
-                        @JsonProperty("authMethod") String auth) {
+                        @JsonProperty("routingMethod") RoutingMethod routingMethod) {
             this.cluster = cluster;
             this.tls = tls;
             this.url = url;
             this.scope = scope;
             this.routingMethod = routingMethod;
-            this.auth = auth;
         }
 
         @Override
@@ -50,7 +47,6 @@ public class InstanceInformation {
                    ", tls=" + tls +
                    ", url=" + url +
                    ", scope='" + scope + '\'' +
-                   ", authType='" + auth + '\'' +
                    ", routingMethod=" + routingMethod +
                    '}';
         }
