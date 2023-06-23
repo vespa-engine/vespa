@@ -37,7 +37,8 @@ class TypeConverter {
     static OrderedTensorType typeFrom(Onnx.TypeProto type) {
         String dimensionPrefix = "d"; // standard naming convention: d0, d1, ...
         Onnx.TensorShapeProto shape = type.getTensorType().getShape();
-        OrderedTensorType.Builder builder = new OrderedTensorType.Builder(toValueType(type.getTensorType().getElemType()));
+        var elemType = Onnx.TensorProto.DataType.forNumber(type.getTensorType().getElemType());
+        OrderedTensorType.Builder builder = new OrderedTensorType.Builder(toValueType(elemType));
         for (int i = 0; i < shape.getDimCount(); ++ i) {
             String dimensionName = dimensionPrefix + i;
             Onnx.TensorShapeProto.Dimension onnxDimension = shape.getDim(i);
@@ -52,8 +53,8 @@ class TypeConverter {
     }
 
     static OrderedTensorType typeFrom(Onnx.TensorProto tensor) {
-        return OrderedTensorType.fromDimensionList(toValueType(tensor.getDataType()),
-                                                   tensor.getDimsList());
+        var elemType = Onnx.TensorProto.DataType.forNumber(tensor.getDataType());
+        return OrderedTensorType.fromDimensionList(toValueType(elemType), tensor.getDimsList());
     }
 
     private static TensorType.Value toValueType(Onnx.TensorProto.DataType dataType) {
