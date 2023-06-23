@@ -24,7 +24,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
@@ -34,6 +33,7 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.flags.UnboundFlag;
+
 import java.io.File;
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -319,13 +319,7 @@ public class ModelContextImpl implements ModelContext {
             return flag.bindTo(source)
                     .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
                     .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
-                    .boxedValue();
-        }
-
-        private static <V> V flagValue(FlagSource source, TenantName tenant, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
-            return flag.bindTo(source)
-                    .with(FetchVector.Dimension.TENANT_ID, tenant.value())
-                    .with(FetchVector.Dimension.VESPA_VERSION, vespaVersion.toFullString())
+                    .with(FetchVector.Dimension.TENANT_ID, appId.tenant().value())
                     .boxedValue();
         }
 
