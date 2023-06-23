@@ -18,6 +18,7 @@ import java.util.List;
 /**
  * @author freva
  */
+@SuppressWarnings("unused") // Injected in container from test code (services.xml)
 public class MockProvisioner implements Provisioner {
 
     @Override
