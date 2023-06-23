@@ -91,7 +91,7 @@ struct CappedBuffersFixture : public Fixture {
     CappedBuffersFixture() : Fixture(1023, 2_Mi, 4_Ki, 256_Mi, 8_Ki) { }
     size_t max_entries(size_t array_size) {
         auto entry_size = array_size * sizeof(int);
-        return std::min(EntryRefType::offsetSize(), (256_Mi + entry_size - 1) / entry_size);
+        return (256_Mi + entry_size - 1) / entry_size;
     }
 };
 
