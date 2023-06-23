@@ -72,7 +72,14 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
     protected double maintain() {
         List<Node> provisionedSnapshot;
         try {
-            provisionedSnapshot = provision(nodeRepository().nodes().list());
+            NodeList nodes;
+            // Host and child nodes are written in separate transactions, but both are written while holding the
+            // unallocated lock. Hold the unallocated lock while reading nodes to ensure we get all the children
+            // of newly provisioned hosts.
+            try (Mutex ignored = nodeRepository().nodes().lockUnallocated()) {
+                nodes = nodeRepository().nodes().list();
+            }
+            provisionedSnapshot = provision(nodes);
         } catch (NodeAllocationException | IllegalStateException e) {
             log.log(Level.WARNING, "Failed to allocate preprovisioned capacity and/or find excess hosts: " + e.getMessage());
             return 0;  // avoid removing excess hosts
