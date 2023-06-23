@@ -620,7 +620,13 @@ const feature_t RankScoreDropLimit::DEFAULT_VALUE(-std::numeric_limits<feature_t
 feature_t
 RankScoreDropLimit::lookup(const Properties &props)
 {
-    return lookupDouble(props, NAME, DEFAULT_VALUE);
+    return lookup(props, DEFAULT_VALUE);
+}
+
+feature_t
+RankScoreDropLimit::lookup(const Properties &props, feature_t defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
 }
 
 } // namspace hitcollector

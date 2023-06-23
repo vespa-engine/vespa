@@ -507,6 +507,7 @@ namespace hitcollector {
         static const vespalib::string NAME;
         static const feature_t DEFAULT_VALUE;
         static feature_t lookup(const Properties &props);
+        static feature_t lookup(const Properties &props, feature_t defaultValue);
     };
 
 
