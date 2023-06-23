@@ -66,14 +66,15 @@ MultiValueMapping<ElemT, RefT>::getAddressSpaceUsage() const {
 template <typename ElemT, typename RefT>
 vespalib::datastore::ArrayStoreConfig
 MultiValueMapping<ElemT, RefT>::optimizedConfigForHugePage(size_t max_type_id,
-                                                             size_t hugePageSize,
-                                                             size_t smallPageSize,
-                                                             size_t min_num_entries_for_new_buffer,
-                                                             float allocGrowFactor,
-                                                             bool enable_free_lists)
+                                                           size_t hugePageSize,
+                                                           size_t smallPageSize,
+                                                           size_t max_buffer_size,
+                                                           size_t min_num_entries_for_new_buffer,
+                                                           float allocGrowFactor,
+                                                           bool enable_free_lists)
 {
     ArrayStoreTypeMapper mapper(max_type_id, array_store_grow_factor);
-    auto result = ArrayStore::optimizedConfigForHugePage(max_type_id, mapper, hugePageSize, smallPageSize, min_num_entries_for_new_buffer, allocGrowFactor);
+    auto result = ArrayStore::optimizedConfigForHugePage(max_type_id, mapper, hugePageSize, smallPageSize, max_buffer_size, min_num_entries_for_new_buffer, allocGrowFactor);
     result.enable_free_lists(enable_free_lists);
     return result;
 }

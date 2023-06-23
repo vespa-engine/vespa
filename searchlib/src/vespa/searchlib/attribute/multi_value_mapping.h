@@ -79,11 +79,12 @@ public:
 
 
     static vespalib::datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t max_type_id,
-                                                                  size_t hugePageSize,
-                                                                  size_t smallPageSize,
-                                                                  size_t min_num_entries_for_new_buffer,
-                                                                  float allocGrowFactor,
-                                                                  bool enable_free_lists);
+                                                                            size_t hugePageSize,
+                                                                            size_t smallPageSize,
+                                                                            size_t max_buffer_size,
+                                                                            size_t min_num_entries_for_new_buffer,
+                                                                            float allocGrowFactor,
+                                                                            bool enable_free_lists);
 };
 
 }

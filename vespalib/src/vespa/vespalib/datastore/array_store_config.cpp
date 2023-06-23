@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "array_store_config.h"
+#include <algorithm>
 #include <cassert>
 
 namespace vespalib::datastore {
@@ -42,6 +43,13 @@ alignToSmallPageSize(size_t value, size_t minLimit, size_t smallPageSize)
     return ((value - minLimit) / smallPageSize) * smallPageSize + minLimit;
 }
 
+size_t
+cap_max_entries(size_t max_entries, size_t max_buffer_size, size_t entry_size)
+{
+    size_t dynamic_max_entries = (max_buffer_size + (entry_size - 1)) / entry_size;
+    return std::min(max_entries, dynamic_max_entries);
+}
+
 }
 
 ArrayStoreConfig
@@ -50,17 +58,21 @@ ArrayStoreConfig::optimizeForHugePage(uint32_t max_type_id,
                                       size_t hugePageSize,
                                       size_t smallPageSize,
                                       size_t maxEntryRefOffset,
+                                      size_t max_buffer_size,
                                       size_t min_num_entries_for_new_buffer,
                                       float allocGrowFactor)
 {
     AllocSpecVector allocSpecs;
-    allocSpecs.emplace_back(0, maxEntryRefOffset, min_num_entries_for_new_buffer, allocGrowFactor); // large array spec;
+    auto entry_size = type_id_to_entry_size(max_type_id);
+    auto capped_max_entries = cap_max_entries(maxEntryRefOffset, max_buffer_size, entry_size);
+    allocSpecs.emplace_back(0, capped_max_entries, min_num_entries_for_new_buffer, allocGrowFactor); // large array spec;
     for (uint32_t type_id = 1; type_id <= max_type_id; ++type_id) {
-        size_t entry_size = type_id_to_entry_size(type_id);
+        entry_size = type_id_to_entry_size(type_id);
+        capped_max_entries = cap_max_entries(maxEntryRefOffset, max_buffer_size, entry_size);
         size_t num_entries_for_new_buffer = hugePageSize / entry_size;
-        num_entries_for_new_buffer = capToLimits(num_entries_for_new_buffer, min_num_entries_for_new_buffer, maxEntryRefOffset);
+        num_entries_for_new_buffer = capToLimits(num_entries_for_new_buffer, min_num_entries_for_new_buffer, capped_max_entries);
         num_entries_for_new_buffer = alignToSmallPageSize(num_entries_for_new_buffer, min_num_entries_for_new_buffer, smallPageSize);
-        allocSpecs.emplace_back(0, maxEntryRefOffset, num_entries_for_new_buffer, allocGrowFactor);
+        allocSpecs.emplace_back(0, capped_max_entries, num_entries_for_new_buffer, allocGrowFactor);
     }
     return ArrayStoreConfig(allocSpecs);
 }

@@ -40,6 +40,7 @@ vespalib::datastore::ArrayStoreConfig make_default_array_store_config() {
     return ReplicaStore::optimizedConfigForHugePage(1023,
                                                     vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                     vespalib::alloc::MemoryAllocator::PAGE_SIZE,
+                                                    vespalib::datastore::ArrayStoreConfig::default_max_buffer_size,
                                                     8_Ki, 0.2).enable_free_lists(true);
 }
 

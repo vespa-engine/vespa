@@ -578,6 +578,7 @@ struct ByteStoreTest : public ArrayStoreTest<testing::Test, uint8_t, EntryRefT<1
                                               optimizedConfigForHugePage(1023,
                                                                          vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                                          vespalib::alloc::MemoryAllocator::PAGE_SIZE,
+                                                                         ArrayStoreConfig::default_max_buffer_size,
                                                                          8_Ki, ALLOC_GROW_FACTOR)) {}
 };
 
