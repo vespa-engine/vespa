@@ -270,6 +270,25 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         clusters.put(sc.getClusterName(), sc);
     }
 
+    /**
+     * Returns whether the schemas in this cluster use streaming mode.
+     *
+     * @return True if this cluster only has schemas with streaming mode, False if it only has schemas
+     *         with indexing, null if it has both or none.
+     */
+    public Boolean isStreaming() {
+        boolean hasStreaming = false;
+        boolean hasIndexed = false;
+        for (var cluster : clusters.values()) {
+            if (cluster.isStreaming())
+                hasStreaming = true;
+            else
+                hasIndexed = true;
+        }
+        if (hasIndexed == hasStreaming) return null;
+        return hasStreaming;
+    }
+
     public List<SearchNode> getSearchNodes() {
         return hasIndexedCluster() ? getIndexed().getSearchNodes() : nonIndexed;
     }
