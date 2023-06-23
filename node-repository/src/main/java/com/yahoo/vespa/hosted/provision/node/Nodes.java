@@ -916,7 +916,7 @@ public class Nodes {
                 mutexes = lockAndGetAll(nodes, timeout);
                 unallocatedLock = timeout.map(db::lockInactive).orElseGet(db::lockInactive);
                 RecursiveNodeMutexes recursive = new RecursiveNodeMutexes(hostname, mutexes, unallocatedLock);
-                Set<Node> freshChildren = recursive.children.stream().map(NodeMutex::node).collect(Collectors.toSet());
+                Set<Node> freshChildren = list().childrenOf(hostname).asSet();
                 Optional<Node> freshNode = recursive.parent.map(NodeMutex::node);
                 if (children.equals(freshChildren) && node.equals(freshNode)) {
                     // No new nodes have appeared, and none will now, so we have a consistent snapshot.
