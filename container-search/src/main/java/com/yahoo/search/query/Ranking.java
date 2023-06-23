@@ -42,6 +42,7 @@ public class Ranking implements Cloneable {
     public static final String QUERYCACHE = "queryCache";
     public static final String RERANKCOUNT = "rerankCount";
     public static final String KEEPRANKCOUNT = "keepRankCount";
+    public static final String RANKSCOREDROPLIMIT = "rankScoreDropLimit";
     public static final String MATCH_PHASE = "matchPhase";
     public static final String DIVERSITY = "diversity";
     public static final String SOFTTIMEOUT = "softtimeout";
@@ -63,6 +64,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(QUERYCACHE, "boolean"));
         argumentType.addField(new FieldDescription(RERANKCOUNT, "integer"));
         argumentType.addField(new FieldDescription(KEEPRANKCOUNT, "integer"));
+        argumentType.addField(new FieldDescription(RANKSCOREDROPLIMIT, "double"));
         argumentType.addField(new FieldDescription(MATCH_PHASE,  new QueryProfileFieldType(MatchPhase.getArgumentType()), "matchPhase"));
         argumentType.addField(new FieldDescription(DIVERSITY, new QueryProfileFieldType(Diversity.getArgumentType())));
         argumentType.addField(new FieldDescription(SOFTTIMEOUT, new QueryProfileFieldType(SoftTimeout.getArgumentType())));
@@ -94,6 +96,7 @@ public class Ranking implements Cloneable {
 
     private Integer rerankCount = null;
     private Integer keepRankCount = null;
+    private Double rankScoreDropLimit = null;
 
     private RankProperties rankProperties = new RankProperties();
 
@@ -164,6 +167,11 @@ public class Ranking implements Cloneable {
     public void setKeepRankCount(int keepRankCount) { this.keepRankCount = keepRankCount; }
     /** Returns the keep-rank-count that will be used, or null if not set */
     public Integer getKeepRankCount() { return keepRankCount; }
+
+    /** Sets the rank-score-drop-limit that will be used, or null if not set */
+    public void setRankScoreDropLimit(double rankScoreDropLimit) { this.rankScoreDropLimit = rankScoreDropLimit; }
+    /** Returns the rank-score-drop-limit that will be used, or null if not set */
+    public Double getRankScoreDropLimit() { return rankScoreDropLimit; }
 
     /** Returns the location of this query, or null if none */
     public Location getLocation() { return location; }
@@ -241,6 +249,8 @@ public class Ranking implements Cloneable {
             rankProperties.put("vespa.hitcollector.heapsize", rerankCount);
         if (keepRankCount != null)
             rankProperties.put("vespa.hitcollector.arraysize", keepRankCount);
+        if (rankScoreDropLimit != null)
+            rankProperties.put("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit);
     }
 
     private void prepareNow(Freshness freshness) {
