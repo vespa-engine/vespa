@@ -315,7 +315,7 @@ public class SpareCapacityMaintainerTest {
         }
 
         private void allocate(ApplicationId application, ClusterSpec clusterSpec, List<Node> nodes) {
-            nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
+            nodes = new ArrayList<>(nodeRepository.nodes().addNodes(nodes, Agent.system));
             for (int i = 0; i < nodes.size(); i++) {
                 Node node = nodes.get(i);
                 ClusterMembership membership = ClusterMembership.from(clusterSpec, i);

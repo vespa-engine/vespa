@@ -117,7 +117,7 @@ public class CuratorDb {
             curatorTransaction.add(CuratorOperations.create(nodePath(node).getAbsolute(), serialized));
         }
         transaction.onCommitted(() -> nodes.forEach(node -> log.log(Level.INFO, "Added " + node)));
-        return new ArrayList<>(nodes.asList());
+        return nodes.asList();
     }
 
     public List<Node> addNodesInState(LockedNodeList nodes, Node.State expectedState, Agent agent) {

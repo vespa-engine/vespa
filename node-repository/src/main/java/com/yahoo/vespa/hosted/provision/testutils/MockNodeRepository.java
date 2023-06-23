@@ -176,7 +176,7 @@ public class MockNodeRepository extends NodeRepository {
                           .build());
 
         // Ready all nodes, except 7 and 55
-        nodes = nodes().addNodes(nodes, Agent.system);
+        nodes = new ArrayList<>(nodes().addNodes(nodes, Agent.system));
         nodes.remove(node7);
         nodes.remove(node55);
         nodes = nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
