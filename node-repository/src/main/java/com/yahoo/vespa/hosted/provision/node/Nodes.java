@@ -910,9 +910,6 @@ public class Nodes {
             Mutex unallocatedLock = null;
             try {
                 // First, we lock all the children, and the host; then we take the allocation lock to ensure our snapshot is valid.
-                if (node.isEmpty() && ! children.isEmpty())
-                    throw new IllegalStateException("Node '" + hostname + "' was not found, but it has children: " + children);
-
                 List<Node> nodes = new ArrayList<>(children.size() + 1);
                 nodes.addAll(children);
                 node.ifPresent(nodes::add);
@@ -923,6 +920,9 @@ public class Nodes {
                 Optional<Node> freshNode = recursive.parent.map(NodeMutex::node);
                 if (children.equals(freshChildren) && node.equals(freshNode)) {
                     // No new nodes have appeared, and none will now, so we have a consistent snapshot.
+                    if (node.isEmpty() && ! children.isEmpty())
+                        throw new IllegalStateException("node '" + hostname + "' was not found, but it has children: " + children);
+
                     mutexes = null;
                     unallocatedLock = null;
                     return recursive;
@@ -1039,9 +1039,13 @@ public class Nodes {
             this.parent = nodes.nodes().stream().filter(node -> node.node().hostname().equals(hostname)).findFirst();
         }
 
+        /** Any children of the node. */
         public List<NodeMutex> children() { return children; }
+        /** The node itself, or throws if the node was not found. */
         public NodeMutex parent() { return parent.orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + hostname + "'")); }
+        /** Empty if the node was not found, or the node, and any children. */
         public NodeMutexes nodes() { return nodes; }
+        /** Closes the allocation lock, and all the node locks. */
         @Override public void close() { try (nodes; unallocatedLock) { } }
     }
 
