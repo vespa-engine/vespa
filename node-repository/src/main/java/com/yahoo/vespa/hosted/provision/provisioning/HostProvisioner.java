@@ -7,7 +7,6 @@ import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -46,12 +45,11 @@ public interface HostProvisioner {
      * Continue provisioning of given list of Nodes.
      *
      * @param host the host to provision
-     * @param children list of all the nodes that run on the given host
      * @return IP config for the provisioned host and its children
      * @throws FatalProvisioningException if the provisioning has irrecoverably failed and the input nodes
      * should be deleted from node-repo.
      */
-    HostIpConfig provision(Node host, Set<Node> children) throws FatalProvisioningException;
+    HostIpConfig provision(Node host) throws FatalProvisioningException;
 
     /**
      * Deprovisions a given host and resources associated with it and its children (such as DNS entries).

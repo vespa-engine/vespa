@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
@@ -49,18 +50,15 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
         NodeList hosts = allNodes.state(Node.State.provisioned).nodeType(NodeType.host, NodeType.confighost, NodeType.controllerhost);
         int failures = 0;
         for (Node host : hosts) {
-            NodeList children = allNodes.childrenOf(host);
             try {
-                log.log(Level.INFO, "Provisioning " + host.hostname() + " with " + children.size() + " children");
-                HostIpConfig hostIpConfig = hostProvisioner.provision(host, children.asSet());
-                setIpConfig(host, children, hostIpConfig);
+                HostIpConfig hostIpConfig = hostProvisioner.provision(host);
+                setIpConfig(host, hostIpConfig);
             } catch (IllegalArgumentException | IllegalStateException e) {
-                log.log(Level.INFO, "Could not provision " + host.hostname() + " with " + children.size() + " children, will retry in " +
+                log.log(Level.INFO, "Could not provision " + host.hostname() + ", will retry in " +
                                     interval() + ": " + Exceptions.toMessageString(e));
             } catch (FatalProvisioningException e) {
                 failures++;
-                log.log(Level.SEVERE, "Failed to provision " + host.hostname() + " with " + children.size()  +
-                                      " children, failing out the host recursively", e);
+                log.log(Level.SEVERE, "Failed to provision " + host.hostname() + ", failing out the host recursively", e);
                 nodeRepository().nodes().failOrMarkRecursively(
                         host.hostname(), Agent.HostResumeProvisioner, "Failed by HostResumeProvisioner due to provisioning failure");
             } catch (RuntimeException e) {
@@ -75,19 +73,17 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
         return asSuccessFactorDeviation(hosts.size(), failures);
     }
 
-    private void setIpConfig(Node host, NodeList children, HostIpConfig hostIpConfig) {
+    private void setIpConfig(Node host, HostIpConfig hostIpConfig) {
         if (hostIpConfig.isEmpty()) return;
-        NodeList nodes = NodeList.of(host).and(children);
-        for (var node : nodes) {
-            verifyDns(node, hostIpConfig.require(node.hostname()));
-        }
+        hostIpConfig.asMap().forEach((hostname, ipConfig) ->
+                verifyDns(hostname, host.type(), host.cloudAccount(), ipConfig));
         nodeRepository().nodes().setIpConfig(hostIpConfig);
     }
 
     /** Verify DNS configuration of given node */
-    private void verifyDns(Node node, IP.Config ipConfig) {
+    private void verifyDns(String hostname, NodeType hostType, CloudAccount cloudAccount, IP.Config ipConfig) {
         for (String ipAddress : ipConfig.primary()) {
-            IP.verifyDns(node.hostname(), ipAddress, node.type(), nodeRepository().nameResolver(), node.cloudAccount(), nodeRepository().zone());
+            IP.verifyDns(hostname, ipAddress, hostType, nodeRepository().nameResolver(), cloudAccount, nodeRepository().zone());
         }
     }
 

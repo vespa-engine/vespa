@@ -97,15 +97,13 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public HostIpConfig provision(Node host, Set<Node> children) throws FatalProvisioningException {
+    public HostIpConfig provision(Node host) throws FatalProvisioningException {
         if (behaviour(Behaviour.failProvisioning)) throw new FatalProvisioningException("Failed to provision node(s)");
         if (host.state() != Node.State.provisioned) throw new IllegalStateException("Host to provision must be in " + Node.State.provisioned);
         Map<String, IP.Config> result = new HashMap<>();
         result.put(host.hostname(), createIpConfig(host));
-        for (var child : children) {
-            if (child.state() != Node.State.reserved) throw new IllegalStateException("Child to provisioned must be in " + Node.State.reserved);
-            result.put(child.hostname(), createIpConfig(child));
-        }
+        host.ipConfig().pool().hostnames().forEach(hostname ->
+                result.put(hostname.value(), IP.Config.ofEmptyPool(nameResolver.resolveAll(hostname.value()))));
         return new HostIpConfig(result);
     }
 
@@ -199,8 +197,6 @@ public class MockHostProvisioner implements HostProvisioner {
         return this;
     }
 
-    public Optional<Flavor> getHostFlavor(ClusterSpec.Type type) { return Optional.ofNullable(hostFlavors.get(type)); }
-
     public MockHostProvisioner addEvent(HostEvent event) {
         hostEvents.add(event);
         return this;
@@ -230,18 +226,17 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     public IP.Config createIpConfig(Node node) {
-        if (!node.type().isHost()) {
-            return node.ipConfig().withPrimary(nameResolver.resolveAll(node.hostname()));
-        }
+        if (!node.type().isHost()) throw new IllegalArgumentException("Node " + node + " is not a host");
         int hostIndex = Integer.parseInt(node.hostname().replaceAll("^[a-z]+|-\\d+$", ""));
         Set<String> addresses = Set.of("::" + hostIndex + ":0");
         Set<String> ipAddressPool = new HashSet<>();
         if (!behaviour(Behaviour.failDnsUpdate)) {
             nameResolver.addRecord(node.hostname(), addresses.iterator().next());
-            for (int i = 1; i <= 2; i++) {
-                String ip = "::" + hostIndex + ":" + i;
+            int i = 1;
+            for (HostName hostName : node.ipConfig().pool().hostnames()) {
+                String ip = "::" + hostIndex + ":" + i++;
                 ipAddressPool.add(ip);
-                nameResolver.addRecord(node.hostname() + "-" + i, ip);
+                nameResolver.addRecord(hostName.value(), ip);
             }
         }
         IP.Pool pool = node.ipConfig().pool().withIpAddresses(ipAddressPool);
@@ -250,7 +245,7 @@ public class MockHostProvisioner implements HostProvisioner {
 
     public enum Behaviour {
 
-        /** Fail call to {@link MockHostProvisioner#provision(com.yahoo.vespa.hosted.provision.Node, java.util.Set)} */
+        /** Fail call to {@link MockHostProvisioner#provision(com.yahoo.vespa.hosted.provision.Node)} */
         failProvisioning,
 
         /** Fail call to {@link MockHostProvisioner#provisionHosts(HostProvisionRequest, Consumer)} */
