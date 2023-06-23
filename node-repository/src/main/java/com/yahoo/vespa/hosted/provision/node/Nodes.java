@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.time.TimeBudget;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -46,7 +47,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.provision.restapi.NodePatcher.DROP_DOCUMENTS_REPORT;
 import static java.util.Comparator.comparing;
@@ -901,6 +901,7 @@ public class Nodes {
      * Closing the returned {@link RecursiveNodeMutexes} will release all the locks, and the locks should not be closed elsewhere.
      */
     public RecursiveNodeMutexes lockAndGetRecursively(String hostname, Optional<Duration> timeout) {
+        TimeBudget budget = TimeBudget.fromNow(clock, timeout.orElse(Duration.ofMinutes(2)));
         Set<Node> children = new HashSet<>(list().childrenOf(hostname).asList());
         Optional<Node> node = node(hostname);
 
@@ -913,8 +914,8 @@ public class Nodes {
                 List<Node> nodes = new ArrayList<>(children.size() + 1);
                 nodes.addAll(children);
                 node.ifPresent(nodes::add);
-                mutexes = lockAndGetAll(nodes, timeout);
-                unallocatedLock = timeout.map(db::lockInactive).orElseGet(db::lockInactive);
+                mutexes = lockAndGetAll(nodes, budget.timeLeftOrThrow());
+                unallocatedLock = db.lockInactive(budget.timeLeftOrThrow().get());
                 RecursiveNodeMutexes recursive = new RecursiveNodeMutexes(hostname, mutexes, unallocatedLock);
                 Set<Node> freshChildren = list().childrenOf(hostname).asSet();
                 Optional<Node> freshNode = recursive.parent.map(NodeMutex::node);
@@ -954,6 +955,7 @@ public class Nodes {
 
     /** Locks all nodes in the given list, in a universal order, and returns the locks and nodes. */
     private NodeMutexes lockAndGetAll(Collection<Node> nodes, Optional<Duration> timeout, boolean required) {
+        TimeBudget budget = TimeBudget.fromNow(clock, timeout.orElse(Duration.ofMinutes(2)));
         Comparator<Node> universalOrder = (a, b) -> {
             Optional<ApplicationId> idA = applicationIdForLock(a);
             Optional<ApplicationId> idB = applicationIdForLock(b);
@@ -981,7 +983,7 @@ public class Nodes {
                 for (NodeMutex node : outOfOrder) unlocked.add(node.node());
                 outOfOrder.clear();
 
-                Mutex lock = lock(next, timeout);
+                Mutex lock = lock(next, budget.timeLeftOrThrow());
                 try {
                     Optional<Node> fresh = node(next.hostname());
                     if (fresh.isEmpty()) {
@@ -1010,7 +1012,7 @@ public class Nodes {
         }
         finally {
             // If we didn't manage to lock all nodes, we must close the ones we did lock before we throw.
-            new NodeMutexes(List.copyOf(locked)).close();
+            NodeMutexes.close(locked.iterator());
         }
     }
 
