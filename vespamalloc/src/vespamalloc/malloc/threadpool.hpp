@@ -7,8 +7,10 @@
 namespace vespamalloc {
 
 namespace {
-    constexpr size_t MMAP_LIMIT_MIN = 0x100000; // 1M
-    constexpr size_t MMAP_LIMIT_MAX = 0x40000000; // 1G
+    size_t
+    sanitizeMMapThreshold(int threshold) {
+        return std::min(MMAP_LIMIT_MAX, std::max(MMAP_LIMIT_MIN, threshold));
+    }
 }
 
 template <typename MemBlockPtrT, typename ThreadStatT>
@@ -112,9 +114,8 @@ ThreadPoolT<MemBlockPtrT, ThreadStatT>::~ThreadPoolT() = default;
 
 template <typename MemBlockPtrT, typename ThreadStatT >
 int ThreadPoolT<MemBlockPtrT, ThreadStatT>::mallopt(int param, int value) {
-    size_t limit = value;
     if (param == M_MMAP_THRESHOLD) {
-        _mmapLimit = std::min(MMAP_LIMIT_MAX, std::max(MMAP_LIMIT_MIN, limit));
+        _mmapLimit = sanitizeMMapThreshold(value);
         return 1;
     }
     return 0;

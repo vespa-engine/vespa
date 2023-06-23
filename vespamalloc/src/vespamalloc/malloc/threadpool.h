@@ -9,6 +9,10 @@
 
 namespace vespamalloc {
 
+constexpr int MMAP_LIMIT_MIN     =   0x100000; //  1M
+constexpr int MMAP_LIMIT_DEFAULT =  0x4000000; // 64M
+constexpr int MMAP_LIMIT_MAX     = 0x40000000; //  1G
+
 template <typename MemBlockPtrT, typename ThreadStatT >
 class ThreadPoolT
 {
