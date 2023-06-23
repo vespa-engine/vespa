@@ -64,6 +64,9 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static com.yahoo.config.provision.NodeResources.Architecture.arm64;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
+import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import static com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner.Behaviour;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -211,10 +214,21 @@ public class HostCapacityMaintainerTest {
                        tester.nodeRepository.nodes().node("host101").isPresent());
         }
 
+        // If a host with another architecture is added to preprovision capacity, a shared host should be added.
+        tester.flagSource.withListFlag(PermanentFlags.PREPROVISION_CAPACITY.id(),
+                                       List.of(new ClusterCapacity(1, 2.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64"),
+                                               new ClusterCapacity(1, 2.0, 30.0, 20.0, 3.0, "fast", "remote", "arm64")),
+                                       ClusterCapacity.class);
+        tester.hostProvisioner.setHostFlavor("arm64");
+        tester.maintain();
+
+        assertEquals(2, tester.hostProvisioner.provisionedHosts().size());
+        assertEquals(1, tester.provisionedHostsMatching(new NodeResources(48, 128, 1000, 10)));
+        assertEquals(1, tester.provisionedHostsMatching(new NodeResources(2, 30, 20, 3, fast, remote, arm64)));
     }
 
     private void verifyFirstMaintain(DynamicProvisioningTester tester) {
-        assertEquals(1, tester.hostProvisioner.provisionedHosts().size());
+        assertEquals(tester.hostProvisioner.provisionedHosts().toString(), 1, tester.hostProvisioner.provisionedHosts().size());
         assertEquals(1, tester.provisionedHostsMatching(new NodeResources(48, 128, 1000, 10)));
         assertEquals(8, tester.nodeRepository.nodes().list().not().state(State.deprovisioned).size());  // 2 removed, 1 added
         assertSame("Failed host 'host2' is deprovisioned", State.deprovisioned, tester.nodeRepository.nodes().node("host2").get().state());
@@ -252,7 +266,7 @@ public class HostCapacityMaintainerTest {
         tester.assertNodesUnchanged();
 
         // Pretend shared-host flag has been set to host4's flavor
-        var sharedHostNodeResources = new NodeResources(48, 128, 1000, 10, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote);
+        var sharedHostNodeResources = new NodeResources(48, 128, 1000, 10, fast, remote);
         tester.hostProvisioner.setHostFlavor("host4");
 
         // Next maintenance run does nothing
@@ -673,7 +687,7 @@ public class HostCapacityMaintainerTest {
         private static final InfraApplication configServerHostApp = new ConfigServerHostApplication();
         private static final InfraApplication configServerApp = new ConfigServerApplication();
         private static final ApplicationId tenantApp = ApplicationId.from("mytenant", "myapp", "default");
-        private static final NodeFlavors flavors = FlavorConfigBuilder.createDummies("default", "docker", "host2", "host3", "host4");
+        private static final NodeFlavors flavors = FlavorConfigBuilder.createDummies("default", "docker", "host2", "host3", "host4", "arm64");
 
         private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
