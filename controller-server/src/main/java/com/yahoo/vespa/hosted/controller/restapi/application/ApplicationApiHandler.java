@@ -139,6 +139,7 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -910,17 +911,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse listTokens(String tenant, HttpRequest request) {
-        var tokens = controller.dataplaneTokenService().listTokens(TenantName.from(tenant))
-                .stream().sorted(Comparator.comparing(DataplaneTokenVersions::tokenId)).toList();
+        List<DataplaneTokenVersions> dataplaneTokenVersions = controller.dataplaneTokenService().listTokens(TenantName.from(tenant));
         Slime slime = new Slime();
         Cursor tokensArray = slime.setObject().setArray("tokens");
-        for (DataplaneTokenVersions token : tokens) {
+        for (DataplaneTokenVersions token : dataplaneTokenVersions) {
             Cursor tokenObject = tokensArray.addObject();
             tokenObject.setString("id", token.tokenId().value());
             Cursor fingerprintsArray = tokenObject.setArray("versions");
-            var versions = token.tokenVersions().stream()
-                    .sorted(Comparator.comparing(DataplaneTokenVersions.Version::creationTime)).toList();
-            for (var tokenVersion : versions) {
+            for (DataplaneTokenVersions.Version tokenVersion : token.tokenVersions()) {
                 Cursor fingerprintObject = fingerprintsArray.addObject();
                 fingerprintObject.setString("fingerprint", tokenVersion.fingerPrint().value());
                 fingerprintObject.setString("created", tokenVersion.creationTime().toString());
