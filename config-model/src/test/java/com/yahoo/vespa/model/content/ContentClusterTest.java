@@ -471,7 +471,6 @@ public class ContentClusterTest extends ContentBaseTest {
             new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
             fail("Deploying without redundancy should fail");
         } catch (IllegalArgumentException e) {
-            System.out.println("Ya, the message is '" + Exceptions.toMessageString(e) + "'");
             assertEquals("In content cluster 'bar': Either <redundancy> or <min-redundancy> must be set",
                          Exceptions.toMessageString(e));
         }
