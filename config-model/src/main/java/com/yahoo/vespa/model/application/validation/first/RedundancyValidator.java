@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.application.validation.first;
 
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
@@ -10,7 +9,6 @@ import com.yahoo.vespa.model.application.validation.Validator;
 import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -48,7 +46,7 @@ public class RedundancyValidator extends Validator implements ChangeValidator {
     }
 
     private boolean hasRedundancyOne(ContentCluster cluster) {
-        return cluster != null && cluster.redundancy().finalRedundancy() == 1 && cluster.redundancy().groups() == 1;
+        return cluster != null && cluster.getRedundancy().finalRedundancy() == 1 && cluster.getRedundancy().groups() == 1;
     }
 
     private void invalidRedundancy(ContentCluster cluster, DeployState deployState) {

@@ -171,12 +171,11 @@ public class StorageGroup {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof StorageGroup) {
-            StorageGroup rhs = (StorageGroup)obj;
-            return this.index.equals(rhs.index) &&
-                    this.name.equals(rhs.name) &&
-                    this.partitions.equals(rhs.partitions);
+    public boolean equals(Object o) {
+        if (o instanceof StorageGroup other) {
+            return this.index.equals(other.index) &&
+                   this.name.equals(other.name) &&
+                   this.partitions.equals(other.partitions);
         }
         return false;
     }
@@ -208,9 +207,7 @@ public class StorageGroup {
             this.context = context;
         }
 
-        public StorageGroup buildRootGroup(DeployState deployState,
-                                           RedundancyBuilder redundancyBuilder,
-                                           ContentCluster owner) {
+        public StorageGroup buildRootGroup(DeployState deployState, ContentCluster owner, Boolean isStreaming) {
             try {
                 if (owner.isHosted())
                     validateRedundancyAndGroups(deployState.zone().environment());
@@ -229,7 +226,8 @@ public class StorageGroup {
                                             ? groupBuilder.buildHosted(deployState, owner, Optional.empty(), context)
                                             : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
 
-                Redundancy redundancy = redundancyBuilder.build(owner.isHosted(), storageGroup.subgroups.size(),
+                RedundancyBuilder redundancyBuilder = new RedundancyBuilder(clusterElement);
+                Redundancy redundancy = redundancyBuilder.build(owner.isHosted(), isStreaming, storageGroup.subgroups.size(),
                                                                 storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(false));
                 owner.setRedundancy(redundancy);
                 if (storageGroup.partitions.isEmpty() && (redundancy.groups() > 1)) {

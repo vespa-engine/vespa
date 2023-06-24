@@ -35,7 +35,7 @@ public class RedundancyIncreaseValidator implements ChangeValidator {
     }
 
     private int redundancyOf(ContentCluster cluster) {
-        return cluster.redundancy().finalRedundancy();
+        return cluster.getRedundancy().finalRedundancy();
     }
 
 }

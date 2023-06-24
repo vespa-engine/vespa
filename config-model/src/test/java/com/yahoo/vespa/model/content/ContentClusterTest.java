@@ -38,6 +38,7 @@ import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -470,7 +471,8 @@ public class ContentClusterTest extends ContentBaseTest {
             new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
             fail("Deploying without redundancy should fail");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("Either <redundancy> or <min-redundancy> must be set"), e.getMessage());
+            assertEquals("In content cluster 'bar': Either <redundancy> or <min-redundancy> must be set",
+                         Exceptions.toMessageString(e));
         }
     }
 
@@ -478,12 +480,13 @@ public class ContentClusterTest extends ContentBaseTest {
     void testRedundancyFinalLessThanInitial() {
         try {
             parse(
-                    "<content version=\"1.0\" id=\"storage\">\n" +
-                            "  <redundancy reply-after=\"4\">2</redundancy>\n" +
-                            "     <group>" +
-                            "       <node hostalias='node0' distribution-key='0' />" +
-                            "     </group>" +
-                            "</content>"
+                    """
+                            <content version="1.0" id="storage">
+                              <redundancy reply-after="4">2</redundancy>
+                              <group>
+                                <node hostalias='node0' distribution-key='0' />
+                              </group>
+                            </content>"""
             );
             fail("no exception thrown");
         } catch (Exception e) { /* ignore */
@@ -494,17 +497,18 @@ public class ContentClusterTest extends ContentBaseTest {
     void testReadyTooHigh() {
         try {
             parse(
-                    "<content version=\"1.0\" id=\"storage\">\n" +
-                            "  <engine>" +
-                            "     <proton>" +
-                            "       <searchable-copies>3</searchable-copies>" +
-                            "     </proton>" +
-                            "  </engine>" +
-                            "  <redundancy>2</redundancy>\n" +
-                            "     <group>" +
-                            "       <node hostalias='node0' distribution-key='0' />" +
-                            "     </group>" +
-                            "</content>"
+                    """
+                            <content version="1.0" id="storage">
+                              <engine>
+                                <proton>
+                                  <searchable-copies>3</searchable-copies>
+                                </proton>
+                              </engine>
+                              <redundancy>2</redundancy>
+                              <group>
+                                <node hostalias='node0' distribution-key='0' />
+                              </group>
+                            </content>"""
             );
             fail("no exception thrown");
         } catch (Exception e) { /* ignore */
@@ -972,15 +976,17 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     void reserved_document_name_throws_exception() {
-        String xml = "<content version=\"1.0\" id=\"storage\">" +
-                "  <redundancy>1</redundancy>" +
-                "  <documents>" +
-                "    <document type=\"true\" mode=\"index\"/>" +
-                "  </documents>" +
-                "  <group>" +
-                "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                "  </group>" +
-                "</content>";
+        String xml = """
+                <content version="1.0" id="storage">
+                  <redundancy>1</redundancy>
+                  <documents>
+                    <document type="true" mode="index"/>
+                  </documents>
+                  <group>
+                    <node distribution-key="0" hostalias="mockhost"/>
+                  </group>
+                </content>
+                """;
 
         List<String> sds = ApplicationPackageUtils.generateSchemas("true");
         try {
@@ -989,6 +995,65 @@ public class ContentClusterTest extends ContentBaseTest {
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().startsWith("The following document types conflict with reserved keyword names: 'true'."));
         }
+    }
+
+    @Test
+    void default_searchable_copies_indexing() {
+        String services = """
+                <content version="1.0" id="storage">
+                  <redundancy>3</redundancy>
+                  <documents>
+                    <document type="music" mode="index"/>
+                  </documents>
+                  <group>
+                    <node distribution-key="0" hostalias="mockhost"/>
+                    <node distribution-key="1" hostalias="mockhost"/>
+                    <node distribution-key="2" hostalias="mockhost"/>
+                  </group>
+                </content>
+                """;
+        var model = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSchemas("music")).create();
+        assertEquals(2, model.getContentClusters().get("storage").getRedundancy().readyCopies());
+    }
+
+    @Test
+    void default_searchable_copies_streaming() {
+        String services = """
+                <content version="1.0" id="storage">
+                  <redundancy>3</redundancy>
+                  <documents>
+                    <document type="mail" mode="streaming"/>
+                  </documents>
+                  <group>
+                    <node distribution-key="0" hostalias="mockhost"/>
+                    <node distribution-key="1" hostalias="mockhost"/>
+                    <node distribution-key="2" hostalias="mockhost"/>
+                  </group>
+                </content>
+                """;
+        var model = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSchemas("mail")).create();
+        assertEquals(3, model.getContentClusters().get("storage").getRedundancy().readyCopies());
+    }
+
+    /** Here there is no good choice. */
+    @Test
+    void default_searchable_copies_mixed() {
+        String services = """
+                <content version="1.0" id="storage">
+                  <redundancy>3</redundancy>
+                  <documents>
+                    <document type="music" mode="index"/>
+                    <document type="mail" mode="streaming"/>
+                  </documents>
+                  <group>
+                    <node distribution-key="0" hostalias="mockhost"/>
+                    <node distribution-key="1" hostalias="mockhost"/>
+                    <node distribution-key="2" hostalias="mockhost"/>
+                  </group>
+                </content>
+                """;
+        var model = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSchemas("music", "mail")).create();
+        assertEquals(2, model.getContentClusters().get("storage").getRedundancy().readyCopies());
     }
 
     private void assertClusterHasBucketSpaceMappings(AllClustersBucketSpacesConfig config, String clusterId,
