@@ -5,6 +5,7 @@
 #include <ostream>
 
 using vespalib::datastore::ArrayStoreConfig;
+using vespalib::datastore::AtomicEntryRef;
 using vespalib::datastore::BufferTypeBase;
 using vespalib::datastore::DynamicArrayBufferType;
 using vespalib::datastore::EntryCount;
@@ -203,6 +204,13 @@ TEST_F(DynamicArrayBufferTypeTest, entry_size_is_calculated)
     EXPECT_EQ(16, get_entry_size<int64_t>(1));
     EXPECT_EQ(24, get_entry_size<int64_t>(2));
     EXPECT_EQ(20, get_entry_size<WrapInt32>(4));
+
+    EXPECT_EQ(1028, get_entry_size<WrapInt32>(256));
+    EXPECT_EQ(1028, get_entry_size<AtomicEntryRef>(256));
+    EXPECT_EQ(1088, get_entry_size<int32_t>(256));
+    EXPECT_EQ(1088, get_entry_size<int64_t>(128));
+    EXPECT_EQ(1088, get_entry_size<float>(256));
+    EXPECT_EQ(1088, get_entry_size<double>(128));
 }
 
 TEST_F(DynamicArrayBufferTypeTest, initialize_reserved_entries)

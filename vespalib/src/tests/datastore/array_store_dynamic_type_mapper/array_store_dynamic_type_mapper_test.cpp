@@ -134,16 +134,16 @@ TEST_F(ArrayStoreDynamicTypeMapperCharTest, type_ids_are_selected)
 
 TEST_F(ArrayStoreDynamicTypeMapperCharTest, large_arrays_grows_exponentially)
 {
-    EXPECT_EQ((std::vector<size_t>{232, 13372, 276860, 5338108}), get_large_array_sizes(4));
+    EXPECT_EQ((std::vector<size_t>{232, 5024, 97100, 1866776}), get_large_array_sizes(4));
 }
 
 TEST_F(ArrayStoreDynamicTypeMapperCharTest, avoid_entry_size_overflow)
 {
     EXPECT_EQ(32, calc_max_buffer_type_id(2.0));
-    EXPECT_EQ(395, calc_max_buffer_type_id(1.05));
-    EXPECT_EQ(485, calc_max_buffer_type_id(1.04));
-    EXPECT_EQ(626, calc_max_buffer_type_id(1.03));
-    EXPECT_EQ(900, calc_max_buffer_type_id(1.02));
+    EXPECT_EQ(410, calc_max_buffer_type_id(1.05));
+    EXPECT_EQ(507, calc_max_buffer_type_id(1.04));
+    EXPECT_EQ(661, calc_max_buffer_type_id(1.03));
+    EXPECT_EQ(968, calc_max_buffer_type_id(1.02));
 }
 
 using ArrayStoreDynamicTypeMapperInt32Test = TestBase<int32_t>;

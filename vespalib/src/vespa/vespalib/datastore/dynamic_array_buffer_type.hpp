@@ -25,7 +25,7 @@ size_t
 DynamicArrayBufferType<ElemT>::calc_entry_size(size_t array_size) noexcept
 {
     auto entry_size = EntryMinAligner::align(sizeof(ElemType) * array_size + sizeof(uint32_t));
-    if (entry_size >= 512) {
+    if (align_for_simd && entry_size >= 512) {
         entry_size = Aligner<64>::align(entry_size);
     }
     return entry_size;
