@@ -22,15 +22,20 @@ struct Fixture
     Fixture(uint32_t max_type_id,
             size_t hugePageSize,
             size_t smallPageSize,
+            size_t max_buffer_size,
             size_t min_num_entries_for_new_buffer)
         : cfg(ArrayStoreConfig::optimizeForHugePage(max_type_id,
                                                     [](size_t type_id) noexcept { return type_id * sizeof(int); },
                                                     hugePageSize, smallPageSize,
                                                     EntryRefType::offsetSize(),
+                                                    max_buffer_size,
                                                     min_num_entries_for_new_buffer,
                                                     ALLOC_GROW_FACTOR)) { }
     void assertSpec(uint32_t type_id, uint32_t num_entries_for_new_buffer) {
-        assertSpec(type_id, AllocSpec(0, EntryRefType::offsetSize(),
+        assertSpec(type_id, EntryRefType::offsetSize(), num_entries_for_new_buffer);
+    }
+    void assertSpec(uint32_t type_id, uint32_t max_entries, uint32_t num_entries_for_new_buffer) {
+        assertSpec(type_id, AllocSpec(0, max_entries,
                                       num_entries_for_new_buffer, ALLOC_GROW_FACTOR));
     }
     void assertSpec(uint32_t type_id, const AllocSpec &expSpec) {
@@ -50,9 +55,6 @@ makeSpec(size_t min_entries_in_buffer,
     return AllocSpec(min_entries_in_buffer, max_entries_in_buffer, num_entries_for_new_buffer, ALLOC_GROW_FACTOR);
 }
 
-constexpr size_t KB = 1024;
-constexpr size_t MB = KB * KB;
-
 TEST_F("require that default allocation spec is given for all array sizes", Fixture(3, makeSpec(4, 32, 8)))
 {
     EXPECT_EQUAL(3u, f.cfg.max_type_id());
@@ -62,26 +64,54 @@ TEST_F("require that default allocation spec is given for all array sizes", Fixt
     TEST_DO(f.assertSpec(3, makeSpec(4, 32, 8)));
 }
 
-TEST_F("require that we can generate config optimized for a given huge page", Fixture(1024,
-                                                                                      2 * MB,
-                                                                                      4 * KB,
-                                                                                      8 * KB))
-{
-    EXPECT_EQUAL(1_Ki, f.cfg.max_type_id());
-    TEST_DO(f.assertSpec(0, 8 * KB)); // large arrays
-    TEST_DO(f.assertSpec(1, 256 * KB));
-    TEST_DO(f.assertSpec(2, 256 * KB));
-    TEST_DO(f.assertSpec(3, 168 * KB));
-    TEST_DO(f.assertSpec(4, 128 * KB));
-    TEST_DO(f.assertSpec(5, 100 * KB));
-    TEST_DO(f.assertSpec(6, 84 * KB));
+struct BigBuffersFixture : public Fixture {
+    BigBuffersFixture() : Fixture(1023, 2_Mi, 4_Ki, 1024_Gi, 8_Ki) { }
+};
 
-    TEST_DO(f.assertSpec(32, 16 * KB));
-    TEST_DO(f.assertSpec(33, 12 * KB));
-    TEST_DO(f.assertSpec(42, 12 * KB));
-    TEST_DO(f.assertSpec(43, 8 * KB));
-    TEST_DO(f.assertSpec(1022, 8 * KB));
-    TEST_DO(f.assertSpec(1023, 8 * KB));
+TEST_F("require that we can generate config optimized for a given huge page without capped buffer sizes", BigBuffersFixture())
+{
+    EXPECT_EQUAL(1023u, f.cfg.max_type_id());
+    TEST_DO(f.assertSpec(0, 8_Ki)); // large arrays
+    TEST_DO(f.assertSpec(1, 256_Ki));
+    TEST_DO(f.assertSpec(2, 256_Ki));
+    TEST_DO(f.assertSpec(3, 168_Ki));
+    TEST_DO(f.assertSpec(4, 128_Ki));
+    TEST_DO(f.assertSpec(5, 100_Ki));
+    TEST_DO(f.assertSpec(6, 84_Ki));
+
+    TEST_DO(f.assertSpec(32, 16_Ki));
+    TEST_DO(f.assertSpec(33, 12_Ki));
+    TEST_DO(f.assertSpec(42, 12_Ki));
+    TEST_DO(f.assertSpec(43, 8_Ki));
+    TEST_DO(f.assertSpec(1022, 8_Ki));
+    TEST_DO(f.assertSpec(1023, 8_Ki));
+}
+
+struct CappedBuffersFixture : public Fixture {
+    CappedBuffersFixture() : Fixture(1023, 2_Mi, 4_Ki, 256_Mi, 8_Ki) { }
+    size_t max_entries(size_t array_size) {
+        auto entry_size = array_size * sizeof(int);
+        return (256_Mi + entry_size - 1) / entry_size;
+    }
+};
+
+TEST_F("require that we can generate config optimized for a given huge page with capped buffer sizes", CappedBuffersFixture())
+{
+    EXPECT_EQUAL(1023u, f.cfg.max_type_id());
+    TEST_DO(f.assertSpec(0, f.max_entries(1023), 8_Ki)); // large arrays
+    TEST_DO(f.assertSpec(1, 256_Ki));
+    TEST_DO(f.assertSpec(2, 256_Ki));
+    TEST_DO(f.assertSpec(3, 168_Ki));
+    TEST_DO(f.assertSpec(4, 128_Ki));
+    TEST_DO(f.assertSpec(5, 100_Ki));
+    TEST_DO(f.assertSpec(6, 84_Ki));
+
+    TEST_DO(f.assertSpec(32, 16_Ki));
+    TEST_DO(f.assertSpec(33, 12_Ki));
+    TEST_DO(f.assertSpec(42, 12_Ki));
+    TEST_DO(f.assertSpec(43, 8_Ki));
+    TEST_DO(f.assertSpec(1022, f.max_entries(1022), 8_Ki));
+    TEST_DO(f.assertSpec(1023, f.max_entries(1023), 8_Ki));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

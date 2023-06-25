@@ -49,6 +49,7 @@ HnswNodeidMapping::HnswNodeidMapping()
       _nodeids(NodeidStore::optimizedConfigForHugePage(max_type_id,
                                                        vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                        vespalib::alloc::MemoryAllocator::PAGE_SIZE,
+                                                       vespalib::datastore::ArrayStoreConfig::default_max_buffer_size,
                                                        min_num_arrays_for_new_buffer,
                                                        alloc_grow_factor).enable_free_lists(true), {}),
       _hold_list(),

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/size_literals.h>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -38,6 +39,8 @@ public:
     };
 
     using AllocSpecVector = std::vector<AllocSpec>;
+
+    static constexpr size_t default_max_buffer_size = 256_Mi;
 
 private:
     AllocSpecVector _allocSpecs;
@@ -77,6 +80,7 @@ public:
                                                 size_t hugePageSize,
                                                 size_t smallPageSize,
                                                 size_t maxEntryRefOffset,
+                                                size_t max_buffer_size,
                                                 size_t min_num_entries_for_new_buffer,
                                                 float allocGrowFactor);
 };

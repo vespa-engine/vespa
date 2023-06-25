@@ -38,6 +38,7 @@ TensorBufferStore::TensorBufferStore(const ValueType& tensor_type, std::shared_p
                                                               TensorBufferTypeMapper(max_small_subspaces_type_id, mapper_grow_factor, &_ops),
                                                               MemoryAllocator::HUGEPAGE_SIZE,
                                                               MemoryAllocator::PAGE_SIZE,
+                                                              vespalib::datastore::ArrayStoreConfig::default_max_buffer_size,
                                                               8_Ki, ALLOC_GROW_FACTOR),
                    std::move(allocator), TensorBufferTypeMapper(max_small_subspaces_type_id, mapper_grow_factor, &_ops))
 {

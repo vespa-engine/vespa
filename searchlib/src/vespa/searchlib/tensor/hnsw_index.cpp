@@ -31,6 +31,7 @@ namespace search::tensor {
 using search::AddressSpaceComponents;
 using search::StateExplorerUtils;
 using search::queryeval::GlobalFilter;
+using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 using vespalib::GenericHeader;
@@ -145,25 +146,27 @@ PreparedAddDoc::PreparedAddDoc(PreparedAddDoc&& other) noexcept = default;
 }
 
 template <HnswIndexType type>
-vespalib::datastore::ArrayStoreConfig
+ArrayStoreConfig
 HnswIndex<type>::make_default_level_array_store_config()
 {
     return LevelArrayStore::optimizedConfigForHugePage(max_level_array_size,
-                                                 vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
-                                                 vespalib::alloc::MemoryAllocator::PAGE_SIZE,
+                                                       vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
+                                                       vespalib::alloc::MemoryAllocator::PAGE_SIZE,
+                                                       ArrayStoreConfig::default_max_buffer_size,
                                                  min_num_arrays_for_new_buffer,
                                                  alloc_grow_factor).enable_free_lists(true);
 }
 
 template <HnswIndexType type>
-vespalib::datastore::ArrayStoreConfig
+ArrayStoreConfig
 HnswIndex<type>::make_default_link_array_store_config()
 {
     return LinkArrayStore::optimizedConfigForHugePage(max_link_array_size,
-                                                 vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
-                                                 vespalib::alloc::MemoryAllocator::PAGE_SIZE,
-                                                 min_num_arrays_for_new_buffer,
-                                                 alloc_grow_factor).enable_free_lists(true);
+                                                      vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
+                                                      vespalib::alloc::MemoryAllocator::PAGE_SIZE,
+                                                      ArrayStoreConfig::default_max_buffer_size,
+                                                      min_num_arrays_for_new_buffer,
+                                                      alloc_grow_factor).enable_free_lists(true);
 }
 
 template <HnswIndexType type>
