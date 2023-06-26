@@ -7,6 +7,7 @@
 #include "array_store_config.h"
 #include <algorithm>
 #include <memory>
+#include <type_traits>
 
 namespace vespalib::datastore {
 
@@ -33,6 +34,7 @@ public:
     static constexpr size_t entry_min_align = std::max(alignof(uint32_t), alignof(ElemT));
     using EntryMinAligner = Aligner<entry_min_align>;
     static constexpr uint32_t dynamic_array_buffer_underflow_size = 64u;
+    static constexpr bool align_for_simd = std::disjunction_v<std::is_same<ElemT, double>,std::is_same<ElemT, float>, std::is_same<ElemT, int64_t>, std::is_same<ElemT, int32_t>>;
 protected:
     static const ElemType& empty_entry() noexcept;
     ElemType* get_entry(void *buffer, size_t offset) noexcept { return get_entry(buffer, offset, entry_size()); }
