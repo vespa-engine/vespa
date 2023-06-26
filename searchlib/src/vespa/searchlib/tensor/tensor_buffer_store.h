@@ -24,6 +24,10 @@ class TensorBufferStore : public TensorStore
     TensorBufferOperations    _ops;
     ArrayStoreType            _array_store;
 public:
+
+    static constexpr double array_store_grow_factor = 1.03;
+    static constexpr uint32_t array_store_max_type_id = 300;
+
     TensorBufferStore(const vespalib::eval::ValueType& tensor_type, std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator, uint32_t max_small_subspaces_type_id);
     ~TensorBufferStore();
     void holdTensor(EntryRef ref) override;

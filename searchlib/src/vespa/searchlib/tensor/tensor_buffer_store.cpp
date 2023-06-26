@@ -26,8 +26,6 @@ namespace {
 
 constexpr float ALLOC_GROW_FACTOR = 0.2;
 
-constexpr double mapper_grow_factor = 1.02;
-
 }
 
 TensorBufferStore::TensorBufferStore(const ValueType& tensor_type, std::shared_ptr<MemoryAllocator> allocator, uint32_t max_small_subspaces_type_id)
@@ -35,12 +33,12 @@ TensorBufferStore::TensorBufferStore(const ValueType& tensor_type, std::shared_p
       _tensor_type(tensor_type),
       _ops(_tensor_type),
       _array_store(ArrayStoreType::optimizedConfigForHugePage(max_small_subspaces_type_id,
-                                                              TensorBufferTypeMapper(max_small_subspaces_type_id, mapper_grow_factor, &_ops),
+                                                              TensorBufferTypeMapper(max_small_subspaces_type_id, array_store_grow_factor, &_ops),
                                                               MemoryAllocator::HUGEPAGE_SIZE,
                                                               MemoryAllocator::PAGE_SIZE,
                                                               vespalib::datastore::ArrayStoreConfig::default_max_buffer_size,
                                                               8_Ki, ALLOC_GROW_FACTOR),
-                   std::move(allocator), TensorBufferTypeMapper(max_small_subspaces_type_id, mapper_grow_factor, &_ops))
+                   std::move(allocator), TensorBufferTypeMapper(max_small_subspaces_type_id, array_store_grow_factor, &_ops))
 {
 }
 
