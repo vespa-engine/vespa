@@ -5,6 +5,7 @@
 #include <cassert>
 
 using vespalib::alloc::MemoryAllocator;
+using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::EntryRef;
 
 namespace {
@@ -17,12 +18,12 @@ namespace search::attribute {
 
 RawBufferStore::RawBufferStore(std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator, uint32_t max_small_buffer_type_id, double grow_factor)
     : _array_store(ArrayStoreType::optimizedConfigForHugePage(max_small_buffer_type_id,
-                                                              TypeMapper(max_small_buffer_type_id, grow_factor),
+                                                              TypeMapper(max_small_buffer_type_id, grow_factor, ArrayStoreConfig::default_max_buffer_size),
                                                               MemoryAllocator::HUGEPAGE_SIZE,
                                                               MemoryAllocator::PAGE_SIZE,
-                                                              vespalib::datastore::ArrayStoreConfig::default_max_buffer_size,
+                                                              ArrayStoreConfig::default_max_buffer_size,
                                                               8_Ki, ALLOC_GROW_FACTOR),
-                   std::move(allocator), TypeMapper(max_small_buffer_type_id, grow_factor))
+                   std::move(allocator), TypeMapper(max_small_buffer_type_id, grow_factor, ArrayStoreConfig::default_max_buffer_size))
 {
 }
 

@@ -2,10 +2,18 @@
 
 #include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <limits>
 
 using vespalib::datastore::ArrayStoreDynamicTypeMapper;
 
+namespace {
+
 constexpr double default_grow_factor = 1.03;
+constexpr size_t default_max_buffer_size = 256_Mi;
+constexpr size_t small_max_buffer_size = 256_Ki;
+constexpr size_t max_max_buffer_size = std::numeric_limits<uint32_t>::max();
+}
 
 template <typename ElemT>
 class TestBase : public testing::Test
@@ -19,13 +27,13 @@ protected:
     std::vector<size_t> get_large_array_sizes(uint32_t num_large_arrays);
     void select_type_ids(std::vector<size_t> array_sizes);
     void setup_mapper(uint32_t max_buffer_type_id, double grow_factor);
-    static uint32_t calc_max_buffer_type_id(double grow_factor);
+    static uint32_t calc_max_buffer_type_id(double grow_factor, size_t max_buffer_size = default_max_buffer_size);
 };
 
 template <typename ElemT>
 TestBase<ElemT>::TestBase()
     : testing::Test(),
-      _mapper(5, default_grow_factor)
+      _mapper(5, default_grow_factor, default_max_buffer_size)
 {
 }
 
@@ -36,7 +44,7 @@ template <typename ElemT>
 void
 TestBase<ElemT>::setup_mapper(uint32_t max_buffer_type_id, double grow_factor)
 {
-    _mapper = ArrayStoreDynamicTypeMapper<ElemT>(max_buffer_type_id, grow_factor);
+    _mapper = ArrayStoreDynamicTypeMapper<ElemT>(max_buffer_type_id, grow_factor, default_max_buffer_size);
 }
 
 template <typename ElemT>
@@ -108,9 +116,9 @@ TestBase<ElemT>::select_type_ids(std::vector<size_t> array_sizes)
 
 template <typename ElemT>
 uint32_t
-TestBase<ElemT>::calc_max_buffer_type_id(double grow_factor)
+TestBase<ElemT>::calc_max_buffer_type_id(double grow_factor, size_t max_buffer_size)
 {
-    ArrayStoreDynamicTypeMapper<ElemT> mapper(1000, grow_factor);
+    ArrayStoreDynamicTypeMapper<ElemT> mapper(1000, grow_factor, max_buffer_size);
     return mapper.get_max_type_id(1000);
 }
 
@@ -139,11 +147,13 @@ TEST_F(ArrayStoreDynamicTypeMapperCharTest, large_arrays_grows_exponentially)
 
 TEST_F(ArrayStoreDynamicTypeMapperCharTest, avoid_entry_size_overflow)
 {
-    EXPECT_EQ(32, calc_max_buffer_type_id(2.0));
-    EXPECT_EQ(410, calc_max_buffer_type_id(1.05));
-    EXPECT_EQ(507, calc_max_buffer_type_id(1.04));
-    EXPECT_EQ(661, calc_max_buffer_type_id(1.03));
-    EXPECT_EQ(968, calc_max_buffer_type_id(1.02));
+    EXPECT_EQ(29, calc_max_buffer_type_id(2.0));
+    EXPECT_EQ(367, calc_max_buffer_type_id(1.05));
+    EXPECT_EQ(454, calc_max_buffer_type_id(1.04));
+    EXPECT_EQ(591, calc_max_buffer_type_id(1.03));
+    EXPECT_EQ(357, calc_max_buffer_type_id(1.03, small_max_buffer_size));
+    EXPECT_EQ(661, calc_max_buffer_type_id(1.03, max_max_buffer_size));
+    EXPECT_EQ(863, calc_max_buffer_type_id(1.02));
 }
 
 using ArrayStoreDynamicTypeMapperInt32Test = TestBase<int32_t>;
@@ -159,11 +169,13 @@ TEST_F(ArrayStoreDynamicTypeMapperInt32Test, array_sizes_are_calculated)
 
 TEST_F(ArrayStoreDynamicTypeMapperInt32Test, avoid_entry_size_overflow)
 {
-    EXPECT_EQ(30, calc_max_buffer_type_id(2.0));
-    EXPECT_EQ(379, calc_max_buffer_type_id(1.05));
-    EXPECT_EQ(462, calc_max_buffer_type_id(1.04));
-    EXPECT_EQ(596, calc_max_buffer_type_id(1.03));
-    EXPECT_EQ(849, calc_max_buffer_type_id(1.02));
+    EXPECT_EQ(27, calc_max_buffer_type_id(2.0));
+    EXPECT_EQ(337, calc_max_buffer_type_id(1.05));
+    EXPECT_EQ(409, calc_max_buffer_type_id(1.04));
+    EXPECT_EQ(525, calc_max_buffer_type_id(1.03));
+    EXPECT_EQ(291, calc_max_buffer_type_id(1.03, small_max_buffer_size));
+    EXPECT_EQ(596, calc_max_buffer_type_id(1.03, max_max_buffer_size));
+    EXPECT_EQ(744, calc_max_buffer_type_id(1.02));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

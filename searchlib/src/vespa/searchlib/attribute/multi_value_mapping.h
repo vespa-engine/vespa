@@ -36,6 +36,7 @@ public:
     MultiValueMapping(const MultiValueMapping &) = delete;
     MultiValueMapping & operator = (const MultiValueMapping &) = delete;
     MultiValueMapping(const vespalib::datastore::ArrayStoreConfig &storeCfg,
+                      size_t max_buffer_size,
                       const vespalib::GrowStrategy &gs,
                       std::shared_ptr<vespalib::alloc::MemoryAllocator> memory_allocator);
     ~MultiValueMapping() override;

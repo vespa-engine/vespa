@@ -12,6 +12,8 @@
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/stash.h>
 
+using vespalib::datastore::ArrayStoreConfig;
+
 namespace search {
 
 namespace multivalueattribute {
@@ -28,10 +30,11 @@ MultiValueAttribute(const vespalib::string &baseFileName,
       _mvMapping(MultiValueMapping::optimizedConfigForHugePage(MultiValueMapping::array_store_max_type_id,
                                                                vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                                vespalib::alloc::MemoryAllocator::PAGE_SIZE,
-                                                               vespalib::datastore::ArrayStoreConfig::default_max_buffer_size,
+                                                               ArrayStoreConfig::default_max_buffer_size,
                                                                8 * 1024,
                                                                cfg.getGrowStrategy().getMultiValueAllocGrowFactor(),
                                                                multivalueattribute::enable_free_lists),
+                 ArrayStoreConfig::default_max_buffer_size,
                  cfg.getGrowStrategy(), this->get_memory_allocator())
 {
 }
