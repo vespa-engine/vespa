@@ -27,6 +27,8 @@ import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +38,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
 
     private final ChangeManagementAssessor assessor;
     private final Controller controller;
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneOffset.UTC);
 
     public ChangeManagementApiHandler(ThreadedHttpRequestHandler.Context ctx, Controller controller) {
         super(ctx, controller.auditLogger());
@@ -164,7 +167,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
         Cursor assessmentCursor = root.setObject("assessment");
 
         // Updated gives clue to if the assessment is old
-        assessmentCursor.setString("updated", "2021-03-12:12:12:12Z");
+        assessmentCursor.setString("updated", formatter.format(controller.clock().instant()));
 
         // Assessment on the cluster level
         Cursor clustersCursor = assessmentCursor.setArray("clusters");
