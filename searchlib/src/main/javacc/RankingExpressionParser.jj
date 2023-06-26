@@ -138,6 +138,7 @@ TOKEN :
     <RANDOM: "random"> |
     <L1_NORMALIZE: "l1_normalize"> |
     <L2_NORMALIZE: "l2_normalize"> |
+    <EUCLIDEAN_DISTANCE: "euclidean_distance"> |
     <MATMUL: "matmul"> |
     <SOFTMAX: "softmax"> |
     <XW_PLUS_B: "xw_plus_b"> |
@@ -379,6 +380,7 @@ TensorFunctionNode tensorFunction() :
         tensorExpression = tensorRandom() |
         tensorExpression = tensorL1Normalize() |
         tensorExpression = tensorL2Normalize() |
+        tensorExpression = tensorEuclideanDistance() |
         tensorExpression = tensorMatmul() |
         tensorExpression = tensorSoftmax() |
         tensorExpression = tensorXwPlusB() |
@@ -544,6 +546,18 @@ TensorFunctionNode tensorL2Normalize() :
     { return new TensorFunctionNode(new L2Normalize(TensorFunctionNode.wrap(tensor), dimension)); }
 }
 
+TensorFunctionNode tensorEuclideanDistance() :
+{
+    ExpressionNode tensor1, tensor2;
+    String dimension;
+}
+{
+    <EUCLIDEAN_DISTANCE> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <COMMA> dimension = identifier() <RBRACE>
+    { return new TensorFunctionNode(new EuclideanDistance(TensorFunctionNode.wrap(tensor1),
+                                                          TensorFunctionNode.wrap(tensor2),
+                                                          dimension)); }
+}
+
 TensorFunctionNode tensorMatmul() :
 {
     ExpressionNode tensor1, tensor2;
@@ -701,6 +715,7 @@ String tensorFunctionName() :
     ( <RANDOM>       { return token.image; } ) |
     ( <L1_NORMALIZE> { return token.image; } ) |
     ( <L2_NORMALIZE> { return token.image; } ) |
+    ( <EUCLIDEAN_DISTANCE> { return token.image; } ) |
     ( <MATMUL>       { return token.image; } ) |
     ( <SOFTMAX>      { return token.image; } ) |
     ( <XW_PLUS_B>    { return token.image; } ) |
