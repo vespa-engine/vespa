@@ -20,9 +20,11 @@ namespace search::tensor {
 class DenseTensorStore : public TensorStore
 {
 public:
-    using RefType = vespalib::datastore::EntryRefT<22>;
+    // 4 Ki buffers of 256 MiB each is 1 TiB.
+    using RefType = vespalib::datastore::EntryRefT<20>;
     using DataStoreType = vespalib::datastore::DataStoreT<RefType>;
     using ValueType = vespalib::eval::ValueType;
+    static constexpr size_t max_dense_tensor_buffer_size = 256_Mi;
 
     struct TensorSizeCalc
     {
@@ -90,8 +92,9 @@ public:
         return VectorBundle(getRawBuffer(ref), 1, _subspace_type);
     }
     const SubspaceType& get_subspace_type() const noexcept { return _subspace_type; }
-    // The following method is meant to be used only for unit tests.
+    // The following methods are meant to be used only for unit tests.
     uint32_t getArraySize() const { return _bufferType.getArraySize(); }
+    uint32_t get_max_buffer_entries() const noexcept { return _bufferType.get_max_entries(); }
 };
 
 }
