@@ -36,6 +36,7 @@ public:
     Nexus &operator=(const Nexus &) = delete;
     size_t num_threads() const noexcept { return _vote.size(); }
     size_t thread_id() const noexcept { return _thread_id; }
+    bool is_main() const noexcept { return _thread_id == 0; }
     bool vote(bool my_vote) { return _vote(my_vote); }
     void barrier() { REQUIRE_EQ(_vote(true), true); }
     struct select_thread_0 {};

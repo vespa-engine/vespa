@@ -11,6 +11,7 @@
 #include <ranges>
 #include <random>
 #include <array>
+#include <algorithm>
 
 using namespace vespalib;
 using namespace vespalib::test;
@@ -20,6 +21,71 @@ duration budget = 250ms;
 constexpr size_t LOOP_CNT = 4096;
 size_t thread_safety_work = 1'000'000;
 size_t state_loop = 1;
+
+//-----------------------------------------------------------------------------
+
+/**
+ * Estimates the 80th percentile by throwing away the 2 best samples
+ * in each set of 10 samples, using the best remaining sample as a
+ * representative for the set. Representatives are hierarchically
+ * matched against representatives from other sample sets. Result
+ * extraction is simplified in that it does not try to estimate the
+ * actual 80th percentile, but rather tries to drop the best samples
+ * if possible.
+ *
+ * The goal is to have a more robust way of combining repeated
+ * micro-benchmark samples than simply using minimum time. With simple
+ * single-threaded CPU-bound tasks, minimum time is a good measure of
+ * how expensive something is, but when we start benchmarking
+ * operations that may conflict with themselves, we do not want to
+ * account for being super lucky. However, we still want to account
+ * for the benchmark conditions being as good as possible.
+ **/
+struct Est80P {
+    struct Level {
+        int cnt;
+        std::array<double,3> data;
+        Level(double value) noexcept
+          : cnt(1), data{value, 0.0, 0.0} {}
+        bool empty() const noexcept { return (cnt == 0); }
+        bool full() const noexcept { return (cnt == 10); }
+        void add(double value) noexcept {
+            assert(!full());
+            if (cnt < 3 || data[2] > value) {
+                size_t i = std::min(cnt, 2);
+                while (i > 0 && data[i - 1] > value) {
+                    data[i] = data[i - 1];
+                    --i;
+                }
+                data[i] = value;
+            }
+            ++cnt;
+        }
+        double get() const noexcept {
+            assert(!empty());
+            return data[std::min(2, cnt - 1)];
+        }
+        void clear() noexcept {
+            cnt = 0;
+        }
+    };
+    std::vector<Level> levels;
+    void add_sample(double value) {
+        for (auto &level: levels) {
+            level.add(value);
+            if (!level.full()) [[likely]] {
+                return;
+            }
+            value = level.get();
+            level.clear();
+        }
+        levels.emplace_back(value);
+    }
+    double get_result() {
+        assert(!levels.empty());
+        return levels.back().get();
+    }
+};
 
 //-----------------------------------------------------------------------------
 
@@ -158,47 +224,31 @@ double measure_ns(auto &work) {
 
 struct BenchmarkResult {
     double cost_ns;
-    double range_ns;
-    size_t threads;
-    BenchmarkResult(size_t num_threads)
-      : cost_ns(std::numeric_limits<double>::max()), range_ns(0.0), threads(num_threads) {}
+    BenchmarkResult(double cost_ns_in) : cost_ns(cost_ns_in) {}
     void report(vespalib::string desc) {
-        if (threads == 1) {
-            fprintf(stderr, "%s: cost_ns: %g\n",
-                    desc.c_str(), cost_ns);
-        } else {
-            fprintf(stderr, "%s: cost_ns: %g, range_ns: %g (%zu threads)\n",
-                    desc.c_str(), cost_ns, range_ns, threads);
-        }
+        fprintf(stderr, "%s: cost_ns: %g\n", desc.c_str(), cost_ns);
     }
     void report(vespalib::string name, vespalib::string desc) {
         report(name + "(" + desc + ")");
     }
 };
 
-struct Meets {
-    vespalib::test::ThreadMeets::Avg avg;
-    vespalib::test::ThreadMeets::Range<double> range;
-    Meets(size_t num_threads) : avg(num_threads), range(num_threads) {}
-};
-
 BenchmarkResult benchmark_ns(auto &&work, size_t num_threads = 1) {
-    Meets meets(num_threads);
+    Est80P collector;
+    vespalib::test::ThreadMeets::Avg avg(num_threads);
     auto entry = [&](Nexus &ctx) {
         Timer timer;
         BenchmarkResult result(ctx.num_threads());
         for (bool once_more = true; ctx.vote(once_more); once_more = (timer.elapsed() < budget)) {
-            auto my_ns = measure_ns(work);
-            auto cost_ns = meets.avg(my_ns);
-            auto range_ns = meets.range(my_ns);
-            if (cost_ns < result.cost_ns) {
-                result.cost_ns = cost_ns;
-                result.range_ns = range_ns;
+            auto cost_ns = avg(measure_ns(work));
+            if (ctx.is_main()) {
+                collector.add_sample(cost_ns);
             }
         }
-        return result;
     };
-    return Nexus::run(num_threads, entry);
+    Nexus::run(num_threads, entry);
+    auto result = collector.get_result();
+    return {result};
 }
 
 //-----------------------------------------------------------------------------
@@ -224,7 +274,7 @@ void estimate_cost() {
 //-----------------------------------------------------------------------------
 
 template <typename T>
-void thread_safety_loop(Nexus &ctx, T &lock, MyState &state, Meets &meets, int read_bp) {
+void thread_safety_loop(Nexus &ctx, T &lock, MyState &state, auto &max, int read_bp) {
     Rnd rnd(ctx.thread_id());
     size_t write_cnt = 0;
     size_t bad_reads = 0;
@@ -247,16 +297,11 @@ void thread_safety_loop(Nexus &ctx, T &lock, MyState &state, Meets &meets, int r
             }
         }
     }
-    auto t1 = steady_clock::now();
-    ctx.barrier();
-    auto t2 = steady_clock::now();
-    auto my_ms = count_ns(t1 - t0) / 1'000'000.0;
-    auto total_ms = count_ns(t2 - t0) / 1'000'000.0;
-    auto cost_ms = meets.avg(my_ms);
-    auto range_ms = meets.range(my_ms);
-    if (ctx.thread_id() == 0) {
-        fprintf(stderr, "---> %s with %2zu threads (%5d bp r): avg: %10.2f ms, range: %10.2f ms, max: %10.2f ms\n",
-                getClassName(lock).c_str(), ctx.num_threads(), read_bp, cost_ms, range_ms, total_ms);
+    auto my_ms = count_ns(steady_clock::now() - t0) / 1'000'000.0;
+    auto actual_ms = max(my_ms);
+    if (ctx.is_main()) {
+        fprintf(stderr, "---> %s with %2zu threads (%5d bp r): time: %10.2f ms\n",
+                getClassName(lock).c_str(), ctx.num_threads(), read_bp, actual_ms);
     }
     state.commit_inconsistent_reads(bad_reads);
     state.commit_expected_writes(write_cnt);
@@ -290,9 +335,9 @@ void benchmark_lock() {
     for (size_t bp: {10000, 9999, 5000, 0}) {
         for (size_t num_threads: {8, 4, 2, 1}) {
             if (bench || (bp == 9999 && num_threads == 8)) {
-                Meets meets(num_threads);
+                vespalib::test::ThreadMeets::Max<double> max(num_threads);
                 Nexus::run(num_threads, [&](Nexus &ctx) {
-                    thread_safety_loop(ctx, *lock, *state, meets, bp);
+                    thread_safety_loop(ctx, *lock, *state, max, bp);
                 });
             }
         }
