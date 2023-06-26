@@ -371,11 +371,15 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
 
         public static class Feeding implements ProtonConfig.Producer {
             public Double concurrency = null;
+            public Double niceness = null;
 
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
                 if (concurrency != null) {
                     builder.feeding.concurrency(concurrency);
+                }
+                if (niceness != null) {
+                    builder.feeding.niceness(niceness);
                 }
             }
         }

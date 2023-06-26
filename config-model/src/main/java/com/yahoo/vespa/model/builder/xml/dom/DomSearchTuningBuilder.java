@@ -298,6 +298,8 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         for (Element e : XML.getChildren(spec)) {
             if (equals("concurrency", e)) {
                 sn.feeding.concurrency = asDouble(e);
+            } else if (equals("niceness", e)) {
+                sn.feeding.niceness = asDouble(e);
             }
         }
     }
