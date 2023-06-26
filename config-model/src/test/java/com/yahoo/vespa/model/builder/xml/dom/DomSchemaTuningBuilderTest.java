@@ -285,9 +285,13 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
     void requireThatWeCanParseFeedingTag() {
         Tuning t = createTuning(parseXml("<feeding>",
                 "<concurrency>0.7</concurrency>",
+                "<niceness>0.3</niceness>",
                 "</feeding>"));
         assertEquals(0.7, t.searchNode.feeding.concurrency, DELTA);
-        assertEquals(getProtonCfg(t).feeding().concurrency(), 0.7, DELTA);
+        assertEquals(0.3, t.searchNode.feeding.niceness, DELTA);
+        var cfg = getProtonCfg(t);
+        assertEquals(cfg.feeding().concurrency(), 0.7, DELTA);
+        assertEquals(cfg.feeding().niceness(), 0.3, DELTA);
     }
 
 }
