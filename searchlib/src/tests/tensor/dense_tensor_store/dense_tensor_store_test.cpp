@@ -9,6 +9,7 @@ LOG_SETUP("dense_tensor_store_test");
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using search::tensor::DenseTensorStore;
 using vespalib::eval::SimpleValue;
@@ -88,6 +89,27 @@ TEST("require that array size is calculated correctly")
     TEST_DO(assertArraySize("tensor<int8>(x[33])", 64));
     TEST_DO(assertArraySize("tensor<int8>(x[64])", 64));
     TEST_DO(assertArraySize("tensor<int8>(x[65])", 96));
+}
+
+void
+assert_max_buffer_entries(const vespalib::string& tensor_type, uint32_t exp_entries)
+{
+    Fixture f(tensor_type);
+    EXPECT_EQUAL(exp_entries, f.store.get_max_buffer_entries());
+}
+
+TEST("require that max entries is calculated correctly")
+{
+    TEST_DO(assert_max_buffer_entries("tensor(x[1])", 1_Mi));
+    TEST_DO(assert_max_buffer_entries("tensor(x[32])", 1_Mi));
+    TEST_DO(assert_max_buffer_entries("tensor(x[64])", 512_Ki));
+    TEST_DO(assert_max_buffer_entries("tensor(x[1024])", 32_Ki));
+    TEST_DO(assert_max_buffer_entries("tensor(x[1024])", 32_Ki));
+    TEST_DO(assert_max_buffer_entries("tensor(x[16777216])", 2));
+    TEST_DO(assert_max_buffer_entries("tensor(x[33554428])", 2));
+    TEST_DO(assert_max_buffer_entries("tensor(x[33554429])", 1));
+    TEST_DO(assert_max_buffer_entries("tensor(x[33554432])", 1));
+    TEST_DO(assert_max_buffer_entries("tensor(x[303554432])", 1));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

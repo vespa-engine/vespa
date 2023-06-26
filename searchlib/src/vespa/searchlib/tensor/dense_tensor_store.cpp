@@ -34,6 +34,13 @@ size_t my_align(size_t size, size_t alignment) {
     return (size - (size % alignment));
 }
 
+size_t
+cap_max_entries(size_t max_entries, size_t max_buffer_size, size_t entry_size)
+{
+    size_t dynamic_max_entries = (max_buffer_size + (entry_size - 1)) / entry_size;
+    return std::min(max_entries, dynamic_max_entries);
+}
+
 }
 
 DenseTensorStore::TensorSizeCalc::TensorSizeCalc(const ValueType &type)
@@ -55,7 +62,7 @@ DenseTensorStore::TensorSizeCalc::TensorSizeCalc(const ValueType &type)
 }
 
 DenseTensorStore::BufferType::BufferType(const TensorSizeCalc &tensorSizeCalc, std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator)
-    : vespalib::datastore::BufferType<char>(tensorSizeCalc.alignedSize(), MIN_BUFFER_ARRAYS, RefType::offsetSize()),
+    : vespalib::datastore::BufferType<char>(tensorSizeCalc.alignedSize(), MIN_BUFFER_ARRAYS, cap_max_entries(RefType::offsetSize(), max_dense_tensor_buffer_size, tensorSizeCalc.alignedSize())),
       _allocator(std::move(allocator))
 {}
 
