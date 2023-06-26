@@ -139,6 +139,7 @@ TOKEN :
     <L1_NORMALIZE: "l1_normalize"> |
     <L2_NORMALIZE: "l2_normalize"> |
     <EUCLIDEAN_DISTANCE: "euclidean_distance"> |
+    <COSINE_SIMILARITY: "cosine_similarity"> |
     <MATMUL: "matmul"> |
     <SOFTMAX: "softmax"> |
     <XW_PLUS_B: "xw_plus_b"> |
@@ -381,6 +382,7 @@ TensorFunctionNode tensorFunction() :
         tensorExpression = tensorL1Normalize() |
         tensorExpression = tensorL2Normalize() |
         tensorExpression = tensorEuclideanDistance() |
+        tensorExpression = tensorCosineSimilarity() |
         tensorExpression = tensorMatmul() |
         tensorExpression = tensorSoftmax() |
         tensorExpression = tensorXwPlusB() |
@@ -558,6 +560,18 @@ TensorFunctionNode tensorEuclideanDistance() :
                                                           dimension)); }
 }
 
+TensorFunctionNode tensorCosineSimilarity() :
+{
+    ExpressionNode tensor1, tensor2;
+    String dimension;
+}
+{
+    <COSINE_SIMILARITY> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <COMMA> dimension = identifier() <RBRACE>
+    { return new TensorFunctionNode(new CosineSimilarity(TensorFunctionNode.wrap(tensor1),
+                                                          TensorFunctionNode.wrap(tensor2),
+                                                          dimension)); }
+}
+
 TensorFunctionNode tensorMatmul() :
 {
     ExpressionNode tensor1, tensor2;
@@ -716,6 +730,7 @@ String tensorFunctionName() :
     ( <L1_NORMALIZE> { return token.image; } ) |
     ( <L2_NORMALIZE> { return token.image; } ) |
     ( <EUCLIDEAN_DISTANCE> { return token.image; } ) |
+    ( <COSINE_SIMILARITY> { return token.image; } ) |
     ( <MATMUL>       { return token.image; } ) |
     ( <SOFTMAX>      { return token.image; } ) |
     ( <XW_PLUS_B>    { return token.image; } ) |

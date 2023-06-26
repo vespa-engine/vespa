@@ -1705,6 +1705,22 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.tensor.functions.CosineSimilarity" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
+      "public java.util.List arguments()",
+      "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
+      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
+      "public int hashCode()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.tensor.functions.Diag" : {
     "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
     "interfaces" : [ ],
