@@ -161,7 +161,7 @@ public class DataplaneProxyService extends AbstractComponent {
         super.deconstruct();
         wantedState = NginxState.STOPPED;
         try {
-            executorService.awaitTermination(5, TimeUnit.MINUTES);
+            executorService.awaitTermination(30, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "Error shutting down proxy reload thread", e);
         }
