@@ -214,7 +214,7 @@ public class ProvisioningTester {
                 NestedTransaction t = new NestedTransaction();
                 if (parent.ipConfig().primary().isEmpty())
                     parent = parent.with(IP.Config.of(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
-                nodeRepository.nodes().activate(List.of(parent), t);
+                nodeRepository.nodes().activate(List.of(parent), new ApplicationTransaction(new ProvisionLock(application, () -> { }), t));
                 t.commit();
             }
         }

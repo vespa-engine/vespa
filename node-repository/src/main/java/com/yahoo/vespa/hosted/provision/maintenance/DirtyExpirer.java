@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.Node.State;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -33,8 +35,12 @@ public class DirtyExpirer extends Expirer {
 
     @Override
     protected void expire(List<Node> expired) {
-        for (Node expiredNode : expired)
-            nodeRepository().nodes().fail(expiredNode.hostname(), wantToDeprovisionOnExpiry, Agent.DirtyExpirer, "Node is stuck in dirty");
+        nodeRepository().nodes().performOn(NodeList.copyOf(expired),
+                                           node -> node.state() == State.dirty && isExpired(node),
+                                           (node, lock) -> nodeRepository().nodes().fail(node.hostname(),
+                                                                                         wantToDeprovisionOnExpiry,
+                                                                                         Agent.DirtyExpirer,
+                                                                                         "Node is stuck in dirty"));
     }
 
 }

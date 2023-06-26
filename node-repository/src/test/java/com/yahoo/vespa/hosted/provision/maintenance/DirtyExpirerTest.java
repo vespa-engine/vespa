@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -45,7 +46,7 @@ public class DirtyExpirerTest {
                         false))
                 .build();
 
-        tester.nodeRepository().database().addNodesInState(List.of(node), node.state(), Agent.system);
+        tester.nodeRepository().database().addNodesInState(new LockedNodeList(List.of(node), () -> { }), node.state(), Agent.system);
 
         Duration expiryTimeout = Duration.ofMinutes(30);
         DirtyExpirer expirer = new DirtyExpirer(tester.nodeRepository(), expiryTimeout, new TestMetric());

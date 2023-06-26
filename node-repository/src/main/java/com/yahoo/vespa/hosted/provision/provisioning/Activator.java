@@ -88,7 +88,7 @@ class Activator {
 
         NodeList activeToRemove = oldActive.matching(node ->  ! hostnames.contains(node.hostname()));
         remove(activeToRemove, transaction); // TODO: Pass activation time in this call and next line
-        nodeRepository.nodes().activate(newActive.asList(), transaction.nested()); // activate also continued active to update node state
+        nodeRepository.nodes().activate(newActive.asList(), transaction); // activate also continued active to update node state
 
         rememberResourceChange(transaction, generation, activationTime,
                                oldActive.not().retired(),

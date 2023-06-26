@@ -6,13 +6,14 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.History.Event.Type;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -67,55 +68,47 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
 
     @Override
     protected double maintain() {
-        NodeList allNodes = nodeRepository.nodes().list();
-        List<Node> remainingNodes = new ArrayList<>(allNodes.state(Node.State.failed)
-                                                            .nodeType(NodeType.tenant, NodeType.host)
-                                                            .asList());
+        Predicate<Node> isExpired = node ->    node.state() == State.failed
+                                            && node.history().hasEventBefore(Type.failed, clock().instant().minus(expiryFor(node)));
+        NodeList allNodes = nodeRepository.nodes().list(); // Stale snapshot, not critical.
 
-        recycleIf(node -> node.allocation().isEmpty(), remainingNodes, allNodes);
-        recycleIf(node -> !node.allocation().get().membership().cluster().isStateful() &&
-                          node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statelessExpiry)),
-                  remainingNodes,
-                  allNodes);
-        recycleIf(node -> node.allocation().get().membership().cluster().isStateful() &&
-                          node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statefulExpiry)),
-                  remainingNodes,
-                  allNodes);
+        nodeRepository.nodes().performOn(allNodes.nodeType(NodeType.tenant),
+                                         isExpired,
+                                         (node, lock) -> recycle(node, List.of(), allNodes).get());
+
+        nodeRepository.nodes().performOnRecursively(allNodes.nodeType(NodeType.host),
+                                                    nodes -> isExpired.test(nodes.parent().node()),
+                                                    nodes -> recycle(nodes.parent().node(),
+                                                                     nodes.children().stream().map(NodeMutex::node).toList(),
+                                                                     allNodes)
+                                                            .map(List::of).orElse(List.of()));
         return 1.0;
     }
 
-    /** Recycle the nodes matching condition, and remove those nodes from the nodes list. */
-    private void recycleIf(Predicate<Node> condition, List<Node> failedNodes, NodeList allNodes) {
-        List<Node> nodesToRecycle = failedNodes.stream().filter(condition).toList();
-        failedNodes.removeAll(nodesToRecycle);
-        recycle(nodesToRecycle, allNodes);
+    private Duration expiryFor(Node node) {
+        return node.allocation().isEmpty() ? Duration.ZERO
+                                           : node.allocation().get().membership().cluster().isStateful() ? statefulExpiry
+                                                                                                         : statelessExpiry;
     }
 
-    /** Move eligible nodes to dirty or parked. This may be a subset of the given nodes */
-    private void recycle(List<Node> nodes, NodeList allNodes) {
-        List<Node> nodesToRecycle = new ArrayList<>();
-        for (Node candidate : nodes) {
-            Optional<String> reason = shouldPark(candidate, allNodes);
-            if (reason.isPresent()) {
-                List<String> unparkedChildren = candidate.type().isHost() ?
-                                                allNodes.childrenOf(candidate)
-                                                        .not()
-                                                        .state(Node.State.parked)
-                                                        .mapToList(Node::hostname) :
-                                                List.of();
-
-                if (unparkedChildren.isEmpty()) {
-                    nodeRepository.nodes().park(candidate.hostname(), true, Agent.FailedExpirer,
-                                                "Parked by FailedExpirer due to " + reason.get());
-                } else {
-                    log.info(String.format("Expired failed node %s was not parked because of unparked children: %s",
-                                           candidate.hostname(), String.join(", ", unparkedChildren)));
-                }
+    private Optional<Node> recycle(Node node, List<Node> children, NodeList allNodes) {
+        Optional<String> reason = shouldPark(node, allNodes);
+        if (reason.isPresent()) {
+            List<String> unparkedChildren = children.stream()
+                                                    .filter(child -> child.state() != Node.State.parked)
+                                                    .map(Node::hostname)
+                                                    .toList();
+            if (unparkedChildren.isEmpty()) {
+                return Optional.of(nodeRepository.nodes().park(node.hostname(), true, Agent.FailedExpirer,
+                                                               "Parked by FailedExpirer due to " + reason.get()));
             } else {
-                nodesToRecycle.add(candidate);
+                log.info(String.format("Expired failed node %s was not parked because of unparked children: %s",
+                                       node.hostname(), String.join(", ", unparkedChildren)));
+                return Optional.empty();
             }
+        } else {
+            return Optional.of(nodeRepository.nodes().deallocate(node, Agent.FailedExpirer, "Expired by FailedExpirer"));
         }
-        nodeRepository.nodes().deallocate(nodesToRecycle, Agent.FailedExpirer, "Expired by FailedExpirer");
     }
 
     /** Returns whether the node should be parked instead of recycled */

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
@@ -10,11 +11,13 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -210,7 +213,8 @@ public class MetricsReporterTest {
         }
 
         NestedTransaction transaction = new NestedTransaction();
-        nodeRepository.nodes().activate(nodeRepository.nodes().list().nodeType(NodeType.host).asList(), transaction);
+        nodeRepository.nodes().activate(nodeRepository.nodes().list().nodeType(NodeType.host).asList(),
+                                        new ApplicationTransaction(new ProvisionLock(InfrastructureApplication.TENANT_HOST.id(), () -> { }), transaction));
         transaction.commit();
 
         Orchestrator orchestrator = mock(Orchestrator.class);

@@ -23,6 +23,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
@@ -201,7 +202,7 @@ public class CapacityCheckerTester {
         nodeRepository.nodes().addNodes(hostsWithChildren.getOrDefault(tenantHostApp, List.of()), Agent.system);
         hostsWithChildren.forEach((applicationId, nodes) -> {
             if (applicationId.equals(tenantHostApp)) return;
-            nodeRepository.database().addNodesInState(nodes, Node.State.active, Agent.system);
+            nodeRepository.database().addNodesInState(new LockedNodeList(nodes, () -> { }), Node.State.active, Agent.system);
         });
         nodeRepository.nodes().addNodes(createEmptyHosts(numHosts, numEmptyHosts, emptyHostExcessCapacity, emptyHostExcessIps), Agent.system);
 
@@ -322,9 +323,9 @@ public class CapacityCheckerTester {
             }
         }
 
-        nodeRepository.database().addNodesInState(hosts, Node.State.active, Agent.system);
+        nodeRepository.database().addNodesInState(new LockedNodeList(hosts, () -> { }), Node.State.active, Agent.system);
         nodes.forEach((application, applicationNodes) -> {
-            nodeRepository.database().addNodesInState(applicationNodes, Node.State.active, Agent.system);
+            nodeRepository.database().addNodesInState(new LockedNodeList(applicationNodes, () -> { }), Node.State.active, Agent.system);
         });
         updateCapacityChecker();
     }

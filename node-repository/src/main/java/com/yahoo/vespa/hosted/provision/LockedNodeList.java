@@ -17,9 +17,16 @@ import java.util.Objects;
  */
 public final class LockedNodeList extends NodeList {
 
+    private final Mutex lock;
+
     public LockedNodeList(List<Node> nodes, Mutex lock) {
         super(nodes, false);
-        Objects.requireNonNull(lock, "lock must be non-null");
+        this.lock = Objects.requireNonNull(lock, "lock must be non-null");
+    }
+
+    /** Returns a new LockedNodeList with the for the same lock. */
+    public LockedNodeList childList(List<Node> nodes) {
+        return new LockedNodeList(nodes, lock);
     }
 
 }

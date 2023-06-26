@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
@@ -10,6 +11,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
@@ -313,7 +315,7 @@ public class SpareCapacityMaintainerTest {
         }
 
         private void allocate(ApplicationId application, ClusterSpec clusterSpec, List<Node> nodes) {
-            nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
+            nodes = new ArrayList<>(nodeRepository.nodes().addNodes(nodes, Agent.system));
             for (int i = 0; i < nodes.size(); i++) {
                 Node node = nodes.get(i);
                 ClusterMembership membership = ClusterMembership.from(clusterSpec, i);
@@ -322,7 +324,7 @@ public class SpareCapacityMaintainerTest {
             }
             nodes = nodeRepository.nodes().reserve(nodes);
             var transaction = new NestedTransaction();
-            nodes = nodeRepository.nodes().activate(nodes, transaction);
+            nodes = nodeRepository.nodes().activate(nodes, new ApplicationTransaction(new ProvisionLock(application, () -> { }), transaction));
             transaction.commit();
         }
 
