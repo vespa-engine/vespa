@@ -16,7 +16,8 @@ namespace search::tensor {
 
 SerializedFastValueAttribute::SerializedFastValueAttribute(stringref name, const Config &cfg, const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(name, cfg, _tensorBufferStore, index_factory),
-      _tensorBufferStore(cfg.tensorType(), get_memory_allocator(), 400u)
+      _tensorBufferStore(cfg.tensorType(), get_memory_allocator(),
+                         TensorBufferStore::array_store_max_type_id)
 {
 }
 

@@ -198,7 +198,7 @@ TEST_F(TensorBufferStoreTest, buffer_handles_range_of_subspaces)
         auto buffer_id = ref.buffer_id(offset_bits);
         buffers.insert(buffer_id);
     }
-    EXPECT_EQ(156u, buffers.size());
+    EXPECT_EQ(119u, buffers.size());
     uint32_t x = 0;
     for (auto ref : refs) {
         auto tensor = store.get_tensor(ref);

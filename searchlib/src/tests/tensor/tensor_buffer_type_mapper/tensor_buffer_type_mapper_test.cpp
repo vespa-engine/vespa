@@ -15,7 +15,7 @@ const vespalib::string tensor_type_2d_mixed_spec("tensor(x{},y[2])");
 const vespalib::string float_tensor_type_spec("tensor<float>(y{})");
 const vespalib::string tensor_type_dense_spec("tensor(x[2])");
 
-constexpr double grow_factor = 1.02;
+constexpr double grow_factor = 1.03;
 
 struct TestParam
 {
@@ -128,10 +128,10 @@ TensorBufferTypeMapperTest::select_type_ids()
 
 INSTANTIATE_TEST_SUITE_P(TensorBufferTypeMapperMultiTest,
                          TensorBufferTypeMapperTest,
-                         testing::Values(TestParam("1d", {8, 16, 32, 40, 64}, {1760, 10880, 76896, 555248, 4020512}, tensor_type_sparse_spec),
-                                         TestParam("1dfloat", {4, 12, 20, 28, 36}, {1728, 11104, 79168, 572128, 4143664}, float_tensor_type_spec),
-                                         TestParam("2d", {8, 24, 40, 56, 80}, {1600, 9184, 63872, 460416, 3332976}, tensor_type_2d_spec),
-                                         TestParam("2dmixed", {8, 24, 48, 64, 96}, {1984, 11472, 79824, 575504, 4166208}, tensor_type_2d_mixed_spec),
+                         testing::Values(TestParam("1d", {8, 16, 32, 40, 64}, {2768, 49712, 950768, 18268976, 351101184}, tensor_type_sparse_spec),
+                                         TestParam("1dfloat", {4, 12, 20, 28, 36}, {2688, 48896, 937248, 18009808, 346121248}, float_tensor_type_spec),
+                                         TestParam("2d", {8, 24, 40, 56, 80}, {2416, 41392, 790112, 15179616, 291726288}, tensor_type_2d_spec),
+                                         TestParam("2dmixed", {8, 24, 48, 64, 96}, {3008, 51728, 987632, 18974512, 364657856}, tensor_type_2d_mixed_spec),
                                          TestParam("dense", {8, 24}, {}, tensor_type_dense_spec)),
                          testing::PrintToStringParamName());
 
@@ -152,7 +152,7 @@ TEST_P(TensorBufferTypeMapperTest, large_arrays_grows_exponentially)
 
 TEST_P(TensorBufferTypeMapperTest, avoid_array_size_overflow)
 {
-    TensorBufferTypeMapper mapper(400, 2.0, &_ops);
+    TensorBufferTypeMapper mapper(300, 2.0, &_ops);
     EXPECT_GE(30, mapper.get_max_type_id(1000));
 }
 
