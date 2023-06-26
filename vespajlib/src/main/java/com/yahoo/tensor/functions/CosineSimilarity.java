@@ -1,7 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
+import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
+import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TensorType.Dimension;
 
 import java.util.Collections;
 import java.util.List;
@@ -12,7 +17,7 @@ import java.util.Objects;
  * cosine_similarity(a, b, mydim) == sum(a*b, mydim) / sqrt(sum(a*a, mydim) * sum(b*b, mydim))
  * @author arnej
  */
-public class CosineSimilarity<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYPE> {
+public class CosineSimilarity<NAMETYPE extends Name> extends TensorFunction<NAMETYPE> {
 
     private final TensorFunction<NAMETYPE> arg1;
     private final TensorFunction<NAMETYPE> arg2;
@@ -35,6 +40,31 @@ public class CosineSimilarity<NAMETYPE extends Name> extends CompositeTensorFunc
         if ( arguments.size() != 2)
             throw new IllegalArgumentException("CosineSimilarity must have 2 arguments, got " + arguments.size());
         return new CosineSimilarity<>(arguments.get(0), arguments.get(1), dimension);
+    }
+
+    @Override
+    public TensorType type(TypeContext<NAMETYPE> context) {
+        TensorType t1 = arg1.toPrimitive().type(context);
+        TensorType t2 = arg2.toPrimitive().type(context);
+        var d1 = t1.dimension(dimension);
+        var d2 = t2.dimension(dimension);
+        if (d1.isEmpty() || d2.isEmpty()
+            || d1.get().type() != Dimension.Type.indexedBound
+            || d2.get().type() != Dimension.Type.indexedBound
+            || d1.get().size().get() != d2.get().size().get())
+        {
+            throw new IllegalArgumentException("cosine_similarity expects both arguments to have the '"
+                                               + dimension + "' dimension with same size, but input types were "
+                                               + t1 + " and " + t2);
+        }
+        // Finds the type this produces by first converting it to a primitive function
+        return toPrimitive().type(context);
+    }
+
+    /** Evaluates this by first converting it to a primitive function */
+    @Override
+    public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+        return toPrimitive().evaluate(context);
     }
 
     @Override
