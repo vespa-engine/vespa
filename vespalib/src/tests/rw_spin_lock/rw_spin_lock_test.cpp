@@ -24,6 +24,23 @@ size_t state_loop = 1;
 
 //-----------------------------------------------------------------------------
 
+/**
+ * Estimates the 80th percentile by throwing away the 2 best samples
+ * in each set of 10 samples, using the best remaining sample as a
+ * representative for the set. Representatives are hierarchically
+ * matched against representatives from other sample sets. Result
+ * extraction is simplified in that it does not try to estimate the
+ * actual 80th percentile, but rather tries to drop the best samples
+ * if possible.
+ *
+ * The goal is to have a more robust way of combining repeated
+ * micro-benchmark samples than simply using minimum time. With simple
+ * single-threaded CPU-bound tasks, minimum time is a good measure of
+ * how expensive something is, but when we start benchmarking
+ * operations that may conflict with themselves, we do not want to
+ * account for being super lucky. However, we still want to account
+ * for the benchmark conditions being as good as possible.
+ **/
 struct Est80P {
     struct Level {
         int cnt;
