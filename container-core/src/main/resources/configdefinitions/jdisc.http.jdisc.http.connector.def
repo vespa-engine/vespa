@@ -22,6 +22,9 @@ responseHeaderSize                  int      default=65536
 # The accept queue size (also known as accept backlog).
 acceptQueueSize                     int      default=0
 
+# Max content size allowed for requests. Set to -1 to disable.
+maxContentSize                      long     default=-1
+
 # Whether the server socket reuses addresses.
 reuseAddress                        bool     default=true
 

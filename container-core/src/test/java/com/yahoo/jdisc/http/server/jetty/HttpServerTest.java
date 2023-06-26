@@ -70,6 +70,7 @@ import static com.yahoo.jdisc.Response.Status.GATEWAY_TIMEOUT;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
+import static com.yahoo.jdisc.Response.Status.REQUEST_TOO_LONG;
 import static com.yahoo.jdisc.Response.Status.REQUEST_URI_TOO_LONG;
 import static com.yahoo.jdisc.Response.Status.UNAUTHORIZED;
 import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
@@ -792,6 +793,17 @@ public class HttpServerTest {
         req.setHeader("Host", requiredServerName);
         driver.client().execute(req).expectStatusCode(is(OK));
         driver.client().get("/").expectStatusCode(is(NOT_FOUND));
+        assertTrue(driver.close());
+    }
+
+    @Test
+    void exceedingMaxContentSizeReturns413() throws IOException {
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+                new EchoRequestHandler(),
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder().maxContentSize(4));
+        driver.client().newPost("/").setBinaryContent(new byte[4]).execute().expectStatusCode(is(OK));
+        driver.client().newPost("/").setBinaryContent(new byte[5]).execute().expectStatusCode(is(REQUEST_TOO_LONG));
         assertTrue(driver.close());
     }
 

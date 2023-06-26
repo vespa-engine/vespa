@@ -1,16 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.jetty.server.Request;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +35,7 @@ import java.util.logging.Logger;
  * @author bjorncs
  */
 class ServletRequestReader {
+
 
     private enum State {
         NOT_STARTED, READING, ALL_DATA_READ, REQUEST_CONTENT_CLOSED
@@ -96,12 +100,15 @@ class ServletRequestReader {
     private final CompletableFuture<Void> finishedFuture = new CompletableFuture<>();
 
     ServletRequestReader(
-            HttpServletRequest req,
+            Request req,
             ContentChannel requestContentChannel,
             Janitor janitor,
             RequestMetricReporter metricReporter) {
         this.req = Objects.requireNonNull(req);
-        this.requestContentChannel = Objects.requireNonNull(requestContentChannel);
+        long maxContentSize = RequestUtils.getConnector(req).connectorConfig().maxContentSize();
+        this.requestContentChannel = maxContentSize >= 0
+                ? new ByteLimitedContentChannel(Objects.requireNonNull(requestContentChannel), maxContentSize)
+                : Objects.requireNonNull(requestContentChannel);
         this.janitor = Objects.requireNonNull(janitor);
         this.metricReporter = Objects.requireNonNull(metricReporter);
     }
@@ -257,6 +264,32 @@ class ServletRequestReader {
         } catch (Throwable t) {
             finishedFuture.completeExceptionally(t);
         }
+    }
+
+    private static class ByteLimitedContentChannel implements ContentChannel {
+        private final long maxContentSize;
+        private final AtomicLong bytesWritten = new AtomicLong();
+        private final ContentChannel delegate;
+
+        ByteLimitedContentChannel(ContentChannel delegate, long maxContentSize) {
+            this.delegate = delegate;
+            this.maxContentSize = maxContentSize;
+        }
+
+        @Override
+        public void write(ByteBuffer buf, CompletionHandler handler) {
+            long written = bytesWritten.addAndGet(buf.remaining());
+            if (written > maxContentSize) {
+                handler.failed(new RequestException(
+                        Response.Status.REQUEST_TOO_LONG,
+                        "Request content length %d exceeds limit of %d bytes".formatted(written, maxContentSize)));
+                return;
+            }
+            delegate.write(buf, handler);
+        }
+
+        @Override public void close(CompletionHandler h) { delegate.close(h); }
+        @Override public void onError(Throwable t) { delegate.onError(t); }
     }
 
 }
