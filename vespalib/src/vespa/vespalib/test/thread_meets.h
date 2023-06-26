@@ -38,12 +38,54 @@ struct ThreadMeets {
         explicit Sum(size_t N) : vespalib::Rendezvous<T,T>(N) {}
         T operator()(T value) { return rendezvous(value); }
         void mingle() override {
-            T acc{};
-            for (size_t i = 0; i < size(); ++i) {
+            T acc = in(0);
+            for (size_t i = 1; i < size(); ++i) {
                 acc += in(i);
             }
             for (size_t i = 0; i < size(); ++i) {
                 out(i) = acc;
+            }
+        }
+    };
+    // maximum of values across all threads
+    template <typename T>
+    struct Max : vespalib::Rendezvous<T,T> {
+        using vespalib::Rendezvous<T,T>::in;
+        using vespalib::Rendezvous<T,T>::out;
+        using vespalib::Rendezvous<T,T>::size;
+        using vespalib::Rendezvous<T,T>::rendezvous;
+        explicit Max(size_t N) : vespalib::Rendezvous<T,T>(N) {}
+        T operator()(T value) { return rendezvous(value); }
+        void mingle() override {
+            T max = in(0);
+            for (size_t i = 1; i < size(); ++i) {
+                if (in(i) > max) {
+                    max = in(i);
+                }
+            }
+            for (size_t i = 0; i < size(); ++i) {
+                out(i) = max;
+            }
+        }
+    };
+    // minimum of values across all threads
+    template <typename T>
+    struct Min : vespalib::Rendezvous<T,T> {
+        using vespalib::Rendezvous<T,T>::in;
+        using vespalib::Rendezvous<T,T>::out;
+        using vespalib::Rendezvous<T,T>::size;
+        using vespalib::Rendezvous<T,T>::rendezvous;
+        explicit Min(size_t N) : vespalib::Rendezvous<T,T>(N) {}
+        T operator()(T value) { return rendezvous(value); }
+        void mingle() override {
+            T min = in(0);
+            for (size_t i = 1; i < size(); ++i) {
+                if (in(i) < min) {
+                    min = in(i);
+                }
+            }
+            for (size_t i = 0; i < size(); ++i) {
+                out(i) = min;
             }
         }
     };
