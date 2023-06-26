@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
+ * Convenience for euclidean distance between vectors.
+ * euclidean_distance(a, b, mydim) == sqrt(sum(pow(a-b, 2), mydim))
  * @author arnej
  */
 public class EuclideanDistance<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYPE> {

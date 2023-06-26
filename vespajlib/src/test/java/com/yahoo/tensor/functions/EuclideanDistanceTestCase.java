@@ -3,6 +3,7 @@ package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.VariableTensor;
 import org.junit.Test;
 
 import java.util.List;
@@ -38,6 +39,16 @@ public class EuclideanDistanceTestCase {
         Tensor result = op.evaluate();
         var expect = Tensor.from("tensor(c{}):{foo:5.0,bar:13.0}");
         assertEquals(expect, result);
+    }
+
+    @Test
+    public void testExpansion() {
+        var tType = TensorType.fromSpec("tensor(vecdim[128])");
+        var a = new VariableTensor<>("left", tType);
+        var b = new VariableTensor<>("right", tType);
+        var op = new EuclideanDistance<>(a, b, "vecdim");
+        assertEquals("map(reduce(map(join(left, right, f(a,b)(a - b)), f(a)(a * a)), sum, vecdim), f(a)(sqrt(a)))",
+                     op.toPrimitive().toString());
     }
 
 }
