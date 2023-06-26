@@ -36,9 +36,9 @@ public:
     using LargeBufferType = vespalib::datastore::LargeArrayBufferType<ElemT>;
 
     ArrayStoreDynamicTypeMapper();
-    ArrayStoreDynamicTypeMapper(uint32_t max_buffer_type_id, double grow_factor);
+    ArrayStoreDynamicTypeMapper(uint32_t max_buffer_type_id, double grow_factor, size_t max_buffer_size);
     ~ArrayStoreDynamicTypeMapper();
-    void setup_array_sizes(uint32_t max_buffer_type_id, double grow_factor);
+    void setup_array_sizes(uint32_t max_buffer_type_id, double grow_factor, size_t max_buffer_size);
     size_t get_entry_size(uint32_t type_id) const;
     bool is_dynamic_buffer(uint32_t type_id) const noexcept { return type_id > _max_static_array_buffer_type_id; }
     uint32_t count_dynamic_buffer_types(uint32_t max_type_id) const noexcept { return (max_type_id > _max_static_array_buffer_type_id) ? (max_type_id - _max_static_array_buffer_type_id) : 0u; }

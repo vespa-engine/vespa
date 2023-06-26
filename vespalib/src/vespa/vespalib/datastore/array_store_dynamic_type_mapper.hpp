@@ -18,16 +18,16 @@ ArrayStoreDynamicTypeMapper<ElemT>::ArrayStoreDynamicTypeMapper()
 }
 
 template <typename ElemT>
-ArrayStoreDynamicTypeMapper<ElemT>::ArrayStoreDynamicTypeMapper(uint32_t max_buffer_type_id, double grow_factor)
+ArrayStoreDynamicTypeMapper<ElemT>::ArrayStoreDynamicTypeMapper(uint32_t max_buffer_type_id, double grow_factor, size_t max_buffer_size)
     : ArrayStoreTypeMapper(),
       _max_static_array_buffer_type_id(0)
 {
-    setup_array_sizes(max_buffer_type_id, grow_factor);
+    setup_array_sizes(max_buffer_type_id, grow_factor, max_buffer_size);
 }
 
 template <typename ElemT>
 void
-ArrayStoreDynamicTypeMapper<ElemT>::setup_array_sizes(uint32_t max_buffer_type_id, double grow_factor)
+ArrayStoreDynamicTypeMapper<ElemT>::setup_array_sizes(uint32_t max_buffer_type_id, double grow_factor, size_t max_buffer_size)
 {
     _array_sizes.clear();
     _array_sizes.reserve(max_buffer_type_id + 1);
@@ -49,7 +49,8 @@ ArrayStoreDynamicTypeMapper<ElemT>::setup_array_sizes(uint32_t max_buffer_type_i
                 entry_size = array_size * sizeof(ElemT);
             }
         }
-        if (entry_size > std::numeric_limits<uint32_t>::max()) {
+        if (entry_size > std::numeric_limits<uint32_t>::max() ||
+            entry_size >= 2 * max_buffer_size) {
             break;
         }
         _array_sizes.emplace_back(array_size);

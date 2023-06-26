@@ -95,7 +95,7 @@ public:
         ArrayStoreConfig config(max_array_store_type_id,
                                 ArrayStoreConfig::AllocSpec(0, RefType::offsetSize(), 8_Ki, ALLOC_GROW_FACTOR));
         config.enable_free_lists(enable_free_lists);
-        _mvMapping = std::make_unique<MvMapping>(config, vespalib::GrowStrategy(), std::make_unique<MemoryAllocatorObserver>(_stats));
+        _mvMapping = std::make_unique<MvMapping>(config, ArrayStoreConfig::default_max_buffer_size, vespalib::GrowStrategy(), std::make_unique<MemoryAllocatorObserver>(_stats));
         _attr = std::make_unique<AttributeType>(*_mvMapping);
         _maxSmallArraySize = _mvMapping->get_mapper().get_array_size(max_array_store_type_id);
     }
@@ -103,7 +103,7 @@ public:
         ArrayStoreConfig config(max_array_store_type_id,
                                 ArrayStoreConfig::AllocSpec(min_entries, max_entries, num_entries_for_new_buffer, ALLOC_GROW_FACTOR));
         config.enable_free_lists(enable_free_lists);
-        _mvMapping = std::make_unique<MvMapping>(config, vespalib::GrowStrategy(), std::make_unique<MemoryAllocatorObserver>(_stats));
+        _mvMapping = std::make_unique<MvMapping>(config, ArrayStoreConfig::default_max_buffer_size, vespalib::GrowStrategy(), std::make_unique<MemoryAllocatorObserver>(_stats));
         _attr = std::make_unique<AttributeType>(*_mvMapping);
         _maxSmallArraySize = _mvMapping->get_mapper().get_array_size(max_array_store_type_id);
     }
