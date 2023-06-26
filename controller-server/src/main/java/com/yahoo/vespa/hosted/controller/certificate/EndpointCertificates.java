@@ -129,7 +129,7 @@ public class EndpointCertificates {
     }
 
     private Optional<EndpointCertificateMetadata> getOrProvision(Instance instance, ZoneId zone, DeploymentSpec deploymentSpec) {
-        if (useRandomizedCert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().toFullString()).value()) {
+        if (useRandomizedCert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().serializedForm()).value()) {
             return Optional.of(assignFromPool(instance, zone));
         }
         Optional<AssignedCertificate> assignedCertificate = curator.readAssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.of(instance.id().instance()));
