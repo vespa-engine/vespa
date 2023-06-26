@@ -22,13 +22,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class DataplaneProxyServiceTest {
     private FileSystem fileSystem = Jimfs.newFileSystem();
-    DataplaneProxyService.ProxyCommands proxyCommandsMock = Mockito.mock(DataplaneProxyService.ProxyCommands.class);
+    DataplaneProxyService.ProxyCommands proxyCommandsMock = mock(DataplaneProxyService.ProxyCommands.class);
 
     @Test
     public void starts_and_reloads_if_no_errors() throws IOException {
@@ -120,6 +123,35 @@ public class DataplaneProxyServiceTest {
         service.converge();
         assertEquals(service.state(), DataplaneProxyService.NginxState.STOPPED);
         assertFalse(proxyCommands.isRunning());
+    }
+
+    @Test
+    public void stops_executor_when_nginx_stop_throws() throws IOException, InterruptedException {
+        DataplaneProxyService.ProxyCommands mockProxyCommands = mock(DataplaneProxyService.ProxyCommands.class);
+        DataplaneProxyService service = dataplaneProxyService(mockProxyCommands);
+        service.converge();
+        when (mockProxyCommands.isRunning()).thenReturn(true);
+        assertEquals(DataplaneProxyService.NginxState.RUNNING, service.state());
+
+        reset(proxyCommandsMock);
+
+        when(mockProxyCommands.isRunning()).thenReturn(true).thenReturn(false);
+        doThrow(new RuntimeException("Failed to stop proxy")).when(proxyCommandsMock).stop();
+        Thread thread = new Thread(service::deconstruct);// deconstruct will block until nginx is stopped
+        thread.start();
+
+        // Wait for above thread to set the wanted state to STOPPED
+        while (service.wantedState() != DataplaneProxyService.NginxState.STOPPED) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+            }
+        }
+        service.converge();
+        assertEquals(service.state(), DataplaneProxyService.NginxState.STOPPED);
+        thread.join();
+
+        verify(mockProxyCommands, times(1)).stop();
     }
 
     private DataplaneProxyService dataplaneProxyService(DataplaneProxyService.ProxyCommands proxyCommands) throws IOException {
