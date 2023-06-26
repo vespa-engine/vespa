@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.vcmr;
 
 import com.yahoo.config.provision.zone.ZoneId;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 

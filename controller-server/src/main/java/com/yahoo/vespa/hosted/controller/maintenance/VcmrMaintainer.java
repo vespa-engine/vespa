@@ -170,7 +170,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
                 .orElse(new HostAction(node.hostname().value(), State.NONE, Instant.now()));
 
         if (changeRequest.getChangeRequestSource().isClosed()) {
-            LOG.fine(() -> changeRequest.getChangeRequestSource().getId() + " is closed, recycling " + node.hostname());
+            LOG.fine(() -> changeRequest.getChangeRequestSource().id() + " is closed, recycling " + node.hostname());
             recycleNode(zoneId, node, hostAction);
             removeReport(zoneId, changeRequest, node);
             return hostAction.withState(State.COMPLETE);
@@ -179,14 +179,14 @@ public class VcmrMaintainer extends ControllerMaintainer {
         if (isLowImpact(changeRequest))
             return hostAction;
 
-        if (shouldAddReport(node, changeRequest.getChangeRequestSource().getId(), hostAction))
+        if (shouldAddReport(node, changeRequest.getChangeRequestSource().id(), hostAction))
             addReport(zoneId, changeRequest, node);
 
         if (isOutOfSync(node, hostAction))
             return hostAction.withState(State.OUT_OF_SYNC);
 
         if (isPostponed(changeRequest, hostAction)) {
-            LOG.fine(() -> changeRequest.getChangeRequestSource().getId() + " is postponed, recycling " + node.hostname());
+            LOG.fine(() -> changeRequest.getChangeRequestSource().id() + " is postponed, recycling " + node.hostname());
             recycleNode(zoneId, node, hostAction);
             return hostAction.withState(State.PENDING_RETIREMENT);
         }
@@ -203,7 +203,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
 
         if (shouldRetire(changeRequest, hostAction)) {
             if (!wantToRetireRecursive(zoneId, node)) {
-                LOG.info(Text.format("Retiring %s due to %s", node.hostname().value(), changeRequest.getChangeRequestSource().getId()));
+                LOG.info(Text.format("Retiring %s due to %s", node.hostname().value(), changeRequest.getChangeRequestSource().id()));
                 // TODO: Remove try/catch once retirement is stabilized
                 try {
                     setWantToRetire(zoneId, node, true);
@@ -256,14 +256,14 @@ public class VcmrMaintainer extends ControllerMaintainer {
 
     private boolean isPostponed(VespaChangeRequest changeRequest, HostAction action) {
         return List.of(State.RETIRED, State.RETIRING).contains(action.getState()) &&
-                changeRequest.getChangeRequestSource().getPlannedStartTime()
+                changeRequest.getChangeRequestSource().plannedStartTime()
                         .minus(ALLOWED_POSTPONEMENT_TIME)
                         .isAfter(ZonedDateTime.now());
     }
 
     private boolean shouldRetire(VespaChangeRequest changeRequest, HostAction action) {
         return action.getState() == State.PENDING_RETIREMENT &&
-                getRetirementStartTime(changeRequest.getChangeRequestSource().getPlannedStartTime())
+                getRetirementStartTime(changeRequest.getChangeRequestSource().plannedStartTime())
                         .isBefore(ZonedDateTime.now());
     }
 
@@ -348,14 +348,14 @@ public class VcmrMaintainer extends ControllerMaintainer {
         if (changeRequest.getApproval() != ChangeRequest.Approval.REQUESTED)
             return;
 
-        LOG.info("Approving " + changeRequest.getChangeRequestSource().getId());
+        LOG.info("Approving " + changeRequest.getChangeRequestSource().id());
         changeRequestClient.approveChangeRequest(changeRequest);
     }
 
     private void removeReport(ZoneId zoneId, VespaChangeRequest changeRequest, Node node) {
         var report = VcmrReport.fromReports(node.reports());
 
-        if (report.removeVcmr(changeRequest.getChangeRequestSource().getId())) {
+        if (report.removeVcmr(changeRequest.getChangeRequestSource().id())) {
             updateReport(zoneId, node, report);
         }
     }

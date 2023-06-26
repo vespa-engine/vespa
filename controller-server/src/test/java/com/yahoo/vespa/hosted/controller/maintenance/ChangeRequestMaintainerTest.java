@@ -36,9 +36,9 @@ public class ChangeRequestMaintainerTest {
         changeRequestMaintainer.maintain();
 
         persistedChangeRequest  = tester.curator().readChangeRequest("some-id").get();
-        assertEquals(Status.CANCELED, persistedChangeRequest.getChangeRequestSource().getStatus());
+        assertEquals(Status.CANCELED, persistedChangeRequest.getChangeRequestSource().status());
         assertEquals(ChangeRequest.Approval.APPROVED, persistedChangeRequest.getApproval());
-        assertEquals(time, persistedChangeRequest.getChangeRequestSource().getPlannedStartTime());
+        assertEquals(time, persistedChangeRequest.getChangeRequestSource().plannedStartTime());
         assertEquals(0, changeRequestClient.getApprovedChangeRequests().size());
     }
 
@@ -99,6 +99,7 @@ public class ChangeRequestMaintainerTest {
                         .url("some-url")
                         .system("some-system")
                         .status(status)
+                        .category("some-category")
                         .build())
                 .build();
     }

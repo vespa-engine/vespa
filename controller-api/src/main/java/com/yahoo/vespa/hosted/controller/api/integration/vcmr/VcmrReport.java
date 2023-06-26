@@ -47,12 +47,12 @@ public class VcmrReport {
      * @return true if list of VCMRs is changed
      */
     public boolean addVcmr(ChangeRequestSource source) {
-        var vcmr = new Vcmr(source.getId(), source.getStatus().name(), source.getPlannedStartTime(), source.getPlannedEndTime());
+        var vcmr = new Vcmr(source.id(), source.status().name(), source.plannedStartTime(), source.plannedEndTime(), source.category());
         if (vcmrs.contains(vcmr))
             return false;
 
         // Remove to catch any changes in start/end time
-        removeVcmr(source.getId());
+        removeVcmr(source.id());
         return vcmrs.add(vcmr);
     }
 
@@ -95,6 +95,7 @@ public class VcmrReport {
     public record Vcmr (@JsonProperty("id") String id,
                         @JsonProperty("status") String status,
                         @JsonProperty("plannedStartTime") ZonedDateTime plannedStartTime,
-                        @JsonProperty("plannedEndTime") ZonedDateTime plannedEndTime) {}
+                        @JsonProperty("plannedEndTime") ZonedDateTime plannedEndTime,
+                        @JsonProperty("category") String category) {}
 
 }
