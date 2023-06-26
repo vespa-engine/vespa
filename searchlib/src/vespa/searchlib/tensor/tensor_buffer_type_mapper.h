@@ -22,7 +22,7 @@ public:
     using LargeBufferType = LargeSubspacesBufferType;
 
     TensorBufferTypeMapper();
-    TensorBufferTypeMapper(uint32_t max_small_subspaces_type_id, double grow_factor, TensorBufferOperations* ops);
+    TensorBufferTypeMapper(uint32_t max_small_subspaces_type_id, double grow_factor, size_t max_buffer_size, TensorBufferOperations* ops);
     ~TensorBufferTypeMapper();
 
     TensorBufferOperations& get_tensor_buffer_operations() const noexcept { return *_ops; }

@@ -13,6 +13,7 @@
 
 using document::DeserializeException;
 using vespalib::alloc::MemoryAllocator;
+using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::CompactionContext;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
@@ -33,12 +34,12 @@ TensorBufferStore::TensorBufferStore(const ValueType& tensor_type, std::shared_p
       _tensor_type(tensor_type),
       _ops(_tensor_type),
       _array_store(ArrayStoreType::optimizedConfigForHugePage(max_small_subspaces_type_id,
-                                                              TensorBufferTypeMapper(max_small_subspaces_type_id, array_store_grow_factor, &_ops),
+                                                              TensorBufferTypeMapper(max_small_subspaces_type_id, array_store_grow_factor, ArrayStoreConfig::default_max_buffer_size, &_ops),
                                                               MemoryAllocator::HUGEPAGE_SIZE,
                                                               MemoryAllocator::PAGE_SIZE,
-                                                              vespalib::datastore::ArrayStoreConfig::default_max_buffer_size,
+                                                              ArrayStoreConfig::default_max_buffer_size,
                                                               8_Ki, ALLOC_GROW_FACTOR),
-                   std::move(allocator), TensorBufferTypeMapper(max_small_subspaces_type_id, array_store_grow_factor, &_ops))
+                   std::move(allocator), TensorBufferTypeMapper(max_small_subspaces_type_id, array_store_grow_factor, ArrayStoreConfig::default_max_buffer_size, &_ops))
 {
 }
 
