@@ -775,10 +775,10 @@ public class OnnxOperationsTestCase {
             Onnx.TensorProto.Builder builder = Onnx.TensorProto.newBuilder();
             tensor.type().dimensions().forEach(d -> builder.addDims(d.size().get()));
             if (tensor.type().valueType() == TensorType.Value.FLOAT) {
-                builder.setDataType(Onnx.TensorProto.DataType.FLOAT);
+                builder.setDataType(Onnx.TensorProto.DataType.FLOAT_VALUE);
                 tensor.valueIterator().forEachRemaining(d -> builder.addFloatData(d.floatValue()));
             } else {
-                builder.setDataType(Onnx.TensorProto.DataType.DOUBLE);
+                builder.setDataType(Onnx.TensorProto.DataType.DOUBLE_VALUE);
                 tensor.valueIterator().forEachRemaining(builder::addDoubleData);
             }
             Onnx.TensorProto val = builder.build();

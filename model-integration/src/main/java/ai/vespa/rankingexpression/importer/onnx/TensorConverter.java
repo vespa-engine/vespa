@@ -32,8 +32,9 @@ class TensorConverter {
     }
 
     private static Values readValuesOf(Onnx.TensorProto tensorProto) {
+        var elemType = Onnx.TensorProto.DataType.forNumber(tensorProto.getDataType());
         if (tensorProto.hasRawData()) {
-            switch (tensorProto.getDataType()) {
+            switch (elemType) {
                 case BOOL: return new RawBoolValues(tensorProto);
                 case FLOAT: return new RawFloatValues(tensorProto);
                 case DOUBLE: return new RawDoubleValues(tensorProto);
@@ -41,7 +42,7 @@ class TensorConverter {
                 case INT64: return new RawLongValues(tensorProto);
             }
         } else {
-            switch (tensorProto.getDataType()) {
+            switch (elemType) {
                 case FLOAT: return new FloatValues(tensorProto);
                 case DOUBLE: return new DoubleValues(tensorProto);
                 case INT32: return new IntValues(tensorProto);

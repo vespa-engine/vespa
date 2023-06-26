@@ -274,7 +274,8 @@ public class OnnxModelInfo {
     static private void onnxTypeToJson(JsonGenerator g, Onnx.ValueInfoProto valueInfo) throws IOException {
         g.writeStartObject();
         g.writeStringField("name", valueInfo.getName());
-        g.writeStringField("type", onnxValueTypeToString(valueInfo.getType().getTensorType().getElemType()));
+        var elemType = Onnx.TensorProto.DataType.forNumber(valueInfo.getType().getTensorType().getElemType());
+        g.writeStringField("type", onnxValueTypeToString(elemType));
         g.writeArrayFieldStart("dim");
         for (Onnx.TensorShapeProto.Dimension dim : valueInfo.getType().getTensorType().getShape().getDimList()) {
             g.writeStartObject();
