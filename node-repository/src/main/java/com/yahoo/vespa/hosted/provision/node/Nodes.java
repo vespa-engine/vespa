@@ -377,17 +377,6 @@ public class Nodes {
         }
     }
 
-    /** Update IP config for nodes in given config */
-    public void setIpConfig(HostIpConfig hostIpConfig) {
-        // Ideally this should hold the unallocated lock over the entire method, but unallocated lock must be taken
-        // after the application lock, making this impossible
-        Predicate<Node> nodeInConfig = (node) -> hostIpConfig.contains(node.hostname());
-        performOn(nodeInConfig, (node, lock) -> {
-            IP.Config ipConfig = hostIpConfig.require(node.hostname());
-            return write(node.with(ipConfig), lock);
-        });
-    }
-
     /**
      * Parks this node and returns it in its new state.
      *
