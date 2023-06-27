@@ -89,23 +89,20 @@ public class InfraDeployerImpl implements InfraDeployer {
         public void prepare() {
             if (prepared) return;
 
-            try (Mutex lock = nodeRepository.applications().lock(application.getApplicationId())) {
-                NodeType nodeType = application.getCapacity().type();
-                Version targetVersion = infrastructureVersions.getTargetVersionFor(nodeType);
-                hostSpecs = provisioner.prepare(application.getApplicationId(),
-                                                application.getClusterSpecWithVersion(targetVersion),
-                                                application.getCapacity(),
-                                                logger::log);
+            NodeType nodeType = application.getCapacity().type();
+            Version targetVersion = infrastructureVersions.getTargetVersionFor(nodeType);
+            hostSpecs = provisioner.prepare(application.getApplicationId(),
+                                            application.getClusterSpecWithVersion(targetVersion),
+                                            application.getCapacity(),
+                                            logger::log);
 
-                prepared = true;
-            }
+            prepared = true;
         }
 
         @Override
         public long activate() {
+            prepare();
             try (var lock = provisioner.lock(application.getApplicationId())) {
-                prepare();
-
                 if (hostSpecs.isEmpty()) {
                     logger.log(Level.FINE, () -> "No nodes to provision for " + application.getCapacity().type() + ", removing application");
                     removeApplication(application.getApplicationId());
