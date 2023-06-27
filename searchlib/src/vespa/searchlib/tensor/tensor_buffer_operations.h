@@ -118,6 +118,7 @@ public:
         vespalib::ConstArrayRef<vespalib::string_id> labels(reinterpret_cast<const vespalib::string_id*>(buf.data() + get_labels_offset()), num_subspaces * _num_mapped_dimensions);
         return SerializedTensorRef(VectorBundle(buf.data() + get_cells_offset(num_subspaces, aligner), num_subspaces, _subspace_type), _num_mapped_dimensions, labels);
     }
+    bool is_dense() const noexcept { return _num_mapped_dimensions == 0; }
 };
 
 }
