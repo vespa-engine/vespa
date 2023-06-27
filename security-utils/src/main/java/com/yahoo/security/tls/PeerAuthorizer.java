@@ -58,16 +58,10 @@ public class PeerAuthorizer {
     }
 
     private static boolean matchesRequiredCredentials(RequiredPeerCredential requiredCredential, String cn, List<String> sans) {
-        switch (requiredCredential.field()) {
-            case CN:
-                return cn != null && requiredCredential.pattern().matches(cn);
-            case SAN_DNS:
-            case SAN_URI:
-                return sans.stream()
-                        .anyMatch(san -> requiredCredential.pattern().matches(san));
-            default:
-                throw new RuntimeException("Unknown field: " + requiredCredential.field());
-        }
+        return switch (requiredCredential.field()) {
+            case CN -> cn != null && requiredCredential.pattern().matches(cn);
+            case SAN_DNS, SAN_URI -> sans.stream().anyMatch(san -> requiredCredential.pattern().matches(san));
+        };
     }
 
     private static List<String> getSubjectAlternativeNames(X509Certificate peerCertificate) {

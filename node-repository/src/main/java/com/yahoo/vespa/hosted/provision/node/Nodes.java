@@ -164,8 +164,7 @@ public class Nodes {
      * with the history of that node.
      */
     public List<Node> addNodes(List<Node> nodes, Agent agent) {
-        try (NodeMutexes existingNodesLocks = lockAndGetAll(nodes, Optional.empty()); // Locks for any existing nodes we may remove.
-             Mutex allocationLock = lockUnallocated()) {
+        try (Mutex allocationLock = lockUnallocated()) {
             List<Node> nodesToAdd =  new ArrayList<>();
             List<Node> nodesToRemove = new ArrayList<>();
             for (int i = 0; i < nodes.size(); i++) {
@@ -984,7 +983,8 @@ public class Nodes {
                 for (NodeMutex node : outOfOrder) unlocked.add(node.node());
                 outOfOrder.clear();
 
-                Mutex lock = lock(next, budget.timeLeftOrThrow());
+                boolean nextLockSameAsPrevious = ! locked.isEmpty() && applicationIdForLock(locked.last().node()).equals(applicationIdForLock(next));
+                Mutex lock = nextLockSameAsPrevious ? () -> { } : lock(next, budget.timeLeftOrThrow());
                 try {
                     Optional<Node> fresh = node(next.hostname());
                     if (fresh.isEmpty()) {
