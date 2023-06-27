@@ -22,7 +22,11 @@ class RawBufferStore
 
     ArrayStoreType                      _array_store;
 public:
-    RawBufferStore(std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator, uint32_t max_small_buffer_type_id, double grow_factor);
+    static constexpr double array_store_grow_factor = 1.03;
+    static constexpr uint32_t array_store_max_type_id = 400;
+    static constexpr size_t max_buffer_size = vespalib::datastore::ArrayStoreConfig::default_max_buffer_size;
+
+    RawBufferStore(std::shared_ptr<vespalib::alloc::MemoryAllocator> allocator, uint32_t max_type_id, double grow_factor);
     ~RawBufferStore();
     EntryRef set(vespalib::ConstArrayRef<char> raw) { return _array_store.add(raw); };
     vespalib::ConstArrayRef<char> get(EntryRef ref) const { return _array_store.get(ref); }
