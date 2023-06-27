@@ -745,7 +745,7 @@ public class Nodes {
 
     public List<Node> performOn(NodeList nodes, Predicate<Node> filter, BiFunction<Node, Mutex, Node> action) {
         List<Node> resultingNodes = new ArrayList<>();
-        nodes.stream().collect(groupingBy(Nodes::applicationIdForLock))
+        nodes.matching(filter).stream().collect(groupingBy(Nodes::applicationIdForLock))
              .forEach((applicationId, nodeList) -> { // Grouped only to reduce number of lock acquire/release cycles.
                  try (NodeMutexes locked = lockAndGetAll(nodeList, Optional.empty())) {
                      for (NodeMutex node : locked.nodes())
