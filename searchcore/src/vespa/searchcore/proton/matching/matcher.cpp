@@ -86,9 +86,9 @@ private:
 };
 
 bool
-willNotNeedRanking(const SearchRequest & request, const GroupingContext & groupingContext) {
-    return (!groupingContext.needRanking() && (request.maxhits == 0))
-           || (!request.sortSpec.empty() && (request.sortSpec.find("[rank]") == vespalib::string::npos));
+willNeedRanking(const SearchRequest & request, const GroupingContext & groupingContext) {
+    return (groupingContext.needRanking() || (request.maxhits != 0))
+           && (request.sortSpec.empty() || (request.sortSpec.find("[rank]") != vespalib::string::npos));
 }
 
 SearchReply::UP
@@ -244,7 +244,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 
         MatchParams params(searchContext.getDocIdLimit(), heapSize, arraySize, rank_score_drop_limit,
                            request.offset, request.maxhits, !_rankSetup->getSecondPhaseRank().empty(),
-                           !willNotNeedRanking(request, groupingContext));
+                           willNeedRanking(request, groupingContext));
 
         ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId,
                            request.sortSpec, params.offset, params.hits);
