@@ -486,7 +486,7 @@ public class Nodes {
                            .withPreferToRetire(false, agent, now);
             }
             if (forceDeprovision)
-                node = node.withWantToRetire(true, true, agent, now);
+                node = node.withWantToRetire(true, true, false, false, agent, now);
             if (toState == Node.State.deprovisioned) {
                 node = node.with(IP.Config.EMPTY);
             }

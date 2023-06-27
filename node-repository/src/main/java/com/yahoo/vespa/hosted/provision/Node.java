@@ -276,7 +276,7 @@ public final class Node implements Nodelike {
      * If both given wantToRetire and wantToDeprovision are equal to the current values, the method is no-op.
      */
     public Node withWantToRetire(boolean wantToRetire, boolean wantToDeprovision, Agent agent, Instant at) {
-        return withWantToRetire(wantToRetire, wantToDeprovision, false, false, agent, at);
+        return withWantToRetire(wantToRetire, wantToDeprovision, status.wantToRebuild(), status.wantToUpgradeFlavor(), agent, at);
     }
 
     /**
