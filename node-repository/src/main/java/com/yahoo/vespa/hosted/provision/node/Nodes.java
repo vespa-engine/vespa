@@ -984,7 +984,8 @@ public class Nodes {
                 for (NodeMutex node : outOfOrder) unlocked.add(node.node());
                 outOfOrder.clear();
 
-                Mutex lock = lock(next, budget.timeLeftOrThrow());
+                boolean nextLockSameAsPrevious = ! locked.isEmpty() && applicationIdForLock(locked.last().node()).equals(applicationIdForLock(next));
+                Mutex lock = nextLockSameAsPrevious ? () -> { } : lock(next, budget.timeLeftOrThrow());
                 try {
                     Optional<Node> fresh = node(next.hostname());
                     if (fresh.isEmpty()) {
