@@ -4,6 +4,7 @@ vespa_add_library(searchlib_expression OBJECT
     attribute_map_lookup_node.cpp
     attributenode.cpp
     attributeresult.cpp
+    current_index_setup.cpp
     enumattributeresult.cpp
     perdocexpression.cpp
     expressiontree.cpp
