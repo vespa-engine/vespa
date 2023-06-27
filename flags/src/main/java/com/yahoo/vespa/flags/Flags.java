@@ -379,7 +379,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
-            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-07-25",
+            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-07-31",
             "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
             HOSTNAME);
 
@@ -396,7 +396,7 @@ public class Flags {
             HOSTNAME, APPLICATION_ID, VESPA_VERSION);
 
     public static final UnboundBooleanFlag RANDOMIZED_ENDPOINT_NAMES = defineFeatureFlag(
-            "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-06-30",
+            "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-07-30",
             "Whether to use randomized endpoint names",
             "Takes effect on application deployment",
             APPLICATION_ID);
