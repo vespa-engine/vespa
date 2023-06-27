@@ -164,8 +164,7 @@ public class Nodes {
      * with the history of that node.
      */
     public List<Node> addNodes(List<Node> nodes, Agent agent) {
-        try (NodeMutexes existingNodesLocks = lockAndGetAll(nodes, Optional.empty()); // Locks for any existing nodes we may remove.
-             Mutex allocationLock = lockUnallocated()) {
+        try (Mutex allocationLock = lockUnallocated()) {
             List<Node> nodesToAdd =  new ArrayList<>();
             List<Node> nodesToRemove = new ArrayList<>();
             for (int i = 0; i < nodes.size(); i++) {
