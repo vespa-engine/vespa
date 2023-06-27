@@ -76,7 +76,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
                                          isExpired,
                                          (node, lock) -> recycle(node, List.of(), allNodes).get());
 
-        nodeRepository.nodes().performOnRecursively(allNodes.nodeType(NodeType.host),
+        nodeRepository.nodes().performOnRecursively(allNodes.nodeType(NodeType.host).matching(isExpired),
                                                     nodes -> isExpired.test(nodes.parent().node()),
                                                     nodes -> recycle(nodes.parent().node(),
                                                                      nodes.children().stream().map(NodeMutex::node).toList(),
