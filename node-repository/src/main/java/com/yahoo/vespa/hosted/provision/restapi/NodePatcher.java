@@ -223,6 +223,7 @@ public class NodePatcher {
             case WANT_TO_RETIRE:
             case WANT_TO_DEPROVISION:
             case WANT_TO_REBUILD:
+            case WANT_TO_UPGRADE_FLAVOR:
                 // These needs to be handled as one, because certain combinations are not allowed.
                 return node.withWantToRetire(asOptionalBoolean(root.field(WANT_TO_RETIRE))
                                                      .orElseGet(node.status()::wantToRetire),

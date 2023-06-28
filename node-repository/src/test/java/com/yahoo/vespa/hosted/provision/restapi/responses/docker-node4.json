@@ -58,6 +58,7 @@
   "preferToRetire": false,
   "wantToDeprovision": false,
   "wantToRebuild": false,
+  "wantToUpgradeFlavor": false,
   "down": false,
   "history": [
     {

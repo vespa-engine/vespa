@@ -80,6 +80,8 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
                 return 1.0;
             } catch (NodeAllocationException e) {
                // Fine, no capacity for upgrade
+                log.log(Level.WARNING, "Failed to redeploy " + node.allocation().get().owner() + " to upgrade flavor (" +
+                                       parent.get().flavor().name() + ") of " + parent.get(), e);
             } finally {
                 if (deploymentValid && !redeployed) { // Cancel upgrade if redeploy failed
                     upgradeFlavor(parent.get(), false);

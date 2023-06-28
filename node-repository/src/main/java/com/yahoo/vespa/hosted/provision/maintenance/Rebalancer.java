@@ -37,9 +37,9 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
     protected double maintain() {
         if ( ! nodeRepository().nodes().isWorking()) return 0.0;
 
-        if ( ! nodeRepository().zone().cloud().allowHostSharing()) return 1.0; // Rebalancing not necessary
-        if (nodeRepository().zone().environment().isTest()) return 1.0; // Short lived deployments; no need to rebalance
-        if (nodeRepository().zone().system().isCd()) return 1.0; // CD tests assert on # of nodes, avoid rebalnacing as it make tests unstable
+        if ( ! nodeRepository().zone().cloud().allowHostSharing()) return 1.0; // Re-balancing not necessary
+        if (nodeRepository().zone().environment().isTest()) return 1.0; // Short-lived deployments; no need to rebalance
+        if (nodeRepository().zone().system().isCd()) return 1.0; // CD tests assert on # of nodes, avoid re-balancing as it make tests unstable
 
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed
         NodeList allNodes = nodeRepository().nodes().list();
