@@ -151,11 +151,6 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         };
     }
 
-    private BundleType effectiveBundleType() {
-        if (bundleType != BundleType.USER) return bundleType;
-        return isVespaInternalGroupId(project.getGroupId()) ? BundleType.INTERNAL : BundleType.USER;
-    }
-
     private void addAdditionalManifestProperties(Map<String, String> manifestContent) {
         addIfNotEmpty(manifestContent, "Bundle-Activator", bundleActivator);
         addIfNotEmpty(manifestContent, "X-JDisc-Privileged-Activator", jdiscPrivilegedActivator);
@@ -274,6 +269,11 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                             " It must have scope 'provided' to avoid resource leaks in your application at runtime." +
                             " Please use 'mvn dependency:tree' to find the root cause.");
         }
+    }
+
+    private BundleType effectiveBundleType() {
+        if (bundleType != BundleType.USER) return bundleType;
+        return isVespaInternalGroupId(project.getGroupId()) ? BundleType.INTERNAL : BundleType.USER;
     }
 
     private boolean isVespaInternalGroupId(String groupId) {
