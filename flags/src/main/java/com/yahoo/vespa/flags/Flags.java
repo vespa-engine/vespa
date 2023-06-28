@@ -435,6 +435,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID
     );
+    public static final UnboundBooleanFlag ENABLE_NESTED_MULTIVALUE_GROUPING = defineFeatureFlag(
+            "enable-nested-multivalue-grouping", false,
+            List.of("baldersheim"), "2023-06-29", "2023-12-31",
+            "Should we enable proper nested multivalue grouping",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
