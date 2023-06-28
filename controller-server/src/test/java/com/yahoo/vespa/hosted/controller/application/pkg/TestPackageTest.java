@@ -202,8 +202,8 @@ public class TestPackageTest {
                                                          <instance id='first'>
                                                              <test tester-flavor="d-6-16-100" />
                                                              <prod>
-                                                                 <region active="true">us-west-1</region>
-                                                                 <test>us-west-1</test>
+                                                                 <region active="true">gcp-us-west-1</region>
+                                                                 <test>gcp-us-west-1</test>
                                                              </prod>
                                                          </instance>
                                                          <instance id='second'>
@@ -221,8 +221,8 @@ public class TestPackageTest {
                                                      </deployment>
                                                      """);
 
-        NodeResources firstResources = TestPackage.testerResourcesFor(ZoneId.from("prod", "us-west-1"), spec.requireInstance("first"));
-        assertEquals(TestPackage.DEFAULT_TESTER_RESOURCES, firstResources);
+        NodeResources firstResources = TestPackage.testerResourcesFor(ZoneId.from("prod", "gcp-us-west-1"), spec.requireInstance("first"));
+        assertEquals(TestPackage.DEFAULT_TESTER_RESOURCES_CLOUD, firstResources);
 
         NodeResources secondResources = TestPackage.testerResourcesFor(ZoneId.from("prod", "us-west-1"), spec.requireInstance("second"));
         assertEquals(6, secondResources.vcpu(), 1e-9);
