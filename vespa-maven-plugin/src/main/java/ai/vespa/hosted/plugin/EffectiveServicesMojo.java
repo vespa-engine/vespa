@@ -49,8 +49,8 @@ public class EffectiveServicesMojo extends AbstractVespaDeploymentMojo {
         Files.write(output, effectiveServices(services, zone, InstanceName.from(instance), tagz).getBytes(StandardCharsets.UTF_8));
         getLog().info("Effective services for " + zone +
                       ", instance " + instance +
-                      ( tags == null ? "" : ", tags '" + tagz) +
-                      "' written to " + output);
+                      ( tags == null ? "" : ", tags '" + tagz + "' ") +
+                      "written to " + output);
     }
 
     static String effectiveServices(File servicesFile, ZoneId zone, InstanceName instance, Tags tags) throws Exception {
