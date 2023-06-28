@@ -34,6 +34,7 @@ vespa_add_library(eval_instruction OBJECT
     mapped_lookup.cpp
     mixed_112_dot_product.cpp
     mixed_inner_product_function.cpp
+    mixed_l2_distance.cpp
     mixed_simple_join_function.cpp
     pow_as_map_optimizer.cpp
     remove_trivial_dimension_optimizer.cpp
