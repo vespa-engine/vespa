@@ -98,9 +98,10 @@ public class CapacityPolicies {
             Architecture architecture = adminClusterArchitecture(applicationId);
 
             if (nodeRepository.exclusiveAllocation(clusterSpec)) {
-                var resources = smallestExclusiveResources();
+                var resources = smallestExclusiveResources(4); //TODO: use 8Gb as default when no apps are using 4Gb
                 return versioned(clusterSpec, Map.of(new Version(0), resources,
-                                                     new Version(8, 182, 12), resources.with(architecture)));
+                                                     new Version(8, 182, 12), resources.with(architecture),
+                                                     new Version(8, 187), smallestExclusiveResources(8).with(architecture)));
             }
 
             if (clusterSpec.id().value().equals("cluster-controllers")) {
@@ -162,10 +163,10 @@ public class CapacityPolicies {
     }
 
     // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
-    private NodeResources smallestExclusiveResources() {
+    private NodeResources smallestExclusiveResources(int memoryGb) {
         return (zone.cloud().name().equals(CloudName.GCP))
-                ? new NodeResources(1, 4, 50, 0.3)
-                : new NodeResources(0.5, 4, 50, 0.3);
+                ? new NodeResources(1, memoryGb, 50, 0.3)
+                : new NodeResources(0.5, memoryGb, 50, 0.3);
     }
 
     // The lowest amount of resources that can be shared (i.e. a matching host flavor for this exists)
