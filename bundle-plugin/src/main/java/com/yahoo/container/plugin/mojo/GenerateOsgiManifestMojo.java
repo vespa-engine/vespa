@@ -19,6 +19,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +29,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.container.plugin.bundle.AnalyzeBundle.exportedPackagesAggregated;
 import static com.yahoo.container.plugin.bundle.AnalyzeBundle.nonPublicApiPackagesAggregated;
+import static com.yahoo.container.plugin.bundle.AnalyzeBundle.providedArtifactsAggregated;
 import static com.yahoo.container.plugin.classanalysis.Packages.disallowedImports;
 import static com.yahoo.container.plugin.osgi.ExportPackages.exportsByPackageName;
 import static com.yahoo.container.plugin.osgi.ImportPackages.calculateImports;
@@ -90,8 +92,11 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
             Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(project);
             warnOnUnsupportedArtifacts(artifactSet.getNonJarArtifacts());
+
+            List<Artifact> artifactsToInclude = artifactSet.getJarArtifactsToInclude();
+
             if (! isContainerDiscArtifact(project.getArtifact()))
-                throwIfInternalContainerArtifactsAreIncluded(artifactSet.getJarArtifactsToInclude());
+                throwIfInternalContainerArtifactsAreIncluded(artifactsToInclude);
 
             List<Artifact> providedJarArtifacts = artifactSet.getJarArtifactsProvided();
             List<File> providedJarFiles = providedJarArtifacts.stream().map(Artifact::getFile).toList();
@@ -105,7 +110,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
             PackageTally projectPackages = getProjectClassesTally();
 
             // Packages defined in compile scoped jars
-            PackageTally compileJarsPackages = definedPackages(artifactSet.getJarArtifactsToInclude());
+            PackageTally compileJarsPackages = definedPackages(artifactsToInclude);
 
             // The union of packages in the project and compile scoped jars
             PackageTally includedPackages = projectPackages.combine(compileJarsPackages);
@@ -124,7 +129,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                         "OSGi header may be missing important packages.").formatted(wantedProvidedDependency()));
             }
             logOverlappingPackages(projectPackages, exportedPackagesFromProvidedDeps);
-            logUnnecessaryPackages(compileJarsPackages, exportedPackagesFromProvidedDeps);
+            logProvidedArtifactsIncluded(artifactsToInclude, providedArtifactsAggregated(providedJarFiles));
 
             Map<String, Import> calculatedImports = calculateImports(includedPackages.referencedPackages(),
                                                                      includedPackages.definedPackages(),
@@ -133,7 +138,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
             List<String> nonPublicApiUsed = disallowedImports(calculatedImports, nonPublicApiPackagesFromProvidedJars);
             logNonPublicApiUsage(nonPublicApiUsed);
 
-            Map<String, String> manifestContent = generateManifestContent(artifactSet.getJarArtifactsToInclude(), calculatedImports, includedPackages);
+            Map<String, String> manifestContent = generateManifestContent(artifactsToInclude, calculatedImports, includedPackages);
             addAdditionalManifestProperties(manifestContent);
             addManifestPropertiesForInternalAndCoreBundles(manifestContent, includedPackages, providedJarArtifacts);
             addManifestPropertiesForUserBundles(manifestContent, jdiscCore, nonPublicApiUsed);
@@ -242,18 +247,19 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         }
     }
 
-    /*
-     * This mostly detects packages re-exported via composite bundles like jdisc_core and container-disc.
-     * An artifact can only be represented once, either in compile or provided scope. So if the project
-     * adds an artifact in compile scope that we deploy as a pre-installed bundle, we won't see the same
-     * artifact as provided via container-dev and hence can't detect the duplicate packages.
-     */
-    private void logUnnecessaryPackages(PackageTally compileJarsPackages,
-                                        Set<String> exportedPackagesFromProvidedDeps) {
-        Set<String> unnecessaryPackages = Sets.intersection(compileJarsPackages.definedPackages(), exportedPackagesFromProvidedDeps);
-        if (! unnecessaryPackages.isEmpty()) {
-            getLog().info("Compile scoped jars contain the following packages that are most likely " +
-                                  "available from jdisc runtime: " + unnecessaryPackages);
+    private void logProvidedArtifactsIncluded(List<Artifact> includedArtifacts, List<ProvidedArtifact> providedArtifacts) {
+        // TODO: add suppress switch
+
+        Set<ProvidedArtifact> included = includedArtifacts.stream().map(ProvidedArtifact::new).collect(Collectors.toSet());
+        Set<ProvidedArtifact> providedIncluded = Sets.intersection(included, new HashSet<>(providedArtifacts));
+
+        if (! providedIncluded.isEmpty()) {
+            List<String> sorted = providedIncluded.stream()
+                    .map(ProvidedArtifact::stringValue)
+                    .sorted().toList();
+
+            // TODO: improve error message
+            warnOrThrow("Artifacts provided from Jdisc runtime are included in compile scope: " + sorted);
         }
     }
 
