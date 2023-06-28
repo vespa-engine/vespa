@@ -3,8 +3,10 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
@@ -13,8 +15,13 @@ import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.flags.custom.HostResources;
+import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -163,7 +170,7 @@ public class DynamicProvisioningTest {
 
     @Test
     public void avoids_allocating_to_empty_hosts() {
-        var tester = tester(false);
+        var tester = tester(true);
         tester.makeReadyHosts(6, new NodeResources(12, 12, 200, 12));
         tester.activateTenantHosts();
 
@@ -182,6 +189,27 @@ public class DynamicProvisioningTest {
         ApplicationId application4 = ProvisioningTester.applicationId();
         prepareAndActivate(application4, clusterSpec("mycluster"), 3, 1, resources, tester);
         assertEquals(5, tester.nodeRepository().nodes().list().nodeType(NodeType.tenant).stream().map(Node::parentHostname).distinct().count());
+    }
+
+    @Test
+    public void does_not_allocate_container_nodes_to_shared_hosts() {
+        assertHostSharing(Environment.prod, ClusterSpec.Type.container, false);
+        assertHostSharing(Environment.prod, ClusterSpec.Type.content, true);
+        assertHostSharing(Environment.staging, ClusterSpec.Type.container, true);
+        assertHostSharing(Environment.staging, ClusterSpec.Type.content, true);
+    }
+
+    private void assertHostSharing(Environment environment, ClusterSpec.Type clusterType, boolean expectShared) {
+        Zone zone = new Zone(Cloud.builder().dynamicProvisioning(true).allowHostSharing(false).build(), SystemName.Public, environment, RegionName.defaultName());
+        MockHostProvisioner hostProvisioner = new MockHostProvisioner(new NodeFlavors(ProvisioningTester.createConfig()).getFlavors(), nameResolver, 0);
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone).hostProvisioner(hostProvisioner).nameResolver(nameResolver).build();
+        tester.makeReadyHosts(2, new NodeResources(12, 12, 200, 12));
+        tester.flagSource().withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(new HostResources(4.0, 16.0, 50.0, 0.3, "fast", "local", null, 10, "x86_64"))), SharedHost.class);
+
+        ApplicationId application = ProvisioningTester.applicationId();
+        ClusterSpec cluster = ClusterSpec.request(clusterType, ClusterSpec.Id.from("default")).vespaVersion("6.42").build();
+        tester.prepare(application, cluster, 2, 1, new NodeResources(2., 10., 20, 1));
+        assertEquals(expectShared ? 2 : 4, tester.nodeRepository().nodes().list().nodeType(NodeType.host).size());
     }
 
     @Test
@@ -207,7 +235,7 @@ public class DynamicProvisioningTest {
 
     @Test
     public void node_indices_are_unique_even_when_a_node_is_left_in_reserved_state() {
-        var tester = tester(false);
+        var tester = tester(true);
         NodeResources resources = new NodeResources(10, 10, 10, 10);
         ApplicationId app = ProvisioningTester.applicationId();
 
