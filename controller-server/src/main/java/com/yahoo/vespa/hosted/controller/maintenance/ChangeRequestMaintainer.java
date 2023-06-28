@@ -121,7 +121,7 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
 
     private boolean shouldDeleteChangeRequest(ChangeRequestSource source) {
         return source.isClosed() &&
-                source.getPlannedStartTime()
+                source.plannedStartTime()
                         .plus(Duration.ofDays(7))
                         .isBefore(ZonedDateTime.now());
     }
@@ -129,7 +129,7 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
     private void approveChangeRequest(ChangeRequest changeRequest) {
         if (system.equals(SystemName.main) &&
                 changeRequest.getApproval() == ChangeRequest.Approval.REQUESTED) {
-            logger.info("Approving " + changeRequest.getChangeRequestSource().getId());
+            logger.info("Approving " + changeRequest.getChangeRequestSource().id());
             changeRequestClient.approveChangeRequest(changeRequest);
         }
     }

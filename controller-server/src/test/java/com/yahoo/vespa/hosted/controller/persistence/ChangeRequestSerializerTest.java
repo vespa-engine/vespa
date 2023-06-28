@@ -21,7 +21,7 @@ public class ChangeRequestSerializerTest {
 
     @Test
     void reserialization_equality() {
-        var source = new ChangeRequestSource("aws", "id321", "url", ChangeRequestSource.Status.STARTED, ZonedDateTime.now(), ZonedDateTime.now());
+        var source = new ChangeRequestSource("aws", "id321", "url", ChangeRequestSource.Status.STARTED, ZonedDateTime.now(), ZonedDateTime.now(), "Some category");
         var actionPlan = List.of(
                 new HostAction("host1", HostAction.State.RETIRING, Instant.now()),
                 new HostAction("host2", HostAction.State.RETIRED, Instant.now())

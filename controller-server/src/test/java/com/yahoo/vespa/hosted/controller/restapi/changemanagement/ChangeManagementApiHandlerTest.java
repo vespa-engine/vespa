@@ -86,7 +86,7 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
     private VespaChangeRequest createChangeRequest() {
         var instant = Instant.ofEpochMilli(9001);
         var date = ZonedDateTime.ofInstant(instant, java.time.ZoneId.of("UTC"));
-        var source = new ChangeRequestSource("aws", "id321", "url", ChangeRequestSource.Status.STARTED, date, date);
+        var source = new ChangeRequestSource("aws", "id321", "url", ChangeRequestSource.Status.STARTED, date, date, "N/A");
         var actionPlan = List.of(
                 new HostAction("host1", HostAction.State.RETIRING, instant),
                 new HostAction("host2", HostAction.State.RETIRED, instant)

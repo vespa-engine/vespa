@@ -58,7 +58,7 @@ public class VcmrMaintainerTest {
     @Test
     void recycle_hosts_after_completion() {
         var vcmrReport = new VcmrReport();
-        vcmrReport.addVcmr(new ChangeRequestSource("aws", "id123", "url", ChangeRequestSource.Status.WAITING_FOR_APPROVAL , ZonedDateTime.now(), ZonedDateTime.now()));
+        vcmrReport.addVcmr(new ChangeRequestSource("aws", "id123", "url", ChangeRequestSource.Status.WAITING_FOR_APPROVAL , ZonedDateTime.now(), ZonedDateTime.now(), "N/A"));
         var parkedNode = createNode(host1, NodeType.host, Node.State.parked, true);
         var failedNode = createNode(host2, NodeType.host, Node.State.failed, false);
         var reports = vcmrReport.toNodeReports();
@@ -285,7 +285,7 @@ public class VcmrMaintainerTest {
 
 
     private VespaChangeRequest newChangeRequest(ChangeRequestSource.Status sourceStatus, State state1, State state2, ZonedDateTime startTime) {
-        var source = new ChangeRequestSource("aws", changeRequestId, "url", sourceStatus , startTime, ZonedDateTime.now());
+        var source = new ChangeRequestSource("aws", changeRequestId, "url", sourceStatus , startTime, ZonedDateTime.now(), "N/A");
         var actionPlan = List.of(
                 new HostAction(host1.value(), state1, Instant.now()),
                 new HostAction(host2.value(), state2, Instant.now())

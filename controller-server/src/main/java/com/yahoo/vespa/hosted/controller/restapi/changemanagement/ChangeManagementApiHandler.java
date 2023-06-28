@@ -106,7 +106,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse changeRequestAssessment(String changeRequestId) {
         var optionalChangeRequest = controller.curator().readChangeRequests()
                 .stream()
-                .filter(request -> changeRequestId.equals(request.getChangeRequestSource().getId()))
+                .filter(request -> changeRequestId.equals(request.getChangeRequestSource().id()))
                 .findFirst();
 
         if (optionalChangeRequest.isEmpty())
