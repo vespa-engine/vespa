@@ -4,6 +4,7 @@ package com.yahoo.container.plugin.bundle;
 import com.yahoo.container.plugin.osgi.ExportPackageParser;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import com.yahoo.container.plugin.util.JarFiles;
+import com.yahoo.container.plugin.util.ProvidedArtifact;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -57,6 +58,27 @@ public class AnalyzeBundle {
         return getMainAttributeValue(manifest, "X-JDisc-Non-PublicApi-Export-Package")
                 .map(s -> Arrays.asList(s.split(",")))
                 .orElseGet(ArrayList::new);
+    }
+
+    public static List<ProvidedArtifact> providedArtifactsAggregated(Collection<File> jarFiles) {
+        return jarFiles.stream()
+                .map(AnalyzeBundle::providedArtifacts)
+                .flatMap(List::stream)
+                .distinct()
+                .toList();
+    }
+
+    public static List<ProvidedArtifact> providedArtifacts(File jarFile) {
+        var manifest = getOsgiManifest(jarFile);
+        if (manifest == null) return Collections.emptyList();
+
+        return getMainAttributeValue(manifest, "X-JDisc-Provided-Artifact")
+                .map(s -> Arrays.stream(s.split(","))
+                .map(ProvidedArtifact::fromStringValue)
+                .toList())
+                .orElse(Collections.emptyList());
+
+
     }
 
     private static Manifest getOsgiManifest(File jarFile) {
