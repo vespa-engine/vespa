@@ -49,10 +49,6 @@ public class Artifacts {
         }
     }
 
-    public static String idAndVersion(Artifact artifact) {
-        return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion();
-    }
-
     public static ArtifactSet getArtifacts(MavenProject project) { return getArtifacts(project, new NoopScopeTranslator()); }
 
     public static ArtifactSet getArtifacts(MavenProject project, ScopeTranslator scopeTranslator) {

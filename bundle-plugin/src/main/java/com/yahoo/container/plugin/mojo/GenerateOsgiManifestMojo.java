@@ -9,6 +9,7 @@ import com.yahoo.container.plugin.osgi.ExportPackages;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import com.yahoo.container.plugin.osgi.ImportPackages.Import;
 import com.yahoo.container.plugin.util.Artifacts;
+import com.yahoo.container.plugin.util.ProvidedArtifact;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -172,7 +173,8 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
         if (effectiveBundleType() == BundleType.CORE) {
             addIfNotEmpty(manifestContent, "X-JDisc-Provided-Artifact", providedJarArtifacts.stream()
-                    .map(Artifacts::idAndVersion)
+                    .map(ProvidedArtifact::new)
+                    .map(ProvidedArtifact::stringValue)
                     .collect(Collectors.joining(",")));
         }
     }
