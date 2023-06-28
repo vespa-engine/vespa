@@ -264,6 +264,7 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(documentCmd)                 // document
 	rootCmd.AddCommand(newLogCmd(c))                // log
 	rootCmd.AddCommand(newManCmd(c))                // man
+	rootCmd.AddCommand(newGendocCmd(c))             // gendoc
 	prodCmd.AddCommand(newProdInitCmd(c))           // prod init
 	prodCmd.AddCommand(newProdDeployCmd(c))         // prod deploy
 	rootCmd.AddCommand(prodCmd)                     // prod
