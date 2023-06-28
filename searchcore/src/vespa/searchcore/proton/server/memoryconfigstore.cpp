@@ -11,8 +11,8 @@ namespace proton {
 
 ConfigMaps::~ConfigMaps() = default;
 
-MemoryConfigStore::MemoryConfigStore() : _maps(new ConfigMaps) {}
-MemoryConfigStore::MemoryConfigStore(ConfigMaps::SP maps) : _maps(maps) {}
+MemoryConfigStore::MemoryConfigStore() : _maps(std::make_shared<ConfigMaps>()) {}
+MemoryConfigStore::MemoryConfigStore(ConfigMaps::SP maps) : _maps(std::move(maps)) {}
 MemoryConfigStore::~MemoryConfigStore() = default;
 
 ConfigStore::SerialNum
@@ -36,10 +36,9 @@ MemoryConfigStore::getPrevValidSerial(SerialNum serial) const {
     return *(--(_maps->_valid.lower_bound(serial)));
 }
 void
-MemoryConfigStore::saveConfig(const DocumentDBConfig &config,
-                              SerialNum serial)
+MemoryConfigStore::saveConfig(const DocumentDBConfig &config, SerialNum serial)
 {
-    _maps->configs[serial] = std::make_shared<DocumentDBConfig>(config);
+    _maps->configs[serial] = config.make_copy();
     _maps->_valid.insert(serial);
 }
 void
