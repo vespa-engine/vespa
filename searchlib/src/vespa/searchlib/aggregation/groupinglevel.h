@@ -5,6 +5,8 @@
 #include <vespa/searchlib/expression/aggregationrefnode.h>
 #include <vespa/searchlib/expression/currentindex.h>
 
+namespace search::expression { class CurrentIndexSetup; }
+
 namespace search::aggregation {
 
 class Grouping;
@@ -22,6 +24,7 @@ private:
     using ExpressionNode = expression::ExpressionNode;
     using ExpressionTree = expression::ExpressionTree;
     using CurrentIndex = expression::CurrentIndex;
+    using CurrentIndexSetup = expression::CurrentIndexSetup;
     class Grouper {
     public:
         virtual ~Grouper() = default;
@@ -117,6 +120,7 @@ public:
     const ExpressionTree & getExpression() const { return _classify; }
     ExpressionTree & getExpression() { return _classify; }
     const       Group &getGroupPrototype() const { return _collect; }
+    void wire_current_index(CurrentIndexSetup &setup, const vespalib::ObjectPredicate &resolve_pred, vespalib::ObjectOperation &resolve_op);
     void prepare(const Grouping * grouping, uint32_t level, bool isOrdered_);
 
     Group &groupPrototype() { return _collect; }
