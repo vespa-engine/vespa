@@ -171,6 +171,15 @@ namespace onsummary {
 }
 }
 
+namespace temporary {
+
+const vespalib::string EnableNestedMultivalueGrouping::NAME("vespa.temporary.enable_nested_multivalue_grouping");
+bool EnableNestedMultivalueGrouping::check(const Properties &props) {
+    return lookupBool(props, NAME, false);
+}
+
+}
+
 namespace mutate {
 
 const vespalib::string AllowQueryOverride::NAME("vespa.mutate.allow_query_override");

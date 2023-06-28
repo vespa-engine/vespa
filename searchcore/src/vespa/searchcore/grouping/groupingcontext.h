@@ -26,6 +26,7 @@ private:
     vespalib::steady_time   _timeOfDoom;
     vespalib::nbostream     _os;
     GroupingList            _groupingList;
+    bool                    _enableNestedMultivalueGrouping;
 public:
 
     /**
@@ -41,7 +42,8 @@ public:
      * @param groupSpec The grouping specification to use for initialization.
      * @param groupSpecLen The length of the grouping specification, in bytes.
      **/
-    GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom, const char *groupSpec, uint32_t groupSpecLen);
+    GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom,
+                    const char *groupSpec, uint32_t groupSpecLen, bool enableNestedMultivalueGrouping);
 
     /**
      * Create a new grouping context from a byte buffer.
@@ -112,6 +114,7 @@ public:
      * @return true if ranking is required.
      */
     bool needRanking() const;
+    bool enableNestedMultivalueGrouping() const { return _enableNestedMultivalueGrouping; }
 };
 
 }

@@ -170,7 +170,7 @@ TEST_F("testGroupingContextInitialization", DoomFixture()) {
     nos << (uint32_t)1;
     baseRequest.serialize(nos);
 
-    GroupingContext context(f1.clock.clock(), f1.timeOfDoom, os.data(), os.size());
+    GroupingContext context(f1.clock.clock(), f1.timeOfDoom, os.data(), os.size(), true);
     ASSERT_TRUE(!context.empty());
     GroupingContext::GroupingList list = context.getGroupingList();
     ASSERT_TRUE(list.size() == 1);

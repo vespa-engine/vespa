@@ -20,12 +20,10 @@ class GroupingContext;
 class GroupingManager
 {
 private:
-    GroupingManager(const GroupingManager &);
-    GroupingManager &operator=(const GroupingManager &);
-
     GroupingContext         &_groupingContext;
-
 public:
+    GroupingManager(const GroupingManager &) = delete;
+    GroupingManager &operator=(const GroupingManager &) = delete;
     /**
      * Create a new grouping manager.
      *

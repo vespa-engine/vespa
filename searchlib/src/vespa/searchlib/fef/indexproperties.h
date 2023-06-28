@@ -175,6 +175,13 @@ namespace mutate {
     };
 }
 
+namespace temporary {
+    struct EnableNestedMultivalueGrouping {
+        static const vespalib::string NAME;
+        static bool check(const Properties &props);
+    };
+}
+
 namespace mutate::on_match {
     struct Attribute {
         static const vespalib::string NAME;

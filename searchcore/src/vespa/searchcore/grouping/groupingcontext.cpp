@@ -48,20 +48,23 @@ GroupingContext::setDistributionKey(uint32_t distributionKey)
     }
 }
 
-GroupingContext::GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom, const char *groupSpec, uint32_t groupSpecLen) :
-    _clock(clock),
-    _timeOfDoom(timeOfDoom),
-    _os(),
-    _groupingList()
+GroupingContext::GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom,
+                                 const char *groupSpec, uint32_t groupSpecLen, bool enableNested)
+    : _clock(clock),
+      _timeOfDoom(timeOfDoom),
+      _os(),
+      _groupingList(),
+      _enableNestedMultivalueGrouping(enableNested)
 {
     deserialize(groupSpec, groupSpecLen);
 }
 
-GroupingContext::GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom) :
-    _clock(clock),
-    _timeOfDoom(timeOfDoom),
-    _os(),
-    _groupingList()
+GroupingContext::GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom)
+    : _clock(clock),
+      _timeOfDoom(timeOfDoom),
+      _os(),
+      _groupingList(),
+      _enableNestedMultivalueGrouping(true)
 {
 }
 
