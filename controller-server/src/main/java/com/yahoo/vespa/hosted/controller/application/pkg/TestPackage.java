@@ -231,8 +231,8 @@ public class TestPackage {
                                           .findFirst()
                                           .flatMap(step -> step.zones().get(0).testerFlavor())
                                           .map(NodeResources::fromLegacyName)
-                                          .orElse(zone.region().value().matches("$(aws-)|(gcp-).*") ? DEFAULT_TESTER_RESOURCES_CLOUD
-                                                                                                    : DEFAULT_TESTER_RESOURCES);
+                                          .orElse(zone.region().value().matches("^(aws|gcp)-.*") ? DEFAULT_TESTER_RESOURCES_CLOUD
+                                                                                                 : DEFAULT_TESTER_RESOURCES);
         return nodeResources.with(NodeResources.DiskSpeed.any);
     }
 
