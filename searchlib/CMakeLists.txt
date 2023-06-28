@@ -126,6 +126,7 @@ vespa_define_module(
     src/tests/engine/proto_converter
     src/tests/engine/proto_rpc_adapter
     src/tests/expression/attributenode
+    src/tests/expression/current_index_setup
     src/tests/features
     src/tests/features/beta
     src/tests/features/bm25
