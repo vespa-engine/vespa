@@ -363,13 +363,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag VESPA_ATHENZ_PROVIDER = defineFeatureFlag(
-            "vespa-athenz-provider", false,
-            List.of("mortent"), "2023-02-22", "2023-08-01",
-            "Enable athenz provider in public systems",
-            "Takes effect on next config server container start",
-            ZONE_ID);
-
     public static final UnboundBooleanFlag NODE_ADMIN_TENANT_SERVICE_REGISTRY = defineFeatureFlag(
             "node-admin-tenant-service-registry", false,
             List.of("olaa"), "2023-04-12", "2023-08-01",
