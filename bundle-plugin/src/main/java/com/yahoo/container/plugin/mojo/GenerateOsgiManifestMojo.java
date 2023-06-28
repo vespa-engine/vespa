@@ -134,7 +134,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
             Map<String, String> manifestContent = generateManifestContent(artifactSet.getJarArtifactsToInclude(), calculatedImports, includedPackages);
             addAdditionalManifestProperties(manifestContent);
-            addManifestPropertiesForInternalBundles(manifestContent, includedPackages);
+            addManifestPropertiesForInternalAndCoreBundles(manifestContent, includedPackages, providedJarArtifacts);
             addManifestPropertiesForUserBundles(manifestContent, jdiscCore, nonPublicApiUsed);
 
             createManifestFile(Paths.get(project.getBuild().getOutputDirectory()), manifestContent);
@@ -160,13 +160,21 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         addIfNotEmpty(manifestContent, "WebInfUrl", webInfUrl);
     }
 
-    private void addManifestPropertiesForInternalBundles(Map<String, String> manifestContent, PackageTally includedPackages) {
+    private void addManifestPropertiesForInternalAndCoreBundles(Map<String, String> manifestContent,
+                                                                PackageTally includedPackages,
+                                                                List<Artifact> providedJarArtifacts) {
         if (effectiveBundleType() == BundleType.USER) return;
 
         // TODO: this attribute is not necessary, remove?
         addIfNotEmpty(manifestContent, "X-JDisc-PublicApi-Package", publicApi(includedPackages));
 
         addIfNotEmpty(manifestContent, "X-JDisc-Non-PublicApi-Export-Package", nonPublicApi(includedPackages));
+
+        if (effectiveBundleType() == BundleType.CORE) {
+            addIfNotEmpty(manifestContent, "X-JDisc-Provided-Artifact", providedJarArtifacts.stream()
+                    .map(Artifacts::idAndVersion)
+                    .collect(Collectors.joining(",")));
+        }
     }
 
     private void addManifestPropertiesForUserBundles(Map<String, String> manifestContent,
