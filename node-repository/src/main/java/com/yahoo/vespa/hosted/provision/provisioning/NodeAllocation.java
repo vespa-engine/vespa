@@ -57,9 +57,6 @@ class NodeAllocation {
     /** The node candidates this has accepted so far, keyed on hostname */
     private final Map<String, NodeCandidate> nodes = new LinkedHashMap<>();
 
-    /** The number of already allocated nodes accepted and not retired */
-    private int accepted = 0;
-
     /** The number of already allocated nodes of compatible size */
     private int acceptedAndCompatible = 0;
 
@@ -264,7 +261,6 @@ class NodeAllocation {
             node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.resources())));
 
         if (retirement == Retirement.none) {
-            accepted++;
 
             // We want to allocate new nodes rather than unretiring with resize, so count without those
             // for the purpose of deciding when to stop accepting nodes (saturation)
