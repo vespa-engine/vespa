@@ -250,7 +250,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     }
 
     private void logProvidedArtifactsIncluded(List<Artifact> includedArtifacts, List<ProvidedArtifact> providedArtifacts) {
-        if (suppressWarningEmbeddedArtifacts) return;
+        if (suppressWarningEmbeddedArtifacts || effectiveBundleType() == BundleType.CORE) return;
 
         Set<ProvidedArtifact> included = includedArtifacts.stream().map(ProvidedArtifact::new).collect(Collectors.toSet());
         Set<ProvidedArtifact> providedIncluded = Sets.intersection(included, new HashSet<>(providedArtifacts));
