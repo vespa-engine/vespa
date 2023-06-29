@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -48,7 +49,8 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
                 }
             } catch (RuntimeException e) {
                 failures++;
-                log.log(Level.WARNING, "Failed to rebuild " + host.hostname() + ", will retry in " + interval(), e);
+                log.log(Level.WARNING, "Failed to rebuild " + host.hostname() + ", will retry in " +
+                                       interval() + ": " + Exceptions.toMessageString(e));
             }
         }
         return this.asSuccessFactorDeviation(nodes.size(), failures);
