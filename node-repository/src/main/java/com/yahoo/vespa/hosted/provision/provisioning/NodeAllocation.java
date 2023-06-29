@@ -433,7 +433,7 @@ class NodeAllocation {
             candidate = candidate.withNode();
             Allocation allocation = candidate.allocation().get();
             candidate = candidate.withNode(candidate.toNode().with(allocation.with(allocation.membership()
-                                 .with(allocation.membership().cluster().exclusive(requestedNodes.isExclusive())))));
+                                 .with(allocation.membership().cluster().exclusive(cluster.isExclusive())))));
             nodes.put(candidate.toNode().hostname(), candidate);
         }
 

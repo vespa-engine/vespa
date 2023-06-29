@@ -24,9 +24,6 @@ public interface NodeSpec {
     /** The node type this requests */
     NodeType type();
 
-    /** Returns whether the hosts running the nodes of this application can also run nodes of other applications. */
-    boolean isExclusive();
-
     /** Returns whether the given node resources is compatible with this spec */
     boolean isCompatible(NodeResources resources);
 
@@ -120,9 +117,6 @@ public interface NodeSpec {
         }
 
         @Override
-        public boolean isExclusive() { return exclusive; }
-
-        @Override
         public NodeType type() { return NodeType.tenant; }
 
         @Override
@@ -211,16 +205,13 @@ public interface NodeSpec {
         private final NodeType type;
         private final CloudAccount cloudAccount;
 
-        public TypeNodeSpec(NodeType type, CloudAccount cloudAccount) {
+        private TypeNodeSpec(NodeType type, CloudAccount cloudAccount) {
             this.type = type;
             this.cloudAccount = cloudAccount;
         }
 
         @Override
         public NodeType type() { return type; }
-
-        @Override
-        public boolean isExclusive() { return false; }
 
         @Override
         public boolean isCompatible(NodeResources resources) { return true; }
