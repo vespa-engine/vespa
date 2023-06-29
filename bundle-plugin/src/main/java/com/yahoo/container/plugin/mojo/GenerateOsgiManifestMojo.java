@@ -78,6 +78,8 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     private boolean suppressWarningPublicApi;
     @Parameter(defaultValue = "false")
     private boolean suppressWarningOverlappingPackages;
+    @Parameter(defaultValue = "false")
+    private boolean suppressWarningEmbeddedArtifacts;
 
     @Parameter(defaultValue = "false")
     private boolean failOnWarnings;
@@ -248,7 +250,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     }
 
     private void logProvidedArtifactsIncluded(List<Artifact> includedArtifacts, List<ProvidedArtifact> providedArtifacts) {
-        // TODO: add suppress switch
+        if (suppressWarningEmbeddedArtifacts) return;
 
         Set<ProvidedArtifact> included = includedArtifacts.stream().map(ProvidedArtifact::new).collect(Collectors.toSet());
         Set<ProvidedArtifact> providedIncluded = Sets.intersection(included, new HashSet<>(providedArtifacts));
