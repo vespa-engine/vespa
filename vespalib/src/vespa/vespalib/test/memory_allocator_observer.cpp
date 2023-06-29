@@ -29,7 +29,7 @@ MemoryAllocatorObserver::alloc(size_t sz) const
 
 
 void
-MemoryAllocatorObserver::free(PtrAndSize alloc) const
+MemoryAllocatorObserver::free(PtrAndSize alloc) const noexcept
 {
     ++_stats.free_cnt;
     _backing_allocator->free(alloc);

@@ -40,7 +40,7 @@ public:
     MmapFileAllocator(const vespalib::string& dir_name);
     ~MmapFileAllocator();
     PtrAndSize alloc(size_t sz) const override;
-    void free(PtrAndSize alloc) const override;
+    void free(PtrAndSize alloc) const noexcept override;
     size_t resize_inplace(PtrAndSize, size_t) const override;
 
     // For unit test
