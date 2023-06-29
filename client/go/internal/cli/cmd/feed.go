@@ -174,6 +174,7 @@ func dispatchFrom(r io.ReadCloser, dispatcher *document.Dispatcher, cli *CLI) {
 		}
 		if err != nil {
 			cli.printErr(fmt.Errorf("failed to decode document: %w", err))
+			break
 		}
 		if err := dispatcher.Enqueue(doc); err != nil {
 			cli.printErr(err)
