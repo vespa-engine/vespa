@@ -59,6 +59,7 @@ public class EndpointCertificates {
     private final BooleanFlag useRandomizedCert;
     private final BooleanFlag useAlternateCertProvider;
     private final StringFlag endpointCertificateAlgo;
+    private final static Duration GCP_CERTIFICATE_EXPIRY_TIME = Duration.ofDays(100); // 100 days, 10 more than notAfter time
 
     public EndpointCertificates(Controller controller, EndpointCertificateProvider certificateProvider,
                                 EndpointCertificateValidator certificateValidator) {
@@ -88,10 +89,20 @@ public class EndpointCertificates {
                 GcpSecretStore gcpSecretStore = controller.serviceRegistry().gcpSecretStore();
                 String mangledCertName = "endpointCert_" + m.certName().replace('.', '_') + "-v" + m.version(); // Google cloud does not accept dots in secrets, but they accept underscores
                 String mangledKeyName = "endpointCert_" + m.keyName().replace('.', '_') + "-v" + m.version(); // Google cloud does not accept dots in secrets, but they accept underscores
-                if (gcpSecretStore.getSecret(mangledCertName, m.version()) == null)
-                    gcpSecretStore.createSecret(mangledCertName, controller.secretStore().getSecret(m.certName(), m.version()));
-                if (gcpSecretStore.getSecret(mangledKeyName, m.version()) == null)
-                    gcpSecretStore.createSecret(mangledKeyName, controller.secretStore().getSecret(m.keyName(), m.version()));
+                if (gcpSecretStore.getLatestSecretVersion(mangledCertName) == null) {
+                    gcpSecretStore.setSecret(mangledCertName,
+                                             Optional.of(GCP_CERTIFICATE_EXPIRY_TIME),
+                                             "endpoint-cert-accessor");
+                    gcpSecretStore.addSecretVersion(mangledCertName,
+                                                    controller.secretStore().getSecret(m.certName(), m.version()));
+                }
+                if (gcpSecretStore.getLatestSecretVersion(mangledKeyName) == null) {
+                    gcpSecretStore.setSecret(mangledKeyName,
+                                             Optional.of(GCP_CERTIFICATE_EXPIRY_TIME),
+                                             "endpoint-cert-accessor");
+                    gcpSecretStore.addSecretVersion(mangledKeyName,
+                                                    controller.secretStore().getSecret(m.keyName(), m.version()));
+                }
 
                 return Optional.of(m.withVersion(1).withKeyName(mangledKeyName).withCertName(mangledCertName));
             }
