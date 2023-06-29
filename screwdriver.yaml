@@ -141,6 +141,7 @@ jobs:
           export FACTORY_VESPA_VERSION=$VESPA_VERSION
           NUM_THREADS=$(( $(nproc) + 2 ))
 
+          VESPA_CMAKE_SANITIZERS_OPTION=""
           VESPA_USE_SANITIZER=$(meta get vespa.build.sanitizer)
           if [[ -n $VESPA_USE_SANITIZER ]] && [[ $VESPA_USE_SANITIZER != null ]]; then
             VESPA_CMAKE_SANITIZERS_OPTION="-DVESPA_USE_SANITIZER=$VESPA_USE_SANITIZER"
