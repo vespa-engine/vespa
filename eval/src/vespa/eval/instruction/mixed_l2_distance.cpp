@@ -72,13 +72,13 @@ struct MultiSelectOp {
     }
 };
 
-bool mixed_compatible_types(const ValueType &mix, const ValueType &vec, const ValueType &res) {
+bool mixed_compatible_types(const ValueType &res, const ValueType &mix, const ValueType &vec) {
     return ((mix.cell_type() == vec.cell_type()) &&
-	   vec.is_dense() &&
-	   res.nontrivial_indexed_dimensions().empty() &&
-	   (res.mapped_dimensions().size() > 0) &&
+           vec.is_dense() &&
+           res.nontrivial_indexed_dimensions().empty() &&
+           (res.mapped_dimensions().size() > 0) &&
             (mix.nontrivial_indexed_dimensions() == vec.nontrivial_indexed_dimensions()) &&
-	   (mix.mapped_dimensions() == res.mapped_dimensions()));
+           (mix.mapped_dimensions() == res.mapped_dimensions()));
 }
 
 
@@ -113,15 +113,15 @@ MixedL2Distance::optimize(const TensorFunction &expr, Stash &stash)
         if (map && (map->function() == operation::Square::f)) {
             auto join = as<Join>(map->child());
             if (join && (join->function() == operation::Sub::f)) {
-	       const auto & res_type = expr.result_type();
-	       const auto & left_type = join->lhs().result_type();
-	       const auto & right_type = join->rhs().result_type();
-	       if (mixed_compatible_types(left_type, right_type, res_type)) {
+               const auto & res_type = expr.result_type();
+               const auto & left_type = join->lhs().result_type();
+               const auto & right_type = join->rhs().result_type();
+               if (mixed_compatible_types(res_type, left_type, right_type)) {
                     return stash.create<MixedL2Distance>(res_type, join->lhs(), join->rhs());
-	       }
-	       if (mixed_compatible_types(right_type, left_type, res_type)) {
+               }
+               if (mixed_compatible_types(res_type, right_type, left_type)) {
                     return stash.create<MixedL2Distance>(res_type, join->rhs(), join->lhs());
-	       }
+               }
             }
         }
     }
