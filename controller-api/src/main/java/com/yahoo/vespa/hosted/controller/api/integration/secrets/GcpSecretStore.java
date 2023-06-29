@@ -1,8 +1,14 @@
 package com.yahoo.vespa.hosted.controller.api.integration.secrets;
 
+import java.time.Duration;
+import java.util.Optional;
+
 public interface GcpSecretStore {
 
-    void createSecret(String secretName, String secret);
+    void setSecret(String secretName, Optional<Duration> expiry, String... accessorServiceAccounts);
 
-    String getSecret(String secretName, int version);
+    void addSecretVersion(String secretName, String secretValue);
+
+    String getLatestSecretVersion(String secretName);
+
 }
