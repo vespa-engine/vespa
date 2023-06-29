@@ -91,7 +91,7 @@ public class VirtualNodeProvisioningTest {
 
     @Test
     public void allow_same_parent_host_for_nodes_in_a_cluster_in_cd_and_non_prod() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().build();
+        ProvisioningTester tester;
 
         final int containerNodeCount = 2;
         final int contentNodeCount = 2;
@@ -102,7 +102,7 @@ public class VirtualNodeProvisioningTest {
             NodeResources flavor = new NodeResources(1, 4, 10, 1);
             tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
             tester.makeReadyNodes(4, flavor, NodeType.host, 1);
-            tester.prepareAndActivateInfraApplication(ProvisioningTester.applicationId(), NodeType.host);
+            tester.activateTenantHosts();
 
             List<HostSpec> containerHosts = tester.prepare(applicationId, containerClusterSpec, containerNodeCount, groups, flavor);
             List<HostSpec> contentHosts = tester.prepare(applicationId,  contentClusterSpec, contentNodeCount, groups, flavor);
@@ -116,7 +116,7 @@ public class VirtualNodeProvisioningTest {
         {
             tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east"))).build();
             tester.makeReadyNodes(4, resources1, NodeType.host, 1);
-            tester.prepareAndActivateInfraApplication(ProvisioningTester.applicationId(), NodeType.host);
+            tester.activateTenantHosts();
 
             List<HostSpec> containerHosts = tester.prepare(applicationId, containerClusterSpec, containerNodeCount, groups, resources1);
             List<HostSpec> contentHosts = tester.prepare(applicationId, contentClusterSpec, contentNodeCount, groups, resources1);

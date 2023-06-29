@@ -22,10 +22,10 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.vespa.service.duper.TenantHostApplication;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
@@ -111,9 +111,7 @@ public class InactiveAndFailedExpirerTest {
         MockDeployer deployer = new MockDeployer(
                 tester.provisioner(),
                 tester.clock(),
-                Collections.singletonMap(
-                        applicationId,
-                        new MockDeployer.ApplicationContext(applicationId, cluster,
+                List.of(new MockDeployer.ApplicationContext(applicationId, cluster,
                                                             Capacity.from(new ClusterResources(2, 1, nodeResources),
                                                                           false, true))
                 )
@@ -161,19 +159,15 @@ public class InactiveAndFailedExpirerTest {
         tester.makeReadyHosts(2, nodeResources);
 
         // Activate and deallocate
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
-        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromRequiredNodeType(NodeType.host));
-        tester.activate(applicationId, new HashSet<>(preparedNodes));
-        assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
-        tester.activate(applicationId, List.of());
-        List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
-        assertEquals(2, inactiveNodes.size());
+        TenantHostApplication tenantHostApp = new TenantHostApplication();
+        tester.prepareAndActivateInfraApplication(tenantHostApp);
+        assertEquals(2, tester.getNodes(tenantHostApp.getApplicationId(), Node.State.active).size());
+        tester.activate(tenantHostApp.getApplicationId(), List.of());
+        List<Node> dirtyNodes = tester.getNodes(tenantHostApp.getApplicationId(), Node.State.dirty).asList();
+        assertEquals(2, dirtyNodes.size());
 
         // Nodes marked for deprovisioning are moved to dirty and then parked when readied by host-admin
-        tester.patchNodes(inactiveNodes, (node) -> node.withWantToRetire(true, true, Agent.system, tester.clock().instant()));
-        tester.advanceTime(Duration.ofMinutes(11));
-        new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), new TestMetric()).run();
-
+        tester.patchNodes(dirtyNodes, (node) -> node.withWantToRetire(true, true, Agent.system, tester.clock().instant()));
         NodeList expired = tester.nodeRepository().nodes().list(Node.State.dirty);
         assertEquals(2, expired.size());
         expired.forEach(node -> tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(node.hostname(), Agent.operator, "Readied by host-admin"));
