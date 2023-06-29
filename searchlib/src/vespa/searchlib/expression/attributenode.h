@@ -4,6 +4,7 @@
 #include "currentindex.h"
 #include "functionnode.h"
 #include "attributeresult.h"
+#include "current_index_setup.h"
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
 
@@ -48,6 +49,7 @@ public:
     AttributeNode & operator = (const AttributeNode & attribute);
     ~AttributeNode() override;
     void setDocId(DocId docId);
+    const CurrentIndex *getCurrentIndex() { return _index; }
     void setCurrentIndex(const CurrentIndex * index) { _index = index; }
     const attribute::IAttributeVector *getAttribute() const {
         return _scratchResult ? _scratchResult->getAttribute() : nullptr;

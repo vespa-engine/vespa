@@ -3,6 +3,7 @@
 #include "groupinglevel.h"
 #include "grouping.h"
 #include <vespa/searchlib/expression/resultvector.h>
+#include <vespa/searchlib/expression/current_index_setup.h>
 
 namespace search::aggregation {
 
@@ -91,6 +92,20 @@ GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode & result,
         _currentIndex->set(i);
         SingleValueGrouper::groupDoc(g, sr, doc, rank);
     }
+}
+
+void
+GroupingLevel::wire_current_index(CurrentIndexSetup &setup, const vespalib::ObjectPredicate &resolve_pred, vespalib::ObjectOperation &resolve_op)
+{
+    CurrentIndexSetup::Usage usage;
+    {
+        CurrentIndexSetup::Usage::Bind capture_guard(setup, usage);
+        _classify.select(resolve_pred, resolve_op);
+    }
+    if (usage.has_single_unbound_struct()) {
+        setup.bind(usage.get_unbound_struct_name(), _currentIndex);
+    }
+    _collect.select(resolve_pred, resolve_op);
 }
 
 void

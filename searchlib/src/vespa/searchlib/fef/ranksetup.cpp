@@ -73,7 +73,8 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _mutateOnFirstPhase(),
       _mutateOnSecondPhase(),
       _mutateOnSummary(),
-      _mutateAllowQueryOverride(false)
+      _mutateAllowQueryOverride(false),
+      _enableNestedMultivalueGrouping(false)
 { }
 
 RankSetup::~RankSetup() = default;

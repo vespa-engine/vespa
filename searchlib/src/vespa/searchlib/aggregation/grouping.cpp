@@ -6,6 +6,7 @@
 #include <vespa/searchlib/expression/enumresultnode.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/expression/current_index_setup.h>
 #include <vespa/searchlib/expression/documentaccessornode.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/vespalib/objects/serializer.hpp>
@@ -98,6 +99,21 @@ public:
     }
     bool check(const vespalib::Identifiable & obj) const override {
         return obj.inherits(FS4Hit::classId);
+    }
+};
+
+// extend to also handle document access nodes when that time comes (streaming)
+struct ResolveCurrentIndex : vespalib::ObjectOperation, vespalib::ObjectPredicate {
+    const CurrentIndexSetup &setup;
+    ResolveCurrentIndex(const CurrentIndexSetup &setup_in) noexcept : setup(setup_in) {}
+    void execute(vespalib::Identifiable &obj) override {
+        auto &attr = static_cast<AttributeNode &>(obj);
+        if (attr.getCurrentIndex() == nullptr) {
+            attr.setCurrentIndex(setup.resolve(attr.getAttributeName()));
+        }
+    }
+    bool check(const vespalib::Identifiable &obj) const override {
+        return obj.inherits(AttributeNode::classId);
     }
 };
 
@@ -303,6 +319,15 @@ Grouping::sortById()
 void
 Grouping::configureStaticStuff(const ConfigureStaticParams & params)
 {
+    if (params._enableNestedMultivalueGrouping) {
+        CurrentIndexSetup setup;
+        ResolveCurrentIndex resolver(setup);
+        size_t end = std::min(size_t(_lastLevel + 1), _levels.size());
+        for (size_t i = _firstLevel; i < end; ++i) {
+            _levels[i].wire_current_index(setup, resolver, resolver);
+        }
+    }
+
     if (params._attrCtx != nullptr) {
         AttributeNode::Configure confAttr(*params._attrCtx);
         select(confAttr, confAttr);
