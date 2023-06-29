@@ -24,9 +24,18 @@ class ArrayAtLookup;
 struct ConfigureStaticParams {
     ConfigureStaticParams (const attribute::IAttributeContext * attrCtx,
                            const document::DocumentType * docType)
-        : _attrCtx(attrCtx), _docType(docType) { }
+        : ConfigureStaticParams(attrCtx, docType, true)
+    {}
+    ConfigureStaticParams (const attribute::IAttributeContext * attrCtx,
+                           const document::DocumentType * docType,
+                           bool enableNesteddMultivalueGrouping)
+        : _attrCtx(attrCtx),
+          _docType(docType),
+          _enableNestedMultivalueGrouping(enableNesteddMultivalueGrouping)
+    { }
     const attribute::IAttributeContext * _attrCtx;
     const document::DocumentType * _docType;
+    bool _enableNestedMultivalueGrouping;
 };
 
 class ExpressionTree : public ExpressionNode

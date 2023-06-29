@@ -56,7 +56,7 @@ GroupingManager::init(const IAttributeContext &attrCtx)
                     an.enableEnumOptimization(true);
                 }
             }
-            ConfigureStaticParams stuff(&attrCtx, nullptr);
+            ConfigureStaticParams stuff(&attrCtx, nullptr, _groupingContext.enableNestedMultivalueGrouping());
             grouping.configureStaticStuff(stuff);
             list.push_back(groupingList[i]);
         } catch (const std::exception & e) {

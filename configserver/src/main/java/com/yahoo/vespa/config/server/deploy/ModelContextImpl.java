@@ -208,6 +208,7 @@ public class ModelContextImpl implements ModelContext {
         private final Predicate<ClusterSpec.Id> allowMoreThanOneContentGroupDown;
         private final boolean enableConditionalPutRemoveWriteRepair;
         private final boolean enableDataplaneProxy;
+        private final boolean enableNestedMultivalueGrouping;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -257,6 +258,7 @@ public class ModelContextImpl implements ModelContext {
             this.allowMoreThanOneContentGroupDown = clusterId -> flagValue(source, appId, version, clusterId, Flags.ALLOW_MORE_THAN_ONE_CONTENT_GROUP_DOWN);
             this.enableConditionalPutRemoveWriteRepair = flagValue(source, appId, version, Flags.ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR);
             this.enableDataplaneProxy = flagValue(source, appId, version, Flags.ENABLE_DATAPLANE_PROXY);
+            this.enableNestedMultivalueGrouping = flagValue(source, appId, version, Flags.ENABLE_NESTED_MULTIVALUE_GROUPING);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -314,6 +316,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean allowMoreThanOneContentGroupDown(ClusterSpec.Id id) { return allowMoreThanOneContentGroupDown.test(id); }
         @Override public boolean enableConditionalPutRemoveWriteRepair() { return enableConditionalPutRemoveWriteRepair; }
         @Override public boolean enableDataplaneProxy() { return enableDataplaneProxy; }
+        @Override public boolean enableNestedMultivalueGrouping() { return enableNestedMultivalueGrouping; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

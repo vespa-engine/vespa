@@ -207,7 +207,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
     { // we want to measure full set-up and tear-down time as part of
       // collateral time
         GroupingContext groupingContext(_clock, request.getTimeOfDoom(),
-                                        request.groupSpec.data(), request.groupSpec.size());
+                                        request.groupSpec.data(), request.groupSpec.size(), _rankSetup->enableNestedMultivalueGrouping());
         SessionId sessionId(request.sessionId.data(), request.sessionId.size());
         bool shouldCacheSearchSession = false;
         bool shouldCacheGroupingSession = false;

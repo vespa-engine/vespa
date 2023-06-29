@@ -154,6 +154,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final OptionalDouble postFilterThreshold;
         private final OptionalDouble approximateThreshold;
         private final double rankScoreDropLimit;
+        private final boolean enableNestedMultivalueGrouping;
 
         /**
          * The rank type definitions used to derive settings for the native rank features
@@ -193,6 +194,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             minHitsPerThread = compiled.getMinHitsPerThread();
             numSearchPartitions = compiled.getNumSearchPartitions();
             termwiseLimit = compiled.getTermwiseLimit().orElse(deployProperties.featureFlags().defaultTermwiseLimit());
+            enableNestedMultivalueGrouping = deployProperties.featureFlags().enableNestedMultivalueGrouping();
             postFilterThreshold = compiled.getPostFilterThreshold();
             approximateThreshold = compiled.getApproximateThreshold();
             keepRankCount = compiled.getKeepRankCount();
@@ -417,6 +419,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             }
             if (termwiseLimit < 1.0) {
                 properties.add(new Pair<>("vespa.matching.termwise_limit", termwiseLimit + ""));
+            }
+            if (enableNestedMultivalueGrouping) {
+                properties.add(new Pair<>("vespa.temporary.enable_nested_multivalue_grouping", String.valueOf(enableNestedMultivalueGrouping)));
             }
             if (postFilterThreshold.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.global_filter.upper_limit", String.valueOf(postFilterThreshold.getAsDouble())));
