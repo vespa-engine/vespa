@@ -10,7 +10,8 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * This removes hosts from {@link com.yahoo.vespa.hosted.provision.Node.State#deprovisioned}, after a grace period.
+ * This removes hosts from {@link com.yahoo.vespa.hosted.provision.Node.State#deprovisioned}, in dynamically provisioned
+ * zones, after a grace period.
  *
  * @author mpolden
  */
@@ -21,8 +22,13 @@ public class DeprovisionedExpirer extends Expirer {
     }
 
     @Override
+    protected boolean isExpired(Node node) {
+        return nodeRepository().zone().cloud().dynamicProvisioning() &&
+               super.isExpired(node);
+    }
+
+    @Override
     protected void expire(List<Node> expired) {
-        if (!nodeRepository().zone().cloud().dynamicProvisioning()) return; // Never expire in statically provisioned zones
         for (var node : expired) {
             nodeRepository().nodes().forget(node);
         }
