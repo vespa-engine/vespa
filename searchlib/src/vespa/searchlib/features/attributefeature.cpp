@@ -15,7 +15,6 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
@@ -126,9 +125,9 @@ public:
 
 class BoolAttributeExecutor final : public fef::FeatureExecutor {
 private:
-    const SingleBoolAttribute & _attribute;
+    const IAttributeVector& _attribute;
 public:
-    explicit BoolAttributeExecutor(const SingleBoolAttribute & attribute)
+    explicit BoolAttributeExecutor(const IAttributeVector& attribute)
         : _attribute(attribute)
     {}
     void execute(uint32_t docId) override {
@@ -377,9 +376,8 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
         if (collectionType == CollectionType::SINGLE) {
             if (attribute->isIntegerType()) {
                 if (basicType == BasicType::BOOL) {
-                    auto boolAttribute = dynamic_cast<const SingleBoolAttribute *>(attribute);
-                    assert (boolAttribute && (numOutputs == 1));
-                    return stash.create<BoolAttributeExecutor>(*boolAttribute);
+                    assert (numOutputs == 1);
+                    return stash.create<BoolAttributeExecutor>(*attribute);
                 } else {
                     assert(numOutputs == 4);
                     if (basicType == BasicType::INT8) {
