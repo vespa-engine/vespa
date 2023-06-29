@@ -254,15 +254,14 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
         Set<ProvidedArtifact> included = includedArtifacts.stream().map(ProvidedArtifact::new).collect(Collectors.toSet());
         Set<ProvidedArtifact> providedIncluded = Sets.intersection(included, new HashSet<>(providedArtifacts));
+        if (providedIncluded.isEmpty()) return;
 
-        if (! providedIncluded.isEmpty()) {
-            List<String> sorted = providedIncluded.stream()
-                    .map(ProvidedArtifact::stringValue)
-                    .sorted().toList();
+        List<String> sorted = providedIncluded.stream()
+                .map(ProvidedArtifact::stringValue)
+                .sorted().toList();
 
-            // TODO: improve error message
-            warnOrThrow("Artifacts provided from Jdisc runtime are included in compile scope: " + sorted);
-        }
+        // TODO: improve error message
+        warnOrThrow("Artifacts provided from Jdisc runtime are included in compile scope: " + sorted);
     }
 
     private static String trimWhitespace(Optional<String> lines) {
