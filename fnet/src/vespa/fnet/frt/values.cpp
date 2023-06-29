@@ -30,20 +30,19 @@ using vespalib::alloc::Alloc;
 class LocalBlob : public FRT_ISharedBlob
 {
 public:
-    LocalBlob(Alloc data, uint32_t len) :
-            _data(std::move(data)),
-            _len(len)
+    LocalBlob(Alloc data, uint32_t len) noexcept
+        : _data(std::move(data)),
+          _len(len)
     { }
     LocalBlob(const char *data, uint32_t len);
+    LocalBlob(const LocalBlob &) = delete;
+    LocalBlob &operator=(const LocalBlob &) = delete;
     void addRef() override {}
     void subRef() override { Alloc().swap(_data); }
     uint32_t getLen() override { return _len; }
     const char *getData() override { return static_cast<const char *>(_data.get()); }
     char *getInternalData() { return static_cast<char *>(_data.get()); }
 private:
-    LocalBlob(const LocalBlob &);
-    LocalBlob &operator=(const LocalBlob &);
-
     Alloc _data;
     uint32_t _len;
 };
@@ -56,7 +55,9 @@ struct BlobRef
     BlobRef         *_next;  // next in list
 
     BlobRef(FRT_DataValue *value, uint32_t idx, FRT_ISharedBlob *blob, BlobRef *next)
-            : _value(value), _idx(idx), _blob(blob), _next(next) { blob->addRef(); }
+        : _value(value), _idx(idx), _blob(blob), _next(next) { blob->addRef(); }
+    BlobRef(const BlobRef &) = delete;
+    BlobRef &operator=(const BlobRef &) = delete;
     ~BlobRef() { discard(); }
     void discard() {
         if (_blob != nullptr) {
@@ -64,9 +65,6 @@ struct BlobRef
             _blob = nullptr;
         }
     }
-private:
-    BlobRef(const BlobRef &);
-    BlobRef &operator=(const BlobRef &);
 };
 
 }

@@ -60,7 +60,7 @@ public:
     void reset() noexcept {
         if (_alloc.get() != nullptr) {
             _allocator->free(_alloc);
-            _alloc = PtrAndSize();
+            _alloc.reset();
         }
     }
     Alloc create(size_t sz) const noexcept {
@@ -90,7 +90,7 @@ private:
           _allocator(allocator)
     { }
     void clear() noexcept {
-        _alloc = PtrAndSize();
+        _alloc.reset();
         _allocator = nullptr;
     }
     PtrAndSize              _alloc;

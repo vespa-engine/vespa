@@ -14,6 +14,7 @@ public:
     PtrAndSize(void * ptr, size_t sz) noexcept;
     void * get() const noexcept { return _ptr; }
     size_t size() const noexcept { return _sz; }
+    void reset() noexcept { _ptr = nullptr; _sz = 0ul; }
 private:
     void * _ptr;
     size_t _sz;
