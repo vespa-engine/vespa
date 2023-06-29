@@ -203,6 +203,7 @@ class NodeAllocation {
 
     private boolean violatesExclusivity(NodeCandidate candidate) {
         if (candidate.parentHostname().isEmpty()) return false;
+        if (requestedNodes.type() != NodeType.tenant) return false;
 
         // In zones which does not allow host sharing, exclusivity is violated if...
         if ( ! nodeRepository.zone().cloud().allowHostSharing()) {
