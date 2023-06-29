@@ -46,7 +46,7 @@ namespace proton::matching {
 
 namespace {
 
-constexpr vespalib::duration SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT = 60s;
+constexpr vespalib::duration TIME_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT = 60s;
 
 // used to give out empty whitelist blueprints
 struct StupidMetaStore : search::IDocumentMetaStore {
@@ -194,12 +194,12 @@ traceQuery(uint32_t traceLevel, Trace & trace, const Query & query) {
 }
 
 void
-updateCoverage(Coverage & coverage, const MatchToolsFactory & mtf, const MatchingStats & my_stats,
+updateCoverage(Coverage & coverage, const MaybeMatchPhaseLimiter & limiter, const MatchingStats & my_stats,
                const search::IDocumentMetaStore &metaStore, const bucketdb::BucketDBOwner & bucketdb)
 {
     size_t spaceEstimate = (my_stats.softDoomed())
                            ? my_stats.docidSpaceCovered()
-                           : mtf.match_limiter().getDocIdSpaceEstimate();
+                           : limiter.getDocIdSpaceEstimate();
     // note: this is actually totalSpace+1, since 0 is reserved
     uint32_t totalSpace = metaStore.getCommittedDocIdLimit();
     if (spaceEstimate >= totalSpace) {
@@ -212,7 +212,7 @@ updateCoverage(Coverage & coverage, const MatchToolsFactory & mtf, const Matchin
     coverage.setActive(metaStore.getNumActiveLids());
     coverage.setTargetActive(bucketdb.getNumActiveDocs());
     coverage.setCovered((spaceEstimate *  coverage.getActive()) / totalSpace);
-    if (mtf.match_limiter().was_limited()) {
+    if (limiter.was_limited()) {
         coverage.degradeMatchPhase();
         LOG(debug, "was limited, degraded from match phase");
     }
@@ -295,7 +295,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         my_stats = MatchMaster::getStats(std::move(master));
         reply = std::move(result->_reply);
         Coverage & coverage = reply->coverage;
-        updateCoverage(coverage, *mtf, my_stats, metaStore, bucketdb);
+        updateCoverage(coverage, mtf->match_limiter(), my_stats, metaStore, bucketdb);
 
         LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%" PRIu64 ", rankprofile=%s",
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), mtf->estimate().estHits, reply->totalHitCount,
@@ -327,18 +327,23 @@ Matcher::updateStats(const MatchingStats & my_stats, const search::engine::Reque
         if (adjustedDuration < vespalib::duration::zero()) {
             adjustedDuration = vespalib::duration::zero();
         }
-        bool allowedSoftTimeoutFactorAdjustment = ((my_clock::now() - _startTime) > SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT)
+        bool allowedSoftTimeoutFactorAdjustment = ((my_clock::now() - _startTime) > TIME_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT)
                                                   && ! isDoomExplicit;
         if (allowedSoftTimeoutFactorAdjustment) {
             _stats.updatesoftDoomFactor(request.getTimeout(), overtimeLimit, adjustedDuration);
         }
-        if ((_stats.softDoomed() < 10) || (_stats.softDoomed()%100 == 0))
-            LOG(info, "Triggered softtimeout %s count: %zu. Coverage = %lu of %lu documents. request=%1.3f, doomOvertime=%1.3f, overtime_limit=%1.3f and duration=%1.3f, rankprofile=%s"
-                      ", factor %s adjusted from %1.3f to %1.3f",
+        if ((_stats.softDoomed() < 10) || (_stats.softDoomed()%100 == 0)) {
+            LOG(info,
+                "Triggered softtimeout %s count: %zu. Coverage = %lu of %lu documents. request=%1.3f,"
+                " doomOvertime=%1.3f, overtime_limit=%1.3f and duration=%1.3f, rankprofile=%s"
+                ", factor %s adjusted from %1.3f to %1.3f",
                 isDoomExplicit ? "with query override" : "factor adjustment",
                 _stats.softDoomed(), coverage.getCovered(), coverage.getActive(),
-                vespalib::to_s(request.getTimeout()), vespalib::to_s(my_stats.doomOvertime()), vespalib::to_s(overtimeLimit), vespalib::to_s(duration),
-                request.ranking.c_str(), (allowedSoftTimeoutFactorAdjustment ? "" : "NOT "), old, _stats.softDoomFactor());
+                vespalib::to_s(request.getTimeout()), vespalib::to_s(my_stats.doomOvertime()),
+                vespalib::to_s(overtimeLimit), vespalib::to_s(duration),
+                request.ranking.c_str(), (allowedSoftTimeoutFactorAdjustment ? "" : "NOT "), old,
+                _stats.softDoomFactor());
+        }
     }
 }
 
