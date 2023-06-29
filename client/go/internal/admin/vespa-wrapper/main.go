@@ -28,12 +28,17 @@ func basename(s string) string {
 
 func main() {
 	defer handleSimplePanic()
-	_ = vespa.FindAndVerifyVespaHome()
 	action := basename(os.Args[0])
 	if action == "vespa-wrapper" && len(os.Args) > 1 {
 		action = os.Args[1]
 		os.Args = os.Args[1:]
 	}
+	if action == "vespa-logfmt" {
+		// "vespa-logfmt" does not require verified VESPA_HOME
+		logfmt.RunCmdLine()
+		return
+	}
+	_ = vespa.FindAndVerifyVespaHome()
 	switch action {
 	case "vespa-stop-services":
 		os.Exit(services.VespaStopServices())
@@ -72,9 +77,6 @@ func main() {
 		}
 	case "vespa-deploy":
 		cobra := deploy.NewDeployCmd()
-		cobra.Execute()
-	case "vespa-logfmt":
-		cobra := logfmt.NewLogfmtCmd()
 		cobra.Execute()
 	case "vespa-get-cluster-state":
 		cobra := clusterstate.NewGetClusterStateCmd()
