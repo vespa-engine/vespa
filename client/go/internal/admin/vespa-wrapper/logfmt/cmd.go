@@ -5,9 +5,21 @@
 package logfmt
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/build"
+	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
+
+func RunCmdLine() {
+	_ = vespa.FindHome()
+	cobra := NewLogfmtCmd()
+	err := cobra.Execute()
+	if err != nil {
+		os.Exit(1)
+	}
+}
 
 func NewLogfmtCmd() *cobra.Command {
 	var (
