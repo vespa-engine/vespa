@@ -142,7 +142,7 @@ jobs:
           NUM_THREADS=$(( $(nproc) + 2 ))
 
           VESPA_USE_SANITIZER=$(meta get vespa.build.sanitizer)
-          if [[ -n $VESPA_USE_SANITIZER ]] && [[ $VESPA_USE_SANITIZER != none ]]; then
+          if [[ -n $VESPA_USE_SANITIZER ]] && [[ $VESPA_USE_SANITIZER != null ]]; then
             VESPA_CMAKE_SANITIZERS_OPTION="-DVESPA_USE_SANITIZER=$VESPA_USE_SANITIZER"
           fi
 
