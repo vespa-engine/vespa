@@ -12,6 +12,16 @@
    fun:UnknownInlinedFun
    fun:allocate_dtv
    fun:_dl_allocate_tls
+   fun:allocate_stack
+   fun:pthread_create@@GLIBC_2.17
+}
+{
+   NPTL keeps a cache of thread stacks, and metadata for thread local storage is not freed for threads in that cache
+   Memcheck:Leak
+   fun:calloc
+   fun:UnknownInlinedFun
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
    fun:pthread_create@@GLIBC_2.2.5
 }
 {
