@@ -72,6 +72,72 @@ void decodeSingleDenseForm(const Inspector &values, const ValueType &value_type,
     }
 }
 
+struct DenseValuesDecoder {
+    const std::vector<ValueType::Dimension> _idims;
+    TensorSpec &_target;
+    void decode(const Inspector &input, const TensorSpec::Address &address, size_t dim_idx) {
+        if (dim_idx == _idims.size()) {
+            _target.add(address, input.asDouble());
+        } else {
+            const auto &dimension = _idims[dim_idx];
+            if (input.entries() != dimension.size) {
+                return; // TODO: handle mismatch better
+            }
+            for (size_t i = 0; i < input.entries(); ++i) {
+                TensorSpec::Address sub_address = address;
+                sub_address.emplace(dimension.name, TensorSpec::Label(i));
+                decode(input[i], sub_address, dim_idx + 1);
+            }
+        }
+    }
+};
+
+void decodeDenseValues(const Inspector &values, const ValueType &value_type, TensorSpec &spec) {
+    TensorSpec::Address address;
+    DenseValuesDecoder decoder(value_type.indexed_dimensions(), spec);
+    decoder.decode(values, address, 0);
+}
+
+
+template<typename F>
+struct TraverserCallback : ObjectTraverser {
+    F _f;
+    TraverserCallback(F f) : _f(std::move(f)) {}
+    void field(const Memory &name, const Inspector &inspector) override {
+        _f(name.make_string(), inspector);
+    }
+};
+
+void decodeSingleMappedBlocks(const Inspector &blocks, const ValueType &value_type, TensorSpec &spec) {
+    if (value_type.count_mapped_dimensions() != 1) {
+        return; // TODO handle mismatch
+    }
+    vespalib::string dim_name = value_type.mapped_dimensions()[0].name;
+    DenseValuesDecoder decoder(value_type.indexed_dimensions(), spec);
+    auto lambda = [&](vespalib::string label, const Inspector &input) {
+        TensorSpec::Address address;
+        address.emplace(dim_name, std::move(label));
+        decoder.decode(input, std::move(address), 0);
+    };
+    TraverserCallback cb(lambda);
+    blocks.traverse(cb);
+}
+
+void decodeAddressedBlocks(const Inspector &blocks, const ValueType &value_type, TensorSpec &spec) {
+    const auto & idims = value_type.indexed_dimensions();
+    std::set<vespalib::string> indexed;
+    for (const auto &dimension: idims) {
+        indexed.insert(dimension.name);
+    }
+    DenseValuesDecoder decoder(value_type.indexed_dimensions(), spec);
+    for (size_t i = 0; i < blocks.entries(); ++i) {
+        TensorSpec::Address address;
+        AddressExtractor extractor(indexed, address);
+        blocks[i]["address"].traverse(extractor);
+        decoder.decode(blocks[i]["values"], address, 0);
+    }
+}
+
 void decodeLiteralForm(const Inspector &cells, const ValueType &value_type, TensorSpec &spec) {
     std::set<vespalib::string> indexed;
     for (const auto &dimension: value_type.dimensions()) {
@@ -140,19 +206,30 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
     bool isSingleDenseType = value_type.is_dense() && (value_type.count_indexed_dimensions() == 1);
     bool isSingleMappedType = value_type.is_sparse() && (value_type.count_mapped_dimensions() == 1);
     const Inspector &root = slime.get();
-    const Inspector &cells = root["cells"];
-    const Inspector &values = root["values"];
-    if (cells.type().getId() == vespalib::slime::ARRAY::ID) {
-        decodeLiteralForm(cells, value_type, spec);
-    }
-    else if (cells.type().getId() == vespalib::slime::OBJECT::ID && isSingleMappedType) {
-        decodeSingleMappedForm(cells, value_type, spec);
-    }
-    else if (values.type().getId() == vespalib::slime::ARRAY::ID && isSingleDenseType) {
-        decodeSingleDenseForm(values, value_type, spec);
-    }
-    else if (root.type().getId() == vespalib::slime::OBJECT::ID && isSingleMappedType) {
-        decodeSingleMappedForm(root, value_type, spec);
+    if (root.type().getId() == vespalib::slime::OBJECT::ID) {
+        const Inspector &cells = root["cells"];
+        const Inspector &values = root["values"];
+        const Inspector &blocks = root["blocks"];
+        if (cells.type().getId() == vespalib::slime::ARRAY::ID) {
+            decodeLiteralForm(cells, value_type, spec);
+        }
+        else if (cells.type().getId() == vespalib::slime::OBJECT::ID) {
+            if (isSingleMappedType) {
+                decodeSingleMappedForm(cells, value_type, spec);
+            }
+        }
+        else if (values.type().getId() == vespalib::slime::ARRAY::ID) {
+            decodeDenseValues(values, value_type, spec);
+        }
+        else if (blocks.type().getId() == vespalib::slime::OBJECT::ID) {
+            decodeSingleMappedBlocks(blocks, value_type, spec);
+        }
+        else if (blocks.type().getId() == vespalib::slime::ARRAY::ID) {
+            decodeAddressedBlocks(blocks, value_type, spec);
+        }
+        else if (isSingleMappedType) {
+            decodeSingleMappedForm(root, value_type, spec);
+        }
     }
     else if (root.type().getId() == vespalib::slime::ARRAY::ID && isSingleDenseType) {
         decodeSingleDenseForm(root, value_type, spec);

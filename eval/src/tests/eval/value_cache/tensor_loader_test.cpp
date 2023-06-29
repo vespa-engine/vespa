@@ -35,8 +35,9 @@ TensorSpec make_sparse_tensor() {
 TensorSpec make_simple_sparse_tensor() {
     return TensorSpec("tensor(mydim{})")
         .add({{"mydim", "foo"}}, 1.0)
-        .add({{"mydim", "three"}}, 3.0)
-        .add({{"mydim", "bar"}}, 2.0);
+        .add({{"mydim", "cells"}}, 2.0)
+        .add({{"mydim", "values"}}, 0.5)
+        .add({{"mydim", "blocks"}}, 1.5);
 }
 
 TensorSpec make_mixed_tensor() {
@@ -97,6 +98,27 @@ TEST_F("require that sparse tensor short form can be loaded", ConstantTensorLoad
 TEST_F("require that dense tensor short form can be loaded", ConstantTensorLoader(factory)) {
     TEST_DO(verify_tensor(make_simple_dense_tensor(), f1.create(TEST_PATH("dense-short1.json"), "tensor(z[3])")));
     TEST_DO(verify_tensor(make_simple_dense_tensor(), f1.create(TEST_PATH("dense-short2.json"), "tensor(z[3])")));
+}
+
+TensorSpec make_mix21_tensor() {
+    return TensorSpec("tensor<float>(brand{},category{},v[3])")
+            .add({{"brand", "shiny"},   {"category", "foo"}, {"v", 0}}, 1.0)
+            .add({{"brand", "shiny"},   {"category", "foo"}, {"v", 1}}, 2.0)
+            .add({{"brand", "shiny"},   {"category", "foo"}, {"v", 2}}, 3.0)
+            .add({{"brand", "shiny"},   {"category", "bar"}, {"v", 0}}, 1.25)
+            .add({{"brand", "shiny"},   {"category", "bar"}, {"v", 1}}, 2.25)
+            .add({{"brand", "shiny"},   {"category", "bar"}, {"v", 2}}, 3.25)
+            .add({{"brand", "stylish"}, {"category", "bar"}, {"v", 0}}, 1.5)
+            .add({{"brand", "stylish"}, {"category", "bar"}, {"v", 1}}, 2.5)
+            .add({{"brand", "stylish"}, {"category", "bar"}, {"v", 2}}, 3.5)
+            .add({{"brand", "stylish"}, {"category", "foo"}, {"v", 0}}, 1.75)
+            .add({{"brand", "stylish"}, {"category", "foo"}, {"v", 1}}, 2.75)
+            .add({{"brand", "stylish"}, {"category", "foo"}, {"v", 2}}, 3.75);
+}
+
+TEST_F("require that mixed tensor blocks form can be loaded", ConstantTensorLoader(factory)) {
+    TEST_DO(verify_tensor(make_mixed_tensor(), f1.create(TEST_PATH("mixed-blocks-11.json"), "tensor(x{},y[2])")));
+    TEST_DO(verify_tensor(make_mix21_tensor(), f1.create(TEST_PATH("mixed-blocks-21.json"), "tensor<float>(brand{},category{},v[3])")));
 }
 
 TEST_F("require that bad lz4 file fails to load creating empty result", ConstantTensorLoader(factory)) {
