@@ -7,10 +7,10 @@ namespace vespalib {
 using alloc::Alloc;
 using LockGuard = std::lock_guard<std::mutex>;
 
-MemoryDataStore::MemoryDataStore(Alloc && initialAlloc, std::mutex * lock) :
-    _buffers(),
-    _writePos(0),
-    _lock(lock)
+MemoryDataStore::MemoryDataStore(Alloc && initialAlloc, std::mutex * lock)
+    : _buffers(),
+      _writePos(0),
+      _lock(lock)
 {
     _buffers.reserve(24);
     _buffers.emplace_back(std::move(initialAlloc));
@@ -23,7 +23,7 @@ MemoryDataStore::push_back(const void * data, const size_t sz)
 {
     std::unique_ptr<LockGuard> guard;
     if  (_lock != nullptr) {
-        guard.reset(new LockGuard(*_lock));
+        guard = std::make_unique<LockGuard>(*_lock);
     }
     const Alloc & b = _buffers.back();
     if ((sz + _writePos) > b.size()) {
@@ -41,9 +41,9 @@ MemoryDataStore::push_back(const void * data, const size_t sz)
     return ref;
 }
 
-VariableSizeVector::VariableSizeVector(size_t initialCount, size_t initialBufferSize) :
-    _vector(),
-    _store(Alloc::alloc(initialBufferSize))
+VariableSizeVector::VariableSizeVector(size_t initialCount, size_t initialBufferSize)
+    : _vector(),
+      _store(Alloc::alloc(initialBufferSize))
 {
     _vector.reserve(initialCount);
 }

@@ -37,7 +37,7 @@ public:
     MemoryAllocatorObserver(Stats &stats);
     ~MemoryAllocatorObserver() override;
     PtrAndSize alloc(size_t sz) const override;
-    void free(PtrAndSize alloc) const override;
+    void free(PtrAndSize alloc) const noexcept override;
     size_t resize_inplace(PtrAndSize current, size_t newSize) const override;
 };
 

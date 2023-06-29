@@ -28,12 +28,12 @@ public:
     static constexpr size_t HUGEPAGE_SIZE = 2_Mi;
     MemoryAllocator(const MemoryAllocator &) = delete;
     MemoryAllocator & operator = (const MemoryAllocator &) = delete;
-    MemoryAllocator() = default;
+    MemoryAllocator() noexcept = default;
     virtual ~MemoryAllocator() = default;
     virtual PtrAndSize alloc(size_t sz) const = 0;
-    virtual void free(PtrAndSize alloc) const = 0;
+    virtual void free(PtrAndSize alloc) const noexcept = 0;
     // Allow for freeing memory there size is the size requested, and not the size allocated.
-    virtual void free(void * ptr, size_t sz) const {
+    virtual void free(void * ptr, size_t sz) const noexcept {
         free(PtrAndSize(ptr, sz));
     }
     /*
@@ -46,7 +46,7 @@ public:
      * @return true if successful.
      */
     virtual size_t resize_inplace(PtrAndSize current, size_t newSize) const = 0;
-    static size_t roundUpToHugePages(size_t sz) {
+    static size_t roundUpToHugePages(size_t sz) noexcept {
         return (sz+(HUGEPAGE_SIZE-1)) & ~(HUGEPAGE_SIZE-1);
     }
     static const MemoryAllocator * select_allocator();
