@@ -72,7 +72,8 @@ GroupingContext::GroupingContext(const GroupingContext & rhs) :
     _clock(rhs._clock),
     _timeOfDoom(rhs._timeOfDoom),
     _os(),
-    _groupingList()
+    _groupingList(),
+    _enableNestedMultivalueGrouping(rhs._enableNestedMultivalueGrouping)
 {
 }
 
