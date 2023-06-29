@@ -46,7 +46,7 @@ namespace proton::matching {
 
 namespace {
 
-constexpr long SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT = 60;
+constexpr vespalib::duration SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT = 60s;
 
 // used to give out empty whitelist blueprints
 struct StupidMetaStore : search::IDocumentMetaStore {
@@ -318,13 +318,14 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             if (adjustedDuration < vespalib::duration::zero()) {
                 adjustedDuration = vespalib::duration::zero();
             }
-            bool allowedSoftTimeoutFactorAdjustment = (std::chrono::duration_cast<std::chrono::seconds>(my_clock::now() - _startTime).count() > SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT)
+            bool allowedSoftTimeoutFactorAdjustment = ((my_clock::now() - _startTime) > SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT)
                                                       && ! isDoomExplicit;
             if (allowedSoftTimeoutFactorAdjustment) {
                 _stats.updatesoftDoomFactor(request.getTimeout(), overtimeLimit, adjustedDuration);
             }
+            if ((_stats.softDoomed() < 10) || (_stats.softDoomed()%100 == 0))
             LOG(info, "Triggered softtimeout %s. Coverage = %lu of %u documents. request=%1.3f, doomOvertime=%1.3f, overtime_limit=%1.3f and duration=%1.3f, rankprofile=%s"
-                      ", factor %sadjusted from %1.3f to %1.3f",
+                      ", factor %s adjusted from %1.3f to %1.3f",
                 isDoomExplicit ? "with query override" : "factor adjustment",
                 covered, numActiveLids,
                 vespalib::to_s(request.getTimeout()), vespalib::to_s(my_stats.doomOvertime()), vespalib::to_s(overtimeLimit), vespalib::to_s(duration),
