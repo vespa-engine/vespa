@@ -99,6 +99,10 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>http-utils</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
         </exclusion>
@@ -225,6 +229,10 @@
       <artifactId>config-bundle</artifactId>
       <version>${project.version}</version>
       <exclusions>
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>http-utils</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>org.lz4</groupId>
           <artifactId>lz4-java</artifactId>
