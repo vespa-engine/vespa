@@ -96,6 +96,35 @@ public class AthenzDbMock {
         public boolean checkAccess(AthenzIdentity principal, String action, String resource) {
             return policies.values().stream().anyMatch(a -> a.matches(principal, action, resource));
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Domain domain = (Domain) o;
+            return isVespaTenant == domain.isVespaTenant && Objects.equals(name, domain.name) && Objects.equals(admins, domain.admins) && Objects.equals(tenantAdmins, domain.tenantAdmins) && Objects.equals(applications, domain.applications) && Objects.equals(services, domain.services) && Objects.equals(roles, domain.roles) && Objects.equals(policies, domain.policies) && Objects.equals(attributes, domain.attributes);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, admins, tenantAdmins, applications, services, roles, policies, isVespaTenant, attributes);
+        }
+
+        @Override
+        public String toString() {
+            return "Domain{" +
+                   "name=" + name +
+                   ", admins=" + admins +
+                   ", tenantAdmins=" + tenantAdmins +
+                   ", applications=" + applications +
+                   ", services=" + services +
+                   ", roles=" + roles +
+                   ", policies=" + policies +
+                   ", isVespaTenant=" + isVespaTenant +
+                   ", attributes=" + attributes +
+                   '}';
+        }
+
     }
 
     public static class Application {
@@ -121,11 +150,30 @@ public class AthenzDbMock {
         public Service(boolean allowLaunch) {
             this.allowLaunch = allowLaunch;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Service service = (Service) o;
+            return allowLaunch == service.allowLaunch;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(allowLaunch);
+        }
+
+        @Override
+        public String toString() {
+            return allowLaunch ? "allowed" : "denied";
+        }
+
     }
 
     public static class Policy {
         private final String name;
-        final List<Assertion> assertions = new ArrayList<>();
+        public final List<Assertion> assertions = new ArrayList<>();
 
         public Policy(String name, String principal, String action, String resource) {
             this(name);
@@ -158,6 +206,12 @@ public class AthenzDbMock {
         public int hashCode() {
             return Objects.hash(name, assertions);
         }
+
+        @Override
+        public String toString() {
+            return name + ": " + assertions;
+        }
+
     }
 
     public static class Assertion {
@@ -203,6 +257,12 @@ public class AthenzDbMock {
         public int hashCode() {
             return Objects.hash(effect, role, action, resource);
         }
+
+        @Override
+        public String toString() {
+            return asString();
+        }
+
     }
 
     public static class Role {
@@ -228,5 +288,11 @@ public class AthenzDbMock {
         public int hashCode() {
             return Objects.hash(name);
         }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+
     }
 }
