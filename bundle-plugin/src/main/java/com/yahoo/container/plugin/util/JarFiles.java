@@ -12,6 +12,8 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static com.yahoo.container.plugin.mojo.GenerateProvidedArtifactManifestMojo.PROVIDED_ARTIFACTS_MANIFEST_ENTRY;
+
 /**
  * @author Tony Vaagenes
  * @author ollivir
@@ -19,8 +21,8 @@ import java.util.zip.ZipFile;
 public class JarFiles {
 
     public static List<ArtifactInfo> providedArtifactsFromClassPath(File jarFile) {
-        return getManifest(jarFile).map(mf -> getMainAttributeValue(mf, "Class-Path")
-                        .map(s -> Arrays.stream(s.split(" "))
+        return getManifest(jarFile).map(mf -> getMainAttributeValue(mf, PROVIDED_ARTIFACTS_MANIFEST_ENTRY)
+                        .map(s -> Arrays.stream(s.split(","))
                                 .map(ArtifactInfo::fromStringValue)
                                 .toList())
                         .orElse(Collections.emptyList()))

@@ -29,6 +29,8 @@ import java.util.jar.Manifest;
 @Mojo(name = "generate-provided-artifact-manifest", requiresDependencyResolution = ResolutionScope.COMPILE, threadSafe = true)
 public class GenerateProvidedArtifactManifestMojo extends AbstractMojo {
 
+    public static final String PROVIDED_ARTIFACTS_MANIFEST_ENTRY = "X-JDisc-Provided-Artifact";
+
     @Parameter(defaultValue = "${project}")
     public MavenProject project;
 
@@ -84,8 +86,8 @@ public class GenerateProvidedArtifactManifestMojo extends AbstractMojo {
             var providedArtifacts = attributes.getValue("Class-Path");
             if (providedArtifacts == null) return;
 
-            attributes.remove(new Attributes.Name( "Class-Path"));
-            attributes.putValue("X-JDisc-Provided-Artifact", providedArtifacts.replace(" ", ","));
+            attributes.remove(new Attributes.Name("Class-Path"));
+            attributes.putValue(PROVIDED_ARTIFACTS_MANIFEST_ENTRY, providedArtifacts.replace(" ", ","));
             attributes.putValue("Created-By", "vespa container maven plugin");
         }
 
