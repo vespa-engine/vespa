@@ -2,20 +2,17 @@
 package com.yahoo.vespa.athenz.identityprovider.api;
 
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzService;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
  * Represents an unsigned identity document
  * @author mortent
  */
-public record IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzService providerService, String configServerHostname,
+public record IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzIdentity providerService, String configServerHostname,
                                String instanceHostname, Instant createdAt, Set<String> ipAddresses,
                                IdentityType identityType, ClusterType clusterType, String ztsUrl,
                                AthenzIdentity serviceIdentity, Map<String, Object> unknownAttributes) {
@@ -31,7 +28,7 @@ public record IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzSer
         unknownAttributes = Map.copyOf(nonNull);
     }
 
-    public IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzService providerService, String configServerHostname,
+    public IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzIdentity providerService, String configServerHostname,
                             String instanceHostname, Instant createdAt, Set<String> ipAddresses,
                             IdentityType identityType, ClusterType clusterType, String ztsUrl,
                             AthenzIdentity serviceIdentity) {
@@ -39,7 +36,7 @@ public record IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzSer
     }
 
 
-    public IdentityDocument withServiceIdentity(AthenzService athenzService) {
+    public IdentityDocument withServiceIdentity(AthenzIdentity serviceIdentity) {
         return new IdentityDocument(
                 this.providerUniqueId,
                 this.providerService,
@@ -50,7 +47,7 @@ public record IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzSer
                 this.identityType,
                 this.clusterType,
                 this.ztsUrl,
-                athenzService,
+                serviceIdentity,
                 this.unknownAttributes);
     }
 }
