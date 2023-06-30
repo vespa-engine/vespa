@@ -80,6 +80,18 @@
           </archive>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>bundle-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>generate-provided-artifact-manifest</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
