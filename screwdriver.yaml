@@ -33,18 +33,20 @@ shared:
         du -sh /tmp/vespa/*
 
         if [[ -z "$SD_PULL_REQUEST" ]]; then
-          # Remove what we have produced
-          rm -rf $LOCAL_MVN_REPO/com/yahoo
-          rm -rf $LOCAL_MVN_REPO/ai/vespa
+          if [[ -z $VESPA_USE_SANITIZER ]] || [[ $VESPA_USE_SANITIZER == null ]]; then
+            # Remove what we have produced
+            rm -rf $LOCAL_MVN_REPO/com/yahoo
+            rm -rf $LOCAL_MVN_REPO/ai/vespa
 
-          # Tar toghether the /tmp/vespa folder containing ccache and cleaned mvn repo
-          mkdir -p $(dirname $MAIN_CACHE_FILE)
-          (cd /tmp && tar cf $MAIN_CACHE_FILE vespa)
+            # Tar toghether the /tmp/vespa folder containing ccache and cleaned mvn repo
+            mkdir -p $(dirname $MAIN_CACHE_FILE)
+            (cd /tmp && tar cf $MAIN_CACHE_FILE vespa)
 
-          # Wipe the cache if we exceed 2GB to avoid pulling and pusing too large files
-          if (( $(stat --format='%s' $MAIN_CACHE_FILE) > $(( 2200*1000*1000 )) )); then
-            tar cf $MAIN_CACHE_FILE --files-from=/dev/null;
-            echo "Cleaning cache file. $MAIN_CACHE_FILE is now $(stat --format='%s' $MAIN_CACHE_FILE) bytes."
+            # Wipe the cache if we exceed 2GB to avoid pulling and pusing too large files
+            if (( $(stat --format='%s' $MAIN_CACHE_FILE) > $(( 2200*1000*1000 )) )); then
+              tar cf $MAIN_CACHE_FILE --files-from=/dev/null;
+              echo "Cleaning cache file. $MAIN_CACHE_FILE is now $(stat --format='%s' $MAIN_CACHE_FILE) bytes."
+            fi
           fi
         fi
 
@@ -77,7 +79,6 @@ jobs:
       - *restore-cache
       - compile: |
           screwdriver/build-vespa.sh
-      - *save-cache
       - inspect-after: |
           du -sh /tmp/vespa/*
           ls -la /main_job_cache || true
@@ -88,7 +89,7 @@ jobs:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
-      screwdriver.cd/timeout: 90
+      screwdriver.cd/timeout: 120
       screwdriver.cd/dockerEnabled: true
       screwdriver.cd/dockerCpu: TURBO
       screwdriver.cd/dockerRam: HIGH
