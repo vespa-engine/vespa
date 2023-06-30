@@ -20,9 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import static ai.vespa.feed.client.FeedClientBuilder.Compression.auto;
-import static ai.vespa.feed.client.FeedClientBuilder.Compression.none;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -32,6 +32,8 @@ import static java.util.Objects.requireNonNull;
  * @author jonmv
  */
 public class FeedClientBuilderImpl implements FeedClientBuilder {
+
+    private static final Logger log = Logger.getLogger(FeedClientBuilderImpl.class.getName());
 
     static final FeedClient.RetryStrategy defaultRetryStrategy = new FeedClient.RetryStrategy() { };
 
@@ -199,6 +201,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
 
     @Override
     public FeedClientBuilderImpl setProxy(URI uri) {
+        log.warning("Proxy configuration ignored - not supported yet");
         this.proxy = uri;
         return this;
     }

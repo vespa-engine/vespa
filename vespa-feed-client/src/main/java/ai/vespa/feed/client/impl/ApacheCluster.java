@@ -9,7 +9,6 @@ import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
-import org.apache.hc.client5.http.impl.async.MinimalH2AsyncClient;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.ContentType;
@@ -178,26 +177,31 @@ class ApacheCluster implements Cluster {
         // Socket timeout must be longer than the longest feasible response timeout
         Timeout socketTimeout = Timeout.ofMinutes(15);
 
-        // Note: MinimalH2AsyncClient does not support proxying or automatic retries
-        MinimalH2AsyncClient client = HttpAsyncClients.createHttp2Minimal(
-                H2Config.custom()
-                        .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
-                        .setCompressionEnabled(true)
-                        .setPushEnabled(false)
-                        .setInitialWindowSize(Integer.MAX_VALUE)
-                        .build(),
-                IOReactorConfig.custom()
-                        .setIoThreadCount(Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 8), 2))
-                        .setTcpNoDelay(true)
-                        .setSoTimeout(socketTimeout)
-                        .build(),
-                tlsStrategyBuilder.build());
         ConnectionConfig connCfg = ConnectionConfig.custom()
                 .setSocketTimeout(socketTimeout)
                 .setConnectTimeout(Timeout.ofSeconds(10))
                 .build();
-        client.setConnectionConfigResolver(__ -> connCfg);
-        return client;
+
+        return HttpAsyncClients.customHttp2()
+                .setH2Config(
+                        H2Config.custom()
+                                .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
+                                .setCompressionEnabled(true)
+                                .setPushEnabled(false)
+                                .setInitialWindowSize(Integer.MAX_VALUE)
+                                .build())
+                .setIOReactorConfig(
+                        IOReactorConfig.custom()
+                                .setIoThreadCount(Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 8), 2))
+                                .setTcpNoDelay(true)
+                                .setSoTimeout(socketTimeout)
+                                .build())
+                .setTlsStrategy(tlsStrategyBuilder.build())
+                .setDefaultConnectionConfig(connCfg)
+                .disableAutomaticRetries()
+                .disableRedirectHandling()
+                .disableCookieManagement()
+                .build();
     }
 
     private static int portOf(URI url) {
