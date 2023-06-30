@@ -23,6 +23,10 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>http-utils</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.bouncycastle</groupId>
           <artifactId>*</artifactId>
         </exclusion>

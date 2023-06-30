@@ -95,6 +95,10 @@
           <artifactId>config</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>http-utils</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.bouncycastle</groupId>
           <artifactId>*</artifactId>
         </exclusion>
@@ -141,6 +145,12 @@
       <artifactId>config-bundle</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>http-utils</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
