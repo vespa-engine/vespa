@@ -6,6 +6,7 @@
 #include "blueprint.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/config.h>
 #include <cassert>
 #include <set>
 
@@ -287,6 +288,14 @@ BlueprintResolver::addSeed(vespalib::stringref feature)
     _seeds.emplace_back(feature);
 }
 
+namespace {
+#if defined(VESPA_USE_ADDRESS_SANITIZER)
+    constexpr size_t STACK_MULTIPLIER  = 8;
+#else
+    constexpr size_t STACK_MULTIPLIER  = 1;
+#endif
+}
+
 bool
 BlueprintResolver::compile()
 {
@@ -304,7 +313,7 @@ BlueprintResolver::compile()
     }
 
     size_t stack_usage = compiler.stack_usage();
-    if (stack_usage > (128_Ki)) {
+    if (stack_usage > (STACK_MULTIPLIER * 128_Ki)) {
         _warnings.emplace_back(fmt("high stack usage: %zu bytes", stack_usage));
     }
     return !compiler.failed();
