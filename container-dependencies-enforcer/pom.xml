@@ -112,7 +112,6 @@
                                         <include>com.yahoo.vespa:fileacquirer:*:provided</include>
                                         <include>com.yahoo.vespa:fsa:*:provided</include>
                                         <include>com.yahoo.vespa:hosted-zone-api:*:provided</include>
-                                        <include>com.yahoo.vespa:http-utils:*:provided</include>
                                         <include>com.yahoo.vespa:jdisc_core:*:provided</include>
                                         <include>com.yahoo.vespa:jrt:*:provided</include>
                                         <include>com.yahoo.vespa:linguistics:*:provided</include>
@@ -140,6 +139,7 @@
                                         <include>com.yahoo.vespa:config-provisioning:*:test</include>
                                         <include>com.yahoo.vespa:container-apache-http-client-bundle:*:test</include>
                                         <include>com.yahoo.vespa:container-test:*:test</include>
+                                        <include>com.yahoo.vespa:http-utils:*:test</include>
                                         <include>com.yahoo.vespa:indexinglanguage:*:test</include>
                                         <include>com.yahoo.vespa:logd:*:test</include>
                                         <include>com.yahoo.vespa:metrics-proxy:*:test</include>
