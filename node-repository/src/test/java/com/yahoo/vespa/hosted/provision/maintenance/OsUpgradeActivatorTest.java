@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
@@ -38,13 +37,11 @@ public class OsUpgradeActivatorTest {
         var version0 = Version.fromString("7.0");
 
         // Create infrastructure nodes
-        var configHostApplication = ApplicationId.from("hosted-vespa", "configserver-host", "default");
         var configHostNodes = tester.makeReadyNodes(3, "default", NodeType.confighost, 1);
-        tester.prepareAndActivateInfraApplication(configHostApplication, NodeType.confighost, version0);
+        tester.prepareAndActivateInfraApplication(NodeType.confighost, version0);
 
-        var tenantHostApplication = ApplicationId.from("hosted-vespa", "tenant-host", "default");
         var tenantHostNodes = tester.makeReadyNodes(3, "default", NodeType.host, 1);
-        tester.prepareAndActivateInfraApplication(tenantHostApplication, NodeType.host, version0);
+        tester.prepareAndActivateInfraApplication(NodeType.host, version0);
         tester.clock().advance(Duration.ofDays(1).plusSeconds(1)); // Let grace period pass
 
         var allNodes = new ArrayList<>(configHostNodes);
@@ -67,7 +64,7 @@ public class OsUpgradeActivatorTest {
 
         // Tenant hosts start upgrading to next Vespa version
         var version1 = Version.fromString("7.1");
-        tester.prepareAndActivateInfraApplication(tenantHostApplication, NodeType.host, version1);
+        tester.prepareAndActivateInfraApplication(NodeType.host, version1);
         assertEquals("Wanted version of " + NodeType.host + " is raised", version1,
                      minWantedVersion(tenantHostNodes));
 

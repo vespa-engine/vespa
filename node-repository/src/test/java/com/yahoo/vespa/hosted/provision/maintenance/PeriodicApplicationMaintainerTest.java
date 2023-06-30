@@ -26,7 +26,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -221,9 +220,9 @@ public class PeriodicApplicationMaintainerTest {
         Fixture() {
             this.tester = new ProvisioningTester.Builder().build();
             this.nodeRepository = tester.nodeRepository();
-            Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
-                    app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.from(new ClusterResources(wantedNodesApp1, 1, nodeResources))),
-                    app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.from(new ClusterResources(wantedNodesApp2, 1, nodeResources))));
+            List<MockDeployer.ApplicationContext> apps = List.of(
+                    new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.from(new ClusterResources(wantedNodesApp1, 1, nodeResources))),
+                    new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.from(new ClusterResources(wantedNodesApp2, 1, nodeResources))));
             this.deployer = new MockDeployer(tester.provisioner(), nodeRepository.clock(), apps);
             this.maintainer = new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofDays(1), // Long duration to prevent scheduled runs during test
                                                                         Duration.ofMinutes(30));

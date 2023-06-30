@@ -5,9 +5,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -57,7 +57,6 @@ public class InPlaceResizeProvisionTest {
     private final ProvisioningTester tester = new ProvisioningTester.Builder()
             .flagSource(flagSource)
             .zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-    private final ApplicationId infraApp = ProvisioningTester.applicationId();
     private final ApplicationId app = ProvisioningTester.applicationId();
 
     @Test
@@ -243,7 +242,7 @@ public class InPlaceResizeProvisionTest {
 
     private void addParentHosts(int count, NodeResources resources) {
         tester.makeReadyNodes(count, resources, NodeType.host, 4);
-        tester.prepareAndActivateInfraApplication(infraApp, NodeType.host);
+        tester.activateTenantHosts();
     }
 
     private void assertSizeAndResources(ClusterSpec cluster, int clusterSize, NodeResources resources) {

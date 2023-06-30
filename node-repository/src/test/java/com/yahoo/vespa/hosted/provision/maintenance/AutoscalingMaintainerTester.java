@@ -19,18 +19,15 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.IntFunction;
-import java.util.stream.Collectors;
 
 /**
  * @author bratseth
@@ -48,9 +45,7 @@ public class AutoscalingMaintainerTester {
     public AutoscalingMaintainerTester(Zone zone, MockDeployer.ApplicationContext ... appContexts) {
         provisioningTester = new ProvisioningTester.Builder().zone(zone).flavorsConfig(flavorsConfig()).build();
         provisioningTester.clock().setInstant(Instant.ofEpochMilli(0));
-        Map<ApplicationId, MockDeployer.ApplicationContext> apps = Arrays.stream(appContexts)
-                                                                         .collect(Collectors.toMap(c -> c.id(), c -> c));
-        deployer = new MockDeployer(provisioningTester.provisioner(), provisioningTester.clock(), apps);
+        deployer = new MockDeployer(provisioningTester.provisioner(), provisioningTester.clock(), List.of(appContexts));
         maintainer = new AutoscalingMaintainer(provisioningTester.nodeRepository(),
                                                deployer,
                                                new TestMetric(),

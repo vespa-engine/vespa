@@ -17,7 +17,7 @@ import com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner.Behaviour;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.Map;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -41,7 +41,7 @@ class HostFlavorUpgraderTest {
                                                     NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote);
         ClusterSpec spec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("c1")).vespaVersion("1").build();
         Capacity capacity = Capacity.from(new ClusterResources(2, 1, resources));
-        Map<ApplicationId, MockDeployer.ApplicationContext> applications = Map.of(app, new MockDeployer.ApplicationContext(app, spec, capacity));
+        List<MockDeployer.ApplicationContext> applications = List.of(new MockDeployer.ApplicationContext(app, spec, capacity));
         MockDeployer deployer = new MockDeployer(tester.provisioner(), tester.clock(), applications);
         HostFlavorUpgrader upgrader = new HostFlavorUpgrader(tester.nodeRepository(), Duration.ofDays(1),
                                                              new TestMetric(), deployer, hostProvisioner);
