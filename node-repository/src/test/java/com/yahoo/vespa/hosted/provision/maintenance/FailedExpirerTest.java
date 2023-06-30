@@ -38,6 +38,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
@@ -47,6 +48,13 @@ import static org.junit.Assert.assertEquals;
  * @author mpolden
  */
 public class FailedExpirerTest {
+
+    private static final ApplicationId tenantHostApplicationId = ApplicationId.from("vespa", "zone-app", "default");
+
+    private static final ClusterSpec tenantHostApplicationClusterSpec =
+            ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
+
+    private static final Capacity tenantHostApplicationCapacity = Capacity.fromRequiredNodeType(NodeType.host);
 
     @Test
     public void ensure_failed_nodes_are_deallocated_in_test_quickly() {
@@ -130,7 +138,9 @@ public class FailedExpirerTest {
                 .withNode(NodeType.proxy, FailureScenario.defaultFlavor, "proxy2")
                 .withNode(NodeType.proxy, FailureScenario.defaultFlavor, "proxy3")
                 .setReady("proxy1", "proxy2", "proxy3")
-                .allocate(NodeType.proxy)
+                .allocate(ApplicationId.from("vespa", "zone-app", "default"),
+                          ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("routing")).vespaVersion("6.42").build(),
+                          Capacity.fromRequiredNodeType(NodeType.proxy))
                 .failNode(1, "proxy1");
 
         for (int i = 0; i < 10; i++) {
@@ -149,7 +159,7 @@ public class FailedExpirerTest {
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent2")
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent3")
                 .setReady("parent1", "parent2", "parent3")
-                .allocate(NodeType.host)
+                .allocate(tenantHostApplicationId, tenantHostApplicationClusterSpec, tenantHostApplicationCapacity)
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node1", "parent1")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node2", "parent2")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node3", "parent3")
@@ -171,7 +181,7 @@ public class FailedExpirerTest {
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent2")
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent3")
                 .setReady("parent1", "parent2", "parent3")
-                .allocate(NodeType.host)
+                .allocate(tenantHostApplicationId, tenantHostApplicationClusterSpec, tenantHostApplicationCapacity)
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node1", "parent1")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node2", "parent2")
                 .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node3", "parent3")
@@ -325,11 +335,6 @@ public class FailedExpirerTest {
                 provisioner.activate(Set.copyOf(preparedNodes), new ActivationContext(0), new ApplicationTransaction(lock, transaction));
                 transaction.commit();
             }
-            return this;
-        }
-
-        public FailureScenario allocate(NodeType nodeType) {
-            tester.prepareAndActivateInfraApplication(nodeType);
             return this;
         }
 

@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author freva
@@ -65,7 +66,7 @@ public abstract class InfraApplication implements InfraApplicationApi {
 
     @Override
     public ClusterSpec getClusterSpecWithVersion(Version version) {
-        return ClusterSpec.request(clusterSpecType, clusterSpecId).exclusive(true).vespaVersion(version).build();
+        return ClusterSpec.request(clusterSpecType, clusterSpecId).vespaVersion(version).build();
     }
 
     public ClusterSpec.Type getClusterSpecType() {

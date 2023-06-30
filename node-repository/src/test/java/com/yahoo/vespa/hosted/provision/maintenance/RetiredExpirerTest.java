@@ -36,6 +36,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -98,9 +99,9 @@ public class RetiredExpirerTest {
         MockDeployer deployer =
             new MockDeployer(provisioner,
                              clock,
-                             List.of(new MockDeployer.ApplicationContext(applicationId,
-                                                                         cluster,
-                                                                         Capacity.from(new ClusterResources(wantedNodes, 1, nodeResources)))));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId,
+                                                                                                         cluster,
+                                                                                                         Capacity.from(new ClusterResources(wantedNodes, 1, nodeResources)))));
         createRetiredExpirer(deployer).run();
         assertEquals(3, nodeRepository.nodes().list(Node.State.active).owner(applicationId).size());
         assertEquals(4, nodeRepository.nodes().list(Node.State.inactive).owner(applicationId).size());
@@ -132,9 +133,11 @@ public class RetiredExpirerTest {
         MockDeployer deployer =
                 new MockDeployer(provisioner,
                                  clock,
-                                 List.of(new MockDeployer.ApplicationContext(applicationId,
-                                                                             cluster,
-                                                                             Capacity.from(new ClusterResources(wantedNodes, 1, nodeResources)))));
+                                 Collections.singletonMap(
+                                     applicationId,
+                                     new MockDeployer.ApplicationContext(applicationId,
+                                                                         cluster,
+                                                                         Capacity.from(new ClusterResources(wantedNodes, 1, nodeResources)))));
 
         // Allow the 1st and 3rd retired nodes permission to inactivate
         doNothing()

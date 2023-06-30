@@ -28,6 +28,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.provision.maintenance.Rebalancer.waitTimeAfterPreviousDeployment;
@@ -138,7 +139,7 @@ public class RebalancerTest {
     @Test
     public void testRebalancingDoesNotReduceSwitchExclusivity() {
         Capacity capacity = Capacity.from(new ClusterResources(4, 1, RebalancerTester.cpuResources), true, false);
-        List<ApplicationContext> apps = List.of(new ApplicationContext(cpuApp, RebalancerTester.clusterSpec("c"), capacity));
+        Map<ApplicationId, ApplicationContext> apps = Map.of(cpuApp, new ApplicationContext(cpuApp, RebalancerTester.clusterSpec("c"), capacity));
         RebalancerTester tester = new RebalancerTester(4, apps);
 
         // Application is deployed and balanced across exclusive switches
@@ -176,11 +177,11 @@ public class RebalancerTest {
 
         RebalancerTester() {
             this(3,
-                 List.of(new ApplicationContext(cpuApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, cpuResources))),
-                        new ApplicationContext(memoryApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, memResources)))));
+                 Map.of(cpuApp, new ApplicationContext(cpuApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, cpuResources))),
+                        memoryApp, new ApplicationContext(memoryApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, memResources)))));
         }
 
-        RebalancerTester(int hostCount, List<ApplicationContext> apps) {
+        RebalancerTester(int hostCount, Map<ApplicationId, ApplicationContext> apps) {
             deployer = new MockDeployer(tester.provisioner(), tester.clock(), apps);
             rebalancer = new Rebalancer(deployer, tester.nodeRepository(), metric, Duration.ofMinutes(1));
             List<Node> hosts = tester.makeReadyNodes(hostCount, "flat", NodeType.host, 8);

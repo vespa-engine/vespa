@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
@@ -28,8 +27,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub;
-import com.yahoo.vespa.service.duper.InfraApplication;
-import com.yahoo.vespa.service.duper.TenantHostApplication;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -38,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -50,6 +46,7 @@ public class NodeFailTester {
     public static final NodeResources nodeResources = new NodeResources(2, 8, 500, 1);
 
     // Immutable components
+    public static final ApplicationId tenantHostApp = ApplicationId.from("hosted-vespa", "tenant-host", "default");
     public static final ApplicationId app1 = ApplicationId.from("foo1", "bar", "fuz");
     public static final ApplicationId app2 = ApplicationId.from("foo2", "bar", "fuz");
     public static final ClusterSpec.Id testCluster = ClusterSpec.Id.from("test");
@@ -77,11 +74,9 @@ public class NodeFailTester {
         provisioner = tester.provisioner();
     }
 
-    private void initializeMaintainers(List<MockDeployer.ApplicationContext> apps) {
-        Map<ApplicationId, MockDeployer.ApplicationContext> appsMap = apps.stream()
-                .collect(Collectors.toMap(MockDeployer.ApplicationContext::id, context -> context));
+    private void initializeMaintainers(Map<ApplicationId, MockDeployer.ApplicationContext> apps) {
         deployer = new MockDeployer(provisioner, tester.clock(), apps);
-        serviceMonitor = new ServiceMonitorStub(appsMap, nodeRepository);
+        serviceMonitor = new ServiceMonitorStub(apps, nodeRepository);
         metric = new TestMetric();
         failer = createFailer();
         updater = createUpdater();
@@ -104,9 +99,9 @@ public class NodeFailTester {
         assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.nodes().list(Node.State.active).owner(app1).size());
         assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.nodes().list(Node.State.active).owner(app2).size());
 
-        List<MockDeployer.ApplicationContext> apps = List.of(
-                new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
-                new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
+        Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
+                app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
+                app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
         tester.initializeMaintainers(apps);
         return tester;
     }
@@ -117,24 +112,24 @@ public class NodeFailTester {
         tester.tester.makeReadyHosts(hostCount, new NodeResources(2, 8, 20, 10));
 
         // Create tenant host application
-        Version version = Version.fromString("6.75.0");
-        TenantHostApplication tenantHostApp = new TenantHostApplication();
-        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, testCluster).vespaVersion(version).build();
-        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, testCluster).vespaVersion(version).build();
+        ClusterSpec clusterNodeAdminApp = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, testCluster).vespaVersion("6.75.0").build();
+        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, testCluster).vespaVersion("6.75.0").build();
+        Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
         Capacity capacity1 = Capacity.from(new ClusterResources(containerCount, 1, new NodeResources(1, 4, 10, 0.3)), false, true);
         Capacity capacity2 = Capacity.from(new ClusterResources(contentCount, 1, new NodeResources(1, 4, 10, 0.3)), false, true);
-        tester.tester.prepareAndActivateInfraApplication(tenantHostApp, version);
+        tester.activate(tenantHostApp, clusterNodeAdminApp, allHosts);
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
         assertEquals(Set.of(tester.nodeRepository.nodes().list().nodeType(NodeType.host).asList()),
-                     Set.of(tester.nodeRepository.nodes().list(Node.State.active).owner(tenantHostApp.getApplicationId()).asList()));
+                     Set.of(tester.nodeRepository.nodes().list(Node.State.active).owner(tenantHostApp).asList()));
         assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.nodes().list(Node.State.active).owner(app1).size());
         assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.nodes().list(Node.State.active).owner(app2).size());
 
-        List<MockDeployer.ApplicationContext> apps = List.of(
-                new MockDeployer.ApplicationContext(tenantHostApp, version),
-                new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
-                new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
+        Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
+                tenantHostApp, new MockDeployer.ApplicationContext(tenantHostApp, clusterNodeAdminApp, allHosts),
+                app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
+                app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
         tester.initializeMaintainers(apps);
         return tester;
     }
@@ -144,24 +139,24 @@ public class NodeFailTester {
         tester.tester.makeReadyNodes(numberOfHosts, new NodeResources(4, 16, 400, 10), NodeType.host, 8);
 
         // Create applications
-        Version version = Version.fromString("6.75.0");
-        TenantHostApplication tenantHostApp = new TenantHostApplication();
-        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, testCluster).vespaVersion(version).build();
-        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, testCluster).vespaVersion(version).build();
+        ClusterSpec clusterNodeAdminApp = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, testCluster).vespaVersion("6.75.0").build();
+        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, testCluster).vespaVersion("6.75.0").build();
+        Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
         Capacity capacity1 = Capacity.from(new ClusterResources(3, 1, new NodeResources(1, 4, 100, 0.3)), false, true);
         Capacity capacity2 = Capacity.from(new ClusterResources(5, 1, new NodeResources(1, 4, 100, 0.3)), false, true);
-        tester.tester.prepareAndActivateInfraApplication(tenantHostApp, version);
+        tester.activate(tenantHostApp, clusterNodeAdminApp, allHosts);
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
         assertEquals(Set.of(tester.nodeRepository.nodes().list().nodeType(NodeType.host).asList()),
-                     Set.of(tester.nodeRepository.nodes().list(Node.State.active).owner(tenantHostApp.getApplicationId()).asList()));
+                     Set.of(tester.nodeRepository.nodes().list(Node.State.active).owner(tenantHostApp).asList()));
         assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.nodes().list(Node.State.active).owner(app1).size());
         assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.nodes().list(Node.State.active).owner(app2).size());
 
-        List<MockDeployer.ApplicationContext> apps = List.of(
-                new MockDeployer.ApplicationContext(tenantHostApp, version),
-                new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
-                new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
+        Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
+                tenantHostApp, new MockDeployer.ApplicationContext(tenantHostApp, clusterNodeAdminApp, allHosts),
+                app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
+                app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
         tester.initializeMaintainers(apps);
         return tester;
     }
@@ -172,7 +167,7 @@ public class NodeFailTester {
 
     public static NodeFailTester withOneUndeployedApplication(Capacity capacity, ClusterSpec spec) {
         NodeFailTester tester = new NodeFailTester();
-        List<MockDeployer.ApplicationContext> apps = List.of(new MockDeployer.ApplicationContext(app1, spec, capacity));
+        Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(app1, new MockDeployer.ApplicationContext(app1, spec, capacity));
         tester.initializeMaintainers(apps);
         return tester;
     }
@@ -182,13 +177,20 @@ public class NodeFailTester {
         tester.createReadyNodes(count, nodeType);
 
         // Create application
-        InfraApplication application = ProvisioningTester.infraApplication(nodeType);
-        Version version = Version.fromString("6.42");
-        tester.tester.prepareAndActivateInfraApplication(application, version);
+        Capacity allNodes = Capacity.fromRequiredNodeType(nodeType);
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+        tester.activate(app1, clusterApp1, allNodes);
         assertEquals(count, tester.nodeRepository.nodes().list(Node.State.active).nodeType(nodeType).size());
 
-        List<MockDeployer.ApplicationContext> apps = List.of(new MockDeployer.ApplicationContext(application, version));
+        Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
+                app1, new MockDeployer.ApplicationContext(app1, clusterApp1, allNodes));
         tester.initializeMaintainers(apps);
+        return tester;
+    }
+
+    public static NodeFailTester withNoApplications() {
+        NodeFailTester tester = new NodeFailTester();
+        tester.initializeMaintainers(Map.of());
         return tester;
     }
 
