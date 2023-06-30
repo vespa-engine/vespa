@@ -33,6 +33,7 @@ import static com.yahoo.container.plugin.bundle.AnalyzeBundle.providedArtifactsA
 import static com.yahoo.container.plugin.classanalysis.Packages.disallowedImports;
 import static com.yahoo.container.plugin.osgi.ExportPackages.exportsByPackageName;
 import static com.yahoo.container.plugin.osgi.ImportPackages.calculateImports;
+import static com.yahoo.container.plugin.util.Artifacts.VESPA_GROUP_ID;
 import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
 
 
@@ -48,8 +49,6 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         INTERNAL,  // other vespa bundles (need not be set for groupId 'com.yahoo.vespa')
         USER
     }
-
-    private static final String VESPA_GROUP_ID = "com.yahoo.vespa";
 
     @Parameter
     private String discApplicationClass = null;

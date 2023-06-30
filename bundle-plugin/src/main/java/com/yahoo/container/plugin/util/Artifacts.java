@@ -13,6 +13,10 @@ import java.util.List;
  * @author ollivir
  */
 public class Artifacts {
+
+    public static final String VESPA_GROUP_ID = "com.yahoo.vespa";
+
+
     interface ScopeTranslator {
         String scopeOf(Artifact artifact);
     }
