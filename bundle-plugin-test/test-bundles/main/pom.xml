@@ -35,6 +35,7 @@
         <extensions>true</extensions>
         <configuration>
           <bundleType>INTERNAL</bundleType>
+          <allowEmbeddedArtifacts>javax.xml.bind:jaxb-api:2.3.0</allowEmbeddedArtifacts>
           <Import-Package>
             manualImport.withoutVersion,
             manualImport.withVersion;version="12.3.4",

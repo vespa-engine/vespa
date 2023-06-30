@@ -78,8 +78,8 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     private boolean suppressWarningPublicApi;
     @Parameter(defaultValue = "false")
     private boolean suppressWarningOverlappingPackages;
-    @Parameter(defaultValue = "false")
-    private boolean suppressWarningEmbeddedArtifacts;
+    @Parameter
+    private List<String> allowEmbeddedArtifacts = List.of();
 
     @Parameter(defaultValue = "false")
     private boolean failOnWarnings;
@@ -244,19 +244,42 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         }
     }
 
-    private void logProvidedArtifactsIncluded(List<Artifact> includedArtifacts, List<ArtifactInfo> providedArtifacts) {
-        if (suppressWarningEmbeddedArtifacts || effectiveBundleType() == BundleType.CORE) return;
+    private void logProvidedArtifactsIncluded(List<Artifact> includedArtifacts,
+                                              List<ArtifactInfo> providedArtifacts) throws MojoExecutionException {
+        if (effectiveBundleType() == BundleType.CORE) return;
 
         Set<ArtifactInfo> included = includedArtifacts.stream().map(ArtifactInfo::new).collect(Collectors.toSet());
         Set<ArtifactInfo> providedIncluded = Sets.intersection(included, new HashSet<>(providedArtifacts));
-        if (providedIncluded.isEmpty()) return;
 
-        List<String> sorted = providedIncluded.stream()
+        HashSet<ArtifactInfo> allowed = getAllowedEmbeddedArtifacts(providedIncluded);
+
+        List<String> violations = providedIncluded.stream()
+                .filter(a -> !allowed.contains(a))
                 .map(ArtifactInfo::stringValue)
                 .sorted().toList();
 
-        // TODO: improve error message
-        warnOrThrow("Artifacts provided from Jdisc runtime are included in compile scope: " + sorted);
+        if (! violations.isEmpty()) {
+            // TODO: improve error message
+            warnOrThrow("Artifacts provided from Jdisc runtime are included in compile scope: " + violations);
+        }
+    }
+
+    private HashSet<ArtifactInfo> getAllowedEmbeddedArtifacts(Set<ArtifactInfo> providedIncluded) throws MojoExecutionException {
+        if (allowEmbeddedArtifacts.isEmpty()) return new HashSet<>();
+
+        var allowed = new HashSet<ArtifactInfo>();
+        try {
+            allowEmbeddedArtifacts.stream().map(ArtifactInfo::fromStringValue).forEach(allowed::add);
+        } catch (Exception e) {
+            throw new MojoExecutionException("In config parameter 'allowEmbeddedArtifacts': " + e.getMessage(), e);
+        }
+        var allowedButUnused = Sets.difference(allowed, providedIncluded);
+        if (! allowedButUnused.isEmpty()) {
+            warnOrThrow("'allowEmbeddedArtifacts' contains artifact(s) not used in project: %s"
+                            .formatted(allowedButUnused.stream().map(ArtifactInfo::stringValue).toList()));
+        }
+        getLog().info("Ignoring artifacts embedded in bundle: " + allowEmbeddedArtifacts);
+        return allowed;
     }
 
     private static String trimWhitespace(Optional<String> lines) {
