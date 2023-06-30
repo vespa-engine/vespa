@@ -147,7 +147,7 @@ func (opts feedOptions) compressionMode() (document.Compression, error) {
 	return 0, errHint(fmt.Errorf("invalid compression mode: %s", opts.compression), `Must be "auto", "gzip" or "none"`)
 }
 
-func feedFiles(files []string, dispatcher *document.Dispatcher, cli *CLI) {
+func enqueueFromFiles(files []string, dispatcher *document.Dispatcher, cli *CLI) error {
 	for _, name := range files {
 		var r io.ReadCloser
 		if len(files) == 1 && name == "-" {
@@ -160,11 +160,14 @@ func feedFiles(files []string, dispatcher *document.Dispatcher, cli *CLI) {
 			}
 			r = f
 		}
-		dispatchFrom(r, dispatcher, cli)
+		if err := enqueueFrom(r, dispatcher, cli); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func dispatchFrom(r io.ReadCloser, dispatcher *document.Dispatcher, cli *CLI) {
+func enqueueFrom(r io.ReadCloser, dispatcher *document.Dispatcher, cli *CLI) error {
 	dec := document.NewDecoder(bufio.NewReaderSize(r, 1<<26)) // Buffer up to 64M of data at a time
 	defer r.Close()
 	for {
@@ -173,12 +176,27 @@ func dispatchFrom(r io.ReadCloser, dispatcher *document.Dispatcher, cli *CLI) {
 			break
 		}
 		if err != nil {
-			cli.printErr(fmt.Errorf("failed to decode document: %w", err))
+			return fmt.Errorf("failed to decode document: %w", err)
 		}
 		if err := dispatcher.Enqueue(doc); err != nil {
-			cli.printErr(err)
+			return err
 		}
 	}
+	return nil
+}
+
+func enqueueAndWait(files []string, dispatcher *document.Dispatcher, options feedOptions, cli *CLI) error {
+	defer dispatcher.Close()
+	if options.speedtestBytes > 0 {
+		if len(files) > 0 {
+			return fmt.Errorf("option --speedtest cannot be combined with feed files")
+		}
+		gen := document.NewGenerator(options.speedtestBytes, cli.now().Add(time.Duration(options.speedtestSecs)*time.Second))
+		return enqueueFrom(io.NopCloser(gen), dispatcher, cli)
+	} else if len(files) > 0 {
+		return enqueueFromFiles(files, dispatcher, cli)
+	}
+	return fmt.Errorf("at least one file to feed from must specified")
 }
 
 func feed(files []string, options feedOptions, cli *CLI) error {
@@ -191,14 +209,13 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 	if err != nil {
 		return err
 	}
-	speedtest := options.speedtestBytes > 0
 	client, err := document.NewClient(document.ClientOptions{
 		Compression: compression,
 		Timeout:     timeout,
 		Route:       options.route,
 		TraceLevel:  options.traceLevel,
 		BaseURL:     baseURL,
-		Speedtest:   speedtest,
+		Speedtest:   options.speedtestBytes > 0,
 		NowFunc:     cli.now,
 	}, clients)
 	if err != nil {
@@ -209,26 +226,14 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, cli.Stderr, options.verbose)
 	start := cli.now()
 	summaryTicker := summaryTicker(options.summarySecs, cli, start, dispatcher.Stats)
-	if speedtest {
-		if len(files) > 0 {
-			return fmt.Errorf("option --speedtest cannot be combined with feed files")
+	defer func() {
+		if summaryTicker != nil {
+			summaryTicker.Stop()
 		}
-		gen := document.NewGenerator(options.speedtestBytes, cli.now().Add(time.Duration(options.speedtestSecs)*time.Second))
-		dispatchFrom(io.NopCloser(gen), dispatcher, cli)
-	} else if len(files) > 0 {
-		feedFiles(files, dispatcher, cli)
-	} else {
-		dispatcher.Close()
-		return fmt.Errorf("at least one file to feed from must specified")
-	}
-	if err := dispatcher.Close(); err != nil {
-		return err
-	}
-	if summaryTicker != nil {
-		summaryTicker.Stop()
-	}
-	elapsed := cli.now().Sub(start)
-	return writeSummaryJSON(cli.Stdout, dispatcher.Stats(), elapsed)
+		elapsed := cli.now().Sub(start)
+		writeSummaryJSON(cli.Stdout, dispatcher.Stats(), elapsed)
+	}()
+	return enqueueAndWait(files, dispatcher, options, cli)
 }
 
 type number float32
