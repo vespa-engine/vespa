@@ -60,14 +60,6 @@ public class AnalyzeBundle {
                 .orElseGet(ArrayList::new);
     }
 
-    public static List<ProvidedArtifact> providedArtifactsAggregated(Collection<File> jarFiles) {
-        return jarFiles.stream()
-                .map(AnalyzeBundle::providedArtifacts)
-                .flatMap(List::stream)
-                .distinct()
-                .toList();
-    }
-
     public static List<ProvidedArtifact> providedArtifacts(File jarFile) {
         var manifest = getOsgiManifest(jarFile);
         if (manifest == null) return Collections.emptyList();
@@ -77,8 +69,6 @@ public class AnalyzeBundle {
                 .map(ProvidedArtifact::fromStringValue)
                 .toList())
                 .orElse(Collections.emptyList());
-
-
     }
 
     private static Manifest getOsgiManifest(File jarFile) {

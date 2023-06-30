@@ -29,11 +29,12 @@ import java.util.stream.Stream;
 
 import static com.yahoo.container.plugin.bundle.AnalyzeBundle.exportedPackagesAggregated;
 import static com.yahoo.container.plugin.bundle.AnalyzeBundle.nonPublicApiPackagesAggregated;
-import static com.yahoo.container.plugin.bundle.AnalyzeBundle.providedArtifactsAggregated;
+import static com.yahoo.container.plugin.bundle.AnalyzeBundle.providedArtifacts;
 import static com.yahoo.container.plugin.classanalysis.Packages.disallowedImports;
 import static com.yahoo.container.plugin.osgi.ExportPackages.exportsByPackageName;
 import static com.yahoo.container.plugin.osgi.ImportPackages.calculateImports;
 import static com.yahoo.container.plugin.util.Artifacts.VESPA_GROUP_ID;
+import static com.yahoo.container.plugin.util.Artifacts.getVespaArtifact;
 import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
 
 
@@ -118,19 +119,20 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
             logDebugPackageSets(exportedPackagesFromProvidedJars, includedPackages);
 
-            Optional<Artifact> jdiscCore = providedJarArtifacts.stream()
-                    .filter(artifact -> artifact.getArtifactId().equals("jdisc_core"))
-                    .findAny();
-
-            if (jdiscCore.isPresent()) {
-                // jdisc_core being provided guarantees that log output does not contain its exported packages
+            Optional<Artifact> jdisc_core = getVespaArtifact("jdisc_core", providedJarArtifacts);
+            Optional<Artifact> wantedProvidedArtifact = getVespaArtifact(wantedProvidedDependency(), providedJarArtifacts);
+            if (wantedProvidedArtifact.isPresent()) {
+                // Having our wanted artifact as provided guarantees that log output does not contain its exported packages
                 logMissingPackages(exportedPackagesFromProvidedDeps, projectPackages, compileJarsPackages, includedPackages);
-            } else if (! suppressWarningMissingImportPackages) {
+
+                logProvidedArtifactsIncluded(artifactsToInclude, providedArtifacts(wantedProvidedArtifact.get().getFile()));
+            } else if (! suppressWarningMissingImportPackages && jdisc_core.isEmpty()) {
+                // TODO: Remove jdisc_core clause above and instead add suppressWarning to necessary vespa modules.
                 warnOrThrow(("This project does not have '%s' as provided dependency, so the generated 'Import-Package' " +
                         "OSGi header may be missing important packages.").formatted(wantedProvidedDependency()));
             }
+
             logOverlappingPackages(projectPackages, exportedPackagesFromProvidedDeps);
-            logProvidedArtifactsIncluded(artifactsToInclude, providedArtifactsAggregated(providedJarFiles));
 
             Map<String, Import> calculatedImports = calculateImports(includedPackages.referencedPackages(),
                                                                      includedPackages.definedPackages(),
@@ -142,7 +144,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
             Map<String, String> manifestContent = generateManifestContent(artifactsToInclude, calculatedImports, includedPackages);
             addAdditionalManifestProperties(manifestContent);
             addManifestPropertiesForInternalAndCoreBundles(manifestContent, includedPackages, providedJarArtifacts);
-            addManifestPropertiesForUserBundles(manifestContent, jdiscCore, nonPublicApiUsed);
+            addManifestPropertiesForUserBundles(manifestContent, providedJarArtifacts, nonPublicApiUsed);
 
             createManifestFile(Paths.get(project.getBuild().getOutputDirectory()), manifestContent);
         } catch (Exception e) {
@@ -186,11 +188,12 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     }
 
     private void addManifestPropertiesForUserBundles(Map<String, String> manifestContent,
-                                                     Optional<Artifact> jdiscCore,
+                                                     List<Artifact> providedArtifacts,
                                                      List<String> nonPublicApiUsed) {
         if (effectiveBundleType() != BundleType.USER) return;
 
-        jdiscCore.ifPresent(
+        Optional<Artifact> jdisc_core = getVespaArtifact("jdisc_core", providedArtifacts);
+        jdisc_core.ifPresent(
                 artifact -> addIfNotEmpty(manifestContent, "X-JDisc-Vespa-Build-Version", artifact.getVersion()));
         addIfNotEmpty(manifestContent, "X-JDisc-Non-PublicApi-Import-Package", String.join(",", nonPublicApiUsed));
     }
