@@ -4,7 +4,6 @@ package com.yahoo.container.plugin.bundle;
 import com.yahoo.container.plugin.osgi.ExportPackageParser;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import com.yahoo.container.plugin.util.JarFiles;
-import com.yahoo.container.plugin.util.ProvidedArtifact;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -14,6 +13,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.jar.Manifest;
+
+import static com.yahoo.container.plugin.util.JarFiles.getMainAttributeValue;
 
 /**
  * Static utilities for analyzing jar files.
@@ -60,17 +61,6 @@ public class AnalyzeBundle {
                 .orElseGet(ArrayList::new);
     }
 
-    public static List<ProvidedArtifact> providedArtifacts(File jarFile) {
-        var manifest = getOsgiManifest(jarFile);
-        if (manifest == null) return Collections.emptyList();
-
-        return getMainAttributeValue(manifest, "X-JDisc-Provided-Artifact")
-                .map(s -> Arrays.stream(s.split(","))
-                .map(ProvidedArtifact::fromStringValue)
-                .toList())
-                .orElse(Collections.emptyList());
-    }
-
     private static Manifest getOsgiManifest(File jarFile) {
         Optional<Manifest> jarManifest = JarFiles.getManifest(jarFile);
         if (jarManifest.isPresent()) {
@@ -90,10 +80,6 @@ public class AnalyzeBundle {
         return getMainAttributeValue(jarManifest, "Export-Package")
                 .map(ExportPackageParser::parseExports)
                 .orElseGet(ArrayList::new);
-    }
-
-    private static Optional<String> getMainAttributeValue(Manifest manifest, String attributeName) {
-        return Optional.ofNullable(manifest.getMainAttributes().getValue(attributeName));
     }
 
     private static boolean isOsgiManifest(Manifest mf) {
