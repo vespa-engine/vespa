@@ -8,8 +8,8 @@ import com.yahoo.container.plugin.classanalysis.PackageTally;
 import com.yahoo.container.plugin.osgi.ExportPackages;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import com.yahoo.container.plugin.osgi.ImportPackages.Import;
+import com.yahoo.container.plugin.util.ArtifactInfo;
 import com.yahoo.container.plugin.util.Artifacts;
-import com.yahoo.container.plugin.util.ProvidedArtifact;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -244,15 +244,15 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         }
     }
 
-    private void logProvidedArtifactsIncluded(List<Artifact> includedArtifacts, List<ProvidedArtifact> providedArtifacts) {
+    private void logProvidedArtifactsIncluded(List<Artifact> includedArtifacts, List<ArtifactInfo> providedArtifacts) {
         if (suppressWarningEmbeddedArtifacts || effectiveBundleType() == BundleType.CORE) return;
 
-        Set<ProvidedArtifact> included = includedArtifacts.stream().map(ProvidedArtifact::new).collect(Collectors.toSet());
-        Set<ProvidedArtifact> providedIncluded = Sets.intersection(included, new HashSet<>(providedArtifacts));
+        Set<ArtifactInfo> included = includedArtifacts.stream().map(ArtifactInfo::new).collect(Collectors.toSet());
+        Set<ArtifactInfo> providedIncluded = Sets.intersection(included, new HashSet<>(providedArtifacts));
         if (providedIncluded.isEmpty()) return;
 
         List<String> sorted = providedIncluded.stream()
-                .map(ProvidedArtifact::stringValue)
+                .map(ArtifactInfo::stringValue)
                 .sorted().toList();
 
         // TODO: improve error message

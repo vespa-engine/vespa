@@ -18,10 +18,10 @@ import java.util.zip.ZipFile;
  */
 public class JarFiles {
 
-    public static List<ProvidedArtifact> providedArtifactsFromClassPath(File jarFile) {
+    public static List<ArtifactInfo> providedArtifactsFromClassPath(File jarFile) {
         return getManifest(jarFile).map(mf -> getMainAttributeValue(mf, "Class-Path")
                         .map(s -> Arrays.stream(s.split(" "))
-                                .map(ProvidedArtifact::fromStringValue)
+                                .map(ArtifactInfo::fromStringValue)
                                 .toList())
                         .orElse(Collections.emptyList()))
                 .orElse(Collections.emptyList());
