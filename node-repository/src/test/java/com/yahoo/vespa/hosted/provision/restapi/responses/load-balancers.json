@@ -41,14 +41,14 @@
       "public": false
     },
     {
-      "id": "cfg:cfg:cfg:configservers",
-      "state": "reserved",
+      "id": "hosted-vespa:zone-config-servers:default:zone-config-servers",
+      "state": "active",
       "changedAt": 123,
-      "application": "cfg",
-      "tenant": "cfg",
-      "instance": "cfg",
-      "cluster": "configservers",
-      "hostname": "lb-cfg.cfg.cfg-configservers",
+      "application": "zone-config-servers",
+      "tenant": "hosted-vespa",
+      "instance": "default",
+      "cluster": "zone-config-servers",
+      "hostname": "lb-hosted-vespa.zone-config-servers-zone-config-servers",
       "dnsZone": "zone-id-1",
       "networks": [
         "10.2.3.0/24",
@@ -57,7 +57,18 @@
       "ports": [
         4443
       ],
-      "reals": [],
+      "reals": [
+        {
+          "hostname": "cfg1.yahoo.com",
+          "ipAddress": "127.0.201.1",
+          "port": 4443
+        },
+        {
+          "hostname": "cfg2.yahoo.com",
+          "ipAddress": "127.0.202.1",
+          "port": 4443
+        }
+      ],
       "public": true
     },
     {

@@ -44,8 +44,7 @@ public class AclProvisioningTest {
         // Populate repo
         tester.makeReadyNodes(10, new NodeResources(1, 4, 10, 1));
         List<Node> host = tester.makeReadyNodes(1, new NodeResources(1, 4, 10, 1), NodeType.host);
-        ApplicationId zoneApplication = ProvisioningTester.applicationId();
-        tester.deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.host));
+        tester.activateTenantHosts();
         tester.makeReadyChildren(1, new NodeResources(1, 4, 10, 1),
                                  host.get(0).hostname());
         List<Node> proxyNodes = tester.makeReadyNodes(3, new NodeResources(1, 4, 10, 1), NodeType.proxy);
@@ -136,11 +135,10 @@ public class AclProvisioningTest {
         tester.makeReadyNodes(3, "default", NodeType.proxy);
 
         // Deploy zone application
-        ApplicationId zoneApplication = ProvisioningTester.applicationId();
-        tester.deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.proxy));
+        tester.prepareAndActivateInfraApplication(NodeType.proxy);
 
         // Get trusted nodes for first proxy node
-        NodeList proxyNodes = tester.nodeRepository().nodes().list().owner(zoneApplication);
+        NodeList proxyNodes = tester.nodeRepository().nodes().list().nodeType(NodeType.proxy);
         Node node = proxyNodes.first().get();
         NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
@@ -180,8 +178,8 @@ public class AclProvisioningTest {
         tester.makeReadyNodes(3, "default", NodeType.controller);
 
         // Allocate
-        ApplicationId controllerApplication = ProvisioningTester.applicationId();
-        List<Node> controllers = tester.deploy(controllerApplication, Capacity.fromRequiredNodeType(NodeType.controller));
+        tester.prepareAndActivateInfraApplication(NodeType.controller);
+        List<Node> controllers = tester.nodeRepository().nodes().list().nodeType(NodeType.controller).asList();
 
         // Controllers and hosts all trust each other
         NodeAcl controllerAcl = controllers.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());

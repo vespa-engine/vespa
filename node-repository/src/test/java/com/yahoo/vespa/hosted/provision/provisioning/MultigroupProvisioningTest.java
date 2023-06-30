@@ -19,7 +19,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -233,8 +232,7 @@ public class MultigroupProvisioningTest {
         MockDeployer deployer =
             new MockDeployer(tester.provisioner(),
                              tester.clock(),
-                             Collections.singletonMap(application1, 
-                                                      new MockDeployer.ApplicationContext(application1, cluster(), 
+                             List.of(new MockDeployer.ApplicationContext(application1, cluster(),
                                                                                           Capacity.from(new ClusterResources(8, 1, large), false, true))));
         new RetiredExpirer(tester.nodeRepository(),
                            deployer,

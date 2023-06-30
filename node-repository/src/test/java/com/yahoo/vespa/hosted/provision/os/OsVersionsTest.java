@@ -219,7 +219,7 @@ public class OsVersionsTest {
         var versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).build());
         setMaxActiveUpgrades(Integer.MAX_VALUE);
         int hostCount = 3;
-        provisionInfraApplication(hostCount, infraApplication, NodeType.host);
+        provisionInfraApplication(hostCount, NodeType.host);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .nodeType(NodeType.host)
                                                    .not().state(Node.State.deprovisioned);
@@ -326,7 +326,7 @@ public class OsVersionsTest {
                                                                     .account(CloudAccount.from("000000000000"))
                                                                     .build());
 
-        provisionInfraApplication(hostCount, infraApplication, NodeType.host, NodeResources.StorageType.remote, NodeResources.Architecture.x86_64);
+        provisionInfraApplication(hostCount, NodeType.host, NodeResources.StorageType.remote, NodeResources.Architecture.x86_64);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
 
         // New target is set
@@ -371,8 +371,8 @@ public class OsVersionsTest {
         setMaxActiveUpgrades(1);
         var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud());
         int hostCount = 3;
-        provisionInfraApplication(hostCount, infraApplication, NodeType.host);
-        provisionInfraApplication(hostCount, ApplicationId.from("hosted-vespa", "confighost", "default"), NodeType.confighost);
+        provisionInfraApplication(hostCount, NodeType.host);
+        provisionInfraApplication(hostCount, NodeType.confighost);
         Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host,
                                                                                          NodeType.confighost);
 
@@ -406,7 +406,7 @@ public class OsVersionsTest {
         int hostCount = 5;
         ApplicationId app1 = ApplicationId.from("t1", "a1", "i1");
         ApplicationId app2 = ApplicationId.from("t2", "a2", "i2");
-        provisionInfraApplication(hostCount, infraApplication, NodeType.host);
+        provisionInfraApplication(hostCount, NodeType.host);
         deployApplication(app1);
         deployApplication(app2);
         Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
@@ -481,7 +481,7 @@ public class OsVersionsTest {
         int hostCount = 3;
         setMaxActiveUpgrades(hostCount);
         var versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud());
-        provisionInfraApplication(hostCount, infraApplication, NodeType.proxyhost);
+        provisionInfraApplication(hostCount, NodeType.proxyhost);
         Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.proxyhost);
 
         // All hosts are on initial version
@@ -532,25 +532,23 @@ public class OsVersionsTest {
     }
 
     private List<Node> provisionInfraApplication(int nodeCount) {
-        return provisionInfraApplication(nodeCount, infraApplication, NodeType.host);
+        return provisionInfraApplication(nodeCount, NodeType.host);
     }
 
-    private List<Node> provisionInfraApplication(int nodeCount, ApplicationId application,
-                                                 NodeType nodeType) {
-        return provisionInfraApplication(nodeCount, application, nodeType, NodeResources.StorageType.local);
+    private List<Node> provisionInfraApplication(int nodeCount, NodeType nodeType) {
+        return provisionInfraApplication(nodeCount, nodeType, NodeResources.StorageType.local);
     }
 
-    private List<Node> provisionInfraApplication(int nodeCount, ApplicationId application,
-                                                 NodeType nodeType, NodeResources.StorageType storageType) {
-        return provisionInfraApplication(nodeCount, application, nodeType, storageType, NodeResources.Architecture.x86_64);
+    private List<Node> provisionInfraApplication(int nodeCount, NodeType nodeType, NodeResources.StorageType storageType) {
+        return provisionInfraApplication(nodeCount, nodeType, storageType, NodeResources.Architecture.x86_64);
     }
 
-    private List<Node> provisionInfraApplication(int nodeCount, ApplicationId application, NodeType nodeType,
+    private List<Node> provisionInfraApplication(int nodeCount, NodeType nodeType,
                                                  NodeResources.StorageType storageType, NodeResources.Architecture architecture) {
         var nodes = tester.makeReadyNodes(nodeCount, new NodeResources(48, 128, 2000, 10,
                                                                        NodeResources.DiskSpeed.fast, storageType, architecture),
                                           nodeType, 10);
-        tester.prepareAndActivateInfraApplication(application, nodeType);
+        tester.prepareAndActivateInfraApplication(nodeType);
         tester.clock().advance(Duration.ofDays(1).plusSeconds(1)); // Let grace period pass
         return nodes.stream()
                     .map(Node::hostname)
@@ -587,11 +585,10 @@ public class OsVersionsTest {
         tester.patchNodes(nodes, (node) -> {
             Optional<Version> wantedOsVersion = node.status().osVersion().wanted();
             if (node.status().wantToDeprovision()) {
-                ApplicationId application = node.allocation().get().owner();
                 tester.nodeRepository().nodes().park(node.hostname(), true, Agent.system,
                                                      getClass().getSimpleName());
                 tester.nodeRepository().nodes().removeRecursively(node.hostname());
-                node = provisionInfraApplication(1, application, nodeType).get(0);
+                node = provisionInfraApplication(1, nodeType).get(0);
             }
             return node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(wantedOsVersion)));
         });
@@ -602,7 +599,6 @@ public class OsVersionsTest {
         tester.patchNodes(nodes, (node) -> {
             Optional<Version> wantedOsVersion = node.status().osVersion().wanted();
             if (node.status().wantToRebuild()) {
-                ApplicationId application = node.allocation().get().owner();
                 tester.nodeRepository().nodes().park(node.hostname(), true, Agent.system,
                                                      getClass().getSimpleName());
                 tester.nodeRepository().nodes().removeRecursively(node.hostname());
@@ -610,7 +606,7 @@ public class OsVersionsTest {
                                    .build();
                 node = tester.nodeRepository().nodes().addNodes(List.of(newNode), Agent.system).get(0);
                 node = tester.move(Node.State.ready, node);
-                tester.prepareAndActivateInfraApplication(application, nodeType);
+                tester.prepareAndActivateInfraApplication(nodeType);
                 node = tester.nodeRepository().nodes().node(node.hostname()).get();
             }
             return node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(wantedOsVersion)));
