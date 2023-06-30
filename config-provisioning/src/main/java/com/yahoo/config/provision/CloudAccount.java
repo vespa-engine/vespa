@@ -13,10 +13,10 @@ import java.util.stream.Collectors;
  */
 public class CloudAccount implements Comparable<CloudAccount> {
 
-    public record CloudMeta(String accountType, Pattern pattern) {
+    private record CloudMeta(String accountType, Pattern pattern) {
         private boolean matches(String account) { return pattern.matcher(account).matches(); }
     }
-    public static final Map<String, CloudMeta> META_BY_CLOUD = Map.of(
+    private static final Map<String, CloudMeta> META_BY_CLOUD = Map.of(
             "aws", new CloudMeta("Account ID", Pattern.compile("[0-9]{12}")),
             "gcp", new CloudMeta("Project ID", Pattern.compile("[a-z][a-z0-9-]{4,28}[a-z0-9]")));
 
