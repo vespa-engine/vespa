@@ -4,7 +4,7 @@ namespace=vespa.hosted.controller.maven.repository.config
 
 # URL to the Maven repository API that holds artifacts for tenants in the controller's system
 #
-apiUrl string default=https://repo.maven.apache.org/maven2/
+apiUrl string default=https://repo1.maven.org/maven2/
 
 # Group ID of the artifact to list versions for
 #

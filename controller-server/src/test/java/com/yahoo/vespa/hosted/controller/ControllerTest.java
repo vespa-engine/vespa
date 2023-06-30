@@ -1340,6 +1340,11 @@ public class ControllerTest {
         tester.controllerTester().upgradeSystem(version0);
         tester.upgrader().overrideConfidence(version0, Confidence.normal);
         tester.controllerTester().computeVersionStatus();
+        Version version00 = Version.fromString("6.2");
+        assertEquals(version00, tester.applications().compileVersion(application, OptionalInt.of(7)));
+        assertEquals(version00, tester.applications().compileVersion(application, OptionalInt.empty()));
+        tester.clock().advance(Duration.ofSeconds(10801));
+        tester.controllerTester().computeVersionStatus();
         assertEquals(version0, tester.applications().compileVersion(application, OptionalInt.of(7)));
         assertEquals(version0, tester.applications().compileVersion(application, OptionalInt.empty()));
         assertEquals("this system has no available versions on specified major: 8",
@@ -1351,6 +1356,7 @@ public class ControllerTest {
         // System is upgraded
         Version version1 = Version.fromString("7.2");
         tester.controllerTester().upgradeSystem(version1);
+        tester.clock().advance(Duration.ofSeconds(10801));
         tester.upgrader().overrideConfidence(version1, Confidence.normal);
         tester.controllerTester().computeVersionStatus();
         assertEquals(version0, tester.applications().compileVersion(application, OptionalInt.empty()));
@@ -1367,6 +1373,7 @@ public class ControllerTest {
         Version version2 = Version.fromString("8.0");
         tester.controllerTester().upgradeSystem(version2);
         tester.upgrader().overrideConfidence(version2, Confidence.low);
+        tester.clock().advance(Duration.ofSeconds(10801));
         tester.controllerTester().computeVersionStatus();
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.empty()));
         assertEquals("this system has no available versions on specified major: 8",

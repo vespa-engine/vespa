@@ -72,7 +72,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -290,14 +289,11 @@ public final class ControllerTester {
     }
 
     public ZoneId toZone(Environment environment) {
-        switch (environment) {
-            case dev: case test:
-                return ZoneId.from(environment, RegionName.from("us-east-1"));
-            case staging:
-                return ZoneId.from(environment, RegionName.from("us-east-3"));
-            default:
-                return ZoneId.from(environment, RegionName.from("us-west-1"));
-        }
+        return switch (environment) {
+            case dev, test -> ZoneId.from(environment, RegionName.from("us-east-1"));
+            case staging -> ZoneId.from(environment, RegionName.from("us-east-3"));
+            default -> ZoneId.from(environment, RegionName.from("us-west-1"));
+        };
     }
 
     public AthenzDomain createDomainWithAdmin(String domainName, AthenzUser user) {
@@ -395,7 +391,7 @@ public final class ControllerTester {
                                                        new CloudAccessControl(new MockUserManagement(), flagSource, serviceRegistry) :
                                                        new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
                                                flagSource,
-                                               new MockMavenRepository(),
+                                               new MockMavenRepository(serviceRegistry.clock()),
                                                serviceRegistry,
                                                new MetricsMock(), new SecretStoreMock(),
                                                new ControllerConfig.Builder().build(),
