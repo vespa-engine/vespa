@@ -26,13 +26,13 @@
   },
   "environment": "BARE_METAL",
   "owner": {
-    "tenant": "hosted-vespa",
-    "application": "tenant-host",
-    "instance": "default"
+    "tenant": "zoneapp",
+    "application": "zoneapp",
+    "instance": "zoneapp"
   },
   "membership": {
     "clustertype": "container",
-    "clusterid": "tenant-host",
+    "clusterid": "node-admin",
     "group": "0",
     "index": 0,
     "retired": false

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
@@ -17,11 +16,10 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
-import com.yahoo.vespa.service.duper.InfraApplication;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -88,12 +86,12 @@ public class ExpeditedChangeApplicationMaintainerTest {
         final MockDeployer deployer;
 
         final NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
-        final InfraApplication proxyApp = ProvisioningTester.infraApplication(NodeType.proxy);
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
-        final ApplicationId app3 = proxyApp.getApplicationId();
+        final ApplicationId app3 = ApplicationId.from(TenantName.from("hosted-vespa"), ApplicationName.from("routing"), InstanceName.from("default"));
         final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         final ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+        final ClusterSpec clusterApp3 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("routing")).vespaVersion("6.42").build();
         final int wantedNodesApp1 = 5;
         final int wantedNodesApp2 = 7;
         final int wantedNodesApp3 = 2;
@@ -101,10 +99,10 @@ public class ExpeditedChangeApplicationMaintainerTest {
         Fixture() {
             this.tester = new ProvisioningTester.Builder().build();
             this.nodeRepository = tester.nodeRepository();
-            List<MockDeployer.ApplicationContext> apps = List.of(
-                    new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.from(new ClusterResources(wantedNodesApp1, 1, nodeResources))),
-                    new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.from(new ClusterResources(wantedNodesApp2, 1, nodeResources))),
-                    new MockDeployer.ApplicationContext(proxyApp, Version.fromString("6.42")));
+            Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
+                    app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.from(new ClusterResources(wantedNodesApp1, 1, nodeResources))),
+                    app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.from(new ClusterResources(wantedNodesApp2, 1, nodeResources))),
+                    app3, new MockDeployer.ApplicationContext(app3, clusterApp3, Capacity.fromRequiredNodeType(NodeType.proxy))) ;
             this.deployer = new MockDeployer(tester.provisioner(), nodeRepository.clock(), apps);
         }
 

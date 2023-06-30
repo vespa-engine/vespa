@@ -30,8 +30,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
-import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
@@ -52,12 +50,6 @@ import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
-import com.yahoo.vespa.service.duper.ConfigServerHostApplication;
-import com.yahoo.vespa.service.duper.ControllerApplication;
-import com.yahoo.vespa.service.duper.ControllerHostApplication;
-import com.yahoo.vespa.service.duper.InfraApplication;
-import com.yahoo.vespa.service.duper.ProxyHostApplication;
-import com.yahoo.vespa.service.duper.TenantHostApplication;
 
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
@@ -85,6 +77,8 @@ import static org.junit.Assert.assertTrue;
  * @author bratseth
  */
 public class ProvisioningTester {
+
+    public static final ApplicationId tenantHostApp = ApplicationId.from("hosted-vespa", "tenant-host", "default");
 
     private final Curator curator;
     private final NodeFlavors nodeFlavors;
@@ -248,24 +242,20 @@ public class ProvisioningTester {
         }
     }
 
-    public List<HostSpec> prepareAndActivateInfraApplication(InfraApplication application, Version version) {
-        ClusterSpec cluster = application.getClusterSpecWithVersion(version);
-        Capacity capacity = application.getCapacity();
-        List<HostSpec> hostSpecs = prepare(application.getApplicationId(), cluster, capacity);
-        activate(application.getApplicationId(), hostSpecs);
+    public List<HostSpec> prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {
+        ClusterSpec cluster = ClusterSpec.request(nodeType.isConfigServerLike() ? ClusterSpec.Type.admin : ClusterSpec.Type.container,
+                                                  ClusterSpec.Id.from(nodeType == NodeType.config ? "zone-config-servers" : nodeType.toString()))
+                                         .vespaVersion(version)
+                                         .stateful(nodeType == NodeType.config || nodeType == NodeType.controller)
+                                         .build();
+        Capacity capacity = Capacity.fromRequiredNodeType(nodeType);
+        List<HostSpec> hostSpecs = prepare(application, cluster, capacity);
+        activate(application, hostSpecs);
         return hostSpecs;
     }
 
-    public List<HostSpec> prepareAndActivateInfraApplication(InfraApplication application) {
-        return prepareAndActivateInfraApplication(application, Version.fromString("6.42"));
-    }
-
-    public List<HostSpec> prepareAndActivateInfraApplication(NodeType nodeType) {
-        return prepareAndActivateInfraApplication(infraApplication(nodeType));
-    }
-
-    public List<HostSpec> prepareAndActivateInfraApplication(NodeType nodeType, Version version) {
-        return prepareAndActivateInfraApplication(infraApplication(nodeType), version);
+    public List<HostSpec> prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType) {
+        return prepareAndActivateInfraApplication(application, nodeType, Version.fromString("6.42"));
     }
 
     public void deactivate(ApplicationId applicationId) {
@@ -566,7 +556,7 @@ public class ProvisioningTester {
     }
 
     public void activateTenantHosts() {
-        prepareAndActivateInfraApplication(NodeType.host);
+        prepareAndActivateInfraApplication(tenantHostApp, NodeType.host);
     }
 
     public static ClusterSpec containerClusterSpec() {
@@ -817,33 +807,6 @@ public class ProvisioningTester {
         @Override
         public long reservedDiskSpaceInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
 
-    }
-
-    public static InfraApplication infraApplication(NodeType nodeType) {
-        return switch (nodeType) {
-            case controllerhost -> new ControllerHostApplication();
-            case controller -> new ControllerApplication();
-            case confighost -> new ConfigServerHostApplication();
-            case config -> new ConfigServerApplication();
-            case proxyhost -> new ProxyHostApplication();
-            case proxy -> new ProxyApplication();
-            case host -> new TenantHostApplication();
-            default -> throw new IllegalArgumentException("Infrastructure application not defined for node type " + nodeType);
-        };
-    }
-
-    // This is not in service-monitor because it's not really an infrastructure application like the others
-    // (proxy is deployed with a real application package)
-    private static class ProxyApplication extends InfraApplication {
-        private ProxyApplication() {
-            super(InfrastructureApplication.PROXY, ClusterSpec.Type.container, ClusterSpec.Id.from("routing"), ServiceType.CONTAINER, 4443);
-        }
-
-        @Override
-        public ClusterSpec getClusterSpecWithVersion(Version version) {
-            // Not exclusive
-            return ClusterSpec.request(getClusterSpecType(), getClusterSpecId()).exclusive(false).vespaVersion(version).build();
-        }
     }
 
 }

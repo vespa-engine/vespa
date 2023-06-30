@@ -1,7 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -9,11 +12,12 @@ import com.yahoo.vespa.hosted.provision.maintenance.RetiredExpirer;
 import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
-import com.yahoo.vespa.service.duper.InfraApplication;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,7 +34,9 @@ public class NodeTypeProvisioningTest {
 
     private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
-    private final InfraApplication proxyApp = ProvisioningTester.infraApplication(NodeType.proxy);
+    private final ApplicationId application = ProvisioningTester.applicationId(); // application using proxy nodes
+    private final Capacity capacity = Capacity.fromRequiredNodeType(NodeType.proxy);
+    private final ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
 
     @Before
     public void setup() {
@@ -45,20 +51,26 @@ public class NodeTypeProvisioningTest {
     @Test
     public void proxy_deployment() {
         { // Deploy
-            tester.prepareAndActivateInfraApplication(proxyApp);
+            List<HostSpec> hosts = deployProxies(application, tester);
+            assertEquals("Reserved all proxies", 11, hosts.size());
+            tester.activate(application, new HashSet<>(hosts));
             NodeList nodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy);
             assertEquals("Activated all proxies", 11, nodes.size());
         }
 
         { // Redeploy with no changes
-            tester.prepareAndActivateInfraApplication(proxyApp);
+            List<HostSpec> hosts = deployProxies(application, tester);
+            assertEquals(11, hosts.size());
+            tester.activate(application, new HashSet<>(hosts));
             NodeList nodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy);
             assertEquals(11, nodes.size());
         }
 
         { // Add 2 ready proxies then redeploy
             tester.makeReadyNodes(2, "small", NodeType.proxy);
-            tester.prepareAndActivateInfraApplication(proxyApp);
+            List<HostSpec> hosts = deployProxies(application, tester);
+            assertEquals(13, hosts.size());
+            tester.activate(application, new HashSet<>(hosts));
             NodeList nodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy);
             assertEquals(13, nodes.size());
         }
@@ -69,7 +81,9 @@ public class NodeTypeProvisioningTest {
             tester.nodeRepository().nodes().fail(nodes.asList().get(1).hostname(), Agent.system, "Failing to unit test");
             tester.nodeRepository().nodes().fail(nodes.asList().get(5).hostname(), Agent.system, "Failing to unit test");
             
-            tester.prepareAndActivateInfraApplication(proxyApp);
+            List<HostSpec> hosts = deployProxies(application, tester);
+            assertEquals(10, hosts.size());
+            tester.activate(application, new HashSet<>(hosts));
             nodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy);
             assertEquals(10, nodes.size());
         }
@@ -79,7 +93,10 @@ public class NodeTypeProvisioningTest {
     public void retire_proxy() {
         MockDeployer deployer = new MockDeployer(tester.provisioner(),
                                                  tester.clock(),
-                                                 List.of(new MockDeployer.ApplicationContext(proxyApp, Version.fromString("6.42"))));
+                                                 Collections.singletonMap(application,
+                                                                          new MockDeployer.ApplicationContext(application,
+                                                                                                              clusterSpec,
+                                                                                                              capacity)));
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(),
                                                             deployer,
                                                             new TestMetric(),
@@ -87,7 +104,9 @@ public class NodeTypeProvisioningTest {
                                                             Duration.ofMinutes(10));
 
         { // Deploy
-            tester.prepareAndActivateInfraApplication(proxyApp);
+            List<HostSpec> hosts = deployProxies(application, tester);
+            assertEquals("Reserved all proxies", 11, hosts.size());
+            tester.activate(application, new HashSet<>(hosts));
             NodeList nodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy);
             assertEquals("Activated all proxies", 11, nodes.size());
         }
@@ -96,7 +115,9 @@ public class NodeTypeProvisioningTest {
         { // Pick out a node and retire it
             tester.nodeRepository().nodes().write(nodeToRetire.withWantToRetire(true, Agent.system, tester.clock().instant()), () -> {});
 
-            tester.prepareAndActivateInfraApplication(proxyApp);
+            List<HostSpec> hosts = deployProxies(application, tester);
+            assertEquals(11, hosts.size());
+            tester.activate(application, new HashSet<>(hosts));
             NodeList nodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy);
             assertEquals(11, nodes.size());
 
@@ -108,7 +129,9 @@ public class NodeTypeProvisioningTest {
         }
 
         { // Redeploying while the node is still retiring has no effect
-            tester.prepareAndActivateInfraApplication(proxyApp);
+            List<HostSpec> hosts = deployProxies(application, tester);
+            assertEquals(11, hosts.size());
+            tester.activate(application, new HashSet<>(hosts));
             NodeList nodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy);
             assertEquals(11, nodes.size());
 
@@ -123,7 +146,9 @@ public class NodeTypeProvisioningTest {
             tester.advanceTime(Duration.ofMinutes(11));
             retiredExpirer.run();
 
-            tester.prepareAndActivateInfraApplication(proxyApp);
+            List<HostSpec> hosts = deployProxies(application, tester);
+            assertEquals(10, hosts.size());
+            tester.activate(application, new HashSet<>(hosts));
             NodeList nodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy);
             assertEquals(10, nodes.size());
 
@@ -137,7 +162,8 @@ public class NodeTypeProvisioningTest {
     public void retire_multiple_proxy_simultaneously() {
         MockDeployer deployer = new MockDeployer(tester.provisioner(),
                                                  tester.clock(),
-                                                 List.of(new MockDeployer.ApplicationContext(proxyApp, Version.fromString("6.42"))));
+                                                 Collections.singletonMap(application,
+                                                                          new MockDeployer.ApplicationContext(application, clusterSpec, capacity)));
         RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(),
                                                             deployer,
                                                             new TestMetric(),
@@ -146,7 +172,9 @@ public class NodeTypeProvisioningTest {
         final int numNodesToRetire = 5;
 
         { // Deploy
-            tester.prepareAndActivateInfraApplication(proxyApp);
+            List<HostSpec> hosts = deployProxies(application, tester);
+            assertEquals("Reserved all proxies", 11, hosts.size());
+            tester.activate(application, new HashSet<>(hosts));
             NodeList nodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy);
             assertEquals("Activated all proxies", 11, nodes.size());
         }
@@ -157,7 +185,9 @@ public class NodeTypeProvisioningTest {
             nodesToRetire.forEach(nodeToRetire ->
                     tester.nodeRepository().nodes().write(nodeToRetire.withWantToRetire(true, Agent.system, tester.clock().instant()), () -> {}));
 
-            tester.prepareAndActivateInfraApplication(proxyApp);
+            List<HostSpec> hosts = deployProxies(application, tester);
+            assertEquals(11, hosts.size());
+            tester.activate(application, new HashSet<>(hosts));
             NodeList nodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy);
             assertEquals(11, nodes.size());
 
@@ -172,7 +202,9 @@ public class NodeTypeProvisioningTest {
         }
 
         { // Redeploying while the nodes are still retiring has no effect
-            tester.prepareAndActivateInfraApplication(proxyApp);
+            List<HostSpec> hosts = deployProxies(application, tester);
+            assertEquals(11, hosts.size());
+            tester.activate(application, new HashSet<>(hosts));
             NodeList nodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy);
             assertEquals(11, nodes.size());
 
@@ -188,7 +220,9 @@ public class NodeTypeProvisioningTest {
             tester.advanceTime(Duration.ofMinutes(11));
             retiredExpirer.run();
 
-            tester.prepareAndActivateInfraApplication(proxyApp);
+            List<HostSpec> hosts = deployProxies(application, tester);
+            assertEquals(6, hosts.size());
+            tester.activate(application, new HashSet<>(hosts));
 
             // All currently active proxy nodes are not marked with wantToRetire or as retired
             long numRetiredActiveProxyNodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy).stream()
@@ -201,6 +235,10 @@ public class NodeTypeProvisioningTest {
             assertEquals(nodesToRetire.stream().map(Node::hostname).collect(Collectors.toSet()),
                     tester.nodeRepository().nodes().list(Node.State.dirty).stream().map(Node::hostname).collect(Collectors.toSet()));
         }
+    }
+
+    private List<HostSpec> deployProxies(ApplicationId application, ProvisioningTester tester) {
+        return tester.prepare(application, clusterSpec, capacity);
     }
 
 }

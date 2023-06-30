@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import ai.vespa.http.DomainName;
 import com.google.common.collect.Iterators;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
@@ -62,6 +61,7 @@ public class LoadBalancerProvisionerTest {
 
     private final ApplicationId app1 = ApplicationId.from("tenant1", "application1", "default");
     private final ApplicationId app2 = ApplicationId.from("tenant2", "application2", "default");
+    private final ApplicationId infraApp1 = ApplicationId.from("vespa", "tenant-host", "default");
     private final NodeResources nodeResources = new NodeResources(2, 4, 10, 0.3);
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
@@ -212,10 +212,11 @@ public class LoadBalancerProvisionerTest {
 
     @Test
     public void does_not_provision_load_balancers_for_non_tenant_node_type() {
-        var tenantHostApp = ProvisioningTester.infraApplication(NodeType.host);
-        tester.prepareAndActivateInfraApplication(tenantHostApp);
+        tester.activate(infraApp1, prepare(infraApp1, Capacity.fromRequiredNodeType(NodeType.host),
+                                           clusterRequest(ClusterSpec.Type.container,
+                                                          ClusterSpec.Id.from("tenant-host"))));
         assertTrue("No load balancer provisioned", tester.loadBalancerService().instances().isEmpty());
-        assertEquals(List.of(), tester.nodeRepository().loadBalancers().list(tenantHostApp.getApplicationId()).asList());
+        assertEquals(List.of(), tester.nodeRepository().loadBalancers().list(infraApp1).asList());
     }
 
     @Test
@@ -241,12 +242,12 @@ public class LoadBalancerProvisionerTest {
 
     @Test
     public void provision_load_balancer_config_server_cluster() {
-        provisionInfrastructureLoadBalancer(NodeType.config);
+        provisionInfrastructureLoadBalancer(infraApp1, NodeType.config);
     }
 
     @Test
     public void provision_load_balancer_controller_cluster() {
-        provisionInfrastructureLoadBalancer(NodeType.controller);
+        provisionInfrastructureLoadBalancer(infraApp1, NodeType.controller);
     }
 
     @Test
@@ -437,16 +438,16 @@ public class LoadBalancerProvisionerTest {
                      activeNodes, reals);
     }
 
-    private void provisionInfrastructureLoadBalancer(NodeType nodeType) {
-        var infraApp = ProvisioningTester.infraApplication(nodeType);
-        Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers().list(infraApp.getApplicationId()).asList();
-        tester.prepareAndActivateInfraApplication(infraApp);
-        var nodes = prepare(infraApp.getApplicationId(), infraApp.getCapacity(), infraApp.getClusterSpecWithVersion(Version.fromString("7.1")));
+    private void provisionInfrastructureLoadBalancer(ApplicationId application, NodeType nodeType) {
+        Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers().list(application).asList();
+        var cluster = ClusterSpec.Id.from("infra-cluster");
+        ClusterSpec.Type clusterType = nodeType == NodeType.config ? ClusterSpec.Type.admin : ClusterSpec.Type.container;
+        var nodes = prepare(application, Capacity.fromRequiredNodeType(nodeType), clusterRequest(clusterType, cluster));
         assertEquals(1, lbs.get().size());
-        tester.activate(infraApp.getApplicationId(), nodes);
+        tester.activate(application, nodes);
         assertEquals("Prepare provisions load balancer with reserved nodes", 3, lbs.get().get(0).instance().get().reals().size());
         assertSame(LoadBalancer.State.active, lbs.get().get(0).state());
-        assertEquals(infraApp.getClusterSpecId(), lbs.get().get(0).id().cluster());
+        assertEquals(cluster, lbs.get().get(0).id().cluster());
     }
 
     private void dirtyNodesOf(ApplicationId application) {
