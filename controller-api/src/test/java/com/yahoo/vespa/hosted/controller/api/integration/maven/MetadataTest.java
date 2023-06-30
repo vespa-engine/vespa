@@ -1,8 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.maven;
 
+import com.yahoo.collections.Iterables;
 import com.yahoo.component.Version;
 import org.junit.jupiter.api.Test;
+
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -13,8 +16,12 @@ public class MetadataTest {
         Metadata metadata = Metadata.fromXml(metadataXml);
         assertEquals("com.yahoo.vespa", metadata.id().groupId());
         assertEquals("tenant-base", metadata.id().artifactId());
-        assertEquals(Version.fromString("6.297.80"), metadata.versions().get(0));
-        assertEquals(Version.fromString("7.61.10"), metadata.versions().get(metadata.versions().size() - 1));
+        assertEquals(Instant.parse("2019-06-19T05:42:45.00Z"), metadata.lastUpdated());
+        assertEquals(Version.fromString("6.297.80"), metadata.versions(metadata.lastUpdated()).get(0));
+        assertEquals(Version.fromString("7.61.10"), Iterables.reversed(metadata.versions(metadata.lastUpdated().plusSeconds(10801)))
+                                                             .iterator().next());
+        assertEquals(Version.fromString("7.60.51"), Iterables.reversed(metadata.versions(metadata.lastUpdated().plusSeconds(10800)))
+                                                             .iterator().next());
     }
 
     private static final String metadataXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

@@ -148,7 +148,7 @@ public record VersionStatus(List<VespaVersion> versions, int currentMajor) {
                                                                                                                                                     .withProjectId()
                                                                                                                                                     .withJobs()));
         List<VespaVersion> versions = new ArrayList<>();
-        List<Version> releasedVersions = controller.mavenRepository().metadata().versions();
+        List<Version> releasedVersions = controller.mavenRepository().metadata().versions(controller.clock().instant());
 
         for (DeploymentStatistics statistics : deploymentStatistics) {
             if (statistics.version().isEmpty()) continue;

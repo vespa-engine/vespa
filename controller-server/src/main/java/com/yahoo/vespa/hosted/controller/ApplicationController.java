@@ -81,6 +81,7 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
+
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
@@ -421,10 +422,10 @@ public class ApplicationController {
 
         // Fall back to the newest, system-compatible version with unknown confidence. For public systems, this implies high confidence.
         Set<Version> knownVersions = versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(toSet());
-        Optional<Version> unknown = controller.mavenRepository().metadata().versions().stream()
-                                              .filter(version -> ! knownVersions.contains(version))
-                                              .filter(systemCompatible)
-                                              .max(naturalOrder());
+        Optional<Version> unknown = controller.mavenRepository().metadata().versions(clock.instant()).stream()
+                                            .filter(version -> ! knownVersions.contains(version))
+                                            .filter(systemCompatible)
+                                            .max(naturalOrder());
 
         if (nonBroken.isPresent()) {
             if (controller.system().isPublic() && unknown.isPresent() && unknown.get().isAfter(nonBroken.get()))
