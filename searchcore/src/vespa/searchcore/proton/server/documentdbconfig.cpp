@@ -98,7 +98,7 @@ DocumentDBConfig::DocumentDBConfig(
 { }
 
 
-DocumentDBConfig::DocumentDBConfig(const DocumentDBConfig &cfg) = default;
+DocumentDBConfig::DocumentDBConfig(const DocumentDBConfig &cfg) noexcept = default;
 
 
 DocumentDBConfig::~DocumentDBConfig() = default;
