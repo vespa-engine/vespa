@@ -27,7 +27,9 @@ GroupingLevel::GroupingLevel() noexcept
 GroupingLevel::~GroupingLevel() = default;
 
 GroupingLevel::GroupingLevel(const GroupingLevel &) = default;
+GroupingLevel::GroupingLevel(GroupingLevel&&) noexcept = default;
 GroupingLevel & GroupingLevel::operator =(const GroupingLevel &) = default;
+GroupingLevel& GroupingLevel::operator=(GroupingLevel&&) noexcept = default;
 
 Serializer &
 GroupingLevel::onSerialize(Serializer & os) const
