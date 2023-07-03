@@ -17,6 +17,7 @@
 #include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.matcher");
@@ -221,9 +222,9 @@ updateCoverage(Coverage & coverage, const MaybeMatchPhaseLimiter & limiter, cons
         LOG(debug, "soft doomed, degraded from timeout covered = %" PRIu64, coverage.getCovered());
     }
     LOG(debug, "docid limit = %d", totalSpace);
-    LOG(debug, "num active lids = %lu", coverage.getActive());
+    LOG(debug, "num active lids = %" PRIu64, coverage.getActive());
     LOG(debug, "space Estimate = %zd", spaceEstimate);
-    LOG(debug, "covered = %zu", coverage.getCovered());
+    LOG(debug, "covered = %" PRIu64, coverage.getCovered());
 }
 
 }
@@ -334,7 +335,7 @@ Matcher::updateStats(const MatchingStats & my_stats, const search::engine::Reque
         }
         if ((_stats.softDoomed() < 10) || (_stats.softDoomed()%100 == 0)) {
             LOG(info,
-                "Triggered softtimeout %s count: %zu. Coverage = %lu of %lu documents. request=%1.3f,"
+                "Triggered softtimeout %s count: %zu. Coverage = %" PRIu64 " of %" PRIu64 " documents. request=%1.3f,"
                 " doomOvertime=%1.3f, overtime_limit=%1.3f and duration=%1.3f, rankprofile=%s"
                 ", factor %s adjusted from %1.3f to %1.3f",
                 isDoomExplicit ? "with query override" : "factor adjustment",
