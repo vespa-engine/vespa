@@ -3,9 +3,11 @@ package com.yahoo.vespa.hosted.provision.persistence;
 
 import ai.vespa.http.DomainName;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -13,6 +15,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.lb.DnsZone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerEndpoint;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.PrivateServiceId;
@@ -62,6 +65,8 @@ public class LoadBalancerSerializer {
     private static final String allowedUrnsField = "allowedUrns";
     private static final String accessTypeField = "type";
     private static final String urnField = "urn";
+    private static final String endpointsField = "endpoints";
+    private static final String authMethodField = "authMethod";
 
     public static byte[] toJson(LoadBalancer loadBalancer) {
         Slime slime = new Slime();
@@ -105,7 +110,7 @@ public class LoadBalancerSerializer {
         }
     }
 
-    public static LoadBalancer fromJson(byte[] data) {
+    public static LoadBalancer fromJson(byte[] data, Environment environment, RegionName region) {
         Cursor object = SlimeUtils.jsonToSlime(data).get();
 
         Set<Real> reals = new LinkedHashSet<>();
@@ -135,8 +140,17 @@ public class LoadBalancerSerializer {
                                                   ? Optional.empty()
                                                   : Optional.of(new LoadBalancerInstance(hostname, ipAddress, dnsZone, ports, networks, reals, settings, serviceIds, cloudAccount));
 
-        return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
-                                instance,
+        LoadBalancerId id = LoadBalancerId.fromSerializedForm(object.field(idField).asString());
+        final List<LoadBalancerEndpoint> endpoints;
+        Cursor endpointsArray = object.field(endpointsField);
+        if (endpointsArray.valid()) { // TODO(mpolden): Require this field after 2023-08-01
+            endpoints = new ArrayList<>();
+            endpointsArray.traverse((ArrayTraverser) (idx, endpointObject) -> endpoints.add(new LoadBalancerEndpoint(endpointObject.field(idField).asString(),
+                                                                                                                     LoadBalancerEndpoint.AuthMethod.valueOf(endpointObject.field(authMethodField).toString()))));
+        } else {
+            endpoints = LoadBalancerEndpoint.createAll(id, environment, region);
+        }
+        return new LoadBalancer(id, endpoints, instance,
                                 stateFromString(object.field(stateField).asString()),
                                 Instant.ofEpochMilli(object.field(changedAtField).asLong()));
     }

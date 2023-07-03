@@ -122,7 +122,7 @@ public class NodeRepository extends AbstractComponent {
                     zone.cloud().dynamicProvisioning(), provisionServiceProvider.getHostProvisioner().map(__ -> "present").orElse("empty")));
 
         this.flagSource = flagSource;
-        this.db = new CuratorDb(flavors, curator, clock, useCuratorClientCache, nodeCacheSize);
+        this.db = new CuratorDb(flavors, curator, clock, useCuratorClientCache, nodeCacheSize, zone);
         this.zone = zone;
         this.clock = clock;
         this.applications = new Applications(db);

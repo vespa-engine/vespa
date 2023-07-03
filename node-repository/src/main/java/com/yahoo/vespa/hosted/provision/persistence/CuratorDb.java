@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -79,12 +80,14 @@ public class CuratorDb {
     private final CachingCurator db;
     private final Clock clock;
     private final CuratorCounter provisionIndexCounter;
+    private final Zone zone;
 
-    public CuratorDb(NodeFlavors flavors, Curator curator, Clock clock, boolean useCache, long nodeCacheSize) {
+    public CuratorDb(NodeFlavors flavors, Curator curator, Clock clock, boolean useCache, long nodeCacheSize, Zone zone) {
         this.nodeSerializer = new NodeSerializer(flavors, nodeCacheSize);
         this.db = new CachingCurator(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter"));
+        this.zone = zone;
         initZK();
     }
 
@@ -421,7 +424,7 @@ public class CuratorDb {
     }
 
     public Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
-        return read(loadBalancerPath(id), LoadBalancerSerializer::fromJson);
+        return read(loadBalancerPath(id), (data) -> LoadBalancerSerializer.fromJson(data, zone.environment(), zone.region()));
     }
 
     public void writeLoadBalancer(LoadBalancer loadBalancer, LoadBalancer.State fromState) {

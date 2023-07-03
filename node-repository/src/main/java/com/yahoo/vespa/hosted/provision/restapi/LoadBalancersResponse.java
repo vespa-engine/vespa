@@ -94,6 +94,12 @@ public class LoadBalancersResponse extends SlimeJsonResponse {
               .map(LoadBalancerInstance::cloudAccount)
               .filter(cloudAccount -> !cloudAccount.isUnspecified())
               .ifPresent(cloudAccount -> lbObject.setString("cloudAccount", cloudAccount.value()));
+            Cursor endpointsArray = lbObject.setArray("endpoints");
+            for (var endpoint : lb.endpoints()) {
+                Cursor endpointObject = endpointsArray.addObject();
+                endpointObject.setString("id", endpoint.id());
+                endpointObject.setString("authMethod", endpoint.authMethod().name());
+            }
         });
     }
 

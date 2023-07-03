@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerEndpoint;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
@@ -202,7 +203,8 @@ public class LoadBalancerProvisioner {
             newLoadBalancer = loadBalancer.get().with(LoadBalancer.State.removable, now);
         } else {
             Optional<LoadBalancerInstance> instance = provisionInstance(id, loadBalancer, zoneEndpoint, cloudAccount);
-            newLoadBalancer = loadBalancer.isEmpty() ? new LoadBalancer(id, instance, LoadBalancer.State.reserved, now)
+            List<LoadBalancerEndpoint> endpoints = LoadBalancerEndpoint.createAll(id, nodeRepository.zone().environment(), nodeRepository.zone().region());
+            newLoadBalancer = loadBalancer.isEmpty() ? new LoadBalancer(id, endpoints, instance, LoadBalancer.State.reserved, now)
                                                      : loadBalancer.get().with(instance);
         }
         // Always store the load balancer. LoadBalancerExpirer will remove unwanted ones

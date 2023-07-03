@@ -3,9 +3,12 @@ package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -24,7 +27,7 @@ public class CuratorDbTest {
 
     private final Curator curator = new MockCurator();
     private final CuratorDb zkClient = new CuratorDb(
-            FlavorConfigBuilder.createDummies("default"), curator, Clock.systemUTC(), true, 1000);
+            FlavorConfigBuilder.createDummies("default"), curator, Clock.systemUTC(), true, 1000, new Zone(Environment.defaultEnvironment(), RegionName.defaultName()));
 
     @Test
     public void can_read_stored_host_information() throws Exception {

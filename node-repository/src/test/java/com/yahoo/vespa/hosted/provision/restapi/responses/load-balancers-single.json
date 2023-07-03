@@ -29,7 +29,17 @@
           "port": 4443
         }
       ],
-      "public": true
+      "public": true,
+      "endpoints": [
+        {
+          "id": "(ignore)",
+          "authMethod": "mtls"
+        },
+        {
+          "id": "(ignore)",
+          "authMethod": "token"
+        }
+      ]
     }
   ]
 }

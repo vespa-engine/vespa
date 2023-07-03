@@ -5,11 +5,14 @@ import ai.vespa.http.DomainName;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.vespa.hosted.provision.lb.DnsZone;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerEndpoint;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.PrivateServiceId;
@@ -37,6 +40,7 @@ public class LoadBalancerSerializerTest {
         var now = Instant.now();
         {
             var loadBalancer = new LoadBalancer(loadBalancerId,
+                                                List.of(new LoadBalancerEndpoint("abcdef01", LoadBalancerEndpoint.AuthMethod.mtls)),
                                                 Optional.of(new LoadBalancerInstance(
                                                         Optional.of(DomainName.of("lb-host")),
                                                         Optional.empty(),
@@ -52,10 +56,10 @@ public class LoadBalancerSerializerTest {
                                                         new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "123"))),
                                                         List.of(PrivateServiceId.of("foo"), PrivateServiceId.of("bar")),
                                                         CloudAccount.from("012345678912"))),
-                                                LoadBalancer.State.active,
-                                                now);
+                                                        LoadBalancer.State.active,
+                                                        now);
 
-            var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
+            var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer), Environment.prod, RegionName.defaultName());
             assertEquals(loadBalancer.id(), serialized.id());
             assertEquals(loadBalancer.instance().get().hostname(), serialized.instance().get().hostname());
             assertEquals(loadBalancer.instance().get().dnsZone(), serialized.instance().get().dnsZone());
@@ -70,6 +74,7 @@ public class LoadBalancerSerializerTest {
         }
         {
             var loadBalancer = new LoadBalancer(loadBalancerId,
+                                                List.of(new LoadBalancerEndpoint("abcdef02", LoadBalancerEndpoint.AuthMethod.token)),
                                                 Optional.of(new LoadBalancerInstance(
                                                         Optional.empty(),
                                                         Optional.of("1.2.3.4"),
@@ -83,7 +88,7 @@ public class LoadBalancerSerializerTest {
                                                 LoadBalancer.State.active,
                                                 now);
 
-            var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
+            var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer), Environment.prod, RegionName.defaultName());
             assertEquals(loadBalancer.id(), serialized.id());
             assertEquals(loadBalancer.instance().get().hostname(), serialized.instance().get().hostname());
             assertEquals(loadBalancer.instance().get().dnsZone(), serialized.instance().get().dnsZone());
@@ -101,9 +106,9 @@ public class LoadBalancerSerializerTest {
     @Test
     public void no_instance_serialization() {
         var now = Instant.now();
-        var loadBalancer = new LoadBalancer(loadBalancerId, Optional.empty(), LoadBalancer.State.reserved, now);
+        var loadBalancer = new LoadBalancer(loadBalancerId, List.of(new LoadBalancerEndpoint("abcdef03", LoadBalancerEndpoint.AuthMethod.mtls)), Optional.empty(), LoadBalancer.State.reserved, now);
 
-        var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
+        var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer), Environment.prod, RegionName.defaultName());
         assertEquals(loadBalancer.id(), serialized.id());
         assertEquals(loadBalancer.instance(), serialized.instance());
         assertEquals(loadBalancer.state(), serialized.state());

@@ -3,9 +3,9 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
-import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -18,12 +18,14 @@ import java.util.Set;
 public class LoadBalancer {
 
     private final LoadBalancerId id;
+    private final List<LoadBalancerEndpoint> endpoints;
     private final Optional<LoadBalancerInstance> instance;
     private final State state;
     private final Instant changedAt;
 
-    public LoadBalancer(LoadBalancerId id, Optional<LoadBalancerInstance> instance, State state, Instant changedAt) {
+    public LoadBalancer(LoadBalancerId id, List<LoadBalancerEndpoint> endpoints, Optional<LoadBalancerInstance> instance, State state, Instant changedAt) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
+        this.endpoints = List.copyOf(Objects.requireNonNull(endpoints, "endpointId must be non-null"));
         this.instance = Objects.requireNonNull(instance, "instance must be non-null");
         this.state = Objects.requireNonNull(state, "state must be non-null");
         this.changedAt = Objects.requireNonNull(changedAt, "changedAt must be non-null");
@@ -39,6 +41,11 @@ public class LoadBalancer {
     /** An identifier for this load balancer. The ID is unique inside the zone */
     public LoadBalancerId id() {
         return id;
+    }
+
+    /** The endpoints of this */
+    public List<LoadBalancerEndpoint> endpoints() {
+        return endpoints;
     }
 
     /** The instance associated with this */
@@ -65,12 +72,12 @@ public class LoadBalancer {
         if (this.state != State.reserved && state == State.reserved) {
             throw new IllegalArgumentException("Invalid state transition: " + this.state + " -> " + state);
         }
-        return new LoadBalancer(id, instance, state, changedAt);
+        return new LoadBalancer(id, endpoints, instance, state, changedAt);
     }
 
     /** Returns a copy of this with instance set to given instance */
     public LoadBalancer with(Optional<LoadBalancerInstance> instance) {
-        return new LoadBalancer(id, instance, state, changedAt);
+        return new LoadBalancer(id, endpoints, instance, state, changedAt);
     }
 
     public enum State {

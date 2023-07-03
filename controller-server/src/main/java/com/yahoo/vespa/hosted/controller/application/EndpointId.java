@@ -4,8 +4,7 @@ package com.yahoo.vespa.hosted.controller.application;
 import java.util.Objects;
 
 /**
- * A type to represent the ID of an endpoint.  This is typically the first part of
- * an endpoint name.
+ * The user-specified ID of an endpoint.  This is typically the first part of an endpoint name.
  *
  * @author ogronnesby
  */
