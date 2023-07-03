@@ -19,7 +19,7 @@ public class ConstantTensorJsonValidatorTest {
     }
 
     private static void validateTensorJson(TensorType tensorType, Reader jsonTensorReader) {
-        new ConstantTensorJsonValidator().validate("dummy.json", tensorType, jsonTensorReader);
+        new ConstantTensorJsonValidator(tensorType).validate("dummy.json", jsonTensorReader);
     }
 
     @Test
@@ -207,8 +207,8 @@ public class ConstantTensorJsonValidatorTest {
                             "        }",
                             "   ]",
                             "}"));
-        });
-        assertTrue(exception.getMessage().contains("Tensor value is not a number (VALUE_STRING)"));
+            });
+        assertTrue(exception.getMessage().contains("Inside 'value': cell value is not a number (VALUE_STRING)"));
     }
 
     @Test
@@ -281,8 +281,7 @@ public class ConstantTensorJsonValidatorTest {
                             "   }",
                             "}"));
         });
-        System.err.println("msg: " + exception.getMessage());
-        assertTrue(exception.getMessage().contains("Expected 'cells' or 'values', got 'stats'"));
+        assertTrue(exception.getMessage().contains("Unexpected content '{' for field 'stats'"));
     }
 
     @Test
@@ -300,6 +299,83 @@ public class ConstantTensorJsonValidatorTest {
         validateTensorJson(
                 TensorType.fromSpec("tensor(x{})"),
                 inputJsonToReader("{'cells':{'a':5,'b':4.0,'c':3.1,'d':-2,'e':-1.0}}"));
+    }
+
+    @Test
+    void ensure_that_matrices_work() {
+        validateTensorJson(
+                TensorType.fromSpec("tensor(x[2], y[3])"),
+                inputJsonToReader(
+                        "[",
+                        " [ 1, 2, 3],",
+                        " [ 4, 5, 6]",
+                        "]"));
+        validateTensorJson(
+                TensorType.fromSpec("tensor(x[2], y[3])"),
+                inputJsonToReader(
+                        "{'values':[",
+                        " [ 1, 2, 3],",
+                        " [ 4, 5, 6]",
+                        "]}"));
+    }
+
+    @Test
+    void ensure_that_simple_maps_work() {
+        validateTensorJson(
+                TensorType.fromSpec("tensor(category{})"),
+                inputJsonToReader(
+                        "{",
+                        "   'foo': 1,",
+                        "   'bar': 2,",
+                        "   'type': 3,",
+                        "   'cells': 4,",
+                        "   'value': 5,",
+                        "   'values': 6,",
+                        "   'blocks': 7,",
+                        "   'anything': 8",
+                        "}"));
+        validateTensorJson(
+                TensorType.fromSpec("tensor(category{})"),
+                inputJsonToReader(
+                        "{'cells':{",
+                        "   'foo': 1,",
+                        "   'bar': 2,",
+                        "   'type': 3,",
+                        "   'cells': 4,",
+                        "   'value': 5,",
+                        "   'values': 6,",
+                        "   'blocks': 7,",
+                        "   'anything': 8",
+                        "}}"));
+    }
+
+    @Test
+    void ensure_that_mixing_formats_disallowed() {
+        Throwable exception = assertThrows(InvalidConstantTensorException.class, () -> {
+            validateTensorJson(
+                    TensorType.fromSpec("tensor(x{})"),
+                    inputJsonToReader("{ 'a': 1.0, 'cells': { 'b': 2.0 } }"));
+
+        });
+        assertTrue(exception.getMessage().contains("Cannot use {label: value} format together with 'cells'"));
+    }
+
+    @Test
+    void ensure_that_simple_blocks_work() {
+        validateTensorJson(
+                TensorType.fromSpec("tensor(a{},b[3])"),
+                inputJsonToReader(
+                        "{'blocks':{'foo':[1,2,3], 'bar':[4,5,6]}}"));
+    }
+
+    @Test
+    void ensure_that_complex_blocks_work() {
+        validateTensorJson(
+                TensorType.fromSpec("tensor(a{},b[3],c{},d[2])"),
+                inputJsonToReader(
+                        "{'blocks':[",
+                        "{'address':{'a':'foo','c':'bar'},'values':[[1,2],[3,4],[5,6]]},",
+                        "{'address':{'a':'qux','c':'zip'},'values':[[9,8],[7,6],[5,4]]}]}"));
     }
 
 }
