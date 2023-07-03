@@ -3,6 +3,8 @@
 #include "groupingcontext.h"
 #include <vespa/searchlib/aggregation/predicates.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
+#include <vespa/searchlib/aggregation/hitsaggregationresult.h>
+#include <vespa/searchlib/common/bitvector.h>
 
 namespace search::grouping {
 
@@ -17,12 +19,11 @@ GroupingContext::deserialize(const char *groupSpec, uint32_t groupSpecLen)
         vespalib::NBOSerializer nis(is);
         uint32_t numGroupings = 0;
         nis >> numGroupings;
+        _groupingList.reserve(numGroupings);
         for (size_t i = 0; i < numGroupings; i++) {
             auto grouping = std::make_shared<search::aggregation::Grouping>();
             grouping->deserialize(nis);
-            grouping->setClock(&_clock);
-            grouping->setTimeOfDoom(_timeOfDoom);
-            _groupingList.push_back(grouping);
+            _groupingList.push_back(std::move(grouping));
         }
     }
 }
@@ -65,8 +66,7 @@ GroupingContext::GroupingContext(const vespalib::Clock & clock, vespalib::steady
       _os(),
       _groupingList(),
       _enableNestedMultivalueGrouping(true)
-{
-}
+{ }
 
 GroupingContext::GroupingContext(const GroupingContext & rhs) :
     _clock(rhs._clock),
@@ -74,8 +74,7 @@ GroupingContext::GroupingContext(const GroupingContext & rhs) :
     _os(),
     _groupingList(),
     _enableNestedMultivalueGrouping(rhs._enableNestedMultivalueGrouping)
-{
-}
+{ }
 
 void
 GroupingContext::addGrouping(const GroupingPtr & g)
@@ -102,6 +101,45 @@ GroupingContext::needRanking() const
         return false;
     }
     return true;
+}
+
+using DocId = uint32_t;
+
+void
+GroupingContext::aggregate(Grouping & grouping, const RankedHit * rankedHit, unsigned int len, const BitVector * bVec) const
+{
+    grouping.preAggregate(false);
+
+    for(unsigned int i(0), m(grouping.getMaxN(len)); (i < m) && !hasExpired(); i++) {
+        grouping.aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
+    }
+    if (bVec != nullptr) {
+        unsigned int sz(bVec->size());
+        int64_t topN = grouping.getTopN();
+        if (topN > 0) {
+            for(DocId d(bVec->getFirstTrueBit()), i(0), m(grouping.getMaxN(sz)); (d < sz) && (i < m) && !hasExpired(); d = bVec->getNextTrueBit(d+1), i++) {
+                grouping.aggregate(d, 0.0);
+            }
+        } else {
+            for(DocId d(bVec->getFirstTrueBit()); (d < sz) && !hasExpired(); d = bVec->getNextTrueBit(d+1)) {
+                grouping.aggregate(d, 0.0);
+            }
+        }
+    }
+    grouping.postProcess();
+}
+
+void
+GroupingContext::aggregate(Grouping & grouping, const RankedHit * rankedHit, unsigned int len) const
+{
+    bool isOrdered(! grouping.needResort());
+    grouping.preAggregate(isOrdered);
+    search::aggregation::HitsAggregationResult::SetOrdered pred;
+    grouping.select(pred, pred);
+    for(unsigned int i(0), m(grouping.getMaxN(len)); (i < m) && !hasExpired(); i++) {
+        grouping.aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
+    }
+    grouping.postProcess();
 }
 
 }

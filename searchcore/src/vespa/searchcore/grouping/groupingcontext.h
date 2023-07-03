@@ -4,6 +4,7 @@
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/clock.h>
 #include <vector>
 #include <memory>
 
@@ -18,16 +19,9 @@ class GroupingContext
 {
 public:
     using UP = std::unique_ptr<GroupingContext>;
-    using GroupingPtr =  std::shared_ptr<search::aggregation::Grouping>;
+    using Grouping = search::aggregation::Grouping;
+    using GroupingPtr =  std::shared_ptr<Grouping>;
     using GroupingList = std::vector<GroupingPtr>;
-
-private:
-    const vespalib::Clock & _clock;
-    vespalib::steady_time   _timeOfDoom;
-    vespalib::nbostream     _os;
-    GroupingList            _groupingList;
-    bool                    _enableNestedMultivalueGrouping;
-public:
 
     /**
      * Deserialize a grouping spec into this context.
@@ -74,7 +68,7 @@ public:
      * Return the internal list of grouping expressions in this context.
      * @return a list of groupings.
      **/
-    GroupingList &getGroupingList() { return _groupingList; }
+    GroupingList &getGroupingList() noexcept { return _groupingList; }
 
     /**
      * Serialize the grouping expressions in this context.
@@ -84,7 +78,7 @@ public:
     /**
      * Check whether this context contains any groupings.
      **/
-    bool empty() const { return _groupingList.empty(); }
+    bool empty() const noexcept { return _groupingList.empty(); }
 
     /**
      * Obtain the grouping result.
@@ -108,13 +102,23 @@ public:
     /**
      * Obtain the time of doom.
      */
-    vespalib::steady_time getTimeOfDoom() const { return _timeOfDoom; }
+    vespalib::steady_time getTimeOfDoom() const noexcept { return _timeOfDoom; }
+    bool hasExpired() const noexcept { return _clock.getTimeNS() > _timeOfDoom; }
     /**
      * Figure out if ranking is necessary for any of the grouping requests here.
      * @return true if ranking is required.
      */
     bool needRanking() const;
-    bool enableNestedMultivalueGrouping() const { return _enableNestedMultivalueGrouping; }
+    bool enableNestedMultivalueGrouping() const noexcept { return _enableNestedMultivalueGrouping; }
+
+    void aggregate(Grouping & grouping, const RankedHit * rankedHit, unsigned int len, const BitVector * bVec) const;
+    void aggregate(Grouping & grouping, const RankedHit * rankedHit, unsigned int len) const;
+private:
+    const vespalib::Clock & _clock;
+    vespalib::steady_time   _timeOfDoom;
+    vespalib::nbostream     _os;
+    GroupingList            _groupingList;
+    bool                    _enableNestedMultivalueGrouping;
 };
 
 }
