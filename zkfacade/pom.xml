@@ -126,6 +126,8 @@
         <extensions>true</extensions>
         <configuration>
           <importPackage>com.sun.management</importPackage>
+          <allowEmbeddedArtifacts>com.google.errorprone:error_prone_annotations:2.18.0, com.google.guava:failureaccess:1.0.1,
+            com.google.guava:guava:27.1-jre, com.google.j2objc:j2objc-annotations:1.1</allowEmbeddedArtifacts>
         </configuration>
       </plugin>
       <plugin>
