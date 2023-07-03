@@ -173,7 +173,7 @@ public:
                      const vespalib::string &configId,
                      const vespalib::string &docTypeName) noexcept;
 
-    DocumentDBConfig(const DocumentDBConfig &cfg);
+    DocumentDBConfig(const DocumentDBConfig &cfg) noexcept;
     DocumentDBConfig & operator=(const DocumentDBConfig &cfg) = delete;
     ~DocumentDBConfig();
 
