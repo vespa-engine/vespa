@@ -259,8 +259,9 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                 .sorted().toList();
 
         if (! violations.isEmpty()) {
-            // TODO: improve error message
-            warnOrThrow("Artifacts provided from Jdisc runtime are included in compile scope: " + violations);
+            warnOrThrow("Artifacts provided from Jdisc runtime are included in compile scope: " + violations
+                                + ". Direct dependencies should be removed."
+                                + " For transitive dependencies, run 'mvn dependency:tree' and add necessary exclusions.");
         }
     }
 
