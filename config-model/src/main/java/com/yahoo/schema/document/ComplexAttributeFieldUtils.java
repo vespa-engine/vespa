@@ -70,11 +70,27 @@ public class ComplexAttributeFieldUtils {
                         return false;
                     }
                 }
+                if (!structField.isImportedField() && hasStructFieldAttributes(structField)) {
+                    return false;
+                }
             }
             return true;
         } else {
             return false;
         }
+    }
+
+    private static boolean hasStructFieldAttributes(ImmutableSDField field) {
+        for (var structField : field.getStructFields()) {
+            var attribute = structField.getAttributes().get(structField.getName());
+            if (attribute != null) {
+                return true;
+            }
+            if (hasStructFieldAttributes(structField)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean isPrimitiveType(Attribute attribute) {

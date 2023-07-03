@@ -82,7 +82,8 @@ public class ComplexFieldsWithStructFieldAttributesValidator extends Validator {
             if (structField.usesStructOrMap() && structField.wasConfiguredToDoAttributing()) {
                 result.add(structField.getName());
             }
-            result.addAll(getStructFieldAttributes(structField.getStructFields(), returnAllTypes));
+            // If we encounter struct field attributes underneath this level, those are not supported and should be returned.
+            result.addAll(getStructFieldAttributes(structField.getStructFields(), true));
         }
         return result;
     }

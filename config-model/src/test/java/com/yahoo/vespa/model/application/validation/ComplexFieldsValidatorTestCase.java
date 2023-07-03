@@ -68,8 +68,36 @@ public class ComplexFieldsValidatorTestCase {
                     "}",
                     "}"));
         });
-        assertTrue(exception.getMessage().contains(getExpectedMessage("docTopics (docTopics.topics)")));
+        assertTrue(exception.getMessage().contains(getExpectedMessage("docTopics (docTopics.topics, docTopics.topics.id, docTopics.topics.label)")));
     }
+
+    @Test
+    void throws_exception_when_struct_field_inside_nested_struct_array_is_specified_as_attribute() throws IOException, SAXException {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            createModelAndValidate(joinLines(
+                    "schema test {",
+                    "document test {",
+                    "struct item {",
+                        "field name type string {}",
+                        "field color type string {}",
+                        "field type type string {}",
+                    "}",
+                    "struct itembox {",
+                        "field items type array<item> {}",
+                    "}",
+                    "field cabinet type map<string, itembox> {",
+                        "struct-field key { indexing: attribute }",
+                        "struct-field value.items {",
+                            "struct-field name  { indexing: attribute }",
+                            "struct-field color { indexing: attribute }",
+                        "}",
+                    "}",
+                    "}",
+                    "}"));
+        });
+        assertTrue(exception.getMessage().contains(getExpectedMessage("cabinet (cabinet.value.items.name, cabinet.value.items.color)")));
+    }
+
 
     private String getExpectedMessage(String unsupportedFields) {
         return "For cluster 'mycluster', search 'test': " +
