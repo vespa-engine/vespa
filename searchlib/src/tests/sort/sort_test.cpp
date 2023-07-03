@@ -18,23 +18,9 @@ using namespace search::common;
 using namespace search::uca;
 using vespalib::ConstBufferRef;
 
-class Test : public vespalib::TestApp
-{
-public:
-    int Main() override;
-    void testUnsignedIntegerSort();
-    template <typename T>
-    void testSignedIntegerSort();
-    void testStringSort();
-    void testIcu();
-    void testStringCaseInsensitiveSort();
-    void testSortSpec();
-    void testSameAsJavaOrder();
-};
-
 struct LoadedStrings
 {
-    LoadedStrings(const char * v=NULL) : _value(v), _currRadix(_value) { }
+    LoadedStrings(const char * v=nullptr) : _value(v), _currRadix(_value) { }
 
     class ValueRadix
     {
@@ -58,7 +44,7 @@ struct LoadedStrings
     const char * _currRadix;
 };
 
-void Test::testIcu()
+TEST("testIcu")
 {
     {
         const std::string src("Creation of Bob2007 this is atumated string\this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string;this is atumated string; _ 12345567890-=,./;'[;");
@@ -70,10 +56,10 @@ void Test::testIcu()
     }
 }
 
-void Test::testUnsignedIntegerSort()
+TEST("testUnsignedIntegerSort")
 {
     search::NumericRadixSorter<uint32_t, true> S;
-    S(NULL, 0);
+    S(nullptr, 0);
 
     Array<uint32_t> array1(1);
     array1[0] = 1567;
@@ -99,10 +85,10 @@ public:
 };
 
 template <typename T>
-void Test::testSignedIntegerSort()
+void testSignedIntegerSort()
 {
     search::NumericRadixSorter<T, true> S;
-    S(NULL, 0);
+    S(nullptr, 0);
 
     Array<T> array1(1);
     array1[0] = 1567;
@@ -122,14 +108,19 @@ void Test::testSignedIntegerSort()
     }
 }
 
-void Test::testStringSort()
+TEST("testSignedIntegerSort") {
+    testSignedIntegerSort<int32_t>();
+    testSignedIntegerSort<int64_t>();
+}
+
+TEST("testStringSort")
 {
     Array<LoadedStrings> array1(1);
 
     unsigned int N(0x1000);
     Array<LoadedStrings> loaded(N);
     std::vector<uint32_t> radixScratchPad(N);
-    search::radix_sort(LoadedStrings::ValueRadix(), LoadedStrings::ValueCompare(), search::AlwaysEof<LoadedStrings>(), 1, static_cast<LoadedStrings *>(NULL), 0, &radixScratchPad[0], 0);
+    search::radix_sort(LoadedStrings::ValueRadix(), LoadedStrings::ValueCompare(), search::AlwaysEof<LoadedStrings>(), 1, static_cast<LoadedStrings *>(nullptr), 0, &radixScratchPad[0], 0);
 
     array1[0] = LoadedStrings("a");
     search::radix_sort(LoadedStrings::ValueRadix(), LoadedStrings::ValueCompare(), search::AlwaysEof<LoadedStrings>(), 1, &array1[0], 1, &radixScratchPad[0], 0);
@@ -147,19 +138,19 @@ void Test::testStringSort()
     }
 }
 
-void Test::testStringCaseInsensitiveSort()
+TEST("testStringCaseInsensitiveSort")
 {
 }
 
-void Test::testSortSpec()
+TEST("testSortSpec")
 {
     UcaConverterFactory ucaFactory;
     {
         SortSpec sortspec("-name", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
-        EXPECT_TRUE( ! sortspec[0]._ascending);
-        EXPECT_TRUE(sortspec[0]._converter.get() == NULL);
+        EXPECT_FALSE( sortspec[0]._ascending);
+        EXPECT_FALSE(sortspec[0]._converter);
     }
 
     {
@@ -167,8 +158,8 @@ void Test::testSortSpec()
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
-        EXPECT_TRUE(sortspec[0]._converter.get() != NULL);
-        EXPECT_TRUE(dynamic_cast<LowercaseConverter *>(sortspec[0]._converter.get()) != NULL);
+        EXPECT_TRUE(sortspec[0]._converter);
+        EXPECT_TRUE(dynamic_cast<LowercaseConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
 
     {
@@ -176,64 +167,64 @@ void Test::testSortSpec()
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
-        EXPECT_TRUE(sortspec[0]._converter.get() != NULL);
-        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
+        EXPECT_TRUE(sortspec[0]._converter);
+        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
     {
         SortSpec sortspec("-uca(name,nn_no,PRIMARY)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
-        EXPECT_TRUE(sortspec[0]._converter.get() != NULL);
-        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
+        EXPECT_TRUE(sortspec[0]._converter);
+        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
     {
         SortSpec sortspec("-uca(name,nn_no,SECONDARY)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
-        EXPECT_TRUE(sortspec[0]._converter.get() != NULL);
-        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
+        EXPECT_TRUE(sortspec[0]._converter);
+        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
     {
         SortSpec sortspec("-uca(name,nn_no,TERTIARY)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
-        EXPECT_TRUE(sortspec[0]._converter.get() != NULL);
-        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
+        EXPECT_TRUE(sortspec[0]._converter);
+        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
     {
         SortSpec sortspec("-uca(name,nn_no,QUATERNARY)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
-        EXPECT_TRUE(sortspec[0]._converter.get() != NULL);
-        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
+        EXPECT_TRUE(sortspec[0]._converter);
+        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
     {
         SortSpec sortspec("-uca(name,nn_no,IDENTICAL)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
-        EXPECT_TRUE(sortspec[0]._converter.get() != NULL);
-        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
+        EXPECT_TRUE(sortspec[0]._converter);
+        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
     {
         SortSpec sortspec("-uca(name,zh)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
-        EXPECT_TRUE(sortspec[0]._converter.get() != NULL);
-        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
+        EXPECT_TRUE(sortspec[0]._converter);
+        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
     {
         SortSpec sortspec("-uca(name,finnes_ikke)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
         EXPECT_TRUE( ! sortspec[0]._ascending);
-        EXPECT_TRUE(sortspec[0]._converter.get() != NULL);
-        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != NULL);
+        EXPECT_TRUE(sortspec[0]._converter);
+        EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
     {
         try {
@@ -246,7 +237,7 @@ void Test::testSortSpec()
     }
 }
 
-void Test::testSameAsJavaOrder()
+TEST("testSameAsJavaOrder")
 {
     std::vector<vespalib::string> javaOrder;
     std::ifstream is("javaorder.zh");
@@ -275,21 +266,4 @@ void Test::testSameAsJavaOrder()
     }
 }
 
-
-TEST_APPHOOK(Test);
-
-int Test::Main()
-{
-    TEST_INIT("sort_test");
-
-    testUnsignedIntegerSort();
-    testSignedIntegerSort<int32_t>();
-    testSignedIntegerSort<int64_t>();
-    testStringSort();
-    testStringCaseInsensitiveSort();
-    testSortSpec();
-    testIcu();
-    testSameAsJavaOrder();
-
-    TEST_DONE();
-}
+TEST_MAIN() { TEST_RUN_ALL(); }
