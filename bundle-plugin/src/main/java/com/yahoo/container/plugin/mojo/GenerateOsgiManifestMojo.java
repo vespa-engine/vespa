@@ -35,7 +35,7 @@ import static com.yahoo.container.plugin.osgi.ImportPackages.calculateImports;
 import static com.yahoo.container.plugin.util.Artifacts.VESPA_GROUP_ID;
 import static com.yahoo.container.plugin.util.Artifacts.getVespaArtifact;
 import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
-import static com.yahoo.container.plugin.util.JarFiles.providedArtifactsFromClassPath;
+import static com.yahoo.container.plugin.util.JarFiles.providedArtifactsFromManifest;
 
 
 /**
@@ -125,7 +125,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                 // Having our wanted artifact as provided guarantees that log output does not contain its exported packages
                 logMissingPackages(exportedPackagesFromProvidedDeps, projectPackages, compileJarsPackages, includedPackages);
 
-                logProvidedArtifactsIncluded(artifactsToInclude, providedArtifactsFromClassPath(wantedProvidedArtifact.get().getFile()));
+                logProvidedArtifactsIncluded(artifactsToInclude, providedArtifactsFromManifest(wantedProvidedArtifact.get().getFile()));
             } else if (! suppressWarningMissingImportPackages && jdisc_core.isEmpty()) {
                 // TODO: Remove jdisc_core clause above and instead add suppressWarning to necessary vespa modules.
                 warnOrThrow(("This project does not have '%s' as provided dependency, so the generated 'Import-Package' " +
