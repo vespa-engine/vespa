@@ -443,7 +443,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     @Override
-    public Optional<Instant> lastDeployTime(ApplicationId application) {
+    public Optional<Instant> activationTime(ApplicationId application) {
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
         Optional<Instant> activatedTime = getActiveSession(tenant, application).map(Session::getActivatedTime);
@@ -743,7 +743,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public HttpResponse getLogs(ApplicationId applicationId, Optional<DomainName> hostname, String apiParams) {
         String logServerURI = getLogServerURI(applicationId, hostname) + apiParams;
-        return logRetriever.getLogs(logServerURI, lastDeployTime(applicationId));
+        return logRetriever.getLogs(logServerURI, activationTime(applicationId));
     }
 
     // ---------------- Methods to do call against tester containers in hosted ------------------------------

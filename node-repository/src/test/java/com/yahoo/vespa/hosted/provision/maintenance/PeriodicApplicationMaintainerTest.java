@@ -143,21 +143,21 @@ public class PeriodicApplicationMaintainerTest {
         assertEquals("No deployment expected", 4, fixture.deployer.redeployments);
 
         Instant firstDeployTime = clock.instant();
-        assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
-        assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
+        assertEquals(firstDeployTime, fixture.deployer.activationTime(fixture.app1).get());
+        assertEquals(firstDeployTime, fixture.deployer.activationTime(fixture.app2).get());
         clock.advance(Duration.ofMinutes(5));
         fixture.runApplicationMaintainer();
         // Too soon: Not redeployed:
         assertEquals("No deployment expected", 4, fixture.deployer.redeployments);
-        assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
-        assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
+        assertEquals(firstDeployTime, fixture.deployer.activationTime(fixture.app1).get());
+        assertEquals(firstDeployTime, fixture.deployer.activationTime(fixture.app2).get());
 
         clock.advance(Duration.ofMinutes(30));
         fixture.runApplicationMaintainer();
         // Redeployed:
         assertEquals("No deployment expected", 6, fixture.deployer.redeployments);
-        assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app1).get());
-        assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app2).get());
+        assertEquals(clock.instant(), fixture.deployer.activationTime(fixture.app1).get());
+        assertEquals(clock.instant(), fixture.deployer.activationTime(fixture.app2).get());
     }
 
     @Test(timeout = 60_000)
@@ -188,8 +188,8 @@ public class PeriodicApplicationMaintainerTest {
             fixture.deployer.lock().unlock();
             fixture.runApplicationMaintainer();
             Instant deployTime = clock.instant();
-            assertEquals(deployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
-            assertEquals(deployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
+            assertEquals(deployTime, fixture.deployer.activationTime(fixture.app1).get());
+            assertEquals(deployTime, fixture.deployer.activationTime(fixture.app2).get());
 
             // Too soon: Already deployed recently
             clock.advance(Duration.ofMinutes(5));

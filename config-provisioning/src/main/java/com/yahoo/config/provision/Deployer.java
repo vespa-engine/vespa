@@ -54,8 +54,8 @@ public interface Deployer {
      */
     Optional<Deployment> deployFromLocalActive(ApplicationId application, Duration timeout, boolean bootstrap);
 
-    /** Returns the time the current local active session was activated, or empty if there is no local active session */
-    Optional<Instant> lastDeployTime(ApplicationId application);
+    /** Returns the time the active session was activated, or empty if there is no active session */
+    Optional<Instant> activationTime(ApplicationId application);
 
     /** Whether the deployer is bootstrapping, some users of the deployer will want to hold off with deployments in that case. */
     default boolean bootstrapping() { return false; }

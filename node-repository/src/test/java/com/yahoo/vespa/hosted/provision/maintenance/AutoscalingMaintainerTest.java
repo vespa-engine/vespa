@@ -58,8 +58,8 @@ public class AutoscalingMaintainerTest {
                 new MockDeployer.ApplicationContext(app2, cluster2, Capacity.from(new ClusterResources(2, 1, highResources))));
 
         tester.maintainer().maintain(); // noop
-        assertTrue(tester.deployer().lastDeployTime(app1).isEmpty());
-        assertTrue(tester.deployer().lastDeployTime(app2).isEmpty());
+        assertTrue(tester.deployer().activationTime(app1).isEmpty());
+        assertTrue(tester.deployer().activationTime(app2).isEmpty());
 
         tester.deploy(app1, cluster1, Capacity.from(new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
                                                     new ClusterResources(5, 1, new NodeResources(4, 4, 10, 0.1)),
@@ -70,16 +70,16 @@ public class AutoscalingMaintainerTest {
 
         tester.clock().advance(Duration.ofMinutes(10));
         tester.maintainer().maintain(); // noop
-        assertTrue(tester.deployer().lastDeployTime(app1).isEmpty());
-        assertTrue(tester.deployer().lastDeployTime(app2).isEmpty());
+        assertTrue(tester.deployer().activationTime(app1).isEmpty());
+        assertTrue(tester.deployer().activationTime(app2).isEmpty());
 
         tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1, cluster1.id());
         tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app2, cluster2.id());
 
         tester.clock().advance(Duration.ofMinutes(10));
         tester.maintainer().maintain();
-        assertTrue(tester.deployer().lastDeployTime(app1).isEmpty()); // since autoscaling is off
-        assertTrue(tester.deployer().lastDeployTime(app2).isPresent());
+        assertTrue(tester.deployer().activationTime(app1).isEmpty()); // since autoscaling is off
+        assertTrue(tester.deployer().activationTime(app2).isPresent());
         Load peakAt90 = tester.nodeRepository().applications().require(app1).cluster(cluster1.id()).get().target().peak();
         Load idealAt90 = tester.nodeRepository().applications().require(app1).cluster(cluster1.id()).get().target().ideal();
         assertNotEquals(Load.zero(), peakAt90);
@@ -116,8 +116,8 @@ public class AutoscalingMaintainerTest {
         tester.clock().advance(Duration.ofMinutes(10));
         Instant firstMaintenanceTime = tester.clock().instant();
         tester.maintainer().maintain();
-        assertTrue(tester.deployer().lastDeployTime(app1).isPresent());
-        assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
+        assertTrue(tester.deployer().activationTime(app1).isPresent());
+        assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().activationTime(app1).get().toEpochMilli());
         List<ScalingEvent> events = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().scalingEvents();
         assertEquals(2, events.size());
         assertEquals(Optional.of(firstMaintenanceTime), events.get(0).completion());
@@ -129,25 +129,25 @@ public class AutoscalingMaintainerTest {
         // Measure overload still, since change is not applied, but metrics are discarded
         tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1, cluster1.id());
         tester.maintainer().maintain();
-        assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
+        assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().activationTime(app1).get().toEpochMilli());
 
         // Measure underload, but no autoscaling since we still haven't measured we're on the new config generation
         tester.addMeasurements(0.1f, 0.1f, 0.1f, 0, 500, app1, cluster1.id());
         tester.maintainer().maintain();
-        assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
+        assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().activationTime(app1).get().toEpochMilli());
 
         // Add measurement of the expected generation, leading to rescaling
         // - record scaling completion
         tester.clock().advance(Duration.ofMinutes(5));
         tester.addMeasurements(0.1f, 0.1f, 0.1f, 1, 1, app1, cluster1.id());
         tester.maintainer().maintain();
-        assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
+        assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().activationTime(app1).get().toEpochMilli());
         // - measure underload
         tester.clock().advance(Duration.ofDays(4)); // Exit cooling period
         tester.addMeasurements(0.1f, 0.1f, 0.1f, 1, 500, app1, cluster1.id());
         Instant lastMaintenanceTime = tester.clock().instant();
         tester.maintainer().maintain();
-        assertEquals(lastMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
+        assertEquals(lastMaintenanceTime.toEpochMilli(), tester.deployer().activationTime(app1).get().toEpochMilli());
         events = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().scalingEvents();
         assertEquals(2, events.get(2).generation());
     }
