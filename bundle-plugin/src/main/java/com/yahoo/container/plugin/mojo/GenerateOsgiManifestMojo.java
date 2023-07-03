@@ -248,13 +248,13 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                                               List<ArtifactInfo> providedArtifacts) throws MojoExecutionException {
         if (effectiveBundleType() == BundleType.CORE) return;
 
-        Set<ArtifactInfo> included = includedArtifacts.stream().map(ArtifactInfo::new).collect(Collectors.toSet());
+        Set<ArtifactInfo> included = includedArtifacts.stream().map(ArtifactInfo::fromArtifact).collect(Collectors.toSet());
         Set<ArtifactInfo> providedIncluded = Sets.intersection(included, new HashSet<>(providedArtifacts));
 
         HashSet<ArtifactInfo> allowed = getAllowedEmbeddedArtifacts(providedIncluded);
 
         List<String> violations = providedIncluded.stream()
-                .filter(a -> !allowed.contains(a))
+                .filter(a -> ! allowed.contains(a))
                 .map(ArtifactInfo::stringValue)
                 .sorted().toList();
 
@@ -276,10 +276,9 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         }
         var allowedButUnused = Sets.difference(allowed, providedIncluded);
         if (! allowedButUnused.isEmpty()) {
-            warnOrThrow("'allowEmbeddedArtifacts' contains artifact(s) not used in project: %s"
-                            .formatted(allowedButUnused.stream().map(ArtifactInfo::stringValue).toList()));
+            warnOrThrow("Configuration parameter 'allowEmbeddedArtifacts' contains artifact(s) not used in project: " + allowedButUnused);
         }
-        getLog().info("Ignoring artifacts embedded in bundle: " + allowEmbeddedArtifacts);
+        getLog().info("Ignoring artifacts embedded in bundle: " + allowed);
         return allowed;
     }
 
