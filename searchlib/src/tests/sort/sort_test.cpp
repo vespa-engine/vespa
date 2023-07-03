@@ -134,7 +134,7 @@ TEST("testStringSort")
     search::radix_sort(LoadedStrings::ValueRadix(), LoadedStrings::ValueCompare(), search::AlwaysEof<LoadedStrings>(), 1, &loaded[0], N, &radixScratchPad[0], 0);
     LoadedStrings::ValueCompare vc;
     for(size_t i(1); i < N; i++) {
-        ASSERT_TRUE( ! vc(loaded[i], loaded[i-1]));
+        ASSERT_FALSE(vc(loaded[i], loaded[i-1]));
     }
 }
 
@@ -157,7 +157,7 @@ TEST("testSortSpec")
         SortSpec sortspec("-lowercase(name)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
-        EXPECT_TRUE( ! sortspec[0]._ascending);
+        EXPECT_FALSE(sortspec[0]._ascending);
         EXPECT_TRUE(sortspec[0]._converter);
         EXPECT_TRUE(dynamic_cast<LowercaseConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
@@ -166,7 +166,7 @@ TEST("testSortSpec")
         SortSpec sortspec("-uca(name,nn_no)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
-        EXPECT_TRUE( ! sortspec[0]._ascending);
+        EXPECT_FALSE(sortspec[0]._ascending);
         EXPECT_TRUE(sortspec[0]._converter);
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
@@ -174,7 +174,7 @@ TEST("testSortSpec")
         SortSpec sortspec("-uca(name,nn_no,PRIMARY)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
-        EXPECT_TRUE( ! sortspec[0]._ascending);
+        EXPECT_FALSE(sortspec[0]._ascending);
         EXPECT_TRUE(sortspec[0]._converter);
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
@@ -182,7 +182,7 @@ TEST("testSortSpec")
         SortSpec sortspec("-uca(name,nn_no,SECONDARY)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
-        EXPECT_TRUE( ! sortspec[0]._ascending);
+        EXPECT_FALSE(sortspec[0]._ascending);
         EXPECT_TRUE(sortspec[0]._converter);
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
@@ -190,7 +190,7 @@ TEST("testSortSpec")
         SortSpec sortspec("-uca(name,nn_no,TERTIARY)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
-        EXPECT_TRUE( ! sortspec[0]._ascending);
+        EXPECT_FALSE(sortspec[0]._ascending);
         EXPECT_TRUE(sortspec[0]._converter);
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
@@ -198,7 +198,7 @@ TEST("testSortSpec")
         SortSpec sortspec("-uca(name,nn_no,QUATERNARY)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
-        EXPECT_TRUE( ! sortspec[0]._ascending);
+        EXPECT_FALSE(sortspec[0]._ascending);
         EXPECT_TRUE(sortspec[0]._converter);
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
@@ -206,7 +206,7 @@ TEST("testSortSpec")
         SortSpec sortspec("-uca(name,nn_no,IDENTICAL)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
-        EXPECT_TRUE( ! sortspec[0]._ascending);
+        EXPECT_FALSE(sortspec[0]._ascending);
         EXPECT_TRUE(sortspec[0]._converter);
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
@@ -214,7 +214,7 @@ TEST("testSortSpec")
         SortSpec sortspec("-uca(name,zh)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
-        EXPECT_TRUE( ! sortspec[0]._ascending);
+        EXPECT_FALSE(sortspec[0]._ascending);
         EXPECT_TRUE(sortspec[0]._converter);
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
@@ -222,7 +222,7 @@ TEST("testSortSpec")
         SortSpec sortspec("-uca(name,finnes_ikke)", ucaFactory);
         EXPECT_EQUAL(sortspec.size(), 1u);
         EXPECT_EQUAL(sortspec[0]._field, "name");
-        EXPECT_TRUE( ! sortspec[0]._ascending);
+        EXPECT_FALSE(sortspec[0]._ascending);
         EXPECT_TRUE(sortspec[0]._converter);
         EXPECT_TRUE(dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()) != nullptr);
     }
