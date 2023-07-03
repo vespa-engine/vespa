@@ -64,6 +64,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 
+import static java.util.logging.Level.WARNING;
+
 /**
  * A content cluster.
  *
@@ -190,7 +192,9 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 index.setQueryTimeout(queryTimeout);
             }
             index.setSearchCoverage(DomSearchCoverageBuilder.build(element));
-            index.setDispatchSpec(DomDispatchBuilder.build(element));
+            if (element.child("dispatch") != null)
+                logger.logApplicationPackage(WARNING, "The <dispatch> element is deprecated and ignored and will be removed in the next major release. "
+                        + " See https://docs.vespa.ai/en/reference/services-content.html#dispatch for details.");
 
             if (index.getTuning() == null)
                 index.setTuning(new Tuning(index));

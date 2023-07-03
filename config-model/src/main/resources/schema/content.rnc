@@ -144,6 +144,7 @@ SearchCoverage = element coverage {
     element max-wait-after-coverage-factor { xsd:double { minInclusive = "0" maxInclusive = "1" } }?
 }
 
+# TODO: Deprecated, remove in Vespa 9
 Dispatch = element dispatch {
     element num-dispatch-groups { xsd:nonNegativeInteger }? &
     DispatchGroup*
