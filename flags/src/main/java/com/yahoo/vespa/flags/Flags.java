@@ -414,7 +414,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR = defineFeatureFlag(
             "enable-conditional-put-remove-write-repair", true,
-            List.of("vekterli", "havardpe"), "2023-05-10", "2023-07-01",
+            List.of("vekterli", "havardpe"), "2023-05-10", "2023-09-01",
             "If set, a conditional Put or Remove operation for a document in an inconsistent bucket " +
             "will initiate a write-repair that evaluates the condition across all mutually inconsistent " +
             "replicas, with the newest document version (if any) being authoritative",
