@@ -238,7 +238,7 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
     /** Returns the parent node of the given child node */
     public Optional<Node> parentOf(Node child) {
-        return child.parentHostname().flatMap(this::get).map(NodeFamily::node);
+        return child.parentHostname().flatMap(this::node);
     }
 
     /** Returns the nodes contained in the group identified by given index */
@@ -391,26 +391,19 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     }
 
     private Map<String, NodeFamily> cache() {
-        return nodeCache.updateAndGet((oldValue) -> {
-            if (oldValue != null) {
-                return oldValue;
-            }
-            Map<String, NodeFamily> newValue = new HashMap<>();
-            for (var node : this) {
-                NodeFamily family;
-                if (node.parentHostname().isEmpty()) {
-                    family = new NodeFamily(node, new ArrayList<>());
-                    for (var child : this) {
-                        if (child.hasParent(node.hostname())) {
-                            family.children.add(child);
-                        }
-                    }
-                } else {
-                    family = new NodeFamily(node, List.of());
-                }
-                newValue.put(node.hostname(), family);
-            }
-            return newValue;
+        return nodeCache.updateAndGet((cached) -> {
+            if (cached != null)
+                return cached;
+
+            Map<String, List<Node>> children = new HashMap<>();
+            for (Node node : this)
+                node.parentHostname().ifPresent(parent -> children.computeIfAbsent(parent, __ -> new ArrayList<>()).add(node));
+
+            Map<String, NodeFamily> families = new HashMap<>();
+            for (Node node : this)
+                families.put(node.hostname(), new NodeFamily(node, children.getOrDefault(node.hostname(), List.of())));
+
+            return families;
         });
     }
 
