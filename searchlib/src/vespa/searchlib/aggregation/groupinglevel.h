@@ -87,8 +87,8 @@ private:
     vespalib::CloneablePtr<Grouper>    _grouper;
 public:
     GroupingLevel() noexcept;
-    GroupingLevel(GroupingLevel &&) noexcept = default;
-    GroupingLevel & operator =(GroupingLevel &&) noexcept = default;
+    GroupingLevel(GroupingLevel&&) noexcept;
+    GroupingLevel& operator=(GroupingLevel&&) noexcept;
     GroupingLevel(const GroupingLevel &);
     GroupingLevel & operator =(const GroupingLevel &);
     ~GroupingLevel();
