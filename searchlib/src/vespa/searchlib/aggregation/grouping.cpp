@@ -12,7 +12,6 @@
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
 #include <vespa/searchlib/common/idocumentmetastore.h>
-#include <vespa/searchlib/common/bitvector.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.aggregation.grouping");
@@ -129,11 +128,8 @@ Grouping::Grouping() noexcept
       _firstLevel(0),
       _lastLevel(0),
       _levels(),
-      _root(),
-      _clock(nullptr),
-      _timeOfDoom(vespalib::duration::zero())
-{
-}
+      _root()
+{ }
 
 Grouping::Grouping(const Grouping &) = default;
 Grouping & Grouping::operator = (const Grouping &) = default;
@@ -221,66 +217,14 @@ Grouping::postProcess()
 }
 
 void
-Grouping::aggregateWithoutClock(const RankedHit * rankedHit, unsigned int len) {
-    for(unsigned int i(0); i < len; i++) {
-        aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
-    }
-}
-
-void
-Grouping::aggregateWithClock(const RankedHit * rankedHit, unsigned int len) {
-    for(unsigned int i(0); (i < len) && !hasExpired(); i++) {
-        aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
-    }
-}
-
-void
 Grouping::aggregate(const RankedHit * rankedHit, unsigned int len)
 {
     bool isOrdered(! needResort());
     preAggregate(isOrdered);
     HitsAggregationResult::SetOrdered pred;
     select(pred, pred);
-    if (_clock == nullptr) {
-        aggregateWithoutClock(rankedHit, getMaxN(len));
-    } else {
-        aggregateWithClock(rankedHit, getMaxN(len));
-    }
-    postProcess();
-}
-
-void
-Grouping::aggregate(const RankedHit * rankedHit, unsigned int len, const BitVector * bVec)
-{
-    preAggregate(false);
-    if (_clock == nullptr) {
-        aggregateWithoutClock(rankedHit, getMaxN(len));
-    } else {
-        aggregateWithClock(rankedHit, getMaxN(len));
-    }
-    if (bVec != nullptr) {
-        unsigned int sz(bVec->size());
-        if (_clock == nullptr) {
-            if (getTopN() > 0) {
-                for(DocId d(bVec->getFirstTrueBit()), i(0), m(getMaxN(sz)); (d < sz) && (i < m); d = bVec->getNextTrueBit(d+1), i++) {
-                    aggregate(d, 0.0);
-                }
-            } else {
-                for(DocId d(bVec->getFirstTrueBit()); d < sz; d = bVec->getNextTrueBit(d+1)) {
-                    aggregate(d, 0.0);
-                }
-            }
-        } else {
-            if (getTopN() > 0) {
-                for(DocId d(bVec->getFirstTrueBit()), i(0), m(getMaxN(sz)); (d < sz) && (i < m) && !hasExpired(); d = bVec->getNextTrueBit(d+1), i++) {
-                    aggregate(d, 0.0);
-                }
-            } else {
-                for(DocId d(bVec->getFirstTrueBit()); (d < sz) && !hasExpired(); d = bVec->getNextTrueBit(d+1)) {
-                    aggregate(d, 0.0);
-                }
-            }
-        }
+    for(unsigned int i(0), m(getMaxN(len)); i < m; i++) {
+        aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
     }
     postProcess();
 }

@@ -69,14 +69,12 @@ GroupingManager::init(const IAttributeContext &attrCtx)
 void
 GroupingManager::groupInRelevanceOrder(const RankedHit *searchResults, uint32_t binSize)
 {
-    GroupingContext::GroupingList &groupingList(_groupingContext.getGroupingList());
-    for (size_t i = 0; i < groupingList.size(); ++i) {
-        Grouping & g = *groupingList[i];
-        if ( ! g.needResort() ) {
-            g.aggregate(searchResults, binSize);
-            LOG(debug, "groupInRelevanceOrder: %s", g.asString().c_str());
-            g.cleanTemporary();
-            g.cleanupAttributeReferences();
+    for (const auto & g : _groupingContext.getGroupingList()) {
+        if ( ! g->needResort() ) {
+            _groupingContext.aggregate(*g, searchResults, binSize);
+            LOG(debug, "groupInRelevanceOrder: %s", g->asString().c_str());
+            g->cleanTemporary();
+            g->cleanupAttributeReferences();
         }
     }
 }
@@ -84,14 +82,12 @@ GroupingManager::groupInRelevanceOrder(const RankedHit *searchResults, uint32_t 
 void
 GroupingManager::groupUnordered(const RankedHit *searchResults, uint32_t binSize, const search::BitVector * overflow)
 {
-    GroupingContext::GroupingList &groupingList(_groupingContext.getGroupingList());
-    for (size_t i = 0; i < groupingList.size(); ++i) {
-        Grouping & g = *groupingList[i];
-        if ( g.needResort() ) {
-            g.aggregate(searchResults, binSize, overflow);
-            LOG(debug, "groupUnordered: %s", g.asString().c_str());
-            g.cleanTemporary();
-            g.cleanupAttributeReferences();
+    for (const auto & g : _groupingContext.getGroupingList()) {
+        if ( g->needResort() ) {
+            _groupingContext.aggregate(*g, searchResults, binSize, overflow);
+            LOG(debug, "groupUnordered: %s", g->asString().c_str());
+            g->cleanTemporary();
+            g->cleanupAttributeReferences();
         }
     }
 }

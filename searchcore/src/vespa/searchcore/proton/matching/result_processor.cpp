@@ -119,7 +119,6 @@ ResultProcessor::Result::UP
 ResultProcessor::makeReply(PartialResultUP full_result)
 {
     auto reply = std::make_unique<search::engine::SearchReply>();
-    const search::IDocumentMetaStore &metaStore = _metaStore;
     search::engine::SearchReply &r = *reply;
     PartialResult &result = *full_result;
     size_t numFs4Hits(0);
@@ -127,7 +126,7 @@ ResultProcessor::makeReply(PartialResultUP full_result)
         if (_wasMerged) {
             _groupingSession->getGroupingManager().prune();
         }
-        _groupingSession->getGroupingManager().convertToGlobalId(metaStore);
+        _groupingSession->getGroupingManager().convertToGlobalId(_metaStore);
         _groupingSession->continueExecution(_groupingContext);
         numFs4Hits = _groupingContext.countFS4Hits();
         _groupingContext.getResult().swap(r.groupResult);
@@ -144,7 +143,7 @@ ResultProcessor::makeReply(PartialResultUP full_result)
         search::engine::SearchReply::Hit &dst = r.hits[i];
         const search::RankedHit &src = result.hit(hitOffset + i);
         uint32_t docId = src.getDocId();
-        if (metaStore.getGidEvenIfMoved(docId, gid)) {
+        if (_metaStore.getGidEvenIfMoved(docId, gid)) {
             dst.gid = gid;
         }
         dst.metric = src.getRank();

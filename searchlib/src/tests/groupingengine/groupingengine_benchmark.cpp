@@ -5,7 +5,6 @@
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
-#include <vespa/searchlib/aggregation/hitsaggregationresult.h>
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/expression/fixedwidthbucketfunctionnode.h>
 #include <vespa/searchlib/grouping/groupingengine.h>
@@ -147,8 +146,8 @@ private:
         CheckAttributeReferences() : _numrefs(0) { }
         int _numrefs;
     private:
-        virtual void execute(vespalib::Identifiable &obj) override {
-            if (static_cast<AttributeNode &>(obj).getAttribute() != NULL) {
+        void execute(vespalib::Identifiable &obj) override {
+            if (static_cast<AttributeNode &>(obj).getAttribute() != nullptr) {
                 _numrefs++;
             }
         }
@@ -261,13 +260,13 @@ Test::Main()
         aggrType = _argv[3];
     }
     if (_argc > 4) {
-        numDocs = strtol(_argv[4], NULL, 0);
+        numDocs = strtol(_argv[4], nullptr, 0);
     }
     if (_argc > 5) {
-        numQueries = strtol(_argv[5], NULL, 0);
+        numQueries = strtol(_argv[5], nullptr, 0);
     }
     if (_argc > 6) {
-        maxGroups = strtol(_argv[6], NULL, 0);
+        maxGroups = strtol(_argv[6], nullptr, 0);
     }
     TEST_INIT("grouping_benchmark");
     LOG(info, "sizeof(Group) = %ld", sizeof(Group));

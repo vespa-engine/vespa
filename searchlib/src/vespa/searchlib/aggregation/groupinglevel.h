@@ -2,7 +2,6 @@
 #pragma once
 
 #include "group.h"
-#include <vespa/searchlib/expression/aggregationrefnode.h>
 #include <vespa/searchlib/expression/currentindex.h>
 
 namespace search::expression { class CurrentIndexSetup; }
