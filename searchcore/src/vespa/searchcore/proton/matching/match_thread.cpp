@@ -68,28 +68,22 @@ fillPartialResult(ResultProcessor::Context & context, size_t totalHits, size_t n
     PartialResult &pr = *context.result;
     pr.totalHits(totalHits);
     size_t maxHits = std::min(numHits, pr.maxSize());
-    const search::BitVector & validLids = context._validLids;
+    //TODO :const search::BitVector & validLids = context._validLids;
     if (pr.hasSortData()) {
         FastS_SortSpec &spec = context.sort->sortSpec;
         for (size_t i = 0; i < maxHits; ++i) {
-            if (validLids.testBit(hits[i].getDocId())) {
-                pr.add(hits[i], spec.getSortRef(i));
-            }
+            pr.add(hits[i], spec.getSortRef(i));
         }
     } else {
         for (size_t i = 0; i < maxHits; ++i) {
-            if (validLids.testBit(hits[i].getDocId())) {
-                pr.add(hits[i]);
-            }
+            pr.add(hits[i]);
         }
         if ((bits != nullptr) && (pr.size() < pr.maxSize())) {
             for (unsigned int bitId = bits->getFirstTrueBit();
                  (bitId < bits->size()) && (pr.size() < pr.maxSize());
                  bitId = bits->getNextTrueBit(bitId + 1))
             {
-                if (validLids.testBit(bitId)) {
-                    pr.add(search::RankedHit(bitId));
-                }
+                pr.add(search::RankedHit(bitId));
             }
         }
     }
