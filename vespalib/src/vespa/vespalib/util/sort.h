@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/objects/nbo.h>
+#include <cstring>
 #include <functional>
 #include <limits>
 #include <algorithm>

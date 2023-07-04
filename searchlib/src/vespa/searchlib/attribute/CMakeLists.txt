@@ -100,6 +100,7 @@ vespa_add_library(searchlib_attribute OBJECT
     numeric_matcher.cpp
     numeric_range_matcher.cpp
     numeric_search_context.cpp
+    numeric_sort_blob_writer.cpp
     posting_list_merger.cpp
     postingchange.cpp
     postinglistattribute.cpp
@@ -143,6 +144,7 @@ vespa_add_library(searchlib_attribute OBJECT
     string_matcher.cpp
     string_search_context.cpp
     string_search_helper.cpp
+    string_sort_blob_writer.cpp
     valuemodifier.cpp
     DEPENDS
 )
