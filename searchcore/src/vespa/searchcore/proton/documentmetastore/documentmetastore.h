@@ -202,6 +202,7 @@ public:
     DocId getNumActiveLids() const override { return _lidAlloc.getNumActiveLids(); }
     search::LidUsageStats getLidUsageStats() const override;
     std::unique_ptr<search::queryeval::Blueprint> createWhiteListBlueprint() const override;
+    const search::BitVector & getValidLids() const override { return _lidAlloc.getUsedLids(); }
 
     /**
      * Implements search::AttributeVector

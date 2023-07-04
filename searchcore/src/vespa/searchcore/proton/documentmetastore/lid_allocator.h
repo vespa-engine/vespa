@@ -85,6 +85,7 @@ public:
     }
 
     const search::BitVector &getActiveLids() const { return _activeLids.getBitVector(); }
+    const search::BitVector &getUsedLids() const { return _usedLids.getBitVector(); }
 };
 
 }

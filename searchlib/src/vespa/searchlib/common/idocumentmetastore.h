@@ -55,13 +55,10 @@ struct DocumentMetaData {
     }
 };
 
-namespace queryeval {
-
-class Blueprint;
-
-}
+namespace queryeval { class Blueprint; }
 
 class IGidToLidMapperVisitor;
+class BitVector;
 
 
 /**
@@ -76,6 +73,8 @@ struct IDocumentMetaStore {
     using Timestamp = uint64_t;
 
     virtual ~IDocumentMetaStore() = default;
+
+    virtual const BitVector & getValidLids() const = 0;
 
     /**
      * Retrieves the gid associated with the given lid.
