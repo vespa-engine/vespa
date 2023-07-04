@@ -52,9 +52,9 @@ public class ImportedFieldsResolver extends Processor {
         ImmutableSDField targetField = getTargetField(importedField, reference);
         if (GeoPos.isAnyPos(targetField)) {
             resolveImportedPositionField(importedField, reference, targetField, validate);
-        } else if (isArrayOfSimpleStruct(targetField)) {
+        } else if (isArrayOfSimpleStruct(targetField, false)) {
             resolveImportedArrayOfStructField(importedField, reference, targetField, validate);
-        } else if (isMapOfSimpleStruct(targetField)) {
+        } else if (isMapOfSimpleStruct(targetField, false)) {
             resolveImportedMapOfStructField(importedField, reference, targetField, validate);
         } else if (isMapOfPrimitiveType(targetField)) {
             resolveImportedMapOfPrimitiveField(importedField, reference, targetField, validate);

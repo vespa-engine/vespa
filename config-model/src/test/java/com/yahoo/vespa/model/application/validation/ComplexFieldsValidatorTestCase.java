@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.logging.Level;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -72,9 +71,9 @@ public class ComplexFieldsValidatorTestCase {
     }
 
     @Test
-    void throws_exception_when_struct_field_inside_nested_struct_array_is_specified_as_attribute() throws IOException, SAXException {
-        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
-            createModelAndValidate(joinLines(
+    void logs_warning_when_struct_field_inside_nested_struct_array_is_specified_as_attribute() throws IOException, SAXException {
+        var logger = new MyLogger();
+        createModelAndValidate(joinLines(
                     "schema test {",
                     "document test {",
                     "struct item {",
@@ -93,11 +92,9 @@ public class ComplexFieldsValidatorTestCase {
                         "}",
                     "}",
                     "}",
-                    "}"));
-        });
-        assertTrue(exception.getMessage().contains(getExpectedMessage("cabinet (cabinet.value.items.name, cabinet.value.items.color)")));
+                    "}"), logger);
+        assertTrue(logger.message.toString().contains(getExpectedMessage("cabinet (cabinet.value.items.name, cabinet.value.items.color)")));
     }
-
 
     private String getExpectedMessage(String unsupportedFields) {
         return "For cluster 'mycluster', search 'test': " +
@@ -133,7 +130,7 @@ public class ComplexFieldsValidatorTestCase {
                 "}",
                 "}",
                 "}"), logger);
-        assertThat(logger.message.toString().contains(
+        assertTrue(logger.message.toString().contains(
                 "For cluster 'mycluster', schema 'test': " +
                         "The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: " +
                         "topics (topics.id, topics.label). " +
