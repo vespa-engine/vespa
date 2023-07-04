@@ -211,7 +211,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 docprocChain = docprocChain.trim();
             }
             if (docprocCluster != null && !docprocCluster.isEmpty()) {
-                if (!c.getSearch().hasIndexedCluster() && !c.getSearch().getIndexingDocproc().isPresent() &&
+                if (!c.getSearch().hasIndexedCluster() && c.getSearch().getIndexingDocproc().isEmpty() &&
                         docprocChain != null && !docprocChain.isEmpty()) {
                     c.getSearch().setupStreamingSearchIndexingDocProc();
                 }
@@ -459,7 +459,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
     @Override
     public void getConfig(MessagetyperouteselectorpolicyConfig.Builder builder) {
-        if ( ! getSearch().getIndexingDocproc().isPresent()) return;
+        if (getSearch().getIndexingDocproc().isEmpty()) return;
         DocumentProtocol.getConfig(builder, getConfigId());
     }
 
