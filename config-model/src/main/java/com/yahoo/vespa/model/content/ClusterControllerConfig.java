@@ -153,13 +153,13 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
 
 
         private static Optional<Integer> maxGroupsAllowedDown(ModelElement tuning, boolean allowMoreThanOneContentGroupDown, int numberOfLeafGroups) {
-            var minGroupsUpRatio = tuning.childAsDouble("min-group-up-ratio");
+            var groupsAllowedDownRatio = tuning.childAsDouble("groups-allowed-down-ratio");
 
-            if (minGroupsUpRatio != null) {
-                if (minGroupsUpRatio < 0.01 || minGroupsUpRatio > 1)
-                    throw new IllegalArgumentException("min-groups-up-ratio must be between 0.01 and 1, got " + minGroupsUpRatio);
-                double minGroupsUp = minGroupsUpRatio * numberOfLeafGroups;
-                var maxGroupsAllowedDown = Math.max(1, numberOfLeafGroups - (int) Math.ceil(minGroupsUp));
+            if (groupsAllowedDownRatio != null) {
+                if (groupsAllowedDownRatio < 0 || groupsAllowedDownRatio > 1)
+                    throw new IllegalArgumentException("groups-allowed-down-ratio must be between 0 and 1, got " + groupsAllowedDownRatio);
+
+                var maxGroupsAllowedDown = Math.max(1, (int) Math.floor(groupsAllowedDownRatio * numberOfLeafGroups));
                 return allowMoreThanOneContentGroupDown ? Optional.of(maxGroupsAllowedDown) : Optional.empty();
             }
 

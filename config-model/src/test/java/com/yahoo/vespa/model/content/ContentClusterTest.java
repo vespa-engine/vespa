@@ -1423,26 +1423,32 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     void testGroupsAllowedToBeDown() {
-        assertMaxAllowedGroupsDown(1, 0.5, 1);
-        assertMaxAllowedGroupsDown(2, 0.5, 1);
-        assertMaxAllowedGroupsDown(3, 0.5, 1);
-        assertMaxAllowedGroupsDown(4, 0.5, 2);
-        assertMaxAllowedGroupsDown(5, 0.5, 2);
-        assertMaxAllowedGroupsDown(6, 0.5, 3);
+        assertGroupsAllowedsDown(1, 0.5, 1);
+        assertGroupsAllowedsDown(2, 0.5, 1);
+        assertGroupsAllowedsDown(3, 0.5, 1);
+        assertGroupsAllowedsDown(4, 0.5, 2);
+        assertGroupsAllowedsDown(5, 0.5, 2);
+        assertGroupsAllowedsDown(6, 0.5, 3);
 
-        assertMaxAllowedGroupsDown(1, 0.33, 1);
-        assertMaxAllowedGroupsDown(2, 0.33, 1);
-        assertMaxAllowedGroupsDown(3, 0.33, 2);
-        assertMaxAllowedGroupsDown(4, 0.33, 2);
-        assertMaxAllowedGroupsDown(5, 0.33, 3);
-        assertMaxAllowedGroupsDown(6, 0.33, 4);
+        assertGroupsAllowedsDown(1, 0.33, 1);
+        assertGroupsAllowedsDown(2, 0.33, 1);
+        assertGroupsAllowedsDown(3, 0.33, 1);
+        assertGroupsAllowedsDown(4, 0.33, 1);
+        assertGroupsAllowedsDown(5, 0.33, 1);
+        assertGroupsAllowedsDown(6, 0.33, 1);
 
-        assertMaxAllowedGroupsDown(1, 0.67, 1);
-        assertMaxAllowedGroupsDown(2, 0.67, 1);
-        assertMaxAllowedGroupsDown(3, 0.67, 1);
-        assertMaxAllowedGroupsDown(4, 0.67, 1);
-        assertMaxAllowedGroupsDown(5, 0.67, 1);
-        assertMaxAllowedGroupsDown(6, 0.67, 1);
+        assertGroupsAllowedsDown(1, 0.67, 1);
+        assertGroupsAllowedsDown(2, 0.67, 1);
+        assertGroupsAllowedsDown(3, 0.67, 2);
+        assertGroupsAllowedsDown(4, 0.67, 2);
+        assertGroupsAllowedsDown(5, 0.67, 3);
+        assertGroupsAllowedsDown(6, 0.67, 4);
+
+        assertGroupsAllowedsDown(1, 0, 1);
+        assertGroupsAllowedsDown(2, 0, 1);
+
+        assertGroupsAllowedsDown(1, 1, 1);
+        assertGroupsAllowedsDown(2, 1, 2);
     }
 
     private void assertIndexingDocprocEnabled(boolean indexed, boolean force, boolean expEnabled) {
@@ -1482,15 +1488,15 @@ public class ContentClusterTest extends ContentBaseTest {
         assertIndexingDocprocEnabled(false, true, true);
     }
 
-    private void assertMaxAllowedGroupsDown(int groupCount, double minGroupUpRatio, int expectedMaxAllowedGroupsDown) {
-        var services = servicesWithGroups(groupCount, minGroupUpRatio);
+    private void assertGroupsAllowedsDown(int groupCount, double groupsAllowedDown, int expectedGroupsAllowedDown) {
+        var services = servicesWithGroups(groupCount, groupsAllowedDown);
         var model = createEnd2EndOneNode(new TestProperties().setAllowMoreThanOneContentGroupDown(true), services);
 
         var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
         model.getConfig(fleetControllerConfigBuilder, "admin/cluster-controllers/0/components/clustercontroller-storage-configurer");
         var config = fleetControllerConfigBuilder.build();
 
-        assertEquals(expectedMaxAllowedGroupsDown, config.max_number_of_groups_allowed_to_be_down());
+        assertEquals(expectedGroupsAllowedDown, config.max_number_of_groups_allowed_to_be_down());
     }
 
     private String servicesWithGroups(int groupCount, double minGroupUpRatio) {
@@ -1522,7 +1528,7 @@ public class ContentClusterTest extends ContentBaseTest {
                 String.format("  </group>" +
                 "    <tuning>" +
                 "      <cluster-controller>" +
-                "        <min-group-up-ratio>%f</min-group-up-ratio>" +
+                "        <groups-allowed-down-ratio>%f</groups-allowed-down-ratio>" +
                 "      </cluster-controller>" +
                 "    </tuning>" +
                 "    <engine>" +
