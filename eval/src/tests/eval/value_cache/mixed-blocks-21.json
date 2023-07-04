@@ -1,0 +1,17 @@
+{
+    "blocks": [
+        {
+            "address": { "brand": "shiny", "category": "foo" },
+            "values": [ 1, 2, 3 ]
+        }, {
+            "address": { "brand": "shiny", "category": "bar" },
+            "values": [ 1.25, 2.25, 3.25 ]
+        }, {
+            "address": { "brand": "stylish", "category": "bar" },
+            "values": [ 1.5, 2.5, 3.5 ]
+        }, {
+            "address": { "brand": "stylish", "category": "foo" },
+            "values": [ 1.75, 2.75, 3.75 ]
+        }
+    ]
+},
