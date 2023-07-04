@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.node;
 
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -17,6 +18,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
@@ -56,9 +58,9 @@ public record NodeAcl(Node node,
         // - nodes in same application
         // - load balancers allocated to application
         trustedPorts.add(22);
-        allNodes.parentOf(node).map(TrustedNode::of).ifPresent(trustedNodes::add);
+        allNodes.parentOf(node).map(parent -> TrustedNode.of(parent, node.cloudAccount())).ifPresent(trustedNodes::add);
         node.allocation().ifPresent(allocation -> {
-            trustedNodes.addAll(TrustedNode.of(allNodes.owner(allocation.owner())));
+            trustedNodes.addAll(TrustedNode.of(allNodes.owner(allocation.owner()), node.cloudAccount()));
             loadBalancers.list(allocation.owner()).asList()
                          .stream()
                          .map(LoadBalancer::instance)
@@ -75,15 +77,15 @@ public record NodeAcl(Node node,
                 // - parents of the nodes in the same application: If some nodes are on a different IP version
                 //   or only a subset of them are dual-stacked, the communication between the nodes may be NAT-ed
                 //   via parent's IP address
-                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.config)));
-                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.proxy)));
-                node.allocation().ifPresent(allocation -> trustedNodes.addAll(TrustedNode.of(allNodes.parentsOf(allNodes.owner(allocation.owner())))));
+                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.config), node.cloudAccount()));
+                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.proxy), node.cloudAccount()));
+                node.allocation().ifPresent(allocation -> trustedNodes.addAll(TrustedNode.of(allNodes.parentsOf(allNodes.owner(allocation.owner())), node.cloudAccount())));
                 if (node.state() == Node.State.ready) {
                     // Tenant nodes in state ready, trust:
                     // - All tenant nodes in zone. When a ready node is allocated to an application there's a brief
                     //   window where current ACLs have not yet been applied on the node. To avoid service disruption
                     //   during this window, ready tenant nodes trust all other tenant nodes
-                    trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.tenant)));
+                    trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.tenant), node.cloudAccount()));
                 }
             }
             case config -> {
@@ -94,7 +96,8 @@ public record NodeAcl(Node node,
                 // - udp port 51820 from the world
                 trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.host, NodeType.tenant,
                                                                      NodeType.proxyhost, NodeType.proxy),
-                                                   RPC_PORTS));
+                                                   RPC_PORTS,
+                                                   node.cloudAccount()));
                 trustedPorts.add(4443);
                 if (zone.system().isPublic() && zone.cloud().allowEnclave()) {
                     trustedUdpPorts.add(WIREGUARD_PORT);
@@ -104,7 +107,7 @@ public record NodeAcl(Node node,
                 // Proxy nodes trust:
                 // - config servers
                 // - all connections from the world on 443 (production traffic) and 4443 (health checks)
-                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.config)));
+                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.config), node.cloudAccount()));
                 trustedPorts.add(443);
                 trustedPorts.add(4443);
             }
@@ -123,24 +126,29 @@ public record NodeAcl(Node node,
 
     public record TrustedNode(String hostname, NodeType type, Set<String> ipAddresses, Set<Integer> ports) {
 
-        /** Trust given ports from node */
-        public static TrustedNode of(Node node, Set<Integer> ports) {
-            return new TrustedNode(node.hostname(), node.type(), node.ipConfig().primary(), ports);
+        /** Trust given ports from node, and primary IP addresses shared with given cloud account */
+        public static TrustedNode of(Node node, Set<Integer> ports, CloudAccount cloudAccount) {
+            Set<String> ipAddresses = node.ipConfig()
+                                          .primary()
+                                          .stream()
+                                          .filter(ip -> IP.inSharedIpSpace(ip, node.cloudAccount(), cloudAccount))
+                                          .collect(Collectors.toSet());
+            return new TrustedNode(node.hostname(), node.type(), ipAddresses, ports);
         }
 
         /** Trust all ports from given node */
-        public static TrustedNode of(Node node) {
-            return of(node, Set.of());
+        public static TrustedNode of(Node node, CloudAccount cloudAccount) {
+            return of(node, Set.of(), cloudAccount);
         }
 
-        public static List<TrustedNode> of(Iterable<Node> nodes, Set<Integer> ports) {
+        public static List<TrustedNode> of(Iterable<Node> nodes, Set<Integer> ports, CloudAccount cloudAccount) {
             return StreamSupport.stream(nodes.spliterator(), false)
-                                .map(node -> TrustedNode.of(node, ports))
+                                .map(node -> TrustedNode.of(node, ports, cloudAccount))
                                 .toList();
         }
 
-        public static List<TrustedNode> of(Iterable<Node> nodes) {
-            return of(nodes, Set.of());
+        public static List<TrustedNode> of(Iterable<Node> nodes, CloudAccount cloudAccount) {
+            return of(nodes, Set.of(), cloudAccount);
         }
 
     }

@@ -61,7 +61,7 @@ public class AclProvisioningTest {
         Supplier<NodeAcl> nodeAcls = () -> node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
         // Trusted nodes are active nodes in same application, proxy nodes and config servers
-        assertAcls(trustedNodesOf(List.of(activeNodes, proxyNodes, configServers.asList(), hostOfNode)),
+        assertAcls(trustedNodesOf(List.of(activeNodes, proxyNodes, configServers.asList(), hostOfNode), node.cloudAccount()),
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    List.of(nodeAcls.get()));
     }
@@ -83,7 +83,7 @@ public class AclProvisioningTest {
         NodeList tenantNodes = tester.nodeRepository().nodes().list().nodeType(NodeType.tenant);
 
         // Trusted nodes are all proxy-, config-, and, tenant-nodes
-        assertAcls(trustedNodesOf(List.of(proxyNodes, configServers.asList(), tenantNodes.asList())), List.of(nodeAcl));
+        assertAcls(trustedNodesOf(List.of(proxyNodes, configServers.asList(), tenantNodes.asList()), node.cloudAccount()), List.of(nodeAcl));
     }
 
     @Test
@@ -108,11 +108,11 @@ public class AclProvisioningTest {
         NodeAcl nodeAcl = node.acl(nodes, tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
         // Trusted nodes is all tenant nodes+hosts, all proxy nodes+hosts, all config servers and load balancer subnets
-        assertAcls(List.of(TrustedNode.of(tenantHosts, Set.of(19070)),
-                           TrustedNode.of(tenantNodes, Set.of(19070)),
-                           TrustedNode.of(proxyHosts, Set.of(19070)),
-                           TrustedNode.of(proxyNodes, Set.of(19070)),
-                           TrustedNode.of(configNodes)),
+        assertAcls(List.of(TrustedNode.of(tenantHosts, Set.of(19070), node.cloudAccount()),
+                           TrustedNode.of(tenantNodes, Set.of(19070), node.cloudAccount()),
+                           TrustedNode.of(proxyHosts, Set.of(19070), node.cloudAccount()),
+                           TrustedNode.of(proxyNodes, Set.of(19070), node.cloudAccount()),
+                           TrustedNode.of(configNodes, node.cloudAccount())),
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    List.of(nodeAcl));
         assertEquals(Set.of(22, 4443), nodeAcl.trustedPorts());
@@ -145,7 +145,7 @@ public class AclProvisioningTest {
         NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
         // Trusted nodes is all config servers and all proxy nodes
-        assertAcls(trustedNodesOf(List.of(proxyNodes.asList(), configServers.asList())), List.of(nodeAcl));
+        assertAcls(trustedNodesOf(List.of(proxyNodes.asList(), configServers.asList()), node.cloudAccount()), List.of(nodeAcl));
         assertEquals(Set.of(22, 443, 4443), nodeAcl.trustedPorts());
         assertEquals(Set.of(), nodeAcl.trustedUdpPorts());
     }
@@ -171,7 +171,7 @@ public class AclProvisioningTest {
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Expected to find ACL for node " + node.hostname()));
             assertEquals(host.hostname(), node.parentHostname().get());
-            assertAcls(trustedNodesOf(List.of(configServers.asList(), nodes, List.of(host))), nodeAcl);
+            assertAcls(trustedNodesOf(List.of(configServers.asList(), nodes, List.of(host)), node.cloudAccount()), nodeAcl);
         }
     }
 
@@ -185,7 +185,7 @@ public class AclProvisioningTest {
 
         // Controllers and hosts all trust each other
         NodeAcl controllerAcl = controllers.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
-        assertAcls(trustedNodesOf(List.of(controllers)), Set.of("10.2.3.0/24", "10.4.5.0/24"), List.of(controllerAcl));
+        assertAcls(trustedNodesOf(List.of(controllers), controllers.get(0).cloudAccount()), Set.of("10.2.3.0/24", "10.4.5.0/24"), List.of(controllerAcl));
         assertEquals(Set.of(22, 4443, 443), controllerAcl.trustedPorts());
         assertEquals(Set.of(), controllerAcl.trustedUdpPorts());
     }
@@ -238,12 +238,12 @@ public class AclProvisioningTest {
                      nodeAcl.trustedNodes().stream().map(TrustedNode::ipAddresses).toList());
     }
 
-    private static List<List<TrustedNode>> trustedNodesOf(List<List<Node>> nodes, Set<Integer> ports) {
-        return nodes.stream().map(node -> TrustedNode.of(node, ports)).toList();
+    private static List<List<TrustedNode>> trustedNodesOf(List<List<Node>> nodes, Set<Integer> ports, CloudAccount cloudAccount) {
+        return nodes.stream().map(node -> TrustedNode.of(node, ports, cloudAccount)).toList();
     }
 
-    private static List<List<TrustedNode>> trustedNodesOf(List<List<Node>> nodes) {
-        return trustedNodesOf(nodes, Set.of());
+    private static List<List<TrustedNode>> trustedNodesOf(List<List<Node>> nodes, CloudAccount cloudAccount) {
+        return trustedNodesOf(nodes, Set.of(), cloudAccount);
     }
 
     private List<Node> deploy(int nodeCount) {

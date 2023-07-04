@@ -171,9 +171,11 @@ public class MockNodeRepository extends NodeRepository {
 
         // Config servers
         nodes.add(Node.create("cfg1", ipConfig(201), "cfg1.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
-                          .wireguardPubKey(WireguardKey.from("lololololololololololololololololololololoo=")).build());
+                      .cloudAccount(defaultCloudAccount)
+                      .wireguardPubKey(WireguardKey.from("lololololololololololololololololololololoo=")).build());
         nodes.add(Node.create("cfg2", ipConfig(202), "cfg2.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config)
-                          .build());
+                      .cloudAccount(defaultCloudAccount)
+                      .build());
 
         // Ready all nodes, except 7 and 55
         nodes = nodes().addNodes(nodes, Agent.system);
@@ -243,8 +245,8 @@ public class MockNodeRepository extends NodeRepository {
         activate(provisioner.prepare(app3, cluster3, Capacity.from(new ClusterResources(2, 1, new NodeResources(1, 4, 100, 1)), false, true), null), app3, provisioner);
 
         List<Node> largeNodes = new ArrayList<>();
-        largeNodes.add(Node.create("node13", ipConfig(13), "host13.yahoo.com", resources(10, 48, 500, 1, fast, local), NodeType.tenant).build());
-        largeNodes.add(Node.create("node14", ipConfig(14), "host14.yahoo.com", resources(10, 48, 500, 1, fast, local), NodeType.tenant).build());
+        largeNodes.add(Node.create("node13", ipConfig(13), "host13.yahoo.com", resources(10, 48, 500, 1, fast, local), NodeType.tenant).cloudAccount(defaultCloudAccount).build());
+        largeNodes.add(Node.create("node14", ipConfig(14), "host14.yahoo.com", resources(10, 48, 500, 1, fast, local), NodeType.tenant).cloudAccount(defaultCloudAccount).build());
         nodes().addNodes(largeNodes, Agent.system);
         largeNodes.forEach(node -> nodes().setReady(new NodeMutex(node, () -> {}), Agent.system, getClass().getSimpleName()));
         ApplicationId app4 = ApplicationId.from(TenantName.from("tenant4"), ApplicationName.from("application4"), InstanceName.from("instance4"));
