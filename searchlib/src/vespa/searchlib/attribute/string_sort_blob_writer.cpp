@@ -22,7 +22,7 @@ StringSortBlobWriter::~StringSortBlobWriter() noexcept = default;
 bool
 StringSortBlobWriter::candidate(const char* val)
 {
-    int size = std::strlen(val) + 1;
+    size_t size = std::strlen(val) + 1;
     vespalib::ConstBufferRef buf(val, size);
     if (_bc != nullptr) {
         buf = _bc->convert(buf);
