@@ -80,16 +80,16 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
             if ( ! canDeployNow(application)) return; // redeployment is no longer needed
             log.log(Level.INFO, () -> application + " will be redeployed" +
                                       (reason == null || reason.isBlank() ? "" : " due to " + reason) +
-                                      ", last deploy time " + getLastDeployTime(application));
+                                      ", last activated " + activationTime(application));
             deployment.activate();
         } finally {
             pendingDeployments.remove(application);
         }
     }
 
-    /** Returns the last time application was activated. Epoch is returned if the application has never been deployed. */
-    protected final Instant getLastDeployTime(ApplicationId application) {
-        return deployer.lastDeployTime(application).orElse(Instant.EPOCH);
+    /** Returns the last time application was activated. Epoch is returned if the application has never been activated. */
+    protected final Instant activationTime(ApplicationId application) {
+        return deployer.activationTime(application).orElse(Instant.EPOCH);
     }
 
     @Override

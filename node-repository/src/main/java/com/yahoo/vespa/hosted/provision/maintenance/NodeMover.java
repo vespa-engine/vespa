@@ -90,9 +90,9 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
 
     private boolean deployedRecently(ApplicationId application) {
         Instant now = nodeRepository().clock().instant();
-        return deployer.lastDeployTime(application)
-                       .map(lastDeployTime -> lastDeployTime.isAfter(now.minus(waitTimeAfterPreviousDeployment)))
-                       // We only know last deploy time for applications that were deployed on this config server,
+        return deployer.activationTime(application)
+                       .map(lastActivatedTime -> lastActivatedTime.isAfter(now.minus(waitTimeAfterPreviousDeployment)))
+                       // We only know last activated time for applications that were deployed on this config server,
                        // the rest will be deployed on another config server
                        .orElse(true);
     }

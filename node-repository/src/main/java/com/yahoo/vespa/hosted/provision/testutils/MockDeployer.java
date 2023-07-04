@@ -120,7 +120,7 @@ public class MockDeployer implements Deployer {
     }
 
     @Override
-    public Optional<Instant> lastDeployTime(ApplicationId application) {
+    public Optional<Instant> activationTime(ApplicationId application) {
         return Optional.ofNullable(lastDeployTimes.get(application));
     }
 
