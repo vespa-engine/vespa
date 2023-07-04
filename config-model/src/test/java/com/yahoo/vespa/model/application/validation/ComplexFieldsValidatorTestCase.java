@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.logging.Level;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -68,7 +67,33 @@ public class ComplexFieldsValidatorTestCase {
                     "}",
                     "}"));
         });
-        assertTrue(exception.getMessage().contains(getExpectedMessage("docTopics (docTopics.topics)")));
+        assertTrue(exception.getMessage().contains(getExpectedMessage("docTopics (docTopics.topics, docTopics.topics.id, docTopics.topics.label)")));
+    }
+
+    @Test
+    void logs_warning_when_struct_field_inside_nested_struct_array_is_specified_as_attribute() throws IOException, SAXException {
+        var logger = new MyLogger();
+        createModelAndValidate(joinLines(
+                    "schema test {",
+                    "document test {",
+                    "struct item {",
+                        "field name type string {}",
+                        "field color type string {}",
+                        "field type type string {}",
+                    "}",
+                    "struct itembox {",
+                        "field items type array<item> {}",
+                    "}",
+                    "field cabinet type map<string, itembox> {",
+                        "struct-field key { indexing: attribute }",
+                        "struct-field value.items {",
+                            "struct-field name  { indexing: attribute }",
+                            "struct-field color { indexing: attribute }",
+                        "}",
+                    "}",
+                    "}",
+                    "}"), logger);
+        assertTrue(logger.message.toString().contains(getExpectedMessage("cabinet (cabinet.value.items.name, cabinet.value.items.color)")));
     }
 
     private String getExpectedMessage(String unsupportedFields) {
@@ -105,7 +130,7 @@ public class ComplexFieldsValidatorTestCase {
                 "}",
                 "}",
                 "}"), logger);
-        assertThat(logger.message.toString().contains(
+        assertTrue(logger.message.toString().contains(
                 "For cluster 'mycluster', schema 'test': " +
                         "The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: " +
                         "topics (topics.id, topics.label). " +

@@ -22,26 +22,31 @@ import com.yahoo.document.StructDataType;
 public class ComplexAttributeFieldUtils {
 
     public static boolean isSupportedComplexField(ImmutableSDField field) {
-        return (isArrayOfSimpleStruct(field) ||
-                isMapOfSimpleStruct(field) ||
+        return isSupportedComplexField(field, false);
+    }
+
+    // TODO: Remove the stricterValidation flag when this is changed to being always on.
+    public static boolean isSupportedComplexField(ImmutableSDField field, boolean stricterValidation) {
+        return (isArrayOfSimpleStruct(field, stricterValidation) ||
+                isMapOfSimpleStruct(field, stricterValidation) ||
                 isMapOfPrimitiveType(field));
     }
 
-    public static boolean isArrayOfSimpleStruct(ImmutableSDField field) {
+    public static boolean isArrayOfSimpleStruct(ImmutableSDField field, boolean stricterValidation) {
         if (field.getDataType() instanceof ArrayDataType) {
             ArrayDataType arrayType = (ArrayDataType)field.getDataType();
-            return isStructWithPrimitiveStructFieldAttributes(arrayType.getNestedType(), field);
+            return isStructWithPrimitiveStructFieldAttributes(arrayType.getNestedType(), field, stricterValidation);
         } else {
             return false;
         }
     }
 
-    public static boolean isMapOfSimpleStruct(ImmutableSDField field) {
+    public static boolean isMapOfSimpleStruct(ImmutableSDField field, boolean stricterValidation) {
         if (field.getDataType() instanceof MapDataType) {
             MapDataType mapType = (MapDataType)field.getDataType();
             return isPrimitiveType(mapType.getKeyType()) &&
                     isStructWithPrimitiveStructFieldAttributes(mapType.getValueType(),
-                            field.getStructField("value"));
+                            field.getStructField("value"), stricterValidation);
         } else {
             return false;
         }
@@ -57,7 +62,7 @@ public class ComplexAttributeFieldUtils {
         }
     }
 
-    private static boolean isStructWithPrimitiveStructFieldAttributes(DataType type, ImmutableSDField field) {
+    private static boolean isStructWithPrimitiveStructFieldAttributes(DataType type, ImmutableSDField field, boolean stricterValidation) {
         if (type instanceof StructDataType && ! GeoPos.isPos(type)) {
             for (ImmutableSDField structField : field.getStructFields()) {
                 Attribute attribute = structField.getAttributes().get(structField.getName());
@@ -70,11 +75,27 @@ public class ComplexAttributeFieldUtils {
                         return false;
                     }
                 }
+                if (stricterValidation && !structField.isImportedField() && hasStructFieldAttributes(structField)) {
+                    return false;
+                }
             }
             return true;
         } else {
             return false;
         }
+    }
+
+    private static boolean hasStructFieldAttributes(ImmutableSDField field) {
+        for (var structField : field.getStructFields()) {
+            var attribute = structField.getAttributes().get(structField.getName());
+            if (attribute != null) {
+                return true;
+            }
+            if (hasStructFieldAttributes(structField)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean isPrimitiveType(Attribute attribute) {
@@ -92,9 +113,9 @@ public class ComplexAttributeFieldUtils {
     }
 
     public static boolean isComplexFieldWithOnlyStructFieldAttributes(ImmutableSDField field) {
-        if (isArrayOfSimpleStruct(field)) {
+        if (isArrayOfSimpleStruct(field, false)) {
             return hasOnlyStructFieldAttributes(field);
-        } else if (isMapOfSimpleStruct(field)) {
+        } else if (isMapOfSimpleStruct(field, false)) {
             return (field.getStructField("key").hasSingleAttribute()) &&
                     hasOnlyStructFieldAttributes(field.getStructField("value"));
         } else if (isMapOfPrimitiveType(field)) {
