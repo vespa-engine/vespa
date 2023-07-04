@@ -16,7 +16,7 @@ import org.w3c.dom.Element;
 import java.util.Optional;
 
 /**
- * Config generation for common parameters for all fleet controllers.
+ * Config generation for parameters for fleet controllers.
  */
 public class ClusterControllerConfig extends AnyConfigProducer implements FleetcontrollerConfig.Producer {
 
@@ -49,25 +49,13 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                 clusterControllerTuning = tuning.child("cluster-controller");
             }
 
+            var numberOfLeafGroups = ((ContentCluster) ancestor).getRootGroup().getNumberOfLeafGroups();
             var tuningConfig = new ClusterControllerTuningBuilder(clusterControllerTuning,
                                                                   minNodeRatioPerGroup,
-                                                                  bucketSplittingMinimumBits)
+                                                                  bucketSplittingMinimumBits,
+                                                                  allowMoreThanOneContentGroupDown,
+                                                                  numberOfLeafGroups)
                     .build();
-            if (ancestor instanceof ContentCluster) {
-                int numberOfLeafGroups = ((ContentCluster) ancestor).getRootGroup().getNumberOfLeafGroups();
-                if (tuningConfig.maxGroupsAllowedDown().isPresent()) {
-                    Integer maxGroupsAllowedDown = tuningConfig.maxGroupsAllowedDown().get();
-                    if (deployState.zone().environment().isProduction() && (maxGroupsAllowedDown > numberOfLeafGroups))
-                        throw new IllegalArgumentException("Cannot set max-groups-allowed-down (" + maxGroupsAllowedDown +
-                                                                   ") larger than number of groups (" + numberOfLeafGroups + ")");
-                } else {
-                    // Reduce to numberOfLeafGroups for tests or in environments where number of groups are reduced by policy (dev, test, staging, perf)
-                    tuningConfig = tuningConfig.withMaxGroupsAllowedDown(numberOfLeafGroups);
-                }
-            } else {
-                // Reduce to 1 for tests (ancestor is a mock class)
-                tuningConfig = tuningConfig.withMaxGroupsAllowedDown(1);
-            }
 
             return new ClusterControllerConfig(ancestor,
                                                clusterName,
@@ -134,11 +122,13 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
         private final Optional<Double> minDistributorUpRatio;
         private final Optional<Double> minStorageUpRatio;
         private final Optional<Integer> minSplitBits;
-        final Optional<Integer> maxGroupsAllowedDown;
+        private final Optional<Integer> maxGroupsAllowedDown;
 
         ClusterControllerTuningBuilder(ModelElement tuning,
                                        Optional<Double> minNodeRatioPerGroup,
-                                       Optional<Integer> bucketSplittingMinimumBits) {
+                                       Optional<Integer> bucketSplittingMinimumBits,
+                                       boolean maxGroupsAllowedDown,
+                                       int numberOfLeafGroups) {
             this.minSplitBits = bucketSplittingMinimumBits;
             this.minNodeRatioPerGroup = minNodeRatioPerGroup;
             if (tuning == null) {
@@ -157,8 +147,23 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                 this.stableStateTimePeriod = Optional.ofNullable(tuning.childAsDuration("stable-state-period"));
                 this.minDistributorUpRatio = Optional.ofNullable(tuning.childAsDouble("min-distributor-up-ratio"));
                 this.minStorageUpRatio = Optional.ofNullable(tuning.childAsDouble("min-storage-up-ratio"));
-                this.maxGroupsAllowedDown = Optional.ofNullable(tuning.childAsInteger("max-groups-allowed-down"));
+                this.maxGroupsAllowedDown = maxGroupsAllowedDown(tuning, maxGroupsAllowedDown, numberOfLeafGroups);
             }
+        }
+
+
+        private static Optional<Integer> maxGroupsAllowedDown(ModelElement tuning, boolean allowMoreThanOneContentGroupDown, int numberOfLeafGroups) {
+            var minGroupsUpRatio = tuning.childAsDouble("min-group-up-ratio");
+
+            if (minGroupsUpRatio != null) {
+                if (minGroupsUpRatio < 0.01 || minGroupsUpRatio > 1)
+                    throw new IllegalArgumentException("min-groups-up-ratio must be between 0.01 and 1, got " + minGroupsUpRatio);
+                double minGroupsUp = minGroupsUpRatio * numberOfLeafGroups;
+                var maxGroupsAllowedDown = Math.max(1, numberOfLeafGroups - (int) Math.ceil(minGroupsUp));
+                return allowMoreThanOneContentGroupDown ? Optional.of(maxGroupsAllowedDown) : Optional.empty();
+            }
+
+            return Optional.empty();
         }
 
         private ClusterControllerTuning build() {
@@ -184,20 +189,6 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                                            Optional<Integer> maxGroupsAllowedDown,
                                            Optional<Double> minNodeRatioPerGroup,
                                            Optional<Integer> minSplitBits) {
-
-        public ClusterControllerTuning withMaxGroupsAllowedDown(int maxGroupsAllowedDown) {
-            return new ClusterControllerConfig.ClusterControllerTuning(
-                    initProgressTime,
-                    transitionTime,
-                    maxPrematureCrashes,
-                    stableStateTimePeriod,
-                    minDistributorUpRatio,
-                    minStorageUpRatio,
-                    Optional.of(maxGroupsAllowedDown),
-                    minNodeRatioPerGroup,
-                    minSplitBits);
-        }
-
     }
 
 }

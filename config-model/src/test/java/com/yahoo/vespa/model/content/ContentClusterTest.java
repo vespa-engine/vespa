@@ -1422,51 +1422,30 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    void testAllow2GroupsDown() {
-        String services = "<?xml version='1.0' encoding='UTF-8' ?>" +
-                "<services version='1.0'>" +
-                "  <container id='default' version='1.0' />" +
-                "  <content id='storage' version='1.0'>" +
-                "    <redundancy>4</redundancy>" +
-                "    <documents>" +
-                "      <document mode='index' type='type1' />" +
-                "    </documents>" +
-                "  <group name='root'>" +
-                "    <distribution partitions='1|1|1|*'/>" +
-                "    <group name='g-1' distribution-key='0'>" +
-                "      <node hostalias='mockhost' distribution-key='0'/>" +
-                "    </group>" +
-                "    <group name='g-2' distribution-key='1'>" +
-                "      <node hostalias='mockhost' distribution-key='1'/>" +
-                "    </group>" +
-                "    <group name='g-3' distribution-key='2'>" +
-                "      <node hostalias='mockhost' distribution-key='2'/>" +
-                "    </group>" +
-                "    <group name='g-4' distribution-key='3'>" +
-                "      <node hostalias='mockhost' distribution-key='3'/>" +
-                "    </group>" +
-                "  </group>" +
-                "    <tuning>" +
-                "      <cluster-controller>" +
-                "        <max-groups-allowed-down>2</max-groups-allowed-down>" +
-                "      </cluster-controller>" +
-                "    </tuning>" +
-                "    <engine>" +
-                "      <proton>" +
-                "        <searchable-copies>4</searchable-copies>" +
-                "      </proton>" +
-                "    </engine>" +
-                "  </content>" +
-                " </services>";
-        VespaModel model = createEnd2EndOneNode(new TestProperties().setAllowMoreThanOneContentGroupDown(true), services);
+    void testGroupsAllowedToBeDown() {
+        assertMaxAllowedGroupsDown(1, 0.5, 1);
+        assertMaxAllowedGroupsDown(2, 0.5, 1);
+        assertMaxAllowedGroupsDown(3, 0.5, 1);
+        assertMaxAllowedGroupsDown(4, 0.5, 2);
+        assertMaxAllowedGroupsDown(5, 0.5, 2);
+        assertMaxAllowedGroupsDown(6, 0.5, 3);
 
-        var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
-        model.getConfig(fleetControllerConfigBuilder, "admin/cluster-controllers/0/components/clustercontroller-storage-configurer");
-        assertEquals(2, fleetControllerConfigBuilder.build().max_number_of_groups_allowed_to_be_down());
+        assertMaxAllowedGroupsDown(1, 0.33, 1);
+        assertMaxAllowedGroupsDown(2, 0.33, 1);
+        assertMaxAllowedGroupsDown(3, 0.33, 2);
+        assertMaxAllowedGroupsDown(4, 0.33, 2);
+        assertMaxAllowedGroupsDown(5, 0.33, 3);
+        assertMaxAllowedGroupsDown(6, 0.33, 4);
+
+        assertMaxAllowedGroupsDown(1, 0.67, 1);
+        assertMaxAllowedGroupsDown(2, 0.67, 1);
+        assertMaxAllowedGroupsDown(3, 0.67, 1);
+        assertMaxAllowedGroupsDown(4, 0.67, 1);
+        assertMaxAllowedGroupsDown(5, 0.67, 1);
+        assertMaxAllowedGroupsDown(6, 0.67, 1);
     }
 
-    private void assertIndexingDocprocEnabled(boolean indexed, boolean force, boolean expEnabled)
-    {
+    private void assertIndexingDocprocEnabled(boolean indexed, boolean force, boolean expEnabled) {
         String services = "<?xml version='1.0' encoding='UTF-8' ?>" +
                 "<services version='1.0'>" +
                 "  <container id='default' version='1.0'>" +
@@ -1501,6 +1480,58 @@ public class ContentClusterTest extends ContentBaseTest {
     void testIndexingDocprocEnabledWhenStreamingModeAndForced()
     {
         assertIndexingDocprocEnabled(false, true, true);
+    }
+
+    private void assertMaxAllowedGroupsDown(int groupCount, double minGroupUpRatio, int expectedMaxAllowedGroupsDown) {
+        var services = servicesWithGroups(groupCount, minGroupUpRatio);
+        var model = createEnd2EndOneNode(new TestProperties().setAllowMoreThanOneContentGroupDown(true), services);
+
+        var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
+        model.getConfig(fleetControllerConfigBuilder, "admin/cluster-controllers/0/components/clustercontroller-storage-configurer");
+        var config = fleetControllerConfigBuilder.build();
+
+        assertEquals(expectedMaxAllowedGroupsDown, config.max_number_of_groups_allowed_to_be_down());
+    }
+
+    private String servicesWithGroups(int groupCount, double minGroupUpRatio) {
+        String services = String.format("<?xml version='1.0' encoding='UTF-8' ?>" +
+                "<services version='1.0'>" +
+                "  <container id='default' version='1.0' />" +
+                "  <content id='storage' version='1.0'>" +
+                "    <redundancy>%d</redundancy>" +
+                "    <documents>" +
+                "      <document mode='index' type='type1' />" +
+                "    </documents>" +
+                "  <group name='root'>", groupCount);
+        String distribution = switch (groupCount) {
+            case 1, 2 -> "    <distribution partitions='1|*'/>";
+            case 3 -> "    <distribution partitions='1|1|*'/>";
+            case 4 -> "    <distribution partitions='1|1|1|*'/>";
+            case 5 -> "    <distribution partitions='1|1|1|1|*'/>";
+            case 6 -> "    <distribution partitions='1|1|1|1|1|*'/>";
+            default -> throw new IllegalArgumentException("Does not support groupCount > 6");
+        };
+        services += distribution;
+        for (int i = 0; i < groupCount; i++) {
+            services += String.format("    <group name='g-%d' distribution-key='%d'>" +
+                                              "      <node hostalias='mockhost' distribution-key='%d'/>" +
+                                              "    </group>",
+                                      i, i, i);
+        }
+        return services +
+                String.format("  </group>" +
+                "    <tuning>" +
+                "      <cluster-controller>" +
+                "        <min-group-up-ratio>%f</min-group-up-ratio>" +
+                "      </cluster-controller>" +
+                "    </tuning>" +
+                "    <engine>" +
+                "      <proton>" +
+                "        <searchable-copies>%d</searchable-copies>" +
+                "      </proton>" +
+                "    </engine>" +
+                "  </content>" +
+                " </services>", minGroupUpRatio, groupCount);
     }
 
 }

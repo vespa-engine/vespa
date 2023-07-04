@@ -2375,7 +2375,7 @@ public class ModelProvisioningTest {
                         "    <nodes count='4' groups='4'/>" +
                         "    <tuning>" +
                         "      <cluster-controller>" +
-                        "        <max-groups-allowed-down>2</max-groups-allowed-down>" +
+                        "        <min-group-up-ratio>0.5</min-group-up-ratio>" +
                         "      </cluster-controller>" +
                         "    </tuning>" +
                         "  </content>" +
