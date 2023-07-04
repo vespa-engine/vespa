@@ -40,7 +40,6 @@ public class Endpoint {
     private final ClusterSpec.Id cluster;
     private final Optional<InstanceName> instance;
     private final URI url;
-    private final URI legacyRegionalUrl;
     private final List<Target> targets;
     private final Scope scope;
     private final boolean legacy;
@@ -48,7 +47,7 @@ public class Endpoint {
     private boolean tokenEndpoint;
 
     private Endpoint(TenantAndApplicationId application, Optional<InstanceName> instanceName, EndpointId id,
-                     ClusterSpec.Id cluster, URI url, URI legacyRegionalUrl, List<Target> targets, Scope scope, Port port, boolean legacy,
+                     ClusterSpec.Id cluster, URI url, List<Target> targets, Scope scope, Port port, boolean legacy,
                      RoutingMethod routingMethod, boolean certificateName, boolean tokenEndpoint) {
         Objects.requireNonNull(application, "application must be non-null");
         Objects.requireNonNull(instanceName, "instanceName must be non-null");
@@ -62,7 +61,6 @@ public class Endpoint {
         this.cluster = requireCluster(cluster, certificateName);
         this.instance = requireInstance(instanceName, scope);
         this.url = url;
-        this.legacyRegionalUrl = legacyRegionalUrl;
         this.targets = List.copyOf(requireTargets(targets, application, instanceName, scope, certificateName));
         this.scope = requireScope(scope, routingMethod);
         this.legacy = legacy;
@@ -100,12 +98,6 @@ public class Endpoint {
     public String dnsName() {
         // because getHost returns "null" for wildcard endpoints
         return url.getAuthority().replaceAll(":.*", "");
-    }
-
-    /** Returns the legacy DNS name with region, for application endpoints */
-    public String legacyRegionalDnsName() {
-        if (scope != Scope.application) throw new IllegalStateException("legacy regional URL is only for application scope endpoints, not " + this);
-        return legacyRegionalUrl.getAuthority().replaceAll(":.*", "");
     }
 
     /** Returns the target(s) to which this routes traffic */
@@ -597,21 +589,11 @@ public class Endpoint {
                                 Objects.requireNonNull(system, "system must be non-null"),
                                 Objects.requireNonNull(port, "port must be non-null"),
                                 false);
-            URI legacyRegionalUrl = scope != Scope.application ? null
-                                                               : createUrl(endpointOrClusterAsString(endpointId, cluster),
-                                                                           Objects.requireNonNull(application, "application must be non-null"),
-                                                                           Objects.requireNonNull(instance, "instance must be non-null"),
-                                                                           Objects.requireNonNull(targets, "targets must be non-null"),
-                                                                           Objects.requireNonNull(scope, "scope must be non-null"),
-                                                                           Objects.requireNonNull(system, "system must be non-null"),
-                                                                           Objects.requireNonNull(port, "port must be non-null"),
-                                                                           true);
             return new Endpoint(application,
                                 instance,
                                 endpointId,
                                 cluster,
                                 url,
-                                legacyRegionalUrl,
                                 targets,
                                 scope,
                                 port,

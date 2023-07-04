@@ -336,14 +336,10 @@ public class RoutingPolicies {
             if (!aliasTargets.isEmpty()) {
                 nameServiceForwarderIn(targetZone).createAlias(
                         RecordName.from(applicationEndpoint.dnsName()), aliasTargets, Priority.normal, owner);
-                nameServiceForwarderIn(targetZone).removeRecords(Type.ALIAS, RecordName.from(applicationEndpoint.legacyRegionalDnsName()),
-                                                                 Priority.normal, owner);
             }
             if (!directTargets.isEmpty()) {
                 nameServiceForwarderIn(targetZone).createDirect(
                         RecordName.from(applicationEndpoint.dnsName()), directTargets, Priority.normal, owner);
-                nameServiceForwarderIn(targetZone).removeRecords(Type.DIRECT, RecordName.from(applicationEndpoint.legacyRegionalDnsName()),
-                                                                 Priority.normal, owner);
             }
         });
 
@@ -355,12 +351,6 @@ public class RoutingPolicies {
                 if (!target.deployment().equals(deployment)) return; // Do not update target not matching this deployment
                 nameServiceForwarderIn(targetZone).removeRecords(target.type(),
                                                                  RecordName.from(applicationEndpoint.dnsName()),
-                                                                 target.data(),
-                                                                 Priority.normal,
-                                                                 owner);
-                // TODO(mpolden): Remove this and legacy name support in Endpoint after 2023-06-22
-                nameServiceForwarderIn(targetZone).removeRecords(target.type(),
-                                                                 RecordName.from(applicationEndpoint.legacyRegionalDnsName()),
                                                                  target.data(),
                                                                  Priority.normal,
                                                                  owner);
@@ -528,19 +518,9 @@ public class RoutingPolicies {
                                                 RecordData.fqdn(policy.canonicalName().get().value()),
                                                 Priority.normal,
                                                 ownerOf(allocation));
-                        forwarder.removeRecords(Record.Type.ALIAS,
-                                                RecordName.from(endpoint.legacyRegionalDnsName()),
-                                                RecordData.fqdn(policy.canonicalName().get().value()),
-                                                Priority.normal,
-                                                ownerOf(allocation));
                     } else {
                         forwarder.removeRecords(Record.Type.DIRECT,
                                                 RecordName.from(endpoint.dnsName()),
-                                                RecordData.from(policy.ipAddress().get()),
-                                                Priority.normal,
-                                                ownerOf(allocation));
-                        forwarder.removeRecords(Record.Type.DIRECT,
-                                                RecordName.from(endpoint.legacyRegionalDnsName()),
                                                 RecordData.from(policy.ipAddress().get()),
                                                 Priority.normal,
                                                 ownerOf(allocation));
