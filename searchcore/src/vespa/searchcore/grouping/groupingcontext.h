@@ -3,10 +3,8 @@
 
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/clock.h>
 #include <vector>
-#include <memory>
 
 namespace search::grouping {
 
@@ -20,8 +18,7 @@ class GroupingContext
 public:
     using UP = std::unique_ptr<GroupingContext>;
     using Grouping = search::aggregation::Grouping;
-    using GroupingPtr =  std::shared_ptr<Grouping>;
-    using GroupingList = std::vector<GroupingPtr>;
+    using GroupingList = std::vector<std::shared_ptr<Grouping>>;
 
     /**
      * Deserialize a grouping spec into this context.
@@ -57,7 +54,7 @@ public:
      * Add another grouping to this context.
      * @param g Pointer to the grouping object to become part of this context.
      **/
-    void addGrouping(const GroupingPtr & g);
+    void addGrouping(std::shared_ptr<Grouping> g);
 
     /**
      * Reset the context to an empty state.
@@ -111,9 +108,12 @@ public:
     bool needRanking() const;
     bool enableNestedMultivalueGrouping() const noexcept { return _enableNestedMultivalueGrouping; }
 
-    void aggregate(Grouping & grouping, const RankedHit * rankedHit, unsigned int len, const BitVector * bVec) const;
+    void aggregate(Grouping & grouping, const RankedHit * rankedHit, unsigned int len, const BitVector * bv) const;
     void aggregate(Grouping & grouping, const RankedHit * rankedHit, unsigned int len) const;
 private:
+    unsigned int aggregateRanked(Grouping & grouping, const RankedHit * rankedHit, unsigned int len) const;
+    void aggregate(Grouping & grouping, const BitVector * bv, unsigned int lidLimit) const;
+    void aggregate(Grouping & grouping, const BitVector * bv, unsigned int , unsigned int topN) const;
     const vespalib::Clock & _clock;
     vespalib::steady_time   _timeOfDoom;
     vespalib::nbostream     _os;

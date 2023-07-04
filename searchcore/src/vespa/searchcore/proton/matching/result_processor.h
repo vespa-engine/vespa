@@ -100,7 +100,6 @@ public:
                     size_t offset, size_t hits);
     ~ResultProcessor();
 
-    size_t countFS4Hits();
     void prepareThreadContextCreation(size_t num_threads);
     Context::UP createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id, uint32_t distributionKey);
     std::vector<std::pair<uint32_t,uint32_t>> extract_docid_ordering(const PartialResult &result) const;
