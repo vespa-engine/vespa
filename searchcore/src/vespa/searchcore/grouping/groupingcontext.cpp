@@ -6,6 +6,9 @@
 #include <vespa/searchlib/aggregation/hitsaggregationresult.h>
 #include <vespa/searchlib/common/bitvector.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchcore/grouping.groupingcontext");
+
 namespace search::grouping {
 
 using aggregation::CountFS4Hits;
@@ -49,9 +52,10 @@ GroupingContext::setDistributionKey(uint32_t distributionKey)
     }
 }
 
-GroupingContext::GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom,
+GroupingContext::GroupingContext(const BitVector & validLids, const vespalib::Clock & clock, vespalib::steady_time timeOfDoom,
                                  const char *groupSpec, uint32_t groupSpecLen, bool enableNested)
-    : _clock(clock),
+    : _validLids(validLids),
+      _clock(clock),
       _timeOfDoom(timeOfDoom),
       _os(),
       _groupingList(),
@@ -60,8 +64,9 @@ GroupingContext::GroupingContext(const vespalib::Clock & clock, vespalib::steady
     deserialize(groupSpec, groupSpecLen);
 }
 
-GroupingContext::GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom)
-    : _clock(clock),
+GroupingContext::GroupingContext(const BitVector & validLids, const vespalib::Clock & clock, vespalib::steady_time timeOfDoom)
+    : _validLids(validLids),
+      _clock(clock),
       _timeOfDoom(timeOfDoom),
       _os(),
       _groupingList(),
@@ -69,7 +74,8 @@ GroupingContext::GroupingContext(const vespalib::Clock & clock, vespalib::steady
 { }
 
 GroupingContext::GroupingContext(const GroupingContext & rhs)
-    : _clock(rhs._clock),
+    : _validLids(rhs._validLids),
+      _clock(rhs._clock),
       _timeOfDoom(rhs._timeOfDoom),
       _os(),
       _groupingList(),
@@ -102,27 +108,32 @@ GroupingContext::needRanking() const
     return true;
 }
 
-using DocId = uint32_t;
+void
+GroupingContext::aggregate(Grouping & grouping, uint32_t docId, HitRank rank) const {
+    if (_validLids.testBit(docId)) {
+        grouping.aggregate(docId, rank);
+    }
+}
 
 unsigned int
 GroupingContext::aggregateRanked(Grouping &grouping, const RankedHit *rankedHit, unsigned int len) const {
     unsigned int i(0);
     for(; (i < len) && !hasExpired(); i++) {
-        grouping.aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
+        aggregate(grouping, rankedHit[i].getDocId(), rankedHit[i].getRank());
     }
     return i;
 }
 
 void
 GroupingContext::aggregate(Grouping & grouping, const BitVector * bVec, unsigned int lidLimit) const {
-    for (DocId d(bVec->getFirstTrueBit()); (d < lidLimit) && !hasExpired(); d = bVec->getNextTrueBit(d+1)) {
-        grouping.aggregate(d, 0.0);
+    for (uint32_t d(bVec->getFirstTrueBit()); (d < lidLimit) && !hasExpired(); d = bVec->getNextTrueBit(d+1)) {
+        aggregate(grouping, d, 0.0);
     }
 }
 void
 GroupingContext::aggregate(Grouping & grouping, const BitVector * bVec, unsigned int lidLimit, unsigned int topN) const {
-    for(DocId d(bVec->getFirstTrueBit()), i(0); (d < lidLimit) && (i < topN) && !hasExpired(); d = bVec->getNextTrueBit(d+1), i++) {
-        grouping.aggregate(d, 0.0);
+    for(uint32_t d(bVec->getFirstTrueBit()), i(0); (d < lidLimit) && (i < topN) && !hasExpired(); d = bVec->getNextTrueBit(d+1), i++) {
+        aggregate(grouping, d, 0.0);
     }
 }
 
@@ -151,6 +162,32 @@ GroupingContext::aggregate(Grouping & grouping, const RankedHit * rankedHit, uns
     grouping.select(pred, pred);
     aggregateRanked(grouping, rankedHit, grouping.getMaxN(len));
     grouping.postProcess();
+}
+
+void
+GroupingContext::groupUnordered(const RankedHit *searchResults, uint32_t binSize, const search::BitVector * overflow)
+{
+    for (const auto & g : _groupingList) {
+        if ( g->needResort() ) {
+            aggregate(*g, searchResults, binSize, overflow);
+            LOG(debug, "groupUnordered: %s", g->asString().c_str());
+            g->cleanTemporary();
+            g->cleanupAttributeReferences();
+        }
+    }
+}
+
+void
+GroupingContext::groupInRelevanceOrder(const RankedHit *searchResults, uint32_t binSize)
+{
+    for (const auto & g : _groupingList) {
+        if ( ! g->needResort() ) {
+            aggregate(*g, searchResults, binSize);
+            LOG(debug, "groupInRelevanceOrder: %s", g->asString().c_str());
+            g->cleanTemporary();
+            g->cleanupAttributeReferences();
+        }
+    }
 }
 
 }

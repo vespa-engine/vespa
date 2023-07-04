@@ -69,27 +69,13 @@ GroupingManager::init(const IAttributeContext &attrCtx)
 void
 GroupingManager::groupInRelevanceOrder(const RankedHit *searchResults, uint32_t binSize)
 {
-    for (const auto & g : _groupingContext.getGroupingList()) {
-        if ( ! g->needResort() ) {
-            _groupingContext.aggregate(*g, searchResults, binSize);
-            LOG(debug, "groupInRelevanceOrder: %s", g->asString().c_str());
-            g->cleanTemporary();
-            g->cleanupAttributeReferences();
-        }
-    }
+    _groupingContext.groupInRelevanceOrder(searchResults, binSize);
 }
 
 void
 GroupingManager::groupUnordered(const RankedHit *searchResults, uint32_t binSize, const search::BitVector * overflow)
 {
-    for (const auto & g : _groupingContext.getGroupingList()) {
-        if ( g->needResort() ) {
-            _groupingContext.aggregate(*g, searchResults, binSize, overflow);
-            LOG(debug, "groupUnordered: %s", g->asString().c_str());
-            g->cleanTemporary();
-            g->cleanupAttributeReferences();
-        }
-    }
+    _groupingContext.groupUnordered(searchResults, binSize, overflow);
 }
 
 void

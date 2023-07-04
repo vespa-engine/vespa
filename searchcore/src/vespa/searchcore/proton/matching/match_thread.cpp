@@ -328,9 +328,7 @@ MatchThread::findMatches(MatchTools &tools)
 }
 
 void
-MatchThread::processResult(const Doom & doom,
-                           search::ResultSet::UP result,
-                           ResultProcessor::Context &context)
+MatchThread::processResult(const Doom & doom, search::ResultSet::UP result, ResultProcessor::Context &context)
 {
     if (doom.hard_doom()) return;
     bool hasGrouping = bool(context.grouping);

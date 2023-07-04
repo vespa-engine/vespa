@@ -33,7 +33,7 @@ public:
      * @param groupSpec The grouping specification to use for initialization.
      * @param groupSpecLen The length of the grouping specification, in bytes.
      **/
-    GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom,
+    GroupingContext(const BitVector & validLids, const vespalib::Clock & clock, vespalib::steady_time timeOfDoom,
                     const char *groupSpec, uint32_t groupSpecLen, bool enableNestedMultivalueGrouping);
 
     /**
@@ -41,7 +41,7 @@ public:
      * @param groupSpec The grouping specification to use for initialization.
      * @param groupSpecLen The length of the grouping specification, in bytes.
      **/
-    GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom);
+    GroupingContext(const BitVector & validLids, const vespalib::Clock & clock, vespalib::steady_time timeOfDoom);
 
     /**
      * Shallow copy of references
@@ -108,12 +108,16 @@ public:
     bool needRanking() const;
     bool enableNestedMultivalueGrouping() const noexcept { return _enableNestedMultivalueGrouping; }
 
+    void groupUnordered(const RankedHit *searchResults, uint32_t binSize, const search::BitVector * overflow);
+    void groupInRelevanceOrder(const RankedHit *searchResults, uint32_t binSize);
+private:
     void aggregate(Grouping & grouping, const RankedHit * rankedHit, unsigned int len, const BitVector * bv) const;
     void aggregate(Grouping & grouping, const RankedHit * rankedHit, unsigned int len) const;
-private:
+    void aggregate(Grouping & grouping, uint32_t docId, HitRank rank) const;
     unsigned int aggregateRanked(Grouping & grouping, const RankedHit * rankedHit, unsigned int len) const;
     void aggregate(Grouping & grouping, const BitVector * bv, unsigned int lidLimit) const;
     void aggregate(Grouping & grouping, const BitVector * bv, unsigned int , unsigned int topN) const;
+    const BitVector       & _validLids;
     const vespalib::Clock & _clock;
     vespalib::steady_time   _timeOfDoom;
     vespalib::nbostream     _os;

@@ -16,6 +16,7 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
+#include <vespa/searchlib/common/allocatedbitvector.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <cinttypes>
 
@@ -51,6 +52,8 @@ constexpr vespalib::duration TIME_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT
 
 // used to give out empty whitelist blueprints
 struct StupidMetaStore : search::IDocumentMetaStore {
+    static const search::AllocatedBitVector _dummy;
+    const search::BitVector & getValidLids() const override { return _dummy; }
     bool getGid(DocId, GlobalId &) const override { return false; }
     bool getGidEvenIfMoved(DocId, GlobalId &) const override { return false; }
     bool getLid(const GlobalId &, DocId &) const override { return false; }
@@ -64,6 +67,8 @@ struct StupidMetaStore : search::IDocumentMetaStore {
     Blueprint::UP createWhiteListBlueprint() const override { return {}; }
     void foreach(const search::IGidToLidMapperVisitor &) const override { }
 };
+
+const search::AllocatedBitVector StupidMetaStore::_dummy(1);
 
 size_t
 numThreads(size_t hits, size_t minHits) {
@@ -245,7 +250,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
     bool isDoomExplicit = false;
     { // we want to measure full set-up and tear-down time as part of
       // collateral time
-        GroupingContext groupingContext(_clock, request.getTimeOfDoom(),
+        GroupingContext groupingContext(metaStore.getValidLids(), _clock, request.getTimeOfDoom(),
                                         request.groupSpec.data(), request.groupSpec.size(), _rankSetup->enableNestedMultivalueGrouping());
         SessionId sessionId(request.sessionId.data(), request.sessionId.size());
         bool shouldCacheSearchSession = false;
@@ -270,7 +275,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 
         MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext, metaStore,
                                                                *feature_overrides, threadBundle, &owned_objects.readGuard, true);
-        isDoomExplicit = mtf->getRequestContext().getDoom().isExplicitSoftDoom();
+        isDoomExplicit = mtf->get_request_context().getDoom().isExplicitSoftDoom();
         traceQuery(6, request.trace(), mtf->query());
         if (!mtf->valid()) {
             return reply;

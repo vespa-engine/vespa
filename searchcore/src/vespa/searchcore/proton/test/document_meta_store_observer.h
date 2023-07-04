@@ -51,6 +51,9 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     uint64_t getCurrentGeneration() const override {
         return _store.getCurrentGeneration();
     }
+    const search::BitVector & getValidLids() const override {
+        return _store.getValidLids();
+    }
 
 
     /**
