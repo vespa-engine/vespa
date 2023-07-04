@@ -7,6 +7,7 @@ import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.utils.FreezableMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -74,7 +75,8 @@ public abstract class TreeConfigProducer<CHILD extends AnyConfigProducer>
                                                errorMsgClassName() + " '" + getSubId() + "'. (This is commonly caused by service/node index " +
                                                "collisions in the config.)." +
                                                "\nExisting instance: " + childrenBySubId.get(child.getSubId()) +
-                                               "\nAttempted to add:  " + child);
+                                               "\nAttempted to add:  " + child +
+                                               "\nStack trace: " + Arrays.toString(Thread.currentThread().getStackTrace()));
         }
         childrenBySubId.put(child.getSubId(), child);
 
