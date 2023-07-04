@@ -8,7 +8,7 @@ import com.yahoo.container.plugin.classanalysis.PackageTally;
 import com.yahoo.container.plugin.osgi.ExportPackages;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import com.yahoo.container.plugin.osgi.ImportPackages.Import;
-import com.yahoo.container.plugin.util.ArtifactInfo;
+import com.yahoo.container.plugin.util.ArtifactId;
 import com.yahoo.container.plugin.util.Artifacts;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -245,17 +245,20 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     }
 
     private void logProvidedArtifactsIncluded(List<Artifact> includedArtifacts,
-                                              List<ArtifactInfo> providedArtifacts) throws MojoExecutionException {
+                                              List<ArtifactId> providedArtifacts) throws MojoExecutionException {
         if (effectiveBundleType() == BundleType.CORE) return;
 
-        Set<ArtifactInfo> included = includedArtifacts.stream().map(ArtifactInfo::fromArtifact).collect(Collectors.toSet());
-        Set<ArtifactInfo> providedIncluded = Sets.intersection(included, new HashSet<>(providedArtifacts));
+        Set<ArtifactId> included = includedArtifacts.stream().map(ArtifactId::fromArtifact).collect(Collectors.toSet());
+        getLog().debug("Included  artifacts: " + included);
+        getLog().debug("Provided  artifacts: " + providedArtifacts);
 
-        HashSet<ArtifactInfo> allowed = getAllowedEmbeddedArtifacts(providedIncluded);
+        Set<ArtifactId> includedProvided = Sets.intersection(included, new HashSet<>(providedArtifacts));
+        getLog().debug("Included provided artifacts: " + includedProvided);
+        HashSet<ArtifactId> allowed = getAllowedEmbeddedArtifacts(includedProvided);
 
-        List<String> violations = providedIncluded.stream()
+        List<String> violations = includedProvided.stream()
                 .filter(a -> ! allowed.contains(a))
-                .map(ArtifactInfo::stringValue)
+                .map(ArtifactId::stringValue)
                 .sorted().toList();
 
         if (! violations.isEmpty()) {
@@ -265,12 +268,12 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         }
     }
 
-    private HashSet<ArtifactInfo> getAllowedEmbeddedArtifacts(Set<ArtifactInfo> providedIncluded) throws MojoExecutionException {
+    private HashSet<ArtifactId> getAllowedEmbeddedArtifacts(Set<ArtifactId> providedIncluded) throws MojoExecutionException {
         if (allowEmbeddedArtifacts.isEmpty()) return new HashSet<>();
 
-        var allowed = new HashSet<ArtifactInfo>();
+        var allowed = new HashSet<ArtifactId>();
         try {
-            allowEmbeddedArtifacts.stream().map(ArtifactInfo::fromStringValue).forEach(allowed::add);
+            allowEmbeddedArtifacts.stream().map(ArtifactId::fromStringValue).forEach(allowed::add);
         } catch (Exception e) {
             throw new MojoExecutionException("In config parameter 'allowEmbeddedArtifacts': " + e.getMessage(), e);
         }

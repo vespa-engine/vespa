@@ -301,9 +301,9 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
-          <allowEmbeddedArtifacts>com.fasterxml.jackson.core:jackson-annotations:2.15.2, com.fasterxml.jackson.core:jackson-core:2.15.2,
-            com.fasterxml.jackson.core:jackson-databind:2.15.2, com.yahoo.vespa:metrics:*, com.yahoo.vespa:predicate-search-core:*,
-            com.yahoo.vespa:searchcore:*</allowEmbeddedArtifacts>
+          <allowEmbeddedArtifacts>com.fasterxml.jackson.core:jackson-annotations, com.fasterxml.jackson.core:jackson-core,
+            com.fasterxml.jackson.core:jackson-databind, com.yahoo.vespa:metrics, com.yahoo.vespa:predicate-search-core,
+            com.yahoo.vespa:searchcore</allowEmbeddedArtifacts>
         </configuration>
       </plugin>
       <plugin>

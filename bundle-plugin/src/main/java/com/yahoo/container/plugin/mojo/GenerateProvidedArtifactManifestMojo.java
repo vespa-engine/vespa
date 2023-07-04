@@ -24,6 +24,9 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
 /**
+ * Replaces the Class-Path of a jar file manifest with a list of provided artifacts.
+ * The Class-Path is used because it is trivial to generate with the maven-jar-plugin.
+ *
  * @author gjoranv
  */
 @Mojo(name = "generate-provided-artifact-manifest", requiresDependencyResolution = ResolutionScope.COMPILE, threadSafe = true)

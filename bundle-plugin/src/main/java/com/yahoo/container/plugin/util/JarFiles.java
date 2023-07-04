@@ -20,10 +20,10 @@ import static com.yahoo.container.plugin.mojo.GenerateProvidedArtifactManifestMo
  */
 public class JarFiles {
 
-    public static List<ArtifactInfo> providedArtifactsFromManifest(File jarFile) {
+    public static List<ArtifactId> providedArtifactsFromManifest(File jarFile) {
         return getManifest(jarFile).map(mf -> getMainAttributeValue(mf, PROVIDED_ARTIFACTS_MANIFEST_ENTRY)
                         .map(s -> Arrays.stream(s.split(","))
-                                .map(ArtifactInfo::fromStringValue)
+                                .map(ArtifactId::fromStringValue)
                                 .toList())
                         .orElse(Collections.emptyList()))
                 .orElse(Collections.emptyList());

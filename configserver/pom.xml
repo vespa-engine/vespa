@@ -296,8 +296,8 @@
           <!-- TODO: Vespa > 8: remove importPackage when the jackson-jaxrs-json-provider bundle is no longer installed in jdisc -->
           <!--   added to ensure using the same class as orchestrator, core-dump-reporter, provision-controller and controller-clients -->
           <importPackage>com.fasterxml.jackson.jaxrs.json;version="[2.12.6,3)"</importPackage>
-          <allowEmbeddedArtifacts>com.fasterxml.jackson.core:jackson-annotations:2.15.2, com.fasterxml.jackson.core:jackson-core:2.15.2,
-            com.yahoo.vespa:airlift-zstd:*</allowEmbeddedArtifacts>
+          <allowEmbeddedArtifacts>com.fasterxml.jackson.core:jackson-annotations, com.fasterxml.jackson.core:jackson-core,
+            com.yahoo.vespa:airlift-zstd</allowEmbeddedArtifacts>
         </configuration>
       </plugin>
       <plugin>
