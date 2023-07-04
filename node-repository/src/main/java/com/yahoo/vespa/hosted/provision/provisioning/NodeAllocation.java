@@ -207,8 +207,10 @@ class NodeAllocation {
             // TODO: Write this in a way that is simple to read
             // If either the parent is dedicated to a cluster type different from this cluster
             return  ! candidate.parent.flatMap(Node::exclusiveToClusterType).map(cluster.type()::equals).orElse(true) ||
-                    // or this cluster is requiring exclusivity, but the host is exclusive to a different owner
-                    (nodeRepository.exclusiveAllocation(cluster) && !candidate.parent.flatMap(Node::exclusiveToApplicationId).map(application::equals).orElse(false));
+                    // or the parent is dedicated to a different application
+                    ! candidate.parent.flatMap(Node::exclusiveToApplicationId).map(application::equals).orElse(true) ||
+                    // or this cluster requires exclusivity, but the host is not exclusive
+                    (nodeRepository.exclusiveAllocation(cluster) && candidate.parent.flatMap(Node::exclusiveToApplicationId).isEmpty());
         }
 
         // In zones with shared hosts we require that if either of the nodes on the host requires exclusivity,

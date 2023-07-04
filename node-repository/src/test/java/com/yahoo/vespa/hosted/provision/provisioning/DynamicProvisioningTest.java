@@ -214,7 +214,8 @@ public class DynamicProvisioningTest {
 
     @Test
     public void retires_on_exclusivity_violation() {
-        var tester = tester(true);
+        var tester = tester(false);
+        tester.flagSource().withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(new HostResources(1., 1., 1., 1., "fast", "local", null, 10, "x86_64"))), SharedHost.class);
         ApplicationId application1 = ProvisioningTester.applicationId();
         NodeResources resources = new NodeResources(4, 80, 100, 1);
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources, tester);
@@ -229,8 +230,20 @@ public class DynamicProvisioningTest {
 
         // Redeploy without exclusive again is no-op
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, smallerExclusiveResources, tester);
-        assertEquals(8, tester.nodeRepository().nodes().list().owner(application1).size());
-        assertEquals(initialNodes, tester.nodeRepository().nodes().list().owner(application1).retired());
+        NodeList nodes = tester.nodeRepository().nodes().list();
+        assertEquals(8, nodes.owner(application1).size());
+        assertEquals(initialNodes, nodes.owner(application1).retired());
+
+        // Remove the old retired nodes and make 2 random parents of current nodes violate exclusivity
+        tester.patchNodes(initialNodes.asList(), node -> node.removable(true));
+        NodeList exclusiveViolators = nodes.owner(application1).not().retired().first(2);
+        List<Node> parents = exclusiveViolators.mapToList(node -> nodes.parentOf(node).get());
+        tester.patchNode(parents.get(0), node -> node.withExclusiveToApplicationId(ApplicationId.defaultId()));
+        tester.patchNode(parents.get(1), node -> node.withExclusiveToClusterType(ClusterSpec.Type.container));
+
+        prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, smallerExclusiveResources, tester);
+        assertEquals(10, tester.nodeRepository().nodes().list().owner(application1).size());
+        assertEquals(exclusiveViolators, tester.nodeRepository().nodes().list().owner(application1).retired());
     }
 
     @Test
