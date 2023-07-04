@@ -7,12 +7,17 @@ import org.apache.maven.project.MavenProject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Tony Vaagenes
  * @author ollivir
  */
 public class Artifacts {
+
+    public static final String VESPA_GROUP_ID = "com.yahoo.vespa";
+
+
     interface ScopeTranslator {
         String scopeOf(Artifact artifact);
     }
@@ -79,4 +84,14 @@ public class Artifacts {
     public static Collection<Artifact> getArtifactsToInclude(MavenProject project) {
         return getArtifacts(project, new NoopScopeTranslator()).getJarArtifactsToInclude();
     }
+
+    public static Optional<Artifact> getVespaArtifact(String artifactId, List<Artifact> availableArtifacts) {
+        for (Artifact artifact : availableArtifacts) {
+            if (artifactId.equals(artifact.getArtifactId()) && VESPA_GROUP_ID.equals(artifact.getGroupId())) {
+                return Optional.of(artifact);
+            }
+        }
+        return Optional.empty();
+    }
+
 }

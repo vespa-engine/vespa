@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-disc</artifactId>
+            <artifactId>container-dev</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -47,18 +47,6 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-ssm</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>jdisc_core</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>component</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -71,6 +59,10 @@
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
+                <configuration>
+                    <allowEmbeddedArtifacts>com.fasterxml.jackson.core:jackson-annotations, com.fasterxml.jackson.core:jackson-core,
+                        com.fasterxml.jackson.core:jackson-databind, commons-logging:commons-logging</allowEmbeddedArtifacts>
+                </configuration>
             </plugin>
         </plugins>
     </build>

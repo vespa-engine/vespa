@@ -83,6 +83,8 @@
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
+                    <allowEmbeddedArtifacts>com.fasterxml.jackson.core:jackson-core, com.yahoo.vespa:annotations,
+                        org.bouncycastle:bcpkix-jdk18on, org.bouncycastle:bcprov-jdk18on, org.bouncycastle:bcutil-jdk18on</allowEmbeddedArtifacts>
                     <useCommonAssemblyIds>true</useCommonAssemblyIds>
                 </configuration>
             </plugin>
