@@ -54,6 +54,8 @@ protected:
         return array.size();
     }
 
+    long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
+    long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
 public:
     MultiValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c =
                                AttributeVector::Config(AttributeVector::BasicType::fromType(T()),

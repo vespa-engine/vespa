@@ -5,6 +5,7 @@
 #include "attributevector.hpp"
 #include "multinumericattributesaver.h"
 #include "multi_numeric_search_context.h"
+#include "numeric_sort_blob_writer.h"
 #include "load_utils.h"
 #include "primitivereader.h"
 #include "valuemodifier.h"
@@ -181,6 +182,30 @@ MultiValueNumericAttribute<B, M>::onInitSave(vespalib::stringref fileName)
     vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().takeGuard());
     return std::make_unique<MultiValueNumericAttributeSaver<MultiValueType>>
         (std::move(guard), this->createAttributeHeader(fileName), this->_mvMapping);
+}
+
+template <typename B, typename M>
+long
+MultiValueNumericAttribute<B, M>::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
+{
+    attribute::NumericSortBlobWriter<T, true> writer;
+    auto indices = this->_mvMapping.get(doc);
+    for (auto& v : indices) {
+        writer.candidate(multivalue::get_value(v));
+    }
+    return writer.write(serTo, available);
+}
+
+template <typename B, typename M>
+long
+MultiValueNumericAttribute<B, M>::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
+{
+    attribute::NumericSortBlobWriter<T, false> writer;
+    auto indices = this->_mvMapping.get(doc);
+    for (auto& v : indices) {
+        writer.candidate(multivalue::get_value(v));
+    }
+    return writer.write(serTo, available);
 }
 
 } // namespace search

@@ -178,14 +178,8 @@ FastS_SortSpec::Add(IAttributeContext & vecMan, const SortInfo & sInfo)
     } else {
         type = (sInfo._ascending) ? ASC_VECTOR : DESC_VECTOR;
         vector = vecMan.getAttribute(sInfo._field);
-        if ( !vector || vector->hasMultiValue()) {
-            const char * err = "OK";
-            if ( !vector ) {
-                err = "not valid";
-            } else  if ( vector->hasMultiValue()) {
-                err = "multivalued";
-            }
-            Issue::report("sort spec: Attribute vector '%s' is %s. Skipped in sorting", sInfo._field.c_str(), err);
+        if ( !vector) {
+            Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", sInfo._field.c_str());
             return false;
         }
     }
@@ -217,6 +211,8 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
                 variableWidth += 11;
             } else if (!vec._vector->hasMultiValue()) {
                 fixedWidth += numBytes;
+            } else {
+                fixedWidth += (1 + numBytes);
             }
         }
     }
