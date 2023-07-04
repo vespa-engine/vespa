@@ -185,10 +185,11 @@ MultiValueNumericAttribute<B, M>::onInitSave(vespalib::stringref fileName)
 }
 
 template <typename B, typename M>
+template <bool asc>
 long
-MultiValueNumericAttribute<B, M>::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
+MultiValueNumericAttribute<B, M>::on_serialize_for_sort(DocId doc, void* serTo, long available) const
 {
-    attribute::NumericSortBlobWriter<T, true> writer;
+    attribute::NumericSortBlobWriter<T, asc> writer;
     auto indices = this->_mvMapping.get(doc);
     for (auto& v : indices) {
         writer.candidate(multivalue::get_value(v));
@@ -198,14 +199,16 @@ MultiValueNumericAttribute<B, M>::onSerializeForAscendingSort(DocId doc, void* s
 
 template <typename B, typename M>
 long
+MultiValueNumericAttribute<B, M>::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
+{
+    return on_serialize_for_sort<true>(doc, serTo, available);
+}
+
+template <typename B, typename M>
+long
 MultiValueNumericAttribute<B, M>::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
 {
-    attribute::NumericSortBlobWriter<T, false> writer;
-    auto indices = this->_mvMapping.get(doc);
-    for (auto& v : indices) {
-        writer.candidate(multivalue::get_value(v));
-    }
-    return writer.write(serTo, available);
+    return on_serialize_for_sort<false>(doc, serTo, available);
 }
 
 } // namespace search

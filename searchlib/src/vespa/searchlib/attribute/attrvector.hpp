@@ -92,13 +92,11 @@ NumericDirectAttrVector(const vespalib::string & baseFileName)
 }
 
 template <typename F, typename B>
+template <bool asc>
 long
-NumericDirectAttrVector<F, B>::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const
+NumericDirectAttrVector<F, B>::on_serialize_for_sort(DocId doc, void* serTo, long available) const
 {
-    if (!F::IsMultiValue()) {
-        return search::NumericDirectAttribute<B>::onSerializeForAscendingSort(doc, serTo, available, bc);
-    }
-    search::attribute::NumericSortBlobWriter<BaseType, true> writer;
+    search::attribute::NumericSortBlobWriter<BaseType, asc> writer;
     vespalib::ConstArrayRef<BaseType> values(this->_data.data() + this->_idx[doc], this->_idx[doc + 1] - this->_idx[doc]);
     for (auto& v : values) {
         writer.candidate(v);
@@ -108,17 +106,22 @@ NumericDirectAttrVector<F, B>::onSerializeForAscendingSort(DocId doc, void* serT
 
 template <typename F, typename B>
 long
+NumericDirectAttrVector<F, B>::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const
+{
+    if (!F::IsMultiValue()) {
+        return search::NumericDirectAttribute<B>::onSerializeForAscendingSort(doc, serTo, available, bc);
+    }
+    return on_serialize_for_sort<true>(doc, serTo, available);
+}
+
+template <typename F, typename B>
+long
 NumericDirectAttrVector<F, B>::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const
 {
     if (!F::IsMultiValue()) {
         return search::NumericDirectAttribute<B>::onSerializeForDescendingSort(doc, serTo, available, bc);
     }
-    search::attribute::NumericSortBlobWriter<BaseType, false> writer;
-    vespalib::ConstArrayRef<BaseType> values(this->_data.data() + this->_idx[doc], this->_idx[doc + 1] - this->_idx[doc]);
-    for (auto& v : values) {
-        writer.candidate(v);
-    }
-    return writer.write(serTo, available);
+    return on_serialize_for_sort<false>(doc, serTo, available);
 }
 
 template <typename F>

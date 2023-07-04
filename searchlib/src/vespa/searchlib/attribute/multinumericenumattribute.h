@@ -40,6 +40,8 @@ protected:
     using WeightedInt = typename B::BaseClass::WeightedInt;
     using largeint_t = typename B::BaseClass::largeint_t;
 
+    template <bool asc>
+    long on_serialize_for_sort(DocId doc, void* serTo, long available) const;
     long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
     long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
 public:
