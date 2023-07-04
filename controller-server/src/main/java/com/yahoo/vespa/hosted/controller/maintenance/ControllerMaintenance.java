@@ -11,13 +11,11 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -85,7 +83,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new BillingDatabaseMaintainer(controller, intervals.billingDatabaseMaintainer));
         maintainers.add(new MeteringMonitorMaintainer(controller, intervals.meteringMonitorMaintainer, controller.serviceRegistry().resourceDatabase(), metric));
         maintainers.add(new EnclaveAccessMaintainer(controller, intervals.defaultInterval));
-        maintainers.add(new CertificatePoolMaintainer(controller, metric, intervals.certificatePoolMaintainer, new SecureRandom()));
+        maintainers.add(new CertificatePoolMaintainer(controller, metric, intervals.certificatePoolMaintainer));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -197,15 +195,14 @@ public class ControllerMaintenance extends AbstractComponent {
 
     private static class SuccessFactorBaseline {
 
-        private final Double defaultSuccessFactorBaseline;
         private final Double deploymentMetricsMaintainerBaseline;
         private final Double trafficFractionUpdater;
 
         public SuccessFactorBaseline(SystemName system) {
             Objects.requireNonNull(system);
-            this.defaultSuccessFactorBaseline = 1.0;
             this.deploymentMetricsMaintainerBaseline = 0.90;
             this.trafficFractionUpdater = system.isCd() ? 0.5 : 0.65;
         }
+
     }
 }

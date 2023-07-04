@@ -55,6 +55,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics.Warning;
 import com.yahoo.vespa.hosted.controller.application.DeploymentQuotaCalculator;
+import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -88,6 +89,7 @@ import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -150,6 +152,7 @@ public class ApplicationController {
     private final ListFlag<String> incompatibleVersions;
     private final BillingController billingController;
     private final ListFlag<String> cloudAccountsFlag;
+
     private final Map<DeploymentId, com.yahoo.vespa.hosted.controller.api.integration.configserver.Application> deploymentInfo = new ConcurrentHashMap<>();
 
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
@@ -651,7 +654,8 @@ public class ApplicationController {
         DeploymentId deployment = new DeploymentId(application, zone);
         // Routing and metadata may have changed, so we need to refresh state after deployment, even if deployment fails.
         interface CleanCloseable extends AutoCloseable { void close(); }
-        try (CleanCloseable postDeployment = () -> updateRoutingAndMeta(deployment, applicationPackage)) {
+        List<GeneratedEndpoint> generatedEndpoints = new ArrayList<>();
+        try (CleanCloseable postDeployment = () -> updateRoutingAndMeta(deployment, applicationPackage, generatedEndpoints)) {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
                     dockerImageRepoFlag
                             .with(FetchVector.Dimension.ZONE_ID, zone.value())
@@ -680,8 +684,16 @@ public class ApplicationController {
             }
             Supplier<Optional<CloudAccount>> cloudAccount = () -> decideCloudAccountOf(deployment, applicationPackage.truncatedPackage().deploymentSpec());
             List<DataplaneTokenVersions> dataplaneTokenVersions = controller.dataplaneTokenService().listTokens(application.tenant());
+            Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadataWrapper = () -> {
+                Optional<EndpointCertificateMetadata> data = endpointCertificateMetadata.get();
+                // TODO(mpolden): Pass these endpoints to config server as part of the deploy call. This will let the
+                //                application know which endpoints are mTLS and which are token-based
+                data.flatMap(EndpointCertificateMetadata::randomizedId)
+                    .ifPresent(applicationPart -> generatedEndpoints.addAll(controller.routing().generateEndpoints(applicationPart, deployment.applicationId())));
+                return data;
+            };
             DeploymentData deploymentData = new DeploymentData(application, zone, applicationPackage::zipStream, platform,
-                    endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
+                    endpoints, endpointCertificateMetadataWrapper, dockerImageRepo, domain,
                     deploymentQuota, tenantSecretStores, operatorCertificates, cloudAccount, dataplaneTokenVersions, dryRun);
             ConfigServer.PreparedApplication preparedApplication = configServer.deploy(deploymentData);
 
@@ -689,9 +701,9 @@ public class ApplicationController {
         }
     }
 
-    private void updateRoutingAndMeta(DeploymentId id, ApplicationPackageStream data) {
+    private void updateRoutingAndMeta(DeploymentId id, ApplicationPackageStream data, List<GeneratedEndpoint> generatedEndpoints) {
         if (id.applicationId().instance().isTester()) return;
-        controller.routing().of(id).configure(data.truncatedPackage().deploymentSpec());
+        controller.routing().of(id).configure(data.truncatedPackage().deploymentSpec(), generatedEndpoints);
         if ( ! id.zoneId().environment().isManuallyDeployed()) return;
         controller.applications().applicationStore().putMeta(id, clock.instant(), data.truncatedPackage().metaDataZip());
     }
@@ -906,7 +918,7 @@ public class ApplicationController {
         DeploymentId id = new DeploymentId(instanceId, zone);
         interface CleanCloseable extends AutoCloseable { void close(); }
         try (CleanCloseable postDeactivation = () -> {
-            application.ifPresent(app -> controller.routing().of(id).configure(app.get().deploymentSpec()));
+            application.ifPresent(app -> controller.routing().of(id).configure(app.get().deploymentSpec(), List.of()));
             if (id.zoneId().environment().isManuallyDeployed())
                 applicationStore.putMetaTombstone(id, clock.instant());
             if ( ! id.zoneId().environment().isTest())

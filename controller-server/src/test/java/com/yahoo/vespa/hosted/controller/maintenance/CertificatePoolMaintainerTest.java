@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -20,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class CertificatePoolMaintainerTest {
 
     private final ControllerTester tester = new ControllerTester();
-    private final CertificatePoolMaintainer maintainer = new CertificatePoolMaintainer(tester.controller(), new MockMetric(), Duration.ofHours(1), new Random(4));
+    private final CertificatePoolMaintainer maintainer = new CertificatePoolMaintainer(tester.controller(), new MockMetric(), Duration.ofHours(1));
 
     @Test
     void new_certs_are_requested_until_limit() {
@@ -41,17 +40,18 @@ public class CertificatePoolMaintainerTest {
 
         assertEquals(
                 List.of(
-                        new DnsNameStatus("*.c8868d4e.z.vespa.oath.cloud", "done"),
-                        new DnsNameStatus("*.c8868d4e.g.vespa.oath.cloud", "done"),
-                        new DnsNameStatus("*.c8868d4e.a.vespa.oath.cloud", "done")
+                        new DnsNameStatus("*.f5549014.z.vespa.oath.cloud", "done"),
+                        new DnsNameStatus("*.f5549014.g.vespa.oath.cloud", "done"),
+                        new DnsNameStatus("*.f5549014.a.vespa.oath.cloud", "done")
                 ), metadata.dnsNames());
 
-        assertEquals("vespa.tls.preprovisioned.c8868d4e-cert", endpointCertificateProvider.certificateDetails(metadata.requestId()).cert_key_keyname());
-        assertEquals("vespa.tls.preprovisioned.c8868d4e-key", endpointCertificateProvider.certificateDetails(metadata.requestId()).private_key_keyname());
+        assertEquals("vespa.tls.preprovisioned.f5549014-cert", endpointCertificateProvider.certificateDetails(metadata.requestId()).cert_key_keyname());
+        assertEquals("vespa.tls.preprovisioned.f5549014-key", endpointCertificateProvider.certificateDetails(metadata.requestId()).private_key_keyname());
     }
 
     private void assertNumCerts(int n) {
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
         assertEquals(n, tester.curator().readUnassignedCertificates().size());
     }
+
 }

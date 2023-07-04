@@ -14,9 +14,10 @@ import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
-import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
+import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
@@ -27,7 +28,6 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 
 /**
@@ -39,7 +39,6 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(CertificatePoolMaintainer.class.getName());
 
-    private final RandomGenerator random;
     private final CuratorDb curator;
     private final SecretStore secretStore;
     private final EndpointCertificateProvider endpointCertificateProvider;
@@ -50,7 +49,7 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
     private final StringFlag endpointCertificateAlgo;
     private final BooleanFlag useAlternateCertProvider;
 
-    public CertificatePoolMaintainer(Controller controller, Metric metric, Duration interval, RandomGenerator random) {
+    public CertificatePoolMaintainer(Controller controller, Metric metric, Duration interval) {
         super(controller, interval, null, Set.of(SystemName.Public, SystemName.PublicCd));
         this.controller = controller;
         this.secretStore = controller.secretStore();
@@ -61,7 +60,6 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
         this.endpointCertificateProvider = controller.serviceRegistry().endpointCertificateProvider();
         this.metric = metric;
         this.dnsSuffix = Endpoint.dnsSuffix(controller.system());
-        this.random = random;
     }
 
     protected double maintain() {
@@ -129,12 +127,7 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
     }
 
     private String generateRandomId() {
-        String alphabet = "abcdef0123456789";
-        StringBuilder sb = new StringBuilder();
-        sb.append(alphabet.charAt(random.nextInt(6))); // start with letter
-        for (int i = 0; i < 7; i++) {
-            sb.append(alphabet.charAt(random.nextInt(alphabet.length())));
-        }
-        return sb.toString();
+        return GeneratedEndpoint.createPart(controller.random(true));
     }
+
 }

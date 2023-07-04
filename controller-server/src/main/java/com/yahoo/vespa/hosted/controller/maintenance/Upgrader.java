@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
@@ -43,12 +42,10 @@ public class Upgrader extends ControllerMaintainer {
     private static final Logger log = Logger.getLogger(Upgrader.class.getName());
 
     private final CuratorDb curator;
-    private final Random random;
 
     public Upgrader(Controller controller, Duration interval) {
         super(controller, interval);
         this.curator = controller.curator();
-        this.random = new Random(controller.clock().instant().toEpochMilli()); // Seed with clock for test determinism
     }
 
     /**
@@ -78,7 +75,7 @@ public class Upgrader extends ControllerMaintainer {
     private InstanceList instances(DeploymentStatusList deploymentStatuses) {
         return InstanceList.from(deploymentStatuses)
                            .withDeclaredJobs()
-                           .shuffle(random)
+                           .shuffle(controller().random(false))
                            .byIncreasingDeployedVersion()
                            .unpinned();
     }
