@@ -97,6 +97,7 @@ vespa_define_module(
     src/tests/attribute/searchable
     src/tests/attribute/searchcontext
     src/tests/attribute/searchcontextelementiterator
+    src/tests/attribute/sort_blob_writers
     src/tests/attribute/sourceselector
     src/tests/attribute/stringattribute
     src/tests/attribute/tensorattribute
