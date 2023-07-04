@@ -145,7 +145,7 @@ public class ZmsClientMock implements ZmsClient {
                 .map(d -> d.attributes)
                 .map(attrs -> {
                     if (attrs.containsKey("account")) {
-                        return new AthenzDomainMeta((String)attrs.get("account"), domain.getName());
+                        return new AthenzDomainMeta((String) attrs.get("account"), (String) attrs.get("gcpProject"), domain.getName());
                     }
                     return null;
                 })
