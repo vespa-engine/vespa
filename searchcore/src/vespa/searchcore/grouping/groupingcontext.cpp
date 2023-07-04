@@ -68,12 +68,12 @@ GroupingContext::GroupingContext(const vespalib::Clock & clock, vespalib::steady
       _enableNestedMultivalueGrouping(true)
 { }
 
-GroupingContext::GroupingContext(const GroupingContext & rhs) :
-    _clock(rhs._clock),
-    _timeOfDoom(rhs._timeOfDoom),
-    _os(),
-    _groupingList(),
-    _enableNestedMultivalueGrouping(rhs._enableNestedMultivalueGrouping)
+GroupingContext::GroupingContext(const GroupingContext & rhs)
+    : _clock(rhs._clock),
+      _timeOfDoom(rhs._timeOfDoom),
+      _os(),
+      _groupingList(),
+      _enableNestedMultivalueGrouping(rhs._enableNestedMultivalueGrouping)
 { }
 
 void
