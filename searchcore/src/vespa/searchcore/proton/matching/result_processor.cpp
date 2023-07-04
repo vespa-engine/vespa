@@ -36,8 +36,9 @@ ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom & doom, I
     }
 }
 
-ResultProcessor::Context::Context(Sort::UP s, PartialResult::UP r, GroupingContext::UP g)
-    : sort(std::move(s)),
+ResultProcessor::Context::Context(const search::BitVector & validLids, Sort::UP s, PartialResultUP r, GroupingContext::UP g)
+    : _validLids(validLids),
+      sort(std::move(s)),
       result(std::move(r)),
       grouping(std::move(g)),
       groupingSource(grouping.get())
@@ -90,7 +91,7 @@ ResultProcessor::prepareThreadContextCreation(size_t num_threads)
     }
 }
 
-ResultProcessor::Context::UP
+std::unique_ptr<ResultProcessor::Context>
 ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id, uint32_t distributionKey)
 {
     auto sort = std::make_unique<Sort>(distributionKey, hardDoom, _attrContext, _sortSpec);
@@ -99,7 +100,7 @@ ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thr
     if (_groupingSession) {
         groupingContext = _groupingSession->createThreadContext(thread_id, _attrContext);
     }
-    return std::make_unique<Context>(std::move(sort), std::move(result), std::move(groupingContext));
+    return std::make_unique<Context>(_metaStore.getValidLids(), std::move(sort), std::move(result), std::move(groupingContext));
 }
 
 std::vector<std::pair<uint32_t,uint32_t>>

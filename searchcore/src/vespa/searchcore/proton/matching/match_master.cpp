@@ -6,12 +6,12 @@
 #include "match_thread.h"
 #include "match_tools.h"
 #include "extract_features.h"
+#include "partial_result.h"
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/data/slime/inserter.h>
-#include <vespa/vespalib/data/slime/inject.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 
 namespace proton::matching {
