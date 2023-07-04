@@ -207,7 +207,7 @@ std::vector<int16_t> Int16Params::values{5, 7, -4, 9};
 
 struct Int32Params {
     using Type = int32_t;
-    static constexpr int16_t value = 44;
+    static constexpr int32_t value = 44;
     static SortData sort_asc;
     static SortData sort_desc;
     static std::vector<int32_t> values;
@@ -221,7 +221,7 @@ std::vector<int32_t> Int32Params::values{5, 7, -4, 9};
 
 struct Int64Params {
     using Type = int64_t;
-    static constexpr int16_t value = 45;
+    static constexpr int64_t value = 45;
     static SortData sort_asc;
     static SortData sort_desc;
     static std::vector<int64_t> values;
@@ -235,7 +235,7 @@ std::vector<int64_t> Int64Params::values{5, 7, -4, 9};
 
 struct FloatParams {
     using Type = float;
-    static constexpr int16_t value = 46;
+    static constexpr float value = 46;
     static std::vector<float> values;
     static std::vector<float> values_with_nan;
     static std::vector<float> values_only_nan;
@@ -249,7 +249,7 @@ std::vector<float> FloatParams::values_only_nan{std::numeric_limits<float>::quie
 
 struct DoubleParams {
     using Type = double;
-    static constexpr int16_t value = 47;
+    static constexpr double value = 47;
     static std::vector<double> values;
     static std::vector<double> values_with_nan;
     static std::vector<double> values_only_nan;
