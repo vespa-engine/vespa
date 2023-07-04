@@ -5,7 +5,6 @@
 #include <vespa/vespalib/util/dual_merge_director.h>
 #include <vespa/searchlib/common/rankedhit.h>
 #include <vector>
-#include <cassert>
 
 namespace proton::matching {
 
@@ -16,19 +15,10 @@ namespace proton::matching {
 class PartialResult : public vespalib::DualMergeDirector::Source
 {
 public:
-    using UP = std::unique_ptr<PartialResult>;
     using SortRef = std::pair<const char *, size_t>;
-
-private:
-    std::vector<search::RankedHit> _hits;
-    std::vector<SortRef>           _sortData;
-    size_t                         _maxSize;
-    size_t                         _totalHits;
-    bool                           _hasSortData;
-    size_t                         _sortDataSize;
-
-public:
     PartialResult(size_t maxSize_in, bool hasSortData_in);
+    PartialResult(const PartialResult &) = delete;
+    PartialResult & operator =(const PartialResult &) = delete;
     ~PartialResult() override;
     size_t size() const { return _hits.size(); }
     size_t maxSize() const { return _maxSize; }
@@ -39,16 +29,21 @@ public:
     const SortRef &sortData(size_t i) const { return _sortData[i]; }
     void totalHits(size_t th) { _totalHits = th; }
     void add(const search::RankedHit &h) {
-        assert(!_hasSortData);
         _hits.push_back(h);
     }
     void add(const search::RankedHit &h, const SortRef &sd) {
-        assert(_hasSortData);
         _hits.push_back(h);
         _sortData.push_back(sd);
         _sortDataSize += sd.second;
     }
     void merge(Source &rhs) override;
+private:
+    std::vector<search::RankedHit> _hits;
+    std::vector<SortRef>           _sortData;
+    size_t                         _maxSize;
+    size_t                         _totalHits;
+    bool                           _hasSortData;
+    size_t                         _sortDataSize;
 };
 
 }

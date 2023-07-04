@@ -107,6 +107,7 @@ public:
      */
     bool needRanking() const;
     bool enableNestedMultivalueGrouping() const noexcept { return _enableNestedMultivalueGrouping; }
+    const search::BitVector & getValidLids() const { return _validLids; }
 
     void groupUnordered(const RankedHit *searchResults, uint32_t binSize, const search::BitVector * overflow);
     void groupInRelevanceOrder(const RankedHit *searchResults, uint32_t binSize);

@@ -5,7 +5,6 @@
 #include "i_match_loop_communicator.h"
 #include "match_params.h"
 #include "matching_stats.h"
-#include "partial_result.h"
 #include "result_processor.h"
 #include "docid_range_scheduler.h"
 #include <vespa/vespalib/util/runnable.h>
@@ -60,7 +59,7 @@ private:
     uint32_t                      _distributionKey;
     ResultProcessor              &resultProcessor;
     vespalib::DualMergeDirector  &mergeDirector;
-    ResultProcessor::Context::UP  resultContext;
+    std::unique_ptr<ResultProcessor::Context>  resultContext;
     MatchingStats::Partition      thread_stats;
     double                        total_time_s;
     double                        match_time_s;
@@ -135,7 +134,7 @@ public:
     void run() override;
     const MatchingStats::Partition &get_thread_stats() const { return thread_stats; }
     double get_match_time() const { return match_time_s; }
-    PartialResult::UP extract_result() { return std::move(resultContext->result); }
+    std::unique_ptr<PartialResult> extract_result();
     const Trace & getTrace() const { return *trace; }
     const UniqueIssues &get_issues() const { return my_issues; }
 };
