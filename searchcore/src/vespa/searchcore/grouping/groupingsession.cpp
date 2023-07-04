@@ -44,9 +44,9 @@ GroupingSession::init(GroupingContext & groupingContext, const IAttributeContext
             auto gp = std::make_shared<Grouping>(*g);
             gp->setLastLevel(gp->levels().size());
             _groupingMap[gp->getId()] = gp;
-            g = gp;
+            g = std::move(gp);
         }
-        _mgrContext->addGrouping(g);
+        _mgrContext->addGrouping(std::move(g));
     }
     _groupingManager->init(attrCtx);
 }
@@ -64,9 +64,8 @@ GroupingSession::createThreadContext(size_t thread_id, const IAttributeContext &
 {
     auto ctx = std::make_unique<GroupingContext>(*_mgrContext);
     if (thread_id == 0) {
-        GroupingContext::GroupingList &groupingList = _mgrContext->getGroupingList();
-        for (size_t i = 0; i < groupingList.size(); ++i) {
-            ctx->addGrouping(groupingList[i]);
+        for (const auto & grouping : _mgrContext->getGroupingList()) {
+            ctx->addGrouping(grouping);
         }
     } else {
         ctx->deserialize(_mgrContext->getResult().peek(), _mgrContext->getResult().size());

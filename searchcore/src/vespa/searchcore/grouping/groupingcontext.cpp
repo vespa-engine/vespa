@@ -32,7 +32,7 @@ size_t
 GroupingContext::countFS4Hits()
 {
     size_t numFs4Hits(0);
-    for (GroupingPtr & g : _groupingList) {
+    for (auto & g : _groupingList) {
         CountFS4Hits counter;
         g->select(counter, counter);
         numFs4Hits += counter.getHitCount();
@@ -43,7 +43,7 @@ GroupingContext::countFS4Hits()
 void
 GroupingContext::setDistributionKey(uint32_t distributionKey)
 {
-    for (GroupingPtr & g : _groupingList) {
+    for (auto & g : _groupingList) {
         FS4HitSetDistributionKey updater(distributionKey);
         g->select(updater, updater);
     }
@@ -68,18 +68,18 @@ GroupingContext::GroupingContext(const vespalib::Clock & clock, vespalib::steady
       _enableNestedMultivalueGrouping(true)
 { }
 
-GroupingContext::GroupingContext(const GroupingContext & rhs) :
-    _clock(rhs._clock),
-    _timeOfDoom(rhs._timeOfDoom),
-    _os(),
-    _groupingList(),
-    _enableNestedMultivalueGrouping(rhs._enableNestedMultivalueGrouping)
+GroupingContext::GroupingContext(const GroupingContext & rhs)
+    : _clock(rhs._clock),
+      _timeOfDoom(rhs._timeOfDoom),
+      _os(),
+      _groupingList(),
+      _enableNestedMultivalueGrouping(rhs._enableNestedMultivalueGrouping)
 { }
 
 void
-GroupingContext::addGrouping(const GroupingPtr & g)
+GroupingContext::addGrouping(std::shared_ptr<Grouping> g)
 {
-    _groupingList.push_back(g);
+    _groupingList.push_back(std::move(g));
 }
 
 void
@@ -88,9 +88,8 @@ GroupingContext::serialize()
     vespalib::NBOSerializer nos(_os);
 
     nos << (uint32_t)_groupingList.size();
-    for (size_t i = 0; i < _groupingList.size(); i++) {
-        search::aggregation::Grouping & grouping(*_groupingList[i]);
-        grouping.serialize(nos);
+    for (const auto & grouping : _groupingList) {
+        grouping->serialize(nos);
     }
 }
 
@@ -105,25 +104,39 @@ GroupingContext::needRanking() const
 
 using DocId = uint32_t;
 
+unsigned int
+GroupingContext::aggregateRanked(Grouping &grouping, const RankedHit *rankedHit, unsigned int len) const {
+    unsigned int i(0);
+    for(; (i < len) && !hasExpired(); i++) {
+        grouping.aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
+    }
+    return i;
+}
+
+void
+GroupingContext::aggregate(Grouping & grouping, const BitVector * bVec, unsigned int lidLimit) const {
+    for (DocId d(bVec->getFirstTrueBit()); (d < lidLimit) && !hasExpired(); d = bVec->getNextTrueBit(d+1)) {
+        grouping.aggregate(d, 0.0);
+    }
+}
+void
+GroupingContext::aggregate(Grouping & grouping, const BitVector * bVec, unsigned int lidLimit, unsigned int topN) const {
+    for(DocId d(bVec->getFirstTrueBit()), i(0); (d < lidLimit) && (i < topN) && !hasExpired(); d = bVec->getNextTrueBit(d+1), i++) {
+        grouping.aggregate(d, 0.0);
+    }
+}
+
 void
 GroupingContext::aggregate(Grouping & grouping, const RankedHit * rankedHit, unsigned int len, const BitVector * bVec) const
 {
     grouping.preAggregate(false);
-
-    for(unsigned int i(0), m(grouping.getMaxN(len)); (i < m) && !hasExpired(); i++) {
-        grouping.aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
-    }
+    uint32_t count = aggregateRanked(grouping, rankedHit, grouping.getMaxN(len));
     if (bVec != nullptr) {
-        unsigned int sz(bVec->size());
         int64_t topN = grouping.getTopN();
-        if (topN > 0) {
-            for(DocId d(bVec->getFirstTrueBit()), i(0), m(grouping.getMaxN(sz)); (d < sz) && (i < m) && !hasExpired(); d = bVec->getNextTrueBit(d+1), i++) {
-                grouping.aggregate(d, 0.0);
-            }
+        if (topN > count) {
+            aggregate(grouping, bVec, bVec->size(), topN - count);
         } else {
-            for(DocId d(bVec->getFirstTrueBit()); (d < sz) && !hasExpired(); d = bVec->getNextTrueBit(d+1)) {
-                grouping.aggregate(d, 0.0);
-            }
+            aggregate(grouping, bVec, bVec->size());
         }
     }
     grouping.postProcess();
@@ -136,9 +149,7 @@ GroupingContext::aggregate(Grouping & grouping, const RankedHit * rankedHit, uns
     grouping.preAggregate(isOrdered);
     search::aggregation::HitsAggregationResult::SetOrdered pred;
     grouping.select(pred, pred);
-    for(unsigned int i(0), m(grouping.getMaxN(len)); (i < m) && !hasExpired(); i++) {
-        grouping.aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
-    }
+    aggregateRanked(grouping, rankedHit, grouping.getMaxN(len));
     grouping.postProcess();
 }
 

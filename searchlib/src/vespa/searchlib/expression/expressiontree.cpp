@@ -21,14 +21,12 @@ ExpressionTree::Configure::execute(vespalib::Identifiable &obj) {
     e.prepare(false);
 }
 
-ExpressionTree::ExpressionTree() :
+ExpressionTree::ExpressionTree() noexcept :
     _root(),
     _attributeNodes(),
     _documentAccessorNodes(),
     _relevanceNodes()
-{
-    prepare(false);
-}
+{ }
 
 ExpressionTree::ExpressionTree(const ExpressionNode &root) :
     _root(root.clone()),
