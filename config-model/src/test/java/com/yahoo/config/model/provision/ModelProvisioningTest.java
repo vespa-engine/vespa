@@ -1313,7 +1313,7 @@ public class ModelProvisioningTest {
                         "     </documents>" +
                         "     <nodes count='24'/>" +
                         "     <engine><proton><searchable-copies>5</searchable-copies></proton></engine>" +
-                        "     <dispatch><num-dispatch-groups>7</num-dispatch-groups></dispatch>" +
+                        "     <dispatch><num-dispatch-groups>7</num-dispatch-groups></dispatch>" + // TODO: Allowed, but ignored, remove in Vespa 9
                         "  </content>" +
                         "</services>";
 
@@ -1327,7 +1327,6 @@ public class ModelProvisioningTest {
         assertEquals(4, cluster.getRedundancy().effectiveInitialRedundancy());
         assertEquals(4, cluster.getRedundancy().effectiveFinalRedundancy());
         assertEquals(4, cluster.getRedundancy().effectiveReadyCopies());
-        assertEquals(4, cluster.getSearch().getIndexed().getDispatchSpec().getGroups().size());
         assertEquals(4, cluster.getSearch().getIndexed().getSearchableCopies());
         assertFalse(cluster.getRootGroup().getPartitions().isPresent());
         assertEquals(4, cluster.getRootGroup().getNodes().size());
@@ -1477,7 +1476,6 @@ public class ModelProvisioningTest {
         assertEquals(1, cluster.getRedundancy().effectiveFinalRedundancy());
         assertEquals(1, cluster.getRedundancy().effectiveReadyCopies());
 
-        assertEquals(1, cluster.getSearch().getIndexed().getDispatchSpec().getGroups().size());
         assertFalse(cluster.getRootGroup().getPartitions().isPresent());
         assertEquals(1, cluster.getRootGroup().getNodes().size());
         assertEquals(0, cluster.getRootGroup().getSubgroups().size());
