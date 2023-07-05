@@ -229,15 +229,13 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void updateDomain(AthenzDomain domain, Map<String, Object> attributes) {
-        for (String attribute : attributes.keySet()) {
-            String domainMeta = uncheck(() -> new ObjectMapper().writeValueAsString(Map.of(attribute, attributes.get(attribute))));
-            HttpUriRequest request = RequestBuilder.put()
-                    .setUri(zmsUrl.resolve("domain/%s/meta/system/%s".formatted(domain.getName(), attribute)))
-                    .setEntity(new StringEntity(domainMeta, ContentType.APPLICATION_JSON))
-                    .build();
-            execute(request, response -> readEntity(response, Void.class));
-        }
+    public void updateDomain(AthenzDomain domain, String mainKey, Map<String, Object> attributes) {
+        String domainMeta = uncheck(() -> new ObjectMapper().writeValueAsString(attributes));
+        HttpUriRequest request = RequestBuilder.put()
+                                               .setUri(zmsUrl.resolve("domain/%s/meta/system/%s".formatted(domain.getName(), mainKey)))
+                                               .setEntity(new StringEntity(domainMeta, ContentType.APPLICATION_JSON))
+                                               .build();
+        execute(request, response -> readEntity(response, Void.class));
     }
 
     @Override
@@ -465,8 +463,8 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         var metaData = new HashMap<String, Object>();
         metaData.putAll(attributes);
         metaData.putAll(Map.of("name", name,
-                        "parent", parent.getName(),
-                        "adminUsers", List.of(identity.getFullName())) // TODO: createSubdomain should receive an adminUsers argument
+                               "parent", parent.getName(),
+                               "adminUsers", List.of(identity.getFullName())) // TODO: createSubdomain should receive an adminUsers argument
         );
         var entity = toJsonStringEntity(metaData);
         var request = RequestBuilder.post(uri)

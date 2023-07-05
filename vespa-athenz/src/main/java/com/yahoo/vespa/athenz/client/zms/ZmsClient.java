@@ -55,7 +55,7 @@ public interface ZmsClient extends Closeable {
 
     AthenzDomainMeta getDomainMeta(AthenzDomain domain);
 
-    void updateDomain(AthenzDomain domain, Map<String, Object> attributes);
+    void updateDomain(AthenzDomain domain, String mainKey, Map<String, Object> attributes);
 
     boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity);
 
