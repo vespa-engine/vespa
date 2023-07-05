@@ -43,6 +43,9 @@ protected:
     using WeightedString = StringAttribute::WeightedString;
     using generation_t = StringAttribute::generation_t;
 
+    long on_serialize_for_sort(DocId doc, void* serTo, long available, const common::BlobConverter* bc, bool asc) const;
+    long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
+    long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
 public:
     MultiValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c);
     MultiValueStringAttributeT(const vespalib::string & name);

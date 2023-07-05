@@ -8,6 +8,7 @@
 #include "loadednumericvalue.h"
 #include "enumerated_multi_value_read_view.h"
 #include "multi_numeric_enum_search_context.h"
+#include "numeric_sort_blob_writer.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/fileutil.hpp>
 #include <vespa/vespalib/util/array.hpp>
@@ -143,6 +144,33 @@ MultiValueNumericEnumAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
     (void) params;
     auto doc_id_limit = this->getCommittedDocIdLimit();
     return std::make_unique<attribute::MultiNumericEnumSearchContext<T, M>>(std::move(qTerm), *this, this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore);
+}
+
+template <typename B, typename M>
+template <bool asc>
+long
+MultiValueNumericEnumAttribute<B, M>::on_serialize_for_sort(DocId doc, void* serTo, long available) const
+{
+    attribute::NumericSortBlobWriter<T, asc> writer;
+    auto indices = this->_mvMapping.get(doc);
+    for (auto& v : indices) {
+        writer.candidate(this->_enumStore.get_value(multivalue::get_value_ref(v).load_acquire()));
+    }
+    return writer.write(serTo, available);
+}
+
+template <typename B, typename M>
+long
+MultiValueNumericEnumAttribute<B, M>::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
+{
+    return on_serialize_for_sort<true>(doc, serTo, available);
+}
+
+template <typename B, typename M>
+long
+MultiValueNumericEnumAttribute<B, M>::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
+{
+    return on_serialize_for_sort<false>(doc, serTo, available);
 }
 
 } // namespace search

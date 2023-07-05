@@ -6,6 +6,7 @@
 #include "enumattribute.hpp"
 #include "enumerated_multi_value_read_view.h"
 #include "multi_string_enum_hint_search_context.h"
+#include "string_sort_blob_writer.h"
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -64,6 +65,34 @@ const attribute::IWeightedSetReadView<const char*>*
 MultiValueStringAttributeT<B, M>::make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>, vespalib::Stash& stash) const
 {
     return &stash.create<attribute::EnumeratedMultiValueReadView<multivalue::WeightedValue<const char*>, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
+}
+
+template <typename B, typename M>
+long
+MultiValueStringAttributeT<B, M>::on_serialize_for_sort(DocId doc, void * serTo, long available, const common::BlobConverter * bc, bool asc) const
+{
+    attribute::StringSortBlobWriter writer(serTo, available, bc, asc);
+    auto indices = this->_mvMapping.get(doc);
+    for (auto& v : indices) {
+        if (!writer.candidate(this->_enumStore.get_value(multivalue::get_value_ref(v).load_acquire()))) {
+            return -1;
+        }
+    }
+    return writer.write();
+}
+
+template <typename B, typename M>
+long
+MultiValueStringAttributeT<B, M>::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
+{
+    return on_serialize_for_sort(doc, serTo, available, bc, true);
+}
+
+template <typename B, typename M>
+long
+MultiValueStringAttributeT<B, M>::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
+{
+    return on_serialize_for_sort(doc, serTo, available, bc, false);
 }
 
 } // namespace search
