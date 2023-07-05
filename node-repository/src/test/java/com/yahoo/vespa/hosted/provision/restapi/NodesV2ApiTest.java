@@ -460,7 +460,7 @@ public class NodesV2ApiTest {
 
     @Test
     public void acls_for_exclave_tenant_host() throws Exception {
-        assertFile(new Request("http://localhost:8080/nodes/v2/acl/host3.yahoo.com"), "acl-tenant-node.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/acl/host5.yahoo.com"), "acl-tenant-node.json");
     }
 
     @Test

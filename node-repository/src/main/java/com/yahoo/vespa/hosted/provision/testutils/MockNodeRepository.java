@@ -126,7 +126,7 @@ public class MockNodeRepository extends NodeRepository {
                 .status(Status.initial()
                         .withVespaVersion(new Version("1.2.3"))
                         .withContainerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:1.2.3")))
-                .cloudAccount(defaultCloudAccount)
+                .cloudAccount(tenantAccount)
                 .build();
         nodes.add(node5);
 

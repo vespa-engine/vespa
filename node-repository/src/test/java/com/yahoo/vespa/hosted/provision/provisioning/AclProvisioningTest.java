@@ -67,23 +67,26 @@ public class AclProvisioningTest {
     }
 
     @Test
-    public void trusted_nodes_for_unallocated_node() {
+    public void trusted_nodes_for_parked_node() {
         NodeList configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
-        tester.makeReadyNodes(10, nodeResources);
+        List<Node> tenantNodes = tester.makeReadyNodes(10, nodeResources);
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
 
         // Allocate 2 nodes to an application
-        deploy(2);
+        Set<String> deployedTenantNodes = deploy(2).stream().map(Node::hostname).collect(Collectors.toSet());
 
-        // Get trusted nodes for a ready tenant node
-        Node node = tester.nodeRepository().nodes().list(Node.State.ready).nodeType(NodeType.tenant).first().get();
+        tester.move(Node.State.parked, tenantNodes.stream()
+                .filter(node -> !deployedTenantNodes.contains(node.hostname()))
+                .toList());
+
+        // Get trusted nodes for a parked tenant node
+        Node node = tester.nodeRepository().nodes().list(Node.State.parked).nodeType(NodeType.tenant).first().get();
         NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone(), true);
-        NodeList tenantNodes = tester.nodeRepository().nodes().list().nodeType(NodeType.tenant);
 
-        // Trusted nodes are all proxy-, config-, and, tenant-nodes
-        assertAcls(trustedNodesOf(List.of(proxyNodes, configServers.asList(), tenantNodes.asList()), node.cloudAccount()), List.of(nodeAcl));
+        // Trusted nodes are all config-nodes
+        assertAcls(trustedNodesOf(List.of(proxyNodes, configServers.asList()), node.cloudAccount()), List.of(nodeAcl));
     }
 
     @Test
@@ -171,7 +174,7 @@ public class AclProvisioningTest {
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Expected to find ACL for node " + node.hostname()));
             assertEquals(host.hostname(), node.parentHostname().get());
-            assertAcls(trustedNodesOf(List.of(configServers.asList(), nodes, List.of(host)), node.cloudAccount()), nodeAcl);
+            assertAcls(trustedNodesOf(List.of(configServers.asList(), List.of(host)), node.cloudAccount()), nodeAcl);
         }
     }
 

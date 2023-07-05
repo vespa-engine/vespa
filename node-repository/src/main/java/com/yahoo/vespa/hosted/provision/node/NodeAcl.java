@@ -55,7 +55,7 @@ public record NodeAcl(Node node,
         //   SSH opened (which is safe for 2 reasons: SSH daemon is not run inside containers, and NPT networks
         //   will (should) not forward port 22 traffic to container).
         // - parent host (for health checks and metrics)
-        // - nodes in same application
+        // - nodes in same application (Slobrok for tenant nodes, file distribution and ZK for config servers, etc).
         // - load balancers allocated to application
         trustedPorts.add(22);
         allNodes.parentOf(node).map(parent -> TrustedNode.of(parent, node.cloudAccount(), simplerAcl)).ifPresent(trustedNodes::add);
@@ -80,13 +80,6 @@ public record NodeAcl(Node node,
                 trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.config), node.cloudAccount(), simplerAcl));
                 trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.proxy), node.cloudAccount(), simplerAcl));
                 node.allocation().ifPresent(allocation -> trustedNodes.addAll(TrustedNode.of(allNodes.parentsOf(allNodes.owner(allocation.owner())), node.cloudAccount(), simplerAcl)));
-                if (node.state() == Node.State.ready) {
-                    // Tenant nodes in state ready, trust:
-                    // - All tenant nodes in zone. When a ready node is allocated to an application there's a brief
-                    //   window where current ACLs have not yet been applied on the node. To avoid service disruption
-                    //   during this window, ready tenant nodes trust all other tenant nodes
-                    trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.tenant), node.cloudAccount(), simplerAcl));
-                }
             }
             case config -> {
                 // Config servers trust:

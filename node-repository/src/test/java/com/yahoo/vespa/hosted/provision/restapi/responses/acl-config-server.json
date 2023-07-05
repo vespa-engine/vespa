@@ -232,15 +232,6 @@
       "trustedBy": "cfg1.yahoo.com"
     },
     {
-      "hostname": "host5.yahoo.com",
-      "type": "tenant",
-      "ipAddress": "127.0.5.1",
-      "ports": [
-        19070
-      ],
-      "trustedBy": "cfg1.yahoo.com"
-    },
-    {
       "hostname": "host55.yahoo.com",
       "type": "tenant",
       "ipAddress": "::55:1",
