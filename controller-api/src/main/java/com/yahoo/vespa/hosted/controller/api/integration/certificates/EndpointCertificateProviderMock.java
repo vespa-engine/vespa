@@ -38,24 +38,23 @@ public class EndpointCertificateProviderMock implements EndpointCertificateProvi
     }
 
     @Override
-    public List<EndpointCertificateRequestMetadata> listCertificates() {
-
+    public List<EndpointCertificateRequest> listCertificates() {
         return certificates.values().stream()
-                           .map(p -> new EndpointCertificateRequestMetadata(
-                        p.leafRequestId().orElse(p.rootRequestId()),
-                        "requestor",
-                        "ticketId",
-                        "athenzDomain",
-                        p.requestedDnsSans().stream()
-                                .map(san -> new EndpointCertificateRequestMetadata.DnsNameStatus(san, "done"))
-                                .toList(),
-                        3600,
-                        "ok",
-                        "2021-09-28T00:14:31.946562037Z",
-                        p.expiry().orElseThrow(),
-                        p.issuer(),
-                        "rsa_2048"
-                ))
+                           .map(p -> new EndpointCertificateRequest(
+                                   p.leafRequestId().orElse(p.rootRequestId()),
+                                   "requestor",
+                                   "ticketId",
+                                   "athenzDomain",
+                                   p.requestedDnsSans().stream()
+                                    .map(san -> new EndpointCertificateRequest.DnsNameStatus(san, "done"))
+                                    .toList(),
+                                   3600,
+                                   "ok",
+                                   "2021-09-28T00:14:31.946562037Z",
+                                   p.expiry().orElseThrow(),
+                                   p.issuer(),
+                                   "rsa_2048"
+                           ))
                            .toList();
     }
 
@@ -67,23 +66,23 @@ public class EndpointCertificateProviderMock implements EndpointCertificateProvi
 
     @Override
     public EndpointCertificateDetails certificateDetails(String requestId) {
-        var metadata = certificates.get(requestId);
+        var request = certificates.get(requestId);
 
-        if (metadata==null) throw new IllegalArgumentException("Unknown certificate request");
+        if (request == null) throw new IllegalArgumentException("Unknown certificate request");
 
         return new EndpointCertificateDetails(requestId,
                 "requestor",
                 "ok",
                 "ticket_id",
                 "athenz_domain",
-                metadata.requestedDnsSans().stream().map(name -> new EndpointCertificateRequestMetadata.DnsNameStatus(name, "done")).toList(),
+                request.requestedDnsSans().stream().map(name -> new EndpointCertificateRequest.DnsNameStatus(name, "done")).toList(),
                 "duration_sec",
                 "expiry",
-                metadata.keyName(),
-                metadata.keyName(),
+                request.keyName(),
+                request.keyName(),
                 "0",
-                metadata.certName(),
-                metadata.certName(),
+                request.certName(),
+                request.certName(),
                 "0",
                 "2021-09-28T00:14:31.946562037Z",
                 true,

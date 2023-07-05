@@ -14,7 +14,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateDetails;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequest;
 import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.EndpointSecretManager;
@@ -200,7 +200,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     }
 
     private void deleteOrReportUnmanagedCertificates() {
-        List<EndpointCertificateRequestMetadata> requests = endpointCertificateProvider.listCertificates();
+        List<EndpointCertificateRequest> requests = endpointCertificateProvider.listCertificates();
         List<AssignedCertificate> assignedCertificates = curator.readAssignedCertificates();
 
         List<String> leafRequestIds = assignedCertificates.stream().map(AssignedCertificate::certificate).flatMap(m -> m.leafRequestId().stream()).toList();
@@ -244,7 +244,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                     if (Instant.parse(request.createTime()).isBefore(Instant.now().minus(7, ChronoUnit.DAYS))) {
                         log.log(Level.INFO, String.format("Deleting unmaintained certificate with request_id %s and SANs %s",
                                 request.requestId(),
-                                request.dnsNames().stream().map(d -> d.dnsName).collect(Collectors.joining(", "))));
+                                request.dnsNames().stream().map(EndpointCertificateRequest.DnsNameStatus::dnsName).collect(Collectors.joining(", "))));
                         endpointCertificateProvider.deleteCertificate(request.requestId());
                     }
                 }

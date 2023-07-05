@@ -5,7 +5,7 @@ import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProviderMock;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata.DnsNameStatus;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequest.DnsNameStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

@@ -13,7 +13,7 @@ public interface EndpointCertificateProvider  {
 
     EndpointCertificate requestCaSignedCertificate(String endpointCertificatePrefix, List<String> dnsNames, Optional<EndpointCertificate> currentCert, String algo, boolean useAlternativeProvider);
 
-    List<EndpointCertificateRequestMetadata> listCertificates();
+    List<EndpointCertificateRequest> listCertificates();
 
     void deleteCertificate(String requestId);
 

@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.certificates;
 import java.util.List;
 
 /**
- * This record is used when requesting additional metadata about an application's endpoint certificate from the provider.
+ * This record is used when requesting additional details about an application's endpoint certificate from the provider.
  *
  * @author andreer
  */
@@ -14,7 +14,7 @@ public record EndpointCertificateDetails(
         String status,
         String ticketId,
         String athenzDomain,
-        List<EndpointCertificateRequestMetadata.DnsNameStatus> dnsNames,
+        List<EndpointCertificateRequest.DnsNameStatus> dnsNames,
         String durationSec,
         String expiry,
         String privateKeyKgname,

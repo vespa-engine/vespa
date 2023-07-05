@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequest;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -60,19 +60,19 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
     }
 
     public HttpResponse listEndpointCertificates() {
-        List<EndpointCertificateRequestMetadata> request = endpointCertificateProvider.listCertificates();
+        List<EndpointCertificateRequest> request = endpointCertificateProvider.listCertificates();
 
         String requestsWithNames = request.stream()
-                .map(metadata -> metadata.requestId() + " : " +
-                        String.join(", ", metadata.dnsNames().stream()
-                                .map(dnsNameStatus -> dnsNameStatus.dnsName)
-                                .collect(Collectors.joining(", "))))
-                .collect(Collectors.joining("\n"));
+                                          .map(r -> r.requestId() + " : " +
+                                                    String.join(", ", r.dnsNames().stream()
+                                                                       .map(EndpointCertificateRequest.DnsNameStatus::dnsName)
+                                                                       .collect(Collectors.joining(", "))))
+                                          .collect(Collectors.joining("\n"));
 
         return new StringResponse(requestsWithNames);
     }
 
-    public StringResponse reRequestEndpointCertificateFor(String instanceId, boolean ignoreExistingMetadata) {
+    public StringResponse reRequestEndpointCertificateFor(String instanceId, boolean ignoreExisting) {
         ApplicationId applicationId = ApplicationId.fromFullString(instanceId);
         if (useRandomizedCert.with(FetchVector.Dimension.APPLICATION_ID, instanceId).value()) {
             throw new IllegalArgumentException("Cannot re-request certificate. " + instanceId + " is assigned certificate from a pool");
@@ -87,7 +87,7 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
 
             EndpointCertificate cert = endpointCertificateProvider.requestCaSignedCertificate(
                     keyPrefix, assignedCertificate.certificate().requestedDnsSans(),
-                    ignoreExistingMetadata ?
+                    ignoreExisting ?
                             Optional.empty() :
                             Optional.of(assignedCertificate.certificate()),
                     algo, useAlternativeProvider);
