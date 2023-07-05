@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import static com.yahoo.vdslib.state.NodeType.DISTRIBUTOR;
@@ -168,12 +167,9 @@ public class NodeStateChangeCheckerTest {
 
     @Test
     void testMaintenanceAllowedFor2Of4Groups() {
-        // 4 groups with 1 node in each group
-        Collection<ConfiguredNode> nodes = createNodes(4);
-        StorDistributionConfig config = createDistributionConfig(4, 4);
-
         int maxNumberOfGroupsAllowedToBeDown = 2;
-        var cluster = new ContentCluster("Clustername", nodes, new Distribution(config), maxNumberOfGroupsAllowedToBeDown);
+        // 4 groups with 1 node in each group
+        var cluster = createCluster(4, 4, maxNumberOfGroupsAllowedToBeDown);
         setAllNodesUp(cluster, HostInfo.createHostInfo(createDistributorHostInfo(4, 5, 6)));
         var nodeStateChangeChecker = createChangeChecker(cluster);
 
@@ -219,12 +215,9 @@ public class NodeStateChangeCheckerTest {
 
     @Test
     void testMaintenanceAllowedFor2Of4Groups8Nodes() {
-        // 4 groups with 2 nodes in each group
-        Collection<ConfiguredNode> nodes = createNodes(8);
-        StorDistributionConfig config = createDistributionConfig(8, 4);
-
         int maxNumberOfGroupsAllowedToBeDown = 2;
-        var cluster = new ContentCluster("Clustername", nodes, new Distribution(config), maxNumberOfGroupsAllowedToBeDown);
+        // 4 groups with 2 nodes in each group
+        var cluster = createCluster(8, 4, maxNumberOfGroupsAllowedToBeDown);
         setAllNodesUp(cluster, HostInfo.createHostInfo(createDistributorHostInfo(4, 5, 6)));
         var nodeStateChangeChecker = createChangeChecker(cluster);
 
@@ -270,6 +263,34 @@ public class NodeStateChangeCheckerTest {
             checkSettingToMaintenanceIsAllowed(nodeIndex, nodeStateChangeChecker, clusterState);
             setStorageNodeWantedStateToMaintenance(cluster, nodeIndex);
         }
+
+        // 2 nodes in group 0 and 2 nodes in group 1 in maintenance, try to set storage node 4 in group 2 to maintenance, should fail
+        {
+            ClusterState clusterState = clusterState(String.format("version:%d distributor:8 storage:8 .0.s:m .1.s:m .2.s:m .3.s:m", currentClusterStateVersion));
+            int nodeIndex = 4;
+            Node node = new Node(STORAGE, nodeIndex);
+            Result result = nodeStateChangeChecker.evaluateTransition(node, clusterState, SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
+            assertFalse(result.settingWantedStateIsAllowed(), result.toString());
+            assertFalse(result.wantedStateAlreadySet());
+            assertEquals("At most 2 groups can have wanted state: [0, 1]", result.getReason());
+        }
+
+        // 2 nodes in group 0 up again but buckets not in sync and 2 nodes in group 1 in maintenance,
+        // try to set storage node 4 in group 2 to maintenance
+        /* WIP
+        {
+            ClusterState clusterState = clusterState(String.format("version:%d distributor:8 storage:8 .2.s:m .3.s:m", currentClusterStateVersion));
+            setStorageNodeWantedState(cluster, 0, UP, "");
+            setStorageNodeWantedState(cluster, 1, UP, "");
+            int nodeIndex = 4;
+            Node node = new Node(STORAGE, nodeIndex);
+            Result result = nodeStateChangeChecker.evaluateTransition(node, clusterState, SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
+            assertFalse(result.settingWantedStateIsAllowed(), result.toString());
+            assertFalse(result.wantedStateAlreadySet());
+            assertEquals("At most 2 groups can have wanted state: [0, 1]", result.getReason());
+        }
+
+         */
 
         // 2 nodes in group 0 in maintenance, storage node 3 in group 1 is in maintenance with another description
         // (set in maintenance by operator), try to set storage node 3 in group 1 to maintenance, should bew allowed

@@ -92,9 +92,9 @@ public class NodeStateChangeChecker {
             return new Result(Action.ALREADY_SET, "Basic preconditions fulfilled and new state is already effective");
         }
 
-        public boolean settingWantedStateIsAllowed() {
-            return action == Action.MUST_SET_WANTED_STATE;
-        }
+        public boolean settingWantedStateIsAllowed() { return action == Action.MUST_SET_WANTED_STATE; }
+
+        public boolean settingWantedStateIsNotAllowed() { return ! settingWantedStateIsAllowed(); }
 
         public boolean wantedStateAlreadySet() {
             return action == Action.ALREADY_SET;
@@ -200,7 +200,7 @@ public class NodeStateChangeChecker {
 
     private Result canSetStateUp(NodeInfo nodeInfo, NodeState oldWantedState) {
         if (oldWantedState.getState() == UP) {
-            // The description is not significant when setting wanting to set the state to UP
+            // The description is not significant when wanting to set the state to UP
             return createAlreadySet();
         }
 
@@ -228,7 +228,7 @@ public class NodeStateChangeChecker {
 
         if (maxNumberOfGroupsAllowedToBeDown == -1) {
             var otherGroupCheck = anotherNodeInAnotherGroupHasWantedState(nodeInfo);
-            if (!otherGroupCheck.settingWantedStateIsAllowed()) {
+            if (otherGroupCheck.settingWantedStateIsNotAllowed()) {
                 return otherGroupCheck;
             }
             if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription)) {
@@ -246,13 +246,13 @@ public class NodeStateChangeChecker {
         }
 
         Result allNodesAreUpCheck = checkAllNodesAreUp(clusterState);
-        if (!allNodesAreUpCheck.settingWantedStateIsAllowed()) {
+        if (allNodesAreUpCheck.settingWantedStateIsNotAllowed()) {
             log.log(FINE, "allNodesAreUpCheck: " + allNodesAreUpCheck);
             return allNodesAreUpCheck;
         }
 
         Result checkDistributorsResult = checkDistributors(nodeInfo.getNode(), clusterState.getVersion());
-        if (!checkDistributorsResult.settingWantedStateIsAllowed()) {
+        if (checkDistributorsResult.settingWantedStateIsNotAllowed()) {
             log.log(FINE, "checkDistributors: "+ checkDistributorsResult);
             return checkDistributorsResult;
         }
@@ -271,7 +271,7 @@ public class NodeStateChangeChecker {
             groupVisiting.visit(group -> {
                 if (!groupContainsNode(group, nodeInfo.getNode())) {
                     Result result = otherNodeInGroupHasWantedState(group);
-                    if (!result.settingWantedStateIsAllowed()) {
+                    if (result.settingWantedStateIsNotAllowed()) {
                         anotherNodeHasWantedState.set(result);
                         // Have found a node that is suspended, halt the visiting
                         return false;
@@ -283,7 +283,7 @@ public class NodeStateChangeChecker {
 
             return anotherNodeHasWantedState.asOptional().orElseGet(Result::allowSettingOfWantedState);
         } else {
-            // Return a disallow-result if there is another node with a wanted state
+            // Returns a disallow-result if there is another node with a wanted state
             return otherNodeHasWantedState(nodeInfo);
         }
     }
@@ -335,7 +335,7 @@ public class NodeStateChangeChecker {
         } else {
             // Return a disallow-result if there is another node with a wanted state
             var otherNodeHasWantedState = otherNodeHasWantedState(nodeInfo);
-            if ( ! otherNodeHasWantedState.settingWantedStateIsAllowed())
+            if (otherNodeHasWantedState.settingWantedStateIsNotAllowed())
                 return Optional.of(otherNodeHasWantedState);
         }
         return Optional.empty();
@@ -484,7 +484,8 @@ public class NodeStateChangeChecker {
         return allowSettingOfWantedState();
     }
 
-    private Result checkStorageNodesForDistributor(DistributorNodeInfo distributorNodeInfo, List<StorageNode> storageNodes, Node node) {
+    private Result checkStorageNodesForDistributor(DistributorNodeInfo distributorNodeInfo, Node node) {
+        List<StorageNode> storageNodes = distributorNodeInfo.getHostInfo().getDistributor().getStorageNodes();
         for (StorageNode storageNode : storageNodes) {
             if (storageNode.getIndex() == node.getIndex()) {
                 Integer minReplication = storageNode.getMinCurrentReplicationFactorOrNull();
@@ -526,9 +527,8 @@ public class NodeStateChangeChecker {
                                                + ") as fleetcontroller (" + clusterStateVersion + ")");
             }
 
-            List<StorageNode> storageNodes = distributorNodeInfo.getHostInfo().getDistributor().getStorageNodes();
-            Result storageNodesResult = checkStorageNodesForDistributor(distributorNodeInfo, storageNodes, node);
-            if (!storageNodesResult.settingWantedStateIsAllowed()) {
+            Result storageNodesResult = checkStorageNodesForDistributor(distributorNodeInfo, node);
+            if (storageNodesResult.settingWantedStateIsNotAllowed()) {
                 return storageNodesResult;
             }
         }
