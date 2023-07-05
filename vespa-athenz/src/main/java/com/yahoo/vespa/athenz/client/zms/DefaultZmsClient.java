@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zms;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzAssertion;
@@ -51,6 +52,8 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 
 /**
@@ -228,15 +231,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     @Override
     public void updateDomain(AthenzDomain domain, Map<String, Object> attributes) {
         for (String attribute : attributes.keySet()) {
-            Object attrVal = attributes.get(attribute);
-
-            String val = attrVal instanceof String ? "\"" + attrVal.toString() + "\"" : attrVal.toString();
-            String domainMeta = """
-                    {
-                        "%s": %s
-                    }
-                    """
-                    .formatted(attribute, val);
+            String domainMeta = uncheck(() -> new ObjectMapper().writeValueAsString(Map.of(attribute, attributes.get(attribute))));
             HttpUriRequest request = RequestBuilder.put()
                     .setUri(zmsUrl.resolve("domain/%s/meta/system/%s".formatted(domain.getName(), attribute)))
                     .setEntity(new StringEntity(domainMeta, ContentType.APPLICATION_JSON))
