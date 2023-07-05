@@ -505,7 +505,7 @@ public class DynamicProvisioningTest {
     }
 
     @Test
-    public void gpu_host()  {
+    public void gpu_host() {
         List<Flavor> flavors = List.of(new Flavor("gpu", new NodeResources(4, 16, 125, 10, fast, local,
                                                                            Architecture.x86_64, new NodeResources.GpuResources(1, 16))));
         ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)

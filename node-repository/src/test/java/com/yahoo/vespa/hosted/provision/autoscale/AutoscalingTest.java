@@ -312,7 +312,6 @@ public class AutoscalingTest {
         fixture.deactivateRetired(capacity);
         fixture.tester().clock().advance(Duration.ofDays(1));
         fixture.loader().applyCpuLoad(0.8, 120);
-        System.out.println("Autoscaling ----------");
         assertEquals(DiskSpeed.any, fixture.autoscale(capacity).resources().get().nodeResources().diskSpeed());
     }
 
@@ -477,6 +476,18 @@ public class AutoscalingTest {
         fixture.loader().applyLoad(new Load(0.9, 0.6, 0.7),  1, true, false, 120);
         assertTrue("Not scaling up since nodes were measured while cluster was unstable",
                    fixture.autoscale().resources().isEmpty());
+    }
+
+    @Test
+    public void too_small_disk_compared_to_memory() {
+        var resources = new ClusterResources(2, 1, new NodeResources(1, 10, 19, 1));
+        var fixture = DynamicProvisioningTester.fixture()
+                                               .awsProdSetup(true)
+                                               .initialResources(Optional.of(resources))
+                                               .build();
+        assertEquals(2, fixture.tester().provisionLogger().applicationLog().size()); // tester deploys twice
+        assertEquals("WARNING: Requested disk (19.0Gb) in cluster 'cluster1' is not large enough to fit core/heap dumps. Minimum recommended disk resources is 2x memory for containers and 3x memory for content",
+                     fixture.tester().provisionLogger().applicationLog().get(0));
     }
 
     @Test

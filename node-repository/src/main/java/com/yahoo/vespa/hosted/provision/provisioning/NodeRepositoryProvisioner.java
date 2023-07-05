@@ -130,7 +130,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             logger.logApplicationPackage(Level.WARNING, "Requested disk (" + resources.diskGb() +
                                                         "Gb) in " + cluster.id() + " is not large enough to fit " +
                                                         "core/heap dumps. Minimum recommended disk resources " +
-                                                        "is 3x memory for content and 2x memory for containers");
+                                                        "is 2x memory for containers and 3x memory for content");
         }
     }
 

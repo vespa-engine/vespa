@@ -47,6 +47,7 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
+import com.yahoo.vespa.hosted.provision.testutils.InMemoryProvisionLogger;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
@@ -93,7 +94,7 @@ public class ProvisioningTester {
     private final HostProvisioner hostProvisioner;
     private final NodeRepositoryProvisioner provisioner;
     private final CapacityPolicies capacityPolicies;
-    private final ProvisionLogger provisionLogger;
+    private final InMemoryProvisionLogger provisionLogger;
     private final LoadBalancerServiceMock loadBalancerService;
 
     private int nextHost = 0;
@@ -132,7 +133,7 @@ public class ProvisioningTester {
                                                  1000);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
-        this.provisionLogger = new NullProvisionLogger();
+        this.provisionLogger = new InMemoryProvisionLogger();
         this.loadBalancerService = loadBalancerService;
     }
 
@@ -162,6 +163,7 @@ public class ProvisioningTester {
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return nodeRepository.nodes().list(inState).owner(id); }
     public InMemoryFlagSource flagSource() { return (InMemoryFlagSource) nodeRepository.flagSource(); }
+    public InMemoryProvisionLogger provisionLogger() { return provisionLogger; }
     public Node node(String hostname) { return nodeRepository.nodes().node(hostname).get(); }
 
     public int decideSize(Capacity capacity, ApplicationId application) {
@@ -771,10 +773,6 @@ public class ProvisioningTester {
             return flavor;
         }
 
-    }
-
-    public static class NullProvisionLogger implements ProvisionLogger {
-        @Override public void log(Level level, String message) { }
     }
 
     static class MockResourcesCalculator implements HostResourcesCalculator {
