@@ -25,33 +25,6 @@
       "trustedBy": "cfg1.yahoo.com"
     },
     {
-      "hostname": "dockerhost1.yahoo.com",
-      "type": "host",
-      "ipAddress": "::100:1",
-      "ports": [
-        19070
-      ],
-      "trustedBy": "cfg1.yahoo.com"
-    },
-    {
-      "hostname": "dockerhost1.yahoo.com",
-      "type": "host",
-      "ipAddress": "127.0.100.1",
-      "ports": [
-        19070
-      ],
-      "trustedBy": "cfg1.yahoo.com"
-    },
-    {
-      "hostname": "dockerhost2.yahoo.com",
-      "type": "host",
-      "ipAddress": "::101:1",
-      "ports": [
-        19070
-      ],
-      "trustedBy": "cfg1.yahoo.com"
-    },
-    {
       "hostname": "dockerhost3.yahoo.com",
       "type": "host",
       "ipAddress": "::102:1",
@@ -64,42 +37,6 @@
       "hostname": "dockerhost3.yahoo.com",
       "type": "host",
       "ipAddress": "127.0.102.1",
-      "ports": [
-        19070
-      ],
-      "trustedBy": "cfg1.yahoo.com"
-    },
-    {
-      "hostname": "dockerhost4.yahoo.com",
-      "type": "host",
-      "ipAddress": "::103:1",
-      "ports": [
-        19070
-      ],
-      "trustedBy": "cfg1.yahoo.com"
-    },
-    {
-      "hostname": "dockerhost4.yahoo.com",
-      "type": "host",
-      "ipAddress": "127.0.103.1",
-      "ports": [
-        19070
-      ],
-      "trustedBy": "cfg1.yahoo.com"
-    },
-    {
-      "hostname": "dockerhost5.yahoo.com",
-      "type": "host",
-      "ipAddress": "::104:1",
-      "ports": [
-        19070
-      ],
-      "trustedBy": "cfg1.yahoo.com"
-    },
-    {
-      "hostname": "dockerhost5.yahoo.com",
-      "type": "host",
-      "ipAddress": "127.0.104.1",
       "ports": [
         19070
       ],

@@ -110,10 +110,11 @@ public class AclProvisioningTest {
                 .orElseThrow(() -> new RuntimeException("Failed to find cfg1"));
         NodeAcl nodeAcl = node.acl(nodes, tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone(), true);
 
-        // Trusted nodes is all tenant nodes+hosts, all proxy nodes+hosts, all config servers and load balancer subnets
+        // Trusted nodes is all tenant nodes, all proxy nodes, all config servers and load balancer subnets
+        // All tenant hosts because nodes are IPv6 and cfg are IPv4, so traffic is NATed.
+        // NOT proxy hosts because proxies are dual-stacked so no NAT is needed
         assertAcls(List.of(TrustedNode.of(tenantHosts, Set.of(19070), node.cloudAccount(), true),
                            TrustedNode.of(tenantNodes, Set.of(19070), node.cloudAccount(), true),
-                           TrustedNode.of(proxyHosts, Set.of(19070), node.cloudAccount(), true),
                            TrustedNode.of(proxyNodes, Set.of(19070), node.cloudAccount(), true),
                            TrustedNode.of(configNodes, node.cloudAccount(), true)),
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
