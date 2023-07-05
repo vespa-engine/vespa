@@ -13,13 +13,13 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.persistence.EndpointCertificateMetadataSerializer;
+import com.yahoo.vespa.hosted.controller.persistence.EndpointCertificateSerializer;
 
 import java.util.List;
 import java.util.Optional;
@@ -60,9 +60,9 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
     }
 
     public HttpResponse listEndpointCertificates() {
-        List<EndpointCertificateRequestMetadata> endpointCertificateMetadata = endpointCertificateProvider.listCertificates();
+        List<EndpointCertificateRequestMetadata> request = endpointCertificateProvider.listCertificates();
 
-        String requestsWithNames = endpointCertificateMetadata.stream()
+        String requestsWithNames = request.stream()
                 .map(metadata -> metadata.requestId() + " : " +
                         String.join(", ", metadata.dnsNames().stream()
                                 .map(dnsNameStatus -> dnsNameStatus.dnsName)
@@ -85,16 +85,16 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
             boolean useAlternativeProvider = useAlternateCertProvider.with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             String keyPrefix = applicationId.toFullString();
 
-            EndpointCertificateMetadata reRequestedMetadata = endpointCertificateProvider.requestCaSignedCertificate(
+            EndpointCertificate cert = endpointCertificateProvider.requestCaSignedCertificate(
                     keyPrefix, assignedCertificate.certificate().requestedDnsSans(),
                     ignoreExistingMetadata ?
                             Optional.empty() :
                             Optional.of(assignedCertificate.certificate()),
                     algo, useAlternativeProvider);
 
-            curator.writeAssignedCertificate(assignedCertificate.with(reRequestedMetadata));
+            curator.writeAssignedCertificate(assignedCertificate.with(cert));
 
-            return new StringResponse(EndpointCertificateMetadataSerializer.toSlime(reRequestedMetadata).toString());
+            return new StringResponse(EndpointCertificateSerializer.toSlime(cert).toString());
         }
     }
 }

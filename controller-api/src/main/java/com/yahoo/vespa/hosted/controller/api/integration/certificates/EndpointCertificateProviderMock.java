@@ -13,35 +13,35 @@ import java.util.UUID;
  * @author tokle
  * @author andreer
  */
-public class EndpointCertificateMock implements EndpointCertificateProvider {
+public class EndpointCertificateProviderMock implements EndpointCertificateProvider {
 
     private final Map<String, List<String>> dnsNames = new HashMap<>();
-    private final Map<String, EndpointCertificateMetadata> providerMetadata = new HashMap<>();
+    private final Map<String, EndpointCertificate> certificates = new HashMap<>();
 
     public List<String> dnsNamesOf(String rootRequestId) {
         return Collections.unmodifiableList(dnsNames.getOrDefault(rootRequestId, List.of()));
     }
 
     @Override
-    public EndpointCertificateMetadata requestCaSignedCertificate(String key, List<String> dnsNames, Optional<EndpointCertificateMetadata> currentMetadata, String algo, boolean useAlternativeProvider) {
+    public EndpointCertificate requestCaSignedCertificate(String key, List<String> dnsNames, Optional<EndpointCertificate> currentCert, String algo, boolean useAlternativeProvider) {
         String endpointCertificatePrefix = "vespa.tls.%s".formatted(key);
         long epochSecond = Instant.now().getEpochSecond();
         long inAnHour = epochSecond + 3600;
         String requestId = UUID.randomUUID().toString();
         this.dnsNames.put(requestId, dnsNames);
-        int version = currentMetadata.map(c -> currentMetadata.get().version()+1).orElse(0);
-        EndpointCertificateMetadata metadata = new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", version, 0,
-                currentMetadata.map(EndpointCertificateMetadata::rootRequestId).orElse(requestId), Optional.of(requestId), dnsNames, "mockCa", Optional.of(inAnHour), Optional.of(epochSecond), Optional.empty());
-        currentMetadata.ifPresent(c -> providerMetadata.remove(c.leafRequestId().orElseThrow()));
-        providerMetadata.put(requestId, metadata);
-        return metadata;
+        int version = currentCert.map(c -> currentCert.get().version() + 1).orElse(0);
+        EndpointCertificate cert = new EndpointCertificate(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", version, 0,
+                                                           currentCert.map(EndpointCertificate::rootRequestId).orElse(requestId), Optional.of(requestId), dnsNames, "mockCa", Optional.of(inAnHour), Optional.of(epochSecond), Optional.empty());
+        currentCert.ifPresent(c -> certificates.remove(c.leafRequestId().orElseThrow()));
+        certificates.put(requestId, cert);
+        return cert;
     }
 
     @Override
     public List<EndpointCertificateRequestMetadata> listCertificates() {
 
-        return providerMetadata.values().stream()
-                .map(p -> new EndpointCertificateRequestMetadata(
+        return certificates.values().stream()
+                           .map(p -> new EndpointCertificateRequestMetadata(
                         p.leafRequestId().orElse(p.rootRequestId()),
                         "requestor",
                         "ticketId",
@@ -56,20 +56,20 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
                         p.issuer(),
                         "rsa_2048"
                 ))
-                .toList();
+                           .toList();
     }
 
     @Override
     public void deleteCertificate(String requestId) {
         dnsNames.remove(requestId);
-        providerMetadata.remove(requestId);
+        certificates.remove(requestId);
     }
 
     @Override
     public EndpointCertificateDetails certificateDetails(String requestId) {
-        var metadata = providerMetadata.get(requestId);
+        var metadata = certificates.get(requestId);
 
-        if(metadata==null) throw new RuntimeException("Unknown certificate request");
+        if (metadata==null) throw new IllegalArgumentException("Unknown certificate request");
 
         return new EndpointCertificateDetails(requestId,
                 "requestor",
@@ -91,4 +91,5 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
                 "issuer",
                 "serial");
     }
+
 }

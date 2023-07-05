@@ -619,7 +619,7 @@ public class CuratorDb {
         Path path = endpointCertificatePath(certificate.application(), certificate.instance());
         curator.create(path);
         CuratorOperation operation = CuratorOperations.setData(path.getAbsolute(),
-                                                               asJson(EndpointCertificateMetadataSerializer.toSlime(certificate.certificate())));
+                                                               asJson(EndpointCertificateSerializer.toSlime(certificate.certificate())));
         transaction.add(CuratorTransaction.from(operation, curator));
     }
 
@@ -634,7 +634,7 @@ public class CuratorDb {
 
     public Optional<AssignedCertificate> readAssignedCertificate(TenantAndApplicationId application, Optional<InstanceName> instance) {
         return readSlime(endpointCertificatePath(application, instance)).map(Slime::get)
-                                                                        .map(EndpointCertificateMetadataSerializer::fromSlime)
+                                                                        .map(EndpointCertificateSerializer::fromSlime)
                                                                         .map(cert -> new AssignedCertificate(application, instance, cert));
     }
 

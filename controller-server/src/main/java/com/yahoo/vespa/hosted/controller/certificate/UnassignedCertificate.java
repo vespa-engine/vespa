@@ -1,6 +1,6 @@
 package com.yahoo.vespa.hosted.controller.certificate;
 
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 
 /**
  * An unassigned certificate, which exists in a pre-provisioned pool of certificates. Once assigned to an application,
@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCe
  *
  * @author andreer
  */
-public record UnassignedCertificate(EndpointCertificateMetadata certificate, UnassignedCertificate.State state) {
+public record UnassignedCertificate(EndpointCertificate certificate, UnassignedCertificate.State state) {
 
     public UnassignedCertificate {
         if (certificate.randomizedId().isEmpty()) {

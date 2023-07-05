@@ -19,7 +19,7 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record.Type;
@@ -1045,12 +1045,12 @@ public class RoutingPoliciesTest {
     }
 
     private void addCertificateToPool(String id, UnassignedCertificate.State state, RoutingPoliciesTester tester) {
-        EndpointCertificateMetadata cert = new EndpointCertificateMetadata("testKey", "testCert", 1, 0,
-                                                                           "request-id",
-                                                                           Optional.of("leaf-request-uuid"),
-                                                                           List.of("name1", "name2"),
-                                                                           "", Optional.empty(),
-                                                                           Optional.empty(), Optional.of(id));
+        EndpointCertificate cert = new EndpointCertificate("testKey", "testCert", 1, 0,
+                                                           "request-id",
+                                                           Optional.of("leaf-request-uuid"),
+                                                           List.of("name1", "name2"),
+                                                           "", Optional.empty(),
+                                                           Optional.empty(), Optional.of(id));
         UnassignedCertificate pooledCert = new UnassignedCertificate(cert, state);
         tester.controllerTester().controller().curator().writeUnassignedCertificate(pooledCert);
     }

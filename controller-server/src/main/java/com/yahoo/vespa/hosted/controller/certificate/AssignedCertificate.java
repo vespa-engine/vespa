@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.certificate;
 
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.util.Optional;
@@ -15,9 +15,9 @@ import java.util.Optional;
  */
 public record AssignedCertificate(TenantAndApplicationId application,
                                   Optional<InstanceName> instance,
-                                  EndpointCertificateMetadata certificate) {
+                                  EndpointCertificate certificate) {
 
-    public AssignedCertificate with(EndpointCertificateMetadata certificate) {
+    public AssignedCertificate with(EndpointCertificate certificate) {
         return new AssignedCertificate(application, instance, certificate);
     }
 
