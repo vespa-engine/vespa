@@ -204,11 +204,14 @@
                                         <include>org.bouncycastle:bcpkix-jdk18on:${bouncycastle.version}:test</include>
                                         <include>org.bouncycastle:bcprov-jdk18on:${bouncycastle.version}:test</include>
                                         <include>org.bouncycastle:bcutil-jdk18on:${bouncycastle.version}:test</include>
+                                        <include>org.eclipse.jetty.http2:http2-client:${jetty.version}:test</include>
                                         <include>org.eclipse.jetty.http2:http2-common:${jetty.version}:test</include>
                                         <include>org.eclipse.jetty.http2:http2-hpack:${jetty.version}:test</include>
+                                        <include>org.eclipse.jetty.http2:http2-http-client-transport:${jetty.version}:test</include>
                                         <include>org.eclipse.jetty.http2:http2-server:${jetty.version}:test</include>
                                         <include>org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api:5.0.2:test</include>
                                         <include>org.eclipse.jetty:jetty-alpn-client:${jetty.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-alpn-java-client:${jetty.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-alpn-java-server:${jetty.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-alpn-server:${jetty.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-client:${jetty.version}:test</include>
