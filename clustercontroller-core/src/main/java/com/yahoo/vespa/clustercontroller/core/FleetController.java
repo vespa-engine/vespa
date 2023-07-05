@@ -253,7 +253,6 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
         controllerThreadId = Thread.currentThread().getId();
         database.shutdown(databaseContext);
 
-        statusPageServer.shutdown();
         if (rpcServer != null) {
             rpcServer.shutdown();
         }
