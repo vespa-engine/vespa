@@ -261,7 +261,7 @@ public class MockDeployer implements Deployer {
         public ClusterSpec cluster() { return cluster; }
 
         private List<HostSpec> prepare(NodeRepositoryProvisioner provisioner) {
-            return provisioner.prepare(id, cluster, capacity, null);
+            return provisioner.prepare(id, cluster, capacity, new SystemOutProvisionLogger());
         }
 
     }

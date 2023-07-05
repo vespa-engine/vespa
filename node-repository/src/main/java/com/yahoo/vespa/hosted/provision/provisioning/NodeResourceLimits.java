@@ -2,14 +2,17 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Locale;
+import java.util.logging.Level;
 
 /**
  * Defines the resource limits for nodes in various zones
@@ -33,6 +36,17 @@ public class NodeResourceLimits {
             illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster));
         if (! requested.diskGbIsUnspecified() && requested.diskGb() < minAdvertisedDiskGb(requested, cluster.isExclusive()))
             illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, cluster.isExclusive()));
+    }
+
+    // TODO: Move this check into the above when we are ready to fail, not just warn on this. */
+    public boolean isWithinAdvertisedDiskLimits(NodeResources requested, ClusterSpec cluster) {
+        if (requested.diskGbIsUnspecified() || requested.memoryGbIsUnspecified()) return true;
+        double minDiskGb = requested.memoryGb() * switch (cluster.type()) {
+            case combined, content -> 3;
+            case container -> 2;
+            default -> 0; // No constraint on other types
+        };
+        return requested.diskGb() >= minDiskGb;
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */

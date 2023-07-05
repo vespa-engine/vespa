@@ -81,11 +81,10 @@ public class NodeRepositoryProvisioner implements Provisioner {
      * The nodes are ordered by increasing index number.
      */
     @Override
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requested,
-                                  ProvisionLogger logger) {
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         log.log(Level.FINE, "Received deploy prepare request for " + requested +
                             " for application " + application + ", cluster " + cluster);
-        validate(application, cluster, requested);
+        validate(application, cluster, requested, logger);
 
         int groups;
         NodeResources resources;
@@ -113,7 +112,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                              requireCompatibleResources(resources, cluster));
     }
 
-    private void validate(ApplicationId application, ClusterSpec cluster, Capacity requested) {
+    private void validate(ApplicationId application, ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
 
         nodeResourceLimits.ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), application, cluster);
@@ -121,6 +120,18 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
         if ( ! requested.minResources().nodeResources().gpuResources().equals(requested.maxResources().nodeResources().gpuResources()))
             throw new IllegalArgumentException(requested + " is invalid: Gpu capacity cannot have ranges");
+
+        logInsufficientDiskResources(cluster, requested, logger);
+    }
+
+    private void logInsufficientDiskResources(ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
+        var resources = requested.minResources().nodeResources();
+        if ( ! nodeResourceLimits.isWithinAdvertisedDiskLimits(resources, cluster)) {
+            logger.logApplicationPackage(Level.WARNING, "Requested disk (" + resources.diskGb() +
+                                                        "Gb) in " + cluster.id() + " is not large enough to fit " +
+                                                        "core/heap dumps. Minimum recommended disk resources " +
+                                                        "is 3x memory for content and 2x memory for containers");
+        }
     }
 
     private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId) {

@@ -10,6 +10,16 @@ import java.util.logging.Level;
  */
 public interface ProvisionLogger {
 
+    /** Log a message unrelated to the application package, e.g. internal error/status. */
     void log(Level level, String message);
+
+    /**
+     * Log a message related to the application package. These messages should be actionable by the user, f.ex. to
+     * signal usage of invalid/deprecated syntax.
+     * This default implementation just forwards to {@link #log(Level, String)}
+     */
+    default void logApplicationPackage(Level level, String message) {
+        log(level, message);
+    }
 
 }

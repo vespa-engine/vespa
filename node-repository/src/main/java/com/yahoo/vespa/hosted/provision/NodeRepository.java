@@ -205,7 +205,7 @@ public class NodeRepository extends AbstractComponent {
      */
     public boolean exclusiveAllocation(ClusterSpec clusterSpec) {
         return clusterSpec.isExclusive() ||
-               ( clusterSpec.type().isContainer() && zone.system().isPublic() &&  !zone.environment().isTest() ) ||
+               ( clusterSpec.type().isContainer() && zone.system().isPublic() && !zone.environment().isTest() ) ||
                ( !zone().cloud().allowHostSharing() && !sharedHosts.value().isEnabled(clusterSpec.type().name()));
     }
 

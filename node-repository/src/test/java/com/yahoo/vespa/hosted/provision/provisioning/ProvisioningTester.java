@@ -773,7 +773,7 @@ public class ProvisioningTester {
 
     }
 
-    private static class NullProvisionLogger implements ProvisionLogger {
+    public static class NullProvisionLogger implements ProvisionLogger {
         @Override public void log(Level level, String message) { }
     }
 
