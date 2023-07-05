@@ -126,7 +126,6 @@ template <typename B, typename M>
 void
 MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const
 {
-    assert(idx.valid());
     self.getPostingList().beginFrozen(idx, dst);
 }
 
@@ -134,7 +133,6 @@ template <typename B, typename M>
 DocumentWeightIterator
 MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(vespalib::datastore::EntryRef idx) const
 {
-    assert(idx.valid());
     return self.getPostingList().beginFrozen(idx);
 }
 
@@ -156,7 +154,7 @@ template <typename B, typename M>
 const IDocumentWeightAttribute *
 MultiValueNumericPostingAttribute<B, M>::asDocumentWeightAttribute() const
 {
-    if (this->hasWeightedSetType() && (this->getBasicType() == AttributeVector::BasicType::INT64)) {
+    if (this->hasWeightedSetType() && this->isIntegerType()) {
         return &_document_weight_attribute_adapter;
     }
     return nullptr;
