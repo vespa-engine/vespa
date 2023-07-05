@@ -119,13 +119,12 @@ public record RoutingPolicy(RoutingPolicyId id,
     /** Returns the zone endpoints of this */
     public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod, boolean includeTokenEndpoint) {
         DeploymentId deployment = new DeploymentId(id.owner(), id.zone());
-        Endpoint zoneEndpoint = endpoint(routingMethod).target(id.cluster(), deployment).in(system);
+        Endpoint.EndpointBuilder builder = endpoint(routingMethod).target(id.cluster(), deployment);
+        Endpoint zoneEndpoint = builder.in(system);
         List<Endpoint> endpoints = new ArrayList<>();
         endpoints.add(zoneEndpoint);
         if (includeTokenEndpoint) {
-            Endpoint tokenEndpoint = endpoint(routingMethod).target(id.cluster(), deployment)
-                                                            .authMethod(Endpoint.AuthMethod.token)
-                                                            .in(system);
+            Endpoint tokenEndpoint = builder.authMethod(Endpoint.AuthMethod.token).in(system);
             endpoints.add(tokenEndpoint);
         }
         for (var generatedEndpoint : generatedEndpoints) {
@@ -134,9 +133,7 @@ public record RoutingPolicy(RoutingPolicyId id,
                 case mtls -> generatedEndpoint;
             };
             if (endpointToInclude != null) {
-                endpoints.add(endpoint(routingMethod).target(id.cluster(), deployment)
-                                                     .generatedEndpoint(endpointToInclude)
-                                                     .in(system));
+                endpoints.add(builder.generatedEndpoint(endpointToInclude).in(system));
             }
         }
         return endpoints;
