@@ -33,6 +33,9 @@ public:
     ~LargeArrayBufferType() override;
     void clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext cleanCtx) override;
     const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
+    alloc::Alloc initial_alloc() const noexcept {
+        return _memory_allocator ? alloc::Alloc::alloc_with_allocator(_memory_allocator.get()) : alloc::Alloc::alloc(0, alloc::MemoryAllocator::HUGEPAGE_SIZE);
+    }
 };
 
 extern template class LargeArrayBufferType<uint8_t>;

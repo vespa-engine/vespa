@@ -595,6 +595,16 @@ TEST_F(ByteStoreTest, offset_in_EntryRefT_is_within_bounds_when_allocating_memor
 TYPED_TEST(NumberStoreTest, provided_memory_allocator_is_used)
 {
     EXPECT_EQ(AllocStats(4, 0), this->stats);
+    this->assertAdd({1,2,3,4,5});
+    EXPECT_EQ(AllocStats(5, 0), this->stats);
+    this->assertAdd({2,3,4,5,6,7});
+    EXPECT_EQ(AllocStats(6, 0), this->stats);
+    this->remove({1,2,3,4,5});
+    this->remove({2,3,4,5,6,7});
+    this->reclaim_memory();
+    EXPECT_EQ(AllocStats(6, 2), this->stats);
+    this->assertAdd({1,2,3,4,5});
+    EXPECT_EQ(AllocStats(7, 2), this->stats);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

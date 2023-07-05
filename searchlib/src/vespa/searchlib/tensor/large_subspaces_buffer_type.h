@@ -35,6 +35,9 @@ public:
     void fallback_copy(void *newBuffer, const void *oldBuffer, EntryCount num_entries) override;
     void initialize_reserved_entries(void *buffer, EntryCount reserved_entries) override;
     const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
+    vespalib::alloc::Alloc initial_alloc() const noexcept {
+        return _memory_allocator ? vespalib::alloc::Alloc::alloc_with_allocator(_memory_allocator.get()) : vespalib::alloc::Alloc::alloc(0, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE);
+    }
 };
 
 }
