@@ -74,12 +74,24 @@ public record NodeAcl(Node node,
                 // Tenant nodes in other states than ready, trust:
                 // - config servers
                 // - proxy nodes
+                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.config), node.cloudAccount(), simplerAcl));
+                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.proxy), node.cloudAccount(), simplerAcl));
                 // - parents of the nodes in the same application: If some nodes are on a different IP version
                 //   or only a subset of them are dual-stacked, the communication between the nodes may be NAT-ed
                 //   via parent's IP address
-                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.config), node.cloudAccount(), simplerAcl));
-                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.proxy), node.cloudAccount(), simplerAcl));
-                node.allocation().ifPresent(allocation -> trustedNodes.addAll(TrustedNode.of(allNodes.parentsOf(allNodes.owner(allocation.owner())), node.cloudAccount(), simplerAcl)));
+                boolean hasIp4 = node.ipConfig().primary().stream().anyMatch(IP::isV4);
+                boolean hasIp6 = node.ipConfig().primary().stream().anyMatch(IP::isV6);
+                node.allocation().ifPresent(allocation -> allNodes
+                        .owner(allocation.owner())
+                        .stream()
+                        .filter(n -> !n.hostname().equals(node.hostname()))
+                        .forEach(otherNode -> {
+                            if (hasIp4 && otherNode.ipConfig().primary().stream().noneMatch(IP::isV4) ||
+                                hasIp6 && otherNode.ipConfig().primary().stream().noneMatch(IP::isV6)) {
+                                // The parent host is assumed to have the required IPv4/IPv6 address for NAT
+                                trustedNodes.add(TrustedNode.of(allNodes.parentOf(otherNode).orElseThrow(), node.cloudAccount(), simplerAcl));
+                            }
+                        }));
             }
             case config -> {
                 // Config servers trust:
@@ -121,28 +133,28 @@ public record NodeAcl(Node node,
     public record TrustedNode(String hostname, NodeType type, Set<String> ipAddresses, Set<Integer> ports) {
 
         /** Trust given ports from node, and primary IP addresses shared with given cloud account */
-        public static TrustedNode of(Node node, Set<Integer> ports, CloudAccount cloudAccount, boolean simplerAcl) {
+        public static TrustedNode of(Node node, Set<Integer> ports, CloudAccount sourceCloudAccount, boolean simplerAcl) {
             Set<String> ipAddresses = node.ipConfig()
                                           .primary()
                                           .stream()
-                                          .filter(ip -> !simplerAcl || IP.inSharedIpSpace(ip, node.cloudAccount(), cloudAccount))
+                                          .filter(ip -> !simplerAcl || IP.inSharedIpSpace(ip, sourceCloudAccount, node.cloudAccount()))
                                           .collect(Collectors.toSet());
             return new TrustedNode(node.hostname(), node.type(), ipAddresses, ports);
         }
 
-        /** Trust all ports from given node */
-        public static TrustedNode of(Node node, CloudAccount cloudAccount, boolean simplerAcl) {
-            return of(node, Set.of(), cloudAccount, simplerAcl);
+        /** The node in the given sourceCloudAccount should trust all ports from given node */
+        public static TrustedNode of(Node node, CloudAccount sourceCloudAccount, boolean simplerAcl) {
+            return of(node, Set.of(), sourceCloudAccount, simplerAcl);
         }
 
-        public static List<TrustedNode> of(Iterable<Node> nodes, Set<Integer> ports, CloudAccount cloudAccount, boolean simplerAcl) {
+        public static List<TrustedNode> of(Iterable<Node> nodes, Set<Integer> ports, CloudAccount sourceCloudAccount, boolean simplerAcl) {
             return StreamSupport.stream(nodes.spliterator(), false)
-                                .map(node -> TrustedNode.of(node, ports, cloudAccount, simplerAcl))
+                                .map(node -> TrustedNode.of(node, ports, sourceCloudAccount, simplerAcl))
                                 .toList();
         }
 
-        public static List<TrustedNode> of(Iterable<Node> nodes, CloudAccount cloudAccount, boolean simplerAcl) {
-            return of(nodes, Set.of(), cloudAccount, simplerAcl);
+        public static List<TrustedNode> of(Iterable<Node> nodes, CloudAccount sourceCloudAccount, boolean simplerAcl) {
+            return of(nodes, Set.of(), sourceCloudAccount, simplerAcl);
         }
 
     }
