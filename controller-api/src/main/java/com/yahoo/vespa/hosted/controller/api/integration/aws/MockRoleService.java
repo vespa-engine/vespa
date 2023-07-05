@@ -11,8 +11,9 @@ public class MockRoleService extends NoopRoleService {
     private List<TenantName> maintainedTenants;
 
     @Override
-    public void maintainRoles(List<TenantName> tenants) {
+    public double maintainRoles(List<TenantName> tenants) {
         maintainedTenants = List.copyOf(tenants);
+        return 1;
     }
 
     public List<TenantName> maintainedTenants() {

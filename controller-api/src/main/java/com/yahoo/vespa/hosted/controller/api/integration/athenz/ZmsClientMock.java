@@ -153,7 +153,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public void updateDomain(AthenzDomain domain, Map<String, Object> attributes) {
+    public void updateDomain(AthenzDomain domain, String mainKey, Map<String, Object> attributes) {
         if (!athenz.domains.containsKey(domain)) throw new IllegalStateException("Domain does not exist: " + domain.getName());
         athenz.domains.get(domain).withAttributes(attributes);
     }
