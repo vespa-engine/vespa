@@ -35,12 +35,12 @@ public class HttpRequestTest {
         //  - The HTTP operation type
         try {
             new HttpRequest().setPath("/foo").verifyComplete();
-            assertTrue(false);
+            fail();
         } catch (IllegalStateException e) {
         }
         try {
             new HttpRequest().setHttpOperation(HttpRequest.HttpOp.GET).verifyComplete();
-            assertTrue(false);
+            fail();
         } catch (IllegalStateException e) {
         }
         new HttpRequest().setHttpOperation(HttpRequest.HttpOp.GET).setPath("/bar").verifyComplete();
@@ -126,7 +126,7 @@ public class HttpRequestTest {
 
     @Test
     void testNothingButGetCoverage() {
-        assertEquals(false, new HttpRequest().equals(new Object()));
+        assertNotEquals(new HttpRequest(), new Object());
         new HttpRequest().getHeaders();
         new HttpRequest().setUrlOptions(new HttpRequest().getUrlOptions());
     }

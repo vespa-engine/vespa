@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * The handler is mostly tested through the apache tests, using it as endpoint here..
+ * The handler is mostly tested through the apache tests, using it as endpoint here.
  * This test class is just to test some special cases.
  */
 public class JDiscHttpRequestHandlerTest {
@@ -30,7 +30,7 @@ public class JDiscHttpRequestHandlerTest {
     }
 
     @Test
-    void testInvalidMethod() throws Exception {
+    void testInvalidMethod() {
         try {
             HttpRequest request = new HttpRequest();
             JDiscHttpRequestHandler.setOperation(request, com.yahoo.jdisc.http.HttpRequest.Method.CONNECT);
@@ -41,7 +41,7 @@ public class JDiscHttpRequestHandlerTest {
     }
 
     @Test
-    void testNothingButAddCoverage() throws Exception {
+    void testNothingButAddCoverage() {
         new JDiscHttpRequestHandler.EmptyCompletionHandler().failed(null);
     }
 }

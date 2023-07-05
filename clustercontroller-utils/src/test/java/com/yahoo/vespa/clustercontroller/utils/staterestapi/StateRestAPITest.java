@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class StateRestAPITest {
 
@@ -87,7 +88,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testTopLevelList() throws Exception {
+    void testTopLevelList() {
         setupDummyStateApi();
         HttpResult result = execute(new HttpRequest().setPath("/cluster/v2"));
         assertEquals(200, result.getHttpReturnCode(), result.toString(true));
@@ -107,7 +108,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testClusterState() throws Exception {
+    void testClusterState() {
         setupDummyStateApi();
         HttpResult result = execute(new HttpRequest().setPath("/cluster/v2/foo"));
         assertEquals(200, result.getHttpReturnCode(), result.toString(true));
@@ -127,7 +128,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testNodeState() throws Exception {
+    void testNodeState() {
         setupDummyStateApi();
         HttpResult result = execute(new HttpRequest().setPath("/cluster/v2/foo/3"));
         assertEquals(200, result.getHttpReturnCode(), result.toString(true));
@@ -151,7 +152,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testRecursiveMode() throws Exception {
+    void testRecursiveMode() {
         setupDummyStateApi();
         {
             JsonNode json = executeOkJsonRequest(
@@ -291,7 +292,7 @@ public class StateRestAPITest {
         }
     }
 
-    private String retireAndExpectHttp200Response(Optional<String> responseWait) throws Exception {
+    private String retireAndExpectHttp200Response(Optional<String> responseWait) {
         ObjectNode json = new ObjectNode(mapper.getNodeFactory());
         json.putObject("state").putObject("current").put("state", "retired").put("reason", "No reason");
         json.put("condition", "FORCE");
@@ -305,7 +306,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testSetNodeState() throws Exception {
+    void testSetNodeState() {
         setupDummyStateApi();
         {
             ObjectNode json = new ObjectNode(mapper.getNodeFactory());
@@ -362,7 +363,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void set_node_state_response_wait_type_is_propagated_to_handler() throws Exception {
+    void set_node_state_response_wait_type_is_propagated_to_handler() {
         setupDummyStateApi();
         {
             String result = retireAndExpectHttp200Response(Optional.of("wait-until-cluster-acked"));
@@ -385,7 +386,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void set_node_state_response_wait_type_is_cluster_acked_by_default() throws Exception {
+    void set_node_state_response_wait_type_is_cluster_acked_by_default() {
         setupDummyStateApi();
         String result = retireAndExpectHttp200Response(Optional.empty());
         assertEquals("""
@@ -397,7 +398,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testMissingUnits() throws Exception {
+    void testMissingUnits() {
         setupDummyStateApi();
         {
             HttpResult result = execute(new HttpRequest().setPath("/cluster/v2/unknown"));
@@ -416,7 +417,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testUnknownMaster() throws Exception {
+    void testUnknownMaster() {
         setupDummyStateApi();
         stateApi.induceException(new UnknownMasterException());
         HttpResult result = execute(new HttpRequest().setPath("/cluster/v2"));
@@ -429,7 +430,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testOtherMaster() throws Exception {
+    void testOtherMaster() {
         setupDummyStateApi();
         {
             stateApi.induceException(new OtherMasterException("example.com", 80));
@@ -454,7 +455,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testRuntimeException() throws Exception {
+    void testRuntimeException() {
         setupDummyStateApi();
         stateApi.induceException(new RuntimeException("Moahaha"));
         HttpResult result = execute(new HttpRequest().setPath("/cluster/v2"));
@@ -466,7 +467,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testClientFailures() throws Exception {
+    void testClientFailures() {
         setupDummyStateApi();
         {
             stateApi.induceException(new InvalidContentException("Foo bar"));
@@ -498,7 +499,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testInternalFailure() throws Exception {
+    void testInternalFailure() {
         setupDummyStateApi();
         {
             stateApi.induceException(new InternalFailure("Foo"));
@@ -512,7 +513,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testInvalidRecursiveValues() throws Exception {
+    void testInvalidRecursiveValues() {
         setupDummyStateApi();
         {
             HttpResult result = execute(new HttpRequest().setPath("/cluster/v2").addUrlOption("recursive", "-5"));
@@ -533,7 +534,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testInvalidJsonInSetStateRequest() throws Exception {
+    void testInvalidJsonInSetStateRequest() {
         setupDummyStateApi();
         {
             ObjectNode json = new ObjectNode(mapper.getNodeFactory());
@@ -596,7 +597,7 @@ public class StateRestAPITest {
         }
     }
 
-    private String retireAndExpectHttp400Response(String condition, String responseWait) throws Exception {
+    private String retireAndExpectHttp400Response(String condition, String responseWait) {
         ObjectNode json = new ObjectNode(mapper.getNodeFactory());
         json.putObject("state").putObject("current").put("state", "retired").put("reason", "No reason");
         json.put("condition", condition);
@@ -610,7 +611,7 @@ public class StateRestAPITest {
     }
 
     @Test
-    void testInvalidPathPrefix() throws Exception {
+    void testInvalidPathPrefix() {
         DummyBackend backend = new DummyBackend();
         stateApi = new DummyStateApi(backend);
         populateDummyBackend(backend);
@@ -618,13 +619,13 @@ public class StateRestAPITest {
         RestApiHandler handler = new RestApiHandler(stateApi);
         try {
             handler.setDefaultPathPrefix("cluster/v2");
-            assertTrue(false);
+            fail();
         } catch (IllegalArgumentException e) {
         }
     }
 
     @Test
-    void deadline_exceeded_exception_returns_http_504_error() throws Exception {
+    void deadline_exceeded_exception_returns_http_504_error() {
         setupDummyStateApi();
         stateApi.induceException(new DeadlineExceededException("argh!"));
         HttpResult result = execute(new HttpRequest().setPath("/cluster/v2"));

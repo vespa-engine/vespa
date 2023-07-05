@@ -12,7 +12,7 @@ public class AsyncOperationListenImpl<T> {
     private static final Logger log = Logger.getLogger(AsyncOperationListenImpl.class.getName());
     private final Collection<AsyncCallback<T>> listeners = new HashSet<>();
     private boolean listenersNotified = false;
-    private AsyncOperation<T> op;
+    private final AsyncOperation<T> op;
 
     protected AsyncOperationListenImpl(AsyncOperation<T> op) {
         this.op = op;

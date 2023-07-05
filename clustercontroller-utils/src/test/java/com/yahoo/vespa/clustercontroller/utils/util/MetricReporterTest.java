@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class MetricReporterTest {
 
     static class MetricReporterMock implements MetricReporter {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
 
         @Override
         public void set(String s, Number number, Context context) {

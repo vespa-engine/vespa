@@ -31,13 +31,13 @@ public class AsyncTest {
         op.setResult("foo");
         op.register(l4);
         // Listener that is unregistered is not called
-        assertEquals(false, l1.called);
+        assertFalse(l1.called);
         // Listener that is registered is called
-        assertEquals(true, l2.called);
+        assertTrue(l2.called);
         // Multiple listeners supported
-        assertEquals(true, l3.called);
+        assertTrue(l3.called);
         // Listener called directly when registered after result is set
-        assertEquals(true, l4.called);
+        assertTrue(l4.called);
     }
 
     @Test
@@ -53,14 +53,14 @@ public class AsyncTest {
             op.setResult("foo");
             op.setFailure(new Exception("bar"));
             assertEquals("foo", op.getResult());
-            assertEquals(true, op.isSuccess());
+            assertTrue(op.isSuccess());
         }
         {
             AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test");
             op.setFailure(new Exception("bar"));
             op.setResult("foo");
             assertNull(op.getResult());
-            assertEquals(false, op.isSuccess());
+            assertFalse(op.isSuccess());
             assertEquals("bar", op.getCause().getMessage());
         }
     }
@@ -70,7 +70,7 @@ public class AsyncTest {
         AsyncOperationImpl<String> op = new AsyncOperationImpl<>("test");
         op.setFailure(new Exception("bar"), "foo");
         assertEquals("foo", op.getResult());
-        assertEquals(false, op.isSuccess());
+        assertFalse(op.isSuccess());
         assertEquals("bar", op.getCause().getMessage());
     }
 
@@ -81,7 +81,6 @@ public class AsyncTest {
                 super(op);
             }
         }
-        ;
         class Listener implements AsyncCallback<String> {
             int calls = 0;
 
@@ -119,8 +118,8 @@ public class AsyncTest {
             });
             assertNull(deleteRequest.getProgress());
             op.setResult("123");
-            assertEquals(true, deleteRequest.isDone());
-            assertEquals(true, deleteRequest.isSuccess());
+            assertTrue(deleteRequest.isDone());
+            assertTrue(deleteRequest.isSuccess());
             assertEquals(Integer.valueOf(123), deleteRequest.getResult());
             assertEquals("desc", deleteRequest.getDescription());
             assertEquals("test", deleteRequest.getName());
@@ -142,9 +141,9 @@ public class AsyncTest {
                 }
             };
             op.setFailure(new Exception("foo"));
-            assertEquals(true, deleteRequest.isDone());
+            assertTrue(deleteRequest.isDone());
             assertEquals("foo", deleteRequest.getCause().getMessage());
-            assertEquals(false, deleteRequest.isSuccess());
+            assertFalse(deleteRequest.isSuccess());
             deleteRequest.getProgress();
         }
     }

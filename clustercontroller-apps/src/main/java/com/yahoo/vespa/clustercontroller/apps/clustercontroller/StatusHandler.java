@@ -9,8 +9,6 @@ import com.yahoo.vespa.clustercontroller.apputil.communication.http.JDiscHttpReq
 
 public class StatusHandler extends JDiscHttpRequestHandler implements CapabilityRequiringRequestHandler {
 
-    private final com.yahoo.vespa.clustercontroller.core.status.StatusHandler statusHandler;
-
     @Inject
     public StatusHandler(ClusterController fc, JDiscHttpRequestHandler.Context ctx) {
         this(new com.yahoo.vespa.clustercontroller.core.status.StatusHandler(fc), ctx);
@@ -19,10 +17,8 @@ public class StatusHandler extends JDiscHttpRequestHandler implements Capability
     @Override public Capability requiredCapability(RequestView __) { return Capability.CLUSTER_CONTROLLER__STATUS; }
 
     private StatusHandler(com.yahoo.vespa.clustercontroller.core.status.StatusHandler handler,
-                          JDiscHttpRequestHandler.Context ctx)
-    {
+                          JDiscHttpRequestHandler.Context ctx) {
         super(handler, ctx);
-        this.statusHandler = handler;
     }
 
 }

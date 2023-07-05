@@ -6,7 +6,8 @@ public class HttpWriter {
     private final StringBuilder builder = new StringBuilder();
 
     private String title = "Untitled page";
-    enum State { HEADER, BODY, FINALIZED };
+    enum State { HEADER, BODY, FINALIZED }
+
     private State state = State.HEADER;
 
     public HttpWriter() {
