@@ -288,7 +288,6 @@ public:
     bool getIsFilter() const override final;
     bool getIsFastSearch() const override final;
     bool isMutable() const;
-    bool getEnableOnlyBitVector() const;
 
     const Config &getConfig() const noexcept { return *_config; }
     void update_config(const Config& cfg);

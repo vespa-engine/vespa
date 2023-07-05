@@ -39,6 +39,7 @@ private:
         void create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const override;
         DocumentWeightIterator create(vespalib::datastore::EntryRef idx) const override;
         std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const override;
+        bool has_weight_iterator(vespalib::datastore::EntryRef idx) const noexcept override;
     };
     DocumentWeightAttributeAdapter _document_weight_attribute_adapter;
 

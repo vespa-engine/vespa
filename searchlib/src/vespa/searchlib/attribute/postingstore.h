@@ -27,7 +27,7 @@ public:
     std::shared_ptr<GrowableBitVector> _bv; // bitvector
 
 public:
-    BitVectorEntry()
+    BitVectorEntry() noexcept
         : _tree(),
           _bv()
     { }
@@ -36,25 +36,22 @@ public:
 
 class PostingStoreBase2
 {
-public:
-    bool _enableOnlyBitVector;
-    bool _isFilter;
 protected:
+    static constexpr uint32_t BUFFERTYPE_BITVECTOR = 9u;
     uint32_t _bvSize;
     uint32_t _bvCapacity;
-public:
     uint32_t _minBvDocFreq; // Less than this ==> destroy bv
     uint32_t _maxBvDocFreq; // Greater than or equal to this ==> create bv
-protected:
-    std::set<uint32_t> _bvs; // Current bitvectors
-    IEnumStoreDictionary& _dictionary;
-    Status            &_status;
-    uint64_t           _bvExtraBytes;
+    std::set<uint32_t>         _bvs; // Current bitvectors
+    IEnumStoreDictionary&      _dictionary;
+    Status                    &_status;
+    uint64_t                   _bvExtraBytes;
     PostingStoreCompactionSpec _compaction_spec;
-
-    static constexpr uint32_t BUFFERTYPE_BITVECTOR = 9u;
+private:
+    bool                       _isFilter;
 
 public:
+    bool isFilter() const noexcept { return _isFilter; }
     PostingStoreBase2(IEnumStoreDictionary& dictionary, Status &status, const Config &config);
     virtual ~PostingStoreBase2();
     bool resizeBitVectors(uint32_t newSize, uint32_t newCapacity);
@@ -111,7 +108,7 @@ public:
 
     bool removeSparseBitVectors() override;
     void consider_remove_sparse_bitvector(std::vector<EntryRef> &refs);
-    static bool isBitVector(uint32_t typeId) { return typeId == BUFFERTYPE_BITVECTOR; }
+    static bool isBitVector(uint32_t typeId) noexcept { return typeId == BUFFERTYPE_BITVECTOR; }
 
     void applyNew(EntryRef &ref, AddIter a, AddIter ae);
 
@@ -185,6 +182,9 @@ public:
 
     BitVectorEntry *getWBitVectorEntry(RefType ref) {
         return _store.template getEntry<BitVectorEntry>(ref);
+    }
+    bool has_btree(const EntryRef ref) const noexcept {
+        return !ref.valid() || !isBitVector(getTypeId(RefType(ref))) || !isFilter();
     }
 
     std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(RefType ref, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const;
