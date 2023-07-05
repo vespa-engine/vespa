@@ -48,7 +48,7 @@ import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeWeak;
 class ApacheCluster implements Cluster {
 
     private final List<Endpoint> endpoints = new ArrayList<>();
-    private final List<BasicHeader> defaultHeaders = Arrays.asList(new BasicHeader(HttpHeaders.USER_AGENT, String.format("vespa-feed-client/%s", Vespa.VERSION)),
+    private final List<BasicHeader> defaultHeaders = Arrays.asList(new BasicHeader(HttpHeaders.USER_AGENT, String.format("vespa-feed-client/%s (Apache)", Vespa.VERSION)),
                                                                    new BasicHeader("Vespa-Client-Version", Vespa.VERSION));
     private final Header gzipEncodingHeader = new BasicHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
     private final Compression compression;

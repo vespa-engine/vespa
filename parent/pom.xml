@@ -914,6 +914,11 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
+                <artifactId>http2-http-client-transport</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.http2</groupId>
                 <artifactId>http2-server</artifactId>
                 <version>${jetty.version}</version>
             </dependency>

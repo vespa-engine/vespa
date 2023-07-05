@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -54,7 +55,8 @@ class HttpFeedClient implements FeedClient {
     private final boolean speedTest;
 
     HttpFeedClient(FeedClientBuilderImpl builder) throws IOException {
-        this(builder, builder.dryrun ? new DryrunCluster() : new ApacheCluster(builder));
+        this(builder, builder.dryrun ?
+                new DryrunCluster() : experimentalClientEnabled() ? new JettyCluster(builder) : new ApacheCluster(builder));
     }
 
     HttpFeedClient(FeedClientBuilderImpl builder, Cluster cluster) {
@@ -311,6 +313,15 @@ class HttpFeedClient implements FeedClient {
         params.tracelevel().ifPresent(tracelevel -> query.add("tracelevel=" + tracelevel));
         if (speedTest) query.add("dryRun=true");
         return query.toString();
+    }
+
+    private static boolean experimentalClientEnabled() {
+        String name = "VESPA_FEED_EXPERIMENTAL_CLIENT";
+        return Optional.ofNullable(System.getenv(name))
+                .map(Boolean::parseBoolean)
+                .orElse(Optional.ofNullable(System.getProperty(name))
+                                .map(Boolean::parseBoolean)
+                                .orElse(false));
     }
 
 }
