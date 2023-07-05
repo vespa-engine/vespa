@@ -4,9 +4,7 @@
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchlib/attribute/postingstore.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreerootbase.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/searchlib/attribute/postingstore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -42,7 +40,7 @@ std::ostream& operator<<(std::ostream& os, const PostingStoreSetup setup)
 
 Config make_config(PostingStoreSetup param) {
     Config cfg;
-    cfg.setEnableOnlyBitVector(param.enable_only_bitvector);
+    cfg.setIsFilter(param.enable_only_bitvector);
     return cfg;
 }
 
@@ -212,8 +210,7 @@ PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
     EXPECT_EQ(make_exp_sequence(4, 4 + sequence_length), get_sequence(ref1));
     EXPECT_EQ(make_exp_sequence(5, 5 + sequence_length), get_sequence(ref2));
     auto usage_after = store.getMemoryUsage();
-    if (sequence_length < huge_sequence_length ||
-        !_config.getEnableOnlyBitVector()) {
+    if ((sequence_length < huge_sequence_length) || !_config.getIsFilter()) {
         EXPECT_GT(usage_before.deadBytes(), usage_after.deadBytes());
     } else {
         EXPECT_EQ(usage_before.deadBytes(), usage_after.deadBytes());
