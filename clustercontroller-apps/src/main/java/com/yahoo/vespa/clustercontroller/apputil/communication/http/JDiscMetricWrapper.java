@@ -4,15 +4,13 @@ package com.yahoo.vespa.clustercontroller.apputil.communication.http;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 
-import java.util.logging.Logger;
-
 public class JDiscMetricWrapper implements MetricReporter {
 
     private final Object lock = new Object();
     private Metric m;
 
     private static class ContextWrapper implements MetricReporter.Context {
-        Metric.Context wrappedContext;
+        final Metric.Context wrappedContext;
 
         public ContextWrapper(Metric.Context wrapped) {
             this.wrappedContext = wrapped;

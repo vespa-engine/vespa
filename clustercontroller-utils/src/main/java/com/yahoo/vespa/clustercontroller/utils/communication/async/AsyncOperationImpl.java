@@ -13,7 +13,7 @@ public class AsyncOperationImpl<T> implements AsyncOperation<T> {
     private boolean failed = false;
     private T result;
     private Exception failure;
-    private AsyncOperationListenImpl<T> listenImpl;
+    private final AsyncOperationListenImpl<T> listenImpl;
 
     public AsyncOperationImpl(String name) {
         this(name, null);

@@ -45,7 +45,7 @@ public class TestEventLog implements EventLogInterface {
     }
 
     @Override
-    public void setMaxSize(int size, int nodesize) {
+    public void setMaxSize(int size, int nodeSize) {
         throw new IllegalStateException("Should never be called.");
     }
 }

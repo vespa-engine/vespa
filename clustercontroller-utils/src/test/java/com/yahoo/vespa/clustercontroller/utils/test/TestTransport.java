@@ -25,8 +25,8 @@ public class TestTransport {
 
     private static final Logger log = Logger.getLogger(TestTransport.class.getName());
     private static class Handler {
-        HttpRequestHandler handler;
-        String pathPrefix;
+        final HttpRequestHandler handler;
+        final String pathPrefix;
         Handler(HttpRequestHandler h, String prefix) { this.handler = h; this.pathPrefix = prefix; }
     }
     private static class Socket {
@@ -39,8 +39,7 @@ public class TestTransport {
         }
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Socket)) return false;
-            Socket other = (Socket) o;
+            if (!(o instanceof Socket other)) return false;
             return (hostname.equals(other.hostname) && port == other.port);
         }
         @Override
@@ -168,19 +167,6 @@ public class TestTransport {
                 handlers.put(socket, shandlers);
             }
             shandlers.add(new Handler(server, pathPrefix));
-        }
-    }
-
-    public void removeServer(HttpRequestHandler server, String hostname, int port, String pathPrefix) {
-        Socket socket = new Socket(hostname, port);
-        synchronized (this) {
-            List<Handler> shandlers = handlers.get(socket);
-            if (shandlers == null) return;
-            for (Handler h : shandlers) {
-                if (h.handler == server && h.pathPrefix.equals(pathPrefix)) {
-                    shandlers.remove(h);
-                }
-            }
         }
     }
 

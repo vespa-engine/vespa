@@ -4,15 +4,17 @@ package com.yahoo.vespa.clustercontroller.utils.communication.http;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class HttpResultTest {
 
     @Test
     void testSuccess() {
-        assertEquals(false, new HttpResult().setHttpCode(199, "foo").isSuccess());
-        assertEquals(true, new HttpResult().setHttpCode(200, "foo").isSuccess());
-        assertEquals(true, new HttpResult().setHttpCode(299, "foo").isSuccess());
-        assertEquals(false, new HttpResult().setHttpCode(300, "foo").isSuccess());
+        assertFalse(new HttpResult().setHttpCode(199, "foo").isSuccess());
+        assertTrue(new HttpResult().setHttpCode(200, "foo").isSuccess());
+        assertTrue(new HttpResult().setHttpCode(299, "foo").isSuccess());
+        assertFalse(new HttpResult().setHttpCode(300, "foo").isSuccess());
     }
 
     @Test

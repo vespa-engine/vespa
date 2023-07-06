@@ -141,8 +141,8 @@ public class RestApiHandler implements HttpRequestHandler {
 
     private int getRecursiveLevel(HttpRequest request) throws StateRestApiException {
         String val = request.getOption("recursive", "false");
-        if (val.toLowerCase().equals("false")) { return 0; }
-        if (val.toLowerCase().equals("true")) { return Integer.MAX_VALUE; }
+        if (val.equalsIgnoreCase("false")) { return 0; }
+        if (val.equalsIgnoreCase("true")) { return Integer.MAX_VALUE; }
         int level;
         try{
             level = Integer.parseInt(val);
@@ -178,7 +178,7 @@ public class RestApiHandler implements HttpRequestHandler {
             this.replaceWith = repl;
         }
     }
-    private static List<Escape> escapes = new ArrayList<>();
+    private static final List<Escape> escapes = new ArrayList<>();
     static {
         escapes.add(new Escape("%", "%25"));
         escapes.add(new Escape(" ", "%20"));

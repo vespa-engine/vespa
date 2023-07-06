@@ -8,7 +8,6 @@ public abstract class RedirectedAsyncOperation<S, T> implements AsyncOperation<T
 
     protected final AsyncOperation<S> source;
     private final AsyncOperationListenImpl<T> listenImpl;
-    private AsyncCallback<S> beforeCallbackTask;
 
     public RedirectedAsyncOperation(AsyncOperation<S> source) {
         this.source = source;
@@ -19,12 +18,7 @@ public abstract class RedirectedAsyncOperation<S, T> implements AsyncOperation<T
         });
     }
 
-    public RedirectedAsyncOperation<S, T> setOnCompleteTask(AsyncCallback<S> beforeTask) {
-        beforeCallbackTask = beforeTask;
-        return this;
-    }
     private void notifyDone() {
-        if (beforeCallbackTask != null) beforeCallbackTask.done(source);
         listenImpl.notifyListeners();
     }
 

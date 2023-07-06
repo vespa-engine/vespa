@@ -11,6 +11,6 @@ public interface EventLogInterface {
     int getNodeEventsSince(Node n, long time);
     long getRecentTimePeriod();
     void writeHtmlState(StringBuilder sb, Node node);
-    void setMaxSize(int size, int nodesize);
+    void setMaxSize(int size, int nodeSize);
 
 }

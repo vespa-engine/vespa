@@ -1,15 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.clustercontroller.core.restapiv2;
+
+import com.yahoo.vdslib.state.NodeType;
+
 /**
  * Class representations of resources in State Rest API.
  *
  * Note that the toString() implementation will put out a slash separated list of the tokens,
  * and thus be compatible with the link format.
  */
-
-package com.yahoo.vespa.clustercontroller.core.restapiv2;
-
-import com.yahoo.vdslib.state.NodeType;
-
 public class Id {
 
     public static class Cluster extends Id {

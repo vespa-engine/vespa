@@ -4,18 +4,18 @@ package com.yahoo.vespa.clustercontroller.utils.communication.http.writer;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class HttpWriterTest {
 
-    private static String defaultTitle = "My Title";
-    private static String defaultHeader = "<html>\n"
+    private static final String defaultTitle = "My Title";
+    private static final String defaultHeader = "<html>\n"
                                         + "  <head>\n"
                                         + "    <title>My Title</title>\n"
                                         + "  </head>\n"
                                         + "  <body>\n"
                                         + "    <h1>My Title</h1>\n";
-    private static String defaultFooter = "  </body>\n"
+    private static final String defaultFooter = "  </body>\n"
                                         + "</html>\n";
 
     @Test
@@ -60,12 +60,12 @@ public class HttpWriterTest {
             HttpWriter writer = new HttpWriter().addTitle(defaultTitle);
             writer.toString();
             writer.write("foo");
-            assertTrue(false);
+            fail();
         } catch (IllegalStateException e) {
         }
         try {
             new HttpWriter().write("foo").addTitle("bar");
-            assertTrue(false);
+            fail();
         } catch (IllegalStateException e) {
         }
     }

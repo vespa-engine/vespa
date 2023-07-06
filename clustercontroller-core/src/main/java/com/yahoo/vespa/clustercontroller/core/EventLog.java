@@ -34,15 +34,15 @@ public class EventLog implements EventLogInterface {
         this.metricUpdater = Objects.requireNonNull(metricUpdater, "metricUpdater must be non-null");
     }
 
-    public void setMaxSize(int size, int nodesize) {
-        if (size < 1 || nodesize < 1) {
+    public void setMaxSize(int size, int nodeSize) {
+        if (size < 1 || nodeSize < 1) {
             throw new IllegalArgumentException("Max size must be at least 1");
         }
         maxSize = size;
         while (eventLog.size() > maxSize) {
             eventLog.remove(0);
         }
-        maxNodeSize = nodesize;
+        maxNodeSize = nodeSize;
         for (List<NodeEvent> list : nodeLog.values()) {
             while (list.size() > maxNodeSize) {
                 list.remove(0);
@@ -71,11 +71,7 @@ public class EventLog implements EventLogInterface {
     public void addNodeOnlyEvent(NodeEvent e, java.util.logging.Level level) {
         log.log(level, "Added node only event: " + e.toString());
         metricUpdater.recordNewNodeEvent();
-        LinkedList<NodeEvent> nodeList = nodeLog.get(e.getNode().getNode());
-        if (nodeList == null) {
-            nodeList = new LinkedList<>();
-            nodeLog.put(e.getNode().getNode(), nodeList);
-        }
+        LinkedList<NodeEvent> nodeList = nodeLog.computeIfAbsent(e.getNode().getNode(), k -> new LinkedList<>());
         nodeList.add(e);
         if (nodeList.size() > maxNodeSize) {
             nodeList.remove(0);
@@ -125,8 +121,8 @@ public class EventLog implements EventLogInterface {
           .append("<tr><td>Date (").append(tz.getDisplayName(false, TimeZone.SHORT))
                 .append(")</td><td>Type</td><td>Node</td><td>Bucket space</td><td>Event</td></tr>\n");
         int nr = 0;
-        Iterator<Event> eventIterator = (events == null ? null : events.descendingIterator());
-        if (eventIterator != null) while (eventIterator.hasNext()) {
+        Iterator<Event> eventIterator = events.descendingIterator();
+        while (eventIterator.hasNext()) {
             Event e = eventIterator.next();
             String colStart = "<font color=\"" + (++nr > recentNodeEvents ? "grey" : "black") + "\">";
             String colEnd = "</font>";
@@ -134,8 +130,7 @@ public class EventLog implements EventLogInterface {
 
             addNobrTableCell(sb, colStart, colEnd, RealTimer.printDate(e.getTimeMs(), tz));
             addNobrTableCell(sb, colStart, colEnd, e.getCategory());
-            if (e instanceof NodeEvent) {
-                NodeEvent nodeEvent = (NodeEvent)e;
+            if (e instanceof NodeEvent nodeEvent) {
                 addNobrTableCell(sb, colStart, colEnd, nodeEvent.getNode().toString());
                 addNobrTableCell(sb, colStart, colEnd, nodeEvent.getBucketSpace().orElse(" - "));
             } else {
