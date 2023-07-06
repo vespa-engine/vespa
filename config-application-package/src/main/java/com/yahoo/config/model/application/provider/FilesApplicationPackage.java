@@ -625,7 +625,9 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private File validateServicesFile() throws IOException {
         File servicesFile = getServicesFile();
-        if ( ! servicesFile.exists() || IOUtils.readFile(servicesFile).isEmpty())
+        if ( ! servicesFile.exists())
+            throw new IllegalArgumentException(SERVICES + " does not exist in application package");
+        if (IOUtils.readFile(servicesFile).isEmpty())
             throw new IllegalArgumentException(SERVICES + " in application package is empty");
         return servicesFile;
     }

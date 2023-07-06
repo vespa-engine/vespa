@@ -122,17 +122,14 @@ public class FilesApplicationPackageTest {
     }
 
     @Test
-    public void failOnEmptyServicesXml() throws IOException {
+    public void failOnMissingServicesXml() throws IOException {
         File appDir = temporaryFolder.newFolder();
         IOUtils.copyDirectory(new File("src/test/resources/multienvapp"), appDir);
         Files.delete(new File(appDir, "services.xml").toPath());
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
-        try {
-            app.preprocess(new Zone(Environment.dev, RegionName.defaultName()), new BaseDeployLogger());
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("services.xml in application package is empty"));
-        }
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> app.preprocess(new Zone(Environment.dev, RegionName.defaultName()), new BaseDeployLogger()));
+        assertEquals("services.xml does not exist in application package", exception.getMessage());
     }
 
     @Test
