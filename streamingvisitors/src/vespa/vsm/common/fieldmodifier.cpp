@@ -14,9 +14,9 @@ FieldModifierMap::~FieldModifierMap() { }
 FieldModifier *
 FieldModifierMap::getModifier(FieldIdT fId) const
 {
-    FieldModifierMapT::const_iterator itr = _map.find(fId);
+    auto itr = _map.find(fId);
     if (itr == _map.end()) {
-        return NULL;
+        return nullptr;
     }
     return itr->second.get();
 }
