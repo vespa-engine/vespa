@@ -1,8 +1,8 @@
 {
     "dimensions": ["x","y"],
     "cells": [
-        { "address": { "x": "0", "y": "0" }, "value": 1.0 },
-        { "address": { "x": "0", "y": "1" }, "value": 2.0 },
-        { "address": { "x": "1", "y": "0" }, "value": 3.0 },
+        { "address": { "x": 0, "y": 0 }, "value": 1.0 },
+        { "address": { "y": 1, "x": 0 }, "value": 2.0 },
+        { "address": { "x": "1", "y": 0 }, "value": 3.0 },
         { "address": { "x": "1", "y": "1" }, "value": 4.0 }]
 }

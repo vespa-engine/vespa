@@ -28,6 +28,7 @@ TensorSpec make_simple_dense_tensor() {
 
 TensorSpec make_sparse_tensor() {
     return TensorSpec("tensor(x{},y{})")
+        .add({{"x", "17"}, {"y", "42"}}, 1742.0)
         .add({{"x", "foo"}, {"y", "bar"}}, 1.0)
         .add({{"x", "bar"}, {"y", "foo"}}, 2.0);
 }
@@ -72,6 +73,10 @@ TEST_F("require that invalid json loads an empty tensor", ConstantTensorLoader(f
 
 TEST_F("require that dense tensors can be loaded", ConstantTensorLoader(factory)) {
     TEST_DO(verify_tensor(make_dense_tensor(), f1.create(TEST_PATH("dense.json"), "tensor(x[2],y[2])")));
+}
+
+TEST_F("require that sparse tensors can be loaded", ConstantTensorLoader(factory)) {
+    TEST_DO(verify_tensor(make_sparse_tensor(), f1.create(TEST_PATH("sparse.json"), "tensor(x{},y{})")));
 }
 
 TEST_F("require that mixed tensors can be loaded", ConstantTensorLoader(factory)) {

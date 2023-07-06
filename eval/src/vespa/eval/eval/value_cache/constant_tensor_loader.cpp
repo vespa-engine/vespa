@@ -20,6 +20,42 @@ using ObjectTraverser = slime::ObjectTraverser;
 
 namespace {
 
+struct Target {
+    const ValueType tensor_type;
+    TensorSpec spec;
+    void check_add(TensorSpec::Address address, double value) {
+        for (const auto &dim : tensor_type.dimensions()) {
+            const auto & it = address.find(dim.name);
+            if (it == address.end()) {
+                LOG(error, "Missing dimension '%s' in address for constant tensor", dim.name.c_str());
+                throw std::exception();
+            }
+            if (it->second.is_mapped() != dim.is_mapped()) {
+                LOG(error, "Mismatch mapped/indexed for '%s' in address", dim.name.c_str());
+                throw std::exception();
+            }
+            if (dim.is_indexed()) {
+                if (it->second.index >= dim.size) {
+                    LOG(error, "Index %zu out of range for dimension %s[%u]",
+                        it->second.index, dim.name.c_str(), dim.size);
+                    throw std::exception();
+                }
+            }
+        }
+        if (address.size() != tensor_type.dimensions().size()) {
+            for (const auto & [name, label] : address) {
+                if (tensor_type.dimension_index(name) == ValueType::Dimension::npos) {
+                    LOG(error, "Extra dimension '%s' in address for constant tensor", name.c_str());
+                }
+            }
+            LOG(error, "Wrong number %zu of dimensions in address for constant tensor, wanted %zu",
+                address.size(), tensor_type.dimensions().size());
+            throw std::exception();
+        }
+        spec.add(address, value);
+    }
+};
+
 struct AddressExtractor : ObjectTraverser {
     const std::set<vespalib::string> &indexed;
     TensorSpec::Address &address;
@@ -28,14 +64,38 @@ struct AddressExtractor : ObjectTraverser {
         : indexed(indexed_in), address(address_out) {}
     void field(const Memory &symbol, const Inspector &inspector) override {
         vespalib::string dimension = symbol.make_string();
-        vespalib::string label = inspector.asString().make_string();
-        if (dimension.empty() || label.empty()) {
+        if (dimension.empty()) {
+            LOG(warning, "missing 'dimension' in address");
+            throw std::exception();
+        }
+        if (inspector.type().getId() == vespalib::slime::LONG::ID) {
+            size_t index = inspector.asLong();
+            if (indexed.contains(dimension)) {
+                address.emplace(dimension, TensorSpec::Label(index));
+            } else {
+                auto label = std::to_string(index);
+                address.emplace(dimension, TensorSpec::Label(label));
+            }
             return;
+        }
+        vespalib::string label = inspector.asString().make_string();
+        if (label.empty()) {
+            auto got = inspector.toString();
+            int sz = got.size();
+            if (sz > 0) --sz;
+            LOG(error, "missing 'label' in address, got '%.*s'", sz, got.c_str());
+            throw std::exception();
         }
         if (indexed.find(dimension) == indexed.end()) {
             address.emplace(dimension, TensorSpec::Label(label));
         } else {
-            size_t index = strtoull(label.c_str(), nullptr, 10);
+            const char *str_beg = label.c_str();
+            char *str_end = const_cast<char *>(str_beg);
+            size_t index = strtoull(str_beg, &str_end, 10);
+            if (str_end == str_beg || *str_end != '\0') {
+                LOG(error, "bad index: '%s' cannot be parsed as an unsigned integer", str_beg);
+                throw std::exception();
+            }
             address.emplace(dimension, TensorSpec::Label(index));
         }
     }
@@ -43,41 +103,41 @@ struct AddressExtractor : ObjectTraverser {
 
 struct SingleMappedExtractor : ObjectTraverser {
     const vespalib::string &dimension;
-    TensorSpec &spec;
-    SingleMappedExtractor(const vespalib::string &dimension_in, TensorSpec &spec_in)
+    Target &target;
+    SingleMappedExtractor(const vespalib::string &dimension_in, Target &target_in)
         : dimension(dimension_in),
-          spec(spec_in)
+          target(target_in)
     {}
     void field(const Memory &symbol, const Inspector &inspector) override {
         vespalib::string label = symbol.make_string();
         double value = inspector.asDouble();
         TensorSpec::Address address;
         address.emplace(dimension, label);
-        spec.add(address, value);
+        target.check_add(address, value);
     }
 };
 
 
-void decodeSingleMappedForm(const Inspector &root, const ValueType &value_type, TensorSpec &spec) {
-    auto extractor = SingleMappedExtractor(value_type.dimensions()[0].name, spec);
+void decodeSingleMappedForm(const Inspector &root, const ValueType &value_type, Target &target) {
+    auto extractor = SingleMappedExtractor(value_type.dimensions()[0].name, target);
     root.traverse(extractor);
 }
 
-void decodeSingleDenseForm(const Inspector &values, const ValueType &value_type, TensorSpec &spec) {
+void decodeSingleDenseForm(const Inspector &values, const ValueType &value_type, Target &target) {
     const auto &dimension = value_type.dimensions()[0].name;
     for (size_t i = 0; i < values.entries(); ++i) {
         TensorSpec::Address address;
         address.emplace(dimension, TensorSpec::Label(i));
-        spec.add(address, values[i].asDouble());
+        target.check_add(address, values[i].asDouble());
     }
 }
 
 struct DenseValuesDecoder {
     const std::vector<ValueType::Dimension> _idims;
-    TensorSpec &_target;
+    Target &_target;
     void decode(const Inspector &input, const TensorSpec::Address &address, size_t dim_idx) {
         if (dim_idx == _idims.size()) {
-            _target.add(address, input.asDouble());
+            _target.check_add(address, input.asDouble());
         } else {
             const auto &dimension = _idims[dim_idx];
             if (input.entries() != dimension.size) {
@@ -92,9 +152,9 @@ struct DenseValuesDecoder {
     }
 };
 
-void decodeDenseValues(const Inspector &values, const ValueType &value_type, TensorSpec &spec) {
+void decodeDenseValues(const Inspector &values, const ValueType &value_type, Target &target) {
     TensorSpec::Address address;
-    DenseValuesDecoder decoder(value_type.indexed_dimensions(), spec);
+    DenseValuesDecoder decoder{value_type.indexed_dimensions(), target};
     decoder.decode(values, address, 0);
 }
 
@@ -108,12 +168,12 @@ struct TraverserCallback : ObjectTraverser {
     }
 };
 
-void decodeSingleMappedBlocks(const Inspector &blocks, const ValueType &value_type, TensorSpec &spec) {
+void decodeSingleMappedBlocks(const Inspector &blocks, const ValueType &value_type, Target &target) {
     if (value_type.count_mapped_dimensions() != 1) {
         return; // TODO handle mismatch
     }
     vespalib::string dim_name = value_type.mapped_dimensions()[0].name;
-    DenseValuesDecoder decoder(value_type.indexed_dimensions(), spec);
+    DenseValuesDecoder decoder{value_type.indexed_dimensions(), target};
     auto lambda = [&](vespalib::string label, const Inspector &input) {
         TensorSpec::Address address;
         address.emplace(dim_name, std::move(label));
@@ -123,13 +183,13 @@ void decodeSingleMappedBlocks(const Inspector &blocks, const ValueType &value_ty
     blocks.traverse(cb);
 }
 
-void decodeAddressedBlocks(const Inspector &blocks, const ValueType &value_type, TensorSpec &spec) {
+void decodeAddressedBlocks(const Inspector &blocks, const ValueType &value_type, Target &target) {
     const auto & idims = value_type.indexed_dimensions();
     std::set<vespalib::string> indexed;
     for (const auto &dimension: idims) {
         indexed.insert(dimension.name);
     }
-    DenseValuesDecoder decoder(value_type.indexed_dimensions(), spec);
+    DenseValuesDecoder decoder{value_type.indexed_dimensions(), target};
     for (size_t i = 0; i < blocks.entries(); ++i) {
         TensorSpec::Address address;
         AddressExtractor extractor(indexed, address);
@@ -138,7 +198,7 @@ void decodeAddressedBlocks(const Inspector &blocks, const ValueType &value_type,
     }
 }
 
-void decodeLiteralForm(const Inspector &cells, const ValueType &value_type, TensorSpec &spec) {
+void decodeLiteralForm(const Inspector &cells, const ValueType &value_type, Target &target) {
     std::set<vespalib::string> indexed;
     for (const auto &dimension: value_type.dimensions()) {
         if (dimension.is_indexed()) {
@@ -149,7 +209,7 @@ void decodeLiteralForm(const Inspector &cells, const ValueType &value_type, Tens
         TensorSpec::Address address;
         AddressExtractor extractor(indexed, address);
         cells[i]["address"].traverse(extractor);
-        spec.add(address, cells[i]["value"].asDouble());
+        target.check_add(address, cells[i]["value"].asDouble());
     }
 }
 
@@ -202,7 +262,7 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
     }
     Slime slime;
     decode_json(path, slime);
-    TensorSpec spec(type);
+    Target target{value_type, TensorSpec(type)};
     bool isSingleDenseType = value_type.is_dense() && (value_type.count_indexed_dimensions() == 1);
     bool isSingleMappedType = value_type.is_sparse() && (value_type.count_mapped_dimensions() == 1);
     const Inspector &root = slime.get();
@@ -211,31 +271,31 @@ ConstantTensorLoader::create(const vespalib::string &path, const vespalib::strin
         const Inspector &values = root["values"];
         const Inspector &blocks = root["blocks"];
         if (cells.type().getId() == vespalib::slime::ARRAY::ID) {
-            decodeLiteralForm(cells, value_type, spec);
+            decodeLiteralForm(cells, value_type, target);
         }
         else if (cells.type().getId() == vespalib::slime::OBJECT::ID) {
             if (isSingleMappedType) {
-                decodeSingleMappedForm(cells, value_type, spec);
+                decodeSingleMappedForm(cells, value_type, target);
             }
         }
         else if (values.type().getId() == vespalib::slime::ARRAY::ID) {
-            decodeDenseValues(values, value_type, spec);
+            decodeDenseValues(values, value_type, target);
         }
         else if (blocks.type().getId() == vespalib::slime::OBJECT::ID) {
-            decodeSingleMappedBlocks(blocks, value_type, spec);
+            decodeSingleMappedBlocks(blocks, value_type, target);
         }
         else if (blocks.type().getId() == vespalib::slime::ARRAY::ID) {
-            decodeAddressedBlocks(blocks, value_type, spec);
+            decodeAddressedBlocks(blocks, value_type, target);
         }
         else if (isSingleMappedType) {
-            decodeSingleMappedForm(root, value_type, spec);
+            decodeSingleMappedForm(root, value_type, target);
         }
     }
     else if (root.type().getId() == vespalib::slime::ARRAY::ID && isSingleDenseType) {
-        decodeSingleDenseForm(root, value_type, spec);
+        decodeSingleDenseForm(root, value_type, target);
     }
     try {
-        return std::make_unique<SimpleConstantValue>(value_from_spec(spec, _factory));
+        return std::make_unique<SimpleConstantValue>(value_from_spec(target.spec, _factory));
     } catch (std::exception &) {
         return std::make_unique<BadConstantValue>();
     }
