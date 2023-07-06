@@ -22,19 +22,20 @@ public class ContainerRestartValidator implements ChangeValidator {
 
     @Override
     public List<ConfigChangeAction> validate(VespaModel currentModel, VespaModel nextModel, DeployState deployState) {
+        boolean nodesUnchanged = currentModel.allocatedHosts().equals(nextModel.allocatedHosts());
         List<ConfigChangeAction> actions = new ArrayList<>();
         for (ContainerCluster<ApplicationContainer> cluster : nextModel.getContainerClusters().values()) {
             actions.addAll(cluster.getContainers().stream()
                                   .filter(container -> isExistingContainer(container, currentModel))
                                   .filter(container -> shouldContainerRestartOnDeploy(container, nextModel))
-                                  .map(container -> createConfigChangeAction(cluster.id(), container))
+                                  .map(container -> createConfigChangeAction(cluster.id(), container, nodesUnchanged))
                                   .toList());
         }
         return actions;
     }
 
-    private static ConfigChangeAction createConfigChangeAction(ClusterSpec.Id id, Container container) {
-        return new VespaRestartAction(id, createMessage(container), container.getServiceInfo(), true);
+    private static ConfigChangeAction createConfigChangeAction(ClusterSpec.Id id, Container container, boolean nodesUnchanged) {
+        return new VespaRestartAction(id, createMessage(container), container.getServiceInfo(), nodesUnchanged);
     }
 
     private static String createMessage(Container container) {

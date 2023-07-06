@@ -23,6 +23,8 @@ public class ContainerRestartValidatorTest {
         VespaModel next = createModel(true);
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(2, result.size());
+        assertTrue(result.get(0).ignoreForInternalRedeploy());
+        assertTrue(result.get(1).ignoreForInternalRedeploy());
     }
 
     @Test
