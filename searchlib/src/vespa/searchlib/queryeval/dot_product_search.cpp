@@ -4,30 +4,29 @@
 #include "iterator_pack.h"
 #include <vespa/vespalib/objects/visit.h>
 
-
 using search::fef::TermFieldMatchData;
 using search::fef::MatchData;
 using vespalib::ObjectVisitor;
 
 namespace search::queryeval {
 
-
 template <typename HEAP, typename IteratorPack>
 class DotProductSearchImpl : public DotProductSearch
 {
 private:
     using ref_t = uint32_t;
+    using Weights = vespalib::ConstArrayRef<int32_t>;
 
     struct CmpDocId {
         const uint32_t *termPos;
-        CmpDocId(const uint32_t *tp) : termPos(tp) {}
-        bool operator()(const ref_t &a, const ref_t &b) const {
+        CmpDocId(const uint32_t *tp) noexcept : termPos(tp) {}
+        bool operator()(const ref_t &a, const ref_t &b) const noexcept {
             return (termPos[a] < termPos[b]);
         }
     };
 
     TermFieldMatchData     &_tmd;
-    std::vector<int32_t>    _weights;
+    Weights                 _weights;
     std::vector<uint32_t>   _termPos;
     CmpDocId                _cmpDocId;
     std::vector<ref_t>      _data_space;
@@ -112,7 +111,7 @@ public:
             HEAP::push(_data_begin, ++_data_stash, _cmpDocId);
         }
     }
-    Trinary is_strict() const override { return Trinary::True; }
+    Trinary is_strict() const final { return Trinary::True; }
 
     void visitMembers(vespalib::ObjectVisitor &) const override {}
 };
