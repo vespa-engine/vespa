@@ -1905,28 +1905,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setString("region", deploymentId.zoneId().region().value());
         addAvailabilityZone(response, deployment.zone());
         var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
-
-        // Add zone endpoints
         boolean legacyEndpoints = request.getBooleanProperty("includeLegacyEndpoints");
         var endpointArray = response.setArray("endpoints");
-        EndpointList zoneEndpoints = controller.routing().readEndpointsOf(deploymentId)
-                                               .scope(Endpoint.Scope.zone);
-        if (!legacyEndpoints) {
-            zoneEndpoints = zoneEndpoints.not().legacy().direct();
-        }
-        for (var endpoint : zoneEndpoints) {
+        for (var endpoint : endpointsOf(deploymentId, application, legacyEndpoints)) {
             toSlime(endpoint, endpointArray.addObject());
         }
-        // Add declared endpoints
-        EndpointList declaredEndpoints = controller.routing().declaredEndpointsOf(application)
-                                                   .targets(deploymentId);
-        if (!legacyEndpoints) {
-            declaredEndpoints = declaredEndpoints.not().legacy().direct();
-        }
-        for (var endpoint : declaredEndpoints) {
-            toSlime(endpoint, endpointArray.addObject());
-        }
-
         response.setString("clusters", withPath(toPath(deploymentId) + "/clusters", request.getUri()).toString());
         response.setString("nodes", withPathAndQuery("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/", "recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
@@ -1997,6 +1980,24 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         metricsObject.setDouble("queryLatencyMillis", metrics.queryLatencyMillis());
         metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
         metrics.instant().ifPresent(instant -> metricsObject.setLong("lastUpdated", instant.toEpochMilli()));
+    }
+
+    private EndpointList endpointsOf(DeploymentId deploymentId, Application application, boolean legacyEndpoints) {
+        EndpointList zoneEndpoints = controller.routing().readEndpointsOf(deploymentId).scope(Endpoint.Scope.zone);
+        if (!legacyEndpoints) {
+            zoneEndpoints = zoneEndpoints.not().legacy().direct();
+        }
+        EndpointList declaredEndpoints = controller.routing().declaredEndpointsOf(application).targets(deploymentId);
+        if (!legacyEndpoints) {
+            declaredEndpoints = declaredEndpoints.not().legacy().direct();
+        }
+        EndpointList endpoints = zoneEndpoints.and(declaredEndpoints);
+        // If the application has any generated endpoints, we show only those
+        EndpointList generatedEndpoints = endpoints.generated();
+        if (!generatedEndpoints.isEmpty()) {
+            endpoints = generatedEndpoints;
+        }
+        return endpoints;
     }
 
     private void toSlime(RotationState state, Cursor object) {
