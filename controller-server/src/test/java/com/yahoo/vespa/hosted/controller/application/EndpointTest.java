@@ -264,6 +264,13 @@ public class EndpointTest {
                         .targetRegion(ClusterSpec.Id.from("c1"), prodZone)
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
+                        .in(SystemName.Public),
+                "https://c1.cafed00d.us-north-2.w.vespa-app.cloud/",
+                Endpoint.of(instance1)
+                        .targetRegion(ClusterSpec.Id.from("c1"), prodZone)
+                        .routingMethod(RoutingMethod.exclusive)
+                        .generatedFrom(new GeneratedEndpoint("deadbeef", "cafed00d", Endpoint.AuthMethod.mtls))
+                        .on(Port.tls())
                         .in(SystemName.Public)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
@@ -351,26 +358,26 @@ public class EndpointTest {
         var tests = Map.of(
                 // Zone endpoint in main, unlike named endpoints, this includes the scope symbol 'z'
                 "cafed00d.deadbeef.z.vespa.oath.cloud",
-                Endpoint.of(instance1).target(ClusterSpec.Id.from("c1"), deployment).generatedEndpoint(ge)
+                Endpoint.of(instance1).target(ClusterSpec.Id.from("c1"), deployment).generatedFrom(ge)
                         .routingMethod(RoutingMethod.sharedLayer4).on(Port.tls()).in(SystemName.main),
                 // Zone endpoint in public
                 "cafed00d.deadbeef.z.vespa-app.cloud",
-                Endpoint.of(instance1).target(ClusterSpec.Id.from("c1"), deployment).generatedEndpoint(ge)
+                Endpoint.of(instance1).target(ClusterSpec.Id.from("c1"), deployment).generatedFrom(ge)
                         .routingMethod(RoutingMethod.exclusive).on(Port.tls()).in(SystemName.Public),
                 // Global endpoint in public
                 "foo.deadbeef.g.vespa-app.cloud",
                 Endpoint.of(instance1).target(EndpointId.of("foo"), ClusterSpec.Id.from("c1"), List.of(deployment))
-                        .generatedEndpoint(ge)
+                        .generatedFrom(ge)
                         .routingMethod(RoutingMethod.exclusive).on(Port.tls()).in(SystemName.Public),
                 // Global endpoint in public, with default ID
                 "deadbeef.g.vespa-app.cloud",
                 Endpoint.of(instance1).target(EndpointId.defaultId(), ClusterSpec.Id.from("c1"), List.of(deployment))
-                        .generatedEndpoint(ge)
+                        .generatedFrom(ge)
                         .routingMethod(RoutingMethod.exclusive).on(Port.tls()).in(SystemName.Public),
                 // Application endpoint in public
                 "bar.deadbeef.a.vespa-app.cloud",
                 Endpoint.of(TenantAndApplicationId.from(instance1)).targetApplication(EndpointId.of("bar"), deployment)
-                        .generatedEndpoint(ge)
+                        .generatedFrom(ge)
                         .routingMethod(RoutingMethod.exclusive).on(Port.tls()).in(SystemName.Public)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.dnsName()));

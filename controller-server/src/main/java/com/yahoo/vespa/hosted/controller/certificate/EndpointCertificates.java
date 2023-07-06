@@ -11,7 +11,6 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -36,7 +35,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate.*;
+import static com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate.State;
 
 /**
  * Looks up stored endpoint certificate, provisions new certificates if none is found,
@@ -56,7 +55,6 @@ public class EndpointCertificates {
     private final Clock clock;
     private final EndpointCertificateProvider certificateProvider;
     private final EndpointCertificateValidator certificateValidator;
-    private final BooleanFlag useRandomizedCert;
     private final BooleanFlag useAlternateCertProvider;
     private final StringFlag endpointCertificateAlgo;
     private final static Duration GCP_CERTIFICATE_EXPIRY_TIME = Duration.ofDays(100); // 100 days, 10 more than notAfter time
@@ -64,7 +62,6 @@ public class EndpointCertificates {
     public EndpointCertificates(Controller controller, EndpointCertificateProvider certificateProvider,
                                 EndpointCertificateValidator certificateValidator) {
         this.controller = controller;
-        this.useRandomizedCert = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
         this.useAlternateCertProvider = PermanentFlags.USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER.bindTo(controller.flagSource());
         this.endpointCertificateAlgo = PermanentFlags.ENDPOINT_CERTIFICATE_ALGORITHM.bindTo(controller.flagSource());
         this.curator = controller.curator();
@@ -140,7 +137,7 @@ public class EndpointCertificates {
     }
 
     private Optional<EndpointCertificate> getOrProvision(Instance instance, ZoneId zone, DeploymentSpec deploymentSpec) {
-        if (useRandomizedCert.with(FetchVector.Dimension.APPLICATION_ID, instance.id().serializedForm()).value()) {
+        if (controller.routing().randomizedEndpointsEnabled(instance.id())) {
             return Optional.of(assignFromPool(instance, zone));
         }
         Optional<AssignedCertificate> assignedCertificate = curator.readAssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.of(instance.id().instance()));

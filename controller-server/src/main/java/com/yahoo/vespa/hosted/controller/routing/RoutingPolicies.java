@@ -7,9 +7,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
@@ -63,12 +60,10 @@ public class RoutingPolicies {
 
     private final Controller controller;
     private final CuratorDb db;
-    private final BooleanFlag createTokenEndpoint;
 
     public RoutingPolicies(Controller controller) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.db = controller.curator();
-        this.createTokenEndpoint = Flags.ENABLE_DATAPLANE_PROXY.bindTo(controller.flagSource());
         try (var lock = db.lockRoutingPolicies()) { // Update serialized format
             for (var policy : db.readRoutingPolicies().entrySet()) {
                 db.writeRoutingPolicies(policy.getKey(), policy.getValue());
@@ -191,7 +186,7 @@ public class RoutingPolicies {
         if (endpoint.scope() != Endpoint.Scope.global) throw new IllegalArgumentException("Endpoint " + endpoint + " is not global");
         if (deployment.isPresent() && !endpoint.deployments().contains(deployment.get())) return;
 
-        Collection<RegionEndpoint> regionEndpoints = computeRegionEndpoints(policies, inactiveZones);
+        Collection<RegionEndpoint> regionEndpoints = computeRegionEndpoints(endpoint, policies, inactiveZones);
         Set<AliasTarget> latencyTargets = new LinkedHashSet<>();
         Set<AliasTarget> inactiveLatencyTargets = new LinkedHashSet<>();
         for (var regionEndpoint : regionEndpoints) {
@@ -243,12 +238,15 @@ public class RoutingPolicies {
     }
 
     /** Compute region endpoints and their targets from given policies */
-    private Collection<RegionEndpoint> computeRegionEndpoints(List<RoutingPolicy> policies, Set<ZoneId> inactiveZones) {
+    private Collection<RegionEndpoint> computeRegionEndpoints(Endpoint parent, List<RoutingPolicy> policies, Set<ZoneId> inactiveZones) {
+        if (!parent.scope().multiDeployment()) {
+            throw new IllegalArgumentException(parent + " has unexpected scope");
+        }
         Map<Endpoint, RegionEndpoint> endpoints = new LinkedHashMap<>();
         for (var policy : policies) {
             if (policy.dnsZone().isEmpty() && policy.canonicalName().isPresent()) continue;
             if (controller.zoneRegistry().routingMethod(policy.id().zone()) != RoutingMethod.exclusive) continue;
-            Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive);
+            Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive, parent.generated());
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
             long weight = 1;
             if (isConfiguredOut(zonePolicy, policy, inactiveZones)) {
@@ -396,7 +394,7 @@ public class RoutingPolicies {
 
     /** Update zone DNS record for given policy */
     private void updateZoneDnsOf(RoutingPolicy policy, LoadBalancer loadBalancer, DeploymentId deploymentId) {
-        boolean addTokenEndpoint = createTokenEndpoint.with(FetchVector.Dimension.APPLICATION_ID, deploymentId.applicationId().serializedForm()).value();
+        boolean addTokenEndpoint = controller.routing().tokenEndpointEnabled(deploymentId.applicationId());
         for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive, addTokenEndpoint)) {
             var name = RecordName.from(endpoint.dnsName());
             var record = policy.canonicalName().isPresent() ?
@@ -471,7 +469,7 @@ public class RoutingPolicies {
      * @return the updated policies
      */
     private RoutingPolicyList removePoliciesUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList instancePolicies, @SuppressWarnings("unused") Mutex lock) {
-        boolean addTokenEndpoint = createTokenEndpoint.with(FetchVector.Dimension.APPLICATION_ID, allocation.deployment.applicationId().serializedForm()).value();
+        boolean addTokenEndpoint = controller.routing().tokenEndpointEnabled(allocation.deployment.applicationId());
         Map<RoutingPolicyId, RoutingPolicy> newPolicies = new LinkedHashMap<>(instancePolicies.asMap());
         Set<RoutingPolicyId> activeIds = allocation.asPolicyIds();
         RoutingPolicyList removable = instancePolicies.deployment(allocation.deployment)
