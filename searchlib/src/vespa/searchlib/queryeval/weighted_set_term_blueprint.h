@@ -12,7 +12,6 @@ namespace search::queryeval {
 
 class WeightedSetTermBlueprint : public ComplexLeafBlueprint
 {
-    HitEstimate                _estimate;
     fef::MatchDataLayout       _layout;
     FieldSpec                  _children_field;
     std::vector<int32_t>       _weights;
@@ -31,7 +30,10 @@ public:
 
     // used by create visitor
     void reserve(size_t num_children);
-    void addTerm(Blueprint::UP term, int32_t weight);
+    void addTerm(Blueprint::UP term, int32_t weight, HitEstimate & estimate);
+    void complete(HitEstimate estimate) {
+        setEstimate(estimate);
+    }
 
     SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
     SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override;

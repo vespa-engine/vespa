@@ -79,12 +79,12 @@ public:
           _localScores()
     {
     }
-    virtual size_t get_num_terms() const override { return _terms.size(); }
-    virtual int32_t get_term_weight(size_t idx) const override { return _terms.weight(idx); }
-    virtual score_t get_max_score(size_t idx) const override { return _terms.maxScore(idx); }
-    virtual const MatchParams &getMatchParams() const override { return _matchParams; }
+    size_t get_num_terms() const override { return _terms.size(); }
+    int32_t get_term_weight(size_t idx) const override { return _terms.weight(idx); }
+    score_t get_max_score(size_t idx) const override { return _terms.maxScore(idx); }
+    const MatchParams &getMatchParams() const override { return _matchParams; }
 
-    virtual void doSeek(uint32_t docid) override {
+    void doSeek(uint32_t docid) override {
         updateThreshold(_matchParams.scores.getMinScore());
         if (IS_STRICT) {
             seek_strict(docid);
@@ -92,7 +92,7 @@ public:
             seek_unstrict(docid);
         }
     }
-    virtual void doUnpack(uint32_t docid) override {
+    void doUnpack(uint32_t docid) override {
         score_t score = _algo.get_full_score(_terms, _heaps, DotProductScorer());
         _localScores.push_back(score);
         if (_localScores.size() == _matchParams.scoresAdjustFrequency) {
@@ -101,14 +101,14 @@ public:
         }
         _tfmd.setRawScore(docid, score);
     }
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const override {
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override {
         _terms.visit_members(visitor);
     }
     void initRange(uint32_t begin, uint32_t end) override {
         ParallelWeakAndSearch::initRange(begin, end);
         _algo.init_range(_terms, _heaps, begin, end);
     }
-    Trinary is_strict() const override { return IS_STRICT ? Trinary::True : Trinary::False; }
+    Trinary is_strict() const final { return IS_STRICT ? Trinary::True : Trinary::False; }
 };
 
 namespace {

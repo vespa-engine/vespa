@@ -312,9 +312,11 @@ TEST("require that children get a common (yet separate) term field match data") 
     auto top_handle = layout.allocTermField(42);
     FieldSpec top_spec("foo", 42, top_handle);
     WeightedSetTermBlueprint blueprint(top_spec);
+    queryeval::Blueprint::HitEstimate estimate;
     for (size_t i = 0; i < 5; ++i) {
-        blueprint.addTerm(vmd.create(blueprint.getNextChildField(top_spec)), 1);
+        blueprint.addTerm(vmd.create(blueprint.getNextChildField(top_spec)), 1, estimate);
     }
+    blueprint.complete(estimate);
     auto match_data = layout.createMatchData();
     auto search = blueprint.createSearch(*match_data, true);
     auto top_tfmd = match_data->resolveTermField(top_handle);

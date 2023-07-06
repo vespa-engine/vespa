@@ -76,12 +76,14 @@ template <typename WS, typename NODE>
 void
 CreateBlueprintVisitorHelper::createWeightedSet(std::unique_ptr<WS> bp, NODE &n) {
     bp->reserve(n.getNumTerms());
+    Blueprint::HitEstimate estimate;
     for (size_t i = 0; i < n.getNumTerms(); ++i) {
         auto term = n.getAsString(i);
         query::SimpleStringTerm node(term.first, n.getView(), 0, term.second); // TODO Temporary
         FieldSpec field = bp->getNextChildField(_field);
-        bp->addTerm(_searchable.createBlueprint(_requestContext, field, node), term.second.percent());
+        bp->addTerm(_searchable.createBlueprint(_requestContext, field, node), term.second.percent(), estimate);
     }
+    bp->complete(estimate);
     setResult(std::move(bp));
 }
 void

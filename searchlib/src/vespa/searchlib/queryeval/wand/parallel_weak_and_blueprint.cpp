@@ -22,7 +22,6 @@ ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(const FieldSpec &field,
       _scoreThreshold(scoreThreshold),
       _thresholdBoostFactor(thresholdBoostFactor),
       _scoresAdjustFrequency(DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY),
-      _estimate(),
       _layout(),
       _weights(),
       _terms()
@@ -40,7 +39,6 @@ ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(const FieldSpec &field,
       _scoreThreshold(scoreThreshold),
       _thresholdBoostFactor(thresholdBoostFactor),
       _scoresAdjustFrequency(scoresAdjustFrequency),
-      _estimate(),
       _layout(),
       _weights(),
       _terms()
@@ -62,20 +60,18 @@ ParallelWeakAndBlueprint::reserve(size_t num_children) {
 }
 
 void
-ParallelWeakAndBlueprint::addTerm(Blueprint::UP term, int32_t weight)
+ParallelWeakAndBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEstimate & estimate)
 {
     HitEstimate childEst = term->getState().estimate();
     if (!childEst.empty) {
-        if (_estimate.empty) {
-            _estimate = childEst;
+        if (estimate.empty) {
+            estimate = childEst;
         } else {
-            _estimate.estHits += childEst.estHits;
+            estimate.estHits += childEst.estHits;
         }
-        setEstimate(_estimate);
     }
     _weights.push_back(weight);
     _terms.push_back(std::move(term));
-    set_tree_size(_terms.size() + 1);
 }
 
 SearchIterator::UP

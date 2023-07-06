@@ -9,12 +9,10 @@ namespace search::queryeval {
 
 DotProductBlueprint::DotProductBlueprint(const FieldSpec &field)
     : ComplexLeafBlueprint(field),
-      _estimate(),
       _layout(),
       _weights(),
       _terms()
-{
-}
+{ }
 
 DotProductBlueprint::~DotProductBlueprint() = default;
 
@@ -32,16 +30,15 @@ DotProductBlueprint::reserve(size_t num_children) {
 }
 
 void
-DotProductBlueprint::addTerm(Blueprint::UP term, int32_t weight)
+DotProductBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEstimate & estimate)
 {
     HitEstimate childEst = term->getState().estimate();
     if (! childEst.empty) {
-        if (_estimate.empty) {
-            _estimate = childEst;
+        if (estimate.empty) {
+            estimate = childEst;
         } else {
-            _estimate.estHits += childEst.estHits;
+            estimate.estHits += childEst.estHits;
         }
-        setEstimate(_estimate);
     }
     _weights.push_back(weight);
     _terms.push_back(std::move(term));
