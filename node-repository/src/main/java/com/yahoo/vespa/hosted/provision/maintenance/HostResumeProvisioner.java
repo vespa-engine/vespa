@@ -87,7 +87,9 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
                 updated.add(nodeRepository().nodes().write(mutex.node().with(hostIpConfig.require(mutex.node().hostname())), mutex));
 
             updated.add(nodeRepository().nodes().write(nodes.parent().node()
-                                                            .with(hostIpConfig.require(nodes.parent().node().hostname())), nodes.parent()));
+                                                            .with(hostIpConfig.require(nodes.parent().node().hostname()))
+                                                            .withExtraId(hostIpConfig.hostId()),
+                                                       nodes.parent()));
 
             return updated;
         });

@@ -483,8 +483,8 @@ public final class Node implements Nodelike {
                         exclusiveToClusterType, switchHostname, trustStoreItems, cloudAccount, wireguardPubKey);
     }
 
-    public Node withExtraId(String extraId) {
-        return new Node(id, Optional.of(extraId), ipConfig, hostname, parentHostname, flavor, status, state, allocation, history,
+    public Node withExtraId(Optional<String> extraId) {
+        return new Node(id, extraId, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history,
                         type, reports, modelName, reservedTo, exclusiveToApplicationId, hostTTL, hostEmptyAt,
                         exclusiveToClusterType, switchHostname, trustStoreItems, cloudAccount, wireguardPubKey);
     }
