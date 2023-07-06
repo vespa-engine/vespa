@@ -18,6 +18,7 @@ import org.eclipse.jetty.http2.client.HTTP2Client;
 import org.eclipse.jetty.http2.client.http.HttpClientTransportOverHTTP2;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.util.HttpCookieStore;
 import org.eclipse.jetty.util.Promise;
 import org.eclipse.jetty.util.SocketAddressResolver;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
@@ -69,11 +70,9 @@ class JettyCluster implements Cluster {
         Endpoint endpoint = findLeastBusyEndpoint(endpoints);
         long reqTimeoutMillis = req.timeout() != null
                 ? req.timeout().toMillis() * 11 / 10 + 1000 : IDLE_TIMEOUT.toMillis();
-        Request jettyReq = client.newRequest(endpoint.uri.getHost(), portOf(endpoint.uri))
+        Request jettyReq = client.newRequest(URI.create(endpoint.uri + req.path()))
                 .version(HttpVersion.HTTP_2)
-                .scheme(endpoint.uri.getScheme())
                 .method(HttpMethod.fromString(req.method()))
-                .path(req.path())
                 .headers(hs -> req.headers().forEach((k, v) -> hs.add(k, v.get())))
                 .idleTimeout(IDLE_TIMEOUT.toMillis(), MILLISECONDS)
                 .timeout(reqTimeoutMillis, MILLISECONDS);
@@ -121,6 +120,7 @@ class JettyCluster implements Cluster {
         httpClient.setConnectTimeout(Duration.ofSeconds(10).toMillis());
         // Stop client from trying different IP address when TLS handshake fails
         httpClient.setSocketAddressResolver(new Ipv4PreferringResolver(httpClient, Duration.ofSeconds(10)));
+        httpClient.setCookieStore(new HttpCookieStore.Empty());
 
         httpClient.setIdleTimeout(IDLE_TIMEOUT.toMillis());
         try {
@@ -162,8 +162,8 @@ class JettyCluster implements Cluster {
 
     private static class Endpoint {
         final AtomicInteger inflight = new AtomicInteger();
-        final URI uri;
-        Endpoint(URI uri) { this.uri = uri; }
+        final String uri;
+        Endpoint(URI uri) { this.uri = String.format("%s://%s:%s", uri.getScheme(), uri.getHost(), portOf(uri)); }
     }
 
     private static class FeedContent extends AbstractRequestContent {
