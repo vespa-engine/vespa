@@ -210,6 +210,10 @@ public class RoutingController {
             if (!directEndpoints.isEmpty()) {
                 zoneEndpoints = directEndpoints; // Use only direct endpoints if we have any
             }
+            EndpointList generatedEndpoints = zoneEndpoints.generated();
+            if (!generatedEndpoints.isEmpty()) {
+                zoneEndpoints = generatedEndpoints; // Use generated endpoints if we have any
+            }
             if  ( ! zoneEndpoints.isEmpty()) {
                 endpoints.put(deployment.zoneId(), zoneEndpoints.asList());
             }
