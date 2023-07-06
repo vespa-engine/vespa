@@ -409,6 +409,7 @@ public class RoutingPolicies {
 
     private void setPrivateDns(Endpoint endpoint, LoadBalancer loadBalancer, DeploymentId deploymentId) {
         if (loadBalancer.service().isEmpty()) return;
+        // TODO(mpolden): Why is this done? Consider creating private DNS for all auth methods
         boolean skipBasedOnAuthMethod = switch (endpoint.authMethod()) {
             case token -> true;
             case mtls -> false;
