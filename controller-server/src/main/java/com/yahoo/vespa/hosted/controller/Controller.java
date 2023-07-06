@@ -27,8 +27,8 @@ import com.yahoo.vespa.hosted.controller.notification.NotificationsDb;
 import com.yahoo.vespa.hosted.controller.notification.Notifier;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
-import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.restapi.dataplanetoken.DataplaneTokenService;
+import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccessControl;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
@@ -38,12 +38,14 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.yolean.concurrent.Sleeper;
 
+import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -91,6 +93,8 @@ public class Controller extends AbstractComponent {
     private final Notifier notifier;
     private final MailVerifier mailVerifier;
     private final DataplaneTokenService dataplaneTokenService;
+    private final Random random;
+    private final Random secureRandom; // Type is Random to allow for test determinism
 
     /**
      * Creates a controller 
@@ -102,13 +106,14 @@ public class Controller extends AbstractComponent {
                       MavenRepository mavenRepository, ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore,
                       ControllerConfig controllerConfig) {
         this(curator, rotationsConfig, accessControl, flagSource,
-             mavenRepository, serviceRegistry, metric, secretStore, controllerConfig, Sleeper.DEFAULT);
+             mavenRepository, serviceRegistry, metric, secretStore, controllerConfig, Sleeper.DEFAULT, new Random(),
+             new SecureRandom());
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, AccessControl accessControl,
                       FlagSource flagSource, MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore,
-                      ControllerConfig controllerConfig, Sleeper sleeper) {
+                      ControllerConfig controllerConfig, Sleeper sleeper, Random random, Random secureRandom) {
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.serviceRegistry = Objects.requireNonNull(serviceRegistry, "ServiceRegistry cannot be null");
         this.zoneRegistry = Objects.requireNonNull(serviceRegistry.zoneRegistry(), "ZoneRegistry cannot be null");
@@ -119,6 +124,8 @@ public class Controller extends AbstractComponent {
         this.metric = Objects.requireNonNull(metric, "Metric cannot be null");
         this.controllerConfig = Objects.requireNonNull(controllerConfig, "ControllerConfig cannot be null");
         this.secretStore = Objects.requireNonNull(secretStore, "SecretStore cannot be null");
+        this.random = Objects.requireNonNull(random, "Random cannot be null");
+        this.secureRandom = Objects.requireNonNull(secureRandom, "SecureRandom cannot be null");
 
         nameServiceForwarder = new NameServiceForwarder(curator);
         jobController = new JobController(this);
@@ -362,4 +369,11 @@ public class Controller extends AbstractComponent {
     public DataplaneTokenService dataplaneTokenService() {
         return dataplaneTokenService;
     }
+
+    /** Returns a random number generator. If secure is true, this returns a {@link SecureRandom} suitable for
+     * cryptographic purposes */
+    public Random random(boolean secure) {
+        return secure ? secureRandom : random;
+    }
+
 }

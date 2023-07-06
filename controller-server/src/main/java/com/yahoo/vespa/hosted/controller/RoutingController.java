@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Scope;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
+import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
@@ -44,6 +45,7 @@ import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -75,6 +77,7 @@ public class RoutingController {
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
     private final BooleanFlag createTokenEndpoint;
+    private final BooleanFlag randomizedEndpoints;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -83,6 +86,7 @@ public class RoutingController {
                                                          controller.applications(),
                                                          controller.curator());
         this.createTokenEndpoint = Flags.ENABLE_DATAPLANE_PROXY.bindTo(controller.flagSource());
+        this.randomizedEndpoints = Flags.RANDOMIZED_ENDPOINT_NAMES.bindTo(controller.flagSource());
     }
 
     /** Create a routing context for given deployment */
@@ -138,6 +142,7 @@ public class RoutingController {
 
     /** Returns endpoints declared in {@link DeploymentSpec} for given application */
     public EndpointList declaredEndpointsOf(Application application) {
+        // TODO(mpolden): Add generated endpoints for global and application scopes. Requires reading routing polices here
         Set<Endpoint> endpoints = new LinkedHashSet<>();
         DeploymentSpec deploymentSpec = application.deploymentSpec();
         for (var spec : deploymentSpec.instances()) {
@@ -169,7 +174,6 @@ public class RoutingController {
                                                                                     t -> t.weight()));
 
             ZoneId zone = deployments.keySet().iterator().next().zoneId(); // Where multiple zones are possible, they all have the same routing method.
-            // Application endpoints are only supported when using direct routing methods
             RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
             endpoints.add(Endpoint.of(application.id())
                                   .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
@@ -356,6 +360,19 @@ public class RoutingController {
                                                                        RecordName.from(endpoint.dnsName()),
                                                                        Priority.normal,
                                                                        Optional.of(application.id())));
+    }
+
+    /** Generate endpoints for all authenticaiton methods, using given application part */
+    public List<GeneratedEndpoint> generateEndpoints(String applicationPart, ApplicationId instance) {
+        boolean enabled = randomizedEndpoints.with(FetchVector.Dimension.APPLICATION_ID, instance.serializedForm()).value();
+        if (!enabled) {
+            return List.of();
+        }
+        return Arrays.stream(Endpoint.AuthMethod.values())
+                     .map(method -> new GeneratedEndpoint(GeneratedEndpoint.createPart(controller.random(true)),
+                                                          applicationPart,
+                                                          method))
+                     .toList();
     }
 
     /**

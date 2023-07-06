@@ -22,13 +22,14 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.ChallengeState;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.DnsChallenge;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.WeightedDirectTarget;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
+import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
@@ -86,7 +87,7 @@ public class RoutingPolicies {
     }
 
     /** Read all routing policies for given application */
-    private RoutingPolicyList read(TenantAndApplicationId application) {
+    public RoutingPolicyList read(TenantAndApplicationId application) {
         return db.readRoutingPolicies((instance) -> TenantAndApplicationId.from(instance).equals(application))
                  .values()
                  .stream()
@@ -112,7 +113,7 @@ public class RoutingPolicies {
      * Refresh routing policies for instance in given zone. This is idempotent and changes will only be performed if
      * routing configuration affecting given deployment has changed.
      */
-    public void refresh(DeploymentId deployment, DeploymentSpec deploymentSpec) {
+    public void refresh(DeploymentId deployment, DeploymentSpec deploymentSpec, List<GeneratedEndpoint> generatedEndpoints) {
         ApplicationId instance = deployment.applicationId();
         List<LoadBalancer> loadBalancers = controller.serviceRegistry().configServer()
                                                      .getLoadBalancers(instance, deployment.zoneId());
@@ -121,18 +122,17 @@ public class RoutingPolicies {
         Optional<TenantAndApplicationId> owner = ownerOf(allocation);
         try (var lock = db.lockRoutingPolicies()) {
             RoutingPolicyList applicationPolicies = read(TenantAndApplicationId.from(instance));
-            RoutingPolicyList instancePolicies = applicationPolicies.instance(instance);
             RoutingPolicyList deploymentPolicies = applicationPolicies.deployment(allocation.deployment);
 
             removeGlobalDnsUnreferencedBy(allocation, deploymentPolicies, lock);
             removeApplicationDnsUnreferencedBy(allocation, deploymentPolicies, lock);
 
-            instancePolicies = storePoliciesOf(allocation, instancePolicies, lock);
+            RoutingPolicyList instancePolicies = storePoliciesOf(allocation, applicationPolicies, generatedEndpoints, lock);
             instancePolicies = removePoliciesUnreferencedBy(allocation, instancePolicies, lock);
 
-            applicationPolicies = applicationPolicies.replace(instance, instancePolicies);
+            RoutingPolicyList updatedApplicationPolicies = applicationPolicies.replace(instance, instancePolicies);
             updateGlobalDnsOf(instancePolicies, Optional.of(deployment), inactiveZones, owner, lock);
-            updateApplicationDnsOf(applicationPolicies, inactiveZones, deployment, owner, lock);
+            updateApplicationDnsOf(updatedApplicationPolicies, inactiveZones, deployment, owner, lock);
         }
     }
 
@@ -363,8 +363,8 @@ public class RoutingPolicies {
      *
      * @return the updated policies
      */
-    private RoutingPolicyList storePoliciesOf(LoadBalancerAllocation allocation, RoutingPolicyList instancePolicies, @SuppressWarnings("unused") Mutex lock) {
-        Map<RoutingPolicyId, RoutingPolicy> policies = new LinkedHashMap<>(instancePolicies.asMap());
+    private RoutingPolicyList storePoliciesOf(LoadBalancerAllocation allocation, RoutingPolicyList applicationPolicies, List<GeneratedEndpoint> generatedEndpoints, @SuppressWarnings("unused") Mutex lock) {
+        Map<RoutingPolicyId, RoutingPolicy> policies = new LinkedHashMap<>(applicationPolicies.instance(allocation.deployment.applicationId()).asMap());
         for (LoadBalancer loadBalancer : allocation.loadBalancers) {
             if (loadBalancer.hostname().isEmpty() && loadBalancer.ipAddress().isEmpty()) continue;
             var policyId = new RoutingPolicyId(loadBalancer.application(), loadBalancer.cluster(), allocation.deployment.zoneId());
@@ -374,10 +374,17 @@ public class RoutingPolicies {
                                               allocation.instanceEndpointsOf(loadBalancer),
                                               allocation.applicationEndpointsOf(loadBalancer),
                                               RoutingStatus.DEFAULT,
-                                              loadBalancer.isPublic());
-            // Preserve global routing status for existing policy
+                                              loadBalancer.isPublic(),
+                                              generatedEndpoints);
+            boolean addingGeneratedEndpoints = !generatedEndpoints.isEmpty() && (existingPolicy == null || existingPolicy.generatedEndpoints().isEmpty());
+            if (addingGeneratedEndpoints) {
+                generatedEndpoints.forEach(ge -> requireNonClashing(ge, applicationPolicies));
+            }
             if (existingPolicy != null) {
-                newPolicy = newPolicy.with(existingPolicy.routingStatus());
+                newPolicy = newPolicy.with(existingPolicy.routingStatus());          // Always preserve routing status
+                if (!addingGeneratedEndpoints) {
+                    newPolicy = newPolicy.with(existingPolicy.generatedEndpoints()); // Endpoints are generated once
+                }
             }
             updateZoneDnsOf(newPolicy, loadBalancer, allocation.deployment);
             policies.put(newPolicy.id(), newPolicy);
@@ -402,7 +409,11 @@ public class RoutingPolicies {
 
     private void setPrivateDns(Endpoint endpoint, LoadBalancer loadBalancer, DeploymentId deploymentId) {
         if (loadBalancer.service().isEmpty()) return;
-        if (endpoint.isTokenEndpoint()) return;
+        boolean skipBasedOnAuthMethod = switch (endpoint.authMethod()) {
+            case token -> true;
+            case mtls -> false;
+        };
+        if (skipBasedOnAuthMethod) return;
         controller.serviceRegistry().vpcEndpointService()
                   .setPrivateDns(DomainName.of(endpoint.dnsName()),
                                  new ClusterId(deploymentId, endpoint.cluster()),
@@ -721,6 +732,16 @@ public class RoutingPolicies {
 
     private static Optional<TenantAndApplicationId> ownerOf(LoadBalancerAllocation allocation) {
         return ownerOf(allocation.deployment);
+    }
+
+    private static void requireNonClashing(GeneratedEndpoint generatedEndpoint, RoutingPolicyList applicationPolicies) {
+        for (var policy : applicationPolicies) {
+            for (var ge : policy.generatedEndpoints()) {
+                if (ge.clusterPart().equals(generatedEndpoint.clusterPart())) {
+                    throw new IllegalArgumentException(generatedEndpoint + " clashes with " + ge + " in " + policy.id());
+                }
+            }
+        }
     }
 
 }

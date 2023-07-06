@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.routing;
 
 import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
@@ -20,6 +19,7 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record.Type;
@@ -32,6 +32,7 @@ import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -53,7 +54,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -262,11 +262,11 @@ public class RoutingPoliciesTest {
         context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
 
         // Deployment creates records and policies for all clusters in all zones
-        Set<String> expectedRecords = Set.of(
-                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+        List<String> expectedRecords = List.of(
                 "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-central-1.vespa.oath.cloud"
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-west-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, tester.recordNames());
         assertEquals(4, tester.policiesOf(context1.instanceId()).size());
@@ -279,13 +279,13 @@ public class RoutingPoliciesTest {
         // Add 1 cluster in each zone and deploy
         tester.provisionLoadBalancers(clustersPerZone + 1, context1.instanceId(), sharedRoutingLayer, zone1, zone2);
         context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
-        expectedRecords = Set.of(
-                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c2.app1.tenant1.us-west-1.vespa.oath.cloud",
+        expectedRecords = List.of(
                 "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
                 "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c2.app1.tenant1.us-central-1.vespa.oath.cloud"
+                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c2.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c2.app1.tenant1.us-west-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, tester.recordNames());
         assertEquals(6, tester.policiesOf(context1.instanceId()).size());
@@ -293,17 +293,17 @@ public class RoutingPoliciesTest {
         // Deploy another application
         tester.provisionLoadBalancers(clustersPerZone, context2.instanceId(), sharedRoutingLayer, zone1, zone2);
         context2.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
-        expectedRecords = Set.of(
-                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c2.app1.tenant1.us-west-1.vespa.oath.cloud",
+        expectedRecords = List.of(
                 "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c2.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
                 "c0.app2.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app2.tenant1.us-central-1.vespa.oath.cloud",
                 "c0.app2.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app2.tenant1.us-west-1.vespa.oath.cloud"
+                "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c1.app2.tenant1.us-central-1.vespa.oath.cloud",
+                "c1.app2.tenant1.us-west-1.vespa.oath.cloud",
+                "c2.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c2.app1.tenant1.us-west-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords.stream().sorted().toList(), tester.recordNames().stream().sorted().toList());
         assertEquals(4, tester.policiesOf(context2.instanceId()).size());
@@ -311,14 +311,14 @@ public class RoutingPoliciesTest {
         // Deploy removes cluster from app1
         tester.provisionLoadBalancers(clustersPerZone, context1.instanceId(), sharedRoutingLayer, zone1, zone2);
         context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
-        expectedRecords = Set.of(
-                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+        expectedRecords = List.of(
                 "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
                 "c0.app2.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app2.tenant1.us-central-1.vespa.oath.cloud",
                 "c0.app2.tenant1.us-west-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c1.app2.tenant1.us-central-1.vespa.oath.cloud",
                 "c1.app2.tenant1.us-west-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, tester.recordNames());
@@ -327,11 +327,11 @@ public class RoutingPoliciesTest {
         tester.controllerTester().controller().applications().requireInstance(context2.instanceId()).deployments().keySet()
               .forEach(zone -> tester.controllerTester().controller().applications().deactivate(context2.instanceId(), zone));
         context2.flushDnsUpdates();
-        expectedRecords = Set.of(
-                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+        expectedRecords = List.of(
                 "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c1.app1.tenant1.us-central-1.vespa.oath.cloud"
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "c1.app1.tenant1.us-west-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, tester.recordNames());
         assertTrue(tester.routingPolicies().read(context2.instanceId()).isEmpty(), "Removes stale routing policies " + context2.application());
@@ -350,11 +350,11 @@ public class RoutingPoliciesTest {
         context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
 
         // Deployment creates records and policies for all clusters in all zones
-        Set<String> expectedRecords = Set.of(
-                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "token-c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+        List<String> expectedRecords = List.of(
                 "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "token-c0.app1.tenant1.us-central-1.vespa.oath.cloud"
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "token-c0.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "token-c0.app1.tenant1.us-west-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, tester.recordNames());
         assertEquals(2, tester.policiesOf(context1.instanceId()).size());
@@ -367,7 +367,7 @@ public class RoutingPoliciesTest {
         tester.provisionLoadBalancers(1, context.instanceId(), true, zone1, zone2);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         assertEquals(0, tester.controllerTester().controller().curator().readNameServiceQueue().requests().size());
-        assertEquals(Set.of(), tester.recordNames());
+        assertEquals(List.of(), tester.recordNames());
         assertEquals(2, tester.policiesOf(context.instanceId()).size());
     }
 
@@ -409,15 +409,17 @@ public class RoutingPoliciesTest {
                 .build();
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
 
-        List<String> expectedRecords = List.of("c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
-                                               "c0.app1.tenant1.gcp-us-south1-b.z.vespa-app.cloud",
-                                               "c0.app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
-                                               "c0.app1.tenant1.gcp-us-south1.w.vespa-app.cloud",
-                                               "r0.app1.tenant1.g.vespa-app.cloud");
-        assertEquals(Set.copyOf(expectedRecords), tester.recordNames());
+        List<String> expectedRecords = List.of(
+                "c0.app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
+                "c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                "c0.app1.tenant1.gcp-us-south1-b.z.vespa-app.cloud",
+                "c0.app1.tenant1.gcp-us-south1.w.vespa-app.cloud",
+                "r0.app1.tenant1.g.vespa-app.cloud"
+        );
+        assertEquals(expectedRecords, tester.recordNames());
 
-        assertEquals(List.of("lb-0--tenant1.app1.default--prod.aws-us-east-1c."), tester.recordDataOf(Record.Type.CNAME, expectedRecords.get(0)));
-        assertEquals(List.of("10.0.0.0"), tester.recordDataOf(Record.Type.A, expectedRecords.get(1)));
+        assertEquals(List.of("lb-0--tenant1.app1.default--prod.aws-us-east-1c."), tester.recordDataOf(Record.Type.CNAME, expectedRecords.get(1)));
+        assertEquals(List.of("10.0.0.0"), tester.recordDataOf(Record.Type.A, expectedRecords.get(2)));
         assertEquals(List.of("weighted/10.0.0.0/prod.gcp-us-south1-b/1"), tester.recordDataOf(Record.Type.DIRECT, expectedRecords.get(3)));
         assertEquals(List.of("latency/c0.app1.tenant1.aws-us-east-1.w.vespa-app.cloud/dns-zone-1/prod.aws-us-east-1c",
                              "latency/c0.app1.tenant1.gcp-us-south1.w.vespa-app.cloud/ignored/prod.gcp-us-south1-b"),
@@ -443,11 +445,12 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context.instanceId(), EndpointId.defaultId(),
                              ClusterSpec.Id.from("default"), 0,
                              Map.of(zone1, 1L, zone2, 1L));
-        assertEquals(Set.of("app1.tenant1.aws-eu-west-1.w.vespa-app.cloud",
-                            "app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
-                            "app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
-                            "app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
-                            "app1.tenant1.g.vespa-app.cloud"),
+        assertEquals(List.of("app1.tenant1.aws-eu-west-1.w.vespa-app.cloud",
+                             "app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
+                             "app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
+                             "app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                             "app1.tenant1.g.vespa-app.cloud"
+                             ),
                      tester.recordNames(),
                      "Registers expected DNS names");
     }
@@ -471,7 +474,7 @@ public class RoutingPoliciesTest {
 
         // Routing policy is created and DNS is updated
         assertEquals(1, tester.policiesOf(context.instanceId()).size());
-        assertEquals(Set.of("app1.tenant1.us-east-1.dev.vespa.oath.cloud"), tester.recordNames());
+        assertEquals(List.of("app1.tenant1.us-east-1.dev.vespa.oath.cloud"), tester.recordNames());
     }
 
     @Test
@@ -482,7 +485,7 @@ public class RoutingPoliciesTest {
         context.submit(applicationPackage).deploy();
         var zone = ZoneId.from("dev", "us-east-1");
         tester.controllerTester().setRoutingMethod(List.of(zone), RoutingMethod.exclusive);
-        var prodRecords = Set.of("app1.tenant1.us-central-1.vespa.oath.cloud", "app1.tenant1.us-west-1.vespa.oath.cloud");
+        var prodRecords = List.of("app1.tenant1.us-central-1.vespa.oath.cloud", "app1.tenant1.us-west-1.vespa.oath.cloud");
         assertEquals(prodRecords, tester.recordNames());
 
         // Deploy to dev under different instance
@@ -494,7 +497,8 @@ public class RoutingPoliciesTest {
 
         // Routing policy is created and DNS is updated
         assertEquals(1, tester.policiesOf(devContext.instanceId()).size());
-        assertEquals(Sets.union(prodRecords, Set.of("user.app1.tenant1.us-east-1.dev.vespa.oath.cloud")), tester.recordNames());
+        assertEquals(Stream.concat(prodRecords.stream(), Stream.of("user.app1.tenant1.us-east-1.dev.vespa.oath.cloud")).sorted().toList(),
+                     tester.recordNames());
     }
 
     @Test
@@ -510,7 +514,7 @@ public class RoutingPoliciesTest {
 
         // Application is deployed
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
-        var expectedRecords = Set.of(
+        var expectedRecords = List.of(
                 "c0.app1.tenant1.us-west-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, tester.recordNames());
@@ -557,8 +561,8 @@ public class RoutingPoliciesTest {
         app.deploy();
 
         // TXT records are cleaned up as we go—the last challenge is the last to go here, and we must flush it ourselves.
-        assertEquals(Set.of("a.t.aws-us-east-1a.vespa.oath.cloud",
-                            "challenge--a.t.aws-us-east-1a.vespa.oath.cloud"),
+        assertEquals(List.of("a.t.aws-us-east-1a.vespa.oath.cloud",
+                             "challenge--a.t.aws-us-east-1a.vespa.oath.cloud"),
                      tester.recordNames());
         app.flushDnsUpdates();
         assertEquals(Set.of(new Record(Type.CNAME,
@@ -773,7 +777,7 @@ public class RoutingPoliciesTest {
             tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone2), RoutingStatus.Value.out,
                                                       RoutingStatus.Agent.tenant);
         } catch (IllegalArgumentException e) {
-            assertEquals("Cannot deactivate routing for tenant1.app1 in prod.us-central-1 as it's the last remaining active deployment in endpoint https://r0.app1.tenant1.global.vespa.oath.cloud/ [scope=global, legacy=false, routingMethod=exclusive]", e.getMessage());
+            assertEquals("Cannot deactivate routing for tenant1.app1 in prod.us-central-1 as it's the last remaining active deployment in endpoint https://r0.app1.tenant1.global.vespa.oath.cloud/ [scope=global, legacy=false, routingMethod=exclusive, authMethod=mtls]", e.getMessage());
         }
         context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone2);
@@ -841,9 +845,9 @@ public class RoutingPoliciesTest {
         // Application endpoints are not created until production jobs run
         betaContext.submit(applicationPackage)
                    .runJob(DeploymentContext.systemTest);
-        assertEquals(Set.of("beta.app1.tenant1.us-east-1.test.vespa.oath.cloud"), tester.recordNames());
+        assertEquals(List.of("beta.app1.tenant1.us-east-1.test.vespa.oath.cloud"), tester.recordNames());
         betaContext.runJob(DeploymentContext.stagingTest);
-        assertEquals(Set.of("beta.app1.tenant1.us-east-3.staging.vespa.oath.cloud"), tester.recordNames());
+        assertEquals(List.of("beta.app1.tenant1.us-east-3.staging.vespa.oath.cloud"), tester.recordNames());
 
         // Deploy both instances
         betaContext.completeRollout();
@@ -958,7 +962,7 @@ public class RoutingPoliciesTest {
             tester.routingPolicies().setRoutingStatus(mainZone2, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Cannot deactivate routing for tenant1.app1.main in prod.south as it's the last remaining active deployment in endpoint https://a0.app1.tenant1.a.vespa.oath.cloud/ [scope=application, legacy=false, routingMethod=exclusive]",
+            assertEquals("Cannot deactivate routing for tenant1.app1.main in prod.south as it's the last remaining active deployment in endpoint https://a0.app1.tenant1.a.vespa.oath.cloud/ [scope=application, legacy=false, routingMethod=exclusive, authMethod=mtls]",
                          e.getMessage());
         }
 
@@ -1002,6 +1006,53 @@ public class RoutingPoliciesTest {
         tester.controllerTester().controller().applications().deactivate(context.instanceId(), zone2);
         assertTrue(tester.controllerTester().controller().routing().policies().read(context.instanceId()).isEmpty(),
                    "Policies removed");
+    }
+
+    @Test
+    public void generated_zone_endpoints() {
+        var tester = new RoutingPoliciesTester(SystemName.Public);
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
+        addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
+
+        // Deploy application
+        int clustersPerZone = 1;
+        var zone1 = ZoneId.from("prod", "aws-us-east-1c");
+        var zone2 = ZoneId.from("prod", "aws-eu-west-1a");
+        ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
+                                                        .region(zone2.region())
+                                                        .build();
+        tester.provisionLoadBalancers(clustersPerZone, context.instanceId(), zone1, zone2);
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+
+        // Deployment creates generated zone names
+        List<String> expectedRecords = List.of(
+                "a9c8c045.cafed00d.z.vespa-app.cloud",
+                "c0.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
+                "c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                "e144a11b.cafed00d.z.vespa-app.cloud"
+        );
+        assertEquals(expectedRecords, tester.recordNames());
+        assertEquals(2, tester.policiesOf(context.instanceId()).size());
+        for (var zone : List.of(zone1, zone2)) {
+            EndpointList endpoints = tester.controllerTester().controller().routing().readEndpointsOf(context.deploymentIdIn(zone));
+            assertEquals(1, endpoints.generated().size());
+        }
+
+        // Next deployment does not change generated names
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        assertEquals(expectedRecords, tester.recordNames());
+    }
+
+    private void addCertificateToPool(String id, UnassignedCertificate.State state, RoutingPoliciesTester tester) {
+        EndpointCertificateMetadata cert = new EndpointCertificateMetadata("testKey", "testCert", 1, 0,
+                                                                           "request-id",
+                                                                           Optional.of("leaf-request-uuid"),
+                                                                           List.of("name1", "name2"),
+                                                                           "", Optional.empty(),
+                                                                           Optional.empty(), Optional.of(id));
+        UnassignedCertificate pooledCert = new UnassignedCertificate(cert, state);
+        tester.controllerTester().controller().curator().writeUnassignedCertificate(pooledCert);
     }
 
     /** Returns an application package builder that satisfies requirements for a directly routed endpoint */
@@ -1113,11 +1164,13 @@ public class RoutingPoliciesTest {
             return tester.controller().routing().policies().read(instance);
         }
 
-        private Set<String> recordNames() {
+        private List<String> recordNames() {
             return tester.controllerTester().nameService().records().stream()
                          .map(Record::name)
                          .map(RecordName::asString)
-                         .collect(Collectors.toSet());
+                         .distinct()
+                         .sorted()
+                         .toList();
         }
 
         private Set<String> aliasDataOf(String name) {

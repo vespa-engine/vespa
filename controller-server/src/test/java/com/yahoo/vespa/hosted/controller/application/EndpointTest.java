@@ -344,4 +344,36 @@ public class EndpointTest {
         tests2.forEach((expected, endpoint) -> assertEquals(expected, endpoint.upstreamName(zone2)));
     }
 
+    @Test
+    public void generated_id() {
+        GeneratedEndpoint ge = new GeneratedEndpoint("cafed00d", "deadbeef", Endpoint.AuthMethod.mtls);
+        var deployment = new DeploymentId(instance1, ZoneId.from("prod", "us-north-1"));
+        var tests = Map.of(
+                // Zone endpoint in main, unlike named endpoints, this includes the scope symbol 'z'
+                "cafed00d.deadbeef.z.vespa.oath.cloud",
+                Endpoint.of(instance1).target(ClusterSpec.Id.from("c1"), deployment).generatedEndpoint(ge)
+                        .routingMethod(RoutingMethod.sharedLayer4).on(Port.tls()).in(SystemName.main),
+                // Zone endpoint in public
+                "cafed00d.deadbeef.z.vespa-app.cloud",
+                Endpoint.of(instance1).target(ClusterSpec.Id.from("c1"), deployment).generatedEndpoint(ge)
+                        .routingMethod(RoutingMethod.exclusive).on(Port.tls()).in(SystemName.Public),
+                // Global endpoint in public
+                "foo.deadbeef.g.vespa-app.cloud",
+                Endpoint.of(instance1).target(EndpointId.of("foo"), ClusterSpec.Id.from("c1"), List.of(deployment))
+                        .generatedEndpoint(ge)
+                        .routingMethod(RoutingMethod.exclusive).on(Port.tls()).in(SystemName.Public),
+                // Global endpoint in public, with default ID
+                "deadbeef.g.vespa-app.cloud",
+                Endpoint.of(instance1).target(EndpointId.defaultId(), ClusterSpec.Id.from("c1"), List.of(deployment))
+                        .generatedEndpoint(ge)
+                        .routingMethod(RoutingMethod.exclusive).on(Port.tls()).in(SystemName.Public),
+                // Application endpoint in public
+                "bar.deadbeef.a.vespa-app.cloud",
+                Endpoint.of(TenantAndApplicationId.from(instance1)).targetApplication(EndpointId.of("bar"), deployment)
+                        .generatedEndpoint(ge)
+                        .routingMethod(RoutingMethod.exclusive).on(Port.tls()).in(SystemName.Public)
+        );
+        tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.dnsName()));
+    }
+
 }
