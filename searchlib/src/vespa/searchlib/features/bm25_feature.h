@@ -2,6 +2,7 @@
 
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
+#include <vespa/vespalib/util/trinary.h>
 
 namespace search::features {
 
@@ -53,8 +54,10 @@ private:
     const fef::FieldInfo* _field;
     double _k1_param;
     double _b_param;
+    std::optional<double> _avg_field_length;
 
-    bool lookup_param(const fef::Properties& props, const vespalib::string& param, double& result) const;
+    vespalib::Trinary lookup_param(const fef::Properties& props, const vespalib::string& param, double& result) const;
+    vespalib::Trinary lookup_param(const fef::Properties& props, const vespalib::string& param, std::optional<double>& result) const;
 
 public:
     Bm25Blueprint();

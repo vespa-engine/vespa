@@ -26,6 +26,7 @@ using fef::ITermData;
 using fef::ITermFieldData;
 using fef::MatchDataDetails;
 using fef::objectstore::as_value;
+using vespalib::Trinary;
 
 namespace {
 
@@ -99,7 +100,7 @@ Bm25Executor::execute(uint32_t doc_id)
     outputs().set_number(0, score);
 }
 
-bool
+Trinary
 Bm25Blueprint::lookup_param(const fef::Properties& props, const vespalib::string& param, double& result) const
 {
     vespalib::string key = getBaseName() + "(" + _field->name() + ")." + param;
@@ -107,13 +108,25 @@ Bm25Blueprint::lookup_param(const fef::Properties& props, const vespalib::string
     if (value.found()) {
         try {
             result = std::stod(value.get());
+            return Trinary::True;
         } catch (const std::invalid_argument& ex) {
             LOG(warning, "Not able to convert rank property '%s': '%s' to a double value",
                 key.c_str(), value.get().c_str());
-            return false;
+            return Trinary::Undefined;
         }
     }
-    return true;
+    return Trinary::False;
+}
+
+Trinary
+Bm25Blueprint::lookup_param(const fef::Properties& props, const vespalib::string& param, std::optional<double>& result) const
+{
+    double tmp_result;
+    auto lres = lookup_param(props, param, tmp_result);
+    if (lres == Trinary::True) {
+        result = tmp_result;
+    }
+    return lres;
 }
 
 double constexpr default_k1_param = 1.2;
@@ -123,7 +136,8 @@ Bm25Blueprint::Bm25Blueprint()
     : Blueprint("bm25"),
       _field(nullptr),
       _k1_param(default_k1_param),
-      _b_param(default_b_param)
+      _b_param(default_b_param),
+      _avg_field_length()
 {
 }
 
@@ -152,10 +166,13 @@ Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList
     const auto& field_name = params[0].getValue();
     _field = env.getFieldByName(field_name);
 
-    if (!lookup_param(env.getProperties(), "k1", _k1_param)) {
+    if (lookup_param(env.getProperties(), "k1", _k1_param) == Trinary::Undefined) {
         return false;
     }
-    if (!lookup_param(env.getProperties(), "b", _b_param)) {
+    if (lookup_param(env.getProperties(), "b", _b_param) == Trinary::Undefined) {
+        return false;
+    }
+    if (lookup_param(env.getProperties(), "averageFieldLength", _avg_field_length) == Trinary::Undefined) {
         return false;
     }
 
@@ -178,7 +195,8 @@ Bm25Blueprint::prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjec
 {
     vespalib::string key = make_avg_field_length_key(getBaseName(), _field->name());
     if (store.get(key) == nullptr) {
-        store.add(key, std::make_unique<AnyWrapper<double>>(env.get_average_field_length(_field->name())));
+        double avg_field_length = _avg_field_length.value_or(env.get_average_field_length(_field->name()));
+        store.add(key, std::make_unique<AnyWrapper<double>>(avg_field_length));
     }
 }
 
@@ -188,7 +206,7 @@ Bm25Blueprint::createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash
     const auto* lookup_result = env.getObjectStore().get(make_avg_field_length_key(getBaseName(), _field->name()));
     double avg_field_length = lookup_result != nullptr ?
                               as_value<double>(*lookup_result) :
-                              env.get_average_field_length(_field->name());
+                              _avg_field_length.value_or(env.get_average_field_length(_field->name()));
     return stash.create<Bm25Executor>(*_field, env, avg_field_length, _k1_param, _b_param);
 }
 
