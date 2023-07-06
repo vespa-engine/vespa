@@ -78,9 +78,9 @@
                   <mainClass>ai.vespa.feed.client.impl.CliClient</mainClass>
                 </manifest>
               </archive>
-              <descriptorRefs>
-                <descriptorRef>jar-with-dependencies</descriptorRef>
-              </descriptorRefs>
+              <descriptors>
+                <descriptor>src/maven/jar-with-dependencies.xml</descriptor>
+              </descriptors>
             </configuration>
           </execution>
           <execution>
