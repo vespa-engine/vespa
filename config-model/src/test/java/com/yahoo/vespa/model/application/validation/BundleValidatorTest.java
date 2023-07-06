@@ -28,7 +28,7 @@ public class BundleValidatorTest {
     @Test
     void basicBundleValidation() throws Exception {
         // Valid jar file
-        JarFile ok = createTemporaryJarFile("ok");
+        JarFile ok = createTemporaryJarFile(tempDir, "ok");
         BundleValidator bundleValidator = new BundleValidator();
         bundleValidator.validateJarFile(DeployState.createTestState(), ok);
 
@@ -38,7 +38,7 @@ public class BundleValidatorTest {
 
     private void validateWithException(String jarName, String exceptionMessage) throws IOException {
         try {
-            JarFile jarFile = createTemporaryJarFile(jarName);
+            JarFile jarFile = createTemporaryJarFile(tempDir, jarName);
             BundleValidator bundleValidator = new BundleValidator();
             bundleValidator.validateJarFile(DeployState.createTestState(), jarFile);
             assert (false);
@@ -52,7 +52,7 @@ public class BundleValidatorTest {
         final StringBuffer buffer = new StringBuffer();
 
         DeployState state = createDeployState(buffer);
-        JarFile jarFile = createTemporaryJarFile("snapshot_bundle");
+        JarFile jarFile = createTemporaryJarFile(tempDir, "snapshot_bundle");
         new BundleValidator().validateJarFile(state, jarFile);
         assertTrue(buffer.toString().contains("Deploying snapshot bundle"));
     }
@@ -62,7 +62,7 @@ public class BundleValidatorTest {
         final StringBuffer buffer = new StringBuffer();
         DeployState state = createDeployState(buffer);
         BundleValidator validator = new BundleValidator();
-        JarFile jarFile = createTemporaryJarFile("import-warnings");
+        JarFile jarFile = createTemporaryJarFile(tempDir, "import-warnings");
         validator.validateJarFile(state, jarFile);
         String output = buffer.toString();
         assertThat(output)
@@ -73,12 +73,12 @@ public class BundleValidatorTest {
                         "The Jetty bundles are no longer provided on Vespa 8 - see https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.");
     }
 
-    private DeployState createDeployState(StringBuffer buffer) {
+    static DeployState createDeployState(StringBuffer buffer) {
         DeployLogger logger = (__, message) -> buffer.append(message).append('\n');
         return DeployState.createTestState(logger);
     }
 
-    private JarFile createTemporaryJarFile(String testArtifact) throws IOException {
+    static JarFile createTemporaryJarFile(File tempDir, String testArtifact) throws IOException {
         Path jarFile = Paths.get(tempDir.toString(), testArtifact + ".jar");
         Path artifactDirectory = Paths.get("src/test/cfg/application/validation/testjars/" + testArtifact);
         try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jarFile))) {
