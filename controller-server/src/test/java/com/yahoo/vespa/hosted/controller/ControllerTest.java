@@ -24,7 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
@@ -941,7 +941,7 @@ public class ControllerTest {
 
     @Test
     void testDeploySelectivelyProvisionsCertificate() {
-        Function<Instance, Optional<EndpointCertificateMetadata>> certificate = (application) -> tester.controller().curator().readAssignedCertificate(application.id()).map(AssignedCertificate::certificate);
+        Function<Instance, Optional<EndpointCertificate>> certificate = (application) -> tester.controller().curator().readAssignedCertificate(application.id()).map(AssignedCertificate::certificate);
 
         // Create app1
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 
 /**
@@ -18,14 +18,14 @@ public class UnassignedCertificateSerializer {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString(stateKey, unassignedCertificate.state().name());
-        EndpointCertificateMetadataSerializer.toSlime(unassignedCertificate.certificate(), root.setObject(certificateKey));
+        EndpointCertificateSerializer.toSlime(unassignedCertificate.certificate(), root.setObject(certificateKey));
         return slime;
     }
 
     public UnassignedCertificate fromSlime(Slime slime) {
         Cursor root = slime.get();
         UnassignedCertificate.State state = UnassignedCertificate.State.valueOf(root.field(stateKey).asString());
-        EndpointCertificateMetadata certificate = EndpointCertificateMetadataSerializer.fromSlime(root.field(certificateKey));
+        EndpointCertificate certificate = EndpointCertificateSerializer.fromSlime(root.field(certificateKey));
         return new UnassignedCertificate(certificate, state);
     }
 

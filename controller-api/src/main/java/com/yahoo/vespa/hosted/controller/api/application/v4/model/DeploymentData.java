@@ -8,7 +8,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
@@ -36,7 +36,7 @@ public class DeploymentData {
     private final Supplier<InputStream> applicationPackage;
     private final Version platform;
     private final Set<ContainerEndpoint> containerEndpoints;
-    private final Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata;
+    private final Supplier<Optional<EndpointCertificate>> endpointCertificate;
     private final Optional<DockerImage> dockerImageRepo;
     private final Optional<AthenzDomain> athenzDomain;
     private final Supplier<Quota> quota;
@@ -48,7 +48,7 @@ public class DeploymentData {
 
     public DeploymentData(ApplicationId instance, ZoneId zone, Supplier<InputStream> applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
-                          Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata,
+                          Supplier<Optional<EndpointCertificate>> endpointCertificate,
                           Optional<DockerImage> dockerImageRepo,
                           Optional<AthenzDomain> athenzDomain,
                           Supplier<Quota> quota,
@@ -62,7 +62,7 @@ public class DeploymentData {
         this.applicationPackage = requireNonNull(applicationPackage);
         this.platform = requireNonNull(platform);
         this.containerEndpoints = Set.copyOf(requireNonNull(containerEndpoints));
-        this.endpointCertificateMetadata = new Memoized<>(requireNonNull(endpointCertificateMetadata));
+        this.endpointCertificate = new Memoized<>(requireNonNull(endpointCertificate));
         this.dockerImageRepo = requireNonNull(dockerImageRepo);
         this.athenzDomain = athenzDomain;
         this.quota = new Memoized<>(requireNonNull(quota));
@@ -93,8 +93,8 @@ public class DeploymentData {
         return containerEndpoints;
     }
 
-    public Optional<EndpointCertificateMetadata> endpointCertificateMetadata() {
-        return endpointCertificateMetadata.get();
+    public Optional<EndpointCertificate> endpointCertificate() {
+        return endpointCertificate.get();
     }
 
     public Optional<DockerImage> dockerImageRepo() {

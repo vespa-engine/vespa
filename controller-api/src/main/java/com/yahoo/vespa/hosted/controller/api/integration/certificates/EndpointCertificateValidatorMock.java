@@ -12,7 +12,7 @@ public class EndpointCertificateValidatorMock implements EndpointCertificateVali
 
     @Override
     public void validate(
-            EndpointCertificateMetadata endpointCertificateMetadata,
+            EndpointCertificate endpointCertificate,
             String serializedApplicationId,
             ZoneId zone,
             List<String> requiredNamesForZone) {

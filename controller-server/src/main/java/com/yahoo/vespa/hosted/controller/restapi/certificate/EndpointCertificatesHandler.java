@@ -13,13 +13,13 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequest;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.certificate.AssignedCertificate;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.persistence.EndpointCertificateMetadataSerializer;
+import com.yahoo.vespa.hosted.controller.persistence.EndpointCertificateSerializer;
 
 import java.util.List;
 import java.util.Optional;
@@ -60,19 +60,19 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
     }
 
     public HttpResponse listEndpointCertificates() {
-        List<EndpointCertificateRequestMetadata> endpointCertificateMetadata = endpointCertificateProvider.listCertificates();
+        List<EndpointCertificateRequest> request = endpointCertificateProvider.listCertificates();
 
-        String requestsWithNames = endpointCertificateMetadata.stream()
-                .map(metadata -> metadata.requestId() + " : " +
-                        String.join(", ", metadata.dnsNames().stream()
-                                .map(dnsNameStatus -> dnsNameStatus.dnsName)
-                                .collect(Collectors.joining(", "))))
-                .collect(Collectors.joining("\n"));
+        String requestsWithNames = request.stream()
+                                          .map(r -> r.requestId() + " : " +
+                                                    String.join(", ", r.dnsNames().stream()
+                                                                       .map(EndpointCertificateRequest.DnsNameStatus::dnsName)
+                                                                       .collect(Collectors.joining(", "))))
+                                          .collect(Collectors.joining("\n"));
 
         return new StringResponse(requestsWithNames);
     }
 
-    public StringResponse reRequestEndpointCertificateFor(String instanceId, boolean ignoreExistingMetadata) {
+    public StringResponse reRequestEndpointCertificateFor(String instanceId, boolean ignoreExisting) {
         ApplicationId applicationId = ApplicationId.fromFullString(instanceId);
         if (useRandomizedCert.with(FetchVector.Dimension.APPLICATION_ID, instanceId).value()) {
             throw new IllegalArgumentException("Cannot re-request certificate. " + instanceId + " is assigned certificate from a pool");
@@ -85,16 +85,16 @@ public class EndpointCertificatesHandler extends ThreadedHttpRequestHandler {
             boolean useAlternativeProvider = useAlternateCertProvider.with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             String keyPrefix = applicationId.toFullString();
 
-            EndpointCertificateMetadata reRequestedMetadata = endpointCertificateProvider.requestCaSignedCertificate(
+            EndpointCertificate cert = endpointCertificateProvider.requestCaSignedCertificate(
                     keyPrefix, assignedCertificate.certificate().requestedDnsSans(),
-                    ignoreExistingMetadata ?
+                    ignoreExisting ?
                             Optional.empty() :
                             Optional.of(assignedCertificate.certificate()),
                     algo, useAlternativeProvider);
 
-            curator.writeAssignedCertificate(assignedCertificate.with(reRequestedMetadata));
+            curator.writeAssignedCertificate(assignedCertificate.with(cert));
 
-            return new StringResponse(EndpointCertificateMetadataSerializer.toSlime(reRequestedMetadata).toString());
+            return new StringResponse(EndpointCertificateSerializer.toSlime(cert).toString());
         }
     }
 }

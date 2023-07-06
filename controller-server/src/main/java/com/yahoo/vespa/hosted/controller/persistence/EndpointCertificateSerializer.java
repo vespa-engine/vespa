@@ -6,20 +6,17 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
 
 /**
- * (de)serializes endpoint certificate metadata
- * <p>
- * A copy of package com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadata,
- * but with additional fields as we need to store some more information in the controller.
+ * Serializer for {@link EndpointCertificate}.
  *
  * @author andreer
  */
-public class EndpointCertificateMetadataSerializer {
+public class EndpointCertificateSerializer {
 
     // WARNING: Since there are multiple servers in a ZooKeeper cluster, and they upgrade one by one
     //          (and rewrite all nodes on startup), changes to the serialized format must be made
@@ -40,33 +37,33 @@ public class EndpointCertificateMetadataSerializer {
     private final static String lastRefreshedField = "lastRefreshed";
     private final static String randomizedIdField = "randomizedId";
 
-    public static Slime toSlime(EndpointCertificateMetadata metadata) {
+    public static Slime toSlime(EndpointCertificate cert) {
         Slime slime = new Slime();
         Cursor object = slime.setObject();
-        toSlime(metadata, object);
+        toSlime(cert, object);
         return slime;
     }
 
-    public static void toSlime(EndpointCertificateMetadata metadata, Cursor object) {
-        object.setString(keyNameField, metadata.keyName());
-        object.setString(certNameField, metadata.certName());
-        object.setLong(versionField, metadata.version());
-        object.setLong(lastRequestedField, metadata.lastRequested());
-        object.setString(rootRequestIdField, metadata.rootRequestId());
-        metadata.leafRequestId().ifPresent(leafRequestId -> object.setString(leafRequestIdField, leafRequestId));
+    public static void toSlime(EndpointCertificate cert, Cursor object) {
+        object.setString(keyNameField, cert.keyName());
+        object.setString(certNameField, cert.certName());
+        object.setLong(versionField, cert.version());
+        object.setLong(lastRequestedField, cert.lastRequested());
+        object.setString(rootRequestIdField, cert.rootRequestId());
+        cert.leafRequestId().ifPresent(leafRequestId -> object.setString(leafRequestIdField, leafRequestId));
         var cursor = object.setArray(requestedDnsSansField);
-        metadata.requestedDnsSans().forEach(cursor::addString);
-        object.setString(issuerField, metadata.issuer());
-        metadata.expiry().ifPresent(expiry -> object.setLong(expiryField, expiry));
-        metadata.lastRefreshed().ifPresent(refreshTime -> object.setLong(lastRefreshedField, refreshTime));
-        metadata.randomizedId().ifPresent(randomizedId -> object.setString(randomizedIdField, randomizedId));
+        cert.requestedDnsSans().forEach(cursor::addString);
+        object.setString(issuerField, cert.issuer());
+        cert.expiry().ifPresent(expiry -> object.setLong(expiryField, expiry));
+        cert.lastRefreshed().ifPresent(refreshTime -> object.setLong(lastRefreshedField, refreshTime));
+        cert.randomizedId().ifPresent(randomizedId -> object.setString(randomizedIdField, randomizedId));
     }
 
-    public static EndpointCertificateMetadata fromSlime(Inspector inspector) {
+    public static EndpointCertificate fromSlime(Inspector inspector) {
         if (inspector.type() != Type.OBJECT)
-            throw new IllegalArgumentException("Unknown format encountered for endpoint certificate metadata!");
+            throw new IllegalArgumentException("Invalid format encountered for endpoint certificate");
 
-        return new EndpointCertificateMetadata(
+        return new EndpointCertificate(
                 inspector.field(keyNameField).asString(),
                 inspector.field(certNameField).asString(),
                 Math.toIntExact(inspector.field(versionField).asLong()),
@@ -87,7 +84,7 @@ public class EndpointCertificateMetadataSerializer {
                         Optional.empty());
     }
 
-    public static EndpointCertificateMetadata fromJsonString(String zkData) {
+    public static EndpointCertificate fromJsonString(String zkData) {
         return fromSlime(SlimeUtils.jsonToSlime(zkData).get());
     }
 

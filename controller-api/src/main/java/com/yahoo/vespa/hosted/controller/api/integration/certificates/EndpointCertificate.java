@@ -5,20 +5,18 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * This class is used for metadata about an application's endpoint certificate on the controller.
- * <p>
- * It has more properties than com.yahoo.config.model.api.EndpointCertificateMetadata.
+ * This holds information about an application's endpoint certificate.
  *
  * @author andreer
  */
-public record EndpointCertificateMetadata(String keyName, String certName, int version, long lastRequested,
-                                          String rootRequestId, // The id of the first request made for this certificate. Should not change.
-                                          Optional<String> leafRequestId, // The id of the last known request made for this certificate. Changes on refresh, may be outdated!
-                                          List<String> requestedDnsSans, String issuer, Optional<Long> expiry,
-                                          Optional<Long> lastRefreshed, Optional<String> randomizedId) {
+public record EndpointCertificate(String keyName, String certName, int version, long lastRequested,
+                                  String rootRequestId, // The id of the first request made for this certificate. Should not change.
+                                  Optional<String> leafRequestId, // The id of the last known request made for this certificate. Changes on refresh, may be outdated!
+                                  List<String> requestedDnsSans, String issuer, Optional<Long> expiry,
+                                  Optional<Long> lastRefreshed, Optional<String> randomizedId) {
 
-    public EndpointCertificateMetadata withRandomizedId(String randomizedId) {
-        return new EndpointCertificateMetadata(
+    public EndpointCertificate withRandomizedId(String randomizedId) {
+        return new EndpointCertificate(
                 this.keyName,
                 this.certName,
                 this.version,
@@ -32,8 +30,8 @@ public record EndpointCertificateMetadata(String keyName, String certName, int v
                 Optional.of(randomizedId));
     }
 
-    public EndpointCertificateMetadata withKeyName(String keyName) {
-        return new EndpointCertificateMetadata(
+    public EndpointCertificate withKeyName(String keyName) {
+        return new EndpointCertificate(
                 keyName,
                 this.certName,
                 this.version,
@@ -47,8 +45,8 @@ public record EndpointCertificateMetadata(String keyName, String certName, int v
                 this.randomizedId);
     }
 
-    public EndpointCertificateMetadata withCertName(String certName) {
-        return new EndpointCertificateMetadata(
+    public EndpointCertificate withCertName(String certName) {
+        return new EndpointCertificate(
                 this.keyName,
                 certName,
                 this.version,
@@ -62,8 +60,8 @@ public record EndpointCertificateMetadata(String keyName, String certName, int v
                 this.randomizedId);
     }
 
-    public EndpointCertificateMetadata withVersion(int version) {
-        return new EndpointCertificateMetadata(
+    public EndpointCertificate withVersion(int version) {
+        return new EndpointCertificate(
                 this.keyName,
                 this.certName,
                 version,
@@ -77,8 +75,8 @@ public record EndpointCertificateMetadata(String keyName, String certName, int v
                 this.randomizedId);
     }
 
-    public EndpointCertificateMetadata withLastRequested(long lastRequested) {
-        return new EndpointCertificateMetadata(
+    public EndpointCertificate withLastRequested(long lastRequested) {
+        return new EndpointCertificate(
                 this.keyName,
                 this.certName,
                 this.version,
@@ -92,8 +90,8 @@ public record EndpointCertificateMetadata(String keyName, String certName, int v
                 this.randomizedId);
     }
 
-    public EndpointCertificateMetadata withLastRefreshed(long lastRefreshed) {
-        return new EndpointCertificateMetadata(
+    public EndpointCertificate withLastRefreshed(long lastRefreshed) {
+        return new EndpointCertificate(
                 this.keyName,
                 this.certName,
                 this.version,
@@ -107,8 +105,8 @@ public record EndpointCertificateMetadata(String keyName, String certName, int v
                 this.randomizedId);
     }
 
-    public EndpointCertificateMetadata withRootRequestId(String rootRequestId) {
-        return new EndpointCertificateMetadata(
+    public EndpointCertificate withRootRequestId(String rootRequestId) {
+        return new EndpointCertificate(
                 this.keyName,
                 this.certName,
                 this.version,
@@ -122,8 +120,8 @@ public record EndpointCertificateMetadata(String keyName, String certName, int v
                 this.randomizedId);
     }
 
-    public EndpointCertificateMetadata withLeafRequestId(Optional<String> leafRequestId) {
-        return new EndpointCertificateMetadata(
+    public EndpointCertificate withLeafRequestId(Optional<String> leafRequestId) {
+        return new EndpointCertificate(
                 this.keyName,
                 this.certName,
                 this.version,

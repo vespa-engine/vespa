@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata.DnsNameStatus;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProviderMock;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequest.DnsNameStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -34,19 +34,19 @@ public class CertificatePoolMaintainerTest {
     void cert_contains_expected_names() {
         tester.flagSource().withIntFlag(Flags.CERT_POOL_SIZE.id(), 1);
         assertNumCerts(1);
-        EndpointCertificateMock endpointCertificateProvider = (EndpointCertificateMock) tester.controller().serviceRegistry().endpointCertificateProvider();
+        EndpointCertificateProviderMock endpointCertificateProvider = (EndpointCertificateProviderMock) tester.controller().serviceRegistry().endpointCertificateProvider();
 
-        var metadata = endpointCertificateProvider.listCertificates().get(0);
+        var request = endpointCertificateProvider.listCertificates().get(0);
 
         assertEquals(
                 List.of(
                         new DnsNameStatus("*.f5549014.z.vespa.oath.cloud", "done"),
                         new DnsNameStatus("*.f5549014.g.vespa.oath.cloud", "done"),
                         new DnsNameStatus("*.f5549014.a.vespa.oath.cloud", "done")
-                ), metadata.dnsNames());
+                ), request.dnsNames());
 
-        assertEquals("vespa.tls.preprovisioned.f5549014-cert", endpointCertificateProvider.certificateDetails(metadata.requestId()).cert_key_keyname());
-        assertEquals("vespa.tls.preprovisioned.f5549014-key", endpointCertificateProvider.certificateDetails(metadata.requestId()).private_key_keyname());
+        assertEquals("vespa.tls.preprovisioned.f5549014-cert", endpointCertificateProvider.certificateDetails(request.requestId()).certKeyKeyname());
+        assertEquals("vespa.tls.preprovisioned.f5549014-key", endpointCertificateProvider.certificateDetails(request.requestId()).privateKeyKeyname());
     }
 
     private void assertNumCerts(int n) {

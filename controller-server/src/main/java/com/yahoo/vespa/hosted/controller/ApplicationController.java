@@ -33,7 +33,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -525,9 +525,9 @@ public class ApplicationController {
                 containerEndpoints = controller.routing().of(deployment).prepare(application);
             } // Release application lock while doing the deployment, which is a lengthy task.
 
-            Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata = () -> {
+            Supplier<Optional<EndpointCertificate>> endpointCertificate = () -> {
                 try (Mutex lock = lock(applicationId)) {
-                    Optional<EndpointCertificateMetadata> data = endpointCertificates.getMetadata(instance, zone, applicationPackage.truncatedPackage().deploymentSpec());
+                    Optional<EndpointCertificate> data = endpointCertificates.get(instance, zone, applicationPackage.truncatedPackage().deploymentSpec());
                     data.ifPresent(e -> deployLogger.accept("Using CA signed certificate version %s".formatted(e.version())));
                     return data;
                 }
@@ -535,7 +535,7 @@ public class ApplicationController {
 
             // Carry out deployment without holding the application lock.
             DeploymentDataAndResult dataAndResult = deploy(job.application(), applicationPackage, zone, platform, containerEndpoints,
-                                                           endpointCertificateMetadata, run.isDryRun(), run.testerCertificate());
+                                                           endpointCertificate, run.isDryRun(), run.testerCertificate());
 
 
             // Record the quota usage for this application
@@ -649,7 +649,7 @@ public class ApplicationController {
     private record DeploymentDataAndResult(DeploymentData data, DeploymentResult result) {}
     private DeploymentDataAndResult deploy(ApplicationId application, ApplicationPackageStream applicationPackage,
                                            ZoneId zone, Version platform, Set<ContainerEndpoint> endpoints,
-                                           Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata,
+                                           Supplier<Optional<EndpointCertificate>> endpointCertificate,
                                            boolean dryRun, Optional<X509Certificate> testerCertificate) {
         DeploymentId deployment = new DeploymentId(application, zone);
         // Routing and metadata may have changed, so we need to refresh state after deployment, even if deployment fails.
@@ -684,16 +684,16 @@ public class ApplicationController {
             }
             Supplier<Optional<CloudAccount>> cloudAccount = () -> decideCloudAccountOf(deployment, applicationPackage.truncatedPackage().deploymentSpec());
             List<DataplaneTokenVersions> dataplaneTokenVersions = controller.dataplaneTokenService().listTokens(application.tenant());
-            Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadataWrapper = () -> {
-                Optional<EndpointCertificateMetadata> data = endpointCertificateMetadata.get();
+            Supplier<Optional<EndpointCertificate>> endpointCertificateWrapper = () -> {
+                Optional<EndpointCertificate> data = endpointCertificate.get();
                 // TODO(mpolden): Pass these endpoints to config server as part of the deploy call. This will let the
                 //                application know which endpoints are mTLS and which are token-based
-                data.flatMap(EndpointCertificateMetadata::randomizedId)
+                data.flatMap(EndpointCertificate::randomizedId)
                     .ifPresent(applicationPart -> generatedEndpoints.addAll(controller.routing().generateEndpoints(applicationPart, deployment.applicationId())));
                 return data;
             };
             DeploymentData deploymentData = new DeploymentData(application, zone, applicationPackage::zipStream, platform,
-                    endpoints, endpointCertificateMetadataWrapper, dockerImageRepo, domain,
+                    endpoints, endpointCertificateWrapper, dockerImageRepo, domain,
                     deploymentQuota, tenantSecretStores, operatorCertificates, cloudAccount, dataplaneTokenVersions, dryRun);
             ConfigServer.PreparedApplication preparedApplication = configServer.deploy(deploymentData);
 

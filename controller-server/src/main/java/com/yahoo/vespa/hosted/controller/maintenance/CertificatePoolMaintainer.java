@@ -12,7 +12,7 @@ import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
@@ -103,13 +103,13 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
 
             curator.readAssignedCertificates().stream()
                    .map(AssignedCertificate::certificate)
-                   .map(EndpointCertificateMetadata::randomizedId)
+                   .map(EndpointCertificate::randomizedId)
                    .forEach(id -> id.ifPresent(existingNames::add));
 
             String id = generateRandomId();
             while (existingNames.contains(id)) id = generateRandomId();
 
-            EndpointCertificateMetadata f = endpointCertificateProvider.requestCaSignedCertificate(
+            EndpointCertificate f = endpointCertificateProvider.requestCaSignedCertificate(
                             "preprovisioned.%s".formatted(id),
                             List.of(
                                     "*.%s.z%s".formatted(id, dnsSuffix),
@@ -119,7 +119,7 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
                             Optional.empty(),
                             endpointCertificateAlgo.value(),
                             useAlternateCertProvider.value())
-                    .withRandomizedId(id);
+                                                               .withRandomizedId(id);
 
             UnassignedCertificate certificate = new UnassignedCertificate(f, UnassignedCertificate.State.requested);
             curator.writeUnassignedCertificate(certificate);
