@@ -415,7 +415,6 @@ private:
     HitEstimate                                         _estimate;
     std::vector<int32_t>                                _weights;
     std::vector<IDocumentWeightAttribute::LookupResult> _terms;
-    vespalib::string                                    _field_name;
     const IAttributeVector                             &_iattr;
     const IDocumentWeightAttribute                     &_attr;
     vespalib::datastore::EntryRef                       _dictionary_snapshot;
@@ -426,7 +425,6 @@ public:
           _estimate(),
           _weights(),
           _terms(),
-          _field_name(field.getName()),
           _iattr(iattr),
           _attr(attr),
           _dictionary_snapshot(_attr.get_dictionary_snapshot())
@@ -456,7 +454,7 @@ public:
 
     std::unique_ptr<SearchIterator> createFilterSearch(bool strict, FilterConstraint constraint) const override;
     std::unique_ptr<queryeval::MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const override {
-        if (fields.has_field(_field_name)) {
+        if (fields.has_field(_iattr.getName())) {
             return queryeval::MatchingElementsSearch::create(_iattr, _dictionary_snapshot, vespalib::ConstArrayRef<IDocumentWeightAttribute::LookupResult>(_terms));
         } else {
             return {};
@@ -609,19 +607,16 @@ AttributeFieldBlueprint::getRange(vespalib::string &from, vespalib::string &to) 
 class DirectAttributeBlueprint : public queryeval::SimpleLeafBlueprint
 {
 private:
-    vespalib::string                        _attrName;
     const IAttributeVector                 &_iattr;
     const IDocumentWeightAttribute         &_attr;
     vespalib::datastore::EntryRef           _dictionary_snapshot;
     IDocumentWeightAttribute::LookupResult  _dict_entry;
 
 public:
-    DirectAttributeBlueprint(const FieldSpec &field, const vespalib::string & name,
-                             const IAttributeVector &iattr,
+    DirectAttributeBlueprint(const FieldSpec &field, const IAttributeVector &iattr,
                              const IDocumentWeightAttribute &attr,
                              const IDocumentWeightAttribute::LookupKey & key)
         : SimpleLeafBlueprint(field),
-          _attrName(name),
           _iattr(iattr),
           _attr(attr),
           _dictionary_snapshot(_attr.get_dictionary_snapshot()),
@@ -660,7 +655,7 @@ public:
         visit_attribute(visitor, _iattr);
     }
     std::unique_ptr<queryeval::MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const override {
-        if (fields.has_field(_attrName)) {
+        if (fields.has_field(_iattr.getName())) {
             return queryeval::MatchingElementsSearch::create(_iattr, _dictionary_snapshot, vespalib::ConstArrayRef<IDocumentWeightAttribute::LookupResult>(&_dict_entry, 1));
         } else {
             return {};
@@ -707,7 +702,7 @@ public:
     void visitTerm(TermNode &n, bool simple = false) {
         if (simple && (_dwa != nullptr) && !_field.isFilter() && n.isRanked()) {
             NodeAsKey key(n, _scratchPad);
-            setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr.getName(), _attr, *_dwa, key));
+            setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr, *_dwa, key));
         } else {
             SearchContextParams scParams = createContextParams(_field.isFilter());
             const string stack = StackDumpCreator::create(n);
