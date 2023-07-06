@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -290,6 +291,12 @@ public class EndpointCertificatesTest {
 
     @Test
     public void assign_certificate_from_pool() {
+        // Initial certificate is requested directly from provider
+        Optional<EndpointCertificate> certFromProvider = endpointCertificates.get(instance, prodZone, DeploymentSpec.empty);
+        assertTrue(certFromProvider.isPresent());
+        assertFalse(certFromProvider.get().randomizedId().isPresent());
+
+        // Pooled certificates become available
         tester.flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
         try {
             addCertificateToPool("pool-cert-1", UnassignedCertificate.State.requested);
@@ -297,6 +304,8 @@ public class EndpointCertificatesTest {
             fail("Expected exception as certificate is not ready");
         } catch (IllegalArgumentException ignored) {}
 
+        // Certificate is assigned from pool instead. The previously assigned certificate will eventually be cleaned up
+        // by EndpointCertificateMaintainer
         { // prod
             String certId = "pool-cert-1";
             addCertificateToPool(certId, UnassignedCertificate.State.ready);

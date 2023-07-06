@@ -115,8 +115,9 @@ public class EndpointCertificates {
         // certificate because application endpoints can span instances
         Optional<InstanceName> instanceName = zone.environment().isManuallyDeployed() ? Optional.of(instance.name()) : Optional.empty();
         TenantAndApplicationId application = TenantAndApplicationId.from(instance.id());
+        // Re-use existing certificate if it contains a randomized ID
         Optional<AssignedCertificate> assignedCertificate = curator.readAssignedCertificate(application, instanceName);
-        if (assignedCertificate.isPresent()) {
+        if (assignedCertificate.isPresent() && assignedCertificate.get().certificate().randomizedId().isPresent()) {
             AssignedCertificate updated = assignedCertificate.get().with(assignedCertificate.get().certificate().withLastRequested(clock.instant().getEpochSecond()));
             curator.writeAssignedCertificate(updated);
             return updated.certificate();
