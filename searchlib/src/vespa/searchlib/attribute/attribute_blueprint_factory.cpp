@@ -129,26 +129,10 @@ private:
 
 public:
     AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
-                            const string &query_stack, const SearchContextParams &params)
-        : AttributeFieldBlueprint(field, attribute, QueryTermDecoder::decodeTerm(query_stack), params)
-    { }
+                            const string &query_stack, const SearchContextParams &params);
     AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
-                            QueryTermSimple::UP term, const SearchContextParams &params)
-        : SimpleLeafBlueprint(field),
-          _attr(attribute),
-          _query_term(term->getTermString()),
-          _search_context(attribute.createSearchContext(std::move(term), params)),
-          _type(OTHER)
-    {
-        uint32_t estHits = _search_context->approximateHits();
-        HitEstimate estimate(estHits, estHits == 0);
-        setEstimate(estimate);
-        if (attribute.isFloatingPointType()) {
-            _type = FLOAT;
-        } else if (attribute.isIntegerType()) {
-            _type = INT;
-        }
-    }
+                            QueryTermSimple::UP term, const SearchContextParams &params);
+    ~AttributeFieldBlueprint() override;
 
     SearchIteratorUP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
         assert(tfmda.size() == 1);
@@ -179,6 +163,30 @@ public:
     }
     bool getRange(vespalib::string &from, vespalib::string &to) const override;
 };
+
+AttributeFieldBlueprint::~AttributeFieldBlueprint() = default;
+
+AttributeFieldBlueprint::AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
+                                                 const string &query_stack, const SearchContextParams &params)
+    : AttributeFieldBlueprint(field, attribute, QueryTermDecoder::decodeTerm(query_stack), params)
+{ }
+AttributeFieldBlueprint::AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
+                                                 QueryTermSimple::UP term, const SearchContextParams &params)
+    : SimpleLeafBlueprint(field),
+      _attr(attribute),
+      _query_term(term->getTermString()),
+      _search_context(attribute.createSearchContext(std::move(term), params)),
+      _type(OTHER)
+{
+    uint32_t estHits = _search_context->approximateHits();
+    HitEstimate estimate(estHits, estHits == 0);
+    setEstimate(estimate);
+    if (attribute.isFloatingPointType()) {
+        _type = FLOAT;
+    } else if (attribute.isIntegerType()) {
+        _type = INT;
+    }
+}
 
 vespalib::string
 get_type(const IAttributeVector& attr)

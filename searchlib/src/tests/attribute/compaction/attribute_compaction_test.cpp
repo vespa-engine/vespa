@@ -123,7 +123,7 @@ void hammerAttribute(AttributePtr &v, DocIdRange range, uint32_t count)
 Config compactAddressSpaceAttributeConfig(bool enableAddressSpaceCompact)
 {
     Config cfg(BasicType::INT8, CollectionType::ARRAY);
-    cfg.setCompactionStrategy({ 1.0, (enableAddressSpaceCompact ? 0.2 : 1.0) });
+    cfg.setCompactionStrategy({ 1.0f, (enableAddressSpaceCompact ? 0.2f : 1.0f) });
     return cfg;
 }
 

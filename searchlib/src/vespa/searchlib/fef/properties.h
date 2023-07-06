@@ -37,7 +37,7 @@ private:
      *
      * @param values the values for this property
      **/
-    Property(const Values &values) : _values(&values) { }
+    Property(const Values &values) noexcept : _values(&values) { }
 
 public:
     /**
@@ -46,14 +46,14 @@ public:
      * object on the stack in the application, and will also be used
      * by the @ref Properties class when a lookup gives no results.
      **/
-    Property() : _values(&_emptyValues) { }
+    Property() noexcept : _values(&_emptyValues) { }
 
     /**
      * Check if we found what we were looking for or not.
      *
      * @return true if the key we looked up had at least one value
      **/
-    bool found() const {
+    bool found() const noexcept {
         return !(*_values).empty();
     }
 
@@ -63,7 +63,7 @@ public:
      *
      * @return first value for the looked up key, or ""
      **/
-    const Value &get() const {
+    const Value &get() const noexcept {
         if ((*_values).empty()) {
             return _emptyValue;
         }
@@ -78,7 +78,7 @@ public:
      * @return first value for the looked up key, or fallBack
      * @param fallBack value to return if no values were found
      **/
-    const Value & get(const Value &fallBack) const {
+    const Value & get(const Value &fallBack) const noexcept {
         if ((*_values).empty()) {
             return fallBack;
         }
@@ -90,7 +90,7 @@ public:
      *
      * @return number of values for this property
      **/
-    uint32_t size() const { return (*_values).size(); }
+    uint32_t size() const noexcept { return (*_values).size(); }
 
     /**
      * Obtain a specific value for the looked up key.
@@ -98,7 +98,7 @@ public:
      * @return the requested value, or "" if idx was out of bounds
      * @param idx the index of the value we want to access
      **/
-    const Value &getAt(uint32_t idx) const;
+    const Value &getAt(uint32_t idx) const noexcept;
 };
 
 //-----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ public:
     /**
      * Virtual destructor to allow safe subclassing.
      **/
-    virtual ~IPropertiesVisitor() {}
+    virtual ~IPropertiesVisitor() = default;
 };
 
 //-----------------------------------------------------------------------------
@@ -156,7 +156,7 @@ private:
      * @param buf data pointer
      * @param len data length
      **/
-    static uint32_t rawHash(const void *buf, uint32_t len);
+    static uint32_t rawHash(const void *buf, uint32_t len) noexcept;
 
 public:
     using UP = std::unique_ptr<Properties>;
@@ -164,7 +164,7 @@ public:
     /**
      * Create an empty properties object.
      **/
-    Properties();
+    Properties() noexcept;
     Properties(Properties &&) noexcept = default;
     Properties & operator=(Properties &&) noexcept = default;
     Properties(const Properties &);
@@ -192,7 +192,7 @@ public:
      * @return number of values for the given key
      * @param key the key
      **/
-    uint32_t count(vespalib::stringref key) const;
+    uint32_t count(vespalib::stringref key) const noexcept;
 
     /**
      * Remove all values for the given key.
@@ -226,14 +226,14 @@ public:
      *
      * @return number of keys
      **/
-    uint32_t numKeys() const { return _data.size(); }
+    uint32_t numKeys() const noexcept { return _data.size(); }
 
     /**
      * Obtain the total number of values stored in this object.
      *
      * @return number of values
      **/
-    uint32_t numValues() const { return _numValues; }
+    uint32_t numValues() const noexcept { return _numValues; }
 
     /**
      * Check if rhs contains the same key/value pairs as this
@@ -242,14 +242,14 @@ public:
      *
      * @return true if we are equal to rhs
      **/
-    bool operator==(const Properties &rhs) const;
+    bool operator==(const Properties &rhs) const noexcept;
 
     /**
      * Calculate a hash code for this object
      *
      * @return hash code for this object
      **/
-    uint32_t hashCode() const;
+    uint32_t hashCode() const noexcept;
 
     /**
      * Visit all key/value pairs
@@ -275,7 +275,7 @@ public:
      * @return object encapsulating lookup result
      * @param key the key to look up
      **/
-    Property lookup(vespalib::stringref key) const;
+    Property lookup(vespalib::stringref key) const noexcept;
 
     /**
      * Look up a key inside a namespace using the proposed namespace
@@ -289,7 +289,7 @@ public:
      * @param key the key to look up
      **/
     Property lookup(vespalib::stringref namespace1,
-                    vespalib::stringref key) const;
+                    vespalib::stringref key) const noexcept;
 
     /**
      * Look up a key inside a namespace using the proposed namespace
@@ -305,7 +305,7 @@ public:
      **/
     Property lookup(vespalib::stringref namespace1,
                     vespalib::stringref namespace2,
-                    vespalib::stringref key) const;
+                    vespalib::stringref key) const noexcept;
 
     /**
      * Look up a key inside a namespace using the proposed namespace
@@ -323,13 +323,13 @@ public:
     Property lookup(vespalib::stringref namespace1,
                     vespalib::stringref namespace2,
                     vespalib::stringref namespace3,
-                    vespalib::stringref key) const;
+                    vespalib::stringref key) const noexcept;
 
-    void swap(Properties & rhs);
+    void swap(Properties & rhs) noexcept ;
 };
 
 inline void
-swap(Properties & a, Properties & b)
+swap(Properties & a, Properties & b) noexcept
 {
     a.swap(b);
 }
