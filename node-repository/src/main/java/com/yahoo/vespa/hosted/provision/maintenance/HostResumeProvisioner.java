@@ -83,8 +83,11 @@ public class HostResumeProvisioner extends NodeRepositoryMaintainer {
 
         nodeRepository().nodes().performOnRecursively(NodeList.of(host), __ -> true, nodes -> {
             List<Node> updated = new ArrayList<>();
-            for (NodeMutex mutex : nodes.nodes().nodes())
+            for (NodeMutex mutex : nodes.children())
                 updated.add(nodeRepository().nodes().write(mutex.node().with(hostIpConfig.require(mutex.node().hostname())), mutex));
+
+            updated.add(nodeRepository().nodes().write(nodes.parent().node()
+                                                            .with(hostIpConfig.require(nodes.parent().node().hostname())), nodes.parent()));
 
             return updated;
         });

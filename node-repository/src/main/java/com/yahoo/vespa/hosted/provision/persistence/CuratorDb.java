@@ -207,7 +207,7 @@ public class CuratorDb {
 
         CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
-            Node newNode = new Node(node.id(), node.ipConfig(), node.hostname(),
+            Node newNode = new Node(node.id(), node.extraId(), node.ipConfig(), node.hostname(),
                                     node.parentHostname(), node.flavor(),
                                     newNodeStatus(node, toState),
                                     toState,
