@@ -62,28 +62,39 @@ void populate_string(AttributeVector::SP attr_ptr) {
     set_doc(attr, 7, "foo", 10);
 }
 
-template<BasicType::Type BT, CollectionType::Type CT>
-struct Fixture {
+template<CollectionType::Type CT>
+struct LongFixture {
     AttributeVector::SP attr;
     const IDocumentWeightAttribute *api;
-    Fixture()
-        : attr(make_attribute(BT, CT, true)),
+    LongFixture()
+        : attr(make_attribute(BasicType::INT64, CollectionType::WSET, true)),
           api(attr->asDocumentWeightAttribute())
     {
         ASSERT_TRUE(api != nullptr);
         add_docs(attr);
-        if (BT == BasicType::STRING) {
-            populate_string(attr);
-        } else {
-            populate_long(attr);
-        }
+        populate_long(attr);
     }
 };
 
-using LongWsetFixture = Fixture<BasicType::INT64, CollectionType::WSET>;
-using LongArrayFixture = Fixture<BasicType::INT64, CollectionType::ARRAY>;
-using StringWsetFixture = Fixture<BasicType::STRING, CollectionType::WSET>;
-using StringArrayFixture = Fixture<BasicType::STRING, CollectionType::ARRAY>;
+using LongWsetFixture = LongFixture<CollectionType::WSET>;
+using LongArrayFixture = LongFixture<CollectionType::ARRAY>;
+
+template<CollectionType::Type CT>
+struct StringFixture {
+    AttributeVector::SP attr;
+    const IDocumentWeightAttribute *api;
+    StringFixture()
+        : attr(make_attribute(BasicType::STRING, CT, true)),
+          api(attr->asDocumentWeightAttribute())
+    {
+        ASSERT_TRUE(api != nullptr);
+        add_docs(attr);
+        populate_string(attr);
+    }
+};
+
+using StringWsetFixture = StringFixture<CollectionType::WSET>;
+using StringArrayFixture = StringFixture<CollectionType::ARRAY>;
 
 TEST("require that appropriate attributes support the document weight attribute interface") {
     EXPECT_TRUE(make_attribute(BasicType::INT32,  CollectionType::WSET, true)->asDocumentWeightAttribute() != nullptr);
