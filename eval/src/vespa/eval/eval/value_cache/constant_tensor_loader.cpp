@@ -75,6 +75,11 @@ void decodeSingleDenseForm(const Inspector &values, const ValueType &value_type,
 struct DenseValuesDecoder {
     const std::vector<ValueType::Dimension> _idims;
     TensorSpec &_target;
+    DenseValuesDecoder(std::vector<ValueType::Dimension> idims, TensorSpec &target)
+        : _idims(std::move(idims)),
+          _target(target)
+    {
+    }
     void decode(const Inspector &input, const TensorSpec::Address &address, size_t dim_idx) {
         if (dim_idx == _idims.size()) {
             _target.add(address, input.asDouble());
