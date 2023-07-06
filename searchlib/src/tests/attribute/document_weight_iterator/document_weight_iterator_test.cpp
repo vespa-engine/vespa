@@ -38,7 +38,13 @@ void add_docs(AttributeVector::SP attr_ptr, size_t limit = 1000) {
 template <typename ATTR, typename KEY>
 void set_doc(ATTR *attr, uint32_t docid, KEY key, int32_t weight) {
     attr->clearDoc(docid);
-    attr->append(docid, key, weight);
+    if (attr->hasWeightedSetType()) {
+        attr->append(docid, key, weight);
+    } else {
+        for (int32_t i(0); i < weight; i++) {
+            attr->append(docid, key, 1);
+        }
+    }
     attr->commit();
 }
 
@@ -56,11 +62,13 @@ void populate_string(AttributeVector::SP attr_ptr) {
     set_doc(attr, 7, "foo", 10);
 }
 
+template<CollectionType::Type CT>
 struct LongFixture {
     AttributeVector::SP attr;
     const IDocumentWeightAttribute *api;
-    LongFixture() : attr(make_attribute(BasicType::INT64, CollectionType::WSET, true)),
-                    api(attr->asDocumentWeightAttribute())
+    LongFixture()
+        : attr(make_attribute(BasicType::INT64, CollectionType::WSET, true)),
+          api(attr->asDocumentWeightAttribute())
     {
         ASSERT_TRUE(api != nullptr);
         add_docs(attr);
@@ -68,11 +76,16 @@ struct LongFixture {
     }
 };
 
+using LongWsetFixture = LongFixture<CollectionType::WSET>;
+using LongArrayFixture = LongFixture<CollectionType::ARRAY>;
+
+template<CollectionType::Type CT>
 struct StringFixture {
     AttributeVector::SP attr;
     const IDocumentWeightAttribute *api;
-    StringFixture() : attr(make_attribute(BasicType::STRING, CollectionType::WSET, true)),
-                      api(attr->asDocumentWeightAttribute())
+    StringFixture()
+        : attr(make_attribute(BasicType::STRING, CT, true)),
+          api(attr->asDocumentWeightAttribute())
     {
         ASSERT_TRUE(api != nullptr);
         add_docs(attr);
@@ -80,10 +93,15 @@ struct StringFixture {
     }
 };
 
+using StringWsetFixture = StringFixture<CollectionType::WSET>;
+using StringArrayFixture = StringFixture<CollectionType::ARRAY>;
+
 TEST("require that appropriate attributes support the document weight attribute interface") {
     EXPECT_TRUE(make_attribute(BasicType::INT32,  CollectionType::WSET, true)->asDocumentWeightAttribute() != nullptr);
     EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::WSET, true)->asDocumentWeightAttribute() != nullptr);
     EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::WSET, true)->asDocumentWeightAttribute() != nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::ARRAY,   true)->asDocumentWeightAttribute() != nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::ARRAY,   true)->asDocumentWeightAttribute() != nullptr);
 }
 
 TEST("require that inappropriate attributes do not support the document weight attribute interface") {
@@ -91,12 +109,10 @@ TEST("require that inappropriate attributes do not support the document weight a
     EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::ARRAY,  false)->asDocumentWeightAttribute() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::WSET,   false)->asDocumentWeightAttribute() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::SINGLE,  true)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::ARRAY,   true)->asDocumentWeightAttribute() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::SINGLE, false)->asDocumentWeightAttribute() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::ARRAY,  false)->asDocumentWeightAttribute() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::WSET,   false)->asDocumentWeightAttribute() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::SINGLE,  true)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::ARRAY,   true)->asDocumentWeightAttribute() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::FLOAT,  CollectionType::WSET,    true)->asDocumentWeightAttribute() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::DOUBLE, CollectionType::WSET,    true)->asDocumentWeightAttribute() == nullptr);
 }
@@ -115,12 +131,22 @@ void verify_invalid_lookup(IDocumentWeightAttribute::LookupResult result) {
     EXPECT_EQUAL(0, result.max_weight);
 }
 
-TEST_F("require that integer lookup works correctly", LongFixture) {
+TEST_F("require that integer wset lookup works correctly", LongWsetFixture) {
     verify_valid_lookup(f1.api->lookup("111", f1.api->get_dictionary_snapshot()));
     verify_invalid_lookup(f1.api->lookup("222", f1.api->get_dictionary_snapshot()));
 }
 
-TEST_F("require string lookup works correctly", StringFixture) {
+TEST_F("require that integer array lookup works correctly", LongArrayFixture) {
+    verify_valid_lookup(f1.api->lookup("111", f1.api->get_dictionary_snapshot()));
+    verify_invalid_lookup(f1.api->lookup("222", f1.api->get_dictionary_snapshot()));
+}
+
+TEST_F("require string wset lookup works correctly", StringWsetFixture) {
+    verify_valid_lookup(f1.api->lookup("foo", f1.api->get_dictionary_snapshot()));
+    verify_invalid_lookup(f1.api->lookup("bar", f1.api->get_dictionary_snapshot()));
+}
+
+TEST_F("require string array lookup works correctly", StringArrayFixture) {
     verify_valid_lookup(f1.api->lookup("foo", f1.api->get_dictionary_snapshot()));
     verify_invalid_lookup(f1.api->lookup("bar", f1.api->get_dictionary_snapshot()));
 }
@@ -152,15 +178,23 @@ void verify_posting(const IDocumentWeightAttribute &api, const char *term) {
     }
 }
 
-TEST_F("require that integer iterators are created correctly", LongFixture) {
+TEST_F("require that integer wset iterators are created correctly", LongWsetFixture) {
     verify_posting(*f1.api, "111");
 }
 
-TEST_F("require that string iterators are created correctly", StringFixture) {
+TEST_F("require that integer array iterators are created correctly", LongArrayFixture) {
+    verify_posting(*f1.api, "111");
+}
+
+TEST_F("require that string wset iterators are created correctly", StringWsetFixture) {
     verify_posting(*f1.api, "foo");
 }
 
-TEST_F("require that collect_folded works for string", StringFixture)
+TEST_F("require that string array iterators are created correctly", StringArrayFixture) {
+    verify_posting(*f1.api, "foo");
+}
+
+TEST_F("require that collect_folded works for string", StringWsetFixture)
 {
     StringAttribute *attr = static_cast<StringAttribute *>(f1.attr.get());
     set_doc(attr, 2, "bar", 30);
@@ -176,7 +210,7 @@ TEST_F("require that collect_folded works for string", StringFixture)
     EXPECT_EQUAL(expected_folded, folded);
 }
 
-TEST_F("require that collect_folded works for integers", LongFixture)
+TEST_F("require that collect_folded works for integers", LongWsetFixture)
 {
     IntegerAttributeTemplate<int64_t> *attr = dynamic_cast<IntegerAttributeTemplate<int64_t> *>(f1.attr.get());
     set_doc(attr, 2, int64_t(112), 30);
@@ -217,7 +251,7 @@ Verifier::Verifier()
         set_doc(int_attr, docid, int64_t(123), 1);
     }
 }
-Verifier::~Verifier() {}
+Verifier::~Verifier() = default;
 
 TEST("verify document weight search iterator") {
     Verifier verifier;

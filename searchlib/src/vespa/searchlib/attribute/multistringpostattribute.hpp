@@ -174,10 +174,9 @@ template <typename B, typename T>
 const IDocumentWeightAttribute *
 MultiValueStringPostingAttributeT<B, T>::asDocumentWeightAttribute() const
 {
-    if (this->hasWeightedSetType() && (this->isStringType())) {
-        return &_document_weight_attribute_adapter;
-    }
-    return nullptr;
+    return this->isStringType()
+        ? &_document_weight_attribute_adapter
+        : nullptr;
 }
 
 } // namespace search
