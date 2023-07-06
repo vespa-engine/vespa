@@ -27,7 +27,7 @@ private:
     };
 
     TermFieldMatchData     &_tmd;
-    std::vector<int32_t>    _weights;
+    const std::vector<int32_t> &_weights;
     std::vector<uint32_t>   _termPos;
     CmpDocId                _cmpDocId;
     std::vector<ref_t>      _data_space;
