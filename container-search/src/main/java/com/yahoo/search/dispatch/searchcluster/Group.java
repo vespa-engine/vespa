@@ -21,7 +21,7 @@ public class Group {
     private final List<Node> nodes;
 
     // Using volatile to ensure visibility for reader.
-    // All udates are done in a single writer thread
+    // All updates are done in a single writer thread
     private volatile boolean hasSufficientCoverage = true;
     private volatile boolean hasFullCoverage = true;
     private volatile long activeDocuments = 0;

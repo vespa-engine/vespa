@@ -104,7 +104,7 @@ public class MockHostProvisioner implements HostProvisioner {
         result.put(host.hostname(), createIpConfig(host));
         host.ipConfig().pool().hostnames().forEach(hostname ->
                 result.put(hostname.value(), IP.Config.ofEmptyPool(nameResolver.resolveAll(hostname.value()))));
-        return new HostIpConfig(result);
+        return new HostIpConfig(result, Optional.empty());
     }
 
     @Override

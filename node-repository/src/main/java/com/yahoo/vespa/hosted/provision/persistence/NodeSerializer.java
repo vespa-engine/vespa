@@ -74,6 +74,7 @@ public class NodeSerializer {
     private static final String containersKey = "containers";
     private static final String containerHostnameKey = "hostname";
     private static final String idKey = "openStackId";
+    private static final String extraIdKey = "extraId";
     private static final String parentHostnameKey = "parentHostname";
     private static final String historyKey = "history";
     private static final String logKey = "log";
@@ -173,6 +174,7 @@ public class NodeSerializer {
         toSlime(node.ipConfig().pool().asSet(), object.setArray(ipAddressPoolKey));
         toSlime(node.ipConfig().pool().hostnames(), object);
         object.setString(idKey, node.id());
+        node.extraId().ifPresent(id -> object.setString(extraIdKey, id));
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         toSlime(node.flavor(), object);
         object.setLong(rebootGenerationKey, node.status().reboot().wanted());
@@ -283,6 +285,7 @@ public class NodeSerializer {
     private Node nodeFromSlime(Inspector object) {
         Flavor flavor = flavorFromSlime(object);
         return new Node(object.field(idKey).asString(),
+                        SlimeUtils.optionalString(object.field(extraIdKey)),
                         IP.Config.of(ipAddressesFromSlime(object, ipAddressesKey),
                                      ipAddressesFromSlime(object, ipAddressPoolKey),
                                      hostnamesFromSlime(object)),
