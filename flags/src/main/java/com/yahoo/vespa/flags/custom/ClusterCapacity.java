@@ -12,6 +12,7 @@ import java.util.OptionalDouble;
 
 import static com.yahoo.vespa.flags.custom.Validation.requireNonNegative;
 import static com.yahoo.vespa.flags.custom.Validation.validArchitectures;
+import static com.yahoo.vespa.flags.custom.Validation.validClusterTypes;
 import static com.yahoo.vespa.flags.custom.Validation.validDiskSpeeds;
 import static com.yahoo.vespa.flags.custom.Validation.validStorageTypes;
 import static com.yahoo.vespa.flags.custom.Validation.validateEnum;
@@ -31,6 +32,7 @@ public class ClusterCapacity {
     private final String diskSpeed;
     private final String storageType;
     private final String architecture;
+    private final String clusterType;
 
     @JsonCreator
     public ClusterCapacity(@JsonProperty("count") int count,
@@ -40,7 +42,8 @@ public class ClusterCapacity {
                            @JsonProperty("bandwidthGbps") Double bandwidthGbps,
                            @JsonProperty("diskSpeed") String diskSpeed,
                            @JsonProperty("storageType") String storageType,
-                           @JsonProperty("architecture") String architecture) {
+                           @JsonProperty("architecture") String architecture,
+                           @JsonProperty("clusterType") String clusterType) {
         this.count = (int) requireNonNegative("count", count);
         this.vcpu = vcpu == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("vcpu", vcpu));
         this.memoryGb = memoryGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("memoryGb", memoryGb));
@@ -49,12 +52,13 @@ public class ClusterCapacity {
         this.diskSpeed = validateEnum("diskSpeed", validDiskSpeeds, diskSpeed == null ? "fast" : diskSpeed);
         this.storageType = validateEnum("storageType", validStorageTypes, storageType == null ? "any" : storageType);
         this.architecture = validateEnum("architecture", validArchitectures, architecture == null ? "x86_64" : architecture);
+        this.clusterType = clusterType == null ? null : validateEnum("clusterType", validClusterTypes, clusterType);
     }
 
     /** Returns a new ClusterCapacity equal to {@code this}, but with the given count. */
     public ClusterCapacity withCount(int count) {
         return new ClusterCapacity(count, vcpuOrNull(), memoryGbOrNull(), diskGbOrNull(), bandwidthGbpsOrNull(),
-                                   diskSpeed, storageType, architecture);
+                                   diskSpeed, storageType, architecture, clusterType);
     }
 
     @JsonGetter("count") public int count() { return count; }
@@ -73,6 +77,7 @@ public class ClusterCapacity {
     @JsonGetter("diskSpeed") public String diskSpeed() { return diskSpeed; }
     @JsonGetter("storageType") public String storageType() { return storageType; }
     @JsonGetter("architecture") public String architecture() { return architecture; }
+    @JsonGetter("clusterType") public String clusterType() { return clusterType; }
 
     @JsonIgnore public Double vcpu() { return vcpu.orElse(0.0); }
     @JsonIgnore public Double memoryGb() { return memoryGb.orElse(0.0); }
@@ -90,6 +95,7 @@ public class ClusterCapacity {
                 ", diskSpeed=" + diskSpeed +
                 ", storageType=" + storageType +
                 ", architecture=" + architecture +
+                ", clusterType=" + clusterType +
                 '}';
     }
 
@@ -105,12 +111,13 @@ public class ClusterCapacity {
                 bandwidthGbps.equals(that.bandwidthGbps) &&
                 diskSpeed.equals(that.diskSpeed) &&
                 storageType.equals(that.storageType) &&
-                architecture.equals(that.architecture);
+                architecture.equals(that.architecture) &&
+                clusterType.equals(that.clusterType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture);
+        return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, clusterType);
     }
 
 }

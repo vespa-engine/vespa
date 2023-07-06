@@ -199,17 +199,22 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                 throw new IllegalStateException("Have provisioned " + numProvisions + " times but there's still deficit: aborting");
             }
 
-            nodesPlusProvisioned.addAll(provisionHosts(deficit.get().count(), toNodeResources(deficit.get())));
+            ClusterCapacity clusterCapacityDeficit = deficit.get();
+            var clusterType = Optional.ofNullable(clusterCapacityDeficit.clusterType());
+            nodesPlusProvisioned.addAll(provisionHosts(clusterCapacityDeficit.count(),
+                                                       toNodeResources(clusterCapacityDeficit),
+                                                       clusterType.map(ClusterSpec.Type::from)));
         }
     }
 
-    private List<Node> provisionHosts(int count, NodeResources nodeResources) {
+    private List<Node> provisionHosts(int count, NodeResources nodeResources, Optional<ClusterSpec.Type> clusterType) {
         try {
             Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
             List<Node> hosts = new ArrayList<>();
-            HostProvisionRequest request = new HostProvisionRequest(provisionIndices, NodeType.host, nodeResources, ApplicationId.defaultId(), osVersion,
-                                                                    HostSharing.shared, Optional.empty(), Optional.empty(),
+            HostProvisionRequest request = new HostProvisionRequest(provisionIndices, NodeType.host, nodeResources,
+                                                                    ApplicationId.defaultId(), osVersion,
+                                                                    HostSharing.shared, clusterType, Optional.empty(),
                                                                     nodeRepository().zone().cloud().account(), false);
             hostProvisioner.provisionHosts(request,
                                            provisionedHosts -> {
@@ -256,7 +261,10 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         // We'll allocate each ClusterCapacity as a unique cluster in a dummy application
         ApplicationId applicationId = ApplicationId.defaultId();
         ClusterSpec.Id clusterId = ClusterSpec.Id.from(String.valueOf(clusterIndex));
-        ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.content, clusterId)
+        ClusterSpec.Type type = clusterCapacity.clusterType() != null
+                ? ClusterSpec.Type.from(clusterCapacity.clusterType())
+                : ClusterSpec.Type.content;
+        ClusterSpec clusterSpec = ClusterSpec.request(type, clusterId)
                 // build() requires a version, even though it is not (should not be) used
                 .vespaVersion(Vtag.currentVersion)
                 .build();
