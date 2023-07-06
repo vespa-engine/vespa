@@ -154,9 +154,10 @@ template <typename B, typename M>
 const IDocumentWeightAttribute *
 MultiValueNumericPostingAttribute<B, M>::asDocumentWeightAttribute() const
 {
-    return this->isIntegerType()
-        ? &_document_weight_attribute_adapter
-        : nullptr;
+    if (this->hasWeightedSetType() && this->isIntegerType()) {
+        return &_document_weight_attribute_adapter;
+    }
+    return nullptr;
 }
 
 } // namespace search
