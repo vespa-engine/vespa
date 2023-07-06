@@ -36,7 +36,7 @@ public class Packages {
     }
 
     /**
-     * Returns the imported packages that exist in the given set of disallowed packages.
+     * Returns a sorted list of the imported packages that exist in the given set of disallowed packages.
      */
     public static List<String> disallowedImports(Map<String, ImportPackages.Import> imports, List<String> disallowed) {
         if (imports == null || imports.isEmpty()) return List.of();
@@ -46,6 +46,7 @@ public class Packages {
 
         return importedSet.stream()
                 .filter(disallowedSet::contains)
+                .sorted()
                 .toList();
     }
 

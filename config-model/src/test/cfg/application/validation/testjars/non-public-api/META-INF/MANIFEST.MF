@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Export-Package: com.yahoo.vespa.test.myapp;version=1.0.0
+Bundle-SymbolicName: my-bundle
+Bundle-Version: 8.0.0
+Created-By: vespa container maven plugin
+Bundle-Vendor: Yahoo!
+X-JDisc-Non-PublicApi-Import-Package: ai.vespa.lib.non_public,com.yahoo.
+ lib.non_public
