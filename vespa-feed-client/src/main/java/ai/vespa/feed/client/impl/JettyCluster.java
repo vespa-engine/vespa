@@ -18,6 +18,7 @@ import org.eclipse.jetty.http2.client.HTTP2Client;
 import org.eclipse.jetty.http2.client.http.HttpClientTransportOverHTTP2;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.util.HttpCookieStore;
 import org.eclipse.jetty.util.Promise;
 import org.eclipse.jetty.util.SocketAddressResolver;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
@@ -121,6 +122,7 @@ class JettyCluster implements Cluster {
         httpClient.setConnectTimeout(Duration.ofSeconds(10).toMillis());
         // Stop client from trying different IP address when TLS handshake fails
         httpClient.setSocketAddressResolver(new Ipv4PreferringResolver(httpClient, Duration.ofSeconds(10)));
+        httpClient.setCookieStore(new HttpCookieStore.Empty());
 
         httpClient.setIdleTimeout(IDLE_TIMEOUT.toMillis());
         try {
