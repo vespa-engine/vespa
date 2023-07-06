@@ -115,8 +115,9 @@ public class EndpointCertificates {
         // certificate because application endpoints can span instances
         Optional<InstanceName> instanceName = zone.environment().isManuallyDeployed() ? Optional.of(instance.name()) : Optional.empty();
         TenantAndApplicationId application = TenantAndApplicationId.from(instance.id());
+        // Re-use existing certificate if it contains a randomized ID
         Optional<AssignedCertificate> assignedCertificate = curator.readAssignedCertificate(application, instanceName);
-        if (assignedCertificate.isPresent()) {
+        if (assignedCertificate.isPresent() && assignedCertificate.get().certificate().randomizedId().isPresent()) {
             AssignedCertificate updated = assignedCertificate.get().with(assignedCertificate.get().certificate().withLastRequested(clock.instant().getEpochSecond()));
             curator.writeAssignedCertificate(updated);
             return updated.certificate();
@@ -193,6 +194,16 @@ public class EndpointCertificates {
                                           instanceSpec.get().deploysTo(zone.environment(), zone.region())))
                          .forEach(requiredZones::add);
         }
+        /* TODO(andreer/mpolden): To allow a seamless transition of existing deployments to using generated endpoints,
+                                  we need to something like this:
+                                  1) All current certificates must be re-provisioned to contain the same wildcard names
+                                     as CertificatePoolMaintainer, and a randomized ID
+                                  2) Generated endpoints must be exposed *before* switching deployment to a
+                                     pre-provisioned certificate
+                                  3) Tenants must shift their traffic to generated endpoints
+                                  4) We can switch to the pre-provisioned certificate. This will invalidate
+                                     non-generated endpoints
+         */
         Set<String> requiredNames = requiredZones.stream()
                                                  .flatMap(zone -> controller.routing().certificateDnsNames(new DeploymentId(deployment.applicationId(), zone),
                                                                                                            deploymentSpec)
