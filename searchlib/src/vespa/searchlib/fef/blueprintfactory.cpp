@@ -35,7 +35,7 @@ BlueprintFactory::visitDumpFeatures(const IIndexEnvironment &indexEnv,
 Blueprint::SP
 BlueprintFactory::createBlueprint(const vespalib::string &name) const
 {
-    BlueprintMap::const_iterator itr = _blueprintMap.find(name);
+    auto itr = _blueprintMap.find(name);
     if (itr == _blueprintMap.end()) {
         return {};
     }

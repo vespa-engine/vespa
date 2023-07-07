@@ -49,7 +49,7 @@ getFPFactory(const std::string &name, const Schema &schema)
     if (fpFactoryMap == nullptr)
         return nullptr;
 
-    FPFactoryMap::const_iterator i(fpFactoryMap->find(name));
+    auto i = fpFactoryMap->find(name);
 
     if (i != fpFactoryMap->end())
         return i->second(schema);
@@ -64,10 +64,9 @@ getPostingTypes()
     std::vector<std::string> res;
 
     if (fpFactoryMap != nullptr)
-        for (FPFactoryMap::const_iterator i(fpFactoryMap->begin());
-             i != fpFactoryMap->end();
-             ++i)
-            res.push_back(i->first);
+        for (const auto& elem : *fpFactoryMap) {
+            res.push_back(elem.first);
+        }
     return res;
 }
 

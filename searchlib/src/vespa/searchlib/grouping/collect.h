@@ -23,7 +23,7 @@ protected:
         int diff(0);
         size_t aOff(getAggrBase(a));
         size_t bOff(getAggrBase(b));
-        for(std::vector<SortInfo>::const_iterator it(_sortInfo.begin()), mt(_sortInfo.end()); (diff == 0) && (it != mt); it++) {
+        for (auto it(_sortInfo.begin()), mt(_sortInfo.end()); (diff == 0) && (it != mt); it++) {
             diff = _aggregator[it->getIndex()].cmp(&_aggrBacking[aOff], &_aggrBacking[bOff]) * it->getSign();
         }
         return diff;

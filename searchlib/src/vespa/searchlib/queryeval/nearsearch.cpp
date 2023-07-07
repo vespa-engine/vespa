@@ -21,10 +21,8 @@ void setup_fields(uint32_t window, std::vector<T> &matchers, const TermFieldMatc
     for (size_t i = 0; i < in.size(); ++i) {
         fields.insert(in[i]->getFieldId());
     }
-    std::set<uint32_t>::const_iterator pos = fields.begin();
-    std::set<uint32_t>::const_iterator end = fields.end();
-    for (; pos != end; ++pos) {
-        matchers.push_back(T(window, *pos, in));
+    for (const auto& elem : fields) {
+        matchers.push_back(T(window, elem, in));
     }
 }
 

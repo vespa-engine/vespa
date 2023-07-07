@@ -33,7 +33,7 @@ waitBaseDir(const string &baseDir)
     std::unique_lock<std::mutex> guard(baseDirLock);
     bool waited = false;
 
-    BaseDirSet::iterator it = baseDirSet.find(baseDir);
+    auto it = baseDirSet.find(baseDir);
     while (it != baseDirSet.end()) {
         if (!waited) {
             waited = true;
@@ -57,7 +57,7 @@ dropBaseDir(const string &baseDir)
         return;
     std::lock_guard<std::mutex> guard(baseDirLock);
 
-    BaseDirSet::iterator it = baseDirSet.find(baseDir);
+    auto it = baseDirSet.find(baseDir);
     if (it == baseDirSet.end()) {
         LOG(error, "AttributeManager: Cannot drop basedir %s, already dropped", baseDir.c_str());
     } else {
@@ -114,8 +114,8 @@ AttributeManager::~AttributeManager()
 uint64_t AttributeManager::getMemoryFootprint() const
 {
     uint64_t sum(0);
-    for(AttributeMap::const_iterator it(_attributes.begin()), mt(_attributes.end()); it != mt; it++) {
-        sum += it->second->getStatus().getAllocated();
+    for (const auto& elem : _attributes) {
+        sum += elem.second->getStatus().getAllocated();
     }
 
     return sum;
@@ -125,7 +125,7 @@ const AttributeManager::VectorHolder *
 AttributeManager::findAndLoadAttribute(const string & name) const
 {
     const VectorHolder * loadedVector(nullptr);
-    AttributeMap::const_iterator found = _attributes.find(name);
+    auto found = _attributes.find(name);
     if (found != _attributes.end()) {
         AttributeVector & vec = *found->second;
         if ( ! vec.isLoaded() ) {
@@ -173,7 +173,7 @@ bool
 AttributeManager::add(const AttributeManager::VectorHolder & vector)
 {
     bool retval(true);
-    AttributeMap::iterator found = _attributes.find(vector->getName());
+    auto found = _attributes.find(vector->getName());
     if (found == _attributes.end()) {
         vector->setInterlock(_interlock);
         _attributes[vector->getName()] = vector;
@@ -186,8 +186,8 @@ void
 AttributeManager::getAttributeList(AttributeList & list) const
 {
     list.reserve(_attributes.size());
-    for(AttributeMap::const_iterator it(_attributes.begin()), mt(_attributes.end()); it != mt; it++) {
-        list.push_back(AttributeGuard(it->second));
+    for (const auto& elem : _attributes) {
+        list.push_back(AttributeGuard(elem.second));
     }
 }
 
@@ -224,7 +224,7 @@ AttributeManager::addVector(const string & name, const Config & config)
             LOG(error, "Attribute Vector '%s' has type conflict", name.c_str());
         }
     } else {
-        AttributeMap::iterator found = _attributes.find(name);
+        auto found = _attributes.find(name);
         if (found != _attributes.end()) {
             const VectorHolder & vh(found->second);
             if ( vh.get() &&

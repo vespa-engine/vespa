@@ -50,7 +50,7 @@ GroupRef GroupEngine::group(Children & children, uint32_t docId, double rank)
         throw std::runtime_error("Does not know how to handle failed select statements");
     }
     const ResultNode &selectResult = *selector.getResult();
-    Children::iterator found = children.find(selectResult);
+    auto found = children.find(selectResult);
     GroupRef gr;
     if (found == children.end()) {
         if (_request->allowMoreGroups(children.size())) {
@@ -158,8 +158,8 @@ Group::UP GroupEngine::getGroup(GroupRef ref) const
         std::vector<GroupRef> v(ch.size());
         {
             size_t i(0);
-            for (Children::const_iterator it(ch.begin()), mt(ch.end()); it != mt; it++) {
-                v[i++] = *it;
+            for (const auto& elem : ch) {
+                v[i++] = elem;
             }
         }
         uint64_t maxN(_nextEngine->_request->getPrecision());

@@ -14,9 +14,7 @@ namespace search::index {
 bool
 PostingListParams::isSet(const vespalib::string &key) const
 {
-    Map::const_iterator it;
-
-    it = _map.find(key);
+    auto it = _map.find(key);
     if (it != _map.end()) {
         return true;
     }
@@ -33,9 +31,7 @@ PostingListParams::setStr(const vespalib::string &key,
 const vespalib::string &
 PostingListParams::getStr(const vespalib::string &key) const
 {
-    Map::const_iterator it;
-
-    it = _map.find(key);
+    auto it = _map.find(key);
     if (it != _map.end()) {
         return it->second;
     }
@@ -81,9 +77,7 @@ void
 PostingListParams::get(const vespalib::string &key, TYPE &val) const
 {
     std::istringstream is;
-    Map::const_iterator it;
-
-    it = _map.find(key);
+    auto it = _map.find(key);
     if (it != _map.end()) {
         is.str(it->second);
         is >> val;

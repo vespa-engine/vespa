@@ -317,8 +317,6 @@ FieldReaderStripInfo::scan_element_lengths(uint32_t scan_chunk)
 void
 FieldReaderStripInfo::read()
 {
-    using Element = search::index::WordDocElementFeatures;
-
     for (;;) {
         FieldReader::read();
         DocIdAndFeatures &features = _docIdAndFeatures;
@@ -328,8 +326,7 @@ FieldReaderStripInfo::read()
         assert(!features.has_raw_data());
         uint32_t numElements = features.elements().size();
         assert(numElements > 0);
-        std::vector<Element>::iterator element =
-            features.elements().begin();
+        auto element = features.elements().begin();
         if (_hasElements) {
             if (!_hasElementWeights) {
                 for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++element) {

@@ -64,7 +64,7 @@ PostingListMerger<DataT>::merge(PostingVector &v, PostingVector &temp, const Sta
         size_t aEnd = startPos[i * 2 + 1];
         size_t bStart = aEnd;
         size_t bEnd = startPos[i * 2 + 2];
-        typename PostingVector::const_iterator it = v.begin();
+        auto it = v.begin();
         std::merge(it + aStart, it + aEnd,
                    it + bStart, it + bEnd,
                    temp.begin() + aStart);

@@ -174,8 +174,8 @@ size_t
 ResultNodeVectorT<B, C, G>::hash() const
 {
     size_t h(0);
-    for(typename Vector::const_iterator it(_result.begin()), mt(_result.end()); it != mt; it++) {
-        h ^= it->hash();
+    for(const auto& elem : _result) {
+        h ^= elem.hash();
     }
     return h;
 }
@@ -184,8 +184,8 @@ template <typename B, typename C, typename G>
 void
 ResultNodeVectorT<B, C, G>::negate()
 {
-    for(typename Vector::iterator it(_result.begin()), mt(_result.end()); it != mt; it++) {
-        it->negate();
+    for (auto& elem : _result) {
+        elem.negate();
     }
 }
 
@@ -194,7 +194,7 @@ const ResultNode *
 ResultNodeVectorT<B, C, G>::find(const ResultNode & key) const
 {
     G getter;
-    typename Vector::const_iterator found = std::lower_bound(_result.begin(), _result.end(), getter(key), typename C::less() );
+    auto found = std::lower_bound(_result.begin(), _result.end(), getter(key), typename C::less() );
     if (found != _result.end()) {
         typename C::equal equal;
         return equal(*found, getter(key)) ? &(*found) : nullptr;

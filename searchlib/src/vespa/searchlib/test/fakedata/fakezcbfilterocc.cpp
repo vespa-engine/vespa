@@ -64,12 +64,8 @@ FakeZcbFilterOcc::FakeZcbFilterOcc(const FakeWord &fw)
     std::vector<uint8_t> bytes;
     uint32_t lastDocId = 0u;
 
-
-    using FW = FakeWord;
-    using DWFL = FW::DocWordFeatureList;
-
-    DWFL::const_iterator d(fw._postings.begin());
-    DWFL::const_iterator de(fw._postings.end());
+    auto d = fw._postings.begin();
+    auto de = fw._postings.end();
 
     while (d != de) {
         if (lastDocId == 0u) {

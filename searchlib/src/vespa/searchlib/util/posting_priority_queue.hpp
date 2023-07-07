@@ -10,7 +10,6 @@ template <class Reader>
 void
 PostingPriorityQueue<Reader>::adjust()
 {
-    using VIT = typename Vector::iterator;
     if (!_vec.front().get()->isValid()) {
         _vec.erase(_vec.begin());   // Iterator no longer valid
         return;
@@ -19,9 +18,9 @@ PostingPriorityQueue<Reader>::adjust()
         return;
     }
     // Peform binary search to find first element higher than changed value
-    VIT gt = std::upper_bound(_vec.begin() + 1, _vec.end(), _vec.front());
-    VIT to = _vec.begin();
-    VIT from = to;
+    auto gt = std::upper_bound(_vec.begin() + 1, _vec.end(), _vec.front());
+    auto to = _vec.begin();
+    auto from = to;
     ++from;
     Ref changed = *to;   // Remember changed value
     while (from != gt) { // Shift elements to make space for changed value

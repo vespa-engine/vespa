@@ -155,12 +155,8 @@ setupT(const FakeWord &fw)
     uint64_t lastL4SkipL3SkipPos = 0;
     unsigned int l4SkipCnt = 0;
 
-
-    using FW = FakeWord;
-    using DWFL = FW::DocWordFeatureList;
-
-    DWFL::const_iterator d(fw._postings.begin());
-    DWFL::const_iterator de(fw._postings.end());
+    auto d = fw._postings.begin();
+    auto de = fw._postings.end();
 
     if (d != de) {
         // Prefix support needs counts embedded in posting list
