@@ -5,6 +5,7 @@ package ai.vespa.feed.client.impl;
 import ai.vespa.feed.client.FeedClientBuilder.Compression;
 import ai.vespa.feed.client.HttpResponse;
 import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.MultiplexConnectionPool;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.client.api.Result;
@@ -19,6 +20,7 @@ import org.eclipse.jetty.http2.client.http.HttpClientTransportOverHTTP2;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.HttpCookieStore;
+import org.eclipse.jetty.util.Pool;
 import org.eclipse.jetty.util.Promise;
 import org.eclipse.jetty.util.SocketAddressResolver;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
@@ -117,12 +119,17 @@ class JettyCluster implements Cluster {
         connector.setSslContextFactory(clientSslCtxFactory);
         HTTP2Client h2Client = new HTTP2Client(connector);
         h2Client.setMaxConcurrentPushedStreams(b.maxStreamsPerConnection);
-        HttpClient httpClient = new HttpClient(new HttpClientTransportOverHTTP2(h2Client));
-        httpClient.setMaxConnectionsPerDestination(b.connectionsPerEndpoint);
+        HttpClientTransportOverHTTP2 transport = new HttpClientTransportOverHTTP2(h2Client);
+        transport.setConnectionPoolFactory(dest -> {
+            MultiplexConnectionPool pool = new MultiplexConnectionPool(
+                    dest, Pool.StrategyType.RANDOM, b.connectionsPerEndpoint, false, dest, Integer.MAX_VALUE);
+            pool.preCreateConnections(8);
+            return pool;
+        });
+        HttpClient httpClient = new HttpClient(transport);
         httpClient.setFollowRedirects(false);
         httpClient.setUserAgentField(
                 new HttpField(HttpHeader.USER_AGENT, String.format("vespa-feed-client/%s (Jetty)", Vespa.VERSION)));
-        httpClient.setMaxRequestsQueuedPerDestination(Integer.MAX_VALUE);
         httpClient.setConnectTimeout(Duration.ofSeconds(10).toMillis());
         // Stop client from trying different IP address when TLS handshake fails
         httpClient.setSocketAddressResolver(new Ipv4PreferringResolver(httpClient, Duration.ofSeconds(10)));
