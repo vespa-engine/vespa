@@ -2692,7 +2692,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                                       deployment.version(),
                                                                       deployment.revision(),
                                                                       deployment.at(),
-                                                                      controller.routing().readTestRunnerEndpointsOf(deployments),
+                                                                      controller.routing().readStepRunnerEndpointsOf(deployments),
                                                                       controller.applications().reachableContentClustersByZone(deployments)));
     }
 

@@ -502,7 +502,7 @@ public class InternalStepRunner implements StepRunner {
 
     private Availability endpointsAvailable(ApplicationId id, ZoneId zone, Deployment deployment, DualLogger logger) {
         DeploymentId deploymentId = new DeploymentId(id, zone);
-        Map<ZoneId, List<Endpoint>> endpoints = controller.routing().readTestRunnerEndpointsOf(Set.of(deploymentId));
+        Map<ZoneId, List<Endpoint>> endpoints = controller.routing().readStepRunnerEndpointsOf(Set.of(deploymentId));
         logEndpoints(endpoints, logger);
         DeploymentRoutingContext context = controller.routing().of(deploymentId);
         boolean resolveEndpoints = context.routingMethod() == RoutingMethod.exclusive;
@@ -594,7 +594,7 @@ public class InternalStepRunner implements StepRunner {
         deployments.add(new DeploymentId(id.application(), zoneId));
 
         logger.log("Attempting to find endpoints ...");
-        var endpoints = controller.routing().readTestRunnerEndpointsOf(deployments);
+        var endpoints = controller.routing().readStepRunnerEndpointsOf(deployments);
         if ( ! endpoints.containsKey(zoneId)) {
             logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
             return Optional.of(error);
