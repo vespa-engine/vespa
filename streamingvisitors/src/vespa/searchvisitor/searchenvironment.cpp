@@ -131,10 +131,10 @@ SearchEnvironment::getEnv(const vespalib::string & searchCluster)
         std::lock_guard guard(_lock);
         _threadLocals.emplace_back(std::move(envMap));
     }
-    EnvMap::iterator localFound = _localEnvMap->find(searchCluster);
+    auto localFound = _localEnvMap->find(searchCluster);
     if (localFound == _localEnvMap->end()) {
         std::lock_guard guard(_lock);
-        EnvMap::iterator found = _envMap.find(searchCluster);
+        auto found = _envMap.find(searchCluster);
         if (found == _envMap.end()) {
             LOG(debug, "Init VSMAdapter with config id = '%s'", searchCluster.c_str());
             Env::SP env = std::make_shared<Env>(searchClusterUri, _wordFolder, _transport, _file_distributor_connection_spec);

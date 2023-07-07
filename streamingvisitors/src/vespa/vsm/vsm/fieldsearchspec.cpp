@@ -193,7 +193,7 @@ bool FieldSearchSpecMap::buildFieldsInQuery(const Query & query, StringFieldIdTM
             const IndexFieldMapT & fim = dtm.second;
             vespalib::string rawIndex(term->index());
             vespalib::string index(stripNonFields(rawIndex));
-            IndexFieldMapT::const_iterator fIt = fim.find(index);
+            auto fIt = fim.find(index);
             if (fIt != fim.end()) {
                 for(FieldIdT fid : fIt->second) {
                     const FieldSearchSpec & spec = specMap().find(fid)->second;
@@ -286,7 +286,7 @@ FieldSearchSpecMap::reconfigFromQuery(const Query & query)
 
     for (const auto & termA : qtl) {
         for (const auto & ifm : documentTypeMap()) {
-            IndexFieldMapT::const_iterator itc = ifm.second.find(termA->index());
+            auto itc = ifm.second.find(termA->index());
             if (itc != ifm.second.end()) {
                 for (FieldIdT fid : itc->second) {
                     FieldSearchSpec & spec = _specMap.find(fid)->second;

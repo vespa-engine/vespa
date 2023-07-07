@@ -81,10 +81,8 @@ RankProcessor::initQueryEnvironment()
             vespalib::string expandedIndexName = vsm::FieldSearchSpecMap::stripNonFields(term.getTerm()->index());
             const RankManager::View *view = _rankManagerSnapshot->getView(expandedIndexName);
             if (view != nullptr) {
-                RankManager::View::const_iterator iter = view->begin();
-                RankManager::View::const_iterator endp = view->end();
-                for (; iter != endp; ++iter) {
-                    qtd.getTermData().addField(*iter).setHandle(_mdLayout.allocTermField(*iter));
+                for (auto field_id : *view) {
+                    qtd.getTermData().addField(field_id).setHandle(_mdLayout.allocTermField(field_id));
                 }
             } else {
                 LOG(warning, "Could not find a view for index '%s'. Ranking no fields.",

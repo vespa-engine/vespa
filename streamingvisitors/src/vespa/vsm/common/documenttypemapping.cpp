@@ -43,7 +43,7 @@ void DocumentTypeMapping::init(const vespalib::string & defaultDocumentType,
 
 bool DocumentTypeMapping::prepareBaseDoc(SharedFieldPathMap & map) const
 {
-    FieldPathMapMapT::const_iterator found = _fieldMap.find(_defaultDocumentTypeName);
+    auto found = _fieldMap.find(_defaultDocumentTypeName);
     if (found != _fieldMap.end()) {
         map = std::make_shared<FieldPathMapT>(found->second);
         LOG(debug, "Found FieldPathMap for default document type '%s' with %zd elements",
@@ -64,8 +64,8 @@ void DocumentTypeMapping::buildFieldMap(
         docTypePtr->getName().c_str(), fieldList.size(), typeId.c_str());
     const document::DocumentType & docType = *docTypePtr;
     size_t highestFNo(0);
-    for (StringFieldIdTMapT::const_iterator it = fieldList.begin(), mt = fieldList.end(); it != mt; it++) {
-        highestFNo = std::max(highestFNo, size_t(it->second));
+    for (const auto& elem : fieldList) {
+        highestFNo = std::max(highestFNo, size_t(elem.second));
     }
     highestFNo++;
     FieldPathMapT & fieldMap = _fieldMap[typeId];
@@ -73,20 +73,20 @@ void DocumentTypeMapping::buildFieldMap(
     fieldMap.resize(highestFNo);
 
     size_t validCount(0);
-    for (StringFieldIdTMapT::const_iterator it = fieldList.begin(), mt = fieldList.end(); it != mt; it++) {
-        vespalib::string fname = it->first;
-        LOG(debug, "Handling %s -> %d", fname.c_str(), it->second);
+    for (const auto& elem : fieldList) {
+        vespalib::string fname = elem.first;
+        LOG(debug, "Handling %s -> %d", fname.c_str(), elem.second);
         try {
-            if ((it->first[0] != '[') && (it->first != "summaryfeatures") && (it->first != "rankfeatures") && (it->first != "ranklog") && (it->first != "sddocname") && (it->first != "documentid")) {
+            if ((elem.first[0] != '[') && (elem.first != "summaryfeatures") && (elem.first != "rankfeatures") && (elem.first != "ranklog") && (elem.first != "sddocname") && (elem.first != "documentid")) {
                 FieldPath fieldPath;
                 docType.buildFieldPath(fieldPath, fname);
-                fieldMap[it->second] = std::move(fieldPath);
+                fieldMap[elem.second] = std::move(fieldPath);
                 validCount++;
-                LOG(spam, "Found %s -> %d in document", fname.c_str(), it->second);
+                LOG(spam, "Found %s -> %d in document", fname.c_str(), elem.second);
             }
         } catch (const std::exception & e) {
             LOG(debug, "Could not get field info for '%s' in documenttype '%s' (id = '%s') : %s",
-                    it->first.c_str(), docType.getName().c_str(), typeId.c_str(), e.what());
+                    elem.first.c_str(), docType.getName().c_str(), typeId.c_str(), e.what());
         }
     }
     _documentTypeFreq.insert(std::make_pair(validCount, docTypePtr));

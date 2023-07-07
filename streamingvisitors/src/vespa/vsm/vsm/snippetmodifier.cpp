@@ -18,7 +18,7 @@ namespace {
 void
 addIfNotPresent(FieldQueryTermMap & map, vsm::FieldIdT fId, QueryTerm * qt)
 {
-    FieldQueryTermMap::iterator itr = map.find(fId);
+    auto itr = map.find(fId);
     if (itr != map.end()) {
         QueryTermList & qtl = itr->second;
         if (std::find(qtl.begin(), qtl.end(), qt) == qtl.end()) {
@@ -108,16 +108,14 @@ SnippetModifierManager::setup(const QueryTermList& queryTerms,
     FieldQueryTermMap fqtm;
 
     // setup modifiers
-    for (QueryTermList::const_iterator i = queryTerms.begin(); i != queryTerms.end(); ++i) {
-        QueryTerm * qt = *i;
-        IndexFieldMapT::const_iterator j = indexMap.find(qt->index());
-        if (j != indexMap.end()) {
-            for (FieldIdTList::const_iterator k = j->second.begin(); k != j->second.end(); ++k) {
-                FieldIdT fId = *k;
+    for (auto qt : queryTerms) {
+        auto itr = indexMap.find(qt->index());
+        if (itr != indexMap.end()) {
+            for (auto fId : itr->second) {
                 const FieldSearchSpec & spec = specMap.find(fId)->second;
                 if (spec.searcher().substring() || qt->isSubstring()) { // we need a modifier for this field id
                     addIfNotPresent(fqtm, fId, qt);
-                    if (_modifiers.getModifier(fId) == NULL) {
+                    if (_modifiers.getModifier(fId) == nullptr) {
                         LOG(debug, "Create snippet modifier for field id '%u'", fId);
                         UTF8SubstringSnippetModifier::SP searcher
                             (new UTF8SubstringSnippetModifier(fId, _searchModifyBuf, _searchOffsetBuf));
