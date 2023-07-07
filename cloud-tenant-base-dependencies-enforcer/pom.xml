@@ -38,7 +38,7 @@
         <!-- ALL BELOW MUST BE KEPT IN SYNC WITH container-dependency-versions pom
              Copied here because cloud-tenant-base does not have a parent. -->
         <aopalliance.version>1.0</aopalliance.version>
-        <guava.version>27.1-jre</guava.version>
+        <guava.version>32.1.1-jre</guava.version>
         <guice.version>4.2.3</guice.version>
         <jackson2.version>2.15.2</jackson2.version>
         <jackson-databind.version>2.15.2</jackson-databind.version>
@@ -89,7 +89,7 @@
                                         <include>com.google.guava:guava:${guava.version}:provided</include>
                                         <include>com.google.errorprone:error_prone_annotations:2.18.0:provided</include>
                                         <include>com.google.guava:failureaccess:1.0.1:provided</include>
-                                        <include>com.google.j2objc:j2objc-annotations:1.1:provided</include>
+                                        <include>com.google.j2objc:j2objc-annotations:2.8:provided</include>
 
                                         <include>com.google.inject:guice:jar:no_aop:${guice.version}:provided</include>
                                         <include>com.sun.activation:javax.activation:1.2.0:provided</include>
