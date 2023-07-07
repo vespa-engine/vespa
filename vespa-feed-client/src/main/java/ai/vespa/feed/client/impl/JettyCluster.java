@@ -127,7 +127,7 @@ class JettyCluster implements Cluster {
         transport.setConnectionPoolFactory(dest -> {
             MultiplexConnectionPool pool = new MultiplexConnectionPool(
                     dest, Pool.StrategyType.RANDOM, b.connectionsPerEndpoint, false, dest, Integer.MAX_VALUE);
-            pool.preCreateConnections(8);
+            pool.preCreateConnections(b.connectionsPerEndpoint);
             return pool;
         });
         HttpClient httpClient = new HttpClient(transport);
