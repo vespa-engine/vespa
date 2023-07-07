@@ -26,14 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Distribution {
 
-    private static class Config {
-        Config(Group nodeGraph, int redundancy) {
-            this.nodeGraph = nodeGraph;
-            this.redundancy = redundancy;
-        }
-
-        private final Group nodeGraph;
-        private final int redundancy;
+    private record Config(Group nodeGraph, int redundancy) {
     }
 
     private ConfigSubscriber configSub;
@@ -197,8 +190,8 @@ public class Distribution {
     }
 
     private static class ScoredGroup implements Comparable<ScoredGroup> {
-        Group group;
-        double score;
+        final Group group;
+        final double score;
 
         ScoredGroup(Group g, double score) { this.group = g; this.score = score; }
 
@@ -266,8 +259,8 @@ public class Distribution {
     }
 
     private static class ResultGroup implements Comparable<ResultGroup> {
-        Group group;
-        int redundancy;
+        final Group group;
+        final int redundancy;
 
         ResultGroup(Group group, int redundancy) {
             this.group = group;
@@ -489,14 +482,11 @@ public class Distribution {
 
     public Set<ConfiguredNode> getNodes() {
         final Set<ConfiguredNode> nodes = new HashSet<>();
-        GroupVisitor visitor = new GroupVisitor() {
-            @Override
-            public boolean visitGroup(Group g) {
-                if (g.isLeafGroup()) {
-                    nodes.addAll(g.getNodes());
-                }
-                return true;
+        GroupVisitor visitor = g -> {
+            if (g.isLeafGroup()) {
+                nodes.addAll(g.getNodes());
             }
+            return true;
         };
         visitGroups(visitor);
         return nodes;

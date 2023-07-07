@@ -17,12 +17,12 @@ public class SearchResultTestCase {
         SearchResult.Hit b = new SearchResult.Hit("b", 0.1);
         SearchResult.Hit c = new SearchResult.Hit("c", 1.0);
         SearchResult.Hit bb = new SearchResult.Hit("b2", 0.1);
-        assertTrue(a.compareTo(a) == 0);
+        assertEquals(0, a.compareTo(a));
         assertTrue(a.compareTo(b) > 0);
         assertTrue(a.compareTo(c) > 0);
         assertTrue(b.compareTo(a) < 0);
-        assertTrue(b.compareTo(bb) == 0);
-        assertTrue(bb.compareTo(b) == 0);
+        assertEquals(0, b.compareTo(bb));
+        assertEquals(0, bb.compareTo(b));
         assertTrue(b.compareTo(c) > 0);
         assertTrue(c.compareTo(a) < 0);
         assertTrue(c.compareTo(b) < 0);
@@ -47,7 +47,7 @@ public class SearchResultTestCase {
         SearchResult.Hit h5 = new SearchResult.HitWithSortBlob(a, b5);
         SearchResult.Hit h6 = new SearchResult.HitWithSortBlob(a, b6);
 
-        assertTrue(h1.compareTo(h1) == 0);
+        assertEquals(0, h1.compareTo(h1));
         assertTrue(h1.compareTo(h2) < 0);
         assertTrue(h1.compareTo(h3) < 0);
         assertTrue(h1.compareTo(h4) < 0);
@@ -55,7 +55,7 @@ public class SearchResultTestCase {
         assertTrue(h1.compareTo(h6) < 0);
 
         assertTrue(h2.compareTo(h1) > 0);
-        assertTrue(h2.compareTo(h2) == 0);
+        assertEquals(0, h2.compareTo(h2));
         assertTrue(h2.compareTo(h3) < 0);
         assertTrue(h2.compareTo(h4) < 0);
         assertTrue(h2.compareTo(h5) < 0);
@@ -63,7 +63,7 @@ public class SearchResultTestCase {
 
         assertTrue(h3.compareTo(h1) > 0);
         assertTrue(h3.compareTo(h2) > 0);
-        assertTrue(h3.compareTo(h3) == 0);
+        assertEquals(0, h3.compareTo(h3));
         assertTrue(h3.compareTo(h4) < 0);
         assertTrue(h3.compareTo(h5) < 0);
         assertTrue(h3.compareTo(h6) < 0);
@@ -71,7 +71,7 @@ public class SearchResultTestCase {
         assertTrue(h4.compareTo(h1) > 0);
         assertTrue(h4.compareTo(h2) > 0);
         assertTrue(h4.compareTo(h3) > 0);
-        assertTrue(h4.compareTo(h4) == 0);
+        assertEquals(0, h4.compareTo(h4));
         assertTrue(h4.compareTo(h5) < 0);
         assertTrue(h4.compareTo(h6) < 0);
 
@@ -79,7 +79,7 @@ public class SearchResultTestCase {
         assertTrue(h5.compareTo(h2) > 0);
         assertTrue(h5.compareTo(h3) > 0);
         assertTrue(h5.compareTo(h4) > 0);
-        assertTrue(h5.compareTo(h5) == 0);
+        assertEquals(0, h5.compareTo(h5));
         assertTrue(h5.compareTo(h6) < 0);
 
         assertTrue(h6.compareTo(h1) > 0);
@@ -87,6 +87,6 @@ public class SearchResultTestCase {
         assertTrue(h6.compareTo(h3) > 0);
         assertTrue(h6.compareTo(h4) > 0);
         assertTrue(h6.compareTo(h5) > 0);
-        assertTrue(h6.compareTo(h6) == 0);
+        assertEquals(0, h6.compareTo(h6));
     }
 }

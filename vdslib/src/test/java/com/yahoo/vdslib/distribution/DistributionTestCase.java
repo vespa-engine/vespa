@@ -30,26 +30,27 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class DistributionTestCase {
+
+    private static final int minUsedBits = 16;
+
     private DistributionTestFactory test;
     /** Build a set of buckets to test that should represent the entire bucket space well. */
-    private static List<BucketId> getTestBuckets() { return getTestBuckets(16); }
-    private static List<BucketId> getTestBuckets(int minUsedBits) {
+    private static List<BucketId> getTestBuckets() {
         List<BucketId> buckets = new ArrayList<>();
-        assertTrue(minUsedBits <= 16);
-            // Get a set of buckets from the same split level
-        for (int i=16; i<=18; ++i) {
-            for (int j=0; j<20; ++j) {
+        // Get a set of buckets from the same split level
+        for (int i = 16; i <= 18; ++ i) {
+            for (int j = 0; j < 20; ++ j) {
                 buckets.add(new BucketId(i, j));
             }
         }
-            // Get a few random buckets at every split level.
+        // Get a few random buckets at every split level.
         Random randomized = new Random(413);
         long randValue = randomized.nextLong();
-        for (int i=minUsedBits; i<58; ++i) {
+        for (int i = minUsedBits; i < 58; ++ i) {
             buckets.add(new BucketId(i, randValue));
         }
         randValue = randomized.nextLong();
-        for (int i=minUsedBits; i<58; ++i) {
+        for (int i = minUsedBits; i < 58; ++ i) {
             buckets.add(new BucketId(i, randValue));
         }
         return Collections.unmodifiableList(buckets);
@@ -230,7 +231,7 @@ public class DistributionTestCase {
     }
 
     @Test
-    public void testSplitBeyondSplitBitDoesntAffectDistribution() throws Exception {
+    public void testSplitBeyondSplitBitDoesntAffectDistribution() {
         Random randomized = new Random(7123161);
         long val = randomized.nextLong();
         test = new DistributionTestFactory("abovesplitbit");
@@ -325,7 +326,7 @@ public class DistributionTestCase {
     }
 
     @Test
-    public void testHierarchicalDistribution() throws Exception {
+    public void testHierarchicalDistribution() {
         test = new DistributionTestFactory("hierarchical-grouping")
                 .setDistribution(buildHierarchicalConfig(6, 3, 1, "1|2|*", 3));
         for (BucketId bucket : getTestBuckets()) {

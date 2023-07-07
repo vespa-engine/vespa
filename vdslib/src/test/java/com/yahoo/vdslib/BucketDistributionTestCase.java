@@ -25,7 +25,7 @@ public class BucketDistributionTestCase {
             BucketDistribution bd = new BucketDistribution(NUM_COLUMNS, numBucketBits);
             for (int i = 0; i < bd.getNumBuckets(); ++i) {
                 if (i % 32 == 0) {
-                    System.out.println("");
+                    System.out.println();
                     System.out.print("                ");
                 }
                 System.out.print(bd.getColumn(new BucketId(16, i)));
@@ -37,7 +37,7 @@ public class BucketDistributionTestCase {
             if (numBucketBits < MAX_BUCKETBITS) {
                 System.out.print(",");
             }
-            System.out.println("");
+            System.out.println();
         }
         System.out.println("        };");
     }

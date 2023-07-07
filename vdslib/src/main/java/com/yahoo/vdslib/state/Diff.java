@@ -8,8 +8,9 @@ import java.util.List;
  * TODO: document this
  */
 public class Diff {
+
     public static class Entry {
-        String id;
+        final String id;
             // Values set for entries that contain diff themselves
         String preContent;
         String postContent;
@@ -32,22 +33,22 @@ public class Diff {
         public Entry bold() { bold = true; return this; }
         public Entry splitLine() { splitLine = true; return this; }
     }
-    private List<Entry> diff = new LinkedList<Entry>();
+    private final List<Entry> diff = new LinkedList<>();
 
     public void add(Entry e) { diff.add(e); }
 
     public boolean differs() { return (!diff.isEmpty()); }
 
-    class PrintProperties {
+    static class PrintProperties {
         boolean insertLineBreaks = false;
-        boolean ommitGroupForSingleEntries = true;
+        final boolean ommitGroupForSingleEntries = true;
         String lineBreak = "\n";
-        String entrySeparator = ", ";
-        String idValueSeparator = ": ";
+        final String entrySeparator = ", ";
+        final String idValueSeparator = ": ";
         String keyValueSeparator = " => ";
-        String singleGroupSeparator = "";
-        String groupStart = "[";
-        String groupStop = "]";
+        final String singleGroupSeparator = "";
+        final String groupStart = "[";
+        final String groupStop = "]";
         String indent = "  ";
         String boldStart = "";
         String boldStop = "";

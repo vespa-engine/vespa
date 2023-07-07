@@ -1,19 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib;
+
 import com.yahoo.data.access.helpers.MatchFeatureData;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Deserializer;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class SearchResult {
+
     public static class Hit implements Comparable<Hit> {
-        private String docId;
+        private final String docId;
         private double rank;
         private MatchFeatureData.HitValue matchFeatures;
         public Hit(Hit h) {
@@ -40,7 +43,7 @@ public class SearchResult {
         }
     }
     public static class HitWithSortBlob extends Hit {
-        private byte [] sortBlob;
+        private final byte [] sortBlob;
         public HitWithSortBlob(Hit h, byte [] sb) {
             super(h);
             sortBlob = sb;
@@ -57,12 +60,12 @@ public class SearchResult {
             return sortBlob.length - b.sortBlob.length;
         }
     }
-    private int    totalHits;
-    private Hit[]  hits;
-    private TreeMap<Integer, byte []> aggregatorList;
-    private TreeMap<Integer, byte []> groupingList;
-    private static int EXTENSION_FLAGS_PRESENT = -1;
-    private static int MATCH_FEATURES_PRESENT_MASK = 1;
+    private final int    totalHits;
+    private final Hit[]  hits;
+    private final TreeMap<Integer, byte []> aggregatorList;
+    private final TreeMap<Integer, byte []> groupingList;
+    private static final int EXTENSION_FLAGS_PRESENT = -1;
+    private static final int MATCH_FEATURES_PRESENT_MASK = 1;
 
     public SearchResult(Deserializer buf) {
         BufferSerializer bser = (BufferSerializer) buf; // TODO: dirty cast. must do this differently
@@ -76,17 +79,13 @@ public class SearchResult {
         }
         hits = new Hit[numHits];
         if (numHits != 0) {
-            int docIdBufferLength = buf.getInt(null);
+            int docIdBufferLength = buf.getInt(null);  // Unused, but need to call getInt() to advance buffer
             byte[] cArr = bser.getBuf().array();
             int start = bser.getBuf().arrayOffset() + bser.position();
             for(int i=0; i < numHits; i++) {
                 int end = start;
                 while (cArr[end++] != 0);
-                try {
-                    hits[i] = new Hit(new String(cArr, start, end-start-1, "utf-8"), 0);
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException("UTF-8 apparently not supported");
-                }
+                hits[i] = new Hit(new String(cArr, start, end-start-1, UTF_8), 0);
                 start = end;
             }
             bser.position(start - bser.getBuf().arrayOffset());
@@ -104,8 +103,9 @@ public class SearchResult {
             hits[i] = new HitWithSortBlob(hits[i], buf.getBytes(null, size[i]));
         }
 
+        // Unused, but need to call getInt() to advance buffer
         int numAggregators = buf.getInt(null);
-        aggregatorList = new TreeMap<Integer, byte []>();
+        aggregatorList = new TreeMap<>();
         for (int i = 0; i < numAggregators; i++) {
             int aggrId = buf.getInt(null);
             int aggrLength = buf.getInt(null);
@@ -113,7 +113,7 @@ public class SearchResult {
         }
 
         int numGroupings = buf.getInt(null);
-        groupingList = new TreeMap<Integer, byte []>();
+        groupingList = new TreeMap<>();
         for (int i = 0; i < numGroupings; i++) {
             int aggrId = buf.getInt(null);
             int aggrLength = buf.getInt(null);
@@ -159,18 +159,8 @@ public class SearchResult {
         return featureType == 0;
     }
 
-    /**
-     * Constructs a new message from a byte buffer.
-     *
-     * @param buffer A byte buffer that contains a serialized message.
-     */
-    public SearchResult(byte[] buffer) {
-        this(BufferSerializer.wrap(buffer));
-    }
-
     final public int getHitCount()      { return hits.length; }
     final public int getTotalHitCount() { return (totalHits != 0) ? totalHits : getHitCount(); }
     final public Hit getHit(int hitNo)  { return hits[hitNo]; }
-    final public Map<Integer, byte []> getAggregatorList() { return aggregatorList; }
     final public Map<Integer, byte []> getGroupingList() { return groupingList; }
 }

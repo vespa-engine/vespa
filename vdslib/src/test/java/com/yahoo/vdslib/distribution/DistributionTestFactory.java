@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 // TODO: Use config builder instead of ConfigGetter to create test config.
 public class DistributionTestFactory extends CrossPlatformTestFactory {
 
-    ObjectMapper mapper = new ObjectMapper();
+    final ObjectMapper mapper = new ObjectMapper();
 
     private static final String testDirectory = "src/tests/distribution/testdata";
     private int redundancy;
@@ -32,14 +32,14 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
     private String upStates;
 
     private int testsRecorded = 0;
-    private List<Test> results = new ArrayList<>();
+    private final List<Test> results = new ArrayList<>();
     private int testsVerified = 0;
 
-    enum Failure { NONE, TOO_FEW_BITS, NO_DISTRIBUTORS_AVAILABLE };
+    enum Failure { NONE, TOO_FEW_BITS, NO_DISTRIBUTORS_AVAILABLE }
 
     static public class Test {
-        private BucketId bucket;
-        private List<Integer> nodes;
+        private final BucketId bucket;
+        private final List<Integer> nodes;
         private Failure failure;
 
         public Test(BucketId bucket) {
@@ -50,8 +50,7 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
 
         @Override
         public boolean equals(Object other) {
-            if (!(other instanceof Test)) return false;
-            Test t = (Test) other;
+            if (!(other instanceof Test t)) return false;
             return (bucket.equals(t.bucket)
                     && nodes.equals(t.nodes)
                     && failure.equals(t.failure));
@@ -81,19 +80,14 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
             return nodes;
         }
 
-        public Test assertFailure(Failure f) {
-            assertEquals(f, failure);
-            return this;
-        }
         public Test assertNodeCount(int count) {
             if (count > 0) assertEquals(toString(), Failure.NONE, failure);
             assertEquals(toString(), count, nodes.size());
             return this;
         }
-        public Test assertNodeUsed(int node) {
+        public void assertNodeUsed(int node) {
             assertEquals(toString(), Failure.NONE, failure);
             assertTrue(toString(), nodes.contains(node));
-            return this;
         }
     }
 
@@ -166,9 +160,7 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
                 int node = d.getIdealDistributorNode(state, bucket, upStates);
                 t.nodes.add(node);
             } else {
-                for (int i : d.getIdealStorageNodes(state, bucket, upStates)) {
-                    t.nodes.add(i);
-                }
+                t.nodes.addAll(d.getIdealStorageNodes(state, bucket, upStates));
             }
         } catch (Distribution.TooFewBucketBitsInUseException e) {
             t.failure = Failure.TOO_FEW_BITS;
@@ -184,7 +176,7 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
         return t;
     }
 
-    public String serialize() throws Exception {
+    public String serialize() {
         ObjectNode test = new ObjectNode(mapper.getNodeFactory())
                 .put("cluster-state", state.toString())
                 .put("distribution", new StorDistributionConfig(distributionConfig).toString())
