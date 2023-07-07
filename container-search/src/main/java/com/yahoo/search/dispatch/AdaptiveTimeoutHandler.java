@@ -54,7 +54,7 @@ class AdaptiveTimeoutHandler implements TimeoutHandler {
             slopedWait += ((adaptiveTimeoutMax - adaptiveTimeoutMin) * (pendingQueries - 1)) / missWidth;
         }
         long nextAdaptive = (long) slopedWait;
-        if (now + nextAdaptive >= deadline) {
+        if (nextAdaptive >= deadline - now) {
             return deadline - now;
         }
         deadline = now + nextAdaptive;
