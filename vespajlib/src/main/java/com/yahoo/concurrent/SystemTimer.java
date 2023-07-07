@@ -46,7 +46,7 @@ public enum SystemTimer implements Timer {
         millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - creationNanos);
         Thread thread = new Thread(() -> {
             while (true) {
-                millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime()) - creationNanos;
+                millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - creationNanos);
                 try {
                     Thread.sleep(napTime);
                 } catch (InterruptedException e) {
