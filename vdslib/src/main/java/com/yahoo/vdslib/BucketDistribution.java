@@ -4,6 +4,7 @@ package com.yahoo.vdslib;
 import com.yahoo.document.BucketId;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -14,16 +15,16 @@ import java.util.logging.Logger;
 public class BucketDistribution {
 
     // A logger object to enable proper logging.
-    private static Logger log = Logger.getLogger(BucketDistribution.class.getName());
+    private static final Logger log = Logger.getLogger(BucketDistribution.class.getName());
 
     // A map from bucket id to column index.
-    private int[] bucketToColumn;
+    private final int[] bucketToColumn;
 
     // The number of columns to distribute to.
     private int numColumns;
 
     // The number of bits to use for bucket identification.
-    private int numBucketBits;
+    private final int numBucketBits;
 
     /**
      * Constructs a new bucket distribution object with a given number of columns and buckets.
@@ -68,7 +69,7 @@ public class BucketDistribution {
      * @return The bucket distribution.
      */
     private static List<Integer> getBucketCount(int numColumns, int numBucketBits) {
-        List<Integer> ret = new ArrayList<Integer>(numColumns);
+        List<Integer> ret = new ArrayList<>(numColumns);
         int cnt = getNumBuckets(numBucketBits) / numColumns;
         int rst = getNumBuckets(numBucketBits) % numColumns;
         for (int i = 0; i < numColumns; ++i) {
@@ -100,9 +101,7 @@ public class BucketDistribution {
      * that it all buckets point to that single column.
      */
     public void reset() {
-        for (int i = 0; i < bucketToColumn.length; ++i) {
-            bucketToColumn[i] = 0;
-        }
+        Arrays.fill(bucketToColumn, 0);
         numColumns = 1;
     }
 
@@ -149,32 +148,6 @@ public class BucketDistribution {
      */
     public int getNumColumns() {
         return numColumns;
-    }
-
-    /**
-     * Sets the number of buckets to use for this document distribution object. This will reset and setup this object
-     * from scratch. The original number of columns is maintained.
-     *
-     * @param numBucketBits The new number of bits to use for bucket id.
-     */
-    public synchronized void setNumBucketBits(int numBucketBits) {
-        if (numBucketBits == this.numBucketBits) {
-            return;
-        }
-        this.numBucketBits = numBucketBits;
-        bucketToColumn = new int[getNumBuckets(numBucketBits)];
-        int numColumns = this.numColumns;
-        reset();
-        setNumColumns(numColumns);
-    }
-
-    /**
-     * Returns the number of bits used for bucket identifiers.
-     *
-     * @return The number of bits.
-     */
-    public int getNumBucketBits() {
-        return numBucketBits;
     }
 
     /**

@@ -5,7 +5,9 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class NodeTest {
 
@@ -29,23 +31,23 @@ public class NodeTest {
         assertEquals(n3, n3);
         assertEquals(n4, n4);
 
-        assertFalse(n1.equals(n2));
-        assertFalse(n1.equals(n3));
-        assertFalse(n1.equals(n4));
+        assertNotEquals(n1, n2);
+        assertNotEquals(n1, n3);
+        assertNotEquals(n1, n4);
 
-        assertFalse(n2.equals(n1));
-        assertFalse(n2.equals(n3));
-        assertFalse(n2.equals(n4));
+        assertNotEquals(n2, n1);
+        assertNotEquals(n2, n3);
+        assertNotEquals(n2, n4);
 
-        assertFalse(n3.equals(n1));
-        assertFalse(n3.equals(n2));
-        assertFalse(n3.equals(n4));
+        assertNotEquals(n3, n1);
+        assertNotEquals(n3, n2);
+        assertNotEquals(n3, n4);
 
-        assertFalse(n4.equals(n1));
-        assertFalse(n4.equals(n2));
-        assertFalse(n4.equals(n3));
+        assertNotEquals(n4, n1);
+        assertNotEquals(n4, n2);
+        assertNotEquals(n4, n3);
 
-        assertFalse(n1.equals("class not instance of Node"));
+        assertNotEquals("class not instance of Node", n1);
     }
 
     @Test
@@ -62,19 +64,19 @@ public class NodeTest {
 
         try {
             new Node("nodewithoutdot");
-            assertTrue("Method expected to throw IllegalArgumentException", false);
+            fail("Method expected to throw IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertEquals("Not a legal node string 'nodewithoutdot'.", e.getMessage());
         }
         try {
             new Node("fleetcontroller.0");
-            assertTrue("Method expected to throw IllegalArgumentException", false);
+            fail("Method expected to throw IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             assertEquals("Unknown node type 'fleetcontroller'. Legal values are 'storage' and 'distributor'.", e.getMessage());
         }
         try {
             new Node("storage.badindex");
-            assertTrue("Method expected to throw NumberFormatException", false);
+            fail("Method expected to throw NumberFormatException");
         } catch (NumberFormatException e) {
             assertEquals("For input string: \"badindex\"", e.getMessage());
         }

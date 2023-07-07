@@ -24,7 +24,7 @@ public class ClusterState implements Cloneable {
 
     /**
      * Maintains a bitset where all non-down nodes have a bit set. All nodes that differ from defaultUp
-     * and defaultDown are store explicit in a hash map.
+     * and defaultDown are stored explicitly in a hash map.
      */
     private static class Nodes {
         private int logicalNodeCount;

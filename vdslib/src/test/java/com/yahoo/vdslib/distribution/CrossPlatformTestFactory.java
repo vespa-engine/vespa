@@ -20,36 +20,29 @@ public abstract class CrossPlatformTestFactory {
 
     public String getName() { return name; }
 
-    public boolean loadTestResults() throws Exception {
+    public void loadTestResults() throws Exception {
         File reference = new File(directory, name + ".reference.results");
         if (!reference.exists()) {
-            return false;
+            return;
         }
-        BufferedReader br = new BufferedReader(new FileReader(reference));
-        StringBuilder sb = new StringBuilder();
-        try{
-            while(true) {
+        try (BufferedReader br = new BufferedReader(new FileReader(reference))) {
+            StringBuilder sb = new StringBuilder();
+            while (true) {
                 String line = br.readLine();
                 if (line == null) break;
                 sb.append(line);
             }
             parse(sb.toString());
-        } finally {
-            br.close();
         }
-        return true;
     }
 
     public void recordTestResults() throws Exception {
         File results = new File(directory, name + ".java.results");
-        FileWriter fw = new FileWriter(results);
-        try{
+        try (FileWriter fw = new FileWriter(results)) {
             fw.write(serialize());
-        } finally {
-            fw.close();
         }
     }
 
-    public abstract String serialize() throws Exception;
+    public abstract String serialize();
     public abstract void parse(String serialized) throws Exception;
 }

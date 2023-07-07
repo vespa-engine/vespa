@@ -9,7 +9,9 @@ import java.util.function.BiFunction;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ClusterStateTestCase{
 
@@ -55,16 +57,16 @@ public class ClusterStateTestCase{
         assertEquals(state, new ClusterState("storage:0"));
         assertEquals(state, new ClusterState("distributor:0"));
 
-        assertFalse(state.equals(new ClusterState("version:1")));
-        assertFalse(state.equals(new ClusterState("cluster:d")));
-        assertFalse(state.equals(new ClusterState("bits:20")));
-        assertFalse(state.equals(new ClusterState("storage:1")));
-        assertFalse(state.equals(new ClusterState("distributor:1")));
+        assertNotEquals(state, new ClusterState("version:1"));
+        assertNotEquals(state, new ClusterState("cluster:d"));
+        assertNotEquals(state, new ClusterState("bits:20"));
+        assertNotEquals(state, new ClusterState("storage:1"));
+        assertNotEquals(state, new ClusterState("distributor:1"));
 
         {
             ClusterState state1 = new ClusterState("distributor:3 .1.s:d .2.s:m storage:3 .1.s:i .2.s:r");
             ClusterState state2 = new ClusterState("distributor:3 .1.s:d .2.s:m storage:3 .1.s:i .2.s:m");
-            assertFalse(state1.equals(state2));
+            assertNotEquals(state1, state2);
             assertFalse(state1.similarTo(state2));
             assertFalse(state1.similarToIgnoringInitProgress(state2));
         }
@@ -72,7 +74,7 @@ public class ClusterStateTestCase{
         {
             ClusterState state1 = new ClusterState("cluster:d");
             ClusterState state2 = new ClusterState("cluster:d version:1 bits:20 distributor:1 storage:1 .0.s:d");
-            assertFalse(state1.equals(state2));
+            assertNotEquals(state1, state2);
             assertTrue(state1.similarTo(state2));
             assertTrue(state1.similarToIgnoringInitProgress(state2));
         }
@@ -80,12 +82,12 @@ public class ClusterStateTestCase{
         {
             ClusterState state1 = new ClusterState("distributor:3 .1.s:d .2.s:m storage:3 .1.s:i .2.s:r");
             ClusterState state2 = new ClusterState("distributor:3 storage:3");
-            assertFalse(state1.equals(state2));
+            assertNotEquals(state1, state2);
             assertFalse(state1.similarTo(state2));
             assertFalse(state1.similarToIgnoringInitProgress(state2));
         }
 
-        assertFalse(state.equals("class not instance of ClusterState"));
+        assertNotEquals("class not instance of ClusterState", state);
         assertFalse(state.similarTo("class not instance of ClusterState"));
 
         assertEquals(state, state);
@@ -200,36 +202,39 @@ public class ClusterStateTestCase{
         ClusterState state3 = new ClusterState("distributor:9 storage:2");
 
         assertEquals("storage: [4: Down => Up, 5: Down => Up], distributor: [7: Up => Down, 8: Up => Down]", state1.getTextualDifference(state2));
-        assertEquals("storage: [<br>\n" +
-                "&nbsp;4: <b>Down</b> =&gt; <b>Up</b>, <br>\n" +
-                "&nbsp;5: <b>Down</b> =&gt; <b>Up</b><br>\n" +
-                "], distributor: [<br>\n" +
-                "&nbsp;7: <b>Up</b> =&gt; <b>Down</b>, <br>\n" +
-                "&nbsp;8: <b>Up</b> =&gt; <b>Down</b><br>\n" +
-                "]", state1.getHtmlDifference(state2));
+        assertEquals("""
+                             storage: [<br>
+                             &nbsp;4: <b>Down</b> =&gt; <b>Up</b>, <br>
+                             &nbsp;5: <b>Down</b> =&gt; <b>Up</b><br>
+                             ], distributor: [<br>
+                             &nbsp;7: <b>Up</b> =&gt; <b>Down</b>, <br>
+                             &nbsp;8: <b>Up</b> =&gt; <b>Down</b><br>
+                             ]""", state1.getHtmlDifference(state2));
         assertEquals("storage: [2: Up => Down, 3: Up => Down, 4: Up => Down, 5: Up => Down], distributor: [7: Down => Up, 8: Down => Up]", state2.getTextualDifference(state3));
-        assertEquals("storage: [<br>\n" +
-                "&nbsp;2: <b>Up</b> =&gt; <b>Down</b>, <br>\n" +
-                "&nbsp;3: <b>Up</b> =&gt; <b>Down</b>, <br>\n" +
-                "&nbsp;4: <b>Up</b> =&gt; <b>Down</b>, <br>\n" +
-                "&nbsp;5: <b>Up</b> =&gt; <b>Down</b><br>\n" +
-                "], distributor: [<br>\n" +
-                "&nbsp;7: <b>Down</b> =&gt; <b>Up</b>, <br>\n" +
-                "&nbsp;8: <b>Down</b> =&gt; <b>Up</b><br>\n" +
-                "]", state2.getHtmlDifference(state3));
+        assertEquals("""
+                             storage: [<br>
+                             &nbsp;2: <b>Up</b> =&gt; <b>Down</b>, <br>
+                             &nbsp;3: <b>Up</b> =&gt; <b>Down</b>, <br>
+                             &nbsp;4: <b>Up</b> =&gt; <b>Down</b>, <br>
+                             &nbsp;5: <b>Up</b> =&gt; <b>Down</b><br>
+                             ], distributor: [<br>
+                             &nbsp;7: <b>Down</b> =&gt; <b>Up</b>, <br>
+                             &nbsp;8: <b>Down</b> =&gt; <b>Up</b><br>
+                             ]""", state2.getHtmlDifference(state3));
 
         state1.setVersion(123);
         state1.setNodeState(new Node(NodeType.STORAGE, 2), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.2f).setDescription("Booting"));
         state2.setDistributionBits(21);
         assertEquals("version: 123 => 0, bits: 16 => 21, storage: [2: [Initializing => Up, description: Booting => ], 4: Down => Up, 5: Down => Up], distributor: [7: Up => Down, 8: Up => Down]", state1.getTextualDifference(state2));
-        assertEquals("version: 123 =&gt; 0, bits: 16 =&gt; 21, storage: [<br>\n" +
-                "&nbsp;2: [<b>Initializing</b> =&gt; <b>Up</b>, description: Booting =&gt; ], <br>\n" +
-                "&nbsp;4: <b>Down</b> =&gt; <b>Up</b>, <br>\n" +
-                "&nbsp;5: <b>Down</b> =&gt; <b>Up</b><br>\n" +
-                "], distributor: [<br>\n" +
-                "&nbsp;7: <b>Up</b> =&gt; <b>Down</b>, <br>\n" +
-                "&nbsp;8: <b>Up</b> =&gt; <b>Down</b><br>\n" +
-                "]", state1.getHtmlDifference(state2));
+        assertEquals("""
+                             version: 123 =&gt; 0, bits: 16 =&gt; 21, storage: [<br>
+                             &nbsp;2: [<b>Initializing</b> =&gt; <b>Up</b>, description: Booting =&gt; ], <br>
+                             &nbsp;4: <b>Down</b> =&gt; <b>Up</b>, <br>
+                             &nbsp;5: <b>Down</b> =&gt; <b>Up</b><br>
+                             ], distributor: [<br>
+                             &nbsp;7: <b>Up</b> =&gt; <b>Down</b>, <br>
+                             &nbsp;8: <b>Up</b> =&gt; <b>Down</b><br>
+                             ]""", state1.getHtmlDifference(state2));
     }
 
     @Test
@@ -254,40 +259,40 @@ public class ClusterStateTestCase{
 
         try {
             new ClusterState("badtokenwithoutcolon");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             new ClusterState(".0.s:d");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             new ClusterState("cluster:badvalue");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             new ClusterState("cluster:m");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             new ClusterState("version:badvalue");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             new ClusterState("distributor:badvalue");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             new ClusterState("storage:badvalue");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             new ClusterState("distributor:2 .3.s:d");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             new ClusterState("storage:2 .3.s:d");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
     }
 
     @Test

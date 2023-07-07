@@ -4,11 +4,12 @@ package com.yahoo.vdslib.state;
 import org.junit.Test;
 
 import java.text.ParseException;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class NodeStateTestCase {
 
@@ -56,36 +57,36 @@ public class NodeStateTestCase {
         assertEquals(ns, NodeState.deserialize(NodeType.STORAGE, ": s:m sbadkey:u bbadkey:2 cbadkey:2.0 rbadkey:2 ibadkey:0.5 tbadkey:2 mbadkey:message dbadkey:2 unknownkey:somevalue"));
         try {
             NodeState.deserialize(NodeType.STORAGE, "s:m badtokenwithoutcolon");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             NodeState.deserialize(NodeType.STORAGE, "s:m c:badvalue");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             NodeState.deserialize(NodeType.STORAGE, "s:m i:badvalue");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             NodeState.deserialize(NodeType.STORAGE, "s:m t:badvalue");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             NodeState.deserialize(NodeType.STORAGE, "s:m t:-1");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             NodeState.deserialize(NodeType.STORAGE, "s:m d:badvalue");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             NodeState.deserialize(NodeType.STORAGE, "s:m d.badkey:badvalue");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
         try {
             NodeState.deserialize(NodeType.STORAGE, "s:m d.1:badindex");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
+            fail("Should fail");
+        } catch (Exception ignored) {}
 
         ns = new NodeState(NodeType.STORAGE, State.UP).setDescription("Foo bar");
         assertEquals("", ns.serialize(2, false));
@@ -127,11 +128,11 @@ public class NodeStateTestCase {
             assertTrue(ns1.similarToIgnoringInitProgress(ns4));
             assertTrue(ns2.similarToIgnoringInitProgress(ns4));
 
-            assertFalse(ns1.equals(ns2));
-            assertFalse(ns2.equals(ns3));
-            assertFalse(ns3.equals(ns4));
+            assertNotEquals(ns1, ns2);
+            assertNotEquals(ns2, ns3);
+            assertNotEquals(ns3, ns4);
 
-            assertFalse(ns1.equals("class not instance of NodeState"));
+            assertNotEquals("class not instance of NodeState", ns1);
             assertFalse(ns1.similarTo("class not instance of NodeState"));
         }
         {
@@ -139,7 +140,7 @@ public class NodeStateTestCase {
             NodeState ns2 = new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(18);
             assertTrue(ns1.similarTo(ns2));
             assertTrue(ns1.similarToIgnoringInitProgress(ns2));
-            assertFalse(ns1.equals(ns2));
+            assertNotEquals(ns1, ns2);
         }
     }
 
@@ -163,12 +164,12 @@ public class NodeStateTestCase {
     public void testValidInClusterState() {
         try{
             new NodeState(NodeType.DISTRIBUTOR, State.UNKNOWN).verifyValidInSystemState(NodeType.DISTRIBUTOR);
-            assertTrue("Should not be valid", false);
-        } catch (Exception e) {}
+            fail("Should not be valid");
+        } catch (Exception ignored) {}
         try{
             new NodeState(NodeType.DISTRIBUTOR, State.UP).setCapacity(3).verifyValidInSystemState(NodeType.DISTRIBUTOR);
-            assertTrue("Should not be valid", false);
-        } catch (Exception e) {}
+            fail("Should not be valid");
+        } catch (Exception ignored) {}
     }
 
 }
