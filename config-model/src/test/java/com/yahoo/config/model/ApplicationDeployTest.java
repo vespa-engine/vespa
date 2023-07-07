@@ -222,7 +222,7 @@ public class ApplicationDeployTest {
 
     @Test
     void testMetaData() throws IOException {
-        File tmp = Files.createTempDir();
+        File tmp = tmpFolder;
         String appPkg = TESTDIR + "app1";
         IOUtils.copyDirectory(new File(appPkg), tmp);
         ApplicationId applicationId = ApplicationId.from("tenant1", "application1", "instance1");
