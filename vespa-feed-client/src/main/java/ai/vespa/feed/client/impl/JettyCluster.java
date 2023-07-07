@@ -67,25 +67,31 @@ class JettyCluster implements Cluster {
 
     @Override
     public void dispatch(HttpRequest req, CompletableFuture<HttpResponse> vessel) {
-        Endpoint endpoint = findLeastBusyEndpoint(endpoints);
-        long reqTimeoutMillis = req.timeout() != null
-                ? req.timeout().toMillis() * 11 / 10 + 1000 : IDLE_TIMEOUT.toMillis();
-        Request jettyReq = client.newRequest(URI.create(endpoint.uri + req.path()))
-                .version(HttpVersion.HTTP_2)
-                .method(HttpMethod.fromString(req.method()))
-                .headers(hs -> req.headers().forEach((k, v) -> hs.add(k, v.get())))
-                .idleTimeout(IDLE_TIMEOUT.toMillis(), MILLISECONDS)
-                .timeout(reqTimeoutMillis, MILLISECONDS);
-        if (req.body() != null) {
-            FeedContent content = new FeedContent(compression, req.body());
-            content.contentEncoding().ifPresent(ce -> jettyReq.headers(hs -> hs.add(ce)));
-            jettyReq.body(content);
-        }
-        jettyReq.send(new BufferingResponseListener() {
-            @Override
-            public void onComplete(Result result) {
-                if (result.isFailed()) vessel.completeExceptionally(result.getFailure());
-                else vessel.complete(new JettyResponse(result.getResponse(), getContent()));
+        client.getExecutor().execute(() -> {
+            try {
+                Endpoint endpoint = findLeastBusyEndpoint(endpoints);
+                long reqTimeoutMillis = req.timeout() != null
+                        ? req.timeout().toMillis() * 11 / 10 + 1000 : IDLE_TIMEOUT.toMillis();
+                Request jettyReq = client.newRequest(URI.create(endpoint.uri + req.path()))
+                        .version(HttpVersion.HTTP_2)
+                        .method(HttpMethod.fromString(req.method()))
+                        .headers(hs -> req.headers().forEach((k, v) -> hs.add(k, v.get())))
+                        .idleTimeout(IDLE_TIMEOUT.toMillis(), MILLISECONDS)
+                        .timeout(reqTimeoutMillis, MILLISECONDS);
+                if (req.body() != null) {
+                    FeedContent content = new FeedContent(compression, req.body());
+                    content.contentEncoding().ifPresent(ce -> jettyReq.headers(hs -> hs.add(ce)));
+                    jettyReq.body(content);
+                }
+                jettyReq.send(new BufferingResponseListener() {
+                    @Override
+                    public void onComplete(Result result) {
+                        if (result.isFailed()) vessel.completeExceptionally(result.getFailure());
+                        else vessel.complete(new JettyResponse(result.getResponse(), getContent()));
+                    }
+                });
+            } catch (Exception e) {
+                vessel.completeExceptionally(e);
             }
         });
     }
@@ -106,7 +112,7 @@ class JettyCluster implements Cluster {
             clientSslCtxFactory.setEndpointIdentificationAlgorithm(null);
         }
         ClientConnector connector = new ClientConnector();
-        int threads = Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 16), 4);
+        int threads = Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 20), 8);
         connector.setExecutor(new QueuedThreadPool(threads));
         connector.setSslContextFactory(clientSslCtxFactory);
         HTTP2Client h2Client = new HTTP2Client(connector);
