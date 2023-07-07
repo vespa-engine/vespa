@@ -519,8 +519,8 @@ TransLogServer::listDomains(FRT_RPCRequest *req)
 
     vespalib::string domains;
     ReadGuard domainGuard(_domainMutex);
-    for(DomainList::const_iterator it(_domains.begin()), mt(_domains.end()); it != mt; it++) {
-        domains += it->second->name();
+    for (const auto& elem : _domains) {
+        domains += elem.second->name();
         domains += "\n";
     }
     ret.AddInt32(0);

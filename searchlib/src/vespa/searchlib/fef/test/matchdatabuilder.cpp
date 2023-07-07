@@ -114,15 +114,11 @@ bool
 MatchDataBuilder::apply(uint32_t docId)
 {
     // For each term, do
-    for (TermMap::const_iterator term_iter = _match.begin();
-         term_iter != _match.end(); ++term_iter)
-    {
-        uint32_t termId = term_iter->first;
+    for (const auto& term_elem : _match) {
+        uint32_t termId = term_elem.first;
 
-        for (FieldPositions::const_iterator field_iter = term_iter->second.begin();
-             field_iter != term_iter->second.end(); ++field_iter)
-        {
-            uint32_t fieldId = field_iter->first;
+        for (const auto& field_elem : term_elem.second) {
+            uint32_t fieldId = field_elem.first;
             TermFieldMatchData *match = getTermFieldMatchData(termId, fieldId);
 
             // Make sure there is a corresponding term field match data object.
@@ -134,7 +130,7 @@ MatchDataBuilder::apply(uint32_t docId)
 
             // find field data
             MyField field;
-            IndexData::const_iterator idxItr = _index.find(fieldId);
+            auto idxItr = _index.find(fieldId);
             if (idxItr != _index.end()) {
                 field = idxItr->second;
             }
@@ -144,11 +140,8 @@ MatchDataBuilder::apply(uint32_t docId)
             vespalib::string name = info != nullptr ? info->name() : vespalib::make_string("%d", fieldId).c_str();
 
             // For each occurence of that term, in that field, do
-            for (Positions::const_iterator occ_iter = field_iter->second.begin();
-                 occ_iter != field_iter->second.end(); occ_iter++)
-            {
+            for (const auto& occ : field_elem.second) {
                 // Append a term match position to the term match data.
-                Position occ = *occ_iter;
                 match->appendPosition(TermFieldMatchDataPosition(
                                               occ.eid,
                                               occ.pos,

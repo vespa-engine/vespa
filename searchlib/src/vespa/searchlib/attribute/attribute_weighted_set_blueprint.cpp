@@ -99,12 +99,12 @@ public:
         }
     }
     void and_hits_into(BitVector & result,uint32_t begin_id) override {
-        typename Map::iterator end = _map.end();
+        auto end = _map.end();
         result.foreach_truebit([&, end](uint32_t key) { if ( _map.find(_attr.getToken(key)) == end) { result.clearBit(key); }}, begin_id);
     }
 
     void doSeek(uint32_t docId) override {
-        typename Map::const_iterator pos = _map.find(_attr.getToken(docId));
+        auto pos = _map.find(_attr.getToken(docId));
         if (pos != _map.end()) {
             _weight = pos->second;
             setDocId(docId);

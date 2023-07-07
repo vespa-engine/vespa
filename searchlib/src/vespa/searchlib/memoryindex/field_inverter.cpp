@@ -138,12 +138,12 @@ FieldInverter::processAnnotations(const StringFieldValue &value)
         }
     }
     std::sort(_terms.begin(), _terms.end());
-    SpanTermVector::const_iterator it  = _terms.begin();
-    SpanTermVector::const_iterator ite = _terms.end();
+    auto it  = _terms.begin();
+    auto ite = _terms.end();
     uint32_t wordRef;
     bool mustStep = false;
     for (; it != ite; ) {
-        SpanTermVector::const_iterator it_begin = it;
+        auto it_begin = it;
         for (; it != ite && it->first == it_begin->first; ++it) {
             if (it->second) {  // it->second is a const FieldValue *.
                 wordRef = saveWord(*it->second);

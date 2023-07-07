@@ -103,7 +103,7 @@ struct State {
                 Path nextP = firstP;
                 uint32_t pos = edges[j];
                 nextP.path.push_back(pos);
-                TermIdxMap::const_iterator it = matchedTermForPos.find(pos);
+                auto it = matchedTermForPos.find(pos);
                 if (it == matchedTermForPos.end()) {
                     return nextP;
                 } else {
@@ -158,7 +158,7 @@ struct State {
             uint32_t pos = positionsForTerm[tix][0];
             assert(pos < posLimit);
 
-            TermIdxMap::const_iterator it = matchedTermForPos.find(pos);
+            auto it = matchedTermForPos.find(pos);
             if (it == matchedTermForPos.end()) {
                 ++found;
                 matchedTermForPos[pos] = tix;

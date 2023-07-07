@@ -25,7 +25,7 @@ RankResult::addScore(const vespalib::string & featureName, feature_t score)
 feature_t
 RankResult::getScore(const vespalib::string & featureName) const
 {
-    RankScores::const_iterator itr = _rankScores.find(featureName);
+    auto itr = _rankScores.find(featureName);
     if (itr != _rankScores.end()) {
         return itr->second;
     }
@@ -43,19 +43,18 @@ RankResult::includes(const RankResult & rhs) const
 {
     double epsilon = std::max(_epsilon, rhs._epsilon);
 
-    RankScores::const_iterator findItr;
-    for (RankScores::const_iterator itr = rhs._rankScores.begin(); itr != rhs._rankScores.end(); ++itr) {
-        findItr = _rankScores.find(itr->first);
+    for (const auto& score : rhs._rankScores) {
+        auto findItr = _rankScores.find(score.first);
         if (findItr == _rankScores.end()) {
-            LOG(info, "Did not find expected feature '%s' in this rank result", itr->first.c_str());
+            LOG(info, "Did not find expected feature '%s' in this rank result", score.first.c_str());
             return false;
         }
-        if (itr->second < findItr->second - epsilon ||
-            itr->second > findItr->second + epsilon ||
-            (std::isnan(findItr->second) && !std::isnan(itr->second)))
+        if (score.second < findItr->second - epsilon ||
+            score.second > findItr->second + epsilon ||
+            (std::isnan(findItr->second) && !std::isnan(score.second)))
         {
-            LOG(info, "Feature '%s' did not have expected score.", itr->first.c_str());
-            LOG(info, "Expected: %f ~ %f", itr->second, epsilon);
+            LOG(info, "Feature '%s' did not have expected score.", score.first.c_str());
+            LOG(info, "Expected: %f ~ %f", score.second, epsilon);
             LOG(info, "Actual  : %f", findItr->second);
             return false;
         }
@@ -73,8 +72,8 @@ RankResult::clear()
 std::vector<vespalib::string> &
 RankResult::getKeys(std::vector<vespalib::string> &ret)
 {
-    for (RankScores::const_iterator it = _rankScores.begin(); it != _rankScores.end(); ++it) {
-        ret.push_back(it->first);
+    for (const auto& score : _rankScores) {
+        ret.push_back(score.first);
     }
     return ret;
 }
@@ -99,8 +98,8 @@ RankResult::getEpsilon() const {
 
 std::ostream & operator<<(std::ostream & os, const RankResult & rhs) {
     os << "[";
-    for (RankResult::RankScores::const_iterator itr = rhs._rankScores.begin(); itr != rhs._rankScores.end(); ++itr) {
-        os << "['" << itr->first << "' = " << itr->second << "]";
+    for (const auto& score : rhs._rankScores) {
+        os << "['" << score.first << "' = " << score.second << "]";
     }
     return os << "]";
 }

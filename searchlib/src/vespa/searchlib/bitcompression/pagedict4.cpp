@@ -1184,8 +1184,7 @@ lookupOverflow(uint64_t wordNum) const
 
     assert(!_overflows.empty());
 
-    OverflowVector::const_iterator lb =
-        std::lower_bound(_overflows.begin(), _overflows.end(), wordNum);
+    auto lb = std::lower_bound(_overflows.begin(), _overflows.end(), wordNum);
 
     assert(lb != _overflows.end());
     assert(lb->_wordNum == wordNum);

@@ -21,17 +21,13 @@ MockAttributeContext::getAttributeStableEnum(const string &name) const {
 }
 void
 MockAttributeContext::getAttributeList(std::vector<const IAttributeVector *> & list) const {
-    Map::const_iterator pos = _vectors.begin();
-    Map::const_iterator end = _vectors.end();
-    for (; pos != end; ++pos) {
-        list.push_back(pos->second);
+    for (const auto& elem : _vectors) {
+        list.push_back(elem.second);
     }
 }
 MockAttributeContext::~MockAttributeContext() {
-    Map::iterator pos = _vectors.begin();
-    Map::iterator end = _vectors.end();
-    for (; pos != end; ++pos) {
-        delete pos->second;
+    for (auto& elem : _vectors) {
+        delete elem.second;
     }
 }
 

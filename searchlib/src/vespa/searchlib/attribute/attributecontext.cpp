@@ -12,7 +12,7 @@ namespace search {
 const IAttributeVector *
 AttributeContext::getAttribute(AttributeMap & map, const string & name, bool stableEnum) const
 {
-    AttributeMap::const_iterator itr = map.find(name);
+    auto itr = map.find(name);
     if (itr != map.end()) {
         if (itr->second) {
             return itr->second->attribute();

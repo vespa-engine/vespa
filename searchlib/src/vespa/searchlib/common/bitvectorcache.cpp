@@ -32,9 +32,9 @@ BitVectorCache::computeCountVector(KeySet & keys, CountVector & v) const
     {
         std::shared_lock guard(_mutex);
         keySets.resize(_chunks.size());
-        Key2Index::const_iterator end(_keys.end());
+        auto end = _keys.end();
         for (Key k : keys) {
-            Key2Index::const_iterator found = _keys.find(k);
+            auto found = _keys.find(k);
             if (found != end) {
                 const KeyMeta & m = found->second;
                 keySets[m.chunkId()].insert(m.chunkIndex());

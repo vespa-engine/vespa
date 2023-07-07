@@ -86,8 +86,7 @@ BitVectorDictionary::lookup(uint64_t wordNum)
 {
     WordSingleKey key;
     key._wordNum = wordNum;
-    std::vector<WordSingleKey>::const_iterator itr =
-        std::lower_bound(_entries.begin(), _entries.end(), key);
+    auto itr = std::lower_bound(_entries.begin(), _entries.end(), key);
     if (itr == _entries.end() || key < *itr) {
         return BitVector::UP();
     }

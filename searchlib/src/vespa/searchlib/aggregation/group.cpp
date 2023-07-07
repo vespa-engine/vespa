@@ -98,7 +98,7 @@ Group::Value::groupSingle(const ResultNode & selectResult, HitRank rank, const G
     }
     GroupHash & childMap = *_childInfo._childMap;
     Group * group(nullptr);
-    GroupHash::iterator found = childMap.find(selectResult);
+    auto found = childMap.find(selectResult);
     if (found == childMap.end()) { // group not present in child map
         if (level.allowMoreGroups(childMap.size())) {
             group = new Group(level.getGroupPrototype());

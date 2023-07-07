@@ -179,19 +179,16 @@ Zc4PostingWriter<bigEndian>::flush_word_no_skip()
     const uint64_t *features = _featureWriteContext.getComprBuf();
     uint64_t featureOffset = 0;
 
-    std::vector<DocIdAndFeatureSize>::const_iterator dit = _docIds.begin();
-    std::vector<DocIdAndFeatureSize>::const_iterator dite = _docIds.end();
-
-    for (; dit != dite; ++dit) {
-        uint32_t docId = dit->_doc_id;
-        uint32_t featureSize = dit->_features_size;
+    for (const auto& elem : _docIds) {
+        uint32_t docId = elem._doc_id;
+        uint32_t featureSize = elem._features_size;
         e.encodeExpGolomb(docId - baseDocId, docIdK);
         baseDocId = docId + 1;
         if (_encode_interleaved_features) {
-            assert(dit->_field_length > 0);
-            e.encodeExpGolomb(dit->_field_length - 1, K_VALUE_ZCPOSTING_FIELD_LENGTH);
-            assert(dit->_num_occs > 0);
-            e.encodeExpGolomb(dit->_num_occs - 1, K_VALUE_ZCPOSTING_NUM_OCCS);
+            assert(elem._field_length > 0);
+            e.encodeExpGolomb(elem._field_length - 1, K_VALUE_ZCPOSTING_FIELD_LENGTH);
+            assert(elem._num_occs > 0);
+            e.encodeExpGolomb(elem._num_occs - 1, K_VALUE_ZCPOSTING_NUM_OCCS);
         }
         if (featureSize != 0) {
             e.writeBits(features + (featureOffset >> 6),

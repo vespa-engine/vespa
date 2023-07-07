@@ -149,14 +149,10 @@ FakeZcFilterOcc::setupT(const FakeWord &fw)
     PostingListCounts counts;
     Zc4PostingWriter<bigEndian> writer(counts);
 
-    using FW = FakeWord;
-    using DWFL = FW::DocWordFeatureList;
-    using DWPFL = FW::DocWordPosFeatureList;
-
-    DWFL::const_iterator d(fw._postings.begin());
-    DWFL::const_iterator de(fw._postings.end());
-    DWPFL::const_iterator p(fw._wordPosFeatures.begin());
-    DWPFL::const_iterator pe(fw._wordPosFeatures.end());
+    auto d = fw._postings.begin();
+    auto de = fw._postings.end();
+    auto p = fw._wordPosFeatures.begin();
+    auto pe = fw._wordPosFeatures.end();
     DocIdAndPosOccFeatures features;
     EGPosOccEncodeContext<bigEndian> f1(&_fieldsParams);
     EG2PosOccEncodeContext<bigEndian> f0(&_fieldsParams);

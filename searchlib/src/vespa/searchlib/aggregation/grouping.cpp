@@ -309,7 +309,7 @@ bool
 Grouping::needResort() const
 {
     bool resort(_root.needResort());
-    for (GroupingLevelList::const_iterator it(_levels.begin()), mt(_levels.end()); !resort && (it != mt); ++it) {
+    for (auto it(_levels.begin()), mt(_levels.end()); !resort && (it != mt); ++it) {
         resort = it->needResort();
     }
     return (resort && getTopN() <= 0);

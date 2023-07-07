@@ -33,11 +33,8 @@ FieldLengthExecutor::execute(uint32_t docId)
 {
     uint32_t val = 0;
     bool validVal = false;
-    for (std::vector<TermFieldHandle>::const_iterator
-             hi = _fieldHandles.begin(), hie = _fieldHandles.end();
-         hi != hie; ++hi)
-    {
-        const TermFieldMatchData &tfmd = *_md->resolveTermField(*hi);
+    for (auto handle : _fieldHandles) {
+        const TermFieldMatchData &tfmd = *_md->resolveTermField(handle);
         if (tfmd.getDocId() == docId) {
             FieldPositionsIterator it = tfmd.getIterator();
             if (it.valid()) {

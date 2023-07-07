@@ -12,7 +12,7 @@ const Table *
 TableManager::getTable(const vespalib::string & name) const
 {
     std::lock_guard guard(_lock);
-    TableCache::const_iterator itr = _cache.find(name);
+    auto itr = _cache.find(name);
     if (itr != _cache.end()) {
         return itr->second.get();
     }
