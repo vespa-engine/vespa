@@ -13,6 +13,7 @@
     "com.yahoo.vespa:cloud-tenant-base",
     "com.yahoo.vespa:parent",
     "com.yahoo.vespa:zookeeper-server-parent",
+    "github.com/go-json-experiment/json",
     "javax.servlet:javax.servlet-api"
   ]
 }
