@@ -1088,7 +1088,7 @@
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
-                <version>3.2.5</version>
+                <version>3.2.6</version>
             </dependency>
             <dependency>
                 <groupId>uk.co.datumedge</groupId>
