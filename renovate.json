@@ -8,6 +8,7 @@
   "prConcurrentLimit": 10,
   "ignorePaths": [],
   "ignoreDeps": [
+    "com.github.spotbugs:spotbugs-annotations",
     "com.yahoo.vespa.bundle-plugin:test-bundles",
     "com.yahoo.vespa.jdisc_core:test_bundles",
     "com.yahoo.vespa:cloud-tenant-base",
