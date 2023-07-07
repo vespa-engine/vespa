@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,9 +40,10 @@ class Preparer {
             return nodes;
         }
         catch (NodeAllocationException e) {
+            e.printStackTrace();
             throw new NodeAllocationException("Could not satisfy " + requestedNodes +
                                               ( wantedGroups > 1 ? " (in " + wantedGroups + " groups)" : "") +
-                                              " in " + application + " " + cluster + ": " + e.getMessage(),
+                                              " in " + application + " " + cluster + ": " + Exceptions.toMessageString(e),
                                               e.retryable());
         }
     }

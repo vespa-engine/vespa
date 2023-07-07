@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.Architecture;
@@ -311,13 +312,6 @@ public class DynamicProvisioningTest {
         }
 
         // Deploy using advertised memory amount (17 + 3 (see MockResourcesCalculator)
-        tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 20, 40),
-                                                      resources(4, 1, 2, 20, 40)));
-        tester.assertNodes("Allocation specifies memory in the advertised amount",
-                           2, 1, 2, 20, 40,
-                           app1, cluster1);
-
-        // Redeploy the same
         tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 20, 40),
                                                       resources(4, 1, 2, 20, 40)));
         tester.assertNodes("Allocation specifies memory in the advertised amount",

@@ -38,15 +38,10 @@ public class NodeResourceLimits {
             illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, cluster.isExclusive()));
     }
 
-    // TODO: Move this check into the above when we are ready to fail, not just warn on this. */
+    // TODO: Remove this when we are ready to fail, not just warn on this. */
     public boolean isWithinAdvertisedDiskLimits(NodeResources requested, ClusterSpec cluster) {
         if (requested.diskGbIsUnspecified() || requested.memoryGbIsUnspecified()) return true;
-        double minDiskGb = requested.memoryGb() * switch (cluster.type()) {
-            case combined, content -> 3;
-            case container -> 2;
-            default -> 0; // No constraint on other types
-        };
-        return requested.diskGb() >= minDiskGb;
+        return requested.diskGb() >= minAdvertisedDiskGb(requested, cluster);
     }
 
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
@@ -66,8 +61,11 @@ public class NodeResourceLimits {
        return true;
     }
 
-    public NodeResources enlargeToLegal(NodeResources requested, ApplicationId applicationId, ClusterSpec cluster, boolean exclusive) {
+    public NodeResources enlargeToLegal(NodeResources requested, ApplicationId applicationId, ClusterSpec cluster, boolean exclusive, boolean followRecommendations) {
         if (requested.isUnspecified()) return requested;
+
+        if (followRecommendations) // TODO: Do unconditionally when we enforce this limit
+            requested = requested.withDiskGb(Math.max(minAdvertisedDiskGb(requested, cluster), requested.diskGb()));
 
         return requested.withVcpu(Math.max(minAdvertisedVcpu(applicationId, cluster), requested.vcpu()))
                         .withMemoryGb(Math.max(minAdvertisedMemoryGb(cluster), requested.memoryGb()))
@@ -90,6 +88,15 @@ public class NodeResourceLimits {
 
     private double minAdvertisedDiskGb(NodeResources requested, boolean exclusive) {
         return minRealDiskGb() + reservedDiskSpaceGb(requested.storageType(), exclusive);
+    }
+
+    // TODO: Move this check into the above when we are ready to fail, not just warn on this. */
+    private double minAdvertisedDiskGb(NodeResources requested, ClusterSpec cluster) {
+        return requested.memoryGb() * switch (cluster.type()) {
+            case combined, content -> 3;
+            case container -> 2;
+            default -> 0; // No constraint on other types
+        };
     }
 
     // Note: Assumes node type 'host'
