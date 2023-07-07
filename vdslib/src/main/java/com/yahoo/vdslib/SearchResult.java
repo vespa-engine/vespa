@@ -62,6 +62,7 @@ public class SearchResult {
     }
     private final int    totalHits;
     private final Hit[]  hits;
+    private final TreeMap<Integer, byte []> aggregatorList;
     private final TreeMap<Integer, byte []> groupingList;
     private static final int EXTENSION_FLAGS_PRESENT = -1;
     private static final int MATCH_FEATURES_PRESENT_MASK = 1;
@@ -78,6 +79,7 @@ public class SearchResult {
         }
         hits = new Hit[numHits];
         if (numHits != 0) {
+            int docIdBufferLength = buf.getInt(null);  // Unused, but need to call getInt() to advance buffer
             byte[] cArr = bser.getBuf().array();
             int start = bser.getBuf().arrayOffset() + bser.position();
             for(int i=0; i < numHits; i++) {
@@ -99,6 +101,15 @@ public class SearchResult {
         }
         for (int i = 0; i < numSortBlobs; i++) {
             hits[i] = new HitWithSortBlob(hits[i], buf.getBytes(null, size[i]));
+        }
+
+        // Unused, but need to call getInt() to advance buffer
+        int numAggregators = buf.getInt(null);
+        aggregatorList = new TreeMap<>();
+        for (int i = 0; i < numAggregators; i++) {
+            int aggrId = buf.getInt(null);
+            int aggrLength = buf.getInt(null);
+            aggregatorList.put(aggrId, buf.getBytes(null, aggrLength));
         }
 
         int numGroupings = buf.getInt(null);
