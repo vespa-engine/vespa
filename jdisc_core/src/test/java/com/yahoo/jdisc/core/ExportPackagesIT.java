@@ -1,5 +1,6 @@
 package com.yahoo.jdisc.core;
 
+import com.google.common.collect.Sets;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -7,11 +8,13 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,6 +52,60 @@ public class ExportPackagesIT {
             "javax.activation.jar"
     ).map(f -> JAR_PATH + f).toList();
 
+    private static final Pattern PACKAGE_PATTERN = Pattern.compile("([^;,]+);\\s*version=\"([^\"]*)\"(?:,\\s*([^;,]+);\\s*uses:=\"([^\"]*)\")?");
+
+    record PackageInfo(String packageName, String version, List<String> clauses) implements Comparable<PackageInfo> {
+
+        PackageInfo withoutVersion() {
+            return new PackageInfo(packageName, "", clauses);
+        }
+
+        @Override
+        public String toString() {
+            return packageName + ":" + version;
+        }
+
+        @Override
+        public int compareTo(PackageInfo o) {
+            int pkg = packageName.compareTo(o.packageName);
+            return (pkg != 0) ? pkg : version.compareTo(o.version);
+        }
+    }
+
+    record PackageSet(List<PackageInfo> packages) {
+        PackageSet removeJavaVersion() {
+            return new PackageSet(packages.stream()
+                                          .map(p -> p.version.contains(".JavaSE_") ? p.withoutVersion() : p)
+                                          .toList());
+        }
+
+        PackageSet removeNewPackageOnJava20() {
+            return new PackageSet(packages.stream()
+                                          .filter(p -> ! p.packageName.contains("java.lang.foreign"))
+                                          .filter(p -> ! p.packageName.contains("com.sun.jna"))
+                                          .toList());
+        }
+
+        boolean isEquivalentTo(PackageSet other) {
+            var thisPackages = new HashSet<>(removeJavaVersion().removeNewPackageOnJava20().packages);
+            var otherPackages = new HashSet<>(other.removeJavaVersion().removeNewPackageOnJava20().packages);
+            return thisPackages.equals(otherPackages);
+        }
+
+        PackageSet minus(PackageSet other) {
+            var thisPackages = new HashSet<>(removeJavaVersion().removeNewPackageOnJava20().packages);
+            var otherPackages = new HashSet<>(other.removeJavaVersion().removeNewPackageOnJava20().packages);
+            Set<PackageInfo> diff = Sets.difference(thisPackages, otherPackages);
+            return new PackageSet(diff.stream().sorted().toList());
+        }
+
+        @Override
+        public String toString() {
+            return packages.stream().map(PackageInfo::toString)
+                    .collect(Collectors.joining(",\n  ", " [", "]"));
+        }
+    }
+
     @TempDir
     public static File tempFolder;
 
@@ -62,60 +119,60 @@ public class ExportPackagesIT {
         String expectedValue = expectedProperties.getProperty(ExportPackages.EXPORT_PACKAGES);
         assertNotNull(expectedValue, "Missing exportPackages property in file.");
 
-        Set<String> actualPackages = removeNewPackageOnJava20(removeJavaVersion(getPackages(actualValue)));
-        Set<String> expectedPackages = removeNewPackageOnJava20(removeJavaVersion(getPackages(expectedValue)));
-        if (!actualPackages.equals(expectedPackages)) {
+        var expectedPackages = parsePackages(expectedValue).removeJavaVersion();
+        var actualPackages = parsePackages(actualValue).removeJavaVersion()
+                .removeNewPackageOnJava20();
+
+        if (!actualPackages.isEquivalentTo(expectedPackages)) {
             StringBuilder message = getDiff(actualPackages, expectedPackages);
             message.append("\n\nIf this test fails due to an intentional change in exported packages, run the following command:\n")
                     .append("$ cp jdisc_core/target/classes/exportPackages.properties jdisc_core/src/test/resources/")
                     .append("\n\nNote that removing exported packages usually requires a new major version of Vespa.\n");
             fail(message.toString());
         }
+        // TODO: check that actualValue equals expectedValue. Problem is that exportPackages.properties is not deterministic.
     }
 
-    private static Set<String> removeJavaVersion(Set<String> packages) {
-        return packages.stream().map(p -> p.replaceAll(".JavaSE_\\d+", "")).collect(Collectors.toSet());
-    }
-
-    private static Set<String> removeNewPackageOnJava20(Set<String> packages) {
-        return packages.stream()
-                       .filter(p -> ! p.contains("java.lang.foreign"))
-                       .filter(p -> ! p.contains("com.sun.jna"))
-                       .collect(Collectors.toSet());
-    }
-
-    private static StringBuilder getDiff(Set<String> actual, Set<String> expected) {
+    private static StringBuilder getDiff(PackageSet actual, PackageSet expected) {
         StringBuilder sb = new StringBuilder();
-        Set<String> onlyInActual = onlyInSet1(actual, expected);
-        if (! onlyInActual.isEmpty()) {
+
+        var onlyInActual = actual.minus(expected);
+        if (! onlyInActual.packages().isEmpty()) {
             sb.append("\nexportPackages.properties contained ")
-                    .append(onlyInActual.size())
+                    .append(onlyInActual.packages.size())
                     .append(" unexpected packages:\n")
-                    .append(onlyInActual.stream().collect(Collectors.joining(",\n  ", " [", "]")));
+                    .append(onlyInActual);
         }
 
-        Set<String> onlyInExpected = onlyInSet1(expected, actual);
-        if (! onlyInExpected.isEmpty()) {
+        var onlyInExpected = expected.minus(actual);
+        if (! onlyInExpected.packages.isEmpty()) {
             sb.append("\nexportPackages.properties did not contain ")
-                    .append(onlyInExpected.size())
+                    .append(onlyInExpected.packages.size())
                     .append(" expected packages:\n")
-                    .append(onlyInExpected.stream().collect(Collectors.joining(",\n  ", " [", "]")));
+                    .append(onlyInExpected);
         }
         return sb;
     }
 
-    // Returns a sorted set for readability.
-    private static Set<String> onlyInSet1(Set<String> set1, Set<String> set2) {
-        return set1.stream()
-                .filter(s -> ! set2.contains(s))
-                .collect(Collectors.toCollection(TreeSet::new));
-    }
+    public static PackageSet parsePackages(String input) {
+        List<PackageInfo> packages = new ArrayList<>();
 
-    private static Set<String> getPackages(String propertyValue) {
-        return Arrays.stream(propertyValue.split(","))
-                .map(String::trim)
-                .filter(s -> ! s.isEmpty())
-                .collect(Collectors.toSet());
+        Matcher matcher = PACKAGE_PATTERN.matcher(input);
+        while (matcher.find()) {
+            String packageName = matcher.group(1);
+            String version = matcher.group(2);
+            String dependencyPackage = matcher.group(3);
+            String dependencyClause = matcher.group(4);
+
+            List<String> clauses = new ArrayList<>();
+            if (dependencyPackage != null && dependencyClause != null) {
+                clauses.add(dependencyPackage + ";" + dependencyClause);
+            }
+
+            PackageInfo packageInfo = new PackageInfo(packageName, version, clauses);
+            packages.add(packageInfo);
+        }
+        return new PackageSet(packages);
     }
 
     private static Properties getPropertiesFromFile(File file) throws IOException {
