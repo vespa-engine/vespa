@@ -13,6 +13,8 @@ github.com/fatih/color v1.15.0 h1:kOqh6YHBtK8aywxGerMG2Eq3H6Qgoqeo13Bk2Mv/nBs=
 github.com/fatih/color v1.15.0/go.mod h1:0h5ZqXfHYED7Bhv2ZJamyIOUej9KtShiJESRwBDUSsw=
 github.com/go-json-experiment/json v0.0.0-20230216065249-540f01442424 h1:I1EK0t+BDH+kvlozNqrvzKqsWeM2QUKxXH0iW2fjDDw=
 github.com/go-json-experiment/json v0.0.0-20230216065249-540f01442424/go.mod h1:I+I5/LT2lLP0eZsBNaVDrOrYASx9h7o7mRHmy+535/A=
+github.com/go-json-experiment/json v0.0.0-20230324203220-04923b7a9528 h1:hmpF6G+rHcypt8J6jhBH/rDUx+04Th/L61Y8uCKFb7Q=
+github.com/go-json-experiment/json v0.0.0-20230324203220-04923b7a9528/go.mod h1:AHV+bpNGVGD0DCHMBhhTYtT7yeBYD9Yk92XAjB7vOgo=
 github.com/godbus/dbus/v5 v5.1.0 h1:4KLkAxT3aOY8Li4FRJe/KvhoNFFxo0m6fNuFUO8QJUk=
 github.com/godbus/dbus/v5 v5.1.0/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
@@ -50,6 +52,8 @@ github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ
 github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/zalando/go-keyring v0.2.2 h1:f0xmpYiSrHtSNAVgwip93Cg8tuF45HJM6rHq/A5RI/4=
 github.com/zalando/go-keyring v0.2.2/go.mod h1:sI3evg9Wvpw3+n4SqplGSJUMwtDeROfD4nsFz4z9PG0=
+golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0 h1:pVgRXcIictcr+lBQIFeiwuwtDIs4eL21OuM9nyAADmo=
+golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0/go.mod h1:CxIveKay+FTh1D0yPZemJVgC/95VzuuOLq5Qi4xnoYc=
 golang.org/x/net v0.9.0 h1:aWJ/m6xSmxWBx+V0XRHTlrYrPG56jKsLdTFmsSsCzOM=
 golang.org/x/net v0.9.0/go.mod h1:d48xBJpPfHeWQsugry2m+kC02ZBRGRgulfHnEXEuWns=
 golang.org/x/sys v0.0.0-20210616045830-e2b7044e8c71/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
