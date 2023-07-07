@@ -85,8 +85,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     // Used as an optimization to ensure ZTS is not DDoS'ed on continuously failing refresh attempts
     private final Map<ContainerName, Instant> lastRefreshAttempt = new ConcurrentHashMap<>();
 
-    public AthenzCredentialsMaintainer(URI ztsEndpoint,
-                                       Path ztsTrustStorePath,
+    public AthenzCredentialsMaintainer(Path ztsTrustStorePath,
                                        ConfigServerInfo configServerInfo,
                                        String certificateDnsSuffix,
                                        ServiceIdentityProvider hostIdentityProvider,
@@ -228,14 +227,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         var keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         var athenzRole = AthenzRole.fromResourceNameString(role);
 
-        var containerIdentitySslContext = new SslContextBuilder()
-                .withKeyStore(privateKeyFile, certificateFile)
-                .withTrustStore(ztsTrustStorePath)
-                .build();
-        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(identityDocument.ztsUrl())
-                .withSslContext(containerIdentitySslContext)
-                .withHostnameVerifier(ztsHostNameVerifier)
-                .build()) {
+        try (ZtsClient ztsClient = ztsClient(identityDocument.ztsUrl(), privateKeyFile, certificateFile, ztsHostNameVerifier)) {
             var csrGenerator = new CsrGenerator(certificateDnsSuffix, identityDocument.providerService().getFullName());
             var csr = csrGenerator.generateRoleCsr(
                     identity, athenzRole, identityDocument.providerUniqueId(), identityDocument.clusterType(), keyPair);
@@ -315,7 +307,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
         // Allow all zts hosts while removing SIS
         HostnameVerifier ztsHostNameVerifier = (hostname, sslSession) -> true;
-        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(doc.ztsUrl()).withIdentityProvider(hostIdentityProvider).withHostnameVerifier(ztsHostNameVerifier).build()) {
+        try (ZtsClient ztsClient = ztsClient(doc.ztsUrl(), hostIdentityProvider.privateKeyPath(), hostIdentityProvider.certificatePath(), ztsHostNameVerifier)) {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
                             doc.providerService(),
@@ -335,14 +327,10 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 identity, doc.providerUniqueId(), doc.ipAddresses(), doc.clusterType(), keyPair);
 
-        SSLContext containerIdentitySslContext = new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile)
-                                                                        .withTrustStore(ztsTrustStorePath)
-                                                                        .build();
-
         try {
             // Allow all zts hosts while removing SIS
             HostnameVerifier ztsHostNameVerifier = (hostname, sslSession) -> true;
-            try (ZtsClient ztsClient = new DefaultZtsClient.Builder(doc.ztsUrl()).withSslContext(containerIdentitySslContext).withHostnameVerifier(ztsHostNameVerifier).build()) {
+            try (ZtsClient ztsClient = ztsClient(doc.ztsUrl(), privateKeyFile, certificateFile, ztsHostNameVerifier)) {
                 InstanceIdentity instanceIdentity =
                         ztsClient.refreshInstance(
                                 doc.providerService(),
@@ -434,6 +422,17 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     /** Get the document version to ask for */
     private int documentVersion(NodeAgentContext context) {
         return SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION;
+    }
+
+    private ZtsClient ztsClient(URI ztsEndpoint, Path privateKeyFile, Path certificateFile, HostnameVerifier hostnameVerifier) {
+        SSLContext sslContext = new SslContextBuilder()
+                .withKeyStore(privateKeyFile, certificateFile)
+                .withTrustStore(ztsTrustStorePath)
+                .build();
+        return new DefaultZtsClient.Builder(ztsEndpoint)
+                .withSslContext(sslContext)
+                .withHostnameVerifier(hostnameVerifier)
+                .build();
     }
 
     private List<String> getRoleList(NodeAgentContext context) {
