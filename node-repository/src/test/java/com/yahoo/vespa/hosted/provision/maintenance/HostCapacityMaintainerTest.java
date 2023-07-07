@@ -246,7 +246,6 @@ public class HostCapacityMaintainerTest {
         setPreprovisionCapacityFlag(tester, clusterCapacity, new ClusterCapacity(2, 0.0, 0.0, 0.0, 0.0, null, null, "arm64", "admin"));
 
         tester.maintain();
-        System.out.println(tester.hostProvisioner.provisionedHosts());
         assertEquals("2 provisioned hosts",
                      2, tester.hostProvisioner.provisionedHosts().size());
         assertEquals(2, tester.provisionedHostsMatching(new NodeResources(2, 30, 20, 30, DiskSpeed.any, remote, arm64)));
