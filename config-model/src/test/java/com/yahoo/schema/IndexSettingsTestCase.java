@@ -37,7 +37,7 @@ public class IndexSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    void requireThatInterlavedFeaturesAreSetOnExtraField() throws ParseException {
+    void requireThatInterleavedFeaturesAreSetOnExtraField() throws ParseException {
         ApplicationBuilder builder = ApplicationBuilder.createFromString(joinLines(
                 "search test {",
                 "  document test {",
