@@ -20,9 +20,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.time.Instant;
 import java.util.Base64;
-import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId.fromDottedString;
@@ -150,7 +148,7 @@ public class EntityBindingsMapper {
                 docEntity.unknownAttributes());
     }
 
-    public static String toIdentityDocmentData(IdentityDocument identityDocument) {
+    public static String toIdentityDocumentData(IdentityDocument identityDocument) {
         IdentityDocumentEntity documentEntity = new IdentityDocumentEntity(
                 identityDocument.providerUniqueId().asDottedString(),
                 identityDocument.providerService().getFullName(),
@@ -160,7 +158,7 @@ public class EntityBindingsMapper {
                 identityDocument.ipAddresses(),
                 identityDocument.identityType().id(),
                 Optional.ofNullable(identityDocument.clusterType()).map(ClusterType::toConfigValue).orElse(null),
-                identityDocument.ztsUrl(),
+                identityDocument.ztsUrl().toString(),
                 identityDocument.serviceIdentity().getFullName());
         try {
             byte[] bytes = mapper.writeValueAsBytes(documentEntity);
