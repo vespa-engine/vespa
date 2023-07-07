@@ -35,11 +35,11 @@ import java.util.Set;
 
 /**
  * A dispatcher communicates with search nodes to perform queries and fill hits.
- *
+ * <p>
  * This class allocates {@link SearchInvoker} and {@link FillInvoker} objects based
  * on query properties and general system status. The caller can then use the provided
  * invocation object to execute the search or fill.
- *
+ * <p>
  * This class is multithread safe.
  *
  * @author bratseth
@@ -111,6 +111,7 @@ public class Dispatcher extends AbstractComponent {
         searchCluster.addMonitoring(clusterMonitor);
         return items;
     }
+
     private void initialWarmup(double warmupTime) {
         Thread warmup = new Thread(() -> warmup(warmupTime));
         warmup.start();
@@ -130,10 +131,10 @@ public class Dispatcher extends AbstractComponent {
 
     private static LoadBalancer.Policy toLoadBalancerPolicy(DispatchConfig.DistributionPolicy.Enum policy) {
         return switch (policy) {
-            case ROUNDROBIN: yield LoadBalancer.Policy.ROUNDROBIN;
-            case BEST_OF_RANDOM_2: yield LoadBalancer.Policy.BEST_OF_RANDOM_2;
-            case ADAPTIVE,LATENCY_AMORTIZED_OVER_REQUESTS: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS;
-            case LATENCY_AMORTIZED_OVER_TIME: yield LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_TIME;
+            case ROUNDROBIN -> LoadBalancer.Policy.ROUNDROBIN;
+            case BEST_OF_RANDOM_2 -> LoadBalancer.Policy.BEST_OF_RANDOM_2;
+            case ADAPTIVE,LATENCY_AMORTIZED_OVER_REQUESTS -> LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_REQUESTS;
+            case LATENCY_AMORTIZED_OVER_TIME -> LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_TIME;
         };
     }
     private static List<Node> toNodes(DispatchNodesConfig nodesConfig) {

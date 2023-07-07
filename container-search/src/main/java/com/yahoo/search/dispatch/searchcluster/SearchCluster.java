@@ -99,7 +99,7 @@ public class SearchCluster implements NodeManager<Node> {
     private Collection<Group> groups() { return groups.groups(); }
 
     public int groupsWithSufficientCoverage() {
-        return (int)groups().stream().filter(Group::hasSufficientCoverage).count();
+        return (int) groups().stream().filter(Group::hasSufficientCoverage).count();
     }
 
     /**
