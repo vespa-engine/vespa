@@ -992,6 +992,7 @@ void attribute(ParsedField field) :
 {
     <ATTRIBUTE> [name = identifier()]
     {
+        // TODO: Remove support for attribute with different name than field name in Vespa 9
         if ( ! name.equals(field.name()))
                 deployLogger.logApplicationPackage(Level.WARNING, "Creating an attribute for field '" + field.name() +
                 "' with a different name '" + name + "' than the field name" +
@@ -1510,6 +1511,7 @@ void indexInsideField(ParsedField field) :
 {
     <INDEX> [indexName = identifier()]
     {
+        // TODO: Remove support for index with different name than field name in Vespa 9
         if ( ! indexName.equals(field.name()))
             deployLogger.logApplicationPackage(Level.WARNING, "Creating an index for field '" + field.name() +
             "' with a different name '" + indexName + "' than the field name" +
