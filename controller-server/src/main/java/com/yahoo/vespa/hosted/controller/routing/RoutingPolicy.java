@@ -128,20 +128,22 @@ public record RoutingPolicy(RoutingPolicyId id,
             endpoints.add(tokenEndpoint);
         }
         for (var generatedEndpoint : generatedEndpoints) {
-            GeneratedEndpoint endpointToInclude = switch (generatedEndpoint.authMethod()) {
-                case token -> includeTokenEndpoint ? generatedEndpoint : null;
-                case mtls -> generatedEndpoint;
+            boolean include = switch (generatedEndpoint.authMethod()) {
+                case token -> includeTokenEndpoint;
+                case mtls -> true;
             };
-            if (endpointToInclude != null) {
-                endpoints.add(builder.generatedEndpoint(endpointToInclude).in(system));
+            if (include) {
+                endpoints.add(builder.generatedFrom(generatedEndpoint).in(system));
             }
         }
         return endpoints;
     }
 
     /** Returns the region endpoint of this */
-    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod) {
-        return endpoint(routingMethod).targetRegion(id.cluster(), id.zone()).in(system);
+    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod, Optional<GeneratedEndpoint> generated) {
+        Endpoint.EndpointBuilder builder = endpoint(routingMethod).targetRegion(id.cluster(), id.zone());
+        generated.ifPresent(builder::generatedFrom);
+        return builder.in(system);
     }
 
     @Override
