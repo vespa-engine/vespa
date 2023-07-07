@@ -1157,7 +1157,7 @@
         <junit.version>5.8.1</junit.version>
         <maven-archiver.version>3.6.0</maven-archiver.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
-        <maven-bundle-plugin.version>5.1.2</maven-bundle-plugin.version>
+        <maven-bundle-plugin.version>5.1.9</maven-bundle-plugin.version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-core.version>3.8.7</maven-core.version>
         <maven-dependency-plugin.version>3.6.0</maven-dependency-plugin.version> <!-- NOTE: When upgrading, also update explicit versions in tenant base poms! -->
