@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
@@ -50,7 +49,7 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
     private final BooleanFlag useAlternateCertProvider;
 
     public CertificatePoolMaintainer(Controller controller, Metric metric, Duration interval) {
-        super(controller, interval, null, Set.of(SystemName.Public, SystemName.PublicCd));
+        super(controller, interval);
         this.controller = controller;
         this.secretStore = controller.secretStore();
         this.certPoolSize = Flags.CERT_POOL_SIZE.bindTo(controller.flagSource());
