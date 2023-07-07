@@ -12,10 +12,12 @@ public class ClusterCapacityTest {
 
     @Test
     void serialization() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, null, "fast", "local", "x86_64");
+        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, null, "fast", "local", "x86_64", null);
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(clusterCapacity);
-        assertEquals("{\"count\":7,\"vcpu\":1.2,\"memoryGb\":3.4,\"diskGb\":5.6,\"diskSpeed\":\"fast\",\"storageType\":\"local\",\"architecture\":\"x86_64\"}", json);
+        assertEquals("""
+                             {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"diskSpeed":"fast","storageType":"local","architecture":"x86_64"}""",
+                     json);
 
         ClusterCapacity deserialized = mapper.readValue(json, ClusterCapacity.class);
         assertEquals(7, deserialized.count());
@@ -30,10 +32,12 @@ public class ClusterCapacityTest {
 
     @Test
     void serialization2() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64");
+        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", null);
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(clusterCapacity);
-        assertEquals("{\"count\":7,\"vcpu\":1.2,\"memoryGb\":3.4,\"diskGb\":5.6,\"bandwidthGbps\":2.3,\"diskSpeed\":\"any\",\"storageType\":\"remote\",\"architecture\":\"arm64\"}", json);
+        assertEquals("""
+                             {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64"}""",
+                     json);
 
         ClusterCapacity deserialized = mapper.readValue(json, ClusterCapacity.class);
         assertEquals(7, deserialized.count());
@@ -47,8 +51,29 @@ public class ClusterCapacityTest {
     }
 
     @Test
+    void serialization3() throws IOException {
+        ClusterCapacity clusterCapacity = new ClusterCapacity(7, 1.2, 3.4, 5.6, 2.3, "any", "remote", "arm64", "admin");
+        ObjectMapper mapper = new ObjectMapper();
+        String json = mapper.writeValueAsString(clusterCapacity);
+        assertEquals("""
+                             {"count":7,"vcpu":1.2,"memoryGb":3.4,"diskGb":5.6,"bandwidthGbps":2.3,"diskSpeed":"any","storageType":"remote","architecture":"arm64","clusterType":"admin"}""",
+                     json);
+
+        ClusterCapacity deserialized = mapper.readValue(json, ClusterCapacity.class);
+        assertEquals(7, deserialized.count());
+        assertEquals(1.2, deserialized.vcpu(), 0.0001);
+        assertEquals(3.4, deserialized.memoryGb(), 0.0001);
+        assertEquals(5.6, deserialized.diskGb(), 0.0001);
+        assertEquals(2.3, deserialized.bandwidthGbps(), 0.0001);
+        assertEquals("any", deserialized.diskSpeed());
+        assertEquals("remote", deserialized.storageType());
+        assertEquals("arm64", deserialized.architecture());
+        assertEquals("admin", deserialized.clusterType());
+    }
+
+    @Test
     void serializationWithNoNodeResources() throws IOException {
-        ClusterCapacity clusterCapacity = new ClusterCapacity(7, null, null, null, null, null, null, null);
+        ClusterCapacity clusterCapacity = new ClusterCapacity(7, null, null, null, null, null, null, null, null);
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writeValueAsString(clusterCapacity);
         assertEquals("{\"count\":7,\"diskSpeed\":\"fast\",\"storageType\":\"any\",\"architecture\":\"x86_64\"}", json);
