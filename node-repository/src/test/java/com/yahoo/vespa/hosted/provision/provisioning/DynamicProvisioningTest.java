@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.Architecture;
@@ -316,13 +317,6 @@ public class DynamicProvisioningTest {
         tester.assertNodes("Allocation specifies memory in the advertised amount",
                            2, 1, 2, 20, 40,
                            app1, cluster1);
-
-        // Redeploy the same
-        tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 20, 40),
-                                                      resources(4, 1, 2, 20, 40)));
-        tester.assertNodes("Allocation specifies memory in the advertised amount",
-                           2, 1, 2, 20, 40,
-                           app1, cluster1);
     }
 
     @Test
@@ -505,7 +499,7 @@ public class DynamicProvisioningTest {
     }
 
     @Test
-    public void gpu_host()  {
+    public void gpu_host() {
         List<Flavor> flavors = List.of(new Flavor("gpu", new NodeResources(4, 16, 125, 10, fast, local,
                                                                            Architecture.x86_64, new NodeResources.GpuResources(1, 16))));
         ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)

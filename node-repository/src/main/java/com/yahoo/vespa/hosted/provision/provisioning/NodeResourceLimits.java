@@ -2,14 +2,17 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Locale;
+import java.util.logging.Level;
 
 /**
  * Defines the resource limits for nodes in various zones
@@ -35,6 +38,12 @@ public class NodeResourceLimits {
             illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, cluster.isExclusive()));
     }
 
+    // TODO: Remove this when we are ready to fail, not just warn on this. */
+    public boolean isWithinAdvertisedDiskLimits(NodeResources requested, ClusterSpec cluster) {
+        if (requested.diskGbIsUnspecified() || requested.memoryGbIsUnspecified()) return true;
+        return requested.diskGb() >= minAdvertisedDiskGb(requested, cluster);
+    }
+
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
     public boolean isWithinRealLimits(NodeCandidate candidateNode, ApplicationId applicationId, ClusterSpec cluster) {
         if (candidateNode.type() != NodeType.tenant) return true; // Resource limits only apply to tenant nodes
@@ -52,8 +61,11 @@ public class NodeResourceLimits {
        return true;
     }
 
-    public NodeResources enlargeToLegal(NodeResources requested, ApplicationId applicationId, ClusterSpec cluster, boolean exclusive) {
+    public NodeResources enlargeToLegal(NodeResources requested, ApplicationId applicationId, ClusterSpec cluster, boolean exclusive, boolean followRecommendations) {
         if (requested.isUnspecified()) return requested;
+
+        if (followRecommendations) // TODO: Do unconditionally when we enforce this limit
+            requested = requested.withDiskGb(Math.max(minAdvertisedDiskGb(requested, cluster), requested.diskGb()));
 
         return requested.withVcpu(Math.max(minAdvertisedVcpu(applicationId, cluster), requested.vcpu()))
                         .withMemoryGb(Math.max(minAdvertisedMemoryGb(cluster), requested.memoryGb()))
@@ -76,6 +88,15 @@ public class NodeResourceLimits {
 
     private double minAdvertisedDiskGb(NodeResources requested, boolean exclusive) {
         return minRealDiskGb() + reservedDiskSpaceGb(requested.storageType(), exclusive);
+    }
+
+    // TODO: Move this check into the above when we are ready to fail, not just warn on this. */
+    private double minAdvertisedDiskGb(NodeResources requested, ClusterSpec cluster) {
+        return requested.memoryGb() * switch (cluster.type()) {
+            case combined, content -> 3;
+            case container -> 2;
+            default -> 0; // No constraint on other types
+        };
     }
 
     // Note: Assumes node type 'host'

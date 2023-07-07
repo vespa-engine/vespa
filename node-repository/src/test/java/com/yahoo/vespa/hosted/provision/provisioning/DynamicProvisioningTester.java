@@ -24,9 +24,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.Fixture;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
-import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
-import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
+import com.yahoo.vespa.hosted.provision.testutils.InMemoryProvisionLogger;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -44,7 +42,7 @@ import static org.junit.Assert.assertTrue;
  * - Supports autoscaling testing.
  *
  * TODO: All provisioning testing should migrate to use this, and then the provisionging tester should be collapsed
- *       into this.
+ *       into this.   ... or we should just use autoscalingtester for everything.
  *
  * @author bratseth
  */
@@ -88,6 +86,8 @@ public class DynamicProvisioningTester {
             flavors.add(new Flavor("flavor" + i, resources.get(i)));
         return flavors;
     }
+
+    public InMemoryProvisionLogger provisionLogger() { return provisioningTester.provisionLogger(); }
 
     public static Fixture.Builder fixture() { return new Fixture.Builder(); }
 

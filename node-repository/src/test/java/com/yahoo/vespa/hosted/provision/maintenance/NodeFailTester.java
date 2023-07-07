@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub;
 import com.yahoo.vespa.service.duper.InfraApplication;
 import com.yahoo.vespa.service.duper.TenantHostApplication;
+import com.yahoo.vespa.hosted.provision.testutils.InMemoryProvisionLogger;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -270,7 +271,7 @@ public class NodeFailTester {
     }
 
     public void activate(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
-        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, capacity, null);
+        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, capacity, new InMemoryProvisionLogger());
         try (var lock = provisioner.lock(applicationId)) {
             NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
             provisioner.activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock, transaction));

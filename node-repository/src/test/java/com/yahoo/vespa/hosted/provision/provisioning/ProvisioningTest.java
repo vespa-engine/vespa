@@ -498,7 +498,7 @@ public class ProvisioningTest {
 
     @Test
     public void test_changing_limits() {
-        Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 100, 4));
+        Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 1000, 4));
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                                                                     .flavors(List.of(hostFlavor))
                                                                     .build();
@@ -508,52 +508,52 @@ public class ProvisioningTest {
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
         // Initial deployment
-        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 20),
-                                                      resources(8, 4, 4, 20, 40)));
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 200),
+                                                      resources(8, 4, 4, 20, 400)));
         tester.assertNodes("Initial allocation at min",
-                           4, 2, 2, 10, 20,
+                           4, 2, 2, 10, 200,
                            app1, cluster1);
 
         // Move window above current allocation
-        tester.activate(app1, cluster1, Capacity.from(resources(8, 4, 4, 21, 40),
-                                                      resources(10, 5, 5, 25, 50)));
+        tester.activate(app1, cluster1, Capacity.from(resources(8, 4, 4, 21, 400),
+                                                      resources(10, 5, 5, 25, 500)));
         tester.assertNodes("New allocation at new min",
-                           8, 4, 4, 21, 40,
+                           8, 4, 4, 21, 400,
                            app1, cluster1);
 
         // Move window below current allocation
-        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 20),
-                                                      resources(6, 3, 3, 15, 25)));
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 200),
+                                                      resources(6, 3, 3, 15, 250)));
         tester.assertNodes("Allocation preserving resources within new limits",
-                           6, 2, 3, 14.57, 25,
+                           6, 2, 3, 14.57, 250,
                            app1, cluster1);
 
         // Widening window does not change allocation
-        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 1, 5, 15),
-                                                      resources(8, 4, 4, 21, 30)));
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 1, 5, 150),
+                                                      resources(8, 4, 4, 21, 300)));
         tester.assertNodes("Same allocation",
-                           6, 2, 3, 14.57, 25,
+                           6, 2, 3, 14.57, 250,
                            app1, cluster1);
 
         // Changing limits in opposite directions cause a mixture of min and max
-        tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 10, 30,  10),
-                                                      resources(4, 2, 14, 40, 13)));
+        tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 10, 30,  100),
+                                                      resources(4, 2, 14, 40, 130)));
         tester.assertNodes("A mix of min and max",
-                           4, 1, 10, 30, 13,
+                           4, 1, 10, 30, 130,
                            app1, cluster1);
 
         // Changing group size
-        tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 8, 25,  10),
-                                                      resources(9, 3, 12, 35, 15)));
+        tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 8, 25,  100),
+                                                      resources(9, 3, 12, 35, 150)));
         tester.assertNodes("Groups changed",
-                           9, 3, 8, 30, 13,
+                           9, 3, 8, 30, 130,
                            app1, cluster1);
 
         // Stop specifying node resources
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(6, 3, NodeResources.unspecified()),
                                                       new ClusterResources(9, 3, NodeResources.unspecified())));
         tester.assertNodes("No change",
-                           9, 3, 8, 30, 13,
+                           9, 3, 8, 30, 130,
                            app1, cluster1);
     }
 

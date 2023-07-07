@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
 import java.util.Optional;
 
@@ -63,9 +64,8 @@ public class AllocationOptimizer {
                                                                             availableRealHostResources,
                                                                             nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
-                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get())) {
+                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                     bestAllocation = allocatableResources;
-                }
             }
         }
         return bestAllocation;

@@ -513,18 +513,18 @@ public class VirtualNodeProvisioningTest {
                            2, 1, 20, 16, 50, 1.0,
                            app1, cluster1);
 
-        var newMinResources = new NodeResources( 5,  6, 11, 1);
-        var newMaxResources = new NodeResources(20, 10, 30, 1);
+        var newMinResources = new NodeResources( 5,  6, 18, 1);
+        var newMaxResources = new NodeResources(20, 10, 90, 1);
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(7, 1, newMinResources),
                                                       new ClusterResources(7, 1, newMaxResources)));
         tester.assertNodes("New allocation preserves total (redundancy adjusted) resources",
-                           7, 1, 5, 6.0, 11, 1.0,
+                           7, 1, 5, 6.0, 18, 1.0,
                            app1, cluster1);
 
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(7, 1, newMinResources),
                                                       new ClusterResources(7, 1, newMaxResources)));
         tester.assertNodes("Redeploying does not cause changes",
-                           7, 1, 5, 6.0, 11, 1.0,
+                           7, 1, 5, 6.0, 18, 1.0,
                            app1, cluster1);
     }
 
