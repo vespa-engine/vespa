@@ -74,6 +74,7 @@ using search::queryeval::ComplexLeafBlueprint;
 using search::queryeval::CreateBlueprintVisitorHelper;
 using search::queryeval::DotProductBlueprint;
 using search::queryeval::FieldSpec;
+using search::queryeval::FieldSpecBase;
 using search::queryeval::FieldSpecBaseList;
 using search::queryeval::FilterWrapper;
 using search::queryeval::IRequestContext;
@@ -129,27 +130,11 @@ private:
     Type _type;
 
 public:
-    AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
-                            const string &query_stack, const SearchContextParams &params)
-        : AttributeFieldBlueprint(field, attribute, QueryTermDecoder::decodeTerm(query_stack), params)
-    { }
-    AttributeFieldBlueprint(const FieldSpec &field, const IAttributeVector &attribute,
-                            QueryTermSimple::UP term, const SearchContextParams &params)
-        : SimpleLeafBlueprint(field),
-          _attr(attribute),
-          _query_term(term->getTermString()),
-          _search_context(attribute.createSearchContext(std::move(term), params)),
-          _type(OTHER)
-    {
-        uint32_t estHits = _search_context->approximateHits();
-        HitEstimate estimate(estHits, estHits == 0);
-        setEstimate(estimate);
-        if (attribute.isFloatingPointType()) {
-            _type = FLOAT;
-        } else if (attribute.isIntegerType()) {
-            _type = INT;
-        }
-    }
+    AttributeFieldBlueprint(FieldSpecBase field, const IAttributeVector &attribute,
+                            const string &query_stack, const SearchContextParams &params);
+    AttributeFieldBlueprint(FieldSpecBase field, const IAttributeVector &attribute,
+                            QueryTermSimple::UP term, const SearchContextParams &params);
+    ~AttributeFieldBlueprint() override;
 
     SearchIteratorUP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
         assert(tfmda.size() == 1);
@@ -180,6 +165,31 @@ public:
     }
     bool getRange(vespalib::string &from, vespalib::string &to) const override;
 };
+
+AttributeFieldBlueprint::~AttributeFieldBlueprint() = default;
+
+AttributeFieldBlueprint::AttributeFieldBlueprint(FieldSpecBase field, const IAttributeVector &attribute,
+                                                 const string &query_stack, const SearchContextParams &params)
+    : AttributeFieldBlueprint(field, attribute, QueryTermDecoder::decodeTerm(query_stack), params)
+{ }
+
+AttributeFieldBlueprint::AttributeFieldBlueprint(FieldSpecBase field, const IAttributeVector &attribute,
+                                                 QueryTermSimple::UP term, const SearchContextParams &params)
+    : SimpleLeafBlueprint(field),
+      _attr(attribute),
+      _query_term(term->getTermString()),
+      _search_context(attribute.createSearchContext(std::move(term), params)),
+      _type(OTHER)
+{
+    uint32_t estHits = _search_context->approximateHits();
+    HitEstimate estimate(estHits, estHits == 0);
+    setEstimate(estimate);
+    if (attribute.isFloatingPointType()) {
+        _type = FLOAT;
+    } else if (attribute.isIntegerType()) {
+        _type = INT;
+    }
+}
 
 vespalib::string
 get_type(const IAttributeVector& attr)
@@ -866,7 +876,7 @@ CreateBlueprintVisitor::createShallowWeightedSet(WS *bp, MultiTerm &n, const Fie
     bp->reserve(n.getNumTerms());
     Blueprint::HitEstimate estimate;
     for (uint32_t i(0); i < n.getNumTerms(); i++) {
-        FieldSpec childfs = bp->getNextChildField(fs);
+        FieldSpecBase childfs = bp->getNextChildField(fs);
         auto term = n.getAsString(i);
         bp->addTerm(std::make_unique<AttributeFieldBlueprint>(childfs, _attr, extractTerm(term.first, isInteger), scParams.useBitVector(childfs.isFilter())), term.second.percent(), estimate);
     }

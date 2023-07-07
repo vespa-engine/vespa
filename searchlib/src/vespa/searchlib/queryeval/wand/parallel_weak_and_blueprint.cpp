@@ -12,12 +12,11 @@
 
 namespace search::queryeval {
 
-ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(const FieldSpec &field,
+ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(FieldSpecBase field,
                                                    uint32_t scoresToTrack,
                                                    score_t scoreThreshold,
                                                    double thresholdBoostFactor)
     : ComplexLeafBlueprint(field),
-      _field(field),
       _scores(scoresToTrack),
       _scoreThreshold(scoreThreshold),
       _thresholdBoostFactor(thresholdBoostFactor),
@@ -28,13 +27,12 @@ ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(const FieldSpec &field,
 {
 }
 
-ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(const FieldSpec &field,
+ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(FieldSpecBase field,
                                                    uint32_t scoresToTrack,
                                                    score_t scoreThreshold,
                                                    double thresholdBoostFactor,
                                                    uint32_t scoresAdjustFrequency)
     : ComplexLeafBlueprint(field),
-      _field(field),
       _scores(scoresToTrack),
       _scoreThreshold(scoreThreshold),
       _thresholdBoostFactor(thresholdBoostFactor),
@@ -46,12 +44,6 @@ ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(const FieldSpec &field,
 }
 
 ParallelWeakAndBlueprint::~ParallelWeakAndBlueprint() = default;
-
-FieldSpec
-ParallelWeakAndBlueprint::getNextChildField(const FieldSpec &outer)
-{
-    return FieldSpec(outer.getName(), outer.getFieldId(), _layout.allocTermField(outer.getFieldId()), false);
-}
 
 void
 ParallelWeakAndBlueprint::reserve(size_t num_children) {

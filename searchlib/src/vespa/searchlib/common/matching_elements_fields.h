@@ -28,7 +28,7 @@ public:
         _fields.insert(field_name);
     }
     void add_mapping(const vespalib::string &field_name,
-                          const vespalib::string &struct_field_name) {
+                     const vespalib::string &struct_field_name) {
         _fields.insert(field_name);
         _struct_fields[struct_field_name] = field_name;
     }
