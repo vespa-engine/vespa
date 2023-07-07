@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +20,7 @@ import java.util.Set;
 public record LegacySignedIdentityDocumentEntity (
         String signature, int signingKeyVersion, String providerUniqueId, String providerService, int documentVersion,
         String configServerHostname, String instanceHostname, Instant createdAt, Set<String> ipAddresses,
-        String identityType, String clusterType, String ztsUrl, String serviceIdentity, Map<String, Object> unknownAttributes)  implements SignedIdentityDocumentEntity {
+        String identityType, String clusterType, URI ztsUrl, String serviceIdentity, Map<String, Object> unknownAttributes)  implements SignedIdentityDocumentEntity {
 
     @JsonCreator
     public LegacySignedIdentityDocumentEntity(@JsonProperty("signature") String signature,
@@ -36,7 +37,7 @@ public record LegacySignedIdentityDocumentEntity (
                                         @JsonProperty("zts-url") String ztsUrl,
                                         @JsonProperty("service-identity") String serviceIdentity) {
         this(signature, signingKeyVersion, providerUniqueId, providerService, documentVersion, configServerHostname,
-             instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, new HashMap<>());
+             instanceHostname, createdAt, ipAddresses, identityType, clusterType, URI.create(ztsUrl), serviceIdentity, new HashMap<>());
     }
 
     @JsonProperty("signature") @Override public String signature() { return signature; }
@@ -50,7 +51,7 @@ public record LegacySignedIdentityDocumentEntity (
     @JsonProperty("ip-addresses") @Override public Set<String> ipAddresses() { return ipAddresses; }
     @JsonProperty("identity-type") @Override public String identityType() { return identityType; }
     @JsonProperty("cluster-type") @Override public String clusterType() { return clusterType; }
-    @JsonProperty("zts-url") @Override public String ztsUrl() { return ztsUrl; }
+    @JsonProperty("zts-url") @Override public URI ztsUrl() { return ztsUrl; }
     @JsonProperty("service-identity") @Override public String serviceIdentity() { return serviceIdentity; }
     @JsonAnyGetter @Override public Map<String, Object> unknownAttributes() { return unknownAttributes; }
     @JsonAnySetter public void set(String name, Object value) { unknownAttributes.put(name, value); }

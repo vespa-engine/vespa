@@ -3,6 +3,7 @@ package com.yahoo.vespa.athenz.identityprovider.api;
 
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +15,7 @@ import java.util.Set;
  */
 public record IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzIdentity providerService, String configServerHostname,
                                String instanceHostname, Instant createdAt, Set<String> ipAddresses,
-                               IdentityType identityType, ClusterType clusterType, String ztsUrl,
+                               IdentityType identityType, ClusterType clusterType, URI ztsUrl,
                                AthenzIdentity serviceIdentity, Map<String, Object> unknownAttributes) {
 
     public IdentityDocument {
@@ -30,7 +31,7 @@ public record IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzIde
 
     public IdentityDocument(VespaUniqueInstanceId providerUniqueId, AthenzIdentity providerService, String configServerHostname,
                             String instanceHostname, Instant createdAt, Set<String> ipAddresses,
-                            IdentityType identityType, ClusterType clusterType, String ztsUrl,
+                            IdentityType identityType, ClusterType clusterType, URI ztsUrl,
                             AthenzIdentity serviceIdentity) {
         this(providerUniqueId, providerService, configServerHostname, instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity, Map.of());
     }

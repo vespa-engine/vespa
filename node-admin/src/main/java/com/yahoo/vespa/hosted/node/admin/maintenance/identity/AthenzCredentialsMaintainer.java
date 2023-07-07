@@ -43,7 +43,6 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -76,7 +75,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private static final String CONTAINER_SIA_DIRECTORY = "/var/lib/sia";
     private static final String LEGACY_SIA_DIRECTORY = "/opt/vespa/var/vespa/sia";
 
-    private final URI ztsEndpoint;
     private final Path ztsTrustStorePath;
     private final Timer timer;
     private final String certificateDnsSuffix;
@@ -94,7 +92,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                        ServiceIdentityProvider hostIdentityProvider,
                                        FlagSource flagSource,
                                        Timer timer) {
-        this.ztsEndpoint = ztsEndpoint;
         this.ztsTrustStorePath = ztsTrustStorePath;
         this.certificateDnsSuffix = certificateDnsSuffix;
         this.hostIdentityProvider = hostIdentityProvider;
@@ -235,7 +232,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 .withKeyStore(privateKeyFile, certificateFile)
                 .withTrustStore(ztsTrustStorePath)
                 .build();
-        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(identityDocument))
+        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(identityDocument.ztsUrl())
                 .withSslContext(containerIdentitySslContext)
                 .withHostnameVerifier(ztsHostNameVerifier)
                 .build()) {
@@ -318,7 +315,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
         // Allow all zts hosts while removing SIS
         HostnameVerifier ztsHostNameVerifier = (hostname, sslSession) -> true;
-        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(doc)).withIdentityProvider(hostIdentityProvider).withHostnameVerifier(ztsHostNameVerifier).build()) {
+        try (ZtsClient ztsClient = new DefaultZtsClient.Builder(doc.ztsUrl()).withIdentityProvider(hostIdentityProvider).withHostnameVerifier(ztsHostNameVerifier).build()) {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
                             doc.providerService(),
@@ -331,15 +328,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         }
     }
 
-    /**
-     * Return zts url from identity document, fallback to ztsEndpoint
-     */
-    private URI ztsEndpoint(IdentityDocument doc) {
-        return Optional.ofNullable(doc.ztsUrl())
-                .filter(s -> !s.isBlank())
-                .map(URI::create)
-                .orElse(ztsEndpoint);
-    }
     private void refreshIdentity(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile,
                                  ContainerPath identityDocumentFile, IdentityDocument doc, IdentityType identityType, AthenzIdentity identity) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
@@ -354,7 +342,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         try {
             // Allow all zts hosts while removing SIS
             HostnameVerifier ztsHostNameVerifier = (hostname, sslSession) -> true;
-            try (ZtsClient ztsClient = new DefaultZtsClient.Builder(ztsEndpoint(doc)).withSslContext(containerIdentitySslContext).withHostnameVerifier(ztsHostNameVerifier).build()) {
+            try (ZtsClient ztsClient = new DefaultZtsClient.Builder(doc.ztsUrl()).withSslContext(containerIdentitySslContext).withHostnameVerifier(ztsHostNameVerifier).build()) {
                 InstanceIdentity instanceIdentity =
                         ztsClient.refreshInstance(
                                 doc.providerService(),
@@ -439,13 +427,11 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         var certsDirectory = legacySiaDirectory.resolve("certs");
         Files.createDirectories(keysDirectory);
         Files.createDirectories(certsDirectory);
-        writeFile(certsDirectory.resolve(certificateFile.getFileName()), new String(Files.readAllBytes(certificateFile)));
-        writeFile(keysDirectory.resolve(privateKeyFile.getFileName()), new String(Files.readAllBytes(privateKeyFile)));
+        writeFile(certsDirectory.resolve(certificateFile.getFileName()), Files.readString(certificateFile));
+        writeFile(keysDirectory.resolve(privateKeyFile.getFileName()), Files.readString(privateKeyFile));
     }
 
-    /*
-    Get the document version to ask for
-     */
+    /** Get the document version to ask for */
     private int documentVersion(NodeAgentContext context) {
         return SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION;
     }
@@ -463,7 +449,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         NODE("vespa-node-identity-document.json"),
         TENANT("vespa-tenant-identity-document.json");
 
-        private String identityDocument;
+        private final String identityDocument;
         IdentityType(String identityDocument) {
             this.identityDocument = identityDocument;
         }

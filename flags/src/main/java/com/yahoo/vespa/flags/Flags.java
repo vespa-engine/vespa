@@ -382,12 +382,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag NEW_IDDOC_LAYOUT = defineFeatureFlag(
-            "new_iddoc_layout", true, List.of("tokle", "bjorncs", "olaa"), "2023-04-24", "2023-12-30",
-            "Whether to use new identity document layout",
-            "Takes effect on node reboot",
-            HOSTNAME, APPLICATION_ID, VESPA_VERSION);
-
     public static final UnboundBooleanFlag RANDOMIZED_ENDPOINT_NAMES = defineFeatureFlag(
             "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-07-30",
             "Whether to use randomized endpoint names",
