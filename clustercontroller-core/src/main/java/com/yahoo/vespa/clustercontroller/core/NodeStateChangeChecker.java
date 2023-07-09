@@ -245,7 +245,7 @@ public class NodeStateChangeChecker {
             return allowSettingOfWantedState();
         }
 
-        Result allNodesAreUpCheck = checkAllNodesAreUp(clusterState);
+        Result allNodesAreUpCheck = nodesAreUpOrRetired(clusterState);
         if (allNodesAreUpCheck.settingWantedStateIsNotAllowed()) {
             log.log(FINE, "allNodesAreUpCheck: " + allNodesAreUpCheck);
             return allNodesAreUpCheck;
@@ -449,36 +449,18 @@ public class NodeStateChangeChecker {
                           .collect(Collectors.toList());
     }
 
-    private Result checkAllNodesAreUp(ClusterState clusterState) {
-        // This method verifies both storage nodes and distributors are up (or retired).
-        // The complicated part is making a summary error message.
+    /** Verifies that storage nodes and distributors are up (or retired). */
+    private Result nodesAreUpOrRetired(ClusterState clusterState) {
+        for (NodeInfo nodeInfo : clusterInfo.getAllNodeInfos()) {
+            State wantedState = nodeInfo.getUserWantedState().getState();
+            if (wantedState != UP && wantedState != RETIRED)
+                return createDisallowed("Another " + nodeInfo.type() + " wants state " +
+                        wantedState.toString().toUpperCase() + ": " + nodeInfo.getNodeIndex());
 
-        for (NodeInfo storageNodeInfo : clusterInfo.getStorageNodeInfos()) {
-            State wantedState = storageNodeInfo.getUserWantedState().getState();
-            if (wantedState != UP && wantedState != RETIRED) {
-                return createDisallowed("Another storage node wants state " +
-                        wantedState.toString().toUpperCase() + ": " + storageNodeInfo.getNodeIndex());
-            }
-
-            State state = clusterState.getNodeState(storageNodeInfo.getNode()).getState();
-            if (state != UP && state != RETIRED) {
-                return createDisallowed("Another storage node has state " + state.toString().toUpperCase() +
-                        ": " + storageNodeInfo.getNodeIndex());
-            }
-        }
-
-        for (NodeInfo distributorNodeInfo : clusterInfo.getDistributorNodeInfos()) {
-            State wantedState = distributorNodeInfo.getUserWantedState().getState();
-            if (wantedState != UP && wantedState != RETIRED) {
-                return createDisallowed("Another distributor wants state " + wantedState.toString().toUpperCase() +
-                        ": " + distributorNodeInfo.getNodeIndex());
-            }
-
-            State state = clusterState.getNodeState(distributorNodeInfo.getNode()).getState();
-            if (state != UP && state != RETIRED) {
-                return createDisallowed("Another distributor has state " + state.toString().toUpperCase() +
-                        ": " + distributorNodeInfo.getNodeIndex());
-            }
+            State state = clusterState.getNodeState(nodeInfo.getNode()).getState();
+            if (state != UP && state != RETIRED)
+                return createDisallowed("Another " + nodeInfo.type() + " has state " +
+                        state.toString().toUpperCase() + ": " + nodeInfo.getNodeIndex());
         }
 
         return allowSettingOfWantedState();
