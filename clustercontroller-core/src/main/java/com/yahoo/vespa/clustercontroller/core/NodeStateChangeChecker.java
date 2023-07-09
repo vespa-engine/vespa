@@ -82,15 +82,8 @@ public class NodeStateChangeChecker {
         if (nodeInfo == null)
             return disallow("Unknown node " + node);
 
-        // If the new state and description equals the existing, we're done. This is done for 2 cases:
-        // - We can short-circuit setting of a new wanted state, which e.g. hits ZooKeeper.
-        // - We ensure that clients that have previously set the wanted state, continue
-        //   to see the same conclusion, even though they possibly would have been
-        //   DISALLOWED if re-evaluated. This is important for implementing idempotent clients.
-        if (newWantedState.getState().equals(oldWantedState.getState()) &&
-            Objects.equals(newWantedState.getDescription(), oldWantedState.getDescription())) {
+        if (noChanges(oldWantedState, newWantedState))
             return alreadySet();
-        }
 
         return switch (newWantedState.getState()) {
             case UP -> canSetStateUp(nodeInfo, oldWantedState);
@@ -100,8 +93,18 @@ public class NodeStateChangeChecker {
         };
     }
 
+    private static boolean noChanges(NodeState oldWantedState, NodeState newWantedState) {
+        // If the new state and description equals the existing, we're done. This is done for 2 cases:
+        // - We can short-circuit setting of a new wanted state, which e.g. hits ZooKeeper.
+        // - We ensure that clients that have previously set the wanted state, continue
+        //   to see the same conclusion, even though they possibly would have been
+        //   DISALLOWED if re-evaluated. This is important for implementing idempotent clients.
+        return newWantedState.getState().equals(oldWantedState.getState())
+               && Objects.equals(newWantedState.getDescription(), oldWantedState.getDescription());
+    }
+
     private Result canSetStateDownPermanently(NodeInfo nodeInfo, ClusterState clusterState, String newDescription) {
-        var result = stateSetAlreadyWithDifferentDescription(nodeInfo, newDescription);
+        var result = checkIfStateSetWithDifferentDescription(nodeInfo, newDescription);
         if (result.notAllowed())
             return result;
 
@@ -146,34 +149,34 @@ public class NodeStateChangeChecker {
 
     private Result canSetStateMaintenanceTemporarily(StorageNodeInfo nodeInfo, ClusterState clusterState,
                                                      String newDescription) {
-        var result = stateSetAlreadyWithDifferentDescription(nodeInfo, newDescription);
+        var result = checkIfStateSetWithDifferentDescription(nodeInfo, newDescription);
         if (result.notAllowed())
             return result;
 
         if (maxNumberOfGroupsAllowedToBeDown == -1) {
-            result = anotherNodeInAnotherGroupHasWantedState(nodeInfo);
+            result = checkIfAnotherNodeInAnotherGroupHasWantedState(nodeInfo);
             if (result.notAllowed())
                 return result;
             if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription))
                 return allow();
         } else {
-            var optionalResult = otherNodesHaveWantedState(nodeInfo, newDescription, clusterState);
+            var optionalResult = checkIfOtherNodesHaveWantedState(nodeInfo, newDescription, clusterState);
             if (optionalResult.isPresent())
                 return optionalResult.get();
         }
 
-        if (clusterState.getNodeState(nodeInfo.getNode()).getState() == DOWN) {
+        if (nodeIsDown(clusterState, nodeInfo)) {
             log.log(FINE, "node is DOWN, allow");
             return allow();
         }
 
-        result = nodesAreUpOrRetired(clusterState);
+        result = checkIfNodesAreUpOrRetired(clusterState);
         if (result.notAllowed()) {
             log.log(FINE, "nodesAreUpOrRetired: " + result);
             return result;
         }
 
-        result = checkDistributors(nodeInfo.getNode(), clusterState.getVersion());
+        result = checkClusterStateAndRedundancy(nodeInfo.getNode(), clusterState.getVersion());
         if (result.notAllowed()) {
             log.log(FINE, "checkDistributors: "+ result);
             return result;
@@ -183,7 +186,7 @@ public class NodeStateChangeChecker {
     }
 
     /** Refuse to override whatever an operator or unknown entity is doing. */
-    private static Result stateSetAlreadyWithDifferentDescription(NodeInfo nodeInfo, String newDescription) {
+    private static Result checkIfStateSetWithDifferentDescription(NodeInfo nodeInfo, String newDescription) {
         State oldWantedState = nodeInfo.getUserWantedState().getState();
         String oldDescription = nodeInfo.getUserWantedState().getDescription();
         if (oldWantedState != UP && ! oldDescription.equals(newDescription))
@@ -196,7 +199,7 @@ public class NodeStateChangeChecker {
      * Returns a disallow-result if there is another node (in another group, if hierarchical)
      * that has a wanted state != UP.  We disallow more than 1 suspended node/group at a time.
      */
-    private Result anotherNodeInAnotherGroupHasWantedState(StorageNodeInfo nodeInfo) {
+    private Result checkIfAnotherNodeInAnotherGroupHasWantedState(StorageNodeInfo nodeInfo) {
         if (groupVisiting.isHierarchical()) {
             SettableOptional<Result> anotherNodeHasWantedState = new SettableOptional<>();
 
@@ -228,7 +231,7 @@ public class NodeStateChangeChecker {
      *                           if less than maxNumberOfGroupsAllowedToBeDown: return Optional.of(allowed)
      *                           else: if node is in group with nodes already down: return Optional.of(allowed), else Optional.of(disallowed)
      */
-    private Optional<Result> otherNodesHaveWantedState(StorageNodeInfo nodeInfo, String newDescription, ClusterState clusterState) {
+    private Optional<Result> checkIfOtherNodesHaveWantedState(StorageNodeInfo nodeInfo, String newDescription, ClusterState clusterState) {
         Node node = nodeInfo.getNode();
 
         if (groupVisiting.isHierarchical()) {
@@ -271,6 +274,10 @@ public class NodeStateChangeChecker {
                 return Optional.of(otherNodeHasWantedState);
         }
         return Optional.empty();
+    }
+
+    private static boolean nodeIsDown(ClusterState clusterState, NodeInfo nodeInfo) {
+        return clusterState.getNodeState(nodeInfo.getNode()).getState() == DOWN;
     }
 
     private ArrayList<Integer> sortSetIntoList(Set<Integer> set) {
@@ -372,7 +379,7 @@ public class NodeStateChangeChecker {
     }
 
     /** Verifies that storage nodes and distributors are up (or retired). */
-    private Result nodesAreUpOrRetired(ClusterState clusterState) {
+    private Result checkIfNodesAreUpOrRetired(ClusterState clusterState) {
         for (NodeInfo nodeInfo : clusterInfo.getAllNodeInfos()) {
             State wantedState = nodeInfo.getUserWantedState().getState();
             if (wantedState != UP && wantedState != RETIRED)
@@ -388,7 +395,7 @@ public class NodeStateChangeChecker {
         return allow();
     }
 
-    private Result checkStorageNodesForDistributor(DistributorNodeInfo distributorNodeInfo, Node node) {
+    private Result checkRedundancy(DistributorNodeInfo distributorNodeInfo, Node node) {
         List<StorageNode> storageNodes = distributorNodeInfo.getHostInfo().getDistributor().getStorageNodes();
         for (StorageNode storageNode : storageNodes) {
             if (storageNode.getIndex() == node.getIndex()) {
@@ -414,7 +421,7 @@ public class NodeStateChangeChecker {
      * @param node the node to be checked
      * @param clusterStateVersion the cluster state we expect distributors to have
      */
-    private Result checkDistributors(Node node, int clusterStateVersion) {
+    private Result checkClusterStateAndRedundancy(Node node, int clusterStateVersion) {
         if (clusterInfo.getDistributorNodeInfos().isEmpty())
             return disallow("Not aware of any distributors, probably not safe to upgrade?");
 
@@ -430,7 +437,7 @@ public class NodeStateChangeChecker {
                                 ") as fleetcontroller (" + clusterStateVersion + ")");
             }
 
-            Result storageNodesResult = checkStorageNodesForDistributor(distributorNodeInfo, node);
+            Result storageNodesResult = checkRedundancy(distributorNodeInfo, node);
             if (storageNodesResult.notAllowed()) {
                 return storageNodesResult;
             }
