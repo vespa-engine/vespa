@@ -3,7 +3,6 @@
 cache:
  job:
    build-vespa: [/main_job_cache]
-   component-build: [/main_job_cache]
 
 shared:
   image: vespaengine/vespa-build-centos-stream8:latest
