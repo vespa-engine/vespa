@@ -22,7 +22,7 @@ public final class Q {
             throw new RuntimeException(e);
         }
     }
-    private static Sources SELECT_ALL_FROM_SOURCES_ALL = new Sources(new Select("*"), "*");
+    private static final Sources SELECT_ALL_FROM_SOURCES_ALL = new Sources(new Select("*"), "*");
 
     public static Select select(String fieldName) { return new Select(fieldName);
     }

@@ -485,6 +485,18 @@ class QTest {
     }
 
     @Test
+    void fuzzy() {
+        String q = Q.p("f1").fuzzy("text to match").build();
+        assertEquals("yql=select * from sources * where f1 contains (fuzzy(\"text to match\"))", q);
+    }
+
+    @Test
+    void fuzzy_with_annotation() {
+        String q = Q.p("f1").fuzzy(A.a("maxEditDistance", 3).append(A.a("prefixLength", 10)), "text to match").build();
+        assertEquals("yql=select * from sources * where f1 contains ({\"prefixLength\":10,\"maxEditDistance\":3}fuzzy(\"text to match\"))", q);
+    }
+
+    @Test
     void use_contains_instead_of_contains_equiv_when_input_size_is_1() {
         String q = Q.p("f1").containsEquiv(Collections.singletonList("p1"))
                 .build();

@@ -571,6 +571,29 @@ public class Field extends QueryChain {
         return common("nearestNeighbor", annotation, (Object) rankFeature);
     }
 
+    /**
+     * Fuzzy query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#fuzzy
+     *
+     * @param text the text to match fuzzily
+     * @return the query
+     */
+    public Query fuzzy(String text) {
+        return common("fuzzy", annotation, text);
+    }
+
+    /**
+     * Fuzzy query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#fuzzy
+     *
+     * @param annotation the annotation
+     * @param text the text to match fuzzily
+     * @return the query
+     */
+    public Query fuzzy(Annotation annotation, String text) {
+        return common("fuzzy", annotation, text);
+    }
+
     private Query common(String relation, Annotation annotation, Object value) {
         return common(relation, annotation, value, values.toArray());
     }
@@ -629,6 +652,8 @@ public class Field extends QueryChain {
                 return hasAnnotation
                     ? Text.format("([%s]nearestNeighbor(%s, %s))", annotation, fieldName, valuesStr)
                     : Text.format("nearestNeighbor(%s, %s)", fieldName, valuesStr);
+            case "fuzzy":
+                return Text.format("%s contains (%sfuzzy(%s))", fieldName, annotation, values.get(0));
             default:
                 Object value = values.get(0);
                 valuesStr = value instanceof Long ? value + "L" : value.toString();
