@@ -9,7 +9,6 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
-import com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Id;
@@ -145,7 +144,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
                 probe);
 
         // If the state was successfully set, just return an "ok" message back.
-        String reason = success ? "ok" : result.getReason();
+        String reason = success ? "ok" : result.reason();
         return new SetResponse(reason, success);
     }
 
@@ -154,19 +153,19 @@ public class SetNodeStateRequest extends Request<SetResponse> {
      * wanted state, or the requested state has been accepted as the new wanted state.
      */
     private static boolean setWantedStateAccordingToResult(
-            NodeStateChangeChecker.Result result,
+            Result result,
             NodeState newWantedState,
             SetUnitStateRequest.Condition condition,
             NodeInfo nodeInfo,
             ContentCluster cluster,
             NodeListener stateListener,
             boolean probe) {
-        if (result.settingWantedStateIsAllowed()) {
+        if (result.allowed()) {
             setNewWantedState(nodeInfo, newWantedState, stateListener, probe);
         }
 
         // True if the wanted state was or has just been set to newWantedState
-        boolean success = result.settingWantedStateIsAllowed() || result.wantedStateAlreadySet();
+        boolean success = result.allowed() || result.isAlreadySet();
 
         if (success && condition == SetUnitStateRequest.Condition.SAFE && nodeInfo.isStorage()) {
             // In safe-mode, setting the storage node must be accompanied by changing the state
