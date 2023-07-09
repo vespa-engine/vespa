@@ -27,7 +27,6 @@ public class Exceptions {
         for (; t != null; t = t.getCause()) {
             message = getMessage(t);
             if (message == null) continue;
-            message = message.trim();
             if (message.isEmpty()) continue;
             if (message.equals(lastMessage)) continue;
             if (b.length() > 0) {
