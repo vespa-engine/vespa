@@ -59,7 +59,7 @@ class NodeAllocation {
     /** The number of already allocated nodes of compatible size */
     private int acceptedAndCompatible = 0;
 
-    /** The number of already allocated nodes which can be made compatible*/
+    /** The number of already allocated nodes which can be made compatible */
     private int acceptedAndCompatibleOrResizable = 0;
 
     /** The number of nodes rejected because of clashing parentHostname */
