@@ -44,7 +44,7 @@ public class ClusterMembership {
 
         this.cluster = ClusterSpec.specification(ClusterSpec.Type.valueOf(components[0]),
                                                  ClusterSpec.Id.from(components[1]))
-                                  .group(ClusterSpec.Group.from(Integer.parseInt(components[2])))
+                                  .group(components[2].isEmpty() ? null : ClusterSpec.Group.from(Integer.parseInt(components[2])))
                                   .vespaVersion(vespaVersion)
                                   .exclusive(exclusive)
                                   .combinedId(combinedId.map(ClusterSpec.Id::from))
@@ -67,7 +67,7 @@ public class ClusterMembership {
     protected String toStringValue() {
         return cluster.type().name() +
                "/" + cluster.id().value() +
-               (cluster.group().isPresent() ? "/" + cluster.group().get().index() : "") +
+               (cluster.group().isPresent() ? "/" + cluster.group().get().index() : "/") +
                "/" + index +
                ( cluster.isExclusive() ? "/exclusive" : "") +
                ( retired ? "/retired" : "") +

@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
-import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
@@ -71,8 +70,9 @@ class Activator {
         NodeList allNodes = nodeRepository.nodes().list();
         NodeList applicationNodes = allNodes.owner(application);
 
-        NodeList reserved = updatePortsFrom(hosts, applicationNodes.state(Node.State.reserved)
-                                                                   .matching(node -> hostnames.contains(node.hostname())));
+        NodeList reserved = applicationNodes.state(Node.State.reserved).matching(node -> hostnames.contains(node.hostname()));
+        reserved = updatePortsFrom(hosts, reserved);
+        reserved = updateGroupFrom(hosts, reserved);
         nodeRepository.nodes().reserve(reserved.asList()); // Re-reserve nodes to avoid reservation expiry
 
         NodeList oldActive = applicationNodes.state(Node.State.active); // All nodes active now
@@ -236,6 +236,18 @@ class Activator {
                 node = node.with(allocation);
             }
             updated.add(node);
+        }
+        return NodeList.copyOf(updated);
+    }
+
+    /**
+     * Reserved nodes are stored before they are assigned a group.
+     */
+    private NodeList updateGroupFrom(Collection<HostSpec> hosts, NodeList nodes) {
+        List<Node> updated = new ArrayList<>();
+        for (Node node : nodes) {
+            var membership = getHost(node.hostname(), hosts).membership().get();
+            updated.add(node.with(node.allocation().get().with(membership)));
         }
         return NodeList.copyOf(updated);
     }

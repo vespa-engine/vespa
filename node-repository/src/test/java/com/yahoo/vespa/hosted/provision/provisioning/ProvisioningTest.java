@@ -241,7 +241,7 @@ public class ProvisioningTest {
     public void application_deployment_variable_application_size() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = ProvisioningTester.applicationId();
+        ApplicationId application1 = ProvisioningTester.applicationId("a1");
 
         tester.makeReadyHosts(30, defaultResources);
         tester.activateTenantHosts();
@@ -821,7 +821,7 @@ public class ProvisioningTest {
     public void highest_node_indexes_are_retired_first() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = ProvisioningTester.applicationId();
+        ApplicationId application1 = ProvisioningTester.applicationId("a1");
 
         tester.makeReadyHosts(14, defaultResources).activateTenantHosts();
 
@@ -833,17 +833,19 @@ public class ProvisioningTest {
         SystemState state2 = prepare(application1, 2, 2, 2, 2, defaultResources, tester);
         tester.activate(application1, state2.allHosts);
 
-        // content0
-        assertFalse(state2.hostByMembership("content0", 0, 0).membership().get().retired());
-        assertFalse(state2.hostByMembership("content0", 0, 1).membership().get().retired());
-        assertTrue( state2.hostByMembership("content0", 0, 2).membership().get().retired());
-        assertTrue( state2.hostByMembership("content0", 0, 3).membership().get().retired());
+        List<Integer> unretiredInContent0Indices = state2.content0.stream().filter(h -> ! h.membership().get().retired()).map(h -> h.membership().get().index()).toList();
+        for (var host : state2.content0) {
+            if ( ! host.membership().get().retired()) continue;
+            for (int unretiredIndex : unretiredInContent0Indices)
+                assertTrue(host.membership().get().index() > unretiredIndex);
+        }
 
-        // content1
-        assertFalse(state2.hostByMembership("content1", 0, 0).membership().get().retired());
-        assertFalse(state2.hostByMembership("content1", 0, 1).membership().get().retired());
-        assertTrue( state2.hostByMembership("content1", 0, 2).membership().get().retired());
-        assertTrue( state2.hostByMembership("content1", 0, 3).membership().get().retired());
+        List<Integer> unretiredInContent1Indices = state2.content1.stream().filter(h -> ! h.membership().get().retired()).map(h -> h.membership().get().index()).toList();
+        for (var host : state2.content1) {
+            if ( ! host.membership().get().retired()) continue;
+            for (int unretiredIndex : unretiredInContent1Indices)
+                assertTrue(host.membership().get().index() > unretiredIndex);
+        }
     }
 
     @Test
@@ -857,7 +859,7 @@ public class ProvisioningTest {
 
         tester.deploy(application, spec, Capacity.from(new ClusterResources(6, 1, defaultResources)));
 
-        // Pick out a random application node and make it's parent larger, this will make it the spare host
+        // Pick out a random application node and make its parent larger, this will make it the spare host
         NodeList nodes = tester.nodeRepository().nodes().list();
         Node randomNode = nodes.owner(application).shuffle(new Random()).first().get();
         tester.nodeRepository().nodes().write(nodes.parentOf(randomNode).get()

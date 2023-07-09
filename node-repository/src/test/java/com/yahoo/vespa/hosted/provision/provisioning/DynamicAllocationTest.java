@@ -94,7 +94,6 @@ public class DynamicAllocationTest {
             hostsWithChildren.add(node.parentHostname().get());
         }
         assertEquals(4 - spareCount, hostsWithChildren.size());
-
     }
 
     /**

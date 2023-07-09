@@ -57,7 +57,7 @@ public class InPlaceResizeProvisionTest {
     private final ProvisioningTester tester = new ProvisioningTester.Builder()
             .flagSource(flagSource)
             .zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-    private final ApplicationId app = ProvisioningTester.applicationId();
+    private final ApplicationId app = ProvisioningTester.applicationId("a1");
 
     @Test
     public void single_group_same_cluster_size_resource_increase() {
@@ -167,8 +167,6 @@ public class InPlaceResizeProvisionTest {
         assertEquals(0, listCluster(content1).retired().size());
     }
 
-
-    /** In this scenario there should be no resizing */
     @Test
     public void increase_size_decrease_resources() {
         addParentHosts(14, largeResources.with(fast));
@@ -198,15 +196,15 @@ public class InPlaceResizeProvisionTest {
         assertSizeAndResources(listCluster(content1).retired(), 4, resources);
         assertSizeAndResources(listCluster(content1).not().retired(), 8, halvedResources);
 
-        // ... same with setting a node to want to retire
-        Node nodeToWantoToRetire = listCluster(content1).not().retired().asList().get(0);
-        try (NodeMutex lock = tester.nodeRepository().nodes().lockAndGetRequired(nodeToWantoToRetire)) {
+        // Here we'll unretire and resize one of the previously retired nodes as there is no rule against it
+        Node nodeToWantToRetire = listCluster(content1).not().retired().asList().get(0);
+        try (NodeMutex lock = tester.nodeRepository().nodes().lockAndGetRequired(nodeToWantToRetire)) {
             tester.nodeRepository().nodes().write(lock.node().withWantToRetire(true, Agent.system,
                     tester.clock().instant()), lock);
         }
         new PrepareHelper(tester, app).prepare(content1, 8, 1, halvedResources).activate();
-        assertTrue(listCluster(content1).retired().stream().anyMatch(n -> n.equals(nodeToWantoToRetire)));
-        assertEquals(5, listCluster(content1).retired().size());
+        assertTrue(listCluster(content1).retired().stream().anyMatch(n -> n.equals(nodeToWantToRetire)));
+        assertEquals(4, listCluster(content1).retired().size());
         assertSizeAndResources(listCluster(content1).not().retired(), 8, halvedResources);
     }
 

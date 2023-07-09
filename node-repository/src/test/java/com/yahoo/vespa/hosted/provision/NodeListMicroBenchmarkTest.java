@@ -58,7 +58,6 @@ public class NodeListMicroBenchmarkTest {
             nodeList.childrenOf(nodes.get(indexes.get(i)));
         }
         Duration duration = Duration.between(start, Instant.now());
-        System.out.println("Calling NodeList.childrenOf took " + duration + " (" + duration.toNanos() / iterations / 1000 + " microseconds per invocation)");
     }
 
     private List<Node> createHosts() {

@@ -23,6 +23,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -442,9 +443,8 @@ public class VirtualNodeProvisioningTest {
                          "Could not satisfy request for 3 nodes with " +
                          "[vcpu: 2.0, memory: 4.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, architecture: any] " +
                          "in tenant2.app2 container cluster 'my-container' 6.39: " +
-                         "Node allocation failure on group 0: " +
                          "Not enough suitable nodes available due to host exclusivity constraints",
-                         e.getMessage());
+                         Exceptions.toMessageString(e));
         }
 
         // Adding 3 nodes of another application for the same tenant works
@@ -469,8 +469,8 @@ public class VirtualNodeProvisioningTest {
             assertEquals("Could not satisfy request for 2 nodes with " +
                          "[vcpu: 1.0, memory: 4.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote, architecture: any] " +
                          "in tenant.app1 content cluster 'my-content'" +
-                         " 6.42: Node allocation failure on group 0",
-                         e.getMessage());
+                         " 6.42",
+                         Exceptions.toMessageString(e));
         }
     }
 

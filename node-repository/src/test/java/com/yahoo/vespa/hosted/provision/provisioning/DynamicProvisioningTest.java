@@ -334,7 +334,7 @@ public class DynamicProvisioningTest {
                 .flagSource(flagSource)
                 .build();
 
-        ApplicationId app = ProvisioningTester.applicationId();
+        ApplicationId app = ProvisioningTester.applicationId("a1");
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("8").build();
         Capacity capacity = Capacity.from(new ClusterResources(4, 2, new NodeResources(2, 4, 50, 0.1, DiskSpeed.any, StorageType.any, Architecture.any)));
 
