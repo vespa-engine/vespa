@@ -43,7 +43,7 @@ jobs:
       - JFROG_API_TOKEN
     steps:
       - inspect: |
-          cat .dockerenv
+          cat /.dockerenv
       - install-dependencies: |
           dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
           dnf install -y docker-ce docker-ce-cli containerd.io
