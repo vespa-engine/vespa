@@ -63,51 +63,6 @@ public class NodeStateChangeChecker {
             throw new IllegalArgumentException("Cannot have both 1 group and maxNumberOfGroupsAllowedToBeDown > 1");
     }
 
-    public static class Result {
-
-        public enum Action {
-            ALLOWED,
-            ALREADY_SET,
-            DISALLOWED
-        }
-
-        private final Action action;
-        private final String reason;
-
-        private Result(Action action, String reason) {
-            this.action = action;
-            this.reason = reason;
-        }
-
-        public static Result disallow(String reason) {
-            return new Result(Action.DISALLOWED, reason);
-        }
-
-        public static Result allow() {
-            return new Result(Action.ALLOWED, "Preconditions fulfilled and new state different");
-        }
-
-        public static Result alreadySet() {
-            return new Result(Action.ALREADY_SET, "Basic preconditions fulfilled and new state is already effective");
-        }
-
-        public boolean allowed() { return action == Action.ALLOWED; }
-
-        public boolean notAllowed() { return ! allowed(); }
-
-        public boolean isAlreadySet() {
-            return action == Action.ALREADY_SET;
-        }
-
-        public String reason() {
-            return reason;
-        }
-
-        public String toString() {
-            return "action " + action + ": " + reason;
-        }
-    }
-
     public Result evaluateTransition(Node node, ClusterState clusterState, SetUnitStateRequest.Condition condition,
                                      NodeState oldWantedState, NodeState newWantedState) {
         if (condition == FORCE)
@@ -121,7 +76,7 @@ public class NodeStateChangeChecker {
 
         if (node.getType() != STORAGE)
             return disallow("Safe-set of node state is only supported for storage nodes! " +
-                    "Requested node type: " + node.getType().toString());
+                            "Requested node type: " + node.getType().toString());
 
         StorageNodeInfo nodeInfo = clusterInfo.getStorageNodeInfo(node.getIndex());
         if (nodeInfo == null)
@@ -146,14 +101,9 @@ public class NodeStateChangeChecker {
     }
 
     private Result canSetStateDownPermanently(NodeInfo nodeInfo, ClusterState clusterState, String newDescription) {
-        NodeState oldWantedState = nodeInfo.getUserWantedState();
-        if (oldWantedState.getState() != UP && !oldWantedState.getDescription().equals(newDescription))
-            // Refuse to override whatever an operator or unknown entity is doing.
-            //
-            // Note:  The new state&description is NOT equal to the old state&description:
-            // that would have been short-circuited prior to this.
-            return disallow("A conflicting wanted state is already set: " +
-                            oldWantedState + ": " + oldWantedState.getDescription());
+        var result = stateSetAlreadyWithDifferentDescription(nodeInfo, newDescription);
+        if (result.notAllowed())
+            return result;
 
         State reportedState = nodeInfo.getReportedState().getState();
         if (reportedState != UP)
@@ -196,27 +146,20 @@ public class NodeStateChangeChecker {
 
     private Result canSetStateMaintenanceTemporarily(StorageNodeInfo nodeInfo, ClusterState clusterState,
                                                      String newDescription) {
-        NodeState oldWantedState = nodeInfo.getUserWantedState();
-        if (oldWantedState.getState() != UP && !oldWantedState.getDescription().equals(newDescription)) {
-            // Refuse to override whatever an operator or unknown entity is doing.  If the description is
-            // identical, we assume it is the same operator.
-            //
-            // Note:  The new state&description is NOT equal to the old state&description:
-            // that would have been short-circuited prior to this.
-            return disallow("A conflicting wanted state is already set: " +
-                            oldWantedState.getState() + ": " + oldWantedState.getDescription());
-        }
+        var result = stateSetAlreadyWithDifferentDescription(nodeInfo, newDescription);
+        if (result.notAllowed())
+            return result;
 
         if (maxNumberOfGroupsAllowedToBeDown == -1) {
-            var result = anotherNodeInAnotherGroupHasWantedState(nodeInfo);
+            result = anotherNodeInAnotherGroupHasWantedState(nodeInfo);
             if (result.notAllowed())
                 return result;
             if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription))
                 return allow();
         } else {
-            var result = otherNodesHaveWantedState(nodeInfo, newDescription, clusterState);
-            if (result.isPresent())
-                return result.get();
+            var optionalResult = otherNodesHaveWantedState(nodeInfo, newDescription, clusterState);
+            if (optionalResult.isPresent())
+                return optionalResult.get();
         }
 
         if (clusterState.getNodeState(nodeInfo.getNode()).getState() == DOWN) {
@@ -224,7 +167,7 @@ public class NodeStateChangeChecker {
             return allow();
         }
 
-        var result = nodesAreUpOrRetired(clusterState);
+        result = nodesAreUpOrRetired(clusterState);
         if (result.notAllowed()) {
             log.log(FINE, "nodesAreUpOrRetired: " + result);
             return result;
@@ -235,6 +178,16 @@ public class NodeStateChangeChecker {
             log.log(FINE, "checkDistributors: "+ result);
             return result;
         }
+
+        return allow();
+    }
+
+    /** Refuse to override whatever an operator or unknown entity is doing. */
+    private static Result stateSetAlreadyWithDifferentDescription(NodeInfo nodeInfo, String newDescription) {
+        State oldWantedState = nodeInfo.getUserWantedState().getState();
+        String oldDescription = nodeInfo.getUserWantedState().getDescription();
+        if (oldWantedState != UP && ! oldDescription.equals(newDescription))
+            return disallow("A conflicting wanted state is already set: " + oldWantedState + ": " + oldDescription);
 
         return allow();
     }
@@ -523,6 +476,52 @@ public class NodeStateChangeChecker {
                           .filter(Group::isLeafGroup)
                           .map(Group::getIndex)
                           .collect(Collectors.toSet());
+    }
+
+    public static class Result {
+
+        public enum Action {
+            ALLOWED,
+            ALREADY_SET,
+            DISALLOWED
+        }
+
+        private final Action action;
+        private final String reason;
+
+        private Result(Action action, String reason) {
+            this.action = action;
+            this.reason = reason;
+        }
+
+        public static Result disallow(String reason) {
+            return new Result(Action.DISALLOWED, reason);
+        }
+
+        public static Result allow() {
+            return new Result(Action.ALLOWED, "Preconditions fulfilled and new state different");
+        }
+
+        public static Result alreadySet() {
+            return new Result(Action.ALREADY_SET, "Basic preconditions fulfilled and new state is already effective");
+        }
+
+        public boolean allowed() { return action == Action.ALLOWED; }
+
+        public boolean notAllowed() { return ! allowed(); }
+
+        public boolean isAlreadySet() {
+            return action == Action.ALREADY_SET;
+        }
+
+        public String reason() {
+            return reason;
+        }
+
+        public String toString() {
+            return "action " + action + ": " + reason;
+        }
+
     }
 
 }
