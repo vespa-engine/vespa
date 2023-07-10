@@ -370,14 +370,22 @@ public class RoutingPoliciesTest {
     }
 
     @Test
-    void zone_routing_policies_without_dns_update() {
+    void zone_routing_policies_with_shared_routing() {
         var tester = new RoutingPoliciesTester(new DeploymentTester(), false);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         tester.provisionLoadBalancers(1, context.instanceId(), true, zone1, zone2);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         assertEquals(0, tester.controllerTester().controller().curator().readNameServiceQueue().requests().size());
+        // Ordinary endpoints are not created in DNS
         assertEquals(List.of(), tester.recordNames());
         assertEquals(2, tester.policiesOf(context.instanceId()).size());
+        // Generated endpoints are created in DNS
+        tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
+        addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
+        context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        assertEquals(List.of("b22ab332.cafed00d.z.vespa.oath.cloud",
+                             "d71005bf.cafed00d.z.vespa.oath.cloud"),
+                     tester.recordNames());
     }
 
     @Test
