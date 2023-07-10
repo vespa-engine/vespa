@@ -3,26 +3,21 @@ search video {
    document video inherits common {
       field director type string {
          bolding: on
-         # index-to: default, director
          indexing: index|summary
       }
       field disp_actor type string {
          bolding: on
-         # index-to: default, disp_actor
          indexing: index|summary
       }
       field actor type string {
          bolding: on
-         # index-to: default, actor
          indexing: index|summary
       }
       field fmt type string {
-         # index-to: default, fmt
          indexing: index|summary
       }
       field isbn type string {
          bolding: on
-         # index-to: default, isbn
          indexing: index|summary
       }
       field year type int {

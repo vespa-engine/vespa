@@ -3,7 +3,6 @@ search music {
   document music {
     field title type string {
       indexing: index | summary
-      # index-to: default
     }
   }
 }

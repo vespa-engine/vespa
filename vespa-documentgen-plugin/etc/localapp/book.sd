@@ -46,18 +46,15 @@ search book {
 
       field author type string {
          bolding: on
-         # index-to: default, author
          indexing: summary | index
       }
       field isbn type string {
-         # index-to: default, isbn
          indexing: summary | index
       }
       field year type int {
          indexing: summary | index
       }
       field description type string {
-         # index-to: default, description
          indexing: summary | index
          summary: dynamic
       }

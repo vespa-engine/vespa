@@ -3,7 +3,6 @@ document product {
 
   field title type string {
     indexing: index | summary
-    # index-to: title, default
   }
 
   field price type int {

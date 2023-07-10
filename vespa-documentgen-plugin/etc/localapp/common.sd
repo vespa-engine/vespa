@@ -6,7 +6,6 @@ search common {
       }
       field title type string {
          bolding: on
-         # index-to: default, title
          indexing: index|summary
          summary-to: smallsum
       }

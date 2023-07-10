@@ -29,7 +29,6 @@ search music {
     }
 
     field genre type string {
-      # index-to: foo
     }
 
     field trumpetist type string {
