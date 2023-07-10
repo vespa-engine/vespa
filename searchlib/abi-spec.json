@@ -822,46 +822,43 @@
       "abstract"
     ],
     "methods" : [
-      "public void setTabSize(int)",
-      "public int getTabSize()",
-      "protected void expandBuff(boolean)",
+      "public void <init>(int, int, int)",
+      "public final void reInit(int, int, int)",
       "protected abstract int streamRead(char[], int, int)",
       "protected abstract void streamClose()",
+      "protected int getBufSizeAfterExpansion()",
+      "protected void expandBuff(boolean)",
+      "protected final void internalAdjustBuffSize()",
       "protected void fillBuff()",
-      "public char beginToken()",
-      "protected void updateLineColumn(char)",
+      "protected final void internalSetBufLineColumn(int, int)",
+      "protected final void internalUpdateLineColumn(char)",
       "public char readChar()",
+      "public char beginToken()",
       "public int getBeginColumn()",
       "public int getBeginLine()",
       "public int getEndColumn()",
       "public int getEndLine()",
       "public void backup(int)",
-      "public void <init>(int, int, int)",
-      "public void reInit(int, int, int)",
       "public java.lang.String getImage()",
       "public char[] getSuffix(int)",
       "public void done()",
-      "public void adjustBeginLineColumn(int, int)",
-      "public void setTrackLineColumn(boolean)",
-      "public boolean isTrackLineColumn()"
+      "public final int getTabSize()",
+      "public final void setTabSize(int)",
+      "public final void adjustBeginLineColumn(int, int)",
+      "protected final int getLine()",
+      "protected final int getColumn()",
+      "public final boolean isTrackLineColumn()",
+      "public final void setTrackLineColumn(boolean)"
     ],
     "fields" : [
       "public static final int DEFAULT_BUF_SIZE",
-      "protected int bufpos",
+      "protected char[] buffer",
       "protected int bufsize",
+      "protected int bufpos",
       "protected int available",
       "protected int tokenBegin",
-      "protected int[] bufline",
-      "protected int[] bufcolumn",
-      "protected int column",
-      "protected int line",
-      "protected boolean prevCharIsCR",
-      "protected boolean prevCharIsLF",
-      "protected char[] buffer",
-      "protected int maxNextCharInd",
       "protected int inBuf",
-      "protected char[] nextCharBuf",
-      "protected int nextCharInd"
+      "protected int maxNextCharInd"
     ]
   },
   "com.yahoo.searchlib.rankingexpression.parser.CharStream" : {
@@ -883,10 +880,10 @@
       "public abstract java.lang.String getImage()",
       "public abstract char[] getSuffix(int)",
       "public abstract void done()",
-      "public abstract void setTabSize(int)",
       "public abstract int getTabSize()",
-      "public abstract void setTrackLineColumn(boolean)",
-      "public abstract boolean isTrackLineColumn()"
+      "public abstract void setTabSize(int)",
+      "public abstract boolean isTrackLineColumn()",
+      "public abstract void setTrackLineColumn(boolean)"
     ],
     "fields" : [ ]
   },
@@ -989,9 +986,7 @@
       "public final com.yahoo.tensor.functions.Slice$DimensionValue dimensionValue(java.util.Optional)",
       "public final java.lang.String label()",
       "public final java.lang.String string()",
-      "public void <init>(java.io.InputStream)",
       "public void <init>(java.io.InputStream, java.lang.String)",
-      "public void ReInit(java.io.InputStream)",
       "public void ReInit(java.io.InputStream, java.lang.String)",
       "public void <init>(java.io.Reader)",
       "public void ReInit(java.io.Reader)",
@@ -1156,26 +1151,22 @@
       "public"
     ],
     "methods" : [
-      "protected int streamRead(char[], int, int)",
-      "protected void streamClose()",
-      "protected void fillBuff()",
-      "public char readChar()",
       "public void <init>(java.io.Reader, int, int, int)",
       "public void <init>(java.io.Reader, int, int)",
       "public void <init>(java.io.Reader)",
-      "public void reInit(java.io.Reader)",
-      "public void reInit(java.io.Reader, int, int)",
       "public void reInit(java.io.Reader, int, int, int)",
+      "public void reInit(java.io.Reader, int, int)",
+      "public void reInit(java.io.Reader)",
       "public void <init>(java.io.InputStream, java.lang.String, int, int, int)",
       "public void <init>(java.io.InputStream, java.lang.String, int, int)",
       "public void <init>(java.io.InputStream, java.lang.String)",
       "public void reInit(java.io.InputStream, java.lang.String)",
       "public void reInit(java.io.InputStream, java.lang.String, int, int)",
-      "public void reInit(java.io.InputStream, java.lang.String, int, int, int)"
+      "public void reInit(java.io.InputStream, java.lang.String, int, int, int)",
+      "protected int streamRead(char[], int, int)",
+      "protected void streamClose()"
     ],
-    "fields" : [
-      "protected java.io.Reader inputStream"
-    ]
+    "fields" : [ ]
   },
   "com.yahoo.searchlib.rankingexpression.parser.Token" : {
     "superClass" : "java.lang.Object",
