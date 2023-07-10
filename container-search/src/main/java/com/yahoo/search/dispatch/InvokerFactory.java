@@ -61,16 +61,10 @@ public abstract class InvokerFactory {
         List<SearchInvoker> invokers = new ArrayList<>(nodes.size());
         Set<Integer> failed = null;
         for (Node node : nodes) {
-            boolean nodeAdded = false;
-            if (node.isWorking() != Boolean.FALSE) {
-                Optional<SearchInvoker> invoker = createNodeSearchInvoker(searcher, query, maxHits, node);
-                if (invoker.isPresent()) {
-                    invokers.add(invoker.get());
-                    nodeAdded = true;
-                }
-            }
-
-            if ( ! nodeAdded) {
+            if (   node.isWorking() == Boolean.FALSE
+                || createNodeSearchInvoker(searcher, query, maxHits, node)
+                        .map(invoker -> { invokers.add(invoker); return invoker; })
+                        .isEmpty()) {
                 if (failed == null) {
                     failed = new HashSet<>();
                 }

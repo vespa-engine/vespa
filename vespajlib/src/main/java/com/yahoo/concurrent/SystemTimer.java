@@ -42,21 +42,18 @@ public enum SystemTimer implements Timer {
 
     SystemTimer() {
         long napTime = adjustTimeoutByDetectedHz(Duration.ofMillis(1)).toMillis();
-        millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
-        Thread thread = new Thread() {
-
-            @Override
-            public void run() {
-                while (true) {
-                    millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
-                    try {
-                        Thread.sleep(napTime);
-                    } catch (InterruptedException e) {
-                        break;
-                    }
+        long creationNanos = System.nanoTime();
+        millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - creationNanos);
+        Thread thread = new Thread(() -> {
+            while (true) {
+                millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - creationNanos);
+                try {
+                    Thread.sleep(napTime);
+                } catch (InterruptedException e) {
+                    break;
                 }
             }
-        };
+        });
         thread.setDaemon(true);
         thread.setName("vespa-system-timer");
         thread.start();
