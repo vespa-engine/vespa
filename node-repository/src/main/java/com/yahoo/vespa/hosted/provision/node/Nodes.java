@@ -1011,7 +1011,9 @@ public class Nodes {
         private static void close(Collection<NodeMutex> nodes) {
             RuntimeException thrown = null;
             for (NodeMutex node : reversed(List.copyOf(nodes))) {
-                try (node) { }
+                try {
+                    node.close();
+                }
                 catch (RuntimeException e) {
                     if (thrown == null) thrown = e;
                     else thrown.addSuppressed(e);
