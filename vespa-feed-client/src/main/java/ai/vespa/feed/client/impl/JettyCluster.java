@@ -124,6 +124,8 @@ class JettyCluster implements Cluster {
         int threads = Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 32), 8);
         connector.setExecutor(new QueuedThreadPool(threads));
         connector.setSslContextFactory(clientSslCtxFactory);
+        connector.setIdleTimeout(IDLE_TIMEOUT);
+        connector.setConnectTimeout(Duration.ofSeconds(10));
         HTTP2Client h2Client = new HTTP2Client(connector);
         h2Client.setMaxConcurrentPushedStreams(b.maxStreamsPerConnection);
         // Set the HTTP/2 flow control windows very large to cause TCP congestion instead of HTTP/2 flow control congestion.
@@ -141,12 +143,10 @@ class JettyCluster implements Cluster {
         httpClient.setFollowRedirects(false);
         httpClient.setUserAgentField(
                 new HttpField(HttpHeader.USER_AGENT, String.format("vespa-feed-client/%s (Jetty)", Vespa.VERSION)));
-        httpClient.setConnectTimeout(Duration.ofSeconds(10).toMillis());
         // Stop client from trying different IP address when TLS handshake fails
         httpClient.setSocketAddressResolver(new Ipv4PreferringResolver(httpClient, Duration.ofSeconds(10)));
         httpClient.setCookieStore(new HttpCookieStore.Empty());
 
-        httpClient.setIdleTimeout(IDLE_TIMEOUT.toMillis());
         try {
             httpClient.start();
         } catch (Exception e) {
