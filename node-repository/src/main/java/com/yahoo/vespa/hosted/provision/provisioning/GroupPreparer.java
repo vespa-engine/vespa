@@ -61,14 +61,14 @@ public class GroupPreparer {
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
     public PrepareResult prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                                 List<Node> surplusActiveNodes, NodeIndices indices, int wantedGroups,
+                                 List<Node> surplusActiveNodes, NodeIndices indices,
                                  LockedNodeList allNodes) {
         log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " +
                                   requestedNodes.resources().orElse(NodeResources.unspecified()));
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
         // and we can return nodes previously allocated.
         NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                           indices::probeNext, wantedGroups, allNodes);
+                                                           indices::probeNext, allNodes);
         if (probeAllocation.fulfilledAndNoChanges()) {
             List<Node> acceptedNodes = probeAllocation.finalNodes();
             surplusActiveNodes.removeAll(acceptedNodes);
@@ -77,7 +77,7 @@ public class GroupPreparer {
         } else {
             // There were some changes, so re-do the allocation with locks
             indices.resetProbe();
-            List<Node> prepared = prepareWithLocks(application, cluster, requestedNodes, surplusActiveNodes, indices, wantedGroups);
+            List<Node> prepared = prepareWithLocks(application, cluster, requestedNodes, surplusActiveNodes, indices);
             return new PrepareResult(prepared, createUnlockedNodeList());
         }
     }
@@ -87,12 +87,12 @@ public class GroupPreparer {
 
     /// Note that this will write to the node repo.
     private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                                        List<Node> surplusActiveNodes, NodeIndices indices, int wantedGroups) {
+                                        List<Node> surplusActiveNodes, NodeIndices indices) {
         try (Mutex lock = nodeRepository.applications().lock(application);
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
             LockedNodeList allNodes = nodeRepository.nodes().list(allocationLock);
             NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                          indices::next, wantedGroups, allNodes);
+                                                          indices::next, allNodes);
             NodeType hostType = allocation.nodeType().hostType();
             if (canProvisionDynamically(hostType) && allocation.hostDeficit().isPresent()) {
                 HostSharing sharing = hostSharing(cluster, hostType);
@@ -134,27 +134,25 @@ public class GroupPreparer {
                 // Non-dynamically provisioned zone with a deficit because we just now retired some nodes.
                 // Try again, but without retiring
                 indices.resetProbe();
-                List<Node> accepted = prepareWithLocks(application, cluster, cns.withoutRetiring(), surplusActiveNodes, indices, wantedGroups);
+                List<Node> accepted = prepareWithLocks(application, cluster, cns.withoutRetiring(), surplusActiveNodes, indices);
                 log.warning("Prepared " + application + " " + cluster.id() + " without retirement due to lack of capacity");
                 return accepted;
             }
 
             if (! allocation.fulfilled() && requestedNodes.canFail())
-                throw new NodeAllocationException((cluster.group().isPresent() ? "Node allocation failure on " + cluster.group().get()
-                                                                               : "") + allocation.allocationFailureDetails(),
-                                                  true);
+                throw new NodeAllocationException(allocation.allocationFailureDetails(), true);
 
             // Carry out and return allocation
+            List<Node> acceptedNodes = allocation.finalNodes();
             nodeRepository.nodes().reserve(allocation.reservableNodes());
             nodeRepository.nodes().addReservedNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
-            List<Node> acceptedNodes = allocation.finalNodes();
             surplusActiveNodes.removeAll(acceptedNodes);
             return acceptedNodes;
         }
     }
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                                             List<Node> surplusActiveNodes, Supplier<Integer> nextIndex, int wantedGroups,
+                                             List<Node> surplusActiveNodes, Supplier<Integer> nextIndex,
                                              LockedNodeList allNodes) {
 
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes, nextIndex, nodeRepository);
@@ -162,7 +160,6 @@ public class GroupPreparer {
                                                           application,
                                                           cluster,
                                                           requestedNodes,
-                                                          wantedGroups,
                                                           nodeRepository.zone().cloud().dynamicProvisioning(),
                                                           nodeRepository.nameResolver(),
                                                           nodeRepository.nodes(),

@@ -35,20 +35,19 @@ public interface NodeSpec {
         return fulfilledDeficitCount(count) == 0;
     }
 
+    /** Returns the total number of nodes this is requesting, or empty if not specified */
+    Optional<Integer> count();
+
+    int groups();
+
     /** Returns whether this should throw an exception if the requested nodes are not fully available */
     boolean canFail();
 
     /** Returns whether we should retire nodes at all when fulfilling this spec */
     boolean considerRetiring();
 
-    /** Returns the ideal number of nodes that should be retired to fulfill this spec */
-    int idealRetiredCount(int acceptedCount, int wantToRetireCount, int currentRetiredCount);
-
     /** Returns number of additional nodes needed for this spec to be fulfilled given the current node count */
     int fulfilledDeficitCount(int count);
-
-    /** Returns a specification of a fraction of all the nodes of this. It is assumed the argument is a valid divisor. */
-    NodeSpec fraction(int divisor);
 
     /** Returns the resources requested by this or empty if none are explicitly requested */
     Optional<NodeResources> resources();
@@ -77,9 +76,9 @@ public interface NodeSpec {
         return false;
     }
 
-    static NodeSpec from(int nodeCount, NodeResources resources, boolean exclusive, boolean canFail,
+    static NodeSpec from(int nodeCount, int groupCount, NodeResources resources, boolean exclusive, boolean canFail,
                          CloudAccount cloudAccount, Duration hostTTL) {
-        return new CountNodeSpec(nodeCount, resources, exclusive, canFail, canFail, cloudAccount, hostTTL);
+        return new CountNodeSpec(nodeCount, groupCount, resources, exclusive, canFail, canFail, cloudAccount, hostTTL);
     }
 
     static NodeSpec from(NodeType type, CloudAccount cloudAccount) {
@@ -90,6 +89,7 @@ public interface NodeSpec {
     class CountNodeSpec implements NodeSpec {
 
         private final int count;
+        private final int groups;
         private final NodeResources requestedNodeResources;
         private final boolean exclusive;
         private final boolean canFail;
@@ -97,9 +97,10 @@ public interface NodeSpec {
         private final CloudAccount cloudAccount;
         private final Duration hostTTL;
 
-        private CountNodeSpec(int count, NodeResources resources, boolean exclusive, boolean canFail,
+        private CountNodeSpec(int count, int groups, NodeResources resources, boolean exclusive, boolean canFail,
                               boolean considerRetiring, CloudAccount cloudAccount, Duration hostTTL) {
             this.count = count;
+            this.groups = groups;
             this.requestedNodeResources = Objects.requireNonNull(resources, "Resources must be specified");
             this.exclusive = exclusive;
             this.canFail = canFail;
@@ -110,6 +111,12 @@ public interface NodeSpec {
             if (!canFail && considerRetiring)
                 throw new IllegalArgumentException("Cannot consider retiring nodes if we cannot fail");
         }
+
+        @Override
+        public Optional<Integer> count() { return Optional.of(count); }
+
+        @Override
+        public int groups() { return groups; }
 
         @Override
         public Optional<NodeResources> resources() {
@@ -136,22 +143,12 @@ public interface NodeSpec {
         }
 
         @Override
-        public int idealRetiredCount(int acceptedCount, int wantToRetireCount, int currentRetiredCount) {
-            return acceptedCount - this.count - currentRetiredCount;
-        }
-
-        @Override
         public int fulfilledDeficitCount(int count) {
             return Math.max(this.count - count, 0);
         }
 
-        @Override
-        public NodeSpec fraction(int divisor) {
-            return new CountNodeSpec(count/divisor, requestedNodeResources, exclusive, canFail, considerRetiring, cloudAccount, hostTTL);
-        }
-
         public NodeSpec withoutRetiring() {
-            return new CountNodeSpec(count, requestedNodeResources, exclusive, canFail, false, cloudAccount, hostTTL);
+            return new CountNodeSpec(count, groups, requestedNodeResources, exclusive, canFail, false, cloudAccount, hostTTL);
         }
 
         @Override
@@ -163,7 +160,6 @@ public interface NodeSpec {
         public boolean canResize(NodeResources currentNodeResources, NodeResources currentSpareHostResources,
                                  ClusterSpec.Type type, boolean hasTopologyChange, int currentClusterSize) {
             if (exclusive) return false; // exclusive resources must match the host
-
             // Never allow in-place resize when also changing topology or decreasing cluster size
             if (hasTopologyChange || count < currentClusterSize) return false;
 
@@ -192,7 +188,10 @@ public interface NodeSpec {
         public Duration hostTTL() { return hostTTL; }
 
         @Override
-        public String toString() { return "request for " + count + " nodes with " + requestedNodeResources; }
+        public String toString() {
+            return "request for " + count + " nodes" +
+                   ( groups > 1 ? " (in " + groups + " groups)" : "") +
+                   " with " + requestedNodeResources; }
 
     }
 
@@ -211,6 +210,12 @@ public interface NodeSpec {
         }
 
         @Override
+        public Optional<Integer> count() { return Optional.empty(); }
+
+        @Override
+        public int groups() { return 1; }
+
+        @Override
         public NodeType type() { return type; }
 
         @Override
@@ -226,18 +231,10 @@ public interface NodeSpec {
         public boolean considerRetiring() { return true; }
 
         @Override
-        public int idealRetiredCount(int acceptedCount, int wantToRetireCount, int currentRetiredCount) {
-            return wantToRetireCount - currentRetiredCount;
-        }
-
-        @Override
         public int fulfilledDeficitCount(int count) {
             // If no wanted count is specified for this node type, then any count fulfills the deficit
             return Math.max(0, WANTED_NODE_COUNT.getOrDefault(type, 0) - count);
         }
-
-        @Override
-        public NodeSpec fraction(int divisor) { return this; }
 
         @Override
         public Optional<NodeResources> resources() {

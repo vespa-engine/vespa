@@ -268,11 +268,9 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                 // build() requires a version, even though it is not (should not be) used
                 .vespaVersion(Vtag.currentVersion)
                 .build();
-        NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), nodeResources, false, true,
+        NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), 1, nodeResources, false, true,
                                           nodeRepository().zone().cloud().account(), Duration.ZERO);
-        int wantedGroups = 1;
-
-        NodePrioritizer prioritizer = new NodePrioritizer(allNodes, applicationId, clusterSpec, nodeSpec, wantedGroups,
+        NodePrioritizer prioritizer = new NodePrioritizer(allNodes, applicationId, clusterSpec, nodeSpec,
                 true, nodeRepository().nameResolver(), nodeRepository().nodes(), nodeRepository().resourcesCalculator(),
                 nodeRepository().spareCount(), nodeSpec.cloudAccount().isExclave(nodeRepository().zone()));
         List<NodeCandidate> nodeCandidates = prioritizer.collect(List.of());

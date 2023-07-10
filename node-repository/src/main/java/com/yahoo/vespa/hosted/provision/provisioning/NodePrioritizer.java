@@ -46,7 +46,7 @@ public class NodePrioritizer {
     private final boolean enclave;
 
     public NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                           int wantedGroups, boolean dynamicProvisioning, NameResolver nameResolver, Nodes nodes,
+                           boolean dynamicProvisioning, NameResolver nameResolver, Nodes nodes,
                            HostResourcesCalculator hostResourcesCalculator, int spareCount, boolean enclave) {
         this.allNodes = allNodes;
         this.calculator = hostResourcesCalculator;
@@ -70,12 +70,9 @@ public class NodePrioritizer {
                         .stream())
                 .distinct()
                 .count();
-        this.topologyChange = currentGroups != wantedGroups;
+        this.topologyChange = currentGroups != requestedNodes.groups();
 
-        this.currentClusterSize = (int) nonRetiredNodesInCluster.state(Node.State.active).stream()
-                .map(node -> node.allocation().flatMap(alloc -> alloc.membership().cluster().group()))
-                .filter(clusterSpec.group()::equals)
-                .count();
+        this.currentClusterSize = (int) nonRetiredNodesInCluster.state(Node.State.active).stream().count();
 
         // In dynamically provisioned zones, we can always take spare hosts since we can provision new on-demand,
         // NodeCandidate::compareTo will ensure that they will not be used until there is no room elsewhere.

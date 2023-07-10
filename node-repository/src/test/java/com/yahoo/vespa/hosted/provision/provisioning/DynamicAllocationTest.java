@@ -94,7 +94,6 @@ public class DynamicAllocationTest {
             hostsWithChildren.add(node.parentHostname().get());
         }
         assertEquals(4 - spareCount, hostsWithChildren.size());
-
     }
 
     /**
@@ -342,8 +341,8 @@ public class DynamicAllocationTest {
         tester.activate(application, hosts);
 
         NodeList activeNodes = tester.nodeRepository().nodes().list().owner(application);
-        assertEquals(Set.of("127.0.127.2", "::2"), activeNodes.asList().get(0).ipConfig().primary());
-        assertEquals(Set.of("127.0.127.13", "::d"), activeNodes.asList().get(1).ipConfig().primary());
+        assertEquals(Set.of("127.0.127.2", "::2"), activeNodes.asList().get(1).ipConfig().primary());
+        assertEquals(Set.of("127.0.127.13", "::d"), activeNodes.asList().get(0).ipConfig().primary());
     }
 
     @Test

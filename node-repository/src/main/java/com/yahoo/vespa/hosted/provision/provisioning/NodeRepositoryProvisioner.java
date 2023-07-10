@@ -96,19 +96,17 @@ public class NodeRepositoryProvisioner implements Provisioner {
             validate(actual, target, cluster, application);
             logIfDownscaled(requested.minResources().nodes(), actual.minResources().nodes(), cluster, logger);
 
-            groups = target.groups();
             resources = getNodeResources(cluster, target.nodeResources(), application);
-            nodeSpec = NodeSpec.from(target.nodes(), resources, cluster.isExclusive(), actual.canFail(),
+            nodeSpec = NodeSpec.from(target.nodes(), target.groups(), resources, cluster.isExclusive(), actual.canFail(),
                                      requested.cloudAccount().orElse(nodeRepository.zone().cloud().account()),
                                      requested.clusterInfo().hostTTL());
         }
         else {
-            groups = 1; // type request with multiple groups is not supported
             cluster = cluster.withExclusivity(true);
             resources = getNodeResources(cluster, requested.minResources().nodeResources(), application);
             nodeSpec = NodeSpec.from(requested.type(), nodeRepository.zone().cloud().account());
         }
-        return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups),
+        return asSortedHosts(preparer.prepare(application, cluster, nodeSpec),
                              requireCompatibleResources(resources, cluster));
     }
 

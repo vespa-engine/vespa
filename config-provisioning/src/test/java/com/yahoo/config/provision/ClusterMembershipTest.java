@@ -100,7 +100,9 @@ public class ClusterMembershipTest {
         assertEquals("id1", instance.cluster().id().value());
         assertFalse(instance.cluster().group().isPresent());
         assertEquals(3, instance.index());
-        assertEquals("container/id1/3", instance.stringValue());
+        assertEquals("container/id1//3", instance.stringValue());
+        // Legacy form:
+        assertEquals(instance, ClusterMembership.from("container/id1/3", instance.cluster().vespaVersion(), Optional.empty()));
     }
 
     private void assertContentService(ClusterMembership instance) {
@@ -109,7 +111,7 @@ public class ClusterMembershipTest {
         assertFalse(instance.cluster().group().isPresent());
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
-        assertEquals("content/id1/37/stateful", instance.stringValue());
+        assertEquals("content/id1//37/stateful", instance.stringValue());
     }
 
     private void assertContentServiceWithGroup(ClusterMembership instance) {
@@ -127,7 +129,9 @@ public class ClusterMembershipTest {
         assertEquals("id1", instance.cluster().id().value());
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
-        assertEquals("content/id1/37/retired/stateful", instance.stringValue());
+        assertEquals("content/id1//37/retired/stateful", instance.stringValue());
+        // Legacy form:
+        assertEquals(instance, ClusterMembership.from("content/id1/37/retired/stateful", instance.cluster().vespaVersion(), Optional.empty()));
     }
 
     private void assertContentServiceWithGroupAndRetire(ClusterMembership instance) {

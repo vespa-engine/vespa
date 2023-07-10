@@ -16,6 +16,11 @@ public class NodeAllocationException extends RuntimeException {
         this.retryable = retryable;
     }
 
+    public NodeAllocationException(String message, Throwable cause, boolean retryable) {
+        super(message, cause);
+        this.retryable = retryable;
+    }
+
     public boolean retryable() {
         return retryable;
     }
