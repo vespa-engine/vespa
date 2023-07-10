@@ -67,7 +67,7 @@ func (d *Dispatcher) logResult(doc Document, result Result, retry bool) {
 	if result.Trace != "" {
 		d.msgs <- fmt.Sprintf("feed: trace for %s %s:\n%s", doc.Operation, doc.Id, result.Trace)
 	}
-	if !d.verbose && result.Success() {
+	if !d.verbose && (retry || result.Success()) {
 		return
 	}
 	var msg strings.Builder

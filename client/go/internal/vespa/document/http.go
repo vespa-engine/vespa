@@ -265,18 +265,18 @@ func (c *Client) Send(document Document) Result {
 	req, buf, err := c.prepare(document)
 	defer c.buffers.Put(buf)
 	if err != nil {
-		return resultWithErr(result, err)
+		return resultWithErr(result, err, 0)
 	}
 	bodySize := len(document.Body)
 	if buf.Len() > 0 {
 		bodySize = buf.Len()
 	}
 	resp, err := c.leastBusyClient().Do(req, c.clientTimeout())
+	elapsed := c.now().Sub(start)
 	if err != nil {
-		return resultWithErr(result, err)
+		return resultWithErr(result, err, elapsed)
 	}
 	defer resp.Body.Close()
-	elapsed := c.now().Sub(start)
 	return c.resultWithResponse(resp, bodySize, result, elapsed, buf, false)
 }
 
@@ -290,20 +290,21 @@ func (c *Client) Get(id Id) Result {
 	result := Result{Id: id}
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return resultWithErr(result, err)
+		return resultWithErr(result, err, 0)
 	}
 	resp, err := c.leastBusyClient().Do(req, c.clientTimeout())
+	elapsed := c.now().Sub(start)
 	if err != nil {
-		return resultWithErr(result, err)
+		return resultWithErr(result, err, elapsed)
 	}
 	defer resp.Body.Close()
-	elapsed := c.now().Sub(start)
 	return c.resultWithResponse(resp, 0, result, elapsed, buf, true)
 }
 
-func resultWithErr(result Result, err error) Result {
+func resultWithErr(result Result, err error, elapsed time.Duration) Result {
 	result.Status = StatusTransportFailure
 	result.Err = err
+	result.Latency = elapsed
 	return result
 }
 
@@ -322,14 +323,14 @@ func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result R
 	buf.Reset()
 	written, err := io.Copy(buf, resp.Body)
 	if err != nil {
-		result = resultWithErr(result, err)
+		result = resultWithErr(result, err, elapsed)
 	} else {
 		if result.Success() && c.options.TraceLevel > 0 {
 			var jsonResponse struct {
 				Trace json.RawValue `json:"trace"`
 			}
 			if err := json.Unmarshal(buf.Bytes(), &jsonResponse); err != nil {
-				result = resultWithErr(result, fmt.Errorf("failed to decode json response: %w", err))
+				result = resultWithErr(result, fmt.Errorf("failed to decode json response: %w", err), elapsed)
 			} else {
 				result.Trace = string(jsonResponse.Trace)
 			}

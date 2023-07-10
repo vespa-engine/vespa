@@ -80,13 +80,17 @@ func TestFeed(t *testing.T) {
 	require.Nil(t, cli.Run("feed", "-"))
 	assert.Equal(t, want, stdout.String())
 
-	httpClient.NextResponseString(500, `{"message":"it's broken yo"}`)
+	for i := 0; i < 10; i++ {
+		httpClient.NextResponseString(500, `{"message":"it's broken yo"}`)
+	}
 	require.Nil(t, cli.Run("feed", jsonFile1))
-	assert.Equal(t, "feed: got status 500 ({\"message\":\"it's broken yo\"}) for put id:ns:type::doc1: retrying\n", stderr.String())
+	assert.Equal(t, "feed: got status 500 ({\"message\":\"it's broken yo\"}) for put id:ns:type::doc1: giving up after 10 attempts\n", stderr.String())
 	stderr.Reset()
-	httpClient.NextResponseError(fmt.Errorf("something else is broken"))
+	for i := 0; i < 10; i++ {
+		httpClient.NextResponseError(fmt.Errorf("something else is broken"))
+	}
 	require.Nil(t, cli.Run("feed", jsonFile1))
-	assert.Equal(t, "feed: got error \"something else is broken\" (no body) for put id:ns:type::doc1: retrying\n", stderr.String())
+	assert.Equal(t, "feed: got error \"something else is broken\" (no body) for put id:ns:type::doc1: giving up after 10 attempts\n", stderr.String())
 }
 
 func TestFeedInvalid(t *testing.T) {

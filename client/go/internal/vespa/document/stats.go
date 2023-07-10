@@ -86,9 +86,9 @@ func (s *Stats) Add(result Result) {
 	if s.ResponsesByCode == nil {
 		s.ResponsesByCode = make(map[int]int64)
 	}
-	responsesByCode := s.ResponsesByCode[result.HTTPStatus]
-	s.ResponsesByCode[result.HTTPStatus] = responsesByCode + 1
 	if result.Err == nil {
+		responsesByCode := s.ResponsesByCode[result.HTTPStatus]
+		s.ResponsesByCode[result.HTTPStatus] = responsesByCode + 1
 		s.Responses++
 	} else {
 		s.Errors++

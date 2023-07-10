@@ -74,6 +74,9 @@ func TestClientSend(t *testing.T) {
 		{Document{Condition: "foo", Id: mustParseId("id:ns:type::doc4"), Operation: OperationUpdate, Body: []byte(`{"fields":{"baz": "789"}}`)},
 			"PUT",
 			"https://example.com:1337/document/v1/ns/type/docid/doc4?timeout=5000ms&condition=foo"},
+		{Document{Id: mustParseId("id:ns:type::doc5"), Operation: OperationPut, Body: []byte(`{"fields":{"baz": "789"}}`)},
+			"POST",
+			"https://example.com:1337/document/v1/ns/type/docid/doc5?timeout=5000ms"},
 	}
 	httpClient := mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
@@ -89,53 +92,61 @@ func TestClientSend(t *testing.T) {
 			Id:      doc.Id,
 			Latency: time.Second,
 		}
-		if i < 3 {
+		switch i {
+		case 0, 1, 2:
 			msg := `{"message":"All good!"}`
 			httpClient.NextResponseString(200, msg)
 			wantRes.Status = StatusSuccess
 			wantRes.HTTPStatus = 200
 			wantRes.BytesRecv = 23
-		} else {
+		case 3:
 			errMsg := `something went wront`
 			httpClient.NextResponseString(502, errMsg)
 			wantRes.Status = StatusVespaFailure
 			wantRes.HTTPStatus = 502
 			wantRes.Body = []byte(errMsg)
 			wantRes.BytesRecv = 20
+		case 4:
+			transportErr := fmt.Errorf("transport error")
+			httpClient.NextResponseError(transportErr)
+			wantRes.Err = transportErr
+			wantRes.Status = StatusTransportFailure
 		}
 		res := client.Send(doc)
-		wantRes.BytesSent = int64(len(httpClient.LastBody))
+		if res.Err == nil {
+			wantRes.BytesSent = int64(len(httpClient.LastBody))
+		}
 		if !reflect.DeepEqual(res, wantRes) {
-			t.Fatalf("got result %+v, want %+v", res, wantRes)
+			t.Fatalf("#%d: got result %+v, want %+v", i, res, wantRes)
 		}
 		stats.Add(res)
 		r := httpClient.LastRequest
 		if r.Method != tt.method {
-			t.Errorf("got r.Method = %q, want %q", r.Method, tt.method)
+			t.Errorf("#%d: got r.Method = %q, want %q", i, r.Method, tt.method)
 		}
 		var headers http.Header = map[string][]string{
 			"Content-Type": {"application/json; charset=utf-8"},
 		}
 		if !reflect.DeepEqual(r.Header, headers) {
-			t.Errorf("got r.Header = %v, want %v", r.Header, headers)
+			t.Errorf("#%d: got r.Header = %v, want %v", i, r.Header, headers)
 		}
 		if r.URL.String() != tt.url {
-			t.Errorf("got r.URL = %q, want %q", r.URL, tt.url)
+			t.Errorf("#%d: got r.URL = %q, want %q", i, r.URL, tt.url)
 		}
 		if !bytes.Equal(httpClient.LastBody, doc.Body) {
-			t.Errorf("got r.Body = %q, want %q", string(httpClient.LastBody), doc.Body)
+			t.Errorf("#%d: got r.Body = %q, want %q", i, string(httpClient.LastBody), doc.Body)
 		}
 	}
 	want := Stats{
-		Requests:  4,
+		Requests:  5,
 		Responses: 4,
 		ResponsesByCode: map[int]int64{
 			200: 3,
 			502: 1,
 		},
-		Errors:       0,
+		Errors:       1,
 		Inflight:     0,
-		TotalLatency: 4 * time.Second,
+		TotalLatency: 5 * time.Second,
 		MinLatency:   time.Second,
 		MaxLatency:   time.Second,
 		BytesSent:    75,
