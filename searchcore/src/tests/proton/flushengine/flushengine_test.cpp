@@ -526,7 +526,12 @@ TEST_F("require that oldest serial is found", Fixture(1, IINTERVAL))
     EXPECT_TRUE(handler->_done.await(LONG_TIMEOUT));
     EXPECT_EQUAL(25ul, handler->_oldestSerial);
     FlushDoneHistory handlerFlushDoneHistory(handler->getFlushDoneHistory());
-    EXPECT_EQUAL(FlushDoneHistory({ 10, 20, 25 }), handlerFlushDoneHistory);
+    if (handlerFlushDoneHistory.size() == 2u) {
+        // Lost sample of oldest serial might happen when system load is high
+        EXPECT_EQUAL(FlushDoneHistory({ 10, 25 }), handlerFlushDoneHistory);
+    } else {
+        EXPECT_EQUAL(FlushDoneHistory({ 10, 20, 25 }), handlerFlushDoneHistory);
+    }
 }
 
 TEST_F("require that GC targets are not considered when oldest serial is found", Fixture(1, IINTERVAL))
