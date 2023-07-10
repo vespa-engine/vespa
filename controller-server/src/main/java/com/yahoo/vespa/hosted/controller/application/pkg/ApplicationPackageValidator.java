@@ -85,10 +85,7 @@ public class ApplicationPackageValidator {
     private void validateDeprecatedElements(ApplicationPackage applicationPackage) {
         int wantedMajor = applicationPackage.compileVersion().map(Version::getMajor)
                                             .or(() -> applicationPackage.deploymentSpec().majorVersion())
-                                            .or(() -> controller.readVersionStatus().controllerVersion()
-                                                                .map(VespaVersion::versionNumber)
-                                                                .map(Version::getMajor))
-                                            .orElseThrow(() -> new IllegalArgumentException("Could not determine wanted major version"));
+                                            .orElseGet(() -> controller.readSystemVersion().getMajor());
         for (var deprecatedElement : applicationPackage.deploymentSpec().deprecatedElements()) {
             if (deprecatedElement.majorVersion() >= wantedMajor) continue;
             throw new IllegalArgumentException(deprecatedElement.humanReadableString());
