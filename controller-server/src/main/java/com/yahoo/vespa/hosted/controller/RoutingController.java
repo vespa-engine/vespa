@@ -200,8 +200,8 @@ public class RoutingController {
         return EndpointList.copyOf(endpoints);
     }
 
-    /** Read test runner endpoints for given deployments, grouped by their zone */
-    public Map<ZoneId, List<Endpoint>> readTestRunnerEndpointsOf(Collection<DeploymentId> deployments) {
+    /** Read endpoints for use in deployment steps, for given deployments, grouped by their zone */
+    public Map<ZoneId, List<Endpoint>> readStepRunnerEndpointsOf(Collection<DeploymentId> deployments) {
         TreeMap<ZoneId, List<Endpoint>> endpoints = new TreeMap<>(Comparator.comparing(ZoneId::value));
         for (var deployment : deployments) {
             EndpointList zoneEndpoints = readEndpointsOf(deployment).scope(Endpoint.Scope.zone)

@@ -38,6 +38,11 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
                                     endpoint.name().equals(id.id()));
     }
 
+    /** Returns the endpoint which has given DNS name, if any */
+    public Optional<Endpoint> dnsName(String dnsName) {
+        return matching(endpoint -> endpoint.dnsName().equals(dnsName)).first();
+    }
+
     /** Returns the subset of endpoints pointing to given cluster */
     public EndpointList cluster(ClusterSpec.Id cluster) {
         return matching(endpoint -> endpoint.cluster().equals(cluster));

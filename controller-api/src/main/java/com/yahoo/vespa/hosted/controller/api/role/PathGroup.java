@@ -38,7 +38,8 @@ enum PathGroup {
              "/provision/v2/{*}",
              "/zone/v2/{*}",
              "/state/v1/{*}",
-             "/changemanagement/v1/{*}"),
+             "/changemanagement/v1/{*}",
+             "/application/v4/search/{*}"),
 
     /** Paths used for creating and reading user resources. */
     user("/application/v4/user",
