@@ -328,13 +328,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             endpoint = URI.create(endpoint).getHost();
         }
         List<Application> applications = controller.applications().asList();
-        List<DeploymentId> deploymentTargets = new ArrayList<>();
+        record EndpointTarget(DeploymentId deployment, ClusterSpec.Id cluster) {}
+        List<EndpointTarget> targets = new ArrayList<>();
         out:
         for (var app : applications) {
             Optional<Endpoint> declaredEndpoint = controller.routing().declaredEndpointsOf(app).dnsName(endpoint);
             if (declaredEndpoint.isPresent()) {
                 for (var target : declaredEndpoint.get().targets()) {
-                    deploymentTargets.add(target.deployment());
+                    targets.add(new EndpointTarget(target.deployment(), declaredEndpoint.get().cluster()));
                 }
                 break;
             } else {
@@ -344,7 +345,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         Optional<Endpoint> matchingEndpoint = controller.routing().readEndpointsOf(id).dnsName(endpoint);
                         if (matchingEndpoint.isPresent()) {
                             for (var target : matchingEndpoint.get().targets()) {
-                                deploymentTargets.add(target.deployment());
+                                targets.add(new EndpointTarget(target.deployment(), matchingEndpoint.get().cluster()));
                             }
                             break out;
                         }
@@ -355,8 +356,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         Cursor deploymentArray = root.setArray("deployments");
-        for (var deployment : deploymentTargets) {
-            toSlime(deployment, deploymentArray.addObject(), request);
+        for (var target : targets) {
+            toSlime(target.deployment, target.cluster, deploymentArray.addObject(), request);
         }
         return new SlimeJsonResponse(slime);
     }
@@ -3081,12 +3082,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                          request.getUri()).toString());
     }
 
-    private void toSlime(DeploymentId id, Cursor object, HttpRequest request) {
+    private void toSlime(DeploymentId id, ClusterSpec.Id cluster, Cursor object, HttpRequest request) {
         object.setString("tenant", id.applicationId().tenant().value());
         object.setString("application", id.applicationId().application().value());
         object.setString("instance", id.applicationId().instance().value());
         object.setString("environment", id.zoneId().environment().value());
         object.setString("region", id.zoneId().region().value());
+        object.setString("cluster", cluster.value());
         object.setString("url", withPath("/application/v4" +
                                          "/tenant/" + id.applicationId().tenant().value() +
                                          "/application/" + id.applicationId().application().value() +
