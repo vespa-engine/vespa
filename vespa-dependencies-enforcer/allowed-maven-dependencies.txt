@@ -89,7 +89,7 @@ org.apache.commons:commons-math3:3.6.1
 org.apache.curator:curator-client:5.4.0
 org.apache.curator:curator-framework:5.4.0
 org.apache.curator:curator-recipes:5.4.0
-org.apache.felix:org.apache.felix.framework:7.0.1
+org.apache.felix:org.apache.felix.framework:7.0.5
 org.apache.felix:org.apache.felix.log:1.0.1
 org.apache.httpcomponents:httpclient:4.5.14
 org.apache.httpcomponents:httpcore:4.4.16
