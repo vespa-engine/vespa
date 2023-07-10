@@ -35,7 +35,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Optional;
@@ -47,6 +46,7 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.collections.Iterables.reversed;
 import static com.yahoo.vespa.hosted.provision.restapi.NodePatcher.DROP_DOCUMENTS_REPORT;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
@@ -1008,9 +1008,9 @@ public class Nodes {
     /** A node with their locks, acquired in a universal order. */
     public record NodeMutexes(List<NodeMutex> nodes) implements AutoCloseable {
         @Override public void close() { close(nodes); }
-        private static void close(Iterable<NodeMutex> nodes) {
+        private static void close(Collection<NodeMutex> nodes) {
             RuntimeException thrown = null;
-            for (NodeMutex node : nodes) {
+            for (NodeMutex node : reversed(List.copyOf(nodes))) {
                 try (node) { }
                 catch (RuntimeException e) {
                     if (thrown == null) thrown = e;
