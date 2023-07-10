@@ -584,7 +584,7 @@ ShowPostingListSubApp::showPostingList()
     for (auto& tfmd : tfmdv) {
         tfmda.add(&tfmd);
     }
-    auto sb = handle->second.createIterator(handle->first, tfmda);
+    std::unique_ptr<SearchIterator> sb(handle->second.createIterator(handle->first, tfmda));
     sb->initFullRange();
     uint32_t docId = 0;
     bool first = true;
