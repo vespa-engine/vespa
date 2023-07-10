@@ -74,8 +74,9 @@ class JettyCluster implements Cluster {
     @Override
     public void dispatch(HttpRequest req, CompletableFuture<HttpResponse> vessel) {
         client.getExecutor().execute(() -> {
+            Endpoint endpoint = findLeastBusyEndpoint(endpoints);
             try {
-                Endpoint endpoint = findLeastBusyEndpoint(endpoints);
+                endpoint.inflight.incrementAndGet();
                 long reqTimeoutMillis = req.timeout() != null
                         ? req.timeout().toMillis() * 11 / 10 + 1000 : IDLE_TIMEOUT.toMillis();
                 Request jettyReq = client.newRequest(URI.create(endpoint.uri + req.path()))
@@ -104,11 +105,13 @@ class JettyCluster implements Cluster {
                 jettyReq.send(new BufferingResponseListener() {
                     @Override
                     public void onComplete(Result result) {
+                        endpoint.inflight.decrementAndGet();
                         if (result.isFailed()) vessel.completeExceptionally(result.getFailure());
                         else vessel.complete(new JettyResponse(result.getResponse(), getContent()));
                     }
                 });
             } catch (Exception e) {
+                endpoint.inflight.decrementAndGet();
                 vessel.completeExceptionally(e);
             }
         });
