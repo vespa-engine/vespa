@@ -201,7 +201,6 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
 
     @Override
     public FeedClientBuilderImpl setProxy(URI uri) {
-        log.warning("Proxy configuration ignored - not supported yet");
         this.proxy = uri;
         return this;
     }

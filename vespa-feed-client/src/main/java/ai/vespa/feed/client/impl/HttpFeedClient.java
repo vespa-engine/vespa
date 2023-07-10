@@ -321,7 +321,7 @@ class HttpFeedClient implements FeedClient {
                 .map(Boolean::parseBoolean)
                 .orElse(Optional.ofNullable(System.getProperty(name))
                                 .map(Boolean::parseBoolean)
-                                .orElse(false));
+                                .orElse(true));
     }
 
 }
