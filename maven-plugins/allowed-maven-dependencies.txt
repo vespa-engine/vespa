@@ -28,7 +28,7 @@ org.apache.maven:maven-repository-metadata:3.8.7
 org.apache.maven:maven-resolver-provider:3.8.7
 org.apache.maven:maven-settings:3.8.7
 org.apache.maven:maven-settings-builder:3.8.7
-org.apache.maven.enforcer:enforcer-api:3.0.0
+org.apache.maven.enforcer:enforcer-api:3.3.0
 org.apache.maven.plugin-tools:maven-plugin-annotations:3.6.4
 org.apache.maven.plugins:maven-shade-plugin:3.4.1
 org.apache.maven.resolver:maven-resolver-api:1.6.3
@@ -37,7 +37,6 @@ org.apache.maven.resolver:maven-resolver-spi:1.6.3
 org.apache.maven.resolver:maven-resolver-util:1.6.3
 org.apache.maven.shared:maven-artifact-transfer:0.13.1
 org.apache.maven.shared:maven-common-artifact-filters:3.1.0
-org.apache.maven.shared:maven-dependency-tree:3.1.1
 org.apache.maven.shared:maven-dependency-tree:3.2.0
 org.apache.maven.shared:maven-shared-utils:3.3.4
 org.codehaus.plexus:plexus-archiver:4.4.0
@@ -50,7 +49,6 @@ org.codehaus.plexus:plexus-sec-dispatcher:2.0
 org.codehaus.plexus:plexus-utils:3.3.1
 org.eclipse.aether:aether-api:1.0.0.v20140518
 org.eclipse.aether:aether-util:1.0.0.v20140518
-org.eclipse.aether:aether-util:1.1.0
 org.eclipse.sisu:org.eclipse.sisu.inject:0.3.5
 org.eclipse.sisu:org.eclipse.sisu.plexus:0.3.5
 org.iq80.snappy:snappy:0.4
