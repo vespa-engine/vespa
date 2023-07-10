@@ -26,7 +26,6 @@ private:
     const wand::score_t                _scoreThreshold;
     double                             _thresholdBoostFactor;
     const uint32_t                     _scoresAdjustFrequency;
-    HitEstimate                        _estimate;
     fef::MatchDataLayout               _layout;
     std::vector<int32_t>               _weights;
     std::vector<Blueprint::UP>         _terms;
@@ -57,7 +56,11 @@ public:
 
     // Used by create visitor
     void reserve(size_t num_children);
-    void addTerm(Blueprint::UP term, int32_t weight);
+    void addTerm(Blueprint::UP term, int32_t weight, HitEstimate & estimate);
+    void complete(HitEstimate estimate) {
+        setEstimate(estimate);
+        set_tree_size(_terms.size() + 1);
+    }
 
     SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
     std::unique_ptr<SearchIterator> createFilterSearch(bool strict, FilterConstraint constraint) const override;

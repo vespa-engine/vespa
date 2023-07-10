@@ -412,7 +412,6 @@ template <typename SearchType>
 class DirectWeightedSetBlueprint : public ComplexLeafBlueprint
 {
 private:
-    HitEstimate                                         _estimate;
     std::vector<int32_t>                                _weights;
     std::vector<IDocumentWeightAttribute::LookupResult> _terms;
     const IAttributeVector                             &_iattr;
@@ -422,7 +421,6 @@ private:
 public:
     DirectWeightedSetBlueprint(const FieldSpec &field, const IAttributeVector &iattr, const IDocumentWeightAttribute &attr, size_t size_hint)
         : ComplexLeafBlueprint(field),
-          _estimate(),
           _weights(),
           _terms(),
           _iattr(iattr),
@@ -435,19 +433,21 @@ public:
     }
     ~DirectWeightedSetBlueprint() override;
 
-    void addTerm(const IDocumentWeightAttribute::LookupKey & key, int32_t weight) {
+    void addTerm(const IDocumentWeightAttribute::LookupKey & key, int32_t weight, HitEstimate & estimate) {
         IDocumentWeightAttribute::LookupResult result = _attr.lookup(key, _dictionary_snapshot);
         HitEstimate childEst(result.posting_size, (result.posting_size == 0));
         if (!childEst.empty) {
-            if (_estimate.empty) {
-                _estimate = childEst;
+            if (estimate.empty) {
+                estimate = childEst;
             } else {
-                _estimate.estHits += childEst.estHits;
+                estimate.estHits += childEst.estHits;
             }
-            setEstimate(_estimate);
             _weights.push_back(weight);
             _terms.push_back(result);
         }
+    }
+    void complete(HitEstimate estimate) {
+        setEstimate(estimate);
     }
 
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override;
@@ -506,7 +506,6 @@ DirectWeightedSetBlueprint<SearchType>::createFilterSearch(bool, FilterConstrain
 class DirectWandBlueprint : public queryeval::ComplexLeafBlueprint
 {
 private:
-    HitEstimate                                         _estimate;
     mutable queryeval::SharedWeakAndPriorityQueue       _scores;
     const queryeval::wand::score_t                      _scoreThreshold;
     double                                              _thresholdBoostFactor;
@@ -520,7 +519,6 @@ public:
     DirectWandBlueprint(const FieldSpec &field, const IDocumentWeightAttribute &attr, uint32_t scoresToTrack,
                         queryeval::wand::score_t scoreThreshold, double thresholdBoostFactor, size_t size_hint)
         : ComplexLeafBlueprint(field),
-          _estimate(),
           _scores(scoresToTrack),
           _scoreThreshold(scoreThreshold),
           _thresholdBoostFactor(thresholdBoostFactor),
@@ -536,19 +534,21 @@ public:
 
     ~DirectWandBlueprint() override;
 
-    void addTerm(const IDocumentWeightAttribute::LookupKey & key, int32_t weight) {
+    void addTerm(const IDocumentWeightAttribute::LookupKey & key, int32_t weight, HitEstimate & estimate) {
         IDocumentWeightAttribute::LookupResult result = _attr.lookup(key, _dictionary_snapshot);
         HitEstimate childEst(result.posting_size, (result.posting_size == 0));
         if (!childEst.empty) {
-            if (_estimate.empty) {
-                _estimate = childEst;
+            if (estimate.empty) {
+                estimate = childEst;
             } else {
-                _estimate.estHits += childEst.estHits;
+                estimate.estHits += childEst.estHits;
             }
-            setEstimate(_estimate);
             _weights.push_back(weight);
             _terms.push_back(result);
         }
+    }
+    void complete(HitEstimate estimate) {
+        setEstimate(estimate);
     }
 
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
@@ -857,9 +857,11 @@ template <typename WS>
 void
 CreateBlueprintVisitor::createDirectWeightedSet(WS *bp, MultiTerm &n) {
     Blueprint::UP result(bp);
+    Blueprint::HitEstimate estimate;
     for (uint32_t i(0); i < n.getNumTerms(); i++) {
-        bp->addTerm(LookupKey(n, i), n.weight(i).percent());
+        bp->addTerm(LookupKey(n, i), n.weight(i).percent(), estimate);
     }
+    bp->complete(estimate);
     setResult(std::move(result));
 }
 
@@ -869,11 +871,13 @@ CreateBlueprintVisitor::createShallowWeightedSet(WS *bp, MultiTerm &n, const Fie
     Blueprint::UP result(bp);
     SearchContextParams scParams = createContextParams();
     bp->reserve(n.getNumTerms());
+    Blueprint::HitEstimate estimate;
     for (uint32_t i(0); i < n.getNumTerms(); i++) {
         FieldSpec childfs = bp->getNextChildField(fs);
         auto term = n.getAsString(i);
-        bp->addTerm(std::make_unique<AttributeFieldBlueprint>(childfs, _attr, extractTerm(term.first, isInteger), scParams.useBitVector(childfs.isFilter())), term.second.percent());
+        bp->addTerm(std::make_unique<AttributeFieldBlueprint>(childfs, _attr, extractTerm(term.first, isInteger), scParams.useBitVector(childfs.isFilter())), term.second.percent(), estimate);
     }
+    bp->complete(estimate);
     setResult(std::move(result));
 }
 

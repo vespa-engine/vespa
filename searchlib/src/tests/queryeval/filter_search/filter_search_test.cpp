@@ -273,7 +273,9 @@ struct WeightedSetTermAdapter {
     WeightedSetTermAdapter();
     ~WeightedSetTermAdapter();
     void addChild(std::unique_ptr<Blueprint> child) {
-        blueprint.addTerm(std::move(child), 100);
+        Blueprint::HitEstimate estimate = blueprint.getState().estimate();
+        blueprint.addTerm(std::move(child), 100, estimate);
+        blueprint.complete(estimate);
     }
     auto createFilterSearch(bool strict, Constraint constraint) const {
         return blueprint.createFilterSearch(strict, constraint);
@@ -292,7 +294,9 @@ struct DotProductAdapter {
     void addChild(std::unique_ptr<Blueprint> child) {
         auto child_field = blueprint.getNextChildField(field);
         auto term = std::make_unique<LeafProxy>(child_field, std::move(child));
-        blueprint.addTerm(std::move(term), 100);
+        Blueprint::HitEstimate estimate = blueprint.getState().estimate();
+        blueprint.addTerm(std::move(term), 100, estimate);
+        blueprint.complete(estimate);
     }
     auto createFilterSearch(bool strict, Constraint constraint) const {
         return blueprint.createFilterSearch(strict, constraint);
@@ -310,7 +314,9 @@ struct ParallelWeakAndAdapter {
     void addChild(std::unique_ptr<Blueprint> child) {
         auto child_field = blueprint.getNextChildField(field);
         auto term = std::make_unique<LeafProxy>(child_field, std::move(child));
-        blueprint.addTerm(std::move(term), 100);
+        Blueprint::HitEstimate estimate = blueprint.getState().estimate();
+        blueprint.addTerm(std::move(term), 100, estimate);
+        blueprint.complete(estimate);
     }
     auto createFilterSearch(bool strict, Constraint constraint) const {
         return blueprint.createFilterSearch(strict, constraint);
