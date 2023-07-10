@@ -112,9 +112,8 @@ public class ConstantTensorJsonValidator {
                 consumeTopObject();
                 return;
             } else if (isScalar()) {
-                if (top == JsonToken.VALUE_NUMBER_FLOAT || top == JsonToken.VALUE_NUMBER_INT) {
-                    return;
-                }
+                throw new InvalidConstantTensorException(
+                        parser, String.format("Invalid type %s: Only tensors with dimensions can be stored as file constants", tensorType.toString()));
             }
             throw new InvalidConstantTensorException(
                     parser, String.format("Unexpected first token '%s' for constant with type %s",
@@ -315,14 +314,6 @@ public class ConstantTensorJsonValidator {
         }
     }
 
-    private void assertFieldNameIs(String wantedFieldName) throws IOException {
-        String actualFieldName = parser.getCurrentName();
-
-        if (!actualFieldName.equals(wantedFieldName)) {
-            throw new InvalidConstantTensorException(parser, String.format("Expected field name '%s', got '%s'", wantedFieldName, actualFieldName));
-        }
-    }
-
     static class InvalidConstantTensorException extends IllegalArgumentException {
 
         InvalidConstantTensorException(JsonParser parser, String message) {
@@ -335,19 +326,6 @@ public class ConstantTensorJsonValidator {
 
         InvalidConstantTensorException(IOException base) {
             super("Failed to parse JSON stream: " + base.getMessage(), base);
-        }
-    }
-
-    @FunctionalInterface
-    private interface SubroutineThrowingIOException {
-        void invoke() throws IOException;
-    }
-
-    private void wrapIOException(SubroutineThrowingIOException lambda) {
-        try {
-            lambda.invoke();
-        } catch (IOException e) {
-            throw new InvalidConstantTensorException(parser, e);
         }
     }
 
