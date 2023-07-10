@@ -33,7 +33,7 @@ public:
      * Create iterator for single word.  Semantic lifetime of counts and
      * handle must exceed lifetime of iterator.
      */
-    queryeval::SearchIterator *
+    std::unique_ptr<queryeval::SearchIterator>
     createIterator(const PostingListCounts &counts, const PostingListHandle &handle,
                    const fef::TermFieldMatchDataArray &matchData, bool usebitVector) const override;
 

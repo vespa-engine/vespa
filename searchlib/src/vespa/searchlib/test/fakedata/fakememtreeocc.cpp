@@ -129,14 +129,14 @@ lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const
 }
 
 
-search::queryeval::SearchIterator *
+std::unique_ptr<search::queryeval::SearchIterator>
 FakeMemTreeOcc::
 createIterator(const fef::TermFieldMatchDataArray &matchData) const
 {
     return memoryindex::make_search_iterator<false>(_tree.begin(_allocator),
                                                     _mgr._featureStore,
                                                     _packedIndex,
-                                                    matchData).release();
+                                                    matchData);
 }
 
 

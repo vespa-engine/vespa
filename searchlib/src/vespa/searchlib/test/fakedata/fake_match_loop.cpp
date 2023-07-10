@@ -32,7 +32,7 @@ public:
         _tfmda.add(&_md);
         _md.setNeedNormalFeatures(posting.enable_unpack_normal_features());
         _md.setNeedInterleavedFeatures(posting.enable_unpack_interleaved_features());
-        _itr.reset(posting.createIterator(_tfmda));
+        _itr = posting.createIterator(_tfmda);
     }
     ~IteratorState() {}
 

@@ -53,7 +53,7 @@ ZcPosOccRandRead::~ZcPosOccRandRead()
 }
 
 
-search::queryeval::SearchIterator *
+std::unique_ptr<search::queryeval::SearchIterator>
 ZcPosOccRandRead::
 createIterator(const PostingListCounts &counts,
                const PostingListHandle &handle,
@@ -67,7 +67,7 @@ createIterator(const PostingListCounts &counts,
     assert(handle._bitOffsetMem <= handle._bitOffset);
 
     if (handle._bitLength == 0) {
-        return new search::queryeval::EmptySearch;
+        return std::make_unique<search::queryeval::EmptySearch>();
     }
 
     const char *cmem = static_cast<const char *>(handle._mem);
@@ -80,7 +80,7 @@ createIterator(const PostingListCounts &counts,
                      handle._bitOffsetMem) & 63;
 
     Position start(mem, bitOffset);
-    return create_zc_posocc_iterator(true, counts, start, handle._bitLength, _posting_params, _fieldsParams, matchData).release();
+    return create_zc_posocc_iterator(true, counts, start, handle._bitLength, _posting_params, _fieldsParams, matchData);
 }
 
 

@@ -176,13 +176,11 @@ FakeFilterOccArrayIterator::doUnpack(uint32_t docId)
 }
 
 
-search::queryeval::SearchIterator *
+std::unique_ptr<search::queryeval::SearchIterator>
 FakeFilterOcc::
 createIterator(const fef::TermFieldMatchDataArray &matchData) const
 {
-    return new FakeFilterOccArrayIterator(&*_uncompressed.begin(),
-            &*_uncompressed.end(),
-            matchData);
+    return std::make_unique<FakeFilterOccArrayIterator>(&*_uncompressed.begin(), &*_uncompressed.end(), matchData);
 }
 
 }
