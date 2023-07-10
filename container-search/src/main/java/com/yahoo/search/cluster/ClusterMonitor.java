@@ -96,17 +96,11 @@ public class ClusterMonitor<T> {
      * Ping all nodes which needs pinging to discover state changes
      */
     public void ping(Executor executor) {
-        for (Iterator<BaseNodeMonitor<T>> i = nodeMonitorIterator(); i.hasNext() && !closed.get(); ) {
-            BaseNodeMonitor<T> monitor= i.next();
-            nodeManager.ping(this, monitor.getNode(), executor); // Cause call to failed or responded
+        for (var monitor : nodeMonitors()) {
+            if (closed.get()) return; // Do nothing to change state if close has started.
+            nodeManager.ping(this, monitor.getNode(), executor);
         }
-        if (closed.get()) return; // Do nothing to change state if close has started.
         nodeManager.pingIterationCompleted();
-    }
-
-    /** Returns a thread-safe snapshot of the NodeMonitors of all added nodes */
-    public Iterator<BaseNodeMonitor<T>> nodeMonitorIterator() {
-        return nodeMonitors().iterator();
     }
 
     /** Returns a thread-safe snapshot of the NodeMonitors of all added nodes */

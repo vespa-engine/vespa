@@ -37,7 +37,7 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
         this.clusterMonitor = clusterMonitor;
         this.pingSequenceId = node.createPingSequenceId();
         this.pongHandler = pongHandler;
-        this. compressor = compressor;
+        this.compressor = compressor;
     }
 
     @Override

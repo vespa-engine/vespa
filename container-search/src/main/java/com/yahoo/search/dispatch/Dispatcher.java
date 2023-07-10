@@ -108,7 +108,7 @@ public class Dispatcher extends AbstractComponent {
                                       (invokerFactory == null)
                                              ? new RpcInvokerFactory(rpcResourcePool, searchCluster.groupList(), dispatchConfig)
                                              : invokerFactory);
-        searchCluster.addMonitoring(clusterMonitor);
+        searchCluster.addMonitoring(clusterMonitor); // TODO: Update, rather than add ... as this creates a pinger for each node
         return items;
     }
 
