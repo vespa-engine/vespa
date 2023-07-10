@@ -127,7 +127,7 @@ class JettyCluster implements Cluster {
         HTTP2Client h2Client = new HTTP2Client(connector);
         h2Client.setMaxConcurrentPushedStreams(b.maxStreamsPerConnection);
         // Set the HTTP/2 flow control windows very large to cause TCP congestion instead of HTTP/2 flow control congestion.
-        int initialWindow = 128 * 1024 * 1024;
+        int initialWindow = Integer.MAX_VALUE;
         h2Client.setInitialSessionRecvWindow(initialWindow);
         h2Client.setInitialStreamRecvWindow(initialWindow);
         HttpClientTransportOverHTTP2 transport = new HttpClientTransportOverHTTP2(h2Client);
