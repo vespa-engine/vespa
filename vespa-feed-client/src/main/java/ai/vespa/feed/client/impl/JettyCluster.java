@@ -83,7 +83,7 @@ class JettyCluster implements Cluster {
                         .version(HttpVersion.HTTP_2)
                         .method(HttpMethod.fromString(req.method()))
                         .headers(hs -> req.headers().forEach((k, v) -> {
-                            if (!k.equalsIgnoreCase(HttpHeader.PROXY_AUTHORIZATION.asString())) hs.add(k, v.get());
+                            if (!isProxyHeader(k)) hs.add(k, v.get());
                         }))
                         .idleTimeout(IDLE_TIMEOUT.toMillis(), MILLISECONDS)
                         .timeout(reqTimeoutMillis, MILLISECONDS);
