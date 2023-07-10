@@ -24,7 +24,7 @@
 
         <bouncycastle.version>1.74</bouncycastle.version>
         <commons-codec.version>1.15</commons-codec.version>
-        <felix.version>7.0.1</felix.version>
+        <felix.version>7.0.5</felix.version>
         <httpclient5.version>5.2.1</httpclient5.version>
         <httpcore5.version>5.2.1</httpcore5.version>
         <httpclient.version>4.5.14</httpclient.version>
