@@ -23,7 +23,7 @@ public class RouteMetricSet {
         void done(RouteMetricSet route);
     }
 
-    RouteMetricSet(String route, Timer timer, ProgressCallback callback) {
+    public RouteMetricSet(String route, Timer timer, ProgressCallback callback) {
         this.route = route;
         this.timer = timer;
         this.callback = callback;
