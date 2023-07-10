@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.clientmetrics;
 
+import com.yahoo.concurrent.Timer;
 import com.yahoo.documentapi.messagebus.protocol.DocumentIgnoredReply;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.Reply;
@@ -12,21 +13,24 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
-* @author thomasg
+* @author Thomas Gundersen
 */
 public class MessageTypeMetricSet {
+
     public long latency_total;
     public long latency_min = Long.MAX_VALUE;
     public long latency_max = Long.MIN_VALUE;
     public long count = 0;
     public long ignored = 0;
     public long errorCount = 0;
+    public final Timer timer;
     private final Map<String, Long> errorCounts = new HashMap<>();
 
     private final String msgName;
 
-    public MessageTypeMetricSet(String msgName) {
+    MessageTypeMetricSet(String msgName, Timer timer) {
         this.msgName = msgName;
+        this.timer = timer;
     }
 
     public String getMessageName() {
@@ -55,7 +59,7 @@ public class MessageTypeMetricSet {
     private void updateSuccessMetrics(Reply r) {
         if (!(r instanceof DocumentIgnoredReply)) {
             if (r.getMessage().getTimeReceived() != 0) {
-                long latency = (SystemTimer.INSTANCE.milliTime() - r.getMessage().getTimeReceived());
+                long latency = (timer.milliTime() - r.getMessage().getTimeReceived());
                 latency_max = Math.max(latency_max, latency);
                 latency_min = Math.min(latency_min, latency);
                 latency_total += latency;

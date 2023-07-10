@@ -20,11 +20,11 @@ public class BenchmarkProgressPrinterTest {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ManualTimer timer = new ManualTimer();
         BenchmarkProgressPrinter printer = new BenchmarkProgressPrinter(timer, new PrintStream(output));
-        RouteMetricSet metrics = new RouteMetricSet("foobar", printer);
+        RouteMetricSet metrics = new RouteMetricSet("foobar", timer, printer);
 
         {
             EmptyReply reply = new EmptyReply();
-            reply.setMessage(PutDocumentMessage.createEmpty().setTimeReceived(1));
+            reply.setMessage(PutDocumentMessage.createEmpty().setTimeReceived(-1));
             metrics.addReply(reply);
         }
 
@@ -32,13 +32,13 @@ public class BenchmarkProgressPrinterTest {
 
         {
             EmptyReply reply = new EmptyReply();
-            reply.setMessage(PutDocumentMessage.createEmpty().setTimeReceived(2));
+            reply.setMessage(PutDocumentMessage.createEmpty().setTimeReceived(-1));
             metrics.addReply(reply);
         }
 
         {
             EmptyReply reply = new EmptyReply();
-            reply.setMessage(UpdateDocumentMessage.createEmpty().setTimeReceived(3));
+            reply.setMessage(UpdateDocumentMessage.createEmpty().setTimeReceived(-1));
             metrics.addReply(reply);
         }
 
@@ -46,7 +46,7 @@ public class BenchmarkProgressPrinterTest {
 
         {
             EmptyReply reply = new EmptyReply();
-            reply.setMessage(UpdateDocumentMessage.createEmpty().setTimeReceived(4));
+            reply.setMessage(UpdateDocumentMessage.createEmpty().setTimeReceived(-1));
             reply.addError(new com.yahoo.messagebus.Error(32, "foo"));
             metrics.addReply(reply);
         }
@@ -55,7 +55,7 @@ public class BenchmarkProgressPrinterTest {
 
         {
             EmptyReply reply = new EmptyReply();
-            reply.setMessage(UpdateDocumentMessage.createEmpty().setTimeReceived(5));
+            reply.setMessage(UpdateDocumentMessage.createEmpty().setTimeReceived(-1));
             reply.addError(new com.yahoo.messagebus.Error(64, "bar"));
             metrics.addReply(reply);
         }
