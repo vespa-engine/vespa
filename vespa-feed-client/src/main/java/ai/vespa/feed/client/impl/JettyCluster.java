@@ -121,7 +121,7 @@ class JettyCluster implements Cluster {
             clientSslCtxFactory.setEndpointIdentificationAlgorithm(null);
         }
         ClientConnector connector = new ClientConnector();
-        int threads = Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 20), 8);
+        int threads = Math.max(Math.min(Runtime.getRuntime().availableProcessors(), 32), 8);
         connector.setExecutor(new QueuedThreadPool(threads));
         connector.setSslContextFactory(clientSslCtxFactory);
         HTTP2Client h2Client = new HTTP2Client(connector);
