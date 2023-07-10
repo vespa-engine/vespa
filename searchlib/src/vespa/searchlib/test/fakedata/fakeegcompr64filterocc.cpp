@@ -717,23 +717,16 @@ FakeFilterOccEGCompressed64ArrayIterator<bigEndian>::doUnpack(uint32_t docId)
 }
 
 
-search::queryeval::SearchIterator *
+std::unique_ptr<search::queryeval::SearchIterator>
 FakeEGCompr64FilterOcc::
 createIterator(const fef::TermFieldMatchDataArray &matchData) const
 {
     const uint64_t *arr = _compressed.first;
-    if (_bigEndian)
-        return new FakeFilterOccEGCompressed64ArrayIterator<true>(arr,
-                0,
-                _hitDocs,
-                _lastDocId,
-                matchData);
-    else
-        return new FakeFilterOccEGCompressed64ArrayIterator<false>(arr,
-                0,
-                _hitDocs,
-                _lastDocId,
-                matchData);
+    if (_bigEndian) {
+        return std::make_unique<FakeFilterOccEGCompressed64ArrayIterator<true>>(arr, 0, _hitDocs, _lastDocId, matchData);
+    } else {
+        return std::make_unique<FakeFilterOccEGCompressed64ArrayIterator<false>>(arr, 0, _hitDocs, _lastDocId, matchData);
+    }
 }
 
 
@@ -766,7 +759,7 @@ class FakeEGCompr64SkipFilterOcc : public FakeEGCompr64FilterOcc
 public:
     FakeEGCompr64SkipFilterOcc(const FakeWord &fw);
     ~FakeEGCompr64SkipFilterOcc();
-    search::queryeval::SearchIterator *createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
+    std::unique_ptr<search::queryeval::SearchIterator> createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
 
@@ -1451,7 +1444,7 @@ FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>::doUnpack(uint32_t docId)
 
 
 template <bool doSkip>
-search::queryeval::SearchIterator *
+std::unique_ptr<search::queryeval::SearchIterator>
 FakeEGCompr64SkipFilterOcc<doSkip>::
 createIterator(const fef::TermFieldMatchDataArray &matchData) const
 {
@@ -1478,15 +1471,16 @@ createIterator(const fef::TermFieldMatchDataArray &matchData) const
     const uint64_t *l2SkipArr = _l2SkipCompressed.first;
     const uint64_t *l3SkipArr = _l3SkipCompressed.first;
     const uint64_t *l4SkipArr = _l4SkipCompressed.first;
-    return new FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>(docIdBits.getCompr(),
-            docIdBits.getBitOffset(),
-            _lastDocId,
-            l1SkipArr, 0,
-            l2SkipArr, 0,
-            l3SkipArr, 0,
-            l4SkipArr, 0,
-            getName(),
-            matchData);
+    return std::make_unique<FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>>
+        (docIdBits.getCompr(),
+         docIdBits.getBitOffset(),
+         _lastDocId,
+         l1SkipArr, 0,
+         l2SkipArr, 0,
+         l3SkipArr, 0,
+         l4SkipArr, 0,
+         getName(),
+         matchData);
 }
 
 }

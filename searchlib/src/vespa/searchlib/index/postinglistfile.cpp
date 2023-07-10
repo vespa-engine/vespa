@@ -3,6 +3,7 @@
 #include "postinglistfile.h"
 #include "postinglistparams.h"
 #include <vespa/fastos/file.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
 
 namespace search::index {
 
@@ -94,7 +95,7 @@ PostingListFileRandReadPassThrough::~PostingListFileRandReadPassThrough()
     }
 }
 
-search::queryeval::SearchIterator *
+std::unique_ptr<search::queryeval::SearchIterator>
 PostingListFileRandReadPassThrough::
 createIterator(const PostingListCounts &counts,
                const PostingListHandle &handle,

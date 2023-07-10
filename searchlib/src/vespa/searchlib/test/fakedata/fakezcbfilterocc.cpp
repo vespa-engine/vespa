@@ -237,14 +237,12 @@ FakeFilterOccZCBArrayIterator::doUnpack(uint32_t docId)
 }
 
 
-search::queryeval::SearchIterator *
+std::unique_ptr<search::queryeval::SearchIterator>
 FakeZcbFilterOcc::
 createIterator(const fef::TermFieldMatchDataArray &matchData) const
 {
     const uint8_t *arr = &*_compressed.begin();
-    return new FakeFilterOccZCBArrayIterator(arr,
-            _hitDocs,
-            matchData);
+    return std::make_unique<FakeFilterOccZCBArrayIterator>(arr, _hitDocs,  matchData);
 }
 
 }

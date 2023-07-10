@@ -72,7 +72,7 @@ public:
     /*
      * Iterator factory, for current query evaluation framework.
      */
-    virtual search::queryeval::SearchIterator *
+    virtual std::unique_ptr<search::queryeval::SearchIterator>
     createIterator(const fef::TermFieldMatchDataArray &matchData) const = 0;
 
     const std::string &getName() const

@@ -147,7 +147,7 @@ public:
      * didn't cover the whole word, probably need access to higher level
      * API above caches.
      */
-    virtual search::queryeval::SearchIterator *
+    virtual std::unique_ptr<search::queryeval::SearchIterator>
     createIterator(const PostingListCounts &counts,
                    const PostingListHandle &handle,
                    const search::fef::TermFieldMatchDataArray &matchData,
@@ -194,7 +194,7 @@ public:
     PostingListFileRandReadPassThrough(PostingListFileRandRead *lower, bool ownLower);
     ~PostingListFileRandReadPassThrough();
 
-    search::queryeval::SearchIterator *
+    std::unique_ptr<search::queryeval::SearchIterator>
     createIterator(const PostingListCounts &counts,
                    const PostingListHandle &handle,
                    const search::fef::TermFieldMatchDataArray &matchData,
