@@ -24,7 +24,6 @@ import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.provision.provisioning.HostIpConfig;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
@@ -36,7 +35,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Optional;
@@ -48,6 +46,7 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.collections.Iterables.reversed;
 import static com.yahoo.vespa.hosted.provision.restapi.NodePatcher.DROP_DOCUMENTS_REPORT;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
@@ -968,7 +967,7 @@ public class Nodes {
                 // If the first node is now earlier in lock order than some other locks we have, we need to close those and re-acquire them.
                 Node next = unlocked.pollFirst();
                 Set<NodeMutex> outOfOrder = locked.tailSet(new NodeMutex(next, () -> { }), false);
-                NodeMutexes.close(outOfOrder.iterator());
+                NodeMutexes.close(outOfOrder);
                 for (NodeMutex node : outOfOrder) unlocked.add(node.node());
                 outOfOrder.clear();
 
@@ -1002,15 +1001,25 @@ public class Nodes {
         }
         finally {
             // If we didn't manage to lock all nodes, we must close the ones we did lock before we throw.
-            NodeMutexes.close(locked.iterator());
+            NodeMutexes.close(locked);
         }
     }
 
     /** A node with their locks, acquired in a universal order. */
     public record NodeMutexes(List<NodeMutex> nodes) implements AutoCloseable {
-        @Override public void close() { close(nodes.iterator()); }
-        private static void close(Iterator<NodeMutex> nodes) {
-            if (nodes.hasNext()) try (NodeMutex node = nodes.next()) { close(nodes); }
+        @Override public void close() { close(nodes); }
+        private static void close(Collection<NodeMutex> nodes) {
+            RuntimeException thrown = null;
+            for (NodeMutex node : reversed(List.copyOf(nodes))) {
+                try {
+                    node.close();
+                }
+                catch (RuntimeException e) {
+                    if (thrown == null) thrown = e;
+                    else thrown.addSuppressed(e);
+                }
+            }
+            if (thrown != null) throw thrown;
         }
     }
 
