@@ -10,6 +10,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <random>
+#include <thread>
 
 using namespace vespalib;
 
@@ -19,6 +20,18 @@ using vespalib::datastore::AtomicValueWrapper;
 using vespalib::makeLambdaTask;
 using MyMemoryAllocator = vespalib::alloc::test::MemoryAllocatorObserver;
 using AllocStats = MyMemoryAllocator::Stats;
+
+namespace {
+
+void consider_yield(uint32_t i)
+{
+    if ((i % 1111) == 0) {
+        // Need to yield sometimes to avoid livelock when running unit test with valgrind
+        std::this_thread::yield();
+    }
+}
+
+}
 
 bool
 assertUsage(const MemoryUsage & exp, const MemoryUsage & act)
@@ -452,12 +465,15 @@ StressFixture::read_work()
     std::mt19937 gen(rd());
     std::uniform_int_distribution<uint32_t> distrib(0, read_area - 1);
     std::vector<int> old(read_area);
+    uint32_t i = 0;
     while (!stop_read.load(std::memory_order_relaxed)) {
         uint32_t idx = distrib(gen);
         auto guard = generation_handler.takeGuard();
         int value = arr.acquire_elem_ref(idx).load_acquire();
         EXPECT_LE(old[idx], value);
         old[idx] = value;
+        consider_yield(i);
+        ++i;
     }
 }
 
@@ -478,6 +494,7 @@ StressFixture::write_work(uint32_t cnt)
         uint32_t idx = distrib(gen);
         arr[idx].store_release(arr[idx].load_relaxed() + 1);
         commit();
+        consider_yield(i);
     }
 }
 
