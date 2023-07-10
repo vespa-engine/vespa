@@ -10,6 +10,7 @@ shared:
   environment:
     USER_SHELL_BIN: bash
   annotations:
+    screwdriver.cd/restrictPR: fork
     restore-cache: &restore-cache
       restore-cache: |
         (cd /tmp && if [[ -f $MAIN_CACHE_FILE ]]; then tar xf $MAIN_CACHE_FILE; fi)
