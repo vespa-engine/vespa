@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
  *
  * @author bjorncs
  */
+@SuppressWarnings("deprecation")
 public class EnforceDependencies implements EnforcerRule {
 
     private List<String> allowedDependencies = List.of();

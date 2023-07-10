@@ -826,6 +826,11 @@
                 <version>2.2.1</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven.enforcer</groupId>
+                <artifactId>enforcer-api</artifactId>
+                <version>${maven-enforcer-plugin.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
                 <artifactId>maven-plugin-annotations</artifactId>
                 <version>${maven-plugin-tools.version}</version>

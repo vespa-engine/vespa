@@ -18,7 +18,6 @@
         <dependency>
             <groupId>org.apache.maven.enforcer</groupId>
             <artifactId>enforcer-api</artifactId>
-            <version>3.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

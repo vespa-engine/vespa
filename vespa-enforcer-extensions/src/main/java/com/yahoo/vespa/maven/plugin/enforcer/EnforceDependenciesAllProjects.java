@@ -38,6 +38,7 @@ import java.util.stream.Stream;
 /**
  * @author bjorncs
  */
+@SuppressWarnings("deprecation")
 public class EnforceDependenciesAllProjects implements EnforcerRule {
 
     private static final String WRITE_SPEC_PROP = "dependencyEnforcer.writeSpec";
