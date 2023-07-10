@@ -143,9 +143,9 @@ public class GroupPreparer {
                 throw new NodeAllocationException(allocation.allocationFailureDetails(), true);
 
             // Carry out and return allocation
+            List<Node> acceptedNodes = allocation.finalNodes();
             nodeRepository.nodes().reserve(allocation.reservableNodes());
             nodeRepository.nodes().addReservedNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
-            List<Node> acceptedNodes = allocation.finalNodes();
             surplusActiveNodes.removeAll(acceptedNodes);
             return acceptedNodes;
         }

@@ -413,6 +413,8 @@ class NodeAllocation {
 
         GroupIndices groupIndices = new GroupIndices(requestedNodes, allNodes, nodeRepository.clock());
         Collection<NodeCandidate> finalNodes = groupIndices.assignTo(nodes.values());
+        nodes.clear();
+        finalNodes.forEach(candidate -> nodes.put(candidate.toNode().hostname(), candidate));
         return finalNodes.stream().map(NodeCandidate::toNode).toList();
     }
 
