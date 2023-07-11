@@ -1136,7 +1136,7 @@
         <apache.httpclient.version>4.5.14</apache.httpclient.version>
         <apache.httpcore.version>4.4.16</apache.httpcore.version>
         <apache.httpclient5.version>5.2.1</apache.httpclient5.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
-        <apache.httpcore5.version>5.2.1</apache.httpcore5.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <apache.httpcore5.version>5.2.2</apache.httpcore5.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
         <asm.version>9.3</asm.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
