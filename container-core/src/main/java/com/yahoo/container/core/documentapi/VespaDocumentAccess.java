@@ -39,14 +39,9 @@ public class VespaDocumentAccess extends DocumentAccess {
 
     private final Memoized<DocumentAccess, RuntimeException> delegate;
 
-    VespaDocumentAccess(DocumentmanagerConfig documentmanagerConfig,
-                        String slobroksConfigId,
-                        MessagebusConfig messagebusConfig,
-                        DocumentProtocolPoliciesConfig policiesConfig,
-                        DistributionConfig distributionConfig) {
+    VespaDocumentAccess(DocumentmanagerConfig documentmanagerConfig, String slobroksConfigId, MessagebusConfig messagebusConfig) {
         super(new DocumentAccessParams().setDocumentmanagerConfig(documentmanagerConfig));
-        this.parameters = new MessageBusParams()
-                .setDocumentProtocolPoliciesConfig(policiesConfig, distributionConfig);
+        this.parameters = new MessageBusParams();
         this.parameters.setDocumentmanagerConfig(documentmanagerConfig);
         this.parameters.getRPCNetworkParams().setSlobrokConfigId(slobroksConfigId);
         this.parameters.getMessageBusParams().setMessageBusConfig(messagebusConfig);
