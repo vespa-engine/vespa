@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Performs preparation of node activation changes for an application.
@@ -61,7 +62,6 @@ class Preparer {
 
         List<Integer> usedIndices = clusterNodes.mapToList(node -> node.allocation().get().membership().index());
         NodeIndices indices = new NodeIndices(usedIndices);
-        List<Node> acceptedNodes = new ArrayList<>();
 
         GroupPreparer.PrepareResult result = groupPreparer.prepare(application, cluster,
                                                                    requestedNodes,
@@ -74,11 +74,8 @@ class Preparer {
                                .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
                                .toList();
         }
-
-        replace(acceptedNodes, accepted);
         moveToActiveGroup(surplusNodes, requestedNodes.groups(), cluster.group());
-        acceptedNodes.removeAll(surplusNodes);
-        return acceptedNodes;
+        return accepted.stream().filter(node -> ! surplusNodes.contains(node)).collect(Collectors.toList());
     }
 
     /** Prepare a load balancer for given application and cluster */
@@ -112,17 +109,6 @@ class Preparer {
                 i.set(node.with(node.allocation().get().with(newGroupMembership)));
             }
         }
-    }
-
-    /**
-     * Nodes are immutable so when changing attributes to the node we create a new instance.
-     *
-     * This method is used to both add new nodes and replaces old node references with the new references.
-     */
-    private List<Node> replace(List<Node> list, List<Node> changed) {
-        list.removeAll(changed);
-        list.addAll(changed);
-        return list;
     }
 
 }
