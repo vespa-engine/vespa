@@ -160,14 +160,14 @@ template <>
 vespalib::string
 BitVectorTest::getSearchStr<IntegerAttribute>()
 {
-    return "-42";
+    return "[-42;-42]";
 }
 
 template <>
 vespalib::string
 BitVectorTest::getSearchStr<FloatingPointAttribute>()
 {
-    return "-42.0";
+    return "[-42.0;-42.0]";
 }
 
 template <>
@@ -365,6 +365,7 @@ BitVectorTest::checkSearch(AttributePtr v,
                            bool weights,
                            bool checkStride)
 {
+    (void) checkStride;
     sb->initRange(1, v->getCommittedDocIdLimit());
     sb->seek(1u);
     uint32_t docId = sb->getDocId();
@@ -374,7 +375,7 @@ BitVectorTest::checkSearch(AttributePtr v,
     while (docId != search::endDocId) {
         lastDocId = docId;
         ++docFreq,
-        ASSERT_TRUE(!checkStride || (docId % 5) == 2u);
+        assert(!checkStride || (docId % 5) == 2u);
         sb->unpack(docId);
         EXPECT_EQUAL(md.getDocId(), docId);
         if (v->getCollectionType() == CollectionType::SINGLE || !weights) {
@@ -430,12 +431,12 @@ BitVectorTest::test(BasicType bt, CollectionType ct, const vespalib::string &pre
     checkSearch(v, std::move(sc), 2, 1022, 205, !filter, true);
     const search::IDocumentWeightAttribute *dwa = v->asDocumentWeightAttribute();
     if (dwa != nullptr) {
-        vespalib::string key = getSearchStr<VectorType>();
-        search::IDocumentWeightAttribute::LookupResult lres = dwa->lookup(key, dwa->get_dictionary_snapshot());
+        search::IDocumentWeightAttribute::LookupResult lres = 
+            dwa->lookup(getSearchStr<VectorType>(), dwa->get_dictionary_snapshot());
         using DWSI = search::queryeval::DocumentWeightSearchIterator;
         using SI = search::queryeval::SearchIterator;
         TermFieldMatchData md;
-        SI::UP dwsi = std::make_unique<DWSI>(md, *dwa, lres);
+        SI::UP dwsi(new DWSI(md, *dwa, lres));
         if (!filter) {
             TEST_DO(checkSearch(v, std::move(dwsi), md, 2, 1022, 205, !filter, true));
         } else {

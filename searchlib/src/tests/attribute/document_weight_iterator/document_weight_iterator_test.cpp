@@ -81,7 +81,6 @@ struct StringFixture {
 };
 
 TEST("require that appropriate attributes support the document weight attribute interface") {
-    EXPECT_TRUE(make_attribute(BasicType::INT32,  CollectionType::WSET, true)->asDocumentWeightAttribute() != nullptr);
     EXPECT_TRUE(make_attribute(BasicType::INT64,  CollectionType::WSET, true)->asDocumentWeightAttribute() != nullptr);
     EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::WSET, true)->asDocumentWeightAttribute() != nullptr);
 }
@@ -97,7 +96,7 @@ TEST("require that inappropriate attributes do not support the document weight a
     EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::WSET,   false)->asDocumentWeightAttribute() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::SINGLE,  true)->asDocumentWeightAttribute() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::STRING, CollectionType::ARRAY,   true)->asDocumentWeightAttribute() == nullptr);
-    EXPECT_TRUE(make_attribute(BasicType::FLOAT,  CollectionType::WSET,    true)->asDocumentWeightAttribute() == nullptr);
+    EXPECT_TRUE(make_attribute(BasicType::INT32,  CollectionType::WSET,    true)->asDocumentWeightAttribute() == nullptr);
     EXPECT_TRUE(make_attribute(BasicType::DOUBLE, CollectionType::WSET,    true)->asDocumentWeightAttribute() == nullptr);
 }
 
