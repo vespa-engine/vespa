@@ -104,6 +104,11 @@ public class ClusterMonitor<T> {
     }
 
     /** Returns a thread-safe snapshot of the NodeMonitors of all added nodes */
+    public Iterator<BaseNodeMonitor<T>> nodeMonitorIterator() {
+        return nodeMonitors().iterator();
+    }
+
+    /** Returns a thread-safe snapshot of the NodeMonitors of all added nodes */
     public List<BaseNodeMonitor<T>> nodeMonitors() {
         return List.copyOf(nodeMonitors.values());
     }
@@ -137,7 +142,7 @@ public class ClusterMonitor<T> {
             // for all pings when there are no problems (important because it ensures that
             // any thread local connections are reused) 2) a new thread will be started to execute
             // new pings when a ping is not responding
-            ExecutorService pingExecutor=Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("search.ping"));
+            ExecutorService pingExecutor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("search.ping"));
             while (!closed.get()) {
                 try {
                     log.finest("Activating ping");
@@ -159,7 +164,9 @@ public class ClusterMonitor<T> {
             }
             pingExecutor.shutdown();
             try {
-                pingExecutor.awaitTermination(10, TimeUnit.SECONDS);
+                if ( ! pingExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    log.warning("Timeout waiting for ping executor to terminate");
+                }
             } catch (InterruptedException e) { }
             log.info("Stopped cluster monitor thread " + getName());
         }
