@@ -40,6 +40,9 @@ public interface NodeSpec {
 
     int groups();
 
+    /** Returns the group size requested if count() is present. Throws RuntimeException otherwise. */
+    default int groupSize() { return count().get() / groups(); }
+
     /** Returns whether this should throw an exception if the requested nodes are not fully available */
     boolean canFail();
 

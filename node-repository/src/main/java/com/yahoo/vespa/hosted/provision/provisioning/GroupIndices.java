@@ -78,7 +78,7 @@ class GroupIndices {
 
     private NodeCandidate moveNodeInSurplusGroup(NodeCandidate node, int[] countInGroup) {
         var currentGroup = node.allocation().get().membership().cluster().group();
-        if (currentGroup.isEmpty()) return node; // Shouldn't happen
+        if (currentGroup.isEmpty()) return node;
         if (currentGroup.get().index() < requested.groups()) return node;
         return inFirstGroupWithDeficiency(node, countInGroup);
     }
@@ -89,7 +89,7 @@ class GroupIndices {
         if (currentGroup.isEmpty()) return node;
         if (currentGroup.get().index() >= requested.groups()) return node;
         if (requested.count().isEmpty()) return node; // Can't retire
-        if (countInGroup[currentGroup.get().index()] <= requested.count().get() / requested.groups()) return node;
+        if (countInGroup[currentGroup.get().index()] <= requested.groupSize()) return node;
         countInGroup[currentGroup.get().index()]--;
         return node.withNode(node.toNode().retire(Agent.application, clock.instant()));
     }
@@ -101,7 +101,7 @@ class GroupIndices {
         if (currentGroup.isEmpty()) return node;
         if (currentGroup.get().index() >= requested.groups()) return node;
         if (node.preferToRetire() || node.wantToRetire()) return node;
-        if (requested.count().isPresent() && countInGroup[currentGroup.get().index()] >= requested.count().get() / requested.groups()) return node;
+        if (requested.count().isPresent() && countInGroup[currentGroup.get().index()] >= requested.groupSize()) return node;
         node = unretire(node);
         if (node.allocation().get().membership().retired()) return node;
         countInGroup[currentGroup.get().index()]++;
@@ -110,7 +110,7 @@ class GroupIndices {
 
     private NodeCandidate inFirstGroupWithDeficiency(NodeCandidate node, int[] countInGroup) {
         for (int group = 0; group < requested.groups(); group++) {
-            if (requested.count().isEmpty() || countInGroup[group] < requested.count().get() / requested.groups()) {
+            if (requested.count().isEmpty() || countInGroup[group] < requested.groupSize()) {
                 return inGroup(group, node, countInGroup);
             }
         }

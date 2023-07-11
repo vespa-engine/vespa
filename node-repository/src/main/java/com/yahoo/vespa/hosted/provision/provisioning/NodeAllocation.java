@@ -301,7 +301,7 @@ class NodeAllocation {
         var group = node.allocation().get().membership().cluster().group();
         if (group.isEmpty()) return true;
         long nodesInGroup = nodes.values().stream().filter(n -> groupOf(n).equals(group)).count();
-        return nodesInGroup < requestedNodes.count().get() / requestedNodes.groups();
+        return nodesInGroup < requestedNodes.groupSize();
     }
 
     private Optional<ClusterSpec.Group> groupOf(NodeCandidate candidate) {
