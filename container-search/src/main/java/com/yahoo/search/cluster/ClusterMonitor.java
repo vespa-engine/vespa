@@ -66,7 +66,7 @@ public class ClusterMonitor<T> {
      * </ul>
      *
      * @param node the object representing the node
-     * @param internal whether or not this node is internal to this cluster
+     * @param internal whether this node is internal to this cluster
      */
     public void add(T node, boolean internal) {
         nodeMonitors.put(node, new TrafficNodeMonitor<>(node, configuration, internal));

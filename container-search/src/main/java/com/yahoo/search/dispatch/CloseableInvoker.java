@@ -2,7 +2,6 @@
 package com.yahoo.search.dispatch;
 
 import java.io.Closeable;
-import java.time.Duration;
 import java.util.function.BiConsumer;
 
 /**
@@ -21,10 +20,7 @@ public abstract class CloseableInvoker implements Closeable {
     private RequestDuration duration;
 
     public void teardown(BiConsumer<Boolean, RequestDuration> teardown) {
-        this.teardown = this.teardown == null ? teardown : (success, duration) -> {
-            this.teardown.accept(success, duration);
-            teardown.accept(success, duration);
-        };
+        this.teardown = this.teardown == null ? teardown : this.teardown.andThen(teardown);
         this.duration = this.duration == null ? new RequestDuration() : this.duration;
     }
 

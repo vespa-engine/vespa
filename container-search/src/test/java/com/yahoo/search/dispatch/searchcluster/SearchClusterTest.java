@@ -31,7 +31,7 @@ public class SearchClusterTest {
         final int nodesPerGroup;
         final VipStatus vipStatus;
         final SearchCluster searchCluster;
-        final ClusterMonitor clusterMonitor;
+        final ClusterMonitor<Node> clusterMonitor;
         final List<AtomicInteger> numDocsPerNode;
         List<AtomicInteger> pingCounts;
 
@@ -57,7 +57,7 @@ public class SearchClusterTest {
             }
             searchCluster = new SearchCluster(clusterId, 100.0, nodes,
                                               vipStatus, new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
-            clusterMonitor = new ClusterMonitor(searchCluster, false);
+            clusterMonitor = new ClusterMonitor<>(searchCluster, false);
             searchCluster.addMonitoring(clusterMonitor);
         }
 
