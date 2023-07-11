@@ -59,7 +59,7 @@ public class NodeStateChangeChecker {
         this.clusterInfo = cluster.clusterInfo();
         this.inMoratorium = inMoratorium;
         this.maxNumberOfGroupsAllowedToBeDown = cluster.maxNumberOfGroupsAllowedToBeDown();
-        if ( ! groupVisiting.isHierarchical() && maxNumberOfGroupsAllowedToBeDown > 1)
+        if ( ! isGroupedSetup() && maxNumberOfGroupsAllowedToBeDown > 1)
             throw new IllegalArgumentException("Cannot have both 1 group and maxNumberOfGroupsAllowedToBeDown > 1");
     }
 
@@ -153,16 +153,22 @@ public class NodeStateChangeChecker {
         if (result.notAllowed())
             return result;
 
-        if (maxNumberOfGroupsAllowedToBeDown == -1) {
-            result = checkIfAnotherNodeInAnotherGroupHasWantedState(nodeInfo);
+        if (isGroupedSetup()) {
+            if (maxNumberOfGroupsAllowedToBeDown == - 1) {
+                result = checkIfAnotherNodeInAnotherGroupHasWantedState(nodeInfo);
+                if (result.notAllowed())
+                    return result;
+                if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription))
+                    return allow();
+            } else {
+                var optionalResult = checkIfOtherNodesHaveWantedState(nodeInfo, newDescription, clusterState);
+                if (optionalResult.isPresent())
+                    return optionalResult.get();
+            }
+        } else {
+            result = otherNodeHasWantedState(nodeInfo);
             if (result.notAllowed())
                 return result;
-            if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription))
-                return allow();
-        } else {
-            var optionalResult = checkIfOtherNodesHaveWantedState(nodeInfo, newDescription, clusterState);
-            if (optionalResult.isPresent())
-                return optionalResult.get();
         }
 
         if (nodeIsDown(clusterState, nodeInfo)) {
@@ -185,6 +191,10 @@ public class NodeStateChangeChecker {
         return allow();
     }
 
+    private boolean isGroupedSetup() {
+        return groupVisiting.isHierarchical();
+    }
+
     /** Refuse to override whatever an operator or unknown entity is doing. */
     private static Result checkIfStateSetWithDifferentDescription(NodeInfo nodeInfo, String newDescription) {
         State oldWantedState = nodeInfo.getUserWantedState().getState();
@@ -196,84 +206,69 @@ public class NodeStateChangeChecker {
     }
 
     /**
-     * Returns a disallow-result if there is another node (in another group, if hierarchical)
-     * that has a wanted state != UP.  We disallow more than 1 suspended node/group at a time.
+     * Returns a disallow-result if there is another node in another group
+     * that has a wanted state != UP.  We disallow more than 1 suspended group at a time.
      */
     private Result checkIfAnotherNodeInAnotherGroupHasWantedState(StorageNodeInfo nodeInfo) {
-        if (groupVisiting.isHierarchical()) {
-            SettableOptional<Result> anotherNodeHasWantedState = new SettableOptional<>();
-
-            groupVisiting.visit(group -> {
-                if (!groupContainsNode(group, nodeInfo.getNode())) {
-                    Result result = otherNodeInGroupHasWantedState(group);
-                    if (result.notAllowed()) {
-                        anotherNodeHasWantedState.set(result);
-                        // Have found a node that is suspended, halt the visiting
-                        return false;
-                    }
+        SettableOptional<Result> anotherNodeHasWantedState = new SettableOptional<>();
+        groupVisiting.visit(group -> {
+            if (! groupContainsNode(group, nodeInfo.getNode())) {
+                Result result = otherNodeInGroupHasWantedState(group);
+                if (result.notAllowed()) {
+                    anotherNodeHasWantedState.set(result);
+                    // Have found a node that is suspended, halt the visiting
+                    return false;
                 }
+            }
 
-                return true;
-            });
+            return true;
+        });
 
-            return anotherNodeHasWantedState.asOptional().orElseGet(Result::allow);
-        } else {
-            // Returns a disallow-result if there is another node with a wanted state
-            return otherNodeHasWantedState(nodeInfo);
-        }
+        return anotherNodeHasWantedState.asOptional().orElseGet(Result::allow);
     }
 
     /**
      * Returns an optional Result, where return value is:
-     * For flat setup: Return Optional.of(disallowed) if wanted state is set on some node, else Optional.empty
-     * For hierarchical setup: No wanted state for other nodes, return Optional.empty
-     *                         Wanted state for nodes/groups are not UP:
-     *                           if less than maxNumberOfGroupsAllowedToBeDown: return Optional.of(allowed)
-     *                           else: if node is in group with nodes already down: return Optional.of(allowed), else Optional.of(disallowed)
+     * - No wanted state for other nodes, return Optional.empty
+     * - Wanted state for nodes/groups are not UP:
+     * - if less than maxNumberOfGroupsAllowedToBeDown: return Optional.of(allowed)
+     *      else: if node is in group with nodes already down: return Optional.of(allowed), else Optional.of(disallowed)
      */
     private Optional<Result> checkIfOtherNodesHaveWantedState(StorageNodeInfo nodeInfo, String newDescription, ClusterState clusterState) {
         Node node = nodeInfo.getNode();
 
-        if (groupVisiting.isHierarchical()) {
-            Set<Integer> groupsWithNodesWantedStateNotUp = groupsWithUserWantedStateNotUp();
-            if (groupsWithNodesWantedStateNotUp.size() == 0) {
-                log.log(FINE, "groupsWithNodesWantedStateNotUp=0");
-                return Optional.empty();
-            }
-
-            Set<Integer> groupsWithSameStateAndDescription = groupsWithSameStateAndDescription(MAINTENANCE, newDescription);
-            if (aGroupContainsNode(groupsWithSameStateAndDescription, node)) {
-                log.log(FINE, "Node is in group with same state and description, allow");
-                return Optional.of(allow());
-            }
-            // There are groups with nodes not up, but with another description, probably operator set
-            if (groupsWithSameStateAndDescription.size() == 0) {
-                return Optional.of(disallow("Wanted state already set for another node in groups: " +
-                                            sortSetIntoList(groupsWithNodesWantedStateNotUp)));
-            }
-
-            Set<Integer> retiredAndNotUpGroups = groupsWithNotRetiredAndNotUp(clusterState);
-            int numberOfGroupsToConsider = retiredAndNotUpGroups.size();
-            // Subtract one group if node is in a group with nodes already retired or not up, since number of such groups will
-            // not increase if we allow node to go down
-            if (aGroupContainsNode(retiredAndNotUpGroups, node)) {
-                numberOfGroupsToConsider = retiredAndNotUpGroups.size() - 1;
-            }
-            if (numberOfGroupsToConsider < maxNumberOfGroupsAllowedToBeDown) {
-                log.log(FINE, "Allow, retiredAndNotUpGroups=" + retiredAndNotUpGroups);
-                return Optional.of(allow());
-            }
-
-            return Optional.of(disallow(String.format("At most %d groups can have wanted state: %s",
-                                                      maxNumberOfGroupsAllowedToBeDown,
-                                                      sortSetIntoList(retiredAndNotUpGroups))));
-        } else {
-            // Return a disallow-result if there is another node with a wanted state
-            var otherNodeHasWantedState = otherNodeHasWantedState(nodeInfo);
-            if (otherNodeHasWantedState.notAllowed())
-                return Optional.of(otherNodeHasWantedState);
+        Set<Integer> groupsWithNodesWantedStateNotUp = groupsWithUserWantedStateNotUp();
+        if (groupsWithNodesWantedStateNotUp.size() == 0) {
+            log.log(FINE, "groupsWithNodesWantedStateNotUp=0");
+            return Optional.empty();
         }
-        return Optional.empty();
+
+        Set<Integer> groupsWithSameStateAndDescription = groupsWithSameStateAndDescription(MAINTENANCE, newDescription);
+        if (aGroupContainsNode(groupsWithSameStateAndDescription, node)) {
+            log.log(FINE, "Node is in group with same state and description, allow");
+            return Optional.of(allow());
+        }
+        // There are groups with nodes not up, but with another description, probably operator set
+        if (groupsWithSameStateAndDescription.size() == 0) {
+            return Optional.of(disallow("Wanted state already set for another node in groups: " +
+                                        sortSetIntoList(groupsWithNodesWantedStateNotUp)));
+        }
+
+        Set<Integer> retiredAndNotUpGroups = groupsWithNotRetiredAndNotUp(clusterState);
+        int numberOfGroupsToConsider = retiredAndNotUpGroups.size();
+        // Subtract one group if node is in a group with nodes already retired or not up, since number of such groups will
+        // not increase if we allow node to go down
+        if (aGroupContainsNode(retiredAndNotUpGroups, node)) {
+            numberOfGroupsToConsider = retiredAndNotUpGroups.size() - 1;
+        }
+        if (numberOfGroupsToConsider < maxNumberOfGroupsAllowedToBeDown) {
+            log.log(FINE, "Allow, retiredAndNotUpGroups=" + retiredAndNotUpGroups);
+            return Optional.of(allow());
+        }
+
+        return Optional.of(disallow(String.format("At most %d groups can have wanted state: %s",
+                                                  maxNumberOfGroupsAllowedToBeDown,
+                                                  sortSetIntoList(retiredAndNotUpGroups))));
     }
 
     private static boolean nodeIsDown(ClusterState clusterState, NodeInfo nodeInfo) {
