@@ -38,7 +38,6 @@ public interface ModelContext {
 
     ApplicationPackage applicationPackage();
     Optional<Model> previousModel();
-    default Optional<ApplicationPackage> permanentApplicationPackage() { return Optional.empty(); } // TODO: Remove when oldest model version is 8.95
     HostProvisioner getHostProvisioner();
     Provisioned provisioned();
     DeployLogger deployLogger();
