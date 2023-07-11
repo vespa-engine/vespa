@@ -19,36 +19,48 @@ public class ContainerRestartValidatorTest {
 
     @Test
     void validator_returns_action_for_containers_with_restart_on_deploy_enabled() {
-        VespaModel current = createModel(true);
-        VespaModel next = createModel(true);
+        VespaModel current = createModel(true, false);
+        VespaModel next = createModel(true, false);
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(2, result.size());
+        assertTrue(result.get(0).ignoreForInternalRedeploy());
+        assertTrue(result.get(1).ignoreForInternalRedeploy());
+    }
+
+    @Test
+    void validator_returns_not_ignored_action_for_containers_with_restart_on_internal_redeploy_always() {
+        VespaModel current = createModel(true, true);
+        VespaModel next = createModel(true, true);
+        List<ConfigChangeAction> result = validateModel(current, next);
+        assertEquals(2, result.size());
+        assertFalse(result.get(0).ignoreForInternalRedeploy());
+        assertFalse(result.get(1).ignoreForInternalRedeploy());
     }
 
     @Test
     void validator_returns_empty_list_for_containers_with_restart_on_deploy_disabled() {
-        VespaModel current = createModel(false);
-        VespaModel next = createModel(false);
+        VespaModel current = createModel(false, true);
+        VespaModel next = createModel(false, true);
         List<ConfigChangeAction> result = validateModel(current, next);
         assertTrue(result.isEmpty());
     }
 
     @Test
     void validator_returns_empty_list_for_containers_with_restart_on_deploy_disabled_where_previously_enabled() {
-        VespaModel current = createModel(true);
-        VespaModel next = createModel(false);
+        VespaModel current = createModel(true, true);
+        VespaModel next = createModel(false, true);
         List<ConfigChangeAction> result = validateModel(current, next);
         assertTrue(result.isEmpty());
     }
 
     @Test
     void restart_on_deploy_is_propagated_to_cluster() {
-        VespaModel model1 = createModel(false);
+        VespaModel model1 = createModel(false, false);
         assertFalse(model1.getContainerClusters().get("cluster1").getDeferChangesUntilRestart());
         assertFalse(model1.getContainerClusters().get("cluster2").getDeferChangesUntilRestart());
         assertFalse(model1.getContainerClusters().get("cluster3").getDeferChangesUntilRestart());
 
-        VespaModel model2 = createModel(true);
+        VespaModel model2 = createModel(true, false);
         assertTrue(model2.getContainerClusters().get("cluster1").getDeferChangesUntilRestart());
         assertTrue(model2.getContainerClusters().get("cluster2").getDeferChangesUntilRestart());
         assertFalse(model2.getContainerClusters().get("cluster3").getDeferChangesUntilRestart());
@@ -58,7 +70,7 @@ public class ContainerRestartValidatorTest {
         return new ContainerRestartValidator().validate(current, next, new DeployState.Builder().build());
     }
 
-    private static VespaModel createModel(boolean restartOnDeploy) {
+    private static VespaModel createModel(boolean restartOnDeploy, boolean alwaysRestart) {
         return new VespaModelCreatorWithMockPkg(
                 null,
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -69,6 +81,9 @@ public class ContainerRestartValidatorTest {
                 "       </http>\n" +
                 "       <config name='container.qr'>\n" +
                 "           <restartOnDeploy>" + restartOnDeploy + "</restartOnDeploy>\n" +
+              (alwaysRestart
+              ? "           <restartOnInternalRedeploy>always</restartOnInternalRedeploy>\n"
+              : "") +
                 "       </config>\n" +
                 "   </container>\n" +
                 "   <container id='cluster2' version='1.0'>\n" +
@@ -77,6 +92,9 @@ public class ContainerRestartValidatorTest {
                 "       </http>\n" +
                 "       <config name='container.qr'>\n" +
                 "           <restartOnDeploy>" + restartOnDeploy + "</restartOnDeploy>\n" +
+              (alwaysRestart
+              ? "           <restartOnInternalRedeploy>always</restartOnInternalRedeploy>\n"
+              : "") +
                 "       </config>\n" +
                 "   </container>\n" +
                 "   <container id='cluster3' version='1.0'>\n" +

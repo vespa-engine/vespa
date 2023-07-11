@@ -34,6 +34,9 @@ nodeIndex int default=0
 ## Force restart of container on deploy, and defer any changes until restart
 restartOnDeploy bool default=false restart
 
+## Specifies under what circumstances restart on deploy should apply to internal redeployments
+restartOnInternalRedeploy enum { always, node_changes, content_changes, never } default=never restart
+
 ## Force heapdump if process is not able to stop within shutdown.timeout
 shutdown.dumpHeapOnTimeout bool default=false
 
