@@ -491,6 +491,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>com.github.luben</groupId>
+                <artifactId>zstd-jni</artifactId>
+                <version>1.5.5-4</version>
+            </dependency>
+            <dependency>
                 <!-- Needed by zookeeper, which has an optional dependency.
                      Version must be the same as the one zk uses - check the zk pom file.  -->
                 <groupId>com.github.spotbugs</groupId>
@@ -1126,6 +1131,7 @@
                 <artifactId>checker-qual</artifactId>
                 <version>3.30.0</version>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
 
