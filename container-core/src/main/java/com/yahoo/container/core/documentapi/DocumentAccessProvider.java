@@ -18,11 +18,8 @@ public class DocumentAccessProvider implements Provider<VespaDocumentAccess> {
     private final VespaDocumentAccess access;
 
     @Inject
-    public DocumentAccessProvider(DocumentmanagerConfig documentmanagerConfig,
-                                  MessagebusConfig messagebusConfig, DocumentProtocolPoliciesConfig policiesConfig,
-                                  DistributionConfig distributionConfig) {
-        this.access = new VespaDocumentAccess(documentmanagerConfig, System.getProperty("config.id"),
-                                              messagebusConfig, policiesConfig, distributionConfig);
+    public DocumentAccessProvider(DocumentmanagerConfig documentmanagerConfig, MessagebusConfig messagebusConfig) {
+        this.access = new VespaDocumentAccess(documentmanagerConfig, System.getProperty("config.id"), messagebusConfig);
     }
 
     @Override
