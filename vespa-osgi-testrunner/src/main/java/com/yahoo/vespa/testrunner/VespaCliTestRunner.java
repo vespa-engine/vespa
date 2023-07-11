@@ -116,7 +116,7 @@ public class VespaCliTestRunner implements TestRunner {
         ProcessBuilder builder = new ProcessBuilder("vespa", "test", suitePath.get().toAbsolutePath().toString(),
                                                     "--application", config.application().toFullString(),
                                                     "--zone", config.zone().value(),
-                                                    "--target", "cloud");
+                                                    "--target", config.system().isPublic() ? "cloud" : "hosted");
         builder.redirectErrorStream(true);
         // The CI environment variables tells Vespa CLI to omit certain warnings that do not apply to CI environments
         builder.environment().put("CI", "true");
@@ -130,13 +130,12 @@ public class VespaCliTestRunner implements TestRunner {
     }
 
     private static String toSuiteDirectoryName(Suite suite) {
-        switch (suite) {
-            case SYSTEM_TEST: return "system-test";
-            case STAGING_SETUP_TEST: return "staging-setup";
-            case STAGING_TEST: return "staging-test";
-            case PRODUCTION_TEST: return "production-test";
-            default: throw new IllegalArgumentException("Unsupported test suite '" + suite + "'");
-        }
+        return switch (suite) {
+            case SYSTEM_TEST -> "system-test";
+            case STAGING_SETUP_TEST -> "staging-setup";
+            case STAGING_TEST -> "staging-test";
+            case PRODUCTION_TEST -> "production-test";
+        };
     }
 
     private void log(Level level, String message, Throwable thrown) {
