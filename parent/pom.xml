@@ -1147,7 +1147,7 @@
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <athenz.version>1.11.34</athenz.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
-        <aws-sdk.version>1.12.460</aws-sdk.version>
+        <aws-sdk.version>1.12.505</aws-sdk.version>
         <!-- Athenz END -->
 
         <!-- WARNING: If you change curator version, you also need to update
