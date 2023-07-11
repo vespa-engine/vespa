@@ -241,7 +241,7 @@
     <properties>
         <aopalliance.version>1.0</aopalliance.version>
         <error-prone-annotations.version>2.18.0</error-prone-annotations.version>
-        <guava.version>27.1-jre</guava.version>
+        <guava.version>32.1.1-jre</guava.version>
         <guice.version>4.2.3</guice.version>
         <jackson2.version>2.15.2</jackson2.version>
         <jackson-databind.version>2.15.2</jackson-databind.version>
