@@ -6,6 +6,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -124,9 +125,14 @@ public class VespaCliTestRunner implements TestRunner {
         builder.environment().put("VESPA_CLI_HOME", ensureDirectoryForVespaCli("cli-home").toString());
         builder.environment().put("VESPA_CLI_CACHE_DIR", ensureDirectoryForVespaCli("cli-cache").toString());
         builder.environment().put("VESPA_CLI_ENDPOINTS", toEndpointsConfig(config));
-        builder.environment().put("VESPA_CLI_DATA_PLANE_KEY_FILE", artifactsPath.resolve("key").toAbsolutePath().toString());
-        builder.environment().put("VESPA_CLI_DATA_PLANE_CERT_FILE", artifactsPath.resolve("cert").toAbsolutePath().toString());
+        Path certRoot = certificateRoot(config);
+        builder.environment().put("VESPA_CLI_DATA_PLANE_KEY_FILE", certRoot.resolve("key").toAbsolutePath().toString());
+        builder.environment().put("VESPA_CLI_DATA_PLANE_CERT_FILE", certRoot.resolve("cert").toAbsolutePath().toString());
         return builder;
+    }
+
+    private Path certificateRoot(TestConfig config) {
+        return config.system().isPublic() ? artifactsPath : Path.of(Defaults.getDefaults().underVespaHome("var/vespa/sia"));
     }
 
     private static String toSuiteDirectoryName(Suite suite) {
