@@ -49,13 +49,12 @@ public class GroupPreparer {
      * @param application        the application we are allocating to
      * @param cluster            the cluster and group we are allocating to
      * @param requested          a specification of the requested nodes
-     * @param allNodes           list of all nodes and hosts
      * @return the list of nodes this cluster group will have allocated if activated
      */
     // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requested, LockedNodeList allNodes) {
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
         log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " +
                                   requested.resources().orElse(NodeResources.unspecified()));
 
@@ -63,6 +62,7 @@ public class GroupPreparer {
 
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
         // and we can return nodes previously allocated.
+        LockedNodeList allNodes = nodeRepository.nodes().list(PROBE_LOCK);
         NodeIndices indices = new NodeIndices(cluster.id(), allNodes);
         NodeAllocation probeAllocation = prepareAllocation(application, cluster, requested, indices::probeNext, allNodes);
         if (probeAllocation.fulfilledAndNoChanges()) {
@@ -75,9 +75,6 @@ public class GroupPreparer {
             return prepareWithLocks(application, cluster, requested, indices);
         }
     }
-
-    // Use this to create allNodes param to prepare method for first invocation of prepare
-    LockedNodeList createUnlockedNodeList() { return nodeRepository.nodes().list(PROBE_LOCK); }
 
     /// Note that this will write to the node repo.
     private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requested, NodeIndices indices) {
