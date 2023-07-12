@@ -402,22 +402,10 @@ class NodeAllocation {
     }
 
     List<Node> finalNodes() {
-        // Set whether the node is exclusive
-        for (NodeCandidate candidate : nodes.values()) {
-            candidate = candidate.withNode();
-            Allocation allocation = candidate.allocation().get();
-            candidate = candidate.withNode(candidate.toNode().with(allocation.with(allocation.membership()
-                                                                                             .with(allocation.membership().cluster().exclusive(cluster.isExclusive())))));
-            nodes.put(candidate.toNode().hostname(), candidate);
-        }
-
-        // Place in groups
         GroupAssigner groupAssigner = new GroupAssigner(requested, allNodes, nodeRepository.clock());
         Collection<NodeCandidate> finalNodes = groupAssigner.assignTo(nodes.values());
         nodes.clear();
         finalNodes.forEach(candidate -> nodes.put(candidate.toNode().hostname(), candidate));
-
-        // Set cluster ID and index
         return finalNodes.stream().map(NodeCandidate::toNode).toList();
     }
 
