@@ -85,6 +85,7 @@
             <arg>-Xlint:all</arg>
             <arg>-Xlint:-unchecked</arg>
             <arg>-Xlint:-processing</arg>
+            <arg>-Xlint:-this-escape</arg>
             <arg>-Werror</arg>
           </compilerArgs>
         </configuration>
