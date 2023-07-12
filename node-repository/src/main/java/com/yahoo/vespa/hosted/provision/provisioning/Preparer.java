@@ -63,13 +63,9 @@ class Preparer {
         List<Integer> usedIndices = clusterNodes.mapToList(node -> node.allocation().get().membership().index());
         NodeIndices indices = new NodeIndices(usedIndices);
 
-        GroupPreparer.PrepareResult result = groupPreparer.prepare(application, cluster,
-                                                                   requestedNodes,
-                                                                   surplusNodes, indices,
-                                                                   allNodes);
-        List<Node> accepted = result.prepared();
+        List<Node> accepted = groupPreparer.prepare(application, cluster, requestedNodes, surplusNodes, indices, allNodes);
         if (requestedNodes.rejectNonActiveParent()) {
-            NodeList activeHosts = result.allNodes().state(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
+            NodeList activeHosts = allNodes.state(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
             accepted = accepted.stream()
                                .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
                                .toList();

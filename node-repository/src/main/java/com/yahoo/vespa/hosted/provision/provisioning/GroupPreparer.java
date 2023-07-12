@@ -35,9 +35,6 @@ public class GroupPreparer {
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
 
-    /** Contains list of prepared nodes and the {@link LockedNodeList} object to use for next prepare call */
-    record PrepareResult(List<Node> prepared, LockedNodeList allNodes) {}
-
     public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
@@ -53,14 +50,13 @@ public class GroupPreparer {
      *                           This method will remove from this list if it finds it needs additional nodes
      * @param indices            the next available node indices for this cluster.
      *                           This method will consume these when it allocates new nodes to the cluster.
-     * @param allNodes           list of all nodes and hosts. Use {@link #createUnlockedNodeList()} to create param for
-     *                           first invocation. Then use previous {@link PrepareResult#allNodes()} for the following.
-     * @return the list of nodes this cluster group will have allocated if activated, and
+     * @param allNodes           list of all nodes and hosts
+     * @return the list of nodes this cluster group will have allocated if activated
      */
     // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
-    public PrepareResult prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                  List<Node> surplusActiveNodes, NodeIndices indices,
                                  LockedNodeList allNodes) {
         log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " +
@@ -73,12 +69,11 @@ public class GroupPreparer {
             List<Node> acceptedNodes = probeAllocation.finalNodes();
             surplusActiveNodes.removeAll(acceptedNodes);
             indices.commitProbe();
-            return new PrepareResult(acceptedNodes, allNodes);
+            return acceptedNodes;
         } else {
             // There were some changes, so re-do the allocation with locks
             indices.resetProbe();
-            List<Node> prepared = prepareWithLocks(application, cluster, requestedNodes, surplusActiveNodes, indices);
-            return new PrepareResult(prepared, createUnlockedNodeList());
+            return prepareWithLocks(application, cluster, requestedNodes, surplusActiveNodes, indices);
         }
     }
 
