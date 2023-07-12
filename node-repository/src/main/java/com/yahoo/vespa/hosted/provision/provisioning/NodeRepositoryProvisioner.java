@@ -238,6 +238,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     }
 
     private List<HostSpec> asSortedHosts(List<Node> nodes, NodeResources requestedResources) {
+        nodes = new ArrayList<>(nodes);
         nodes.sort(Comparator.comparingInt(node -> node.allocation().get().membership().index()));
         List<HostSpec> hosts = new ArrayList<>(nodes.size());
         for (Node node : nodes) {

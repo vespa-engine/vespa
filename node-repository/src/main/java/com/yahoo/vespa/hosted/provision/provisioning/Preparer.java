@@ -30,14 +30,14 @@ class Preparer {
     }
 
     /** Prepare all required resources for the given application and cluster */
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
         try {
-            var nodes = prepareNodes(application, cluster, requestedNodes);
-            prepareLoadBalancer(application, cluster, requestedNodes);
+            var nodes = prepareNodes(application, cluster, requested);
+            prepareLoadBalancer(application, cluster, requested);
             return nodes;
         }
         catch (NodeAllocationException e) {
-            throw new NodeAllocationException("Could not satisfy " + requestedNodes +
+            throw new NodeAllocationException("Could not satisfy " + requested +
                                               " in " + application + " " + cluster, e,
                                               e.retryable());
         }
@@ -52,14 +52,12 @@ class Preparer {
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
     private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
-        LockedNodeList allNodes = groupPreparer.createUnlockedNodeList();
-        List<Node> accepted = groupPreparer.prepare(application, cluster, requested, allNodes);
-        return new ArrayList<>(accepted);
+        return groupPreparer.prepare(application, cluster, requested, groupPreparer.createUnlockedNodeList());
     }
 
     /** Prepare a load balancer for given application and cluster */
-    public void prepareLoadBalancer(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
-        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.prepare(application, cluster, requestedNodes));
+    public void prepareLoadBalancer(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
+        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.prepare(application, cluster, requested));
     }
 
 }
