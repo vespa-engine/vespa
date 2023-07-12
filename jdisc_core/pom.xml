@@ -211,7 +211,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>java</executable>
+                            <executable>/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java</executable>
                             <arguments>
                                 <argument>--add-opens=java.base/java.net=ALL-UNNAMED</argument>
                                 <argument>-classpath</argument>
