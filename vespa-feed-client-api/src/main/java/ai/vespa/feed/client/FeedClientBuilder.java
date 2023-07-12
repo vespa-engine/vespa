@@ -84,6 +84,15 @@ public interface FeedClientBuilder {
      */
     FeedClientBuilder addRequestHeader(String name, Supplier<String> valueSupplier);
 
+    /** Adds HTTP request header to all proxy requests. */
+    FeedClientBuilder addProxyRequestHeader(String name, String value);
+
+    /**
+     * Adds HTTP request header to all proxy requests. Value {@link Supplier} is invoked for each HTTP request,
+     * i.e. value can be dynamically updated for each new proxy connection.
+     */
+    FeedClientBuilder addProxyRequestHeader(String name, Supplier<String> valueSupplier);
+
     /**
      * Overrides default retry strategy.
      * @see FeedClient.RetryStrategy

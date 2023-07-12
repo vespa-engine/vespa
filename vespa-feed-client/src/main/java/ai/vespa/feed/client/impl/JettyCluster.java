@@ -85,9 +85,7 @@ class JettyCluster implements Cluster {
                 Request jettyReq = client.newRequest(URI.create(endpoint.uri + req.path()))
                         .version(HttpVersion.HTTP_2)
                         .method(HttpMethod.fromString(req.method()))
-                        .headers(hs -> req.headers().forEach((k, v) -> {
-                            if (!isProxyHeader(k)) hs.add(k, v.get());
-                        }))
+                        .headers(hs -> req.headers().forEach((k, v) -> hs.add(k, v.get())))
                         .idleTimeout(IDLE_TIMEOUT.toMillis(), MILLISECONDS)
                         .timeout(reqTimeoutMillis, MILLISECONDS);
                 if (req.body() != null) {
@@ -187,19 +185,16 @@ class JettyCluster implements Cluster {
             httpClient.getProxyConfiguration().addProxy(
                     new HttpProxy(address, false, new Origin.Protocol(Collections.singletonList("h2c"), false)));
         }
-        Map<String, Supplier<String>> proxyHeaders = new TreeMap<>();
-        b.requestHeaders.forEach((k, v) -> { if (isProxyHeader(k)) proxyHeaders.put(k, v); });
-        if (!proxyHeaders.isEmpty()) {
+        Map<String, Supplier<String>> proxyHeadersCopy = new TreeMap<>(b.proxyRequestHeaders);
+        if (!proxyHeadersCopy.isEmpty()) {
             httpClient.getAuthenticationStore().addAuthenticationResult(new Authentication.Result() {
                 @Override public URI getURI() { return URI.create(endpointUri(b.proxy)); }
                 @Override public void apply(Request r) {
-                    r.headers(hs -> proxyHeaders.forEach((k, v) -> hs.add(k, v.get())));
+                    r.headers(hs -> proxyHeadersCopy.forEach((k, v) -> hs.add(k, v.get())));
                 }
             });
         }
     }
-
-    private static boolean isProxyHeader(String h) { return h.equalsIgnoreCase(HttpHeader.PROXY_AUTHORIZATION.asString()); }
 
     private static Endpoint findLeastBusyEndpoint(List<Endpoint> endpoints) {
         Endpoint leastBusy = endpoints.get(0);

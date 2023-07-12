@@ -39,6 +39,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
 
     List<URI> endpoints;
     final Map<String, Supplier<String>> requestHeaders = new HashMap<>();
+    final Map<String, Supplier<String>> proxyRequestHeaders = new HashMap<>();
     SSLContext sslContext;
     HostnameVerifier hostnameVerifier;
     HostnameVerifier proxyHostnameVerifier;
@@ -135,6 +136,18 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     @Override
     public FeedClientBuilderImpl addRequestHeader(String name, Supplier<String> valueSupplier) {
         this.requestHeaders.put(requireNonNull(name), requireNonNull(valueSupplier));
+        return this;
+    }
+
+    @Override
+    public FeedClientBuilder addProxyRequestHeader(String name, String value) {
+        this.proxyRequestHeaders.put(requireNonNull(name), () -> requireNonNull(value));
+        return this;
+    }
+
+    @Override
+    public FeedClientBuilder addProxyRequestHeader(String name, Supplier<String> valueSupplier) {
+        this.proxyRequestHeaders.put(requireNonNull(name), requireNonNull(valueSupplier));
         return this;
     }
 
