@@ -13,6 +13,7 @@ import org.eclipse.jetty.client.api.Authentication;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.client.api.Result;
+import org.eclipse.jetty.client.dynamic.HttpClientTransportDynamic;
 import org.eclipse.jetty.client.util.BufferingResponseListener;
 import org.eclipse.jetty.client.util.BytesRequestContent;
 import org.eclipse.jetty.http.HttpField;
@@ -20,7 +21,8 @@ import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http2.client.HTTP2Client;
-import org.eclipse.jetty.http2.client.http.HttpClientTransportOverHTTP2;
+import org.eclipse.jetty.http2.client.http.ClientConnectionFactoryOverHTTP2;
+import org.eclipse.jetty.io.ClientConnectionFactory;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.util.HttpCookieStore;
 import org.eclipse.jetty.util.Pool;
@@ -145,7 +147,8 @@ class JettyCluster implements Cluster {
         int initialWindow = Integer.MAX_VALUE;
         h2Client.setInitialSessionRecvWindow(initialWindow);
         h2Client.setInitialStreamRecvWindow(initialWindow);
-        HttpClientTransportOverHTTP2 transport = new HttpClientTransportOverHTTP2(h2Client);
+        ClientConnectionFactory.Info http2 = new ClientConnectionFactoryOverHTTP2.HTTP2(h2Client);
+        HttpClientTransportDynamic transport = new HttpClientTransportDynamic(connector, http2);
         transport.setConnectionPoolFactory(dest -> {
             MultiplexConnectionPool pool = new MultiplexConnectionPool(
                     dest, Pool.StrategyType.RANDOM, b.connectionsPerEndpoint, false, dest, Integer.MAX_VALUE);
