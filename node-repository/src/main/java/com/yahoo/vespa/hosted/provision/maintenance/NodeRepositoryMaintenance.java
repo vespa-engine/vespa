@@ -128,6 +128,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
         DefaultTimes(Zone zone, Deployer deployer) {
             boolean isCdZone = zone.system().isCd();
+            boolean isProduction = zone.environment().isProduction();
+            boolean isTest = zone.environment().isTest();
 
             autoscalingInterval = Duration.ofMinutes(5);
             dynamicProvisionerInterval = Duration.ofMinutes(3);
@@ -157,10 +159,10 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             hostRetirerInterval = Duration.ofMinutes(30);
             hostFlavorUpgraderInterval = Duration.ofMinutes(30);
-            // CD (de)provisions hosts frequently. Expire deprovisioned ones earlier
-            deprovisionedExpiry = isCdZone ? Duration.ofDays(1) : Duration.ofDays(30);
+            // CD, test and staging (de)provisions hosts frequently. Expire deprovisioned ones earlier
+            deprovisionedExpiry = (isCdZone || isTest) ? Duration.ofDays(3) : Duration.ofDays(30);
 
-            if (zone.environment().isProduction() && ! isCdZone) {
+            if (isProduction && ! isCdZone) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(15);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
