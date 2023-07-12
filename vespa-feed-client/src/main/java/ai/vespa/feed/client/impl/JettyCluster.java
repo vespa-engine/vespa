@@ -181,15 +181,12 @@ class JettyCluster implements Cluster {
         Map<String, Supplier<String>> proxyHeaders = new TreeMap<>();
         b.requestHeaders.forEach((k, v) -> { if (isProxyHeader(k)) proxyHeaders.put(k, v); });
         if (!proxyHeaders.isEmpty()) {
-            for (URI endpoint : b.endpoints) {
-                httpClient.getAuthenticationStore().addAuthenticationResult(new Authentication.Result() {
-                    @Override public URI getURI() { return URI.create(endpointUri(endpoint)); }
-                    @Override public void apply(Request r) {
-                        r.headers(hs -> proxyHeaders.forEach((k, v) -> hs.add(k, v.get())));
-                    }
-                });
-
-            }
+            httpClient.getAuthenticationStore().addAuthenticationResult(new Authentication.Result() {
+                @Override public URI getURI() { return URI.create(endpointUri(b.proxy)); }
+                @Override public void apply(Request r) {
+                    r.headers(hs -> proxyHeaders.forEach((k, v) -> hs.add(k, v.get())));
+                }
+            });
         }
     }
 
