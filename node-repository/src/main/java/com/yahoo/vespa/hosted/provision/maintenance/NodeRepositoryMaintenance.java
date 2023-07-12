@@ -160,7 +160,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             hostRetirerInterval = Duration.ofMinutes(30);
             hostFlavorUpgraderInterval = Duration.ofMinutes(30);
             // CD, test and staging (de)provisions hosts frequently. Expire deprovisioned ones earlier
-            deprovisionedExpiry = (isCdZone || isTest) ? Duration.ofDays(1) : Duration.ofDays(30);
+            deprovisionedExpiry = (isCdZone || isTest) ? Duration.ofDays(3) : Duration.ofDays(30);
 
             if (isProduction && ! isCdZone) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
