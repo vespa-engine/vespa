@@ -147,20 +147,20 @@ public class Preparer {
         }
     }
 
-    private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
+    private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requested,
                                              Supplier<Integer> nextIndex, LockedNodeList allNodes) {
 
-        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes, nextIndex, nodeRepository);
+        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, nextIndex, nodeRepository);
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
                                                           application,
                                                           cluster,
-                                                          requestedNodes,
+                                                          requested,
                                                           nodeRepository.zone().cloud().dynamicProvisioning(),
                                                           nodeRepository.nameResolver(),
                                                           nodeRepository.nodes(),
                                                           nodeRepository.resourcesCalculator(),
                                                           nodeRepository.spareCount(),
-                                                          requestedNodes.cloudAccount().isExclave(nodeRepository.zone()));
+                                                          requested.cloudAccount().isExclave(nodeRepository.zone()));
         allocation.offer(prioritizer.collect());
         return allocation;
     }

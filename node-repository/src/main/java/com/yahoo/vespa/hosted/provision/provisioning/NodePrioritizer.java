@@ -33,7 +33,7 @@ public class NodePrioritizer {
     private final LockedNodeList allNodes;
     private final HostCapacity capacity;
     private final HostResourcesCalculator calculator;
-    private final NodeSpec requestedNodes;
+    private final NodeSpec requested;
     private final ApplicationId application;
     private final ClusterSpec clusterSpec;
     private final NameResolver nameResolver;
@@ -51,7 +51,7 @@ public class NodePrioritizer {
         this.allNodes = allNodes;
         this.calculator = hostResourcesCalculator;
         this.capacity = new HostCapacity(this.allNodes, hostResourcesCalculator);
-        this.requestedNodes = nodeSpec;
+        this.requested = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.application = application;
         this.dynamicProvisioning = dynamicProvisioning;
@@ -70,7 +70,7 @@ public class NodePrioritizer {
                         .stream())
                 .distinct()
                 .count();
-        this.topologyChange = currentGroups != requestedNodes.groups();
+        this.topologyChange = currentGroups != requested.groups();
 
         this.currentClusterSize = (int) nonRetiredNodesInCluster.state(Node.State.active).stream().count();
 
@@ -116,7 +116,7 @@ public class NodePrioritizer {
 
     /** Add a node on each host with enough capacity for the requested flavor  */
     private void addCandidatesOnExistingHosts() {
-        if (requestedNodes.resources().isEmpty()) return;
+        if (requested.resources().isEmpty()) return;
 
         for (Node host : allNodes) {
             if ( ! nodes.canAllocateTenantNodeTo(host, dynamicProvisioning)) continue;
@@ -126,10 +126,10 @@ public class NodePrioritizer {
             if (host.exclusiveToApplicationId().isPresent() && ! fitsPerfectly(host)) continue;
             if ( ! host.exclusiveToClusterType().map(clusterSpec.type()::equals).orElse(true)) continue;
             if (spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
-            if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
+            if ( ! capacity.hasCapacity(host, requested.resources().get())) continue;
             if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
 
-            candidates.add(NodeCandidate.createNewChild(requestedNodes.resources().get(),
+            candidates.add(NodeCandidate.createNewChild(requested.resources().get(),
                                                         capacity.availableCapacityOf(host),
                                                         host,
                                                         spareHosts.contains(host),
@@ -140,14 +140,14 @@ public class NodePrioritizer {
     }
 
     private boolean fitsPerfectly(Node host) {
-        return calculator.advertisedResourcesOf(host.flavor()).compatibleWith(requestedNodes.resources().get());
+        return calculator.advertisedResourcesOf(host.flavor()).compatibleWith(requested.resources().get());
     }
 
     /** Add existing nodes allocated to the application */
     private void addApplicationNodes() {
         EnumSet<Node.State> legalStates = EnumSet.of(Node.State.active, Node.State.inactive, Node.State.reserved);
         allNodes.stream()
-                .filter(node -> node.type() == requestedNodes.type())
+                .filter(node -> node.type() == requested.type())
                 .filter(node -> legalStates.contains(node.state()))
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(application))
@@ -160,7 +160,7 @@ public class NodePrioritizer {
     /** Add nodes already provisioned, but not allocated to any application */
     private void addReadyNodes() {
         allNodes.stream()
-                .filter(node -> node.type() == requestedNodes.type())
+                .filter(node -> node.type() == requested.type())
                 .filter(node -> node.state() == Node.State.ready)
                 .map(node -> candidateFrom(node, false))
                 .filter(n -> !n.violatesSpares || canAllocateToSpareHosts)
@@ -179,11 +179,11 @@ public class NodePrioritizer {
                                              isSurplus,
                                              false,
                                              parent.exclusiveToApplicationId().isEmpty()
-                                             && requestedNodes.canResize(node.resources(),
-                                                                         capacity.unusedCapacityOf(parent),
-                                                                         clusterSpec.type(),
-                                                                         topologyChange,
-                                                                         currentClusterSize));
+                                             && requested.canResize(node.resources(),
+                                                                    capacity.unusedCapacityOf(parent),
+                                                                    clusterSpec.type(),
+                                                                    topologyChange,
+                                                                    currentClusterSize));
         } else {
             return NodeCandidate.createStandalone(node, isSurplus, false);
         }
@@ -196,7 +196,7 @@ public class NodePrioritizer {
                                      .orElse(nodesInCluster);
         int failedNodesInGroup = nodesInGroup.failing().size() + nodesInGroup.state(Node.State.failed).size();
         if (failedNodesInGroup == 0) return false;
-        return ! requestedNodes.fulfilledBy(nodesInGroup.size() - failedNodesInGroup);
+        return ! requested.fulfilledBy(nodesInGroup.size() - failedNodesInGroup);
     }
 
     /**
