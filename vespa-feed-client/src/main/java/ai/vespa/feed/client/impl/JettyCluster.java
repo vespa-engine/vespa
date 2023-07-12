@@ -8,10 +8,12 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.MultiplexConnectionPool;
 import org.eclipse.jetty.client.Origin;
+import org.eclipse.jetty.client.WWWAuthenticationProtocolHandler;
 import org.eclipse.jetty.client.api.Authentication;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.client.api.Result;
+import org.eclipse.jetty.client.dynamic.HttpClientTransportDynamic;
 import org.eclipse.jetty.client.util.BufferingResponseListener;
 import org.eclipse.jetty.client.util.BytesRequestContent;
 import org.eclipse.jetty.http.HttpField;
@@ -19,7 +21,8 @@ import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http2.client.HTTP2Client;
-import org.eclipse.jetty.http2.client.http.HttpClientTransportOverHTTP2;
+import org.eclipse.jetty.http2.client.http.ClientConnectionFactoryOverHTTP2;
+import org.eclipse.jetty.io.ClientConnectionFactory;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.util.HttpCookieStore;
 import org.eclipse.jetty.util.Pool;
@@ -82,9 +85,7 @@ class JettyCluster implements Cluster {
                 Request jettyReq = client.newRequest(URI.create(endpoint.uri + req.path()))
                         .version(HttpVersion.HTTP_2)
                         .method(HttpMethod.fromString(req.method()))
-                        .headers(hs -> req.headers().forEach((k, v) -> {
-                            if (!isProxyHeader(k)) hs.add(k, v.get());
-                        }))
+                        .headers(hs -> req.headers().forEach((k, v) -> hs.add(k, v.get())))
                         .idleTimeout(IDLE_TIMEOUT.toMillis(), MILLISECONDS)
                         .timeout(reqTimeoutMillis, MILLISECONDS);
                 if (req.body() != null) {
@@ -144,7 +145,8 @@ class JettyCluster implements Cluster {
         int initialWindow = Integer.MAX_VALUE;
         h2Client.setInitialSessionRecvWindow(initialWindow);
         h2Client.setInitialStreamRecvWindow(initialWindow);
-        HttpClientTransportOverHTTP2 transport = new HttpClientTransportOverHTTP2(h2Client);
+        ClientConnectionFactory.Info http2 = new ClientConnectionFactoryOverHTTP2.HTTP2(h2Client);
+        HttpClientTransportDynamic transport = new HttpClientTransportDynamic(connector, http2);
         transport.setConnectionPoolFactory(dest -> {
             MultiplexConnectionPool pool = new MultiplexConnectionPool(
                     dest, Pool.StrategyType.RANDOM, b.connectionsPerEndpoint, false, dest, Integer.MAX_VALUE);
@@ -161,6 +163,8 @@ class JettyCluster implements Cluster {
 
         if (b.proxy != null) addProxyConfiguration(b, httpClient);
         try { httpClient.start(); } catch (Exception e) { throw new IOException(e); }
+        // Must be removed after client has started
+        httpClient.getProtocolHandlers().remove(WWWAuthenticationProtocolHandler.NAME);
         return httpClient;
     }
 
@@ -168,9 +172,12 @@ class JettyCluster implements Cluster {
         Origin.Address address = new Origin.Address(b.proxy.getHost(), b.proxy.getPort());
         if (b.proxy.getScheme().equals("https")) {
             SslContextFactory.Client proxySslCtxFactory = new SslContextFactory.Client();
-            if (b.hostnameVerifier != null) proxySslCtxFactory.setHostnameVerifier(b.hostnameVerifier);
-            // Disable built-in hostname verification in the JDK's TLS implementation
-            proxySslCtxFactory.setEndpointIdentificationAlgorithm(null);
+            if (b.proxyHostnameVerifier != null) {
+                proxySslCtxFactory.setHostnameVerifier(b.proxyHostnameVerifier);
+                // Disable built-in hostname verification in the JDK's TLS implementation
+                proxySslCtxFactory.setEndpointIdentificationAlgorithm(null);
+            }
+            proxySslCtxFactory.setSslContext(b.constructProxySslContext());
             try { proxySslCtxFactory.start(); } catch (Exception e) { throw new IOException(e); }
             httpClient.getProxyConfiguration().addProxy(
                     new HttpProxy(address, proxySslCtxFactory, new Origin.Protocol(Collections.singletonList("h2"), false)));
@@ -178,22 +185,16 @@ class JettyCluster implements Cluster {
             httpClient.getProxyConfiguration().addProxy(
                     new HttpProxy(address, false, new Origin.Protocol(Collections.singletonList("h2c"), false)));
         }
-        Map<String, Supplier<String>> proxyHeaders = new TreeMap<>();
-        b.requestHeaders.forEach((k, v) -> { if (isProxyHeader(k)) proxyHeaders.put(k, v); });
-        if (!proxyHeaders.isEmpty()) {
-            for (URI endpoint : b.endpoints) {
-                httpClient.getAuthenticationStore().addAuthenticationResult(new Authentication.Result() {
-                    @Override public URI getURI() { return URI.create(endpointUri(endpoint)); }
-                    @Override public void apply(Request r) {
-                        r.headers(hs -> proxyHeaders.forEach((k, v) -> hs.add(k, v.get())));
-                    }
-                });
-
-            }
+        Map<String, Supplier<String>> proxyHeadersCopy = new TreeMap<>(b.proxyRequestHeaders);
+        if (!proxyHeadersCopy.isEmpty()) {
+            httpClient.getAuthenticationStore().addAuthenticationResult(new Authentication.Result() {
+                @Override public URI getURI() { return URI.create(endpointUri(b.proxy)); }
+                @Override public void apply(Request r) {
+                    r.headers(hs -> proxyHeadersCopy.forEach((k, v) -> hs.add(k, v.get())));
+                }
+            });
         }
     }
-
-    private static boolean isProxyHeader(String h) { return h.equalsIgnoreCase(HttpHeader.PROXY_AUTHORIZATION.asString()); }
 
     private static Endpoint findLeastBusyEndpoint(List<Endpoint> endpoints) {
         Endpoint leastBusy = endpoints.get(0);

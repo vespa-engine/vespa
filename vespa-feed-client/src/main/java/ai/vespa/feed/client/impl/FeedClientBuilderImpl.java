@@ -39,8 +39,10 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
 
     List<URI> endpoints;
     final Map<String, Supplier<String>> requestHeaders = new HashMap<>();
+    final Map<String, Supplier<String>> proxyRequestHeaders = new HashMap<>();
     SSLContext sslContext;
     HostnameVerifier hostnameVerifier;
+    HostnameVerifier proxyHostnameVerifier;
     int connectionsPerEndpoint = 8;
     int maxStreamsPerConnection = 128;
     FeedClient.RetryStrategy retryStrategy = defaultRetryStrategy;
@@ -48,9 +50,11 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     Path certificateFile;
     Path privateKeyFile;
     Path caCertificatesFile;
+    Path proxyCaCertificatesFile;
     Collection<X509Certificate> certificate;
     PrivateKey privateKey;
     Collection<X509Certificate> caCertificates;
+    Collection<X509Certificate> proxyCaCertificates;
     boolean benchmark = true;
     boolean dryrun = false;
     boolean speedTest = false;
@@ -105,6 +109,13 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
         return this;
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public FeedClientBuilder setProxyHostnameVerifier(HostnameVerifier verifier) {
+        this.proxyHostnameVerifier = requireNonNull(verifier);
+        return this;
+    }
+
     /** Turns off benchmarking. Attempting to get {@link FeedClient#stats()} will result in an exception. */
     @Override
     public FeedClientBuilderImpl noBenchmarking() {
@@ -125,6 +136,18 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     @Override
     public FeedClientBuilderImpl addRequestHeader(String name, Supplier<String> valueSupplier) {
         this.requestHeaders.put(requireNonNull(name), requireNonNull(valueSupplier));
+        return this;
+    }
+
+    @Override
+    public FeedClientBuilder addProxyRequestHeader(String name, String value) {
+        this.proxyRequestHeaders.put(requireNonNull(name), () -> requireNonNull(value));
+        return this;
+    }
+
+    @Override
+    public FeedClientBuilder addProxyRequestHeader(String name, Supplier<String> valueSupplier) {
+        this.proxyRequestHeaders.put(requireNonNull(name), requireNonNull(valueSupplier));
         return this;
     }
 
@@ -192,11 +215,25 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
         return this;
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public FeedClientBuilderImpl setProxyCaCertificatesFile(Path caCertificatesFile) {
+        this.proxyCaCertificatesFile = caCertificatesFile;
+        return this;
+    }
+
     /** Overrides JVM default SSL truststore */
     @Override
     public FeedClientBuilderImpl setCaCertificates(Collection<X509Certificate> caCertificates) {
         this.caCertificates = caCertificates;
         return this;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public FeedClientBuilder setProxyCaCertificates(Collection<X509Certificate> caCertificates) {
+        this.proxyCaCertificates = caCertificates;
+        return null;
     }
 
     @Override
@@ -236,6 +273,16 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
             sslContextBuilder.withCaCertificates(caCertificates);
         }
         return sslContextBuilder.build();
+    }
+
+    SSLContext constructProxySslContext() throws IOException {
+        SslContextBuilder b = new SslContextBuilder();
+        if (proxyCaCertificatesFile != null) {
+            b.withCaCertificates(proxyCaCertificatesFile);
+        } else if (proxyCaCertificates != null) {
+            b.withCaCertificates(proxyCaCertificates);
+        }
+        return b.build();
     }
 
     private void validateConfiguration() {
