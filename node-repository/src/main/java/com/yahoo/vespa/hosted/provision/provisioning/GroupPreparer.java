@@ -60,9 +60,8 @@ public class GroupPreparer {
                                   requestedNodes.resources().orElse(NodeResources.unspecified()));
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
         // and we can return nodes previously allocated.
-        List<Integer> usedIndices = allNodes.cluster(cluster.id()).mapToList(node -> node.allocation().get().membership().index());
-        NodeIndices indices = new NodeIndices(usedIndices);
 
+        NodeIndices indices = new NodeIndices(cluster.id(), allNodes);
         NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
                                                            indices::probeNext, allNodes);
         if (probeAllocation.fulfilledAndNoChanges()) {

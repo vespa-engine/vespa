@@ -54,19 +54,17 @@ class Preparer {
      // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
-    private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
+    private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
         LockedNodeList allNodes = groupPreparer.createUnlockedNodeList();
-        NodeList clusterNodes = allNodes.owner(application);
-        List<Node> surplusNodes = findNodesInRemovableGroups(clusterNodes, requestedNodes.groups());
-
-        List<Node> accepted = groupPreparer.prepare(application, cluster, requestedNodes, surplusNodes, allNodes);
-        if (requestedNodes.rejectNonActiveParent()) {
-            NodeList activeHosts = allNodes.state(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
+        List<Node> surplusNodes = findNodesInRemovableGroups(application, requested.groups(), allNodes);
+        List<Node> accepted = groupPreparer.prepare(application, cluster, requested, surplusNodes, allNodes);
+        if (requested.rejectNonActiveParent()) { // TODO: Move to NodeAllocation
+            NodeList activeHosts = allNodes.state(Node.State.active).parents().nodeType(requested.type().hostType());
             accepted = accepted.stream()
                                .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
                                .toList();
         }
-        moveToActiveGroup(surplusNodes, requestedNodes.groups(), cluster.group());
+        moveToActiveGroup(surplusNodes, requested.groups(), cluster.group());
         return accepted.stream().filter(node -> ! surplusNodes.contains(node)).collect(Collectors.toList());
     }
 
@@ -79,9 +77,9 @@ class Preparer {
      * Returns a list of the nodes which are
      * in groups with index number above or equal the group count
      */
-    private List<Node> findNodesInRemovableGroups(NodeList clusterNodes, int wantedGroups) {
+    private List<Node> findNodesInRemovableGroups(ApplicationId application, int wantedGroups, NodeList allNodes) {
         List<Node> surplusNodes = new ArrayList<>();
-        for (Node node : clusterNodes.state(Node.State.active)) {
+        for (Node node : allNodes.owner(application).state(Node.State.active)) {
             ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
             if (nodeCluster.group().get().index() >= wantedGroups)
                 surplusNodes.add(node);
