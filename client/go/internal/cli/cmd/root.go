@@ -31,7 +31,6 @@ const (
 	clusterFlag     = "cluster"
 	zoneFlag        = "zone"
 	targetFlag      = "target"
-	waitFlag        = "wait"
 	colorFlag       = "color"
 	quietFlag       = "quiet"
 )
@@ -202,7 +201,6 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 		instance    string
 		cluster     string
 		zone        string
-		waitSecs    int
 		color       string
 		quiet       bool
 	)
@@ -211,7 +209,6 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 	c.cmd.PersistentFlags().StringVarP(&instance, instanceFlag, "i", "", "The instance of the application to use")
 	c.cmd.PersistentFlags().StringVarP(&cluster, clusterFlag, "C", "", "The container cluster to use. This is only required for applications with multiple clusters")
 	c.cmd.PersistentFlags().StringVarP(&zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone")
-	c.cmd.PersistentFlags().IntVarP(&waitSecs, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
 	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", `Whether to use colors in output. Must be "auto", "never", or "always"`)
 	c.cmd.PersistentFlags().BoolVarP(&quiet, quietFlag, "q", false, "Print only errors")
 	flags := make(map[string]*pflag.Flag)
@@ -278,6 +275,14 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(newVersionCmd(c))            // version
 	rootCmd.AddCommand(newVisitCmd(c))              // visit
 	rootCmd.AddCommand(newFeedCmd(c))               // feed
+}
+
+func (c *CLI) bindWaitFlag(cmd *cobra.Command, defaultSecs int, value *int) {
+	desc := "Number of seconds to wait for a service to become ready. 0 to disable"
+	if defaultSecs == 0 {
+		desc += " (default 0)"
+	}
+	cmd.PersistentFlags().IntVarP(value, "wait", "w", defaultSecs, desc)
 }
 
 func (c *CLI) printErr(err error, hints ...string) {
@@ -502,11 +507,7 @@ func (c *CLI) system(targetType string) (vespa.System, error) {
 // service returns the service of given name located at target. If non-empty, cluster specifies a cluster to query. This
 // function blocks according to the wait period configured in this CLI. The parameter sessionOrRunID specifies either
 // the session ID (local target) or run ID (cloud target) to wait for.
-func (c *CLI) service(target vespa.Target, name string, sessionOrRunID int64, cluster string) (*vespa.Service, error) {
-	timeout, err := c.config.timeout()
-	if err != nil {
-		return nil, err
-	}
+func (c *CLI) service(target vespa.Target, name string, sessionOrRunID int64, cluster string, timeout time.Duration) (*vespa.Service, error) {
 	if timeout > 0 {
 		log.Printf("Waiting up to %s for %s service to become available ...", color.CyanString(timeout.String()), color.CyanString(name))
 	}
@@ -519,18 +520,6 @@ func (c *CLI) service(target vespa.Target, name string, sessionOrRunID int64, cl
 		return nil, err
 	}
 	return s, nil
-}
-
-func (c *CLI) createDeploymentOptions(pkg vespa.ApplicationPackage, target vespa.Target) (vespa.DeploymentOptions, error) {
-	timeout, err := c.config.timeout()
-	if err != nil {
-		return vespa.DeploymentOptions{}, err
-	}
-	return vespa.DeploymentOptions{
-		ApplicationPackage: pkg,
-		Target:             target,
-		Timeout:            timeout,
-	}, nil
 }
 
 // isCI returns true if running inside a continuous integration environment.

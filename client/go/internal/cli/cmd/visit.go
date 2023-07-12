@@ -35,6 +35,7 @@ type visitArgs struct {
 	sliceId        int
 	bucketSpace    string
 	bucketSpaces   []string
+	waitSecs       int
 	cli            *CLI
 }
 
@@ -107,7 +108,7 @@ $ vespa visit --field-set "[id]" # list document IDs
 			if !result.Success {
 				return fmt.Errorf("argument error: %s", result.Message)
 			}
-			service, err := documentService(cli)
+			service, err := documentService(cli, vArgs.waitSecs)
 			if err != nil {
 				return err
 			}
@@ -135,6 +136,7 @@ $ vespa visit --field-set "[id]" # list document IDs
 	cmd.Flags().IntVar(&vArgs.sliceId, "slice-id", -1, `The number of the slice this visit invocation should fetch`)
 	cmd.Flags().IntVar(&vArgs.slices, "slices", -1, `Split the document corpus into this number of independent slices`)
 	cmd.Flags().StringSliceVar(&vArgs.bucketSpaces, "bucket-space", []string{"global", "default"}, `"default" or "global" bucket space`)
+	cli.bindWaitFlag(cmd, 0, &vArgs.waitSecs)
 	return cmd
 }
 

@@ -142,10 +142,7 @@ $ vespa prod deploy`,
 			if err := verifyTests(cli, pkg); err != nil {
 				return err
 			}
-			opts, err := cli.createDeploymentOptions(pkg, target)
-			if err != nil {
-				return err
-			}
+			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 			if err := maybeCopyCertificate(copyCert, true, cli, target, pkg); err != nil {
 				return err
 			}
@@ -405,6 +402,6 @@ func verifyTest(cli *CLI, testsParent string, suite string, required bool) error
 		}
 		return nil
 	}
-	_, _, err = runTests(cli, testDirectory, true)
+	_, _, err = runTests(cli, testDirectory, true, 0)
 	return err
 }
