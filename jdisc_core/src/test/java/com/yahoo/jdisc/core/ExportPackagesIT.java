@@ -52,6 +52,9 @@ public class ExportPackagesIT {
             "javax.activation.jar"
     ).map(f -> JAR_PATH + f).toList();
 
+    private static final List<String> newPackagesInJava21 = List.of("java.lang.foreign");
+    private static final List<String> removedPackagesInJava21 = List.of("com.sun.jarsigner");
+
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("([^;,]+);\\s*version=\"([^\"]*)\"(?:,\\s*([^;,]+);\\s*uses:=\"([^\"]*)\")?");
 
     record PackageInfo(String packageName, String version, List<String> clauses) implements Comparable<PackageInfo> {
@@ -79,23 +82,25 @@ public class ExportPackagesIT {
                                           .toList());
         }
 
-        PackageSet removeNewPackageOnJava20() {
+        PackageSet addPackages(List<String> packageNames) {
+            var newPackages = packageNames.stream()
+                    .map(p -> new PackageInfo(p, "", List.of()))
+                    .toList();
+            return new PackageSet(new ArrayList<>(packages) {{ addAll(newPackages); }});
+        }
+
+        PackageSet removePackages(List<String> packageNames) {
             return new PackageSet(packages.stream()
-                                          .filter(p -> ! p.packageName.contains("java.lang.foreign"))
-                                          .filter(p -> ! p.packageName.contains("com.sun.jna"))
+                                          .filter(p -> ! packageNames.contains(p.packageName))
                                           .toList());
         }
 
         boolean isEquivalentTo(PackageSet other) {
-            var thisPackages = new HashSet<>(removeJavaVersion().removeNewPackageOnJava20().packages);
-            var otherPackages = new HashSet<>(other.removeJavaVersion().removeNewPackageOnJava20().packages);
-            return thisPackages.equals(otherPackages);
+            return new HashSet<>(this.packages).equals(new HashSet<>(other.packages));
         }
 
         PackageSet minus(PackageSet other) {
-            var thisPackages = new HashSet<>(removeJavaVersion().removeNewPackageOnJava20().packages);
-            var otherPackages = new HashSet<>(other.removeJavaVersion().removeNewPackageOnJava20().packages);
-            Set<PackageInfo> diff = Sets.difference(thisPackages, otherPackages);
+            Set<PackageInfo> diff = Sets.difference(new HashSet<>(this.packages), new HashSet<>(other.packages));
             return new PackageSet(diff.stream().sorted().toList());
         }
 
@@ -120,8 +125,9 @@ public class ExportPackagesIT {
         assertNotNull(expectedValue, "Missing exportPackages property in file.");
 
         var expectedPackages = parsePackages(expectedValue).removeJavaVersion();
-        var actualPackages = parsePackages(actualValue).removeJavaVersion()
-                .removeNewPackageOnJava20();
+               // .removePackages(removedPackagesInJava21)
+               // .addPackages(newPackagesInJava21);
+        var actualPackages = parsePackages(actualValue).removeJavaVersion();
 
         if (!actualPackages.isEquivalentTo(expectedPackages)) {
             StringBuilder message = getDiff(actualPackages, expectedPackages);
@@ -130,7 +136,7 @@ public class ExportPackagesIT {
                     .append("\n\nNote that removing exported packages usually requires a new major version of Vespa.\n");
             fail(message.toString());
         }
-        // TODO: check that actualValue equals expectedValue. Problem is that exportPackages.properties is not deterministic.
+        // TODO: check that actualValue equals expectedValue. Problem is that exportPackages.properties is non-deterministic.
     }
 
     private static StringBuilder getDiff(PackageSet actual, PackageSet expected) {
@@ -159,14 +165,14 @@ public class ExportPackagesIT {
 
         Matcher matcher = PACKAGE_PATTERN.matcher(input);
         while (matcher.find()) {
-            String packageName = matcher.group(1);
-            String version = matcher.group(2);
+            String packageName = matcher.group(1).trim();
+            String version = matcher.group(2).trim();
             String dependencyPackage = matcher.group(3);
             String dependencyClause = matcher.group(4);
 
             List<String> clauses = new ArrayList<>();
             if (dependencyPackage != null && dependencyClause != null) {
-                clauses.add(dependencyPackage + ";" + dependencyClause);
+                clauses.add(dependencyPackage.trim() + ";" + dependencyClause.trim());
             }
 
             PackageInfo packageInfo = new PackageInfo(packageName, version, clauses);
