@@ -86,7 +86,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
                             " for application " + application + ", cluster " + cluster);
         validate(application, cluster, requested, logger);
 
-        int groups;
         NodeResources resources;
         NodeSpec nodeSpec;
         if (requested.type() == NodeType.tenant) {

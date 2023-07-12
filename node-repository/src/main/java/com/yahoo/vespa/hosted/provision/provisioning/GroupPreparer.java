@@ -10,6 +10,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
@@ -45,21 +46,21 @@ public class GroupPreparer {
      *
      * @param application        the application we are allocating to
      * @param cluster            the cluster and group we are allocating to
-     * @param requestedNodes     a specification of the requested nodes
+     * @param requested          a specification of the requested nodes
      * @param allNodes           list of all nodes and hosts
      * @return the list of nodes this cluster group will have allocated if activated
      */
     // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, LockedNodeList allNodes) {
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requested, LockedNodeList allNodes) {
         log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " +
-                                  requestedNodes.resources().orElse(NodeResources.unspecified()));
+                                  requested.resources().orElse(NodeResources.unspecified()));
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
         // and we can return nodes previously allocated.
 
         NodeIndices indices = new NodeIndices(cluster.id(), allNodes);
-        NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, indices::probeNext, allNodes);
+        NodeAllocation probeAllocation = prepareAllocation(application, cluster, requested, indices::probeNext, allNodes);
         if (probeAllocation.fulfilledAndNoChanges()) {
             List<Node> acceptedNodes = probeAllocation.finalNodes();
             indices.commitProbe();
@@ -67,7 +68,7 @@ public class GroupPreparer {
         } else {
             // There were some changes, so re-do the allocation with locks
             indices.resetProbe();
-            return prepareWithLocks(application, cluster, requestedNodes, indices);
+            return prepareWithLocks(application, cluster, requested, indices);
         }
     }
 
@@ -75,11 +76,11 @@ public class GroupPreparer {
     LockedNodeList createUnlockedNodeList() { return nodeRepository.nodes().list(PROBE_LOCK); }
 
     /// Note that this will write to the node repo.
-    private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, NodeIndices indices) {
+    private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requested, NodeIndices indices) {
         try (Mutex lock = nodeRepository.applications().lock(application);
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
             LockedNodeList allNodes = nodeRepository.nodes().list(allocationLock);
-            NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, indices::next, allNodes);
+            NodeAllocation allocation = prepareAllocation(application, cluster, requested, indices::next, allNodes);
             NodeType hostType = allocation.nodeType().hostType();
             if (canProvisionDynamically(hostType) && allocation.hostDeficit().isPresent()) {
                 HostSharing sharing = hostSharing(cluster, hostType);
@@ -87,13 +88,13 @@ public class GroupPreparer {
                 NodeAllocation.HostDeficit deficit = allocation.hostDeficit().get();
                 List<Node> hosts = new ArrayList<>();
                 Consumer<List<ProvisionedHost>> whenProvisioned = provisionedHosts -> {
-                    hosts.addAll(provisionedHosts.stream().map(host -> host.generateHost(requestedNodes.hostTTL())).toList());
+                    hosts.addAll(provisionedHosts.stream().map(host -> host.generateHost(requested.hostTTL())).toList());
                     nodeRepository.nodes().addNodes(hosts, Agent.application);
 
                     // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
                     List<NodeCandidate> candidates = provisionedHosts.stream()
                             .map(host -> NodeCandidate.createNewExclusiveChild(host.generateNode(),
-                                                                               host.generateHost(requestedNodes.hostTTL())))
+                                                                               host.generateHost(requested.hostTTL())))
                             .toList();
                     allocation.offer(candidates);
                 };
@@ -106,7 +107,7 @@ public class GroupPreparer {
                                                                             sharing,
                                                                             Optional.of(cluster.type()),
                                                                             Optional.of(cluster.id()),
-                                                                            requestedNodes.cloudAccount(),
+                                                                            requested.cloudAccount(),
                                                                             deficit.dueToFlavorUpgrade());
                     hostProvisioner.get().provisionHosts(request, whenProvisioned);
                 } catch (NodeAllocationException e) {
@@ -116,8 +117,8 @@ public class GroupPreparer {
                     hosts.forEach(host -> nodeRepository.nodes().deprovision(host.hostname(), Agent.system, nodeRepository.clock().instant()));
                     throw e;
                 }
-            } else if (allocation.hostDeficit().isPresent() && requestedNodes.canFail() &&
-                       allocation.hasRetiredJustNow() && requestedNodes instanceof NodeSpec.CountNodeSpec cns) {
+            } else if (allocation.hostDeficit().isPresent() && requested.canFail() &&
+                       allocation.hasRetiredJustNow() && requested instanceof NodeSpec.CountNodeSpec cns) {
                 // Non-dynamically provisioned zone with a deficit because we just now retired some nodes.
                 // Try again, but without retiring
                 indices.resetProbe();
@@ -126,13 +127,20 @@ public class GroupPreparer {
                 return accepted;
             }
 
-            if (! allocation.fulfilled() && requestedNodes.canFail())
+            if (! allocation.fulfilled() && requested.canFail())
                 throw new NodeAllocationException(allocation.allocationFailureDetails(), true);
 
             // Carry out and return allocation
             List<Node> acceptedNodes = allocation.finalNodes();
             nodeRepository.nodes().reserve(allocation.reservableNodes());
             nodeRepository.nodes().addReservedNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
+
+            if (requested.rejectNonActiveParent()) { // TODO: Move into offer() - currently this must be done *after* reserving
+                NodeList activeHosts = allNodes.state(Node.State.active).parents().nodeType(requested.type().hostType());
+                acceptedNodes = acceptedNodes.stream()
+                                             .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
+                                             .toList();
+            }
             return acceptedNodes;
         }
     }

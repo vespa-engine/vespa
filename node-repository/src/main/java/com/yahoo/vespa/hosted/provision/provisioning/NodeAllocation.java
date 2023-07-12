@@ -51,7 +51,7 @@ class NodeAllocation {
     private final ClusterSpec cluster;
 
     /** The requested nodes of this list */
-    private final NodeSpec requestedNodes;
+    private final NodeSpec requested;
 
     /** The node candidates this has accepted so far, keyed on hostname */
     private final Map<String, NodeCandidate> nodes = new LinkedHashMap<>();
@@ -86,12 +86,12 @@ class NodeAllocation {
     private final NodeResourceLimits nodeResourceLimits;
     private final Optional<String> requiredHostFlavor;
 
-    NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
+    NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requested,
                    Supplier<Integer> nextIndex, NodeRepository nodeRepository) {
         this.allNodes = allNodes;
         this.application = application;
         this.cluster = cluster;
-        this.requestedNodes = requestedNodes;
+        this.requested = requested;
         this.nextIndex = nextIndex;
         this.nodeRepository = nodeRepository;
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
@@ -122,11 +122,11 @@ class NodeAllocation {
                 if ( candidate.state() == Node.State.active && allocation.removable()) continue; // don't accept; causes removal
                 if ( candidate.state() == Node.State.active && candidate.wantToFail()) continue; // don't accept; causes failing
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
-                if (nodeRepository.zone().cloud().allowEnclave() && candidate.parent.isPresent() && ! candidate.parent.get().cloudAccount().equals(requestedNodes.cloudAccount())) continue; // wrong account
+                if (nodeRepository.zone().cloud().allowEnclave() && candidate.parent.isPresent() && ! candidate.parent.get().cloudAccount().equals(requested.cloudAccount())) continue; // wrong account
 
-                boolean resizeable = requestedNodes.considerRetiring() && candidate.isResizable;
+                boolean resizeable = requested.considerRetiring() && candidate.isResizable;
 
-                if ((! saturated() && hasCompatibleResources(candidate) && requestedNodes.acceptable(candidate)) || acceptIncompatible(candidate)) {
+                if ((! saturated() && hasCompatibleResources(candidate) && requested.acceptable(candidate)) || acceptIncompatible(candidate)) {
                     candidate = candidate.withNode();
                     if (candidate.isValid())
                         acceptNode(candidate, shouldRetire(candidate, candidates), resizeable);
@@ -150,7 +150,7 @@ class NodeAllocation {
                 }
                 candidate = candidate.allocate(application,
                                                ClusterMembership.from(cluster, nextIndex.get()),
-                                               requestedNodes.resources().orElse(candidate.resources()),
+                                               requested.resources().orElse(candidate.resources()),
                                                nodeRepository.clock().instant());
                 if (candidate.isValid()) {
                     acceptNode(candidate, Retirement.none, false);
@@ -161,7 +161,7 @@ class NodeAllocation {
 
     /** Returns the cause of retirement for given candidate */
     private Retirement shouldRetire(NodeCandidate candidate, List<NodeCandidate> candidates) {
-        if ( ! requestedNodes.considerRetiring()) {
+        if ( ! requested.considerRetiring()) {
             boolean alreadyRetired = candidate.allocation().map(a -> a.membership().retired()).orElse(false);
             return alreadyRetired ? Retirement.alreadyRetired : Retirement.none;
         }
@@ -199,7 +199,7 @@ class NodeAllocation {
 
     private boolean violatesExclusivity(NodeCandidate candidate) {
         if (candidate.parentHostname().isEmpty()) return false;
-        if (requestedNodes.type() != NodeType.tenant) return false;
+        if (requested.type() != NodeType.tenant) return false;
 
         // In zones which does not allow host sharing, exclusivity is violated if...
         if ( ! nodeRepository.zone().cloud().allowHostSharing()) {
@@ -244,20 +244,20 @@ class NodeAllocation {
         if (candidate.state() != Node.State.active) return false;
         if (candidate.allocation().get().membership().retired()) return true; // don't second-guess if already retired
 
-        if ( ! requestedNodes.considerRetiring()) // the node is active and we are not allowed to remove gracefully, so keep
+        if ( ! requested.considerRetiring()) // the node is active and we are not allowed to remove gracefully, so keep
             return true;
         return cluster.isStateful() ||
                (cluster.type() == ClusterSpec.Type.container && !hasCompatibleResources(candidate));
     }
 
     private boolean hasCompatibleResources(NodeCandidate candidate) {
-        return requestedNodes.isCompatible(candidate.resources()) || candidate.isResizable;
+        return requested.isCompatible(candidate.resources()) || candidate.isResizable;
     }
 
     private Node acceptNode(NodeCandidate candidate, Retirement retirement, boolean resizeable) {
         Node node = candidate.toNode();
         if (node.allocation().isPresent()) // Record the currently requested resources
-            node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.resources())));
+            node = node.with(node.allocation().get().withRequestedResources(requested.resources().orElse(node.resources())));
 
         if (retirement == Retirement.none) {
 
@@ -265,7 +265,7 @@ class NodeAllocation {
             // for the purpose of deciding when to stop accepting nodes (saturation)
             if (node.allocation().isEmpty()
                 || (canBeUsedInGroupWithDeficiency(node) &&
-                   ! ( requestedNodes.needsResize(node) && (node.allocation().get().membership().retired() || ! requestedNodes.considerRetiring())))) {
+                   ! (requested.needsResize(node) && (node.allocation().get().membership().retired() || ! requested.considerRetiring())))) {
                 acceptedAndCompatible++;
             }
 
@@ -296,12 +296,12 @@ class NodeAllocation {
     }
 
     private boolean canBeUsedInGroupWithDeficiency(Node node) {
-        if (requestedNodes.count().isEmpty()) return true;
+        if (requested.count().isEmpty()) return true;
         if (node.allocation().isEmpty()) return true;
         var group = node.allocation().get().membership().cluster().group();
         if (group.isEmpty()) return true;
         long nodesInGroup = nodes.values().stream().filter(n -> groupOf(n).equals(group)).count();
-        return nodesInGroup < requestedNodes.groupSize();
+        return nodesInGroup < requested.groupSize();
     }
 
     private Optional<ClusterSpec.Group> groupOf(NodeCandidate candidate) {
@@ -310,10 +310,10 @@ class NodeAllocation {
 
     private Node resize(Node node) {
         NodeResources hostResources = allNodes.parentOf(node).get().flavor().resources();
-        return node.with(new Flavor(requestedNodes.resources().get()
-                                                  .with(hostResources.diskSpeed())
-                                                  .with(hostResources.storageType())
-                                                  .with(hostResources.architecture())),
+        return node.with(new Flavor(requested.resources().get()
+                                             .with(hostResources.diskSpeed())
+                                             .with(hostResources.storageType())
+                                             .with(hostResources.architecture())),
                 Agent.application, nodeRepository.clock().instant());
     }
 
@@ -324,12 +324,12 @@ class NodeAllocation {
 
     /** Returns true if no more nodes are needed in this list */
     public boolean saturated() {
-        return requestedNodes.saturatedBy(acceptedAndCompatible);
+        return requested.saturatedBy(acceptedAndCompatible);
     }
 
     /** Returns true if the content of this list is sufficient to meet the request */
     boolean fulfilled() {
-        return requestedNodes.fulfilledBy(acceptedAndCompatibleOrResizable());
+        return requested.fulfilledBy(acceptedAndCompatibleOrResizable());
     }
 
     /** Returns true if this allocation was already fulfilled and resulted in no new changes */
@@ -352,10 +352,10 @@ class NodeAllocation {
         if (nodeType().isHost()) {
             return Optional.empty(); // Hosts are provisioned as required by the child application
         }
-        int deficit = requestedNodes.fulfilledDeficitCount(acceptedAndCompatibleOrResizable());
+        int deficit = requested.fulfilledDeficitCount(acceptedAndCompatibleOrResizable());
         // We can only require flavor upgrade if the entire deficit is caused by upgrades
         boolean dueToFlavorUpgrade = deficit == wasRetiredDueToFlavorUpgrade;
-        return Optional.of(new HostDeficit(requestedNodes.resources().orElseGet(NodeResources::unspecified),
+        return Optional.of(new HostDeficit(requested.resources().orElseGet(NodeResources::unspecified),
                                            deficit,
                                            dueToFlavorUpgrade))
                        .filter(hostDeficit -> hostDeficit.count() > 0);
@@ -364,7 +364,7 @@ class NodeAllocation {
     /** Returns the indices to use when provisioning hosts for this */
     List<Integer> provisionIndices(int count) {
         if (count < 1) throw new IllegalArgumentException("Count must be positive");
-        NodeType hostType = requestedNodes.type().hostType();
+        NodeType hostType = requested.type().hostType();
 
         // Tenant hosts have a continuously increasing index
         if (hostType == NodeType.host) return nodeRepository.database().readProvisionIndices(count);
@@ -398,7 +398,7 @@ class NodeAllocation {
 
     /** The node type this is allocating */
     NodeType nodeType() {
-        return requestedNodes.type();
+        return requested.type();
     }
 
     List<Node> finalNodes() {
@@ -411,10 +411,13 @@ class NodeAllocation {
             nodes.put(candidate.toNode().hostname(), candidate);
         }
 
-        GroupIndices groupIndices = new GroupIndices(requestedNodes, allNodes, nodeRepository.clock());
+        // Place in groups
+        GroupIndices groupIndices = new GroupIndices(requested, allNodes, nodeRepository.clock());
         Collection<NodeCandidate> finalNodes = groupIndices.assignTo(nodes.values());
         nodes.clear();
         finalNodes.forEach(candidate -> nodes.put(candidate.toNode().hostname(), candidate));
+
+        // Set cluster ID and index
         return finalNodes.stream().map(NodeCandidate::toNode).toList();
     }
 

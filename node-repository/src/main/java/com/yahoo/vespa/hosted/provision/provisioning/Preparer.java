@@ -54,12 +54,6 @@ class Preparer {
     private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
         LockedNodeList allNodes = groupPreparer.createUnlockedNodeList();
         List<Node> accepted = groupPreparer.prepare(application, cluster, requested, allNodes);
-        if (requested.rejectNonActiveParent()) { // TODO: Move to NodeAllocation
-            NodeList activeHosts = allNodes.state(Node.State.active).parents().nodeType(requested.type().hostType());
-            accepted = accepted.stream()
-                               .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
-                               .toList();
-        }
         return new ArrayList<>(accepted);
     }
 
