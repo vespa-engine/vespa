@@ -29,35 +29,24 @@ class Preparer {
         this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner);
     }
 
-    /** Prepare all required resources for the given application and cluster */
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
-        try {
-            var nodes = prepareNodes(application, cluster, requested);
-            prepareLoadBalancer(application, cluster, requested);
-            return nodes;
-        }
-        catch (NodeAllocationException e) {
-            throw new NodeAllocationException("Could not satisfy " + requested +
-                                              " in " + application + " " + cluster, e,
-                                              e.retryable());
-        }
-    }
-
     /**
-     * Ensure sufficient nodes are reserved or active for the given application and cluster
+     * Prepare all required resources for the given application and cluster.
      *
      * @return the list of nodes this cluster will have allocated if activated
      */
-     // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
-     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
-     // active config model which is changed on activate
-    private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
-        return groupPreparer.prepare(application, cluster, requested, groupPreparer.createUnlockedNodeList());
-    }
-
-    /** Prepare a load balancer for given application and cluster */
-    public void prepareLoadBalancer(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
-        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.prepare(application, cluster, requested));
+    // Note: This may make persisted changes to the set of reserved and inactive nodes,
+    // but it may not change the set of active nodes, as the active nodes must stay in sync with the
+    // active config model which is changed on activate
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
+        try {
+            var nodes = groupPreparer.prepare(application, cluster, requested, groupPreparer.createUnlockedNodeList());
+            loadBalancerProvisioner.ifPresent(provisioner -> provisioner.prepare(application, cluster, requested));
+            return nodes;
+        }
+        catch (NodeAllocationException e) {
+            throw new NodeAllocationException("Could not satisfy " + requested + " in " + application + " " + cluster, e,
+                                              e.retryable());
+        }
     }
 
 }
