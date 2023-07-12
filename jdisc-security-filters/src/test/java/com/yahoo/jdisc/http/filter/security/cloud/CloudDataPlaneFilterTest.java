@@ -17,11 +17,15 @@ import com.yahoo.security.token.Token;
 import com.yahoo.security.token.TokenCheckHash;
 import com.yahoo.security.token.TokenDomain;
 import com.yahoo.security.token.TokenGenerator;
+import com.yahoo.test.ManualClock;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
@@ -52,10 +56,15 @@ class CloudDataPlaneFilterTest {
     private static final String TOKEN_SEARCH_CLIENT = "token-search-client";
     private static final String TOKEN_CONTEXT = "my-token-context";
     private static final String TOKEN_ID = "my-token-id";
+    private static final Instant TOKEN_EXPIRATION = EPOCH.plus(Duration.ofDays(1));
     private static final Token VALID_TOKEN =
             TokenGenerator.generateToken(TokenDomain.of(TOKEN_CONTEXT), "vespa_token_", CHECK_HASH_BYTES);
     private static final Token UNKNOWN_TOKEN =
             TokenGenerator.generateToken(TokenDomain.of(TOKEN_CONTEXT), "vespa_token_", CHECK_HASH_BYTES);
+
+    private ManualClock clock;
+
+    @BeforeEach void resetClock() { clock = new ManualClock(EPOCH); }
 
     @Test
     void accepts_any_trusted_client_certificate_in_legacy_mode() {
@@ -150,6 +159,7 @@ class CloudDataPlaneFilterTest {
         assertEquals(new ClientPrincipal(Set.of(TOKEN_SEARCH_CLIENT), Set.of(READ)), req.getUserPrincipal());
         assertEquals(TOKEN_ID, entry.getKeyValues().get("token.id").get(0));
         assertEquals(VALID_TOKEN.fingerprint().toDelimitedHexString(), entry.getKeyValues().get("token.hash").get(0));
+        assertEquals(TOKEN_EXPIRATION.toString(), entry.getKeyValues().get("token.exp").get(0));
     }
 
     @Test
@@ -228,13 +238,40 @@ class CloudDataPlaneFilterTest {
         assertEquals(new ClientPrincipal(Set.of(FEED_CLIENT_ID), Set.of(WRITE)), req.getUserPrincipal());
     }
 
-    private static CloudDataPlaneFilter newFilterWithLegacyMode() {
-        return new CloudDataPlaneFilter(
-                new CloudDataPlaneFilterConfig.Builder()
-                        .legacyMode(true).build(), (X509Certificate) null);
+    @Test
+    void fails_for_expired_token() {
+        var entry = new AccessLogEntry();
+        var req = FilterTestUtils.newRequestBuilder()
+                .withMethod(Method.GET)
+                .withAccessLogEntry(entry)
+                .withClientCertificate(REVERSE_PROXY_CERT)
+                .withHeader("Authorization", "Bearer " + VALID_TOKEN.secretTokenString())
+                .build();
+        var filter = newFilterWithClientsConfig();
+
+        var responseHandler = new MockResponseHandler();
+        filter.filter(req, responseHandler);
+        assertNull(responseHandler.getResponse());
+
+        clock.advance(Duration.ofDays(1));
+        responseHandler = new MockResponseHandler();
+        filter.filter(req, responseHandler);
+        assertNull(responseHandler.getResponse());
+
+        clock.advance(Duration.ofMillis(1));
+        responseHandler = new MockResponseHandler();
+        filter.filter(req, responseHandler);
+        assertNotNull(responseHandler.getResponse());
+        assertEquals(FORBIDDEN, responseHandler.getResponse().getStatus());
     }
 
-    private static CloudDataPlaneFilter newFilterWithClientsConfig() {
+    private CloudDataPlaneFilter newFilterWithLegacyMode() {
+        return new CloudDataPlaneFilter(
+                new CloudDataPlaneFilterConfig.Builder()
+                        .legacyMode(true).build(), (X509Certificate) null, clock);
+    }
+
+    private CloudDataPlaneFilter newFilterWithClientsConfig() {
         return new CloudDataPlaneFilter(
                 new CloudDataPlaneFilterConfig.Builder()
                         .tokenContext(TOKEN_CONTEXT)
@@ -251,11 +288,13 @@ class CloudDataPlaneFilterTest {
                                         .tokens(new CloudDataPlaneFilterConfig.Clients.Tokens.Builder()
                                                         .id(TOKEN_ID)
                                                         .checkAccessHashes(TokenCheckHash.of(VALID_TOKEN, 32).toHexString())
-                                                        .fingerprints(VALID_TOKEN.fingerprint().toDelimitedHexString()))
+                                                        .fingerprints(VALID_TOKEN.fingerprint().toDelimitedHexString())
+                                                        .expirations(TOKEN_EXPIRATION.toString()))
                                         .permissions(READ.asString())
                                         .id(TOKEN_SEARCH_CLIENT)))
                         .build(),
-                REVERSE_PROXY_CERT);
+                REVERSE_PROXY_CERT,
+                clock);
     }
 
     private static X509Certificate certificate(String name) {

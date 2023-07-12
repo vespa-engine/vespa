@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
@@ -147,14 +148,15 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
         assertEquals(List.of("read"), tokenClient.permissions());
         assertTrue(tokenClient.certificates().isEmpty());
         var expectedTokenCfg = tokenConfig(
-                "my-token", List.of("myfingerprint1", "myfingerprint2"), List.of("myaccesshash1", "myaccesshash2"));
+                "my-token", List.of("myfingerprint1", "myfingerprint2"), List.of("myaccesshash1", "myaccesshash2"),
+                List.of("<none>", "2243-10-17T00:00:00Z"));
         assertEquals(List.of(expectedTokenCfg), tokenClient.tokens());
     }
 
     private static CloudDataPlaneFilterConfig.Clients.Tokens tokenConfig(
-            String id, Collection<String> fingerprints, Collection<String> accessCheckHashes) {
+            String id, Collection<String> fingerprints, Collection<String> accessCheckHashes, Collection<String> expirations) {
         return new CloudDataPlaneFilterConfig.Clients.Tokens.Builder()
-                .id(id).fingerprints(fingerprints).checkAccessHashes(accessCheckHashes).build();
+                .id(id).fingerprints(fingerprints).checkAccessHashes(accessCheckHashes).expirations(expirations).build();
     }
 
     @Test
@@ -230,8 +232,8 @@ public class CloudDataPlaneFilterTest extends ContainerModelBuilderTestBase {
                         new TestProperties()
                                 .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))
                                 .setDataplaneTokens(List.of(new DataplaneToken("my-token", List.of(
-                                        new DataplaneToken.Version("myfingerprint1", "myaccesshash1"),
-                                        new DataplaneToken.Version("myfingerprint2", "myaccesshash2")))))
+                                        new DataplaneToken.Version("myfingerprint1", "myaccesshash1", Optional.empty()),
+                                        new DataplaneToken.Version("myfingerprint2", "myaccesshash2", Optional.of(Instant.EPOCH.plus(Duration.ofDays(100000))))))))
                                 .setHostedVespa(true))
                 .zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()))
                 .build();

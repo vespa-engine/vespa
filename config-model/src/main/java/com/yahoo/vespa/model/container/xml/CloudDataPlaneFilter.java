@@ -13,6 +13,7 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.http.Client;
 import com.yahoo.vespa.model.container.http.Filter;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
@@ -62,7 +63,9 @@ class CloudDataPlaneFilter extends Filter implements CloudDataPlaneFilterConfig.
                 .map(token -> new CloudDataPlaneFilterConfig.Clients.Tokens.Builder()
                         .id(token.tokenId())
                         .fingerprints(token.versions().stream().map(DataplaneToken.Version::fingerprint).toList())
-                        .checkAccessHashes(token.versions().stream().map(DataplaneToken.Version::checkAccessHash).toList()))
+                        .checkAccessHashes(token.versions().stream().map(DataplaneToken.Version::checkAccessHash).toList())
+                        .expirations(token.versions().stream().map(v -> v.expiration().map(Instant::toString).orElse("<none>")).toList()))
                 .toList();
     }
+
 }

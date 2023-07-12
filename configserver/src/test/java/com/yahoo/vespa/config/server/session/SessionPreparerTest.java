@@ -366,7 +366,7 @@ public class SessionPreparerTest {
         TestModelFactory modelFactory = new TestModelFactory(version123);
         preparer = createPreparer(new ModelFactoryRegistry(List.of(modelFactory)), HostProvisionerProvider.empty());
         ApplicationId applicationId = applicationId("test");
-        List<DataplaneToken> expected = List.of(new DataplaneToken("id", List.of(new DataplaneToken.Version("f1", "ch1"))));
+        List<DataplaneToken> expected = List.of(new DataplaneToken("id", List.of(new DataplaneToken.Version("f1", "ch1", Optional.empty()))));
         PrepareParams params = new PrepareParams.Builder().applicationId(applicationId)
                 .dataplaneTokens(expected)
                 .build();

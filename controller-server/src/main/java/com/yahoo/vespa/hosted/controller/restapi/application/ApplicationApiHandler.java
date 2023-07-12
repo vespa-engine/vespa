@@ -111,6 +111,7 @@ import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.SupportAccessSerializer;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
+import com.yahoo.vespa.hosted.controller.restapi.dataplanetoken.DataplaneTokenService;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
@@ -985,12 +986,17 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
 
     private HttpResponse generateToken(String tenant, String tokenid, HttpRequest request) {
-        DataplaneToken token = controller.dataplaneTokenService().generateToken(TenantName.from(tenant), TokenId.of(tokenid), request.getJDiscRequest().getUserPrincipal());
+        // 'expiration=PT0S' for no expiration, no 'expiration' for default TTL.
+        Duration expiration = Optional.ofNullable(request.getProperty("expiration"))
+                .map(Duration::parse).orElse(DataplaneTokenService.DEFAULT_TTL);
+        DataplaneToken token = controller.dataplaneTokenService().generateToken(
+                TenantName.from(tenant), TokenId.of(tokenid), expiration, request.getJDiscRequest().getUserPrincipal());
         Slime slime = new Slime();
         Cursor tokenObject = slime.setObject();
         tokenObject.setString("id", token.tokenId().value());
         tokenObject.setString("token", token.tokenValue());
         tokenObject.setString("fingerprint", token.fingerPrint().value());
+        tokenObject.setString("expiration", token.expiration().map(Instant::toString).orElse("<none>"));
         return new SlimeJsonResponse(slime);
     }
 

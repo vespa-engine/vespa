@@ -20,6 +20,8 @@ import com.yahoo.security.token.TokenFingerprint;
 
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -53,21 +55,23 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
     private final boolean legacyMode;
     private final List<Client> allowedClients;
     private final TokenDomain tokenDomain;
+    private final Clock clock;
 
     @Inject
     public CloudDataPlaneFilter(CloudDataPlaneFilterConfig cfg,
                                 ComponentRegistry<DataplaneProxyCredentials> optionalReverseProxy) {
-        this(cfg, reverseProxyCert(optionalReverseProxy).orElse(null));
+        this(cfg, reverseProxyCert(optionalReverseProxy).orElse(null), Clock.systemUTC());
     }
 
-    CloudDataPlaneFilter(CloudDataPlaneFilterConfig cfg, X509Certificate reverseProxyCert) {
+    CloudDataPlaneFilter(CloudDataPlaneFilterConfig cfg, X509Certificate reverseProxyCert, Clock clock) {
         this.legacyMode = cfg.legacyMode();
         this.tokenDomain = TokenDomain.of(cfg.tokenContext());
+        this.clock = clock;
         if (legacyMode) {
             allowedClients = List.of();
             log.fine(() -> "Legacy mode enabled");
         } else {
-            allowedClients = parseClients(cfg, reverseProxyCert);
+            allowedClients = parseClients(cfg, reverseProxyCert, clock);
         }
     }
 
@@ -76,7 +80,8 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
         return optionalReverseProxy.allComponents().stream().findAny().map(DataplaneProxyCredentials::certificate);
     }
 
-    private static List<Client> parseClients(CloudDataPlaneFilterConfig cfg, X509Certificate reverseProxyCert) {
+    private static List<Client> parseClients(CloudDataPlaneFilterConfig cfg, X509Certificate reverseProxyCert, Clock clock) {
+        var now = clock.instant();
         Set<String> ids = new HashSet<>();
         List<Client> clients = new ArrayList<>(cfg.clients().size());
         boolean hasClientRequiringCertificate = false;
@@ -112,8 +117,14 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
                 for (var token : c.tokens()) {
                     for (int version = 0; version < token.checkAccessHashes().size(); version++) {
                         var tokenVersion = TokenVersion.of(
-                                token.id(), token.fingerprints().get(version), token.checkAccessHashes().get(version));
-                        tokens.put(tokenVersion.accessHash(), tokenVersion);
+                                token.id(), token.fingerprints().get(version), token.checkAccessHashes().get(version),
+                                token.expirations().get(version));
+                        var expiration = tokenVersion.expiration().orElse(null);
+                        if (expiration != null && now.isAfter(expiration))
+                            log.fine(() -> "Ignoring expired version %s of token '%s' (expiration=%s)".formatted(
+                                    tokenVersion.fingerprint(), tokenVersion.id(), expiration));
+                        else
+                            tokens.put(tokenVersion.accessHash(), tokenVersion);
                     }
                 }
                 // Add reverse proxy certificate as required certificate for client definition
@@ -128,6 +139,7 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
 
     @Override
     protected Optional<ErrorResponse> filter(DiscFilterRequest req) {
+        var now = clock.instant();
         var certs = req.getClientCertificateChain();
         log.fine(() -> "Certificate chain contains %d elements".formatted(certs.size()));
         if (certs.isEmpty()) {
@@ -164,6 +176,8 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
                 if (requestTokenHash == null) continue;
                 var matchedToken  = c.tokens().get(requestTokenHash);
                 if (matchedToken == null) continue;
+                var expiration = matchedToken.expiration().orElse(null);
+                if (expiration != null && now.isAfter(expiration)) continue;
                 matchedTokens.add(matchedToken);
             }
             clientIds.add(c.id());
@@ -178,6 +192,7 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
         if (matchedToken != null) {
             addAccessLogEntry(req, "token.id", matchedToken.id());
             addAccessLogEntry(req, "token.hash", matchedToken.fingerprint().toDelimitedHexString());
+            addAccessLogEntry(req, "token.exp", matchedToken.expiration().map(Instant::toString).orElse("<none>"));
         }
         log.fine(() -> "Client with ids=%s, permissions=%s"
                 .formatted(clientIds, permissions.stream().map(Permission::asString).toList()));
@@ -225,9 +240,10 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
         }
     }
 
-    private record TokenVersion(String id, TokenFingerprint fingerprint, TokenCheckHash accessHash) {
-        static TokenVersion of(String id, String fingerprint, String accessHash) {
-            return new TokenVersion(id, TokenFingerprint.ofHex(fingerprint), TokenCheckHash.ofHex(accessHash));
+    private record TokenVersion(String id, TokenFingerprint fingerprint, TokenCheckHash accessHash, Optional<Instant> expiration) {
+        static TokenVersion of(String id, String fingerprint, String accessHash, String expiration) {
+            return new TokenVersion(id, TokenFingerprint.ofHex(fingerprint), TokenCheckHash.ofHex(accessHash),
+                                    expiration.equals("<none>") ? Optional.empty() : Optional.of(Instant.parse(expiration)));
         }
     }
 
