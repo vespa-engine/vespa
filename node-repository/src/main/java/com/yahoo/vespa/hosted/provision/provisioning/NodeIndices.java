@@ -1,9 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import java.util.List;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.vespa.hosted.provision.NodeList;
 
-import static java.util.Comparator.naturalOrder;
+import java.util.List;
 
 /**
  * Tracks indices of a node cluster, and proposes the index of the next allocation.
@@ -18,8 +19,12 @@ class NodeIndices {
     private int probe;
 
     /** Pass the list of current indices in the cluster. */
+    NodeIndices(ClusterSpec.Id cluster, NodeList allNodes) {
+        this(allNodes.cluster(cluster).mapToList(node -> node.allocation().get().membership().index()));
+    }
+
     NodeIndices(List<Integer> used) {
-        this.used = List.copyOf(used);
+        this.used = used;
         this.last = -1;
         this.probe = last;
     }
