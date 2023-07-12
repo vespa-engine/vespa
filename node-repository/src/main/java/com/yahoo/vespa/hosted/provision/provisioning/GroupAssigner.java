@@ -20,13 +20,13 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-class GroupIndices {
+class GroupAssigner {
 
     private final NodeSpec requested;
     private final NodeList allNodes;
     private final Clock clock;
 
-    GroupIndices(NodeSpec requested, NodeList allNodes, Clock clock) {
+    GroupAssigner(NodeSpec requested, NodeList allNodes, Clock clock) {
         if (requested.groups() > 1 && requested.count().isEmpty())
             throw new IllegalArgumentException("Unlimited nodes cannot be grouped");
         this.requested = requested;
