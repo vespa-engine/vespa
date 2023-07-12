@@ -81,9 +81,8 @@ public class NodePrioritizer {
     }
 
     /** Collects all node candidates for this application and returns them in the most-to-least preferred order */
-    public List<NodeCandidate> collect(List<Node> surplusActiveNodes) {
+    public List<NodeCandidate> collect() {
         addApplicationNodes();
-        addSurplusNodes(surplusActiveNodes);
         addReadyNodes();
         addCandidatesOnExistingHosts();
         return prioritize();
@@ -113,19 +112,6 @@ public class NodePrioritizer {
         }
         Collections.sort(nodes);
         return nodes;
-    }
-
-    /**
-     * Add nodes that have been previously reserved to the same application from
-     * an earlier downsizing of a cluster
-     */
-    private void addSurplusNodes(List<Node> surplusNodes) {
-        for (Node node : surplusNodes) {
-            NodeCandidate candidate = candidateFrom(node, true);
-            if (!candidate.violatesSpares || canAllocateToSpareHosts) {
-                candidates.add(candidate);
-            }
-        }
     }
 
     /** Add a node on each host with enough capacity for the requested flavor  */

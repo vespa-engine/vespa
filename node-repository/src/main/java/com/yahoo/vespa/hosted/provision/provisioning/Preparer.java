@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Performs preparation of node activation changes for an application.
@@ -54,34 +53,19 @@ class Preparer {
      // active config model which is changed on activate
     private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
         LockedNodeList allNodes = groupPreparer.createUnlockedNodeList();
-        List<Node> surplusNodes = findNodesInRemovableGroups(application, requested.groups(), allNodes);
-        List<Node> accepted = groupPreparer.prepare(application, cluster, requested, surplusNodes, allNodes);
+        List<Node> accepted = groupPreparer.prepare(application, cluster, requested, allNodes);
         if (requested.rejectNonActiveParent()) { // TODO: Move to NodeAllocation
             NodeList activeHosts = allNodes.state(Node.State.active).parents().nodeType(requested.type().hostType());
             accepted = accepted.stream()
                                .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
                                .toList();
         }
-        return accepted.stream().filter(node -> ! surplusNodes.contains(node)).collect(Collectors.toList());
+        return new ArrayList<>(accepted);
     }
 
     /** Prepare a load balancer for given application and cluster */
     public void prepareLoadBalancer(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
         loadBalancerProvisioner.ifPresent(provisioner -> provisioner.prepare(application, cluster, requestedNodes));
-    }
-
-    /**
-     * Returns a list of the nodes which are
-     * in groups with index number above or equal the group count
-     */
-    private List<Node> findNodesInRemovableGroups(ApplicationId application, int wantedGroups, NodeList allNodes) {
-        List<Node> surplusNodes = new ArrayList<>();
-        for (Node node : allNodes.owner(application).state(Node.State.active)) {
-            ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
-            if (nodeCluster.group().get().index() >= wantedGroups)
-                surplusNodes.add(node);
-        }
-        return surplusNodes;
     }
 
 }

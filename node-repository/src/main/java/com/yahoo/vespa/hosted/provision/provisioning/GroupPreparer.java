@@ -46,33 +46,28 @@ public class GroupPreparer {
      * @param application        the application we are allocating to
      * @param cluster            the cluster and group we are allocating to
      * @param requestedNodes     a specification of the requested nodes
-     * @param surplusActiveNodes currently active nodes which are available to be assigned to this group.
-     *                           This method will remove from this list if it finds it needs additional nodes
      * @param allNodes           list of all nodes and hosts
      * @return the list of nodes this cluster group will have allocated if activated
      */
     // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                                 List<Node> surplusActiveNodes, LockedNodeList allNodes) {
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, LockedNodeList allNodes) {
         log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " +
                                   requestedNodes.resources().orElse(NodeResources.unspecified()));
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
         // and we can return nodes previously allocated.
 
         NodeIndices indices = new NodeIndices(cluster.id(), allNodes);
-        NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                           indices::probeNext, allNodes);
+        NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, indices::probeNext, allNodes);
         if (probeAllocation.fulfilledAndNoChanges()) {
             List<Node> acceptedNodes = probeAllocation.finalNodes();
-            surplusActiveNodes.removeAll(acceptedNodes);
             indices.commitProbe();
             return acceptedNodes;
         } else {
             // There were some changes, so re-do the allocation with locks
             indices.resetProbe();
-            return prepareWithLocks(application, cluster, requestedNodes, surplusActiveNodes, indices);
+            return prepareWithLocks(application, cluster, requestedNodes, indices);
         }
     }
 
@@ -80,13 +75,11 @@ public class GroupPreparer {
     LockedNodeList createUnlockedNodeList() { return nodeRepository.nodes().list(PROBE_LOCK); }
 
     /// Note that this will write to the node repo.
-    private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                                        List<Node> surplusActiveNodes, NodeIndices indices) {
+    private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, NodeIndices indices) {
         try (Mutex lock = nodeRepository.applications().lock(application);
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
             LockedNodeList allNodes = nodeRepository.nodes().list(allocationLock);
-            NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                          indices::next, allNodes);
+            NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, indices::next, allNodes);
             NodeType hostType = allocation.nodeType().hostType();
             if (canProvisionDynamically(hostType) && allocation.hostDeficit().isPresent()) {
                 HostSharing sharing = hostSharing(cluster, hostType);
@@ -128,7 +121,7 @@ public class GroupPreparer {
                 // Non-dynamically provisioned zone with a deficit because we just now retired some nodes.
                 // Try again, but without retiring
                 indices.resetProbe();
-                List<Node> accepted = prepareWithLocks(application, cluster, cns.withoutRetiring(), surplusActiveNodes, indices);
+                List<Node> accepted = prepareWithLocks(application, cluster, cns.withoutRetiring(), indices);
                 log.warning("Prepared " + application + " " + cluster.id() + " without retirement due to lack of capacity");
                 return accepted;
             }
@@ -140,14 +133,12 @@ public class GroupPreparer {
             List<Node> acceptedNodes = allocation.finalNodes();
             nodeRepository.nodes().reserve(allocation.reservableNodes());
             nodeRepository.nodes().addReservedNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
-            surplusActiveNodes.removeAll(acceptedNodes);
             return acceptedNodes;
         }
     }
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                                             List<Node> surplusActiveNodes, Supplier<Integer> nextIndex,
-                                             LockedNodeList allNodes) {
+                                             Supplier<Integer> nextIndex, LockedNodeList allNodes) {
 
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes, nextIndex, nodeRepository);
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
@@ -160,7 +151,7 @@ public class GroupPreparer {
                                                           nodeRepository.resourcesCalculator(),
                                                           nodeRepository.spareCount(),
                                                           requestedNodes.cloudAccount().isExclave(nodeRepository.zone()));
-        allocation.offer(prioritizer.collect(surplusActiveNodes));
+        allocation.offer(prioritizer.collect());
         return allocation;
     }
 
