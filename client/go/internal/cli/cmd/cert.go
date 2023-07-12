@@ -168,7 +168,7 @@ func maybeCopyCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, 
 	}
 	if cli.isTerminal() {
 		cli.printWarning("Application package does not contain " + color.CyanString("security/clients.pem") + ", which is required for deployments to Vespa Cloud")
-		ok, err := cli.confirm("Do you want to copy the certificate of application " + color.GreenString(target.Deployment().Application.String()) + " into this application package?")
+		ok, err := cli.confirm("Do you want to copy the certificate of application "+color.GreenString(target.Deployment().Application.String())+" into this application package?", true)
 		if err != nil {
 			return err
 		}
