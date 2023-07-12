@@ -208,7 +208,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         // so we must release ours before failing the children.
         List<FailingNode> activeChildrenToFail = new ArrayList<>();
         boolean redeploy = false;
-        try (NodeMutex lock = nodeRepository().nodes().lockAndGetRequired(failing.node())) {
+        try (NodeMutex lock = nodeRepository().nodes().lockAndGetRequired(failing.node())) { // TODO: recursive lock for right order, only for hosts though
             // Now that we have gotten the node object under the proper lock, sanity-check it still makes sense to fail
             if (!Objects.equals(failing.node().allocation().map(Allocation::owner), lock.node().allocation().map(Allocation::owner)))
                 return;

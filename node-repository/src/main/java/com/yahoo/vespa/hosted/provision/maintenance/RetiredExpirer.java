@@ -72,7 +72,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
             }
             boolean redeploy = false;
             List<String> nodesToDeactivate = new ArrayList<>();
-            try (var lock = nodeRepository().applications().lock(application)) {
+            try (var lock = nodeRepository().applications().lock(application)) { // TODO: take recusrive lock for right order
                 NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
                 Map<Removal, NodeList> nodesByRemovalReason = activeNodes.owner(application)
                                                                          .retired()
