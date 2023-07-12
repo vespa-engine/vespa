@@ -8,6 +8,7 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.MultiplexConnectionPool;
 import org.eclipse.jetty.client.Origin;
+import org.eclipse.jetty.client.WWWAuthenticationProtocolHandler;
 import org.eclipse.jetty.client.api.Authentication;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
@@ -161,6 +162,8 @@ class JettyCluster implements Cluster {
 
         if (b.proxy != null) addProxyConfiguration(b, httpClient);
         try { httpClient.start(); } catch (Exception e) { throw new IOException(e); }
+        // Must be removed after client has started
+        httpClient.getProtocolHandlers().remove(WWWAuthenticationProtocolHandler.NAME);
         return httpClient;
     }
 
