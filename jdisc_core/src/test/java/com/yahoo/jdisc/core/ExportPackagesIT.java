@@ -124,9 +124,9 @@ public class ExportPackagesIT {
         String expectedValue = expectedProperties.getProperty(ExportPackages.EXPORT_PACKAGES);
         assertNotNull(expectedValue, "Missing exportPackages property in file.");
 
-        var expectedPackages = parsePackages(expectedValue).removeJavaVersion();
-               // .removePackages(removedPackagesInJava21)
-               // .addPackages(newPackagesInJava21);
+        var expectedPackages = parsePackages(expectedValue).removeJavaVersion()
+                .removePackages(removedPackagesInJava21)
+                .addPackages(newPackagesInJava21);
         var actualPackages = parsePackages(actualValue).removeJavaVersion();
 
         if (!actualPackages.isEquivalentTo(expectedPackages)) {
