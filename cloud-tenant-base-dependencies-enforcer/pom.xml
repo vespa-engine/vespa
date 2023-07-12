@@ -170,6 +170,7 @@
                                         <include>com.yahoo.vespa:tenant-cd-commons:*:test</include>
                                         <include>com.yahoo.vespa:vespa-feed-client:*:test</include>
                                         <include>com.yahoo.vespa:vespa-feed-client-api:*:test</include>
+                                        <include>com.yahoo.vespa:vespaclient-container-plugin:*:test</include>
                                         <include>com.yahoo.vespa:vespaclient-core:*:test</include>
                                         <include>com.yahoo.vespa:vsm:*:test</include>
 

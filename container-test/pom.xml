@@ -32,11 +32,17 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <!-- Excluded above, and re-declared here, to work around a presumed Maven bug which otherwise puts this
-         in provided scope when container-test is declared before, and together with, the container artifact -->
     <dependency>
+      <!-- Excluded above, and re-declared here, to work around a presumed Maven bug which otherwise puts this
+           in provided scope when container-test is declared before, and together with, the container artifact -->
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk18on</artifactId>
+    </dependency>
+    <dependency>
+      <!-- Not sure if this is needed, added after removing it from 'container' to ensure unchanged test classpath-->
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vespaclient-container-plugin</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <!-- All dependencies that should be visible in test classpath, but not compile classpath,

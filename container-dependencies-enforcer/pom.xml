@@ -146,6 +146,7 @@
                                         <include>com.yahoo.vespa:searchsummary:*:test</include>
                                         <include>com.yahoo.vespa:standalone-container:*:test</include>
                                         <include>com.yahoo.vespa:storage:*:test</include>
+                                        <include>com.yahoo.vespa:vespaclient-container-plugin:*:test</include>
                                         <include>com.yahoo.vespa:vespaclient-core:*:test</include>
                                         <include>com.yahoo.vespa:vsm:*:test</include>
 
