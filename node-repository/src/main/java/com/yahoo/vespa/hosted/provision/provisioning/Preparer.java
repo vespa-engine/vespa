@@ -24,20 +24,20 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Performs preparation of node activation changes for a single host group in an application.
+ * Performs preparation of node activation changes for a cluster of an application.
  *
  * @author bratseth
  */
-public class GroupPreparer {
+public class Preparer {
 
     private static final Mutex PROBE_LOCK = () -> {};
-    private static final Logger log = Logger.getLogger(GroupPreparer.class.getName());
+    private static final Logger log = Logger.getLogger(Preparer.class.getName());
 
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
 
-    public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,  Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
+    public Preparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner, Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
         this.loadBalancerProvisioner = loadBalancerProvisioner;
