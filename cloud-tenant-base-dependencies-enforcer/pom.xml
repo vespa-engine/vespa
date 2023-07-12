@@ -144,7 +144,6 @@
                                         <include>com.yahoo.vespa:security-utils:*:provided</include>
                                         <include>com.yahoo.vespa:vdslib:*:provided</include>
                                         <include>com.yahoo.vespa:vespa-3party-bundles:pom:*:provided</include>
-                                        <include>com.yahoo.vespa:vespaclient-container-plugin:*:provided</include>
                                         <include>com.yahoo.vespa:vespajlib:*:provided</include>
                                         <include>com.yahoo.vespa:vespalog:*:provided</include>
 
