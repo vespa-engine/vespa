@@ -2,8 +2,6 @@
 package vespa
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,5 +21,5 @@ func TestFindVespaUser(t *testing.T) {
 
 func TestFindVespaUidAndGid(t *testing.T) {
 	uid, gid := FindVespaUidAndGid()
-	fmt.Fprintln(os.Stderr, "INFO: result from FindVespaUidAndGid() is", uid, "and", gid)
+	t.Log("INFO: result from FindVespaUidAndGid() is", uid, "and", gid)
 }

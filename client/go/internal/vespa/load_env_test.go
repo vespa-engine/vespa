@@ -2,7 +2,7 @@
 package vespa
 
 import (
-	"fmt"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -112,9 +112,9 @@ override VESPA_V2 v2
 func TestFindUser(t *testing.T) {
 	u := FindVespaUser()
 	if u == "" {
-		fmt.Fprintln(os.Stderr, "WARNING: empty result from FindVespaUser()")
+		t.Log("WARNING: empty result from FindVespaUser()")
 	} else {
-		fmt.Fprintln(os.Stderr, "INFO: result from FindVespaUser() is", u)
+		t.Log("INFO: result from FindVespaUser() is", u)
 		assert.Equal(t, u, os.Getenv("VESPA_USER"))
 	}
 	setup(t, `
@@ -166,7 +166,11 @@ unset XYZ
 	assert.Equal(t, 4, len(holder.exportVars))
 	assert.Equal(t, 2, len(holder.unsetVars))
 	// run it
-	err = ExportDefaultEnvToSh()
+	w := io.Discard
+	if testing.Verbose() {
+		w = os.Stdout
+	}
+	err = ExportDefaultEnvTo(w)
 	assert.Nil(t, err)
 }
 
@@ -177,7 +181,7 @@ func TestLoadEnvNop(t *testing.T) {
 	assert.Nil(t, err)
 	// check results
 	path := os.Getenv("PATH")
-	fmt.Println("got path:", path)
+	t.Log("got path:", path)
 	assert.True(t, strings.Contains(path, td+"/vespa/bin:"))
 	assert.True(t, strings.Contains(path, ":"+td))
 }

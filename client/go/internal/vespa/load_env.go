@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -29,13 +30,15 @@ func LoadDefaultEnv() error {
 }
 
 // parse default-env.txt, then dump export statements for "sh" to stdout
-func ExportDefaultEnvToSh() error {
+func ExportDefaultEnvToSh() error { return ExportDefaultEnvTo(os.Stdout) }
+
+func ExportDefaultEnvTo(w io.Writer) error {
 	holder := newShellEnvExporter()
 	err := loadDefaultEnvTo(holder)
 	holder.fallbackVar(envvars.VESPA_HOME, FindHome())
 	holder.fallbackVar(envvars.VESPA_USER, FindVespaUser())
 	ensureGoodPath(holder)
-	holder.dump()
+	holder.dump(w)
 	return err
 }
 
@@ -250,13 +253,13 @@ func shellQuote(s string) string {
 	return string(res)
 }
 
-func (p *shellEnvExporter) dump() {
+func (p *shellEnvExporter) dump(w io.Writer) {
 	for vn, vv := range p.exportVars {
-		fmt.Printf("%s=%s\n", vn, vv)
-		fmt.Printf("export %s\n", vn)
+		fmt.Fprintf(w, "%s=%s\n", vn, vv)
+		fmt.Fprintf(w, "export %s\n", vn)
 	}
 	for vn, _ := range p.unsetVars {
-		fmt.Printf("unset %s\n", vn)
+		fmt.Fprintf(w, "unset %s\n", vn)
 	}
 }
 
