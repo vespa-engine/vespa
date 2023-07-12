@@ -455,7 +455,7 @@ class NodeAllocation {
             reasons.add("insufficient real resources on hosts");
 
         if (reasons.isEmpty()) return "";
-        return "Not enough suitable nodes available due to " + String.join(", ", reasons);
+        return ": Not enough suitable nodes available due to " + String.join(", ", reasons);
     }
 
     private static Integer parseIndex(String hostname) {

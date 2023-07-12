@@ -21,12 +21,10 @@ import java.util.Optional;
 class Preparer {
 
     private final GroupPreparer groupPreparer;
-    private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
 
     public Preparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,
                     Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
-        this.loadBalancerProvisioner = loadBalancerProvisioner;
-        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner);
+        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner, loadBalancerProvisioner);
     }
 
     /**
@@ -38,14 +36,7 @@ class Preparer {
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
-        try {
-            loadBalancerProvisioner.ifPresent(provisioner -> provisioner.prepare(application, cluster, requested));
-            return groupPreparer.prepare(application, cluster, requested, groupPreparer.createUnlockedNodeList());
-        }
-        catch (NodeAllocationException e) {
-            throw new NodeAllocationException("Could not satisfy " + requested + " in " + application + " " + cluster, e,
-                                              e.retryable());
-        }
+        return groupPreparer.prepare(application, cluster, requested, groupPreparer.createUnlockedNodeList());
     }
 
 }

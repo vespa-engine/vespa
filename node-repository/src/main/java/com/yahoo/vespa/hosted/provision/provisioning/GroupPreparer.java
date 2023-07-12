@@ -35,10 +35,12 @@ public class GroupPreparer {
 
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
+    private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
 
-    public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner) {
+    public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,  Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
+        this.loadBalancerProvisioner = loadBalancerProvisioner;
     }
 
     /**
@@ -56,9 +58,11 @@ public class GroupPreparer {
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requested, LockedNodeList allNodes) {
         log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " +
                                   requested.resources().orElse(NodeResources.unspecified()));
+
+        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.prepare(application, cluster, requested));
+
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
         // and we can return nodes previously allocated.
-
         NodeIndices indices = new NodeIndices(cluster.id(), allNodes);
         NodeAllocation probeAllocation = prepareAllocation(application, cluster, requested, indices::probeNext, allNodes);
         if (probeAllocation.fulfilledAndNoChanges()) {
@@ -128,7 +132,8 @@ public class GroupPreparer {
             }
 
             if (! allocation.fulfilled() && requested.canFail())
-                throw new NodeAllocationException(allocation.allocationFailureDetails(), true);
+                throw new NodeAllocationException("Could not satisfy " + requested + " in " + application + " " + cluster +
+                                                  allocation.allocationFailureDetails(), true);
 
             // Carry out and return allocation
             List<Node> acceptedNodes = allocation.finalNodes();
