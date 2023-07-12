@@ -55,7 +55,7 @@ Hint: Pass --add-cert to use the certificate of the current application
 	cli.Stdin = &buf
 	require.NotNil(t, cli.Run("deploy", "--add-cert=false", pkgDir2))
 	warning := "Warning: Application package does not contain security/clients.pem, which is required for deployments to Vespa Cloud\n"
-	assert.Equal(t, warning+strings.Repeat("Error: please answer 'Y' or 'n'\n", 3)+certError, stderr.String())
+	assert.Equal(t, warning+strings.Repeat("Error: please answer 'y' or 'n'\n", 3)+certError, stderr.String())
 	buf.WriteString("y\n")
 	require.Nil(t, cli.Run("deploy", "--add-cert=false", pkgDir2))
 	assert.Contains(t, stdout.String(), "Success: Triggered deployment")

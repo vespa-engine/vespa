@@ -255,6 +255,7 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(configCmd)                   // config
 	rootCmd.AddCommand(newCurlCmd(c))               // curl
 	rootCmd.AddCommand(newDeployCmd(c))             // deploy
+	rootCmd.AddCommand(newDestroyCmd(c))            // destroy
 	rootCmd.AddCommand(newPrepareCmd(c))            // prepare
 	rootCmd.AddCommand(newActivateCmd(c))           // activate
 	documentCmd.AddCommand(newDocumentPutCmd(c))    // document put
@@ -301,22 +302,29 @@ func (c *CLI) printWarning(msg interface{}, hints ...string) {
 	}
 }
 
-func (c *CLI) confirm(question string) (bool, error) {
+func (c *CLI) confirm(question string, confirmByDefault bool) (bool, error) {
 	if !c.isTerminal() {
 		return false, fmt.Errorf("terminal is not interactive")
 	}
 	for {
 		var answer string
-		fmt.Fprintf(c.Stdout, "%s [Y/n] ", question)
+		choice := "[Y/n]"
+		if !confirmByDefault {
+			choice = "[y/N]"
+		}
+		fmt.Fprintf(c.Stdout, "%s %s ", question, choice)
 		fmt.Fscanln(c.Stdin, &answer)
-		answer = strings.TrimSpace(strings.ToLower(answer))
+		answer = strings.TrimSpace(answer)
+		if answer == "" {
+			return confirmByDefault, nil
+		}
 		switch answer {
-		case "y", "":
+		case "y", "Y":
 			return true, nil
-		case "n":
+		case "n", "N":
 			return false, nil
 		default:
-			c.printErr(fmt.Errorf("please answer 'Y' or 'n'"))
+			c.printErr(fmt.Errorf("please answer 'y' or 'n'"))
 		}
 	}
 }

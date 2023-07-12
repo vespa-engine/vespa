@@ -45,12 +45,12 @@ func newLoginCmd(cli *CLI) *cobra.Command {
 
 			log.Printf("Your Device Confirmation code is: %s\n", state.UserCode)
 
-			auto_open, err := cli.confirm("Automatically open confirmation page in your default browser?")
+			autoOpen, err := cli.confirm("Automatically open confirmation page in your default browser?", true)
 			if err != nil {
 				return err
 			}
 
-			if auto_open {
+			if autoOpen {
 				log.Printf("Opened link in your browser: %s\n", state.VerificationURI)
 				err = browser.OpenURL(state.VerificationURI)
 				if err != nil {

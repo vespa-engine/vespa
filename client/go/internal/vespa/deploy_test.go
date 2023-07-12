@@ -122,6 +122,31 @@ func TestFindApplicationPackage(t *testing.T) {
 	})
 }
 
+func TestDeactivate(t *testing.T) {
+	httpClient := mock.HTTPClient{}
+	target := LocalTarget(&httpClient, TLSOptions{})
+	opts := DeploymentOptions{Target: target}
+	require.Nil(t, Deactivate(opts))
+	assert.Equal(t, 1, len(httpClient.Requests))
+	req := httpClient.LastRequest
+	assert.Equal(t, "DELETE", req.Method)
+	assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/application/default", req.URL.String())
+}
+
+func TestDeactivateCloud(t *testing.T) {
+	httpClient := mock.HTTPClient{}
+	target := createCloudTarget(t, "http://vespacloud", io.Discard)
+	cloudTarget, ok := target.(*cloudTarget)
+	require.True(t, ok)
+	cloudTarget.httpClient = &httpClient
+	opts := DeploymentOptions{Target: target}
+	require.Nil(t, Deactivate(opts))
+	assert.Equal(t, 1, len(httpClient.Requests))
+	req := httpClient.LastRequest
+	assert.Equal(t, "DELETE", req.Method)
+	assert.Equal(t, "http://vespacloud/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1", req.URL.String())
+}
+
 type pkgFixture struct {
 	expectedPath     string
 	expectedTestPath string
