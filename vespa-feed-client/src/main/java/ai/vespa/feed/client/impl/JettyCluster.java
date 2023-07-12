@@ -174,9 +174,12 @@ class JettyCluster implements Cluster {
         Origin.Address address = new Origin.Address(b.proxy.getHost(), b.proxy.getPort());
         if (b.proxy.getScheme().equals("https")) {
             SslContextFactory.Client proxySslCtxFactory = new SslContextFactory.Client();
-            if (b.hostnameVerifier != null) proxySslCtxFactory.setHostnameVerifier(b.hostnameVerifier);
-            // Disable built-in hostname verification in the JDK's TLS implementation
-            proxySslCtxFactory.setEndpointIdentificationAlgorithm(null);
+            if (b.proxyHostnameVerifier != null) {
+                proxySslCtxFactory.setHostnameVerifier(b.proxyHostnameVerifier);
+                // Disable built-in hostname verification in the JDK's TLS implementation
+                proxySslCtxFactory.setEndpointIdentificationAlgorithm(null);
+            }
+            proxySslCtxFactory.setSslContext(b.constructProxySslContext());
             try { proxySslCtxFactory.start(); } catch (Exception e) { throw new IOException(e); }
             httpClient.getProxyConfiguration().addProxy(
                     new HttpProxy(address, proxySslCtxFactory, new Origin.Protocol(Collections.singletonList("h2"), false)));

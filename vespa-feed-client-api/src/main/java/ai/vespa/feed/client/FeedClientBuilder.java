@@ -69,6 +69,9 @@ public interface FeedClientBuilder {
     /** Sets {@link HostnameVerifier} instance (e.g for disabling default SSL hostname verification). */
     FeedClientBuilder setHostnameVerifier(HostnameVerifier verifier);
 
+    /** Sets {@link HostnameVerifier} instance for proxy (e.g for disabling default SSL hostname verification). */
+    FeedClientBuilder setProxyHostnameVerifier(HostnameVerifier verifier);
+
     /** Turns off benchmarking. Attempting to get {@link FeedClient#stats()} will result in an exception. */
     FeedClientBuilder noBenchmarking();
 
@@ -114,8 +117,17 @@ public interface FeedClientBuilder {
      */
     FeedClientBuilder setCaCertificatesFile(Path caCertificatesFile);
 
+    /**
+     * Overrides JVM default SSL truststore for proxy
+     * @param caCertificatesFile Path to PEM encoded file containing trusted certificates
+     */
+    FeedClientBuilder setProxyCaCertificatesFile(Path caCertificatesFile);
+
     /** Overrides JVM default SSL truststore */
     FeedClientBuilder setCaCertificates(Collection<X509Certificate> caCertificates);
+
+    /** Overrides JVM default SSL truststore for proxy */
+    FeedClientBuilder setProxyCaCertificates(Collection<X509Certificate> caCertificates);
 
     /** Overrides endpoint URIs for this client */
     FeedClientBuilder setEndpointUris(List<URI> endpoints);
