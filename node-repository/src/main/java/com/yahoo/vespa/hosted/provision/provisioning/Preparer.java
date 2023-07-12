@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -60,10 +59,7 @@ class Preparer {
         NodeList clusterNodes = allNodes.owner(application);
         List<Node> surplusNodes = findNodesInRemovableGroups(clusterNodes, requestedNodes.groups());
 
-        List<Integer> usedIndices = clusterNodes.mapToList(node -> node.allocation().get().membership().index());
-        NodeIndices indices = new NodeIndices(usedIndices);
-
-        List<Node> accepted = groupPreparer.prepare(application, cluster, requestedNodes, surplusNodes, indices, allNodes);
+        List<Node> accepted = groupPreparer.prepare(application, cluster, requestedNodes, surplusNodes, allNodes);
         if (requestedNodes.rejectNonActiveParent()) {
             NodeList activeHosts = allNodes.state(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
             accepted = accepted.stream()

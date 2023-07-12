@@ -48,8 +48,6 @@ public class GroupPreparer {
      * @param requestedNodes     a specification of the requested nodes
      * @param surplusActiveNodes currently active nodes which are available to be assigned to this group.
      *                           This method will remove from this list if it finds it needs additional nodes
-     * @param indices            the next available node indices for this cluster.
-     *                           This method will consume these when it allocates new nodes to the cluster.
      * @param allNodes           list of all nodes and hosts
      * @return the list of nodes this cluster group will have allocated if activated
      */
@@ -57,12 +55,14 @@ public class GroupPreparer {
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                                 List<Node> surplusActiveNodes, NodeIndices indices,
-                                 LockedNodeList allNodes) {
+                                 List<Node> surplusActiveNodes, LockedNodeList allNodes) {
         log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " +
                                   requestedNodes.resources().orElse(NodeResources.unspecified()));
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
         // and we can return nodes previously allocated.
+        List<Integer> usedIndices = allNodes.cluster(cluster.id()).mapToList(node -> node.allocation().get().membership().index());
+        NodeIndices indices = new NodeIndices(usedIndices);
+
         NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
                                                            indices::probeNext, allNodes);
         if (probeAllocation.fulfilledAndNoChanges()) {
