@@ -145,9 +145,7 @@ class VespaServiceDumperImplTest {
         // Setup mocks
         ContainerOperations operations = mock(ContainerOperations.class);
         when(operations.executeCommandInContainer(any(), any(), any()))
-                .thenReturn(new CommandResult(null, 0, "12345"))
-                .thenReturn(new CommandResult(null, 0, ""))
-                .thenReturn(new CommandResult(null, 0, ""));
+                .thenReturn(new CommandResult(null, 0, "12345"));
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
         TestTimer timer = new TestTimer(Instant.ofEpochMilli(1600001000000L));
@@ -174,6 +172,44 @@ class VespaServiceDumperImplTest {
 
         List<URI> expectedUris = List.of(
                 URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/zookeeper-snapshot.tgz"));
+        assertSyncedFiles(context, syncClient, expectedUris);
+    }
+
+    @Test
+    void invokes_config_proxy_command_whn_invoking_config_dump() {
+        // Setup mocks
+        ContainerOperations operations = mock(ContainerOperations.class);
+        when(operations.executeCommandInContainer(any(), any(), any()))
+                .thenReturn(new CommandResult(null, 0, "12345"));
+        SyncClient syncClient = createSyncClientMock();
+        NodeRepoMock nodeRepository = new NodeRepoMock();
+        TestTimer timer = new TestTimer(Instant.ofEpochMilli(1600001000000L));
+        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, List.of("config-dump"));
+
+        VespaServiceDumper reporter = new VespaServiceDumperImpl(
+                ArtifactProducers.createDefault(Sleeper.NOOP), operations, syncClient, nodeRepository, timer);
+        NodeAgentContextImpl context = NodeAgentContextImpl.builder(nodeSpec)
+                .fileSystem(fileSystem)
+                .build();
+        reporter.processServiceDumpRequest(context);
+
+        verify(operations).executeCommandInContainer(
+                context,
+                context.users().vespa(),
+                "bash",
+                "-c",
+                "mkdir -p /opt/vespa/var/tmp/vespa-service-dump-1600000000000/config;" +
+                " /opt/vespa/bin/vespa-configproxy-cmd -m dumpcache /opt/vespa/var/tmp/vespa-service-dump-1600000000000/config;" +
+                        " tar cvf /opt/vespa/var/tmp/vespa-service-dump-1600000000000/config.tar /opt/vespa/var/tmp/vespa-service-dump-1600000000000/config;" +
+                        " zstd /opt/vespa/var/tmp/vespa-service-dump-1600000000000/config.tar -o /opt/vespa/var/tmp/vespa-service-dump-1600000000000/config-dump.tar.zst");
+
+        String expectedJson = "{\"createdMillis\":1600000000000,\"startedAt\":1600001000000,\"completedAt\":1600001000000," +
+                "\"location\":\"s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/\"," +
+                "\"configId\":\"default/container.1\",\"artifacts\":[\"config-dump\"],\"dumpOptions\":{}}";
+        assertReportEquals(nodeRepository, expectedJson);
+
+        List<URI> expectedUris = List.of(
+                URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/config-dump.tar.zst"));
         assertSyncedFiles(context, syncClient, expectedUris);
     }
 
