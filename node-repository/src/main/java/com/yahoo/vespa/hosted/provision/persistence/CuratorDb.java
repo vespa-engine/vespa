@@ -258,12 +258,10 @@ public class CuratorDb {
                           Pair<Integer, Node> cached = cachedNodes.getIfPresent(path);
                           if (cached != null && cached.getFirst().equals(stat)) return cached.getSecond();
                           cachedNodes.invalidate(path);
-                          try {
-                              return cachedNodes.get(path, () -> new Pair<>(stat, read(path, nodeSerializer::fromJson).get())).getSecond();
-                          }
-                          catch (ExecutionException e) {
-                              throw new UncheckedExecutionException(e.getCause());
-                          }
+                          Optional<Node> node = session.getData(path).filter(data -> data.length > 0).map(nodeSerializer::fromJson);
+                          if (node.isEmpty()) return null;
+                          cachedNodes.put(path, new Pair<>(stat, node.get()));
+                          return node.get();
                       });
     }
 
