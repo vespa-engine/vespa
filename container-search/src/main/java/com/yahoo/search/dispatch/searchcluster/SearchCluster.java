@@ -59,12 +59,13 @@ public class SearchCluster implements NodeManager<Node> {
     @Override
     public String name() { return clusterId; }
 
+    /** Sets the new nodes to monitor to be the new nodes, but keep any existing node instances which equal the new ones. */
     public void updateNodes(Collection<Node> newNodes, double minActivedocsPercentage) {
         Collection<Node> retainedNodes = groups.nodes();
         Collection<Node> currentNodes = new HashSet<>(newNodes);
-        retainedNodes.retainAll(currentNodes);
-        currentNodes.removeIf(retainedNodes::contains);
-        currentNodes.addAll(retainedNodes);
+        retainedNodes.retainAll(currentNodes);          // Throw away all old nodes which are not in the new set.
+        currentNodes.removeIf(retainedNodes::contains); // Throw away all new nodes for which we have more information in an old object.
+        currentNodes.addAll(retainedNodes);             // Keep the old nodes that were replaced in the new set.
         groups = toGroups(currentNodes, minActivedocsPercentage);
     }
 
