@@ -127,7 +127,8 @@ public class Dispatcher extends AbstractComponent {
 
     Dispatcher(DispatchConfig dispatchConfig, RpcConnectionPool rpcConnectionPool,
                SearchCluster searchCluster, InvokerFactoryFactory invokerFactories) {
-        this(dispatchConfig, rpcConnectionPool, searchCluster, new ClusterMonitor<>(searchCluster, true), invokerFactories);
+        this(dispatchConfig, rpcConnectionPool, searchCluster, new ClusterMonitor<>(searchCluster, false), invokerFactories);
+        this.volatileItems.clusterMonitor.start(); // Populate nodes to monitor before starting it.
     }
 
     Dispatcher(DispatchConfig dispatchConfig, RpcConnectionPool rpcConnectionPool,
@@ -137,6 +138,7 @@ public class Dispatcher extends AbstractComponent {
         this.searchCluster = searchCluster;
         this.invokerFactories = invokerFactories;
         this.volatileItems = update(clusterMonitor);
+        searchCluster.addMonitoring(clusterMonitor);
     }
 
     /* For simple mocking in tests. Beware that searchCluster is shutdown in deconstruct() */
@@ -190,10 +192,10 @@ public class Dispatcher extends AbstractComponent {
             };
 
             // Update the nodes the search cluster keeps track of, and what nodes are monitored.
-            searchCluster.updateNodes(toNodes(nodesConfig), dispatchConfig.minActivedocsPercentage());
+            ClusterMonitor<Node> newMonitor = searchCluster.updateNodes(toNodes(nodesConfig), dispatchConfig.minActivedocsPercentage());
 
             // Update the snapshot to use the new nodes set in the search cluster; the RPC pool is ready for this.
-            this.volatileItems = update(new ClusterMonitor<>(searchCluster, true));
+            this.volatileItems = update(newMonitor);
 
             // Wait for the old cluster monitor to die; it may be pinging nodes we want to shut down RPC connections to.
             items.get().clusterMonitor.shutdown();
@@ -204,7 +206,6 @@ public class Dispatcher extends AbstractComponent {
         var items = new VolatileItems(new LoadBalancer(searchCluster.groupList().groups(), toLoadBalancerPolicy(dispatchConfig.distributionPolicy())),
                                       invokerFactories.create(rpcResourcePool, searchCluster.groupList(), dispatchConfig),
                                       clusterMonitor);
-        searchCluster.addMonitoring(clusterMonitor);
         return items;
     }
 

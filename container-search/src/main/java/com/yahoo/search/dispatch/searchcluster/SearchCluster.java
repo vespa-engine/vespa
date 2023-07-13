@@ -6,6 +6,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
+import com.yahoo.yolean.UncheckedInterruptedException;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -60,13 +61,22 @@ public class SearchCluster implements NodeManager<Node> {
     public String name() { return clusterId; }
 
     /** Sets the new nodes to monitor to be the new nodes, but keep any existing node instances which equal the new ones. */
-    public void updateNodes(Collection<Node> newNodes, double minActivedocsPercentage) {
+    public ClusterMonitor<Node> updateNodes(Collection<Node> newNodes, double minActivedocsPercentage) {
         Collection<Node> retainedNodes = groups.nodes();
         Collection<Node> currentNodes = new HashSet<>(newNodes);
         retainedNodes.retainAll(currentNodes);          // Throw away all old nodes which are not in the new set.
         currentNodes.removeIf(retainedNodes::contains); // Throw away all new nodes for which we have more information in an old object.
+        Collection<Node> addedNodes = List.copyOf(currentNodes);
         currentNodes.addAll(retainedNodes);             // Keep the old nodes that were replaced in the new set.
-        groups = toGroups(currentNodes, minActivedocsPercentage);
+        SearchGroupsImpl groups = toGroups(currentNodes, minActivedocsPercentage);
+        ClusterMonitor<Node> monitor = new ClusterMonitor<>(this, false);
+        for (Node node : groups.nodes()) monitor.add(node, true);
+        monitor.start();
+        try { while (addedNodes.stream().anyMatch(node -> node.isWorking() == null)) { Thread.sleep(1); } }
+        catch (InterruptedException e) { throw new UncheckedInterruptedException(e, true); }
+        pingIterationCompleted(groups);
+        this.groups = groups;
+        return monitor;
     }
 
     public void addMonitoring(ClusterMonitor<Node> clusterMonitor) {
@@ -208,8 +218,8 @@ public class SearchCluster implements NodeManager<Node> {
         pinger.ping();
     }
 
-    private void pingIterationCompletedSingleGroup() {
-        Group group = groups().iterator().next();
+    private void pingIterationCompletedSingleGroup(SearchGroupsImpl groups) {
+        Group group = groups.groups().iterator().next();
         group.aggregateNodeValues();
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
@@ -218,10 +228,10 @@ public class SearchCluster implements NodeManager<Node> {
         trackGroupCoverageChanges(group, sufficientCoverage, group.activeDocuments());
     }
 
-    private void pingIterationCompletedMultipleGroups() {
-        groups().forEach(Group::aggregateNodeValues);
+    private void pingIterationCompletedMultipleGroups(SearchGroupsImpl groups) {
+        groups.groups().forEach(Group::aggregateNodeValues);
         long medianDocuments = groups.medianDocumentsPerGroup();
-        for (Group group : groups()) {
+        for (Group group : groups.groups()) {
             boolean sufficientCoverage = groups.isGroupCoverageSufficient(group.activeDocuments(), medianDocuments);
             updateSufficientCoverage(group, sufficientCoverage);
             trackGroupCoverageChanges(group, sufficientCoverage, medianDocuments);
@@ -235,10 +245,14 @@ public class SearchCluster implements NodeManager<Node> {
      */
     @Override
     public void pingIterationCompleted() {
+        pingIterationCompleted(groups);
+    }
+
+    private void pingIterationCompleted(SearchGroupsImpl groups) {
         if (groups.size() == 1) {
-            pingIterationCompletedSingleGroup();
+            pingIterationCompletedSingleGroup(groups);
         } else {
-            pingIterationCompletedMultipleGroups();
+            pingIterationCompletedMultipleGroups(groups);
         }
     }
 
