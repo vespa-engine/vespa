@@ -147,10 +147,11 @@ class JettyCluster implements Cluster {
         h2Client.setInitialStreamRecvWindow(initialWindow);
         ClientConnectionFactory.Info http2 = new ClientConnectionFactoryOverHTTP2.HTTP2(h2Client);
         HttpClientTransportDynamic transport = new HttpClientTransportDynamic(connector, http2);
+        int connectionsPerEndpoint = b.connectionsPerEndpoint;
         transport.setConnectionPoolFactory(dest -> {
             MultiplexConnectionPool pool = new MultiplexConnectionPool(
-                    dest, Pool.StrategyType.RANDOM, b.connectionsPerEndpoint, false, dest, Integer.MAX_VALUE);
-            pool.preCreateConnections(b.connectionsPerEndpoint);
+                    dest, Pool.StrategyType.RANDOM, connectionsPerEndpoint, false, dest, Integer.MAX_VALUE);
+            pool.preCreateConnections(connectionsPerEndpoint);
             return pool;
         });
         HttpClient httpClient = new HttpClient(transport);
@@ -186,9 +187,10 @@ class JettyCluster implements Cluster {
                     new HttpProxy(address, false, new Origin.Protocol(Collections.singletonList("h2c"), false)));
         }
         Map<String, Supplier<String>> proxyHeadersCopy = new TreeMap<>(b.proxyRequestHeaders);
+        URI proxyUri = URI.create(endpointUri(b.proxy));
         if (!proxyHeadersCopy.isEmpty()) {
             httpClient.getAuthenticationStore().addAuthenticationResult(new Authentication.Result() {
-                @Override public URI getURI() { return URI.create(endpointUri(b.proxy)); }
+                @Override public URI getURI() { return proxyUri; }
                 @Override public void apply(Request r) {
                     r.headers(hs -> proxyHeadersCopy.forEach((k, v) -> hs.add(k, v.get())));
                 }
