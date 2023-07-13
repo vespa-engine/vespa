@@ -46,7 +46,9 @@ public class DataplaneTokenSerializer {
         return new DataplaneToken.Version(
                 inspector.field(FINGERPRINT_FIELD).asString(),
                 inspector.field(CHECKACCESSHASH_FIELD).asString(),
-                expirationStr.equals("<none>") ? Optional.empty() : Optional.of(Instant.parse(expirationStr)));
+                expirationStr.equals("<none>") ? Optional.empty()
+                        : (expirationStr.isBlank()
+                        ? Optional.of(Instant.EPOCH) : Optional.of(Instant.parse(expirationStr))));
     }
 
     public static Slime toSlime(List<DataplaneToken> dataplaneTokens) {
