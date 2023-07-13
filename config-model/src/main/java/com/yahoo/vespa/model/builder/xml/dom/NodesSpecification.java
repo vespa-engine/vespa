@@ -101,9 +101,9 @@ public class NodesSpecification {
         this.hasCountAttribute = hasCountAttribute;
     }
 
-    private static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
-                                             ModelElement nodesElement, Optional<DockerImage> dockerImageRepo,
-                                             Optional<CloudAccount> cloudAccount) {
+    static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
+                                     ModelElement nodesElement, Optional<DockerImage> dockerImageRepo,
+                                     Optional<CloudAccount> cloudAccount) {
         var resolvedElement = resolveElement(nodesElement);
         var combinedId = findCombinedId(nodesElement, resolvedElement);
         var resourceConstraints = toResourceConstraints(resolvedElement);
@@ -126,8 +126,13 @@ public class NodesSpecification {
         var nodes =  rangeFrom(nodesElement, "count");
         var groups =  rangeFrom(nodesElement, "groups");
         var groupSize =  rangeFrom(nodesElement, "group-size");
-        int defaultMaxGroups = groupSize.isEmpty() ? 1 : nodes.to().orElse(1); // Don't constrain the number of groups if group size is set
-        var min = new ClusterResources(nodes.from().orElse(1),  groups.from().orElse(1),  nodeResources(nodesElement).getFirst());
+
+        // Find the tightest possible limits for groups to avoid falsely concluding we are autoscaling
+        // when only specifying group size
+        int defaultMinGroups =                           nodes.from().orElse(1) / groupSize.to().orElse(nodes.from().orElse(1));
+        int defaultMaxGroups = groupSize.isEmpty() ? 1 : nodes.to().orElse(1) / groupSize.from().orElse(1);
+
+        var min = new ClusterResources(nodes.from().orElse(1),  groups.from().orElse(defaultMinGroups),  nodeResources(nodesElement).getFirst());
         var max = new ClusterResources(nodes.to().orElse(1), groups.to().orElse(defaultMaxGroups), nodeResources(nodesElement).getSecond());
         return new ResourceConstraints(min, max, groupSize);
     }
