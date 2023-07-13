@@ -3,15 +3,18 @@ package com.yahoo.vespa.model.container.search;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.search.dispatch.DispatchConfigurer;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.search.ranking.RankProfilesEvaluatorFactory;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
@@ -81,10 +84,19 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     /** Adds a Dispatcher component to the owning container cluster for each search cluster */
     private void initializeDispatchers(Collection<SearchCluster> searchClusters) {
+        boolean useReconfigurableDispatch = false;
+        if (useReconfigurableDispatch) {
+            owningCluster.addSimpleComponent(DispatchConfigurer.class.getName(), null, SEARCH_AND_DOCPROC_BUNDLE);
+        }
         for (SearchCluster searchCluster : searchClusters) {
             if (searchCluster instanceof IndexedSearchCluster indexed) {
-                var dispatcher = new DispatcherComponent(indexed);
-                owningCluster.addComponent(dispatcher);
+                if (useReconfigurableDispatch) {
+                    owningCluster.addComponent(new ReconfigurableDispatcherComponent(indexed));
+                    owningCluster.addComponent(new DispatchNodesConfigHolderComponent(indexed));
+                }
+                else {
+                    owningCluster.addComponent(new DispatcherComponent(indexed));
+                }
             }
             if (globalPhase) {
                 for (var documentDb : searchCluster.getDocumentDbs()) {

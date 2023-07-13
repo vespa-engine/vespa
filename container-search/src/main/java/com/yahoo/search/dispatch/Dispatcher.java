@@ -203,10 +203,9 @@ public class Dispatcher extends AbstractComponent {
     }
 
     private VolatileItems update(ClusterMonitor<Node> clusterMonitor) {
-        var items = new VolatileItems(new LoadBalancer(searchCluster.groupList().groups(), toLoadBalancerPolicy(dispatchConfig.distributionPolicy())),
-                                      invokerFactories.create(rpcResourcePool, searchCluster.groupList(), dispatchConfig),
-                                      clusterMonitor);
-        return items;
+        return new VolatileItems(new LoadBalancer(searchCluster.groupList().groups(), toLoadBalancerPolicy(dispatchConfig.distributionPolicy())),
+                                 invokerFactories.create(rpcResourcePool, searchCluster.groupList(), dispatchConfig),
+                                 clusterMonitor);
     }
 
     private void initialWarmup(double warmupTime) {
