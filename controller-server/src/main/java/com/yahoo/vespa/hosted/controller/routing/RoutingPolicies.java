@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.DirectTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.Record.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.ChallengeState;
@@ -395,8 +394,8 @@ public class RoutingPolicies {
         RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(deploymentId.zoneId());
         boolean addTokenEndpoint = controller.routing().tokenEndpointEnabled(deploymentId.applicationId());
         for (var endpoint : policy.zoneEndpointsIn(controller.system(), routingMethod, addTokenEndpoint)) {
-            var name = RecordName.from(endpoint.dnsName());
-            var record = policy.canonicalName().isPresent() ?
+            RecordName name = RecordName.from(endpoint.dnsName());
+            Record record = policy.canonicalName().isPresent() ?
                     new Record(Record.Type.CNAME, name, RecordData.fqdn(policy.canonicalName().get().value())) :
                     new Record(Record.Type.A, name, RecordData.from(policy.ipAddress().orElseThrow()));
             nameServiceForwarder(endpoint).createRecord(record, Priority.normal, ownerOf(deploymentId));
@@ -458,7 +457,7 @@ public class RoutingPolicies {
     }
 
     private void removeDnsChallenge(DnsChallenge challenge) {
-        controller.nameServiceForwarder().removeRecords(Type.TXT, challenge.name(), Priority.normal, ownerOf(challenge.clusterId().deploymentId()));
+        controller.nameServiceForwarder().removeRecords(Record.Type.TXT, challenge.name(), Priority.normal, ownerOf(challenge.clusterId().deploymentId()));
         db.deleteDnsChallenge(challenge.clusterId());
     }
 
@@ -476,7 +475,8 @@ public class RoutingPolicies {
                                                       .not().matching(policy -> activeIds.contains(policy.id()));
         for (var policy : removable) {
             for (var endpoint : policy.zoneEndpointsIn(controller.system(), routingMethod, addTokenEndpoint)) {
-                nameServiceForwarder(endpoint).removeRecords(Record.Type.CNAME,
+                Record.Type type = policy.canonicalName().isPresent() ? Record.Type.CNAME : Record.Type.A;
+                nameServiceForwarder(endpoint).removeRecords(type,
                                                              RecordName.from(endpoint.dnsName()),
                                                              Priority.normal,
                                                              ownerOf(allocation));
