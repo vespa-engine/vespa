@@ -133,7 +133,7 @@ public class MetricsReporterTest {
         expectedMetrics.put("suspendedSeconds", 123L);
         expectedMetrics.put("numberOfServices", 0L);
 
-        expectedMetrics.put("cache.nodeObject.hitRate", 0.5555555555555556D);
+        expectedMetrics.put("cache.nodeObject.hitRate", 5D/7D);
         expectedMetrics.put("cache.nodeObject.evictionCount", 0L);
         expectedMetrics.put("cache.nodeObject.size", 2L);
 
