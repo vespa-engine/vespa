@@ -96,6 +96,8 @@ public final class ClusterSpec {
         return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
 
+    // TODO: Remove after July 2023
+    @Deprecated
     public ClusterSpec exclusive(boolean exclusive) {
         return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
