@@ -287,7 +287,7 @@ Fast_BufferedFile::ReadOpenExisting(const char *name)
     bool ok = Close();
     ok &= _file->OpenReadOnlyExisting(true, name);
     if (!ok) {
-        fprintf(stderr, "ERROR opening %s for read: %s",
+        fprintf(stderr, "ERROR opening %s for read: %s\n",
                 _file->GetFileName(), getLastErrorString().c_str());
         assert(ok);
     }
@@ -304,7 +304,7 @@ Fast_BufferedFile::ReadOpen(const char *name)
     bool ok = Close();
     ok &= _file->OpenReadOnly(name);
     if (!ok) {
-        fprintf(stderr, "ERROR opening %s for read: %s",
+        fprintf(stderr, "ERROR opening %s for read: %s\n",
                 _file->GetFileName(), getLastErrorString().c_str());
         assert(ok);
     }
@@ -324,7 +324,7 @@ Fast_BufferedFile::WriteOpen(const char *name)
     bool ok = Close();
     ok &= _file->OpenWriteOnly(name);
     if (!ok) {
-        fprintf(stderr, "ERROR opening %s for write: %s",
+        fprintf(stderr, "ERROR opening %s for write: %s\n",
                 _file->GetFileName(), getLastErrorString().c_str());
         assert(ok);
     }

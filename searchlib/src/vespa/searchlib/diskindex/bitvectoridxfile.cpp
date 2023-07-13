@@ -20,7 +20,7 @@ void
 readHeader(vespalib::FileHeader &h, const vespalib::string &name)
 {
     Fast_BufferedFile file(32_Ki);
-    file.OpenReadOnly(name.c_str());
+    file.ReadOpenExisting(name.c_str());
     h.readFile(file);
 }
 
@@ -66,8 +66,7 @@ BitVectorIdxFileWrite::open(const vespalib::string &name,
         _idxFile->EnableDirectIO();
     }
 
-    // XXX no checking for success:
-    _idxFile->OpenWriteOnly(idxname.c_str());
+    _idxFile->WriteOpen(idxname.c_str());
 
     if (_idxHeaderLen == 0) {
         assert(_numKeys == 0);
