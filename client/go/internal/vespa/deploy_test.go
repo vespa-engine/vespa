@@ -69,6 +69,41 @@ func TestDeployCloud(t *testing.T) {
 	assert.Equal(t, string(values["deployOptions"]), `{"vespaVersion":"1.2.3"}`)
 }
 
+func TestSubmit(t *testing.T) {
+	httpClient := mock.HTTPClient{}
+	target := createCloudTarget(t, "http://vespacloud", io.Discard)
+	cloudTarget, ok := target.(*cloudTarget)
+	require.True(t, ok)
+	cloudTarget.httpClient = &httpClient
+	appDir, _ := mock.ApplicationPackageDir(t, false, true)
+	opts := DeploymentOptions{
+		Target:             target,
+		ApplicationPackage: ApplicationPackage{Path: appDir},
+	}
+	httpClient.NextResponseString(200, "ok")
+	require.Nil(t, Submit(opts, Submission{}))
+	require.Nil(t, httpClient.LastRequest.ParseMultipartForm(1<<20))
+	assert.Equal(t, "{}", httpClient.LastRequest.FormValue("submitOptions"))
+	f, err := httpClient.LastRequest.MultipartForm.File["applicationZip"][0].Open()
+	require.Nil(t, err)
+	defer f.Close()
+	contents := make([]byte, 5)
+	f.Read(contents)
+	assert.Equal(t, "PK\x03\x04\x14", string(contents))
+
+	require.Nil(t, Submit(opts, Submission{
+		Risk:        1,
+		Commit:      "sha",
+		Description: "broken garbage",
+		AuthorEmail: "foo@example.com",
+		SourceURL:   "https://github.com/foo/repo",
+	}))
+	require.Nil(t, httpClient.LastRequest.ParseMultipartForm(1<<20))
+	assert.Equal(t,
+		"{\"risk\":1,\"commit\":\"sha\",\"description\":\"broken garbage\",\"authorEmail\":\"foo@example.com\",\"sourceUrl\":\"https://github.com/foo/repo\"}",
+		httpClient.LastRequest.FormValue("submitOptions"))
+}
+
 func TestApplicationFromString(t *testing.T) {
 	app, err := ApplicationFromString("t1.a1.i1")
 	assert.Nil(t, err)

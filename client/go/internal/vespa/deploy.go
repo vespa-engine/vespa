@@ -51,6 +51,14 @@ type DeploymentOptions struct {
 	Version            version.Version
 }
 
+type Submission struct {
+	Risk        int    `json:"risk,omitempty"`
+	Commit      string `json:"commit,omitempty"`
+	Description string `json:"description,omitempty"`
+	AuthorEmail string `json:"authorEmail,omitempty"`
+	SourceURL   string `json:"sourceUrl,omitempty"`
+}
+
 type LogLinePrepareResponse struct {
 	Time    int64
 	Level   string
@@ -247,7 +255,7 @@ func copyToPart(dst *multipart.Writer, src io.Reader, fieldname, filename string
 	return nil
 }
 
-func Submit(opts DeploymentOptions) error {
+func Submit(opts DeploymentOptions, submission Submission) error {
 	if !opts.Target.IsCloud() {
 		return fmt.Errorf("%s: deploy is unsupported by %s target", opts, opts.Target.Type())
 	}
@@ -261,7 +269,11 @@ func Submit(opts DeploymentOptions) error {
 	}
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
-	if err := copyToPart(writer, strings.NewReader("{}"), "submitOptions", ""); err != nil {
+	submitOptions, err := json.Marshal(submission)
+	if err != nil {
+		return err
+	}
+	if err := copyToPart(writer, bytes.NewReader(submitOptions), "submitOptions", ""); err != nil {
 		return err
 	}
 	applicationZip, err := opts.ApplicationPackage.zipReader(false)
