@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.DirectTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.Record.Type;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.VpcEndpointService.ChallengeState;
@@ -119,7 +118,7 @@ public class RoutingPolicies {
             RoutingPolicyList applicationPolicies = read(TenantAndApplicationId.from(instance));
             RoutingPolicyList deploymentPolicies = applicationPolicies.deployment(allocation.deployment);
 
-            removeGlobalDnsUnreferencedBy(allocation, deploymentPolicies, lock);
+            removeGlobalDnsUnreferencedBy(allocation, deploymentPolicies, inactiveZones, lock);
             removeApplicationDnsUnreferencedBy(allocation, deploymentPolicies, lock);
 
             RoutingPolicyList instancePolicies = storePoliciesOf(allocation, applicationPolicies, generatedEndpoints, lock);
@@ -395,8 +394,8 @@ public class RoutingPolicies {
         RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(deploymentId.zoneId());
         boolean addTokenEndpoint = controller.routing().tokenEndpointEnabled(deploymentId.applicationId());
         for (var endpoint : policy.zoneEndpointsIn(controller.system(), routingMethod, addTokenEndpoint)) {
-            var name = RecordName.from(endpoint.dnsName());
-            var record = policy.canonicalName().isPresent() ?
+            RecordName name = RecordName.from(endpoint.dnsName());
+            Record record = policy.canonicalName().isPresent() ?
                     new Record(Record.Type.CNAME, name, RecordData.fqdn(policy.canonicalName().get().value())) :
                     new Record(Record.Type.A, name, RecordData.from(policy.ipAddress().orElseThrow()));
             nameServiceForwarder(endpoint).createRecord(record, Priority.normal, ownerOf(deploymentId));
@@ -458,7 +457,7 @@ public class RoutingPolicies {
     }
 
     private void removeDnsChallenge(DnsChallenge challenge) {
-        controller.nameServiceForwarder().removeRecords(Type.TXT, challenge.name(), Priority.normal, ownerOf(challenge.clusterId().deploymentId()));
+        controller.nameServiceForwarder().removeRecords(Record.Type.TXT, challenge.name(), Priority.normal, ownerOf(challenge.clusterId().deploymentId()));
         db.deleteDnsChallenge(challenge.clusterId());
     }
 
@@ -476,7 +475,8 @@ public class RoutingPolicies {
                                                       .not().matching(policy -> activeIds.contains(policy.id()));
         for (var policy : removable) {
             for (var endpoint : policy.zoneEndpointsIn(controller.system(), routingMethod, addTokenEndpoint)) {
-                nameServiceForwarder(endpoint).removeRecords(Record.Type.CNAME,
+                Record.Type type = policy.canonicalName().isPresent() ? Record.Type.CNAME : Record.Type.A;
+                nameServiceForwarder(endpoint).removeRecords(type,
                                                              RecordName.from(endpoint.dnsName()),
                                                              Priority.normal,
                                                              ownerOf(allocation));
@@ -489,7 +489,7 @@ public class RoutingPolicies {
     }
 
     /** Remove unreferenced instance endpoints from DNS */
-    private void removeGlobalDnsUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList deploymentPolicies, @SuppressWarnings("unused") Mutex lock) {
+    private void removeGlobalDnsUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList deploymentPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Mutex lock) {
         Set<RoutingId> removalCandidates = new HashSet<>(deploymentPolicies.asInstanceRoutingTable().keySet());
         Set<RoutingId> activeRoutingIds = instanceRoutingIds(allocation);
         removalCandidates.removeAll(activeRoutingIds);
@@ -499,9 +499,18 @@ public class RoutingPolicies {
                                                .named(id.endpointId(), Endpoint.Scope.global);
             // This removes all ALIAS records having this DNS name. There is no attempt to delete only the entry for the
             // affected zone. Instead, the correct set of records is (re)created by updateGlobalDnsOf
-            endpoints.forEach(endpoint -> nameServiceForwarder(endpoint).removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()),
-                                                                                       Priority.normal,
-                                                                                       ownerOf(allocation)));
+            for (var endpoint : endpoints) {
+                for (var regionEndpoint : computeRegionEndpoints(endpoint, deploymentPolicies.asList(), inactiveZones)) {
+                    Record.Type type = regionEndpoint.zoneDirectTargets().isEmpty() ? Record.Type.ALIAS : Record.Type.DIRECT;
+                    controller.nameServiceForwarder().removeRecords(type,
+                                                                    RecordName.from(regionEndpoint.target().name().value()),
+                                                                    Priority.normal,
+                                                                    ownerOf(allocation));
+                }
+                nameServiceForwarder(endpoint).removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()),
+                                                             Priority.normal,
+                                                             ownerOf(allocation));
+            }
         }
     }
 
