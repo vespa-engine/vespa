@@ -1,6 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken;
 
+import java.time.Instant;
+import java.util.Optional;
+
 /**
  * Represents a generated data plane token.
  *
@@ -8,5 +11,5 @@ package com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken;
  *
  * @author mortent
  */
-public record DataplaneToken(TokenId tokenId, FingerPrint fingerPrint, String tokenValue) {
+public record DataplaneToken(TokenId tokenId, FingerPrint fingerPrint, String tokenValue, Optional<Instant> expiration) {
 }

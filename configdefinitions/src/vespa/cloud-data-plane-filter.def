@@ -9,3 +9,4 @@ clients[].certificates[] string
 clients[].tokens[].id string
 clients[].tokens[].fingerprints[] string
 clients[].tokens[].checkAccessHashes[] string
+clients[].tokens[].expirations[] string
