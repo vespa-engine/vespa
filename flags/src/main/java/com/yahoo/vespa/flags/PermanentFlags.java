@@ -362,6 +362,12 @@ public class PermanentFlags {
             "Takes effect on next redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag AUTOSCALING = defineFeatureFlag(
+            "autoscaling", true,
+            "Whether to enable autoscaling",
+            "Takes effect immediately",
+            APPLICATION_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
