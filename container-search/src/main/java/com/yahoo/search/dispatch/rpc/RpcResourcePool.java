@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.search.DispatchNodesConfig.Node;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -22,7 +21,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author ollivir
  */
-public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
+public class RpcResourcePool implements RpcConnectionPool {
 
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private volatile Map<Integer, NodeConnectionPool> nodeConnectionPools = Map.of();
@@ -45,7 +44,7 @@ public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
         });
     }
 
-    /** Will return a list of items that need a delayed close. */
+    @Override
     public Collection<? extends AutoCloseable> updateNodes(DispatchNodesConfig nodesConfig) {
         Map<Integer, NodeConnectionPool> currentPools = new HashMap<>(nodeConnectionPools);
         Map<Integer, NodeConnectionPool> nextPools = new HashMap<>();
