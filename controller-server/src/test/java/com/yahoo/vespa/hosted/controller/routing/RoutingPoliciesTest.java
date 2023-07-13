@@ -441,6 +441,12 @@ public class RoutingPoliciesTest {
         assertEquals(List.of("latency/c0.app1.tenant1.aws-us-east-1.w.vespa-app.cloud/dns-zone-1/prod.aws-us-east-1c",
                              "latency/c0.app1.tenant1.gcp-us-south1.w.vespa-app.cloud/ignored/prod.gcp-us-south1-b"),
                      tester.recordDataOf(Record.Type.ALIAS, expectedRecords.get(4)));
+
+        // Application is removed and records are cleaned up
+        tester.controllerTester().controller().applications().requireInstance(context.instanceId()).deployments().keySet()
+              .forEach(zone -> tester.controllerTester().controller().applications().deactivate(context.instanceId(), zone));
+        context.flushDnsUpdates();
+        assertEquals(List.of(), tester.recordNames());
     }
 
     @Test

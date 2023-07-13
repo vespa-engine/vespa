@@ -118,7 +118,7 @@ public class RoutingPolicies {
             RoutingPolicyList applicationPolicies = read(TenantAndApplicationId.from(instance));
             RoutingPolicyList deploymentPolicies = applicationPolicies.deployment(allocation.deployment);
 
-            removeGlobalDnsUnreferencedBy(allocation, deploymentPolicies, lock);
+            removeGlobalDnsUnreferencedBy(allocation, deploymentPolicies, inactiveZones, lock);
             removeApplicationDnsUnreferencedBy(allocation, deploymentPolicies, lock);
 
             RoutingPolicyList instancePolicies = storePoliciesOf(allocation, applicationPolicies, generatedEndpoints, lock);
@@ -489,7 +489,7 @@ public class RoutingPolicies {
     }
 
     /** Remove unreferenced instance endpoints from DNS */
-    private void removeGlobalDnsUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList deploymentPolicies, @SuppressWarnings("unused") Mutex lock) {
+    private void removeGlobalDnsUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList deploymentPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Mutex lock) {
         Set<RoutingId> removalCandidates = new HashSet<>(deploymentPolicies.asInstanceRoutingTable().keySet());
         Set<RoutingId> activeRoutingIds = instanceRoutingIds(allocation);
         removalCandidates.removeAll(activeRoutingIds);
@@ -499,9 +499,18 @@ public class RoutingPolicies {
                                                .named(id.endpointId(), Endpoint.Scope.global);
             // This removes all ALIAS records having this DNS name. There is no attempt to delete only the entry for the
             // affected zone. Instead, the correct set of records is (re)created by updateGlobalDnsOf
-            endpoints.forEach(endpoint -> nameServiceForwarder(endpoint).removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()),
-                                                                                       Priority.normal,
-                                                                                       ownerOf(allocation)));
+            for (var endpoint : endpoints) {
+                for (var regionEndpoint : computeRegionEndpoints(endpoint, deploymentPolicies.asList(), inactiveZones)) {
+                    Record.Type type = regionEndpoint.zoneDirectTargets().isEmpty() ? Record.Type.ALIAS : Record.Type.DIRECT;
+                    controller.nameServiceForwarder().removeRecords(type,
+                                                                    RecordName.from(regionEndpoint.target().name().value()),
+                                                                    Priority.normal,
+                                                                    ownerOf(allocation));
+                }
+                nameServiceForwarder(endpoint).removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()),
+                                                             Priority.normal,
+                                                             ownerOf(allocation));
+            }
         }
     }
 
