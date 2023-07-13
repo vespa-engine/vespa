@@ -10,8 +10,33 @@
 
 using namespace search::fef;
 using CollectionType = FieldInfo::CollectionType;
+using DataType = FieldInfo::DataType;
 
 namespace search::features {
+
+namespace {
+
+auto attribute_match_data_types = ParameterDataTypeSet::normalTypeSet();
+
+bool matchable_field(const FieldInfo& info)
+{
+    auto field_type = info.type();
+    if (field_type != FieldType::INDEX && field_type != FieldType::ATTRIBUTE) {
+        return false;
+    }
+    auto data_type = info.get_data_type();
+    if (data_type == DataType::TENSOR || data_type == DataType::RAW) {
+        // not matchable
+        return false;
+    }
+    if (field_type == FieldType::ATTRIBUTE && !attribute_match_data_types.allowedType(data_type)) {
+        // bad data type for attributeMatch feature
+        return false;
+    }
+    return true;
+}
+
+}
 
 MatchExecutor::MatchExecutor(const MatchParams & params) :
     FeatureExecutor(),
@@ -67,30 +92,28 @@ MatchBlueprint::setup(const IIndexEnvironment & env,
 {
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
         const FieldInfo * info = env.getField(i);
-        if (info->get_data_type() == FieldInfo::DataType::TENSOR) {
-            // not matchable
+        if (!matchable_field(*info)) {
             continue;
         }
-        if ((info->type() == FieldType::INDEX) || (info->type() == FieldType::ATTRIBUTE)) {
-            _params.weights.push_back(indexproperties::FieldWeight::lookup(env.getProperties(), info->name()));
-            if (info->type() == FieldType::INDEX) {
-                if (info->collection() == CollectionType::SINGLE) {
-                    defineInput("fieldMatch(" + info->name() + ")");
-                } else {
-                    defineInput("elementCompleteness(" + info->name() + ")");
-                }
-            } else if (info->type() == FieldType::ATTRIBUTE) {
-                defineInput("attributeMatch(" + info->name() + ")");
+        _params.weights.push_back(indexproperties::FieldWeight::lookup(env.getProperties(), info->name()));
+        if (info->type() == FieldType::INDEX) {
+            if (info->collection() == CollectionType::SINGLE) {
+                defineInput("fieldMatch(" + info->name() + ")");
+            } else {
+                defineInput("elementCompleteness(" + info->name() + ")");
             }
+        } else if (info->type() == FieldType::ATTRIBUTE) {
+            defineInput("attributeMatch(" + info->name() + ")");
         }
     }
     describeOutput("score", "Normalized sum over all matched fields");
     describeOutput("totalWeight", "Sum of rank weights for all matched fields");
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
         const FieldInfo * info = env.getField(i);
-        if ((info->type() == FieldType::INDEX) || (info->type() == FieldType::ATTRIBUTE)) {
-            describeOutput("weight." + info->name(), "The rank weight value for field '" + info->name() + "'");
+        if (!matchable_field(*info)) {
+            continue;
         }
+        describeOutput("weight." + info->name(), "The rank weight value for field '" + info->name() + "'");
     }
     return true;
 }
