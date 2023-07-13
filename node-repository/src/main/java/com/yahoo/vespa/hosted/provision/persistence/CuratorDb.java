@@ -2,6 +2,10 @@
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import ai.vespa.http.DomainName;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.UncheckedExecutionException;
+import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
@@ -38,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -79,6 +84,9 @@ public class CuratorDb {
     private final CachingCurator db;
     private final Clock clock;
     private final CuratorCounter provisionIndexCounter;
+
+    /** Simple cache for deserialized node objects, based on their ZK node version. */
+    private final Cache<Path, Pair<Integer, Node>> cachedNodes = CacheBuilder.newBuilder().recordStats().build();
 
     public CuratorDb(NodeFlavors flavors, Curator curator, Clock clock, boolean useCache, long nodeCacheSize) {
         this.nodeSerializer = new NodeSerializer(flavors, nodeCacheSize);
@@ -244,7 +252,19 @@ public class CuratorDb {
     }
 
     private Optional<Node> readNode(CachingCurator.Session session, String hostname) {
-        return session.getData(nodePath(hostname)).map(nodeSerializer::fromJson);
+        Path path = nodePath(hostname);
+        return session.getStat(path)
+                      .map(stat -> {
+                          Pair<Integer, Node> cached = cachedNodes.getIfPresent(path);
+                          if (cached != null && cached.getFirst().equals(stat)) return cached.getSecond();
+                          cachedNodes.invalidate(path);
+                          try {
+                              return cachedNodes.get(path, () -> new Pair<>(stat, read(path, nodeSerializer::fromJson).get())).getSecond();
+                          }
+                          catch (ExecutionException e) {
+                              throw new UncheckedExecutionException(e.getCause());
+                          }
+                      });
     }
 
     /** Read node with given hostname, if any such node exists */
@@ -486,7 +506,8 @@ public class CuratorDb {
     }
 
     public CacheStats nodeSerializerCacheStats() {
-        return nodeSerializer.cacheStats();
+        var stats = cachedNodes.stats();
+        return new CacheStats(stats.hitRate(), stats.evictionCount(), cachedNodes.size());
     }
 
     private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {

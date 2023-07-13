@@ -390,7 +390,7 @@ public class CuratorDb {
                       .map(stat -> cachedApplications.compute(path, (__, old) ->
                               old != null && old.getFirst() == stat.getVersion()
                               ? old
-                              : new Pair<>(stat.getVersion(), read(path, bytes -> applicationSerializer.fromSlime(bytes)).get())).getSecond());
+                              : new Pair<>(stat.getVersion(), read(path, applicationSerializer::fromSlime).get())).getSecond());
     }
 
     public List<Application> readApplications(boolean canFail) {
