@@ -9,12 +9,14 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import org.apache.zookeeper.data.Stat;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -145,8 +147,9 @@ public class CachingCurator {
         // The content of the map is immutable.
         private final Map<Path, List<String>> children = new ConcurrentHashMap<>();
         private final Map<Path, Optional<byte[]>> data = new ConcurrentHashMap<>();
+        private final Map<Path, Optional<Integer>> stats = new ConcurrentHashMap<>();
 
-        private final AbstractCache.SimpleStatsCounter stats = new AbstractCache.SimpleStatsCounter();
+        private final AbstractCache.SimpleStatsCounter statistics = new AbstractCache.SimpleStatsCounter();
 
         /** Create an empty snapshot at a given generation (as an empty snapshot is a valid partial snapshot) */
         private Cache(long generation, Curator curator) {
@@ -164,19 +167,24 @@ public class CachingCurator {
             return get(data, path, () -> curator.getData(path)).map(data -> Arrays.copyOf(data, data.length));
         }
 
+        @Override
+        public Optional<Integer> getStat(Path path) {
+            return get(stats, path, () -> curator.getStat(path).map(Stat::getVersion));
+        }
+
         private <T> T get(Map<Path, T> values, Path path, Supplier<T> loader) {
             return values.compute(path, (key, value) -> {
                 if (value == null) {
-                    stats.recordMisses(1);
+                    statistics.recordMisses(1);
                     return loader.get();
                 }
-                stats.recordHits(1);
+                statistics.recordHits(1);
                 return value;
             });
         }
 
         public CacheStats stats() {
-            var stats = this.stats.snapshot();
+            var stats = this.statistics.snapshot();
             return new CacheStats(stats.hitRate(), stats.evictionCount(), children.size() + data.size());
         }
 
@@ -193,6 +201,11 @@ public class CachingCurator {
         @Override
         public Optional<byte[]> getData(Path path) { return curator.getData(path); }
 
+        @Override
+        public Optional<Integer> getStat(Path path) {
+            return curator.getStat(path).map(Stat::getVersion);
+        }
+
     }
 
     interface Session {
@@ -206,6 +219,8 @@ public class CachingCurator {
          * Returns a copy of the content of this child - which may be empty.
          */
         Optional<byte[]> getData(Path path);
+
+        Optional<Integer> getStat(Path path);
 
     }
 
