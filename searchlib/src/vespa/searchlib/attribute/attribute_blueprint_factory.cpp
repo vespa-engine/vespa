@@ -66,6 +66,7 @@ using search::query::StackDumpCreator;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
+using search::query::Term;
 using search::queryeval::AndBlueprint;
 using search::queryeval::AndSearchStrict;
 using search::queryeval::Blueprint;
@@ -700,7 +701,7 @@ public:
 
     template <class TermNode>
     void visitSimpleTerm(TermNode &n) {
-        if ((_dwa != nullptr) && !_field.isFilter() && n.isRanked()) {
+        if ((_dwa != nullptr) && !_field.isFilter() && n.isRanked() && !Term::isPossibleRangeTerm(n.getTerm())) {
             NodeAsKey key(n, _scratchPad);
             setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr, *_dwa, key));
         } else {

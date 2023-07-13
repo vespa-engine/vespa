@@ -174,7 +174,7 @@ private:
                 Location loc(parser.getGeoLocation());
                 t = &builder.addLocationTerm(loc, view, id, weight);
             } else if (type == ParseItem::ITEM_NUMTERM) {
-                if (term[0] == '[' || term[0] == '<' || term[0] == '>') {
+                if (Term::isPossibleRangeTerm(term)) {
                     Range range(term);
                     t = &builder.addRangeTerm(range, view, id, weight);
                 } else {
