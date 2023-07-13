@@ -337,18 +337,6 @@ func (c *Config) targetOrURL() (string, error) {
 	return targetType, nil
 }
 
-func (c *Config) timeout() (time.Duration, error) {
-	wait, ok := c.get(waitFlag)
-	if !ok {
-		return 0, nil
-	}
-	secs, err := strconv.Atoi(wait)
-	if err != nil {
-		return 0, err
-	}
-	return time.Duration(secs) * time.Second, nil
-}
-
 func (c *Config) isQuiet() bool {
 	quiet, _ := c.get(quietFlag)
 	return quiet == "true"
@@ -628,12 +616,6 @@ func (c *Config) set(option, value string) error {
 		return nil
 	case clusterFlag:
 		c.config.Set(clusterFlag, value)
-		return nil
-	case waitFlag:
-		if n, err := strconv.Atoi(value); err != nil || n < 0 {
-			return fmt.Errorf("%s option must be an integer >= 0, got %q", option, value)
-		}
-		c.config.Set(option, value)
 		return nil
 	case colorFlag:
 		switch value {

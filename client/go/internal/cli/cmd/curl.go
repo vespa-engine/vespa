@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/curl"
@@ -14,6 +15,7 @@ import (
 
 func newCurlCmd(cli *CLI) *cobra.Command {
 	var (
+		waitSecs    int
 		dryRun      bool
 		curlService string
 	)
@@ -37,7 +39,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			if err != nil {
 				return err
 			}
-			service, err := target.Service(curlService, 0, 0, cli.config.cluster())
+			service, err := target.Service(curlService, time.Duration(waitSecs)*time.Second, 0, cli.config.cluster())
 			if err != nil {
 				return err
 			}
@@ -72,6 +74,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 	}
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Print the curl command that would be executed")
 	cmd.Flags().StringVarP(&curlService, "service", "s", "query", "Which service to query. Must be \"deploy\", \"document\" or \"query\"")
+	cli.bindWaitFlag(cmd, 60, &waitSecs)
 	return cmd
 }
 

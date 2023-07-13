@@ -26,6 +26,7 @@ import (
 )
 
 func newTestCmd(cli *CLI) *cobra.Command {
+	var waitSecs int
 	testCmd := &cobra.Command{
 		Use:   "test test-directory-or-file",
 		Short: "Run a test suite, or a single test",
@@ -40,7 +41,7 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			count, failed, err := runTests(cli, args[0], false)
+			count, failed, err := runTests(cli, args[0], false, waitSecs)
 			if err != nil {
 				return err
 			}
@@ -64,10 +65,11 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 			}
 		},
 	}
+	cli.bindWaitFlag(testCmd, 0, &waitSecs)
 	return testCmd
 }
 
-func runTests(cli *CLI, rootPath string, dryRun bool) (int, []string, error) {
+func runTests(cli *CLI, rootPath string, dryRun bool, waitSecs int) (int, []string, error) {
 	count := 0
 	failed := make([]string, 0)
 	if stat, err := os.Stat(rootPath); err != nil {
@@ -86,7 +88,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool) (int, []string, error) {
 					fmt.Fprintln(cli.Stdout, "")
 					previousFailed = false
 				}
-				failure, err := runTest(testPath, context)
+				failure, err := runTest(testPath, context, waitSecs)
 				if err != nil {
 					return 0, nil, err
 				}
@@ -98,7 +100,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool) (int, []string, error) {
 			}
 		}
 	} else if strings.HasSuffix(stat.Name(), ".json") {
-		failure, err := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun, cli: cli})
+		failure, err := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun, cli: cli}, waitSecs)
 		if err != nil {
 			return 0, nil, err
 		}
@@ -114,7 +116,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool) (int, []string, error) {
 }
 
 // Runs the test at the given path, and returns the specified test name if the test fails
-func runTest(testPath string, context testContext) (string, error) {
+func runTest(testPath string, context testContext, waitSecs int) (string, error) {
 	var test test
 	testBytes, err := os.ReadFile(testPath)
 	if err != nil {
@@ -147,7 +149,7 @@ func runTest(testPath string, context testContext) (string, error) {
 		if step.Name != "" {
 			stepName += ": " + step.Name
 		}
-		failure, longFailure, err := verify(step, test.Defaults.Cluster, defaultParameters, context)
+		failure, longFailure, err := verify(step, test.Defaults.Cluster, defaultParameters, context, waitSecs)
 		if err != nil {
 			fmt.Fprintln(context.cli.Stderr)
 			return "", errHint(fmt.Errorf("error in %s: %w", stepName, err), "See https://docs.vespa.ai/en/reference/testing")
@@ -170,7 +172,7 @@ func runTest(testPath string, context testContext) (string, error) {
 }
 
 // Asserts specified response is obtained for request, or returns a failure message, or an error if this fails
-func verify(step step, defaultCluster string, defaultParameters map[string]string, context testContext) (string, string, error) {
+func verify(step step, defaultCluster string, defaultParameters map[string]string, context testContext, waitSecs int) (string, string, error) {
 	requestBody, err := getBody(step.Request.BodyRaw, context.testsPath)
 	if err != nil {
 		return "", "", err
@@ -214,7 +216,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		if err != nil {
 			return "", "", err
 		}
-		service, err = target.Service(vespa.QueryService, 0, 0, cluster)
+		service, err = target.Service(vespa.QueryService, time.Duration(waitSecs)*time.Second, 0, cluster)
 		if err != nil {
 			return "", "", err
 		}

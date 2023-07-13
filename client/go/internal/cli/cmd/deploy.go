@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -18,6 +19,7 @@ import (
 
 func newDeployCmd(cli *CLI) *cobra.Command {
 	var (
+		waitSecs    int
 		logLevelArg string
 		versionArg  string
 		copyCert    bool
@@ -57,10 +59,8 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			if err != nil {
 				return err
 			}
-			opts, err := cli.createDeploymentOptions(pkg, target)
-			if err != nil {
-				return err
-			}
+			timeout := time.Duration(waitSecs) * time.Second
+			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target, Timeout: timeout}
 			if versionArg != "" {
 				version, err := version.Parse(versionArg)
 				if err != nil {
@@ -95,12 +95,13 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 					opts.Target.Deployment().Application.Instance, opts.Target.Deployment().Zone.Environment, opts.Target.Deployment().Zone.Region,
 					result.ID)))
 			}
-			return waitForQueryService(cli, target, result.ID)
+			return waitForQueryService(cli, target, result.ID, timeout)
 		},
 	}
 	cmd.Flags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
 	cmd.Flags().StringVarP(&versionArg, "version", "V", "", `Override the Vespa runtime version to use in Vespa Cloud`)
 	cmd.Flags().BoolVarP(&copyCert, "add-cert", "A", false, `Copy certificate of the configured application to the current application package`)
+	cli.bindWaitFlag(cmd, 60, &waitSecs)
 	return cmd
 }
 
@@ -120,10 +121,7 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			opts, err := cli.createDeploymentOptions(pkg, target)
-			if err != nil {
-				return err
-			}
+			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 			var result vespa.PrepareResult
 			err = cli.spinner(cli.Stderr, "Uploading application package ...", func() error {
 				result, err = vespa.Prepare(opts)
@@ -143,7 +141,8 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 }
 
 func newActivateCmd(cli *CLI) *cobra.Command {
-	return &cobra.Command{
+	var waitSecs int
+	cmd := &cobra.Command{
 		Use:               "activate",
 		Short:             "Activate (deploy) a previously prepared application package",
 		Args:              cobra.MaximumNArgs(1),
@@ -162,31 +161,26 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			opts, err := cli.createDeploymentOptions(pkg, target)
-			if err != nil {
-				return err
-			}
+			timeout := time.Duration(waitSecs) * time.Second
+			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target, Timeout: timeout}
 			err = vespa.Activate(sessionID, opts)
 			if err != nil {
 				return err
 			}
 			cli.printSuccess("Activated ", color.CyanString(pkg.Path), " with session ", sessionID)
-			return waitForQueryService(cli, target, sessionID)
+			return waitForQueryService(cli, target, sessionID, timeout)
 		},
 	}
+	cli.bindWaitFlag(cmd, 60, &waitSecs)
+	return cmd
 }
 
-func waitForQueryService(cli *CLI, target vespa.Target, sessionOrRunID int64) error {
-	timeout, err := cli.config.timeout()
-	if err != nil {
-		return err
+func waitForQueryService(cli *CLI, target vespa.Target, sessionOrRunID int64, timeout time.Duration) error {
+	if timeout == 0 {
+		return nil
 	}
-	if timeout > 0 {
-		log.Println()
-		_, err := cli.service(target, vespa.QueryService, sessionOrRunID, cli.config.cluster())
-		return err
-	}
-	return nil
+	_, err := cli.service(target, vespa.QueryService, sessionOrRunID, cli.config.cluster(), timeout)
+	return err
 }
 
 func printPrepareLog(stderr io.Writer, result vespa.PrepareResult) {

@@ -16,7 +16,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
 
-func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
+func addFeedFlags(cli *CLI, cmd *cobra.Command, options *feedOptions) {
 	cmd.PersistentFlags().IntVar(&options.connections, "connections", 8, "The number of connections to use")
 	cmd.PersistentFlags().StringVar(&options.compression, "compression", "auto", `Compression mode to use. Default is "auto" which compresses large documents. Must be "auto", "gzip" or "none"`)
 	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Individual feed operation timeout in seconds. 0 to disable (default 0)")
@@ -34,6 +34,7 @@ func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
 	// Hide these flags as they are intended for internal use
 	cmd.PersistentFlags().MarkHidden(memprofile)
 	cmd.PersistentFlags().MarkHidden(cpuprofile)
+	cli.bindWaitFlag(cmd, 0, &options.waitSecs)
 }
 
 type feedOptions struct {
@@ -47,6 +48,7 @@ type feedOptions struct {
 	summarySecs    int
 	speedtestBytes int
 	speedtestSecs  int
+	waitSecs       int
 
 	memprofile string
 	cpuprofile string
@@ -92,11 +94,11 @@ $ cat docs.jsonl | vespa feed -`,
 			return err
 		},
 	}
-	addFeedFlags(cmd, &options)
+	addFeedFlags(cli, cmd, &options)
 	return cmd
 }
 
-func createServices(n int, timeout time.Duration, cli *CLI) ([]util.HTTPClient, string, error) {
+func createServices(n int, timeout time.Duration, waitSecs int, cli *CLI) ([]util.HTTPClient, string, error) {
 	if n < 1 {
 		return nil, "", fmt.Errorf("need at least one client")
 	}
@@ -107,7 +109,7 @@ func createServices(n int, timeout time.Duration, cli *CLI) ([]util.HTTPClient, 
 	services := make([]util.HTTPClient, 0, n)
 	baseURL := ""
 	for i := 0; i < n; i++ {
-		service, err := cli.service(target, vespa.DocumentService, 0, cli.config.cluster())
+		service, err := cli.service(target, vespa.DocumentService, 0, cli.config.cluster(), time.Duration(waitSecs)*time.Second)
 		if err != nil {
 			return nil, "", err
 		}
@@ -201,7 +203,7 @@ func enqueueAndWait(files []string, dispatcher *document.Dispatcher, options fee
 
 func feed(files []string, options feedOptions, cli *CLI) error {
 	timeout := time.Duration(options.timeoutSecs) * time.Second
-	clients, baseURL, err := createServices(options.connections, timeout, cli)
+	clients, baseURL, err := createServices(options.connections, timeout, options.waitSecs, cli)
 	if err != nil {
 		return err
 	}

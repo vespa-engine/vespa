@@ -7,6 +7,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -14,7 +15,8 @@ import (
 )
 
 func newStatusCmd(cli *CLI) *cobra.Command {
-	return &cobra.Command{
+	var waitSecs int
+	cmd := &cobra.Command{
 		Use:               "status",
 		Short:             "Verify that a service is ready to use (query by default)",
 		Example:           `$ vespa status query`,
@@ -22,13 +24,16 @@ func newStatusCmd(cli *CLI) *cobra.Command {
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return printServiceStatus(cli, vespa.QueryService)
+			return printServiceStatus(cli, vespa.QueryService, waitSecs)
 		},
 	}
+	cli.bindWaitFlag(cmd, 0, &waitSecs)
+	return cmd
 }
 
 func newStatusQueryCmd(cli *CLI) *cobra.Command {
-	return &cobra.Command{
+	var waitSecs int
+	cmd := &cobra.Command{
 		Use:               "query",
 		Short:             "Verify that the query service is ready to use (default)",
 		Example:           `$ vespa status query`,
@@ -36,13 +41,16 @@ func newStatusQueryCmd(cli *CLI) *cobra.Command {
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return printServiceStatus(cli, vespa.QueryService)
+			return printServiceStatus(cli, vespa.QueryService, waitSecs)
 		},
 	}
+	cli.bindWaitFlag(cmd, 0, &waitSecs)
+	return cmd
 }
 
 func newStatusDocumentCmd(cli *CLI) *cobra.Command {
-	return &cobra.Command{
+	var waitSecs int
+	cmd := &cobra.Command{
 		Use:               "document",
 		Short:             "Verify that the document service is ready to use",
 		Example:           `$ vespa status document`,
@@ -50,13 +58,16 @@ func newStatusDocumentCmd(cli *CLI) *cobra.Command {
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return printServiceStatus(cli, vespa.DocumentService)
+			return printServiceStatus(cli, vespa.DocumentService, waitSecs)
 		},
 	}
+	cli.bindWaitFlag(cmd, 0, &waitSecs)
+	return cmd
 }
 
 func newStatusDeployCmd(cli *CLI) *cobra.Command {
-	return &cobra.Command{
+	var waitSecs int
+	cmd := &cobra.Command{
 		Use:               "deploy",
 		Short:             "Verify that the deploy service is ready to use",
 		Example:           `$ vespa status deploy`,
@@ -64,26 +75,25 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return printServiceStatus(cli, vespa.DeployService)
+			return printServiceStatus(cli, vespa.DeployService, waitSecs)
 		},
 	}
+	cli.bindWaitFlag(cmd, 0, &waitSecs)
+	return cmd
 }
 
-func printServiceStatus(cli *CLI, name string) error {
+func printServiceStatus(cli *CLI, name string, waitSecs int) error {
 	t, err := cli.target(targetOptions{})
 	if err != nil {
 		return err
 	}
 	cluster := cli.config.cluster()
-	s, err := cli.service(t, name, 0, cluster)
+	s, err := cli.service(t, name, 0, cluster, 0)
 	if err != nil {
 		return err
 	}
-	timeout, err := cli.config.timeout()
-	if err != nil {
-		return err
-	}
-	status, err := s.Wait(timeout)
+	// Wait explicitly
+	status, err := s.Wait(time.Duration(waitSecs) * time.Second)
 	clusterPart := ""
 	if cluster != "" {
 		clusterPart = fmt.Sprintf(" named %s", color.CyanString(cluster))

@@ -96,7 +96,7 @@ func withMockClient(t *testing.T, prepCli func(*mock.HTTPClient), runOp func(*ve
 	prepCli(client)
 	cli, _, _ := newTestCLI(t)
 	cli.httpClient = client
-	service, _ := documentService(cli)
+	service, _ := documentService(cli, 0)
 	runOp(service)
 	return client.LastRequest
 }
