@@ -59,7 +59,9 @@ public class DataplaneTokenSerializer {
                                 Instant creationTime = SlimeUtils.instant(versionCursor.field(creationTimeField));
                                 String author = versionCursor.field(authorField).asString();
                                 String expirationStr = versionCursor.field(expirationField).asString();
-                                Optional<Instant> expiration = expirationStr.equals("<none>") ? Optional.empty() : Optional.of(Instant.parse(expirationStr));
+                                Optional<Instant> expiration = expirationStr.equals("<none>") ? Optional.empty()
+                                        : (expirationStr.isBlank()
+                                        ? Optional.of(Instant.EPOCH) : Optional.of(Instant.parse(expirationStr)));
                                 return new DataplaneTokenVersions.Version(fingerPrint, checkAccessHash, creationTime, expiration, author);
                             })
                             .toList();
