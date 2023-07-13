@@ -126,7 +126,6 @@
                                         <include>com.yahoo.vespa:security-utils:*:provided</include>
                                         <include>com.yahoo.vespa:vdslib:*:provided</include>
                                         <include>com.yahoo.vespa:vespa-3party-bundles:pom:*:provided</include>
-                                        <include>com.yahoo.vespa:vespaclient-container-plugin:*:provided</include>
                                         <include>com.yahoo.vespa:vespajlib:*:provided</include>
                                         <include>com.yahoo.vespa:vespalog:*:provided</include>
 
@@ -147,6 +146,7 @@
                                         <include>com.yahoo.vespa:searchsummary:*:test</include>
                                         <include>com.yahoo.vespa:standalone-container:*:test</include>
                                         <include>com.yahoo.vespa:storage:*:test</include>
+                                        <include>com.yahoo.vespa:vespaclient-container-plugin:*:test</include>
                                         <include>com.yahoo.vespa:vespaclient-core:*:test</include>
                                         <include>com.yahoo.vespa:vsm:*:test</include>
 

@@ -44,25 +44,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>vespaclient-container-plugin</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>vespaclient-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.airlift</groupId>
-          <artifactId>airline</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents.client5</groupId>
-          <artifactId>httpclient5</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
   </dependencies>
 
   <build>
