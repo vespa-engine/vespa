@@ -12,7 +12,7 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-interface Client {
+public interface Client {
 
     /** Creates a connection to a particular node in this */
     NodeConnection createConnection(String hostname, int port);

@@ -107,7 +107,7 @@ public class Dispatcher extends AbstractComponent {
 
     public static QueryProfileType getArgumentType() { return argumentType; }
 
-    private interface InvokerFactoryFactory {
+    interface InvokerFactoryFactory {
         InvokerFactory create(RpcConnectionPool rpcConnectionPool, SearchGroups searchGroups, DispatchConfig dispatchConfig);
     }
 

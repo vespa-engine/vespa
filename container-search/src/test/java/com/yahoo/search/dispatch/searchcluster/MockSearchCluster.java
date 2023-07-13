@@ -15,7 +15,11 @@ import java.util.Map;
 public class MockSearchCluster extends SearchCluster {
 
     public MockSearchCluster(String clusterId, int groups, int nodesPerGroup) {
-        super(clusterId, buildGroupListForTest(groups, nodesPerGroup, 88.0), null, null);
+        this(clusterId, groups, nodesPerGroup, null);
+    }
+
+    public MockSearchCluster(String clusterId, int groups, int nodesPerGroup, PingFactory pingFactory) {
+        super(clusterId, buildGroupListForTest(groups, nodesPerGroup, 88.0), null, pingFactory);
     }
 
     @Override
