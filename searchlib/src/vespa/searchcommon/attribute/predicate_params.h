@@ -11,16 +11,17 @@ namespace search::attribute {
  */
 class PredicateParams : public PersistentPredicateParams
 {
-    float _dense_posting_list_threshold;
+    double _dense_posting_list_threshold;
 public:
-    PredicateParams() noexcept
+    PredicateParams()
         : PersistentPredicateParams(),
           _dense_posting_list_threshold(0.4)
-    { }
+    {
+    }
 
-    float dense_posting_list_threshold() const noexcept { return _dense_posting_list_threshold; }
-    void setDensePostingListThreshold(float v)  noexcept { _dense_posting_list_threshold = v; }
-    bool operator==(const PredicateParams &rhs) const noexcept {
+    double dense_posting_list_threshold() const { return _dense_posting_list_threshold; }
+    void setDensePostingListThreshold(double v)  { _dense_posting_list_threshold = v; }
+    bool operator==(const PredicateParams &rhs) const {
         return (PersistentPredicateParams::operator==(rhs) &&
                 (_dense_posting_list_threshold == rhs._dense_posting_list_threshold));
     }

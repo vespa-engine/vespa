@@ -23,14 +23,14 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_) noexcept
       _fastAccess(false),
       _mutable(false),
       _paged(false),
-      _distance_metric(DistanceMetric::Euclidean),
+      _maxUnCommittedMemory(MAX_UNCOMMITTED_MEMORY),
       _match(Match::UNCASED),
       _dictionary(),
-      _maxUnCommittedMemory(MAX_UNCOMMITTED_MEMORY),
       _growStrategy(),
       _compactionStrategy(),
       _predicateParams(),
       _tensorType(vespalib::eval::ValueType::error_type()),
+      _distance_metric(DistanceMetric::Euclidean),
       _hnsw_index_params()
 {
 }
@@ -42,7 +42,7 @@ Config & Config::operator = (Config &&) noexcept = default;
 Config::~Config() = default;
 
 bool
-Config::operator==(const Config &b) const noexcept
+Config::operator==(const Config &b) const
 {
     return _basicType == b._basicType &&
            _type == b._type &&

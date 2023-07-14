@@ -216,7 +216,7 @@ public:
 
 template <typename T, size_t N, size_t M>
 bool operator==(const SmallVector<T,N> &a,
-                const SmallVector<T,M> &b) noexcept
+                const SmallVector<T,M> &b)
 {
     if (a.size() != b.size()) {
         return false;
