@@ -608,7 +608,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void test_autoscaling_group_size() {
+    public void test_autoscaling_groupsize() {
         var min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
         var now = new ClusterResources(6, 2, new NodeResources(10, 100, 100, 1));
         var max = new ClusterResources(30, 30, new NodeResources(100, 100, 1000, 1));
