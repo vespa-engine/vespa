@@ -336,15 +336,15 @@ public class TestReport {
 
         StackTraceElement[] stack = thrown.getStackTrace();
         int i = 0;
-        int previousNativeFrame = -1;
+        int firstReflectFrame = -1;
         int cutoff = 0;
         boolean rootedInTestFramework = false;
         while (++i < stack.length) {
             rootedInTestFramework |= testFrameworkRootClass.equals(stack[i].getClassName());
-            if (stack[i].isNativeMethod())
-                previousNativeFrame = i; // Native method invokes the first user test frame.
-            if (rootedInTestFramework && previousNativeFrame > 0) {
-                cutoff = previousNativeFrame;
+            if (firstReflectFrame == -1 && stack[i].getClassName().startsWith("jdk.internal.reflect."))
+                firstReflectFrame = i; // jdk.internal.reflect class invokes the first user test frame, on both jdk 17 and 21.
+            if (rootedInTestFramework && firstReflectFrame > 0) {
+                cutoff = firstReflectFrame;
                 break;
             }
             boolean isDynamicTestInvocation = "org.junit.jupiter.engine.descriptor.DynamicTestTestDescriptor".equals(stack[i].getClassName());
