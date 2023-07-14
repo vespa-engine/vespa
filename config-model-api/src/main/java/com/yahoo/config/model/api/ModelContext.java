@@ -118,6 +118,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli", "havardpe"}) default boolean enableConditionalPutRemoveWriteRepair() { return false; }
         @ModelFeatureFlag(owners = {"mortent", "olaa"}) default boolean enableDataplaneProxy() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean enableNestedMultivalueGrouping() { return false; }
+        @ModelFeatureFlag(owners = {"jonmv"}) default boolean useReconfigurableDispatcher() { return false; }
 
         //Below are all flags that must be kept until 7 is out of the door
         @ModelFeatureFlag(owners = {"arnej"}, removeAfter="7.last") default boolean ignoreThreadStackSizes() { return false; }

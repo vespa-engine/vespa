@@ -209,6 +209,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableConditionalPutRemoveWriteRepair;
         private final boolean enableDataplaneProxy;
         private final boolean enableNestedMultivalueGrouping;
+        private final boolean useReconfigurableDispatcher;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -259,6 +260,7 @@ public class ModelContextImpl implements ModelContext {
             this.enableConditionalPutRemoveWriteRepair = flagValue(source, appId, version, Flags.ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR);
             this.enableDataplaneProxy = flagValue(source, appId, version, Flags.ENABLE_DATAPLANE_PROXY);
             this.enableNestedMultivalueGrouping = flagValue(source, appId, version, Flags.ENABLE_NESTED_MULTIVALUE_GROUPING);
+            this.useReconfigurableDispatcher = flagValue(source, appId, version, Flags.USE_RECONFIGURABLE_DISPATCHER);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -317,6 +319,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enableConditionalPutRemoveWriteRepair() { return enableConditionalPutRemoveWriteRepair; }
         @Override public boolean enableDataplaneProxy() { return enableDataplaneProxy; }
         @Override public boolean enableNestedMultivalueGrouping() { return enableNestedMultivalueGrouping; }
+        @Override public boolean useReconfigurableDispatcher() { return useReconfigurableDispatcher; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

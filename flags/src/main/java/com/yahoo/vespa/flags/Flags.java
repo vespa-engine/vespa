@@ -429,6 +429,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_RECONFIGURABLE_DISPATCHER = defineFeatureFlag(
+            "use-reconfigurable-dispatcher", false,
+            List.of("jonmv"), "2023-07-14", "2023-10-01",
+            "Whether to set up a ReconfigurableDispatcher with config self-sub for backend nodes",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

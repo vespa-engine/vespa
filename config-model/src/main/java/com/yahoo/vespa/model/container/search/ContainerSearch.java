@@ -51,6 +51,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private final List<SearchCluster> searchClusters = new LinkedList<>();
     private final Collection<String> schemasWithGlobalPhase;
     private final boolean globalPhase;
+    private final boolean useReconfigurableDispatcher;
 
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
@@ -59,6 +60,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     public ContainerSearch(DeployState deployState, ApplicationContainerCluster cluster, SearchChains chains) {
         super(chains);
         this.globalPhase = deployState.featureFlags().enableGlobalPhase();
+        this.useReconfigurableDispatcher = deployState.featureFlags().useReconfigurableDispatcher();
         this.schemasWithGlobalPhase = getSchemasWithGlobalPhase(deployState);
         this.owningCluster = cluster;
 
@@ -83,8 +85,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     /** Adds a Dispatcher component to the owning container cluster for each search cluster */
     private void initializeDispatchers(Collection<SearchCluster> searchClusters) {
-        boolean useReconfigurableDispatch = false;
-        Class<? extends Dispatcher> dispatcherClass = useReconfigurableDispatch ? ReconfigurableDispatcher.class : Dispatcher.class;
+        Class<? extends Dispatcher> dispatcherClass = useReconfigurableDispatcher ? ReconfigurableDispatcher.class : Dispatcher.class;
         for (SearchCluster searchCluster : searchClusters) {
             if (searchCluster instanceof IndexedSearchCluster indexed) {
                 var dispatcher = new DispatcherComponent(indexed, dispatcherClass);
