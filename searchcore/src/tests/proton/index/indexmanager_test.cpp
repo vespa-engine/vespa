@@ -728,7 +728,7 @@ TEST_F(IndexManagerTest, require_that_serial_number_is_read_on_load)
 void crippleFusion(uint32_t fusionId) {
     vespalib::asciistream ost;
     ost << index_dir << "/index.flush." << fusionId << "/serial.dat";
-    FastOS_File(ost.str().data()).Delete();
+    std::filesystem::remove(std::filesystem::path(ost.str()));
 }
 
 TEST_F(IndexManagerTest, require_that_failed_fusion_is_retried)

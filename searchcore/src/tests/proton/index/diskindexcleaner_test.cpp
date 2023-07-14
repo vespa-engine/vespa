@@ -120,7 +120,7 @@ void Test::requireThatIndexesInUseAreNotRemoved() {
 
 void Test::requireThatInvalidFlushIndexesAreRemoved() {
     createIndexes();
-    FastOS_File((index_dir + "/index.flush.4/serial.dat").c_str()).Delete();
+    std::filesystem::remove(std::filesystem::path(index_dir + "/index.flush.4/serial.dat"));
     DiskIndexes disk_indexes;
     DiskIndexCleaner::clean(index_dir, disk_indexes);
     vector<string> indexes = readIndexes();
@@ -131,7 +131,7 @@ void Test::requireThatInvalidFlushIndexesAreRemoved() {
 
 void Test::requireThatInvalidFusionIndexesAreRemoved() {
     createIndexes();
-    FastOS_File((index_dir + "/index.fusion.2/serial.dat").c_str()).Delete();
+    std::filesystem::remove(std::filesystem::path(index_dir + "/index.fusion.2/serial.dat"));
     DiskIndexes disk_indexes;
     DiskIndexCleaner::clean(index_dir, disk_indexes);
     vector<string> indexes = readIndexes();
@@ -144,7 +144,7 @@ void Test::requireThatInvalidFusionIndexesAreRemoved() {
 
 void Test::requireThatRemoveDontTouchNewIndexes() {
     createIndexes();
-    FastOS_File((index_dir + "/index.flush.4/serial.dat").c_str()).Delete();
+    std::filesystem::remove(std::filesystem::path(index_dir + "/index.flush.4/serial.dat"));
     DiskIndexes disk_indexes;
     DiskIndexCleaner::removeOldIndexes(index_dir, disk_indexes);
     vector<string> indexes = readIndexes();
