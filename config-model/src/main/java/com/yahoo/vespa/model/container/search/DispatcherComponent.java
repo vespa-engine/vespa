@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.search;
 
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import com.yahoo.vespa.model.container.component.Component;
@@ -22,15 +23,15 @@ public class DispatcherComponent extends Component<TreeConfigProducer<?>, Compon
 
     private final IndexedSearchCluster indexedSearchCluster;
 
-    public DispatcherComponent(IndexedSearchCluster indexedSearchCluster) {
-        super(toComponentModel(indexedSearchCluster.getClusterName()));
+    public DispatcherComponent(IndexedSearchCluster indexedSearchCluster, Class<? extends Dispatcher> clazz) {
+        super(toComponentModel(indexedSearchCluster.getClusterName(), clazz));
         this.indexedSearchCluster = indexedSearchCluster;
     }
 
-    private static ComponentModel toComponentModel(String clusterName) {
+    private static ComponentModel toComponentModel(String clusterName, Class<? extends Dispatcher> clazz) {
         String dispatcherComponentId = "dispatcher." + clusterName; // used by ClusterSearcher
         return new ComponentModel(dispatcherComponentId,
-                                  com.yahoo.search.dispatch.Dispatcher.class.getName(),
+                                  clazz.getName(),
                                   PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE);
     }
 
