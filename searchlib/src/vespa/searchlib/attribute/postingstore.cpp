@@ -19,7 +19,9 @@ using vespalib::btree::BTreeNoLeafData;
 using vespalib::datastore::EntryRefFilter;
 
 PostingStoreBase2::PostingStoreBase2(IEnumStoreDictionary& dictionary, Status &status, const Config &config)
-    : _bvSize(64u),
+    : _enableOnlyBitVector(config.getEnableOnlyBitVector()),
+      _isFilter(config.getIsFilter()),
+      _bvSize(64u),
       _bvCapacity(128u),
       _minBvDocFreq(64),
       _maxBvDocFreq(std::numeric_limits<uint32_t>::max()),
@@ -27,9 +29,9 @@ PostingStoreBase2::PostingStoreBase2(IEnumStoreDictionary& dictionary, Status &s
       _dictionary(dictionary),
       _status(status),
       _bvExtraBytes(0),
-      _compaction_spec(),
-      _isFilter(config.getIsFilter())
-{ }
+      _compaction_spec()
+{
+}
 
 
 PostingStoreBase2::~PostingStoreBase2() = default;
@@ -58,7 +60,8 @@ PostingStoreBase2::resizeBitVectors(uint32_t newSize, uint32_t newCapacity)
 
 
 template <typename DataT>
-PostingStore<DataT>::PostingStore(IEnumStoreDictionary& dictionary, Status &status, const Config &config)
+PostingStore<DataT>::PostingStore(IEnumStoreDictionary& dictionary, Status &status,
+                                  const Config &config)
     : Parent(false),
       PostingStoreBase2(dictionary, status, config),
       _bvType(1, 1024u, RefType::offsetSize())
@@ -182,7 +185,8 @@ PostingStore<DataT>::applyNew(EntryRef &ref, AddIter a, AddIter ae)
 
 template <typename DataT>
 void
-PostingStore<DataT>::makeDegradedTree(EntryRef &ref, const BitVector &bv)
+PostingStore<DataT>::makeDegradedTree(EntryRef &ref,
+                                      const BitVector &bv)
 {
     assert(!ref.valid());
     BTreeTypeRefPair tPair(allocBTree());
@@ -260,7 +264,7 @@ PostingStore<DataT>::makeBitVector(EntryRef &ref)
     assert(bv.countTrueBits() == expDocFreq);
     BitVectorRefPair bPair(allocBitVector());
     BitVectorEntry *bve = bPair.data;
-    if (isFilter()) {
+    if (_enableOnlyBitVector) {
         BTreeType *tree = getWTreeEntry(iRef);
         tree->clear(_allocator);
         _store.hold_entry(ref);
@@ -297,7 +301,7 @@ PostingStore<DataT>::applyNewBitVector(EntryRef &ref, AddIter aOrg, AddIter ae)
     assert(bv.countTrueBits() == expDocFreq);
     BitVectorRefPair bPair(allocBitVector());
     BitVectorEntry *bve = bPair.data;
-    if (!isFilter()) {
+    if (!_enableOnlyBitVector) {
         applyNewTree(bve->_tree, aOrg, ae, CompareT());
     }
     bve->_bv = bvsp;
@@ -311,7 +315,11 @@ PostingStore<DataT>::applyNewBitVector(EntryRef &ref, AddIter aOrg, AddIter ae)
 
 template <typename DataT>
 void
-PostingStore<DataT>::apply(BitVector &bv, AddIter a, AddIter ae, RemoveIter r, RemoveIter re)
+PostingStore<DataT>::apply(BitVector &bv,
+                           AddIter a,
+                           AddIter ae,
+                           RemoveIter r,
+                           RemoveIter re)
 {
     while (a != ae || r != re) {
         if (r != re && (a == ae || *r < a->_key)) {
@@ -337,7 +345,11 @@ PostingStore<DataT>::apply(BitVector &bv, AddIter a, AddIter ae, RemoveIter r, R
 
 template <typename DataT>
 void
-PostingStore<DataT>::apply(EntryRef &ref, AddIter a, AddIter ae, RemoveIter r, RemoveIter re)
+PostingStore<DataT>::apply(EntryRef &ref,
+                           AddIter a,
+                           AddIter ae,
+                           RemoveIter r,
+                           RemoveIter re)
 {
     if (!ref.valid()) {
         // No old data
@@ -494,9 +506,11 @@ PostingStore<DataT>::beginFrozen(const EntryRef ref) const
     return ConstIterator(shortArray, clusterSize, _allocator, _aggrCalc);
 }
 
+
 template <typename DataT>
 void
-PostingStore<DataT>::beginFrozen(const EntryRef ref, std::vector<ConstIterator> &where) const
+PostingStore<DataT>::beginFrozen(const EntryRef ref,
+                                 std::vector<ConstIterator> &where) const
 {
     if (!ref.valid()) {
         where.emplace_back();
@@ -728,7 +742,8 @@ PostingStore<DataT>::compact_worst_buffers(CompactionSpec compaction_spec, const
         filter.add_buffers(_bvType.get_active_buffers());
     }
     _dictionary.normalize_posting_lists([this](std::vector<EntryRef>& refs)
-                                        { return move(refs); }, filter);
+                                        { return move(refs); },
+                                        filter);
     compacting_buffers->finish();
 }
 

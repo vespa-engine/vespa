@@ -159,13 +159,6 @@ MultiValueStringPostingAttributeT<B, M>::DocumentWeightAttributeAdapter::create(
 }
 
 template <typename B, typename M>
-bool
-MultiValueStringPostingAttributeT<B, M>::DocumentWeightAttributeAdapter::has_weight_iterator(vespalib::datastore::EntryRef idx) const noexcept
-{
-    return self.getPostingList().has_btree(idx);
-}
-
-template <typename B, typename M>
 std::unique_ptr<queryeval::SearchIterator>
 MultiValueStringPostingAttributeT<B, M>::DocumentWeightAttributeAdapter::make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const
 {
@@ -176,7 +169,9 @@ template <typename B, typename T>
 const IDocumentWeightAttribute *
 MultiValueStringPostingAttributeT<B, T>::asDocumentWeightAttribute() const
 {
-    if (this->hasWeightedSetType() && (this->getBasicType() == AttributeVector::BasicType::STRING)) {
+    if (this->hasWeightedSetType() &&
+        this->getBasicType() == AttributeVector::BasicType::STRING &&
+        !this->getConfig().getIsFilter()) {
         return &_document_weight_attribute_adapter;
     }
     return nullptr;
