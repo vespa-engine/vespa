@@ -16,6 +16,7 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStat
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -391,24 +392,28 @@ public class NodeStateChangeChecker {
     }
 
     private Result checkRedundancy(DistributorNodeInfo distributorNodeInfo, Node node) {
-        List<StorageNode> storageNodes = distributorNodeInfo.getHostInfo().getDistributor().getStorageNodes();
-        for (StorageNode storageNode : storageNodes) {
-            if (storageNode.getIndex() == node.getIndex()) {
-                Integer minReplication = storageNode.getMinCurrentReplicationFactorOrNull();
-                // Why test on != null? Missing min-replication is OK (indicate empty/few buckets on system).
-                if (minReplication != null && minReplication < requiredRedundancy) {
-                    return disallow("Distributor " + distributorNodeInfo.getNodeIndex()
-                            + " says storage node " + node.getIndex()
-                            + " has buckets with redundancy as low as "
-                            + storageNode.getMinCurrentReplicationFactorOrNull()
-                            + ", but we require at least " + requiredRedundancy);
-                } else {
-                    return allow();
-                }
-            }
+        Integer minReplication = minReplication(distributorNodeInfo).get(node.getIndex());
+        // Why test on != null? Missing min-replication is OK (indicate empty/few buckets on system).
+        if (minReplication != null && minReplication < requiredRedundancy) {
+            return disallow("Distributor " + distributorNodeInfo.getNodeIndex()
+                                    + " says storage node " + node.getIndex()
+                                    + " has buckets with redundancy as low as "
+                                    + minReplication + ", but we require at least " + requiredRedundancy);
         }
 
         return allow();
+    }
+
+    private Map<Integer, Integer> minReplication(DistributorNodeInfo distributorNodeInfo) {
+        Map<Integer, Integer> replicationPerNodeIndex = new HashMap<>();
+        for (StorageNode storageNode : distributorNodeInfo.getHostInfo().getDistributor().getStorageNodes()) {
+            var currentValue = replicationPerNodeIndex.get(storageNode.getIndex());
+            Integer minReplicationFactor = storageNode.getMinCurrentReplicationFactorOrNull();
+            if (currentValue == null || (minReplicationFactor != null && minReplicationFactor < currentValue))
+                replicationPerNodeIndex.put(storageNode.getIndex(), minReplicationFactor);
+        }
+
+        return replicationPerNodeIndex;
     }
 
     /**
