@@ -319,8 +319,8 @@ public:
 
     AddressSpaceUsage getAddressSpaceUsage() const;
 
-    BasicType::Type getBasicType() const override final;
-    CollectionType::Type getCollectionType() const override final;
+    BasicType::Type getBasicType() const override final { return getInternalBasicType().type(); }
+    CollectionType::Type getCollectionType() const override final { return getInternalCollectionType().type(); }
     uint32_t getCommittedDocIdLimit() const override final { return _committedDocIdLimit.load(std::memory_order_acquire); }
     bool isImported() const override;
 

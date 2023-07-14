@@ -292,7 +292,7 @@ HeapAllocator::alloc(size_t sz) const {
 PtrAndSize
 HeapAllocator::salloc(size_t sz) {
     if (sz == 0) {
-        return PtrAndSize();
+        return PtrAndSize(nullptr, sz);
     }
     void * ptr = malloc(sz);
     if (ptr == nullptr) {
@@ -311,7 +311,7 @@ void HeapAllocator::sfree(PtrAndSize alloc) noexcept {
 
 PtrAndSize
 AlignedHeapAllocator::alloc(size_t sz) const {
-    if (!sz) { return PtrAndSize(); }
+    if (!sz) { return PtrAndSize(nullptr, 0); }
     void* ptr;
     int result = posix_memalign(&ptr, _alignment, sz);
     if (result != 0) {

@@ -2,10 +2,8 @@
 
 #pragma once
 
-#include <cstdint>
-
 namespace search::attribute {
 
-enum DistanceMetric : uint8_t { Euclidean, Angular, GeoDegrees, InnerProduct, Hamming, PrenormalizedAngular, Dotproduct };
+enum class DistanceMetric { Euclidean, Angular, GeoDegrees, InnerProduct, Hamming, PrenormalizedAngular, Dotproduct };
 
 }

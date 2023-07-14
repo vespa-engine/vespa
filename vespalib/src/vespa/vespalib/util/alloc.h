@@ -49,7 +49,7 @@ public:
         }
         return *this;
     }
-    Alloc() noexcept : _alloc(), _allocator(nullptr) { }
+    Alloc() noexcept : _alloc(nullptr, 0), _allocator(nullptr) { }
     ~Alloc() noexcept {
         reset();
     }
@@ -83,9 +83,10 @@ private:
     Alloc(const MemoryAllocator * allocator, size_t sz) noexcept
         : _alloc(allocator->alloc(sz)),
           _allocator(allocator)
-    { }
+    {
+    }
     Alloc(const MemoryAllocator * allocator) noexcept
-        : _alloc(),
+        : _alloc(nullptr, 0),
           _allocator(allocator)
     { }
     void clear() noexcept {

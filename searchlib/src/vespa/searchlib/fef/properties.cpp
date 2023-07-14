@@ -11,7 +11,7 @@ const Property::Value Property::_emptyValue;
 const Property::Values Property::_emptyValues;
 
 const Property::Value &
-Property::getAt(uint32_t idx) const noexcept
+Property::getAt(uint32_t idx) const
 {
     if (idx < (*_values).size()) {
         return (*_values)[idx];
@@ -22,7 +22,7 @@ Property::getAt(uint32_t idx) const noexcept
 //-----------------------------------------------------------------------------
 
 uint32_t
-Properties::rawHash(const void *buf, uint32_t len) noexcept
+Properties::rawHash(const void *buf, uint32_t len)
 {
     uint32_t res = 0;
     unsigned const char *pt = (unsigned const char *) buf;
@@ -33,7 +33,7 @@ Properties::rawHash(const void *buf, uint32_t len) noexcept
     return res;
 }
 
-Properties::Properties() noexcept
+Properties::Properties()
     : _numValues(0),
       _data()
 {
@@ -59,7 +59,7 @@ Properties::add(vespalib::stringref key, vespalib::stringref value)
 }
 
 uint32_t
-Properties::count(vespalib::stringref key) const noexcept
+Properties::count(vespalib::stringref key) const
 {
     if (!key.empty()) {
         auto node = _data.find(key);
@@ -112,14 +112,14 @@ Properties::clear()
 }
 
 bool
-Properties::operator==(const Properties &rhs) const noexcept
+Properties::operator==(const Properties &rhs) const
 {
     return (_numValues == rhs._numValues &&
             _data == rhs._data);
 }
 
 uint32_t
-Properties::hashCode() const noexcept
+Properties::hashCode() const
 {
     uint32_t hash = numKeys() + numValues();
     for (const auto& elem : _data) {
@@ -159,7 +159,7 @@ Properties::visitNamespace(vespalib::stringref ns,
 }
 
 Property
-Properties::lookup(vespalib::stringref key) const noexcept
+Properties::lookup(vespalib::stringref key) const
 {
     if (key.empty()) {
         return Property();
@@ -172,7 +172,7 @@ Properties::lookup(vespalib::stringref key) const noexcept
 }
 
 Property Properties::lookup(vespalib::stringref namespace1,
-                            vespalib::stringref key) const noexcept
+                            vespalib::stringref key) const
 {
     if (namespace1.empty() || key.empty()) {
         return Property();
@@ -184,7 +184,7 @@ Property Properties::lookup(vespalib::stringref namespace1,
 
 Property Properties::lookup(vespalib::stringref namespace1,
                             vespalib::stringref namespace2,
-                            vespalib::stringref key) const noexcept
+                            vespalib::stringref key) const
 {
     if (namespace1.empty() || namespace2.empty() || key.empty()) {
         return Property();
@@ -197,7 +197,7 @@ Property Properties::lookup(vespalib::stringref namespace1,
 Property Properties::lookup(vespalib::stringref namespace1,
                             vespalib::stringref namespace2,
                             vespalib::stringref namespace3,
-                            vespalib::stringref key) const noexcept
+                            vespalib::stringref key) const
 {
     if (namespace1.empty() || namespace2.empty() || namespace3.empty() || key.empty()) {
         return Property();
@@ -207,7 +207,7 @@ Property Properties::lookup(vespalib::stringref namespace1,
     return lookup(fullKey);
 }
 
-void Properties::swap(Properties & rhs) noexcept
+void Properties::swap(Properties & rhs)
 {
     _data.swap(rhs._data);
     std::swap(_numValues, rhs._numValues);
