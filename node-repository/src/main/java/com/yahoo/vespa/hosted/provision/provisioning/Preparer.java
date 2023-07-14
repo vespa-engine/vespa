@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -36,11 +37,13 @@ public class Preparer {
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
+    private final ProvisioningThrottler throttler;
 
-    public Preparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner, Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
+    public Preparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner, Optional<LoadBalancerProvisioner> loadBalancerProvisioner, Metric metric) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
         this.loadBalancerProvisioner = loadBalancerProvisioner;
+        this.throttler = new ProvisioningThrottler(nodeRepository.clock(), metric);
     }
 
     /**
@@ -110,6 +113,9 @@ public class Preparer {
                                                                             Optional.of(cluster.id()),
                                                                             requested.cloudAccount(),
                                                                             deficit.dueToFlavorUpgrade());
+                    if (throttler.throttle(allNodes, Agent.system)) {
+                        throw new NodeAllocationException("Host provisioning is being throttled", true);
+                    }
                     hostProvisioner.get().provisionHosts(request, whenProvisioned);
                 } catch (NodeAllocationException e) {
                     // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do
