@@ -19,6 +19,7 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_) noexcept
     : _basicType(bt),
       _type(ct),
       _fastSearch(fastSearch_),
+      _enableOnlyBitVector(false),
       _isFilter(false),
       _fastAccess(false),
       _mutable(false),
@@ -47,6 +48,7 @@ Config::operator==(const Config &b) const
     return _basicType == b._basicType &&
            _type == b._type &&
            _fastSearch == b._fastSearch &&
+           _enableOnlyBitVector == b._enableOnlyBitVector &&
            _isFilter == b._isFilter &&
            _fastAccess == b._fastAccess &&
            _mutable == b._mutable &&

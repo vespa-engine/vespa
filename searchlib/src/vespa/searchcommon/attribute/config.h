@@ -46,6 +46,8 @@ public:
      * Check if attribute posting list can consist of only a bitvector with
      * no corresponding btree.
      */
+    bool getEnableOnlyBitVector() const { return _enableOnlyBitVector; }
+
     bool getIsFilter() const { return _isFilter; }
     bool isMutable() const { return _mutable; }
 
@@ -81,6 +83,14 @@ public:
      * document frequency goes down, since recreated btree representation
      * will then have lost weight information.
      */
+    Config & setEnableOnlyBitVector(bool enableOnlyBitVector) {
+        _enableOnlyBitVector = enableOnlyBitVector;
+        return *this;
+    }
+
+    /**
+     * Hide weight information when searching in attributes.
+     */
     Config & setIsFilter(bool isFilter) { _isFilter = isFilter; return *this; }
     Config & setMutable(bool isMutable) { _mutable = isMutable; return *this; }
     Config & setPaged(bool paged_in) { _paged = paged_in; return *this; }
@@ -102,6 +112,7 @@ private:
     BasicType      _basicType;
     CollectionType _type;
     bool           _fastSearch;
+    bool           _enableOnlyBitVector;
     bool           _isFilter;
     bool           _fastAccess;
     bool           _mutable;
