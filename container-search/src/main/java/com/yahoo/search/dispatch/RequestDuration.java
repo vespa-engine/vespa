@@ -5,7 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 /**
- * Contains start and and time. Exposes a duration, and lets you measure the time difference between 2 requests.
+ * Contains start and end time. Exposes a duration, and lets you measure the time difference between 2 requests.
  * It does use System.nanoTime to get a steady clock.
  *
  * @author baldersheim

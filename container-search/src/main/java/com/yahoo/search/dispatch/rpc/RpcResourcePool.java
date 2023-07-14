@@ -3,8 +3,10 @@ package com.yahoo.search.dispatch.rpc;
 
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.rpc.Client.NodeConnection;
+import com.yahoo.search.dispatch.rpc.RpcClient.RpcNodeConnection;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig.Node;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,7 +21,7 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author ollivir
  */
-public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
+public class RpcResourcePool implements RpcConnectionPool {
 
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private volatile Map<Integer, NodeConnectionPool> nodeConnectionPools = Map.of();
@@ -35,46 +37,35 @@ public class RpcResourcePool implements RpcConnectionPool, AutoCloseable {
     }
 
     public RpcResourcePool(DispatchConfig dispatchConfig, DispatchNodesConfig nodesConfig) {
-        super();
         rpcClient = new RpcClient("dispatch-client", dispatchConfig.numJrtTransportThreads());
         numConnections = dispatchConfig.numJrtConnectionsPerNode();
-        updateNodes(nodesConfig).forEach(item -> {
-            try {
-                item.close();
-            } catch (Exception e) {}
+        updateNodes(nodesConfig).forEach(pool -> {
+            try { pool.close(); } catch (Exception ignored) { } // Shouldn't throw.
         });
     }
 
-    /** Will return a list of items that need a delayed close */
-    public Collection<AutoCloseable> updateNodes(DispatchNodesConfig nodesConfig) {
-        List<AutoCloseable> toClose = new ArrayList<>();
-        var builder = new HashMap<Integer, NodeConnectionPool>();
+    @Override
+    public Collection<? extends AutoCloseable> updateNodes(DispatchNodesConfig nodesConfig) {
+        Map<Integer, NodeConnectionPool> currentPools = new HashMap<>(nodeConnectionPools);
+        Map<Integer, NodeConnectionPool> nextPools = new HashMap<>();
         // Who can be reused
-        for (var node : nodesConfig.node()) {
-            var prev = nodeConnectionPools.get(node.key());
-            NodeConnection nc = prev != null ? prev.nextConnection() : null;
-            if (nc instanceof RpcClient.RpcNodeConnection rpcNodeConnection
-                    && rpcNodeConnection.getPort() == node.port()
-                    && rpcNodeConnection.getHostname().equals(node.host()))
+        for (Node node : nodesConfig.node()) {
+            if (   currentPools.containsKey(node.key())
+                && currentPools.get(node.key()).nextConnection() instanceof RpcNodeConnection rpcNodeConnection
+                && rpcNodeConnection.getPort() == node.port()
+                && rpcNodeConnection.getHostname().equals(node.host()))
             {
-                builder.put(node.key(), prev);
+                nextPools.put(node.key(), currentPools.remove(node.key()));
             } else {
-                var connections = new ArrayList<NodeConnection>(numConnections);
+                ArrayList<NodeConnection> connections = new ArrayList<>(numConnections);
                 for (int i = 0; i < numConnections; i++) {
                     connections.add(rpcClient.createConnection(node.host(), node.port()));
                 }
-                builder.put(node.key(), new NodeConnectionPool(connections));
+                nextPools.put(node.key(), new NodeConnectionPool(connections));
             }
         }
-        // Who are not needed any more
-        nodeConnectionPools.forEach((key, pool) -> {
-            var survivor = builder.get(key);
-            if (survivor == null || pool != survivor) {
-                toClose.add(pool);
-            }
-        });
-        this.nodeConnectionPools = Map.copyOf(builder);
-        return toClose;
+        this.nodeConnectionPools = Map.copyOf(nextPools);
+        return currentPools.values();
     }
 
     @Override

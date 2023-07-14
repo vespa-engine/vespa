@@ -82,7 +82,7 @@ public abstract class BaseNodeMonitor<T> {
     /** Thread-safely changes the state of this node if required */
     protected abstract void setWorking(boolean working,String explanation);
 
-    /** Returns whether or not this is monitoring an internal node. Default is false. */
+    /** Returns whether this is monitoring an internal node. Default is false. */
     public boolean isInternal() { return internal; }
 
 }

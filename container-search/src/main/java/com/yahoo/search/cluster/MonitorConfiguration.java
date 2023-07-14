@@ -22,7 +22,7 @@ public class MonitorConfiguration  {
 
     /**
      * Returns the number of milliseconds to attempt to service a request
-     * (at different nodes) before giving up. Default is 5000 ms.
+     * (at different nodes) before giving up. See {@link #requestTimeout}.
      */
     public long getRequestTimeout() { return requestTimeout; }
 
