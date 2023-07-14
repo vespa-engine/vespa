@@ -979,6 +979,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 fingerprintObject.setString("fingerprint", tokenVersion.fingerPrint().value());
                 fingerprintObject.setString("created", tokenVersion.creationTime().toString());
                 fingerprintObject.setString("author", tokenVersion.author());
+                fingerprintObject.setString("expiration", tokenVersion.expiration().map(Instant::toString).orElse("<none>"));
             }
         }
         return new SlimeJsonResponse(slime);
