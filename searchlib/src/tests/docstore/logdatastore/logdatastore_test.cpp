@@ -204,7 +204,7 @@ TEST("test that DirectIOPadding works accordng to spec") {
     EXPECT_EQUAL(1u, padAfter);
 
     EXPECT_TRUE(file.Close());
-    FastOS_File::Delete(file.GetFileName());
+    std::filesystem::remove(std::filesystem::path(file.GetFileName()));
 }
 #endif
 
@@ -746,23 +746,6 @@ TEST("testWriteRead") {
         EXPECT_EQUAL(0ul, datastore.getMaxSpreadAsBloat());
     }
     std::filesystem::remove_all(std::filesystem::path("empty"));
-}
-
-TEST("requireThatSyncTokenIsUpdatedAfterFlush") {
-#if 0
-    std::string file = "sync.dat";
-    FastOS_File::Delete(file.c_str());
-    {
-        vespalib::DataBuffer buf;
-        SimpleDataStore store(file);
-        EXPECT_EQUAL(0u, store.lastSyncToken());
-        makeData(buf, 10);
-        store.write(0, buf, 10);
-        store.flush(4);
-        EXPECT_EQUAL(4u, store.lastSyncToken());
-    }
-    FastOS_File::Delete(file.c_str());
-#endif
 }
 
 TEST("requireThatFlushTimeIsAvailableAfterFlush") {
