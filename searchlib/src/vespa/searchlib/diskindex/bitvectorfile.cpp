@@ -22,7 +22,7 @@ readHeader(vespalib::FileHeader &h,
            const vespalib::string &name)
 {
     Fast_BufferedFile file(32_Ki);
-    file.OpenReadOnly(name.c_str());
+    file.ReadOpenExisting(name.c_str());
     h.readFile(file);
 }
 
@@ -58,8 +58,7 @@ BitVectorFileWrite::open(const vespalib::string &name,
     if (tuneFileWrite.getWantDirectIO()) {
         _datFile->EnableDirectIO();
     }
-    // XXX no checking for success:
-    _datFile->OpenWriteOnly(datname.c_str());
+    _datFile->WriteOpen(datname.c_str());
 
     if (_datHeaderLen == 0) {
         assert(_numKeys == 0);
