@@ -92,6 +92,7 @@ public class AllocationOptimizer {
                      .multiply(clusterModel.loadWith(nodes, groups)) // redundancy aware adjustment with these counts
                      .divide(clusterModel.redundancyAdjustment())    // correct for double redundancy adjustment
                      .scaled(current.realResources().nodeResources());
+
         // Combine the scaled resource values computed here
         // with the currently configured non-scaled values, given in the limits, if any
         var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
