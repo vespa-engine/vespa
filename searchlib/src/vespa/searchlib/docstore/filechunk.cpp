@@ -15,6 +15,7 @@
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/fastos/file.h>
+#include <filesystem>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -141,23 +142,14 @@ verifyOrAssert(const TmpChunkMetaV & v)
     }
 }
 
-vespalib::string eraseErrorMsg(const vespalib::string & fileName, int error) {
-    return make_string("Error erasing file '%s'. Error is '%s'",
-                       fileName.c_str(), getErrorString(error).c_str());
-}
-
 }
 
 void
 FileChunk::erase()
 {
     _file.reset();
-    if (!FastOS_File::Delete(_idxFileName.c_str()) && (errno != ENOENT)) {
-        throw std::runtime_error(eraseErrorMsg(_idxFileName, errno));
-    }
-    if (!FastOS_File::Delete(_dataFileName.c_str()) && (errno != ENOENT)) {
-        throw std::runtime_error(eraseErrorMsg(_dataFileName, errno));
-    }
+    std::filesystem::remove(std::filesystem::path(_idxFileName));
+    std::filesystem::remove(std::filesystem::path(_dataFileName));
 }
 
 size_t
@@ -569,18 +561,14 @@ void
 FileChunk::eraseIdxFile(const vespalib::string & name)
 {
     vespalib::string fileName(createIdxFileName(name));
-    if ( ! FastOS_File::Delete(fileName.c_str())) {
-        throw std::runtime_error(make_string("Failed to delete '%s'", fileName.c_str()));
-    }
+    std::filesystem::remove(std::filesystem::path(fileName));
 }
 
 void
 FileChunk::eraseDatFile(const vespalib::string & name)
 {
     vespalib::string fileName(createDatFileName(name));
-    if ( ! FastOS_File::Delete(fileName.c_str())) {
-        throw std::runtime_error(make_string("Failed to delete '%s'", fileName.c_str()));
-    }
+    std::filesystem::remove(std::filesystem::path(fileName));
 }
 
 
