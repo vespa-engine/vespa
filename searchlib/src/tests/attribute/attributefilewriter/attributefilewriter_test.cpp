@@ -10,7 +10,7 @@
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/fastos/file.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attributefilewriter_test");
@@ -24,7 +24,7 @@ namespace {
 vespalib::string testFileName("test.dat");
 vespalib::string hello("Hello world");
 
-void removeTestFile() { FastOS_File::Delete(testFileName.c_str()); }
+void removeTestFile() { std::filesystem::remove(std::filesystem::path(testFileName)); }
 
 struct Fixture {
     TuneFileAttributes _tuneFileAttributes;
