@@ -422,15 +422,7 @@ public class NodeStateChangeChecker {
 
     private Result checkRedundancy(DistributorNodeInfo distributorNodeInfo, Node node) {
         Integer minReplication = minReplication(distributorNodeInfo).get(node.getIndex());
-        // Why test on != null? Missing min-replication is OK (indicate empty/few buckets on system).
-        if (minReplication != null && minReplication < requiredRedundancy) {
-            return disallow("Distributor " + distributorNodeInfo.getNodeIndex()
-                                    + " says storage node " + node.getIndex()
-                                    + " has buckets with redundancy as low as "
-                                    + minReplication + ", but we require at least " + requiredRedundancy);
-        }
-
-        return allow();
+        return verifyRedundancy(distributorNodeInfo, minReplication, node.getIndex());
     }
 
     private Result checkRedundancySeenFromDistributor(DistributorNodeInfo distributorNodeInfo, Set<Integer> indexesToCheck) {
@@ -444,11 +436,17 @@ public class NodeStateChangeChecker {
             if ( ! indexesToCheck.contains(nodeIndex)) continue;
             if (minReplication == null || (value != null && value < minReplication)) {
                 minReplication = value;
+                if (minReplication == null) continue;
+
                 minReplicationIndex = nodeIndex;
                 if (minReplication < requiredRedundancy) break;
             }
         }
 
+        return verifyRedundancy(distributorNodeInfo, minReplication, minReplicationIndex);
+    }
+
+    private Result verifyRedundancy(DistributorNodeInfo distributorNodeInfo, Integer minReplication, Integer minReplicationIndex) {
         // Why test on != null? Missing min-replication is OK (indicate empty/few buckets on system).
         if (minReplication != null && minReplication < requiredRedundancy) {
             return disallow("Distributor " + distributorNodeInfo.getNodeIndex()
