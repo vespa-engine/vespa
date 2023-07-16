@@ -22,12 +22,12 @@ import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLock;
-import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
@@ -73,7 +73,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.NodeResources.StorageType.local;
@@ -131,7 +130,7 @@ public class ProvisioningTester {
                                                  true,
                                                  spareCount,
                                                  1000);
-        this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider);
+        this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, new MockMetric());
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.provisionLogger = new InMemoryProvisionLogger();
         this.loadBalancerService = loadBalancerService;

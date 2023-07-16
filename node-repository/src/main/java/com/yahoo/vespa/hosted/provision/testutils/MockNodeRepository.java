@@ -25,6 +25,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -104,7 +105,7 @@ public class MockNodeRepository extends NodeRepository {
     }
 
     private void populate() {
-        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, Zone.defaultZone(), new MockProvisionServiceProvider());
+        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, Zone.defaultZone(), new MockProvisionServiceProvider(), new MockMetric());
         List<Node> nodes = new ArrayList<>();
 
         // Regular nodes

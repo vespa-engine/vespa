@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing
 import com.yahoo.vespa.hosted.provision.provisioning.NodeCandidate;
 import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeSpec;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningThrottler;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -57,6 +58,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
 
     private final HostProvisioner hostProvisioner;
     private final ListFlag<ClusterCapacity> preprovisionCapacityFlag;
+    private final ProvisioningThrottler throttler;
 
     HostCapacityMaintainer(NodeRepository nodeRepository,
                            Duration interval,
@@ -66,6 +68,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         super(nodeRepository, interval, metric);
         this.hostProvisioner = hostProvisioner;
         this.preprovisionCapacityFlag = PermanentFlags.PREPROVISION_CAPACITY.bindTo(flagSource);
+        this.throttler = new ProvisioningThrottler(nodeRepository.clock(), metric);
     }
 
     @Override
@@ -203,19 +206,23 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             var clusterType = Optional.ofNullable(clusterCapacityDeficit.clusterType());
             nodesPlusProvisioned.addAll(provisionHosts(clusterCapacityDeficit.count(),
                                                        toNodeResources(clusterCapacityDeficit),
-                                                       clusterType.map(ClusterSpec.Type::from)));
+                                                       clusterType.map(ClusterSpec.Type::from),
+                                                       nodeList));
         }
     }
 
-    private List<Node> provisionHosts(int count, NodeResources nodeResources, Optional<ClusterSpec.Type> clusterType) {
+    private List<Node> provisionHosts(int count, NodeResources nodeResources, Optional<ClusterSpec.Type> clusterType, NodeList allNodes) {
         try {
+            if (throttler.throttle(allNodes, Agent.HostCapacityMaintainer)) {
+                throw new NodeAllocationException("Host provisioning is being throttled", true);
+            }
             Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
-            List<Node> hosts = new ArrayList<>();
             HostProvisionRequest request = new HostProvisionRequest(provisionIndices, NodeType.host, nodeResources,
                                                                     ApplicationId.defaultId(), osVersion,
                                                                     HostSharing.shared, clusterType, Optional.empty(),
                                                                     nodeRepository().zone().cloud().account(), false);
+            List<Node> hosts = new ArrayList<>();
             hostProvisioner.provisionHosts(request,
                                            provisionedHosts -> {
                                                hosts.addAll(provisionedHosts.stream().map(host -> host.generateHost(Duration.ZERO)).toList());

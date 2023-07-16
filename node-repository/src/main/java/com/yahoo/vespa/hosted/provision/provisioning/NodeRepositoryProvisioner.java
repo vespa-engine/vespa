@@ -16,6 +16,7 @@ import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -61,7 +62,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository,
                                      Zone zone,
-                                     ProvisionServiceProvider provisionServiceProvider) {
+                                     ProvisionServiceProvider provisionServiceProvider,
+                                     Metric metric) {
         this.nodeRepository = nodeRepository;
         this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
@@ -71,7 +73,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
                                      provisionServiceProvider.getHostProvisioner(),
-                                     loadBalancerProvisioner);
+                                     loadBalancerProvisioner,
+                                     metric);
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
     }
 
