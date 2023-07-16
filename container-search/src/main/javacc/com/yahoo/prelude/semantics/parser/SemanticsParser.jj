@@ -274,7 +274,8 @@ TermProduction nonphraseTermProduction() :
     TermProduction termProduction;
 }
 {
-    ( termProduction = referenceTermProduction() |
+    ( LOOKAHEAD(2)
+      termProduction = referenceTermProduction() |
       termProduction = literalTermProduction() )
     {
       return termProduction;
@@ -314,8 +315,10 @@ ReferenceTermProduction referenceTermProduction() :
 {
     String reference;
     boolean produceAll = false;
+    String comparisonPrefix = "";
 }
 {
+    ( comparisonPrefix = comparisonPrefix() )?
     <LEFTSQUAREBRACKET>
         reference = referenceIdentifier()
         (<STAR> { produceAll = true; })?
@@ -326,10 +329,17 @@ ReferenceTermProduction referenceTermProduction() :
 LiteralTermProduction literalTermProduction() :
 {
     String literal;
+    String comparisonPrefix = "";
 }
 {
-    literal = identifier()
-    { return new LiteralTermProduction(literal); }
+    ( ( comparisonPrefix = comparisonPrefix() )? literal = identifier() )
+    { return new LiteralTermProduction(comparisonPrefix + literal); }
+}
+
+String comparisonPrefix() : {}
+{
+    <SMALLER> { return "<"; } |
+    <LARGER> { return ">"; }
 }
 
 TermType termType() :
