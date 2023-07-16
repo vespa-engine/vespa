@@ -13,10 +13,12 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNode;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -262,6 +264,11 @@ public class NodeStateChangeChecker {
         if (aGroupContainsNode(retiredAndNotUpGroups, node)) {
             numberOfGroupsToConsider = retiredAndNotUpGroups.size() - 1;
         }
+
+        var result = checkRedundancyForGroupsThatAreUp(retiredAndNotUpGroups);
+        if (result.isPresent() && result.get().notAllowed())
+            return result;
+
         if (numberOfGroupsToConsider < maxNumberOfGroupsAllowedToBeDown) {
             log.log(FINE, "Allow, retiredAndNotUpGroups=" + retiredAndNotUpGroups);
             return Optional.of(allow());
@@ -270,6 +277,28 @@ public class NodeStateChangeChecker {
         return Optional.of(disallow(String.format("At most %d groups can have wanted state: %s",
                                                   maxNumberOfGroupsAllowedToBeDown,
                                                   sortSetIntoList(retiredAndNotUpGroups))));
+    }
+
+    private Optional<Result> checkRedundancyForGroupsThatAreUp(Set<Integer> retiredAndNotUpGroups) {
+        Set<Integer> groupsThatAreUp = groupsThatAreUp(retiredAndNotUpGroups);
+        log.log(FINE, "Check min replication for groups " + groupsThatAreUp);
+        for (int group : groupsThatAreUp) {
+            List<ConfiguredNode> nodesInGroup = getNodesInGroup(group);
+            for (var n : nodesInGroup) {
+                log.log(FINE, "Check min replication for index " + n.index() + " in group " + group);
+                Set<Integer> indexesToCheck = nodesInGroup.stream().map(ConfiguredNode::index).collect(Collectors.toSet());
+                var r = checkRedundancySeenFromDistributor(clusterInfo.getDistributorNodeInfo(n.index()), indexesToCheck);
+                if (r.notAllowed())
+                    return Optional.of(r);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private Set<Integer> groupsThatAreUp(Set<Integer> retiredAndNotUpGroups) {
+        var allGroups = allGroupIndexes();
+        allGroups.removeAll(retiredAndNotUpGroups);
+        return allGroups;
     }
 
     private static boolean nodeIsDown(ClusterState clusterState, NodeInfo nodeInfo) {
@@ -404,6 +433,33 @@ public class NodeStateChangeChecker {
         return allow();
     }
 
+    private Result checkRedundancySeenFromDistributor(DistributorNodeInfo distributorNodeInfo, Set<Integer> indexesToCheck) {
+        Map<Integer, Integer> replication = new LinkedHashMap<>(minReplication(distributorNodeInfo));
+
+        Integer minReplication = null;
+        Integer minReplicationIndex = null;
+        for (var entry : replication.entrySet()) {
+            Integer value = entry.getValue();
+            Integer nodeIndex = entry.getKey();
+            if ( ! indexesToCheck.contains(nodeIndex)) continue;
+            if (minReplication == null || (value != null && value < minReplication)) {
+                minReplication = value;
+                minReplicationIndex = nodeIndex;
+                if (minReplication < requiredRedundancy) break;
+            }
+        }
+
+        // Why test on != null? Missing min-replication is OK (indicate empty/few buckets on system).
+        if (minReplication != null && minReplication < requiredRedundancy) {
+            return disallow("Distributor " + distributorNodeInfo.getNodeIndex()
+                                    + " says storage node " + minReplicationIndex
+                                    + " has buckets with redundancy as low as "
+                                    + minReplication + ", but we require at least " + requiredRedundancy);
+        }
+
+        return allow();
+    }
+
     private Map<Integer, Integer> minReplication(DistributorNodeInfo distributorNodeInfo) {
         Map<Integer, Integer> replicationPerNodeIndex = new HashMap<>();
         for (StorageNode storageNode : distributorNodeInfo.getHostInfo().getDistributor().getStorageNodes()) {
@@ -456,6 +512,25 @@ public class NodeStateChangeChecker {
                           .collect(Collectors.toSet());
     }
 
+    private Set<Integer> allGroupIndexes() {
+        return clusterInfo.getAllNodeInfos().stream()
+                .map(NodeInfo::getGroup)
+                .filter(Objects::nonNull)
+                .filter(Group::isLeafGroup)
+                .map(Group::getIndex)
+                .collect(Collectors.toSet());
+    }
+
+    private Group groupForThisIndex(int groupIndex) {
+        return clusterInfo.getAllNodeInfos().stream()
+                .map(NodeInfo::getGroup)
+                .filter(Objects::nonNull)
+                .filter(Group::isLeafGroup)
+                .filter(group -> group.getIndex() == groupIndex)
+                .findFirst()
+                .orElseThrow();
+    }
+
     // groups with at least one node with the same state & description
     private Set<Integer> groupsWithSameStateAndDescription(State state, String newDescription) {
         return clusterInfo.getAllNodeInfos().stream()
@@ -483,6 +558,10 @@ public class NodeStateChangeChecker {
                           .filter(Group::isLeafGroup)
                           .map(Group::getIndex)
                           .collect(Collectors.toSet());
+    }
+
+    private List<ConfiguredNode> getNodesInGroup(int groupIndex) {
+        return groupForThisIndex(groupIndex).getNodes();
     }
 
     public static class Result {
