@@ -119,12 +119,7 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
                         var tokenVersion = TokenVersion.of(
                                 token.id(), token.fingerprints().get(version), token.checkAccessHashes().get(version),
                                 token.expirations().get(version));
-                        var expiration = tokenVersion.expiration().orElse(null);
-                        if (expiration != null && now.isAfter(expiration))
-                            log.fine(() -> "Ignoring expired version %s of token '%s' (expiration=%s)".formatted(
-                                    tokenVersion.fingerprint(), tokenVersion.id(), expiration));
-                        else
-                            tokens.put(tokenVersion.accessHash(), tokenVersion);
+                        tokens.put(tokenVersion.accessHash(), tokenVersion);
                     }
                 }
                 // Add reverse proxy certificate as required certificate for client definition
