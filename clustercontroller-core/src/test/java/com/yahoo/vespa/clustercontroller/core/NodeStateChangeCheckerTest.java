@@ -216,8 +216,6 @@ public class NodeStateChangeCheckerTest {
 
     @Test
     void testMaintenanceAllowedFor2Of4Groups8Nodes() {
-        // LogSetup.initVespaLogging("foo");
-
         int maxNumberOfGroupsAllowedToBeDown = 2;
         // 4 groups with 2 nodes in each group
         var cluster = createCluster(8, 4, maxNumberOfGroupsAllowedToBeDown);

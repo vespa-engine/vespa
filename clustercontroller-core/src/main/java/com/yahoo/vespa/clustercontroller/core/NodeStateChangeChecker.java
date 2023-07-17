@@ -157,7 +157,7 @@ public class NodeStateChangeChecker {
             return result;
 
         if (isGroupedSetup()) {
-            if (maxNumberOfGroupsAllowedToBeDown == - 1) {
+            if (maxNumberOfGroupsAllowedToBeDown == -1) {
                 result = checkIfAnotherNodeInAnotherGroupHasWantedState(nodeInfo);
                 if (result.notAllowed())
                     return result;
