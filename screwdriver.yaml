@@ -91,7 +91,7 @@ jobs:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
-      screwdriver.cd/timeout: 120
+      screwdriver.cd/timeout: 150
       screwdriver.cd/dockerEnabled: true
       screwdriver.cd/dockerCpu: TURBO
       screwdriver.cd/dockerRam: HIGH
