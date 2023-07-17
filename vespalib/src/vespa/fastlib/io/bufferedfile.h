@@ -217,7 +217,6 @@ public:
      * Just forwarded to the real file to support FastOS_FileInterface.
      */
     bool Open(unsigned int, const char*) override;
-    bool Delete() override;
 
     void alignEndForDirectIO();
 };

@@ -338,13 +338,6 @@ public:
     int64_t getSize() const { return const_cast<FastOS_FileInterface *>(this)->GetSize(); }
 
     /**
-     * Delete the file. This method requires that the file is
-     * currently not opened.
-     * @return Boolean success/failure
-     */
-    virtual bool Delete() = 0;
-
-    /**
      * Rename/move a file or directory. This method requires that
      * the file is currently not opened. A move operation is
      * supported as long as the source and destination reside
