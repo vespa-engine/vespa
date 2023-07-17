@@ -4,8 +4,15 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/fastos/file.h>
+#include <filesystem>
 
 using namespace vespalib;
+
+namespace {
+
+vespalib::string fileheader_tmp("fileheader.tmp");
+
+}
 
 class Test : public vespalib::TestApp {
 private:
@@ -337,7 +344,7 @@ Test::testFileReader()
 {
     {
         FastOS_File file;
-        ASSERT_TRUE(file.OpenWriteOnlyTruncate("fileheader.tmp"));
+        ASSERT_TRUE(file.OpenWriteOnlyTruncate(fileheader_tmp.c_str()));
 
         uint8_t buf[256];
         for (uint32_t i = 0; i < 256; ++i) {
@@ -347,7 +354,7 @@ Test::testFileReader()
     }
     {
         FastOS_File file;
-        ASSERT_TRUE(file.OpenReadOnly("fileheader.tmp"));
+        ASSERT_TRUE(file.OpenReadOnly(fileheader_tmp.c_str()));
         FileHeader::FileReader reader(file);
 
         char buf[7];
@@ -362,7 +369,7 @@ Test::testFileReader()
         EXPECT_EQUAL(256u, sum);
 
         ASSERT_TRUE(file.Close());
-        file.Delete();
+        std::filesystem::remove(std::filesystem::path(fileheader_tmp));
     }
 }
 
@@ -371,7 +378,7 @@ Test::testFileWriter()
 {
     {
         FastOS_File file;
-        ASSERT_TRUE(file.OpenWriteOnlyTruncate("fileheader.tmp"));
+        ASSERT_TRUE(file.OpenWriteOnlyTruncate(fileheader_tmp.c_str()));
         FileHeader::FileWriter writer(file);
 
         uint32_t sum = 0;
@@ -388,7 +395,7 @@ Test::testFileWriter()
     }
     {
         FastOS_File file;
-        ASSERT_TRUE(file.OpenReadOnly("fileheader.tmp"));
+        ASSERT_TRUE(file.OpenReadOnly(fileheader_tmp.c_str()));
 
         uint8_t buf[256];
         EXPECT_EQUAL(256, file.Read(buf, 256));
@@ -397,7 +404,7 @@ Test::testFileWriter()
         }
 
         ASSERT_TRUE(file.Close());
-        file.Delete();
+        std::filesystem::remove(std::filesystem::path(fileheader_tmp));
     }
 }
 
@@ -412,13 +419,13 @@ Test::testFileHeader()
         header.putTag(FileHeader::Tag("baz", "666999"));
 
         FastOS_File file;
-        ASSERT_TRUE(file.OpenWriteOnlyTruncate("fileheader.tmp"));
+        ASSERT_TRUE(file.OpenWriteOnlyTruncate(fileheader_tmp.c_str()));
         len = header.writeFile(file);
         EXPECT_EQUAL(len, header.getSize());
     }
     {
         FastOS_File file;
-        ASSERT_TRUE(file.OpenReadWrite("fileheader.tmp"));
+        ASSERT_TRUE(file.OpenReadWrite(fileheader_tmp.c_str()));
 
         FileHeader header;
         EXPECT_EQUAL(len, header.readFile(file));
@@ -441,11 +448,11 @@ Test::testFileHeader()
         FileHeader header;
 
         FastOS_File file;
-        ASSERT_TRUE(file.OpenReadOnly("fileheader.tmp"));
+        ASSERT_TRUE(file.OpenReadOnly(fileheader_tmp.c_str()));
         EXPECT_EQUAL(len, header.readFile(file));
         EXPECT_EQUAL(len, header.getSize());
         ASSERT_TRUE(file.Close());
-        file.Delete();
+        std::filesystem::remove(std::filesystem::path(fileheader_tmp));
 
         EXPECT_TRUE(header.hasTag("foo"));
         EXPECT_EQUAL(9.6, header.getTag("foo").asFloat());
@@ -571,12 +578,12 @@ Test::testRewriteErrors()
 
     {
         FastOS_File file;
-        ASSERT_TRUE(file.OpenWriteOnlyTruncate("fileheader.tmp"));
+        ASSERT_TRUE(file.OpenWriteOnlyTruncate(fileheader_tmp.c_str()));
         EXPECT_EQUAL(len, header.writeFile(file));
     }
     {
         FastOS_File file;
-        ASSERT_TRUE(file.OpenReadWrite("fileheader.tmp"));
+        ASSERT_TRUE(file.OpenReadWrite(fileheader_tmp.c_str()));
         header.putTag(FileHeader::Tag("baz", "cox"));
         EXPECT_TRUE(len != header.getSize());
         try {
