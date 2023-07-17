@@ -309,7 +309,7 @@ public class NodeStateChangeCheckerTest {
             Result result = nodeStateChangeChecker.evaluateTransition(node, clusterState, SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
             assertFalse(result.allowed(), result.toString());
             assertFalse(result.isAlreadySet());
-            assertEquals("Distributor 2 says storage node 2 has buckets with redundancy as low as 1, but we require at least 4", result.reason());
+            assertEquals("Distributor 0 says storage node 0 has buckets with redundancy as low as 1, but we require at least 4", result.reason());
         }
 
     }

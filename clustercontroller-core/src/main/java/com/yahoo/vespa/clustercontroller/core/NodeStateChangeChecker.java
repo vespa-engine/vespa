@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -265,7 +266,7 @@ public class NodeStateChangeChecker {
             numberOfGroupsToConsider = retiredAndNotUpGroups.size() - 1;
         }
 
-        var result = checkRedundancyForGroupsThatAreUp(retiredAndNotUpGroups);
+        var result = checkRedundancy(retiredAndNotUpGroups);
         if (result.isPresent() && result.get().notAllowed())
             return result;
 
@@ -279,26 +280,21 @@ public class NodeStateChangeChecker {
                                                   sortSetIntoList(retiredAndNotUpGroups))));
     }
 
-    private Optional<Result> checkRedundancyForGroupsThatAreUp(Set<Integer> retiredAndNotUpGroups) {
-        Set<Integer> groupsThatAreUp = groupsThatAreUp(retiredAndNotUpGroups);
-        log.log(FINE, "Check min replication for groups " + groupsThatAreUp);
-        for (int group : groupsThatAreUp) {
-            List<ConfiguredNode> nodesInGroup = getNodesInGroup(group);
-            for (var n : nodesInGroup) {
-                log.log(FINE, "Check min replication for index " + n.index() + " in group " + group);
-                Set<Integer> indexesToCheck = nodesInGroup.stream().map(ConfiguredNode::index).collect(Collectors.toSet());
-                var r = checkRedundancySeenFromDistributor(clusterInfo.getDistributorNodeInfo(n.index()), indexesToCheck);
-                if (r.notAllowed())
-                    return Optional.of(r);
-            }
+    // Check redundancy for nodes seen from all distributors that are UP for
+    // storage nodes that are in groups that should be UP
+    private Optional<Result> checkRedundancy(Set<Integer> retiredAndNotUpGroups) {
+        Set<Integer> indexesToCheck = new HashSet<>();
+        retiredAndNotUpGroups.forEach(index -> getNodesInGroup(index).forEach(node -> indexesToCheck.add(node.index())));
+
+        for (var distributorNodeInfo : clusterInfo.getDistributorNodeInfos()) {
+            // Skip distributors that are DOWN (otherwise they will be UP and should be checked)
+            if (distributorNodeInfo.getUserWantedState().getState() != UP) continue;
+
+            var r = checkRedundancySeenFromDistributor(distributorNodeInfo, indexesToCheck);
+            if (r.notAllowed())
+                return Optional.of(r);
         }
         return Optional.empty();
-    }
-
-    private Set<Integer> groupsThatAreUp(Set<Integer> retiredAndNotUpGroups) {
-        var allGroups = allGroupIndexes();
-        allGroups.removeAll(retiredAndNotUpGroups);
-        return allGroups;
     }
 
     private static boolean nodeIsDown(ClusterState clusterState, NodeInfo nodeInfo) {
@@ -458,6 +454,7 @@ public class NodeStateChangeChecker {
         return allow();
     }
 
+    // Replication per storage node index
     private Map<Integer, Integer> minReplication(DistributorNodeInfo distributorNodeInfo) {
         Map<Integer, Integer> replicationPerNodeIndex = new HashMap<>();
         for (StorageNode storageNode : distributorNodeInfo.getHostInfo().getDistributor().getStorageNodes()) {
@@ -508,15 +505,6 @@ public class NodeStateChangeChecker {
                           .filter(Group::isLeafGroup)
                           .map(Group::getIndex)
                           .collect(Collectors.toSet());
-    }
-
-    private Set<Integer> allGroupIndexes() {
-        return clusterInfo.getAllNodeInfos().stream()
-                .map(NodeInfo::getGroup)
-                .filter(Objects::nonNull)
-                .filter(Group::isLeafGroup)
-                .map(Group::getIndex)
-                .collect(Collectors.toSet());
     }
 
     private Group groupForThisIndex(int groupIndex) {
