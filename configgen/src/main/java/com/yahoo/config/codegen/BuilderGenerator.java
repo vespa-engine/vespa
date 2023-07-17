@@ -2,9 +2,9 @@
 package com.yahoo.config.codegen;
 
 import com.yahoo.config.codegen.LeafCNode.FileLeaf;
+import com.yahoo.config.codegen.LeafCNode.ModelLeaf;
 import com.yahoo.config.codegen.LeafCNode.PathLeaf;
 import com.yahoo.config.codegen.LeafCNode.UrlLeaf;
-import com.yahoo.config.codegen.LeafCNode.ModelLeaf;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +41,7 @@ public class BuilderGenerator {
     private static String getDeclaration(InnerCNode node) {
         String getInterfaces = (node.getParent() == null) ? "implements ConfigInstance.Builder" : "implements ConfigBuilder";
 
-        return "public static class Builder " + getInterfaces + " {";
+        return "public static final class Builder " + getInterfaces + " {";
     }
 
     private static String getSpecialRootBuilderCode(InnerCNode node) {

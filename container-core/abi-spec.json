@@ -310,7 +310,8 @@
       "com.yahoo.config.ConfigInstance$Builder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1032,7 +1033,8 @@
       "com.yahoo.config.ConfigInstance$Builder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1091,7 +1093,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1128,7 +1131,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1174,7 +1178,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1205,7 +1210,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1240,7 +1246,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1329,7 +1336,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1366,7 +1374,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1768,7 +1777,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1806,7 +1816,8 @@
       "com.yahoo.config.ConfigInstance$Builder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1855,7 +1866,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1884,7 +1896,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1915,7 +1928,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1946,7 +1960,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
@@ -1977,7 +1992,8 @@
       "com.yahoo.config.ConfigBuilder"
     ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",
