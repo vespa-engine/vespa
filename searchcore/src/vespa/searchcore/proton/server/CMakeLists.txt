@@ -126,6 +126,4 @@ vespa_add_library(searchcore_server STATIC
     searchcore_summaryengine
     searchcore_reference
     configdefinitions
-    EXTERNAL_DEPENDS
-    ${VESPA_STDCXX_FS_LIB}
 )
