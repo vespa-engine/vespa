@@ -55,7 +55,7 @@ public class ProvisioningThrottler {
     }
 
     static boolean throttle(int recent, int total, Duration window, Agent agent) {
-        if (total < MIN_SIZE && recent < MIN_SIZE) return false; // Allow burst in small zones
+        if (total < MIN_SIZE && recent < MAX_GROWTH) return false; // Allow burst in small zones
         int maxGrowth = Math.min(MAX_GROWTH, (int) (total * MAX_GROWTH_RATE));
         boolean throttle = recent > maxGrowth;
         if (throttle) {
