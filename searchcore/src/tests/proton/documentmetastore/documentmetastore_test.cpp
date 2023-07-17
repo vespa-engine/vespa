@@ -21,11 +21,11 @@
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <filesystem>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -525,7 +525,7 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded)
         EXPECT_EQ(numLids + 1, dms2.getNumDocs());
         EXPECT_EQ(numLids - (3 - i), dms2.getNumUsedLids());
     }
-    vespalib::unlink("documentmetastore2.dat");
+    std::filesystem::remove(std::filesystem::path("documentmetastore2.dat"));
 }
 
 TEST(DocumentMetaStoreTest, bucket_used_bits_are_lbounded_at_load_time)
@@ -551,7 +551,7 @@ TEST(DocumentMetaStoreTest, bucket_used_bits_are_lbounded_at_load_time)
 
     BucketId expected_bucket(storage::spi::BucketLimits::MinUsedBits, gid.convertToBucketId().getRawId());
     assertGid(gid, lid, dms2, expected_bucket, Timestamp(1000));
-    vespalib::unlink("documentmetastore2.dat");
+    std::filesystem::remove(std::filesystem::path("documentmetastore2.dat"));
 }
 
 TEST(DocumentMetaStore, stats_are_updated)
@@ -1915,8 +1915,8 @@ TEST(DocumentMetaStoreTest, document_sizes_are_saved)
     assertSize(dms4, 1, 1);
     assertSize(dms4, 2, 1);
     assertSize(dms4, 3, 1);
-    vespalib::unlink("documentmetastore3.dat");
-    vespalib::unlink("documentmetastore4.dat");
+    std::filesystem::remove(std::filesystem::path("documentmetastore3.dat"));
+    std::filesystem::remove(std::filesystem::path("documentmetastore4.dat"));
 }
 
 namespace {

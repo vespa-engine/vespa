@@ -39,7 +39,7 @@ bool isValidIndex(const string &index_dir) {
 }
 
 void invalidateIndex(const string &index_dir) {
-    vespalib::unlink(index_dir + "/serial.dat");
+    std::filesystem::remove(std::filesystem::path(index_dir + "/serial.dat"));
     vespalib::File::sync(index_dir);
 }
 

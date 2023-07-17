@@ -4,8 +4,9 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/guard.h>
-#include <cassert>
 #include <algorithm>
+#include <cassert>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".indexmetainfo");
@@ -305,7 +306,7 @@ IndexMetaInfo::save(const vespalib::string &baseName)
 {
     vespalib::string fileName = makeFileName(baseName);
     vespalib::string newName = fileName + ".new";
-    vespalib::unlink(newName);
+    std::filesystem::remove(std::filesystem::path(newName));
     vespalib::FilePointer f(fopen(newName.c_str(), "w"));
     if (!f.valid()) {
         LOG(warning, "could not open file for writing: %s", newName.c_str());
