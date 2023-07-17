@@ -6,6 +6,7 @@
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <cassert>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.domainpart");
@@ -371,7 +372,7 @@ DomainPart::erase(SerialNum to)
     bool retval(true);
     if (to > get_range_to()) {
         close();
-        _transLog->Delete();
+        std::filesystem::remove(std::filesystem::path(_fileName));
     } else {
         auto range_from = get_range_from();
         if (to > range_from) {
