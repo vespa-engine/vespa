@@ -253,6 +253,12 @@ func TestConfigReadTLSOptions(t *testing.T) {
 			PrivateKeyFile:  defaultKeyFile,
 		},
 	)
+
+	// Key pair files specified through environment are required
+	nonExistentFile := filepath.Join(homeDir, "non-existent-file")
+	cli, _, _ := newTestCLI(t, "VESPA_CLI_DATA_PLANE_CERT_FILE="+nonExistentFile, "VESPA_CLI_DATA_PLANE_KEY_FILE="+nonExistentFile)
+	_, err := cli.config.readTLSOptions(app, vespa.TargetLocal)
+	assert.True(t, os.IsNotExist(err))
 }
 
 func TestConfigTargetResolving(t *testing.T) {
