@@ -4,9 +4,10 @@ package com.yahoo.vespa.clustercontroller.utils.staterestapi.errors;
 public class InvalidOptionValueException extends StateRestApiException {
 
     public InvalidOptionValueException(String option, String value, String description) {
-        super("Option '" + option + "' have invalid value '" + value + "': " + description);
-        setHtmlCode(400);
-        setHtmlStatus("Option '" + option + "' have invalid value '" + value + "'");
+        super("Option '" + option + "' have invalid value '" + value + "': " + description,
+              400,
+              "Option '" + option + "' have invalid value '" + value + "'");
+
     }
 
 }
