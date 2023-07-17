@@ -43,7 +43,7 @@ public class Preparer {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
         this.loadBalancerProvisioner = loadBalancerProvisioner;
-        this.throttler = new ProvisioningThrottler(nodeRepository.clock(), metric);
+        this.throttler = new ProvisioningThrottler(nodeRepository, metric);
     }
 
     /**

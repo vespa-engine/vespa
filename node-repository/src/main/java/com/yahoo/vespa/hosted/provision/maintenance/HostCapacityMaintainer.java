@@ -68,7 +68,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
         super(nodeRepository, interval, metric);
         this.hostProvisioner = hostProvisioner;
         this.preprovisionCapacityFlag = PermanentFlags.PREPROVISION_CAPACITY.bindTo(flagSource);
-        this.throttler = new ProvisioningThrottler(nodeRepository.clock(), metric);
+        this.throttler = new ProvisioningThrottler(nodeRepository, metric);
     }
 
     @Override
