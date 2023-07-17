@@ -36,7 +36,6 @@ class VespaCliTestRunnerTest {
         assertEquals(List.of("vespa", "test", systemTests.toAbsolutePath().toString(),
                              "--application", "t.a.i",
                              "--zone", "dev.aws-us-east-1c",
-                             "--system", "publiccd",
                              "--target", "cloud"),
                      builder.command());
         assertTrue(builder.environment().containsKey("CI"));
@@ -67,7 +66,6 @@ class VespaCliTestRunnerTest {
         assertEquals(List.of("vespa", "test", systemTests.toAbsolutePath().toString(),
                              "--application", "t.a.i",
                              "--zone", "dev.aws-us-east-1c",
-                             "--system", "cd",
                              "--target", "hosted"),
                      builder.command());
         assertTrue(builder.environment().containsKey("CI"));
