@@ -639,7 +639,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         endpointCert.certificate(),
                         endpointCert.key());
                 cluster.addComponent(dataplaneProxy);
-                builder.tokenEndpoint(true);
             }
         }
         var connectorFactory = builder.build();

@@ -38,7 +38,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                 ? ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH : ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH;
         return new CloudSslProvider(
                 builder.name, builder.endpointCertificate.key(), builder.endpointCertificate.certificate(),
-                builder.tlsCaCertificatesPath, builder.tlsCaCertificatesPem, clientAuthentication, builder.tokenEndpoint);
+                builder.tlsCaCertificatesPath, builder.tlsCaCertificatesPem, clientAuthentication);
     }
 
     @Override
@@ -72,7 +72,6 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         EndpointCertificateSecrets endpointCertificate;
         String tlsCaCertificatesPem;
         String tlsCaCertificatesPath;
-        boolean tokenEndpoint;
 
         private Builder(String name, int port) { this.name = name; this.port = port; }
         public Builder requireTlsClientAuthDuringTlsHandshake(boolean enable) {this.requireTlsClientAuthDuringTlsHandshake = enable; return this; }
@@ -82,7 +81,6 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         public Builder endpointCertificate(EndpointCertificateSecrets cert) { this.endpointCertificate = cert; return this; }
         public Builder tlsCaCertificatesPath(String path) { this.tlsCaCertificatesPath = path; return this; }
         public Builder tlsCaCertificatesPem(String pem) { this.tlsCaCertificatesPem = pem; return this; }
-        public Builder tokenEndpoint(boolean enable) { this.tokenEndpoint = enable; return this; }
 
         public HostedSslConnectorFactory build() { return new HostedSslConnectorFactory(this); }
     }
