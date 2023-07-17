@@ -117,12 +117,12 @@ public class VespaCliTestRunner implements TestRunner {
         ProcessBuilder builder = new ProcessBuilder("vespa", "test", suitePath.get().toAbsolutePath().toString(),
                                                     "--application", config.application().toFullString(),
                                                     "--zone", config.zone().value(),
-                                                    "--system", config.system().value(),
                                                     "--target", config.system().isPublic() ? "cloud" : "hosted");
         builder.redirectErrorStream(true);
         // The CI environment variables tells Vespa CLI to omit certain warnings that do not apply to CI environments
         builder.environment().put("CI", "true");
         builder.environment().put("VESPA_CLI_CLOUD_CI", "true");
+        builder.environment().put("VESPA_CLI_CLOUD_SYSTEM", config.system().value());
         builder.environment().put("VESPA_CLI_HOME", ensureDirectoryForVespaCli("cli-home").toString());
         builder.environment().put("VESPA_CLI_CACHE_DIR", ensureDirectoryForVespaCli("cli-cache").toString());
         builder.environment().put("VESPA_CLI_ENDPOINTS", toEndpointsConfig(config));
