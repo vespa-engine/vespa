@@ -15,9 +15,9 @@
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <filesystem>
 
 
 using namespace cloud::config::filedistribution;
@@ -165,7 +165,7 @@ TEST_FF("requireThatConfigCanBeSerializedAndDeserialized", Transport(), Document
 TEST_FF("requireThatConfigCanBeLoadedWithoutExtraConfigsDataFile", Transport(), DocumentDBConfig::SP(makeBaseConfigSnapshot(f1.transport())))
 {
     saveBaseConfigSnapshot(f1.transport(), *f2, 70);
-    EXPECT_FALSE(vespalib::unlink("out/config-70/extraconfigs.dat"));
+    EXPECT_FALSE(std::filesystem::remove(std::filesystem::path("out/config-70/extraconfigs.dat")));
     DocumentDBConfig::SP esnap(makeEmptyConfigSnapshot());
     {
         FileConfigManager cm(f1.transport(), "out", myId, "dummy");

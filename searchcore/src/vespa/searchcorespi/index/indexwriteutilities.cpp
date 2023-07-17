@@ -159,7 +159,7 @@ IndexWriteUtilities::updateDiskIndexSchema(const vespalib::string &indexDir,
     }
     vespalib::string schemaTmpName = schemaName + ".tmp";
     vespalib::string schemaOrigName = schemaName + ".orig";
-    vespalib::unlink(schemaTmpName);
+    std::filesystem::remove(std::filesystem::path(schemaTmpName));
     if (!newSchema->saveToFile(schemaTmpName)) {
         LOG(error, "Could not save schema to '%s'",
             schemaTmpName.c_str());
