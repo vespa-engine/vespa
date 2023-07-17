@@ -431,11 +431,6 @@ bool Fast_BufferedFile::Open(unsigned int openFlags, const char * name)
     return ok;
 }
 
-bool Fast_BufferedFile::Delete()
-{
-    return _file->Delete();
-}
-
 void Fast_BufferedFile::alignEndForDirectIO()
 {
     while( (_bufi - buf())%MIN_ALIGNMENT ) {

@@ -165,7 +165,7 @@ TEST(FileTest, WriteOnlyTest) {
     ASSERT_EQ(myFile->GetPosition(), 0);
     EXPECT_LT(myFile->Read(dummyData, 6), 0);
     EXPECT_TRUE(myFile->Close());
-    EXPECT_TRUE(myFile->Delete());
+    EXPECT_TRUE(std::filesystem::remove(std::filesystem::path(woFilename)));
 }
 
 TEST(FileTest, ReadWriteTest) {
@@ -188,7 +188,7 @@ TEST(FileTest, ReadWriteTest) {
     EXPECT_EQ(myFile->Read(dummyData2, 6), 0);
     EXPECT_EQ(myFile->GetPosition(), 6);
     EXPECT_TRUE(myFile->Close());
-    EXPECT_TRUE(myFile->Delete());
+    EXPECT_TRUE(std::filesystem::remove(std::filesystem::path(rwFilename)));
 }
 
 TEST(FileTest, ScanDirectoryTest) {

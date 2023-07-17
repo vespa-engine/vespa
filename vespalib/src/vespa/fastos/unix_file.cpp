@@ -341,21 +341,6 @@ FastOS_UNIX_File::GetSize()
     return fileSize;
 }
 
-bool
-FastOS_UNIX_File::Delete(const char *name)
-{
-    return (unlink(name) == 0);
-}
-
-
-bool
-FastOS_UNIX_File::Delete()
-{
-    assert( ! IsOpened());
-
-    return (unlink(_filename.c_str()) == 0);
-}
-
 bool FastOS_UNIX_File::Rename (const char *currentFileName, const char *newFileName)
 {
     bool rc = false;
