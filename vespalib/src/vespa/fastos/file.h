@@ -20,9 +20,6 @@ constexpr int FASTOS_FILE_OPEN_WRITE     = (1<<1);
 constexpr int FASTOS_FILE_OPEN_EXISTING  = (1<<2);
 constexpr int FASTOS_FILE_OPEN_CREATE    = (1<<3);
 constexpr int FASTOS_FILE_OPEN_TRUNCATE  = (1<<4);
-constexpr int FASTOS_FILE_OPEN_STDOUT    = (2<<5);
-constexpr int FASTOS_FILE_OPEN_STDERR    = (3<<5);
-constexpr int FASTOS_FILE_OPEN_STDFLAGS  = (3<<5);
 constexpr int FASTOS_FILE_OPEN_DIRECTIO  = (1<<7);
 constexpr int FASTOS_FILE_OPEN_SYNCWRITES = (1<<9); // synchronous writes
 

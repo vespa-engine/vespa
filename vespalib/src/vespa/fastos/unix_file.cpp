@@ -207,80 +207,50 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
     bool rc = false;
     assert(_filedes == -1);
 
-    if ((openFlags & FASTOS_FILE_OPEN_STDFLAGS) != 0) {
-        FILE *file;
+    if (filename != nullptr) {
+        SetFileName(filename);
+    }
+    unsigned int accessFlags = CalcAccessFlags(openFlags);
 
-        switch(openFlags & FASTOS_FILE_OPEN_STDFLAGS) {
+    _filedes = open(_filename.c_str(), accessFlags, 0664);
 
-        case FASTOS_FILE_OPEN_STDOUT:
-            file = stdout;
-            SetFileName("stdout");
-            break;
+    rc = (_filedes != -1);
 
-        case FASTOS_FILE_OPEN_STDERR:
-            file = stderr;
-            SetFileName("stderr");
-            break;
-
-        default:
-            fprintf(stderr, "Invalid open-flags %08X\n", openFlags);
-            abort();
-        }
-
-#ifdef __linux__
-        _filedes = file->_fileno;
-#else
-        _filedes = fileno(file);
-#endif
+    if (rc) {
         _openFlags = openFlags;
-        rc = true;
-    } else {
-        if (filename != nullptr) {
-            SetFileName(filename);
-        }
-        unsigned int accessFlags = CalcAccessFlags(openFlags);
-
-        _filedes = open(_filename.c_str(), accessFlags, 0664);
-
-        rc = (_filedes != -1);
-
-        if (rc) {
-            _openFlags = openFlags;
-            if (_mmapEnabled) {
-                int64_t filesize = GetSize();
-                auto mlen = static_cast<size_t>(filesize);
-                if ((static_cast<int64_t>(mlen) == filesize) && (mlen > 0)) {
-                    void *mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | _mmapFlags, _filedes, 0);
-                    if (mbase == MAP_FAILED) {
-                        mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | (_mmapFlags & ALWAYS_SUPPORTED_MMAP_FLAGS), _filedes, 0);
-                    }
-                    if (mbase != MAP_FAILED) {
+        if (_mmapEnabled) {
+            int64_t filesize = GetSize();
+            auto mlen = static_cast<size_t>(filesize);
+            if ((static_cast<int64_t>(mlen) == filesize) && (mlen > 0)) {
+                void *mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | _mmapFlags, _filedes, 0);
+                if (mbase == MAP_FAILED) {
+                    mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | (_mmapFlags & ALWAYS_SUPPORTED_MMAP_FLAGS), _filedes, 0);
+                }
+                if (mbase != MAP_FAILED) {
 #ifdef __linux__
-                        int fadviseOptions = getFAdviseOptions();
-                        int eCode(0);
-                        if (POSIX_FADV_RANDOM == fadviseOptions) {
-                            eCode = posix_madvise(mbase, mlen, POSIX_MADV_RANDOM);
-                        } else if (POSIX_FADV_SEQUENTIAL == fadviseOptions) {
-                            eCode = posix_madvise(mbase, mlen, POSIX_MADV_SEQUENTIAL);
-                        }
-                        if (eCode != 0) {
-                            fprintf(stderr, "Failed: posix_madvise(%p, %ld, %d) = %d\n", mbase, mlen, fadviseOptions, eCode);
-                        }
-#endif
-                        _mmapbase = mbase;
-                        _mmaplen = mlen;
-                    } else {
-                        close(_filedes);
-                        _filedes = -1;
-                        std::ostringstream os;
-                        os << "mmap of file '" << GetFileName() << "' with flags '" << std::hex << (MAP_SHARED | _mmapFlags) << std::dec
-                           << "' failed with error :'" << getErrorString(GetLastOSError()) << "'";
-                        throw std::runtime_error(os.str());
+                    int fadviseOptions = getFAdviseOptions();
+                    int eCode(0);
+                    if (POSIX_FADV_RANDOM == fadviseOptions) {
+                        eCode = posix_madvise(mbase, mlen, POSIX_MADV_RANDOM);
+                    } else if (POSIX_FADV_SEQUENTIAL == fadviseOptions) {
+                        eCode = posix_madvise(mbase, mlen, POSIX_MADV_SEQUENTIAL);
                     }
+                    if (eCode != 0) {
+                        fprintf(stderr, "Failed: posix_madvise(%p, %ld, %d) = %d\n", mbase, mlen, fadviseOptions, eCode);
+                    }
+#endif
+                    _mmapbase = mbase;
+                    _mmaplen = mlen;
+                } else {
+                    close(_filedes);
+                    _filedes = -1;
+                    std::ostringstream os;
+                    os << "mmap of file '" << GetFileName() << "' with flags '" << std::hex << (MAP_SHARED | _mmapFlags) << std::dec
+                       << "' failed with error :'" << getErrorString(GetLastOSError()) << "'";
+                    throw std::runtime_error(os.str());
                 }
             }
         }
-
     }
 
     return rc;
@@ -300,13 +270,9 @@ FastOS_UNIX_File::Close()
     bool ok = true;
 
     if (_filedes >= 0) {
-        if ((_openFlags & FASTOS_FILE_OPEN_STDFLAGS) != 0) {
-            ok = true;
-        } else {
-            do {
-                ok = (close(_filedes) == 0);
-            } while (!ok && errno == EINTR);
-        }
+        do {
+            ok = (close(_filedes) == 0);
+        } while (!ok && errno == EINTR);
 
         if (_mmapbase != nullptr) {
             madvise(_mmapbase, _mmaplen, MADV_DONTNEED);
