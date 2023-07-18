@@ -2,14 +2,14 @@
 
 #include "unpacking_iterators_optimizer.h"
 
-#include <vespa/log/log.h>
-LOG_SETUP(".matching.unpacking_iterators_optimizer");
-
 #include "querynodes.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/searchlib/query/tree/queryvisitor.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 #include <vespa/searchlib/query/tree/querytreecreator.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".matching.unpacking_iterators_optimizer");
 
 using namespace search::query;
 

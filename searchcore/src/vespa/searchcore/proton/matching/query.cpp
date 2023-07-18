@@ -15,10 +15,10 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+#include <vespa/searchlib/query/tree/querytreecreator.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.query");
-#include <vespa/searchlib/query/tree/querytreecreator.h>
 
 using document::PositionDataType;
 using search::SimpleQueryStackDumpIterator;

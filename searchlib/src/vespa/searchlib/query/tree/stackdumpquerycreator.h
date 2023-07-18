@@ -4,15 +4,20 @@
 
 #include "node.h"
 #include "querybuilder.h"
-#include "term.h"
+#include "termnodes.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/common/geo_location_parser.h>
-#include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/issue.h>
 #include <charconv>
 
 namespace search::query {
+
+class StackDumpQueryCreatorHelper {
+public:
+    static void populateMultiTerm(SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt);
+    static void reportError(const SimpleQueryStackDumpIterator &queryStack, const QueryBuilderBase & builder);
+};
 
 /**
  * Creates a query tree from a stack dump.
@@ -40,34 +45,14 @@ public:
             }
         }
         if (builder.hasError()) {
-            vespalib::stringref stack = queryStack.getStack();
-            vespalib::Issue::report("Unable to create query tree from stack dump. Failed at position %ld out of %ld bytes %s",
-                       queryStack.getPosition(), stack.size(), builder.error().c_str());
-            LOG(error, "got bad query stack: %s", vespalib::HexDump(stack.data(), stack.size()).toString().c_str());
+            StackDumpQueryCreatorHelper::reportError(queryStack, builder);
         }
         return builder.build();
     }
 
 private:
     static void populateMultiTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt) {
-        uint32_t added(0);
-        for (added = 0; (added < mt.getNumTerms()) && queryStack.next(); added++) {
-            ParseItem::ItemType type = queryStack.getType();
-            switch (type) {
-                case ParseItem::ITEM_PURE_WEIGHTED_LONG:
-                    mt.addTerm(queryStack.getIntergerTerm(), queryStack.GetWeight());
-                    break;
-                case ParseItem::ITEM_PURE_WEIGHTED_STRING:
-                    mt.addTerm(queryStack.getTerm(), queryStack.GetWeight());
-                    break;
-                default:
-                    builder.reportError(vespalib::make_string("Got unexpected node %d for multiterm node at child term %d", type, added));
-                    return;
-            }
-        }
-        if (added < mt.getNumTerms()) {
-            builder.reportError(vespalib::make_string("Too few nodes(%d) for multiterm(%d)", added, mt.getNumTerms()));
-        }
+        StackDumpQueryCreatorHelper::populateMultiTerm(queryStack, builder, mt);
     }
     static Term *
     createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, vespalib::stringref & pureTermView) {
@@ -189,7 +174,7 @@ private:
                 Location loc(parser.getGeoLocation());
                 t = &builder.addLocationTerm(loc, view, id, weight);
             } else if (type == ParseItem::ITEM_NUMTERM) {
-                if (term[0] == '[' || term[0] == '<' || term[0] == '>') {
+                if (Term::isPossibleRangeTerm(term)) {
                     Range range(term);
                     t = &builder.addRangeTerm(range, view, id, weight);
                 } else {

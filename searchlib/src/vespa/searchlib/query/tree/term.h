@@ -34,6 +34,9 @@ public:
     bool isRanked() const { return _ranked; }
     bool usePositionData() const { return _position_data; }
 
+    static bool isPossibleRangeTerm(vespalib::stringref term) noexcept {
+        return (term[0] == '[' || term[0] == '<' || term[0] == '>');
+    }
 protected:
     Term(vespalib::stringref view, int32_t id, Weight weight);
 };
