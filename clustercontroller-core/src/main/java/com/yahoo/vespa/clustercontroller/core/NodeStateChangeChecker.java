@@ -13,9 +13,13 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.StorageNode;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,7 +63,7 @@ public class NodeStateChangeChecker {
         this.clusterInfo = cluster.clusterInfo();
         this.inMoratorium = inMoratorium;
         this.maxNumberOfGroupsAllowedToBeDown = cluster.maxNumberOfGroupsAllowedToBeDown();
-        if ( ! groupVisiting.isHierarchical() && maxNumberOfGroupsAllowedToBeDown > 1)
+        if ( ! isGroupedSetup() && maxNumberOfGroupsAllowedToBeDown > 1)
             throw new IllegalArgumentException("Cannot have both 1 group and maxNumberOfGroupsAllowedToBeDown > 1");
     }
 
@@ -153,16 +157,22 @@ public class NodeStateChangeChecker {
         if (result.notAllowed())
             return result;
 
-        if (maxNumberOfGroupsAllowedToBeDown == -1) {
-            result = checkIfAnotherNodeInAnotherGroupHasWantedState(nodeInfo);
+        if (isGroupedSetup()) {
+            if (maxNumberOfGroupsAllowedToBeDown == -1) {
+                result = checkIfAnotherNodeInAnotherGroupHasWantedState(nodeInfo);
+                if (result.notAllowed())
+                    return result;
+                if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription))
+                    return allow();
+            } else {
+                var optionalResult = checkIfOtherNodesHaveWantedState(nodeInfo, newDescription, clusterState);
+                if (optionalResult.isPresent())
+                    return optionalResult.get();
+            }
+        } else {
+            result = otherNodeHasWantedState(nodeInfo);
             if (result.notAllowed())
                 return result;
-            if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription))
-                return allow();
-        } else {
-            var optionalResult = checkIfOtherNodesHaveWantedState(nodeInfo, newDescription, clusterState);
-            if (optionalResult.isPresent())
-                return optionalResult.get();
         }
 
         if (nodeIsDown(clusterState, nodeInfo)) {
@@ -185,6 +195,10 @@ public class NodeStateChangeChecker {
         return allow();
     }
 
+    private boolean isGroupedSetup() {
+        return groupVisiting.isHierarchical();
+    }
+
     /** Refuse to override whatever an operator or unknown entity is doing. */
     private static Result checkIfStateSetWithDifferentDescription(NodeInfo nodeInfo, String newDescription) {
         State oldWantedState = nodeInfo.getUserWantedState().getState();
@@ -196,82 +210,88 @@ public class NodeStateChangeChecker {
     }
 
     /**
-     * Returns a disallow-result if there is another node (in another group, if hierarchical)
-     * that has a wanted state != UP.  We disallow more than 1 suspended node/group at a time.
+     * Returns a disallow-result if there is another node in another group
+     * that has a wanted state != UP.  We disallow more than 1 suspended group at a time.
      */
     private Result checkIfAnotherNodeInAnotherGroupHasWantedState(StorageNodeInfo nodeInfo) {
-        if (groupVisiting.isHierarchical()) {
-            SettableOptional<Result> anotherNodeHasWantedState = new SettableOptional<>();
-
-            groupVisiting.visit(group -> {
-                if (!groupContainsNode(group, nodeInfo.getNode())) {
-                    Result result = otherNodeInGroupHasWantedState(group);
-                    if (result.notAllowed()) {
-                        anotherNodeHasWantedState.set(result);
-                        // Have found a node that is suspended, halt the visiting
-                        return false;
-                    }
+        SettableOptional<Result> anotherNodeHasWantedState = new SettableOptional<>();
+        groupVisiting.visit(group -> {
+            if (! groupContainsNode(group, nodeInfo.getNode())) {
+                Result result = otherNodeInGroupHasWantedState(group);
+                if (result.notAllowed()) {
+                    anotherNodeHasWantedState.set(result);
+                    // Have found a node that is suspended, halt the visiting
+                    return false;
                 }
+            }
 
-                return true;
-            });
+            return true;
+        });
 
-            return anotherNodeHasWantedState.asOptional().orElseGet(Result::allow);
-        } else {
-            // Returns a disallow-result if there is another node with a wanted state
-            return otherNodeHasWantedState(nodeInfo);
-        }
+        return anotherNodeHasWantedState.asOptional().orElseGet(Result::allow);
     }
 
     /**
      * Returns an optional Result, where return value is:
-     * For flat setup: Return Optional.of(disallowed) if wanted state is set on some node, else Optional.empty
-     * For hierarchical setup: No wanted state for other nodes, return Optional.empty
-     *                         Wanted state for nodes/groups are not UP:
-     *                           if less than maxNumberOfGroupsAllowedToBeDown: return Optional.of(allowed)
-     *                           else: if node is in group with nodes already down: return Optional.of(allowed), else Optional.of(disallowed)
+     * - No wanted state for other nodes, return Optional.empty
+     * - Wanted state for nodes/groups are not UP:
+     * - if less than maxNumberOfGroupsAllowedToBeDown: return Optional.of(allowed)
+     *      else: if node is in group with nodes already down: return Optional.of(allowed), else Optional.of(disallowed)
      */
     private Optional<Result> checkIfOtherNodesHaveWantedState(StorageNodeInfo nodeInfo, String newDescription, ClusterState clusterState) {
         Node node = nodeInfo.getNode();
 
-        if (groupVisiting.isHierarchical()) {
-            Set<Integer> groupsWithNodesWantedStateNotUp = groupsWithUserWantedStateNotUp();
-            if (groupsWithNodesWantedStateNotUp.size() == 0) {
-                log.log(FINE, "groupsWithNodesWantedStateNotUp=0");
-                return Optional.empty();
-            }
+        Set<Integer> groupsWithNodesWantedStateNotUp = groupsWithUserWantedStateNotUp();
+        if (groupsWithNodesWantedStateNotUp.size() == 0) {
+            log.log(FINE, "groupsWithNodesWantedStateNotUp=0");
+            return Optional.empty();
+        }
 
-            Set<Integer> groupsWithSameStateAndDescription = groupsWithSameStateAndDescription(MAINTENANCE, newDescription);
-            if (aGroupContainsNode(groupsWithSameStateAndDescription, node)) {
-                log.log(FINE, "Node is in group with same state and description, allow");
-                return Optional.of(allow());
-            }
-            // There are groups with nodes not up, but with another description, probably operator set
-            if (groupsWithSameStateAndDescription.size() == 0) {
-                return Optional.of(disallow("Wanted state already set for another node in groups: " +
-                                            sortSetIntoList(groupsWithNodesWantedStateNotUp)));
-            }
+        Set<Integer> groupsWithSameStateAndDescription = groupsWithSameStateAndDescription(MAINTENANCE, newDescription);
+        if (aGroupContainsNode(groupsWithSameStateAndDescription, node)) {
+            log.log(FINE, "Node is in group with same state and description, allow");
+            return Optional.of(allow());
+        }
+        // There are groups with nodes not up, but with another description, probably operator set
+        if (groupsWithSameStateAndDescription.size() == 0) {
+            return Optional.of(disallow("Wanted state already set for another node in groups: " +
+                                        sortSetIntoList(groupsWithNodesWantedStateNotUp)));
+        }
 
-            Set<Integer> retiredAndNotUpGroups = groupsWithNotRetiredAndNotUp(clusterState);
-            int numberOfGroupsToConsider = retiredAndNotUpGroups.size();
-            // Subtract one group if node is in a group with nodes already retired or not up, since number of such groups will
-            // not increase if we allow node to go down
-            if (aGroupContainsNode(retiredAndNotUpGroups, node)) {
-                numberOfGroupsToConsider = retiredAndNotUpGroups.size() - 1;
-            }
-            if (numberOfGroupsToConsider < maxNumberOfGroupsAllowedToBeDown) {
-                log.log(FINE, "Allow, retiredAndNotUpGroups=" + retiredAndNotUpGroups);
-                return Optional.of(allow());
-            }
+        Set<Integer> retiredAndNotUpGroups = groupsWithNotRetiredAndNotUp(clusterState);
+        int numberOfGroupsToConsider = retiredAndNotUpGroups.size();
+        // Subtract one group if node is in a group with nodes already retired or not up, since number of such groups will
+        // not increase if we allow node to go down
+        if (aGroupContainsNode(retiredAndNotUpGroups, node)) {
+            numberOfGroupsToConsider = retiredAndNotUpGroups.size() - 1;
+        }
 
-            return Optional.of(disallow(String.format("At most %d groups can have wanted state: %s",
-                                                      maxNumberOfGroupsAllowedToBeDown,
-                                                      sortSetIntoList(retiredAndNotUpGroups))));
-        } else {
-            // Return a disallow-result if there is another node with a wanted state
-            var otherNodeHasWantedState = otherNodeHasWantedState(nodeInfo);
-            if (otherNodeHasWantedState.notAllowed())
-                return Optional.of(otherNodeHasWantedState);
+        var result = checkRedundancy(retiredAndNotUpGroups, clusterState);
+        if (result.isPresent() && result.get().notAllowed())
+            return result;
+
+        if (numberOfGroupsToConsider < maxNumberOfGroupsAllowedToBeDown) {
+            log.log(FINE, "Allow, retiredAndNotUpGroups=" + retiredAndNotUpGroups);
+            return Optional.of(allow());
+        }
+
+        return Optional.of(disallow(String.format("At most %d groups can have wanted state: %s",
+                                                  maxNumberOfGroupsAllowedToBeDown,
+                                                  sortSetIntoList(retiredAndNotUpGroups))));
+    }
+
+    // Check redundancy for nodes seen from all distributors that are UP in cluster state for
+    // storage nodes that are in groups that should be UP
+    private Optional<Result> checkRedundancy(Set<Integer> retiredAndNotUpGroups, ClusterState clusterState) {
+        Set<Integer> indexesToCheck = new HashSet<>();
+        retiredAndNotUpGroups.forEach(index -> getNodesInGroup(index).forEach(node -> indexesToCheck.add(node.index())));
+
+        for (var distributorNodeInfo : clusterInfo.getDistributorNodeInfos()) {
+            if (clusterState.getNodeState(distributorNodeInfo.getNode()).getState() != UP) continue;
+
+            var r = checkRedundancySeenFromDistributor(distributorNodeInfo, indexesToCheck);
+            if (r.notAllowed())
+                return Optional.of(r);
         }
         return Optional.empty();
     }
@@ -396,24 +416,54 @@ public class NodeStateChangeChecker {
     }
 
     private Result checkRedundancy(DistributorNodeInfo distributorNodeInfo, Node node) {
-        List<StorageNode> storageNodes = distributorNodeInfo.getHostInfo().getDistributor().getStorageNodes();
-        for (StorageNode storageNode : storageNodes) {
-            if (storageNode.getIndex() == node.getIndex()) {
-                Integer minReplication = storageNode.getMinCurrentReplicationFactorOrNull();
-                // Why test on != null? Missing min-replication is OK (indicate empty/few buckets on system).
-                if (minReplication != null && minReplication < requiredRedundancy) {
-                    return disallow("Distributor " + distributorNodeInfo.getNodeIndex()
-                            + " says storage node " + node.getIndex()
-                            + " has buckets with redundancy as low as "
-                            + storageNode.getMinCurrentReplicationFactorOrNull()
-                            + ", but we require at least " + requiredRedundancy);
-                } else {
-                    return allow();
-                }
+        Integer minReplication = minReplication(distributorNodeInfo).get(node.getIndex());
+        return verifyRedundancy(distributorNodeInfo, minReplication, node.getIndex());
+    }
+
+    private Result checkRedundancySeenFromDistributor(DistributorNodeInfo distributorNodeInfo, Set<Integer> indexesToCheck) {
+        Map<Integer, Integer> replication = new LinkedHashMap<>(minReplication(distributorNodeInfo));
+
+        Integer minReplication = null;
+        Integer minReplicationIndex = null;
+        for (var entry : replication.entrySet()) {
+            Integer value = entry.getValue();
+            Integer nodeIndex = entry.getKey();
+            if ( ! indexesToCheck.contains(nodeIndex)) continue;
+            if (minReplication == null || (value != null && value < minReplication)) {
+                minReplication = value;
+                if (minReplication == null) continue;
+
+                minReplicationIndex = nodeIndex;
+                if (minReplication < requiredRedundancy) break;
             }
         }
 
+        return verifyRedundancy(distributorNodeInfo, minReplication, minReplicationIndex);
+    }
+
+    private Result verifyRedundancy(DistributorNodeInfo distributorNodeInfo, Integer minReplication, Integer minReplicationIndex) {
+        // Why test on != null? Missing min-replication is OK (indicate empty/few buckets on system).
+        if (minReplication != null && minReplication < requiredRedundancy) {
+            return disallow("Distributor " + distributorNodeInfo.getNodeIndex()
+                                    + " says storage node " + minReplicationIndex
+                                    + " has buckets with redundancy as low as "
+                                    + minReplication + ", but we require at least " + requiredRedundancy);
+        }
+
         return allow();
+    }
+
+    // Replication per storage node index
+    private Map<Integer, Integer> minReplication(DistributorNodeInfo distributorNodeInfo) {
+        Map<Integer, Integer> replicationPerNodeIndex = new HashMap<>();
+        for (StorageNode storageNode : distributorNodeInfo.getHostInfo().getDistributor().getStorageNodes()) {
+            var currentValue = replicationPerNodeIndex.get(storageNode.getIndex());
+            Integer minReplicationFactor = storageNode.getMinCurrentReplicationFactorOrNull();
+            if (currentValue == null || (minReplicationFactor != null && minReplicationFactor < currentValue))
+                replicationPerNodeIndex.put(storageNode.getIndex(), minReplicationFactor);
+        }
+
+        return replicationPerNodeIndex;
     }
 
     /**
@@ -456,6 +506,16 @@ public class NodeStateChangeChecker {
                           .collect(Collectors.toSet());
     }
 
+    private Group groupForThisIndex(int groupIndex) {
+        return clusterInfo.getAllNodeInfos().stream()
+                .map(NodeInfo::getGroup)
+                .filter(Objects::nonNull)
+                .filter(Group::isLeafGroup)
+                .filter(group -> group.getIndex() == groupIndex)
+                .findFirst()
+                .orElseThrow();
+    }
+
     // groups with at least one node with the same state & description
     private Set<Integer> groupsWithSameStateAndDescription(State state, String newDescription) {
         return clusterInfo.getAllNodeInfos().stream()
@@ -483,6 +543,10 @@ public class NodeStateChangeChecker {
                           .filter(Group::isLeafGroup)
                           .map(Group::getIndex)
                           .collect(Collectors.toSet());
+    }
+
+    private List<ConfiguredNode> getNodesInGroup(int groupIndex) {
+        return groupForThisIndex(groupIndex).getNodes();
     }
 
     public static class Result {

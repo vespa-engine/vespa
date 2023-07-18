@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.log.LogSetup;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.ClusterState;
@@ -275,25 +276,8 @@ public class NodeStateChangeCheckerTest {
             assertEquals("At most 2 groups can have wanted state: [0, 1]", result.reason());
         }
 
-        // 2 nodes in group 0 up again but buckets not in sync and 2 nodes in group 1 in maintenance,
-        // try to set storage node 4 in group 2 to maintenance
-        /* WIP
-        {
-            ClusterState clusterState = clusterState(String.format("version:%d distributor:8 storage:8 .2.s:m .3.s:m", currentClusterStateVersion));
-            setStorageNodeWantedState(cluster, 0, UP, "");
-            setStorageNodeWantedState(cluster, 1, UP, "");
-            int nodeIndex = 4;
-            Node node = new Node(STORAGE, nodeIndex);
-            Result result = nodeStateChangeChecker.evaluateTransition(node, clusterState, SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
-            assertFalse(result.settingWantedStateIsAllowed(), result.toString());
-            assertFalse(result.wantedStateAlreadySet());
-            assertEquals("At most 2 groups can have wanted state: [0, 1]", result.getReason());
-        }
-
-         */
-
         // 2 nodes in group 0 in maintenance, storage node 3 in group 1 is in maintenance with another description
-        // (set in maintenance by operator), try to set storage node 3 in group 1 to maintenance, should bew allowed
+        // (set in maintenance by operator), try to set storage node 2 in group 1 to maintenance, should be allowed
         {
             ClusterState clusterState = clusterState(String.format("version:%d distributor:8 storage:8 .0.s:m .1.s:m .3.s:m", currentClusterStateVersion));
             setStorageNodeWantedState(cluster, 3, MAINTENANCE, "Maintenance, set by operator");  // Set to another description
@@ -303,6 +287,29 @@ public class NodeStateChangeCheckerTest {
             Result result = nodeStateChangeChecker.evaluateTransition(node, clusterState, SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
             assertTrue(result.allowed(), result.toString());
             assertFalse(result.isAlreadySet());
+        }
+
+        // 2 nodes in group 0 up again but buckets not in sync and 2 nodes in group 1 in maintenance,
+        // try to set storage node 4 in group 2 to maintenance
+        {
+            setStorageNodeWantedState(cluster, 0, MAINTENANCE, "Orchestrator");
+            setStorageNodeWantedState(cluster, 1, MAINTENANCE, "Orchestrator");
+            setStorageNodeWantedState(cluster, 2, UP, ""); // Set up again
+            setStorageNodeWantedState(cluster, 3, UP, ""); // Set up again
+            ClusterState clusterState = clusterState(String.format("version:%d distributor:8 storage:8 .0.s:m .1.s:m", currentClusterStateVersion));
+
+            // Set bucket in sync to 1 for node 2 in group 1
+            var distributorHostInfo = createDistributorHostInfo(1, 2, 1);
+            cluster.clusterInfo().getDistributorNodeInfo(0).setHostInfo(HostInfo.createHostInfo(distributorHostInfo));
+            cluster.clusterInfo().getDistributorNodeInfo(1).setHostInfo(HostInfo.createHostInfo(distributorHostInfo));
+            cluster.clusterInfo().getDistributorNodeInfo(2).setHostInfo(HostInfo.createHostInfo(distributorHostInfo));
+
+            int nodeIndex = 2;
+            Node node = new Node(STORAGE, nodeIndex);
+            Result result = nodeStateChangeChecker.evaluateTransition(node, clusterState, SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
+            assertFalse(result.allowed(), result.toString());
+            assertFalse(result.isAlreadySet());
+            assertEquals("Distributor 0 says storage node 0 has buckets with redundancy as low as 1, but we require at least 4", result.reason());
         }
 
     }
