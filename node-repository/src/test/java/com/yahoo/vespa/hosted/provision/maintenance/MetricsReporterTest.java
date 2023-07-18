@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
-import com.yahoo.vespa.hosted.provision.node.ClusterId;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -140,6 +139,7 @@ public class MetricsReporterTest {
         expectedMetrics.put("cache.curator.hitRate", 3D/5D);
         expectedMetrics.put("cache.curator.evictionCount", 0L);
         expectedMetrics.put("cache.curator.size", 2L);
+        expectedMetrics.put("nodes.emptyExclusive", 0);
 
         nodeRepository.nodes().list();
         tester.clock().setInstant(Instant.ofEpochSecond(124));
@@ -278,7 +278,6 @@ public class MetricsReporterTest {
         assertEquals(4, getMetric("nodes.active", metric, dimensions));
         assertEquals(0, getMetric("nodes.nonActive", metric, dimensions));
 
-
         Map<String, String> clusterDimensions = Map.of("applicationId", applicationId.toFullString(),
                                                        "clusterid", clusterSpec.id().value());
         assertEquals(1.392, getMetric("cluster.cost", metric, clusterDimensions));
@@ -339,6 +338,34 @@ public class MetricsReporterTest {
         tester.assertSwitches(Set.of(switch0, switch1, switch2, switch3), app, spec2.id());
         metricsReporter.maintain();
         assertEquals(1D, getMetric("nodes.exclusiveSwitchFraction", metric, MetricsReporter.dimensions(app, spec2.id())).doubleValue(), Double.MIN_VALUE);
+    }
+
+    @Test
+    public void empty_exclusive_hosts() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().build();
+        ApplicationId app = ApplicationId.from("t1", "a1", "default");
+        TestMetric metric = new TestMetric();
+        MetricsReporter metricsReporter = metricsReporter(metric, tester);
+        NodeResources resources = new NodeResources(8, 32, 100, 10);
+        List<Node> hosts = tester.makeReadyNodes(4, resources, NodeType.host, 5);
+        tester.activateTenantHosts();
+        tester.patchNodes(hosts, (host) -> host.withExclusiveToApplicationId(app));
+
+        // Hosts are not considered empty until enough time passes
+        metricsReporter.maintain();
+        assertEquals(0, metric.values.get("nodes.emptyExclusive").intValue());
+        tester.clock().advance(Duration.ofMinutes(10));
+        metricsReporter.maintain();
+        assertEquals(hosts.size(), metric.values.get("nodes.emptyExclusive").intValue());
+
+        // Deploy application
+        ClusterSpec spec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("c1")).vespaVersion("1").build();
+        Capacity capacity = Capacity.from(new ClusterResources(4, 1, resources));
+        tester.deploy(app, spec, capacity);
+
+        // Host are now in use
+        metricsReporter.maintain();
+        assertEquals(0, metric.values.get("nodes.emptyExclusive").intValue());
     }
 
     private Number getMetric(String name, TestMetric metric, Map<String, String> dimensions) {
