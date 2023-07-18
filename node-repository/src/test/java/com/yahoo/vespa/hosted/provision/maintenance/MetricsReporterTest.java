@@ -139,6 +139,7 @@ public class MetricsReporterTest {
         expectedMetrics.put("cache.curator.hitRate", 3D/5D);
         expectedMetrics.put("cache.curator.evictionCount", 0L);
         expectedMetrics.put("cache.curator.size", 2L);
+        expectedMetrics.put("nodes.emptyExclusive", 0);
 
         nodeRepository.nodes().list();
         tester.clock().setInstant(Instant.ofEpochSecond(124));
