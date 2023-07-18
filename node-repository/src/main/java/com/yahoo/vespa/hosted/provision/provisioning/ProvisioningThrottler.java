@@ -2,7 +2,8 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.jdisc.Metric;
-import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.flags.IntFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -24,44 +25,36 @@ public class ProvisioningThrottler {
     private static final String throttlingActiveMetric = "throttledHostProvisioning";
 
     private static final Logger LOG = Logger.getLogger(ProvisioningThrottler.class.getName());
-
-    private static final int MIN_SIZE = 100;
-    private static final int MAX_GROWTH = 200;
-    private static final double MAX_GROWTH_RATE = 0.4;
+    private static final Duration WINDOW = Duration.ofDays(1);
 
     private final NodeRepository nodeRepository;
     private final Metric metric;
+    private final IntFlag maxHostsPerHourFlag;
 
     public ProvisioningThrottler(NodeRepository nodeRepository, Metric metric) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.metric = Objects.requireNonNull(metric);
-    }
-
-    private Duration window() {
-        return nodeRepository.zone().system().isCd() ? Duration.ofHours(2) : Duration.ofHours(8);
+        this.maxHostsPerHourFlag = PermanentFlags.MAX_HOSTS_PER_HOUR.bindTo(nodeRepository.flagSource());
     }
 
     /** Returns whether provisioning should be throttled at given instant */
     public boolean throttle(NodeList allNodes, Agent agent) {
-        Duration window = window();
-        Instant startOfWindow = nodeRepository.clock().instant().minus(window);
-        NodeList hosts = allNodes.hosts();
-        int existingHosts = hosts.not().state(Node.State.deprovisioned).size();
-        int provisionedRecently = hosts.matching(host -> host.history().hasEventAfter(History.Event.Type.provisioned, startOfWindow))
-                                       .size();
-        boolean throttle = throttle(provisionedRecently, existingHosts, window, agent);
+        Instant startOfWindow = nodeRepository.clock().instant().minus(WINDOW);
+        int provisionedRecently = allNodes.matching(host -> host.history().hasEventAfter(History.Event.Type.provisioned,
+                                                                                         startOfWindow))
+                                          .size();
+        boolean throttle = throttle(provisionedRecently, maxHostsPerHourFlag.value(), agent);
         metric.set(throttlingActiveMetric, throttle ? 1 : 0, null);
         return throttle;
     }
 
-    static boolean throttle(int recent, int total, Duration window, Agent agent) {
-        if (total < MIN_SIZE && recent < MAX_GROWTH) return false; // Allow burst in small zones
-        int maxGrowth = Math.min(MAX_GROWTH, (int) (total * MAX_GROWTH_RATE));
-        boolean throttle = recent > maxGrowth;
+    static boolean throttle(int recentHosts, int maxPerHour, Agent agent) {
+        double rate = recentHosts / (double) WINDOW.toMillis();
+        boolean throttle = (rate * Duration.ofHours(1).toMillis()) > maxPerHour;
         if (throttle) {
             LOG.warning(String.format("Throttling provisioning of new hosts by %s: %d hosts have been provisioned " +
-                                      "in the past %s, which exceeds growth limit of %d", agent,
-                                      recent, window, maxGrowth));
+                                      "in the past %s, which exceeds maximum rate of %d hosts/hour", agent,
+                                      recentHosts, WINDOW, maxPerHour));
         }
         return throttle;
     }
