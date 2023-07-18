@@ -99,7 +99,7 @@ public:
 
     /**
      * Constructor. A filename could be supplied at this point, or specified
-     * later using @ref SetFileName() or @ref Open().
+     * later using @ref Open().
      * @param filename  a filename (optional)
      */
     FastOS_FileInterface(const char *filename=nullptr);
@@ -109,14 +109,6 @@ public:
      * it for you.
      */
     virtual ~FastOS_FileInterface();
-
-    /**
-     * Associate a new filename with this object. This filename will be
-     * used when performing @ref Open() (unless @ref Open() specifies a
-     * different filename).
-     * @param filename  filename character string (will be copied internally)
-     */
-    virtual void SetFileName(const char *filename);
 
     /**
      * Return the filename associated with the File object. If no filename
@@ -136,8 +128,7 @@ public:
      * @param filename     You may optionally specify a filename here. This
      *                     will replace the currently associated filename
      *                     (if any) set using either the constructor,
-     *                     @ref SetFileName() or a previous call to
-     *                     @ref Open().
+     *                     or a previous call to @ref Open().
      * @return Boolean success/failure
      */
     virtual bool Open(unsigned int openFlags, const char *filename=nullptr) = 0;
@@ -148,7 +139,7 @@ public:
      * @param filename       You may optionally specify a filename here. This
      *                       will replace the currently associated filename
      *                       (if any) set using either the constructor,
-     *                       @ref SetFileName() or a previous call to @ref Open().
+     *                       or a previous call to @ref Open().
      * @return Boolean success/failure
      */
     bool OpenReadWrite(const char *filename=nullptr);
@@ -160,7 +151,7 @@ public:
      * @param filename         You may optionally specify a filename here. This
      *                         will replace the currently associated filename
      *                         (if any) set using either the constructor,
-     *                         @ref SetFileName() or a previous call to
+     *                         or a previous call to
      *                         @ref Open().
      * @return Boolean success/failure
      */
@@ -173,8 +164,7 @@ public:
      * @param filename         You may optionally specify a filename here. This
      *                         will replace the currently associated filename
      *                         (if any) set using either the constructor,
-     *                         @ref SetFileName() or a previous call to
-     *                         @ref Open().
+     *                         or a previous call to @ref Open().
      * @return Boolean success/failure
      */
     bool OpenReadOnlyExisting (bool abortIfNotExist=false, const char *filename=nullptr);
@@ -185,8 +175,7 @@ public:
      * @param filename         You may optionally specify a filename here. This
      *                         will replace the currently associated filename
      *                         (if any) set using either the constructor,
-     *                         @ref SetFileName() or a previous call to
-     *                         @ref Open().
+     *                         or a previous call to @ref Open().
      * @return Boolean success/failure
      */
     bool OpenWriteOnlyTruncate(const char *filename=nullptr);
@@ -198,8 +187,7 @@ public:
      * @param filename         You may optionally specify a filename here. This
      *                         will replace the currently associated filename
      *                         (if any) set using either the constructor,
-     *                         @ref SetFileName() or a previous call to
-     *                         @ref Open().
+     *                         or a previous call to @ref Open().
      * @return Boolean success/failure
      */
     bool OpenWriteOnlyExisting (bool abortIfNotExist=false, const char *filename=nullptr);
@@ -210,7 +198,7 @@ public:
      * @param filename       You may optionally specify a filename here. This
      *                       will replace the currently associated filename
      *                       (if any) set using either the constructor,
-     *                       @ref SetFileName() or a previous call to @ref Open().
+     *                       or a previous call to @ref Open().
      * @return Boolean success/failure
      */
     bool OpenReadOnly(const char *filename=nullptr);
@@ -221,7 +209,7 @@ public:
      * @param filename       You may optionally specify a filename here. This
      *                       will replace the currently associated filename
      *                       (if any) set using either the constructor,
-     *                       @ref SetFileName() or a previous call to @ref Open().
+     *                       or a previous call to Open().
      * @return Boolean success/failure
      */
     bool OpenWriteOnly(const char *filename=nullptr);

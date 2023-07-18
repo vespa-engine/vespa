@@ -208,7 +208,7 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
     assert(_filedes == -1);
 
     if (filename != nullptr) {
-        SetFileName(filename);
+        _filename = filename;
     }
     unsigned int accessFlags = CalcAccessFlags(openFlags);
 

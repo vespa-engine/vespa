@@ -40,13 +40,11 @@ static const size_t MAX_CHUNK_SIZE = 0x4000000; // 64 MB
 FastOS_FileInterface::FastOS_FileInterface(const char *filename)
     : _fAdviseOptions(_defaultFAdviseOptions),
       _chunkSize(MAX_CHUNK_SIZE),
-      _filename(),
+      _filename(filename != nullptr ? filename : ""),
       _openFlags(0),
       _directIOEnabled(false),
       _syncWritesEnabled(false)
 {
-    if (filename != nullptr)
-        SetFileName(filename);
 }
 
 
@@ -206,13 +204,6 @@ FastOS_FileInterface::IsMemoryMapped() const
     // Only subclases with support for memory mapping do something here.
     return false;
 }
-
-void
-FastOS_FileInterface::SetFileName(const char *filename)
-{
-    _filename = filename;
-}
-
 
 const char *
 FastOS_FileInterface::GetFileName() const
