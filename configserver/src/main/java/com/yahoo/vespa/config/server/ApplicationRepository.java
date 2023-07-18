@@ -167,7 +167,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  ConfigserverConfig configserverConfig,
                                  Orchestrator orchestrator,
                                  TesterClient testerClient,
-                                 Zone zone,
                                  HealthCheckerProvider healthCheckers,
                                  Metric metric,
                                  SecretStore secretStore,
