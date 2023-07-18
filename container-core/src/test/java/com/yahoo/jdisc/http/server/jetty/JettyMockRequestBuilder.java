@@ -85,7 +85,11 @@ public class JettyMockRequestBuilder {
         HttpChannel channel = mock(HttpChannel.class);
         HttpConnection connection = mock(HttpConnection.class);
         JDiscServerConnector connector = mock(JDiscServerConnector.class);
-        when(connector.connectorConfig()).thenReturn(new ConnectorConfig(new ConnectorConfig.Builder().listenPort(localPort)));
+        when(connector.connectorConfig()).thenReturn(new ConnectorConfig(
+                new ConnectorConfig.Builder().listenPort(localPort)
+                        .accessLog(new ConnectorConfig.AccessLog.Builder()
+                                           .remoteAddressHeaders(List.of("x-forwarded-for", "y-ra"))
+                                           .remotePortHeaders(List.of("X-Forwarded-Port", "y-rp")))));
         when(connector.getLocalPort()).thenReturn(localPort);
         when(connection.getCreatedTimeStamp()).thenReturn(System.currentTimeMillis());
         when(connection.getConnector()).thenReturn(connector);

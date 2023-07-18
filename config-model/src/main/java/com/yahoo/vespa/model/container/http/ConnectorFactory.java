@@ -8,6 +8,7 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ssl.DefaultSslProvider;
 import com.yahoo.vespa.model.container.http.ssl.SslProvider;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -40,6 +41,9 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     public void getConfig(ConnectorConfig.Builder connectorBuilder) {
         connectorBuilder.listenPort(listenPort);
         connectorBuilder.name(name);
+        connectorBuilder.accessLog(new ConnectorConfig.AccessLog.Builder()
+                                           .remoteAddressHeaders(List.of("x-forwarded-for"))
+                                           .remotePortHeaders(List.of("X-Forwarded-Port")));
         sslProviderComponent.amendConnectorConfig(connectorBuilder);
     }
 

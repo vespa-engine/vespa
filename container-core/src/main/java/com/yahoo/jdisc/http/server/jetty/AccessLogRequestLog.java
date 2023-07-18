@@ -7,8 +7,6 @@ import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
 import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.jdisc.http.ServerConfig;
-import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.jetty.http2.HTTP2Stream;
 import org.eclipse.jetty.http2.server.HttpTransportOverHTTP2;
 import org.eclipse.jetty.server.HttpChannel;
@@ -27,6 +25,7 @@ import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
 import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnectorLocalPort;
 
 /**
@@ -44,13 +43,9 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
     private static final List<String> LOGGED_REQUEST_HEADERS = List.of("Vespa-Client-Version");
 
     private final RequestLog requestLog;
-    private final List<String> remoteAddressHeaders;
-    private final List<String> remotePortHeaders;
 
-    AccessLogRequestLog(RequestLog requestLog, ServerConfig.AccessLog config) {
+    AccessLogRequestLog(RequestLog requestLog) {
         this.requestLog = requestLog;
-        this.remoteAddressHeaders = config.remoteAddressHeaders();
-        this.remotePortHeaders = config.remotePortHeaders();
     }
 
     @Override
@@ -144,16 +139,16 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
         }
     }
 
-    private String getRemoteAddress(HttpServletRequest request) {
-        for (String header : remoteAddressHeaders) {
+    private String getRemoteAddress(Request request) {
+        for (String header : getConnector(request).connectorConfig().accessLog().remoteAddressHeaders()) {
             String value = request.getHeader(header);
             if (value != null) return value;
         }
         return request.getRemoteAddr();
     }
 
-    private int getRemotePort(HttpServletRequest request) {
-        for (String header : remotePortHeaders) {
+    private int getRemotePort(Request request) {
+        for (String header : getConnector(request).connectorConfig().accessLog().remotePortHeaders()) {
             String value = request.getHeader(header);
             if (value != null) {
                 OptionalInt maybePort = parsePort(value);

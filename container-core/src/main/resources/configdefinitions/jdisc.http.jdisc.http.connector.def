@@ -138,3 +138,9 @@ serverName.fallback string default=""
 
 # The list of accepted server names. Empty list to accept any. Elements follows format of 'serverName.default'.
 serverName.allowed[] string
+
+# HTTP request headers that contain remote address
+accessLog.remoteAddressHeaders[]      string
+
+# HTTP request headers that contain remote port
+accessLog.remotePortHeaders[]         string

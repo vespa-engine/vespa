@@ -63,17 +63,8 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
                 .searchHandlerPaths(List.of("/search"))
         );
         if (isHostedVespa) {
-            // Proxy-protocol v1/v2 is used in hosted Vespa for remote address/port
-            builder.accessLog(new ServerConfig.AccessLog.Builder()
-                    .remoteAddressHeaders(List.of())
-                    .remotePortHeaders(List.of()));
-
             // Enable connection log hosted Vespa
             builder.connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true));
-        } else {
-            builder.accessLog(new ServerConfig.AccessLog.Builder()
-                    .remoteAddressHeaders(List.of("x-forwarded-for"))
-                    .remotePortHeaders(List.of("X-Forwarded-Port")));
         }
         configureJettyThreadpool(builder);
         builder.stopTimeout(300);
