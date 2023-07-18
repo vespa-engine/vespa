@@ -89,3 +89,4 @@ install_config_definition(hugging-face-embedder.def embedding.huggingface.huggin
 install_config_definition(hugging-face-tokenizer.def language.huggingface.config.hugging-face-tokenizer.def)
 install_config_definition(bert-base-embedder.def embedding.bert-base-embedder.def)
 install_config_definition(cloud-data-plane-filter.def jdisc.http.filter.security.cloud.config.cloud-data-plane-filter.def)
+install_config_definition(cloud-token-data-plane-filter.def jdisc.http.filter.security.cloud.config.cloud-token-data-plane-filter.def)
