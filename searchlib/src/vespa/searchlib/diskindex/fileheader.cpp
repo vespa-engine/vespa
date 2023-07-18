@@ -47,7 +47,7 @@ FileHeader::taste(const vespalib::string &name,
             return false;
         }
 
-        fileSize = file.GetSize();
+        fileSize = file.getSize();
         try {
             headerLen = header.readFile(file);
             assert(headerLen >= header.getSize());

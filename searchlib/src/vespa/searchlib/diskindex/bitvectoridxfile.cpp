@@ -75,13 +75,13 @@ BitVectorIdxFileWrite::open(const vespalib::string &name,
 
     int64_t pos = idxSize();
 
-    int64_t oldidxsize = _idxFile->GetSize();
+    int64_t oldidxsize = _idxFile->getSize();
     assert(oldidxsize >= pos);
     (void) oldidxsize;
 
     _idxFile->SetSize(pos);
 
-    assert(pos == _idxFile->GetPosition());
+    assert(pos == _idxFile->getPosition());
 }
 
 void
@@ -138,7 +138,7 @@ BitVectorIdxFileWrite::flush()
 {
     _idxFile->Flush();
 
-    uint64_t pos = _idxFile->GetPosition();
+    uint64_t pos = _idxFile->getPosition();
     assert(pos == idxSize());
     (void) pos;
 }
@@ -162,7 +162,7 @@ BitVectorIdxFileWrite::close()
 {
     if (_idxFile) {
         if (_idxFile->IsOpened()) {
-            uint64_t pos = _idxFile->GetPosition();
+            uint64_t pos = _idxFile->getPosition();
             assert(pos == idxSize());
             _idxFile->alignEndForDirectIO();
             updateIdxHeader(pos * 8);

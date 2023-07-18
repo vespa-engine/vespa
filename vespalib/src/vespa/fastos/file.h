@@ -288,12 +288,7 @@ public:
      * Get the filepointer. -1 is returned if the operation fails.
      * @return current position of file pointer (in bytes)
      */
-    virtual int64_t GetPosition() = 0;
-
-    /**
-     * const version of @link GetPosition
-     */
-    int64_t getPosition() const { return const_cast<FastOS_FileInterface *>(this)->GetPosition(); }
+    virtual int64_t getPosition() const = 0;
 
     /**
      * Return the file size. This method requires that the file is
@@ -302,12 +297,7 @@ public:
      * If an error occurs, the returned value is -1.
      * @return file size (in bytes)
      */
-    virtual int64_t GetSize() = 0;
-
-    /**
-     * const version of @link GetSize
-     */
-    int64_t getSize() const { return const_cast<FastOS_FileInterface *>(this)->GetSize(); }
+    virtual int64_t getSize() const = 0;
 
     /**
      * Force completion of pending disk writes (flush cache).

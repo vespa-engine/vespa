@@ -32,36 +32,21 @@ AuxTest::~AuxTest()
 
 void AuxTest::init()
 {
-    test_methods_["TestExample"] =
-        &AuxTest::TestExample;
-    test_methods_["TestPropertyMap"] =
-        &AuxTest::TestPropertyMap;
-    test_methods_["TestRerase"] =
-        &AuxTest::TestRerase;
-    test_methods_["TestUTF811"] =
-        &AuxTest::TestUTF811;
-    test_methods_["TestUTF812"] =
-        &AuxTest::TestUTF812;
-    test_methods_["TestDoubleWidth"] =
-        &AuxTest::TestDoubleWidth;
-    test_methods_["TestPartialUTF8"] =
-        &AuxTest::TestPartialUTF8;
-    test_methods_["TestLargeBlockChinese"] =
-        &AuxTest::TestLargeBlockChinese;
-    test_methods_["TestUTF8context"] =
-        &AuxTest::TestUTF8context;
-    test_methods_["TestJapanese"] =
-        &AuxTest::TestJapanese;
-    test_methods_["TestStartHits"] =
-        &AuxTest::TestStartHits;
-    test_methods_["TestEndHit"] =
-        &AuxTest::TestEndHit;
-    test_methods_["TestJuniperStack"] =
-        &AuxTest::TestJuniperStack;
-    test_methods_["TestSpecialTokenRegistry"] =
-        &AuxTest::TestSpecialTokenRegistry;
-    test_methods_["TestWhiteSpacePreserved"] =
-        &AuxTest::TestWhiteSpacePreserved;
+    test_methods_["TestExample"] = &AuxTest::TestExample;
+    test_methods_["TestPropertyMap"] = &AuxTest::TestPropertyMap;
+    test_methods_["TestRerase"] = &AuxTest::TestRerase;
+    test_methods_["TestUTF811"] = &AuxTest::TestUTF811;
+    test_methods_["TestUTF812"] = &AuxTest::TestUTF812;
+    test_methods_["TestDoubleWidth"] = &AuxTest::TestDoubleWidth;
+    test_methods_["TestPartialUTF8"] = &AuxTest::TestPartialUTF8;
+    test_methods_["TestLargeBlockChinese"] = &AuxTest::TestLargeBlockChinese;
+    test_methods_["TestUTF8context"] = &AuxTest::TestUTF8context;
+    test_methods_["TestJapanese"] = &AuxTest::TestJapanese;
+    test_methods_["TestStartHits"] = &AuxTest::TestStartHits;
+    test_methods_["TestEndHit"] = &AuxTest::TestEndHit;
+    test_methods_["TestJuniperStack"] = &AuxTest::TestJuniperStack;
+    test_methods_["TestSpecialTokenRegistry"] = &AuxTest::TestSpecialTokenRegistry;
+    test_methods_["TestWhiteSpacePreserved"] = &AuxTest::TestWhiteSpacePreserved;
 }
 
 
@@ -155,7 +140,7 @@ AuxTest::TestPartialUTF8()
     {
         FastOS_File file((GetSourceDirectory() + "partialutf8.input.utf8").c_str());
         _test(file.OpenReadOnly());
-        _test(file.GetSize() == inputSize);
+        _test(file.getSize() == inputSize);
         _test(file.Read(input, inputSize));
         _test(countBrokenUTF8(input, inputSize) == 0);
     }
@@ -191,7 +176,7 @@ void AuxTest::TestLargeBlockChinese()
     {
         FastOS_File file((GetSourceDirectory() + "largeblockchinese.input.utf8").c_str());
         _test(file.OpenReadOnly());
-        _test(file.GetSize() == inputSize);
+        _test(file.getSize() == inputSize);
         _test(file.Read(input, inputSize));
         _test(countBrokenUTF8(input, inputSize) == 0);
     }

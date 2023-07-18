@@ -74,8 +74,8 @@ public:
 
     bool IsMemoryMapped() const override { return _mmapbase != nullptr; }
     bool SetPosition(int64_t desiredPosition) override;
-    int64_t GetPosition() override;
-    int64_t GetSize() override;
+    int64_t getPosition() const override;
+    int64_t getSize() const override;
     [[nodiscard]] bool Sync() override;
     bool SetSize(int64_t newSize) override;
     void dropFromCache() const override;

@@ -60,7 +60,7 @@ FastOS_UNIX_File::SetPosition(int64_t desiredPosition)
 
 
 int64_t
-FastOS_UNIX_File::GetPosition()
+FastOS_UNIX_File::getPosition() const
 {
     return lseek(_filedes, 0, SEEK_CUR);
 }
@@ -219,7 +219,7 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
     if (rc) {
         _openFlags = openFlags;
         if (_mmapEnabled) {
-            int64_t filesize = GetSize();
+            int64_t filesize = getSize();
             auto mlen = static_cast<size_t>(filesize);
             if ((static_cast<int64_t>(mlen) == filesize) && (mlen > 0)) {
                 void *mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | _mmapFlags, _filedes, 0);
@@ -291,7 +291,7 @@ FastOS_UNIX_File::Close()
 
 
 int64_t
-FastOS_UNIX_File::GetSize()
+FastOS_UNIX_File::getSize() const
 {
     int64_t fileSize=-1;
     struct stat stbuf{};
