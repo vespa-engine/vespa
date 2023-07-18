@@ -10,8 +10,8 @@ import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import static com.yahoo.container.bundle.BundleInstantiationSpecification.fromSearchAndDocproc;
 
@@ -28,7 +28,7 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
     static final String EXECUTION_FACTORY_CLASSNAME = EXECUTION_FACTORY.getName();
 
     static final BundleInstantiationSpecification HANDLER_SPEC = fromSearchAndDocproc(HANDLER_CLASSNAME);
-    static final BindingPattern DEFAULT_BINDING = bindingPattern(Optional.empty());
+    static final BindingPattern DEFAULT_BINDING = SystemBindingPattern.fromHttpPath("/search/*");
 
     SearchHandler(ApplicationContainerCluster cluster,
                   List<BindingPattern> bindings,
@@ -37,12 +37,11 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
         bindings.forEach(this::addServerBindings);
     }
 
-    static BindingPattern bindingPattern(Optional<String> port) {
-        String path = "/search/*";
-        return port
-                .filter(s -> !s.isBlank())
-                .map(s -> SystemBindingPattern.fromHttpPortAndPath(s, path))
-                .orElseGet(() -> SystemBindingPattern.fromHttpPath(path));
+    static List<BindingPattern> bindingPattern(Collection<Integer> ports) {
+        if (ports.isEmpty()) return List.of(DEFAULT_BINDING);
+        return ports.stream()
+                .map(s -> (BindingPattern)SystemBindingPattern.fromHttpPortAndPath(s, DEFAULT_BINDING.path()))
+                .toList();
     }
 
     private static class Threadpool extends ContainerThreadpool {

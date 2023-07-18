@@ -15,7 +15,7 @@ import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
 import org.w3c.dom.Element;
 
-import java.util.OptionalInt;
+import java.util.Collection;
 import java.util.Set;
 
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.METRICS_V2_HANDLER_BINDING_1;
@@ -38,12 +38,9 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilderB
                    VIP_HANDLER_BINDING);
 
     private final ApplicationContainerCluster cluster;
-    private final OptionalInt portBindingOverride;
+    private final Set<Integer> portBindingOverride;
 
-    public DomHandlerBuilder(ApplicationContainerCluster cluster) {
-        this(cluster, OptionalInt.empty());
-    }
-    public DomHandlerBuilder(ApplicationContainerCluster cluster, OptionalInt portBindingOverride) {
+    public DomHandlerBuilder(ApplicationContainerCluster cluster, Set<Integer> portBindingOverride) {
         this.cluster = cluster;
         this.portBindingOverride = portBindingOverride;
     }
@@ -51,23 +48,24 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilderB
     @Override
     protected Handler doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element handlerElement) {
         Handler handler = createHandler(handlerElement);
-        OptionalInt port = portBindingOverride.isPresent() && deployState.isHosted() && deployState.featureFlags().useRestrictedDataPlaneBindings()
-                ? portBindingOverride
-                : OptionalInt.empty();
+        var ports = deployState.isHosted() && deployState.featureFlags().useRestrictedDataPlaneBindings()
+                ? portBindingOverride : Set.<Integer>of();
 
-        for (Element binding : XML.getChildren(handlerElement, "binding"))
-            addServerBinding(handler, userBindingPattern(XML.getValue(binding), port), deployState.getDeployLogger());
+        for (Element xmlBinding : XML.getChildren(handlerElement, "binding"))
+            for (var binding : userBindingPattern(XML.getValue(xmlBinding), ports))
+                addServerBinding(handler, binding, deployState.getDeployLogger());
 
         DomComponentBuilder.addChildren(deployState, parent, handlerElement, handler);
 
         return handler;
     }
 
-    private static UserBindingPattern userBindingPattern(String path, OptionalInt port) {
+    private static Collection<UserBindingPattern> userBindingPattern(String path, Set<Integer> portBindingOverride) {
         UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
-        return port.isPresent()
-                ? bindingPattern.withPort(port.getAsInt())
-                : bindingPattern;
+        if (portBindingOverride.isEmpty()) return Set.of(bindingPattern);
+        return portBindingOverride.stream()
+                .map(bindingPattern::withPort)
+                .toList();
     }
 
     Handler createHandler(Element handlerElement) {

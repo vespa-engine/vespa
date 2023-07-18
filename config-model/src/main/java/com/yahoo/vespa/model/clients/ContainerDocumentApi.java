@@ -14,7 +14,8 @@ import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.OptionalInt;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author Einar M R Rosenvinge
@@ -28,7 +29,7 @@ public class ContainerDocumentApi {
 
     private final boolean ignoreUndefinedFields;
 
-    public ContainerDocumentApi(ContainerCluster<?> cluster, HandlerOptions handlerOptions, boolean ignoreUndefinedFields, OptionalInt portOverride) {
+    public ContainerDocumentApi(ContainerCluster<?> cluster, HandlerOptions handlerOptions, boolean ignoreUndefinedFields, Set<Integer> portOverride) {
         this.ignoreUndefinedFields = ignoreUndefinedFields;
         addRestApiHandler(cluster, handlerOptions, portOverride);
         addFeedHandler(cluster, handlerOptions, portOverride);
@@ -39,7 +40,7 @@ public class ContainerDocumentApi {
         c.addPlatformBundle(VESPACLIENT_CONTAINER_BUNDLE);
     }
 
-    private static void addFeedHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions, OptionalInt portOverride) {
+    private static void addFeedHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions, Set<Integer> portOverride) {
         String bindingSuffix = ContainerCluster.RESERVED_URI_PREFIX + "/feedapi";
         var executor = new Threadpool("feedapi-handler", handlerOptions.feedApiThreadpoolOptions);
         var handler = newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler",
@@ -48,7 +49,7 @@ public class ContainerDocumentApi {
     }
 
 
-    private static void addRestApiHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions, OptionalInt portOverride) {
+    private static void addRestApiHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions, Set<Integer> portOverride) {
         var handler = newVespaClientHandler("com.yahoo.document.restapi.resource.DocumentV1ApiHandler",
                                             DOCUMENT_V1_PREFIX + "/*", handlerOptions, null, portOverride);
         cluster.addComponent(handler);
@@ -65,34 +66,34 @@ public class ContainerDocumentApi {
                                                  String bindingSuffix,
                                                  HandlerOptions handlerOptions,
                                                  Threadpool executor,
-                                                 OptionalInt portOverride) {
+                                                 Set<Integer> portOverride) {
         Handler handler = createHandler(componentId, executor);
         if (handlerOptions.bindings.isEmpty()) {
-            handler.addServerBindings(
-                    bindingPattern(bindingSuffix, portOverride),
-                    bindingPattern(bindingSuffix + '/', portOverride));
+            handler.addServerBindings(bindingPattern(bindingSuffix, portOverride));
+            handler.addServerBindings(bindingPattern(bindingSuffix + '/', portOverride));
         } else {
             for (String rootBinding : handlerOptions.bindings) {
                 String pathWithoutLeadingSlash = bindingSuffix.substring(1);
-                handler.addServerBindings(
-                        userBindingPattern(rootBinding + pathWithoutLeadingSlash, portOverride),
-                        userBindingPattern(rootBinding + pathWithoutLeadingSlash + '/', portOverride));
+                handler.addServerBindings(userBindingPattern(rootBinding + pathWithoutLeadingSlash, portOverride));
+                handler.addServerBindings(userBindingPattern(rootBinding + pathWithoutLeadingSlash + '/', portOverride));
             }
         }
         return handler;
     }
 
-    private static BindingPattern bindingPattern(String path, OptionalInt port) {
-        return port.isPresent()
-                ? SystemBindingPattern.fromHttpPortAndPath(Integer.toString(port.getAsInt()), path)
-                : SystemBindingPattern.fromHttpPath(path);
+    private static List<BindingPattern> bindingPattern(String path, Set<Integer> ports) {
+        if (ports.isEmpty()) return List.of(SystemBindingPattern.fromHttpPath(path));
+        return ports.stream()
+                .map(p -> (BindingPattern)SystemBindingPattern.fromHttpPortAndPath(p, path))
+                .toList();
     }
 
-    private static UserBindingPattern userBindingPattern(String path, OptionalInt port) {
+    private static List<BindingPattern> userBindingPattern(String path, Set<Integer> ports) {
         UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
-        return port.isPresent()
-                ? bindingPattern.withPort(port.getAsInt())
-                : bindingPattern;
+        if (ports.isEmpty()) return List.of(bindingPattern);
+        return ports.stream()
+                .map(p -> (BindingPattern)bindingPattern.withPort(p))
+                .toList();
     }
 
     private static Handler createHandler(String className, Threadpool executor) {

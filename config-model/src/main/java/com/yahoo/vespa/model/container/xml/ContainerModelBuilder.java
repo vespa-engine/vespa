@@ -139,9 +139,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     // Default path to vip status file for container in Hosted Vespa.
     static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/vespa/load-balancer/status.html");
 
-    // Data plane port for hosted Vespa
-    public static final int HOSTED_VESPA_DATAPLANE_PORT = 4443;
-
     //Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
 
@@ -469,7 +466,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static void addCloudDataPlaneFilter(DeployState deployState, ApplicationContainerCluster cluster) {
         if (!deployState.isHosted() || !deployState.zone().system().isPublic()) return;
 
-        var dataplanePort = getDataplanePort(deployState);
+        var dataplanePort = getMtlsDataplanePort(deployState);
         // Setup secure filter chain
         var secureChain = new HttpFilterChain("cloud-data-plane-secure", HttpFilterChain.Type.SYSTEM);
         secureChain.addInnerComponent(new CloudDataPlaneFilter(cluster, deployState));
@@ -604,7 +601,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         String serverName = server.getComponentId().getName();
 
         // If the deployment contains certificate/private key reference, setup TLS port
-        var builder = HostedSslConnectorFactory.builder(serverName, getDataplanePort(state))
+        var builder = HostedSslConnectorFactory.builder(serverName, getMtlsDataplanePort(state))
                 .proxyProtocol(true, state.getProperties().featureFlags().enableProxyProtocolMixedMode())
                 .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
                 .endpointConnectionTtl(state.getProperties().endpointConnectionTtl());
@@ -637,7 +634,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 cluster.addSimpleComponent(DataplaneProxyService.class);
 
                 var dataplaneProxy = new DataplaneProxy(
-                        getDataplanePort(state),
+                        getMtlsDataplanePort(state),
                         endpointCert.certificate(),
                         endpointCert.key());
                 cluster.addComponent(dataplaneProxy);
@@ -810,7 +807,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addUserHandlers(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
-        OptionalInt portBindingOverride = isHostedTenantApplication(context) ? OptionalInt.of(getDataplanePort(deployState)) : OptionalInt.empty();
+        var portBindingOverride = isHostedTenantApplication(context) ? getDataplanePorts(deployState) : Set.<Integer>of();
         for (Element component: XML.getChildren(spec, "handler")) {
             cluster.addComponent(
                     new DomHandlerBuilder(cluster, portBindingOverride).build(deployState, cluster, component));
@@ -1099,12 +1096,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addSearchHandler(DeployState deployState, ApplicationContainerCluster cluster, Element searchElement, ConfigModelContext context) {
-        BindingPattern bindingPattern = SearchHandler.DEFAULT_BINDING;
+        var bindingPatterns = List.<BindingPattern>of(SearchHandler.DEFAULT_BINDING);
         if (isHostedTenantApplication(context) && deployState.featureFlags().useRestrictedDataPlaneBindings()) {
-            bindingPattern = SearchHandler.bindingPattern(Optional.of(Integer.toString(getDataplanePort(deployState))));
+            bindingPatterns = SearchHandler.bindingPattern(getDataplanePorts(deployState));
         }
         SearchHandler searchHandler = new SearchHandler(cluster,
-                                                        serverBindings(deployState, context, searchElement, bindingPattern),
+                                                        serverBindings(deployState, context, searchElement, bindingPatterns),
                                                         ContainerThreadpool.UserOptions.fromXml(searchElement).orElse(null));
         cluster.addComponent(searchHandler);
 
@@ -1112,31 +1109,33 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
     }
 
-    private List<BindingPattern> serverBindings(DeployState deployState, ConfigModelContext context, Element searchElement, BindingPattern... defaultBindings) {
+    private List<BindingPattern> serverBindings(DeployState deployState, ConfigModelContext context, Element searchElement, Collection<BindingPattern> defaultBindings) {
         List<Element> bindings = XML.getChildren(searchElement, "binding");
         if (bindings.isEmpty())
-            return List.of(defaultBindings);
+            return List.copyOf(defaultBindings);
 
         return toBindingList(deployState, context, bindings);
     }
 
     private List<BindingPattern> toBindingList(DeployState deployState, ConfigModelContext context, List<Element> bindingElements) {
         List<BindingPattern> result = new ArrayList<>();
-        OptionalInt portOverride = isHostedTenantApplication(context) && deployState.featureFlags().useRestrictedDataPlaneBindings() ? OptionalInt.of(getDataplanePort(deployState)) : OptionalInt.empty();
+        var portOverride = isHostedTenantApplication(context) && deployState.featureFlags().useRestrictedDataPlaneBindings() ? getDataplanePorts(deployState) : Set.<Integer>of();
         for (Element element: bindingElements) {
             String text = element.getTextContent().trim();
             if (!text.isEmpty())
-                result.add(userBindingPattern(text, portOverride));
+                result.addAll(userBindingPattern(text, portOverride));
         }
 
         return result;
     }
-    private static UserBindingPattern userBindingPattern(String path, OptionalInt portOverride) {
+    private static Collection<UserBindingPattern> userBindingPattern(String path, Set<Integer> portBindingOverride) {
         UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
-        return portOverride.isPresent()
-                ? bindingPattern.withPort(portOverride.getAsInt())
-                : bindingPattern;
+        if (portBindingOverride.isEmpty()) return Set.of(bindingPattern);
+        return portBindingOverride.stream()
+                .map(bindingPattern::withPort)
+                .toList();
     }
+
 
     private ContainerDocumentApi buildDocumentApi(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         Element documentApiElement = XML.getChild(spec, "document-api");
@@ -1144,9 +1143,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         ContainerDocumentApi.HandlerOptions documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
         Element ignoreUndefinedFields = XML.getChild(documentApiElement, "ignore-undefined-fields");
-        OptionalInt portBindingOverride = deployState.featureFlags().useRestrictedDataPlaneBindings() && isHostedTenantApplication(context)
-                ? OptionalInt.of(getDataplanePort(deployState))
-                : OptionalInt.empty();
+        var portBindingOverride = deployState.featureFlags().useRestrictedDataPlaneBindings() && isHostedTenantApplication(context)
+                ? getDataplanePorts(deployState)
+                : Set.<Integer>of();
         return new ContainerDocumentApi(cluster, documentApiOptions,
                                         "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride);
     }
@@ -1406,8 +1405,18 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     }
 
-    private static int getDataplanePort(DeployState deployState) {
-        return deployState.featureFlags().enableDataplaneProxy() ? 8443 : HOSTED_VESPA_DATAPLANE_PORT;
+    private static Set<Integer> getDataplanePorts(DeployState ds) {
+        var tokenPort = getTokenDataplanePort(ds);
+        var mtlsPort = getMtlsDataplanePort(ds);
+        return tokenPort.isPresent() ? Set.of(mtlsPort, tokenPort.getAsInt()) : Set.of(mtlsPort);
+    }
+
+    private static int getMtlsDataplanePort(DeployState ds) {
+        return ds.featureFlags().enableDataplaneProxy() ? 8443 : 4443;
+    }
+
+    private static OptionalInt getTokenDataplanePort(DeployState ds) {
+        return ds.featureFlags().enableDataplaneProxy() ? OptionalInt.of(8444) : OptionalInt.empty();
     }
 
 }
