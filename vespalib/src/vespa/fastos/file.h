@@ -338,17 +338,6 @@ public:
     int64_t getSize() const { return const_cast<FastOS_FileInterface *>(this)->GetSize(); }
 
     /**
-     * Rename/move a file or directory. This method requires that
-     * the file is currently not opened. A move operation is
-     * supported as long as the source and destination reside
-     * on the same volume/device.
-     * The method fails if the destination already exists.
-     * @param  newFileName       New file name
-     * @return Boolean success/failure
-     */
-    virtual bool Rename (const char *newFileName);
-
-    /**
      * Force completion of pending disk writes (flush cache).
      */
     [[nodiscard]] virtual bool Sync() = 0;

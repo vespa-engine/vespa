@@ -335,16 +335,6 @@ FastOS_FileInterface::getLastErrorString()
     return FastOS_File::getErrorString(err);
 }
 
-bool FastOS_FileInterface::Rename (const char *newFileName)
-{
-    bool rc=false;
-    if (FastOS_File::Rename(GetFileName(), newFileName)) {
-        SetFileName(newFileName);
-        rc = true;
-    }
-    return rc;
-}
-
 void FastOS_FileInterface::dropFromCache() const
 {
 }
