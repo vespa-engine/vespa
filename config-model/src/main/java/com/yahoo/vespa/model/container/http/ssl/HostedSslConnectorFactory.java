@@ -19,7 +19,8 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
 
     boolean requireTlsClientAuthDuringTlsHandshake;
     private final List<String> tlsCiphersOverride;
-    private final boolean enableProxyProtocolMixedMode;
+    private final boolean proxyProtocolEnabled;
+    private final boolean proxyProtocolMixedMode;
     private final Duration endpointConnectionTtl;
 
     public static Builder builder(String name, int listenPort) { return new Builder(name, listenPort); }
@@ -28,7 +29,8 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         super(new ConnectorFactory.Builder("tls"+builder.port, builder.port).sslProvider(createSslProvider(builder)));
         this.requireTlsClientAuthDuringTlsHandshake = builder.requireTlsClientAuthDuringTlsHandshake;
         this.tlsCiphersOverride = List.copyOf(builder.tlsCiphersOverride);
-        this.enableProxyProtocolMixedMode = builder.enableProxyProtocolMixedMode;
+        this.proxyProtocolEnabled = builder.proxyProtocolEnabled;
+        this.proxyProtocolMixedMode = builder.proxyProtocolMixedMode;
         this.endpointConnectionTtl = builder.endpointConnectionTtl;
     }
 
@@ -57,7 +59,8 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
             connectorBuilder.ssl.enabledCipherSuites(TlsContext.ALLOWED_CIPHER_SUITES.stream().sorted().toList());
         }
         connectorBuilder
-                .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder().enabled(true).mixedMode(enableProxyProtocolMixedMode))
+                .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder()
+                                       .enabled(proxyProtocolEnabled).mixedMode(proxyProtocolMixedMode))
                 .idleTimeout(Duration.ofSeconds(30).toSeconds())
                 .maxConnectionLife(endpointConnectionTtl != null ? endpointConnectionTtl.toSeconds() : 0);
     }
@@ -67,7 +70,8 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         final int port;
         boolean requireTlsClientAuthDuringTlsHandshake;
         List<String> tlsCiphersOverride;
-        boolean enableProxyProtocolMixedMode;
+        boolean proxyProtocolEnabled;
+        boolean proxyProtocolMixedMode;
         Duration endpointConnectionTtl;
         EndpointCertificateSecrets endpointCertificate;
         String tlsCaCertificatesPem;
@@ -78,7 +82,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         public Builder requireTlsClientAuthDuringTlsHandshake(boolean enable) {this.requireTlsClientAuthDuringTlsHandshake = enable; return this; }
         public Builder endpointConnectionTtl(Duration ttl) { endpointConnectionTtl = ttl; return this; }
         public Builder tlsCiphersOverride(Collection<String> ciphers) { tlsCiphersOverride = List.copyOf(ciphers); return this; }
-        public Builder proxyProtocolMixedMode(boolean enable) { enableProxyProtocolMixedMode = enable; return this; }
+        public Builder proxyProtocol(boolean enabled, boolean mixedMode) { proxyProtocolEnabled = enabled; proxyProtocolMixedMode = mixedMode; return this; }
         public Builder endpointCertificate(EndpointCertificateSecrets cert) { this.endpointCertificate = cert; return this; }
         public Builder tlsCaCertificatesPath(String path) { this.tlsCaCertificatesPath = path; return this; }
         public Builder tlsCaCertificatesPem(String pem) { this.tlsCaCertificatesPem = pem; return this; }

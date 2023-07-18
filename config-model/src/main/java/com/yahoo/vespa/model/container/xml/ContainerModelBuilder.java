@@ -604,7 +604,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // If the deployment contains certificate/private key reference, setup TLS port
         var builder = HostedSslConnectorFactory.builder(serverName, getDataplanePort(state))
-                .proxyProtocolMixedMode(state.getProperties().featureFlags().enableProxyProtocolMixedMode())
+                .proxyProtocol(true, state.getProperties().featureFlags().enableProxyProtocolMixedMode())
                 .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
                 .endpointConnectionTtl(state.getProperties().endpointConnectionTtl());
         var endpointCert = state.endpointCertificateSecrets().orElse(null);
