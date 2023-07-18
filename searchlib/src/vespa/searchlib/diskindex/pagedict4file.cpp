@@ -83,7 +83,7 @@ PageDict4FileSeqRead::DictFileReadContext::DictFileReadContext(vespalib::stringr
         LOG(error, "could not open %s: %s", _file.GetFileName(), getLastErrorString().c_str());
         return;
     }
-    uint64_t fileSize = _file.GetSize();
+    uint64_t fileSize = _file.getSize();
     _readContext.setFile(&_file);
     _readContext.setFileSize(fileSize);
     if (read_all_upfront) {
@@ -257,11 +257,11 @@ PageDict4FileSeqWrite::DictFileContext::DictFileContext(bool extended, vespalib:
     assertOpenWriteOnly(ok, name);
     _writeContext.setFile(&_file);
     _writeContext.allocComprBuf(64_Ki, 32_Ki);
-    uint64_t fileSize = _file.GetSize();
+    uint64_t fileSize = _file.getSize();
     uint64_t bufferStartFilePos = _writeContext.getBufferStartFilePos();
     assert(fileSize >= bufferStartFilePos);
     _file.SetSize(bufferStartFilePos);
-    assert(bufferStartFilePos == static_cast<uint64_t>(_file.GetPosition()));
+    assert(bufferStartFilePos == static_cast<uint64_t>(_file.getPosition()));
 
     _ec.setupWrite(_writeContext);
     assert(_ec.getWriteOffset() == 0);

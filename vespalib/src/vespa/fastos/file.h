@@ -99,7 +99,7 @@ public:
 
     /**
      * Constructor. A filename could be supplied at this point, or specified
-     * later using @ref SetFileName() or @ref Open().
+     * later using @ref Open().
      * @param filename  a filename (optional)
      */
     FastOS_FileInterface(const char *filename=nullptr);
@@ -109,14 +109,6 @@ public:
      * it for you.
      */
     virtual ~FastOS_FileInterface();
-
-    /**
-     * Associate a new filename with this object. This filename will be
-     * used when performing @ref Open() (unless @ref Open() specifies a
-     * different filename).
-     * @param filename  filename character string (will be copied internally)
-     */
-    virtual void SetFileName(const char *filename);
 
     /**
      * Return the filename associated with the File object. If no filename
@@ -136,8 +128,7 @@ public:
      * @param filename     You may optionally specify a filename here. This
      *                     will replace the currently associated filename
      *                     (if any) set using either the constructor,
-     *                     @ref SetFileName() or a previous call to
-     *                     @ref Open().
+     *                     or a previous call to @ref Open().
      * @return Boolean success/failure
      */
     virtual bool Open(unsigned int openFlags, const char *filename=nullptr) = 0;
@@ -148,23 +139,10 @@ public:
      * @param filename       You may optionally specify a filename here. This
      *                       will replace the currently associated filename
      *                       (if any) set using either the constructor,
-     *                       @ref SetFileName() or a previous call to @ref Open().
+     *                       or a previous call to @ref Open().
      * @return Boolean success/failure
      */
     bool OpenReadWrite(const char *filename=nullptr);
-
-    /**
-     * Open a file for read/write access. This method fails if the file does
-     * not already exist.
-     * @param abortIfNotExist  Abort the program if the file does not exist.
-     * @param filename         You may optionally specify a filename here. This
-     *                         will replace the currently associated filename
-     *                         (if any) set using either the constructor,
-     *                         @ref SetFileName() or a previous call to
-     *                         @ref Open().
-     * @return Boolean success/failure
-     */
-    bool OpenExisting(bool abortIfNotExist=false, const char *filename=nullptr);
 
     /**
      * Open a file for read access. This method fails if the file does
@@ -173,8 +151,7 @@ public:
      * @param filename         You may optionally specify a filename here. This
      *                         will replace the currently associated filename
      *                         (if any) set using either the constructor,
-     *                         @ref SetFileName() or a previous call to
-     *                         @ref Open().
+     *                         or a previous call to @ref Open().
      * @return Boolean success/failure
      */
     bool OpenReadOnlyExisting (bool abortIfNotExist=false, const char *filename=nullptr);
@@ -185,8 +162,7 @@ public:
      * @param filename         You may optionally specify a filename here. This
      *                         will replace the currently associated filename
      *                         (if any) set using either the constructor,
-     *                         @ref SetFileName() or a previous call to
-     *                         @ref Open().
+     *                         or a previous call to @ref Open().
      * @return Boolean success/failure
      */
     bool OpenWriteOnlyTruncate(const char *filename=nullptr);
@@ -198,8 +174,7 @@ public:
      * @param filename         You may optionally specify a filename here. This
      *                         will replace the currently associated filename
      *                         (if any) set using either the constructor,
-     *                         @ref SetFileName() or a previous call to
-     *                         @ref Open().
+     *                         or a previous call to @ref Open().
      * @return Boolean success/failure
      */
     bool OpenWriteOnlyExisting (bool abortIfNotExist=false, const char *filename=nullptr);
@@ -210,7 +185,7 @@ public:
      * @param filename       You may optionally specify a filename here. This
      *                       will replace the currently associated filename
      *                       (if any) set using either the constructor,
-     *                       @ref SetFileName() or a previous call to @ref Open().
+     *                       or a previous call to @ref Open().
      * @return Boolean success/failure
      */
     bool OpenReadOnly(const char *filename=nullptr);
@@ -221,7 +196,7 @@ public:
      * @param filename       You may optionally specify a filename here. This
      *                       will replace the currently associated filename
      *                       (if any) set using either the constructor,
-     *                       @ref SetFileName() or a previous call to @ref Open().
+     *                       or a previous call to Open().
      * @return Boolean success/failure
      */
     bool OpenWriteOnly(const char *filename=nullptr);
@@ -313,12 +288,7 @@ public:
      * Get the filepointer. -1 is returned if the operation fails.
      * @return current position of file pointer (in bytes)
      */
-    virtual int64_t GetPosition() = 0;
-
-    /**
-     * const version of @link GetPosition
-     */
-    int64_t getPosition() const { return const_cast<FastOS_FileInterface *>(this)->GetPosition(); }
+    virtual int64_t getPosition() const = 0;
 
     /**
      * Return the file size. This method requires that the file is
@@ -327,12 +297,7 @@ public:
      * If an error occurs, the returned value is -1.
      * @return file size (in bytes)
      */
-    virtual int64_t GetSize() = 0;
-
-    /**
-     * const version of @link GetSize
-     */
-    int64_t getSize() const { return const_cast<FastOS_FileInterface *>(this)->GetSize(); }
+    virtual int64_t getSize() const = 0;
 
     /**
      * Force completion of pending disk writes (flush cache).

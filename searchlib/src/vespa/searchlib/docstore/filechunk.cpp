@@ -92,13 +92,13 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
         if (!dataFile.Sync()) {
             throw SummaryException("Failed syncing dat file", dataFile, VESPA_STRLOC);
         }
-        _diskFootprint.fetch_add(dataFile.GetSize(), std::memory_order_relaxed);
+        _diskFootprint.fetch_add(dataFile.getSize(), std::memory_order_relaxed);
         FastOS_File idxFile(_idxFileName.c_str());
         if (idxFile.OpenReadOnly()) {
             if (!idxFile.Sync()) {
                 throw SummaryException("Failed syncing idx file", idxFile, VESPA_STRLOC);
             }
-            _diskFootprint.fetch_add(idxFile.GetSize(), std::memory_order_relaxed);
+            _diskFootprint.fetch_add(idxFile.getSize(), std::memory_order_relaxed);
             _modificationTime = FileKit::getModificationTime(_idxFileName);
         } else {
             throw SummaryException("Failed opening idx file", idxFile, VESPA_STRLOC);
@@ -162,7 +162,7 @@ FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNu
     idxFile.enableMemoryMap(0);
     if (idxFile.OpenReadOnly()) {
         if (idxFile.IsMemoryMapped()) {
-            const int64_t fileSize = idxFile.GetSize();
+            const int64_t fileSize = idxFile.getSize();
             if (_idxHeaderLen == 0) {
                 _idxHeaderLen = readIdxHeader(idxFile, _docIdLimit);
             }
@@ -436,7 +436,7 @@ FileChunk::readDataHeader(FileRandRead &datFile)
 uint64_t
 FileChunk::readIdxHeader(FastOS_FileInterface &idxFile, uint32_t &docIdLimit)
 {
-    int64_t fileSize = idxFile.GetSize();
+    int64_t fileSize = idxFile.getSize();
     uint32_t hl = GenericHeader::getMinSize();
     uint64_t idxHeaderLen = 0;
     if (fileSize >= hl) {

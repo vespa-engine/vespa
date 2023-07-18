@@ -165,7 +165,7 @@ open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead)
         LOG(error, "could not open %s: %s", _file->GetFileName(), getLastErrorString().c_str());
         return false;
     }
-    _fileSize = _file->GetSize();
+    _fileSize = _file->getSize();
 
     readHeader();
     return true;
@@ -187,7 +187,7 @@ ZcPosOccRandRead::readHeader(const vespalib::string &identifier)
     ComprFileReadContext drc(d);
 
     drc.setFile(_file.get());
-    drc.setFileSize(_file->GetSize());
+    drc.setFileSize(_file->getSize());
     drc.allocComprBuf(512, 32768u);
     d.emptyBuffer(0);
     drc.readComprBuffer();

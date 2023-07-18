@@ -122,7 +122,7 @@ WriteableFileChunk(vespalib::Executor &executor,
         if (_dataHeaderLen == 0) {
             writeDataHeader(fileHeaderContext);
         }
-        _dataFile.SetPosition(_dataFile.GetSize());
+        _dataFile.SetPosition(_dataFile.getSize());
         if (tune._write.getWantDirectIO()) {
             if (!_dataFile.GetDirectIORestrictions(_alignment, _granularity, _maxChunkSize)) {
                 LOG(debug, "Direct IO setup failed for file %s due to %s",
@@ -134,7 +134,7 @@ WriteableFileChunk(vespalib::Executor &executor,
         if (_idxHeaderLen == 0) {
             _idxHeaderLen = writeIdxHeader(fileHeaderContext, _docIdLimit, *idxFile);
         }
-        _idxFileSize.store(idxFile->GetSize(), std::memory_order_relaxed);
+        _idxFileSize.store(idxFile->getSize(), std::memory_order_relaxed);
         if ( ! idxFile->Sync()) {
             throw SummaryException("Failed syncing idx file", *idxFile, VESPA_STRLOC);
         }
@@ -335,8 +335,8 @@ const std::vector<char> Padding(Alignment, '\0');
 size_t
 getAlignedStartPos(FastOS_File & file)
 {
-    ssize_t startPos(file.GetPosition());
-    assert(startPos == file.GetSize());
+    ssize_t startPos(file.getPosition());
+    assert(startPos == file.getSize());
     if (startPos & (Alignment-1)) {
         FastOS_File align(file.GetFileName());
         if (align.OpenWriteOnly()) {
@@ -345,8 +345,8 @@ getAlignedStartPos(FastOS_File & file)
             ssize_t written = align.Write2(&Padding[0], toWrite);
             if (written == toWrite) {
                 if ( align.Sync() ) {
-                    file.SetPosition(align.GetSize());
-                    startPos = file.GetPosition();
+                    file.SetPosition(align.getSize());
+                    startPos = file.getPosition();
                 } else {
                     throw SummaryException(
                             make_string("Failed syncing dat file."),
@@ -744,7 +744,7 @@ WriteableFileChunk::append(uint64_t serialNum, uint32_t lid, const void * buffer
 void
 WriteableFileChunk::readDataHeader()
 {
-    int64_t fSize(_dataFile.GetSize());
+    int64_t fSize(_dataFile.getSize());
     try {
         FileHeader h;
         _dataHeaderLen = h.readFile(_dataFile);
@@ -763,8 +763,8 @@ WriteableFileChunk::readDataHeader()
             // header length, or if header has been truncated.
             _dataFile.SetPosition(0);
             _dataFile.SetSize(0);
-            assert(_dataFile.GetSize() == 0);
-            assert(_dataFile.GetPosition() == 0);
+            assert(_dataFile.getSize() == 0);
+            assert(_dataFile.getPosition() == 0);
             LOG(warning,
                 "Truncated file chunk data %s due to truncated file header",
                 _dataFile.GetFileName());
@@ -776,7 +776,7 @@ WriteableFileChunk::readDataHeader()
 void
 WriteableFileChunk::readIdxHeader(FastOS_FileInterface & idxFile)
 {
-    int64_t fSize(idxFile.GetSize());
+    int64_t fSize(idxFile.getSize());
     try {
         FileHeader h;
         _idxHeaderLen = h.readFile(idxFile);
@@ -797,8 +797,8 @@ WriteableFileChunk::readIdxHeader(FastOS_FileInterface & idxFile)
             // header length, or if header has been truncated.
             idxFile.SetPosition(0);
             idxFile.SetSize(0);
-            assert(idxFile.GetSize() == 0);
-            assert(idxFile.GetPosition() == 0);
+            assert(idxFile.getSize() == 0);
+            assert(idxFile.getPosition() == 0);
             LOG(warning, "Truncated file chunk index %s due to truncated file header", idxFile.GetFileName());
         }
     }
@@ -812,7 +812,7 @@ WriteableFileChunk::writeDataHeader(const FileHeaderContext &fileHeaderContext)
     FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     assert(_dataFile.IsOpened());
     assert(_dataFile.IsWriteMode());
-    assert(_dataFile.GetPosition() == 0);
+    assert(_dataFile.getPosition() == 0);
     fileHeaderContext.addTags(h, _dataFile.GetFileName());
     h.putTag(Tag("desc", "Log data store chunk data"));
     _dataHeaderLen = h.writeFile(_dataFile);
@@ -826,7 +826,7 @@ WriteableFileChunk::writeIdxHeader(const FileHeaderContext &fileHeaderContext, u
     FileHeader h;
     assert(file.IsOpened());
     assert(file.IsWriteMode());
-    assert(file.GetPosition() == 0);
+    assert(file.getPosition() == 0);
     fileHeaderContext.addTags(h, file.GetFileName());
     h.putTag(Tag("desc", "Log data store chunk index"));
     writeDocIdLimit(h, docIdLimit);
@@ -911,7 +911,7 @@ WriteableFileChunk::unconditionallyFlushPendingChunks(const unique_lock &flushGu
     }
     vespalib::system_time timeStamp(vespalib::system_clock::now());
     auto idxFile = openIdx();
-    idxFile->SetPosition(idxFile->GetSize());
+    idxFile->SetPosition(idxFile->getSize());
     ssize_t wlen = idxFile->Write2(os.data(), os.size());
     updateCurrentDiskFootprint();
 
@@ -921,7 +921,7 @@ WriteableFileChunk::unconditionallyFlushPendingChunks(const unique_lock &flushGu
     if ( ! idxFile->Sync()) {
         throw SummaryException("Failed fsync of idx file", *idxFile, VESPA_STRLOC);
     }
-    _idxFileSize.store(idxFile->GetSize(), std::memory_order_relaxed);
+    _idxFileSize.store(idxFile->getSize(), std::memory_order_relaxed);
     if (_lastPersistedSerialNum.load(std::memory_order_relaxed) < lastSerial) {
         _lastPersistedSerialNum.store(lastSerial, std::memory_order_relaxed);
     }

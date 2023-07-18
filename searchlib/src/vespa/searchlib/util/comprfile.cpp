@@ -222,7 +222,7 @@ ComprFileReadBase::SetPosition(uint64_t newPosition,
 
     assert(pos <= static_cast<int64_t>(fileSize));
     file->SetPosition(pos);
-    assert(pos == file->GetPosition());
+    assert(pos == file->getPosition());
 
     decodeContext.emptyBuffer(newPosition);
     assert(decodeContext.getBitPos(bitOffset,

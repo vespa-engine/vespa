@@ -49,9 +49,8 @@ DirectIORandRead::read(size_t offset, vespalib::DataBuffer & buffer, size_t sz)
 
 
 int64_t
-DirectIORandRead::getSize()
-{
-    return _file->GetSize();
+DirectIORandRead::getSize() const {
+    return _file->getSize();
 }
 
 
@@ -85,8 +84,8 @@ MMapRandRead::read(size_t offset, vespalib::DataBuffer & buffer, size_t sz)
 }
 
 int64_t
-MMapRandRead::getSize() {
-    return _file->GetSize();
+MMapRandRead::getSize() const {
+    return _file->getSize();
 }
 
 const void *
@@ -147,8 +146,8 @@ MMapRandReadDynamic::contains(const FastOS_FileInterface & file, size_t sz) {
 
 
 int64_t
-MMapRandReadDynamic::getSize() {
-    return _holder.get()->GetSize();
+MMapRandReadDynamic::getSize() const {
+    return _holder.get()->getSize();
 }
 
 FileRandRead::FSP
@@ -162,9 +161,9 @@ NormalRandRead::read(size_t offset, vespalib::DataBuffer & buffer, size_t sz)
 }
 
 int64_t
-NormalRandRead::getSize()
+NormalRandRead::getSize() const
 {
-    return _file->GetSize();
+    return _file->getSize();
 }
 
 }
