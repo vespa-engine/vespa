@@ -372,9 +372,6 @@ FastOS_Linux_File::Open(unsigned int openFlags, const char *filename)
     bool rc;
     _cachedSize = -1;
     _filePointer = -1;
-    if (_directIOEnabled && (_openFlags & FASTOS_FILE_OPEN_STDFLAGS) != 0) {
-        _directIOEnabled = false;
-    }
     if (_syncWritesEnabled) {
         openFlags |= FASTOS_FILE_OPEN_SYNCWRITES;
     }
