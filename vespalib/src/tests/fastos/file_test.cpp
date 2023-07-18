@@ -171,7 +171,7 @@ TEST(FileTest, WriteOnlyTest) {
 TEST(FileTest, ReadWriteTest) {
     Generated guard;
     auto myFile = std::make_unique<FastOS_File>(rwFilename.c_str());
-    ASSERT_FALSE(myFile->OpenExisting());
+    ASSERT_FALSE(myFile->OpenReadOnlyExisting());
     ASSERT_TRUE(myFile->OpenReadWrite());
     ASSERT_EQ(myFile->GetSize(), 0);
     char dummyData[6] = "Dummy";

@@ -221,29 +221,6 @@ FastOS_FileInterface::OpenReadWrite(const char *filename)
 
 
 bool
-FastOS_FileInterface::OpenExisting(bool abortIfNotExist,
-                                   const char *filename)
-{
-    bool rc = Open(FASTOS_FILE_OPEN_READ |
-                   FASTOS_FILE_OPEN_WRITE |
-                   FASTOS_FILE_OPEN_EXISTING,
-                   filename);
-
-    if (abortIfNotExist && (!rc)) {
-        std::string errorString =
-            FastOS_FileInterface::getLastErrorString();
-        fprintf(stderr,
-                "Cannot open %s: %s\n",
-                filename,
-                errorString.c_str());
-        abort();
-    }
-
-    return rc;
-}
-
-
-bool
 FastOS_FileInterface::OpenReadOnlyExisting(bool abortIfNotExist,
         const char *filename)
 {

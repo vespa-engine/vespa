@@ -145,19 +145,6 @@ public:
     bool OpenReadWrite(const char *filename=nullptr);
 
     /**
-     * Open a file for read/write access. This method fails if the file does
-     * not already exist.
-     * @param abortIfNotExist  Abort the program if the file does not exist.
-     * @param filename         You may optionally specify a filename here. This
-     *                         will replace the currently associated filename
-     *                         (if any) set using either the constructor,
-     *                         or a previous call to
-     *                         @ref Open().
-     * @return Boolean success/failure
-     */
-    bool OpenExisting(bool abortIfNotExist=false, const char *filename=nullptr);
-
-    /**
      * Open a file for read access. This method fails if the file does
      * not already exist.
      * @param abortIfNotExist  Abort the program if the file does not exist.
