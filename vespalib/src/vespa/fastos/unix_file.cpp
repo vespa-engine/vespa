@@ -341,20 +341,6 @@ FastOS_UNIX_File::GetSize()
     return fileSize;
 }
 
-bool FastOS_UNIX_File::Rename (const char *currentFileName, const char *newFileName)
-{
-    bool rc = false;
-
-    // Enforce documentation. If the destination file exists,
-    // fail Rename.
-    FastOS_StatInfo statInfo{};
-    if (!FastOS_File::Stat(newFileName, &statInfo)) {
-        rc = (rename(currentFileName, newFileName) == 0);
-    } else {
-        errno = EEXIST;
-    }
-    return rc;
-}
 
 bool
 FastOS_UNIX_File::Sync()

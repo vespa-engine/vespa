@@ -30,13 +30,7 @@ protected:
     bool   _mmapEnabled;
 
     static unsigned int CalcAccessFlags(unsigned int openFlags);
-
 public:
-    static bool Rename (const char *currentFileName, const char *newFileName);
-    bool Rename (const char *newFileName) override {
-        return FastOS_FileInterface::Rename(newFileName);
-    }
-
     static bool Stat(const char *filename, FastOS_StatInfo *statInfo);
 
     static std::string getCurrentDirectory();
