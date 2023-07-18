@@ -31,6 +31,7 @@ public:
     std::string getStatus() const override { return ""; };
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
     void onClose(DistributorStripeMessageSender& sender) override;
+    void on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) override;
 
     std::pair<document::BucketId, uint16_t> getNewestTimestampLocation() const {
         return _newestTimestampLocation;

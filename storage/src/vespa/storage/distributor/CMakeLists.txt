@@ -10,6 +10,7 @@ vespa_add_library(storage_distributor OBJECT
     bucket_spaces_stats_provider.cpp
     bucketgctimecalculator.cpp
     bucketlistmerger.cpp
+    cancelled_replicas_pruner.cpp
     clusterinformation.cpp
     crypto_uuid_generator.cpp
     distributor_bucket_space.cpp

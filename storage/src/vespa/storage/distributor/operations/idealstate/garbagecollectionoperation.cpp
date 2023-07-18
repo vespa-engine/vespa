@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "garbagecollectionoperation.h"
+#include <vespa/storage/distributor/cancelled_replicas_pruner.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
@@ -22,6 +23,7 @@ GarbageCollectionOperation::GarbageCollectionOperation(const ClusterContext& clu
       _cluster_state_version_at_phase1_start_time(0),
       _remove_candidates(),
       _replica_info(),
+      _cancel_scope(),
       _max_documents_removed(0),
       _is_done(false)
 {}
@@ -148,6 +150,14 @@ GarbageCollectionOperation::onReceive(DistributorStripeMessageSender& sender,
     }
 }
 
+void GarbageCollectionOperation::on_cancel(DistributorStripeMessageSender&, const CancelScope& cancel_scope) {
+    if (!_cancel_scope) {
+        _cancel_scope = cancel_scope;
+    } else {
+        _cancel_scope->merge(cancel_scope);
+    }
+}
+
 void GarbageCollectionOperation::update_replica_response_info_from_reply(uint16_t from_node, const api::RemoveLocationReply& reply) {
     _replica_info.emplace_back(_manager->operation_context().generate_unique_timestamp(),
                                from_node, reply.getBucketInfo());
@@ -185,6 +195,11 @@ void GarbageCollectionOperation::handle_ok_phase2_reply(uint16_t from_node, cons
 bool GarbageCollectionOperation::may_start_write_phase() const {
     if (!_ok) {
         return false; // Already broken, no reason to proceed.
+    }
+    if (is_cancelled()) {
+        LOG(debug, "GC(%s): not sending write phase; operation has been explicitly cancelled",
+            getBucket().toString().c_str());
+        return false;
     }
     const auto state_version_now = _bucketSpace->getClusterState().getVersion();
     if ((state_version_now != _cluster_state_version_at_phase1_start_time) ||
@@ -250,9 +265,18 @@ void GarbageCollectionOperation::update_last_gc_timestamp_in_db() {
 }
 
 void GarbageCollectionOperation::merge_received_bucket_info_into_db() {
-    // TODO avoid two separate DB ops for this. Current API currently does not make this elegant.
-    _manager->operation_context().update_bucket_database(getBucket(), _replica_info);
-    update_last_gc_timestamp_in_db();
+    if (_cancel_scope) {
+        if (_cancel_scope->fully_cancelled()) {
+            return;
+        } else {
+            _replica_info = prune_cancelled_nodes(_replica_info, *_cancel_scope);
+        }
+    }
+    if (!_replica_info.empty()) {
+        // TODO avoid two separate DB ops for this. Current API currently does not make this elegant.
+        _manager->operation_context().update_bucket_database(getBucket(), _replica_info);
+        update_last_gc_timestamp_in_db();
+    } // else: effectively fully cancelled, no touching the DB.
 }
 
 void GarbageCollectionOperation::update_gc_metrics() {

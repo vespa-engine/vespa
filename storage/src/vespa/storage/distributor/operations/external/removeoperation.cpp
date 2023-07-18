@@ -156,7 +156,19 @@ void RemoveOperation::on_completed_check_condition(CheckCondition::Outcome& outc
 void
 RemoveOperation::onClose(DistributorStripeMessageSender& sender)
 {
+    if (_check_condition) {
+        _check_condition->close(sender);
+    }
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
+}
+
+void
+RemoveOperation::on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope)
+{
+    if (_check_condition) {
+        _check_condition->cancel(sender, cancel_scope);
+    }
+    _tracker.cancel(cancel_scope);
 }
 
 bool RemoveOperation::has_condition() const noexcept {

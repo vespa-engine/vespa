@@ -17,6 +17,7 @@ namespace storage::api { class StorageReply; }
 
 namespace storage::distributor {
 
+class CancelScope;
 class DistributorBucketSpace;
 class DistributorNodeContext;
 class DistributorStripeMessageSender;
@@ -122,7 +123,8 @@ public:
     void start_and_send(DistributorStripeMessageSender& sender);
     void handle_reply(DistributorStripeMessageSender& sender,
                       const std::shared_ptr<api::StorageReply>& reply);
-    void cancel(DistributorStripeMessageSender& sender);
+    void cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope);
+    void close(DistributorStripeMessageSender& sender);
 
     [[nodiscard]] std::optional<Outcome>& maybe_outcome() noexcept {
         return _outcome;

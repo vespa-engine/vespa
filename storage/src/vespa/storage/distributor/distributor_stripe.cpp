@@ -281,6 +281,7 @@ DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state
     enterRecoveryMode();
 
     // Clear all active messages on nodes that are down.
+    // TODO this should also be done on nodes that are no longer part of the config!
     const uint16_t old_node_count = oldState.getBaselineClusterState()->getNodeCount(lib::NodeType::STORAGE);
     const uint16_t new_node_count = baseline_state.getNodeCount(lib::NodeType::STORAGE);
     for (uint16_t i = 0; i < std::max(old_node_count, new_node_count); ++i) {

@@ -11,7 +11,7 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/vespalib/gtest/gtest.h>
+#include <gtest/gtest.h>
 
 using config::ConfigGetter;
 using config::FileSpec;
@@ -29,11 +29,14 @@ struct UpdateOperationTest : Test, DistributorStripeTestUtil {
     std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType* _html_type;
 
+    UpdateOperationTest()
+        : _repo(std::make_shared<DocumentTypeRepo>(*ConfigGetter<DocumenttypesConfig>::
+                                                   getConfig("config-doctypes", FileSpec("../config-doctypes.cfg")))),
+          _html_type(_repo->getDocumentType("text/html"))
+    {
+    }
+
     void SetUp() override {
-        _repo.reset(
-                new DocumentTypeRepo(*ConfigGetter<DocumenttypesConfig>::
-                                     getConfig("config-doctypes", FileSpec("../config-doctypes.cfg"))));
-        _html_type = _repo->getDocumentType("text/html");
         createLinks();
     }
 
@@ -239,6 +242,33 @@ TEST_F(UpdateOperationTest, inconsistent_create_if_missing_updates_picks_largest
     // Implementation detail: since we get diverging results from nodes 2 and 1, these are
     // counted as separate diverging updates.
     EXPECT_EQ(2, m.diverging_timestamp_updates.getValue());
+}
+
+// Note: we don't exhaustively test cancellation edges here, as we assume that Put/Update/Remove ops
+// share the same underlying PersistenceMessageTracker logic. See PutOperationTest for more tests.
+
+TEST_F(UpdateOperationTest, cancelled_nodes_are_not_updated_in_db) {
+    setup_stripe(Redundancy(3), NodeCount(3), "distributor:1 storage:3");
+
+    std::shared_ptr<UpdateOperation> op = sendUpdate("0=1/2/3,1=1/2/3,2=1/2/3");
+    DistributorMessageSenderStub sender;
+    op->start(sender);
+
+    ASSERT_EQ("Update => 0,Update => 1,Update => 2", sender.getCommands(true));
+
+    // Simulate nodes 0 and 2 going down
+    operation_context().remove_nodes_from_bucket_database(makeDocumentBucket(_bId), {0, 2});
+    // Cancelling shall be cumulative
+    op->cancel(_sender, CancelScope::of_node_subset({0}));
+    op->cancel(_sender, CancelScope::of_node_subset({2}));
+
+    replyToMessage(*op, sender, 0, 120);
+    replyToMessage(*op, sender, 1, 120);
+    replyToMessage(*op, sender, 2, 120);
+
+    EXPECT_EQ("BucketId(0x400000000000cac4) : "
+              "node(idx=1,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false,ready=false)",
+              dumpBucket(_bId));
 }
 
 }

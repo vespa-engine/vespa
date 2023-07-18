@@ -73,7 +73,7 @@ OperationOwner::onClose()
 void
 OperationOwner::erase(api::StorageMessage::Id msgId)
 {
-    _sentMessageMap.pop(msgId);
+    (void)_sentMessageMap.pop(msgId);
 }
 
 }

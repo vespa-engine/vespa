@@ -207,6 +207,13 @@ UpdateOperation::onClose(DistributorStripeMessageSender& sender)
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
 }
 
+void
+UpdateOperation::on_cancel(DistributorStripeMessageSender&, const CancelScope& cancel_scope)
+{
+    _tracker.cancel(cancel_scope);
+}
+
+
 // The backend behavior of "create-if-missing" updates is to return the timestamp of the
 // _new_ update operation if the document was created from scratch. The two-phase update
 // operation logic auto-detects unexpected inconsistencies and tries to reconcile

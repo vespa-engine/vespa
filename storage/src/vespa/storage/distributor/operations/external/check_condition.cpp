@@ -104,7 +104,12 @@ CheckCondition::handle_reply(DistributorStripeMessageSender& sender,
     }
 }
 
-void CheckCondition::cancel(DistributorStripeMessageSender& sender) {
+void CheckCondition::cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) {
+    IntermediateMessageSender proxy_sender(_sent_message_map, _cond_get_op, sender);
+    _cond_get_op->cancel(proxy_sender, cancel_scope);
+}
+
+void CheckCondition::close(DistributorStripeMessageSender& sender) {
     IntermediateMessageSender proxy_sender(_sent_message_map, _cond_get_op, sender);
     _cond_get_op->onClose(proxy_sender);
     // We don't propagate any generated reply from the GetOperation, as its existence
@@ -160,6 +165,12 @@ void CheckCondition::handle_internal_get_operation_reply(std::shared_ptr<api::St
         if (_cond_get_op->any_replicas_failed()) {
             _outcome.emplace(api::ReturnCode(api::ReturnCode::ABORTED,
                                              "One or more replicas failed during test-and-set condition evaluation"),
+                             reply->steal_trace());
+            return;
+        }
+        if (_cond_get_op->is_cancelled()) {
+            _outcome.emplace(api::ReturnCode(api::ReturnCode::ABORTED,
+                                             "Operation has been cancelled (likely due to a cluster state change)"),
                              reply->steal_trace());
             return;
         }
