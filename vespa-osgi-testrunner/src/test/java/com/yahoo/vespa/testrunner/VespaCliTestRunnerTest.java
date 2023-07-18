@@ -26,7 +26,7 @@ class VespaCliTestRunnerTest {
         temp.toFile().deleteOnExit();
         Path tests = Files.createDirectory(temp.resolve("tests"));
         Path artifacts = Files.createDirectory(temp.resolve("artifacts"));
-        VespaCliTestRunner runner = new VespaCliTestRunner(artifacts, tests);
+        VespaCliTestRunner runner = new VespaCliTestRunner(artifacts, tests, Files.createDirectory(temp.resolve("vespa")));
 
         Path systemTests = Files.createDirectory(tests.resolve("system-test"));
         TestConfig testConfig = testConfig(SystemName.PublicCd);
@@ -57,7 +57,12 @@ class VespaCliTestRunnerTest {
         temp.toFile().deleteOnExit();
         Path tests = Files.createDirectory(temp.resolve("tests"));
         Path artifacts = Files.createDirectory(temp.resolve("artifacts"));
-        VespaCliTestRunner runner = new VespaCliTestRunner(artifacts, tests);
+        Path vespaHome = Files.createDirectory(temp.resolve("vespa"));
+        Path keyFile = vespaHome.resolve("var/vespa/sia/keys/my.domain.foo.key.pem");
+        Path certFile = vespaHome.resolve("var/vespa/sia/certs/my.domain.foo.cert.pem");
+        Files.createDirectories(keyFile.getParent());
+        Files.createFile(keyFile);
+        VespaCliTestRunner runner = new VespaCliTestRunner(artifacts, tests, vespaHome);
 
         Path systemTests = Files.createDirectory(tests.resolve("system-test"));
         TestConfig testConfig = testConfig(SystemName.cd);
@@ -76,9 +81,9 @@ class VespaCliTestRunnerTest {
         assertEquals("cd", builder.environment().get("VESPA_CLI_CLOUD_SYSTEM"));
         assertEquals("{\"endpoints\":[{\"cluster\":\"default\",\"url\":\"https://dev.endpoint:443/\"}]}",
                      builder.environment().get("VESPA_CLI_ENDPOINTS"));
-        assertEquals("/opt/vespa/var/vespa/sia/key",
+        assertEquals(keyFile.toString(),
                      builder.environment().get("VESPA_CLI_DATA_PLANE_KEY_FILE"));
-        assertEquals("/opt/vespa/var/vespa/sia/cert",
+        assertEquals(certFile.toString(),
                      builder.environment().get("VESPA_CLI_DATA_PLANE_CERT_FILE"));
     }
 
