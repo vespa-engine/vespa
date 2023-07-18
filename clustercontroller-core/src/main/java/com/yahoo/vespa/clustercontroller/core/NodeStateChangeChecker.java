@@ -266,7 +266,7 @@ public class NodeStateChangeChecker {
             numberOfGroupsToConsider = retiredAndNotUpGroups.size() - 1;
         }
 
-        var result = checkRedundancy(retiredAndNotUpGroups);
+        var result = checkRedundancy(retiredAndNotUpGroups, clusterState);
         if (result.isPresent() && result.get().notAllowed())
             return result;
 
@@ -280,15 +280,14 @@ public class NodeStateChangeChecker {
                                                   sortSetIntoList(retiredAndNotUpGroups))));
     }
 
-    // Check redundancy for nodes seen from all distributors that are UP for
+    // Check redundancy for nodes seen from all distributors that are UP in cluster state for
     // storage nodes that are in groups that should be UP
-    private Optional<Result> checkRedundancy(Set<Integer> retiredAndNotUpGroups) {
+    private Optional<Result> checkRedundancy(Set<Integer> retiredAndNotUpGroups, ClusterState clusterState) {
         Set<Integer> indexesToCheck = new HashSet<>();
         retiredAndNotUpGroups.forEach(index -> getNodesInGroup(index).forEach(node -> indexesToCheck.add(node.index())));
 
         for (var distributorNodeInfo : clusterInfo.getDistributorNodeInfos()) {
-            // Skip distributors that are DOWN (otherwise they will be UP and should be checked)
-            if (distributorNodeInfo.getUserWantedState().getState() != UP) continue;
+            if (clusterState.getNodeState(distributorNodeInfo.getNode()).getState() != UP) continue;
 
             var r = checkRedundancySeenFromDistributor(distributorNodeInfo, indexesToCheck);
             if (r.notAllowed())
