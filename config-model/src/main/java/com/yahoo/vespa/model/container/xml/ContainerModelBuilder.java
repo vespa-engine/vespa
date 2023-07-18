@@ -458,8 +458,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             addHostedImplicitHttpIfNotPresent(deployState, cluster);
             addHostedImplicitAccessControlIfNotPresent(deployState, cluster);
             addDefaultConnectorHostedFilterBinding(cluster);
-            addAdditionalHostedConnector(deployState, cluster);
+            addCloudMtlsConnector(deployState, cluster);
             addCloudDataPlaneFilter(deployState, cluster);
+            addCloudTokenSupport(deployState, cluster);
         }
     }
 
@@ -596,7 +597,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .ifPresent(accessControl -> accessControl.configureDefaultHostedConnector(cluster.getHttp()));                                 ;
     }
 
-    private void addAdditionalHostedConnector(DeployState state, ApplicationContainerCluster cluster) {
+    private void addCloudMtlsConnector(DeployState state, ApplicationContainerCluster cluster) {
         JettyHttpServer server = cluster.getHttp().getHttpServer().get();
         String serverName = server.getComponentId().getName();
 
@@ -624,28 +625,52 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         .orElse(false);
                 builder.clientAuth(needAuth ? SslClientAuth.NEED : SslClientAuth.WANT);
             }
-
-            boolean enableTokenSupport = state.featureFlags().enableDataplaneProxy()
-                    && cluster.getClients().stream().anyMatch(c -> !c.tokens().isEmpty());
-
-            // Set up component to generate proxy cert if token support is enabled
-            if (enableTokenSupport) {
-                cluster.addSimpleComponent(DataplaneProxyCredentials.class);
-                cluster.addSimpleComponent(DataplaneProxyService.class);
-
-                var dataplaneProxy = new DataplaneProxy(
-                        getMtlsDataplanePort(state),
-                        endpointCert.certificate(),
-                        endpointCert.key());
-                cluster.addComponent(dataplaneProxy);
-                builder.tokenEndpoint(true);
-            }
         } else {
             builder.clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
         }
         var connectorFactory = builder.build();
         cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
         server.addConnector(connectorFactory);
+    }
+
+    private void addCloudTokenSupport(DeployState state, ApplicationContainerCluster cluster) {
+        var server = cluster.getHttp().getHttpServer().get();
+        boolean enableTokenSupport = state.isHosted() && state.zone().system().isPublic()
+                && state.featureFlags().enableDataplaneProxy()
+                && cluster.getClients().stream().anyMatch(c -> !c.tokens().isEmpty());
+        if (!enableTokenSupport) return;
+        var endpointCert = state.endpointCertificateSecrets().orElseThrow();
+        int tokenPort = getTokenDataplanePort(state).orElseThrow();
+
+        // Set up component to generate proxy cert if token support is enabled
+        cluster.addSimpleComponent(DataplaneProxyCredentials.class);
+        cluster.addSimpleComponent(DataplaneProxyService.class);
+        var dataplaneProxy = new DataplaneProxy(
+                getMtlsDataplanePort(state),
+                endpointCert.certificate(),
+                endpointCert.key());
+        cluster.addComponent(dataplaneProxy);
+
+        // Setup dedicated connector
+        var connector = HostedSslConnectorFactory.builder(server.getComponentId().getName()+"-token", tokenPort)
+                .tokenEndpoint(true)
+                .proxyProtocol(false, false)
+                .endpointCertificate(endpointCert)
+                .remoteAddressHeader("X-Forwarded-For")
+                .remotePortHeader("X-Forwarded-Port")
+                .clientAuth(SslClientAuth.NEED)
+                .build();
+        server.addConnector(connector);
+
+        // Setup token filter chain
+        var tokenChain = new HttpFilterChain("cloud-token-data-plane-secure", HttpFilterChain.Type.SYSTEM);
+        tokenChain.addInnerComponent(new CloudTokenDataPlaneFilter(cluster, state));
+        cluster.getHttp().getFilterChains().add(tokenChain);
+
+        // Set as default filter for token port
+        cluster.getHttp().getHttpServer().orElseThrow().getConnectorFactories().stream()
+                .filter(c -> c.getListenPort() == tokenPort).findAny().orElseThrow()
+                .setDefaultRequestFilterChain(tokenChain.getComponentId());
     }
 
     // Returns the client certificates of the clients defined for an application cluster

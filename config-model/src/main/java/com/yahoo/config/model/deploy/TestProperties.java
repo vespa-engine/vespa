@@ -88,6 +88,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean allowMoreThanOneContentGroupDown = false;
     private boolean enableConditionalPutRemoveWriteRepair = false;
     private List<DataplaneToken> dataplaneTokens;
+    private boolean enableDataplaneProxy;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -148,6 +149,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean allowMoreThanOneContentGroupDown(ClusterSpec.Id id) { return allowMoreThanOneContentGroupDown; }
     @Override public boolean enableConditionalPutRemoveWriteRepair() { return enableConditionalPutRemoveWriteRepair; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
+    @Override public boolean enableDataplaneProxy() { return enableDataplaneProxy; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -390,6 +392,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setDataplaneTokens(Collection<DataplaneToken> tokens) {
         this.dataplaneTokens = List.copyOf(tokens);
+        return this;
+    }
+
+    public TestProperties setEnableDataplaneProxy(boolean enable) {
+        this.enableDataplaneProxy = enable;
         return this;
     }
 

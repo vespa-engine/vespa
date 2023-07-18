@@ -81,7 +81,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         final List<String> remoteAddressHeaders = new ArrayList<>();
         final List<String> remotePortHeaders = new ArrayList<>();
         SslClientAuth clientAuth;
-        List<String> tlsCiphersOverride;
+        List<String> tlsCiphersOverride = List.of();
         boolean proxyProtocolEnabled;
         boolean proxyProtocolMixedMode;
         Duration endpointConnectionTtl;
