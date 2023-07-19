@@ -500,10 +500,10 @@ StateManager::warn_on_missing_health_ping()
     }
     if (health_ping_time.has_value()) {
         vespalib::duration duration = now - health_ping_time.value();
-        LOG(warning, "Last health ping was %1.1f seconds ago", vespalib::to_s(duration));
+        LOG(warning, "Last health ping from cluster controller was %1.1f seconds ago", vespalib::to_s(duration));
     } else {
         vespalib::duration duration = now - _start_time;
-        LOG(warning, "No health pings since startup %1.1f seconds ago", vespalib::to_s(duration));
+        LOG(warning, "No health pings from cluster controller since startup %1.1f seconds ago", vespalib::to_s(duration));
     }
 }
 
