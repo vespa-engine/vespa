@@ -134,13 +134,18 @@ public class OnnxEvaluator implements AutoCloseable {
         }
     }
 
-    private static ReferencedOrtSession createSession(
-            ModelPathOrData model, OnnxRuntime runtime, OnnxEvaluatorOptions options, boolean tryCuda) {
+    private static ReferencedOrtSession createSession(ModelPathOrData model, OnnxRuntime runtime,
+                                                      OnnxEvaluatorOptions options, boolean tryCuda) {
         if (options == null) {
             options = new OnnxEvaluatorOptions();
         }
         try {
-            return runtime.acquireSession(model, options, tryCuda && options.requestingGpu());
+            boolean loadCuda = tryCuda && options.requestingGpu();
+            ReferencedOrtSession session = runtime.acquireSession(model, options, loadCuda);
+            if (loadCuda) {
+                LOG.log(Level.INFO, "Created session with CUDA using GPU device " + options.gpuDeviceNumber());
+            }
+            return session;
         } catch (OrtException e) {
             if (e.getCode() == OrtException.OrtErrorCode.ORT_NO_SUCHFILE) {
                 throw new IllegalArgumentException("No such file: " + model.path().get());
