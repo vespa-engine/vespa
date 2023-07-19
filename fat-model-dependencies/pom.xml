@@ -268,7 +268,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>${protobuf.version}</version>
+      <version>${protobuf.vespa.version}</version>
     </dependency>
   </dependencies>
 </project>

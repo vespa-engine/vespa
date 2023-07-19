@@ -17,40 +17,40 @@
     <packaging>pom</packaging>
 
     <properties>
-        <junit5.platform.version>1.8.1</junit5.platform.version>
+        <junit5.platform.vespa.version>1.8.1</junit5.platform.vespa.version>
 
         <!-- MUST BE KEPT IN SYNC WITH parent/pom.xml -->
-        <athenz.version>1.11.34</athenz.version>
+        <athenz.vespa.version>1.11.34</athenz.vespa.version>
 
-        <bouncycastle.version>1.74</bouncycastle.version>
-        <commons-codec.version>1.15</commons-codec.version>
-        <felix.version>7.0.5</felix.version>
-        <httpclient5.version>5.2.1</httpclient5.version>
-        <httpcore5.version>5.2.2</httpcore5.version>
-        <httpclient.version>4.5.14</httpclient.version>
-        <httpcore.version>4.4.16</httpcore.version>
-        <junit5.version>5.8.1</junit5.version>  <!-- TODO: in parent this is named 'junit.version' -->
-        <onnxruntime.version>1.13.1</onnxruntime.version>
-        <openai-gpt3.version>0.12.0</openai-gpt3.version>
+        <bouncycastle.vespa.version>1.74</bouncycastle.vespa.version>
+        <commons-codec.vespa.version>1.15</commons-codec.vespa.version>
+        <felix.vespa.version>7.0.5</felix.vespa.version>
+        <httpclient5.vespa.version>5.2.1</httpclient5.vespa.version>
+        <httpcore5.vespa.version>5.2.2</httpcore5.vespa.version>
+        <httpclient.vespa.version>4.5.14</httpclient.vespa.version>
+        <httpcore.vespa.version>4.4.16</httpcore.vespa.version>
+        <junit5.vespa.version>5.8.1</junit5.vespa.version>  <!-- TODO: in parent this is named 'junit.version' -->
+        <onnxruntime.vespa.version>1.13.1</onnxruntime.vespa.version>
+        <openai-gpt3.vespa.version>0.12.0</openai-gpt3.vespa.version>
         <!-- END parent/pom.xml -->
 
 
         <!-- ALL BELOW MUST BE KEPT IN SYNC WITH container-dependency-versions pom
              Copied here because cloud-tenant-base does not have a parent. -->
-        <aopalliance.version>1.0</aopalliance.version>
-        <guava.version>32.1.1-jre</guava.version>
-        <guice.version>4.2.3</guice.version>
-        <jackson2.version>2.15.2</jackson2.version>
-        <jackson-databind.version>2.15.2</jackson-databind.version>
-        <javax.inject.version>1</javax.inject.version>
-        <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
-        <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
-        <jaxb.version>2.3.0</jaxb.version>
-        <jetty.version>11.0.15</jetty.version>
-        <org.lz4.version>1.8.0</org.lz4.version>
-        <org.json.version>20230227</org.json.version> <!-- TODO: Remove on Vespa 9 -->
-        <slf4j.version>1.7.32</slf4j.version> <!-- WARNING: when updated, also update c.y.v.tenant:base pom -->
-        <xml-apis.version>1.4.01</xml-apis.version>
+        <aopalliance.vespa.version>1.0</aopalliance.vespa.version>
+        <guava.vespa.version>32.1.1-jre</guava.vespa.version>
+        <guice.vespa.version>4.2.3</guice.vespa.version>
+        <jackson2.vespa.version>2.15.2</jackson2.vespa.version>
+        <jackson-databind.vespa.version>2.15.2</jackson-databind.vespa.version>
+        <javax.inject.vespa.version>1</javax.inject.vespa.version>
+        <javax.servlet-api.vespa.version>3.1.0</javax.servlet-api.vespa.version>
+        <javax.ws.rs-api.vespa.version>2.0.1</javax.ws.rs-api.vespa.version>
+        <jaxb.vespa.version>2.3.0</jaxb.vespa.version>
+        <jetty.vespa.version>11.0.15</jetty.vespa.version>
+        <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>
+        <org.json.vespa.version>20230227</org.json.vespa.version> <!-- TODO: Remove on Vespa 9 -->
+        <slf4j.vespa.version>1.7.32</slf4j.vespa.version> <!-- WARNING: when updated, also update c.y.v.tenant:base pom -->
+        <xml-apis.vespa.version>1.4.01</xml-apis.vespa.version>
     </properties>
 
     <build>
@@ -78,33 +78,33 @@
                                 <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.EnforceDependencies">
                                     <allowed>
                                         <!-- MUST BE KEPT IN SYNC WITH container-dependencies-enforcer pom -->
-                                        <include>aopalliance:aopalliance:${aopalliance.version}:provided</include>
-                                        <include>com.fasterxml.jackson.core:jackson-annotations:${jackson2.version}:provided</include>
-                                        <include>com.fasterxml.jackson.core:jackson-core:${jackson2.version}:provided</include>
-                                        <include>com.fasterxml.jackson.core:jackson-databind:${jackson-databind.version}:provided</include>
-                                        <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.version}:provided</include>
-                                        <include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.version}:provided</include>
+                                        <include>aopalliance:aopalliance:${aopalliance.vespa.version}:provided</include>
+                                        <include>com.fasterxml.jackson.core:jackson-annotations:${jackson2.vespa.version}:provided</include>
+                                        <include>com.fasterxml.jackson.core:jackson-core:${jackson2.vespa.version}:provided</include>
+                                        <include>com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}:provided</include>
+                                        <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.vespa.version}:provided</include>
+                                        <include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}:provided</include>
 
                                         <!-- Guava with its internal dependencies -->
-                                        <include>com.google.guava:guava:${guava.version}:provided</include>
+                                        <include>com.google.guava:guava:${guava.vespa.version}:provided</include>
                                         <include>com.google.errorprone:error_prone_annotations:2.18.0:provided</include>
                                         <include>com.google.guava:failureaccess:1.0.1:provided</include>
                                         <include>com.google.j2objc:j2objc-annotations:2.8:provided</include>
 
-                                        <include>com.google.inject:guice:jar:no_aop:${guice.version}:provided</include>
+                                        <include>com.google.inject:guice:jar:no_aop:${guice.vespa.version}:provided</include>
                                         <include>com.sun.activation:javax.activation:1.2.0:provided</include>
-                                        <include>com.sun.xml.bind:jaxb-core:${jaxb.version}:provided</include>
-                                        <include>com.sun.xml.bind:jaxb-impl:${jaxb.version}:provided</include>
+                                        <include>com.sun.xml.bind:jaxb-core:${jaxb.vespa.version}:provided</include>
+                                        <include>com.sun.xml.bind:jaxb-impl:${jaxb.vespa.version}:provided</include>
                                         <include>commons-logging:commons-logging:1.2:provided</include>
-                                        <include>javax.inject:javax.inject:${javax.inject.version}:provided</include>
-                                        <include>javax.servlet:javax.servlet-api:${javax.servlet-api.version}:provided</include>
-                                        <include>javax.ws.rs:javax.ws.rs-api:${javax.ws.rs-api.version}:provided</include>
-                                        <include>javax.xml.bind:jaxb-api:${jaxb.version}:provided</include>
-                                        <include>org.slf4j:jcl-over-slf4j:${slf4j.version}:provided</include>
-                                        <include>org.slf4j:log4j-over-slf4j:${slf4j.version}:provided</include>
-                                        <include>org.slf4j:slf4j-api:${slf4j.version}:provided</include>
-                                        <include>org.slf4j:slf4j-jdk14:${slf4j.version}:provided</include>
-                                        <include>xml-apis:xml-apis:${xml-apis.version}:provided</include>
+                                        <include>javax.inject:javax.inject:${javax.inject.vespa.version}:provided</include>
+                                        <include>javax.servlet:javax.servlet-api:${javax.servlet-api.vespa.version}:provided</include>
+                                        <include>javax.ws.rs:javax.ws.rs-api:${javax.ws.rs-api.vespa.version}:provided</include>
+                                        <include>javax.xml.bind:jaxb-api:${jaxb.vespa.version}:provided</include>
+                                        <include>org.slf4j:jcl-over-slf4j:${slf4j.vespa.version}:provided</include>
+                                        <include>org.slf4j:log4j-over-slf4j:${slf4j.vespa.version}:provided</include>
+                                        <include>org.slf4j:slf4j-api:${slf4j.vespa.version}:provided</include>
+                                        <include>org.slf4j:slf4j-jdk14:${slf4j.vespa.version}:provided</include>
+                                        <include>xml-apis:xml-apis:${xml-apis.vespa.version}:provided</include>
 
                                         <!-- Vespa provided dependencies -->
                                         <include>com.yahoo.vespa:annotations:*:provided</include>
@@ -178,9 +178,9 @@
                                         <include>com.google.code.findbugs:jsr305:3.0.2:test</include>
                                         <include>com.google.protobuf:protobuf-java:3.21.7:test</include>
                                         <include>com.ibm.icu:icu4j:70.1:test</include>
-                                        <include>com.microsoft.onnxruntime:onnxruntime:jar:${onnxruntime.version}:test</include>
+                                        <include>com.microsoft.onnxruntime:onnxruntime:jar:${onnxruntime.vespa.version}:test</include>
                                         <include>com.thaiopensource:jing:20091111:test</include>
-                                        <include>commons-codec:commons-codec:${commons-codec.version}:test</include>
+                                        <include>commons-codec:commons-codec:${commons-codec.vespa.version}:test</include>
                                         <include>io.airlift:airline:0.9:test</include>
                                         <include>io.prometheus:simpleclient:0.6.0:test</include>
                                         <include>io.prometheus:simpleclient_common:0.6.0:test</include>
@@ -191,47 +191,47 @@
                                         <include>org.antlr:antlr4-runtime:4.11.1:test</include>
                                         <include>org.apache.commons:commons-exec:1.3:test</include>
                                         <include>org.apache.commons:commons-math3:3.6.1:test</include>
-                                        <include>org.apache.felix:org.apache.felix.framework:${felix.version}:test</include>
+                                        <include>org.apache.felix:org.apache.felix.framework:${felix.vespa.version}:test</include>
                                         <include>org.apache.felix:org.apache.felix.log:1.0.1:test</include>
-                                        <include>org.apache.httpcomponents.client5:httpclient5:${httpclient5.version}:test</include>
-                                        <include>org.apache.httpcomponents.core5:httpcore5:${httpcore5.version}:test</include>
-                                        <include>org.apache.httpcomponents.core5:httpcore5-h2:${httpcore5.version}:test</include>
-                                        <include>org.apache.httpcomponents:httpclient:${httpclient.version}:test</include>
-                                        <include>org.apache.httpcomponents:httpcore:${httpcore.version}:test</include>
-                                        <include>org.apache.httpcomponents:httpmime:${httpclient.version}:test</include>
+                                        <include>org.apache.httpcomponents.client5:httpclient5:${httpclient5.vespa.version}:test</include>
+                                        <include>org.apache.httpcomponents.core5:httpcore5:${httpcore5.vespa.version}:test</include>
+                                        <include>org.apache.httpcomponents.core5:httpcore5-h2:${httpcore5.vespa.version}:test</include>
+                                        <include>org.apache.httpcomponents:httpclient:${httpclient.vespa.version}:test</include>
+                                        <include>org.apache.httpcomponents:httpcore:${httpcore.vespa.version}:test</include>
+                                        <include>org.apache.httpcomponents:httpmime:${httpclient.vespa.version}:test</include>
                                         <include>org.apache.opennlp:opennlp-tools:1.9.3:test</include>
                                         <include>org.apiguardian:apiguardian-api:1.1.2:test</include>
-                                        <include>org.bouncycastle:bcpkix-jdk18on:${bouncycastle.version}:test</include>
-                                        <include>org.bouncycastle:bcprov-jdk18on:${bouncycastle.version}:test</include>
-                                        <include>org.bouncycastle:bcutil-jdk18on:${bouncycastle.version}:test</include>
-                                        <include>org.eclipse.jetty.http2:http2-client:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty.http2:http2-common:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty.http2:http2-hpack:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty.http2:http2-http-client-transport:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty.http2:http2-server:${jetty.version}:test</include>
+                                        <include>org.bouncycastle:bcpkix-jdk18on:${bouncycastle.vespa.version}:test</include>
+                                        <include>org.bouncycastle:bcprov-jdk18on:${bouncycastle.vespa.version}:test</include>
+                                        <include>org.bouncycastle:bcutil-jdk18on:${bouncycastle.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty.http2:http2-client:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty.http2:http2-common:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty.http2:http2-hpack:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty.http2:http2-http-client-transport:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty.http2:http2-server:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api:5.0.2:test</include>
-                                        <include>org.eclipse.jetty:jetty-alpn-client:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-alpn-java-client:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-alpn-java-server:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-alpn-server:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-client:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-http:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-io:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-jmx:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-security:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-server:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-servlet:${jetty.version}:test</include>
-                                        <include>org.eclipse.jetty:jetty-util:${jetty.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-alpn-client:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-alpn-java-client:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-alpn-java-server:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-alpn-server:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-client:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-http:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-io:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-jmx:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-security:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-server:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-servlet:${jetty.vespa.version}:test</include>
+                                        <include>org.eclipse.jetty:jetty-util:${jetty.vespa.version}:test</include>
 
                                         <include>org.hamcrest:hamcrest-core:1.3:test</include>
                                         <include>org.hdrhistogram:HdrHistogram:2.1.12:test</include>
-                                        <include>org.json:json:${org.json.version}:test</include>
-                                        <include>org.junit.jupiter:junit-jupiter-api:${junit5.version}:test</include>
-                                        <include>org.junit.jupiter:junit-jupiter-engine:${junit5.version}:test</include>
-                                        <include>org.junit.platform:junit-platform-commons:${junit5.platform.version}:test</include>
-                                        <include>org.junit.platform:junit-platform-engine:${junit5.platform.version}:test</include>
-                                        <include>org.junit.vintage:junit-vintage-engine:${junit5.version}:test</include>
-                                        <include>org.lz4:lz4-java:${org.lz4.version}:test</include>
+                                        <include>org.json:json:${org.json.vespa.version}:test</include>
+                                        <include>org.junit.jupiter:junit-jupiter-api:${junit5.vespa.version}:test</include>
+                                        <include>org.junit.jupiter:junit-jupiter-engine:${junit5.vespa.version}:test</include>
+                                        <include>org.junit.platform:junit-platform-commons:${junit5.platform.vespa.version}:test</include>
+                                        <include>org.junit.platform:junit-platform-engine:${junit5.platform.vespa.version}:test</include>
+                                        <include>org.junit.vintage:junit-vintage-engine:${junit5.vespa.version}:test</include>
+                                        <include>org.lz4:lz4-java:${org.lz4.vespa.version}:test</include>
                                         <include>org.opentest4j:opentest4j:1.2.0:test</include>
                                         <include>org.osgi:org.osgi.compendium:4.1.0:test</include>
                                         <include>org.osgi:org.osgi.core:4.1.0:test</include>
