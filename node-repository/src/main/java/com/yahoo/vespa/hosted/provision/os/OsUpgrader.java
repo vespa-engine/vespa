@@ -45,7 +45,8 @@ public abstract class OsUpgrader {
 
     /** Returns whether node can upgrade at given instant */
     final boolean canUpgradeAt(Instant instant, Node node) {
-        return node.history().age(instant).compareTo(gracePeriod()) > 0;
+        return node.status().osVersion().downgrading() || // Fast-track downgrades
+               node.history().age(instant).compareTo(gracePeriod()) > 0;
     }
 
     /** The duration this leaves new nodes alone before scheduling any upgrade */
