@@ -16,6 +16,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
@@ -108,6 +109,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -598,35 +600,31 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .ifPresent(accessControl -> accessControl.configureDefaultHostedConnector(cluster.getHttp()));                                 ;
     }
 
-    private void addAdditionalHostedConnector(DeployState state, ApplicationContainerCluster cluster) {
+    private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster) {
         JettyHttpServer server = cluster.getHttp().getHttpServer().get();
         String serverName = server.getComponentId().getName();
 
         // If the deployment contains certificate/private key reference, setup TLS port
-        var builder = HostedSslConnectorFactory.builder(serverName, getDataplanePort(state))
-                .proxyProtocolMixedMode(state.getProperties().featureFlags().enableProxyProtocolMixedMode())
-                .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
-                .endpointConnectionTtl(state.getProperties().endpointConnectionTtl());
-        var endpointCert = state.endpointCertificateSecrets().orElse(null);
-        if (endpointCert != null) {
-            builder.endpointCertificate(endpointCert);
-            boolean isPublic = state.zone().system().isPublic();
+        HostedSslConnectorFactory connectorFactory;
+        Collection<String> tlsCiphersOverride = deployState.getProperties().tlsCiphersOverride();
+        boolean proxyProtocolMixedMode = deployState.getProperties().featureFlags().enableProxyProtocolMixedMode();
+        Duration endpointConnectionTtl = deployState.getProperties().endpointConnectionTtl();
+        var port = getDataplanePort(deployState);
+        if (deployState.endpointCertificateSecrets().isPresent()) {
+            boolean authorizeClient = deployState.zone().system().isPublic();
             List<X509Certificate> clientCertificates = getClientCertificates(cluster);
-            if (isPublic) {
-                if (clientCertificates.isEmpty())
-                    throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
-                                                               "see: https://cloud.vespa.ai/en/security/guide#data-plane");
-                builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates));
-            } else {
-                builder.tlsCaCertificatesPath("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem");
+            if (authorizeClient && clientCertificates.isEmpty()) {
+                throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
+                                                   "see: https://cloud.vespa.ai/en/security/guide#data-plane");
             }
-            builder.requireTlsClientAuthDuringTlsHandshake(
-                    cluster.getHttp().getAccessControl()
-                            .map(accessControl -> accessControl.clientAuthentication)
-                            .map(clientAuth -> clientAuth == AccessControl.ClientAuthentication.need)
-                            .orElse(false));
+            EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
 
-            boolean enableTokenSupport = state.featureFlags().enableDataplaneProxy()
+            boolean enforceHandshakeClientAuth = cluster.getHttp().getAccessControl()
+                    .map(accessControl -> accessControl.clientAuthentication)
+                    .map(clientAuth -> clientAuth == AccessControl.ClientAuthentication.need)
+                    .orElse(false);
+
+            boolean enableTokenSupport = deployState.featureFlags().enableDataplaneProxy()
                     && cluster.getClients().stream().anyMatch(c -> !c.tokens().isEmpty());
 
             // Set up component to generate proxy cert if token support is enabled
@@ -635,13 +633,24 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 cluster.addSimpleComponent(DataplaneProxyService.class);
 
                 var dataplaneProxy = new DataplaneProxy(
-                        getDataplanePort(state),
-                        endpointCert.certificate(),
-                        endpointCert.key());
+                        getDataplanePort(deployState),
+                        endpointCertificateSecrets.certificate(),
+                        endpointCertificateSecrets.key());
                 cluster.addComponent(dataplaneProxy);
             }
+
+            connectorFactory = authorizeClient
+                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
+                    serverName, endpointCertificateSecrets, X509CertificateUtils.toPem(clientCertificates),
+                    tlsCiphersOverride, proxyProtocolMixedMode, port, endpointConnectionTtl, enableTokenSupport)
+                    : HostedSslConnectorFactory.withProvidedCertificate(
+                    serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride,
+                    proxyProtocolMixedMode, port, endpointConnectionTtl, enableTokenSupport);
+        } else {
+            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(
+                    serverName, tlsCiphersOverride, proxyProtocolMixedMode, port,
+                    endpointConnectionTtl);
         }
-        var connectorFactory = builder.build();
         cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
         server.addConnector(connectorFactory);
     }
