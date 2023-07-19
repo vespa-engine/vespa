@@ -13,6 +13,13 @@
     <url>https://github.com/vespa-engine</url>
     <packaging>pom</packaging>
 
+    <parent>
+        <artifactId>dependency-versions</artifactId>
+        <groupId>com.yahoo.vespa</groupId>
+        <version>8-SNAPSHOT</version>
+        <relativePath>../dependency-versions/pom.xml</relativePath>
+    </parent>
+
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
@@ -35,12 +42,9 @@
         <vespaversion>${project.version}</vespaversion>
         <bundle-plugin.failOnWarnings>false</bundle-plugin.failOnWarnings>
         <target_jdk_version>17</target_jdk_version>
-        <maven-compiler-plugin.vespa.version>3.10.1</maven-compiler-plugin.vespa.version>
-        <maven-surefire-plugin.vespa.version>2.22.2</maven-surefire-plugin.vespa.version>
-        <maven-dependency-plugin.vespa.version>3.6.0</maven-dependency-plugin.vespa.version>
-        <jackson2.vespa.version>2.15.2</jackson2.vespa.version>
+
         <!-- NOTE: this must not be overriden by users, and must be in sync with junit version specified in 'tenant-cd-api' -->
-        <vespa.junit.vespa.version>5.8.1</vespa.junit.vespa.version>
+        <junit.vespa.tenant.version>5.8.1</junit.vespa.tenant.version>
         <test.categories>!integration</test.categories>
 
         <!-- To allow specialized base pom to include additional "test provided" dependencies -->
@@ -98,19 +102,19 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>${vespa.junit.vespa.version}</version>
+                <version>${junit.vespa.tenant.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
-                <version>${vespa.junit.vespa.version}</version>
+                <version>${junit.vespa.tenant.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
-                <version>${vespa.junit.vespa.version}</version>
+                <version>${junit.vespa.tenant.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -245,8 +249,8 @@
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:compile</exclude>
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:provided</exclude>
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:runtime</exclude>
-                                                <exclude>org.junit.jupiter:junit-jupiter-api:(,${vespa.junit.vespa.version}):jar:*</exclude>
-                                                <exclude>org.junit.jupiter:junit-jupiter-api:(${vespa.junit.vespa.version},):jar:*</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:(,${junit.vespa.tenant.version}):jar:*</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:(${junit.vespa.tenant.version},):jar:*</exclude>
                                             </excludes>
                                         </bannedDependencies>
                                     </rules>
