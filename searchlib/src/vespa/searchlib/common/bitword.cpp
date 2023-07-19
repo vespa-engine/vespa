@@ -22,6 +22,6 @@ BitWord::Init::Init()
     fillUp(BitWord::_checkTab, std::numeric_limits<BitWord::Word>::max());
 }
 
-constexpr BitWord::Word BitWord::_checkTab[BitWord::WordLen];
+BitWord::Word BitWord::_checkTab[BitWord::WordLen];
 
 }
