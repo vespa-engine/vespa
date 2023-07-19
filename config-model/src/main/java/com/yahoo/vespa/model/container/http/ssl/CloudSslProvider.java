@@ -26,7 +26,8 @@ public class CloudSslProvider extends SslProvider {
     private final String caCertificate;
     private final ClientAuth.Enum clientAuthentication;
 
-    public CloudSslProvider(String servername, String privateKey, String certificate, String caCertificatePath, String caCertificate, ClientAuth.Enum clientAuthentication, boolean enableTokenSupport) {
+    public CloudSslProvider(String servername, String privateKey, String certificate, String caCertificatePath,
+                            String caCertificate, ClientAuth.Enum clientAuthentication, boolean enableTokenSupport) {
         super(COMPONENT_ID_PREFIX, servername, componentClass(enableTokenSupport), null);
         this.privateKey = privateKey;
         this.certificate = certificate;
