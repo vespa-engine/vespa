@@ -36,6 +36,8 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.yolean.Exceptions;
+
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
@@ -47,6 +49,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.yolean.Exceptions.toMessageString;
 import static java.util.logging.Level.FINE;
 
 /**
@@ -197,7 +200,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
 
         if (configserverConfig.hostedVespa())
             // Use another exception, as this is not a problem with the application package
-            throw new NodeAllocationException(exception.getMessage(), true);
+            throw new NodeAllocationException(toMessageString(exception), true);
 
         throw exception;
     }
