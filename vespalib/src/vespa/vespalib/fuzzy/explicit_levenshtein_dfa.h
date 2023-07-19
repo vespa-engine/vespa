@@ -77,7 +77,7 @@ struct DfaNode {
 
     void add_match_out_edge(uint32_t out_char, uint32_t out_node) noexcept {
         assert(num_match_out_edges < MaxCharOutEdges);
-        match_out_edges_buf[num_match_out_edges] = Edge(out_char, out_node);
+        match_out_edges_buf[num_match_out_edges] = Edge{out_char, out_node};
         ++num_match_out_edges;
     }
 

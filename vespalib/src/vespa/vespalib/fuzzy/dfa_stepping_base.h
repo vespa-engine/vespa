@@ -8,8 +8,8 @@ namespace vespalib::fuzzy {
 
 template <typename Traits>
 struct DfaSteppingBase {
-    using StateType       = Traits::StateType;
-    using TransitionsType = Traits::TransitionsType;
+    using StateType       = typename Traits::StateType;
+    using TransitionsType = typename Traits::TransitionsType;
 
     std::span<const uint32_t> _u32_str; // TODO std::u32string_view
 

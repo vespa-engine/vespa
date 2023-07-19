@@ -16,7 +16,7 @@ template <uint8_t MaxEdits>
 struct ExplicitDfaMatcher {
     using DfaNodeType = typename ExplicitLevenshteinDfaImpl<MaxEdits>::DfaNodeType;
     using StateType   = const DfaNodeType*;
-    using EdgeType    = const DfaNodeType::Edge*;
+    using EdgeType    = const typename DfaNodeType::Edge*;
 
     using StateParamType = const DfaNodeType*;
 
@@ -120,7 +120,7 @@ struct ExploreState {
     ExploreState();
     ~ExploreState();
 
-    [[nodiscard]] SparseExploredStates::iterator node_of(const StateType& state) {
+    [[nodiscard]] typename SparseExploredStates::iterator node_of(const StateType& state) {
         auto maybe_explored = explored_states.find(state);
         if (maybe_explored != explored_states.end()) {
             return maybe_explored;
@@ -131,11 +131,11 @@ struct ExploreState {
         return explored_states.insert(std::make_pair(state, std::make_pair(this_node, false))).first; // not yet explored;
     }
 
-    [[nodiscard]] bool already_explored(const SparseExploredStates::iterator& node) const noexcept {
+    [[nodiscard]] bool already_explored(const typename SparseExploredStates::iterator& node) const noexcept {
         return node->second.second;
     }
 
-    void tag_as_explored(SparseExploredStates::iterator& node) noexcept {
+    void tag_as_explored(typename SparseExploredStates::iterator& node) noexcept {
         node->second.second = true;
     }
 };
