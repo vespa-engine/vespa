@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.yahoo.vespa</groupId>
+    <artifactId>dependency-versions</artifactId>
+    <packaging>pom</packaging>
+    <version>8-SNAPSHOT</version>
+    <description>Version properties for (almost) all Vespa dependencies.</description>
+    <url>https://github.com/vespa-engine</url>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Vespa</name>
+            <url>https://github.com/vespa-engine</url>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
+        <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
+        <url>git@github.com:vespa-engine/vespa.git</url>
+    </scm>
+
+    <properties>
+        
+        <!-- Dependencies available from the Jdisc container, see container-dependency-versions/pom.xml -->
+        <aopalliance.version>1.0</aopalliance.version>
+        <error-prone-annotations.version>2.18.0</error-prone-annotations.version>
+        <guava.version>32.1.1-jre</guava.version>
+        <guice.version>4.2.3</guice.version>
+        <jackson2.version>2.15.2</jackson2.version>
+        <jackson-databind.version>2.15.2</jackson-databind.version>
+        <javax.inject.version>1</javax.inject.version>
+        <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
+        <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
+        <jaxb.version>2.3.0</jaxb.version>
+        <slf4j.version>1.7.32</slf4j.version>
+        <xml-apis.version>1.4.01</xml-apis.version>
+
+
+        <!-- Dependencies used internally in Vespa, not visible for users -->
+        <airline.version>0.9</airline.version>
+        <antlr.version>3.5.3</antlr.version>
+        <antlr4.version>4.11.1</antlr4.version>
+        <apache.httpclient.version>4.5.14</apache.httpclient.version>
+        <apache.httpcore.version>4.4.16</apache.httpcore.version>
+        <apache.httpclient5.version>5.2.1</apache.httpclient5.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <apache.httpcore5.version>5.2.2</apache.httpcore5.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <asm.version>9.3</asm.version>
+
+        <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
+        <athenz.version>1.11.34</athenz.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <aws-sdk.version>1.12.460</aws-sdk.version>
+        <!-- Athenz END -->
+
+        <!-- WARNING: If you change curator version, you also need to update
+                 zkfacade/src/main/java/org/apache/curator/**/package-info.java
+             using something like
+                 find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
+                     xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
+        -->
+        <bouncycastle.version>1.74</bouncycastle.version>
+        <curator.version>5.4.0</curator.version>
+        <commons-codec.version>1.15</commons-codec.version>
+        <commons-io.version>2.11.0</commons-io.version>
+        <commons.math3.version>3.6.1</commons.math3.version>
+        <eclipse-collections.version>11.0.0</eclipse-collections.version>
+        <felix.version>7.0.5</felix.version>
+        <felix.log.version>1.0.1</felix.log.version>
+        <findbugs.version>3.0.2</findbugs.version> <!-- Should be kept in sync with guava -->
+        <hdrhistogram.version>2.1.12</hdrhistogram.version>
+        <jetty.version>11.0.15</jetty.version>
+        <jetty-servlet-api.version>5.0.2</jetty-servlet-api.version>
+        <jjwt.version>0.11.5</jjwt.version>
+        <jna.version>5.11.0</jna.version>
+        <junit.version>5.8.1</junit.version>
+        <maven-archiver.version>3.6.0</maven-archiver.version>
+        <maven-wagon.version>2.10</maven-wagon.version>
+        <mockito.version>4.0.0</mockito.version>
+        <netty.version>4.1.94.Final</netty.version>
+        <netty-tcnative.version>2.0.61.Final</netty-tcnative.version>
+        <onnxruntime.version>1.13.1</onnxruntime.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <org.json.version>20230227</org.json.version>
+        <org.lz4.version>1.8.0</org.lz4.version>
+        <prometheus.client.version>0.6.0</prometheus.client.version>
+        <protobuf.version>3.21.7</protobuf.version>
+        <spifly.version>1.3.6</spifly.version>
+        <surefire.version>3.0.0-M9</surefire.version>
+        <wiremock.version>2.35.0</wiremock.version>
+        <zero-allocation-hashing.version>0.16</zero-allocation-hashing.version>
+        <zookeeper.client.version>3.8.0</zookeeper.client.version>
+
+
+        <!-- Maven plugins -->
+        <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
+        <maven-bundle-plugin.version>5.1.9</maven-bundle-plugin.version>
+        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
+        <maven-core.version>3.8.7</maven-core.version>
+        <maven-dependency-plugin.version>3.6.0</maven-dependency-plugin.version> <!-- NOTE: When upgrading, also update explicit versions in tenant base poms! -->
+        <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+        <maven-enforcer-plugin.version>3.3.0</maven-enforcer-plugin.version>
+        <maven-failsafe-plugin.version>3.0.0-M6</maven-failsafe-plugin.version>
+        <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
+        <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
+        <maven-javadoc-plugin.version>3.3.1</maven-javadoc-plugin.version>
+        <maven-plugin-api.version>${maven-core.version}</maven-plugin-api.version>
+        <maven-plugin-tools.version>3.6.4</maven-plugin-tools.version>
+        <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
+        <maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
+        <maven-site-plugin.version>3.9.1</maven-site-plugin.version>
+        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+        <versions-maven-plugin.version>2.8.1</versions-maven-plugin.version>
+    </properties>
+
+</project>

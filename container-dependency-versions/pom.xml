@@ -2,13 +2,19 @@
 <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.yahoo.vespa</groupId>
     <artifactId>container-dependency-versions</artifactId>
     <packaging>pom</packaging>
     <version>8-SNAPSHOT</version>
     <name>container-dependency-versions</name>
     <description>Versions for all 3rd party dependencies provided from the Vespa container.</description>
     <url>https://github.com/vespa-engine</url>
+
+    <parent>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>dependency-versions</artifactId>
+        <version>8-SNAPSHOT</version>
+        <relativePath>../dependency-versions/pom.xml</relativePath>
+    </parent>
 
     <licenses>
         <license>
@@ -237,23 +243,5 @@
             </distributionManagement>
         </profile>
     </profiles>
-
-    <properties>
-        <aopalliance.version>1.0</aopalliance.version>
-        <error-prone-annotations.version>2.18.0</error-prone-annotations.version>
-        <guava.version>32.1.1-jre</guava.version>
-        <guice.version>4.2.3</guice.version>
-        <jackson2.version>2.15.2</jackson2.version>
-        <jackson-databind.version>2.15.2</jackson-databind.version>
-        <javax.inject.version>1</javax.inject.version>
-        <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
-        <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
-        <jaxb.version>2.3.0</jaxb.version>
-        <slf4j.version>1.7.32</slf4j.version> <!-- WARNING: when updated, also update c.y.v.tenant:base pom -->
-        <xml-apis.version>1.4.01</xml-apis.version>
-
-        <!-- Not a dependency. Only included to allow the versions-maven-plugin to check for updates of itself  -->
-        <versions-maven-plugin.version>2.8.1</versions-maven-plugin.version>
-    </properties>
 
 </project>
