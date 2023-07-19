@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security.token;
 
+import com.yahoo.security.SideChannelSafe;
+
 import java.util.Arrays;
 
 import static com.yahoo.security.ArrayUtils.hex;
@@ -18,8 +20,9 @@ public record TokenCheckHash(byte[] hashBytes) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TokenCheckHash tokenCheckHash = (TokenCheckHash) o;
-        // We don't consider token hashes secret data, so no harm in data-dependent equals()
-        return Arrays.equals(hashBytes, tokenCheckHash.hashBytes);
+        // Although not considered secret information, avoid leaking the contents of
+        // the check-hashes themselves via timing channels.
+        return SideChannelSafe.arraysEqual(hashBytes, tokenCheckHash.hashBytes);
     }
 
     @Override
