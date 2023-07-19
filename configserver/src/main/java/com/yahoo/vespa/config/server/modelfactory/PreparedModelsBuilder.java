@@ -24,6 +24,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.Application;
@@ -193,6 +194,10 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 } catch (InterruptedException interruptedException) {/* ignore */}
             }
         } while (Instant.now().isBefore(end));
+
+        if (configserverConfig.hostedVespa())
+            // Use another exception, as this is not a problem with the application package
+            throw new NodeAllocationException(exception.getMessage(), true);
 
         throw exception;
     }
