@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class HostedSslConnectorFactory extends ConnectorFactory {
 
-    boolean requireTlsClientAuthDuringTlsHandshake;
+    private final SslClientAuth clientAuth;
     private final List<String> tlsCiphersOverride;
     private final boolean proxyProtocolEnabled;
     private final boolean proxyProtocolMixedMode;
@@ -27,7 +27,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
 
     private HostedSslConnectorFactory(Builder builder) {
         super(new ConnectorFactory.Builder("tls"+builder.port, builder.port).sslProvider(createSslProvider(builder)));
-        this.requireTlsClientAuthDuringTlsHandshake = builder.requireTlsClientAuthDuringTlsHandshake;
+        this.clientAuth = builder.clientAuth;
         this.tlsCiphersOverride = List.copyOf(builder.tlsCiphersOverride);
         this.proxyProtocolEnabled = builder.proxyProtocolEnabled;
         this.proxyProtocolMixedMode = builder.proxyProtocolMixedMode;
@@ -36,17 +36,17 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
 
     private static SslProvider createSslProvider(Builder builder) {
         if (builder.endpointCertificate == null) return new DefaultSslProvider(builder.name);
-        var clientAuthentication = builder.requireTlsClientAuthDuringTlsHandshake
+        var sslClientAuth = builder.clientAuth == SslClientAuth.NEED
                 ? ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH : ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH;
         return new CloudSslProvider(
                 builder.name, builder.endpointCertificate.key(), builder.endpointCertificate.certificate(),
-                builder.tlsCaCertificatesPath, builder.tlsCaCertificatesPem, clientAuthentication, builder.tokenEndpoint);
+                builder.tlsCaCertificatesPath, builder.tlsCaCertificatesPem, sslClientAuth, builder.tokenEndpoint);
     }
 
     @Override
     public void getConfig(ConnectorConfig.Builder connectorBuilder) {
         super.getConfig(connectorBuilder);
-        if (! requireTlsClientAuthDuringTlsHandshake) {
+        if (clientAuth == SslClientAuth.WANT_WITH_ENFORCER) {
             connectorBuilder.tlsClientAuthEnforcer(
                     new ConnectorConfig.TlsClientAuthEnforcer.Builder()
                             .pathWhitelist(List.of("/status.html")).enable(true));
@@ -65,10 +65,11 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                 .maxConnectionLife(endpointConnectionTtl != null ? endpointConnectionTtl.toSeconds() : 0);
     }
 
+    public enum SslClientAuth { WANT, NEED, WANT_WITH_ENFORCER }
     public static class Builder {
         final String name;
         final int port;
-        boolean requireTlsClientAuthDuringTlsHandshake;
+        SslClientAuth clientAuth;
         List<String> tlsCiphersOverride;
         boolean proxyProtocolEnabled;
         boolean proxyProtocolMixedMode;
@@ -79,7 +80,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         boolean tokenEndpoint;
 
         private Builder(String name, int port) { this.name = name; this.port = port; }
-        public Builder requireTlsClientAuthDuringTlsHandshake(boolean enable) {this.requireTlsClientAuthDuringTlsHandshake = enable; return this; }
+        public Builder clientAuth(SslClientAuth auth) { clientAuth = auth; return this; }
         public Builder endpointConnectionTtl(Duration ttl) { endpointConnectionTtl = ttl; return this; }
         public Builder tlsCiphersOverride(Collection<String> ciphers) { tlsCiphersOverride = List.copyOf(ciphers); return this; }
         public Builder proxyProtocol(boolean enabled, boolean mixedMode) { proxyProtocolEnabled = enabled; proxyProtocolMixedMode = mixedMode; return this; }

@@ -94,6 +94,7 @@ import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.HttpFilterChain;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
+import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory.SslClientAuth;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
@@ -616,15 +617,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 if (clientCertificates.isEmpty())
                     throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
                                                                "see: https://cloud.vespa.ai/en/security/guide#data-plane");
-                builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates));
+                builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates))
+                        .clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
             } else {
                 builder.tlsCaCertificatesPath("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem");
+                var needAuth = cluster.getHttp().getAccessControl()
+                        .map(accessControl -> accessControl.clientAuthentication)
+                        .map(clientAuth -> clientAuth == AccessControl.ClientAuthentication.need)
+                        .orElse(false);
+                builder.clientAuth(needAuth ? SslClientAuth.NEED : SslClientAuth.WANT);
             }
-            builder.requireTlsClientAuthDuringTlsHandshake(
-                    cluster.getHttp().getAccessControl()
-                            .map(accessControl -> accessControl.clientAuthentication)
-                            .map(clientAuth -> clientAuth == AccessControl.ClientAuthentication.need)
-                            .orElse(false));
 
             boolean enableTokenSupport = state.featureFlags().enableDataplaneProxy()
                     && cluster.getClients().stream().anyMatch(c -> !c.tokens().isEmpty());
@@ -641,6 +643,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 cluster.addComponent(dataplaneProxy);
                 builder.tokenEndpoint(true);
             }
+        } else {
+            builder.clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
         }
         var connectorFactory = builder.build();
         cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
