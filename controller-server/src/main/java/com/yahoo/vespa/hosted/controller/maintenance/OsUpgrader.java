@@ -44,17 +44,18 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     @Override
     protected void upgrade(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
-        log.info(Text.format("Upgrading OS of %s to version %s in %s in cloud %s", application.id(),
-                               target.osVersion().version().toFullString(),
-                               zone.getVirtualId(), zone.getCloudName()));
+        log.info(Text.format((target.downgrade() ? "Downgrading" : "Upgrading") + " OS of %s to version %s in %s in cloud %s", application.id(),
+                             target.osVersion().version().toFullString(),
+                             zone.getVirtualId(), zone.getCloudName()));
         controller().serviceRegistry().configServer().nodeRepository().upgradeOs(zone.getVirtualId(), application.nodeType(),
-                                                                                 target.osVersion().version());
+                                                                                 target.osVersion().version(),
+                                                                                 target.downgrade());
     }
 
     @Override
     protected boolean convergedOn(OsVersionTarget target, SystemApplication application, ZoneApi zone, NodeSlice nodeSlice) {
         Version currentVersion = versionOf(nodeSlice, zone, application, Node::currentOsVersion).orElse(target.osVersion().version());
-        return !currentVersion.isBefore(target.osVersion().version());
+        return satisfiedBy(currentVersion, target);
     }
 
     @Override
@@ -66,10 +67,10 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     @Override
     protected Optional<OsVersionTarget> target() {
-        // Return target if we have nodes in this cloud on a lower version
+        // Return target if we have nodes in this cloud on the wrong version
         return controller().osVersionTarget(cloud)
                            .filter(target -> controller().osVersionStatus().nodesIn(cloud).stream()
-                                                         .anyMatch(node -> node.currentVersion().isBefore(target.osVersion().version())));
+                                                         .anyMatch(node -> !satisfiedBy(node.currentVersion(), target)));
     }
 
     @Override
@@ -78,8 +79,17 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
         return controller().serviceRegistry().configServer().nodeRepository()
                            .targetVersionsOf(zone.getVirtualId())
                            .osVersion(application.nodeType())
-                           .map(currentTarget -> target.osVersion().version().isAfter(currentTarget))
+                           .map(currentVersion -> !satisfiedBy(currentVersion, target))
                            .orElse(true);
+    }
+
+    private static boolean satisfiedBy(Version version, OsVersionTarget target) {
+        if (target.downgrade()) {
+            // When downgrading we want an exact version
+            return version.equals(target.osVersion().version());
+        }
+        // Otherwise, matching or later version is fine
+        return !version.isBefore(target.osVersion().version());
     }
 
     /** Returns whether node currently allows upgrades */

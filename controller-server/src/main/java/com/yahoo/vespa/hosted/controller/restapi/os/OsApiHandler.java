@@ -39,7 +39,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * This implements the /os/v1 API which provides operators with information about, and scheduling of OS upgrades for
@@ -147,9 +146,10 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         }
         Version target = parseStringField("version", root, Version::fromString);
         boolean force = root.field("force").asBool();
-        controller.upgradeOsIn(cloud, target, force);
+        boolean pin = root.field("pin").asBool();
+        controller.upgradeOsIn(cloud, target, force, pin);
         return new MessageResponse("Set target OS version for cloud '" + cloud.value() + "' to " +
-                                   target.toFullString());
+                                   target.toFullString() + (pin ? " (pinned)" : ""));
     }
 
     private Slime osVersions() {
@@ -167,6 +167,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
             target.ifPresent(t -> {
                 currentVersionObject.setString("upgradeBudget", Duration.ZERO.toString());
                 currentVersionObject.setLong("scheduledAt", t.scheduledAt().toEpochMilli());
+                currentVersionObject.setBool("pinned", t.pinned());
                 Optional<Change> nextChange = osUpgradeScheduler.changeIn(t.osVersion().cloud(), now);
                 nextChange.ifPresent(c -> {
                     currentVersionObject.setString("nextVersion", c.version().toFullString());

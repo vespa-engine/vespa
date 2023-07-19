@@ -243,13 +243,20 @@ public class Controller extends AbstractComponent {
         return curator.readOsVersionTargets();
     }
 
-    /** Set the target OS version for given cloud in this system */
-    public void upgradeOsIn(CloudName cloudName, Version version, boolean force) {
+    /**
+     * Set the target OS version for given cloud in this system.
+     *
+     * @param cloud   The cloud to upgrade
+     * @param version The target OS version
+     * @param force   Allow downgrades, and override pinned target (if any)
+     * @param pin     Pin this version. This prevents automatic scheduling of upgrades until version is unpinned
+     */
+    public void upgradeOsIn(CloudName cloud, Version version, boolean force, boolean pin) {
         if (version.isEmpty()) {
             throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
         }
-        if (!clouds().contains(cloudName)) {
-            throw new IllegalArgumentException("Cloud '" + cloudName + "' does not exist in this system");
+        if (!clouds().contains(cloud)) {
+            throw new IllegalArgumentException("Cloud '" + cloud + "' does not exist in this system");
         }
         Instant scheduledAt = clock.instant();
         try (Mutex lock = curator.lockOsVersions()) {
@@ -257,19 +264,28 @@ public class Controller extends AbstractComponent {
                                                              .collect(Collectors.toMap(t -> t.osVersion().cloud(),
                                                                                        Function.identity()));
 
-            OsVersionTarget currentTarget = targets.get(cloudName);
-            if (!force && currentTarget != null) {
-                if (currentTarget.osVersion().version().isAfter(version)) {
-                    throw new IllegalArgumentException("Cannot downgrade cloud '" + cloudName.value() + "' to version " +
-                                                       version.toFullString());
+            OsVersionTarget currentTarget = targets.get(cloud);
+            boolean downgrade = false;
+            if (currentTarget != null) {
+                boolean versionChange = !currentTarget.osVersion().version().equals(version);
+                downgrade = version.isBefore(currentTarget.osVersion().version());
+                if (versionChange && currentTarget.pinned() && !force) {
+                    throw new IllegalArgumentException("Cannot " + (downgrade ? "downgrade" : "upgrade") + " cloud " +
+                                                       cloud.value() + "' to version " + version.toFullString() +
+                                                       ": Current target is pinned. Add 'force' parameter to override");
                 }
-                if (currentTarget.osVersion().version().equals(version)) return; // Version unchanged
+                if (downgrade && !force) {
+                    throw new IllegalArgumentException("Cannot downgrade cloud '" + cloud.value() + "' to version " +
+                                                       version.toFullString() + ": Missing 'force' parameter");
+                }
+                if (!versionChange && currentTarget.pinned() == pin) return; // No change
             }
 
-            OsVersionTarget newTarget = new OsVersionTarget(new OsVersion(version, cloudName), scheduledAt);
-            targets.put(cloudName, newTarget);
+            OsVersionTarget newTarget = new OsVersionTarget(new OsVersion(version, cloud), scheduledAt, pin, downgrade);
+            targets.put(cloud, newTarget);
             curator.writeOsVersionTargets(new TreeSet<>(targets.values()));
-            log.info("Triggered OS upgrade to " + version.toFullString() + " in cloud " + cloudName.value());
+            log.info("Triggered OS " + (downgrade ? "downgrade" : "upgrade") + " to " + version.toFullString() +
+                     " in cloud " + cloud.value());
         }
     }
 

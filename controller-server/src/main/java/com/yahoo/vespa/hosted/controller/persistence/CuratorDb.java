@@ -63,6 +63,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -335,7 +336,7 @@ public class CuratorDb {
 
     // Infrastructure upgrades
 
-    public void writeOsVersionTargets(Set<OsVersionTarget> versions) {
+    public void writeOsVersionTargets(SortedSet<OsVersionTarget> versions) {
         curator.set(osVersionTargetsPath(), asJson(osVersionTargetSerializer.toSlime(versions)));
     }
 

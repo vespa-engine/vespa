@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
@@ -25,12 +26,14 @@ public class OsVersionTargetSerializer {
 
     private static final String versionsField = "versions";
     private static final String scheduledAtField = "scheduledAt";
+    private static final String pinnedField = "pinned";
+    private static final String downgradeField = "downgrade";
 
     public OsVersionTargetSerializer(OsVersionSerializer osVersionSerializer) {
         this.osVersionSerializer = osVersionSerializer;
     }
 
-    public Slime toSlime(Set<OsVersionTarget> osVersionTargets) {
+    public Slime toSlime(SortedSet<OsVersionTarget> osVersionTargets) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         Cursor array = root.setArray(versionsField);
@@ -44,7 +47,9 @@ public class OsVersionTargetSerializer {
         array.traverse((ArrayTraverser) (i, inspector) -> {
             OsVersion osVersion = osVersionSerializer.fromSlime(inspector);
             Instant scheduledAt = SlimeUtils.instant(inspector.field(scheduledAtField));
-            osVersionTargets.add(new OsVersionTarget(osVersion, scheduledAt));
+            boolean pinned = inspector.field(pinnedField).asBool();
+            boolean downgrade = inspector.field(downgradeField).asBool();
+            osVersionTargets.add(new OsVersionTarget(osVersion, scheduledAt, pinned, downgrade));
         });
         return Collections.unmodifiableSet(osVersionTargets);
     }
@@ -52,6 +57,8 @@ public class OsVersionTargetSerializer {
     private void toSlime(OsVersionTarget target, Cursor object) {
         osVersionSerializer.toSlime(target.osVersion(), object);
         object.setLong(scheduledAtField, target.scheduledAt().toEpochMilli());
+        object.setBool(pinnedField, target.pinned());
+        object.setBool(downgradeField, target.downgrade());
     }
 
 }

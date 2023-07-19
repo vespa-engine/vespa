@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.maintenance.OsUpgrader;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,13 +37,15 @@ public record OsVersionStatus(Map<OsVersion, List<NodeVersion>> versions) {
         this.versions = ImmutableMap.copyOf(Objects.requireNonNull(versions, "versions must be non-null"));
     }
 
-    /** Returns nodes eligible for OS upgrades that exist in given cloud */
+    /** Returns all node versions that exist in given cloud */
     public List<NodeVersion> nodesIn(CloudName cloud) {
-        return versions.entrySet().stream()
-                       .filter(entry -> entry.getKey().cloud().equals(cloud))
-                       .map(Map.Entry::getValue)
-                       .findFirst()
-                       .orElseGet(List::of);
+        List<NodeVersion> nodeVersions = new ArrayList<>();
+        versions.forEach((osVersion, nodesOnVersion) -> {
+            if (osVersion.cloud().equals(cloud)) {
+                nodeVersions.addAll(nodesOnVersion);
+            }
+        });
+        return Collections.unmodifiableList(nodeVersions);
     }
 
     /** Returns versions that exist in given cloud */

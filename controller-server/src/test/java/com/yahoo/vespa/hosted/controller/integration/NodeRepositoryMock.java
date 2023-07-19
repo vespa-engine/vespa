@@ -169,7 +169,7 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public void upgradeOs(ZoneId zone, NodeType type, Version version) {
+    public void upgradeOs(ZoneId zone, NodeType type, Version version, boolean downgrade) {
         this.targetVersions.compute(zone, (ignored, targetVersions) -> {
             if (targetVersions == null) {
                 targetVersions = TargetVersions.EMPTY;
