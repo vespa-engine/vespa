@@ -196,19 +196,19 @@
                 hosted-zone-api-jar-with-dependencies.jar,
                 container-apache-http-client-bundle-jar-with-dependencies.jar,
                 security-utils.jar,
-                bcprov-jdk18on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
-                bcpkix-jdk18on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
-                bcutil-jdk18on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
+                bcprov-jdk18on-${bouncycastle.vespa.version}.jar, <!-- Used by security-utils -->
+                bcpkix-jdk18on-${bouncycastle.vespa.version}.jar, <!-- Used by security-utils -->
+                bcutil-jdk18on-${bouncycastle.vespa.version}.jar, <!-- Used by security-utils -->
                 <!-- END Bundles needed to retrieve config, or used by container-disc -->
 
-                jackson-annotations-${jackson2.version}.jar,
-                jackson-core-${jackson2.version}.jar,
-                jackson-databind-${jackson-databind.version}.jar,
-                jackson-datatype-jdk8-${jackson2.version}.jar,
-                jackson-datatype-jsr310-${jackson2.version}.jar,
+                jackson-annotations-${jackson2.vespa.version}.jar,
+                jackson-core-${jackson2.vespa.version}.jar,
+                jackson-databind-${jackson-databind.vespa.version}.jar,
+                jackson-datatype-jdk8-${jackson2.vespa.version}.jar,
+                jackson-datatype-jsr310-${jackson2.vespa.version}.jar,
 
                 <!-- Only one instance of javax.ws.rs.client.ClientBuilder can be loaded by the JVM -->
-                javax.ws.rs-api-${javax.ws.rs-api.version}.jar
+                javax.ws.rs-api-${javax.ws.rs-api.vespa.version}.jar
             </discPreInstallBundle>
 
             <!-- Enable Spifly ServiceLoader weaving. Required for Jetty ALPN/HTTP2 -->
