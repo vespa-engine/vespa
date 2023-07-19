@@ -4,9 +4,7 @@ package com.yahoo.vespa.clustercontroller.utils.staterestapi.errors;
 public class InvalidContentException extends StateRestApiException {
 
     public InvalidContentException(String description) {
-        super(description);
-        setHtmlCode(400);
-        setHtmlStatus("Content of HTTP request had invalid data");
+        super(description, 400, "Content of HTTP request had invalid data");
     }
 
 }

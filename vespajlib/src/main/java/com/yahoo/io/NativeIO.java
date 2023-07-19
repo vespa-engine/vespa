@@ -74,7 +74,7 @@ public class NativeIO {
     }
 
     public boolean valid() { return fdField.isInitialized(); }
-    public Throwable getError() { return fdField.getError(); }
+    public final Throwable getError() { return fdField.getError(); }
 
     /**
      * Will hint the OS that data read so far will not be accessed again and should hence be dropped from the buffer cache.

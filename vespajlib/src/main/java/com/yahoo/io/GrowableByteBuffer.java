@@ -3,7 +3,15 @@ package com.yahoo.io;
 
 import com.yahoo.text.Utf8;
 
-import java.nio.*;
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 
 /**
  * GrowableByteBuffer encapsulates a ByteBuffer and grows it as needed.
@@ -70,7 +78,7 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
         return growFactor;
     }
 
-    public void setGrowFactor(float growFactor) {
+    public final void setGrowFactor(float growFactor) {
         if (growFactor <= 1.00f) {
             throw new IllegalArgumentException("Growth factor must be greater than 1.00f, otherwise buffer will never grow!");
         }
