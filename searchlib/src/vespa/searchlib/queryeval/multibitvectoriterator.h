@@ -8,7 +8,7 @@
 
 namespace search::queryeval {
 
-class MultiBitVectorIteratorBase : public MultiSearch, protected BitWord
+class MultiBitVectorIteratorBase : public MultiSearch
 {
 public:
     ~MultiBitVectorIteratorBase() override;
@@ -20,7 +20,8 @@ public:
      */
     static SearchIterator::UP optimize(SearchIterator::UP parent);
 protected:
-    MultiBitVectorIteratorBase(Children hildren);
+    using Word = BitWord::Word;
+    MultiBitVectorIteratorBase(Children children);
     using MetaWord = std::pair<const void *, bool>;
 
     uint32_t                _numDocs;
@@ -29,7 +30,7 @@ protected:
     Word                    _lastValue; // Last value computed
     std::vector<MetaWord>   _bvs;
 private:
-    virtual bool acceptExtraFilter() const = 0;
+    virtual bool acceptExtraFilter() const noexcept = 0;
     UP andWith(UP filter, uint32_t estimate) override;
     void doUnpack(uint32_t docid) override;
     static SearchIterator::UP optimizeMultiSearch(SearchIterator::UP parent);

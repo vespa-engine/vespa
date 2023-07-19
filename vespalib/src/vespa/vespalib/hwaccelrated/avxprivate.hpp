@@ -8,12 +8,12 @@ namespace vespalib::hwaccelrated::avx {
 
 namespace {
 
-inline bool validAlignment(const void * p, const size_t align) {
+inline bool validAlignment(const void * p, const size_t align) noexcept {
     return (reinterpret_cast<uint64_t>(p) & (align-1)) == 0;
 }
 
 template <typename T, typename V>
-T sumT(const V & v) {
+T sumT(const V & v) noexcept {
     T sum(0);
     for (size_t i(0); i < (sizeof(V)/sizeof(T)); i++) {
         sum += v[i];
@@ -22,7 +22,7 @@ T sumT(const V & v) {
 }
 
 template <typename T, size_t C>
-T sumR(const T * v) {
+T sumR(const T * v) noexcept {
     if (C == 1) {
         return v[0];
     } else if (C == 2) {
@@ -33,10 +33,10 @@ T sumR(const T * v) {
 }
 
 template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB, size_t VectorsPerChunk>
-static T computeDotProduct(const T * af, const T * bf, size_t sz) __attribute__((noinline));
+static T computeDotProduct(const T * af, const T * bf, size_t sz) noexcept __attribute__((noinline));
 
 template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB, size_t VectorsPerChunk>
-T computeDotProduct(const T * af, const T * bf, size_t sz)
+T computeDotProduct(const T * af, const T * bf, size_t sz) noexcept
 {
     constexpr const size_t ChunkSize = VLEN*VectorsPerChunk/sizeof(T);
     typedef T V __attribute__ ((vector_size (VLEN)));
@@ -65,10 +65,10 @@ T computeDotProduct(const T * af, const T * bf, size_t sz)
 }
 
 template <typename T, size_t VLEN, size_t VectorsPerChunk=4>
-VESPA_DLL_LOCAL T dotProductSelectAlignment(const T * af, const T * bf, size_t sz);
+VESPA_DLL_LOCAL T dotProductSelectAlignment(const T * af, const T * bf, size_t sz) noexcept;
 
 template <typename T, size_t VLEN, size_t VectorsPerChunk>
-T dotProductSelectAlignment(const T * af, const T * bf, size_t sz)
+T dotProductSelectAlignment(const T * af, const T * bf, size_t sz) noexcept
 {
     if (validAlignment(af, VLEN)) {
         if (validAlignment(bf, VLEN)) {
@@ -87,7 +87,7 @@ T dotProductSelectAlignment(const T * af, const T * bf, size_t sz)
 
 template <typename T, unsigned VLEN, unsigned AlignA, unsigned AlignB>
 double
-euclideanDistanceT(const T * af, const T * bf, size_t sz)
+euclideanDistanceT(const T * af, const T * bf, size_t sz) noexcept
 {
     constexpr unsigned VectorsPerChunk = 4;
     constexpr unsigned ChunkSize = VLEN*VectorsPerChunk/sizeof(T);
@@ -115,7 +115,7 @@ euclideanDistanceT(const T * af, const T * bf, size_t sz)
 }
 
 template <typename T, unsigned VLEN>
-double euclideanDistanceSelectAlignment(const T * af, const T * bf, size_t sz)
+double euclideanDistanceSelectAlignment(const T * af, const T * bf, size_t sz) noexcept
 {
     constexpr unsigned ALIGN = 32;
     if (validAlignment(af, ALIGN)) {
