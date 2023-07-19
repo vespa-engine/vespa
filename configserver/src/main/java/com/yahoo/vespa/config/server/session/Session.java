@@ -121,7 +121,7 @@ public abstract class Session implements Comparable<Session>  {
     }
 
     void setApplicationPackageReference(FileReference applicationPackageReference) {
-        sessionZooKeeperClient.writeApplicationPackageReference(Optional.ofNullable(applicationPackageReference));
+        sessionZooKeeperClient.writeApplicationPackageReference(applicationPackageReference);
     }
 
     public void setVespaVersion(Version version) {

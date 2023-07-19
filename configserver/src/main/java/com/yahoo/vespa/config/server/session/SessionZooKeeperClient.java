@@ -175,9 +175,8 @@ public class SessionZooKeeperClient {
                       .orElseThrow(() -> new NotFoundException("Could not find application id for session " + sessionId));
     }
 
-    void writeApplicationPackageReference(Optional<FileReference> applicationPackageReference) {
-        applicationPackageReference.ifPresent(
-                reference -> curator.set(applicationPackageReferencePath(), Utf8.toBytes(reference.value())));
+    void writeApplicationPackageReference(FileReference applicationPackageReference) {
+        curator.set(applicationPackageReferencePath(), Utf8.toBytes(applicationPackageReference.value()));
     }
 
     FileReference readApplicationPackageReference() {
