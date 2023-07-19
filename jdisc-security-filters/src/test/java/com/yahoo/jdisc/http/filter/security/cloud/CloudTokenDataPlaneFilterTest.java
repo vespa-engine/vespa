@@ -73,7 +73,6 @@ class CloudTokenDataPlaneFilterTest {
 
     @Test
     void fails_on_handler_with_custom_request_spec_with_invalid_action() {
-        // Spec that maps POST as action 'read'
         var spec = RequestHandlerSpec.builder()
                 .withAclMapping(HttpMethodAclMapping.standard()
                                         .override(Method.GET, Action.custom("custom")).build())

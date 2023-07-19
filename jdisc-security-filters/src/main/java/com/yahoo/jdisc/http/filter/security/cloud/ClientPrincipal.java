@@ -20,12 +20,11 @@ record ClientPrincipal(Set<String> ids, Set<Permission> permissions) implements 
         return "ids=%s,permissions=%s".formatted(ids, permissions.stream().map(Permission::asString).toList());
     }
 
-    static ClientPrincipal createForRequest(DiscFilterRequest req, Set<String> ids, Set<Permission> permissions) {
+    static void attachToRequest(DiscFilterRequest req, Set<String> ids, Set<Permission> permissions) {
         var p = new ClientPrincipal(ids, permissions);
         req.setUserPrincipal(p);
         log.fine(() -> "Client with ids=%s, permissions=%s"
                 .formatted(ids, permissions.stream().map(Permission::asString).toList()));
-        return p;
     }
 }
 

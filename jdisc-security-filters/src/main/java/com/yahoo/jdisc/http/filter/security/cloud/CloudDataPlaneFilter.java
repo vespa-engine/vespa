@@ -85,7 +85,7 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
         }
         if (legacyMode) {
             log.fine("Legacy mode validation complete");
-            ClientPrincipal.createForRequest(req, Set.of(), Set.of(READ, WRITE));
+            ClientPrincipal.attachToRequest(req, Set.of(), Set.of(READ, WRITE));
             return Optional.empty();
         }
         var permission = Permission.getRequiredPermission(req).orElse(null);
@@ -100,7 +100,7 @@ public class CloudDataPlaneFilter extends JsonSecurityRequestFilterBase {
             permissions.addAll(c.permissions());
         }
         if (clientIds.isEmpty()) return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Forbidden"));
-        ClientPrincipal.createForRequest(req, clientIds, permissions);
+        ClientPrincipal.attachToRequest(req, clientIds, permissions);
         return Optional.empty();
     }
 

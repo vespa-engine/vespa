@@ -89,7 +89,7 @@ public class CloudTokenDataPlaneFilter extends JsonSecurityRequestFilterBase {
         if (permission == null) return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Forbidden"));
         var requestTokenHash = requestTokenHash(bearerToken);
         var clientIds = new TreeSet<String>();
-        var permissions = new TreeSet<Permission>();
+        var permissions = EnumSet.noneOf(Permission.class);
         var matchedTokens = new HashSet<TokenVersion>();
         for (Client c : allowedClients) {
             if (!c.permissions().contains(permission)) continue;
@@ -107,13 +107,11 @@ public class CloudTokenDataPlaneFilter extends JsonSecurityRequestFilterBase {
                                 .formatted(matchedTokens.stream().map(TokenVersion::id).toList()));
             return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Forbidden"));
         }
-        var matchedToken = matchedTokens.stream().findAny().orElse(null);
-        if (matchedToken != null) {
-            addAccessLogEntry(req, "token.id", matchedToken.id());
-            addAccessLogEntry(req, "token.hash", matchedToken.fingerprint().toDelimitedHexString());
-            addAccessLogEntry(req, "token.exp", matchedToken.expiration().map(Instant::toString).orElse("<none>"));
-        }
-        ClientPrincipal.createForRequest(req, clientIds, permissions);
+        var matchedToken = matchedTokens.stream().findAny().get();
+        addAccessLogEntry(req, "token.id", matchedToken.id());
+        addAccessLogEntry(req, "token.hash", matchedToken.fingerprint().toDelimitedHexString());
+        addAccessLogEntry(req, "token.exp", matchedToken.expiration().map(Instant::toString).orElse("<none>"));
+        ClientPrincipal.attachToRequest(req, clientIds, permissions);
         return Optional.empty();
     }
 
