@@ -276,7 +276,7 @@ public class MetricsReporter extends ControllerMaintainer {
     }
 
     private Map<NodeVersion, Duration> osChangeDurations() {
-        return changeDurations(controller().osVersionStatus().versions().values(), Function.identity());
+        return changeDurations(controller().os().status().versions().values(), Function.identity());
     }
 
     private <V> Map<NodeVersion, Duration> changeDurations(Collection<V> versions, Function<V, List<NodeVersion>> versionsGetter) {

@@ -71,9 +71,9 @@ public class OsUpgraderTest {
 
         // New OS version released
         Version version1 = Version.fromString("7.1");
-        tester.controller().upgradeOsIn(cloud1, Version.fromString("7.0"), false, false);
-        tester.controller().upgradeOsIn(cloud1, version1, false, false);
-        assertEquals(1, tester.controller().osVersionTargets().size()); // Only allows one version per cloud
+        tester.controller().os().upgradeTo(Version.fromString("7.0"), cloud1, false, false);
+        tester.controller().os().upgradeTo(version1, cloud1, false, false);
+        assertEquals(1, tester.controller().os().targets().size()); // Only allows one version per cloud
         statusUpdater.maintain();
 
         // zone 0: controllers upgrade first
@@ -127,9 +127,9 @@ public class OsUpgraderTest {
         osUpgrader.maintain();
         assertWanted(version1, SystemApplication.tenantHost, zone1, zone2, zone3, zone4);
         statusUpdater.maintain();
-        assertTrue(tester.controller().osVersionStatus().nodesIn(cloud1).stream()
-                        .filter(node -> !node.hostname().equals(nodeDeferringOsUpgrade.hostname()))
-                        .allMatch(node -> node.currentVersion().equals(version1)),
+        assertTrue(tester.controller().os().status().nodesIn(cloud1).stream()
+                         .filter(node -> !node.hostname().equals(nodeDeferringOsUpgrade.hostname()))
+                         .allMatch(node -> node.currentVersion().equals(version1)),
                 "All non-deferring nodes are on target version");
     }
 
@@ -150,8 +150,8 @@ public class OsUpgraderTest {
 
         // New OS version released
         Version version = Version.fromString("7.1");
-        tester.controller().upgradeOsIn(cloud, Version.fromString("7.0"), false, false);
-        tester.controller().upgradeOsIn(cloud, version, false, false); // Replaces existing target
+        tester.controller().os().upgradeTo(Version.fromString("7.0"), cloud, false, false);
+        tester.controller().os().upgradeTo(version, cloud, false, false); // Replaces existing target
         statusUpdater.maintain();
 
         // zone 1 upgrades
@@ -172,8 +172,8 @@ public class OsUpgraderTest {
         // No more upgrades
         osUpgrader.maintain();
         assertWanted(version, SystemApplication.tenantHost, zone1, zone2);
-        assertTrue(tester.controller().osVersionStatus().nodesIn(cloud).stream()
-                .noneMatch(node -> node.currentVersion().isBefore(version)), "All nodes on target version or newer");
+        assertTrue(tester.controller().os().status().nodesIn(cloud).stream()
+                         .noneMatch(node -> node.currentVersion().isBefore(version)), "All nodes on target version or newer");
     }
 
     @Test
@@ -194,7 +194,7 @@ public class OsUpgraderTest {
         // New OS version released
         Version version0 = Version.fromString("1.0");
         Version version1 = Version.fromString("2.0");
-        tester.controller().upgradeOsIn(cloud, version1, false, false);
+        tester.controller().os().upgradeTo(version1, cloud, false, false);
         statusUpdater.maintain();
 
         // All zones upgrade
@@ -203,11 +203,11 @@ public class OsUpgraderTest {
             completeUpgrade(version1, SystemApplication.tenantHost, zone);
             statusUpdater.maintain();
         }
-        assertTrue(tester.controller().osVersionStatus().nodesIn(cloud).stream()
+        assertTrue(tester.controller().os().status().nodesIn(cloud).stream()
                          .allMatch(node -> node.currentVersion().equals(version1)), "All nodes on target version");
 
         // Downgrade is triggered
-        tester.controller().upgradeOsIn(cloud, version0, true, false);
+        tester.controller().os().upgradeTo(version0, cloud, true, false);
 
         // All zones downgrade, in reverse order
         for (var zone : List.of(zone2, zone1)) {
@@ -215,12 +215,12 @@ public class OsUpgraderTest {
             completeUpgrade(version0, SystemApplication.tenantHost, zone);
             statusUpdater.maintain();
         }
-        assertTrue(tester.controller().osVersionStatus().nodesIn(cloud).stream()
+        assertTrue(tester.controller().os().status().nodesIn(cloud).stream()
                          .allMatch(node -> node.currentVersion().equals(version0)), "All nodes on target version");
     }
 
     private List<NodeVersion> nodesOn(Version version) {
-        return tester.controller().osVersionStatus().versions().entrySet().stream()
+        return tester.controller().os().status().versions().entrySet().stream()
                      .filter(entry -> entry.getKey().version().equals(version))
                      .flatMap(entry -> entry.getValue().stream())
                      .toList();

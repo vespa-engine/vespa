@@ -68,8 +68,8 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
     @Override
     protected Optional<OsVersionTarget> target() {
         // Return target if we have nodes in this cloud on the wrong version
-        return controller().osVersionTarget(cloud)
-                           .filter(target -> controller().osVersionStatus().nodesIn(cloud).stream()
+        return controller().os().target(cloud)
+                           .filter(target -> controller().os().status().nodesIn(cloud).stream()
                                                          .anyMatch(node -> !satisfiedBy(node.currentVersion(), target)));
     }
 

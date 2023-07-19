@@ -160,7 +160,7 @@ public class OsApiTest extends ControllerContainerTest {
     }
 
     private void updateVersionStatus() {
-        tester.controller().updateOsVersionStatus(OsVersionStatus.compute(tester.controller()));
+        tester.controller().os().updateStatus(OsVersionStatus.compute(tester.controller()));
     }
 
     private void completeUpgrade(ZoneId... zones) {

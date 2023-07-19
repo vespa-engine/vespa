@@ -59,7 +59,7 @@ public record OsVersionStatus(Map<OsVersion, List<NodeVersion>> versions) {
     /** Compute the current OS versions in this system. This is expensive and should be called infrequently */
     public static OsVersionStatus compute(Controller controller) {
         Map<OsVersion, List<NodeVersion>> osVersions = new HashMap<>();
-        controller.osVersionTargets().forEach(target -> osVersions.put(target.osVersion(), new ArrayList<>()));
+        controller.os().targets().forEach(target -> osVersions.put(target.osVersion(), new ArrayList<>()));
 
         for (var application : SystemApplication.all()) {
             for (var zone : zonesToUpgrade(controller)) {

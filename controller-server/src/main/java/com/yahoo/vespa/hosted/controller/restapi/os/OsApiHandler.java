@@ -141,13 +141,13 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         Inspector root = requestData.get();
         CloudName cloud = parseStringField("cloud", root, CloudName::from);
         if (requireField("version", root).type() == Type.NIX) {
-            controller.cancelOsUpgradeIn(cloud);
+            controller.os().cancelUpgrade(cloud);
             return new MessageResponse("Cleared target OS version for cloud '" + cloud.value() + "'");
         }
         Version target = parseStringField("version", root, Version::fromString);
         boolean force = root.field("force").asBool();
         boolean pin = root.field("pin").asBool();
-        controller.upgradeOsIn(cloud, target, force, pin);
+        controller.os().upgradeTo(target, cloud, force, pin);
         return new MessageResponse("Set target OS version for cloud '" + cloud.value() + "' to " +
                                    target.toFullString() + (pin ? " (pinned)" : ""));
     }
@@ -155,11 +155,11 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
     private Slime osVersions() {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        Set<OsVersionTarget> targets = controller.osVersionTargets();
+        Set<OsVersionTarget> targets = controller.os().targets();
 
         Cursor versions = root.setArray("versions");
         Instant now = controller.clock().instant();
-        controller.osVersionStatus().versions().forEach((osVersion, nodeVersions) -> {
+        controller.os().status().versions().forEach((osVersion, nodeVersions) -> {
             Cursor currentVersionObject = versions.addObject();
             currentVersionObject.setString("version", osVersion.version().toFullString());
             Optional<OsVersionTarget> target = targets.stream().filter(t -> t.osVersion().equals(osVersion)).findFirst();

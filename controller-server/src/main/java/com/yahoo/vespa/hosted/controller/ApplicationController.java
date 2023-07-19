@@ -126,7 +126,7 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 /**
- * A singleton owned by the Controller which contains the methods and state for controlling applications.
+ * A singleton owned by {@link Controller} which contains the methods and state for controlling applications.
  *
  * @author bratseth
  */

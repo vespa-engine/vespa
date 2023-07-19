@@ -47,7 +47,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
             if (!change.get().scheduleAt(now)) continue;
             try {
                 attempts++;
-                controller().upgradeOsIn(cloud, change.get().version(), false, false);
+                controller().os().upgradeTo(change.get().version(), cloud, false, false);
             } catch (IllegalArgumentException e) {
                 failures++;
                 LOG.log(Level.WARNING, "Failed to schedule OS upgrade: " + Exceptions.toMessageString(e) +
@@ -59,7 +59,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
     /** Returns the wanted change for cloud at given instant, if any */
     public Optional<Change> changeIn(CloudName cloud, Instant instant) {
-        Optional<OsVersionTarget> currentTarget = controller().osVersionTarget(cloud);
+        Optional<OsVersionTarget> currentTarget = controller().os().target(cloud);
         if (currentTarget.isEmpty()) return Optional.empty();
         if (upgradingToNewMajor(cloud)) return Optional.empty(); // Skip further upgrades until major version upgrade is complete
 
@@ -68,7 +68,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     private boolean upgradingToNewMajor(CloudName cloud) {
-        return controller().osVersionStatus().versionsIn(cloud).stream()
+        return controller().os().status().versionsIn(cloud).stream()
                            .filter(version -> !version.isEmpty()) // Ignore empty/unknown versions
                            .map(Version::getMajor)
                            .distinct()
