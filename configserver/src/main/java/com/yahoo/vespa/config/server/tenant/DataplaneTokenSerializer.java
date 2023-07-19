@@ -54,6 +54,11 @@ public class DataplaneTokenSerializer {
     public static Slime toSlime(List<DataplaneToken> dataplaneTokens) {
         Slime slime = new Slime();
         Cursor root = slime.setArray();
+        toSlime(dataplaneTokens, root);
+        return slime;
+    }
+
+    public static void toSlime(List<DataplaneToken> dataplaneTokens, Cursor root) {
         for (DataplaneToken token : dataplaneTokens) {
             Cursor cursor = root.addObject();
             cursor.setString(ID_FIELD, token.tokenId());
@@ -65,6 +70,6 @@ public class DataplaneTokenSerializer {
                 val.setString(EXPIRATION_FIELD, v.expiration().map(Instant::toString).orElse("<none>"));
             });
         }
-        return slime;
     }
+
 }
