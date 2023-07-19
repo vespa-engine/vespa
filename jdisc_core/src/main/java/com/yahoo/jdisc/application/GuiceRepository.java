@@ -62,13 +62,13 @@ public class GuiceRepository implements Iterable<Module> {
         return module;
     }
 
-    public void installAll(Iterable<? extends Module> modules) {
+    public final void installAll(Iterable<? extends Module> modules) {
         for (Module module : modules) {
             install(module);
         }
     }
 
-    public void install(Module module) {
+    public final void install(Module module) {
         modules.put(module, Elements.getElements(module));
         injector = null;
     }

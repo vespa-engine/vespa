@@ -6,6 +6,8 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.BufferedReader;
@@ -15,6 +17,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.testrunner.TestRunner.Status.ERROR;
@@ -44,17 +48,19 @@ public class VespaCliTestRunner implements TestRunner {
     private final Path artifactsPath;
     private final Path testsPath;
     private final AtomicReference<Status> status = new AtomicReference<>(Status.NOT_STARTED);
+    private final Path vespaHome;
 
     private Path vespaCliRoot = null;
 
     @Inject
     public VespaCliTestRunner(VespaCliTestRunnerConfig config) {
-        this(config.artifactsPath(), config.testsPath());
+        this(config.artifactsPath(), config.testsPath(), Path.of(Defaults.getDefaults().vespaHome()));
     }
 
-    VespaCliTestRunner(Path artifactsPath, Path testsPath) {
+    VespaCliTestRunner(Path artifactsPath, Path testsPath, Path vespaHome) {
         this.artifactsPath = artifactsPath;
         this.testsPath = testsPath;
+        this.vespaHome = vespaHome;
     }
 
     @Override
@@ -126,14 +132,35 @@ public class VespaCliTestRunner implements TestRunner {
         builder.environment().put("VESPA_CLI_HOME", ensureDirectoryForVespaCli("cli-home").toString());
         builder.environment().put("VESPA_CLI_CACHE_DIR", ensureDirectoryForVespaCli("cli-cache").toString());
         builder.environment().put("VESPA_CLI_ENDPOINTS", toEndpointsConfig(config));
-        Path certRoot = certificateRoot(config);
-        builder.environment().put("VESPA_CLI_DATA_PLANE_KEY_FILE", certRoot.resolve("key").toAbsolutePath().toString());
-        builder.environment().put("VESPA_CLI_DATA_PLANE_CERT_FILE", certRoot.resolve("cert").toAbsolutePath().toString());
+        Credentials credentials = getCredentials(config);
+        builder.environment().put("VESPA_CLI_DATA_PLANE_KEY_FILE", credentials.privateKeyFile().toString());
+        builder.environment().put("VESPA_CLI_DATA_PLANE_CERT_FILE", credentials.certificateFile().toString());
         return builder;
     }
 
-    private Path certificateRoot(TestConfig config) {
-        return config.system().isPublic() ? artifactsPath : Path.of(Defaults.getDefaults().underVespaHome("var/vespa/sia"));
+    private record Credentials(Path privateKeyFile, Path certificateFile) {}
+
+    private Credentials getCredentials(TestConfig config) {
+        final Path privateKeyFile;
+        final Path certificateFile;
+        if (config.system().isPublic()) {
+            privateKeyFile = artifactsPath.resolve("key");
+            certificateFile = artifactsPath.resolve("cert");
+        } else {
+            Path siaRoot = vespaHome.resolve("var/vespa/sia");
+            List<AthenzIdentity> services = SiaUtils.findSiaServices(siaRoot);
+            if (services.isEmpty()) {
+                throw new IllegalArgumentException("No service credentials in " + siaRoot + ". Application has no " +
+                                                   "Athenz service, and may not access read / write protected resources");
+            }
+            if (services.size() > 1) {
+                throw new IllegalStateException("More than one set of service credentials in " + siaRoot + ":\n"
+                                                + services.stream().map(AthenzIdentity::getFullName).collect(Collectors.joining("\n")));
+            }
+            privateKeyFile = SiaUtils.getPrivateKeyFile(siaRoot, services.get(0));
+            certificateFile = SiaUtils.getCertificateFile(siaRoot, services.get(0));
+        }
+        return new Credentials(privateKeyFile.toAbsolutePath(), certificateFile.toAbsolutePath());
     }
 
     private static String toSuiteDirectoryName(Suite suite) {

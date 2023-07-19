@@ -66,6 +66,7 @@ using search::query::StackDumpCreator;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
+using search::query::Term;
 using search::queryeval::AndBlueprint;
 using search::queryeval::AndSearchStrict;
 using search::queryeval::Blueprint;
@@ -687,15 +688,19 @@ public:
     ~CreateBlueprintVisitor() override;
 
     template <class TermNode>
-    void visitTerm(TermNode &n, bool simple = false) {
-        if (simple && (_dwa != nullptr) && !_field.isFilter() && n.isRanked()) {
+    void visitSimpleTerm(TermNode &n) {
+        if ((_dwa != nullptr) && !_field.isFilter() && n.isRanked() && !Term::isPossibleRangeTerm(n.getTerm())) {
             NodeAsKey key(n, _scratchPad);
             setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr, *_dwa, key));
         } else {
-            SearchContextParams scParams = createContextParams(_field.isFilter());
-            const string stack = StackDumpCreator::create(n);
-            setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, stack, scParams));
+            visitTerm(n);
         }
+    }
+    template <class TermNode>
+    void visitTerm(TermNode &n) {
+        SearchContextParams scParams = createContextParams(_field.isFilter());
+        const string stack = StackDumpCreator::create(n);
+        setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, stack, scParams));
     }
 
     void visitLocation(LocationTerm &node) {
@@ -712,7 +717,7 @@ public:
         }
     }
 
-    void visit(NumberTerm & n) override { visitTerm(n, true); }
+    void visit(NumberTerm & n) override { visitSimpleTerm(n); }
     void visit(LocationTerm &n) override { visitLocation(n); }
     void visit(PrefixTerm & n) override { visitTerm(n); }
 
@@ -736,7 +741,7 @@ public:
         }
     }
 
-    void visit(StringTerm & n) override { visitTerm(n, true); }
+    void visit(StringTerm & n) override { visitSimpleTerm(n); }
     void visit(SubstringTerm & n) override {
         query::SimpleRegExpTerm re(vespalib::RegexpUtil::make_from_substring(n.getTerm()),
                                    n.getView(), n.getId(), n.getWeight());

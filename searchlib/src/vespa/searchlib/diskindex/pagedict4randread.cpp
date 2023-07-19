@@ -84,7 +84,7 @@ PageDict4RandRead::readSPHeader()
 
     d.setReadContext(&rc);
     rc.setFile(_spfile.get());
-    rc.setFileSize(_spfile->GetSize());
+    rc.setFileSize(_spfile->getSize());
     rc.allocComprBuf(512, 32768u);
     d.emptyBuffer(0);
     rc.readComprBuffer();
@@ -117,7 +117,7 @@ PageDict4RandRead::readPHeader()
 
     d.setReadContext(&rc);
     rc.setFile(_pfile.get());
-    rc.setFileSize(_pfile->GetSize());
+    rc.setFileSize(_pfile->getSize());
     rc.allocComprBuf(512, 32768u);
     d.emptyBuffer(0);
     rc.readComprBuffer();
@@ -228,7 +228,7 @@ PageDict4RandRead::open(const vespalib::string &name,
         return false;
     }
 
-    uint64_t fileSize = _ssfile->GetSize();
+    uint64_t fileSize = _ssfile->getSize();
     _ssReadContext.setFile(_ssfile.get());
     _ssReadContext.setFileSize(fileSize);
     _ssReadContext.allocComprBuf((fileSize + sizeof(uint64_t) - 1) / sizeof(uint64_t), 32768u);

@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/resource_limits.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/alloc.h>
+#include <unistd.h>
 #include <filesystem>
 #include <thread>
 

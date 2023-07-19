@@ -318,7 +318,7 @@ FileChecksum::FileChecksum(const vespalib::string &file_name)
         LOG(error, "Could not open %s for sha256 checksum", full_file_name.c_str());
         LOG_ABORT("should not be reached");
     }
-    int64_t flen = f.GetSize();
+    int64_t flen = f.getSize();
     int64_t remainder = flen;
     EvpMdCtxPtr md_ctx(EVP_MD_CTX_new());
     const EVP_MD* md = EVP_get_digestbyname("SHA256");

@@ -30,7 +30,7 @@ public:
     bool DirectIOPadding(int64_t offset, size_t length, size_t &padBefore, size_t &padAfter) override;
     void EnableDirectIO() override;
     bool SetPosition(int64_t desiredPosition) override;
-    int64_t GetPosition() override;
+    int64_t getPosition() const override;
     bool SetSize(int64_t newSize) override;
     void ReadBuf(void *buffer, size_t length, int64_t readOffset) override;
     void *AllocateDirectIOBuffer(size_t byteSize, void *&realPtr) override;

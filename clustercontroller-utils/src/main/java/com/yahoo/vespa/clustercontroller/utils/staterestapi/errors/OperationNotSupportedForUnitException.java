@@ -11,9 +11,7 @@ public class OperationNotSupportedForUnitException extends StateRestApiException
     }
 
     public OperationNotSupportedForUnitException(List<String> path, String description) {
-        super(createMessage(path, description));
-        setHtmlCode(405);
-        setHtmlStatus("Operation not supported for resource");
+        super(createMessage(path, description), 405, "Operation not supported for resource");
     }
 
 }

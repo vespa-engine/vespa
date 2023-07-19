@@ -537,7 +537,7 @@ FileHeader::rewriteFile(FastOS_FileInterface &file)
     LOG_ASSERT(file.IsWriteMode());
 
     // Store current position in file.
-    int64_t pos = file.GetPosition();
+    int64_t pos = file.getPosition();
     if (pos != 0) {
         file.SetPosition(0);
     }
@@ -566,7 +566,7 @@ FileHeader::rewriteFile(FastOS_FileInterface &file)
     // Write new header and reset file position.
     file.SetPosition(0);
     size_t ret = writeFile(file);
-    if (file.GetPosition() != pos) {
+    if (file.getPosition() != pos) {
         file.SetPosition(pos);
     }
     return ret;

@@ -16,9 +16,7 @@ public class MissingUnitException extends StateRestApiException {
     }
 
     public MissingUnitException(List<String> path, int level) {
-        super(createMessage(path, level));
-        setHtmlCode(404);
-        setHtmlStatus(getMessage());
+        super(createMessage(path, level), 404, null);
     }
 
 }

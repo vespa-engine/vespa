@@ -436,6 +436,20 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
+            "write-config-server-session-data-as-blob", false,
+            List.of("hmuusm"), "2023-07-19", "2023-09-01",
+            "Whether to write config server session data in one blob or as individual paths",
+            "Takes effect immediately",
+            ZONE_ID);
+
+    public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
+            "read-config-server-session-data-as-blob", false,
+            List.of("hmuusm"), "2023-07-19", "2023-09-01",
+            "Whether to read config server session data from sesion data blob or from individual paths",
+            "Takes effect immediately",
+            ZONE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

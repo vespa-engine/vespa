@@ -24,7 +24,7 @@ WordNumMapping::readMappingFile(const vespalib::string &name,
     }
     // XXX no checking for success
     old2newwordfile.ReadOpen(name.c_str());
-    int64_t tempfilesize = old2newwordfile.GetSize();
+    int64_t tempfilesize = old2newwordfile.getSize();
     uint64_t tempfileentries = static_cast<uint64_t>(tempfilesize /
             sizeof(uint64_t));
     Array &map = _old2newwords;

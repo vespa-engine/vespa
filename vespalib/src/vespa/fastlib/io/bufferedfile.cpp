@@ -78,9 +78,9 @@ Fast_BufferedFile::Eof() const
 }
 
 int64_t
-Fast_BufferedFile::GetSize()
+Fast_BufferedFile::getSize() const
 {
-    return _file->GetSize();
+    return _file->getSize();
 }
 
 bool
@@ -122,10 +122,10 @@ Fast_BufferedFile::EnableSyncWrites()
 }
 
 int64_t
-Fast_BufferedFile::GetPosition()
+Fast_BufferedFile::getPosition() const
 {
     if (_file->IsWriteMode()) {
-        int64_t filePosition = _file->GetPosition();
+        int64_t filePosition = _file->getPosition();
         return (filePosition == -1) ? -1 : filePosition + (_bufi - buf());
     } else {
         return _filepos - (_bufe - _bufi);
@@ -293,7 +293,7 @@ Fast_BufferedFile::ReadOpenExisting(const char *name)
     }
     _openFlags = FASTOS_FILE_OPEN_READ;
     //CASTWARN
-    _fileleft = static_cast<uint64_t>(GetSize());
+    _fileleft = static_cast<uint64_t>(getSize());
     _filepos = 0;
     ResetBuf();
 }
@@ -310,7 +310,7 @@ Fast_BufferedFile::ReadOpen(const char *name)
     }
     if (_file->IsOpened()) {
         //CASTWARN
-        _fileleft = static_cast<uint64_t>(GetSize());
+        _fileleft = static_cast<uint64_t>(getSize());
         _openFlags = FASTOS_FILE_OPEN_READ;
     } else
         _fileleft = 0;
@@ -413,7 +413,7 @@ bool Fast_BufferedFile::Open(unsigned int openFlags, const char * name)
         if (ok) {
             _openFlags = openFlags;
             //CASTWARN
-            _fileleft = static_cast<uint64_t>(GetSize());
+            _fileleft = static_cast<uint64_t>(getSize());
         } else {
             // caller will have to check return value
         }
