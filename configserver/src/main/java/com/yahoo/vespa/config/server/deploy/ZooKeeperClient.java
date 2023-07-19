@@ -105,7 +105,7 @@ public class ZooKeeperClient {
     }
 
     /**
-     * Puts some of the application package files into ZK - see write(app).
+     * Writes some application package files into ZK - see write(app).
      *
      * @param app the application package to use as input.
      * @throws java.io.IOException if not able to write to Zookeeper

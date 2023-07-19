@@ -45,6 +45,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 
+import static com.yahoo.vespa.config.server.session.SessionData.APPLICATION_ID_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.APPLICATION_PACKAGE_REFERENCE_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.ATHENZ_DOMAIN;
+import static com.yahoo.vespa.config.server.session.SessionData.CLOUD_ACCOUNT_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.CREATE_TIME_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.DATAPLANE_TOKENS_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.DOCKER_IMAGE_REPOSITORY_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.OPERATOR_CERTIFICATES_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.QUOTA_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.SESSION_DATA_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.TENANT_SECRET_STORES_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.VERSION_PATH;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USER_DEFCONFIGS_ZK_SUBPATH;
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -60,18 +72,6 @@ public class SessionZooKeeperClient {
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(SessionZooKeeperClient.class.getName());
 
     // NOTE: Any state added here MUST also be propagated in com.yahoo.vespa.config.server.deploy.Deployment.prepare()
-
-    static final String APPLICATION_ID_PATH = "applicationId";
-    static final String APPLICATION_PACKAGE_REFERENCE_PATH = "applicationPackageReference";
-    private static final String VERSION_PATH = "version";
-    private static final String CREATE_TIME_PATH = "createTime";
-    private static final String DOCKER_IMAGE_REPOSITORY_PATH = "dockerImageRepository";
-    private static final String ATHENZ_DOMAIN = "athenzDomain";
-    private static final String QUOTA_PATH = "quota";
-    private static final String TENANT_SECRET_STORES_PATH = "tenantSecretStores";
-    private static final String OPERATOR_CERTIFICATES_PATH = "operatorCertificates";
-    private static final String CLOUD_ACCOUNT_PATH = "cloudAccount";
-    private static final String DATAPLANE_TOKENS_PATH = "dataplaneTokens";
 
     private final Curator curator;
     private final TenantName tenantName;
@@ -223,6 +223,10 @@ public class SessionZooKeeperClient {
 
     public void writeVespaVersion(Version version) {
        curator.set(versionPath(), Utf8.toBytes(version.toString()));
+    }
+
+    public void writeSessionData(SessionData sessionData) {
+        curator.set(sessionPath.append(SESSION_DATA_PATH), sessionData.toJson());
     }
 
     public Version readVespaVersion() {

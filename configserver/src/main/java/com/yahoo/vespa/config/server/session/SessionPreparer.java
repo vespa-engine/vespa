@@ -49,7 +49,9 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.model.application.validation.BundleValidator;
 import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -90,6 +92,7 @@ public class SessionPreparer {
     private final SecretStore secretStore;
     private final FlagSource flagSource;
     private final ExecutorService executor;
+    private final BooleanFlag writeSessionData;
 
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
                            FileDistributionFactory fileDistributionFactory,
@@ -111,6 +114,7 @@ public class SessionPreparer {
         this.secretStore = secretStore;
         this.flagSource = flagSource;
         this.executor = executor;
+        this.writeSessionData = Flags.WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
     }
 
     ExecutorService getExecutor() { return executor; }
@@ -403,6 +407,17 @@ public class SessionPreparer {
             zooKeeperClient.writeOperatorCertificates(operatorCertificates);
             zooKeeperClient.writeCloudAccount(cloudAccount);
             zooKeeperClient.writeDataplaneTokens(dataplaneTokens);
+            if (writeSessionData.value())
+                zooKeeperClient.writeSessionData(new SessionData(applicationId,
+                                                                 fileReference,
+                                                                 vespaVersion,
+                                                                 dockerImageRepository,
+                                                                 athenzDomain,
+                                                                 quota,
+                                                                 tenantSecretStores,
+                                                                 operatorCertificates,
+                                                                 cloudAccount,
+                                                                 dataplaneTokens));
         } catch (RuntimeException | IOException e) {
             zkDeployer.cleanup();
             throw new RuntimeException("Error preparing session", e);

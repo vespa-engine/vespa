@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
@@ -16,10 +17,13 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.vespa.config.server.session.SessionData.APPLICATION_ID_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.SESSION_DATA_PATH;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.SESSIONSTATE_ZK_SUBPATH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -87,7 +91,7 @@ public class SessionZooKeeperClientTest {
         int sessionId = 3;
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
         zkc.writeApplicationId(id);
-        Path path = sessionPath(sessionId).append(SessionZooKeeperClient.APPLICATION_ID_PATH);
+        Path path = sessionPath(sessionId).append(APPLICATION_ID_PATH);
         assertTrue(curator.exists(path));
         assertEquals(id.serializedForm(), Utf8.toString(curator.getData(path).get()));
     }
@@ -157,9 +161,30 @@ public class SessionZooKeeperClientTest {
         assertEquals(secretStores, zkc.readTenantSecretStores());
     }
 
+    @Test
+    public void require_that_session_data_is_written_to_zk() {
+        int sessionId = 2;
+        SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
+        zkc.writeSessionData(new SessionData(ApplicationId.defaultId(),
+                                             new FileReference("foo"),
+                                             Version.fromString("8.195.1"),
+                                             Optional.empty(),
+                                             Optional.empty(),
+                                             Optional.empty(),
+                                             List.of(),
+                                             List.of(),
+                                             Optional.empty(),
+                                             List.of()));
+        Path path = sessionPath(sessionId).append(SESSION_DATA_PATH);
+        assertTrue(curator.exists(path));
+        String data = Utf8.toString(curator.getData(path).get());
+        assertTrue(data.contains("{\"applicationId\":\"default:default:default\",\"applicationPackageReference\":\"foo\",\"version\":\"8.195.1\",\"createTime\":"));
+        assertTrue(data.contains(",\"tenantSecretStores\":[],\"operatorCertificates\":[],\"dataplaneTokens\":[]}"));
+    }
+
     private void assertApplicationIdParse(long sessionId, String idString, String expectedIdString) {
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
-        Path path = sessionPath(sessionId).append(SessionZooKeeperClient.APPLICATION_ID_PATH);
+        Path path = sessionPath(sessionId).append(APPLICATION_ID_PATH);
         curator.set(path, Utf8.toBytes(idString));
         assertEquals(expectedIdString, zkc.readApplicationId().serializedForm());
     }
