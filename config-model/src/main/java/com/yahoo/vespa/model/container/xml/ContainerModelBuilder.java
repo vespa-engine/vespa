@@ -647,6 +647,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addSimpleComponent(DataplaneProxyService.class);
         var dataplaneProxy = new DataplaneProxy(
                 getMtlsDataplanePort(state),
+                tokenPort,
                 endpointCert.certificate(),
                 endpointCert.key());
         cluster.addComponent(dataplaneProxy);
