@@ -156,7 +156,7 @@ template <typename B, typename M>
 const IDocumentWeightAttribute *
 MultiValueNumericPostingAttribute<B, M>::asDocumentWeightAttribute() const
 {
-    if (this->hasWeightedSetType() && (this->getBasicType() == AttributeVector::BasicType::INT64)) {
+    if (this->hasWeightedSetType() && (this->getBasicType() == AttributeVector::BasicType::INT64) && !this->getIsFilter()) {
         return &_document_weight_attribute_adapter;
     }
     return nullptr;

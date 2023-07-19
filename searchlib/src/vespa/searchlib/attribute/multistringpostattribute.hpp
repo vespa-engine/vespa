@@ -176,7 +176,8 @@ template <typename B, typename T>
 const IDocumentWeightAttribute *
 MultiValueStringPostingAttributeT<B, T>::asDocumentWeightAttribute() const
 {
-    if (this->hasWeightedSetType() && (this->getBasicType() == AttributeVector::BasicType::STRING)) {
+    // TODO: Add support for handling bit vectors too, and lift restriction on isFilter.
+    if (this->hasWeightedSetType() && this->isStringType() && ! this->getIsFilter()) {
         return &_document_weight_attribute_adapter;
     }
     return nullptr;
