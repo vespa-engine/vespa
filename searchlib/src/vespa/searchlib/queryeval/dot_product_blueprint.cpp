@@ -16,12 +16,6 @@ DotProductBlueprint::DotProductBlueprint(const FieldSpec &field)
 
 DotProductBlueprint::~DotProductBlueprint() = default;
 
-FieldSpec
-DotProductBlueprint::getNextChildField(const FieldSpec &outer)
-{
-    return FieldSpec(outer.getName(), outer.getFieldId(), _layout.allocTermField(outer.getFieldId()), false);
-}
-
 void
 DotProductBlueprint::reserve(size_t num_children) {
     _weights.reserve(num_children);

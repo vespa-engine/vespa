@@ -3,7 +3,6 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 
-#include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/field_spec.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
@@ -282,7 +281,7 @@ TEST("verify search iterator conformance with document weight iterator children"
 struct VerifyMatchData {
     struct MyBlueprint : search::queryeval::SimpleLeafBlueprint {
         VerifyMatchData &vmd;
-        MyBlueprint(VerifyMatchData &vmd_in, const FieldSpec & spec_in)
+        MyBlueprint(VerifyMatchData &vmd_in, FieldSpecBase spec_in)
             : SimpleLeafBlueprint(spec_in), vmd(vmd_in) {}
         [[nodiscard]] SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const override {
             EXPECT_EQUAL(tfmda.size(), 1u);
@@ -301,7 +300,7 @@ struct VerifyMatchData {
     };
     size_t child_cnt = 0;
     TermFieldMatchData *child_tfmd = nullptr;
-    search::queryeval::Blueprint::UP create(const FieldSpec &spec) {
+    search::queryeval::Blueprint::UP create(FieldSpecBase spec) {
         return std::make_unique<MyBlueprint>(*this, spec);
     }
 };

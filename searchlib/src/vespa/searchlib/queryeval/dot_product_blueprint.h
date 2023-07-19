@@ -22,7 +22,9 @@ public:
     ~DotProductBlueprint() override;
 
     // used by create visitor
-    FieldSpec getNextChildField(const FieldSpec &outer);
+    FieldSpecBase getNextChildField(FieldSpecBase parent) {
+        return {parent.getFieldId(), _layout.allocTermField(parent.getFieldId()), false};
+    }
 
     // used by create visitor
     void reserve(size_t num_children);

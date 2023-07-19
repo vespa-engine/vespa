@@ -21,7 +21,6 @@ class ParallelWeakAndBlueprint : public ComplexLeafBlueprint
 private:
     using score_t = wand::score_t;
 
-    const FieldSpec                    _field;
     mutable SharedWeakAndPriorityQueue _scores;
     const wand::score_t                _scoreThreshold;
     double                             _thresholdBoostFactor;
@@ -30,15 +29,14 @@ private:
     std::vector<int32_t>               _weights;
     std::vector<Blueprint::UP>         _terms;
 
-    ParallelWeakAndBlueprint(const ParallelWeakAndBlueprint &);
-    ParallelWeakAndBlueprint &operator=(const ParallelWeakAndBlueprint &);
-
 public:
-    ParallelWeakAndBlueprint(const FieldSpec &field,
+    ParallelWeakAndBlueprint(const ParallelWeakAndBlueprint &) = delete;
+    ParallelWeakAndBlueprint &operator=(const ParallelWeakAndBlueprint &) = delete;
+    ParallelWeakAndBlueprint(FieldSpecBase field,
                              uint32_t scoresToTrack,
                              score_t scoreThreshold,
                              double thresholdBoostFactor);
-    ParallelWeakAndBlueprint(const FieldSpec &field,
+    ParallelWeakAndBlueprint(FieldSpecBase field,
                              uint32_t scoresToTrack,
                              score_t scoreThreshold,
                              double thresholdBoostFactor,
@@ -52,7 +50,9 @@ public:
     double getThresholdBoostFactor() const { return _thresholdBoostFactor; }
 
     // Used by create visitor
-    FieldSpec getNextChildField(const FieldSpec &outer);
+    FieldSpecBase getNextChildField(FieldSpecBase parent) {
+        return {parent.getFieldId(), _layout.allocTermField(parent.getFieldId()), false};
+    }
 
     // Used by create visitor
     void reserve(size_t num_children);
