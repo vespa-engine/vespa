@@ -426,10 +426,8 @@ jobs:
           fi
 
   publish-cli-release:
+    requires: [publish-release]
     image: homebrew/brew:latest
-    annotations:
-      # Run once an hour, in the hours 7-15 UTC, Monday-Thursday
-      screwdriver.cd/buildPeriodically: H 7-15 * * 1-4
     secrets:
       - HOMEBREW_GITHUB_API_TOKEN
       - GH_TOKEN
