@@ -398,7 +398,7 @@ public class SessionPreparer {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             // Note: When changing the below you need to also change similar calls in SessionRepository.createSessionFromExisting()
             zooKeeperClient.writeApplicationId(applicationId);
-            zooKeeperClient.writeApplicationPackageReference(fileReference);
+            zooKeeperClient.writeApplicationPackageReference(Optional.of(fileReference));
             zooKeeperClient.writeVespaVersion(vespaVersion);
             zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
             zooKeeperClient.writeAthenzDomain(athenzDomain);

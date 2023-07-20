@@ -175,13 +175,14 @@ public class SessionZooKeeperClient {
                       .orElseThrow(() -> new NotFoundException("Could not find application id for session " + sessionId));
     }
 
-    void writeApplicationPackageReference(FileReference applicationPackageReference) {
-        curator.set(applicationPackageReferencePath(), Utf8.toBytes(applicationPackageReference.value()));
+    void writeApplicationPackageReference(Optional<FileReference> applicationPackageReference) {
+        applicationPackageReference.ifPresent(
+                reference -> curator.set(applicationPackageReferencePath(), Utf8.toBytes(reference.value())));
     }
 
     FileReference readApplicationPackageReference() {
         Optional<byte[]> data = curator.getData(applicationPackageReferencePath());
-        if (data.isEmpty()) return null; // This should not happen.
+        if (data.isEmpty()) return null; // TODO: This should not happen, but it does. Figure out why.
 
         return new FileReference(Utf8.toString(data.get()));
     }
