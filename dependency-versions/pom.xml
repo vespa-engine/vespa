@@ -29,7 +29,7 @@
 
     <properties>
         
-        <!-- Dependencies available from the Jdisc container, see container-dependency-versions/pom.xml -->
+        <!-- BEGIN Dependencies available from the Jdisc container, see container-dependency-versions/pom.xml -->
         <aopalliance.vespa.version>1.0</aopalliance.vespa.version>
         <error-prone-annotations.vespa.version>2.18.0</error-prone-annotations.vespa.version>
         <guava.vespa.version>32.1.1-jre</guava.vespa.version>
@@ -42,7 +42,7 @@
         <jaxb.vespa.version>2.3.0</jaxb.vespa.version>
         <slf4j.vespa.version>1.7.32</slf4j.vespa.version>
         <xml-apis.vespa.version>1.4.01</xml-apis.vespa.version>
-
+        <!-- END Dependencies available from the Jdisc container -->
 
         <!-- Dependencies used internally in Vespa, not visible for users -->
         <airline.vespa.version>0.9</airline.vespa.version>
@@ -75,6 +75,7 @@
         <felix.log.vespa.version>1.0.1</felix.log.vespa.version>
         <findbugs.vespa.version>3.0.2</findbugs.vespa.version> <!-- Should be kept in sync with guava -->
         <hdrhistogram.vespa.version>2.1.12</hdrhistogram.vespa.version>
+        <jersey.vespa.version>2.25</jersey.vespa.version>
         <jetty.vespa.version>11.0.15</jetty.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
         <jjwt.vespa.version>0.11.5</jjwt.vespa.version>
