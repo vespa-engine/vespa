@@ -57,6 +57,7 @@
       "targetVersion": true,
       "upgradeBudget": "PT0S",
       "scheduledAt": 1234,
+      "pinned": false,
       "cloud": "cloud1",
       "nodes": [
         {
@@ -163,6 +164,7 @@
       "targetVersion": true,
       "upgradeBudget": "PT0S",
       "scheduledAt": 1234,
+      "pinned": false,
       "nextVersion": "8.2.1.20211228",
       "nextScheduledAt": 1640743200000,
       "cloud": "cloud2",

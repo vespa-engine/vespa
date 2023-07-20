@@ -27,7 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A singleton owned by the Controller which contains the methods and state for controlling tenants.
+ * A singleton owned by the {@link Controller} which contains the methods and state for controlling tenants.
  *
  * @author bratseth
  * @author mpolden

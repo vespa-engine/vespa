@@ -55,7 +55,7 @@ public interface NodeRepository {
     void upgrade(ZoneId zone, NodeType type, Version version, boolean allowDowngrade);
 
     /** Upgrade OS for all nodes of given type to a new version */
-    void upgradeOs(ZoneId zone, NodeType type, Version version);
+    void upgradeOs(ZoneId zone, NodeType type, Version version, boolean allowDowngrade);
 
     /** Get target versions for upgrades in given zone */
     TargetVersions targetVersionsOf(ZoneId zone);

@@ -66,8 +66,8 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * The routing controller encapsulates state and methods for inspecting and manipulating deployment endpoints in a
- * hosted Vespa system.
+ * The routing controller is owned by {@link Controller} and encapsulates state and methods for inspecting and
+ * manipulating deployment endpoints in a hosted Vespa system.
  *
  * The one-stop shop for all your routing needs!
  *

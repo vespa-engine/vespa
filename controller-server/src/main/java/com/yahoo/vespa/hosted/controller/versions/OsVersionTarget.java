@@ -11,7 +11,7 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public record OsVersionTarget(OsVersion osVersion, Instant scheduledAt) implements VersionTarget, Comparable<OsVersionTarget> {
+public record OsVersionTarget(OsVersion osVersion, Instant scheduledAt, boolean pinned, boolean downgrade) implements VersionTarget, Comparable<OsVersionTarget> {
 
     public OsVersionTarget {
         Objects.requireNonNull(osVersion);
@@ -30,7 +30,7 @@ public record OsVersionTarget(OsVersion osVersion, Instant scheduledAt) implemen
 
     @Override
     public boolean downgrade() {
-        return false; // Not supported by this target type
+        return downgrade;
     }
 
 }

@@ -35,24 +35,24 @@ public class OsVersionStatusUpdaterTest {
         tester.zoneRegistry().setOsUpgradePolicy(CloudName.DEFAULT, upgradePolicy.build());
 
         // Initially empty
-        assertSame(OsVersionStatus.empty, tester.controller().osVersionStatus());
+        assertSame(OsVersionStatus.empty, tester.controller().os().status());
 
         // Setting a new target adds it to current status
         Version version1 = Version.fromString("7.1");
         CloudName cloud = CloudName.DEFAULT;
-        tester.controller().upgradeOsIn(cloud, version1, false);
+        tester.controller().os().upgradeTo(version1, cloud, false, false);
         statusUpdater.maintain();
 
-        var osVersions = tester.controller().osVersionStatus().versions();
+        var osVersions = tester.controller().os().status().versions();
         assertEquals(3, osVersions.size());
         assertFalse(osVersions.get(new OsVersion(Version.emptyVersion, cloud)).isEmpty(), "All nodes on unknown version");
         assertTrue(osVersions.get(new OsVersion(version1, cloud)).isEmpty(), "No nodes on current target");
 
         CloudName otherCloud = CloudName.AWS;
-        tester.controller().upgradeOsIn(otherCloud, version1, false);
+        tester.controller().os().upgradeTo(version1, otherCloud, false, false);
         statusUpdater.maintain();
 
-        osVersions = tester.controller().osVersionStatus().versions();
+        osVersions = tester.controller().os().status().versions();
         assertEquals(4, osVersions.size()); // 2 in cloud, 2 in otherCloud.
         assertFalse(osVersions.get(new OsVersion(Version.emptyVersion, cloud)).isEmpty(), "All nodes on unknown version");
         assertTrue(osVersions.get(new OsVersion(version1, cloud)).isEmpty(), "No nodes on current target");

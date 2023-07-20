@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.OsRelease;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -19,6 +20,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Automatically schedule upgrades to the next OS version.
@@ -27,6 +30,8 @@ import java.util.Optional;
  */
 public class OsUpgradeScheduler extends ControllerMaintainer {
 
+    private static final Logger LOG = Logger.getLogger(OsUpgradeScheduler.class.getName());
+
     public OsUpgradeScheduler(Controller controller, Duration interval) {
         super(controller, interval);
     }
@@ -34,18 +39,27 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     @Override
     protected double maintain() {
         Instant now = controller().clock().instant();
+        int attempts = 0;
+        int failures = 0;
         for (var cloud : controller().clouds()) {
             Optional<Change> change = changeIn(cloud, now);
             if (change.isEmpty()) continue;
             if (!change.get().scheduleAt(now)) continue;
-            controller().upgradeOsIn(cloud, change.get().version(), false);
+            try {
+                attempts++;
+                controller().os().upgradeTo(change.get().version(), cloud, false, false);
+            } catch (IllegalArgumentException e) {
+                failures++;
+                LOG.log(Level.WARNING, "Failed to schedule OS upgrade: " + Exceptions.toMessageString(e) +
+                                       ". Retrying in " + interval());
+            }
         }
-        return 0.0;
+        return asSuccessFactorDeviation(attempts, failures);
     }
 
     /** Returns the wanted change for cloud at given instant, if any */
     public Optional<Change> changeIn(CloudName cloud, Instant instant) {
-        Optional<OsVersionTarget> currentTarget = controller().osVersionTarget(cloud);
+        Optional<OsVersionTarget> currentTarget = controller().os().target(cloud);
         if (currentTarget.isEmpty()) return Optional.empty();
         if (upgradingToNewMajor(cloud)) return Optional.empty(); // Skip further upgrades until major version upgrade is complete
 
@@ -54,7 +68,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     private boolean upgradingToNewMajor(CloudName cloud) {
-        return controller().osVersionStatus().versionsIn(cloud).stream()
+        return controller().os().status().versionsIn(cloud).stream()
                            .filter(version -> !version.isEmpty()) // Ignore empty/unknown versions
                            .map(Version::getMajor)
                            .distinct()
