@@ -433,7 +433,7 @@ bool
 File::unlink()
 {
     close();
-    return vespalib::unlink(_filename);
+    return std::filesystem::remove(std::filesystem::path(_filename));
 }
 
 string
@@ -505,22 +505,6 @@ lstat(const string & path)
 bool
 fileExists(const string & path) {
     return (stat(path).get() != 0);
-}
-
-bool
-unlink(const string & filename)
-{
-    if (::unlink(filename.c_str()) != 0) {
-        if (errno == ENOENT) {
-            return false;
-        }
-        asciistream ost;
-        ost << "unlink(" << filename << "): Failed, errno(" << errno << "): "
-            << safeStrerror(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
-    }
-    LOG(debug, "unlink(%s): File deleted.", filename.c_str());
-    return true;
 }
 
 namespace {
