@@ -18,10 +18,14 @@ import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -198,6 +202,58 @@ public class OsUpgraderTest {
         statusUpdater.maintain();
 
         // All zones upgrade
+        List<ZoneApi> zones = new ArrayList<>(List.of(zone1, zone2));
+        for (var zone : zones) {
+            osUpgrader.maintain();
+            completeUpgrade(version1, SystemApplication.tenantHost, zone);
+            statusUpdater.maintain();
+        }
+        assertTrue(tester.controller().os().status().nodesIn(cloud).stream()
+                         .allMatch(node -> node.currentVersion().equals(version1)), "All nodes on target version");
+
+        // Downgrade is triggered
+        tester.controller().os().upgradeTo(version0, cloud, true, false);
+        // Zone order is reversed
+        Collections.reverse(zones);
+
+        // One host in first zone downgrades. Wanted version is not changed for second zone yet
+        osUpgrader.maintain();
+        completeUpgrade(1, version0, SystemApplication.tenantHost, zones.get(0));
+        osUpgrader.maintain();
+        assertWanted(version1, SystemApplication.tenantHost, zones.get(1));
+
+        // All zones downgrade
+        for (var zone : zones) {
+            osUpgrader.maintain();
+            completeUpgrade(version0, SystemApplication.tenantHost, zone);
+            statusUpdater.maintain();
+        }
+        assertTrue(tester.controller().os().status().nodesIn(cloud).stream()
+                         .allMatch(node -> node.currentVersion().equals(version0)), "All nodes on target version");
+    }
+
+    @Test
+    public void downgrade_os_partially() {
+        CloudName cloud = CloudName.from("cloud");
+        ZoneApi zone1 = zone("dev.us-east-1", cloud);
+        ZoneApi zone2 = zone("prod.us-west-1", cloud);
+        UpgradePolicy upgradePolicy = UpgradePolicy.builder()
+                                                   .upgrade(zone1)
+                                                   .upgrade(zone2)
+                                                   .build();
+        OsUpgrader osUpgrader = osUpgrader(upgradePolicy, cloud, false);
+
+        // Bootstrap system
+        tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId()),
+                                        List.of(SystemApplication.tenantHost));
+
+        // New OS version released
+        Version version0 = Version.fromString("1.0");
+        Version version1 = Version.fromString("2.0");
+        tester.controller().os().upgradeTo(version1, cloud, false, false);
+        statusUpdater.maintain();
+
+        // All zones upgrade
         for (var zone : List.of(zone1, zone2)) {
             osUpgrader.maintain();
             completeUpgrade(version1, SystemApplication.tenantHost, zone);
@@ -212,11 +268,17 @@ public class OsUpgraderTest {
         // All zones downgrade, in reverse order
         for (var zone : List.of(zone2, zone1)) {
             osUpgrader.maintain();
-            completeUpgrade(version0, SystemApplication.tenantHost, zone);
+            // Partial downgrading happens, as this decision is left up to the zone. Downgrade target is still set in
+            // all zones as a best-effort, and to halt any further upgrades
+            completeUpgrade(1, version0, SystemApplication.tenantHost, zone);
             statusUpdater.maintain();
         }
-        assertTrue(tester.controller().os().status().nodesIn(cloud).stream()
-                         .allMatch(node -> node.currentVersion().equals(version0)), "All nodes on target version");
+        int zoneCount = 2;
+        Map<Version, Long> currentVersions = tester.controller().os().status().nodesIn(cloud).stream()
+                                                   .collect(Collectors.groupingBy(NodeVersion::currentVersion,
+                                                                                  Collectors.counting()));
+        assertEquals(1 * zoneCount, currentVersions.get(version0));
+        assertEquals(2 * zoneCount, currentVersions.get(version1));
     }
 
     private List<NodeVersion> nodesOn(Version version) {
