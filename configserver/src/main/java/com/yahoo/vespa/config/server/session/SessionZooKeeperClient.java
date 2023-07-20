@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -37,7 +38,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.apache.zookeeper.data.Stat;
-
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -181,8 +181,9 @@ public class SessionZooKeeperClient {
 
     FileReference readApplicationPackageReference() {
         Optional<byte[]> data = curator.getData(applicationPackageReferencePath());
-        return new FileReference(Utf8.toString(
-                data.orElseThrow(() -> new IllegalArgumentException("No application package reference found"))));
+        if (data.isEmpty()) return null; // This should not happen.
+
+        return new FileReference(Utf8.toString(data.get()));
     }
 
     private Path applicationPackageReferencePath() {
@@ -230,8 +231,9 @@ public class SessionZooKeeperClient {
     }
 
     public Version readVespaVersion() {
-        return curator.getData(versionPath()).map(d -> new Version(
-                Utf8.toString(d))).orElseThrow(() -> new IllegalArgumentException("No vespa version found"));
+        Optional<byte[]> data = curator.getData(versionPath());
+        // TODO: Empty version should not be possible any more - verify and remove
+        return data.map(d -> new Version(Utf8.toString(d))).orElse(Vtag.currentVersion);
     }
 
     public Optional<DockerImage> readDockerImageRepository() {
