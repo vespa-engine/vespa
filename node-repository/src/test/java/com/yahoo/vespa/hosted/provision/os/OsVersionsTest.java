@@ -38,7 +38,6 @@ import static org.junit.Assert.fail;
 public class OsVersionsTest {
 
     private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
-    private final ApplicationId infraApplication = ApplicationId.from("hosted-vespa", "infra", "default");
 
     @Test
     public void upgrade() {
@@ -159,7 +158,7 @@ public class OsVersionsTest {
     }
 
     @Test
-    public void upgrade_by_retiring() {
+    public void upgrade_and_downgrade_by_retiring() {
         int maxActiveUpgrades = 2;
         var versions = new OsVersions(tester.nodeRepository(), Cloud.builder().dynamicProvisioning(true).build());
         setMaxActiveUpgrades(maxActiveUpgrades);
@@ -196,7 +195,7 @@ public class OsVersionsTest {
         assertEquals(2, deprovisioningChildrenOf(nodesDeprovisioning.asList().get(0)).size());
         completeReprovisionOf(nodesDeprovisioning.asList());
 
-        // Remaining hosts complete upgrades one by one
+        // Remaining hosts upgrade, batch by batch
         for (int i = 0; i < hostCount - 2; i += maxActiveUpgrades) {
             versions.resumeUpgradeOf(NodeType.host, true);
             nodesDeprovisioning = hostNodes.get().deprovisioning();
@@ -212,6 +211,20 @@ public class OsVersionsTest {
         // Resuming after everything has upgraded does nothing
         versions.resumeUpgradeOf(NodeType.host, true);
         assertEquals(0, hostNodes.get().deprovisioning().size());
+
+        // Downgrade is triggered
+        var version0 = Version.fromString("7.0");
+        versions.setTarget(NodeType.host, version0, true);
+
+        // Hosts downgrade, batch by batch
+        for (int i = 0; i < hostCount; i += maxActiveUpgrades) {
+            versions.resumeUpgradeOf(NodeType.host, true);
+            nodesDeprovisioning = hostNodes.get().deprovisioning();
+            assertEquals(maxActiveUpgrades, nodesDeprovisioning.size());
+            completeReprovisionOf(nodesDeprovisioning.asList());
+        }
+        assertEquals(hostCount, hostNodes.get().onOsVersion(version0).not().deprovisioning().size());
+        assertEquals(hostCount*2, tester.nodeRepository().nodes().list(Node.State.deprovisioned).size());
     }
 
     @Test

@@ -12,8 +12,8 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
- * An upgrader that delegates the upgrade to the node itself, triggered by changing its wanted OS version. This
- * implementation limits the number of parallel upgrades to avoid overloading the orchestrator with suspension requests.
+ * An upgrader that delegates the upgrade to the node itself, triggered by changing its wanted OS version. Downgrades
+ * are not supported.
  *
  * Used in clouds where nodes can upgrade themselves in-place, without data loss.
  *
@@ -32,6 +32,8 @@ public class DelegatingOsUpgrader extends OsUpgrader {
         NodeList activeNodes = nodeRepository.nodes().list(Node.State.active).nodeType(target.nodeType());
         Instant now = nodeRepository.clock().instant();
         NodeList nodesToUpgrade = activeNodes.not().changingOsVersionTo(target.version())
+                                             // This upgrader cannot downgrade nodes. We therefore consider only nodes
+                                             // on a lower version than the target
                                              .osVersionIsBefore(target.version())
                                              .matching(node -> canUpgradeAt(now, node))
                                              .byIncreasingOsVersion()

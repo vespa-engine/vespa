@@ -54,7 +54,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     @Override
     protected boolean convergedOn(OsVersionTarget target, SystemApplication application, ZoneApi zone, NodeSlice nodeSlice) {
-        Version currentVersion = versionOf(nodeSlice, zone, application, Node::currentOsVersion).orElse(target.osVersion().version());
+        Version currentVersion = versionOf(nodeSlice, zone, application, Node::currentOsVersion, target.downgrade()).orElse(target.version());
         return satisfiedBy(currentVersion, target);
     }
 
@@ -67,9 +67,11 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     @Override
     protected Optional<OsVersionTarget> target() {
-        // Return target if we have nodes in this cloud on the wrong version
+        // Return target if we have nodes in this cloud on the wrong version, or if we're downgrading a zone which does
+        // not support downgrading all nodes
         return controller().os().target(cloud)
-                           .filter(target -> controller().os().status().nodesIn(cloud).stream()
+                           .filter(target -> (target.downgrade() && !downgradingSupported()) ||
+                                             controller().os().status().nodesIn(cloud).stream()
                                                          .anyMatch(node -> !satisfiedBy(node.currentVersion(), target)));
     }
 
@@ -79,17 +81,21 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
         return controller().serviceRegistry().configServer().nodeRepository()
                            .targetVersionsOf(zone.getVirtualId())
                            .osVersion(application.nodeType())
-                           .map(currentVersion -> !satisfiedBy(currentVersion, target))
+                           .map(currentVersion -> !currentVersion.equals(target.version()))
                            .orElse(true);
     }
 
-    private static boolean satisfiedBy(Version version, OsVersionTarget target) {
-        if (target.downgrade()) {
-            // When downgrading we want an exact version
+    private boolean satisfiedBy(Version version, OsVersionTarget target) {
+        if (target.downgrade() && downgradingSupported()) {
+            // When downgrading we want an exact version if the cloud supports downgrades
             return version.equals(target.osVersion().version());
         }
         // Otherwise, matching or later version is fine
         return !version.isBefore(target.osVersion().version());
+    }
+
+    private boolean downgradingSupported() {
+        return !controller().zoneRegistry().zones().all().dynamicallyProvisioned().in(cloud).zones().isEmpty();
     }
 
     /** Returns whether node currently allows upgrades */

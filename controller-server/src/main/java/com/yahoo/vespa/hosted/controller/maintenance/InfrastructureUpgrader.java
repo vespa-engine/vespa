@@ -128,8 +128,12 @@ public abstract class InfrastructureUpgrader<TARGET extends VersionTarget> exten
     /** Returns whether the upgrader should expect given node to upgrade */
     protected abstract boolean expectUpgradeOf(Node node, SystemApplication application, ZoneApi zone);
 
-    /** Find the highest version used by nodes satisfying nodeSlice in zone. If no such slice exists, the lowest known version is returned */
-    protected final Optional<Version> versionOf(NodeSlice nodeSlice, ZoneApi zone, SystemApplication application, Function<Node, Version> versionField) {
+    /**
+     * Find the version currently used by a slice of nodes, in given zone. If no such slice exists,
+     * the lowest (or highest, when downgrading) overall version is returned.
+     */
+    protected final Optional<Version> versionOf(NodeSlice nodeSlice, ZoneApi zone, SystemApplication application,
+                                                Function<Node, Version> versionField, boolean downgrading) {
         try {
             Map<Version, Long> nodeCountByVersion = controller().serviceRegistry().configServer()
                                                                 .nodeRepository()
@@ -147,11 +151,13 @@ public abstract class InfrastructureUpgrader<TARGET extends VersionTarget> exten
                 }
             }
             if (!versionsOfMatchingSlices.isEmpty()) {
-                // Choose the highest version in case we have several matching slices
-                return versionsOfMatchingSlices.stream().max(Comparator.naturalOrder());
+                return downgrading
+                        ? versionsOfMatchingSlices.stream().min(Comparator.naturalOrder())
+                        : versionsOfMatchingSlices.stream().max(Comparator.naturalOrder());
             }
-            // No matching slices found, fall back to the lowest known version
-            return nodeCountByVersion.keySet().stream().min(Comparator.naturalOrder());
+            return downgrading
+                    ? nodeCountByVersion.keySet().stream().max(Comparator.naturalOrder())
+                    : nodeCountByVersion.keySet().stream().min(Comparator.naturalOrder());
         } catch (Exception e) {
             throw new UnreachableNodeRepositoryException(Text.format("Failed to get version for %s in %s: %s",
                                                                      application.id(), zone,
