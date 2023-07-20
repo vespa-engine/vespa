@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_library(fsa
+vespa_add_library(vespafsa
     SOURCES
     automaton.cpp
     base64.cpp

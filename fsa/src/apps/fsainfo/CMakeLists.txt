@@ -5,5 +5,5 @@ vespa_add_executable(fsa_fsainfo_app
     OUTPUT_NAME vespa-fsainfo
     INSTALL bin
     DEPENDS
-    fsa
+    vespafsa
 )
