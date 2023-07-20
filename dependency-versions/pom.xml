@@ -50,12 +50,12 @@
         <antlr4.vespa.version>4.11.1</antlr4.vespa.version>
         <apache.httpclient.vespa.version>4.5.14</apache.httpclient.vespa.version>
         <apache.httpcore.vespa.version>4.4.16</apache.httpcore.vespa.version>
-        <apache.httpclient5.vespa.version>5.2.1</apache.httpclient5.vespa.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
-        <apache.httpcore5.vespa.version>5.2.2</apache.httpcore5.vespa.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <apache.httpclient5.vespa.version>5.2.1</apache.httpclient5.vespa.version>
+        <apache.httpcore5.vespa.version>5.2.2</apache.httpcore5.vespa.version>
         <asm.vespa.version>9.3</asm.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <athenz.vespa.version>1.11.34</athenz.vespa.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <athenz.vespa.version>1.11.34</athenz.vespa.version>
         <aws-sdk.vespa.version>1.12.460</aws-sdk.vespa.version>
         <!-- Athenz END -->
 
@@ -86,7 +86,7 @@
         <mockito.vespa.version>4.0.0</mockito.vespa.version>
         <netty.vespa.version>4.1.94.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.61.Final</netty-tcnative.vespa.version>
-        <onnxruntime.vespa.version>1.13.1</onnxruntime.vespa.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <onnxruntime.vespa.version>1.13.1</onnxruntime.vespa.version>
         <org.json.vespa.version>20230227</org.json.vespa.version>
         <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>
         <prometheus.client.vespa.version>0.6.0</prometheus.client.vespa.version>
@@ -103,7 +103,7 @@
         <maven-bundle-plugin.vespa.version>5.1.9</maven-bundle-plugin.vespa.version>
         <maven-compiler-plugin.vespa.version>3.10.1</maven-compiler-plugin.vespa.version>
         <maven-core.vespa.version>3.8.7</maven-core.vespa.version>
-        <maven-dependency-plugin.vespa.version>3.6.0</maven-dependency-plugin.vespa.version> <!-- NOTE: When upgrading, also update explicit versions in tenant base poms! -->
+        <maven-dependency-plugin.vespa.version>3.6.0</maven-dependency-plugin.vespa.version>
         <maven-deploy-plugin.vespa.version>2.8.2</maven-deploy-plugin.vespa.version>
         <maven-enforcer-plugin.vespa.version>3.3.0</maven-enforcer-plugin.vespa.version>
         <maven-failsafe-plugin.vespa.version>3.0.0-M6</maven-failsafe-plugin.vespa.version>
