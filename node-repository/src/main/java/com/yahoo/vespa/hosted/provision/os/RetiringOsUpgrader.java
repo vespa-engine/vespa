@@ -47,16 +47,16 @@ public class RetiringOsUpgrader extends OsUpgrader {
 
     /** Returns nodes that are candidates for upgrade */
     private NodeList candidates(Instant instant, OsVersionTarget target, NodeList allNodes) {
-        NodeList activeNodes = allNodes.state(Node.State.active).nodeType(target.nodeType());
+        NodeList nodes = allNodes.state(Node.State.active, Node.State.provisioned).nodeType(target.nodeType());
         if (softRebuild) {
             // Retire only hosts which do not have a replaceable root disk
-            activeNodes = activeNodes.not().replaceableRootDisk();
+            nodes = nodes.not().replaceableRootDisk();
         }
-        return activeNodes.not().deprovisioning()
-                          .osVersionIsBefore(target.version())
-                          .matching(node -> canUpgradeAt(instant, node))
-                          .byIncreasingOsVersion()
-                          .first(upgradeSlots(target, activeNodes.deprovisioning()));
+        return nodes.not().deprovisioning()
+                    .not().onOsVersion(target.version())
+                    .matching(node -> canUpgradeAt(instant, node))
+                    .byIncreasingOsVersion()
+                    .first(upgradeSlots(target, nodes.deprovisioning()));
     }
 
     /** Upgrade given host by retiring and deprovisioning it */

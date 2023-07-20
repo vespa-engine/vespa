@@ -66,13 +66,13 @@ public class RebuildingOsUpgrader extends OsUpgrader {
                                                                    .statefulClusters());
 
         // Rebuild hosts not containing stateful clusters with retiring nodes, up to rebuild limit
-        NodeList activeHosts = hostsOfTargetType.state(Node.State.active);
-        int rebuildLimit = upgradeSlots(target, activeHosts.rebuilding(softRebuild));
+        NodeList hosts = hostsOfTargetType.state(Node.State.active, Node.State.provisioned);
+        int rebuildLimit = upgradeSlots(target, hosts.rebuilding(softRebuild));
         List<Node> hostsToRebuild = new ArrayList<>(rebuildLimit);
-        NodeList candidates = activeHosts.not().rebuilding(softRebuild)
-                                         .osVersionIsBefore(target.version())
-                                         .matching(node -> canUpgradeAt(now, node))
-                                         .byIncreasingOsVersion();
+        NodeList candidates = hosts.not().rebuilding(softRebuild)
+                                   .not().onOsVersion(target.version())
+                                   .matching(node -> canUpgradeAt(now, node))
+                                   .byIncreasingOsVersion();
         for (Node host : candidates) {
             if (hostsToRebuild.size() == rebuildLimit) break;
             Set<ClusterId> clustersOnHost = activeNodes.childrenOf(host).statefulClusters();
