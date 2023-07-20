@@ -14,6 +14,7 @@ import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.client.api.Result;
 import org.eclipse.jetty.client.dynamic.HttpClientTransportDynamic;
+import org.eclipse.jetty.client.http.HttpClientConnectionFactory;
 import org.eclipse.jetty.client.util.BufferingResponseListener;
 import org.eclipse.jetty.client.util.BytesRequestContent;
 import org.eclipse.jetty.http.HttpField;
@@ -145,8 +146,10 @@ class JettyCluster implements Cluster {
         int initialWindow = Integer.MAX_VALUE;
         h2Client.setInitialSessionRecvWindow(initialWindow);
         h2Client.setInitialStreamRecvWindow(initialWindow);
+        // Need HTTP/1.1 for tunnel using CONNECT method
+        ClientConnectionFactory.Info h1 = HttpClientConnectionFactory.HTTP11;
         ClientConnectionFactory.Info http2 = new ClientConnectionFactoryOverHTTP2.HTTP2(h2Client);
-        HttpClientTransportDynamic transport = new HttpClientTransportDynamic(connector, http2);
+        HttpClientTransportDynamic transport = new HttpClientTransportDynamic(connector, http2, h1);
         int connectionsPerEndpoint = b.connectionsPerEndpoint;
         transport.setConnectionPoolFactory(dest -> {
             MultiplexConnectionPool pool = new MultiplexConnectionPool(
@@ -171,6 +174,7 @@ class JettyCluster implements Cluster {
 
     private static void addProxyConfiguration(FeedClientBuilderImpl b, HttpClient httpClient) throws IOException {
         Origin.Address address = new Origin.Address(b.proxy.getHost(), b.proxy.getPort());
+        Map<String, Supplier<String>> proxyHeadersCopy = new TreeMap<>(b.proxyRequestHeaders);
         if (b.proxy.getScheme().equals("https")) {
             SslContextFactory.Client proxySslCtxFactory = new SslContextFactory.Client();
             if (b.proxyHostnameVerifier != null) {
@@ -182,17 +186,23 @@ class JettyCluster implements Cluster {
             try { proxySslCtxFactory.start(); } catch (Exception e) { throw new IOException(e); }
             httpClient.getProxyConfiguration().addProxy(
                     new HttpProxy(address, proxySslCtxFactory, new Origin.Protocol(Collections.singletonList("h2"), false)));
-        } else {
-            httpClient.getProxyConfiguration().addProxy(
-                    new HttpProxy(address, false, new Origin.Protocol(Collections.singletonList("h2c"), false)));
-        }
-        Map<String, Supplier<String>> proxyHeadersCopy = new TreeMap<>(b.proxyRequestHeaders);
-        URI proxyUri = URI.create(endpointUri(b.proxy));
-        if (!proxyHeadersCopy.isEmpty()) {
+            URI proxyUri = URI.create(endpointUri(b.proxy));
             httpClient.getAuthenticationStore().addAuthenticationResult(new Authentication.Result() {
                 @Override public URI getURI() { return proxyUri; }
                 @Override public void apply(Request r) {
                     r.headers(hs -> proxyHeadersCopy.forEach((k, v) -> hs.add(k, v.get())));
+                }
+            });
+        } else {
+            // Assume insecure proxy uses HTTP/1.1
+            httpClient.getProxyConfiguration().addProxy(
+                    new HttpProxy(address, false, new Origin.Protocol(Collections.singletonList("http/1.1"), false)));
+            // Bug in Jetty cause authentication result to be ignored for HTTP/1.1 CONNECT requests
+            httpClient.getRequestListeners().add(new Request.Listener() {
+                @Override
+                public void onHeaders(Request r) {
+                    if (HttpMethod.CONNECT.is(r.getMethod()))
+                        r.headers(hs -> proxyHeadersCopy.forEach((k, v) -> hs.add(k, v.get())));
                 }
             });
         }
