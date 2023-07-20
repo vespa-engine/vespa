@@ -460,25 +460,6 @@ chdir(const string & directory)
     LOG(debug, "chdir(%s): Working directory changed.", directory.c_str());
 }
 
-FileInfo::UP
-stat(const string & path)
-{
-    struct ::stat filestats;
-    return processStat(filestats, ::stat(path.c_str(), &filestats) == 0, path);
-}
-
-FileInfo::UP
-lstat(const string & path)
-{
-    struct ::stat filestats;
-    return processStat(filestats, ::lstat(path.c_str(), &filestats) == 0, path);
-}
-
-bool
-fileExists(const string & path) {
-    return (stat(path).get() != 0);
-}
-
 namespace {
 
     uint32_t diskAlignmentSize = 4_Ki;
@@ -566,12 +547,6 @@ getOpenErrorString(const int osError, stringref filename)
     os << " dirStat";
     addStat(os, dirName);
     return os.str();
-}
-
-bool
-isDirectory(const string & path) {
-    FileInfo::UP info(stat(path));
-    return (info.get() && info->_directory);
 }
 
 } // vespalib

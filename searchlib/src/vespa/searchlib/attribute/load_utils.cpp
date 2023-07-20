@@ -9,6 +9,7 @@
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/array.hpp>
+#include <filesystem>
 
 using search::multivalue::WeightedValue;
 using vespalib::datastore::AtomicEntryRef;
@@ -45,7 +46,7 @@ LoadUtils::openWeight(const AttributeVector& attr)
 bool
 LoadUtils::file_exists(const AttributeVector& attr, const vespalib::string& suffix)
 {
-    return vespalib::fileExists(attr.getBaseFileName() + "." + suffix);
+    return std::filesystem::exists(std::filesystem::path(attr.getBaseFileName() + "." + suffix));
 }
 
 LoadedBufferUP

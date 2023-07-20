@@ -23,7 +23,6 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
 
 #include <vespa/vespalib/testkit/test_kit.h>
@@ -32,6 +31,7 @@
 #include <fcntl.h>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <filesystem>
 
 using vespalib::nbostream;
 using namespace ::testing;
@@ -748,7 +748,7 @@ TEST(DocumentTest,testReadSerializedAllVersions)
         int version = tests[i]._createdVersion;
         std::string name = tests[i]._dataFile;
         std::cerr << name << std::endl;
-        if (!vespalib::fileExists(name)) {
+        if (!std::filesystem::exists(std::filesystem::path(name))) {
             FAIL() << "File " << name << " does not exist.";
         }
         int fd = open(tests[i]._dataFile.c_str(), O_RDONLY);

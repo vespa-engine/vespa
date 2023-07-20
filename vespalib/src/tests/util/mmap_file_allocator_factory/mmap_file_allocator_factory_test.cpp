@@ -37,12 +37,12 @@ TEST(MmapFileAllocatorFactoryTest, nonempty_dir_gives_allocator)
     EXPECT_TRUE(is_mmap_file_allocator(allocator1.get()));
     vespalib::string allocator0_dir(basedir + "/0.foo");
     vespalib::string allocator1_dir(basedir + "/1.bar");
-    EXPECT_TRUE(isDirectory(allocator0_dir));
-    EXPECT_TRUE(isDirectory(allocator1_dir));
+    EXPECT_TRUE(std::filesystem::is_directory(std::filesystem::path(allocator0_dir)));
+    EXPECT_TRUE(std::filesystem::is_directory(std::filesystem::path(allocator1_dir)));
     allocator0.reset();
-    EXPECT_FALSE(isDirectory(allocator0_dir));
+    EXPECT_FALSE(std::filesystem::is_directory(std::filesystem::path(allocator0_dir)));
     allocator1.reset();
-    EXPECT_FALSE(isDirectory(allocator1_dir));
+    EXPECT_FALSE(std::filesystem::is_directory(std::filesystem::path(allocator1_dir)));
     MmapFileAllocatorFactory::instance().setup("");
     std::filesystem::remove_all(std::filesystem::path(basedir));
 }
