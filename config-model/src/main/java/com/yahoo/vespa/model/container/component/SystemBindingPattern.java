@@ -15,6 +15,7 @@ public class SystemBindingPattern extends BindingPattern {
     public static SystemBindingPattern fromPattern(String binding) { return new SystemBindingPattern(binding);}
     public static SystemBindingPattern fromHttpPortAndPath(String port, String path) { return new SystemBindingPattern("http", "*", port, path); }
     public static SystemBindingPattern fromHttpPortAndPath(int port, String path) { return new SystemBindingPattern("http", "*", Integer.toString(port), path); }
+    public SystemBindingPattern withPort(int port) { return new SystemBindingPattern(scheme(), host(), Integer.toString(port), path()); }
 
     @Override
     public String toString() {

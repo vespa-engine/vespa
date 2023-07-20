@@ -168,7 +168,8 @@ public class DataplaneProxyServiceTest {
     private DataplaneProxyConfig proxyConfig() {
         X509CertificateWithKey selfSigned = X509CertificateUtils.createSelfSigned("cn=test", Duration.ofMinutes(10));
         return new DataplaneProxyConfig.Builder()
-                .port(1234)
+                .mtlsPort(1234)
+                .tokenPort(1235)
                 .serverCertificate(X509CertificateUtils.toPem(selfSigned.certificate()))
                 .serverKey(KeyUtils.toPem(selfSigned.privateKey()))
                 .build();

@@ -7,6 +7,7 @@ import com.yahoo.security.tls.TlsContext;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -22,6 +23,8 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     private final boolean proxyProtocolEnabled;
     private final boolean proxyProtocolMixedMode;
     private final Duration endpointConnectionTtl;
+    private final List<String> remoteAddressHeaders;
+    private final List<String> remotePortHeaders;
 
     public static Builder builder(String name, int listenPort) { return new Builder(name, listenPort); }
 
@@ -32,6 +35,8 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         this.proxyProtocolEnabled = builder.proxyProtocolEnabled;
         this.proxyProtocolMixedMode = builder.proxyProtocolMixedMode;
         this.endpointConnectionTtl = builder.endpointConnectionTtl;
+        this.remoteAddressHeaders = List.copyOf(builder.remoteAddressHeaders);
+        this.remotePortHeaders = List.copyOf(builder.remotePortHeaders);
     }
 
     private static SslProvider createSslProvider(Builder builder) {
@@ -62,15 +67,21 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder()
                                        .enabled(proxyProtocolEnabled).mixedMode(proxyProtocolMixedMode))
                 .idleTimeout(Duration.ofSeconds(30).toSeconds())
-                .maxConnectionLife(endpointConnectionTtl != null ? endpointConnectionTtl.toSeconds() : 0);
+                .maxConnectionLife(endpointConnectionTtl != null ? endpointConnectionTtl.toSeconds() : 0)
+                .accessLog(new ConnectorConfig.AccessLog.Builder()
+                                  .remoteAddressHeaders(remoteAddressHeaders)
+                                  .remotePortHeaders(remotePortHeaders));
+
     }
 
     public enum SslClientAuth { WANT, NEED, WANT_WITH_ENFORCER }
     public static class Builder {
         final String name;
         final int port;
+        final List<String> remoteAddressHeaders = new ArrayList<>();
+        final List<String> remotePortHeaders = new ArrayList<>();
         SslClientAuth clientAuth;
-        List<String> tlsCiphersOverride;
+        List<String> tlsCiphersOverride = List.of();
         boolean proxyProtocolEnabled;
         boolean proxyProtocolMixedMode;
         Duration endpointConnectionTtl;
@@ -88,6 +99,8 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         public Builder tlsCaCertificatesPath(String path) { this.tlsCaCertificatesPath = path; return this; }
         public Builder tlsCaCertificatesPem(String pem) { this.tlsCaCertificatesPem = pem; return this; }
         public Builder tokenEndpoint(boolean enable) { this.tokenEndpoint = enable; return this; }
+        public Builder remoteAddressHeader(String header) { this.remoteAddressHeaders.add(header); return this; }
+        public Builder remotePortHeader(String header) { this.remotePortHeaders.add(header); return this; }
 
         public HostedSslConnectorFactory build() { return new HostedSslConnectorFactory(this); }
     }
