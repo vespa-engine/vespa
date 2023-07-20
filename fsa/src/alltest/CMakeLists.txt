@@ -3,7 +3,7 @@ vespa_add_executable(fsa_conceptnet_test_app
     SOURCES
     conceptnet_test.cpp
     DEPENDS
-    fsamanagers
+    vespafsamanagers
     vespafsa
 )
 vespa_add_executable(fsa_detector_test_app
@@ -34,7 +34,7 @@ vespa_add_executable(fsa_fsamanager_test_app
     SOURCES
     fsamanager_test.cpp
     DEPENDS
-    fsamanagers
+    vespafsamanagers
     vespafsa
 )
 vespa_add_executable(fsa_lookup_test_app
