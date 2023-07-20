@@ -168,23 +168,17 @@ TEST("require that vespalib::File::stat works")
     EXPECT_EQUAL(false, fileExists("myfile"));
     EXPECT_EQUAL(false, fileExists("mydir"));
     std::filesystem::create_directory(std::filesystem::path("mydir"));
-    FileInfo::UP info = stat("myfile");
-    ASSERT_TRUE(info.get() == 0);
     File f("myfile");
     f.open(File::CREATE, false);
     f.write("foobar", 6, 0);
 
-    info = stat("myfile");
-    ASSERT_TRUE(info.get() != 0);
-    FileInfo info2 = f.stat();
-    EXPECT_EQUAL(*info, info2);
-    EXPECT_EQUAL(6, info->_size);
-    EXPECT_EQUAL(true, info->_plainfile);
-    EXPECT_EQUAL(false, info->_directory);
+    FileInfo info = f.stat();
+    EXPECT_EQUAL(6, info._size);
+    EXPECT_EQUAL(true, info._plainfile);
+    EXPECT_EQUAL(false, info._directory);
 
     EXPECT_EQUAL(6, f.getFileSize());
     f.close();
-    EXPECT_EQUAL(6, getFileSize("myfile"));
 
     EXPECT_EQUAL(true, fileExists("myfile"));
     EXPECT_EQUAL(true, fileExists("mydir"));

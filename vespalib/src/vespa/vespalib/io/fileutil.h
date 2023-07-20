@@ -224,24 +224,6 @@ extern vespalib::string getCurrentDirectory();
 extern void chdir(const vespalib::string & directory);
 
 /**
- * Stat a file.
- *
- * @throw  IoException If we failed to stat the file.
- * @return A file info object if everything went well, a null pointer if the
- *         file was not found.
- */
-extern FileInfo::UP stat(const vespalib::string & path);
-
-/**
- * Get the filesize of the given file. Ignoring if it exists or not.
- * (None-existing files will be reported to have size zero)
- */
-extern inline off_t getFileSize(const vespalib::string & path) {
-    FileInfo::UP info(stat(path));
-    return (info.get() == 0 ? 0 : info->_size);
-}
-
-/**
  * List the contents of the given directory.
  */
 using DirectoryList = std::vector<vespalib::string>;
