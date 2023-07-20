@@ -103,7 +103,11 @@ public final class Capacity {
 
     /** Create a non-required, failable capacity request */
     public static Capacity from(ClusterResources min, ClusterResources max) {
-        return from(min, max, IntRange.empty(), false, true, Optional.empty(), ClusterInfo.empty());
+        return from(min, max, IntRange.empty());
+    }
+
+    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize) {
+        return from(min, max, groupSize, false, true, Optional.empty(), ClusterInfo.empty());
     }
 
     public static Capacity from(ClusterResources resources, boolean required, boolean canFail) {

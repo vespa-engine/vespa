@@ -10,7 +10,6 @@ import org.w3c.dom.Document;
 
 import java.io.File;
 import java.io.StringReader;
-import java.util.Set;
 
 /**
  * @author hmusum

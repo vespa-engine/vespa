@@ -188,10 +188,10 @@ public class ConvertParsedFields {
         for (var dictOp : parsed.getDictionaryOptions()) {
             var dictionary = field.getOrSetDictionary();
             switch (dictOp) {
-            case HASH:    dictionary.updateType(Dictionary.Type.HASH); break;
-            case BTREE:   dictionary.updateType(Dictionary.Type.BTREE); break;
-            case CASED:   dictionary.updateMatch(Case.CASED); break;
-            case UNCASED: dictionary.updateMatch(Case.UNCASED); break;
+                case HASH -> dictionary.updateType(Dictionary.Type.HASH);
+                case BTREE -> dictionary.updateType(Dictionary.Type.BTREE);
+                case CASED -> dictionary.updateMatch(Case.CASED);
+                case UNCASED -> dictionary.updateMatch(Case.UNCASED);
             }
         }
         for (var index : parsed.getIndexes()) {
