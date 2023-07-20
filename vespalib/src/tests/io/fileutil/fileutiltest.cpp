@@ -180,8 +180,6 @@ TEST("require that vespalib::File::stat works")
 
     EXPECT_EQUAL(true, isDirectory("mydir"));
     EXPECT_EQUAL(false, isDirectory("myfile"));
-    EXPECT_EQUAL(false, isPlainFile("mydir"));
-    EXPECT_EQUAL(true, isPlainFile("myfile"));
     EXPECT_EQUAL(true, fileExists("myfile"));
     EXPECT_EQUAL(true, fileExists("mydir"));
 }

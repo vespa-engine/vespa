@@ -249,18 +249,6 @@ extern FileInfo::UP lstat(const vespalib::string & path);
 extern bool fileExists(const vespalib::string & path);
 
 /**
- * Check if a path exists, i.e. whether it's a symbolic link, regular file,
- * directory, etc.
- *
- * This function is the same as fileExists, except if path is a symbolic link:
- * This function returns true, while fileExists returns true only if the path
- * the symbolic link points to exists.
- */
-extern inline bool pathExists(const vespalib::string & path) {
-    return (lstat(path).get() != 0);
-}
-
-/**
  * Get the filesize of the given file. Ignoring if it exists or not.
  * (None-existing files will be reported to have size zero)
  */
@@ -270,34 +258,12 @@ extern inline off_t getFileSize(const vespalib::string & path) {
 }
 
 /**
- * Check if a file is a plain file or not.
- *
- * @return True if it is a plain file, false if it don't exist or isn't.
- * @throw IoException If we failed to stat the file.
- */
-extern inline bool isPlainFile(const vespalib::string & path) {
-    FileInfo::UP info(stat(path));
-    return (info.get() && info->_plainfile);
-}
-
-/**
  * Check if a file is a directory or not.
  *
  * @return True if it is a directory, false if it don't exist or isn't.
  * @throw IoException If we failed to stat the file.
  */
 extern bool isDirectory(const vespalib::string & path);
-
-/**
- * Check whether a path is a symlink.
- *
- * @return True if path exists and is a symbolic link.
- * @throw IoException If there's an unexpected stat failure.
- */
-extern inline bool isSymLink(const vespalib::string & path) {
-    FileInfo::UP info(lstat(path));
-    return (info.get() && info->_symlink);
-}
 
 /**
  * List the contents of the given directory.
