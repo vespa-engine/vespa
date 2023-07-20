@@ -39,6 +39,7 @@ import static com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker.Resu
 import static com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest.Condition.FORCE;
 import static com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest.Condition.SAFE;
 import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
 
 /**
  * Checks if a node can be upgraded.
@@ -165,6 +166,7 @@ public class NodeStateChangeChecker {
                 if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription))
                     return allow();
             } else {
+                log.log(INFO, "Checking if we can set " + nodeInfo.getNode() + " to maintenance temporarily");
                 var optionalResult = checkIfOtherNodesHaveWantedState(nodeInfo, newDescription, clusterState);
                 if (optionalResult.isPresent())
                     return optionalResult.get();
@@ -243,13 +245,13 @@ public class NodeStateChangeChecker {
 
         Set<Integer> groupsWithNodesWantedStateNotUp = groupsWithUserWantedStateNotUp();
         if (groupsWithNodesWantedStateNotUp.size() == 0) {
-            log.log(FINE, "groupsWithNodesWantedStateNotUp=0");
+            log.log(INFO, "groupsWithNodesWantedStateNotUp=0");
             return Optional.empty();
         }
 
         Set<Integer> groupsWithSameStateAndDescription = groupsWithSameStateAndDescription(MAINTENANCE, newDescription);
         if (aGroupContainsNode(groupsWithSameStateAndDescription, node)) {
-            log.log(FINE, "Node is in group with same state and description, allow");
+            log.log(INFO, "Node is in group with same state and description, allow");
             return Optional.of(allow());
         }
         // There are groups with nodes not up, but with another description, probably operator set
@@ -271,7 +273,7 @@ public class NodeStateChangeChecker {
             return result;
 
         if (numberOfGroupsToConsider < maxNumberOfGroupsAllowedToBeDown) {
-            log.log(FINE, "Allow, retiredAndNotUpGroups=" + retiredAndNotUpGroups);
+            log.log(INFO, "Allow, retiredAndNotUpGroups=" + retiredAndNotUpGroups);
             return Optional.of(allow());
         }
 
