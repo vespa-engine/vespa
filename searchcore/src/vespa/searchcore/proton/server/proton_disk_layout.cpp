@@ -83,7 +83,9 @@ ProtonDiskLayout::remove(const DocTypeName &docTypeName)
     vespalib::string name(docTypeName.toString());
     vespalib::string normalDir(documentsDir + "/" + name);
     vespalib::string removedDir(documentsDir + "/" + getRemovedName(name));
-    vespalib::rename(normalDir, removedDir, false, false);
+    if (std::filesystem::exists(std::filesystem::path(normalDir))) {
+        std::filesystem::rename(std::filesystem::path(normalDir), std::filesystem::path(removedDir));
+    }
     vespalib::File::sync(documentsDir);
     TransLogClient tlc(_transport, _tlsSpec);
     if (!tlc.remove(name)) {

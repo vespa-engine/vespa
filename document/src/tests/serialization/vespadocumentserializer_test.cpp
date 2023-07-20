@@ -46,6 +46,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/vespalib/util/compressionconfig.h>
+#include <filesystem>
 
 using vespalib::File;
 using vespalib::Slime;
@@ -706,8 +707,8 @@ void checkDeserialization(const string &name, std::unique_ptr<Slime> slime) {
 
     PredicateFieldValue value(std::move(slime));
     serializeToFile(value, data_dir + name + "__cpp.new");
-    vespalib::rename(data_dir + name + "__cpp.new",
-                     data_dir + name + "__cpp");
+    std::filesystem::rename(std::filesystem::path(data_dir + name + "__cpp.new"),
+                            std::filesystem::path(data_dir + name + "__cpp"));
 
     deserializeAndCheck(data_dir + name + "__cpp", value);
     deserializeAndCheck(data_dir + name + "__java", value);
@@ -836,8 +837,8 @@ void checkDeserialization(const string &name, std::unique_ptr<vespalib::eval::Va
         value = std::move(tensor);
     }
     serializeToFile(value, data_dir + name + "__cpp.new");
-    vespalib::rename(data_dir + name + "__cpp.new",
-                     data_dir + name + "__cpp");
+    std::filesystem::rename(std::filesystem::path(data_dir + name + "__cpp.new"),
+                            std::filesystem::path(data_dir + name + "__cpp"));
 
     deserializeAndCheck(data_dir + name + "__cpp", value);
     deserializeAndCheck(data_dir + name + "__java", value);
@@ -965,8 +966,8 @@ struct RefFixture {
         const string field_name = "ref_field";
         serializeToFile(value, data_dir + file_base_name + "__cpp.new",
                         fixed_repo.getDocumentTypeRepo(), ref_doc_type, field_name);
-        vespalib::rename(data_dir + file_base_name + "__cpp.new",
-                         data_dir + file_base_name + "__cpp");
+        std::filesystem::rename(std::filesystem::path(data_dir + file_base_name + "__cpp.new"),
+                                std::filesystem::path(data_dir + file_base_name + "__cpp"));
 
         deserializeAndCheck(data_dir + file_base_name + "__cpp",
                             value, fixed_repo, field_name);
