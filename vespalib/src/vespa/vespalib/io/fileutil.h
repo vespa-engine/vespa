@@ -242,14 +242,6 @@ extern inline off_t getFileSize(const vespalib::string & path) {
 }
 
 /**
- * Check if a file is a directory or not.
- *
- * @return True if it is a directory, false if it don't exist or isn't.
- * @throw IoException If we failed to stat the file.
- */
-extern bool isDirectory(const vespalib::string & path);
-
-/**
  * List the contents of the given directory.
  */
 using DirectoryList = std::vector<vespalib::string>;
