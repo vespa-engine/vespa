@@ -34,7 +34,7 @@ TEST("require that vespalib::File::open works")
 {
         // Opening non-existing file for reading should fail.
     try{
-        unlink("myfile"); // Just in case
+        std::filesystem::remove(std::filesystem::path("myfile")); // Just in case
         File f("myfile");
         f.open(File::READONLY);
         TEST_FATAL("Opening non-existing file for reading should fail.");
@@ -155,7 +155,7 @@ TEST("require that vespalib::File::isOpen works")
 
 TEST("require that vespalib::File::stat works")
 {
-    unlink("myfile");
+    std::filesystem::remove(std::filesystem::path("myfile"));
     std::filesystem::remove_all(std::filesystem::path("mydir"));
     EXPECT_EQUAL(false, fileExists("myfile"));
     EXPECT_EQUAL(false, fileExists("mydir"));
@@ -188,7 +188,7 @@ TEST("require that vespalib::File::stat works")
 
 TEST("require that vespalib::File::resize works")
 {
-    unlink("myfile");
+    std::filesystem::remove(std::filesystem::path("myfile"));
     File f("myfile");
     f.open(File::CREATE, false);
     f.write("foobar", 6, 0);
@@ -204,35 +204,6 @@ TEST("require that vespalib::File::resize works")
     read = f.read(&vec[0], 20, 0);
     EXPECT_EQUAL(3u, read);
     EXPECT_EQUAL(std::string("foo"), std::string(&vec[0], 3));
-}
-
-TEST("require that vespalib::unlink works")
-{
-        // Fails on directory
-    try{
-        std::filesystem::create_directory(std::filesystem::path("mydir"));
-        unlink("mydir");
-        TEST_FATAL("Should work on directories.");
-    } catch (IoException& e) {
-        //std::cerr << e.what() << "\n";
-#ifdef __APPLE__
-        EXPECT_EQUAL(IoException::NO_PERMISSION, e.getType());
-#else
-        EXPECT_EQUAL(IoException::ILLEGAL_PATH, e.getType());
-#endif
-    }
-        // Works for file
-    {
-        {
-            File f("myfile");
-            f.open(File::CREATE);
-            f.write("foo", 3, 0);
-        }
-        ASSERT_TRUE(fileExists("myfile"));
-        ASSERT_TRUE(unlink("myfile"));
-        ASSERT_TRUE(!fileExists("myfile"));
-        ASSERT_TRUE(!unlink("myfile"));
-    }
 }
 
 TEST("require that copy constructor and assignment for vespalib::File works")
@@ -341,7 +312,7 @@ TEST("require that vespalib::symlink works")
 TEST("require that we can read all data written to file")
 {
     // Write text into a file.
-    unlink("myfile");
+    std::filesystem::remove(std::filesystem::path("myfile"));
     File fileForWriting("myfile");
     fileForWriting.open(File::CREATE);
     vespalib::string text = "This is some text. ";

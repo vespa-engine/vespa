@@ -325,15 +325,6 @@ extern void symlink(const vespalib::string & oldPath,
 extern vespalib::string readLink(const vespalib::string & path);
 
 /**
- * Remove the given file.
- *
- * @param filename name of file.
- * @return True if file was removed, false if it did not exist.
- * @throw IoException If we failed to unlink the file.
- */
-extern bool unlink(const vespalib::string & filename);
-
-/**
  * List the contents of the given directory.
  */
 using DirectoryList = std::vector<vespalib::string>;
