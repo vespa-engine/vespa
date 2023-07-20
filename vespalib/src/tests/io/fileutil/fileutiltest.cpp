@@ -247,68 +247,6 @@ TEST("require that copy constructor and assignment for vespalib::File works")
     }
 }
 
-TEST("require that vespalib::symlink works")
-{
-    // Target exists
-    {
-        std::filesystem::remove_all(std::filesystem::path("mydir"));
-        std::filesystem::create_directory(std::filesystem::path("mydir"));
-
-        File f("mydir/myfile");
-        f.open(File::CREATE | File::TRUNC);
-        f.write("Hello World!\n", 13, 0);
-        f.close();
-
-        symlink("myfile", "mydir/linkyfile");
-        EXPECT_TRUE(fileExists("mydir/linkyfile"));
-
-        File f2("mydir/linkyfile");
-        f2.open(File::READONLY);
-        std::vector<char> vec(20, ' ');
-        size_t read = f2.read(&vec[0], 20, 0);
-        EXPECT_EQUAL(13u, read);
-        EXPECT_EQUAL(std::string("Hello World!\n"), std::string(&vec[0], 13));
-    }
-
-    // POSIX symlink() fails
-    {
-        std::filesystem::remove_all(std::filesystem::path("mydir"));
-        std::filesystem::create_directories(std::filesystem::path("mydir/a"));
-        std::filesystem::create_directory(std::filesystem::path("mydir/b"));
-        try {
-            // Link already exists
-            symlink("a", "mydir/b");
-            TEST_FATAL("Exception not thrown on already existing link");
-        } catch (IoException& e) {
-            EXPECT_EQUAL(IoException::ALREADY_EXISTS, e.getType());
-        }
-    }
-
-    {
-        std::filesystem::remove_all(std::filesystem::path("mydir"));
-        std::filesystem::create_directory(std::filesystem::path("mydir"));
-
-        File f("mydir/myfile");
-        f.open(File::CREATE | File::TRUNC);
-        f.write("Hello World!\n", 13, 0);
-        f.close();
-    }
-
-    // readLink success
-    {
-        symlink("myfile", "mydir/linkyfile");
-        EXPECT_EQUAL("myfile", readLink("mydir/linkyfile"));
-    }
-    // readLink failure
-    {
-        try {
-            readLink("no/such/link");
-        } catch (IoException& e) {
-            EXPECT_EQUAL(IoException::NOT_FOUND, e.getType());
-        }        
-    }
-}
-
 TEST("require that we can read all data written to file")
 {
     // Write text into a file.
