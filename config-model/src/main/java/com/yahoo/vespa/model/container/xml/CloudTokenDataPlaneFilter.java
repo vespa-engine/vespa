@@ -40,6 +40,7 @@ class CloudTokenDataPlaneFilter extends Filter implements CloudTokenDataPlaneFil
     @Override
     public void getConfig(CloudTokenDataPlaneFilterConfig.Builder builder) {
         var clientsCfg = clients.stream()
+                .filter(c -> !c.tokens().isEmpty())
                 .map(x -> new CloudTokenDataPlaneFilterConfig.Clients.Builder()
                         .id(x.id())
                         .tokens(tokensConfig(x.tokens()))

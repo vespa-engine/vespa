@@ -42,6 +42,7 @@ class CloudDataPlaneFilter extends Filter implements CloudDataPlaneFilterConfig.
             builder.legacyMode(true);
         } else {
             var clientsCfg = clients.stream()
+                    .filter(c -> !c.certificates().isEmpty())
                     .map(x -> new CloudDataPlaneFilterConfig.Clients.Builder()
                             .id(x.id())
                             .certificates(x.certificates().stream().map(X509CertificateUtils::toPem).toList())
