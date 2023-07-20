@@ -523,101 +523,10 @@ unlink(const string & filename)
     return true;
 }
 
-bool
-rename(const string & frompath, const string & topath,
-       bool copyDeleteBetweenFilesystems, bool createTargetDirectoryIfMissing)
-{
-    LOG(spam, "rename(%s, %s): Renaming file%s.",
-        frompath.c_str(), topath.c_str(),
-        createTargetDirectoryIfMissing
-            ? " recursively creating target directory if missing" : "");
-    if (::rename(frompath.c_str(), topath.c_str()) != 0) {
-        if (errno == ENOENT) {
-            if (!fileExists(frompath)) return false;
-            if (createTargetDirectoryIfMissing) {
-                string::size_type pos = topath.rfind('/');
-                if (pos != string::npos) {
-                    string path(topath.substr(0, pos));
-                    std::filesystem::create_directories(std::filesystem::path(path));
-                    LOG(debug, "rename(%s, %s): Created target directory. Calling recursively.",
-                        frompath.c_str(), topath.c_str());
-                    return rename(frompath, topath, copyDeleteBetweenFilesystems, false);
-                }
-            } else {
-                asciistream ost;
-                ost << "rename(" << frompath << ", " << topath
-                    << (copyDeleteBetweenFilesystems ? ", revert to copy" : "")
-                    << (createTargetDirectoryIfMissing
-                            ? ", create missing target" : "")
-                    << "): Failed, target path does not exist.";
-                throw IoException(ost.str(), IoException::NOT_FOUND,
-                                  VESPA_STRLOC);
-            }
-        } else if (errno == EXDEV && copyDeleteBetweenFilesystems) {
-            if (!fileExists(frompath)) {
-                LOG(debug, "rename(%s, %s): Renaming non-existing file across "
-                           "filesystems returned EXDEV rather than ENOENT.",
-                    frompath.c_str(), topath.c_str());
-                return false;
-            }
-            LOG(debug, "rename(%s, %s): Cannot rename across filesystems. "
-                       "Copying and deleting instead.",
-                frompath.c_str(), topath.c_str());
-            copy(frompath, topath, createTargetDirectoryIfMissing);
-            unlink(frompath);
-            return true;
-        }
-        asciistream ost;
-        ost << "rename(" << frompath << ", " << topath
-            << (copyDeleteBetweenFilesystems ? ", revert to copy" : "")
-            << (createTargetDirectoryIfMissing ? ", create missing target" : "")
-            << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno),
-                          VESPA_STRLOC);
-    }
-    LOG(debug, "rename(%s, %s): Renamed.", frompath.c_str(), topath.c_str());
-    return true;
-}
-
 namespace {
 
-    uint32_t bufferSize = 1_Mi;
     uint32_t diskAlignmentSize = 4_Ki;
 
-}
-
-void
-copy(const string & frompath, const string & topath,
-     bool createTargetDirectoryIfMissing, bool useDirectIO)
-{
-        // Get aligned buffer, so it works with direct IO
-    LOG(spam, "copy(%s, %s): Copying file%s.",
-        frompath.c_str(), topath.c_str(),
-        createTargetDirectoryIfMissing
-            ? " recursively creating target directory if missing" : "");
-    MallocAutoPtr buffer(getAlignedBuffer(bufferSize));
-
-    File source(frompath);
-    File target(topath);
-    source.open(File::READONLY | (useDirectIO ? File::DIRECTIO : 0));
-    size_t sourceSize = source.getFileSize();
-    if (useDirectIO && sourceSize % diskAlignmentSize != 0) {
-        LOG(warning, "copy(%s, %s): Cannot use direct IO to write new file, "
-                     "as source file has size %zu, which is not "
-                     "dividable by the disk alignment size of %u.",
-            frompath.c_str(), topath.c_str(), sourceSize, diskAlignmentSize);
-        useDirectIO = false;
-    }
-    target.open(File::CREATE | File::TRUNC | (useDirectIO ? File::DIRECTIO : 0),
-                createTargetDirectoryIfMissing);
-    off_t offset = 0;
-    for (;;) {
-        size_t bytesRead = source.read(buffer.get(), bufferSize, offset);
-        target.write(buffer.get(), bytesRead, offset);
-        if (bytesRead < bufferSize) break;
-        offset += bytesRead;
-    }
-    LOG(debug, "copy(%s, %s): Completed.", frompath.c_str(), topath.c_str());
 }
 
 DirectoryList

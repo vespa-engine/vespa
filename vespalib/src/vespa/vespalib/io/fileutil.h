@@ -334,36 +334,6 @@ extern vespalib::string readLink(const vespalib::string & path);
 extern bool unlink(const vespalib::string & filename);
 
 /**
- * Rename the file at frompath to topath.
- *
- * @param frompath old name of file.
- * @param topath new name of file.
- *
- * @param copyDeleteBetweenFilesystems whether a copy-and-delete
- * operation should be performed if rename crosses a file system
- * boundary, or not.
- *
- * @param createTargetDirectoryIfMissing whether the target directory
- * should be created if it's missing, or not.
- *
- * @throw IoException If we failed to rename the file.
- * @throw std::filesystem::filesystem_error If we failed to create a target directory
- * @return True if file was renamed, false if frompath did not exist.
- */
-extern bool rename(const vespalib::string & frompath,
-                   const vespalib::string & topath,
-                   bool copyDeleteBetweenFilesystems = true,
-                   bool createTargetDirectoryIfMissing = false);
-
-/**
- * Copies a file to a destination using Direct IO.
- */
-extern void copy(const vespalib::string & frompath,
-                 const vespalib::string & topath,
-                 bool createTargetDirectoryIfMissing = false,
-                 bool useDirectIO = true);
-
-/**
  * List the contents of the given directory.
  */
 using DirectoryList = std::vector<vespalib::string>;
