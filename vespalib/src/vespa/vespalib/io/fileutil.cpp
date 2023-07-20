@@ -449,34 +449,6 @@ getCurrentDirectory()
 }
 
 void
-symlink(const string & oldPath, const string & newPath)
-{
-    if (::symlink(oldPath.c_str(), newPath.c_str())) {
-        asciistream ss;
-        const int err = errno;
-        ss << "symlink(" << oldPath << ", " << newPath
-           << "): Failed, errno(" << err << "): "
-           << safeStrerror(err);
-        throw IoException(ss.str(), IoException::getErrorType(err), VESPA_STRLOC);
-    }
-}
-
-string
-readLink(const string & path)
-{
-    char buf[256];
-    ssize_t bytes(::readlink(path.c_str(), buf, sizeof(buf)));
-    if (bytes < 0) {
-        asciistream ss;
-        const int err = errno;
-        ss << "readlink(" << path << "): Failed, errno(" << err << "): "
-           << safeStrerror(err);
-        throw IoException(ss.str(), IoException::getErrorType(err), VESPA_STRLOC);
-    }
-    return string(buf, bytes);
-}
-
-void
 chdir(const string & directory)
 {
     if (::chdir(directory.c_str()) != 0) {

@@ -300,31 +300,6 @@ extern inline bool isSymLink(const vespalib::string & path) {
 }
 
 /**
- * Creates a symbolic link named newPath which contains the string oldPath.
- *
- * IMPORTANT: from the spec:
- * "Symbolic links are interpreted at run time as if the contents of the link had
- * been substituted into the path being followed to find a file or directory."
- *
- * This means oldPath is _relative_ to the directory in which newPath resides!
- *
- * @param oldPath Target of symbolic link.
- * @param newPath Relative link to be created. See above note for semantics.
- * @throw IoException if we fail to create the symlink.
- */
-extern void symlink(const vespalib::string & oldPath,
-                    const vespalib::string & newPath);
-
-/**
- * Read and return the contents of symbolic link at the given path.
- *
- * @param path Path to symbolic link.
- * @return Contents of symbolic link.
- * @throw IoException if we cannot read the link.
- */
-extern vespalib::string readLink(const vespalib::string & path);
-
-/**
  * List the contents of the given directory.
  */
 using DirectoryList = std::vector<vespalib::string>;
