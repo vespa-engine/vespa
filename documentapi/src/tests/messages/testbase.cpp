@@ -5,10 +5,10 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/vespalib/util/exception.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <algorithm>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".testbase");
@@ -128,7 +128,7 @@ TestBase::testCoverage(const std::vector<uint32_t> &expected, const std::vector<
 }
 
 bool TestBase::file_content_is_unchanged(const string& filename, const mbus::Blob& data_to_write) const {
-    if (!vespalib::fileExists(filename)) {
+    if (!std::filesystem::exists(std::filesystem::path(filename))) {
         return false;
     }
     mbus::Blob existing = readFile(filename);

@@ -100,7 +100,7 @@ struct Fixture {
 
     ~Fixture() {
         engine.reset();
-        if (fileExists("test_cert.pem")) {
+        if (std::filesystem::exists(std::filesystem::path("test_cert.pem"))) {
             unlink("test_cert.pem"); // just crash the test if this throws
         }
     }

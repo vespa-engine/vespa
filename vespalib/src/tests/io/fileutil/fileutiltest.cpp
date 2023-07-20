@@ -11,6 +11,14 @@
 
 namespace vespalib {
 
+namespace {
+
+bool fileExists(const vespalib::string& name) {
+    return std::filesystem::exists(std::filesystem::path(name));
+}
+
+}
+
 vespalib::string normalizeOpenError(const vespalib::string str)
 {
     std::regex modeex(" mode=[0-7]+");
@@ -178,8 +186,6 @@ TEST("require that vespalib::File::stat works")
     f.close();
     EXPECT_EQUAL(6, getFileSize("myfile"));
 
-    EXPECT_EQUAL(true, isDirectory("mydir"));
-    EXPECT_EQUAL(false, isDirectory("myfile"));
     EXPECT_EQUAL(true, fileExists("myfile"));
     EXPECT_EQUAL(true, fileExists("mydir"));
 }

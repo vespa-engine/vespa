@@ -54,7 +54,7 @@ void scanDir(const vespalib::string documentsDir, DocumentDBDirScan &dirs)
 {
     auto names = vespalib::listDirectory(documentsDir);
     for (const auto &name : names) {
-        if (vespalib::isDirectory(documentsDir + "/" + name)) {
+        if (std::filesystem::is_directory(std::filesystem::path(documentsDir + "/" + name))) {
             if (isRemovedName(name)) {
                 dirs[DocTypeName(getNormalName(name))].removed = true;
             } else {

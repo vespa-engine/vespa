@@ -467,18 +467,6 @@ stat(const string & path)
     return processStat(filestats, ::stat(path.c_str(), &filestats) == 0, path);
 }
 
-FileInfo::UP
-lstat(const string & path)
-{
-    struct ::stat filestats;
-    return processStat(filestats, ::lstat(path.c_str(), &filestats) == 0, path);
-}
-
-bool
-fileExists(const string & path) {
-    return (stat(path).get() != 0);
-}
-
 namespace {
 
     uint32_t diskAlignmentSize = 4_Ki;

@@ -233,22 +233,6 @@ extern void chdir(const vespalib::string & directory);
 extern FileInfo::UP stat(const vespalib::string & path);
 
 /**
- * Stat a file. Give info on symlink rather than on file pointed to.
- *
- * @throw  IoException If we failed to stat the file.
- * @return A file info object if everything went well, a null pointer if the
- *         file was not found.
- */
-extern FileInfo::UP lstat(const vespalib::string & path);
-
-/**
- * Check if a file exists or not. See also pathExists.
- *
- * @throw IoException If we failed to stat the file.
- */
-extern bool fileExists(const vespalib::string & path);
-
-/**
  * Get the filesize of the given file. Ignoring if it exists or not.
  * (None-existing files will be reported to have size zero)
  */
