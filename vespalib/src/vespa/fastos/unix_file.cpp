@@ -116,9 +116,6 @@ FastOS_UNIX_File::Stat(const char *filename, FastOS_StatInfo *statInfo)
     return rc;
 }
 
-bool FastOS_UNIX_File::SetCurrentDirectory (const char *pathName) { return (chdir(pathName) == 0); }
-
-
 int FastOS_UNIX_File::GetMaximumFilenameLength (const char *pathName)
 {
     return pathconf(pathName, _PC_NAME_MAX);
@@ -128,28 +125,6 @@ int FastOS_UNIX_File::GetMaximumPathLength(const char *pathName)
 {
     return pathconf(pathName, _PC_PATH_MAX);
 }
-
-std::string
-FastOS_UNIX_File::getCurrentDirectory()
-{
-    std::string res;
-    int maxPathLen = FastOS_File::GetMaximumPathLength(".");
-    if (maxPathLen == -1) {
-        maxPathLen = 16384;
-    } else if (maxPathLen < 512) {
-        maxPathLen = 512;
-    }
-
-    char *currentDir = new char [maxPathLen + 1];
-
-    if (getcwd(currentDir, maxPathLen) != nullptr) {
-        res = currentDir;
-    }
-    delete [] currentDir;
-
-    return res;
-}
-
 
 unsigned int
 FastOS_UNIX_File::CalcAccessFlags(unsigned int openFlags)

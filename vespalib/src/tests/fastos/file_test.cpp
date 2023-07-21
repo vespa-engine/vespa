@@ -18,16 +18,6 @@ struct Generated {
     ~Generated() { std::filesystem::remove_all(std::filesystem::path("generated")); }
 };
 
-TEST(FileTest, GetCurrentDirTest) {
-    std::string currentDir = FastOS_File::getCurrentDirectory();
-    EXPECT_FALSE(currentDir.empty());
-    EXPECT_TRUE(FastOS_File::SetCurrentDirectory(".."));
-    std::string parentDir = FastOS_File::getCurrentDirectory();
-    EXPECT_FALSE(parentDir.empty());
-    EXPECT_NE(currentDir, parentDir);
-    EXPECT_TRUE(FastOS_File::SetCurrentDirectory(currentDir.c_str()));
-}
-
 void MemoryMapTestImpl(int mmap_flags) {
     Generated guard;
     const int bufSize = 1000;

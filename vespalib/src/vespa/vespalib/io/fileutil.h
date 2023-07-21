@@ -209,21 +209,6 @@ public:
 };
 
 /**
- * Get the current working directory.
- *
- * @throw IoException On failure.
- */
-extern vespalib::string getCurrentDirectory();
-
-/**
- * Change working directory.
- *
- * @param directory   The directory to change to.
- * @throw IoException If we failed to change to the new working directory.
- */
-extern void chdir(const vespalib::string & directory);
-
-/**
  * List the contents of the given directory.
  */
 using DirectoryList = std::vector<vespalib::string>;
