@@ -20,7 +20,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.jaxrs</groupId>
       <artifactId>jackson-jaxrs-json-provider</artifactId>
-      <version>${jackson2.vespa.version}</version>
+      <version>${jackson2.version}</version>
       <exclusions>
         <exclusion>
           <!-- Conflicts with javax.activation:javax.activation-api:1.2.0, which is "exported" via jdisc_core. -->
@@ -42,12 +42,12 @@
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
       <artifactId>jersey-client</artifactId>
-      <version>${jersey.vespa.version}</version>
+      <version>2.25</version>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
       <artifactId>jersey-server</artifactId>
-      <version>${jersey.vespa.version}</version>
+      <version>2.25</version>
       <exclusions>
         <exclusion>
           <groupId>org.glassfish.jersey.media</groupId>
@@ -58,12 +58,12 @@
     <dependency>
       <groupId>org.glassfish.jersey.ext</groupId>
       <artifactId>jersey-proxy-client</artifactId>
-      <version>${jersey.vespa.version}</version>
+      <version>2.25</version>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-json-jackson</artifactId>
-      <version>${jersey.vespa.version}</version>
+      <version>2.25</version>
       <exclusions>
         <!-- Prevent embedding deps provided by jdisc  -->
         <exclusion>
@@ -79,7 +79,7 @@
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-multipart</artifactId>
-      <version>${jersey.vespa.version}</version>
+      <version>2.25</version>
     </dependency>
 
     <!-- END Jersey deps -->

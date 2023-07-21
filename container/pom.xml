@@ -56,7 +56,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <classpathLayoutType>custom</classpathLayoutType>
-              <customClasspathLayout>$${artifact.groupId}:$${artifact.artifactId}:$${artifact.vespa.version}</customClasspathLayout>
+              <customClasspathLayout>$${artifact.groupId}:$${artifact.artifactId}:$${artifact.version}</customClasspathLayout>
             </manifest>
           </archive>
         </configuration>
