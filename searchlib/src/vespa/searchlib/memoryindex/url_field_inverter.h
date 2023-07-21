@@ -29,15 +29,15 @@ class UrlFieldInverter {
 
     void endElement();
 
-    void processUrlField(const document::FieldValue &url_field);
+    void processUrlField(const document::FieldValue &url_field, const document::Document& doc);
 
-    void processUrlOldStyle(const vespalib::string &s);
+    void processUrlOldStyle(const vespalib::string &s, const document::Document& doc);
 
-    void processArrayUrlField(const document::ArrayFieldValue &field);
+    void processArrayUrlField(const document::ArrayFieldValue &field, const document::Document& doc);
 
-    void processWeightedSetUrlField(const document::WeightedSetFieldValue &field);
+    void processWeightedSetUrlField(const document::WeightedSetFieldValue &field, const document::Document& doc);
 
-    void invertUrlField(const document::FieldValue &field);
+    void invertUrlField(const document::FieldValue &field, const document::Document& doc);
 public:
     UrlFieldInverter(index::schema::CollectionType collectionType,
                      FieldInverter *all,
@@ -49,7 +49,7 @@ public:
                      FieldInverter *fragment,
                      FieldInverter *hostname);
 
-    void invertField(uint32_t docId, const document::FieldValue::UP &field);
+    void invertField(uint32_t docId, const document::FieldValue::UP &field, const document::Document& doc);
     void removeDocument(uint32_t docId);
 
     void applyRemoves();

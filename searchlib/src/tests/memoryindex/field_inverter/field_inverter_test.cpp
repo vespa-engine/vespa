@@ -18,7 +18,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-namespace search {
+namespace search::memoryindex {
 
 using document::ArrayFieldValue;
 using document::DataType;
@@ -30,8 +30,6 @@ using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
 
 using namespace index;
-
-namespace memoryindex {
 
 namespace {
 
@@ -138,6 +136,16 @@ makeCorruptDocument(DocBuilder &b, size_t wordOffset)
     return std::make_unique<Document>(b.get_repo(), badstream);
 }
 
+std::unique_ptr<Document>
+make_very_long_word_document(DocBuilder& b)
+{
+    StringFieldBuilder sfb(b);
+    auto doc = b.make_document("id:ns:searchdocument::19");
+    vespalib::string long_word(FieldInverter::max_word_len + 1, 'z');
+    doc->setValue("f0", sfb.tokenize("before ").word(long_word).tokenize(" after").build());
+    return doc;
+}
+
 }
 
 struct FieldInverterTest : public ::testing::Test {
@@ -169,7 +177,7 @@ struct FieldInverterTest : public ::testing::Test {
         for (auto &inverter : _inverters) {
             vespalib::stringref fieldName =
                 _schema.getIndexField(fieldId).getName();
-            inverter->invertField(docId, doc.getValue(fieldName));
+            inverter->invertField(docId, doc.getValue(fieldName), doc);
             ++fieldId;
         }
     }
@@ -421,7 +429,16 @@ TEST_F(FieldInverterTest, require_that_word_with_NUL_byte_is_dropped_when_trunca
               _inserter_backend.toStr());
 }
 
+TEST_F(FieldInverterTest, very_long_words_are_dropped)
+{
+    invertDocument(1, *make_very_long_word_document(_b));
+    pushDocuments();
+    EXPECT_EQ("f=0,"
+              "w=after,a=1,"
+              "w=before,a=1",
+              _inserter_backend.toStr());
 }
+
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
