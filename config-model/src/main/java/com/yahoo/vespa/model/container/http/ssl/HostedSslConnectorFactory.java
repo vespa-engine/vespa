@@ -56,7 +56,8 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                     new ConnectorConfig.TlsClientAuthEnforcer.Builder()
                             .pathWhitelist(List.of("/status.html")).enable(true));
         }
-        connectorBuilder.ssl.enabledProtocols(TlsContext.ALLOWED_PROTOCOLS);
+        // Disables TLSv1.3 as it causes some browsers to prompt user for client certificate (when connector has 'want' auth)
+        connectorBuilder.ssl.enabledProtocols(List.of("TLSv1.2"));
         if (!tlsCiphersOverride.isEmpty()) {
             connectorBuilder.ssl.enabledCipherSuites(tlsCiphersOverride.stream().sorted().toList());
         } else {
