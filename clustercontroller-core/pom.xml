@@ -38,7 +38,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>${mockito.vespa.version}</version>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
