@@ -255,7 +255,7 @@ FieldInverter::saveWord(const vespalib::stringref word, const Document* doc)
     }
     if (len > max_word_len && doc != nullptr) {
         const Schema::IndexField& field = _schema.getIndexField(_fieldId);
-        LOG(error, "Dropped too long word (len=%zu) from document %s field %s, word prefix is %.100s", len, doc->getId().toString().c_str(), field.getName().c_str(), word.data());
+        LOG(warning, "Dropped too long word (len %zu > max len %zu) from document %s field %s, word prefix is %.100s", len, max_word_len, doc->getId().toString().c_str(), field.getName().c_str(), word.data());
         return 0u;
     }
     if (len == 0) {
