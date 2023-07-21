@@ -132,7 +132,7 @@ struct UrlFieldInverterTest : public ::testing::Test {
     ~UrlFieldInverterTest() override;
 
     void invertDocument(uint32_t docId, const Document &doc) {
-        _urlInverter->invertField(docId, doc.getValue(url));
+        _urlInverter->invertField(docId, doc.getValue(url), doc);
     }
 
     void pushDocuments() {
