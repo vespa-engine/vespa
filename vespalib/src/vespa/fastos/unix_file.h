@@ -33,9 +33,6 @@ protected:
 public:
     static bool Stat(const char *filename, FastOS_StatInfo *statInfo);
 
-    static std::string getCurrentDirectory();
-
-    static bool SetCurrentDirectory (const char *pathName);
     static int GetMaximumFilenameLength (const char *pathName);
     static int GetMaximumPathLength (const char *pathName);
 

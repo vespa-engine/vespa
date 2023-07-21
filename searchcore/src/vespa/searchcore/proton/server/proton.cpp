@@ -329,16 +329,15 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
         break;
     }
     _protonDiskLayout = std::make_unique<ProtonDiskLayout>(_transport, protonConfig.basedir, protonConfig.tlsspec);
-    vespalib::chdir(protonConfig.basedir);
+    std::filesystem::current_path(std::filesystem::path(protonConfig.basedir));
     vespalib::alloc::MmapFileAllocatorFactory::instance().setup(protonConfig.basedir + "/swapdirs");
     _tls->start(_transport, hwInfo.cpu().cores());
     _flushEngine = std::make_unique<FlushEngine>(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
                                                  strategy, flush.maxconcurrent, vespalib::from_s(flush.idleinterval));
     _metricsEngine->addExternalMetrics(_summaryEngine->getMetrics());
 
-    char tmp[1024];
     LOG(debug, "Start proton server with root at %s and cwd at %s",
-        protonConfig.basedir.c_str(), getcwd(tmp, sizeof(tmp)));
+        protonConfig.basedir.c_str(), std::filesystem::current_path().string().c_str());
 
     _persistenceEngine = std::make_unique<PersistenceEngine>(*this, _diskMemUsageSampler->writeFilter(),
                                                              _diskMemUsageSampler->notifier(),

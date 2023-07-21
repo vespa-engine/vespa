@@ -436,30 +436,6 @@ File::unlink()
     return std::filesystem::remove(std::filesystem::path(_filename));
 }
 
-string
-getCurrentDirectory()
-{
-    MallocAutoPtr ptr = getcwd(0, 0);
-    if (ptr.get() != 0) {
-        return string(static_cast<char*>(ptr.get()));
-    }
-    asciistream ost;
-    ost << "getCurrentDirectory(): Failed, errno(" << errno << "): " << safeStrerror(errno);
-    throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
-}
-
-void
-chdir(const string & directory)
-{
-    if (::chdir(directory.c_str()) != 0) {
-        asciistream ost;
-        ost << "chdir(" << directory << "): Failed, errno(" << errno << "): "
-            << safeStrerror(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
-    }
-    LOG(debug, "chdir(%s): Working directory changed.", directory.c_str());
-}
-
 namespace {
 
     uint32_t diskAlignmentSize = 4_Ki;
