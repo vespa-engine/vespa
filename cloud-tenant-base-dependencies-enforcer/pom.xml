@@ -50,12 +50,12 @@
 
                                         <!-- Guava with its internal dependencies -->
                                         <include>com.google.guava:guava:${guava.vespa.version}:provided</include>
-                                        <include>com.google.errorprone:error_prone_annotations:2.18.0:provided</include>
-                                        <include>com.google.guava:failureaccess:1.0.1:provided</include>
-                                        <include>com.google.j2objc:j2objc-annotations:2.8:provided</include>
+                                        <include>com.google.errorprone:error_prone_annotations:[2.18.0, 3):provided</include>
+                                        <include>com.google.guava:failureaccess:[1.0.1, 2):provided</include>
+                                        <include>com.google.j2objc:j2objc-annotations:[2.8, 3):provided</include>
 
                                         <include>com.google.inject:guice:jar:no_aop:${guice.vespa.version}:provided</include>
-                                        <include>com.sun.activation:javax.activation:1.2.0:provided</include>
+                                        <include>com.sun.activation:javax.activation:[1.2.0, 2):provided</include>
                                         <include>com.sun.xml.bind:jaxb-core:${jaxb.vespa.version}:provided</include>
                                         <include>com.sun.xml.bind:jaxb-impl:${jaxb.vespa.version}:provided</include>
                                         <include>commons-logging:commons-logging:${commons-logging.vespa.version}:provided</include>
@@ -196,8 +196,8 @@
                                         <include>org.junit.vintage:junit-vintage-engine:${junit.vespa.version}:test</include>
                                         <include>org.lz4:lz4-java:${org.lz4.vespa.version}:test</include>
                                         <include>org.opentest4j:opentest4j:1.2.0:test</include>
-                                        <include>org.osgi:org.osgi.compendium:4.1.0:test</include>
-                                        <include>org.osgi:org.osgi.core:4.1.0:test</include>
+                                        <include>org.osgi:org.osgi.compendium:[4.1.0, 5):test</include>
+                                        <include>org.osgi:org.osgi.core:[4.1.0, 5):test</include>
                                         <include>xerces:xercesImpl:2.12.2:test</include>
                                     </allowed>
                                 </enforceDependencies>
