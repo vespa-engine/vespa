@@ -7,8 +7,6 @@
 #include "juniperproperties.h"
 #include "resultclass.h"
 #include "resultconfig.h"
-#include <vespa/fastlib/text/unicodeutil.h>
-#include <vespa/fastlib/text/wordfolder.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search { class IAttributeManager; }
