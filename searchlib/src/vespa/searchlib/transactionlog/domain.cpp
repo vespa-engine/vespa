@@ -61,11 +61,11 @@ Domain::Domain(const string &domainName, const string & baseDir, vespalib::Execu
       _markedDeleted(false)
 {
     assert(_config.getEncoding().getCompression() != Encoding::Compression::none);
-    int retval = makeDirectory(_baseDir.c_str());
+    int retval = makeDirectory(_baseDir);
     if (retval != 0) {
         throw runtime_error(fmt("Failed creating basedirectory %s r(%d), e(%d)", _baseDir.c_str(), retval, errno));
     }
-    retval = makeDirectory(dir().c_str());
+    retval = makeDirectory(dir());
     if (retval != 0) {
         throw runtime_error(fmt("Failed creating domaindir %s r(%d), e(%d)", dir().c_str(), retval, errno));
     }

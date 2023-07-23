@@ -5,11 +5,12 @@
 #include "domain.h"
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/fastos/file.h>
+#include <filesystem>
 
 
 using vespalib::slime::Inserter;
 using vespalib::slime::Cursor;
+namespace fs = std::filesystem;
 
 namespace search::transactionlog {
 
@@ -34,11 +35,7 @@ struct DomainExplorer : vespalib::StateExplorer {
                 part.setLong("numEntries", part_in.numEntries);
                 part.setLong("byteSize", part_in.byteSize);
                 part.setString("file", part_in.file);
-                {
-                    FastOS_StatInfo stat_info;
-                    FastOS_File::Stat(part_in.file.c_str(), &stat_info);
-                    part.setString("lastModified", vespalib::to_string(stat_info._modifiedTime));
-                }
+                part.setString("lastModified", vespalib::to_string(fs::last_write_time(fs::path(part_in.file))));
             }
         }
     }
