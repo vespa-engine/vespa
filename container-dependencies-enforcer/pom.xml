@@ -201,7 +201,7 @@
                                         <include>org.lz4:lz4-java:${org.lz4.vespa.version}:test</include>
                                         <include>org.osgi:org.osgi.compendium:[4.1.0, 5):test</include>
                                         <include>org.osgi:org.osgi.core:[4.1.0, 5):test</include>
-                                        <include>xerces:xercesImpl:2.12.2:test</include>
+                                        <include>xerces:xercesImpl:${xerces.vespa.version}:test</include>
                                     </allowed>
                                 </enforceDependencies>
                             </rules>
