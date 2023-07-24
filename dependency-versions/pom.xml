@@ -86,6 +86,7 @@
         <joda-time.vespa.version>2.12.2</joda-time.vespa.version>
         <junit.vespa.version>5.8.1</junit.vespa.version>
         <junit.platform.vespa.version>1.8.1</junit.platform.vespa.version>
+        <junit4.vespa.version>4.13.2</junit4.vespa.version>
         <maven-archiver.vespa.version>3.6.0</maven-archiver.vespa.version>
         <maven-wagon.vespa.version>2.10</maven-wagon.vespa.version>
         <mockito.vespa.version>4.0.0</mockito.vespa.version>

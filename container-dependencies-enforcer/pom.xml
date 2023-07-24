@@ -160,7 +160,7 @@
                                         <include>io.airlift:airline:${airline.vespa.version}:test</include>
                                         <include>io.prometheus:simpleclient:${prometheus.client.vespa.version}:test</include>
                                         <include>io.prometheus:simpleclient_common:${prometheus.client.vespa.version}:test</include>
-                                        <include>junit:junit:4.13.2:test</include>
+                                        <include>junit:junit:${junit4.vespa.version}:test</include>
                                         <include>net.java.dev.jna:jna:5.11.0:test</include>
                                         <include>net.openhft:zero-allocation-hashing:jar:0.16:test</include>
                                         <include>org.antlr:antlr-runtime:3.5.3:test</include>
