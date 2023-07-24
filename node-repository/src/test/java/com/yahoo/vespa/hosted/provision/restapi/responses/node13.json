@@ -77,6 +77,5 @@
     "127.0.13.1",
     "::13:1"
   ],
-  "additionalIpAddresses": [],
-  "cloudAccount": "aws:111222333444"
+  "additionalIpAddresses": []
 }

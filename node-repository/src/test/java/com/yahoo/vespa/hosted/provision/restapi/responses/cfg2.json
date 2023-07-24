@@ -117,6 +117,5 @@
     "127.0.202.1",
     "::202:1"
   ],
-  "additionalIpAddresses": [],
-  "cloudAccount": "aws:111222333444"
+  "additionalIpAddresses": []
 }
