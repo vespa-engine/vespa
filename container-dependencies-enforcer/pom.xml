@@ -176,7 +176,7 @@
                                         <include>org.apache.httpcomponents:httpclient:${apache.httpclient.vespa.version}:test</include>
                                         <include>org.apache.httpcomponents:httpcore:${apache.httpcore.vespa.version}:test</include>
                                         <include>org.apache.httpcomponents:httpmime:${apache.httpclient.vespa.version}:test</include>
-                                        <include>org.apache.opennlp:opennlp-tools:1.9.3:test</include>
+                                        <include>org.apache.opennlp:opennlp-tools:${opennlp.vespa.version}:test</include>
                                         <include>org.bouncycastle:bcpkix-jdk18on:${bouncycastle.vespa.version}:test</include>
                                         <include>org.bouncycastle:bcprov-jdk18on:${bouncycastle.vespa.version}:test</include>
                                         <include>org.bouncycastle:bcutil-jdk18on:${bouncycastle.vespa.version}:test</include>
