@@ -186,7 +186,7 @@
                                         <include>org.eclipse.jetty:jetty-servlet:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-util:${jetty.vespa.version}:test</include>
 
-                                        <include>org.hamcrest:hamcrest-core:1.3:test</include>
+                                        <include>org.hamcrest:hamcrest-core:${hamcrest.vespa.version}:test</include>
                                         <include>org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}:test</include>
                                         <include>org.json:json:${org.json.vespa.version}:test</include>
                                         <include>org.junit.jupiter:junit-jupiter-api:${junit.vespa.version}:test</include>
