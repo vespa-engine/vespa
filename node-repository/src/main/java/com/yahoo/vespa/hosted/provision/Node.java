@@ -616,8 +616,8 @@ public final class Node implements Nodelike {
     }
 
     /** Returns the ACL for the node (trusted nodes, networks and ports) */
-    public NodeAcl acl(NodeList allNodes, LoadBalancers loadBalancers, Zone zone, boolean simplerAcl) {
-        return NodeAcl.from(this, allNodes, loadBalancers, zone, simplerAcl);
+    public NodeAcl acl(NodeList allNodes, LoadBalancers loadBalancers, Zone zone) {
+        return NodeAcl.from(this, allNodes, loadBalancers, zone);
     }
 
     @Override
