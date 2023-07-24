@@ -167,7 +167,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven-surefire-plugin.vespa.version}</version>
+                        <version>${surefire.vespa.version}</version>
                         <configuration>
                             <groups>${test.categories}</groups>
                             <redirectTestOutputToFile>false</redirectTestOutputToFile>
@@ -190,7 +190,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-report-plugin</artifactId>
-                        <version>${maven-surefire-plugin.vespa.version}</version>
+                        <version>${surefire.vespa.version}</version>
                         <configuration>
                             <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                         </configuration>
