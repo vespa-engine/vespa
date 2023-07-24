@@ -46,6 +46,7 @@ import com.yahoo.vespa.hosted.controller.routing.ZoneRoutingPolicy;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.tenant.PendingMailVerification;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.versions.CertifiedOsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -119,6 +120,7 @@ public class CuratorDb {
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionTargetSerializer osVersionTargetSerializer = new OsVersionTargetSerializer(osVersionSerializer);
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer, nodeVersionSerializer);
+    private final CertifiedOsVersionSerializer certifiedOsVersionSerializer = new CertifiedOsVersionSerializer();
     private final RoutingPolicySerializer routingPolicySerializer = new RoutingPolicySerializer();
     private final ZoneRoutingPolicySerializer zoneRoutingPolicySerializer = new ZoneRoutingPolicySerializer(routingPolicySerializer);
     private final AuditLogSerializer auditLogSerializer = new AuditLogSerializer();
@@ -214,6 +216,10 @@ public class CuratorDb {
 
     public Mutex lockOsVersionStatus() {
         return curator.lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
+    }
+
+    public Mutex lockCertifiedOsVersions() {
+        return curator.lock(lockRoot.append("certifiedOsVersions"), defaultLockTimeout);
     }
 
     public Mutex lockRoutingPolicies() {
@@ -334,7 +340,7 @@ public class CuratorDb {
                 .orElse(ControllerVersion.CURRENT);
     }
 
-    // Infrastructure upgrades
+    // OS upgrades
 
     public void writeOsVersionTargets(SortedSet<OsVersionTarget> versions) {
         curator.set(osVersionTargetsPath(), asJson(osVersionTargetSerializer.toSlime(versions)));
@@ -350,6 +356,14 @@ public class CuratorDb {
 
     public OsVersionStatus readOsVersionStatus() {
         return readSlime(osVersionStatusPath()).map(osVersionStatusSerializer::fromSlime).orElse(OsVersionStatus.empty);
+    }
+
+    public void writeCertifiedOsVersions(Set<CertifiedOsVersion> certifiedOsVersions) {
+        curator.set(certifiedOsVersionsPath(), asJson(certifiedOsVersionSerializer.toSlime(certifiedOsVersions)));
+    }
+
+    public Set<CertifiedOsVersion> readCertifiedOsVersions() {
+        return readSlime(certifiedOsVersionsPath()).map(certifiedOsVersionSerializer::fromSlime).orElseGet(Set::of);
     }
 
     // -------------- Tenant --------------------------------------------------
@@ -810,6 +824,10 @@ public class CuratorDb {
 
     private static Path osVersionTargetsPath() {
         return root.append("osUpgrader").append("targetVersion");
+    }
+
+    private static Path certifiedOsVersionsPath() {
+        return root.append("osUpgrader").append("certifiedVersion");
     }
 
     private static Path osVersionStatusPath() {
