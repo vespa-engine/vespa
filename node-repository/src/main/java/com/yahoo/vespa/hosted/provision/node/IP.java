@@ -119,7 +119,7 @@ public record IP() {
                 for (var other : sortedNodes) {
                     if (node.equals(other)) continue;
                     if (canAssignIpOf(other, node)) continue;
-                    Predicate<String> sharedIpSpace = other.cloudAccount().equals(node.cloudAccount()) ? __ -> true : IP::isPublic;
+                    Predicate<String> sharedIpSpace = ip -> inSharedIpSpace(ip, other.cloudAccount(), node.cloudAccount());
 
                     var addresses = new HashSet<>(node.ipConfig().primary());
                     var otherAddresses = new HashSet<>(other.ipConfig().primary());
@@ -471,6 +471,11 @@ public record IP() {
     public static boolean isPublic(String ip) {
         InetAddress address = parse(ip);
         return ! address.isLoopbackAddress() && ! address.isLinkLocalAddress() && ! address.isSiteLocalAddress();
+    }
+
+    /** Returns true if the IP address is in the IP space of both sourceCloudAccount and targetCloudAccount. */
+    public static boolean inSharedIpSpace(String ip, CloudAccount sourceCloudAccount, CloudAccount targetCloudAccount) {
+        return sourceCloudAccount.equals(targetCloudAccount) || isPublic(ip);
     }
 
 }
