@@ -622,17 +622,17 @@
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>
-                <version>${jjwt.vespa.version}</version>
+                <version>${java-jjwt.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-impl</artifactId>
-                <version>${jjwt.vespa.version}</version>
+                <version>${java-jjwt.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-jackson</artifactId>
-                <version>${jjwt.vespa.version}</version>
+                <version>${java-jjwt.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
