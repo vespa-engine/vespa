@@ -195,7 +195,7 @@
                                         <include>org.junit.platform:junit-platform-engine:${junit.platform.vespa.version}:test</include>
                                         <include>org.junit.vintage:junit-vintage-engine:${junit.vespa.version}:test</include>
                                         <include>org.lz4:lz4-java:${org.lz4.vespa.version}:test</include>
-                                        <include>org.opentest4j:opentest4j:1.2.0:test</include>
+                                        <include>org.opentest4j:opentest4j:${opentest4j.vespa.version}:test</include>
                                         <include>org.osgi:org.osgi.compendium:[4.1.0, 5):test</include>
                                         <include>org.osgi:org.osgi.core:[4.1.0, 5):test</include>
                                         <include>xerces:xercesImpl:${xerces.vespa.version}:test</include>

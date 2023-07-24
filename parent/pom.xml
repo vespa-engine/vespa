@@ -1081,6 +1081,11 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>org.opentest4j</groupId>
+                <artifactId>opentest4j</artifactId>
+                <version>${opentest4j.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
                 <version>${asm.vespa.version}</version>

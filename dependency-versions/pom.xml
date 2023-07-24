@@ -97,6 +97,7 @@
         <netty-tcnative.vespa.version>2.0.61.Final</netty-tcnative.vespa.version>
         <onnxruntime.vespa.version>1.13.1</onnxruntime.vespa.version>
         <opennlp.vespa.version>1.9.3</opennlp.vespa.version>
+        <opentest4j.vespa.version>1.2.0</opentest4j.vespa.version>
         <org.json.vespa.version>20230227</org.json.vespa.version>
         <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>
         <prometheus.client.vespa.version>0.6.0</prometheus.client.vespa.version>
