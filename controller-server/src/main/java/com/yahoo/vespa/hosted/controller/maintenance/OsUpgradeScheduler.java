@@ -191,9 +191,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         }
 
         private Duration cooldown() {
-            return system.isCd()
-                    ? Duration.ofDays(1)                          // CD: Give new releases some time to propagate
-                    : Duration.ofDays(7 - RELEASE_DAY.ordinal()); // non-CD: Wait until start of the following week
+            return Duration.ofDays(1); // Give new releases some time to propagate
         }
 
         /** Find the most recent version available according to the scheduling step, relative to now */
