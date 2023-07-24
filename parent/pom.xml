@@ -727,7 +727,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-exec</artifactId>
-                <version>1.3</version>
+                <version>${commons-exec.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
