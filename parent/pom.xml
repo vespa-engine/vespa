@@ -1058,7 +1058,7 @@
             <dependency>
                 <groupId>org.jvnet.mimepull</groupId>
                 <artifactId>mimepull</artifactId>
-                <version>1.9.6</version>
+                <version>${mimepull.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.lz4</groupId>
