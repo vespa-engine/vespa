@@ -559,7 +559,7 @@
             <dependency>
                 <groupId>com.ibm.icu</groupId>
                 <artifactId>icu4j</artifactId>
-                <version>70.1</version>
+                <version>${icu4j.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.infradna.tool</groupId>

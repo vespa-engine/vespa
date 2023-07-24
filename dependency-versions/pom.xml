@@ -77,6 +77,7 @@
         <felix.log.vespa.version>1.0.1</felix.log.vespa.version>
         <findbugs.vespa.version>3.0.2</findbugs.vespa.version> <!-- Should be kept in sync with guava -->
         <hdrhistogram.vespa.version>2.1.12</hdrhistogram.vespa.version>
+        <icu4j.vespa.version>70.1</icu4j.vespa.version>
         <jersey.vespa.version>2.25</jersey.vespa.version>
         <jetty.vespa.version>11.0.15</jetty.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
