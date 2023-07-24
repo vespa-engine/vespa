@@ -722,7 +722,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.23.0</version>
+                <version>${commons-compress.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
