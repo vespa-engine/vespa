@@ -13,6 +13,13 @@
     <url>https://github.com/vespa-engine</url>
     <packaging>pom</packaging>
 
+    <parent>
+        <artifactId>dependency-versions</artifactId>
+        <groupId>com.yahoo.vespa</groupId>
+        <version>8-SNAPSHOT</version>
+        <relativePath>../dependency-versions/pom.xml</relativePath>
+    </parent>
+
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
@@ -35,12 +42,9 @@
         <vespaversion>${project.version}</vespaversion>
         <bundle-plugin.failOnWarnings>false</bundle-plugin.failOnWarnings>
         <target_jdk_version>17</target_jdk_version>
-        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
-        <maven-dependency-plugin.version>3.6.0</maven-dependency-plugin.version>
-        <jackson2.version>2.15.2</jackson2.version>
+
         <!-- NOTE: this must not be overriden by users, and must be in sync with junit version specified in 'tenant-cd-api' -->
-        <vespa.junit.version>5.8.1</vespa.junit.version>
+        <junit.vespa.tenant.version>5.8.1</junit.vespa.tenant.version>
         <test.categories>!integration</test.categories>
 
         <!-- To allow specialized base pom to include additional "test provided" dependencies -->
@@ -98,19 +102,19 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>${vespa.junit.version}</version>
+                <version>${junit.vespa.tenant.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
-                <version>${vespa.junit.version}</version>
+                <version>${junit.vespa.tenant.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
-                <version>${vespa.junit.version}</version>
+                <version>${junit.vespa.tenant.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -163,7 +167,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven-surefire-plugin.version}</version>
+                        <version>${surefire.vespa.version}</version>
                         <configuration>
                             <groups>${test.categories}</groups>
                             <redirectTestOutputToFile>false</redirectTestOutputToFile>
@@ -186,7 +190,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-report-plugin</artifactId>
-                        <version>${maven-surefire-plugin.version}</version>
+                        <version>${surefire.vespa.version}</version>
                         <configuration>
                             <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                         </configuration>
@@ -245,8 +249,8 @@
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:compile</exclude>
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:provided</exclude>
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:runtime</exclude>
-                                                <exclude>org.junit.jupiter:junit-jupiter-api:(,${vespa.junit.version}):jar:*</exclude>
-                                                <exclude>org.junit.jupiter:junit-jupiter-api:(${vespa.junit.version},):jar:*</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:(,${junit.vespa.tenant.version}):jar:*</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:(${junit.vespa.tenant.version},):jar:*</exclude>
                                             </excludes>
                                         </bannedDependencies>
                                     </rules>
@@ -377,7 +381,7 @@
                 </property>
             </activation>
             <properties>
-                <vespaversion>${vespa.compile.version}</vespaversion>
+                <vespaversion>${vespa.compile.vespa.version}</vespaversion>
             </properties>
         </profile>
 
@@ -389,7 +393,7 @@
                 </property>
             </activation>
             <properties>
-                <vespaVersion>${vespa.runtime.version}</vespaVersion>
+                <vespaVersion>${vespa.runtime.vespa.version}</vespaVersion>
             </properties>
         </profile>
         <profile>
@@ -404,7 +408,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven.gpg.plugin.version}</version>
+                        <version>${maven.gpg.plugin.vespa.version}</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -424,7 +428,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>${nexus.staging.maven.plugin.version}</version>
+                        <version>${nexus.staging.maven.plugin.vespa.version}</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>
@@ -452,7 +456,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>${maven-dependency-plugin.version}</version>
+                    <version>${maven-dependency-plugin.vespa.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -460,7 +464,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
+                <version>${maven-compiler-plugin.vespa.version}</version>
                 <configuration>
                     <release>${target_jdk_version}</release>
                     <showWarnings>true</showWarnings>

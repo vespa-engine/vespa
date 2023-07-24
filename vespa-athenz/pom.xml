@@ -141,7 +141,7 @@
         <dependency>
             <groupId>com.yahoo.athenz</groupId>
             <artifactId>athenz-auth-core</artifactId>
-            <version>${athenz.version}</version>
+            <version>${athenz.vespa.version}</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
