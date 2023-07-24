@@ -381,7 +381,7 @@
                 </property>
             </activation>
             <properties>
-                <vespaversion>${vespa.compile.vespa.version}</vespaversion>
+                <vespaversion>${vespa.compile.version}</vespaversion>
             </properties>
         </profile>
 
@@ -393,7 +393,7 @@
                 </property>
             </activation>
             <properties>
-                <vespaVersion>${vespa.runtime.vespa.version}</vespaVersion>
+                <vespaVersion>${vespa.runtime.version}</vespaVersion>
             </properties>
         </profile>
         <profile>
