@@ -30,6 +30,8 @@
     <properties>
         
         <!-- BEGIN Dependencies available from the Jdisc container, see container-dependency-versions/pom.xml -->
+
+        <!-- DO NOT UPGRADE THESE TO A NEW MAJOR VERSION WITHOUT CHECKING FOR BINARY COMPATIBILITY -->
         <aopalliance.vespa.version>1.0</aopalliance.vespa.version>
         <commons-logging.vespa.version>1.2</commons-logging.vespa.version>  <!-- This version is exported by jdisc via jcl-over-slf4j. -->
         <error-prone-annotations.vespa.version>2.18.0</error-prone-annotations.vespa.version>
@@ -43,9 +45,11 @@
         <jaxb.vespa.version>2.3.0</jaxb.vespa.version>
         <slf4j.vespa.version>1.7.32</slf4j.vespa.version>
         <xml-apis.vespa.version>1.4.01</xml-apis.vespa.version>
+
         <!-- END Dependencies available from the Jdisc container -->
 
-        <!-- Dependencies used internally in Vespa, not visible for users -->
+
+        <!-- Dependencies used internally in Vespa, not visible for users, or only visible in test classpath -->
 
         <airline.vespa.version>0.9</airline.vespa.version>
         <antlr.vespa.version>3.5.3</antlr.vespa.version>
