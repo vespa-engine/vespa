@@ -463,7 +463,7 @@
             <dependency>
                 <groupId>com.auth0</groupId>
                 <artifactId>java-jwt</artifactId>
-                <version>3.10.0</version>
+                <version>${java-jwt.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -559,7 +559,7 @@
             <dependency>
                 <groupId>com.ibm.icu</groupId>
                 <artifactId>icu4j</artifactId>
-                <version>70.1</version>
+                <version>${icu4j.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.infradna.tool</groupId>
@@ -622,22 +622,22 @@
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>
-                <version>${jjwt.vespa.version}</version>
+                <version>${java-jjwt.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-impl</artifactId>
-                <version>${jjwt.vespa.version}</version>
+                <version>${java-jjwt.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-jackson</artifactId>
-                <version>${jjwt.vespa.version}</version>
+                <version>${java-jjwt.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.12.2</version>
+                <version>${joda-time.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.openhft</groupId>
@@ -692,7 +692,7 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.13.2</version>
+                <version>${junit4.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
@@ -722,12 +722,12 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.23.0</version>
+                <version>${commons-compress.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-exec</artifactId>
-                <version>1.3</version>
+                <version>${commons-exec.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -841,6 +841,11 @@
                 <version>${maven-enforcer-plugin.vespa.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven.enforcer</groupId>
+                <artifactId>enforcer-rules</artifactId>
+                <version>${maven-enforcer-plugin.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
                 <artifactId>maven-plugin-annotations</artifactId>
                 <version>${maven-plugin-tools.vespa.version}</version>
@@ -879,12 +884,17 @@
             <dependency>
                 <groupId>org.apache.opennlp</groupId>
                 <artifactId>opennlp-tools</artifactId>
-                <version>1.9.3</version>
+                <version>${opennlp.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.velocity</groupId>
                 <artifactId>velocity-engine-core</artifactId>
                 <version>2.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apiguardian</groupId>
+                <artifactId>apiguardian-api</artifactId>
+                <version>${apiguardian.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.assertj</groupId>
@@ -1000,19 +1010,19 @@
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
-                <version>1.3</version>
+                <version>${hamcrest.vespa.version}</version>
                 <scope>test</scope> <!-- TODO: remove scope from parent pom -->
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
-                <version>1.3</version>
+                <version>${hamcrest.vespa.version}</version>
                 <scope>test</scope> <!-- TODO: remove scope from parent pom -->
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-library</artifactId>
-                <version>1.3</version>
+                <version>${hamcrest.vespa.version}</version>
                 <scope>test</scope> <!-- TODO: remove scope from parent pom -->
             </dependency>
             <dependency>
@@ -1048,7 +1058,7 @@
             <dependency>
                 <groupId>org.jvnet.mimepull</groupId>
                 <artifactId>mimepull</artifactId>
-                <version>1.9.6</version>
+                <version>${mimepull.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.lz4</groupId>
@@ -1069,6 +1079,11 @@
                 <version>1.5.0</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.opentest4j</groupId>
+                <artifactId>opentest4j</artifactId>
+                <version>${opentest4j.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
@@ -1119,7 +1134,7 @@
             <dependency>
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
-                <version>2.12.2</version>
+                <version>${xerces.vespa.version}</version>
             </dependency>
             <dependency> <!-- TODO: Remove on Vespa 9 -->
                 <groupId>org.json</groupId>

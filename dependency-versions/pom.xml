@@ -30,7 +30,10 @@
     <properties>
         
         <!-- BEGIN Dependencies available from the Jdisc container, see container-dependency-versions/pom.xml -->
+
+        <!-- DO NOT UPGRADE THESE TO A NEW MAJOR VERSION WITHOUT CHECKING FOR BINARY COMPATIBILITY -->
         <aopalliance.vespa.version>1.0</aopalliance.vespa.version>
+        <commons-logging.vespa.version>1.2</commons-logging.vespa.version>  <!-- This version is exported by jdisc via jcl-over-slf4j. -->
         <error-prone-annotations.vespa.version>2.18.0</error-prone-annotations.vespa.version>
         <guava.vespa.version>32.1.1-jre</guava.vespa.version>
         <guice.vespa.version>4.2.3</guice.vespa.version>
@@ -42,9 +45,12 @@
         <jaxb.vespa.version>2.3.0</jaxb.vespa.version>
         <slf4j.vespa.version>1.7.32</slf4j.vespa.version>
         <xml-apis.vespa.version>1.4.01</xml-apis.vespa.version>
+
         <!-- END Dependencies available from the Jdisc container -->
 
-        <!-- Dependencies used internally in Vespa, not visible for users -->
+
+        <!-- Dependencies used internally in Vespa, not visible for users, or only visible in test classpath -->
+
         <airline.vespa.version>0.9</airline.vespa.version>
         <antlr.vespa.version>3.5.3</antlr.vespa.version>
         <antlr4.vespa.version>4.11.1</antlr4.vespa.version>
@@ -52,6 +58,7 @@
         <apache.httpcore.vespa.version>4.4.16</apache.httpcore.vespa.version>
         <apache.httpclient5.vespa.version>5.2.1</apache.httpclient5.vespa.version>
         <apache.httpcore5.vespa.version>5.2.2</apache.httpcore5.vespa.version>
+        <apiguardian.vespa.version>1.1.2</apiguardian.vespa.version>
         <asm.vespa.version>9.3</asm.vespa.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
@@ -68,26 +75,36 @@
         <bouncycastle.vespa.version>1.74</bouncycastle.vespa.version>
         <curator.vespa.version>5.4.0</curator.vespa.version>
         <commons-codec.vespa.version>1.15</commons-codec.vespa.version>
+        <commons-exec.vespa.version>1.3</commons-exec.vespa.version>
         <commons-io.vespa.version>2.11.0</commons-io.vespa.version>
         <commons.math3.vespa.version>3.6.1</commons.math3.vespa.version>
+        <commons-compress.vespa.version>1.23.0</commons-compress.vespa.version>
         <eclipse-collections.vespa.version>11.0.0</eclipse-collections.vespa.version>
         <felix.vespa.version>7.0.5</felix.vespa.version>
         <felix.log.vespa.version>1.0.1</felix.log.vespa.version>
         <findbugs.vespa.version>3.0.2</findbugs.vespa.version> <!-- Should be kept in sync with guava -->
+        <hamcrest.vespa.version>1.3</hamcrest.vespa.version>
         <hdrhistogram.vespa.version>2.1.12</hdrhistogram.vespa.version>
+        <icu4j.vespa.version>70.1</icu4j.vespa.version>
+        <java-jjwt.vespa.version>0.11.5</java-jjwt.vespa.version>
+        <java-jwt.vespa.version>3.10.0</java-jwt.vespa.version>
         <jersey.vespa.version>2.25</jersey.vespa.version>
         <jetty.vespa.version>11.0.15</jetty.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
-        <jjwt.vespa.version>0.11.5</jjwt.vespa.version>
         <jna.vespa.version>5.11.0</jna.vespa.version>
+        <joda-time.vespa.version>2.12.2</joda-time.vespa.version>
         <junit.vespa.version>5.8.1</junit.vespa.version>
         <junit.platform.vespa.version>1.8.1</junit.platform.vespa.version>
+        <junit4.vespa.version>4.13.2</junit4.vespa.version>
         <maven-archiver.vespa.version>3.6.0</maven-archiver.vespa.version>
         <maven-wagon.vespa.version>2.10</maven-wagon.vespa.version>
+        <mimepull.vespa.version>1.9.6</mimepull.vespa.version>
         <mockito.vespa.version>4.0.0</mockito.vespa.version>
         <netty.vespa.version>4.1.94.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.61.Final</netty-tcnative.vespa.version>
         <onnxruntime.vespa.version>1.13.1</onnxruntime.vespa.version>
+        <opennlp.vespa.version>1.9.3</opennlp.vespa.version>
+        <opentest4j.vespa.version>1.2.0</opentest4j.vespa.version>
         <org.json.vespa.version>20230227</org.json.vespa.version>
         <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>
         <prometheus.client.vespa.version>0.6.0</prometheus.client.vespa.version>
@@ -95,6 +112,7 @@
         <spifly.vespa.version>1.3.6</spifly.vespa.version>
         <surefire.vespa.version>3.0.0-M9</surefire.vespa.version>
         <wiremock.vespa.version>2.35.0</wiremock.vespa.version>
+        <xerces.vespa.version>2.12.2</xerces.vespa.version>
         <zero-allocation-hashing.vespa.version>0.16</zero-allocation-hashing.vespa.version>
         <zookeeper.client.vespa.version>3.8.0</zookeeper.client.vespa.version>
 
