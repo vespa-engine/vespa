@@ -7,9 +7,21 @@
       "trustedBy": "host5.yahoo.com"
     },
     {
+      "hostname": "cfg1.yahoo.com",
+      "type": "config",
+      "ipAddress": "127.0.201.1",
+      "trustedBy": "host5.yahoo.com"
+    },
+    {
       "hostname": "cfg2.yahoo.com",
       "type": "config",
       "ipAddress": "::202:1",
+      "trustedBy": "host5.yahoo.com"
+    },
+    {
+      "hostname": "cfg2.yahoo.com",
+      "type": "config",
+      "ipAddress": "127.0.202.1",
       "trustedBy": "host5.yahoo.com"
     },
     {

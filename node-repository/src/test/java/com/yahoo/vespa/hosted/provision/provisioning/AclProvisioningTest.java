@@ -15,6 +15,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl.TrustedNode;
 import org.junit.Test;
@@ -112,10 +113,11 @@ public class AclProvisioningTest {
         // Trusted nodes is all tenant nodes, all proxy nodes, all config servers and load balancer subnets
         // All tenant hosts because nodes are IPv6 and cfg are IPv4, so traffic is NATed.
         // NOT proxy hosts because proxies are dual-stacked so no NAT is needed
-        assertAcls(List.of(TrustedNode.of(tenantHosts, Set.of(19070), node.cloudAccount(), true),
-                           TrustedNode.of(tenantNodes, Set.of(19070), node.cloudAccount(), true),
-                           TrustedNode.of(proxyNodes, Set.of(19070), node.cloudAccount(), true),
-                           TrustedNode.of(configNodes, node.cloudAccount(), true)),
+        IP.Space ipSpace = IP.Space.of(tester.nodeRepository().zone(), node.cloudAccount());
+        assertAcls(List.of(TrustedNode.of(tenantHosts, Set.of(19070), ipSpace),
+                           TrustedNode.of(tenantNodes, Set.of(19070), ipSpace),
+                           TrustedNode.of(proxyNodes, Set.of(19070), ipSpace),
+                           TrustedNode.of(configNodes, ipSpace)),
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    List.of(nodeAcl));
         assertEquals(Set.of(22, 4443), nodeAcl.trustedPorts());
@@ -240,11 +242,12 @@ public class AclProvisioningTest {
                      nodeAcl.trustedNodes().stream().map(TrustedNode::ipAddresses).toList());
     }
 
-    private static List<List<TrustedNode>> trustedNodesOf(List<List<Node>> nodes, Set<Integer> ports, CloudAccount cloudAccount) {
-        return nodes.stream().map(node -> TrustedNode.of(node, ports, cloudAccount, true)).toList();
+    private List<List<TrustedNode>> trustedNodesOf(List<List<Node>> nodes, Set<Integer> ports, CloudAccount cloudAccount) {
+        IP.Space ipSpace = IP.Space.of(tester.nodeRepository().zone(), cloudAccount);
+        return nodes.stream().map(node -> TrustedNode.of(node, ports, ipSpace)).toList();
     }
 
-    private static List<List<TrustedNode>> trustedNodesOf(List<List<Node>> nodes, CloudAccount cloudAccount) {
+    private List<List<TrustedNode>> trustedNodesOf(List<List<Node>> nodes, CloudAccount cloudAccount) {
         return trustedNodesOf(nodes, Set.of(), cloudAccount);
     }
 

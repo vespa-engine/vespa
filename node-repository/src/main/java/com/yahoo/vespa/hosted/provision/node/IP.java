@@ -24,14 +24,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.NodeType.confighost;
 import static com.yahoo.config.provision.NodeType.controllerhost;
 import static com.yahoo.config.provision.NodeType.proxyhost;
-import static java.util.function.Predicate.not;
 
 /**
  * This handles IP address configuration and allocation.
@@ -113,13 +111,13 @@ public record IP() {
          *
          * @throws IllegalArgumentException if there are IP conflicts with existing nodes
          */
-        public static LockedNodeList verify(List<Node> nodes, LockedNodeList allNodes) {
+        public static LockedNodeList verify(List<Node> nodes, LockedNodeList allNodes, Zone zone) {
             NodeList sortedNodes = allNodes.sortedBy(Comparator.comparing(Node::hostname));
             for (var node : nodes) {
+                Space ipSpace = Space.of(zone, node.cloudAccount());
                 for (var other : sortedNodes) {
                     if (node.equals(other)) continue;
                     if (canAssignIpOf(other, node)) continue;
-                    Predicate<String> sharedIpSpace = ip -> inSharedIpSpace(ip, other.cloudAccount(), node.cloudAccount());
 
                     var addresses = new HashSet<>(node.ipConfig().primary());
                     var otherAddresses = new HashSet<>(other.ipConfig().primary());
@@ -127,7 +125,7 @@ public record IP() {
                         addresses.addAll(node.ipConfig().pool().asSet());
                         otherAddresses.addAll(other.ipConfig().pool().asSet());
                     }
-                    otherAddresses.removeIf(not(sharedIpSpace));
+                    otherAddresses.removeIf(otherIp -> !ipSpace.contains(otherIp, other.cloudAccount()));
                     otherAddresses.retainAll(addresses);
                     if (!otherAddresses.isEmpty())
                         throw new IllegalArgumentException("Cannot assign " + addresses + " to " + node.hostname() +
@@ -151,8 +149,8 @@ public record IP() {
             };
         }
 
-        public static Node verify(Node node, LockedNodeList allNodes) {
-            return verify(List.of(node), allNodes).asList().get(0);
+        public static Node verify(Node node, LockedNodeList allNodes, Zone zone) {
+            return verify(List.of(node), allNodes, zone).asList().get(0);
         }
 
     }
@@ -468,14 +466,33 @@ public record IP() {
     }
 
     /** Returns whether given string is a public IP address */
-    public static boolean isPublic(String ip) {
+    private static boolean isPublic(String ip) {
         InetAddress address = parse(ip);
         return ! address.isLoopbackAddress() && ! address.isLinkLocalAddress() && ! address.isSiteLocalAddress();
     }
 
-    /** Returns true if the IP address is in the IP space of both sourceCloudAccount and targetCloudAccount. */
-    public static boolean inSharedIpSpace(String ip, CloudAccount sourceCloudAccount, CloudAccount targetCloudAccount) {
-        return sourceCloudAccount.equals(targetCloudAccount) || isPublic(ip);
+    @FunctionalInterface
+    public interface Space {
+        static Space of(Zone zone) { return of(zone, zone.cloud().account()); }
+
+        /** Returns the IP space of a cloud account in a zone. */
+        static Space of(Zone zone, CloudAccount cloudAccount) { return (ip, account) -> sharedIp(ip, account, cloudAccount, zone); }
+
+        private static boolean sharedIp(String ip, CloudAccount sourceCloudAccount, CloudAccount targetCloudAccount, Zone zone) {
+            // IPs within the same account and zone are always shared.
+            if (sourceCloudAccount.equals(targetCloudAccount))
+                return true;
+
+            // Only public IPs inside (outside) an exclave account are shared outside (inside).
+            if (sourceCloudAccount.isExclave(zone) || targetCloudAccount.isExclave(zone))
+                return isPublic(ip);
+
+            // IPs in noclave and inclave are always shared.
+            return true;
+        }
+
+        /** Returns true if the IP in the given account is in this IP space. */
+        boolean contains(String ip, CloudAccount cloudAccount);
     }
 
 }

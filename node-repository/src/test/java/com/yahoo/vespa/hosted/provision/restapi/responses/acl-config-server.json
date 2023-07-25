@@ -135,6 +135,15 @@
     {
       "hostname": "host3.yahoo.com",
       "type": "tenant",
+      "ipAddress": "127.0.3.1",
+      "ports": [
+        19070
+      ],
+      "trustedBy": "cfg1.yahoo.com"
+    },
+    {
+      "hostname": "host3.yahoo.com",
+      "type": "tenant",
       "ipAddress": "::3:1",
       "ports": [
         19070
@@ -163,6 +172,15 @@
       "hostname": "host5.yahoo.com",
       "type": "tenant",
       "ipAddress": "::5:1",
+      "ports": [
+        19070
+      ],
+      "trustedBy": "cfg1.yahoo.com"
+    },
+    {
+      "hostname": "host5.yahoo.com",
+      "type": "tenant",
+      "ipAddress": "127.0.5.1",
       "ports": [
         19070
       ],
