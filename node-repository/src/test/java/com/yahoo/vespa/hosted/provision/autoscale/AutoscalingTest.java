@@ -654,7 +654,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(0.16,  0.02, 0.5), 120);
         fixture.tester().assertResources("Scaling down memory",
-                                         6, 1, 3.0, 4.0, 96.2,
+                                         7, 1, 2.5, 4.0, 80.2,
                                          fixture.autoscale());
     }
 
@@ -666,7 +666,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofHours(12 * 3 + 1));
         fixture.loader().applyCpuLoad(0.02, 5);
         fixture.tester().assertResources("Scaling down since enough time has passed",
-                                         3, 1, 1.0, 29.5, 126.7,
+                                         5, 1, 1.0, 12.3, 50.7,
                                          fixture.autoscale());
     }
 
@@ -799,7 +799,7 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.loader().addCpuMeasurements(0.4, 200);
         fixture.tester().assertResources("Write only -> smallest possible",
-                                         4, 1, 1.1,  20.1, 84.5,
+                                         5, 1, 1.0,  12.3, 50.7,
                                          fixture.autoscale());
     }
 
