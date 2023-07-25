@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.MockRoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClientMock;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingReporter;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
@@ -312,4 +313,9 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     public GcpSecretStore gcpSecretStore() { return new NoopGcpSecretStore(); }
+
+    @Override
+    public BillingReporter billingReporter() {
+        return () -> 0.0;
+    }
 }

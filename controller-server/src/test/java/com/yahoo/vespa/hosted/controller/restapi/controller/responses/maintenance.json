@@ -25,6 +25,9 @@
       "name": "BillingDatabaseMaintainer"
     },
     {
+      "name": "BillingReportMaintainer"
+    },
+    {
       "name": "CertificatePoolMaintainer"
     },
     {
