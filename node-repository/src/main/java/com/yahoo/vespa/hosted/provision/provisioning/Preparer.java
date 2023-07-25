@@ -103,6 +103,10 @@ public class Preparer {
                     allocation.offer(candidates);
                 };
                 try {
+                    if (throttler.throttle(allNodes, Agent.system)) {
+                        throw new NodeAllocationException("Host provisioning is being throttled", true);
+                    }
+
                     HostProvisionRequest request = new HostProvisionRequest(allocation.provisionIndices(deficit.count()),
                                                                             hostType,
                                                                             deficit.resources(),
