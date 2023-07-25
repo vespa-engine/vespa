@@ -171,6 +171,14 @@ public class ClusterModel {
         return Duration.ofMinutes(5);
     }
 
+    /** Transforms the given load adjustment to an equivalent adjustment given a target number of nodes and groups. */
+    public Load loadAdjustmentWith(int nodes, int groups, Load loadAdjustment) {
+        return loadAdjustment // redundancy adjusted target relative to current load
+               .multiply(loadWith(nodes, groups)) // redundancy aware adjustment with these counts
+               .divide(redundancyAdjustment());   // correct for double redundancy adjustment
+    }
+
+
     /**
      * Returns the relative load adjustment accounting for redundancy given these nodes+groups
      * relative to node nodes+groups in this.

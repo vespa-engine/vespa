@@ -90,12 +90,9 @@ public class AllocationOptimizer {
                                             Load loadAdjustment,
                                             AllocatableClusterResources current,
                                             ClusterModel clusterModel) {
-        var loadWithTarget = loadAdjustment                                  // redundancy adjusted target relative to current load
-                             .multiply(clusterModel.loadWith(nodes, groups)) // redundancy aware adjustment with these counts
-                             .divide(clusterModel.redundancyAdjustment());   // correct for double redundancy adjustment
+        var loadWithTarget = clusterModel.loadAdjustmentWith(nodes, groups, loadAdjustment);
 
-        // Don't scale down all the way to the ideal as that leaves no headroom before needing to scale back up
-        var oldLoad = loadWithTarget;
+        // Leave some headroom above the ideal allocation to avoid immediately needing to scale back up
         if (loadAdjustment.cpu() < 1 && (1.0 - loadWithTarget.cpu()) < headroomRequiredToScaleDown)
             loadAdjustment = loadAdjustment.withCpu(1.0);
         if (loadAdjustment.memory() < 1 && (1.0 - loadWithTarget.memory()) < headroomRequiredToScaleDown)
@@ -103,11 +100,7 @@ public class AllocationOptimizer {
         if (loadAdjustment.disk() < 1 && (1.0 - loadWithTarget.disk()) < headroomRequiredToScaleDown)
             loadAdjustment = loadAdjustment.withDisk(1.0);
 
-        loadWithTarget = loadAdjustment                                  // redundancy adjusted target relative to current load
-                                                                             .multiply(clusterModel.loadWith(nodes, groups)) // redundancy aware adjustment with these counts
-                                                                             .divide(clusterModel.redundancyAdjustment());   // correct for double redundancy adjustment
-
-        System.out.println(nodes + " nodes, headroom adjust: " + oldLoad + " -> " + loadWithTarget);
+        loadWithTarget = clusterModel.loadAdjustmentWith(nodes, groups, loadAdjustment);
 
         var scaled = loadWithTarget.scaled(current.realResources().nodeResources());
         var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
