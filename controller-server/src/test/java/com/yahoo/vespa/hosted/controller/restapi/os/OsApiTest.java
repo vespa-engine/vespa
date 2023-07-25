@@ -79,6 +79,7 @@ public class OsApiTest extends ControllerContainerTest {
 
         // All nodes are initially on empty version
         upgradeAndUpdateStatus();
+
         // Upgrade OS to a different version in each cloud
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
                 "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2\"}", 200);
@@ -110,6 +111,14 @@ public class OsApiTest extends ControllerContainerTest {
                        "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2\"}", 200);
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\", \"pin\": true}", Request.Method.PATCH),
                        "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2 (pinned)\"}", 200);
+
+        // Certify an OS and Vespa version pair
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud1/7.5.2", "8.200.37", Request.Method.POST),
+                       "{\"message\":\"Certified 7.5.2 in cloud cloud1 as compatible with Vespa version 8.200.37\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud1/7.5.2", "8.200.42", Request.Method.POST),
+                       "{\"message\":\"7.5.2 is already certified in cloud cloud1 as compatible with Vespa version 8.200.37. Leaving certification unchanged\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud1/7.5.2", "", Request.Method.DELETE),
+                       "{\"message\":\"Removed certification of 7.5.2 in cloud cloud1\"}", 200);
 
         // Error: Missing fields
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\"}", Request.Method.PATCH),

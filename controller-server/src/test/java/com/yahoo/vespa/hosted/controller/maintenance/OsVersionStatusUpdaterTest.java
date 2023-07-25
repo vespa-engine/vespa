@@ -6,11 +6,16 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.versions.CertifiedOsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -25,8 +30,7 @@ public class OsVersionStatusUpdaterTest {
     @Test
     void test_update() {
         ControllerTester tester = new ControllerTester();
-        OsVersionStatusUpdater statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1)
-        );
+        OsVersionStatusUpdater statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1));
         // Add all zones to upgrade policy
         UpgradePolicy.Builder upgradePolicy = UpgradePolicy.builder();
         for (ZoneApi zone : tester.zoneRegistry().zones().controllerUpgraded().zones()) {
@@ -58,6 +62,24 @@ public class OsVersionStatusUpdaterTest {
         assertTrue(osVersions.get(new OsVersion(version1, cloud)).isEmpty(), "No nodes on current target");
         assertFalse(osVersions.get(new OsVersion(Version.emptyVersion, otherCloud)).isEmpty(), "All nodes on unknown version");
         assertTrue(osVersions.get(new OsVersion(version1, otherCloud)).isEmpty(), "No nodes on current target");
+
+        // Updating status cleans up stale certifications
+        Set<OsVersion> knownVersions = osVersions.keySet();
+        List<OsVersion> versionsToCertify = new ArrayList<>(knownVersions);
+        versionsToCertify.addAll(List.of(new OsVersion(Version.fromString("95.0.1"), cloud),
+                                         new OsVersion(Version.fromString("98.0.2"), cloud)));
+        for (OsVersion version : versionsToCertify) {
+            tester.controller().os().certify(version.version(), version.cloud(), Version.fromString("1.2.3"));
+        }
+        assertEquals(knownVersions.size() + 2, certifiedOsVersions(tester).size());
+        statusUpdater.maintain();
+        assertEquals(knownVersions, certifiedOsVersions(tester));
+    }
+
+    private static Set<OsVersion> certifiedOsVersions(ControllerTester tester) {
+        return tester.controller().curator().readCertifiedOsVersions().stream()
+                     .map(CertifiedOsVersion::osVersion)
+                     .collect(Collectors.toSet());
     }
 
 }

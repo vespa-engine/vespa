@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
 import com.yahoo.vespa.hosted.controller.maintenance.OsUpgradeScheduler;
 import com.yahoo.vespa.hosted.controller.maintenance.OsUpgradeScheduler.Change;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
+import com.yahoo.vespa.hosted.controller.versions.CertifiedOsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.yolean.Exceptions;
 
@@ -36,6 +37,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.Function;
@@ -89,6 +91,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri());
+        if (path.matches("/os/v1/certify/{cloud}/{version}")) return certifyVersion(request, path.get("version"), path.get("cloud"));
         if (path.matches("/os/v1/firmware/")) return requestFirmwareCheckResponse(path);
         if (path.matches("/os/v1/firmware/{environment}/")) return requestFirmwareCheckResponse(path);
         if (path.matches("/os/v1/firmware/{environment}/{region}/")) return requestFirmwareCheckResponse(path);
@@ -97,10 +100,32 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse delete(HttpRequest request) {
         Path path = new Path(request.getUri());
+        if (path.matches("/os/v1/certify/{cloud}/{version}")) return uncertifyVersion(request, path.get("version"), path.get("cloud"));
         if (path.matches("/os/v1/firmware/")) return cancelFirmwareCheckResponse(path);
         if (path.matches("/os/v1/firmware/{environment}/")) return cancelFirmwareCheckResponse(path);
         if (path.matches("/os/v1/firmware/{environment}/{region}/")) return cancelFirmwareCheckResponse(path);
         return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse certifyVersion(HttpRequest request, String versionString, String cloudName) {
+        Version version = Version.fromString(versionString);
+        CloudName cloud = CloudName.from(cloudName);
+        Version vespaVersion = Version.fromString(asString(request.getData()));
+        CertifiedOsVersion certified = controller.os().certify(version, cloud, vespaVersion);
+        if (certified.vespaVersion().equals(vespaVersion)) {
+            return new MessageResponse("Certified " + version.toFullString() + " in cloud " + cloud +
+                                       " as compatible with Vespa version " + vespaVersion.toFullString());
+        }
+        return new MessageResponse(version.toFullString() + " is already certified in cloud " + cloud +
+                                   " as compatible with Vespa version " + certified.vespaVersion().toFullString() +
+                                   ". Leaving certification unchanged");
+    }
+
+    private HttpResponse uncertifyVersion(HttpRequest request, String versionString, String cloudName) {
+        Version version = Version.fromString(versionString);
+        CloudName cloud = CloudName.from(cloudName);
+        controller.os().uncertify(version, cloud);
+        return new MessageResponse("Removed certification of " + version.toFullString() + " in cloud " + cloud);
     }
 
     private HttpResponse requestFirmwareCheckResponse(Path path) {
@@ -170,7 +195,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
                 currentVersionObject.setBool("pinned", t.pinned());
                 Optional<Change> nextChange = osUpgradeScheduler.changeIn(t.osVersion().cloud(), now);
                 nextChange.ifPresent(c -> {
-                    currentVersionObject.setString("nextVersion", c.version().toFullString());
+                    currentVersionObject.setString("nextVersion", c.osVersion().version().toFullString());
                     currentVersionObject.setLong("nextScheduledAt", c.scheduleAt().toEpochMilli());
                 });
             });
@@ -209,6 +234,14 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         Inspector field = root.field(name);
         if (!field.valid()) throw new IllegalArgumentException("Field '" + name + "' is required");
         return field;
+    }
+
+    private static String asString(InputStream in) {
+        Scanner scanner = new Scanner(in).useDelimiter("\\A");
+        if (scanner.hasNext()) {
+            return scanner.next();
+        }
+        return "";
     }
 
 }
