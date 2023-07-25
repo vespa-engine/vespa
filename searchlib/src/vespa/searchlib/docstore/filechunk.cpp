@@ -15,6 +15,7 @@
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/fastos/file.h>
+#include <filesystem>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -91,13 +92,13 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
         if (!dataFile.Sync()) {
             throw SummaryException("Failed syncing dat file", dataFile, VESPA_STRLOC);
         }
-        _diskFootprint.fetch_add(dataFile.GetSize(), std::memory_order_relaxed);
+        _diskFootprint.fetch_add(dataFile.getSize(), std::memory_order_relaxed);
         FastOS_File idxFile(_idxFileName.c_str());
         if (idxFile.OpenReadOnly()) {
             if (!idxFile.Sync()) {
                 throw SummaryException("Failed syncing idx file", idxFile, VESPA_STRLOC);
             }
-            _diskFootprint.fetch_add(idxFile.GetSize(), std::memory_order_relaxed);
+            _diskFootprint.fetch_add(idxFile.getSize(), std::memory_order_relaxed);
             _modificationTime = FileKit::getModificationTime(_idxFileName);
         } else {
             throw SummaryException("Failed opening idx file", idxFile, VESPA_STRLOC);
@@ -141,23 +142,14 @@ verifyOrAssert(const TmpChunkMetaV & v)
     }
 }
 
-vespalib::string eraseErrorMsg(const vespalib::string & fileName, int error) {
-    return make_string("Error erasing file '%s'. Error is '%s'",
-                       fileName.c_str(), getErrorString(error).c_str());
-}
-
 }
 
 void
 FileChunk::erase()
 {
     _file.reset();
-    if (!FastOS_File::Delete(_idxFileName.c_str()) && (errno != ENOENT)) {
-        throw std::runtime_error(eraseErrorMsg(_idxFileName, errno));
-    }
-    if (!FastOS_File::Delete(_dataFileName.c_str()) && (errno != ENOENT)) {
-        throw std::runtime_error(eraseErrorMsg(_dataFileName, errno));
-    }
+    std::filesystem::remove(std::filesystem::path(_idxFileName));
+    std::filesystem::remove(std::filesystem::path(_dataFileName));
 }
 
 size_t
@@ -170,7 +162,7 @@ FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNu
     idxFile.enableMemoryMap(0);
     if (idxFile.OpenReadOnly()) {
         if (idxFile.IsMemoryMapped()) {
-            const int64_t fileSize = idxFile.GetSize();
+            const int64_t fileSize = idxFile.getSize();
             if (_idxHeaderLen == 0) {
                 _idxHeaderLen = readIdxHeader(idxFile, _docIdLimit);
             }
@@ -444,7 +436,7 @@ FileChunk::readDataHeader(FileRandRead &datFile)
 uint64_t
 FileChunk::readIdxHeader(FastOS_FileInterface &idxFile, uint32_t &docIdLimit)
 {
-    int64_t fileSize = idxFile.GetSize();
+    int64_t fileSize = idxFile.getSize();
     uint32_t hl = GenericHeader::getMinSize();
     uint64_t idxHeaderLen = 0;
     if (fileSize >= hl) {
@@ -569,18 +561,14 @@ void
 FileChunk::eraseIdxFile(const vespalib::string & name)
 {
     vespalib::string fileName(createIdxFileName(name));
-    if ( ! FastOS_File::Delete(fileName.c_str())) {
-        throw std::runtime_error(make_string("Failed to delete '%s'", fileName.c_str()));
-    }
+    std::filesystem::remove(std::filesystem::path(fileName));
 }
 
 void
 FileChunk::eraseDatFile(const vespalib::string & name)
 {
     vespalib::string fileName(createDatFileName(name));
-    if ( ! FastOS_File::Delete(fileName.c_str())) {
-        throw std::runtime_error(make_string("Failed to delete '%s'", fileName.c_str()));
-    }
+    std::filesystem::remove(std::filesystem::path(fileName));
 }
 
 

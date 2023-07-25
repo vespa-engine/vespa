@@ -27,6 +27,7 @@ private:
     bool _directIOEnabled;
 
     char * buf() { return static_cast<char *>(_buf.get()); }
+    const char * buf() const { return static_cast<const char *>(_buf.get()); }
 protected:
     /** The file instance used for low-level file access. */
     std::unique_ptr<FastOS_FileInterface> _file;
@@ -154,7 +155,7 @@ public:
      *
      * @return int64_t The size of the file.
      */
-    int64_t GetSize () override;
+    int64_t getSize () const override;
     /**
      * Truncate or extend the file to a new size. Required write
      * access.
@@ -196,7 +197,7 @@ public:
      *
      * @return int64_t The file position.
      */
-    int64_t GetPosition () override;
+    int64_t getPosition () const override;
     /**
      * Set the position in the file. The next read or write
      * will continue from this position.
@@ -217,7 +218,6 @@ public:
      * Just forwarded to the real file to support FastOS_FileInterface.
      */
     bool Open(unsigned int, const char*) override;
-    bool Delete() override;
 
     void alignEndForDirectIO();
 };

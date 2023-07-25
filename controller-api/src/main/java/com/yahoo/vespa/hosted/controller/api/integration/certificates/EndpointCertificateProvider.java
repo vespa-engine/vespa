@@ -11,9 +11,9 @@ import java.util.Optional;
  */
 public interface EndpointCertificateProvider  {
 
-    EndpointCertificateMetadata requestCaSignedCertificate(String endpointCertificatePrefix, List<String> dnsNames, Optional<EndpointCertificateMetadata> currentMetadata, String algo, boolean useAlternativeProvider);
+    EndpointCertificate requestCaSignedCertificate(String endpointCertificatePrefix, List<String> dnsNames, Optional<EndpointCertificate> currentCert, String algo, boolean useAlternativeProvider);
 
-    List<EndpointCertificateRequestMetadata> listCertificates();
+    List<EndpointCertificateRequest> listCertificates();
 
     void deleteCertificate(String requestId);
 

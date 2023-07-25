@@ -43,49 +43,58 @@ public class OsUpgradeSchedulerTest {
 
         // Initial run does nothing as the cloud does not have a target
         scheduler.maintain();
-        assertTrue(tester.controller().osVersionTarget(cloud).isEmpty(), "No target set");
+        assertTrue(tester.controller().os().target(cloud).isEmpty(), "No target set");
 
         // Target is set manually
         Version version0 = Version.fromString("7.0.0.20220101");
-        tester.controller().upgradeOsIn(cloud, version0, false);
+        tester.controller().os().upgradeTo(version0, cloud, false, false);
 
         // Target remains unchanged as it hasn't expired yet
         for (var interval : List.of(Duration.ZERO, Duration.ofDays(30))) {
             tester.clock().advance(interval);
             scheduler.maintain();
-            assertEquals(version0, tester.controller().osVersionTarget(cloud).get().osVersion().version());
+            assertEquals(version0, tester.controller().os().target(cloud).get().osVersion().version());
         }
 
-        // New release becomes available, but is not triggered until cool-down period has passed
+        // New release becomes available, but is not triggered until cool-down period has passed, and we're inside a
+        // trigger period
         Version version1 = Version.fromString("7.0.0.20220301");
         tester.clock().advance(Duration.ofDays(16));
         assertEquals("2022-03-03T09:05:00", formatInstant(tester.clock().instant()));
         assertEquals(version1, scheduler.changeIn(cloud, tester.clock().instant()).get().version());
         scheduler.maintain();
         assertEquals(version0,
-                     tester.controller().osVersionTarget(cloud).get().osVersion().version(),
+                     tester.controller().os().target(cloud).get().osVersion().version(),
                      "Target is unchanged because cooldown hasn't passed");
-
-        // ... and we're inside the trigger period
         tester.clock().advance(Duration.ofDays(3).plusHours(18));
         assertEquals("2022-03-07T03:05:00", formatInstant(tester.clock().instant()));
         scheduler.maintain();
         assertEquals(version0,
-                     tester.controller().osVersionTarget(cloud).get().osVersion().version(),
+                     tester.controller().os().target(cloud).get().osVersion().version(),
                      "Target is unchanged because we're outside trigger period");
         tester.clock().advance(Duration.ofHours(5));
         assertEquals("2022-03-07T08:05:00", formatInstant(tester.clock().instant()));
+
+        // Time constraints have now passed, but the current target has been pinned in the meantime
+        tester.controller().os().upgradeTo(version0, cloud, false, true);
         Optional<OsUpgradeScheduler.Change> change = scheduler.changeIn(cloud, tester.clock().instant());
         assertTrue(change.isPresent());
+        assertEquals(-1, scheduler.maintain());
+        assertEquals(version0,
+                     tester.controller().os().target(cloud).get().osVersion().version(),
+                     "Target is unchanged because it's pinned");
+
+        // Target is unpinned and new version is allowed to be scheduled
+        tester.controller().os().upgradeTo(version0, cloud, false, false);
         scheduler.maintain();
         assertEquals(version1,
-                tester.controller().osVersionTarget(cloud).get().osVersion().version(),
+                tester.controller().os().target(cloud).get().osVersion().version(),
                 "New target set");
 
         // A few more days pass and target remains unchanged
         tester.clock().advance(Duration.ofDays(2));
         scheduler.maintain();
-        assertEquals(version1, tester.controller().osVersionTarget(cloud).get().osVersion().version());
+        assertEquals(version1, tester.controller().os().target(cloud).get().osVersion().version());
 
         // Estimate next change
         Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud, tester.clock().instant());
@@ -106,19 +115,19 @@ public class OsUpgradeSchedulerTest {
 
         // Set initial target
         Version version0 = Version.fromString("7.0.0.20220101");
-        tester.controller().upgradeOsIn(cloud, version0, false);
+        tester.controller().os().upgradeTo(version0, cloud, false, false);
 
         // Next version is triggered
         Version version1 = Version.fromString("7.0.0.20220301");
         tester.clock().advance(Duration.ofDays(44));
         assertEquals("2022-03-01T02:05:00", formatInstant(tester.clock().instant()));
         scheduler.maintain();
-        assertEquals(version0, tester.controller().osVersionTarget(cloud).get().osVersion().version());
+        assertEquals(version0, tester.controller().os().target(cloud).get().osVersion().version());
         // Cool-down passes
         tester.clock().advance(Duration.ofDays(1));
         assertEquals(version1, scheduler.changeIn(cloud, tester.clock().instant()).get().version());
         scheduler.maintain();
-        assertEquals(version1, tester.controller().osVersionTarget(cloud).get().osVersion().version());
+        assertEquals(version1, tester.controller().os().target(cloud).get().osVersion().version());
 
         // Estimate next change
         Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud, tester.clock().instant());
@@ -137,7 +146,7 @@ public class OsUpgradeSchedulerTest {
         // Set initial target
         CloudName cloud = tester.controller().clouds().iterator().next();
         Version version0 = Version.fromString("8.0");
-        tester.controller().upgradeOsIn(cloud, version0, false);
+        tester.controller().os().upgradeTo(version0, cloud, false, false);
 
         // Stable release (tagged outside trigger period) is scheduled once trigger period opens
         Version version1 = Version.fromString("8.1");
@@ -151,7 +160,7 @@ public class OsUpgradeSchedulerTest {
 
         // A newer version is triggered manually
         Version version3 = Version.fromString("8.3");
-        tester.controller().upgradeOsIn(cloud, version3, false);
+        tester.controller().os().upgradeTo(version3, cloud, false, false);
 
         // Nothing happens in next iteration as tagged release is older than manually triggered version
         scheduleUpgradeAfter(Duration.ofDays(7), version3, scheduler, tester);
@@ -168,7 +177,7 @@ public class OsUpgradeSchedulerTest {
         // Set initial target
         CloudName cloud = tester.controller().clouds().iterator().next();
         Version version0 = Version.fromString("8.0");
-        tester.controller().upgradeOsIn(cloud, version0, false);
+        tester.controller().os().upgradeTo(version0, cloud, false, false);
 
         // Latest release is not scheduled immediately
         Version version1 = Version.fromString("8.1");
@@ -205,7 +214,7 @@ public class OsUpgradeSchedulerTest {
         tester.clock().advance(duration);
         scheduler.maintain();
         CloudName cloud = tester.controller().clouds().iterator().next();
-        OsVersionTarget target = tester.controller().osVersionTarget(cloud).get();
+        OsVersionTarget target = tester.controller().os().target(cloud).get();
         assertEquals(version, target.osVersion().version());
     }
 

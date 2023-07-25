@@ -10,7 +10,9 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
@@ -45,12 +47,15 @@ public class RoutingPolicySerializer {
     private static final String dnsZoneField = "dnsZone";
     private static final String instanceEndpointsField = "rotations";
     private static final String applicationEndpointsField = "applicationEndpoints";
-    private static final String loadBalancerActiveField = "active";
     private static final String globalRoutingField = "globalRouting";
     private static final String agentField = "agent";
     private static final String changedAtField = "changedAt";
     private static final String statusField = "status";
     private static final String privateOnlyField = "private";
+    private static final String generatedEndpointsField = "generatedEndpoints";
+    private static final String clusterPartField = "clusterPart";
+    private static final String applicationPartField = "applicationPart";
+    private static final String authMethodField = "authMethod";
 
     public Slime toSlime(List<RoutingPolicy> routingPolicies) {
         var slime = new Slime();
@@ -69,6 +74,13 @@ public class RoutingPolicySerializer {
             policy.applicationEndpoints().forEach(endpointId -> applicationEndpointsArray.addString(endpointId.id()));
             globalRoutingToSlime(policy.routingStatus(), policyObject.setObject(globalRoutingField));
             if ( ! policy.isPublic()) policyObject.setBool(privateOnlyField, true);
+            Cursor generatedEndpointsArray = policyObject.setArray(generatedEndpointsField);
+            policy.generatedEndpoints().forEach(generatedEndpoint -> {
+                Cursor generatedEndpointObject = generatedEndpointsArray.addObject();
+                generatedEndpointObject.setString(clusterPartField, generatedEndpoint.clusterPart());
+                generatedEndpointObject.setString(applicationPartField, generatedEndpoint.applicationPart());
+                generatedEndpointObject.setString(authMethodField, authMethod(generatedEndpoint.authMethod()));
+            });
         });
         return slime;
     }
@@ -86,6 +98,14 @@ public class RoutingPolicySerializer {
                                                      ClusterSpec.Id.from(inspect.field(clusterField).asString()),
                                                      ZoneId.from(inspect.field(zoneField).asString()));
             boolean isPublic = ! inspect.field(privateOnlyField).asBool();
+            List<GeneratedEndpoint> generatedEndpoints = new ArrayList<>();
+            Inspector generatedEndpointsArray = inspect.field(generatedEndpointsField);
+            if (generatedEndpointsArray.valid()) {
+                generatedEndpointsArray.traverse((ArrayTraverser) (idx, generatedEndpointObject) ->
+                        generatedEndpoints.add(new GeneratedEndpoint(generatedEndpointObject.field(clusterPartField).asString(),
+                                                                     generatedEndpointObject.field(applicationPartField).asString(),
+                                                                     authMethodFromSlime(generatedEndpointObject.field(authMethodField)))));
+            }
             policies.add(new RoutingPolicy(id,
                                            SlimeUtils.optionalString(inspect.field(canonicalNameField)).map(DomainName::of),
                                            SlimeUtils.optionalString(inspect.field(ipAddressField)),
@@ -93,7 +113,8 @@ public class RoutingPolicySerializer {
                                            instanceEndpoints,
                                            applicationEndpoints,
                                            routingStatusFromSlime(inspect.field(globalRoutingField)),
-                                           isPublic));
+                                           isPublic,
+                                           generatedEndpoints));
         });
         return Collections.unmodifiableList(policies);
     }
@@ -109,6 +130,21 @@ public class RoutingPolicySerializer {
         var agent = RoutingStatus.Agent.valueOf(object.field(agentField).asString());
         var changedAt = SlimeUtils.optionalInstant(object.field(changedAtField)).orElse(Instant.EPOCH);
         return new RoutingStatus(status, agent, changedAt);
+    }
+
+    private String authMethod(Endpoint.AuthMethod authMethod) {
+        return switch (authMethod) {
+            case token -> "token";
+            case mtls -> "mtls";
+        };
+    }
+
+    private Endpoint.AuthMethod authMethodFromSlime(Inspector field) {
+        return switch (field.asString()) {
+            case "token" -> Endpoint.AuthMethod.token;
+            case "mtls" -> Endpoint.AuthMethod.mtls;
+            default -> throw new IllegalArgumentException("Unknown auth method '" + field.asString() + "'");
+        };
     }
 
 }

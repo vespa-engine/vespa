@@ -5,7 +5,6 @@ import com.google.common.math.Quantiles;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class SearchGroupsImpl implements SearchGroups {
 
@@ -38,7 +37,8 @@ public class SearchGroupsImpl implements SearchGroups {
 
     public long medianDocumentsPerGroup() {
         if (isEmpty()) return 0;
-        var activeDocuments = groups().stream().map(Group::activeDocuments).toList();
-        return (long) Quantiles.median().compute(activeDocuments);
+        double[] activeDocuments = groups().stream().mapToDouble(Group::activeDocuments).toArray();
+        return (long) Quantiles.median().computeInPlace(activeDocuments);
     }
+
 }

@@ -35,7 +35,13 @@ public class GroupingParser {
         if (str.indexOf('.') >= 0) {
             return Double.valueOf(str);
         }
+        if (str.equals(Long.toString(Long.MIN_VALUE).substring(1))) return Double.NaN;
         return Long.valueOf(str);
+    }
+
+    private static GroupingExpression resolveNegation(GroupingExpression exp) {
+        if (exp instanceof DoubleValue && ((DoubleValue)exp).getValue().isNaN()) return new LongValue(Long.MIN_VALUE);
+        return new NegFunction(exp);
     }
 }
 
@@ -299,7 +305,7 @@ GroupingExpression exp(GroupingOperation grp) :
 }
 {
     ( [ add() | sub()                         { neg = true; } ]
-      exp = expAlias(grp)                     { if (neg) { exp = new NegFunction(exp); } }
+      exp = expAlias(grp)                     { if (neg) { exp = resolveNegation(exp); } }
       [ <AS> lbrace() str = string() rbrace() { exp.setLabel(str); } ] )
     { return exp; }
 }
@@ -623,13 +629,13 @@ MulFunction mulFunction(GroupingOperation grp) :
       return new MulFunction(arg1, arg2, argN.toArray(new GroupingExpression[argN.size()])); }
 }
 
-NegFunction negFunction(GroupingOperation grp) :
+GroupingExpression negFunction(GroupingOperation grp) :
 {
     GroupingExpression exp;
 }
 {
     ( <NEG> lbrace() exp = exp(grp) rbrace() )
-    { return new NegFunction(exp); }
+    { return resolveNegation(exp); }
 }
 
 NormalizeSubjectFunction normalizeSubjectFunction(GroupingOperation grp) :

@@ -14,13 +14,13 @@ TensorBufferTypeMapper::TensorBufferTypeMapper()
 {
 }
 
-TensorBufferTypeMapper::TensorBufferTypeMapper(uint32_t max_small_subspaces_type_id, double grow_factor, TensorBufferOperations* ops)
+TensorBufferTypeMapper::TensorBufferTypeMapper(uint32_t max_small_subspaces_type_id, double grow_factor, size_t max_buffer_size, TensorBufferOperations* ops)
     : vespalib::datastore::ArrayStoreTypeMapper(),
       _ops(ops)
 {
     _array_sizes.reserve(max_small_subspaces_type_id + 1);
     _array_sizes.emplace_back(0); // type id 0 uses LargeSubspacesBufferType
-    uint32_t num_subspaces = 0;
+    uint32_t num_subspaces =  _ops->is_dense() ? 1 : 0;
     size_t prev_array_size = 0u;
     size_t array_size = 0u;
     for (uint32_t type_id = 1; type_id <= max_small_subspaces_type_id; ++type_id) {
@@ -32,10 +32,14 @@ TensorBufferTypeMapper::TensorBufferTypeMapper(uint32_t max_small_subspaces_type
             ++num_subspaces;
             array_size = _ops->get_buffer_size(num_subspaces);
         }
-        if (array_size > std::numeric_limits<uint32_t>::max()) {
+        if (array_size > std::numeric_limits<uint32_t>::max() ||
+            array_size >= 2 * max_buffer_size) {
             break;
         }
         _array_sizes.emplace_back(array_size);
+        if (_ops->is_dense()) {
+            break;
+        }
         prev_array_size = array_size;
     }
 }

@@ -54,12 +54,6 @@ func TestConfig(t *testing.T) {
 	assertConfigCommand(t, configHome, "", "config", "set", "instance", "i2")
 	assertConfigCommand(t, configHome, "instance = i2\n", "config", "get", "instance")
 
-	// wait
-	assertConfigCommandErr(t, configHome, "Error: wait option must be an integer >= 0, got \"foo\"\n", "config", "set", "wait", "foo")
-	assertConfigCommand(t, configHome, "", "config", "set", "wait", "60")
-	assertConfigCommand(t, configHome, "wait = 60\n", "config", "get", "wait")
-	assertConfigCommand(t, configHome, "wait = 30\n", "config", "get", "--wait", "30", "wait") // flag overrides global config
-
 	// color
 	assertConfigCommandErr(t, configHome, "Error: invalid option or value: color = foo\n", "config", "set", "color", "foo")
 	assertConfigCommand(t, configHome, "", "config", "set", "color", "never")
@@ -74,6 +68,7 @@ func TestConfig(t *testing.T) {
 	// zone
 	assertConfigCommand(t, configHome, "", "config", "set", "zone", "dev.us-east-1")
 	assertConfigCommand(t, configHome, "zone = dev.us-east-1\n", "config", "get", "zone")
+	assertConfigCommand(t, configHome, "zone = prod.us-north-1\n", "config", "get", "--zone", "prod.us-north-1", "zone") // flag overrides global config
 
 	// Write empty value to YAML config, which should be ignored. This is for compatibility with older config formats
 	configFile := filepath.Join(configHome, "config.yaml")
@@ -118,7 +113,6 @@ color = auto
 instance = foo
 quiet = false
 target = cloud
-wait = 0
 zone = <unset>
 `, "config", "get")
 
@@ -259,6 +253,12 @@ func TestConfigReadTLSOptions(t *testing.T) {
 			PrivateKeyFile:  defaultKeyFile,
 		},
 	)
+
+	// Key pair files specified through environment are required
+	nonExistentFile := filepath.Join(homeDir, "non-existent-file")
+	cli, _, _ := newTestCLI(t, "VESPA_CLI_DATA_PLANE_CERT_FILE="+nonExistentFile, "VESPA_CLI_DATA_PLANE_KEY_FILE="+nonExistentFile)
+	_, err := cli.config.readTLSOptions(app, vespa.TargetLocal)
+	assert.True(t, os.IsNotExist(err))
 }
 
 func TestConfigTargetResolving(t *testing.T) {

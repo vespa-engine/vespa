@@ -40,7 +40,7 @@
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-ssh-external</artifactId>
-                <version>${maven-wagon.version}</version>
+                <version>${maven-wagon.vespa.version}</version>
             </extension>
             <extension>
                 <groupId>org.apache.maven.archetype</groupId>
@@ -53,7 +53,7 @@
                 <plugin>
                     <groupId>org.antlr</groupId>
                     <artifactId>antlr3-maven-plugin</artifactId>
-                    <version>${antlr.version}</version>
+                    <version>${antlr.vespa.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -63,17 +63,17 @@
                 <plugin>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
-                    <version>${maven-bundle-plugin.version}</version>
+                    <version>${maven-bundle-plugin.vespa.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
-                    <version>${maven-assembly-plugin.version}</version>
+                    <version>${maven-assembly-plugin.vespa.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${maven-compiler-plugin.version}</version>
+                    <version>${maven-compiler-plugin.vespa.version}</version>
                     <configuration>
                         <release>17</release>
                         <showWarnings>true</showWarnings>
@@ -90,12 +90,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>${maven-dependency-plugin.version}</version>
+                    <version>${maven-dependency-plugin.vespa.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
-                    <version>${maven-deploy-plugin.version}</version>
+                    <version>${maven-deploy-plugin.vespa.version}</version>
                     <configuration>
                         <retryFailedDeploymentCount>10</retryFailedDeploymentCount>
                     </configuration>
@@ -103,22 +103,22 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>${maven-enforcer-plugin.version}</version>
+                    <version>${maven-enforcer-plugin.vespa.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>${maven-failsafe-plugin.version}</version>
+                    <version>${maven-failsafe-plugin.vespa.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>${maven-install-plugin.version}</version>
+                    <version>${maven-install-plugin.vespa.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>${maven-jar-plugin.version}</version>
+                    <version>${maven-jar-plugin.vespa.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -131,12 +131,12 @@
                         <!-- TODO: remove this setting when the plugin looks for element-list (JDK 10+) instead of package-list. -->
                         <detectOfflineLinks>false</detectOfflineLinks>
                     </configuration>
-                    <version>${maven-javadoc-plugin.version}</version>
+                    <version>${maven-javadoc-plugin.vespa.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>
-                    <version>${maven-plugin-tools.version}</version>
+                    <version>${maven-plugin-tools.vespa.version}</version>
                     <configuration>
                         <!-- see http://jira.codehaus.org/browse/MNG-5346 -->
                         <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
@@ -153,7 +153,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>${maven-resources-plugin.version}</version>
+                    <version>${maven-resources-plugin.vespa.version}</version>
                     <configuration>
                         <escapeString>\</escapeString>
                     </configuration>
@@ -161,7 +161,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>${maven-shade-plugin.version}</version>
+                    <version>${maven-shade-plugin.vespa.version}</version>
                     <configuration>
                         <filters>
                             <filter>
@@ -190,12 +190,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-site-plugin</artifactId>
-                    <version>${maven-site-plugin.version}</version>
+                    <version>${maven-site-plugin.vespa.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>${maven-source-plugin.version}</version>
+                    <version>${maven-source-plugin.vespa.version}</version>
                     <configuration>
                         <includePom>true</includePom>
                     </configuration>
@@ -203,7 +203,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${surefire.version}</version>
+                    <version>${surefire.vespa.version}</version>
                     <configuration>
                         <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
                         <systemPropertyVariables>
@@ -218,7 +218,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-report-plugin</artifactId>
-                    <version>${surefire.version}</version>
+                    <version>${surefire.vespa.version}</version>
                     <configuration>
                         <alwaysGenerateSurefireReport>false</alwaysGenerateSurefireReport>
                         <showSuccess>false</showSuccess>
@@ -252,7 +252,7 @@
                 <plugin>
                     <groupId>com.helger.maven</groupId>
                     <artifactId>ph-javacc-maven-plugin</artifactId>
-                    <version>4.1.2</version>
+                    <version>4.1.5</version>
                     <executions>
                         <execution>
                             <phase>generate-sources</phase>
@@ -273,7 +273,7 @@
                                 <goal>run</goal>
                             </goals>
                             <configuration>
-                                <protocVersion>${protobuf.version}</protocVersion>
+                                <protocVersion>${protobuf.vespa.version}</protocVersion>
                                 <addSources>main</addSources>
                                 <outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
                                 <inputDirectories>
@@ -448,17 +448,17 @@
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-core</artifactId>
-                <version>${aws-sdk.version}</version>
+                <version>${aws-sdk.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-ssm</artifactId>
-                <version>${aws-sdk.version}</version>
+                <version>${aws-sdk.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-sts</artifactId>
-                <version>${aws-sdk.version}</version>
+                <version>${aws-sdk.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.auth0</groupId>
@@ -468,7 +468,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-cbor</artifactId>
-                <version>${jackson2.version}</version>
+                <version>${jackson2.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.cverges.expect4j</groupId>
@@ -478,7 +478,7 @@
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
-                <version>${zookeeper.client.version}</version>
+                <version>${zookeeper.client.vespa.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -491,6 +491,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>com.github.luben</groupId>
+                <artifactId>zstd-jni</artifactId>
+                <version>1.5.5-4</version>
+            </dependency>
+            <dependency>
                 <!-- Needed by zookeeper, which has an optional dependency.
                      Version must be the same as the one zk uses - check the zk pom file.  -->
                 <groupId>com.github.spotbugs</groupId>
@@ -501,17 +506,17 @@
             <dependency>
                 <groupId>com.github.tomakehurst</groupId>
                 <artifactId>wiremock-jre8-standalone</artifactId>
-                <version>${wiremock.version}</version>
+                <version>${wiremock.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
-                <version>${findbugs.version}</version>
+                <version>${findbugs.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>${guava.version}</version>
+                <version>${guava.vespa.version}</version>
                 <exclusions>
                     <exclusion>
                         <!-- Annotations with retention Runtime. Remove exclusion and provide from jdisc_core if needed. -->
@@ -538,7 +543,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava-testlib</artifactId>
-                <version>${guava.version}</version>
+                <version>${guava.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.jimfs</groupId>
@@ -549,7 +554,7 @@
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
-                <version>${protobuf.version}</version>
+                <version>${protobuf.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.ibm.icu</groupId>
@@ -564,12 +569,12 @@
             <dependency>
                 <groupId>com.microsoft.onnxruntime</groupId>
                 <artifactId>onnxruntime</artifactId>
-                <version>${onnxruntime.version}</version>
+                <version>${onnxruntime.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.yahoo.athenz</groupId>
                 <artifactId>athenz-cert-refresher</artifactId>
-                <version>${athenz.version}</version>
+                <version>${athenz.vespa.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.bouncycastle</groupId>
@@ -580,7 +585,7 @@
             <dependency>
                 <groupId>com.yahoo.athenz</groupId>
                 <artifactId>athenz-zms-java-client</artifactId>
-                <version>${athenz.version}</version>
+                <version>${athenz.vespa.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.bouncycastle</groupId>
@@ -591,12 +596,12 @@
             <dependency>
                 <groupId>com.yahoo.athenz</groupId>
                 <artifactId>athenz-zpe-java-client</artifactId>
-                <version>${athenz.version}</version>
+                <version>${athenz.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.yahoo.athenz</groupId>
                 <artifactId>athenz-zts-java-client</artifactId>
-                <version>${athenz.version}</version>
+                <version>${athenz.vespa.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.bouncycastle</groupId>
@@ -607,7 +612,7 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>${commons-io.version}</version>
+                <version>${commons-io.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -617,17 +622,17 @@
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>
-                <version>${jjwt.version}</version>
+                <version>${jjwt.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-impl</artifactId>
-                <version>${jjwt.version}</version>
+                <version>${jjwt.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-jackson</artifactId>
-                <version>${jjwt.version}</version>
+                <version>${jjwt.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
@@ -637,12 +642,12 @@
             <dependency>
                 <groupId>net.openhft</groupId>
                 <artifactId>zero-allocation-hashing</artifactId>
-                <version>${zero-allocation-hashing.version}</version>
+                <version>${zero-allocation-hashing.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-math3</artifactId>
-                <version>${commons.math3.version}</version>
+                <version>${commons.math3.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-cli</groupId>
@@ -652,37 +657,37 @@
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>${commons-codec.version}</version>
+                <version>${commons-codec.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>airline</artifactId>
-                <version>${airline.version}</version>
+                <version>${airline.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-handler</artifactId>
-                <version>${netty.version}</version>
+                <version>${netty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-transport-native-epoll</artifactId>
-                <version>${netty.version}</version>
+                <version>${netty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-tcnative</artifactId>
-                <version>${netty-tcnative.version}</version>
+                <version>${netty-tcnative.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.prometheus</groupId>
                 <artifactId>simpleclient</artifactId>
-                <version>${prometheus.client.version}</version>
+                <version>${prometheus.client.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.prometheus</groupId>
                 <artifactId>simpleclient_common</artifactId>
-                <version>${prometheus.client.version}</version>
+                <version>${prometheus.client.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -692,7 +697,7 @@
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>${jna.version}</version>
+                <version>${jna.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.spy</groupId>
@@ -702,17 +707,17 @@
             <dependency>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr-runtime</artifactId>
-                <version>${antlr.version}</version>
+                <version>${antlr.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
-                <version>${antlr4.version}</version>
+                <version>${antlr4.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.aries.spifly</groupId>
                 <artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
-                <version>${spifly.version}</version>
+                <version>${spifly.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -727,17 +732,17 @@
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-recipes</artifactId>
-                <version>${curator.version}</version>
+                <version>${curator.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-test</artifactId>
-                <version>${curator.version}</version>
+                <version>${curator.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>${apache.httpclient.version}</version>
+                <version>${apache.httpclient.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -747,7 +752,7 @@
             <dependency>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>org.apache.felix.framework</artifactId>
-                <version>${felix.version}</version>
+                <version>${felix.vespa.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.codehaus.mojo</groupId>
@@ -758,67 +763,67 @@
             <dependency>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>org.apache.felix.log</artifactId>
-                <version>${felix.log.version}</version>
+                <version>${felix.log.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
-                <version>${apache.httpcore.version}</version>
+                <version>${apache.httpcore.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents.client5</groupId>
                 <artifactId>httpclient5</artifactId>
-                <version>${apache.httpclient5.version}</version>
+                <version>${apache.httpclient5.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents.core5</groupId>
                 <artifactId>httpcore5</artifactId>
-                <version>${apache.httpcore5.version}</version>
+                <version>${apache.httpcore5.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents.core5</groupId>
                 <artifactId>httpcore5-h2</artifactId>
-                <version>${apache.httpcore5.version}</version>
+                <version>${apache.httpcore5.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpmime</artifactId>
-                <version>${apache.httpclient.version}</version>
+                <version>${apache.httpclient.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-archiver</artifactId>
-                <version>${maven-archiver.version}</version>
+                <version>${maven-archiver.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-artifact</artifactId>
-                <version>${maven-core.version}</version>
+                <version>${maven-core.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-core</artifactId>
-                <version>${maven-core.version}</version>
+                <version>${maven-core.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-model</artifactId>
-                <version>${maven-core.version}</version>
+                <version>${maven-core.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-repository-metadata</artifactId>
-                <version>${maven-core.version}</version>
+                <version>${maven-core.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-settings</artifactId>
-                <version>${maven-core.version}</version>
+                <version>${maven-core.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-plugin-api</artifactId>
-                <version>${maven-plugin-api.version}</version>
+                <version>${maven-plugin-api.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
@@ -826,35 +831,50 @@
                 <version>2.2.1</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven.enforcer</groupId>
+                <artifactId>enforcer-api</artifactId>
+                <version>${maven-enforcer-plugin.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.enforcer</groupId>
+                <artifactId>enforcer-rules</artifactId>
+                <version>${maven-enforcer-plugin.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
                 <artifactId>maven-plugin-annotations</artifactId>
-                <version>${maven-plugin-tools.version}</version>
+                <version>${maven-plugin-tools.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven-jar-plugin.version}</version>
+                <version>${maven-jar-plugin.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.shared</groupId>
+                <artifactId>maven-dependency-tree</artifactId>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.surefire</groupId>
                 <artifactId>surefire-junit4</artifactId>
-                <version>${surefire.version}</version>
+                <version>${surefire.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.surefire</groupId>
                 <artifactId>surefire-providers</artifactId>
-                <version>${surefire.version}</version>
+                <version>${surefire.vespa.version}</version>
                 <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-ssh-external</artifactId>
-                <version>${maven-wagon.version}</version>
+                <version>${maven-wagon.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-provider-api</artifactId>
-                <version>${maven-wagon.version}</version>
+                <version>${maven-wagon.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.opennlp</groupId>
@@ -879,17 +899,17 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk18on</artifactId>
-                <version>${bouncycastle.version}</version>
+                <version>${bouncycastle.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk18on</artifactId>
-                <version>${bouncycastle.version}</version>
+                <version>${bouncycastle.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcutil-jdk18on</artifactId>
-                <version>${bouncycastle.version}</version>
+                <version>${bouncycastle.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.cthul</groupId>
@@ -900,72 +920,77 @@
             <dependency>
                 <groupId>org.eclipse.collections</groupId>
                 <artifactId>eclipse-collections</artifactId>
-                <version>${eclipse-collections.version}</version>
+                <version>${eclipse-collections.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.collections</groupId>
                 <artifactId>eclipse-collections-api</artifactId>
-                <version>${eclipse-collections.version}</version>
+                <version>${eclipse-collections.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
                 <artifactId>http2-common</artifactId>
-                <version>${jetty.version}</version>
+                <version>${jetty.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.http2</groupId>
+                <artifactId>http2-http-client-transport</artifactId>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
                 <artifactId>http2-server</artifactId>
-                <version>${jetty.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-alpn-java-server</artifactId>
-                <version>${jetty.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-alpn-server</artifactId>
-                <version>${jetty.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-client</artifactId>
-                <version>${jetty.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-http</artifactId>
-                <version>${jetty.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-io</artifactId>
-                <version>${jetty.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-jmx</artifactId>
-                <version>${jetty.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-server</artifactId>
-                <version>${jetty.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-servlet</artifactId>
-                <version>${jetty.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-util</artifactId>
-                <version>${jetty.version}</version>
+                <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.toolchain</groupId>
                 <artifactId>jetty-jakarta-servlet-api</artifactId>
-                <version>${jetty-servlet-api.version}</version>
+                <version>${jetty-servlet-api.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jaxb</groupId>
@@ -993,32 +1018,32 @@
             <dependency>
                 <groupId>org.hdrhistogram</groupId>
                 <artifactId>HdrHistogram</artifactId>
-                <version>${hdrhistogram.version}</version>
+                <version>${hdrhistogram.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
-                <version>${junit.version}</version>
+                <version>${junit.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
-                <version>${junit.version}</version>
+                <version>${junit.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>${junit.version}</version>
+                <version>${junit.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-params</artifactId>
-                <version>${junit.version}</version>
+                <version>${junit.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
-                <version>${junit.version}</version>
+                <version>${junit.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jvnet.mimepull</groupId>
@@ -1028,12 +1053,12 @@
             <dependency>
                 <groupId>org.lz4</groupId>
                 <artifactId>lz4-java</artifactId>
-                <version>${org.lz4.version}</version>
+                <version>${org.lz4.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>${mockito.version}</version>
+                <version>${mockito.vespa.version}</version>
                 <scope>test</scope> <!-- TODO: remove scope from parent pom -->
             </dependency>
             <dependency>
@@ -1048,27 +1073,27 @@
             <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
-                <version>${asm.version}</version>
+                <version>${asm.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm-analysis</artifactId>
-                <version>${asm.version}</version>
+                <version>${asm.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm-commons</artifactId>
-                <version>${asm.version}</version>
+                <version>${asm.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm-tree</artifactId>
-                <version>${asm.version}</version>
+                <version>${asm.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm-util</artifactId>
-                <version>${asm.version}</version>
+                <version>${asm.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.twdata.maven</groupId>
@@ -1099,7 +1124,7 @@
             <dependency> <!-- TODO: Remove on Vespa 9 -->
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>${org.json.version}</version>
+                <version>${org.json.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.errorprone</groupId>
@@ -1111,78 +1136,11 @@
                 <artifactId>checker-qual</artifactId>
                 <version>3.30.0</version>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
 
     <properties>
-        <airline.version>0.9</airline.version>
-        <antlr.version>3.5.3</antlr.version>
-        <antlr4.version>4.11.1</antlr4.version>
-        <apache.httpclient.version>4.5.14</apache.httpclient.version>
-        <apache.httpcore.version>4.4.16</apache.httpcore.version>
-        <apache.httpclient5.version>5.2.1</apache.httpclient5.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
-        <apache.httpcore5.version>5.2.1</apache.httpcore5.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
-        <asm.version>9.3</asm.version>
-
-        <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <athenz.version>1.11.28</athenz.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
-        <aws-sdk.version>1.12.460</aws-sdk.version>
-        <!-- Athenz END -->
-
-        <!-- WARNING: If you change curator version, you also need to update
-                 zkfacade/src/main/java/org/apache/curator/**/package-info.java
-             using something like
-                 find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
-                     xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
-        -->
-        <bouncycastle.version>1.74</bouncycastle.version>
-        <curator.version>5.4.0</curator.version>
-        <commons-codec.version>1.15</commons-codec.version>
-        <commons-io.version>2.11.0</commons-io.version>
-        <commons.math3.version>3.6.1</commons.math3.version>
-        <eclipse-collections.version>11.0.0</eclipse-collections.version>
-        <felix.version>7.0.1</felix.version>
-        <felix.log.version>1.0.1</felix.log.version>
-        <findbugs.version>3.0.2</findbugs.version> <!-- Should be kept in sync with guava -->
-        <hdrhistogram.version>2.1.12</hdrhistogram.version>
-        <jetty.version>11.0.15</jetty.version>
-        <jetty-servlet-api.version>5.0.2</jetty-servlet-api.version>
-        <jjwt.version>0.11.5</jjwt.version>
-        <jna.version>5.11.0</jna.version>
-        <junit.version>5.8.1</junit.version>
-        <maven-archiver.version>3.6.0</maven-archiver.version>
-        <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
-        <maven-bundle-plugin.version>5.1.2</maven-bundle-plugin.version>
-        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
-        <maven-core.version>3.8.7</maven-core.version>
-        <maven-dependency-plugin.version>3.5.0</maven-dependency-plugin.version> <!-- NOTE: When upgrading, also update explicit versions in tenant base poms! -->
-        <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
-        <maven-enforcer-plugin.version>3.0.0</maven-enforcer-plugin.version>
-        <maven-failsafe-plugin.version>3.0.0-M6</maven-failsafe-plugin.version>
-        <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
-        <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
-        <maven-javadoc-plugin.version>3.3.1</maven-javadoc-plugin.version>
-        <maven-plugin-api.version>${maven-core.version}</maven-plugin-api.version>
-        <maven-plugin-tools.version>3.6.4</maven-plugin-tools.version>
-        <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
-        <maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
-        <maven-site-plugin.version>3.9.1</maven-site-plugin.version>
-        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-        <maven-wagon.version>2.10</maven-wagon.version>
-        <mockito.version>4.0.0</mockito.version>
-        <netty.version>4.1.94.Final</netty.version>
-        <netty-tcnative.version>2.0.61.Final</netty-tcnative.version>
-        <onnxruntime.version>1.13.1</onnxruntime.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
-        <org.json.version>20230227</org.json.version>
-        <org.lz4.version>1.8.0</org.lz4.version>
-        <prometheus.client.version>0.6.0</prometheus.client.version>
-        <protobuf.version>3.21.7</protobuf.version>
-        <spifly.version>1.3.6</spifly.version>
-        <surefire.version>3.0.0-M9</surefire.version>
-        <wiremock.version>2.35.0</wiremock.version>
-        <zero-allocation-hashing.version>0.16</zero-allocation-hashing.version>
-        <zookeeper.client.version>3.8.0</zookeeper.client.version>
-
         <doclint>all</doclint>
         <test.hide>true</test.hide>
 

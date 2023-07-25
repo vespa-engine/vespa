@@ -24,6 +24,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.Application;
@@ -35,6 +36,8 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.yolean.Exceptions;
+
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
@@ -45,6 +48,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.yolean.Exceptions.toMessageString;
+import static java.util.logging.Level.FINE;
 
 /**
  * @author bratseth
@@ -102,7 +108,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                     Optional<DockerImage> wantedDockerImageRepository,
                                                     Version wantedNodeVespaVersion) {
         Version modelVersion = modelFactory.version();
-        log.log(Level.FINE, () -> "Building model " + modelVersion + " for " + applicationId);
+        log.log(FINE, () -> "Building model " + modelVersion + " for " + applicationId);
 
         // Use empty on non-hosted systems, use already allocated hosts if available, create connection to a host provisioner otherwise
         Provisioned provisioned = new Provisioned();
@@ -126,15 +132,17 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         return new PreparedModelResult(modelVersion, result.getModel(), fileRegistry, result.getConfigChangeActions());
     }
 
-    private ModelCreateResult createAndValidateModel(ModelFactory modelFactory, ApplicationId applicationId, Version modelVersion, ModelContext modelContext) {
-        log.log(zone().system().isCd() ? Level.INFO : Level.FINE,
-                () -> "Create and validate model " + modelVersion + " for " + applicationId + ", previous model is " +
-                modelOf(modelVersion).map(Model::version).map(Version::toFullString).orElse("non-existing"));
+    private ModelCreateResult createAndValidateModel(ModelFactory modelFactory,
+                                                     ApplicationId applicationId,
+                                                     Version modelVersion,
+                                                     ModelContext modelContext) {
+        log.log(FINE, () -> "Create and validate model " + modelVersion + " for " + applicationId +
+                ", previous model " + (modelOf(modelVersion).isPresent() ? " exists" : "does not exist"));
         ValidationParameters validationParameters =
                 new ValidationParameters(params.ignoreValidationErrors() ? IgnoreValidationErrors.TRUE : IgnoreValidationErrors.FALSE);
         ModelCreateResult result = modelFactory.createAndValidateModel(modelContext, validationParameters);
         validateModelHosts(hostValidator, applicationId, result.getModel());
-        log.log(Level.FINE, () -> "Done building model " + modelVersion + " for " + applicationId);
+        log.log(FINE, () -> "Done building model " + modelVersion + " for " + applicationId);
         params.getTimeoutBudget().assertNotTimedOut(() -> "prepare timed out after building model " + modelVersion +
                                                           " (timeout " + params.getTimeoutBudget().timeout() + "): " + applicationId);
         return result;
@@ -189,6 +197,10 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 } catch (InterruptedException interruptedException) {/* ignore */}
             }
         } while (Instant.now().isBefore(end));
+
+        if (configserverConfig.hostedVespa())
+            // Use another exception, as this is not a problem with the application package
+            throw new NodeAllocationException(toMessageString(exception), true);
 
         throw exception;
     }

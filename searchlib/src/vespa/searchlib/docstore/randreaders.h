@@ -15,7 +15,7 @@ class DirectIORandRead : public FileRandRead
 public:
     DirectIORandRead(const vespalib::string & fileName);
     FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
-    int64_t getSize() override;
+    int64_t getSize() const override;
 private:
     std::unique_ptr<FastOS_FileInterface>  _file;
     size_t                                 _alignment;
@@ -28,7 +28,7 @@ class MMapRandRead : public FileRandRead
 public:
     MMapRandRead(const vespalib::string & fileName, int mmapFlags, int fadviseOptions);
     FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
-    int64_t getSize() override;
+    int64_t getSize() const override;
     const void * getMapping();
 private:
     std::unique_ptr<FastOS_FileInterface>  _file;
@@ -39,7 +39,7 @@ class MMapRandReadDynamic : public FileRandRead
 public:
     MMapRandReadDynamic(const vespalib::string & fileName, int mmapFlags, int fadviseOptions);
     FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
-    int64_t getSize() override;
+    int64_t getSize() const override;
 private:
     static bool contains(const FastOS_FileInterface & file, size_t sz);
     void remap(size_t end);
@@ -55,7 +55,7 @@ class NormalRandRead : public FileRandRead
 public:
     NormalRandRead(const vespalib::string & fileName);
     FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
-    int64_t getSize() override;
+    int64_t getSize() const override;
 private:
     std::unique_ptr<FastOS_FileInterface>  _file;
 };

@@ -32,12 +32,11 @@ UTF8SuffixStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mints
             ++srcbuf;
         }
         srcbuf = tokenize(srcbuf, _buf->capacity(), dstbuf, tokenlen);
-        for (QueryTermList::iterator it = _qtl.begin(), mt = _qtl.end(); it != mt; ++it) {
-            QueryTerm & qt = **it;
+        for (auto qt : _qtl) {
             const cmptype_t * term;
-            termsize_t tsz = qt.term(term);
+            termsize_t tsz = qt->term(term);
             if (matchTermSuffix(term, tsz, dstbuf, tokenlen)) {
-                addHit(qt, words);
+                addHit(*qt, words);
             }
         }
         words++;

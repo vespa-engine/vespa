@@ -9,9 +9,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
-
 import com.yahoo.security.X509CertificateUtils;
-
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Injector;
 import com.yahoo.slime.ObjectInserter;
@@ -29,7 +27,6 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
 import java.util.OptionalInt;
-;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

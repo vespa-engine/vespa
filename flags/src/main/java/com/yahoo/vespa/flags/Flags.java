@@ -48,12 +48,6 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag IPV6_IN_GCP = defineFeatureFlag(
-            "ipv6-in-gcp", false,
-            List.of("hakonhall"), "2023-05-15", "2023-07-15",
-            "Provision GCP hosts with external IPv6 addresses",
-            "Takes effect on the next host provisioning");
-
     public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
             "drop-caches", false,
             List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-08-05",
@@ -363,13 +357,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag VESPA_ATHENZ_PROVIDER = defineFeatureFlag(
-            "vespa-athenz-provider", false,
-            List.of("mortent"), "2023-02-22", "2023-08-01",
-            "Enable athenz provider in public systems",
-            "Takes effect on next config server container start",
-            ZONE_ID);
-
     public static final UnboundBooleanFlag NODE_ADMIN_TENANT_SERVICE_REGISTRY = defineFeatureFlag(
             "node-admin-tenant-service-registry", false,
             List.of("olaa"), "2023-04-12", "2023-08-01",
@@ -379,7 +366,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
-            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-07-25",
+            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-07-31",
             "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
             HOSTNAME);
 
@@ -389,14 +376,8 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag NEW_IDDOC_LAYOUT = defineFeatureFlag(
-            "new_iddoc_layout", true, List.of("tokle", "bjorncs", "olaa"), "2023-04-24", "2023-06-30",
-            "Whether to use new identity document layout",
-            "Takes effect on node reboot",
-            HOSTNAME, APPLICATION_ID, VESPA_VERSION);
-
     public static final UnboundBooleanFlag RANDOMIZED_ENDPOINT_NAMES = defineFeatureFlag(
-            "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-06-30",
+            "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-07-30",
             "Whether to use randomized endpoint names",
             "Takes effect on application deployment",
             APPLICATION_ID);
@@ -421,7 +402,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR = defineFeatureFlag(
             "enable-conditional-put-remove-write-repair", true,
-            List.of("vekterli", "havardpe"), "2023-05-10", "2023-07-01",
+            List.of("vekterli", "havardpe"), "2023-05-10", "2023-09-01",
             "If set, a conditional Put or Remove operation for a document in an inconsistent bucket " +
             "will initiate a write-repair that evaluates the condition across all mutually inconsistent " +
             "replicas, with the newest document version (if any) being authoritative",
@@ -435,6 +416,33 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID
     );
+    public static final UnboundBooleanFlag ENABLE_NESTED_MULTIVALUE_GROUPING = defineFeatureFlag(
+            "enable-nested-multivalue-grouping", false,
+            List.of("baldersheim"), "2023-06-29", "2023-12-31",
+            "Should we enable proper nested multivalue grouping",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundBooleanFlag USE_RECONFIGURABLE_DISPATCHER = defineFeatureFlag(
+            "use-reconfigurable-dispatcher", false,
+            List.of("jonmv"), "2023-07-14", "2023-10-01",
+            "Whether to set up a ReconfigurableDispatcher with config self-sub for backend nodes",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
+            "write-config-server-session-data-as-blob", false,
+            List.of("hmuusm"), "2023-07-19", "2023-09-01",
+            "Whether to write config server session data in one blob or as individual paths",
+            "Takes effect immediately",
+            ZONE_ID);
+
+    public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
+            "read-config-server-session-data-as-blob", false,
+            List.of("hmuusm"), "2023-07-19", "2023-09-01",
+            "Whether to read config server session data from sesion data blob or from individual paths",
+            "Takes effect immediately",
+            ZONE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

@@ -1,7 +1,8 @@
 {
-  "cells": {
-    "foo": 1.0,
-    "bar": 2.0,
-    "three": 3.0
+    "cells": {
+        "foo": 1,
+        "cells": 2.0,
+        "values": 0.5,
+        "blocks": 1.5
   }
 }

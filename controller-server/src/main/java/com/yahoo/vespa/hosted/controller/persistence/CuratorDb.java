@@ -63,6 +63,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -335,7 +336,7 @@ public class CuratorDb {
 
     // Infrastructure upgrades
 
-    public void writeOsVersionTargets(Set<OsVersionTarget> versions) {
+    public void writeOsVersionTargets(SortedSet<OsVersionTarget> versions) {
         curator.set(osVersionTargetsPath(), asJson(osVersionTargetSerializer.toSlime(versions)));
     }
 
@@ -390,7 +391,7 @@ public class CuratorDb {
                       .map(stat -> cachedApplications.compute(path, (__, old) ->
                               old != null && old.getFirst() == stat.getVersion()
                               ? old
-                              : new Pair<>(stat.getVersion(), read(path, bytes -> applicationSerializer.fromSlime(bytes)).get())).getSecond());
+                              : new Pair<>(stat.getVersion(), read(path, applicationSerializer::fromSlime).get())).getSecond());
     }
 
     public List<Application> readApplications(boolean canFail) {
@@ -619,7 +620,7 @@ public class CuratorDb {
         Path path = endpointCertificatePath(certificate.application(), certificate.instance());
         curator.create(path);
         CuratorOperation operation = CuratorOperations.setData(path.getAbsolute(),
-                                                               asJson(EndpointCertificateMetadataSerializer.toSlime(certificate.certificate())));
+                                                               asJson(EndpointCertificateSerializer.toSlime(certificate.certificate())));
         transaction.add(CuratorTransaction.from(operation, curator));
     }
 
@@ -634,7 +635,7 @@ public class CuratorDb {
 
     public Optional<AssignedCertificate> readAssignedCertificate(TenantAndApplicationId application, Optional<InstanceName> instance) {
         return readSlime(endpointCertificatePath(application, instance)).map(Slime::get)
-                                                                        .map(EndpointCertificateMetadataSerializer::fromSlime)
+                                                                        .map(EndpointCertificateSerializer::fromSlime)
                                                                         .map(cert -> new AssignedCertificate(application, instance, cert));
     }
 

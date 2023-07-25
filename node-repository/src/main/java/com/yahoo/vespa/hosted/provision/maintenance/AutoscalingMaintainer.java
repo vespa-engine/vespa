@@ -7,6 +7,9 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -34,6 +37,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     private final Autoscaler autoscaler;
     private final Deployer deployer;
     private final Metric metric;
+    private final BooleanFlag enabledFlag;
 
     public AutoscalingMaintainer(NodeRepository nodeRepository,
                                  Deployer deployer,
@@ -43,6 +47,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         this.autoscaler = new Autoscaler(nodeRepository);
         this.deployer = deployer;
         this.metric = metric;
+        this.enabledFlag = PermanentFlags.AUTOSCALING.bindTo(nodeRepository.flagSource());
     }
 
     @Override
@@ -53,6 +58,9 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         int attempts = 0;
         int failures = 0;
         for (var applicationNodes : activeNodesByApplication().entrySet()) {
+            boolean enabled = enabledFlag.with(FetchVector.Dimension.APPLICATION_ID,
+                                               applicationNodes.getKey().serializedForm()).value();
+            if (!enabled) continue;
             for (var clusterNodes : nodesByCluster(applicationNodes.getValue()).entrySet()) {
                 attempts++;
                 if ( ! autoscale(applicationNodes.getKey(), clusterNodes.getKey()))

@@ -74,7 +74,7 @@ Zc4PostingSeqRead::open(const vespalib::string &name,
     if (res) {
         auto &readContext = _reader.get_read_context();
         readContext.setFile(&_file);
-        readContext.setFileSize(_file.GetSize());
+        readContext.setFileSize(_file.getSize());
         auto &d = _reader.get_decode_features();
         readContext.allocComprBuf(65536u, 32768u);
         d.emptyBuffer(0);

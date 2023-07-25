@@ -24,7 +24,7 @@ public final class LockedNodeList extends NodeList {
         this.lock = Objects.requireNonNull(lock, "lock must be non-null");
     }
 
-    /** Returns a new LockedNodeList with the for the same lock. */
+    /** Returns a new LockedNodeList with the same lock. */
     public LockedNodeList childList(List<Node> nodes) {
         return new LockedNodeList(nodes, lock);
     }

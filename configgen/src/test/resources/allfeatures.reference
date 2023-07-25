@@ -99,7 +99,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
     void getConfig(Builder builder);
   }
 
-  public static class Builder implements ConfigInstance.Builder {
+  public static final class Builder implements ConfigInstance.Builder {
     private Set<String> __uninitialized = new HashSet<String>(Arrays.asList(
       "boolVal",
       "intVal",
@@ -1345,7 +1345,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
    */
   public final static class Basic_struct extends InnerNode { 
 
-    public static class Builder implements ConfigBuilder {
+    public static final class Builder implements ConfigBuilder {
       private Set<String> __uninitialized = new HashSet<String>();
 
       private String foo = null;
@@ -1432,7 +1432,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
    */
   public final static class Struct_of_struct extends InnerNode { 
 
-    public static class Builder implements ConfigBuilder {
+    public static final class Builder implements ConfigBuilder {
       private Set<String> __uninitialized = new HashSet<String>();
 
       public Inner0.Builder inner0 = new Inner0.Builder();
@@ -1529,7 +1529,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
      */
     public final static class Inner0 extends InnerNode { 
 
-      public static class Builder implements ConfigBuilder {
+      public static final class Builder implements ConfigBuilder {
         private Set<String> __uninitialized = new HashSet<String>();
 
         private String name = null;
@@ -1616,7 +1616,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
      */
     public final static class Inner1 extends InnerNode { 
 
-      public static class Builder implements ConfigBuilder {
+      public static final class Builder implements ConfigBuilder {
         private Set<String> __uninitialized = new HashSet<String>();
 
         private String name = null;
@@ -1703,7 +1703,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
    */
   public final static class MyArray extends InnerNode { 
 
-    public static class Builder implements ConfigBuilder {
+    public static final class Builder implements ConfigBuilder {
       private Set<String> __uninitialized = new HashSet<String>(Arrays.asList(
         "refVal"
         ));
@@ -1939,7 +1939,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
      */
     public final static class AnotherArray extends InnerNode { 
 
-      public static class Builder implements ConfigBuilder {
+      public static final class Builder implements ConfigBuilder {
         private Set<String> __uninitialized = new HashSet<String>();
 
         private Integer foo = null;
@@ -2013,7 +2013,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
    */
   public final static class MyMap extends InnerNode { 
 
-    public static class Builder implements ConfigBuilder {
+    public static final class Builder implements ConfigBuilder {
       private Set<String> __uninitialized = new HashSet<String>(Arrays.asList(
         "refVal"
         ));
@@ -2249,7 +2249,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
      */
     public final static class AnotherArray extends InnerNode { 
 
-      public static class Builder implements ConfigBuilder {
+      public static final class Builder implements ConfigBuilder {
         private Set<String> __uninitialized = new HashSet<String>();
 
         private Integer foo = null;

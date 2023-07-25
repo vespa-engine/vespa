@@ -125,10 +125,10 @@ namespace {
 class HeapAllocator : public MemoryAllocator {
 public:
     PtrAndSize alloc(size_t sz) const override;
-    void free(PtrAndSize alloc) const override;
+    void free(PtrAndSize alloc) const noexcept override;
     size_t resize_inplace(PtrAndSize, size_t) const override { return 0; }
     static PtrAndSize salloc(size_t sz);
-    static void sfree(PtrAndSize alloc);
+    static void sfree(PtrAndSize alloc) noexcept;
     static MemoryAllocator & getDefault();
 };
 
@@ -146,11 +146,11 @@ private:
 class MMapAllocator : public MemoryAllocator {
 public:
     PtrAndSize alloc(size_t sz) const override;
-    void free(PtrAndSize alloc) const override;
+    void free(PtrAndSize alloc) const noexcept override;
     size_t resize_inplace(PtrAndSize current, size_t newSize) const override;
     static size_t sresize_inplace(PtrAndSize current, size_t newSize);
     static PtrAndSize salloc(size_t sz, void * wantedAddress);
-    static void sfree(PtrAndSize alloc);
+    static void sfree(PtrAndSize alloc) noexcept;
     static MemoryAllocator & getDefault();
 private:
     static size_t extend_inplace(PtrAndSize current, size_t newSize);
@@ -161,8 +161,8 @@ class AutoAllocator : public MemoryAllocator {
 public:
     AutoAllocator(size_t mmapLimit, size_t alignment) : _mmapLimit(mmapLimit), _alignment(alignment) { }
     PtrAndSize alloc(size_t sz) const override;
-    void free(PtrAndSize alloc) const override;
-    void free(void * ptr, size_t sz) const override;
+    void free(PtrAndSize alloc) const noexcept override;
+    void free(void * ptr, size_t sz) const noexcept override;
     size_t resize_inplace(PtrAndSize current, size_t newSize) const override;
     static MemoryAllocator & getDefault();
     static MemoryAllocator & getAllocator(size_t mmapLimit, size_t alignment);
@@ -301,11 +301,11 @@ HeapAllocator::salloc(size_t sz) {
     return PtrAndSize(ptr, sz);
 }
 
-void HeapAllocator::free(PtrAndSize alloc) const {
+void HeapAllocator::free(PtrAndSize alloc) const noexcept {
     sfree(alloc);
 }
 
-void HeapAllocator::sfree(PtrAndSize alloc) {
+void HeapAllocator::sfree(PtrAndSize alloc) noexcept {
     if (alloc.get()) { ::free(alloc.get()); }
 }
 
@@ -419,11 +419,11 @@ MMapAllocator::shrink_inplace(PtrAndSize current, size_t newSize) {
     return newSize;
 }
 
-void MMapAllocator::free(PtrAndSize alloc) const {
+void MMapAllocator::free(PtrAndSize alloc) const noexcept {
     sfree(alloc);
 }
 
-void MMapAllocator::sfree(PtrAndSize alloc)
+void MMapAllocator::sfree(PtrAndSize alloc) noexcept
 {
     if (alloc.get() != nullptr) {
         int madvise_retval = madvise(alloc.get(), alloc.size(), MADV_DONTNEED);
@@ -477,7 +477,7 @@ AutoAllocator::alloc(size_t sz) const {
 }
 
 void
-AutoAllocator::free(PtrAndSize alloc) const {
+AutoAllocator::free(PtrAndSize alloc) const noexcept {
     if ( ! isMMapped(alloc.size())) {
         return HeapAllocator::sfree(alloc);
     } else {
@@ -486,7 +486,7 @@ AutoAllocator::free(PtrAndSize alloc) const {
 }
 
 void
-AutoAllocator::free(void * ptr, size_t sz) const {
+AutoAllocator::free(void * ptr, size_t sz) const noexcept {
     if ( ! useMMap(sz)) {
         return HeapAllocator::sfree(PtrAndSize(ptr, sz));
     } else {

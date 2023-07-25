@@ -7,15 +7,11 @@ import java.util.List;
 public class OperationNotSupportedForUnitException extends StateRestApiException {
 
     private static String createMessage(List<String> path, String description) {
-        return new StringBuilder()
-                .append(Arrays.toString(path.toArray())).append(": ").append(description)
-                .toString();
+        return Arrays.toString(path.toArray()) + ": " + description;
     }
 
     public OperationNotSupportedForUnitException(List<String> path, String description) {
-        super(createMessage(path, description));
-        setHtmlCode(405);
-        setHtmlStatus("Operation not supported for resource");
+        super(createMessage(path, description), 405, "Operation not supported for resource");
     }
 
 }

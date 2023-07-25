@@ -2,7 +2,8 @@
 namespace=cloud.config
 
 # The port Jdisc will be listening on
-port                int
+tokenPort           int
+mtlsPort            int
 
 # Server certificate and key to be used when creating server socket
 serverCertificate   string

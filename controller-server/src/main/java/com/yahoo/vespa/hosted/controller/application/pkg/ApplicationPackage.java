@@ -163,7 +163,7 @@ public class ApplicationPackage {
                                                       deploymentFile, DeploymentSpec.empty.xmlForm().getBytes(UTF_8))));
     }
 
-    /** Returns a zip containing meta data about deployments of this package by the given job. */
+    /** Returns a zip containing metadata about deployments of this package by the given job. */
     public byte[] metaDataZip() {
         return cacheZip();
     }

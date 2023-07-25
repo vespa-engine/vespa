@@ -149,14 +149,10 @@ FakeZcFilterOcc::setupT(const FakeWord &fw)
     PostingListCounts counts;
     Zc4PostingWriter<bigEndian> writer(counts);
 
-    using FW = FakeWord;
-    using DWFL = FW::DocWordFeatureList;
-    using DWPFL = FW::DocWordPosFeatureList;
-
-    DWFL::const_iterator d(fw._postings.begin());
-    DWFL::const_iterator de(fw._postings.end());
-    DWPFL::const_iterator p(fw._wordPosFeatures.begin());
-    DWPFL::const_iterator pe(fw._wordPosFeatures.end());
+    auto d = fw._postings.begin();
+    auto de = fw._postings.end();
+    auto p = fw._wordPosFeatures.begin();
+    auto pe = fw._wordPosFeatures.end();
     DocIdAndPosOccFeatures features;
     EGPosOccEncodeContext<bigEndian> f1(&_fieldsParams);
     EG2PosOccEncodeContext<bigEndian> f0(&_fieldsParams);
@@ -506,11 +502,11 @@ FakeFilterOccZCArrayIterator::doUnpack(uint32_t docId)
 }
 
 
-SearchIterator *
+std::unique_ptr<SearchIterator>
 FakeZcFilterOcc::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return new FakeFilterOccZCArrayIterator(_compressed.first, 0, _posting_params._doc_id_limit, matchData);
+    return std::make_unique<FakeFilterOccZCArrayIterator>(_compressed.first, 0, _posting_params._doc_id_limit, matchData);
 }
 
 class FakeZcSkipFilterOcc : public FakeZcFilterOcc
@@ -520,7 +516,7 @@ public:
     FakeZcSkipFilterOcc(const FakeWord &fw);
 
     ~FakeZcSkipFilterOcc() override;
-    SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
+    std::unique_ptr<SearchIterator> createIterator(const TermFieldMatchDataArray &matchData) const override;
 };
 
 static FPFactoryInit
@@ -538,10 +534,10 @@ FakeZcSkipFilterOcc::FakeZcSkipFilterOcc(const FakeWord &fw)
 
 FakeZcSkipFilterOcc::~FakeZcSkipFilterOcc() = default;
 
-SearchIterator *
+std::unique_ptr<SearchIterator>
 FakeZcSkipFilterOcc::createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return create_zc_posocc_iterator(true, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
+    return create_zc_posocc_iterator(true, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData);
 }
 
 
@@ -554,7 +550,7 @@ public:
     ~FakeEGCompr64PosOcc() override;
     size_t bitSize() const override;
     bool hasWordPositions() const override;
-    SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
+    std::unique_ptr<SearchIterator> createIterator(const TermFieldMatchDataArray &matchData) const override;
 };
 
 
@@ -591,11 +587,11 @@ FakeEGCompr64PosOcc<bigEndian>::hasWordPositions() const
 
 
 template <bool bigEndian>
-SearchIterator *
+std::unique_ptr<SearchIterator>
 FakeEGCompr64PosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
+    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData);
 }
 
 
@@ -608,7 +604,7 @@ public:
     ~FakeEG2Compr64PosOcc() override;
     size_t bitSize() const override;
     bool hasWordPositions() const override;
-    SearchIterator *createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
+    std::unique_ptr<SearchIterator> createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
 
@@ -646,11 +642,11 @@ FakeEG2Compr64PosOcc<bigEndian>::hasWordPositions() const
 
 
 template <bool bigEndian>
-SearchIterator *
+std::unique_ptr<SearchIterator>
 FakeEG2Compr64PosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
+    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData);
 }
 
 
@@ -664,7 +660,7 @@ public:
 
     size_t bitSize() const override;
     bool hasWordPositions() const override;
-    SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
+    std::unique_ptr<SearchIterator> createIterator(const TermFieldMatchDataArray &matchData) const override;
 };
 
 
@@ -703,11 +699,11 @@ FakeZcSkipPosOcc<bigEndian>::hasWordPositions() const
 
 
 template <bool bigEndian>
-SearchIterator *
+std::unique_ptr<SearchIterator>
 FakeZcSkipPosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
-    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
+    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData);
 }
 
 
@@ -724,7 +720,7 @@ public:
     ~FakeZc4SkipPosOcc() override;
     size_t bitSize() const override;
     bool hasWordPositions() const override;
-    SearchIterator *createIterator(const TermFieldMatchDataArray &matchData) const override;
+    std::unique_ptr<SearchIterator> createIterator(const TermFieldMatchDataArray &matchData) const override;
     bool enable_unpack_normal_features() const override { return _unpack_normal_features; }
     bool enable_unpack_interleaved_features() const override { return _unpack_interleaved_features; }
 };
@@ -770,7 +766,7 @@ FakeZc4SkipPosOcc<bigEndian>::hasWordPositions() const
 
 
 template <bool bigEndian>
-SearchIterator *
+std::unique_ptr<SearchIterator>
 FakeZc4SkipPosOcc<bigEndian>::
 createIterator(const TermFieldMatchDataArray &matchData) const
 {
@@ -781,7 +777,7 @@ createIterator(const TermFieldMatchDataArray &matchData) const
         assert(!_unpack_normal_features);
         assert(!_unpack_interleaved_features);
     }
-return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData).release();
+    return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits, _posting_params, _fieldsParams, matchData);
 }
 
 template <bool bigEndian>

@@ -115,7 +115,7 @@ DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
 
     if ( !_fieldPath.empty() ) {
         bool nestedMultiValue(false);
-        for(document::FieldPath::const_iterator it(_fieldPath.begin()), mt(_fieldPath.end()); !nestedMultiValue && (it != mt); it++) {
+        for (auto it(_fieldPath.begin()), mt(_fieldPath.end()); !nestedMultiValue && (it != mt); it++) {
             const FieldPathEntry & fpe = **it;
             if (fpe.getType() == document::FieldPathEntry::STRUCT_FIELD) {
                 const FieldValue & fv = fpe.getFieldValueToSet();

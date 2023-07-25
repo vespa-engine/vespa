@@ -7,6 +7,7 @@ import com.yahoo.vespa.model.container.ContainerThreadpool;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -50,6 +51,8 @@ public class Handler extends Component<Component<?, ?>, ComponentModel> {
     public void addServerBindings(BindingPattern... bindings) {
         serverBindings.addAll(Arrays.asList(bindings));
     }
+
+    public void addServerBindings(Collection<BindingPattern> bps) { serverBindings.addAll(bps); }
 
     public void removeServerBinding(BindingPattern binding) {
         serverBindings.remove(binding);

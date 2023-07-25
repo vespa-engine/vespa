@@ -88,12 +88,12 @@ public class LoadBalancerProvisioner {
      * <p>
      * Calling this for irrelevant node or cluster types is a no-op.
      */
-    public void prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
-        if (!shouldProvision(application, requestedNodes.type(), cluster.type())) return;
+    public void prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requested) {
+        if (!shouldProvision(application, requested.type(), cluster.type())) return;
         try (var lock = db.lock(application)) {
             ClusterSpec.Id clusterId = effectiveId(cluster);
             LoadBalancerId loadBalancerId = requireNonClashing(new LoadBalancerId(application, clusterId));
-            prepare(loadBalancerId, cluster.zoneEndpoint(), requestedNodes.cloudAccount());
+            prepare(loadBalancerId, cluster.zoneEndpoint(), requested.cloudAccount());
         }
     }
 

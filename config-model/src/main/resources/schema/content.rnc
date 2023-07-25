@@ -82,7 +82,7 @@ ClusterControllerTuning = element cluster-controller {
     element stable-state-period {  xsd:string { pattern = "([0-9\.]+)\s*([a-z]+)?" }  }? &
     element min-distributor-up-ratio { xsd:double }? &
     element min-storage-up-ratio { xsd:double }? &
-    element max-groups-allowed-down { xsd:nonNegativeInteger }?
+    element groups-allowed-down-ratio { xsd:double { minInclusive = "0" maxInclusive = "1" } }?
 }
 
 DispatchTuning = element dispatch {
@@ -144,6 +144,7 @@ SearchCoverage = element coverage {
     element max-wait-after-coverage-factor { xsd:double { minInclusive = "0" maxInclusive = "1" } }?
 }
 
+# TODO: Deprecated, remove in Vespa 9
 Dispatch = element dispatch {
     element num-dispatch-groups { xsd:nonNegativeInteger }? &
     DispatchGroup*

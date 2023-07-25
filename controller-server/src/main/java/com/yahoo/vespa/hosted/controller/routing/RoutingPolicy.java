@@ -5,12 +5,13 @@ import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
-import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,11 +30,13 @@ public record RoutingPolicy(RoutingPolicyId id,
                             Set<EndpointId> instanceEndpoints,
                             Set<EndpointId> applicationEndpoints,
                             RoutingStatus routingStatus,
-                            boolean isPublic) {
+                            boolean isPublic,
+                            List<GeneratedEndpoint> generatedEndpoints) {
 
     /** DO NOT USE. Public for serialization purposes */
     public RoutingPolicy(RoutingPolicyId id, Optional<DomainName> canonicalName, Optional<String> ipAddress, Optional<String> dnsZone,
-                         Set<EndpointId> instanceEndpoints, Set<EndpointId> applicationEndpoints, RoutingStatus routingStatus, boolean isPublic) {
+                         Set<EndpointId> instanceEndpoints, Set<EndpointId> applicationEndpoints, RoutingStatus routingStatus, boolean isPublic,
+                         List<GeneratedEndpoint> generatedEndpoints) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.ipAddress = Objects.requireNonNull(ipAddress, "ipAddress must be non-null");
@@ -42,6 +45,7 @@ public record RoutingPolicy(RoutingPolicyId id,
         this.applicationEndpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(applicationEndpoints, "applicationEndpoints must be non-null"));
         this.routingStatus = Objects.requireNonNull(routingStatus, "status must be non-null");
         this.isPublic = isPublic;
+        this.generatedEndpoints = List.copyOf(Objects.requireNonNull(generatedEndpoints, "generatedEndpoints must be non-null"));
 
         if (canonicalName.isEmpty() == ipAddress.isEmpty())
             throw new IllegalArgumentException("Exactly 1 of canonicalName=%s and ipAddress=%s must be set".formatted(
@@ -77,9 +81,14 @@ public record RoutingPolicy(RoutingPolicyId id,
         return instanceEndpoints;
     }
 
-    /** The application-level endpoints  this participates in */
+    /** The application-level endpoints this participates in */
     public Set<EndpointId> applicationEndpoints() {
         return applicationEndpoints;
+    }
+
+    /** The endpoints to generate for this policy, if any */
+    public List<GeneratedEndpoint> generatedEndpoints() {
+        return generatedEndpoints;
     }
 
     /** Return status of routing */
@@ -100,24 +109,41 @@ public record RoutingPolicy(RoutingPolicyId id,
 
     /** Returns a copy of this with routing status set to given status */
     public RoutingPolicy with(RoutingStatus routingStatus) {
-        return new RoutingPolicy(id, canonicalName, ipAddress, dnsZone, instanceEndpoints, applicationEndpoints, routingStatus, isPublic);
+        return new RoutingPolicy(id, canonicalName, ipAddress, dnsZone, instanceEndpoints, applicationEndpoints, routingStatus, isPublic, generatedEndpoints);
+    }
+
+    public RoutingPolicy with(List<GeneratedEndpoint> generatedEndpoints) {
+        return new RoutingPolicy(id, canonicalName, ipAddress, dnsZone, instanceEndpoints, applicationEndpoints, routingStatus, isPublic, generatedEndpoints);
     }
 
     /** Returns the zone endpoints of this */
     public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod, boolean includeTokenEndpoint) {
         DeploymentId deployment = new DeploymentId(id.owner(), id.zone());
-        Endpoint zoneEndpoint = endpoint(routingMethod).target(id.cluster(), deployment).in(system);
+        Endpoint.EndpointBuilder builder = endpoint(routingMethod).target(id.cluster(), deployment);
+        Endpoint zoneEndpoint = builder.in(system);
+        List<Endpoint> endpoints = new ArrayList<>();
+        endpoints.add(zoneEndpoint);
         if (includeTokenEndpoint) {
-            Endpoint tokenEndpoint = endpoint(routingMethod).target(id.cluster(), deployment).tokenEndpoint().in(system);
-            return List.of(zoneEndpoint, tokenEndpoint);
-        } else {
-            return List.of(zoneEndpoint);
+            Endpoint tokenEndpoint = builder.authMethod(Endpoint.AuthMethod.token).in(system);
+            endpoints.add(tokenEndpoint);
         }
+        for (var generatedEndpoint : generatedEndpoints) {
+            boolean include = switch (generatedEndpoint.authMethod()) {
+                case token -> includeTokenEndpoint;
+                case mtls -> true;
+            };
+            if (include) {
+                endpoints.add(builder.generatedFrom(generatedEndpoint).in(system));
+            }
+        }
+        return endpoints;
     }
 
     /** Returns the region endpoint of this */
-    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod) {
-        return endpoint(routingMethod).targetRegion(id.cluster(), id.zone()).in(system);
+    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod, Optional<GeneratedEndpoint> generated) {
+        Endpoint.EndpointBuilder builder = endpoint(routingMethod).targetRegion(id.cluster(), id.zone());
+        generated.ifPresent(builder::generatedFrom);
+        return builder.in(system);
     }
 
     @Override
@@ -133,17 +159,10 @@ public record RoutingPolicy(RoutingPolicyId id,
         return Objects.hash(id);
     }
 
-    @Override
-    public String toString() {
-        return Text.format("%s [instance endpoints: %s, application endpoints: %s%s], %s owned by %s, in %s", canonicalName,
-                           instanceEndpoints, applicationEndpoints,
-                           dnsZone.map(z -> ", DNS zone: " + z).orElse(""), id.cluster(), id.owner().toShortString(),
-                           id.zone().value());
-    }
-
     private Endpoint.EndpointBuilder endpoint(RoutingMethod routingMethod) {
         return Endpoint.of(id.owner())
                        .on(Port.fromRoutingMethod(routingMethod))
                        .routingMethod(routingMethod);
     }
+
 }

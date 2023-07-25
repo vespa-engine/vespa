@@ -99,6 +99,10 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>http-utils</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
         </exclusion>
@@ -226,6 +230,10 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>http-utils</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.lz4</groupId>
           <artifactId>lz4-java</artifactId>
         </exclusion>
@@ -273,4 +281,35 @@
     </dependency>
     <!-- DO NOT add dependencies here, but above the NOTE! -->
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <classpathLayoutType>custom</classpathLayoutType>
+              <customClasspathLayout>$${artifact.groupId}:$${artifact.artifactId}:$${artifact.vespa.version}</customClasspathLayout>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>bundle-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>generate-provided-artifact-manifest</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>

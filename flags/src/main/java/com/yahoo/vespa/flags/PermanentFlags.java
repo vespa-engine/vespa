@@ -161,7 +161,7 @@ public class PermanentFlags {
             HOSTNAME, NODE_TYPE, TENANT_ID, APPLICATION_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION);
 
     public static final UnboundStringFlag ZOOKEEPER_SERVER_VERSION = defineStringFlag(
-            "zookeeper-server-version", "3.8.0",  // Note: Nodes running Vespa 7 have 3.7.1 as the only available version
+            "zookeeper-server-version", "3.8.0",
             "ZooKeeper server version, a jar file zookeeper-server-<ZOOKEEPER_SERVER_VERSION>-jar-with-dependencies.jar must exist",
             "Takes effect on restart of Docker container",
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
@@ -361,6 +361,18 @@ public class PermanentFlags {
             "Time to live for connections to endpoints in seconds",
             "Takes effect on next redeployment",
             APPLICATION_ID);
+
+    public static final UnboundBooleanFlag AUTOSCALING = defineFeatureFlag(
+            "autoscaling", true,
+            "Whether to enable autoscaling",
+            "Takes effect immediately",
+            APPLICATION_ID);
+
+    public static final UnboundIntFlag MAX_HOSTS_PER_HOUR = defineIntFlag(
+            "max-hosts-per-hour", 40,
+            "The number of hosts that can be provisioned per hour in a zone, before throttling is " +
+            "triggered",
+            "Takes effect immediately");
 
     private PermanentFlags() {}
 

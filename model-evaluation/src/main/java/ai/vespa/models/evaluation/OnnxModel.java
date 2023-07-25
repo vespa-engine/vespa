@@ -4,8 +4,6 @@ package ai.vespa.models.evaluation;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
-import com.yahoo.searchlib.rankingexpression.Reference;
-import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -207,5 +205,10 @@ class OnnxModel implements AutoCloseable {
         return evaluator;
     }
 
-    @Override public void close() { evaluator.close(); }
+    @Override public void close() {
+        if (evaluator != null) {
+            evaluator.close();
+            evaluator = null;
+        }
+    }
 }

@@ -48,7 +48,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
      *
      * @param id the id of this searcher
      * @param connections the connections of the cluster
-     * @param internal whether or not this cluster is internal (part of the same installation)
+     * @param internal whether this cluster is internal (part of the same installation)
      */
     public ClusterSearcher(ComponentId id, List<T> connections, boolean internal) {
         this(id, connections, new Hasher<>(), internal);

@@ -161,6 +161,11 @@ public class HostSystem extends TreeConfigProducer<Host> {
             deployLogger.log(level, message);
         }
 
+        @Override
+        public void logApplicationPackage(Level level, String message) {
+            deployLogger.logApplicationPackage(level, message);
+        }
+
     }
 
 }

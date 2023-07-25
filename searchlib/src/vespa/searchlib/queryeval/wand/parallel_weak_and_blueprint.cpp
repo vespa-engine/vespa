@@ -12,35 +12,31 @@
 
 namespace search::queryeval {
 
-ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(const FieldSpec &field,
+ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(FieldSpecBase field,
                                                    uint32_t scoresToTrack,
                                                    score_t scoreThreshold,
                                                    double thresholdBoostFactor)
     : ComplexLeafBlueprint(field),
-      _field(field),
       _scores(scoresToTrack),
       _scoreThreshold(scoreThreshold),
       _thresholdBoostFactor(thresholdBoostFactor),
       _scoresAdjustFrequency(DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY),
-      _estimate(),
       _layout(),
       _weights(),
       _terms()
 {
 }
 
-ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(const FieldSpec &field,
+ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(FieldSpecBase field,
                                                    uint32_t scoresToTrack,
                                                    score_t scoreThreshold,
                                                    double thresholdBoostFactor,
                                                    uint32_t scoresAdjustFrequency)
     : ComplexLeafBlueprint(field),
-      _field(field),
       _scores(scoresToTrack),
       _scoreThreshold(scoreThreshold),
       _thresholdBoostFactor(thresholdBoostFactor),
       _scoresAdjustFrequency(scoresAdjustFrequency),
-      _estimate(),
       _layout(),
       _weights(),
       _terms()
@@ -49,12 +45,6 @@ ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(const FieldSpec &field,
 
 ParallelWeakAndBlueprint::~ParallelWeakAndBlueprint() = default;
 
-FieldSpec
-ParallelWeakAndBlueprint::getNextChildField(const FieldSpec &outer)
-{
-    return FieldSpec(outer.getName(), outer.getFieldId(), _layout.allocTermField(outer.getFieldId()), false);
-}
-
 void
 ParallelWeakAndBlueprint::reserve(size_t num_children) {
     _weights.reserve(num_children);
@@ -62,20 +52,18 @@ ParallelWeakAndBlueprint::reserve(size_t num_children) {
 }
 
 void
-ParallelWeakAndBlueprint::addTerm(Blueprint::UP term, int32_t weight)
+ParallelWeakAndBlueprint::addTerm(Blueprint::UP term, int32_t weight, HitEstimate & estimate)
 {
     HitEstimate childEst = term->getState().estimate();
     if (!childEst.empty) {
-        if (_estimate.empty) {
-            _estimate = childEst;
+        if (estimate.empty) {
+            estimate = childEst;
         } else {
-            _estimate.estHits += childEst.estHits;
+            estimate.estHits += childEst.estHits;
         }
-        setEstimate(_estimate);
     }
     _weights.push_back(weight);
     _terms.push_back(std::move(term));
-    set_tree_size(_terms.size() + 1);
 }
 
 SearchIterator::UP

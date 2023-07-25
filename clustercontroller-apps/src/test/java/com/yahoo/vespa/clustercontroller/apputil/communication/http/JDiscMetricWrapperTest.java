@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class JDiscMetricWrapperTest {
 
-    class MetricImpl implements Metric {
+    static class MetricImpl implements Metric {
         int calls = 0;
         @Override
         public void set(String s, Number number, Context context) { ++calls; }
@@ -31,13 +31,13 @@ public class JDiscMetricWrapperTest {
         JDiscMetricWrapper wrapper = new JDiscMetricWrapper(impl1);
         wrapper.add("foo", 234, null);
         wrapper.set("bar", 234, null);
-        assertTrue(wrapper.createContext(null) != null);
+        assertNotNull(wrapper.createContext(null));
         assertEquals(3, impl1.calls);
         impl1.calls = 0;
         wrapper.updateMetricImplementation(impl2);
         wrapper.add("foo", 234, wrapper.createContext(null));
         wrapper.set("bar", 234, wrapper.createContext(null));
-        assertTrue(wrapper.createContext(null) != null);
+        assertNotNull(wrapper.createContext(null));
         assertEquals(0, impl1.calls);
         assertEquals(5, impl2.calls);
 

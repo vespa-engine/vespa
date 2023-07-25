@@ -53,7 +53,7 @@ ZcPosOccRandRead::~ZcPosOccRandRead()
 }
 
 
-search::queryeval::SearchIterator *
+std::unique_ptr<search::queryeval::SearchIterator>
 ZcPosOccRandRead::
 createIterator(const PostingListCounts &counts,
                const PostingListHandle &handle,
@@ -67,7 +67,7 @@ createIterator(const PostingListCounts &counts,
     assert(handle._bitOffsetMem <= handle._bitOffset);
 
     if (handle._bitLength == 0) {
-        return new search::queryeval::EmptySearch;
+        return std::make_unique<search::queryeval::EmptySearch>();
     }
 
     const char *cmem = static_cast<const char *>(handle._mem);
@@ -80,7 +80,7 @@ createIterator(const PostingListCounts &counts,
                      handle._bitOffsetMem) & 63;
 
     Position start(mem, bitOffset);
-    return create_zc_posocc_iterator(true, counts, start, handle._bitLength, _posting_params, _fieldsParams, matchData).release();
+    return create_zc_posocc_iterator(true, counts, start, handle._bitLength, _posting_params, _fieldsParams, matchData);
 }
 
 
@@ -165,7 +165,7 @@ open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead)
         LOG(error, "could not open %s: %s", _file->GetFileName(), getLastErrorString().c_str());
         return false;
     }
-    _fileSize = _file->GetSize();
+    _fileSize = _file->getSize();
 
     readHeader();
     return true;
@@ -187,7 +187,7 @@ ZcPosOccRandRead::readHeader(const vespalib::string &identifier)
     ComprFileReadContext drc(d);
 
     drc.setFile(_file.get());
-    drc.setFileSize(_file->GetSize());
+    drc.setFileSize(_file->getSize());
     drc.allocComprBuf(512, 32768u);
     d.emptyBuffer(0);
     drc.readComprBuffer();

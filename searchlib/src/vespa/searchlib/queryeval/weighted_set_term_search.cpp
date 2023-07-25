@@ -36,7 +36,7 @@ private:
     };
 
     fef::TermFieldMatchData                       &_tmd;
-    std::vector<int32_t>                           _weights;
+    const std::vector<int32_t>                    &_weights;
     std::vector<uint32_t>                          _termPos;
     CmpDocId                                       _cmpDocId;
     CmpWeight                                      _cmpWeight;

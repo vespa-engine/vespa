@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base"
+  ],
+  "dependencyDashboardApproval": true,
+  "transitiveRemediation": true,
+  "prHourlyLimit": 10,
+  "prConcurrentLimit": 10,
+  "ignorePaths": [],
+  "ignoreDeps": [
+    "com.github.spotbugs:spotbugs-annotations",
+    "com.yahoo.vespa.bundle-plugin:test-bundles",
+    "com.yahoo.vespa.jdisc_core:test_bundles",
+    "com.yahoo.vespa:cloud-tenant-base",
+    "com.yahoo.vespa:parent",
+    "com.yahoo.vespa:zookeeper-server-parent",
+    "github.com/go-json-experiment/json",
+    "javax.servlet:javax.servlet-api"
+  ]
+}

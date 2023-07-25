@@ -8,9 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
-import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
-import org.w3c.dom.Element;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,9 +69,6 @@ public interface ApplicationPackage {
     String RANKPROFILE_NAME_SUFFIX = ".profile";
     String RULES_NAME_SUFFIX = ".sr";
     String EXT_DIR = "ext";
-
-    // TODO: Remove when oldest model version is 8.95
-    String PERMANENT_SERVICES = "permanent-services.xml";
 
     ApplicationId getApplicationId();
 

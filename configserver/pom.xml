@@ -20,7 +20,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.jaxrs</groupId>
       <artifactId>jackson-jaxrs-json-provider</artifactId>
-      <version>${jackson2.version}</version>
+      <version>${jackson2.vespa.version}</version>
       <exclusions>
         <exclusion>
           <!-- Conflicts with javax.activation:javax.activation-api:1.2.0, which is "exported" via jdisc_core. -->
@@ -42,12 +42,12 @@
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
       <artifactId>jersey-client</artifactId>
-      <version>2.25</version>
+      <version>${jersey.vespa.version}</version>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
       <artifactId>jersey-server</artifactId>
-      <version>2.25</version>
+      <version>${jersey.vespa.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.glassfish.jersey.media</groupId>
@@ -58,12 +58,12 @@
     <dependency>
       <groupId>org.glassfish.jersey.ext</groupId>
       <artifactId>jersey-proxy-client</artifactId>
-      <version>2.25</version>
+      <version>${jersey.vespa.version}</version>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-json-jackson</artifactId>
-      <version>2.25</version>
+      <version>${jersey.vespa.version}</version>
       <exclusions>
         <!-- Prevent embedding deps provided by jdisc  -->
         <exclusion>
@@ -79,7 +79,7 @@
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-multipart</artifactId>
-      <version>2.25</version>
+      <version>${jersey.vespa.version}</version>
     </dependency>
 
     <!-- END Jersey deps -->
@@ -296,6 +296,8 @@
           <!-- TODO: Vespa > 8: remove importPackage when the jackson-jaxrs-json-provider bundle is no longer installed in jdisc -->
           <!--   added to ensure using the same class as orchestrator, core-dump-reporter, provision-controller and controller-clients -->
           <importPackage>com.fasterxml.jackson.jaxrs.json;version="[2.12.6,3)"</importPackage>
+          <allowEmbeddedArtifacts>com.fasterxml.jackson.core:jackson-annotations, com.fasterxml.jackson.core:jackson-core,
+            com.yahoo.vespa:airlift-zstd</allowEmbeddedArtifacts>
         </configuration>
       </plugin>
       <plugin>

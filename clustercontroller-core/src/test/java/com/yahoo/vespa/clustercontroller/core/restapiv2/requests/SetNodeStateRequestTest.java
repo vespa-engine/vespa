@@ -12,7 +12,6 @@ import com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
-import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker.Result;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -54,7 +54,7 @@ public class SetNodeStateRequestTest {
         testSetStateRequest(
                 "maintenance",
                 State.UP, State.UP,
-                NodeStateChangeChecker.Result.allowSettingOfWantedState(),
+                Result.allow(),
                 Optional.of(State.MAINTENANCE), Optional.of(State.DOWN));
     }
 
@@ -64,7 +64,7 @@ public class SetNodeStateRequestTest {
         testSetStateRequest(
                 "maintenance",
                 State.UP, State.UP,
-                NodeStateChangeChecker.Result.allowSettingOfWantedState(),
+                Result.allow(),
                 Optional.empty(), Optional.empty());
     }
 
@@ -73,7 +73,7 @@ public class SetNodeStateRequestTest {
         testSetStateRequest(
                 "down",
                 State.UP, State.UP,
-                NodeStateChangeChecker.Result.allowSettingOfWantedState(),
+                Result.allow(),
                 Optional.of(State.DOWN), Optional.of(State.DOWN));
     }
 
@@ -82,7 +82,7 @@ public class SetNodeStateRequestTest {
         testSetStateRequest(
                 "up",
                 State.MAINTENANCE, State.DOWN,
-                NodeStateChangeChecker.Result.allowSettingOfWantedState(),
+                Result.allow(),
                 Optional.of(State.UP), Optional.of(State.UP));
     }
 
@@ -91,7 +91,7 @@ public class SetNodeStateRequestTest {
         testSetStateRequest(
                 "up",
                 State.DOWN, State.DOWN,
-                NodeStateChangeChecker.Result.allowSettingOfWantedState(),
+                Result.allow(),
                 Optional.of(State.UP), Optional.of(State.UP));
     }
 
@@ -100,7 +100,7 @@ public class SetNodeStateRequestTest {
         testSetStateRequest(
                 "maintenance",
                 State.MAINTENANCE, State.UP,
-                NodeStateChangeChecker.Result.createAlreadySet(),
+                Result.alreadySet(),
                 Optional.empty(), Optional.of(State.DOWN));
     }
 
@@ -109,7 +109,7 @@ public class SetNodeStateRequestTest {
         testSetStateRequest(
                 "maintenance",
                 State.MAINTENANCE, State.DOWN,
-                NodeStateChangeChecker.Result.createAlreadySet(),
+                Result.alreadySet(),
                 Optional.empty(), Optional.empty());
     }
 
@@ -168,8 +168,8 @@ public class SetNodeStateRequestTest {
         }
     }
 
-    private SetResponse setWantedState() throws StateRestApiException {
-        return SetNodeStateRequest.setWantedState(
+    private void setWantedState() throws StateRestApiException {
+        SetNodeStateRequest.setWantedState(
                 cluster,
                 condition,
                 newStates,

@@ -3,18 +3,26 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.flags.custom.HostResources;
+import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -163,7 +171,7 @@ public class DynamicProvisioningTest {
 
     @Test
     public void avoids_allocating_to_empty_hosts() {
-        var tester = tester(false);
+        var tester = tester(true);
         tester.makeReadyHosts(6, new NodeResources(12, 12, 200, 12));
         tester.activateTenantHosts();
 
@@ -185,8 +193,30 @@ public class DynamicProvisioningTest {
     }
 
     @Test
+    public void does_not_allocate_container_nodes_to_shared_hosts() {
+        assertHostSharing(Environment.prod, ClusterSpec.Type.container, false);
+        assertHostSharing(Environment.prod, ClusterSpec.Type.content, true);
+        assertHostSharing(Environment.staging, ClusterSpec.Type.container, true);
+        assertHostSharing(Environment.staging, ClusterSpec.Type.content, true);
+    }
+
+    private void assertHostSharing(Environment environment, ClusterSpec.Type clusterType, boolean expectShared) {
+        Zone zone = new Zone(Cloud.builder().dynamicProvisioning(true).allowHostSharing(false).build(), SystemName.Public, environment, RegionName.defaultName());
+        MockHostProvisioner hostProvisioner = new MockHostProvisioner(new NodeFlavors(ProvisioningTester.createConfig()).getFlavors(), nameResolver, 0);
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone).hostProvisioner(hostProvisioner).nameResolver(nameResolver).build();
+        tester.makeReadyHosts(2, new NodeResources(12, 12, 200, 12));
+        tester.flagSource().withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(new HostResources(4.0, 16.0, 50.0, 0.3, "fast", "local", null, 10, "x86_64"))), SharedHost.class);
+
+        ApplicationId application = ProvisioningTester.applicationId();
+        ClusterSpec cluster = ClusterSpec.request(clusterType, ClusterSpec.Id.from("default")).vespaVersion("6.42").build();
+        tester.prepare(application, cluster, 2, 1, new NodeResources(2., 10., 20, 1));
+        assertEquals(expectShared ? 2 : 4, tester.nodeRepository().nodes().list().nodeType(NodeType.host).size());
+    }
+
+    @Test
     public void retires_on_exclusivity_violation() {
-        var tester = tester(true);
+        var tester = tester(false);
+        tester.flagSource().withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(new HostResources(1., 1., 1., 1., "fast", "local", null, 10, "x86_64"))), SharedHost.class);
         ApplicationId application1 = ProvisioningTester.applicationId();
         NodeResources resources = new NodeResources(4, 80, 100, 1);
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources, tester);
@@ -201,13 +231,25 @@ public class DynamicProvisioningTest {
 
         // Redeploy without exclusive again is no-op
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, smallerExclusiveResources, tester);
-        assertEquals(8, tester.nodeRepository().nodes().list().owner(application1).size());
-        assertEquals(initialNodes, tester.nodeRepository().nodes().list().owner(application1).retired());
+        NodeList nodes = tester.nodeRepository().nodes().list();
+        assertEquals(8, nodes.owner(application1).size());
+        assertEquals(initialNodes, nodes.owner(application1).retired());
+
+        // Remove the old retired nodes and make 2 random parents of current nodes violate exclusivity
+        tester.patchNodes(initialNodes.asList(), node -> node.removable(true));
+        NodeList exclusiveViolators = nodes.owner(application1).not().retired().first(2);
+        List<Node> parents = exclusiveViolators.mapToList(node -> nodes.parentOf(node).get());
+        tester.patchNode(parents.get(0), node -> node.withExclusiveToApplicationId(ApplicationId.defaultId()));
+        tester.patchNode(parents.get(1), node -> node.withExclusiveToClusterType(ClusterSpec.Type.container));
+
+        prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, smallerExclusiveResources, tester);
+        assertEquals(10, tester.nodeRepository().nodes().list().owner(application1).size());
+        assertEquals(exclusiveViolators, tester.nodeRepository().nodes().list().owner(application1).retired());
     }
 
     @Test
     public void node_indices_are_unique_even_when_a_node_is_left_in_reserved_state() {
-        var tester = tester(false);
+        var tester = tester(true);
         NodeResources resources = new NodeResources(10, 10, 10, 10);
         ApplicationId app = ProvisioningTester.applicationId();
 
@@ -275,13 +317,6 @@ public class DynamicProvisioningTest {
         tester.assertNodes("Allocation specifies memory in the advertised amount",
                            2, 1, 2, 20, 40,
                            app1, cluster1);
-
-        // Redeploy the same
-        tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 20, 40),
-                                                      resources(4, 1, 2, 20, 40)));
-        tester.assertNodes("Allocation specifies memory in the advertised amount",
-                           2, 1, 2, 20, 40,
-                           app1, cluster1);
     }
 
     @Test
@@ -299,7 +334,7 @@ public class DynamicProvisioningTest {
                 .flagSource(flagSource)
                 .build();
 
-        ApplicationId app = ProvisioningTester.applicationId();
+        ApplicationId app = ProvisioningTester.applicationId("a1");
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("8").build();
         Capacity capacity = Capacity.from(new ClusterResources(4, 2, new NodeResources(2, 4, 50, 0.1, DiskSpeed.any, StorageType.any, Architecture.any)));
 
@@ -464,7 +499,7 @@ public class DynamicProvisioningTest {
     }
 
     @Test
-    public void gpu_host()  {
+    public void gpu_host() {
         List<Flavor> flavors = List.of(new Flavor("gpu", new NodeResources(4, 16, 125, 10, fast, local,
                                                                            Architecture.x86_64, new NodeResources.GpuResources(1, 16))));
         ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)

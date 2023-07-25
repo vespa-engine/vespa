@@ -14,6 +14,7 @@ namespace search {
         class GroupingSession;
     }
     struct IDocumentMetaStore;
+    class BitVector;
 }
 
 namespace proton::matching {
@@ -58,15 +59,15 @@ public:
      * Context per thread used for result processing.
      **/
     struct Context {
-        using UP = std::unique_ptr<Context>;
         using GroupingContextUP = std::unique_ptr<GroupingContext>;
 
+        const search::BitVector & _validLids;
         Sort::UP          sort;
         PartialResultUP   result;
         GroupingContextUP grouping;
         GroupingSource    groupingSource;
 
-        Context(Sort::UP s, PartialResultUP r, GroupingContextUP g);
+        Context(const search::BitVector & validLids, Sort::UP s, PartialResultUP r, GroupingContextUP g);
         ~Context();
     };
 
@@ -100,9 +101,8 @@ public:
                     size_t offset, size_t hits);
     ~ResultProcessor();
 
-    size_t countFS4Hits();
     void prepareThreadContextCreation(size_t num_threads);
-    Context::UP createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id, uint32_t distributionKey);
+    std::unique_ptr<Context> createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id, uint32_t distributionKey);
     std::vector<std::pair<uint32_t,uint32_t>> extract_docid_ordering(const PartialResult &result) const;
     std::unique_ptr<Result> makeReply(PartialResultUP full_result);
 };

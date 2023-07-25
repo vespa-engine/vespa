@@ -6,6 +6,8 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.search.dispatch.Dispatcher;
+import com.yahoo.search.dispatch.ReconfigurableDispatcher;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.search.ranking.RankProfilesEvaluatorFactory;
@@ -49,6 +51,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private final List<SearchCluster> searchClusters = new LinkedList<>();
     private final Collection<String> schemasWithGlobalPhase;
     private final boolean globalPhase;
+    private final boolean useReconfigurableDispatcher;
 
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
@@ -57,6 +60,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     public ContainerSearch(DeployState deployState, ApplicationContainerCluster cluster, SearchChains chains) {
         super(chains);
         this.globalPhase = deployState.featureFlags().enableGlobalPhase();
+        this.useReconfigurableDispatcher = deployState.featureFlags().useReconfigurableDispatcher();
         this.schemasWithGlobalPhase = getSchemasWithGlobalPhase(deployState);
         this.owningCluster = cluster;
 
@@ -81,16 +85,17 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     /** Adds a Dispatcher component to the owning container cluster for each search cluster */
     private void initializeDispatchers(Collection<SearchCluster> searchClusters) {
+        Class<? extends Dispatcher> dispatcherClass = useReconfigurableDispatcher ? ReconfigurableDispatcher.class : Dispatcher.class;
         for (SearchCluster searchCluster : searchClusters) {
             if (searchCluster instanceof IndexedSearchCluster indexed) {
-                var dispatcher = new DispatcherComponent(indexed);
+                var dispatcher = new DispatcherComponent(indexed, dispatcherClass);
                 owningCluster.addComponent(dispatcher);
             }
             if (globalPhase) {
                 for (var documentDb : searchCluster.getDocumentDbs()) {
-                    if (!schemasWithGlobalPhase.contains(documentDb.getSchemaName())) continue;
+                    if ( ! schemasWithGlobalPhase.contains(documentDb.getSchemaName())) continue;
                     var factory = new RankProfilesEvaluatorComponent(documentDb);
-                    if (! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
+                    if ( ! owningCluster.getComponentsMap().containsKey(factory.getComponentId())) {
                         owningCluster.addComponent(factory);
                     }
                 }

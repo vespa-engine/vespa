@@ -13,9 +13,9 @@
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <cinttypes>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("reference_attribute_test");
@@ -312,8 +312,8 @@ TEST_F(ReferenceAttributeTest, attribute_can_be_saved_and_loaded)
     assertRef(doc1, 1);
     assertRef(doc2, 2);
     assertRef(doc1, 4);
-    EXPECT_TRUE(vespalib::unlink("test.dat"));
-    EXPECT_TRUE(vespalib::unlink("test.udat"));
+    EXPECT_TRUE(std::filesystem::remove(std::filesystem::path("test.dat")));
+    EXPECT_TRUE(std::filesystem::remove(std::filesystem::path("test.udat")));
 }
 
 TEST_F(ReferenceAttributeTest, update_uses_gid_mapper_to_set_target_lid)
@@ -399,8 +399,8 @@ TEST_F(ReferenceAttributeTest, populateTargetLids_uses_gid_mapper_to_update_lid_
     save();
     load();
     checkPopulateTargetLids(*this);
-    EXPECT_TRUE(vespalib::unlink("test.dat"));
-    EXPECT_TRUE(vespalib::unlink("test.udat"));
+    EXPECT_TRUE(std::filesystem::remove(std::filesystem::path("test.dat")));
+    EXPECT_TRUE(std::filesystem::remove(std::filesystem::path("test.udat")));
 }
 
 TEST_F(ReferenceAttributeTest, populateTargetLids_handles_removes)

@@ -66,13 +66,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -290,14 +290,11 @@ public final class ControllerTester {
     }
 
     public ZoneId toZone(Environment environment) {
-        switch (environment) {
-            case dev: case test:
-                return ZoneId.from(environment, RegionName.from("us-east-1"));
-            case staging:
-                return ZoneId.from(environment, RegionName.from("us-east-3"));
-            default:
-                return ZoneId.from(environment, RegionName.from("us-west-1"));
-        }
+        return switch (environment) {
+            case dev, test -> ZoneId.from(environment, RegionName.from("us-east-1"));
+            case staging -> ZoneId.from(environment, RegionName.from("us-east-3"));
+            default -> ZoneId.from(environment, RegionName.from("us-west-1"));
+        };
     }
 
     public AthenzDomain createDomainWithAdmin(String domainName, AthenzUser user) {
@@ -311,11 +308,11 @@ public final class ControllerTester {
     }
 
     public TenantName createTenant(String tenantName, Tenant.Type type) {
-        switch (type) {
-            case athenz: return createTenant(tenantName, "domain" + nextDomainId.getAndIncrement(), nextPropertyId.getAndIncrement());
-            case cloud: return createCloudTenant(tenantName);
-            default: throw new UnsupportedOperationException();
-        }
+        return switch (type) {
+            case athenz -> createTenant(tenantName, "domain" + nextDomainId.getAndIncrement(), nextPropertyId.getAndIncrement());
+            case cloud -> createCloudTenant(tenantName);
+            default -> throw new UnsupportedOperationException();
+        };
     }
 
     public TenantName createTenant(String tenantName, String domainName, Long propertyId) {
@@ -351,17 +348,13 @@ public final class ControllerTester {
     public Credentials credentialsFor(TenantName tenantName) {
         Tenant tenant = controller().tenants().require(tenantName);
 
-        switch (tenant.type()) {
-            case athenz:
-                return new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
-                                                                             ((AthenzTenant) tenant).domain(),
-                                                                             OAuthCredentials.createForTesting("okta-access-token", "okta-identity-token"));
-            case cloud:
-                return new Credentials(new SimplePrincipal("dev"));
-
-            default:
-                throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'");
-        }
+        return switch (tenant.type()) {
+            case athenz -> new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
+                                                 ((AthenzTenant) tenant).domain(),
+                                                 OAuthCredentials.createForTesting("okta-access-token", "okta-identity-token"));
+            case cloud -> new Credentials(new SimplePrincipal("dev"));
+            default -> throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'");
+        };
     }
 
     public Application createApplication(ApplicationId id) {
@@ -389,17 +382,20 @@ public final class ControllerTester {
                                                AthenzDbMock athensDb,
                                                ServiceRegistryMock serviceRegistry,
                                                FlagSource flagSource) {
+        Random random = new Random(serviceRegistry.clock().instant().toEpochMilli()); // Seed with clock for test determinism
         Controller controller = new Controller(curator,
                                                rotationsConfig,
                                                serviceRegistry.zoneRegistry().system().isPublic() ?
                                                        new CloudAccessControl(new MockUserManagement(), flagSource, serviceRegistry) :
                                                        new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
                                                flagSource,
-                                               new MockMavenRepository(),
+                                               new MockMavenRepository(serviceRegistry.clock()),
                                                serviceRegistry,
                                                new MetricsMock(), new SecretStoreMock(),
                                                new ControllerConfig.Builder().build(),
-                                               Sleeper.NOOP);
+                                               Sleeper.NOOP,
+                                               random,
+                                               random);
         // Calculate initial versions
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;

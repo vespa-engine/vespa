@@ -96,25 +96,26 @@ public final class ClusterSpec {
         return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
 
+    // TODO: Remove after July 2023
+    @Deprecated
     public ClusterSpec exclusive(boolean exclusive) {
         return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
     }
 
     /** Creates a ClusterSpec when requesting a cluster */
     public static Builder request(Type type, Id id) {
-        return new Builder(type, id, false);
+        return new Builder(type, id);
     }
 
     /** Creates a ClusterSpec for an existing cluster, group id and Vespa version needs to be set */
     public static Builder specification(Type type, Id id) {
-        return new Builder(type, id, true);
+        return new Builder(type, id);
     }
 
     public static class Builder {
 
         private final Type type;
         private final Id id;
-        private final boolean specification;
 
         private Optional<Group> groupId = Optional.empty();
         private Optional<DockerImage> dockerImageRepo = Optional.empty();
@@ -124,19 +125,13 @@ public final class ClusterSpec {
         private ZoneEndpoint zoneEndpoint = ZoneEndpoint.defaultEndpoint;
         private boolean stateful;
 
-        private Builder(Type type, Id id, boolean specification) {
+        private Builder(Type type, Id id) {
             this.type = type;
             this.id = id;
-            this.specification = specification;
             this.stateful = type.isContent(); // Default to true for content clusters
         }
 
         public ClusterSpec build() {
-            if (specification) {
-                if (groupId.isEmpty()) throw new IllegalArgumentException("groupId is required to be set when creating a ClusterSpec with specification()");
-                if (vespaVersion == null) throw new IllegalArgumentException("vespaVersion is required to be set when creating a ClusterSpec with specification()");
-            } else
-                if (groupId.isPresent()) throw new IllegalArgumentException("groupId is not allowed to be set when creating a ClusterSpec with request()");
             return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, combinedId, dockerImageRepo, zoneEndpoint, stateful);
         }
 

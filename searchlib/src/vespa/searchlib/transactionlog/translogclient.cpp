@@ -164,7 +164,7 @@ Session *
 TransLogClient::findSession(const vespalib::string & domainName, int sessionId)
 {
     SessionKey key(domainName, sessionId);
-    SessionMap::iterator found(_sessions.find(key));
+    auto found = _sessions.find(key);
     Session * session((found != _sessions.end()) ? found->second : nullptr);
     return session;
 }

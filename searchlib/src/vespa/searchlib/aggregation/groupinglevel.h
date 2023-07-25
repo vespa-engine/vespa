@@ -2,8 +2,9 @@
 #pragma once
 
 #include "group.h"
-#include <vespa/searchlib/expression/aggregationrefnode.h>
 #include <vespa/searchlib/expression/currentindex.h>
+
+namespace search::expression { class CurrentIndexSetup; }
 
 namespace search::aggregation {
 
@@ -22,6 +23,7 @@ private:
     using ExpressionNode = expression::ExpressionNode;
     using ExpressionTree = expression::ExpressionTree;
     using CurrentIndex = expression::CurrentIndex;
+    using CurrentIndexSetup = expression::CurrentIndexSetup;
     class Grouper {
     public:
         virtual ~Grouper() = default;
@@ -84,8 +86,8 @@ private:
     vespalib::CloneablePtr<Grouper>    _grouper;
 public:
     GroupingLevel() noexcept;
-    GroupingLevel(GroupingLevel &&) noexcept = default;
-    GroupingLevel & operator =(GroupingLevel &&) noexcept = default;
+    GroupingLevel(GroupingLevel&&) noexcept;
+    GroupingLevel& operator=(GroupingLevel&&) noexcept;
     GroupingLevel(const GroupingLevel &);
     GroupingLevel & operator =(const GroupingLevel &);
     ~GroupingLevel();
@@ -117,6 +119,7 @@ public:
     const ExpressionTree & getExpression() const { return _classify; }
     ExpressionTree & getExpression() { return _classify; }
     const       Group &getGroupPrototype() const { return _collect; }
+    void wire_current_index(CurrentIndexSetup &setup, const vespalib::ObjectPredicate &resolve_pred, vespalib::ObjectOperation &resolve_op);
     void prepare(const Grouping * grouping, uint32_t level, bool isOrdered_);
 
     Group &groupPrototype() { return _collect; }

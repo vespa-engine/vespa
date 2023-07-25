@@ -34,7 +34,7 @@ public class NoopRoleService implements RoleService {
     public void deleteTenantPolicy(TenantName tenant, String policyName, String role) { }
 
     @Override
-    public void maintainRoles(List<TenantName> tenants) { }
+    public double maintainRoles(List<TenantName> tenants) { return 1; }
 
     @Override
     public void cleanupRoles(List<TenantName> tenants) {

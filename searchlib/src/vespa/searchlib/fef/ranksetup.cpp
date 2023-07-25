@@ -73,7 +73,8 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _mutateOnFirstPhase(),
       _mutateOnSecondPhase(),
       _mutateOnSummary(),
-      _mutateAllowQueryOverride(false)
+      _mutateAllowQueryOverride(false),
+      _enableNestedMultivalueGrouping(false)
 { }
 
 RankSetup::~RankSetup() = default;
@@ -131,6 +132,7 @@ RankSetup::configure()
     _mutateOnSummary._attribute = mutate::on_summary::Attribute::lookup(_indexEnv.getProperties());
     _mutateOnSummary._operation = mutate::on_summary::Operation::lookup(_indexEnv.getProperties());
     _mutateAllowQueryOverride = mutate::AllowQueryOverride::check(_indexEnv.getProperties());
+    _enableNestedMultivalueGrouping = temporary::EnableNestedMultivalueGrouping::check(_indexEnv.getProperties());
 }
 
 void

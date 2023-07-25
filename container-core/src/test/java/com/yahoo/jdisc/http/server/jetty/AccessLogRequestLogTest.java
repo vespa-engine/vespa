@@ -4,7 +4,6 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
-import com.yahoo.jdisc.http.ServerConfig;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.junit.jupiter.api.Test;
@@ -117,11 +116,7 @@ public class AccessLogRequestLogTest {
     }
 
     private void doAccessLoggingOfRequest(RequestLog requestLog, Request jettyRequest) {
-        ServerConfig.AccessLog config = new ServerConfig.AccessLog(
-                new ServerConfig.AccessLog.Builder()
-                        .remoteAddressHeaders(List.of("x-forwarded-for", "y-ra"))
-                        .remotePortHeaders(List.of("X-Forwarded-Port", "y-rp")));
-        new AccessLogRequestLog(requestLog, config).log(jettyRequest, createResponseMock());
+        new AccessLogRequestLog(requestLog).log(jettyRequest, createResponseMock());
     }
 
     private static JettyMockRequestBuilder createRequestBuilder() {

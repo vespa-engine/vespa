@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
+import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
@@ -16,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
+import com.yahoo.vespa.service.duper.InfraApplication;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -52,7 +54,7 @@ public class MockDeployer implements Deployer {
     @Inject
     @SuppressWarnings("unused")
     public MockDeployer() {
-        this(null, Clock.systemUTC(), Map.of());
+        this(null, Clock.systemUTC(), List.of());
     }
 
     /**
@@ -74,9 +76,9 @@ public class MockDeployer implements Deployer {
      */
     public MockDeployer(NodeRepositoryProvisioner provisioner,
                         Clock clock,
-                        Map<ApplicationId, ApplicationContext> applications) {
+                        List<ApplicationContext> applications) {
         this.provisioner = provisioner;
-        this.applications = new HashMap<>(applications);
+        this.applications = applications.stream().collect(Collectors.toMap(ApplicationContext::id, c -> c));
         this.nodeRepository = null;
 
         this.clock = clock;
@@ -118,7 +120,7 @@ public class MockDeployer implements Deployer {
     }
 
     @Override
-    public Optional<Instant> lastDeployTime(ApplicationId application) {
+    public Optional<Instant> activationTime(ApplicationId application) {
         return Optional.ofNullable(lastDeployTimes.get(application));
     }
 
@@ -223,6 +225,11 @@ public class MockDeployer implements Deployer {
             this(id, List.of(new ClusterContext(id, cluster, capacity)));
         }
 
+        public ApplicationContext(InfraApplication application, Version version) {
+            this(application.getApplicationId(), List.of(new ClusterContext(
+                    application.getApplicationId(), application.getClusterSpecWithVersion(version), application.getCapacity())));
+        }
+
         public ApplicationId id() { return id; }
 
         /** Returns list of cluster specs of this application. */
@@ -254,7 +261,7 @@ public class MockDeployer implements Deployer {
         public ClusterSpec cluster() { return cluster; }
 
         private List<HostSpec> prepare(NodeRepositoryProvisioner provisioner) {
-            return provisioner.prepare(id, cluster, capacity, null);
+            return provisioner.prepare(id, cluster, capacity, new InMemoryProvisionLogger());
         }
 
     }

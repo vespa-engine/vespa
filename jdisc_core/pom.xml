@@ -39,7 +39,6 @@
             <!-- Newer version than the one in rt.jar, including the ElementTraversal class needed by Xerces (Aug 2015, still valid Sep 2017) -->
             <groupId>xml-apis</groupId>
             <artifactId>xml-apis</artifactId>
-            <version>1.4.01</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -262,7 +261,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0-M6</version>
                 <executions>
                     <execution>
                         <goals>

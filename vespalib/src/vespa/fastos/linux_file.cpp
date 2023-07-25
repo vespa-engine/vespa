@@ -264,9 +264,9 @@ FastOS_Linux_File::SetPosition(int64_t desiredPosition)
 
 
 int64_t
-FastOS_Linux_File::GetPosition()
+FastOS_Linux_File::getPosition() const
 {
-    return _directIOEnabled ? _filePointer : FastOS_UNIX_File::GetPosition();
+    return _directIOEnabled ? _filePointer : FastOS_UNIX_File::getPosition();
 }
 
 
@@ -336,7 +336,7 @@ FastOS_Linux_File::DirectIOPadding (int64_t offset, size_t length, size_t &padBe
         if (int64_t(offset+length+padAfter) > _cachedSize) {
             // _cachedSize is not really trustworthy, so if we suspect it is not correct, we correct it.
             // The main reason is that it will not reflect the file being extended by another filedescriptor.
-            _cachedSize = GetSize();
+            _cachedSize = getSize();
         }
         if ((padAfter != 0) &&
             (static_cast<int64_t>(offset + length + padAfter) > _cachedSize) &&
@@ -372,9 +372,6 @@ FastOS_Linux_File::Open(unsigned int openFlags, const char *filename)
     bool rc;
     _cachedSize = -1;
     _filePointer = -1;
-    if (_directIOEnabled && (_openFlags & FASTOS_FILE_OPEN_STDFLAGS) != 0) {
-        _directIOEnabled = false;
-    }
     if (_syncWritesEnabled) {
         openFlags |= FASTOS_FILE_OPEN_SYNCWRITES;
     }
@@ -396,7 +393,7 @@ FastOS_Linux_File::Open(unsigned int openFlags, const char *filename)
         if (rc) {
             bool sync_ok = Sync();
             assert(sync_ok);
-            _cachedSize = GetSize();
+            _cachedSize = getSize();
             _filePointer = 0;
         }
     } else {

@@ -66,6 +66,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.NodeResources.Architecture.arm64;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import static com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner.Behaviour;
@@ -96,7 +97,7 @@ public class HostCapacityMaintainerTest {
     @Test
     public void does_not_deprovision_when_preprovisioning_enabled() {
         tester = new DynamicProvisioningTester().addInitialNodes();
-        setPreprovisionCapacityFlag(tester, new ClusterCapacity(1, 1.0, 3.0, 2.0, 1.0, "fast", "remote", "x86_64"));
+        setPreprovisionCapacityFlag(tester, new ClusterCapacity(1, 1.0, 3.0, 2.0, 1.0, "fast", "remote", "x86_64", null));
         Optional<Node> failedHost = node("host2");
         assertTrue(failedHost.isPresent());
 
@@ -109,8 +110,8 @@ public class HostCapacityMaintainerTest {
     public void provision_deficit_and_deprovision_excess() {
         tester = new DynamicProvisioningTester().addInitialNodes();
         setPreprovisionCapacityFlag(tester,
-                                    new ClusterCapacity(2, 48.0, 128.0, 1000.0, 10.0, "fast", "remote", "x86_64"),
-                                    new ClusterCapacity(1, 16.0, 24.0, 100.0, 1.0, "fast", "remote", "x86_64"));
+                                    new ClusterCapacity(2, 48.0, 128.0, 1000.0, 10.0, "fast", "remote", "x86_64", null),
+                                    new ClusterCapacity(1, 16.0, 24.0, 100.0, 1.0, "fast", "remote", "x86_64", null));
 
         assertEquals(0, tester.hostProvisioner.provisionedHosts().size());
         assertEquals(9, tester.nodeRepository.nodes().list().size());
@@ -146,7 +147,7 @@ public class HostCapacityMaintainerTest {
         tester = new DynamicProvisioningTester().addInitialNodes();
         // Makes provisioned hosts 48-128-1000-10
         tester.hostProvisioner.setHostFlavor("host4");
-        var clusterCapacity = new ClusterCapacity(2, 1.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64");
+        var clusterCapacity = new ClusterCapacity(2, 1.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64", null);
         setPreprovisionCapacityFlag(tester, clusterCapacity);
 
         assertEquals(0, tester.hostProvisioner.provisionedHosts().size());
@@ -179,7 +180,7 @@ public class HostCapacityMaintainerTest {
 
         setPreprovisionCapacityFlag(tester,
                                     clusterCapacity,
-                                    new ClusterCapacity(2, 24.0, 64.0, 100.0, 1.0, "fast", "remote", "x86_64"));
+                                    new ClusterCapacity(2, 24.0, 64.0, 100.0, 1.0, "fast", "remote", "x86_64", null));
 
         tester.maintain();
 
@@ -193,7 +194,7 @@ public class HostCapacityMaintainerTest {
         // If the preprovision capacity is reduced, we should see shared hosts deprovisioned.
 
         setPreprovisionCapacityFlag(tester,
-                                    new ClusterCapacity(1, 1.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64"));
+                                    new ClusterCapacity(1, 1.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64", null));
 
         tester.maintain();
 
@@ -211,14 +212,43 @@ public class HostCapacityMaintainerTest {
 
         // If a host with another architecture is added to preprovision capacity, a shared host should be added.
         setPreprovisionCapacityFlag(tester,
-                                    new ClusterCapacity(1, 2.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64"),
-                                    new ClusterCapacity(1, 2.0, 30.0, 20.0, 3.0, "fast", "remote", "arm64"));
+                                    new ClusterCapacity(1, 2.0, 30.0, 20.0, 3.0, "fast", "remote", "x86_64", null),
+                                    new ClusterCapacity(1, 2.0, 30.0, 20.0, 3.0, "fast", "remote", "arm64", null));
         tester.hostProvisioner.setHostFlavor("arm64");
         tester.maintain();
 
         assertEquals(2, tester.hostProvisioner.provisionedHosts().size());
         assertEquals(1, tester.provisionedHostsMatching(new NodeResources(48, 128, 1000, 10)));
         assertEquals(1, tester.provisionedHostsMatching(new NodeResources(2, 30, 20, 3, fast, remote, arm64)));
+    }
+
+    @Test
+    public void preprovision_with_shared_host_no_resources_specified() {
+        tester = new DynamicProvisioningTester();  // No nodes initially
+        // Makes provisioned hosts 2-30-20-3-arm64
+        tester.hostProvisioner.setHostFlavor("arm64");
+        var clusterCapacity = new ClusterCapacity(1, 0.0, 0.0, 0.0, 0.0, null, null, "arm64", null);
+        setPreprovisionCapacityFlag(tester, clusterCapacity);
+
+        assertEquals(0, tester.hostProvisioner.provisionedHosts().size());
+        assertEquals(0, tester.nodeRepository.nodes().list().size());
+
+        // The first cluster will be allocated to host3 and a new host host100.
+        // host100 will be a large shared host specified above.
+        tester.maintain();
+        verifyFirstMaintainArm64(tester);
+
+        // Second maintain should be a no-op, otherwise we did wrong in the first maintain.
+        tester.maintain();
+        verifyFirstMaintainArm64(tester);
+
+        // Add a second cluster for cluster type admin. Need new hosts
+        setPreprovisionCapacityFlag(tester, clusterCapacity, new ClusterCapacity(2, 0.0, 0.0, 0.0, 0.0, null, null, "arm64", "admin"));
+
+        tester.maintain();
+        assertEquals("2 provisioned hosts",
+                     2, tester.hostProvisioner.provisionedHosts().size());
+        assertEquals(2, tester.provisionedHostsMatching(new NodeResources(2, 30, 20, 30, DiskSpeed.any, remote, arm64)));
     }
 
     private void verifyFirstMaintain(DynamicProvisioningTester tester) {
@@ -229,6 +259,13 @@ public class HostCapacityMaintainerTest {
         assertTrue("Node on deprovisioned host removed", node("host2-1").isEmpty());
         assertTrue("One 1-30-20-3 node fits on host3", node("host3").isPresent());
         assertTrue("New 48-128-1000-10 host added", node("host100").isPresent());
+    }
+
+    private void verifyFirstMaintainArm64(DynamicProvisioningTester tester) {
+        assertEquals(tester.hostProvisioner.provisionedHosts().toString(), 1, tester.hostProvisioner.provisionedHosts().size());
+        assertEquals(1, tester.provisionedHostsMatching(new NodeResources(2, 30, 20, 30)));
+        assertEquals(1, tester.nodeRepository.nodes().list().not().state(State.deprovisioned).size());  // 2 removed, 1 added
+        assertTrue("New 2-30-20-30 host added", node("host100").isPresent());
     }
 
     @Test
@@ -248,7 +285,8 @@ public class HostCapacityMaintainerTest {
         setPreprovisionCapacityFlag(tester,
                                     new ClusterCapacity(2, resources1.vcpu(), resources1.memoryGb(), resources1.diskGb(),
                                                         resources1.bandwidthGbps(), resources1.diskSpeed().name(),
-                                                        resources1.storageType().name(), resources1.architecture().name()));
+                                                        resources1.storageType().name(), resources1.architecture().name(),
+                                                        null));
         tester.maintain();
 
         // Hosts are provisioned
@@ -266,7 +304,7 @@ public class HostCapacityMaintainerTest {
         tester.assertNodesUnchanged();
 
         // Must be able to allocate 2 nodes with "no resource requirement"
-        setPreprovisionCapacityFlag(tester, new ClusterCapacity(2, 0.0, 0.0, 0.0, 0.0, null, null, null));
+        setPreprovisionCapacityFlag(tester, new ClusterCapacity(2, 0.0, 0.0, 0.0, 0.0, null, null, null, null));
 
         // Next maintenance run does nothing
         tester.assertNodesUnchanged();
@@ -289,7 +327,7 @@ public class HostCapacityMaintainerTest {
         tester.assertNodesUnchanged();
 
         // Increasing the capacity provisions additional hosts
-        setPreprovisionCapacityFlag(tester, new ClusterCapacity(3, 0.0, 0.0, 0.0, 0.0, null, null, null));
+        setPreprovisionCapacityFlag(tester, new ClusterCapacity(3, 0.0, 0.0, 0.0, 0.0, null, null, null, null));
         assertEquals(0, tester.provisionedHostsMatching(sharedHostNodeResources));
         assertTrue(node("host102").isEmpty());
         tester.maintain();
@@ -308,7 +346,8 @@ public class HostCapacityMaintainerTest {
                                                         resources1.bandwidthGbps() - applicationNodeResources.bandwidthGbps(),
                                                         resources1.diskSpeed().name(),
                                                         resources1.storageType().name(),
-                                                        resources1.architecture().name()));
+                                                        resources1.architecture().name(),
+                                                        null));
         tester.assertNodesUnchanged();
 
         // But requiring a bit more in the cluster => provisioning of 2 shared hosts.
@@ -320,7 +359,8 @@ public class HostCapacityMaintainerTest {
                                                         resources1.bandwidthGbps(),
                                                         resources1.diskSpeed().name(),
                                                         resources1.storageType().name(),
-                                                        resources1.architecture().name()));
+                                                        resources1.architecture().name(),
+                                                        null));
 
         assertEquals(1, tester.provisionedHostsMatching(sharedHostNodeResources));
         assertTrue(node("host102").isPresent());
@@ -367,16 +407,16 @@ public class HostCapacityMaintainerTest {
     }
 
     private void replace_config_server_like(NodeType hostType) {
-        final ApplicationId hostApp;
-        final ApplicationId configSrvApp;
+        final InfraApplication hostApp;
+        final InfraApplication configSrvApp;
         switch (hostType) {
             case confighost -> {
-                hostApp = new ConfigServerHostApplication().getApplicationId();
-                configSrvApp = new ConfigServerApplication().getApplicationId();
+                hostApp = new ConfigServerHostApplication();
+                configSrvApp = new ConfigServerApplication();
             }
             case controllerhost -> {
-                hostApp = new ControllerHostApplication().getApplicationId();
-                configSrvApp = new ControllerApplication().getApplicationId();
+                hostApp = new ControllerHostApplication();
+                configSrvApp = new ControllerApplication();
             }
             default -> throw new IllegalArgumentException("Unexpected config server host like node type: " + hostType);
         }
@@ -390,14 +430,14 @@ public class HostCapacityMaintainerTest {
         List<Node> provisionedHosts = tester.makeReadyNodes(3, "default", hostType, 1).stream()
                                             .sorted(Comparator.comparing(Node::hostname))
                                             .toList();
-        tester.prepareAndActivateInfraApplication(hostApp, hostType);
+        tester.prepareAndActivateInfraApplication(hostApp);
 
         // Provision config servers
         for (int i = 0; i < provisionedHosts.size(); i++) {
             tester.makeReadyChildren(1, i + 1, new NodeResources(1.5, 8, 50, 0.3), hostType.childNodeType(),
                     provisionedHosts.get(i).hostname(), (nodeIndex) -> "cfg" + nodeIndex);
         }
-        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
+        tester.prepareAndActivateInfraApplication(configSrvApp);
 
         // Expected number of hosts and children are provisioned
         NodeList allNodes = tester.nodeRepository().nodes().list().not().state(State.deprovisioned);
@@ -413,7 +453,7 @@ public class HostCapacityMaintainerTest {
         tester.nodeRepository().nodes().deprovision(hostToRemove.get().hostname(), Agent.system, tester.clock().instant());
 
         // Redeployment of config server application retires node
-        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
+        tester.prepareAndActivateInfraApplication(configSrvApp);
         assertTrue("Redeployment retires node", nodeToRemove.get().allocation().get().membership().retired());
 
         // Config server becomes removable (done by RetiredExpirer in a real system) and redeployment moves it
@@ -421,8 +461,8 @@ public class HostCapacityMaintainerTest {
         int removedIndex = nodeToRemove.get().allocation().get().membership().index();
         tester.nodeRepository().nodes().setRemovable(NodeList.of(nodeToRemove.get()), true);
         tester.nodeRepository().nodes().setRemovable(NodeList.of(hostToRemove.get()), true);
-        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
-        tester.prepareAndActivateInfraApplication(hostApp, hostType);
+        tester.prepareAndActivateInfraApplication(configSrvApp);
+        tester.prepareAndActivateInfraApplication(hostApp);
         tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(nodeToRemove.get().hostname(), Agent.nodeAdmin, "Readied by host-admin");
         tester.nodeRepository().nodes().markNodeAvailableForNewAllocation(hostToRemove.get().hostname(), Agent.nodeAdmin, "Readied by host-admin");
         assertEquals(2, tester.nodeRepository().nodes().list().nodeType(hostType.childNodeType()).state(Node.State.active).size());
@@ -443,13 +483,13 @@ public class HostCapacityMaintainerTest {
 
         // Deployment by the removed host has no effect
         HostName.setHostNameForTestingOnly("cfg2.example.com");
-        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
+        tester.prepareAndActivateInfraApplication(configSrvApp);
         assertEquals(List.of(), dynamicProvisioningTester.hostProvisioner.provisionedHosts());
 
         // Deployment on another config server starts provisioning a new host and child
         HostName.setHostNameForTestingOnly("cfg3.example.com");
         assertEquals(0, tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(hostType.childNodeType()).size());
-        assertEquals(2, tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType()).size());
+        assertEquals(2, tester.prepareAndActivateInfraApplication(configSrvApp).size());
         assertEquals(1, tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(hostType.childNodeType()).size());
         Node newNode = tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(hostType.childNodeType()).first().get();
 
@@ -458,18 +498,18 @@ public class HostCapacityMaintainerTest {
         List<ProvisionedHost> newHosts = dynamicProvisioningTester.hostProvisioner.provisionedHosts();
         assertEquals(1, newHosts.size());
         tester.move(Node.State.ready, newHosts.get(0).hostHostname());
-        tester.prepareAndActivateInfraApplication(hostApp, hostType);
+        tester.prepareAndActivateInfraApplication(hostApp);
         assertEquals(3, tester.nodeRepository().nodes().list(Node.State.active).nodeType(hostType).size());
 
         // Redeployment of config server app actives new node
-        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
+        tester.prepareAndActivateInfraApplication(configSrvApp);
         newNode = tester.nodeRepository().nodes().node(newNode.hostname()).get();
         assertSame(Node.State.active, newNode.state());
         assertEquals("Removed index is reused", removedIndex, newNode.allocation().get().membership().index());
 
         // Next redeployment does nothing
         NodeList nodesBefore = tester.nodeRepository().nodes().list().nodeType(hostType.childNodeType());
-        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
+        tester.prepareAndActivateInfraApplication(configSrvApp);
         NodeList nodesAfter = tester.nodeRepository().nodes().list().nodeType(hostType.childNodeType());
         assertEquals(nodesBefore, nodesAfter);
     }
@@ -592,9 +632,11 @@ public class HostCapacityMaintainerTest {
                            Duration.ofHours(1),
                            Duration.ofHours(1)).maintain();
 
-        // Host and children can now be removed.
         tester.provisioningTester.activateTenantHosts();
-        tester.maintain();
+        // Hosts move themselves to parked (via ready) once they've synced up their logs to archive and are then deprovisioned
+        tester.nodeRepository.nodes().list(State.dirty).forEach(node ->
+                tester.nodeRepository.nodes().markNodeAvailableForNewAllocation(node.hostname(), Agent.nodeAdmin, "Readied by host-admin"));
+        tester.deprovisioner.maintain();
         assertEquals(List.of(), tester.nodeRepository.nodes().list().not().state(State.deprovisioned).asList());
     }
 
@@ -645,7 +687,7 @@ public class HostCapacityMaintainerTest {
         for (var hostname : provisionedHostnames) {
             tester.provisioningTester.move(Node.State.ready, hostname);
         }
-        tester.provisioningTester.prepareAndActivateInfraApplication(DynamicProvisioningTester.tenantHostApp.getApplicationId(), NodeType.host);
+        tester.provisioningTester.activateTenantHosts();
         NodeList activeHosts = tester.provisioningTester.nodeRepository().nodes()
                                                         .list(Node.State.active)
                                                         .nodeType(NodeType.host)

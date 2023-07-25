@@ -32,9 +32,9 @@ public:
     bool resize_inplace(size_t newSize);
     Alloc(const Alloc &) = delete;
     Alloc & operator = (const Alloc &) = delete;
-    Alloc(Alloc && rhs) noexcept :
-        _alloc(rhs._alloc),
-        _allocator(rhs._allocator)
+    Alloc(Alloc && rhs) noexcept
+        : _alloc(rhs._alloc),
+          _allocator(rhs._allocator)
     {
         rhs.clear();
     }
@@ -50,20 +50,17 @@ public:
         return *this;
     }
     Alloc() noexcept : _alloc(nullptr, 0), _allocator(nullptr) { }
-    ~Alloc() {
-        if (_alloc.get() != nullptr) {
-            _allocator->free(_alloc);
-            _alloc = PtrAndSize();
-        }
+    ~Alloc() noexcept {
+        reset();
     }
     void swap(Alloc & rhs) noexcept {
         std::swap(_alloc, rhs._alloc);
         std::swap(_allocator, rhs._allocator);
     }
-    void reset() {
+    void reset() noexcept {
         if (_alloc.get() != nullptr) {
             _allocator->free(_alloc);
-            _alloc = PtrAndSize();
+            _alloc.reset();
         }
     }
     Alloc create(size_t sz) const noexcept {
@@ -92,8 +89,8 @@ private:
         : _alloc(nullptr, 0),
           _allocator(allocator)
     { }
-    void clear() {
-        _alloc = PtrAndSize();
+    void clear() noexcept {
+        _alloc.reset();
         _allocator = nullptr;
     }
     PtrAndSize              _alloc;

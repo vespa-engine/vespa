@@ -33,7 +33,7 @@ public class RpcInvokerFactory extends InvokerFactory {
         super(cluster, dispatchConfig);
         this.rpcResourcePool = rpcResourcePool;
         this.compressor = new CompressService();
-        decodeType = convert(dispatchConfig.summaryDecodePolicy());
+        this.decodeType = convert(dispatchConfig.summaryDecodePolicy());
     }
 
     @Override

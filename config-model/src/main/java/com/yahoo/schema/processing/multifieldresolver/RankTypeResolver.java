@@ -11,7 +11,7 @@ import java.util.logging.Level;
 
 /**
  * Checks if fields have defined different rank types for the same
- * index (typically in an index-to statement), and if they have
+ * index (typically in a fieldset statement), and if they have
  * output a warning and use the first ranktype.
  *
  * @author hmusum

@@ -40,13 +40,11 @@ static const size_t MAX_CHUNK_SIZE = 0x4000000; // 64 MB
 FastOS_FileInterface::FastOS_FileInterface(const char *filename)
     : _fAdviseOptions(_defaultFAdviseOptions),
       _chunkSize(MAX_CHUNK_SIZE),
-      _filename(),
+      _filename(filename != nullptr ? filename : ""),
       _openFlags(0),
       _directIOEnabled(false),
       _syncWritesEnabled(false)
 {
-    if (filename != nullptr)
-        SetFileName(filename);
 }
 
 
@@ -207,13 +205,6 @@ FastOS_FileInterface::IsMemoryMapped() const
     return false;
 }
 
-void
-FastOS_FileInterface::SetFileName(const char *filename)
-{
-    _filename = filename;
-}
-
-
 const char *
 FastOS_FileInterface::GetFileName() const
 {
@@ -226,29 +217,6 @@ FastOS_FileInterface::OpenReadWrite(const char *filename)
 {
     return Open(FASTOS_FILE_OPEN_READ |
                 FASTOS_FILE_OPEN_WRITE, filename);
-}
-
-
-bool
-FastOS_FileInterface::OpenExisting(bool abortIfNotExist,
-                                   const char *filename)
-{
-    bool rc = Open(FASTOS_FILE_OPEN_READ |
-                   FASTOS_FILE_OPEN_WRITE |
-                   FASTOS_FILE_OPEN_EXISTING,
-                   filename);
-
-    if (abortIfNotExist && (!rc)) {
-        std::string errorString =
-            FastOS_FileInterface::getLastErrorString();
-        fprintf(stderr,
-                "Cannot open %s: %s\n",
-                filename,
-                errorString.c_str());
-        abort();
-    }
-
-    return rc;
 }
 
 
@@ -333,16 +301,6 @@ FastOS_FileInterface::getLastErrorString()
 {
     int err = FastOS_File::GetLastOSError();
     return FastOS_File::getErrorString(err);
-}
-
-bool FastOS_FileInterface::Rename (const char *newFileName)
-{
-    bool rc=false;
-    if (FastOS_File::Rename(GetFileName(), newFileName)) {
-        SetFileName(newFileName);
-        rc = true;
-    }
-    return rc;
 }
 
 void FastOS_FileInterface::dropFromCache() const

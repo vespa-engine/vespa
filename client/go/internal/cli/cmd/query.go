@@ -24,6 +24,7 @@ func newQueryCmd(cli *CLI) *cobra.Command {
 	var (
 		printCurl        bool
 		queryTimeoutSecs int
+		waitSecs         int
 	)
 	cmd := &cobra.Command{
 		Use:     "query query-parameters",
@@ -38,11 +39,12 @@ can be set by the syntax [parameter-name]=[value].`,
 		SilenceUsage:      true,
 		Args:              cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return query(cli, args, queryTimeoutSecs, printCurl)
+			return query(cli, args, queryTimeoutSecs, waitSecs, printCurl)
 		},
 	}
 	cmd.PersistentFlags().BoolVarP(&printCurl, "verbose", "v", false, "Print the equivalent curl command for the query")
 	cmd.Flags().IntVarP(&queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
+	cli.bindWaitFlag(cmd, 0, &waitSecs)
 	return cmd
 }
 
@@ -57,12 +59,12 @@ func printCurl(stderr io.Writer, url string, service *vespa.Service) error {
 	return err
 }
 
-func query(cli *CLI, arguments []string, timeoutSecs int, curl bool) error {
+func query(cli *CLI, arguments []string, timeoutSecs, waitSecs int, curl bool) error {
 	target, err := cli.target(targetOptions{})
 	if err != nil {
 		return err
 	}
-	service, err := cli.service(target, vespa.QueryService, 0, cli.config.cluster())
+	service, err := cli.service(target, vespa.QueryService, 0, cli.config.cluster(), time.Duration(waitSecs)*time.Second)
 	if err != nil {
 		return err
 	}

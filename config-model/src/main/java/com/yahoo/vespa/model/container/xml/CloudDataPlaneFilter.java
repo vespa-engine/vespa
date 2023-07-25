@@ -5,7 +5,6 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.filter.security.cloud.config.CloudDataPlaneFilterConfig;
 import com.yahoo.security.X509CertificateUtils;
@@ -23,15 +22,11 @@ class CloudDataPlaneFilter extends Filter implements CloudDataPlaneFilterConfig.
 
     private final Collection<Client> clients;
     private final boolean clientsLegacyMode;
-    private final String tokenContext;
 
     CloudDataPlaneFilter(ApplicationContainerCluster cluster, DeployState state) {
         super(model());
         this.clients = List.copyOf(cluster.getClients());
         this.clientsLegacyMode = cluster.clientsLegacyMode();
-        // Token domain must be identical to the domain used for generating the tokens
-        this.tokenContext = "Vespa Cloud tenant data plane:%s"
-                .formatted(state.getProperties().applicationId().tenant().value());
     }
 
     private static ChainedComponentModel model() {
@@ -47,22 +42,15 @@ class CloudDataPlaneFilter extends Filter implements CloudDataPlaneFilterConfig.
             builder.legacyMode(true);
         } else {
             var clientsCfg = clients.stream()
+                    .filter(c -> !c.certificates().isEmpty())
                     .map(x -> new CloudDataPlaneFilterConfig.Clients.Builder()
                             .id(x.id())
                             .certificates(x.certificates().stream().map(X509CertificateUtils::toPem).toList())
-                            .tokens(tokensConfig(x.tokens()))
                             .permissions(x.permissions()))
                     .toList();
-            builder.clients(clientsCfg).legacyMode(false).tokenContext(tokenContext);
+            builder.clients(clientsCfg).legacyMode(false);
         }
     }
 
-    private static List<CloudDataPlaneFilterConfig.Clients.Tokens.Builder> tokensConfig(Collection<DataplaneToken> tokens) {
-        return tokens.stream()
-                .map(token -> new CloudDataPlaneFilterConfig.Clients.Tokens.Builder()
-                        .id(token.tokenId())
-                        .fingerprints(token.versions().stream().map(DataplaneToken.Version::fingerprint).toList())
-                        .checkAccessHashes(token.versions().stream().map(DataplaneToken.Version::checkAccessHash).toList()))
-                .toList();
-    }
+
 }

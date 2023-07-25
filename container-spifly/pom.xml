@@ -72,11 +72,11 @@
                                     <manifestEntries>
                                         <Bundle-Name>container-spifly</Bundle-Name>
                                         <Bundle-SymbolicName>container-spifly</Bundle-SymbolicName>
-                                        <Bundle-Version>${spifly.version}</Bundle-Version>
+                                        <Bundle-Version>${spifly.vespa.version}</Bundle-Version>
                                         <Export-Package>
-                                            ${relocation-pkg-prefix}.spifly;version="${spifly.version}",
-                                            ${relocation-pkg-prefix}.spifly.dynamic;version="${spifly.version}",
-                                            ${relocation-pkg-prefix}.spifly.weaver;version="${spifly.version}"
+                                            ${relocation-pkg-prefix}.spifly;version="${spifly.vespa.version}",
+                                            ${relocation-pkg-prefix}.spifly.dynamic;version="${spifly.vespa.version}",
+                                            ${relocation-pkg-prefix}.spifly.weaver;version="${spifly.vespa.version}"
                                         </Export-Package>
                                         <Import-Package>
                                             org.osgi.framework;version="[1.7,2)",

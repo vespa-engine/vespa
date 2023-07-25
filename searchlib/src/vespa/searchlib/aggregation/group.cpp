@@ -1,16 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "group.h"
-#include "maxaggregationresult.h"
-#include "groupinglevel.h"
 #include "grouping.h"
+#include <vespa/searchlib/expression/aggregationrefnode.h>
 
-#include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/stllike/hash_set.hpp>
-#include <cmath>
 #include <cassert>
-#include <algorithm>
 
 namespace search::aggregation {
 
@@ -102,7 +98,7 @@ Group::Value::groupSingle(const ResultNode & selectResult, HitRank rank, const G
     }
     GroupHash & childMap = *_childInfo._childMap;
     Group * group(nullptr);
-    GroupHash::iterator found = childMap.find(selectResult);
+    auto found = childMap.find(selectResult);
     if (found == childMap.end()) { // group not present in child map
         if (level.allowMoreGroups(childMap.size())) {
             group = new Group(level.getGroupPrototype());
@@ -766,10 +762,22 @@ Group::Value::partialCopy(const Value & rhs) {
     memcpy(_orderBy, rhs._orderBy, sizeof(_orderBy));
 }
 
+namespace {
+    class AggregationRefNodeConfigure : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
+    {
+    public:
+        AggregationRefNodeConfigure(expression::ExpressionNode::CP * & exprVec) : _exprVec(exprVec) { }
+    private:
+        void execute(vespalib::Identifiable &obj) override { static_cast<AggregationRefNode&>(obj).locateExpression(_exprVec); }
+        bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AggregationRefNode::classId); }
+        expression::ExpressionNode::CP * & _exprVec;
+    };
+}
+
 void
 Group::Value::setupAggregationReferences()
 {
-    AggregationRefNode::Configure exprRefSetup(_aggregationResults);
+    AggregationRefNodeConfigure exprRefSetup(_aggregationResults);
     select(exprRefSetup, exprRefSetup);
 }
 

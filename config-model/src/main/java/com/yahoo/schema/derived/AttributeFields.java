@@ -51,9 +51,9 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         if (unsupportedFieldType(field)) {
             return; // Ignore complex struct and map fields for indexed search (only supported for streaming search)
         }
-        if (isArrayOfSimpleStruct(field)) {
+        if (isArrayOfSimpleStruct(field, false)) {
             deriveArrayOfSimpleStruct(field);
-        } else if (isMapOfSimpleStruct(field)) {
+        } else if (isMapOfSimpleStruct(field, false)) {
             deriveMapOfSimpleStruct(field);
         } else if (isMapOfPrimitiveType(field)) {
             deriveMapOfPrimitiveType(field);

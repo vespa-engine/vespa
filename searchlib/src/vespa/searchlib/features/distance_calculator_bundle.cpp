@@ -108,7 +108,9 @@ DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment&
             const auto* term = env.getTerm(i);
             if (term->query_tensor_name().has_value() && (attr != nullptr)) {
                 _elems.emplace_back(handle, make_distance_calculator(env, *attr, term->query_tensor_name().value(), feature_name));
-                _min_rawscore = _elems.back().calc->function().min_rawscore();
+                if (_elems.back().calc) {
+                    _min_rawscore = _elems.back().calc->function().min_rawscore();
+                }
             } else {
                 _elems.emplace_back(handle);
             }
@@ -138,7 +140,9 @@ DistanceCalculatorBundle::DistanceCalculatorBundle(const fef::IQueryEnvironment&
                     const auto* attr = resolve_attribute_for_field(env, term_field.getFieldId(), feature_name);
                     if (attr != nullptr) {
                         calc = make_distance_calculator(env, *attr, term->query_tensor_name().value(), feature_name);
-                        _min_rawscore = calc->function().min_rawscore();
+                        if (calc) {
+                            _min_rawscore = calc->function().min_rawscore();
+                        }
                     }
                 }
                 _elems.emplace_back(handle, std::move(calc));

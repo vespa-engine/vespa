@@ -23,6 +23,10 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>http-utils</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.bouncycastle</groupId>
           <artifactId>*</artifactId>
         </exclusion>
@@ -40,24 +44,36 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>vespaclient-container-plugin</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>vespaclient-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.airlift</groupId>
-          <artifactId>airline</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents.client5</groupId>
-          <artifactId>httpclient5</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <classpathLayoutType>custom</classpathLayoutType>
+              <customClasspathLayout>$${artifact.groupId}:$${artifact.artifactId}:$${artifact.vespa.version}</customClasspathLayout>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>bundle-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>generate-provided-artifact-manifest</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>

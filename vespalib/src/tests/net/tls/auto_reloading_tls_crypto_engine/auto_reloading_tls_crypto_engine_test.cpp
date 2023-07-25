@@ -9,6 +9,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/time_bomb.h>
 #include <openssl/ssl.h>
+#include <filesystem>
 
 using namespace vespalib;
 using namespace vespalib::net::tls;
@@ -99,7 +100,7 @@ struct Fixture {
 
     ~Fixture() {
         engine.reset();
-        if (fileExists("test_cert.pem")) {
+        if (std::filesystem::exists(std::filesystem::path("test_cert.pem"))) {
             unlink("test_cert.pem"); // just crash the test if this throws
         }
     }
@@ -118,7 +119,7 @@ TEST_FF("Config reloading transitively loads updated files", Fixture(50ms), Time
     ASSERT_EQUAL(cert1_pem, current_certs);
 
     write_file("test_cert.pem.tmp", cert2_pem);
-    rename("test_cert.pem.tmp", "test_cert.pem", false, false); // We expect this to be an atomic rename under the hood
+    std::filesystem::rename(std::filesystem::path("test_cert.pem.tmp"), std::filesystem::path("test_cert.pem")); // We expect this to be an atomic rename under the hood
 
     current_certs = f1.current_cert_chain();
     while (current_certs != cert2_pem) {
@@ -140,7 +141,7 @@ TEST_FF("Config reload failure increments failure statistic", Fixture(50ms), Tim
     auto before = ConfigStatistics::get().snapshot();
 
     write_file("test_cert.pem.tmp", "Broken file oh no :(");
-    rename("test_cert.pem.tmp", "test_cert.pem", false, false);
+    std::filesystem::rename(std::filesystem::path("test_cert.pem.tmp"), std::filesystem::path("test_cert.pem"));
 
     while (ConfigStatistics::get().snapshot().subtract(before).failed_config_reloads == 0) {
         std::this_thread::sleep_for(10ms);

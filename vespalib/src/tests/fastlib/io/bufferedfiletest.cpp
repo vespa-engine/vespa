@@ -1,17 +1,26 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <filesystem>
 
+namespace {
+
+void remove_testfiles()
+{
+    std::filesystem::remove(std::filesystem::path("testfile1"));
+    std::filesystem::remove(std::filesystem::path("testfile2"));
+    std::filesystem::remove(std::filesystem::path("testfile3"));
+    std::filesystem::remove(std::filesystem::path("testfile4"));
+    std::filesystem::remove(std::filesystem::path("testfile5"));
+}
+
+}
 
 TEST("main") {
     int value = 0;
     FastOS_StatInfo statInfo;
 
-    FastOS_File::Delete("testfile1");
-    FastOS_File::Delete("testfile2");
-    FastOS_File::Delete("testfile3");
-    FastOS_File::Delete("testfile4");
-    FastOS_File::Delete("testfile5");
+    remove_testfiles();
 
     Fast_BufferedFile bufFile(4096);
 
@@ -84,11 +93,7 @@ TEST("main") {
     }
     printf (" -- SUCCESS\n\n");
 
-    FastOS_File::Delete("testfile1");
-    FastOS_File::Delete("testfile2");
-    FastOS_File::Delete("testfile3");
-    FastOS_File::Delete("testfile4");
-    FastOS_File::Delete("testfile5");
+    remove_testfiles();
 
     printf ("All tests OK for bufferedfiletest\n");
     printf (" -- SUCCESS\n\n");

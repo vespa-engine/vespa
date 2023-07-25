@@ -433,191 +433,13 @@ bool
 File::unlink()
 {
     close();
-    return vespalib::unlink(_filename);
-}
-
-string
-getCurrentDirectory()
-{
-    MallocAutoPtr ptr = getcwd(0, 0);
-    if (ptr.get() != 0) {
-        return string(static_cast<char*>(ptr.get()));
-    }
-    asciistream ost;
-    ost << "getCurrentDirectory(): Failed, errno(" << errno << "): " << safeStrerror(errno);
-    throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
-}
-
-void
-symlink(const string & oldPath, const string & newPath)
-{
-    if (::symlink(oldPath.c_str(), newPath.c_str())) {
-        asciistream ss;
-        const int err = errno;
-        ss << "symlink(" << oldPath << ", " << newPath
-           << "): Failed, errno(" << err << "): "
-           << safeStrerror(err);
-        throw IoException(ss.str(), IoException::getErrorType(err), VESPA_STRLOC);
-    }
-}
-
-string
-readLink(const string & path)
-{
-    char buf[256];
-    ssize_t bytes(::readlink(path.c_str(), buf, sizeof(buf)));
-    if (bytes < 0) {
-        asciistream ss;
-        const int err = errno;
-        ss << "readlink(" << path << "): Failed, errno(" << err << "): "
-           << safeStrerror(err);
-        throw IoException(ss.str(), IoException::getErrorType(err), VESPA_STRLOC);
-    }
-    return string(buf, bytes);
-}
-
-void
-chdir(const string & directory)
-{
-    if (::chdir(directory.c_str()) != 0) {
-        asciistream ost;
-        ost << "chdir(" << directory << "): Failed, errno(" << errno << "): "
-            << safeStrerror(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
-    }
-    LOG(debug, "chdir(%s): Working directory changed.", directory.c_str());
-}
-
-FileInfo::UP
-stat(const string & path)
-{
-    struct ::stat filestats;
-    return processStat(filestats, ::stat(path.c_str(), &filestats) == 0, path);
-}
-
-FileInfo::UP
-lstat(const string & path)
-{
-    struct ::stat filestats;
-    return processStat(filestats, ::lstat(path.c_str(), &filestats) == 0, path);
-}
-
-bool
-fileExists(const string & path) {
-    return (stat(path).get() != 0);
-}
-
-bool
-unlink(const string & filename)
-{
-    if (::unlink(filename.c_str()) != 0) {
-        if (errno == ENOENT) {
-            return false;
-        }
-        asciistream ost;
-        ost << "unlink(" << filename << "): Failed, errno(" << errno << "): "
-            << safeStrerror(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
-    }
-    LOG(debug, "unlink(%s): File deleted.", filename.c_str());
-    return true;
-}
-
-bool
-rename(const string & frompath, const string & topath,
-       bool copyDeleteBetweenFilesystems, bool createTargetDirectoryIfMissing)
-{
-    LOG(spam, "rename(%s, %s): Renaming file%s.",
-        frompath.c_str(), topath.c_str(),
-        createTargetDirectoryIfMissing
-            ? " recursively creating target directory if missing" : "");
-    if (::rename(frompath.c_str(), topath.c_str()) != 0) {
-        if (errno == ENOENT) {
-            if (!fileExists(frompath)) return false;
-            if (createTargetDirectoryIfMissing) {
-                string::size_type pos = topath.rfind('/');
-                if (pos != string::npos) {
-                    string path(topath.substr(0, pos));
-                    std::filesystem::create_directories(std::filesystem::path(path));
-                    LOG(debug, "rename(%s, %s): Created target directory. Calling recursively.",
-                        frompath.c_str(), topath.c_str());
-                    return rename(frompath, topath, copyDeleteBetweenFilesystems, false);
-                }
-            } else {
-                asciistream ost;
-                ost << "rename(" << frompath << ", " << topath
-                    << (copyDeleteBetweenFilesystems ? ", revert to copy" : "")
-                    << (createTargetDirectoryIfMissing
-                            ? ", create missing target" : "")
-                    << "): Failed, target path does not exist.";
-                throw IoException(ost.str(), IoException::NOT_FOUND,
-                                  VESPA_STRLOC);
-            }
-        } else if (errno == EXDEV && copyDeleteBetweenFilesystems) {
-            if (!fileExists(frompath)) {
-                LOG(debug, "rename(%s, %s): Renaming non-existing file across "
-                           "filesystems returned EXDEV rather than ENOENT.",
-                    frompath.c_str(), topath.c_str());
-                return false;
-            }
-            LOG(debug, "rename(%s, %s): Cannot rename across filesystems. "
-                       "Copying and deleting instead.",
-                frompath.c_str(), topath.c_str());
-            copy(frompath, topath, createTargetDirectoryIfMissing);
-            unlink(frompath);
-            return true;
-        }
-        asciistream ost;
-        ost << "rename(" << frompath << ", " << topath
-            << (copyDeleteBetweenFilesystems ? ", revert to copy" : "")
-            << (createTargetDirectoryIfMissing ? ", create missing target" : "")
-            << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno),
-                          VESPA_STRLOC);
-    }
-    LOG(debug, "rename(%s, %s): Renamed.", frompath.c_str(), topath.c_str());
-    return true;
+    return std::filesystem::remove(std::filesystem::path(_filename));
 }
 
 namespace {
 
-    uint32_t bufferSize = 1_Mi;
     uint32_t diskAlignmentSize = 4_Ki;
 
-}
-
-void
-copy(const string & frompath, const string & topath,
-     bool createTargetDirectoryIfMissing, bool useDirectIO)
-{
-        // Get aligned buffer, so it works with direct IO
-    LOG(spam, "copy(%s, %s): Copying file%s.",
-        frompath.c_str(), topath.c_str(),
-        createTargetDirectoryIfMissing
-            ? " recursively creating target directory if missing" : "");
-    MallocAutoPtr buffer(getAlignedBuffer(bufferSize));
-
-    File source(frompath);
-    File target(topath);
-    source.open(File::READONLY | (useDirectIO ? File::DIRECTIO : 0));
-    size_t sourceSize = source.getFileSize();
-    if (useDirectIO && sourceSize % diskAlignmentSize != 0) {
-        LOG(warning, "copy(%s, %s): Cannot use direct IO to write new file, "
-                     "as source file has size %zu, which is not "
-                     "dividable by the disk alignment size of %u.",
-            frompath.c_str(), topath.c_str(), sourceSize, diskAlignmentSize);
-        useDirectIO = false;
-    }
-    target.open(File::CREATE | File::TRUNC | (useDirectIO ? File::DIRECTIO : 0),
-                createTargetDirectoryIfMissing);
-    off_t offset = 0;
-    for (;;) {
-        size_t bytesRead = source.read(buffer.get(), bufferSize, offset);
-        target.write(buffer.get(), bytesRead, offset);
-        if (bytesRead < bufferSize) break;
-        offset += bytesRead;
-    }
-    LOG(debug, "copy(%s, %s): Completed.", frompath.c_str(), topath.c_str());
 }
 
 DirectoryList
@@ -701,12 +523,6 @@ getOpenErrorString(const int osError, stringref filename)
     os << " dirStat";
     addStat(os, dirName);
     return os.str();
-}
-
-bool
-isDirectory(const string & path) {
-    FileInfo::UP info(stat(path));
-    return (info.get() && info->_directory);
 }
 
 } // vespalib

@@ -1,20 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for stackdumpquerycreator.
 
-#include <vespa/log/log.h>
-LOG_SETUP("stackdumpquerycreator_test");
-
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/query/tree/stackdumpquerycreator.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("stackdumpquerycreator_test");
+#include <vespa/searchlib/query/tree/stackdumpquerycreator.h>
 
 using search::ParseItem;
 using search::RawBuf;
 using search::SimpleQueryStackDumpIterator;
-using std::string;
+using vespalib::string;
 using namespace search::query;
 
 namespace {

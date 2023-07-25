@@ -145,7 +145,7 @@ public class ZmsClientMock implements ZmsClient {
                 .map(d -> d.attributes)
                 .map(attrs -> {
                     if (attrs.containsKey("account")) {
-                        return new AthenzDomainMeta((String)attrs.get("account"), domain.getName());
+                        return new AthenzDomainMeta((String) attrs.get("account"), (String) attrs.get("gcpProject"), domain.getName());
                     }
                     return null;
                 })
@@ -153,7 +153,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public void updateDomain(AthenzDomain domain, Map<String, Object> attributes) {
+    public void updateDomain(AthenzDomain domain, String mainKey, Map<String, Object> attributes) {
         if (!athenz.domains.containsKey(domain)) throw new IllegalStateException("Domain does not exist: " + domain.getName());
         athenz.domains.get(domain).withAttributes(attributes);
     }

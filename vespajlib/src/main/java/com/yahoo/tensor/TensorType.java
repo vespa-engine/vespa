@@ -486,7 +486,7 @@ public class TensorType {
 
     }
 
-    public static class Builder {
+    public static final class Builder {
 
         private final Map<String, Dimension> dimensions = new LinkedHashMap<>();
 
@@ -614,4 +614,3 @@ public class TensorType {
     }
 
 }
-

@@ -114,11 +114,11 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []
 
 	if !overwriteCertificate {
 		hint := "Use -f flag to force overwriting"
-		if util.PathExists(privateKeyFile) {
-			return errHint(fmt.Errorf("private key %s already exists", color.CyanString(privateKeyFile)), hint)
+		if util.PathExists(privateKeyFile.path) {
+			return errHint(fmt.Errorf("private key %s already exists", color.CyanString(privateKeyFile.path)), hint)
 		}
-		if util.PathExists(certificateFile) {
-			return errHint(fmt.Errorf("certificate %s already exists", color.CyanString(certificateFile)), hint)
+		if util.PathExists(certificateFile.path) {
+			return errHint(fmt.Errorf("certificate %s already exists", color.CyanString(certificateFile.path)), hint)
 		}
 	}
 
@@ -126,14 +126,14 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []
 	if err != nil {
 		return err
 	}
-	if err := keyPair.WriteCertificateFile(certificateFile, overwriteCertificate); err != nil {
+	if err := keyPair.WriteCertificateFile(certificateFile.path, overwriteCertificate); err != nil {
 		return fmt.Errorf("could not write certificate: %w", err)
 	}
-	if err := keyPair.WritePrivateKeyFile(privateKeyFile, overwriteCertificate); err != nil {
+	if err := keyPair.WritePrivateKeyFile(privateKeyFile.path, overwriteCertificate); err != nil {
 		return fmt.Errorf("could not write private key: %w", err)
 	}
-	cli.printSuccess("Certificate written to ", color.CyanString(certificateFile))
-	cli.printSuccess("Private key written to ", color.CyanString(privateKeyFile))
+	cli.printSuccess("Certificate written to ", color.CyanString(certificateFile.path))
+	cli.printSuccess("Private key written to ", color.CyanString(privateKeyFile.path))
 	if !skipApplicationPackage {
 		return doCertAdd(cli, overwriteCertificate, args)
 	}
@@ -168,7 +168,7 @@ func maybeCopyCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, 
 	}
 	if cli.isTerminal() {
 		cli.printWarning("Application package does not contain " + color.CyanString("security/clients.pem") + ", which is required for deployments to Vespa Cloud")
-		ok, err := cli.confirm("Do you want to copy the certificate of application " + color.GreenString(target.Deployment().Application.String()) + " into this application package?")
+		ok, err := cli.confirm("Do you want to copy the certificate of application "+color.GreenString(target.Deployment().Application.String())+" into this application package?", true)
 		if err != nil {
 			return err
 		}

@@ -337,18 +337,6 @@ func (c *Config) targetOrURL() (string, error) {
 	return targetType, nil
 }
 
-func (c *Config) timeout() (time.Duration, error) {
-	wait, ok := c.get(waitFlag)
-	if !ok {
-		return 0, nil
-	}
-	secs, err := strconv.Atoi(wait)
-	if err != nil {
-		return 0, err
-	}
-	return time.Duration(secs) * time.Second, nil
-}
-
 func (c *Config) isQuiet() bool {
 	quiet, _ := c.get(quietFlag)
 	return quiet == "true"
@@ -396,24 +384,43 @@ func (c *Config) caCertificatePath() string {
 	return c.environment["VESPA_CLI_DATA_PLANE_CA_CERT_FILE"]
 }
 
-func (c *Config) certificatePath(app vespa.ApplicationID, targetType string) (string, error) {
-	if override, ok := c.environment["VESPA_CLI_DATA_PLANE_CERT_FILE"]; ok {
-		return override, nil
-	}
-	if targetType == vespa.TargetHosted {
-		return athenzPath("cert")
-	}
-	return c.applicationFilePath(app, "data-plane-public-cert.pem")
+type credentialsFile struct {
+	path     string
+	optional bool
 }
 
-func (c *Config) privateKeyPath(app vespa.ApplicationID, targetType string) (string, error) {
-	if override, ok := c.environment["VESPA_CLI_DATA_PLANE_KEY_FILE"]; ok {
-		return override, nil
+func (c *Config) credentialsFile(app vespa.ApplicationID, targetType string, cert bool) (credentialsFile, error) {
+	envVar := "VESPA_CLI_DATA_PLANE_CERT_FILE"
+	athenzFile := "cert"
+	applicationFile := "data-plane-public-cert.pem"
+	if !cert {
+		envVar = "VESPA_CLI_DATA_PLANE_KEY_FILE"
+		athenzFile = "key"
+		applicationFile = "data-plane-private-key.pem"
+	}
+	if override, ok := c.environment[envVar]; ok {
+		return credentialsFile{override, false}, nil
 	}
 	if targetType == vespa.TargetHosted {
-		return athenzPath("key")
+		path, err := athenzPath(athenzFile)
+		if err != nil {
+			return credentialsFile{}, err
+		}
+		return credentialsFile{path, false}, nil
 	}
-	return c.applicationFilePath(app, "data-plane-private-key.pem")
+	path, err := c.applicationFilePath(app, applicationFile)
+	if err != nil {
+		return credentialsFile{}, err
+	}
+	return credentialsFile{path, true}, nil
+}
+
+func (c *Config) certificatePath(app vespa.ApplicationID, targetType string) (credentialsFile, error) {
+	return c.credentialsFile(app, targetType, true)
+}
+
+func (c *Config) privateKeyPath(app vespa.ApplicationID, targetType string) (credentialsFile, error) {
+	return c.credentialsFile(app, targetType, false)
 }
 
 func (c *Config) readTLSOptions(app vespa.ApplicationID, targetType string) (vespa.TLSOptions, error) {
@@ -425,16 +432,13 @@ func (c *Config) readTLSOptions(app vespa.ApplicationID, targetType string) (ves
 	// CA certificate
 	if caCertOk {
 		options.CACertificate = []byte(caCertText)
-	} else {
-		caCertFile := c.caCertificatePath()
-		if caCertFile != "" {
-			b, err := os.ReadFile(caCertFile)
-			if err != nil {
-				return options, err
-			}
-			options.CACertificate = b
-			options.CACertificateFile = caCertFile
+	} else if caCertFile := c.caCertificatePath(); caCertFile != "" {
+		b, err := os.ReadFile(caCertFile)
+		if err != nil {
+			return options, err
 		}
+		options.CACertificate = b
+		options.CACertificateFile = caCertFile
 	}
 	// Certificate and private key
 	if certOk && keyOk {
@@ -452,15 +456,17 @@ func (c *Config) readTLSOptions(app vespa.ApplicationID, targetType string) (ves
 		if err != nil {
 			return vespa.TLSOptions{}, err
 		}
-		kp, err := tls.LoadX509KeyPair(certFile, keyFile)
+		kp, err := tls.LoadX509KeyPair(certFile.path, keyFile.path)
+		allowMissing := os.IsNotExist(err) && keyFile.optional && certFile.optional
 		if err == nil {
 			options.KeyPair = []tls.Certificate{kp}
-			options.PrivateKeyFile = keyFile
-			options.CertificateFile = certFile
-		} else if err != nil && !os.IsNotExist(err) {
+			options.PrivateKeyFile = keyFile.path
+			options.CertificateFile = certFile.path
+		} else if err != nil && !allowMissing {
 			return vespa.TLSOptions{}, err
 		}
 	}
+	// If we found a key pair, parse it and check expiry
 	if options.KeyPair != nil {
 		cert, err := x509.ParseCertificate(options.KeyPair[0].Certificate[0])
 		if err != nil {
@@ -628,12 +634,6 @@ func (c *Config) set(option, value string) error {
 		return nil
 	case clusterFlag:
 		c.config.Set(clusterFlag, value)
-		return nil
-	case waitFlag:
-		if n, err := strconv.Atoi(value); err != nil || n < 0 {
-			return fmt.Errorf("%s option must be an integer >= 0, got %q", option, value)
-		}
-		c.config.Set(option, value)
 		return nil
 	case colorFlag:
 		switch value {

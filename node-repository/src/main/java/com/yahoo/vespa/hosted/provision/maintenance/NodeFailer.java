@@ -195,39 +195,48 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     /**
      * Called when a node should be moved to the failed state: Do that if it seems safe,
      * which is when the node repo has available capacity to replace the node (and all its tenant nodes if host).
-     * Otherwise not replacing the node ensures (by Orchestrator check) that no further action will be taken.
+     * Otherwise, not replacing the node ensures (by Orchestrator check) that no further action will be taken.
      */
     private void failActive(FailingNode failing) {
         Optional<Deployment> deployment =
             deployer.deployFromLocalActive(failing.node().allocation().get().owner(), Duration.ofMinutes(5));
         if (deployment.isEmpty()) return;
 
+        boolean redeploy = false;
         // If the active node that we are trying to fail is of type host, we need to successfully fail all
         // the children nodes running on it before we fail the host.  Failing a child node in a dynamically
         // provisioned zone may require provisioning new hosts that require the host application lock to be held,
         // so we must release ours before failing the children.
-        List<FailingNode> activeChildrenToFail = new ArrayList<>();
-        boolean redeploy = false;
-        try (NodeMutex lock = nodeRepository().nodes().lockAndGetRequired(failing.node())) {
-            // Now that we have gotten the node object under the proper lock, sanity-check it still makes sense to fail
-            if (!Objects.equals(failing.node().allocation().map(Allocation::owner), lock.node().allocation().map(Allocation::owner)))
-                return;
-            if (lock.node().state() == Node.State.failed)
-                return;
-            if (!Objects.equals(failing.node().state(), lock.node().state()))
-                return;
-            failing = new FailingNode(lock.node(), failing.reason);
+        if (failing.node.type().isHost()) {
+            List<FailingNode> activeChildrenToFail = new ArrayList<>();
+            try (var lock = nodeRepository().nodes().lockAndGetRecursively(failing.node.hostname(), Optional.empty())) {
+                failing = shouldFail(lock.parent().node(), failing);
+                if (failing == null) return;
 
-            String reasonForChildFailure = "Failing due to parent host " + failing.node().hostname() + " failure: " + failing.reason();
-            for (Node failingTenantNode : nodeRepository().nodes().list().childrenOf(failing.node())) {
-                if (failingTenantNode.state() == Node.State.active) {
-                    activeChildrenToFail.add(new FailingNode(failingTenantNode, reasonForChildFailure));
-                } else if (failingTenantNode.state() != Node.State.failed) {
-                    nodeRepository().nodes().fail(failingTenantNode.hostname(), Agent.NodeFailer, reasonForChildFailure);
+                String reasonForChildFailure = "Failing due to parent host " + failing.node().hostname() + " failure: " + failing.reason();
+                for (var failingTenantNode : lock.children()) {
+                    if (failingTenantNode.node().state() == Node.State.active) {
+                        activeChildrenToFail.add(new FailingNode(failingTenantNode.node(), reasonForChildFailure));
+                    } else if (failingTenantNode.node().state() != Node.State.failed) {
+                        nodeRepository().nodes().fail(failingTenantNode.node().hostname(), Agent.NodeFailer, reasonForChildFailure);
+                    }
+                }
+
+                if (activeChildrenToFail.isEmpty()) {
+                    log.log(Level.INFO, "Failing out " + failing.node + ": " + failing.reason);
+                    markWantToFail(failing.node(), true, lock.parent());
+                    redeploy = true;
                 }
             }
+            // In a dynamically provisioned zone the failing of the first child may require a new host to be provisioned,
+            // so failActive() may take a long time to complete, but the remaining children should be fast.
+            activeChildrenToFail.forEach(this::failActive);
+        }
+        else {
+            try (var lock = nodeRepository().nodes().lockAndGetRequired(failing.node)) {
+                failing = shouldFail(lock.node(), failing);
+                if (failing == null) return;
 
-            if (activeChildrenToFail.isEmpty()) {
                 log.log(Level.INFO, "Failing out " + failing.node + ": " + failing.reason);
                 markWantToFail(failing.node(), true, lock);
                 redeploy = true;
@@ -237,13 +246,19 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         // Redeploy to replace failing node
         if (redeploy) {
             redeploy(deployment.get(), failing);
-            return;
         }
+    }
 
-        // In a dynamically provisioned zone the failing of the first child may require a new host to be provisioned,
-        // so failActive() may take a long time to complete, but the remaining children should be fast.
-        activeChildrenToFail.forEach(this::failActive);
-
+    // Returns an updated FailingNode if we should still fail the node, otherwise null
+    private static FailingNode shouldFail(Node fresh, FailingNode stale) {
+        // Now that we have gotten the node object under the proper lock, sanity-check it still makes sense to fail
+        if (!Objects.equals(stale.node.allocation().map(Allocation::owner), fresh.allocation().map(Allocation::owner)))
+            return null;
+        if (fresh.state() == Node.State.failed)
+            return null;
+        if (!Objects.equals(stale.node.state(), fresh.state()))
+            return null;
+        return new FailingNode(fresh, stale.reason);
     }
 
     private void redeploy(Deployment deployment, FailingNode failing) {

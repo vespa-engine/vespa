@@ -68,15 +68,15 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
 
     /** Returns the reason for doing an expedited deploy. */
     private Optional<String> hasNodesWithChanges(ApplicationId applicationId, NodeList nodes) {
-        Optional<Instant> lastDeployTime = deployer().lastDeployTime(applicationId);
-        if (lastDeployTime.isEmpty()) return Optional.empty();
+        Optional<Instant> activationTime = deployer().activationTime(applicationId);
+        if (activationTime.isEmpty()) return Optional.empty();
 
         List<String> reasons = nodes.stream()
                                     .flatMap(node -> node.history()
                                                          .events()
                                                          .stream()
                                                          .filter(event -> expediteChangeBy(event.agent()))
-                                                         .filter(event -> lastDeployTime.get().isBefore(event.at()))
+                                                         .filter(event -> activationTime.get().isBefore(event.at()))
                                                          .map(event -> event.type() + (event.agent() == Agent.system ? "" : " by " + event.agent())))
                                     .sorted()
                                     .distinct()

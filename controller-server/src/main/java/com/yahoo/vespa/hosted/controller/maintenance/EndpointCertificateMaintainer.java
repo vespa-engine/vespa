@@ -11,10 +11,10 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateDetails;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequestMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequest;
 import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.EndpointSecretManager;
@@ -156,7 +156,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                 });
     }
 
-    private OptionalInt latestVersionInSecretStore(EndpointCertificateMetadata originalCertificateMetadata) {
+    private OptionalInt latestVersionInSecretStore(EndpointCertificate originalCertificateMetadata) {
         try {
             var certVersions = new HashSet<>(secretStore.listSecretVersions(originalCertificateMetadata.certName()));
             var keyVersions = new HashSet<>(secretStore.listSecretVersions(originalCertificateMetadata.keyName()));
@@ -169,7 +169,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private void deleteUnusedCertificates() {
         var oneMonthAgo = clock.instant().minus(30, ChronoUnit.DAYS);
         curator.readAssignedCertificates().forEach(assignedCertificate -> {
-            EndpointCertificateMetadata certificate = assignedCertificate.certificate();
+            EndpointCertificate certificate = assignedCertificate.certificate();
             var lastRequested = Instant.ofEpochSecond(certificate.lastRequested());
             if (lastRequested.isBefore(oneMonthAgo) && hasNoDeployments(assignedCertificate.application())) {
                 try (Mutex lock = lock(assignedCertificate.application())) {
@@ -200,11 +200,11 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     }
 
     private void deleteOrReportUnmanagedCertificates() {
-        List<EndpointCertificateRequestMetadata> endpointCertificateMetadata = endpointCertificateProvider.listCertificates();
+        List<EndpointCertificateRequest> requests = endpointCertificateProvider.listCertificates();
         List<AssignedCertificate> assignedCertificates = curator.readAssignedCertificates();
 
         List<String> leafRequestIds = assignedCertificates.stream().map(AssignedCertificate::certificate).flatMap(m -> m.leafRequestId().stream()).toList();
-        List<String> rootRequestIds = assignedCertificates.stream().map(AssignedCertificate::certificate).map(EndpointCertificateMetadata::rootRequestId).toList();
+        List<String> rootRequestIds = assignedCertificates.stream().map(AssignedCertificate::certificate).map(EndpointCertificate::rootRequestId).toList();
         List<UnassignedCertificate> unassignedCertificates = curator.readUnassignedCertificates();
         List<String> certPoolRootIds = unassignedCertificates.stream().map(p -> p.certificate().leafRequestId()).flatMap(Optional::stream).toList();
         List<String> certPoolLeafIds = unassignedCertificates.stream().map(p -> p.certificate().rootRequestId()).toList();
@@ -215,21 +215,21 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         managedIds.addAll(certPoolRootIds);
         managedIds.addAll(certPoolLeafIds);
 
-        for (var providerCertificateMetadata : endpointCertificateMetadata) {
-            if (!managedIds.contains(providerCertificateMetadata.requestId())) {
+        for (var request : requests) {
+            if (!managedIds.contains(request.requestId())) {
 
                 // It could just be a refresh we're not aware of yet. See if it matches the cert/keyname of any known cert
-                EndpointCertificateDetails unknownCertDetails = endpointCertificateProvider.certificateDetails(providerCertificateMetadata.requestId());
+                EndpointCertificateDetails unknownCertDetails = endpointCertificateProvider.certificateDetails(request.requestId());
                 boolean matchFound = false;
                 for (AssignedCertificate assignedCertificate : assignedCertificates) {
-                    if (assignedCertificate.certificate().certName().equals(unknownCertDetails.cert_key_keyname())) {
+                    if (assignedCertificate.certificate().certName().equals(unknownCertDetails.certKeyKeyname())) {
                         matchFound = true;
                         try (Mutex lock = lock(assignedCertificate.application())) {
                             if (unchanged(assignedCertificate, lock)) {
                                 log.log(Level.INFO, "Cert for app " + asString(assignedCertificate.application(), assignedCertificate.instance())
-                                        + " has a new leafRequestId " + unknownCertDetails.request_id() + ", updating in ZK");
+                                                    + " has a new leafRequestId " + unknownCertDetails.requestId() + ", updating in ZK");
                                 try (NestedTransaction transaction = new NestedTransaction()) {
-                                    EndpointCertificateMetadata updated = assignedCertificate.certificate().withLeafRequestId(Optional.of(unknownCertDetails.request_id()));
+                                    EndpointCertificate updated = assignedCertificate.certificate().withLeafRequestId(Optional.of(unknownCertDetails.requestId()));
                                     curator.writeAssignedCertificate(assignedCertificate.with(updated), transaction);
                                     transaction.commit();
                                 }
@@ -241,11 +241,11 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                 if (!matchFound) {
                     // The certificate is not known - however it could be in the process of being requested by us or another controller.
                     // So we only delete if it was requested more than 7 days ago.
-                    if (Instant.parse(providerCertificateMetadata.createTime()).isBefore(Instant.now().minus(7, ChronoUnit.DAYS))) {
+                    if (Instant.parse(request.createTime()).isBefore(Instant.now().minus(7, ChronoUnit.DAYS))) {
                         log.log(Level.INFO, String.format("Deleting unmaintained certificate with request_id %s and SANs %s",
-                                providerCertificateMetadata.requestId(),
-                                providerCertificateMetadata.dnsNames().stream().map(d -> d.dnsName).collect(Collectors.joining(", "))));
-                        endpointCertificateProvider.deleteCertificate(providerCertificateMetadata.requestId());
+                                request.requestId(),
+                                request.dnsNames().stream().map(EndpointCertificateRequest.DnsNameStatus::dnsName).collect(Collectors.joining(", "))));
+                        endpointCertificateProvider.deleteCertificate(request.requestId());
                     }
                 }
             }

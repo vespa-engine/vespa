@@ -40,7 +40,7 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
 
     @Override
     protected double maintain() {
-        NodeList expired = nodeRepository().nodes().list(fromState).matching(this::isExpired);
+        NodeList expired = getExpiredNodes();
 
         if ( ! expired.isEmpty()) {
             log.info(fromState + " expirer found " + expired.size() + " expired nodes: " + expired);
@@ -49,6 +49,10 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
 
         metric.add("expired." + fromState, expired.size(), null);
         return 1.0;
+    }
+
+    protected NodeList getExpiredNodes() {
+        return nodeRepository().nodes().list(fromState).matching(this::isExpired);
     }
 
     protected boolean isExpired(Node node) {

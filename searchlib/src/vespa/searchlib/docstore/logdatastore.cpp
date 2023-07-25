@@ -694,7 +694,7 @@ hasNonHeaderData(const vespalib::string &name)
     FastOS_File file(name.c_str());
     if (!file.OpenReadOnly())
         return false;
-    int64_t fSize(file.GetSize());
+    int64_t fSize(file.getSize());
     uint32_t headerLen = 0;
     uint32_t minHeaderLen = vespalib::GenericHeader::getMinSize();
     if (fSize < minHeaderLen)
@@ -777,8 +777,7 @@ LogDataStore::preload()
     if (!partList.empty()) {
         verifyModificationTime(partList);
         partList = scanDir(getBaseDir(), ".idx");
-        using It = NameIdSet::const_iterator;
-        for (It it(partList.begin()), mt(--partList.end()); it != mt; it++) {
+        for (auto it(partList.begin()), mt(--partList.end()); it != mt; it++) {
             _fileChunks.push_back(createReadOnlyFile(FileId(_fileChunks.size()), *it));
         }
         _fileChunks.push_back(isReadOnly()
@@ -824,7 +823,7 @@ LogDataStore::NameIdSet
 LogDataStore::findIncompleteCompactedFiles(const NameIdSet & partList) {
     NameIdSet incomplete;
     if ( !partList.empty()) {
-        NameIdSet::const_iterator it = partList.begin();
+        auto it = partList.begin();
         for (FileChunk::NameId prev = *it++; it != partList.end(); it++) {
             if (prev.next() == *it) {
                 if (!incomplete.empty() && (*incomplete.rbegin() == prev)) {
@@ -869,15 +868,13 @@ LogDataStore::eraseIncompleteCompactedFiles(NameIdSet partList)
 void
 LogDataStore::eraseDanglingDatFiles(const NameIdSet &partList, const NameIdSet &datPartList)
 {
-    using IT = NameIdSet::const_iterator;
-    
-    IT iib(partList.begin());
-    IT ii(iib);
-    IT iie(partList.end());
-    IT dib(datPartList.begin());
-    IT di(dib);
-    IT die(datPartList.end());
-    IT dirb(die);
+    auto iib = partList.begin();
+    auto ii = iib;
+    auto iie = partList.end();
+    auto dib = datPartList.begin();
+    auto di = dib;
+    auto die = datPartList.end();
+    auto dirb = die;
     NameId endMarker(NameId::last());
     
     if (dirb != dib) {

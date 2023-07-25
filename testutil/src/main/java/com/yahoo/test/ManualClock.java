@@ -2,6 +2,7 @@
 package com.yahoo.test;
 
 import com.yahoo.component.annotation.Inject;
+
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -40,7 +41,7 @@ public class ManualClock extends Clock {
         currentTime.updateAndGet(time -> time.minus(temporal));
     }
 
-    public void setInstant(Instant time) {
+    public final void setInstant(Instant time) {
         currentTime.set(time);
     }
 

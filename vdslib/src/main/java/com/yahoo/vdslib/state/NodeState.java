@@ -41,8 +41,8 @@ public class NodeState implements Cloneable {
     }
 
     /**
-     * A state can not be forced to be in a state above it's reported state.
-     * For instance, a down being down, cannot be forced up, but a node being down can be forced in maintenance.
+     * A state can not be forced to be in a state above its reported state.
+     * For instance, a node being down cannot be forced to up, but a node being down can be forced to maintenance.
      */
     public boolean above(NodeState other) {
         return (state.ordinal() > other.state.ordinal());

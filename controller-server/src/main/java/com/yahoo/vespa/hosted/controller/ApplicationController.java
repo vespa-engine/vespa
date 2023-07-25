@@ -33,7 +33,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -55,6 +55,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics.Warning;
 import com.yahoo.vespa.hosted.controller.application.DeploymentQuotaCalculator;
+import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -81,12 +82,14 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
+
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -123,7 +126,7 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 /**
- * A singleton owned by the Controller which contains the methods and state for controlling applications.
+ * A singleton owned by {@link Controller} which contains the methods and state for controlling applications.
  *
  * @author bratseth
  */
@@ -149,6 +152,7 @@ public class ApplicationController {
     private final ListFlag<String> incompatibleVersions;
     private final BillingController billingController;
     private final ListFlag<String> cloudAccountsFlag;
+
     private final Map<DeploymentId, com.yahoo.vespa.hosted.controller.api.integration.configserver.Application> deploymentInfo = new ConcurrentHashMap<>();
 
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
@@ -421,10 +425,10 @@ public class ApplicationController {
 
         // Fall back to the newest, system-compatible version with unknown confidence. For public systems, this implies high confidence.
         Set<Version> knownVersions = versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(toSet());
-        Optional<Version> unknown = controller.mavenRepository().metadata().versions().stream()
-                                              .filter(version -> ! knownVersions.contains(version))
-                                              .filter(systemCompatible)
-                                              .max(naturalOrder());
+        Optional<Version> unknown = controller.mavenRepository().metadata().versions(clock.instant()).stream()
+                                            .filter(version -> ! knownVersions.contains(version))
+                                            .filter(systemCompatible)
+                                            .max(naturalOrder());
 
         if (nonBroken.isPresent()) {
             if (controller.system().isPublic() && unknown.isPresent() && unknown.get().isAfter(nonBroken.get()))
@@ -521,9 +525,9 @@ public class ApplicationController {
                 containerEndpoints = controller.routing().of(deployment).prepare(application);
             } // Release application lock while doing the deployment, which is a lengthy task.
 
-            Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata = () -> {
+            Supplier<Optional<EndpointCertificate>> endpointCertificate = () -> {
                 try (Mutex lock = lock(applicationId)) {
-                    Optional<EndpointCertificateMetadata> data = endpointCertificates.getMetadata(instance, zone, applicationPackage.truncatedPackage().deploymentSpec());
+                    Optional<EndpointCertificate> data = endpointCertificates.get(instance, zone, applicationPackage.truncatedPackage().deploymentSpec());
                     data.ifPresent(e -> deployLogger.accept("Using CA signed certificate version %s".formatted(e.version())));
                     return data;
                 }
@@ -531,7 +535,7 @@ public class ApplicationController {
 
             // Carry out deployment without holding the application lock.
             DeploymentDataAndResult dataAndResult = deploy(job.application(), applicationPackage, zone, platform, containerEndpoints,
-                                                           endpointCertificateMetadata, run.isDryRun(), run.testerCertificate());
+                                                           endpointCertificate, run.isDryRun(), run.testerCertificate());
 
 
             // Record the quota usage for this application
@@ -645,12 +649,13 @@ public class ApplicationController {
     private record DeploymentDataAndResult(DeploymentData data, DeploymentResult result) {}
     private DeploymentDataAndResult deploy(ApplicationId application, ApplicationPackageStream applicationPackage,
                                            ZoneId zone, Version platform, Set<ContainerEndpoint> endpoints,
-                                           Supplier<Optional<EndpointCertificateMetadata>> endpointCertificateMetadata,
+                                           Supplier<Optional<EndpointCertificate>> endpointCertificate,
                                            boolean dryRun, Optional<X509Certificate> testerCertificate) {
         DeploymentId deployment = new DeploymentId(application, zone);
         // Routing and metadata may have changed, so we need to refresh state after deployment, even if deployment fails.
         interface CleanCloseable extends AutoCloseable { void close(); }
-        try (CleanCloseable postDeployment = () -> updateRoutingAndMeta(deployment, applicationPackage)) {
+        List<GeneratedEndpoint> generatedEndpoints = new ArrayList<>();
+        try (CleanCloseable postDeployment = () -> updateRoutingAndMeta(deployment, applicationPackage, generatedEndpoints)) {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
                     dockerImageRepoFlag
                             .with(FetchVector.Dimension.ZONE_ID, zone.value())
@@ -679,8 +684,16 @@ public class ApplicationController {
             }
             Supplier<Optional<CloudAccount>> cloudAccount = () -> decideCloudAccountOf(deployment, applicationPackage.truncatedPackage().deploymentSpec());
             List<DataplaneTokenVersions> dataplaneTokenVersions = controller.dataplaneTokenService().listTokens(application.tenant());
+            Supplier<Optional<EndpointCertificate>> endpointCertificateWrapper = () -> {
+                Optional<EndpointCertificate> data = endpointCertificate.get();
+                // TODO(mpolden): Pass these endpoints to config server as part of the deploy call. This will let the
+                //                application know which endpoints are mTLS and which are token-based
+                data.flatMap(EndpointCertificate::randomizedId)
+                    .ifPresent(applicationPart -> generatedEndpoints.addAll(controller.routing().generateEndpoints(applicationPart, deployment.applicationId())));
+                return data;
+            };
             DeploymentData deploymentData = new DeploymentData(application, zone, applicationPackage::zipStream, platform,
-                    endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
+                    endpoints, endpointCertificateWrapper, dockerImageRepo, domain,
                     deploymentQuota, tenantSecretStores, operatorCertificates, cloudAccount, dataplaneTokenVersions, dryRun);
             ConfigServer.PreparedApplication preparedApplication = configServer.deploy(deploymentData);
 
@@ -688,9 +701,9 @@ public class ApplicationController {
         }
     }
 
-    private void updateRoutingAndMeta(DeploymentId id, ApplicationPackageStream data) {
+    private void updateRoutingAndMeta(DeploymentId id, ApplicationPackageStream data, List<GeneratedEndpoint> generatedEndpoints) {
         if (id.applicationId().instance().isTester()) return;
-        controller.routing().of(id).configure(data.truncatedPackage().deploymentSpec());
+        controller.routing().of(id).configure(data.truncatedPackage().deploymentSpec(), generatedEndpoints);
         if ( ! id.zoneId().environment().isManuallyDeployed()) return;
         controller.applications().applicationStore().putMeta(id, clock.instant(), data.truncatedPackage().metaDataZip());
     }
@@ -905,7 +918,7 @@ public class ApplicationController {
         DeploymentId id = new DeploymentId(instanceId, zone);
         interface CleanCloseable extends AutoCloseable { void close(); }
         try (CleanCloseable postDeactivation = () -> {
-            application.ifPresent(app -> controller.routing().of(id).configure(app.get().deploymentSpec()));
+            application.ifPresent(app -> controller.routing().of(id).configure(app.get().deploymentSpec(), List.of()));
             if (id.zoneId().environment().isManuallyDeployed())
                 applicationStore.putMetaTombstone(id, clock.instant());
             if ( ! id.zoneId().environment().isTest())

@@ -9,6 +9,7 @@
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/annotation/spantreevisitor.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/searchlib/bitcompression/compression.h>
@@ -106,7 +107,7 @@ getSpan(const SpanNode &span_node)
 }
 
 void
-FieldInverter::processAnnotations(const StringFieldValue &value)
+FieldInverter::processAnnotations(const StringFieldValue &value, const Document& doc)
 {
     _terms.clear();
     StringFieldValue::SpanTrees spanTrees = value.getSpanTrees();
@@ -117,7 +118,7 @@ FieldInverter::processAnnotations(const StringFieldValue &value)
         if (text.empty()) {
             return;
         }
-        uint32_t wordRef = saveWord(text);
+        uint32_t wordRef = saveWord(text, &doc);
         if (wordRef != 0u) {
             add(wordRef);
             stepWordPos();
@@ -138,21 +139,21 @@ FieldInverter::processAnnotations(const StringFieldValue &value)
         }
     }
     std::sort(_terms.begin(), _terms.end());
-    SpanTermVector::const_iterator it  = _terms.begin();
-    SpanTermVector::const_iterator ite = _terms.end();
+    auto it  = _terms.begin();
+    auto ite = _terms.end();
     uint32_t wordRef;
     bool mustStep = false;
     for (; it != ite; ) {
-        SpanTermVector::const_iterator it_begin = it;
+        auto it_begin = it;
         for (; it != ite && it->first == it_begin->first; ++it) {
             if (it->second) {  // it->second is a const FieldValue *.
-                wordRef = saveWord(*it->second);
+                wordRef = saveWord(*it->second, doc);
             } else {
                 const Span &iSpan = it->first;
                 assert(iSpan.from() >= 0);
                 assert(iSpan.length() > 0);
                 wordRef = saveWord(vespalib::stringref(&text[iSpan.from()],
-                                                       iSpan.length()));
+                                                       iSpan.length()), &doc);
             }
             if (wordRef != 0u) {
                 add(wordRef);
@@ -243,7 +244,7 @@ FieldInverter::endElement()
 }
 
 uint32_t
-FieldInverter::saveWord(const vespalib::stringref word)
+FieldInverter::saveWord(const vespalib::stringref word, const Document* doc)
 {
     const size_t wordsSize = _words.size();
     // assert((wordsSize & 3) == 0); // Check alignment
@@ -251,6 +252,11 @@ FieldInverter::saveWord(const vespalib::stringref word)
     if (len < word.size()) {
         const Schema::IndexField &field = _schema.getIndexField(_fieldId);
         LOG(error, "Detected NUL byte in word, length reduced from %zu to %zu, lid is %u, field is %s, truncated word is %s", word.size(), len, _docId, field.getName().c_str(), word.data());
+    }
+    if (len > max_word_len && doc != nullptr) {
+        const Schema::IndexField& field = _schema.getIndexField(_fieldId);
+        LOG(warning, "Dropped too long word (len %zu > max len %zu) from document %s field %s, word prefix is %.100s", len, max_word_len, doc->getId().toString().c_str(), field.getName().c_str(), word.data());
+        return 0u;
     }
     if (len == 0) {
         return 0u;
@@ -273,18 +279,18 @@ FieldInverter::saveWord(const vespalib::stringref word)
 }
 
 uint32_t
-FieldInverter::saveWord(const document::FieldValue &fv)
+FieldInverter::saveWord(const document::FieldValue &fv, const Document& doc)
 {
     assert(fv.isA(FieldValue::Type::STRING));
     using RawRef = std::pair<const char*, size_t>;
     RawRef sRef = fv.getAsRaw();
-    return saveWord(vespalib::stringref(sRef.first, sRef.second));
+    return saveWord(vespalib::stringref(sRef.first, sRef.second), &doc);
 }
 
 void
 FieldInverter::remove(const vespalib::stringref word, uint32_t docId)
 {
-    uint32_t wordRef = saveWord(word);
+    uint32_t wordRef = saveWord(word, nullptr);
     assert(wordRef != 0);
     _positions.emplace_back(wordRef, docId);
 }
@@ -313,15 +319,15 @@ FieldInverter::endDoc()
 }
 
 void
-FieldInverter::processNormalDocTextField(const StringFieldValue &field)
+FieldInverter::processNormalDocTextField(const StringFieldValue &field, const Document& doc)
 {
     startElement(1);
-    processAnnotations(field);
+    processAnnotations(field, doc);
     endElement();
 }
 
 void
-FieldInverter::processNormalDocArrayTextField(const ArrayFieldValue &field)
+FieldInverter::processNormalDocArrayTextField(const ArrayFieldValue &field, const Document& doc)
 {
     uint32_t el = 0;
     uint32_t ele = field.size();
@@ -330,13 +336,13 @@ FieldInverter::processNormalDocArrayTextField(const ArrayFieldValue &field)
         assert(elfv.isA(FieldValue::Type::STRING));
         const auto &element = static_cast<const StringFieldValue &>(elfv);
         startElement(1);
-        processAnnotations(element);
+        processAnnotations(element, doc);
         endElement();
     }
 }
 
 void
-FieldInverter::processNormalDocWeightedSetTextField(const WeightedSetFieldValue &field)
+FieldInverter::processNormalDocWeightedSetTextField(const WeightedSetFieldValue &field, const Document& doc)
 {
     for (const auto & el : field) {
         const FieldValue &key = *el.first;
@@ -346,7 +352,7 @@ FieldInverter::processNormalDocWeightedSetTextField(const WeightedSetFieldValue 
         const auto &element = static_cast<const StringFieldValue &>(key);
         int32_t weight = xweight.getAsInt();
         startElement(weight);
-        processAnnotations(element);
+        processAnnotations(element, doc);
         endElement();
     }
 }
@@ -437,11 +443,12 @@ FieldInverter::trimAbortedDocs()
 }
 
 void
-FieldInverter::invertField(uint32_t docId, const FieldValue::UP &val)
+FieldInverter::invertField(uint32_t docId, const FieldValue::UP &val, const Document& doc)
 {
+    (void) doc;
     if (val) {
         startDoc(docId);
-        invertNormalDocTextField(*val);
+        invertNormalDocTextField(*val, doc);
         endDoc();
     } else {
         removeDocument(docId);
@@ -460,13 +467,13 @@ FieldInverter::startDoc(uint32_t docId) {
 }
 
 void
-FieldInverter::invertNormalDocTextField(const FieldValue &val)
+FieldInverter::invertNormalDocTextField(const FieldValue &val, const Document& doc)
 {
     const Schema::IndexField &field = _schema.getIndexField(_fieldId);
     switch (field.getCollectionType()) {
     case CollectionType::SINGLE:
         if (val.isA(FieldValue::Type::STRING)) {
-            processNormalDocTextField(static_cast<const StringFieldValue &>(val));
+            processNormalDocTextField(static_cast<const StringFieldValue &>(val), doc);
         } else {
             throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", val.getDataType()->getName().c_str()));
         }
@@ -475,7 +482,7 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
         if (val.isA(FieldValue::Type::WSET)) {
             const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
             if (wset.getNestedType() == *DataType::STRING) {
-                processNormalDocWeightedSetTextField(wset);
+                processNormalDocWeightedSetTextField(wset, doc);
             } else {
                 throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", wset.getNestedType().getName().c_str()));
             }
@@ -487,7 +494,7 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
         if (val.isA(FieldValue::Type::ARRAY)) {
             const auto &arr = static_cast<const ArrayFieldValue&>(val);
             if (arr.getNestedType() == *DataType::STRING) {
-                processNormalDocArrayTextField(arr);
+                processNormalDocArrayTextField(arr, doc);
             } else {
                 throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", arr.getNestedType().getName().c_str()));
             }

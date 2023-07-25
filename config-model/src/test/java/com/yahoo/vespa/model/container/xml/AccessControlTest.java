@@ -16,7 +16,6 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.path.Path;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.TlsContext;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
@@ -37,10 +36,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author gjoranv
@@ -280,7 +284,8 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 new TestProperties()
                         .setAthenzDomain(tenantDomain)
                         .setHostedVespa(true)
-                        .allowDisableMtls(true))
+                        .allowDisableMtls(true)
+                        .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
                 .build();
         Http http = createModelAndGetHttp(state,
                 "  <http>",
@@ -290,6 +295,13 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>");
         assertTrue(http.getAccessControl().isPresent());
         assertEquals(AccessControl.ClientAuthentication.want, http.getAccessControl().get().clientAuthentication);
+        var tlsPort = http.getHttpServer().get().getConnectorFactories().stream()
+                .filter(connectorFactory -> connectorFactory.getListenPort() == 4443).findFirst().orElseThrow();
+        var builder = new ConnectorConfig.Builder();
+        tlsPort.getConfig(builder);
+        var connectorConfig = new ConnectorConfig(builder);
+        assertFalse(connectorConfig.tlsClientAuthEnforcer().enable());
+        assertEquals(WANT_AUTH, connectorConfig.ssl().clientAuth());
     }
 
     @Test
@@ -497,7 +509,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
         ConnectorConfig connectorConfig = new ConnectorConfig(builder);
         assertTrue(connectorConfig.ssl().enabled());
-        assertEquals(ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH, connectorConfig.ssl().clientAuth());
+        assertEquals(WANT_AUTH, connectorConfig.ssl().clientAuth());
         assertEquals("CERT", connectorConfig.ssl().certificate());
         assertEquals("KEY", connectorConfig.ssl().privateKey());
         assertEquals(4443, connectorConfig.listenPort());

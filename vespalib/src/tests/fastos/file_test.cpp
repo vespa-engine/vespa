@@ -18,16 +18,6 @@ struct Generated {
     ~Generated() { std::filesystem::remove_all(std::filesystem::path("generated")); }
 };
 
-TEST(FileTest, GetCurrentDirTest) {
-    std::string currentDir = FastOS_File::getCurrentDirectory();
-    EXPECT_FALSE(currentDir.empty());
-    EXPECT_TRUE(FastOS_File::SetCurrentDirectory(".."));
-    std::string parentDir = FastOS_File::getCurrentDirectory();
-    EXPECT_FALSE(parentDir.empty());
-    EXPECT_NE(currentDir, parentDir);
-    EXPECT_TRUE(FastOS_File::SetCurrentDirectory(currentDir.c_str()));
-}
-
 void MemoryMapTestImpl(int mmap_flags) {
     Generated guard;
     const int bufSize = 1000;
@@ -144,51 +134,51 @@ TEST(FileTest, DirectIOTest) {
 TEST(FileTest, ReadOnlyTest) {
     auto myFile = std::make_unique<FastOS_File>(roFilename.c_str());
     ASSERT_TRUE(myFile->OpenReadOnly());
-    EXPECT_EQ(myFile->GetSize(), 27);
+    EXPECT_EQ(myFile->getSize(), 27);
     char dummyData[6] = "Dummy";
     ASSERT_FALSE(myFile->CheckedWrite(dummyData, 6));
     char dummyData2[28];
     ASSERT_TRUE(myFile->SetPosition(1));
     EXPECT_EQ(myFile->Read(dummyData2, 28), 26);
-    EXPECT_EQ(myFile->GetPosition(), 27);
+    EXPECT_EQ(myFile->getPosition(), 27);
 }
 
 TEST(FileTest, WriteOnlyTest) {
     Generated guard;
     auto myFile = std::make_unique<FastOS_File>(woFilename.c_str());
     ASSERT_TRUE(myFile->OpenWriteOnly());
-    EXPECT_EQ(myFile->GetSize(), 0);
+    EXPECT_EQ(myFile->getSize(), 0);
     char dummyData[6] = "Dummy";
     ASSERT_TRUE(myFile->CheckedWrite(dummyData, 6));
-    ASSERT_EQ(myFile->GetPosition(), 6);
+    ASSERT_EQ(myFile->getPosition(), 6);
     ASSERT_TRUE(myFile->SetPosition(0));
-    ASSERT_EQ(myFile->GetPosition(), 0);
+    ASSERT_EQ(myFile->getPosition(), 0);
     EXPECT_LT(myFile->Read(dummyData, 6), 0);
     EXPECT_TRUE(myFile->Close());
-    EXPECT_TRUE(myFile->Delete());
+    EXPECT_TRUE(std::filesystem::remove(std::filesystem::path(woFilename)));
 }
 
 TEST(FileTest, ReadWriteTest) {
     Generated guard;
     auto myFile = std::make_unique<FastOS_File>(rwFilename.c_str());
-    ASSERT_FALSE(myFile->OpenExisting());
+    ASSERT_FALSE(myFile->OpenReadOnlyExisting());
     ASSERT_TRUE(myFile->OpenReadWrite());
-    ASSERT_EQ(myFile->GetSize(), 0);
+    ASSERT_EQ(myFile->getSize(), 0);
     char dummyData[6] = "Dummy";
     ASSERT_TRUE(myFile->CheckedWrite(dummyData, 6));
-    ASSERT_EQ(myFile->GetPosition(), 6);
+    ASSERT_EQ(myFile->getPosition(), 6);
     ASSERT_TRUE(myFile->SetPosition(0));
-    ASSERT_EQ(myFile->GetPosition(), 0);
+    ASSERT_EQ(myFile->getPosition(), 0);
     char dummyData2[7];
     ASSERT_EQ(myFile->Read(dummyData2, 6), 6);
     EXPECT_EQ(memcmp(dummyData, dummyData2, 6), 0);
     ASSERT_TRUE(myFile->SetPosition(1));
     EXPECT_EQ(myFile->Read(dummyData2, 7), 5);
-    EXPECT_EQ(myFile->GetPosition(), 6);
+    EXPECT_EQ(myFile->getPosition(), 6);
     EXPECT_EQ(myFile->Read(dummyData2, 6), 0);
-    EXPECT_EQ(myFile->GetPosition(), 6);
+    EXPECT_EQ(myFile->getPosition(), 6);
     EXPECT_TRUE(myFile->Close());
-    EXPECT_TRUE(myFile->Delete());
+    EXPECT_TRUE(std::filesystem::remove(std::filesystem::path(rwFilename)));
 }
 
 TEST(FileTest, ScanDirectoryTest) {
@@ -205,14 +195,14 @@ TEST(FileTest, ReadBufTest) {
     FastOS_File file(roFilename.c_str());
     char buffer[20];
     ASSERT_TRUE(file.OpenReadOnly());
-    EXPECT_EQ(file.GetPosition(), 0);
+    EXPECT_EQ(file.getPosition(), 0);
     EXPECT_EQ(file.Read(buffer, 4), 4);
     buffer[4] = '\0';
-    EXPECT_EQ(file.GetPosition(), 4);
+    EXPECT_EQ(file.getPosition(), 4);
     EXPECT_EQ(strcmp(buffer, "This"), 0);
     file.ReadBuf(buffer, 6, 8);
     buffer[6] = '\0';
-    EXPECT_EQ(file.GetPosition(), 4);
+    EXPECT_EQ(file.getPosition(), 4);
     EXPECT_EQ(strcmp(buffer, "a test"), 0);
 }
 

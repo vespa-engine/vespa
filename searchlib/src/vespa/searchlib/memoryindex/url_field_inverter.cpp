@@ -46,6 +46,7 @@ lowercaseToken(vespalib::string &dest, const char *src, size_t srcSize)
 
 using document::ArrayFieldValue;
 using document::DataType;
+using document::Document;
 using document::FieldValue;
 using document::IntFieldValue;
 using document::SpanTree;
@@ -110,21 +111,21 @@ UrlFieldInverter::endElement()
 }
 
 void
-UrlFieldInverter::processUrlField(const FieldValue &url_field)
+UrlFieldInverter::processUrlField(const FieldValue &url_field, const Document& doc)
 {
     assert(url_field.isA(FieldValue::Type::STRING));
     const vespalib::string &url_str =
         static_cast<const StringFieldValue &>(url_field).getValue();
-    processUrlOldStyle(url_str);
+    processUrlOldStyle(url_str, doc);
     return;
 }
 
 void
-UrlFieldInverter::processUrlOldStyle(const vespalib::string &s)
+UrlFieldInverter::processUrlOldStyle(const vespalib::string &s, const Document& doc)
 {
     URL url(reinterpret_cast<const unsigned char *>(s.data()), s.size());
 
-    _hostname->addWord(HOSTNAME_BEGIN);
+    _hostname->addWord(HOSTNAME_BEGIN, doc);
 
     vespalib::string lowToken;
     const unsigned char *t;
@@ -137,60 +138,60 @@ UrlFieldInverter::processUrlOldStyle(const vespalib::string &s)
         vespalib::stringref tokenRef(token, tokenLen);
         switch (url_context) {
         case URL::URL_SCHEME:
-            _scheme->addWord(tokenRef);
-            _all->addWord(tokenRef);
+            _scheme->addWord(tokenRef, doc);
+            _all->addWord(tokenRef, doc);
             break;
         case URL::URL_HOST:
         case URL::URL_DOMAIN:
         case URL::URL_MAINTLD:
-            _host->addWord(tokenRef);
-            _hostname->addWord(tokenRef);
-            _all->addWord(tokenRef);
+            _host->addWord(tokenRef, doc);
+            _hostname->addWord(tokenRef, doc);
+            _all->addWord(tokenRef, doc);
             break;
         case URL::URL_PORT:
             if (strcmp(token, "80") && strcmp(token, "443")) {
-                _port->addWord(tokenRef);
-                _all->addWord(tokenRef);
+                _port->addWord(tokenRef, doc);
+                _all->addWord(tokenRef, doc);
             }
             break;
         case URL::URL_PATH:
         case URL::URL_FILENAME:
         case URL::URL_EXTENSION:
         case URL::URL_PARAMS:
-            _path->addWord(tokenRef);
-            _all->addWord(tokenRef);
+            _path->addWord(tokenRef, doc);
+            _all->addWord(tokenRef, doc);
             break;
         case URL::URL_QUERY:
-            _query->addWord(tokenRef);
-            _all->addWord(tokenRef);
+            _query->addWord(tokenRef, doc);
+            _all->addWord(tokenRef, doc);
             break;
         case URL::URL_FRAGMENT:
-            _fragment->addWord(tokenRef);
-            _all->addWord(tokenRef);
+            _fragment->addWord(tokenRef, doc);
+            _all->addWord(tokenRef, doc);
             break;
         case URL::URL_ADDRESS:
-            _all->addWord(tokenRef);
+            _all->addWord(tokenRef, doc);
             break;
         default:
             LOG(warning, "Ignoring unknown Uri token '%s'.", token);
         }
     }
-    _hostname->addWord(HOSTNAME_END);
+    _hostname->addWord(HOSTNAME_END, doc);
 }
 
 void
-UrlFieldInverter::processArrayUrlField(const ArrayFieldValue &field)
+UrlFieldInverter::processArrayUrlField(const ArrayFieldValue &field, const Document& doc)
 {
     for (uint32_t el(0), ele(field.size());el < ele; ++el) {
         const FieldValue &element = field[el];
         startElement(1);
-        processUrlField(element);
+        processUrlField(element, doc);
         endElement();
     }
 }
 
 void
-UrlFieldInverter::processWeightedSetUrlField(const WeightedSetFieldValue &field)
+UrlFieldInverter::processWeightedSetUrlField(const WeightedSetFieldValue &field, const Document& doc)
 {
     for (const auto & el : field) {
         const FieldValue &key = *el.first;
@@ -198,7 +199,7 @@ UrlFieldInverter::processWeightedSetUrlField(const WeightedSetFieldValue &field)
         assert(xweight.isA(FieldValue::Type::INT));
         int32_t weight = xweight.getAsInt();
         startElement(weight);
-        processUrlField(key);
+        processUrlField(key, doc);
         endElement();
     }
 }
@@ -214,13 +215,13 @@ isUriType(const DataType &type)
 }
 
 void
-UrlFieldInverter::invertUrlField(const FieldValue &val)
+UrlFieldInverter::invertUrlField(const FieldValue &val, const Document& doc)
 {
     switch (_collectionType) {
     case CollectionType::SINGLE:
         if (isUriType(*val.getDataType())) {
             startElement(1);
-            processUrlField(val);
+            processUrlField(val, doc);
             endElement();
         } else {
             throw std::runtime_error(make_string("Expected URI field, got '%s'", val.getDataType()->getName().c_str()));
@@ -230,7 +231,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
         assert(val.isA(FieldValue::Type::WSET));
         const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
         if (isUriType(wset.getNestedType())) {
-            processWeightedSetUrlField(wset);
+            processWeightedSetUrlField(wset, doc);
         } else {
             throw std::runtime_error(
                     make_string("Expected wset of URI struct, got '%s'", wset.getNestedType().getName().c_str()));
@@ -241,7 +242,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
         assert(val.isA(FieldValue::Type::ARRAY));
         const auto &arr = static_cast<const ArrayFieldValue &>(val);
         if (isUriType(arr.getNestedType())) {
-            processArrayUrlField(arr);
+            processArrayUrlField(arr, doc);
         } else {
             throw std::runtime_error(
                     make_string("Expected array of URI struct, got '%s' (%s)", arr.getNestedType().getName().c_str(),
@@ -255,11 +256,11 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
 }
 
 void
-UrlFieldInverter::invertField(uint32_t docId, const FieldValue::UP &val)
+UrlFieldInverter::invertField(uint32_t docId, const FieldValue::UP &val, const Document& doc)
 {
     if (val) {
         startDoc(docId);
-        invertUrlField(*val);
+        invertUrlField(*val, doc);
         endDoc();
     } else {
         removeDocument(docId);

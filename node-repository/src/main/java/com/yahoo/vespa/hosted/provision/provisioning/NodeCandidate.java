@@ -81,6 +81,9 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
     public abstract boolean preferToRetire();
 
+    /** Returns true if we have decided to retire this node as part of this deployment */
+    public boolean retiredNow() { return false; }
+
     public abstract boolean wantToFail();
 
     public abstract Flavor flavor();
@@ -217,7 +220,12 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
     /** Returns a copy of this with node set to given value */
     NodeCandidate withNode(Node node) {
-        return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
+        return withNode(node, retiredNow());
+    }
+
+    /** Returns a copy of this with node set to given value */
+    NodeCandidate withNode(Node node, boolean retiredNow) {
+        return new ConcreteNodeCandidate(node, retiredNow, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
     }
 
     /** Returns the switch priority, based on switch exclusivity, of this compared to other */
@@ -260,7 +268,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                             boolean isSurplus,
                                             boolean isNew,
                                             boolean isResizeable) {
-        return new ConcreteNodeCandidate(node, freeParentCapacity, Optional.of(parent), violatesSpares, true, isSurplus, isNew, isResizeable);
+        return new ConcreteNodeCandidate(node, false, freeParentCapacity, Optional.of(parent), violatesSpares, true, isSurplus, isNew, isResizeable);
     }
 
     public static NodeCandidate createNewChild(NodeResources resources,
@@ -274,24 +282,31 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
     }
 
     public static NodeCandidate createNewExclusiveChild(Node node, Node parent) {
-        return new ConcreteNodeCandidate(node, node.resources(), Optional.of(parent), false, true, false, true, false);
+        return new ConcreteNodeCandidate(node, false, node.resources(), Optional.of(parent), false, true, false, true, false);
     }
 
     public static NodeCandidate createStandalone(Node node, boolean isSurplus, boolean isNew) {
-        return new ConcreteNodeCandidate(node, node.resources(), Optional.empty(), false, true, isSurplus, isNew, false);
+        return new ConcreteNodeCandidate(node, false, node.resources(), Optional.empty(), false, true, isSurplus, isNew, false);
     }
 
     /** A candidate backed by a node */
     static class ConcreteNodeCandidate extends NodeCandidate {
 
         private final Node node;
+        private final boolean retiredNow;
 
-        ConcreteNodeCandidate(Node node, NodeResources freeParentCapacity, Optional<Node> parent,
+        ConcreteNodeCandidate(Node node,
+                              boolean retiredNow,
+                              NodeResources freeParentCapacity, Optional<Node> parent,
                               boolean violatesSpares, boolean exclusiveSwitch,
                               boolean isSurplus, boolean isNew, boolean isResizeable) {
             super(freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizeable);
+            this.retiredNow = retiredNow;
             this.node = Objects.requireNonNull(node, "Node cannot be null");
         }
+
+        @Override
+        public boolean retiredNow() { return retiredNow; }
 
         @Override
         public NodeResources resources() { return node.resources(); }
@@ -322,7 +337,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
         @Override
         public NodeCandidate allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
-            return new ConcreteNodeCandidate(node.allocate(owner, membership, requestedResources, at),
+            return new ConcreteNodeCandidate(node.allocate(owner, membership, requestedResources, at), retiredNow,
                                              freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
         }
 
@@ -332,7 +347,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
         @Override
         public NodeCandidate withExclusiveSwitch(boolean exclusiveSwitch) {
-            return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, exclusiveSwitch,
+            return new ConcreteNodeCandidate(node, retiredNow, freeParentCapacity, parent, violatesSpares, exclusiveSwitch,
                                              isSurplus, isNew, isResizable);
         }
 
@@ -439,7 +454,7 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                      NodeType.tenant)
                             .cloudAccount(parent.get().cloudAccount())
                             .build();
-            return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
+            return new ConcreteNodeCandidate(node, false, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
 
         }
 

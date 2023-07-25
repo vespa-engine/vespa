@@ -67,6 +67,7 @@ using search::attribute::WeightedEnumContent;
 using search::attribute::test::AttributeBuilder;
 using search::common::GeoLocation;
 using search::common::GeoLocationSpec;
+using vespalib::eval::ValueType;
 
 using AttributePtr = AttributeVector::SP;
 using AVC = search::attribute::Config;
@@ -391,6 +392,14 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
     avs.push_back(AttributeFactory::createAttribute("sbool",   AVC(AVBT::BOOL,  AVCT::SINGLE))); // 14
     avs.push_back(AttributeFactory::createAttribute("sebool",   AVC(AVBT::BOOL,  AVCT::SINGLE))); // 15
     avs.push_back(AttributeFactory::createAttribute("sdouble",   AVC(AVBT::DOUBLE,  AVCT::SINGLE))); // 16
+    {
+        AVC cfg(AVBT::TENSOR, AVCT::SINGLE);
+        cfg.setTensorType(ValueType::from_spec("tensor(x[2])"));
+        avs.push_back(AttributeFactory::createAttribute("tensor", cfg));
+    }
+    avs.push_back(AttributeFactory::createAttribute("predicate", AVC(AVBT::PREDICATE, AVCT::SINGLE))); // 18
+    avs.push_back(AttributeFactory::createAttribute("reference", AVC(AVBT::REFERENCE, AVCT::SINGLE))); // 19
+    avs.push_back(AttributeFactory::createAttribute("raw", AVC(AVBT::RAW, AVCT::SINGLE))); // 20
 
     // simulate a unique only attribute as specified in sd
     AVC cfg(AVBT::INT32, AVCT::SINGLE);
@@ -417,7 +426,11 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sdouble")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sbyte")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOL,"sbool")
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOL,"sebool");
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOL,"sebool")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::TENSOR, "tensor")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOLEANTREE, "predicate")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::REFERENCE, "reference")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::RAW, "raw");
     }
 
     for (const auto & attr : avs) {
@@ -1499,6 +1512,10 @@ Test::testMatch()
          ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sint");
          ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint");
          ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsint");
+         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "tensor");
+         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "predicate");
+         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "reference");
+         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "raw");
 
         FtIndexEnvironment idx_env;
         idx_env.getBuilder()
@@ -1507,7 +1524,11 @@ Test::testMatch()
             .addField(FieldType::INDEX, CollectionType::WEIGHTEDSET, "baz")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sint")
             .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint")
-            .addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsint");
+            .addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsint")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::TENSOR, "tensor")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOLEANTREE, "predicate")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::REFERENCE, "reference")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::RAW, "raw");
 
         StringList params, in, out;
         FT_SETUP_OK(pt, params, in, out.add("score").add("totalWeight"));

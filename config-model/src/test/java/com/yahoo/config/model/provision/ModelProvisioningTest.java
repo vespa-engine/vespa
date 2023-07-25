@@ -1313,7 +1313,7 @@ public class ModelProvisioningTest {
                         "     </documents>" +
                         "     <nodes count='24'/>" +
                         "     <engine><proton><searchable-copies>5</searchable-copies></proton></engine>" +
-                        "     <dispatch><num-dispatch-groups>7</num-dispatch-groups></dispatch>" +
+                        "     <dispatch><num-dispatch-groups>7</num-dispatch-groups></dispatch>" + // TODO: Allowed, but ignored, remove in Vespa 9
                         "  </content>" +
                         "</services>";
 
@@ -1327,7 +1327,6 @@ public class ModelProvisioningTest {
         assertEquals(4, cluster.getRedundancy().effectiveInitialRedundancy());
         assertEquals(4, cluster.getRedundancy().effectiveFinalRedundancy());
         assertEquals(4, cluster.getRedundancy().effectiveReadyCopies());
-        assertEquals(4, cluster.getSearch().getIndexed().getDispatchSpec().getGroups().size());
         assertEquals(4, cluster.getSearch().getIndexed().getSearchableCopies());
         assertFalse(cluster.getRootGroup().getPartitions().isPresent());
         assertEquals(4, cluster.getRootGroup().getNodes().size());
@@ -1477,7 +1476,6 @@ public class ModelProvisioningTest {
         assertEquals(1, cluster.getRedundancy().effectiveFinalRedundancy());
         assertEquals(1, cluster.getRedundancy().effectiveReadyCopies());
 
-        assertEquals(1, cluster.getSearch().getIndexed().getDispatchSpec().getGroups().size());
         assertFalse(cluster.getRootGroup().getPartitions().isPresent());
         assertEquals(1, cluster.getRootGroup().getNodes().size());
         assertEquals(0, cluster.getRootGroup().getSubgroups().size());
@@ -2375,7 +2373,7 @@ public class ModelProvisioningTest {
                         "    <nodes count='4' groups='4'/>" +
                         "    <tuning>" +
                         "      <cluster-controller>" +
-                        "        <max-groups-allowed-down>2</max-groups-allowed-down>" +
+                        "        <groups-allowed-down-ratio>0.5</groups-allowed-down-ratio>" +
                         "      </cluster-controller>" +
                         "    </tuning>" +
                         "  </content>" +
@@ -2577,44 +2575,6 @@ public class ModelProvisioningTest {
         assertEquals(2000, cfg.flush().memory().maxtlssize()); // from config override
         assertEquals(1000, cfg.flush().memory().maxmemory()); // from explicit tuning
         assertEquals((long) ((128 - memoryOverheadGb) * GB * 0.08), cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
-    }
-
-    @Test
-    public void warn_on_insufficient_disk_resources() {
-        String services = """
-                <?xml version='1.0' encoding='utf-8' ?>
-                <services>
-                  <container version='1.0' id='c1'>
-                    <nodes count='1'>
-                      <resources vcpu='1' memory='24Gb' disk='40Gb'/>
-                    </nodes>
-                  </container>
-                  <container version='1.0' id='c2'>
-                    <nodes count='1'>
-                      <resources vcpu='1' memory='24Gb' disk='50Gb'/>
-                    </nodes>
-                  </container>
-                  <content version='1.0' id='c3'>
-                    <redundancy>1</redundancy>
-                    <documents>
-                      <document type='type1' mode='index'/>
-                    </documents>
-                    <nodes count='1'>
-                      <resources vcpu='1' memory='24Gb' disk='50Gb'/>
-                    </nodes>
-                  </content>
-                </services>
-                """;
-        VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(new NodeResources(1, 24, 50, 1, DiskSpeed.fast), 10);
-        TestLogger testLogger = new TestLogger();
-        VespaModel model = tester.createModel(services, true, new DeployState.Builder().deployLogger(testLogger));
-        assertEquals(1, model.getContainerClusters().get("c1").getContainers().size());
-        assertEquals(1, model.getContainerClusters().get("c2").getContainers().size());
-        assertEquals(1, model.getContentClusters().get("c3").getSearch().getSearchNodes().size());
-        assertEquals(List.of(new TestLogger.LogMessage(Level.WARNING, "Requested disk (40.0Gb) in cluster 'c1' is not large enough to fit core/heap dumps. Minimum recommended disk resources is 48.0Gb"),
-                             new TestLogger.LogMessage(Level.WARNING, "Requested disk (50.0Gb) in cluster 'c3' is not large enough to fit core/heap dumps. Minimum recommended disk resources is 72.0Gb")),
-                     testLogger.msgs());
     }
 
     private static ProtonConfig getProtonConfig(VespaModel model, String configId) {

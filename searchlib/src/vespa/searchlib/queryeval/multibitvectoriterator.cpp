@@ -29,12 +29,12 @@ public:
         memset(_lastWords, 0, sizeof(_lastWords));
     }
 protected:
-    void updateLastValue(uint32_t docId);
-    void strictSeek(uint32_t docId);
+    void updateLastValue(uint32_t docId) noexcept;
+    void strictSeek(uint32_t docId) noexcept;
 private:
     void doSeek(uint32_t docId) override;
     Trinary is_strict() const override { return Trinary::False; }
-    bool acceptExtraFilter() const override { return Update::isAnd(); }
+    bool acceptExtraFilter() const noexcept final { return Update::isAnd(); }
     Update              _update;
     const IAccelrated & _accel;
     alignas(64) Word    _lastWords[8];
@@ -42,7 +42,7 @@ private:
 };
 
 template<typename Update>
-class MultiBitVectorIteratorStrict : public MultiBitVectorIterator<Update>
+class MultiBitVectorIteratorStrict final : public MultiBitVectorIterator<Update>
 {
 public:
     explicit MultiBitVectorIteratorStrict(MultiSearch::Children  children)
@@ -55,36 +55,36 @@ private:
 
 struct And {
     using Word = BitWord::Word;
-    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, void *dest) {
+    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, void *dest) noexcept {
         accel.and64(offset, src, dest);
     }
-    static bool isAnd() { return true; }
+    static bool isAnd() noexcept { return true; }
 };
 
 struct Or {
     using Word = BitWord::Word;
-    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, void *dest) {
+    void operator () (const IAccelrated & accel, size_t offset, const std::vector<std::pair<const void *, bool>> & src, void *dest) noexcept {
         accel.or64(offset, src, dest);
     }
-    static bool isAnd() { return false; }
+    static bool isAnd() noexcept { return false; }
 };
 
 template<typename Update>
-void MultiBitVectorIterator<Update>::updateLastValue(uint32_t docId)
+void MultiBitVectorIterator<Update>::updateLastValue(uint32_t docId) noexcept
 {
     if (docId >= _lastMaxDocIdLimit) {
         if (__builtin_expect(docId >= _numDocs, false)) {
             setAtEnd();
             return;
         }
-        const uint32_t index(wordNum(docId));
+        const uint32_t index(BitWord::wordNum(docId));
         if (docId >= _lastMaxDocIdLimitRequireFetch) {
             uint32_t baseIndex = index & ~(NumWordsInBatch - 1);
             _update(_accel, baseIndex*sizeof(Word), _bvs, _lastWords);
-            _lastMaxDocIdLimitRequireFetch = (baseIndex + NumWordsInBatch) * WordLen;
+            _lastMaxDocIdLimitRequireFetch = (baseIndex + NumWordsInBatch) * BitWord::WordLen;
         }
         _lastValue = _lastWords[index % NumWordsInBatch];
-        _lastMaxDocIdLimit = (index + 1) * WordLen;
+        _lastMaxDocIdLimit = (index + 1) * BitWord::WordLen;
     }
 }
 
@@ -94,7 +94,7 @@ MultiBitVectorIterator<Update>::doSeek(uint32_t docId)
 {
     updateLastValue(docId);
     if (__builtin_expect( ! isAtEnd(), true)) {
-        if (_lastValue & mask(docId)) {
+        if (_lastValue & BitWord::mask(docId)) {
             setDocId(docId);
         }
     }
@@ -102,13 +102,13 @@ MultiBitVectorIterator<Update>::doSeek(uint32_t docId)
 
 template<typename Update>
 void
-MultiBitVectorIterator<Update>::strictSeek(uint32_t docId)
+MultiBitVectorIterator<Update>::strictSeek(uint32_t docId) noexcept
 {
-    for (updateLastValue(docId), _lastValue = _lastValue & checkTab(docId);
+    for (updateLastValue(docId), _lastValue = _lastValue & BitWord::checkTab(docId);
          (_lastValue == 0) && __builtin_expect(! isAtEnd(), true);
          updateLastValue(_lastMaxDocIdLimit));
     if (__builtin_expect(!isAtEnd(), true)) {
-        docId = _lastMaxDocIdLimit - WordLen + vespalib::Optimized::lsbIdx(_lastValue);
+        docId = _lastMaxDocIdLimit - BitWord::WordLen + vespalib::Optimized::lsbIdx(_lastValue);
         if (__builtin_expect(docId >= _numDocs, false)) {
             setAtEnd();
         } else {

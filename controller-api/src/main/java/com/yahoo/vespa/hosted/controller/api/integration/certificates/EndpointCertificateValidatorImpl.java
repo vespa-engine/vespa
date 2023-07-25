@@ -31,9 +31,9 @@ public class EndpointCertificateValidatorImpl implements EndpointCertificateVali
     }
 
     @Override
-    public void validate(EndpointCertificateMetadata endpointCertificateMetadata, String serializedInstanceId, ZoneId zone, List<String> requiredNamesForZone) {
+    public void validate(EndpointCertificate endpointCertificate, String serializedInstanceId, ZoneId zone, List<String> requiredNamesForZone) {
         try {
-            var pemEncodedEndpointCertificate = secretStore.getSecret(endpointCertificateMetadata.certName(), endpointCertificateMetadata.version());
+            var pemEncodedEndpointCertificate = secretStore.getSecret(endpointCertificate.certName(), endpointCertificate.version());
 
             if (pemEncodedEndpointCertificate == null)
                 throw new EndpointCertificateException(EndpointCertificateException.Type.CERT_NOT_AVAILABLE, "Secret store returned null for certificate");

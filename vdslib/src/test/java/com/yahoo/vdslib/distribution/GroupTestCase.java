@@ -31,7 +31,7 @@ public class GroupTestCase {
 
     private void assertDistributionFailure(String spec, int redundancy, String expectedError) {
         try{
-            Group.Distribution distribution = new Group.Distribution(spec, redundancy);
+            new Group.Distribution(spec, redundancy);
             fail("Failed to fail parsing of spec \"" + spec + "\", redundancy " + redundancy + " with failure: " + expectedError);
         } catch (Exception e) {
             assertEquals(expectedError, e.getMessage());

@@ -10,6 +10,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -60,7 +61,7 @@ public class InfraDeployerImplTest {
 
     private final NodeRepositoryTester tester = new NodeRepositoryTester();
     private final NodeRepository nodeRepository = tester.nodeRepository();
-    private final Provisioner provisioner = spy(new NodeRepositoryProvisioner(nodeRepository, Zone.defaultZone(), new EmptyProvisionServiceProvider()));
+    private final Provisioner provisioner = spy(new NodeRepositoryProvisioner(nodeRepository, Zone.defaultZone(), new EmptyProvisionServiceProvider(), new MockMetric()));
     private final InfrastructureVersions infrastructureVersions = nodeRepository.infrastructureVersions();
     private final DuperModelInfraApi duperModelInfraApi = mock(DuperModelInfraApi.class);
     private final InfraDeployerImpl infraDeployer;

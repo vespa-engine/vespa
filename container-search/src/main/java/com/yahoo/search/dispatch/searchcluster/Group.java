@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.searchcluster;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -21,7 +22,7 @@ public class Group {
     private final List<Node> nodes;
 
     // Using volatile to ensure visibility for reader.
-    // All udates are done in a single writer thread
+    // All updates are done in a single writer thread
     private volatile boolean hasSufficientCoverage = true;
     private volatile boolean hasFullCoverage = true;
     private volatile long activeDocuments = 0;
@@ -51,7 +52,7 @@ public class Group {
 
     /**
      * Returns whether this group has sufficient active documents
-     * (compared to other groups) that is should receive traffic
+     * (compared to other groups) that should receive traffic
      */
     public boolean hasSufficientCoverage() {
         return hasSufficientCoverage;
@@ -66,14 +67,16 @@ public class Group {
     }
 
     public void aggregateNodeValues() {
-        long activeDocs = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getActiveDocuments).sum();
+        List<Node> workingNodes = new ArrayList<>(nodes);
+        workingNodes.removeIf(node -> node.isWorking() != Boolean.TRUE);
+        long activeDocs = workingNodes.stream().mapToLong(Node::getActiveDocuments).sum();
         activeDocuments = activeDocs;
-        targetActiveDocuments = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getTargetActiveDocuments).sum();
+        targetActiveDocuments = workingNodes.stream().mapToLong(Node::getTargetActiveDocuments).sum();
         isBlockingWrites = nodes.stream().anyMatch(Node::isBlockingWrites);
-        int numWorkingNodes = workingNodes();
+        int numWorkingNodes = workingNodes.size();
         if (numWorkingNodes > 0) {
             long average = activeDocs / numWorkingNodes;
-            long skew = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
+            long skew = workingNodes.stream().mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
             boolean balanced = skew <= activeDocs * maxContentSkew;
             if (balanced != isBalanced) {
                 if (!isSparse())

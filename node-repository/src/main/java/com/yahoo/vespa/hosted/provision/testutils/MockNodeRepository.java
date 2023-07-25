@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
-import com.yahoo.config.provision.ClusterInfo;
-import com.yahoo.config.provision.IntRange;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
@@ -10,12 +8,14 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -25,6 +25,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -42,6 +43,9 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
+import com.yahoo.vespa.service.duper.ConfigServerApplication;
+import com.yahoo.vespa.service.duper.InfraApplication;
+import com.yahoo.vespa.service.duper.TenantHostApplication;
 
 import javax.inject.Inject;
 import java.time.Clock;
@@ -101,7 +105,7 @@ public class MockNodeRepository extends NodeRepository {
     }
 
     private void populate() {
-        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, Zone.defaultZone(), new MockProvisionServiceProvider());
+        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, Zone.defaultZone(), new MockProvisionServiceProvider(), new MockMetric());
         List<Node> nodes = new ArrayList<>();
 
         // Regular nodes
@@ -189,13 +193,11 @@ public class MockNodeRepository extends NodeRepository {
         nodes().removeRecursively("dockerhost6.yahoo.com");
 
         // Activate config servers
-        ApplicationId cfgApp = ApplicationId.from("cfg", "cfg", "cfg");
-        ClusterSpec cfgCluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("configservers")).vespaVersion("6.42").build();
-        activate(provisioner.prepare(cfgApp, cfgCluster, Capacity.fromRequiredNodeType(NodeType.config), null), cfgApp, provisioner);
+        InfraApplication cfgApp = new ConfigServerApplication();
+        activate(provisioner.prepare(cfgApp.getApplicationId(), cfgApp.getClusterSpecWithVersion(Version.fromString("6.42")), cfgApp.getCapacity(), null), cfgApp.getApplicationId(), provisioner);
 
-        ApplicationId zoneApp = ApplicationId.from(TenantName.from("zoneapp"), ApplicationName.from("zoneapp"), InstanceName.from("zoneapp"));
-        ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
-        activate(provisioner.prepare(zoneApp, zoneCluster, Capacity.fromRequiredNodeType(NodeType.host), null), zoneApp, provisioner);
+        InfraApplication tenantHostApp = new TenantHostApplication();
+        activate(provisioner.prepare(tenantHostApp.getApplicationId(), tenantHostApp.getClusterSpecWithVersion(Version.fromString("6.42")), tenantHostApp.getCapacity(), null), tenantHostApp.getApplicationId(), provisioner);
 
         ApplicationId app1Id = ApplicationId.from(TenantName.from("tenant1"), ApplicationName.from("application1"), InstanceName.from("instance1"));
         ClusterSpec cluster1Id = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1"))

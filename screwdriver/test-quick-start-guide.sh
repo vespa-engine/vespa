@@ -12,7 +12,7 @@ cd $TESTDIR
 # Clone and setup doc tests
 git clone -q --depth 1 https://github.com/vespa-engine/documentation
 cd documentation
-python3 -m pip install -qqq -r test/requirements.txt --user
+python3.9 -m pip install -qqq -r test/requirements.txt --user
 echo -e "urls:\n    - en/vespa-quick-start.html" > test/_quick-start.yaml
 
 # Get the required vespa CLI
@@ -21,5 +21,5 @@ curl -fsSL https://github.com/vespa-engine/vespa/releases/download/v${VESPA_CLI_
 ln -sf /opt/vespa-cli_${VESPA_CLI_VERSION}_linux_amd64/bin/vespa /usr/local/bin/
 
 # Run test
-test/test.py -v -c test/_quick-start.yaml
+python3.9 test/test.py -v -c test/_quick-start.yaml
 

@@ -44,7 +44,7 @@ public:
         bool initRankSetup(const search::fef::BlueprintFactory & factory);
         bool setup(const RankManager & manager);
         int getIndex(const vespalib::string & key) const {
-            Map::const_iterator found(_rpmap.find(key));
+            auto found = _rpmap.find(key);
             return (found != _rpmap.end()) ? found->second : 0;
         }
 
@@ -60,7 +60,7 @@ public:
             return _indexEnv[getIndex(rankProfile)];
         }
         const View *getView(const vespalib::string & index) const {
-            ViewMap::const_iterator itr = _views.find(index);
+            auto itr = _views.find(index);
             if (itr != _views.end()) {
                 return &itr->second;
             }

@@ -111,6 +111,7 @@ import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.SupportAccessSerializer;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
+import com.yahoo.vespa.hosted.controller.restapi.dataplanetoken.DataplaneTokenService;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
@@ -150,6 +151,7 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
@@ -250,6 +252,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse handleGET(Path path, HttpRequest request) {
         if (path.matches("/application/v4/")) return root(request);
+        if (path.matches("/application/v4/search/{*}")) return search(path, request);
         if (path.matches("/application/v4/notifications")) return notifications(request, Optional.ofNullable(request.getProperty("tenant")), true);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
@@ -309,6 +312,57 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return getGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
+
+    private HttpResponse search(Path path, HttpRequest request) {
+        if (path.matches("/application/v4/search/deployment")) return searchDeploymentsByEndpoint(request);
+        return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse searchDeploymentsByEndpoint(HttpRequest request) {
+        String endpoint = request.getProperty("endpoint");
+        if (endpoint == null) {
+            throw new IllegalArgumentException("Missing 'endpoint' query parameter");
+        }
+        endpoint = endpoint.trim();
+        if (endpoint.startsWith("https://") || endpoint.startsWith("http://")) {
+            // Trim scheme and port
+            endpoint = URI.create(endpoint).getHost();
+        }
+        List<Application> applications = controller.applications().asList();
+        record EndpointTarget(DeploymentId deployment, ClusterSpec.Id cluster) {}
+        List<EndpointTarget> targets = new ArrayList<>();
+        out:
+        for (var app : applications) {
+            Optional<Endpoint> declaredEndpoint = controller.routing().declaredEndpointsOf(app).dnsName(endpoint);
+            if (declaredEndpoint.isPresent()) {
+                for (var target : declaredEndpoint.get().targets()) {
+                    targets.add(new EndpointTarget(target.deployment(), declaredEndpoint.get().cluster()));
+                }
+                break;
+            } else {
+                for (var instance : app.instances().values()) {
+                    for (var deployment : instance.deployments().values()) {
+                        DeploymentId id = new DeploymentId(instance.id(), deployment.zone());
+                        Optional<Endpoint> matchingEndpoint = controller.routing().readEndpointsOf(id).dnsName(endpoint);
+                        if (matchingEndpoint.isPresent()) {
+                            for (var target : matchingEndpoint.get().targets()) {
+                                targets.add(new EndpointTarget(target.deployment(), matchingEndpoint.get().cluster()));
+                            }
+                            break out;
+                        }
+                    }
+                }
+            }
+        }
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        Cursor deploymentArray = root.setArray("deployments");
+        for (var target : targets) {
+            toSlime(target.deployment, target.cluster, deploymentArray.addObject(), request);
+        }
+        return new SlimeJsonResponse(slime);
+    }
+
 
     private HttpResponse handlePUT(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
@@ -925,6 +979,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 fingerprintObject.setString("fingerprint", tokenVersion.fingerPrint().value());
                 fingerprintObject.setString("created", tokenVersion.creationTime().toString());
                 fingerprintObject.setString("author", tokenVersion.author());
+                fingerprintObject.setString("expiration", tokenVersion.expiration().map(Instant::toString).orElse("<none>"));
             }
         }
         return new SlimeJsonResponse(slime);
@@ -932,12 +987,17 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
 
     private HttpResponse generateToken(String tenant, String tokenid, HttpRequest request) {
-        DataplaneToken token = controller.dataplaneTokenService().generateToken(TenantName.from(tenant), TokenId.of(tokenid), request.getJDiscRequest().getUserPrincipal());
+        // 'expiration=PT0S' for no expiration, no 'expiration' for default TTL.
+        Duration expiration = Optional.ofNullable(request.getProperty("expiration"))
+                .map(Duration::parse).orElse(DataplaneTokenService.DEFAULT_TTL);
+        DataplaneToken token = controller.dataplaneTokenService().generateToken(
+                TenantName.from(tenant), TokenId.of(tokenid), expiration, request.getJDiscRequest().getUserPrincipal());
         Slime slime = new Slime();
         Cursor tokenObject = slime.setObject();
         tokenObject.setString("id", token.tokenId().value());
         tokenObject.setString("token", token.tokenValue());
         tokenObject.setString("fingerprint", token.fingerPrint().value());
+        tokenObject.setString("expiration", token.expiration().map(Instant::toString).orElse("<none>"));
         return new SlimeJsonResponse(slime);
     }
 
@@ -1891,7 +1951,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setString("scope", endpointScopeString(endpoint.scope()));
         object.setString("routingMethod", routingMethodString(endpoint.routingMethod()));
         object.setBool("legacy", endpoint.legacy());
-        object.setString("authMethod", endpoint.isTokenEndpoint() ? "token" : "mtls");
+        switch (endpoint.authMethod()) {
+            case mtls -> object.setString("authMethod", "mtls");
+            case token -> object.setString("authMethod", "token");
+        }
     }
 
     private void toSlime(Cursor response, DeploymentId deploymentId, Deployment deployment, HttpRequest request) {
@@ -1902,28 +1965,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setString("region", deploymentId.zoneId().region().value());
         addAvailabilityZone(response, deployment.zone());
         var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
-
-        // Add zone endpoints
         boolean legacyEndpoints = request.getBooleanProperty("includeLegacyEndpoints");
         var endpointArray = response.setArray("endpoints");
-        EndpointList zoneEndpoints = controller.routing().readEndpointsOf(deploymentId)
-                                               .scope(Endpoint.Scope.zone);
-        if (!legacyEndpoints) {
-            zoneEndpoints = zoneEndpoints.not().legacy().direct();
-        }
-        for (var endpoint : zoneEndpoints) {
+        for (var endpoint : endpointsOf(deploymentId, application, legacyEndpoints)) {
             toSlime(endpoint, endpointArray.addObject());
         }
-        // Add declared endpoints
-        EndpointList declaredEndpoints = controller.routing().declaredEndpointsOf(application)
-                                                   .targets(deploymentId);
-        if (!legacyEndpoints) {
-            declaredEndpoints = declaredEndpoints.not().legacy().direct();
-        }
-        for (var endpoint : declaredEndpoints) {
-            toSlime(endpoint, endpointArray.addObject());
-        }
-
         response.setString("clusters", withPath(toPath(deploymentId) + "/clusters", request.getUri()).toString());
         response.setString("nodes", withPathAndQuery("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/", "recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
@@ -1994,6 +2040,24 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         metricsObject.setDouble("queryLatencyMillis", metrics.queryLatencyMillis());
         metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
         metrics.instant().ifPresent(instant -> metricsObject.setLong("lastUpdated", instant.toEpochMilli()));
+    }
+
+    private EndpointList endpointsOf(DeploymentId deploymentId, Application application, boolean legacyEndpoints) {
+        EndpointList zoneEndpoints = controller.routing().readEndpointsOf(deploymentId).scope(Endpoint.Scope.zone);
+        if (!legacyEndpoints) {
+            zoneEndpoints = zoneEndpoints.not().legacy().direct();
+        }
+        EndpointList declaredEndpoints = controller.routing().declaredEndpointsOf(application).targets(deploymentId);
+        if (!legacyEndpoints) {
+            declaredEndpoints = declaredEndpoints.not().legacy().direct();
+        }
+        EndpointList endpoints = zoneEndpoints.and(declaredEndpoints);
+        // If the application has any generated endpoints, we show only those
+        EndpointList generatedEndpoints = endpoints.generated();
+        if (!generatedEndpoints.isEmpty()) {
+            endpoints = generatedEndpoints;
+        }
+        return endpoints;
     }
 
     private void toSlime(RotationState state, Cursor object) {
@@ -2636,7 +2700,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                                       deployment.version(),
                                                                       deployment.revision(),
                                                                       deployment.at(),
-                                                                      controller.routing().readTestRunnerEndpointsOf(deployments),
+                                                                      controller.routing().readStepRunnerEndpointsOf(deployments),
                                                                       controller.applications().reachableContentClustersByZone(deployments)));
     }
 
@@ -3022,6 +3086,22 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                          "/tenant/" + id.tenant().value() +
                                          "/application/" + id.application().value() +
                                          "/instance/" + id.instance().value(),
+                                         request.getUri()).toString());
+    }
+
+    private void toSlime(DeploymentId id, ClusterSpec.Id cluster, Cursor object, HttpRequest request) {
+        object.setString("tenant", id.applicationId().tenant().value());
+        object.setString("application", id.applicationId().application().value());
+        object.setString("instance", id.applicationId().instance().value());
+        object.setString("environment", id.zoneId().environment().value());
+        object.setString("region", id.zoneId().region().value());
+        object.setString("cluster", cluster.value());
+        object.setString("url", withPath("/application/v4" +
+                                         "/tenant/" + id.applicationId().tenant().value() +
+                                         "/application/" + id.applicationId().application().value() +
+                                         "/instance/" + id.applicationId().instance().value() +
+                                         "/environment/" + id.zoneId().environment().value() +
+                                         "/region/" + id.zoneId().region().value(),
                                          request.getUri()).toString());
     }
 

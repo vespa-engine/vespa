@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -54,7 +55,7 @@ class HttpFeedClient implements FeedClient {
     private final boolean speedTest;
 
     HttpFeedClient(FeedClientBuilderImpl builder) throws IOException {
-        this(builder, builder.dryrun ? new DryrunCluster() : new ApacheCluster(builder));
+        this(builder, builder.dryrun ? new DryrunCluster() : new JettyCluster(builder));
     }
 
     HttpFeedClient(FeedClientBuilderImpl builder, Cluster cluster) {

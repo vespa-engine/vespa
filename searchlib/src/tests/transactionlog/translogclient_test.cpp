@@ -935,7 +935,7 @@ TEST("test truncate on version mismatch") {
     }
     FastOS_File f((testDir.getDir() + "/sync/sync-0000000000000000").c_str());
     EXPECT_TRUE(f.OpenWriteOnlyExisting());
-    EXPECT_TRUE(f.SetPosition(f.GetSize()));
+    EXPECT_TRUE(f.SetPosition(f.getSize()));
    
     char tmp[100];
     memset(tmp, 0, sizeof(tmp));

@@ -129,14 +129,14 @@ lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const
 }
 
 
-search::queryeval::SearchIterator *
+std::unique_ptr<search::queryeval::SearchIterator>
 FakeMemTreeOcc::
 createIterator(const fef::TermFieldMatchDataArray &matchData) const
 {
     return memoryindex::make_search_iterator<false>(_tree.begin(_allocator),
                                                     _mgr._featureStore,
                                                     _packedIndex,
-                                                    matchData).release();
+                                                    matchData);
 }
 
 
@@ -228,10 +228,9 @@ FakeMemTreeOccMgr::remove(uint32_t wordIdx, uint32_t docId)
 void
 FakeMemTreeOccMgr::sortUnflushed()
 {
-    using I = std::vector<PendingOp>::iterator;
     uint32_t seq = 0;
-    for (I i(_unflushed.begin()), ie(_unflushed.end()); i != ie; ++i) {
-        i->setSeq(++seq);
+    for (auto& elem : _unflushed) {
+        elem.setSeq(++seq);
     }
     std::sort(_unflushed.begin(), _unflushed.end());
 }
@@ -241,16 +240,15 @@ void
 FakeMemTreeOccMgr::flush()
 {
     using Aligner = FeatureStore::Aligner;
-    using I = std::vector<PendingOp>::iterator;
 
     if (_unflushed.empty())
         return;
 
     uint32_t lastWord = std::numeric_limits<uint32_t>::max();
     sortUnflushed();
-    for (I i(_unflushed.begin()), ie(_unflushed.end()); i != ie; ++i) {
-        uint32_t wordIdx = i->getWordIdx();
-        uint32_t docId = i->getDocId();
+    for (auto& elem : _unflushed) {
+        uint32_t wordIdx = elem.getWordIdx();
+        uint32_t docId = elem.getDocId();
         PostingIdx &pidx(*_postingIdxs[wordIdx].get());
         Tree &tree = pidx._tree;
         Tree::Iterator &itr = pidx._iterator;
@@ -261,7 +259,7 @@ FakeMemTreeOccMgr::flush()
             itr.linearSeek(docId);
         }
         lastWord = wordIdx;
-        if (i->getRemove()) {
+        if (elem.getRemove()) {
             if (itr.valid() && itr.getKey() == docId) {
                 uint64_t bits = _featureStore.bitSize(fw->getPackedIndex(), EntryRef(itr.getData().get_features_relaxed()));
                 _featureSizes[wordIdx] -= Aligner::align((bits + 7) / 8) * 8;
@@ -269,7 +267,7 @@ FakeMemTreeOccMgr::flush()
             }
         } else {
             if (!itr.valid() || docId < itr.getKey()) {
-                tree.insert(itr, docId, PostingListEntryType(i->getFeatureRef(), 0, 1));
+                tree.insert(itr, docId, PostingListEntryType(elem.getFeatureRef(), 0, 1));
             }
         }
     }
@@ -320,13 +318,12 @@ FakeMemTreeOccFactory::~FakeMemTreeOccFactory()
 FakePosting::SP
 FakeMemTreeOccFactory::make(const FakeWord &fw)
 {
-    std::map<const FakeWord *, uint32_t>::const_iterator
-        i(_mgr._fw2WordIdx.find(&fw));
+    auto itr = _mgr._fw2WordIdx.find(&fw);
 
-    if (i == _mgr._fw2WordIdx.end())
+    if (itr == _mgr._fw2WordIdx.end())
         LOG_ABORT("should not be reached");
 
-    uint32_t wordIdx = i->second;
+    uint32_t wordIdx = itr->second;
 
     assert(_mgr._postingIdxs.size() > wordIdx);
 
@@ -341,8 +338,8 @@ FakeMemTreeOccFactory::setup(const std::vector<const FakeWord *> &fws)
     using PostingIdx = FakeMemTreeOccMgr::PostingIdx;
     std::vector<FakeWord::RandomizedReader> r;
     uint32_t wordIdx = 0;
-    std::vector<const FakeWord *>::const_iterator fwi(fws.begin());
-    std::vector<const FakeWord *>::const_iterator fwe(fws.end());
+    auto fwi = fws.begin();
+    auto fwe = fws.end();
     while (fwi != fwe) {
         _mgr._fakeWords.push_back(*fwi);
         _mgr._featureSizes.push_back(0);
@@ -355,8 +352,8 @@ FakeMemTreeOccFactory::setup(const std::vector<const FakeWord *> &fws)
     }
 
     PostingPriorityQueueMerger<FakeWord::RandomizedReader, FakeWord::RandomizedWriter> heap;
-    std::vector<FakeWord::RandomizedReader>::iterator i(r.begin());
-    std::vector<FakeWord::RandomizedReader>::iterator ie(r.end());
+    auto i = r.begin();
+    auto ie = r.end();
     FlushToken flush_token;
     while (i != ie) {
         i->read();
@@ -386,8 +383,7 @@ FakeMemTreeOcc2Factory::~FakeMemTreeOcc2Factory() = default;
 FakePosting::SP
 FakeMemTreeOcc2Factory::make(const FakeWord &fw)
 {
-    std::map<const FakeWord *, uint32_t>::const_iterator
-        i(_mgr._fw2WordIdx.find(&fw));
+    auto i = _mgr._fw2WordIdx.find(&fw);
 
     if (i == _mgr._fw2WordIdx.end())
         LOG_ABORT("should not be reached");

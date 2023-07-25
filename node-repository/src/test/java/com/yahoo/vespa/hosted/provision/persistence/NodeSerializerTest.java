@@ -90,6 +90,7 @@ public class NodeSerializerTest {
                              requestedResources,
                              Instant.ofEpochMilli(1));
         assertEquals(1, node.history().events().size());
+        node = node.withExtraId(Optional.of("foobarbaz"));
         node = node.withRestart(new Generation(1, 2));
         node = node.withReboot(new Generation(3, 4));
         node = node.with(FlavorConfigBuilder.createDummies("arm64").getFlavorOrThrow("arm64"), Agent.system, Instant.ofEpochMilli(2));
@@ -102,6 +103,7 @@ public class NodeSerializerTest {
         Node copy = nodeSerializer.fromJson(nodeSerializer.toJson(node));
 
         assertEquals(node.id(), copy.id());
+        assertEquals(node.extraId(), copy.extraId());
         assertEquals(node.hostname(), copy.hostname());
         assertEquals(node.state(), copy.state());
         assertEquals(1, copy.allocation().get().restartGeneration().wanted());

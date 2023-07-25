@@ -16,7 +16,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
 
-func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
+func addFeedFlags(cli *CLI, cmd *cobra.Command, options *feedOptions) {
 	cmd.PersistentFlags().IntVar(&options.connections, "connections", 8, "The number of connections to use")
 	cmd.PersistentFlags().StringVar(&options.compression, "compression", "auto", `Compression mode to use. Default is "auto" which compresses large documents. Must be "auto", "gzip" or "none"`)
 	cmd.PersistentFlags().IntVar(&options.timeoutSecs, "timeout", 0, "Individual feed operation timeout in seconds. 0 to disable (default 0)")
@@ -34,6 +34,7 @@ func addFeedFlags(cmd *cobra.Command, options *feedOptions) {
 	// Hide these flags as they are intended for internal use
 	cmd.PersistentFlags().MarkHidden(memprofile)
 	cmd.PersistentFlags().MarkHidden(cpuprofile)
+	cli.bindWaitFlag(cmd, 0, &options.waitSecs)
 }
 
 type feedOptions struct {
@@ -47,6 +48,7 @@ type feedOptions struct {
 	summarySecs    int
 	speedtestBytes int
 	speedtestSecs  int
+	waitSecs       int
 
 	memprofile string
 	cpuprofile string
@@ -92,11 +94,11 @@ $ cat docs.jsonl | vespa feed -`,
 			return err
 		},
 	}
-	addFeedFlags(cmd, &options)
+	addFeedFlags(cli, cmd, &options)
 	return cmd
 }
 
-func createServices(n int, timeout time.Duration, cli *CLI) ([]util.HTTPClient, string, error) {
+func createServices(n int, timeout time.Duration, waitSecs int, cli *CLI) ([]util.HTTPClient, string, error) {
 	if n < 1 {
 		return nil, "", fmt.Errorf("need at least one client")
 	}
@@ -107,7 +109,7 @@ func createServices(n int, timeout time.Duration, cli *CLI) ([]util.HTTPClient, 
 	services := make([]util.HTTPClient, 0, n)
 	baseURL := ""
 	for i := 0; i < n; i++ {
-		service, err := cli.service(target, vespa.DocumentService, 0, cli.config.cluster())
+		service, err := cli.service(target, vespa.DocumentService, 0, cli.config.cluster(), time.Duration(waitSecs)*time.Second)
 		if err != nil {
 			return nil, "", err
 		}
@@ -147,7 +149,7 @@ func (opts feedOptions) compressionMode() (document.Compression, error) {
 	return 0, errHint(fmt.Errorf("invalid compression mode: %s", opts.compression), `Must be "auto", "gzip" or "none"`)
 }
 
-func feedFiles(files []string, dispatcher *document.Dispatcher, cli *CLI) {
+func enqueueFromFiles(files []string, dispatcher *document.Dispatcher, cli *CLI) error {
 	for _, name := range files {
 		var r io.ReadCloser
 		if len(files) == 1 && name == "-" {
@@ -160,11 +162,14 @@ func feedFiles(files []string, dispatcher *document.Dispatcher, cli *CLI) {
 			}
 			r = f
 		}
-		dispatchFrom(r, dispatcher, cli)
+		if err := enqueueFrom(r, dispatcher, cli); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func dispatchFrom(r io.ReadCloser, dispatcher *document.Dispatcher, cli *CLI) {
+func enqueueFrom(r io.ReadCloser, dispatcher *document.Dispatcher, cli *CLI) error {
 	dec := document.NewDecoder(bufio.NewReaderSize(r, 1<<26)) // Buffer up to 64M of data at a time
 	defer r.Close()
 	for {
@@ -173,17 +178,32 @@ func dispatchFrom(r io.ReadCloser, dispatcher *document.Dispatcher, cli *CLI) {
 			break
 		}
 		if err != nil {
-			cli.printErr(fmt.Errorf("failed to decode document: %w", err))
+			return fmt.Errorf("failed to decode document: %w", err)
 		}
 		if err := dispatcher.Enqueue(doc); err != nil {
-			cli.printErr(err)
+			return err
 		}
 	}
+	return nil
+}
+
+func enqueueAndWait(files []string, dispatcher *document.Dispatcher, options feedOptions, cli *CLI) error {
+	defer dispatcher.Close()
+	if options.speedtestBytes > 0 {
+		if len(files) > 0 {
+			return fmt.Errorf("option --speedtest cannot be combined with feed files")
+		}
+		gen := document.NewGenerator(options.speedtestBytes, cli.now().Add(time.Duration(options.speedtestSecs)*time.Second))
+		return enqueueFrom(io.NopCloser(gen), dispatcher, cli)
+	} else if len(files) > 0 {
+		return enqueueFromFiles(files, dispatcher, cli)
+	}
+	return fmt.Errorf("at least one file to feed from must specified")
 }
 
 func feed(files []string, options feedOptions, cli *CLI) error {
 	timeout := time.Duration(options.timeoutSecs) * time.Second
-	clients, baseURL, err := createServices(options.connections, timeout, cli)
+	clients, baseURL, err := createServices(options.connections, timeout, options.waitSecs, cli)
 	if err != nil {
 		return err
 	}
@@ -191,14 +211,13 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 	if err != nil {
 		return err
 	}
-	speedtest := options.speedtestBytes > 0
 	client, err := document.NewClient(document.ClientOptions{
 		Compression: compression,
 		Timeout:     timeout,
 		Route:       options.route,
 		TraceLevel:  options.traceLevel,
 		BaseURL:     baseURL,
-		Speedtest:   speedtest,
+		Speedtest:   options.speedtestBytes > 0,
 		NowFunc:     cli.now,
 	}, clients)
 	if err != nil {
@@ -209,26 +228,14 @@ func feed(files []string, options feedOptions, cli *CLI) error {
 	dispatcher := document.NewDispatcher(client, throttler, circuitBreaker, cli.Stderr, options.verbose)
 	start := cli.now()
 	summaryTicker := summaryTicker(options.summarySecs, cli, start, dispatcher.Stats)
-	if speedtest {
-		if len(files) > 0 {
-			return fmt.Errorf("option --speedtest cannot be combined with feed files")
+	defer func() {
+		if summaryTicker != nil {
+			summaryTicker.Stop()
 		}
-		gen := document.NewGenerator(options.speedtestBytes, cli.now().Add(time.Duration(options.speedtestSecs)*time.Second))
-		dispatchFrom(io.NopCloser(gen), dispatcher, cli)
-	} else if len(files) > 0 {
-		feedFiles(files, dispatcher, cli)
-	} else {
-		dispatcher.Close()
-		return fmt.Errorf("at least one file to feed from must specified")
-	}
-	if err := dispatcher.Close(); err != nil {
-		return err
-	}
-	if summaryTicker != nil {
-		summaryTicker.Stop()
-	}
-	elapsed := cli.now().Sub(start)
-	return writeSummaryJSON(cli.Stdout, dispatcher.Stats(), elapsed)
+		elapsed := cli.now().Sub(start)
+		writeSummaryJSON(cli.Stdout, dispatcher.Stats(), elapsed)
+	}()
+	return enqueueAndWait(files, dispatcher, options, cli)
 }
 
 type number float32

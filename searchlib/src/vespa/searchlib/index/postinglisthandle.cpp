@@ -2,10 +2,11 @@
 
 #include "postinglisthandle.h"
 #include "postinglistfile.h"
+#include <vespa/searchlib/queryeval/searchiterator.h>
 
 namespace search::index {
 
-search::queryeval::SearchIterator *
+std::unique_ptr<search::queryeval::SearchIterator>
 PostingListHandle::createIterator(const PostingListCounts &counts,
                                   const search::fef::TermFieldMatchDataArray &matchData,
                                   bool useBitVector) const

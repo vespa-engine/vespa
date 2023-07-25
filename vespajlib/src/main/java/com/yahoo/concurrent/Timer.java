@@ -20,16 +20,8 @@ public interface Timer {
      * @return The current value of the timer, in milliseconds.
      */
     long milliTime();
-    Timer monotonic = () -> TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
-    static Timer wrap(Clock original) {
-        return new Timer() {
-            private final Clock clock = original;
-
-            @Override
-            public long milliTime() {
-                return clock.millis();
-            }
-        }; }
-
+    long creationNanos = System.nanoTime(); // Avoid monotonic timer overflow for the first 146 years of JVM uptime.
+    Timer monotonic = () -> TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - creationNanos);
+    static Timer wrap(Clock original) { return original::millis; }
     default Instant instant() { return Instant.ofEpochMilli(milliTime()); }
 }

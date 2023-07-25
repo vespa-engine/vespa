@@ -4,13 +4,11 @@ document TTPOI {
 # categories associated with the POI
     field Categories type array<string> {
         indexing: summary | index
-        # index-to: Categories
     }
 
 # sub catagories associated with the POI
     field SubCategories type array<string> {
         indexing: summary | index
-        # index-to: SubCategories
     }
 }
 

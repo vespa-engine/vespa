@@ -35,6 +35,7 @@ type visitArgs struct {
 	sliceId        int
 	bucketSpace    string
 	bucketSpaces   []string
+	waitSecs       int
 	cli            *CLI
 }
 
@@ -107,7 +108,7 @@ $ vespa visit --field-set "[id]" # list document IDs
 			if !result.Success {
 				return fmt.Errorf("argument error: %s", result.Message)
 			}
-			service, err := documentService(cli)
+			service, err := documentService(cli, vArgs.waitSecs)
 			if err != nil {
 				return err
 			}
@@ -124,17 +125,18 @@ $ vespa visit --field-set "[id]" # list document IDs
 	}
 	cmd.Flags().StringVar(&vArgs.contentCluster, "content-cluster", "*", `Which content cluster to visit documents from`)
 	cmd.Flags().StringVar(&vArgs.fieldSet, "field-set", "", `Which fieldset to ask for`)
-	cmd.Flags().StringVar(&vArgs.selection, "selection", "", `select subset of cluster`)
-	cmd.Flags().BoolVar(&vArgs.debugMode, "debug-mode", false, `print debugging output`)
-	cmd.Flags().BoolVar(&vArgs.jsonLines, "json-lines", true, `output documents as JSON lines`)
-	cmd.Flags().BoolVar(&vArgs.makeFeed, "make-feed", false, `output JSON array suitable for vespa-feeder`)
-	cmd.Flags().BoolVar(&vArgs.pretty, "pretty-json", false, `format pretty JSON`)
-	cmd.Flags().IntVar(&vArgs.chunkCount, "chunk-count", 1000, `chunk by count`)
+	cmd.Flags().StringVar(&vArgs.selection, "selection", "", `Select subset of cluster`)
+	cmd.Flags().BoolVar(&vArgs.debugMode, "debug-mode", false, `Print debugging output`)
+	cmd.Flags().BoolVar(&vArgs.jsonLines, "json-lines", true, `Output documents as JSON lines`)
+	cmd.Flags().BoolVar(&vArgs.makeFeed, "make-feed", false, `Output JSON array suitable for vespa-feeder`)
+	cmd.Flags().BoolVar(&vArgs.pretty, "pretty-json", false, `Format pretty JSON`)
+	cmd.Flags().IntVar(&vArgs.chunkCount, "chunk-count", 1000, `Chunk by count`)
 	cmd.Flags().StringVar(&vArgs.from, "from", "", `Timestamp to visit from, in seconds`)
 	cmd.Flags().StringVar(&vArgs.to, "to", "", `Timestamp to visit up to, in seconds`)
 	cmd.Flags().IntVar(&vArgs.sliceId, "slice-id", -1, `The number of the slice this visit invocation should fetch`)
 	cmd.Flags().IntVar(&vArgs.slices, "slices", -1, `Split the document corpus into this number of independent slices`)
-	cmd.Flags().StringSliceVar(&vArgs.bucketSpaces, "bucket-space", []string{"global", "default"}, `"default" or "global" bucket space`)
+	cmd.Flags().StringSliceVar(&vArgs.bucketSpaces, "bucket-space", []string{"global", "default"}, `The "default" or "global" bucket space`)
+	cli.bindWaitFlag(cmd, 0, &vArgs.waitSecs)
 	return cmd
 }
 

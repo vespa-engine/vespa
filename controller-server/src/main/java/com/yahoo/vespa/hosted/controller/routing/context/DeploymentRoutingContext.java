@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
@@ -20,7 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * A deployment routing context, which extends {@link RoutingContext} to support routing configuration of a deployment.
@@ -49,8 +49,8 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
     }
 
     /** Configure routing for the deployment in this context, using given deployment spec */
-    public final void configure(DeploymentSpec deploymentSpec) {
-        controller.policies().refresh(deployment, deploymentSpec);
+    public final void configure(DeploymentSpec deploymentSpec, List<GeneratedEndpoint> generatedEndpoints) {
+        controller.policies().refresh(deployment, deploymentSpec, generatedEndpoints);
     }
 
     /** Routing method of this context */

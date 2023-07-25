@@ -125,6 +125,10 @@ private:
     uint32_t get(DocId doc, WeightedEnum * v, uint32_t sz)  const override { return getAllEnumHelper(doc, v, sz); }
     uint32_t get(DocId doc, WeightedInt * v, uint32_t sz)   const override { return getAllHelper<WeightedInt, largeint_t>(doc, v, sz); }
     uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override { return getAllHelper<WeightedFloat, double>(doc, v, sz); }
+    template <bool asc>
+    long on_serialize_for_sort(DocId doc, void* serTo, long available) const;
+    long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const override;
+    long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -220,5 +224,8 @@ private:
         }
         return available;
     }
+    long on_serialize_for_sort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc, bool asc) const;
+    long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const override;
+    long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const override;
 };
 

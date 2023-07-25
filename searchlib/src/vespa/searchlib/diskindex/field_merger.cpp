@@ -482,10 +482,6 @@ FieldMerger::merge_field_start()
         return;
     }
 
-    if (FileKit::hasStamp(_field_dir + "/.mergeocc_done")) {
-        _state = State::MERGE_DONE;
-        return;
-    }
     std::filesystem::create_directory(std::filesystem::path(_field_dir));
 
     LOG(debug, "merge_field for field %s dir %s", _field_name.c_str(), _field_dir.c_str());
@@ -505,10 +501,6 @@ FieldMerger::merge_field_finish()
     bool res = merge_postings_finish();
     if (!res) {
         merge_postings_failed();
-        return;
-    }
-    if (!FileKit::createStamp(_field_dir +  "/.mergeocc_done")) {
-        _failed = true;
         return;
     }
     vespalib::File::sync(_field_dir);

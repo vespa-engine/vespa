@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.jar.Manifest;
 
+import static com.yahoo.container.plugin.util.JarFiles.getMainAttributeValue;
+
 /**
  * Static utilities for analyzing jar files.
  *
@@ -78,10 +80,6 @@ public class AnalyzeBundle {
         return getMainAttributeValue(jarManifest, "Export-Package")
                 .map(ExportPackageParser::parseExports)
                 .orElseGet(ArrayList::new);
-    }
-
-    private static Optional<String> getMainAttributeValue(Manifest manifest, String attributeName) {
-        return Optional.ofNullable(manifest.getMainAttributes().getValue(attributeName));
     }
 
     private static boolean isOsgiManifest(Manifest mf) {

@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 import static com.yahoo.vdslib.state.NodeState.ORCHESTRATOR_RESERVED_DESCRIPTION;
+import static com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker.Result;
 
 public class ContentCluster {
 
@@ -129,7 +130,7 @@ public class ContentCluster {
      * @param newState state wanted to be set
      * @param inMoratorium whether the CC is in moratorium
      */
-    public NodeStateChangeChecker.Result calculateEffectOfNewState(
+    public Result calculateEffectOfNewState(
             Node node, ClusterState clusterState, SetUnitStateRequest.Condition condition,
             NodeState oldState, NodeState newState, boolean inMoratorium) {
 

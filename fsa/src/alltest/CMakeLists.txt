@@ -3,69 +3,69 @@ vespa_add_executable(fsa_conceptnet_test_app
     SOURCES
     conceptnet_test.cpp
     DEPENDS
-    fsamanagers
-    fsa
+    vespafsamanagers
+    vespafsa
 )
 vespa_add_executable(fsa_detector_test_app
     SOURCES
     detector_test.cpp
     DEPENDS
-    fsa
+    vespafsa
 )
 vespa_add_executable(fsa_fsa_test_app
     SOURCES
     fsa_test.cpp
     DEPENDS
-    fsa
+    vespafsa
 )
 vespa_add_executable(fsa_fsa_create_test_app
     SOURCES
     fsa_create_test.cpp
     DEPENDS
-    fsa
+    vespafsa
 )
 vespa_add_executable(fsa_fsa_perf_test_app
     SOURCES
     fsa_perftest.cpp
     DEPENDS
-    fsa
+    vespafsa
 )
 vespa_add_executable(fsa_fsamanager_test_app
     SOURCES
     fsamanager_test.cpp
     DEPENDS
-    fsamanagers
-    fsa
+    vespafsamanagers
+    vespafsa
 )
 vespa_add_executable(fsa_lookup_test_app
     SOURCES
     lookup_test.cpp
     DEPENDS
-    fsa
+    vespafsa
 )
 vespa_add_executable(fsa_ngram_test_app
     SOURCES
     ngram_test.cpp
     DEPENDS
-    fsa
+    vespafsa
 )
 vespa_add_executable(fsa_segmenter_test_app
     SOURCES
     segmenter_test.cpp
     DEPENDS
-    fsa
+    vespafsa
 )
 vespa_add_executable(fsa_vectorizer_test_app
     SOURCES
     vectorizer_test.cpp
     DEPENDS
-    fsa
+    vespafsa
 )
 vespa_add_executable(fsa_vectorizer_perf_test_app TEST
     SOURCES
     vectorizer_perftest.cpp
     DEPENDS
-    fsa
+    vespafsa
 )
 vespa_add_test(NAME fsa_vectorizer_perf_test_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/alltest.sh 
                DEPENDS fsa_conceptnet_test_app fsa_detector_test_app fsa_fsa_test_app fsa_fsa_create_test_app 

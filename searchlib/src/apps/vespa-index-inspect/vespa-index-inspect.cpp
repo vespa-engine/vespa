@@ -151,12 +151,10 @@ FieldOptions::~FieldOptions() = default;
 void
 FieldOptions::validateFields(const Schema &schema)
 {
-    for (std::vector<vespalib::string>::const_iterator
-             i = _fields.begin(), ie = _fields.end();
-         i != ie; ++i) {
-        uint32_t fieldId = schema.getIndexFieldId(*i);
+    for (const auto& field : _fields) {
+        uint32_t fieldId = schema.getIndexFieldId(field);
         if (fieldId == Schema::UNKNOWN_FIELD_ID) {
-            LOG(error, "No such field: %s", i->c_str());
+            LOG(error, "No such field: %s", field.c_str());
             std::_Exit(1);
         }
         _ids.push_back(fieldId);
@@ -399,10 +397,8 @@ ShowPostingListSubApp::readWordList(const Schema &schema)
     _wmv.resize(numFields);
 
     if (!_fieldOptions.empty()) {
-        for (std::vector<uint32_t>::const_iterator
-                 i = _fieldOptions._ids.begin(), ie = _fieldOptions._ids.end();
-             i != ie; ++i) {
-            SchemaUtil::IndexIterator index(schema, *i);
+        for (auto id : _fieldOptions._ids) {
+            SchemaUtil::IndexIterator index(schema, id);
             if (!readWordList(index))
                 return false;
         }
@@ -462,10 +458,8 @@ ShowPostingListSubApp::showTransposedPostingList()
         return;
     std::vector<PosEntry> entries;
     if (!_fieldOptions.empty()) {
-        for (std::vector<uint32_t>::const_iterator
-                 i = _fieldOptions._ids.begin(), ie = _fieldOptions._ids.end();
-             i != ie; ++i) {
-            SchemaUtil::IndexIterator index(schema, *i);
+        for (auto id : _fieldOptions._ids) {
+            SchemaUtil::IndexIterator index(schema, id);
             readPostings(index, entries);
         }
     } else {
@@ -481,35 +475,34 @@ ShowPostingListSubApp::showTransposedPostingList()
     uint32_t prevElemId = static_cast<uint32_t>(-1);
     uint32_t prevElementLen = 0;
     int32_t prevElementWeight = 0;
-    for (std::vector<PosEntry>::const_iterator
-             i = entries.begin(), ie = entries.end(); i != ie; ++i) {
-        if (i->_docId != prevDocId) {
-            std::cout << "docId = " << i->_docId << '\n';
-            prevDocId = i->_docId;
+    for (const auto& entry : entries) {
+        if (entry._docId != prevDocId) {
+            std::cout << "docId = " << entry._docId << '\n';
+            prevDocId = entry._docId;
             prevFieldId = static_cast<uint32_t>(-1);
         }
-        if (i->_fieldId != prevFieldId) {
-            std::cout << " field = " << i->_fieldId <<
-                " \"" << schema.getIndexField(i->_fieldId).getName() <<
+        if (entry._fieldId != prevFieldId) {
+            std::cout << " field = " << entry._fieldId <<
+                " \"" << schema.getIndexField(entry._fieldId).getName() <<
                 "\"\n";
-            prevFieldId = i->_fieldId;
+            prevFieldId = entry._fieldId;
             prevElemId = static_cast<uint32_t>(-1);
         }
-        if (i->_elementId != prevElemId ||
-            i->_elementLen != prevElementLen ||
-            i->_elementWeight != prevElementWeight) {
-            std::cout << "  element = " << i->_elementId <<
-                ", elementLen = " << i->_elementLen <<
-                ", elementWeight = " << i->_elementWeight <<
+        if (entry._elementId != prevElemId ||
+            entry._elementLen != prevElementLen ||
+            entry._elementWeight != prevElementWeight) {
+            std::cout << "  element = " << entry._elementId <<
+                ", elementLen = " << entry._elementLen <<
+                ", elementWeight = " << entry._elementWeight <<
                 '\n';
-            prevElemId = i->_elementId;
-            prevElementLen = i->_elementLen;
-            prevElementWeight = i->_elementWeight;
+            prevElemId = entry._elementId;
+            prevElementLen = entry._elementLen;
+            prevElementWeight = entry._elementWeight;
         }
-        assert(i->_wordNum != 0);
-        assert(i->_wordNum < _wordsv[i->_fieldId].size());
-        std::cout << "   pos = " << i->_wordPos <<
-            ", word = \"" << _wordsv[i->_fieldId][i->_wordNum] << "\"";
+        assert(entry._wordNum != 0);
+        assert(entry._wordNum < _wordsv[entry._fieldId].size());
+        std::cout << "   pos = " << entry._wordPos <<
+            ", word = \"" << _wordsv[entry._fieldId][entry._wordNum] << "\"";
         std::cout << '\n';
     }
 }
@@ -588,13 +581,10 @@ ShowPostingListSubApp::showPostingList()
                                        handle->second);
     std::vector<TermFieldMatchData> tfmdv(numFields);
     TermFieldMatchDataArray tfmda;
-    for (std::vector<TermFieldMatchData>::iterator
-             tfit = tfmdv.begin(), tfite = tfmdv.end();
-         tfit != tfite; ++tfit) {
-        tfmda.add(&*tfit);
+    for (auto& tfmd : tfmdv) {
+        tfmda.add(&tfmd);
     }
-    std::unique_ptr<SearchIterator> sb(handle->second.createIterator(
-                                         handle->first, tfmda));
+    auto sb = handle->second.createIterator(handle->first, tfmda);
     sb->initFullRange();
     uint32_t docId = 0;
     bool first = true;

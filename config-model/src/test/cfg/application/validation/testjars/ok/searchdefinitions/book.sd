@@ -2,34 +2,28 @@ search book {
         document book inherits base {
                 field title type string {
                         bolding: on
-                        index-to: default, title
                         indexing: index|summary
                         rank-type: about
                 }
                 field dispauthor type string {
                         bolding: on
-                        index-to: default, dispauthor
                         indexing: index|summary
                         rank-type: about
                 }
                 field author type string {
                         bolding: on
-                        index-to: default, author
                         indexing: index|summary
                         rank-type: about
                 }
                 field keys type string {
-                        index-to: default, keys
                         indexing: index
                         rank-type: about
                 }
                 field isbn type string {
-                        index-to: default, isbn
                         indexing: index|summary
                         rank-type: about
                 }
                 field series type string {
-                        index-to: default, series
                         indexing: index
                         rank-type: about
                 }

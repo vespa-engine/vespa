@@ -85,7 +85,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.store(new BcpGroupInfo(100, 1.1, 0.3));
         fixture.loader().addCpuMeasurements(0.7f, 10);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         3, 3, 10.5, 38.4, 168.9,
+                                         3, 3, 10.5, 43.2, 190.0,
                                          fixture.autoscale());
 
         // Higher query rate
@@ -93,7 +93,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.store(new BcpGroupInfo(200, 1.1, 0.3));
         fixture.loader().addCpuMeasurements(0.7f, 10);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         3, 3, 20.9, 38.4, 168.9,
+                                         3, 3, 20.9, 43.2, 190.0,
                                          fixture.autoscale());
 
         // Higher headroom
@@ -101,7 +101,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.store(new BcpGroupInfo(100, 1.3, 0.3));
         fixture.loader().addCpuMeasurements(0.7f, 10);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         3, 3, 12.4, 38.4, 168.9,
+                                         3, 3, 12.4, 43.2, 190.0,
                                          fixture.autoscale());
 
         // Higher per query cost
@@ -109,7 +109,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.store(new BcpGroupInfo(100, 1.1, 0.45));
         fixture.loader().addCpuMeasurements(0.7f, 10);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         3, 3, 15.7, 38.4, 168.9,
+                                         3, 3, 15.7, 43.2, 190.0,
                                          fixture.autoscale());
     }
 
@@ -206,7 +206,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.tester().clock().advance(duration2.negated());
         fixture.loader().addQueryRateMeasurements(10, __ -> 50.0);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         8, 1, 3.0, 7.4, 29.0,
+                                         8, 1, 2.9, 7.4, 29.0,
                                          fixture.autoscale());
 
         // Mostly local
@@ -216,7 +216,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.tester().clock().advance(duration3.negated());
         fixture.loader().addQueryRateMeasurements(10, __ -> 90.0);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         8, 1, 2.3, 7.4, 29.0,
+                                         8, 1, 2.2, 7.4, 29.0,
                                          fixture.autoscale());
 
         // Local only
@@ -226,7 +226,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.tester().clock().advance(duration4.negated());
         fixture.loader().addQueryRateMeasurements(10, __ -> 100.0);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         8, 1, 2.2, 7.4, 29.0,
+                                         8, 1, 2.1, 7.4, 29.0,
                                          fixture.autoscale());
 
         // No group info, should be the same as the above
@@ -236,7 +236,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.tester().clock().advance(duration5.negated());
         fixture.loader().addQueryRateMeasurements(10, __ -> 100.0);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         8, 1, 2.2, 7.4, 29.0,
+                                         8, 1, 2.1, 7.4, 29.0,
                                          fixture.autoscale());
 
         // 40 query rate, no group info (for reference to the below)
@@ -266,7 +266,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.tester().clock().advance(duration8.negated());
         fixture.loader().addQueryRateMeasurements(10, __ -> 40.0);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
-                                         8, 1, 1.9, 7.4, 29.0,
+                                         8, 1, 1.8, 7.4, 29.0,
                                          fixture.autoscale());
     }
 
@@ -288,16 +288,18 @@ public class AutoscalingUsingBcpGroupInfoTest {
 
         // External load is measured to zero -> 0
         fixture.tester().clock().advance(Duration.ofDays(2));
-        fixture.loader().addCpuMeasurements(0.7f, 10);
+        var duration = fixture.loader().addCpuMeasurements(0.7f, 10);
+        fixture.tester().clock().advance(duration.negated());
         fixture.loader().addQueryRateMeasurements(10, i -> 0.0);
         assertEquals(new Autoscaling.Metrics(0, 1.0, 0),
                      fixture.autoscale().metrics());
 
         // External load
         fixture.tester().clock().advance(Duration.ofDays(2));
-        fixture.loader().addCpuMeasurements(0.7f, 10);
+        duration = fixture.loader().addCpuMeasurements(0.7f, 10);
+        fixture.tester().clock().advance(duration.negated());
         fixture.loader().addQueryRateMeasurements(10, i -> 110.0);
-        assertEquals(new Autoscaling.Metrics(110, 1.1, 0.05),
+        assertEquals(new Autoscaling.Metrics(110, 1.0, 0.05),
                      round(fixture.autoscale().metrics()));
     }
 

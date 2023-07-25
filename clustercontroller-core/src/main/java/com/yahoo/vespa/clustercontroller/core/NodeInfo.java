@@ -216,10 +216,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         return RPCCommunicator.SET_DISTRIBUTION_STATES_RPC_VERSION;
     }
 
-    public String getSlobrokAddress() {
-        return "storage/cluster." + cluster.getName() + "/" + node.getType() + "/" + node.getIndex();
-    }
-
     public void markRpcAddressOutdated(Timer timer) {
         lastSeenInSlobrok = timer.getCurrentTimeInMillis();
     }
@@ -235,6 +231,10 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     public boolean isStorage() {
         return node.getType().equals(NodeType.STORAGE);
+    }
+
+    public String type() {
+        return isDistributor() ? "distributor" : "storage node";
     }
 
     public int getNodeIndex() {

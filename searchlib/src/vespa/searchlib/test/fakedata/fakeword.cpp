@@ -246,11 +246,11 @@ FakeWord::fakeup(search::BitVector &bitmap,
         }
         uint32_t field_len = 0;
         do {
-            DocWordPosFeatureList::iterator ie(wpf.end());
-            DocWordPosFeatureList::iterator i(wpf.begin());
+            auto ie = wpf.end();
+            auto i = wpf.begin();
             while (i != ie) {
                 uint32_t lastwordpos = i->_wordPos;
-                DocWordPosFeatureList::iterator pi(i);
+                auto pi = i;
                 ++i;
                 while (i != ie &&
                        pi->_elementId == i->_elementId) {
@@ -287,11 +287,8 @@ FakeWord::fakeup(search::BitVector &bitmap,
         dwf._accPositions = wordPosFeatures.size();
         assert(dwf._positions == wpf.size());
         postings.push_back(dwf);
-        DocWordPosFeatureList::iterator ie(wpf.end());
-        DocWordPosFeatureList::iterator i(wpf.begin());
-        while (i != ie) {
-            wordPosFeatures.push_back(*i);
-            ++i;
+        for (const auto& elem : wpf) {
+            wordPosFeatures.push_back(elem);
         }
         ++idx;
         if (idx >= docIdLimit)
@@ -318,12 +315,11 @@ FakeWord::fakeupTemps(vespalib::Rand48 &rnd,
 void
 FakeWord::setupRandomizer(vespalib::Rand48 &rnd)
 {
-    using DWFL = DocWordFeatureList;
     Randomizer randomAdd;
     Randomizer randomRem;
 
-    DWFL::const_iterator d(_postings.begin());
-    DWFL::const_iterator de(_postings.end());
+    auto d = _postings.begin();
+    auto de = _postings.end();
     int32_t ref = 0;
 
     while (d != de) {
@@ -338,8 +334,8 @@ FakeWord::setupRandomizer(vespalib::Rand48 &rnd)
         ++ref;
     }
 
-    DWFL::const_iterator ed(_extraPostings.begin());
-    DWFL::const_iterator ede(_extraPostings.end());
+    auto ed = _extraPostings.begin();
+    auto ede = _extraPostings.end();
 
     int32_t eref = -1;
     uint32_t tref = 0;
@@ -378,9 +374,8 @@ FakeWord::setupRandomizer(vespalib::Rand48 &rnd)
 void
 FakeWord::addDocIdBias(uint32_t docIdBias)
 {
-    using DWFL = DocWordFeatureList;
-    DWFL::iterator d(_postings.begin());
-    DWFL::iterator de(_postings.end());
+    auto d = _postings.begin();
+    auto de = _postings.end();
     for (; d != de; ++d) {
         d->_docId += docIdBias;
     }
@@ -404,14 +399,12 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
     iterator->initFullRange();
     uint32_t docId = 0;
 
-    using DWFL = DocWordFeatureList;
-    using DWPFL = DocWordPosFeatureList;
     using TMDPI = TermFieldMatchData::PositionsIterator;
 
-    DWFL::const_iterator d(_postings.begin());
-    DWFL::const_iterator de(_postings.end());
-    DWPFL::const_iterator p(_wordPosFeatures.begin());
-    DWPFL::const_iterator pe(_wordPosFeatures.end());
+    auto d = _postings.begin();
+    auto de = _postings.end();
+    auto p = _wordPosFeatures.begin();
+    auto pe = _wordPosFeatures.end();
 
     if (verbose)
         printf("Start validate word '%s'\n", _name.c_str());
@@ -484,14 +477,12 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
     iterator->initFullRange();
     uint32_t docId = 1;
 
-    using DWFL = DocWordFeatureList;
-    using DWPFL = DocWordPosFeatureList;
     using TMDPI = TermFieldMatchData::PositionsIterator;
 
-    DWFL::const_iterator d(_postings.begin());
-    DWFL::const_iterator de(_postings.end());
-    DWPFL::const_iterator p(_wordPosFeatures.begin());
-    DWPFL::const_iterator pe(_wordPosFeatures.end());
+    auto d = _postings.begin();
+    auto de = _postings.end();
+    auto p = _wordPosFeatures.begin();
+    auto pe = _wordPosFeatures.end();
 
     if (verbose)
         printf("Start validate word '%s'\n", _name.c_str());
@@ -556,10 +547,8 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator, bool verbose) co
     iterator->initFullRange();
     uint32_t docId = 1;
 
-    using DWFL = DocWordFeatureList;
-
-    DWFL::const_iterator d(_postings.begin());
-    DWFL::const_iterator de(_postings.end());
+    auto d = _postings.begin();
+    auto de = _postings.end();
 
     if (verbose)
         printf("Start validate word '%s'\n", _name.c_str());
@@ -599,14 +588,12 @@ FakeWord::validate(FieldReader &fieldReader,
     uint32_t presidue;
     bool unpres;
 
-    using DWFL = DocWordFeatureList;
-    using DWPFL = DocWordPosFeatureList;
     using TMDPI = TermFieldMatchData::PositionsIterator;
 
-    DWFL::const_iterator d(_postings.begin());
-    DWFL::const_iterator de(_postings.end());
-    DWPFL::const_iterator p(_wordPosFeatures.begin());
-    DWPFL::const_iterator pe(_wordPosFeatures.end());
+    auto d = _postings.begin();
+    auto de = _postings.end();
+    auto p = _wordPosFeatures.begin();
+    auto pe = _wordPosFeatures.end();
 
     if (verbose)
         printf("Start validate word '%s'\n", _name.c_str());
@@ -633,13 +620,8 @@ FakeWord::validate(FieldReader &fieldReader,
 #else
             (void) unpres;
 
-            using Elements = WordDocElementFeatures;
-            using Positions = WordDocElementWordPosFeatures;
-
-            std::vector<Elements>::const_iterator element =
-                features.elements().begin();
-            std::vector<Positions>::const_iterator position =
-                features.word_positions().begin();
+            auto element = features.elements().begin();
+            auto position = features.word_positions().begin();
 
             TermFieldMatchData *tfmd = matchData[0];
             assert(tfmd != 0);
@@ -701,12 +683,10 @@ FakeWord::validate(FieldReader &fieldReader,
 void
 FakeWord::validate(const std::vector<uint32_t> &docIds) const
 {
-    using DWFL = DocWordFeatureList;
-    using DL = std::vector<uint32_t>;
-    DWFL::const_iterator d(_postings.begin());
-    DWFL::const_iterator de(_postings.end());
-    DL::const_iterator di(docIds.begin());
-    DL::const_iterator die(docIds.end());
+    auto d = _postings.begin();
+    auto de = _postings.end();
+    auto di = docIds.begin();
+    auto die = docIds.end();
 
     while (d != de) {
         assert(di != die);
@@ -721,9 +701,8 @@ FakeWord::validate(const std::vector<uint32_t> &docIds) const
 void
 FakeWord::validate(const search::BitVector &bv) const
 {
-    using DWFL = DocWordFeatureList;
-    DWFL::const_iterator d(_postings.begin());
-    DWFL::const_iterator de(_postings.end());
+    auto d = _postings.begin();
+    auto de = _postings.end();
     uint32_t bitHits = bv.countTrueBits();
     assert(bitHits == _postings.size());
     (void) bitHits;
@@ -745,13 +724,10 @@ FakeWord::dump(FieldWriter &fieldWriter,
     uint32_t residue;
     DocIdAndPosOccFeatures features;
 
-    using DWFL = DocWordFeatureList;
-    using DWPFL = DocWordPosFeatureList;
-
-    DWFL::const_iterator d(_postings.begin());
-    DWFL::const_iterator de(_postings.end());
-    DWPFL::const_iterator p(_wordPosFeatures.begin());
-    DWPFL::const_iterator pe(_wordPosFeatures.end());
+    auto d = _postings.begin();
+    auto de = _postings.end();
+    auto p = _wordPosFeatures.begin();
+    auto pe = _wordPosFeatures.end();
 
     if (verbose)
         printf("Start dumping word '%s'\n", _name.c_str());

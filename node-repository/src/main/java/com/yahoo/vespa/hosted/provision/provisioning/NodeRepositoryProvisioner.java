@@ -16,6 +16,7 @@ import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -61,7 +62,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository,
                                      Zone zone,
-                                     ProvisionServiceProvider provisionServiceProvider) {
+                                     ProvisionServiceProvider provisionServiceProvider,
+                                     Metric metric) {
         this.nodeRepository = nodeRepository;
         this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
@@ -71,7 +73,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
                                      provisionServiceProvider.getHostProvisioner(),
-                                     loadBalancerProvisioner);
+                                     loadBalancerProvisioner,
+                                     metric);
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
     }
 
@@ -81,13 +84,11 @@ public class NodeRepositoryProvisioner implements Provisioner {
      * The nodes are ordered by increasing index number.
      */
     @Override
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requested,
-                                  ProvisionLogger logger) {
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         log.log(Level.FINE, "Received deploy prepare request for " + requested +
                             " for application " + application + ", cluster " + cluster);
-        validate(application, cluster, requested);
+        validate(application, cluster, requested, logger);
 
-        int groups;
         NodeResources resources;
         NodeSpec nodeSpec;
         if (requested.type() == NodeType.tenant) {
@@ -97,23 +98,21 @@ public class NodeRepositoryProvisioner implements Provisioner {
             validate(actual, target, cluster, application);
             logIfDownscaled(requested.minResources().nodes(), actual.minResources().nodes(), cluster, logger);
 
-            groups = target.groups();
             resources = getNodeResources(cluster, target.nodeResources(), application);
-            nodeSpec = NodeSpec.from(target.nodes(), resources, cluster.isExclusive(), actual.canFail(),
+            nodeSpec = NodeSpec.from(target.nodes(), target.groups(), resources, cluster.isExclusive(), actual.canFail(),
                                      requested.cloudAccount().orElse(nodeRepository.zone().cloud().account()),
                                      requested.clusterInfo().hostTTL());
         }
         else {
-            groups = 1; // type request with multiple groups is not supported
             cluster = cluster.withExclusivity(true);
             resources = getNodeResources(cluster, requested.minResources().nodeResources(), application);
             nodeSpec = NodeSpec.from(requested.type(), nodeRepository.zone().cloud().account());
         }
-        return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups),
+        return asSortedHosts(preparer.prepare(application, cluster, nodeSpec),
                              requireCompatibleResources(resources, cluster));
     }
 
-    private void validate(ApplicationId application, ClusterSpec cluster, Capacity requested) {
+    private void validate(ApplicationId application, ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
 
         nodeResourceLimits.ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), application, cluster);
@@ -121,6 +120,18 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
         if ( ! requested.minResources().nodeResources().gpuResources().equals(requested.maxResources().nodeResources().gpuResources()))
             throw new IllegalArgumentException(requested + " is invalid: Gpu capacity cannot have ranges");
+
+        logInsufficientDiskResources(cluster, requested, logger);
+    }
+
+    private void logInsufficientDiskResources(ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
+        var resources = requested.minResources().nodeResources();
+        if ( ! nodeResourceLimits.isWithinAdvertisedDiskLimits(resources, cluster)) {
+            logger.logApplicationPackage(Level.WARNING, "Requested disk (" + resources.diskGb() +
+                                                        "Gb) in " + cluster.id() + " is not large enough to fit " +
+                                                        "core/heap dumps. Minimum recommended disk resources " +
+                                                        "is 2x memory for containers and 3x memory for content");
+        }
     }
 
     private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId) {
@@ -230,6 +241,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     }
 
     private List<HostSpec> asSortedHosts(List<Node> nodes, NodeResources requestedResources) {
+        nodes = new ArrayList<>(nodes);
         nodes.sort(Comparator.comparingInt(node -> node.allocation().get().membership().index()));
         List<HostSpec> hosts = new ArrayList<>(nodes.size());
         for (Node node : nodes) {

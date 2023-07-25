@@ -24,12 +24,9 @@ import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.Fixture;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
-import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
-import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
+import com.yahoo.vespa.hosted.provision.testutils.InMemoryProvisionLogger;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -38,13 +35,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * A provisioniong tester which
+ * A provisioning tester which
  * - Supports dynamic provisioning (only).
  * - Optionally replicates the actual AWS setup and logic used on Vespa Cloud.
  * - Supports autoscaling testing.
  *
- * TODO: All provisioning testing should migrate to use this, and then the provisionging tester should be collapsed
- *       into this.
+ * TODO: All provisioning testing should migrate to use this, and then the provisioning tester should be collapsed
+ *       into this.   ... or we should just use autoscalingtester for everything.
  *
  * @author bratseth
  */
@@ -82,12 +79,7 @@ public class DynamicProvisioningTester {
         capacityPolicies = new CapacityPolicies(provisioningTester.nodeRepository());
     }
 
-    private static List<Flavor> toFlavors(List<NodeResources> resources) {
-        List<Flavor> flavors = new ArrayList<>();
-        for (int i = 0; i < resources.size(); i++)
-            flavors.add(new Flavor("flavor" + i, resources.get(i)));
-        return flavors;
-    }
+    public InMemoryProvisionLogger provisionLogger() { return provisioningTester.provisionLogger(); }
 
     public static Fixture.Builder fixture() { return new Fixture.Builder(); }
 
@@ -192,6 +184,17 @@ public class DynamicProvisioningTester {
         assertResources(message, nodeCount, groupCount,
                         expectedResources.vcpu(), expectedResources.memoryGb(), expectedResources.diskGb(),
                         resources);
+    }
+
+    public void assertResources(String message,
+                                int nodeCount, int groupCount,
+                                NodeResources expectedResources,
+                                Autoscaling autoscaling) {
+        assertTrue("Resources are present: " + message + " (" + autoscaling + ": " + autoscaling.status() + ")",
+                   autoscaling.resources().isPresent());
+        assertResources(message, nodeCount, groupCount,
+                        expectedResources.vcpu(), expectedResources.memoryGb(), expectedResources.diskGb(),
+                        autoscaling.resources().get());
     }
 
     public ClusterResources assertResources(String message,

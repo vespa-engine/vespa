@@ -23,7 +23,7 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
         this.configuration = configuration;
     }
 
-    /** Whether or not this has ever responded successfully */
+    /** Whether this has ever responded successfully */
     private boolean atStartUp = true;
 
     public T getNode() { return node; }
@@ -55,7 +55,7 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
         respondedAt = now();
         succeededAt = respondedAt;
 
-        setWorking(true,"Responds correctly");
+        setWorking(true, "Responds correctly");
     }
 
     /**

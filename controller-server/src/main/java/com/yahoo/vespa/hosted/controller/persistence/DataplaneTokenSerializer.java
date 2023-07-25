@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.TokenId;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author mortent
@@ -23,6 +24,7 @@ public class DataplaneTokenSerializer {
     private static final String checkAccessHashField = "checkAccessHash";
     private static final String creationTimeField = "creationTime";
     private static final String authorField = "author";
+    private static final String expirationField = "expiration";
 
     public static Slime toSlime(List<DataplaneTokenVersions> dataplaneTokenVersions) {
         Slime slime = new Slime();
@@ -39,6 +41,7 @@ public class DataplaneTokenSerializer {
                 versionCursor.setLong(creationTimeField, version.creationTime().toEpochMilli());
                 versionCursor.setString(creationTimeField, version.creationTime().toString());
                 versionCursor.setString(authorField, version.author());
+                versionCursor.setString(expirationField, version.expiration().map(Instant::toString).orElse("<none>"));
             });
         });
         return slime;
@@ -55,7 +58,11 @@ public class DataplaneTokenSerializer {
                                 String checkAccessHash = versionCursor.field(checkAccessHashField).asString();
                                 Instant creationTime = SlimeUtils.instant(versionCursor.field(creationTimeField));
                                 String author = versionCursor.field(authorField).asString();
-                                return new DataplaneTokenVersions.Version(fingerPrint, checkAccessHash, creationTime, author);
+                                String expirationStr = versionCursor.field(expirationField).asString();
+                                Optional<Instant> expiration = expirationStr.equals("<none>") ? Optional.empty()
+                                        : (expirationStr.isBlank()
+                                        ? Optional.of(Instant.EPOCH) : Optional.of(Instant.parse(expirationStr)));
+                                return new DataplaneTokenVersions.Version(fingerPrint, checkAccessHash, creationTime, expiration, author);
                             })
                             .toList();
                     return new DataplaneTokenVersions(id, versions);

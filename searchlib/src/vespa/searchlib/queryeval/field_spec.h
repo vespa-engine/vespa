@@ -44,9 +44,16 @@ public:
         : FieldSpecBase(fieldId, handle, isFilter_),
           _name(name)
     {}
+    FieldSpec(const vespalib::string & name, FieldSpecBase base)
+        : FieldSpecBase(base),
+          _name(name)
+    {}
     ~FieldSpec();
 
-    const vespalib::string & getName() const { return _name; }
+    void setBase(FieldSpecBase base) {
+        static_cast<FieldSpecBase &>(*this) = base;
+    }
+    const vespalib::string & getName() const noexcept { return _name; }
 private:
     vespalib::string     _name;     // field name
 };

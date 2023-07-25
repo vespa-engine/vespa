@@ -64,6 +64,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 
+import static java.util.logging.Level.WARNING;
+
 /**
  * A content cluster.
  *
@@ -190,7 +192,9 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 index.setQueryTimeout(queryTimeout);
             }
             index.setSearchCoverage(DomSearchCoverageBuilder.build(element));
-            index.setDispatchSpec(DomDispatchBuilder.build(element));
+            if (element.child("dispatch") != null)
+                logger.logApplicationPackage(WARNING, "The <dispatch> element is deprecated and ignored and will be removed in the next major release. "
+                        + " See https://docs.vespa.ai/en/reference/services-content.html#dispatch for details.");
 
             if (index.getTuning() == null)
                 index.setTuning(new Tuning(index));
@@ -207,7 +211,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 docprocChain = docprocChain.trim();
             }
             if (docprocCluster != null && !docprocCluster.isEmpty()) {
-                if (!c.getSearch().hasIndexedCluster() && !c.getSearch().getIndexingDocproc().isPresent() &&
+                if (!c.getSearch().hasIndexedCluster() && c.getSearch().getIndexingDocproc().isEmpty() &&
                         docprocChain != null && !docprocChain.isEmpty()) {
                     c.getSearch().setupStreamingSearchIndexingDocProc();
                 }
@@ -455,7 +459,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
     @Override
     public void getConfig(MessagetyperouteselectorpolicyConfig.Builder builder) {
-        if ( ! getSearch().getIndexingDocproc().isPresent()) return;
+        if (getSearch().getIndexingDocproc().isEmpty()) return;
         DocumentProtocol.getConfig(builder, getConfigId());
     }
 

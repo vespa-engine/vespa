@@ -51,6 +51,14 @@ type DeploymentOptions struct {
 	Version            version.Version
 }
 
+type Submission struct {
+	Risk        int    `json:"risk,omitempty"`
+	Commit      string `json:"commit,omitempty"`
+	Description string `json:"description,omitempty"`
+	AuthorEmail string `json:"authorEmail,omitempty"`
+	SourceURL   string `json:"sourceUrl,omitempty"`
+}
+
 type LogLinePrepareResponse struct {
 	Time    int64
 	Level   string
@@ -132,13 +140,12 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 	if err != nil {
 		return PrepareResult{}, err
 	}
-	serviceDescription := "Deploy service"
 	response, err := deployServiceDo(req, time.Second*30, deployment)
 	if err != nil {
 		return PrepareResult{}, err
 	}
 	defer response.Body.Close()
-	if err := checkResponse(req, response, serviceDescription); err != nil {
+	if err := checkResponse(req, response); err != nil {
 		return PrepareResult{}, err
 	}
 	var jsonResponse struct {
@@ -173,13 +180,39 @@ func Activate(sessionID int64, deployment DeploymentOptions) error {
 	if err != nil {
 		return err
 	}
-	serviceDescription := "Deploy service"
 	response, err := deployServiceDo(req, time.Second*30, deployment)
 	if err != nil {
 		return err
 	}
 	defer response.Body.Close()
-	return checkResponse(req, response, serviceDescription)
+	return checkResponse(req, response)
+}
+
+// Deactivate given deployment
+func Deactivate(opts DeploymentOptions) error {
+	path := "/application/v2/tenant/default/application/default"
+	if opts.Target.IsCloud() {
+		if opts.Target.Deployment().Zone.Environment == "" || opts.Target.Deployment().Zone.Region == "" {
+			return fmt.Errorf("%s: missing zone", opts)
+		}
+		path = fmt.Sprintf("/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s",
+			opts.Target.Deployment().Application.Tenant,
+			opts.Target.Deployment().Application.Application,
+			opts.Target.Deployment().Application.Instance,
+			opts.Target.Deployment().Zone.Environment,
+			opts.Target.Deployment().Zone.Region)
+	}
+	u, err := opts.url(path)
+	if err != nil {
+		return err
+	}
+	req := &http.Request{URL: u, Method: "DELETE"}
+	resp, err := deployServiceDo(req, 30*time.Second, opts)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkResponse(req, resp)
 }
 
 func Deploy(opts DeploymentOptions) (PrepareResult, error) {
@@ -222,7 +255,7 @@ func copyToPart(dst *multipart.Writer, src io.Reader, fieldname, filename string
 	return nil
 }
 
-func Submit(opts DeploymentOptions) error {
+func Submit(opts DeploymentOptions, submission Submission) error {
 	if !opts.Target.IsCloud() {
 		return fmt.Errorf("%s: deploy is unsupported by %s target", opts, opts.Target.Type())
 	}
@@ -236,7 +269,11 @@ func Submit(opts DeploymentOptions) error {
 	}
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
-	if err := copyToPart(writer, strings.NewReader("{}"), "submitOptions", ""); err != nil {
+	submitOptions, err := json.Marshal(submission)
+	if err != nil {
+		return err
+	}
+	if err := copyToPart(writer, bytes.NewReader(submitOptions), "submitOptions", ""); err != nil {
 		return err
 	}
 	applicationZip, err := opts.ApplicationPackage.zipReader(false)
@@ -265,13 +302,12 @@ func Submit(opts DeploymentOptions) error {
 		Header: make(http.Header),
 	}
 	request.Header.Set("Content-Type", writer.FormDataContentType())
-	serviceDescription := "Deploy service"
 	response, err := deployServiceDo(request, time.Minute*10, opts)
 	if err != nil {
 		return err
 	}
 	defer response.Body.Close()
-	return checkResponse(request, response, serviceDescription)
+	return checkResponse(request, response)
 }
 
 func deployServiceDo(request *http.Request, timeout time.Duration, opts DeploymentOptions) (*http.Response, error) {
@@ -354,7 +390,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 		Log []LogLinePrepareResponse `json:"log"`
 	}
 	jsonResponse.SessionID = "0" // Set a default session ID for responses that don't contain int (e.g. cloud deployment)
-	if err := checkResponse(request, response, service.Description()); err != nil {
+	if err := checkResponse(request, response); err != nil {
 		return PrepareResult{}, err
 	}
 	jsonDec := json.NewDecoder(response.Body)
@@ -372,11 +408,11 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 	}, err
 }
 
-func checkResponse(req *http.Request, response *http.Response, serviceDescription string) error {
+func checkResponse(req *http.Request, response *http.Response) error {
 	if response.StatusCode/100 == 4 {
 		return fmt.Errorf("invalid application package (%s)\n%s", response.Status, extractError(response.Body))
 	} else if response.StatusCode != 200 {
-		return fmt.Errorf("error from %s at %s (%s):\n%s", strings.ToLower(serviceDescription), req.URL.Host, response.Status, util.ReaderToJSON(response.Body))
+		return fmt.Errorf("error from deploy api at %s (%s):\n%s", req.URL.Host, response.Status, util.ReaderToJSON(response.Body))
 	}
 	return nil
 }

@@ -46,7 +46,7 @@ public class ArchiveApiTest {
 
 
         tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "\"archiveUri\":\"ftp://host/dir/tenant3/application3/instance3/id3/host4/\"", true);
-        tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), "\"archiveUri\":\"s3://acc-bucket/zoneapp/zoneapp/zoneapp/node-admin/dockerhost2/\"", true);
+        tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), "\"archiveUri\":\"s3://acc-bucket/hosted-vespa/tenant-host/default/tenant-host/dockerhost2/\"", true);
         assertFile(new Request("http://localhost:8080/nodes/v2/archive"), "archives.json");
 
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/archive/tenant/tenant3", new byte[0], Request.Method.DELETE), "{\"message\":\"Removed archive URI for tenant3\"}");

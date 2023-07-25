@@ -77,6 +77,12 @@ TEST_F(Bm25BlueprintTest, blueprint_setup_fails_when_b_param_is_malformed)
     expect_setup_fail({"is"});
 }
 
+TEST_F(Bm25BlueprintTest, blueprint_setup_fails_when_avg_field_length_is_malformed)
+{
+    index_env.getProperties().add("bm25(is).averageFieldLength", "malformed");
+    expect_setup_fail({"is"});
+}
+
 TEST_F(Bm25BlueprintTest, blueprint_setup_succeeds_for_index_field)
 {
     expect_setup_succeed({"is"});
@@ -240,6 +246,15 @@ TEST_F(Bm25ExecutorTest, b_param_can_be_overriden)
     setup();
     prepare_term(0, 0, 3, 20);
     scorer.b_param = 0.9;
+    EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
+}
+
+TEST_F(Bm25ExecutorTest, avg_field_length_can_be_overriden)
+{
+    test.getIndexEnv().getProperties().add("bm25(foo).averageFieldLength", "15");
+    setup();
+    prepare_term(0, 0, 3, 20);
+    scorer.avg_field_length = 15;
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 

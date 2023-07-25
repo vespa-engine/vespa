@@ -6,12 +6,12 @@
 #include <vespa/searchlib/expression/enumresultnode.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/expression/current_index_setup.h>
 #include <vespa/searchlib/expression/documentaccessornode.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/deserializer.hpp>
 #include <vespa/searchlib/common/idocumentmetastore.h>
-#include <vespa/searchlib/common/bitvector.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.aggregation.grouping");
@@ -101,6 +101,21 @@ public:
     }
 };
 
+// extend to also handle document access nodes when that time comes (streaming)
+struct ResolveCurrentIndex : vespalib::ObjectOperation, vespalib::ObjectPredicate {
+    const CurrentIndexSetup &setup;
+    ResolveCurrentIndex(const CurrentIndexSetup &setup_in) noexcept : setup(setup_in) {}
+    void execute(vespalib::Identifiable &obj) override {
+        auto &attr = static_cast<AttributeNode &>(obj);
+        if (attr.getCurrentIndex() == nullptr) {
+            attr.setCurrentIndex(setup.resolve(attr.getAttributeName()));
+        }
+    }
+    bool check(const vespalib::Identifiable &obj) const override {
+        return obj.inherits(AttributeNode::classId);
+    }
+};
+
 } // namespace search::aggregation::<unnamed>
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, Grouping, vespalib::Identifiable);
@@ -113,11 +128,8 @@ Grouping::Grouping() noexcept
       _firstLevel(0),
       _lastLevel(0),
       _levels(),
-      _root(),
-      _clock(nullptr),
-      _timeOfDoom(vespalib::duration::zero())
-{
-}
+      _root()
+{ }
 
 Grouping::Grouping(const Grouping &) = default;
 Grouping & Grouping::operator = (const Grouping &) = default;
@@ -205,66 +217,14 @@ Grouping::postProcess()
 }
 
 void
-Grouping::aggregateWithoutClock(const RankedHit * rankedHit, unsigned int len) {
-    for(unsigned int i(0); i < len; i++) {
-        aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
-    }
-}
-
-void
-Grouping::aggregateWithClock(const RankedHit * rankedHit, unsigned int len) {
-    for(unsigned int i(0); (i < len) && !hasExpired(); i++) {
-        aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
-    }
-}
-
-void
 Grouping::aggregate(const RankedHit * rankedHit, unsigned int len)
 {
     bool isOrdered(! needResort());
     preAggregate(isOrdered);
     HitsAggregationResult::SetOrdered pred;
     select(pred, pred);
-    if (_clock == nullptr) {
-        aggregateWithoutClock(rankedHit, getMaxN(len));
-    } else {
-        aggregateWithClock(rankedHit, getMaxN(len));
-    }
-    postProcess();
-}
-
-void
-Grouping::aggregate(const RankedHit * rankedHit, unsigned int len, const BitVector * bVec)
-{
-    preAggregate(false);
-    if (_clock == nullptr) {
-        aggregateWithoutClock(rankedHit, getMaxN(len));
-    } else {
-        aggregateWithClock(rankedHit, getMaxN(len));
-    }
-    if (bVec != nullptr) {
-        unsigned int sz(bVec->size());
-        if (_clock == nullptr) {
-            if (getTopN() > 0) {
-                for(DocId d(bVec->getFirstTrueBit()), i(0), m(getMaxN(sz)); (d < sz) && (i < m); d = bVec->getNextTrueBit(d+1), i++) {
-                    aggregate(d, 0.0);
-                }
-            } else {
-                for(DocId d(bVec->getFirstTrueBit()); d < sz; d = bVec->getNextTrueBit(d+1)) {
-                    aggregate(d, 0.0);
-                }
-            }
-        } else {
-            if (getTopN() > 0) {
-                for(DocId d(bVec->getFirstTrueBit()), i(0), m(getMaxN(sz)); (d < sz) && (i < m) && !hasExpired(); d = bVec->getNextTrueBit(d+1), i++) {
-                    aggregate(d, 0.0);
-                }
-            } else {
-                for(DocId d(bVec->getFirstTrueBit()); (d < sz) && !hasExpired(); d = bVec->getNextTrueBit(d+1)) {
-                    aggregate(d, 0.0);
-                }
-            }
-        }
+    for(unsigned int i(0), m(getMaxN(len)); i < m; i++) {
+        aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
     }
     postProcess();
 }
@@ -303,6 +263,15 @@ Grouping::sortById()
 void
 Grouping::configureStaticStuff(const ConfigureStaticParams & params)
 {
+    if (params._enableNestedMultivalueGrouping) {
+        CurrentIndexSetup setup;
+        ResolveCurrentIndex resolver(setup);
+        size_t end = std::min(size_t(_lastLevel + 1), _levels.size());
+        for (size_t i = _firstLevel; i < end; ++i) {
+            _levels[i].wire_current_index(setup, resolver, resolver);
+        }
+    }
+
     if (params._attrCtx != nullptr) {
         AttributeNode::Configure confAttr(*params._attrCtx);
         select(confAttr, confAttr);
@@ -340,7 +309,7 @@ bool
 Grouping::needResort() const
 {
     bool resort(_root.needResort());
-    for (GroupingLevelList::const_iterator it(_levels.begin()), mt(_levels.end()); !resort && (it != mt); ++it) {
+    for (auto it(_levels.begin()), mt(_levels.end()); !resort && (it != mt); ++it) {
         resort = it->needResort();
     }
     return (resort && getTopN() <= 0);

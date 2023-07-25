@@ -5,7 +5,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
@@ -44,7 +46,8 @@ public class RoutingPolicySerializerTest {
                                                  Set.of(),
                                                  Set.of(),
                                                  RoutingStatus.DEFAULT,
-                                                 false),
+                                                 false,
+                                                 List.of(new GeneratedEndpoint("deadbeef", "cafed00d", Endpoint.AuthMethod.mtls))),
                                new RoutingPolicy(id2,
                                                  Optional.of(HostName.of("long-and-ugly-name-2")),
                                                  Optional.empty(),
@@ -54,7 +57,8 @@ public class RoutingPolicySerializerTest {
                                                  new RoutingStatus(RoutingStatus.Value.out,
                                                                    RoutingStatus.Agent.tenant,
                                                                    Instant.ofEpochSecond(123)),
-                                                 true),
+                                                 true,
+                                                 List.of(new GeneratedEndpoint("cafed00d", "deadbeef", Endpoint.AuthMethod.token))),
                                new RoutingPolicy(id1,
                                                  Optional.empty(),
                                                  Optional.of("127.0.0.1"),
@@ -62,7 +66,8 @@ public class RoutingPolicySerializerTest {
                                                  instanceEndpoints,
                                                  applicationEndpoints,
                                                  RoutingStatus.DEFAULT,
-                                                 true));
+                                                 true,
+                                                 List.of()));
         var serialized = serializer.fromSlime(owner, serializer.toSlime(policies));
         assertEquals(policies.size(), serialized.size());
         for (Iterator<RoutingPolicy> it1 = policies.iterator(), it2 = serialized.iterator(); it1.hasNext(); ) {

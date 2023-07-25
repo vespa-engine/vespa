@@ -13,11 +13,18 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -31,7 +38,7 @@ public class SearchClusterTest {
         final int nodesPerGroup;
         final VipStatus vipStatus;
         final SearchCluster searchCluster;
-        final ClusterMonitor clusterMonitor;
+        final ClusterMonitor<Node> clusterMonitor;
         final List<AtomicInteger> numDocsPerNode;
         List<AtomicInteger> pingCounts;
 
@@ -57,7 +64,7 @@ public class SearchClusterTest {
             }
             searchCluster = new SearchCluster(clusterId, 100.0, nodes,
                                               vipStatus, new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
-            clusterMonitor = new ClusterMonitor(searchCluster, false);
+            clusterMonitor = new ClusterMonitor<>(searchCluster, false);
             searchCluster.addMonitoring(clusterMonitor);
         }
 
@@ -374,6 +381,39 @@ public class SearchClusterTest {
         group.nodes().get(1).setActiveDocuments(819);
         group.aggregateNodeValues();
         assertTrue(group.isBalanced());
+    }
+
+    @Test
+    void requireThatPreciselyTheRetainedNodesAreKeptWhenNodesAreUpdated() {
+        try (State state = new State("query", 2, IntStream.range(0, 6).mapToObj(i -> "node-" + i).toList())) {
+            List<Node> referenceNodes = List.of(new Node(0, "node-0", 0),
+                                                new Node(1, "node-1", 0),
+                                                new Node(0, "node-2", 1),
+                                                new Node(1, "node-3", 1),
+                                                new Node(0, "node-4", 2),
+                                                new Node(1, "node-5", 2));
+            SearchGroups oldGroups = state.searchCluster.groupList();
+            assertEquals(Set.copyOf(referenceNodes), oldGroups.nodes());
+
+            List<Node> updatedNodes = List.of(new Node(0, "node-1", 0),  // Swap node-0 and node-1
+                                              new Node(1, "node-0", 0),  // Swap node-1 and node-0
+                                              new Node(0, "node-4", 1),  // Swap node-2 and node-4
+                                              new Node(1, "node-3", 1),
+                                              new Node(0, "node-2", 2),  // Swap node-4 and node-2
+                                              new Node(1, "node-6", 2)); // Replace node-6
+            state.searchCluster.updateNodes(updatedNodes, 100.0);
+            SearchGroups newGroups = state.searchCluster.groupList();
+            assertEquals(Set.copyOf(updatedNodes), newGroups.nodes());
+
+            Map<Node, Node> oldNodesByIdentity = newGroups.nodes().stream().collect(toMap(identity(), identity()));
+            Map<Node, Node> newNodesByIdentity = newGroups.nodes().stream().collect(toMap(identity(), identity()));
+            assertSame(updatedNodes.get(0), newNodesByIdentity.get(updatedNodes.get(0)));
+            assertSame(updatedNodes.get(1), newNodesByIdentity.get(updatedNodes.get(1)));
+            assertSame(updatedNodes.get(2), newNodesByIdentity.get(updatedNodes.get(2)));
+            assertSame(oldNodesByIdentity.get(referenceNodes.get(3)), newNodesByIdentity.get(updatedNodes.get(3)));
+            assertSame(updatedNodes.get(4), newNodesByIdentity.get(updatedNodes.get(4)));
+            assertSame(updatedNodes.get(5), newNodesByIdentity.get(updatedNodes.get(5)));
+        }
     }
 
 }

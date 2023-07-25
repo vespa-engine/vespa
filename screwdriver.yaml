@@ -10,6 +10,7 @@ shared:
   environment:
     USER_SHELL_BIN: bash
   annotations:
+    screwdriver.cd/restrictPR: fork
     restore-cache: &restore-cache
       restore-cache: |
         (cd /tmp && if [[ -f $MAIN_CACHE_FILE ]]; then tar xf $MAIN_CACHE_FILE; fi)
@@ -33,18 +34,20 @@ shared:
         du -sh /tmp/vespa/*
 
         if [[ -z "$SD_PULL_REQUEST" ]]; then
-          # Remove what we have produced
-          rm -rf $LOCAL_MVN_REPO/com/yahoo
-          rm -rf $LOCAL_MVN_REPO/ai/vespa
+          if [[ -z $VESPA_USE_SANITIZER ]] || [[ $VESPA_USE_SANITIZER == null ]]; then
+            # Remove what we have produced
+            rm -rf $LOCAL_MVN_REPO/com/yahoo
+            rm -rf $LOCAL_MVN_REPO/ai/vespa
 
-          # Tar toghether the /tmp/vespa folder containing ccache and cleaned mvn repo
-          mkdir -p $(dirname $MAIN_CACHE_FILE)
-          (cd /tmp && tar cf $MAIN_CACHE_FILE vespa)
+            # Tar toghether the /tmp/vespa folder containing ccache and cleaned mvn repo
+            mkdir -p $(dirname $MAIN_CACHE_FILE)
+            (cd /tmp && tar cf $MAIN_CACHE_FILE vespa)
 
-          # Wipe the cache if we exceed 2GB to avoid pulling and pusing too large files
-          if (( $(stat --format='%s' $MAIN_CACHE_FILE) > $(( 2200*1000*1000 )) )); then
-            tar cf $MAIN_CACHE_FILE --files-from=/dev/null;
-            echo "Cleaning cache file. $MAIN_CACHE_FILE is now $(stat --format='%s' $MAIN_CACHE_FILE) bytes."
+            # Wipe the cache if we exceed 2GB to avoid pulling and pusing too large files
+            if (( $(stat --format='%s' $MAIN_CACHE_FILE) > $(( 2200*1000*1000 )) )); then
+              tar cf $MAIN_CACHE_FILE --files-from=/dev/null;
+              echo "Cleaning cache file. $MAIN_CACHE_FILE is now $(stat --format='%s' $MAIN_CACHE_FILE) bytes."
+            fi
           fi
         fi
 
@@ -88,7 +91,7 @@ jobs:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
-      screwdriver.cd/timeout: 90
+      screwdriver.cd/timeout: 150
       screwdriver.cd/dockerEnabled: true
       screwdriver.cd/dockerCpu: TURBO
       screwdriver.cd/dockerRam: HIGH
@@ -140,7 +143,13 @@ jobs:
           cd $WORKDIR/vespa
           export FACTORY_VESPA_VERSION=$VESPA_VERSION
           NUM_THREADS=$(( $(nproc) + 2 ))
+
           VESPA_CMAKE_SANITIZERS_OPTION=""
+          VESPA_USE_SANITIZER=$(meta get vespa.build.sanitizer)
+          if [[ -n $VESPA_USE_SANITIZER ]] && [[ $VESPA_USE_SANITIZER != null ]]; then
+            VESPA_CMAKE_SANITIZERS_OPTION="-DVESPA_USE_SANITIZER=$VESPA_USE_SANITIZER"
+          fi
+
           time make -C client/go BIN=$WORKDIR/vespa-install/opt/vespa/bin SHARE=$WORKDIR/vespa-install/usr/share install-all
           time ./bootstrap.sh java
           time mvn -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS install
@@ -417,10 +426,8 @@ jobs:
           fi
 
   publish-cli-release:
+    requires: [publish-release]
     image: homebrew/brew:latest
-    annotations:
-      # Run once an hour, in the hours 7-15 UTC, Monday-Thursday
-      screwdriver.cd/buildPeriodically: H 7-15 * * 1-4
     secrets:
       - HOMEBREW_GITHUB_API_TOKEN
       - GH_TOKEN

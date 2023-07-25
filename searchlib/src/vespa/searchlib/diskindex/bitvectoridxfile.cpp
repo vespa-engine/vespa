@@ -20,7 +20,7 @@ void
 readHeader(vespalib::FileHeader &h, const vespalib::string &name)
 {
     Fast_BufferedFile file(32_Ki);
-    file.OpenReadOnly(name.c_str());
+    file.ReadOpenExisting(name.c_str());
     h.readFile(file);
 }
 
@@ -66,8 +66,7 @@ BitVectorIdxFileWrite::open(const vespalib::string &name,
         _idxFile->EnableDirectIO();
     }
 
-    // XXX no checking for success:
-    _idxFile->OpenWriteOnly(idxname.c_str());
+    _idxFile->WriteOpen(idxname.c_str());
 
     if (_idxHeaderLen == 0) {
         assert(_numKeys == 0);
@@ -76,13 +75,13 @@ BitVectorIdxFileWrite::open(const vespalib::string &name,
 
     int64_t pos = idxSize();
 
-    int64_t oldidxsize = _idxFile->GetSize();
+    int64_t oldidxsize = _idxFile->getSize();
     assert(oldidxsize >= pos);
     (void) oldidxsize;
 
     _idxFile->SetSize(pos);
 
-    assert(pos == _idxFile->GetPosition());
+    assert(pos == _idxFile->getPosition());
 }
 
 void
@@ -139,7 +138,7 @@ BitVectorIdxFileWrite::flush()
 {
     _idxFile->Flush();
 
-    uint64_t pos = _idxFile->GetPosition();
+    uint64_t pos = _idxFile->getPosition();
     assert(pos == idxSize());
     (void) pos;
 }
@@ -163,7 +162,7 @@ BitVectorIdxFileWrite::close()
 {
     if (_idxFile) {
         if (_idxFile->IsOpened()) {
-            uint64_t pos = _idxFile->GetPosition();
+            uint64_t pos = _idxFile->getPosition();
             assert(pos == idxSize());
             _idxFile->alignEndForDirectIO();
             updateIdxHeader(pos * 8);

@@ -7,31 +7,28 @@ package com.yahoo.vdslib.distribution;
  *
  * @author bratseth
  */
-public class ConfiguredNode implements Comparable<ConfiguredNode> {
+public record ConfiguredNode(int index, boolean retired) implements Comparable<ConfiguredNode> {
 
-    private final int index;
+    /**
+     * Return the index (distribution key) of this node
+     */
+    @Override
+    public int index() {return index;}
 
-    private final boolean retired;
-
-    public ConfiguredNode(int index, boolean retired) {
-        this.index = index;
-        this.retired = retired;
-    }
-
-    /** Return the index (distribution key) of this node */
-    public int index() { return index; }
-
-    /** Returns whether the node is configured to be retired */
-    public boolean retired() { return retired; }
+    /**
+     * Returns whether the node is configured to be retired
+     */
+    @Override
+    public boolean retired() {return retired;}
 
     @Override
-    public int hashCode() { return index; }
+    public int hashCode() {return index;}
 
     @Override
     public boolean equals(Object other) {
         if (other == this) return true;
-        if ( ! (other instanceof ConfiguredNode)) return false;
-        return ((ConfiguredNode)other).index == this.index;
+        if (! (other instanceof ConfiguredNode)) return false;
+        return ((ConfiguredNode) other).index == this.index;
     }
 
     @Override

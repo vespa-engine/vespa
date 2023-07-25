@@ -419,7 +419,7 @@
       "public void <init>(java.lang.String, java.lang.String, int, java.lang.String)",
       "public boolean isValid()",
       "public java.lang.String getScheme()",
-      "public boolean isOpaque()",
+      "public final boolean isOpaque()",
       "public java.lang.String getHost()",
       "public int getPort()",
       "public java.lang.String getRest()",
@@ -1319,7 +1319,8 @@
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
-      "public"
+      "public",
+      "final"
     ],
     "methods" : [
       "public void <init>()",

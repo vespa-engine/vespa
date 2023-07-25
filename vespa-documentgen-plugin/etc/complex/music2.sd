@@ -3,19 +3,16 @@ search music2 {
    document music2 inherits common {
       field artist type string {
          bolding: on
-         # index-to: default, artist
          indexing: index|summary
       }
       field disp_song type string {
          indexing: summary
       }
       field song type string {
-         # index-to: default, song
          indexing: index
       }
       field isbn type string {
          bolding: on
-         # index-to: default, isbn
          indexing: index|summary
       }
       field year type int {

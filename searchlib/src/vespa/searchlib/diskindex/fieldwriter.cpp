@@ -5,8 +5,9 @@
 #include "extposocc.h"
 #include "pagedict4file.h"
 #include <vespa/vespalib/util/error.h>
-#include <vespa/log/log.h>
+#include <filesystem>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".diskindex.fieldwriter");
 
 using search::index::FieldLengthInfo;
@@ -184,7 +185,7 @@ FieldWriter::remove(const vespalib::string &prefix)
 {
     for (const char **j = termOccNames; *j != nullptr; ++j) {
         vespalib::string tmpName = prefix + *j;
-        FastOS_File::Delete(tmpName.c_str());
+        std::filesystem::remove(std::filesystem::path(tmpName));
     }
 }
 

@@ -11,20 +11,12 @@
 using vespalib::alloc::MemoryAllocator;
 using vespalib::datastore::EntryRef;
 
-namespace {
-
-constexpr double mapper_grow_factor = 1.03;
-
-constexpr uint32_t max_small_buffer_type_id = 500u;
-
-}
-
 namespace search::attribute {
 
 SingleRawAttribute::SingleRawAttribute(const vespalib::string& name, const Config& config)
     : RawAttribute(name, config),
       _ref_vector(config.getGrowStrategy(), getGenerationHolder()),
-      _raw_store(get_memory_allocator(), max_small_buffer_type_id, mapper_grow_factor)
+      _raw_store(get_memory_allocator(), RawBufferStore::array_store_max_type_id, RawBufferStore::array_store_grow_factor)
 {
 }
 

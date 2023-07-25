@@ -25,8 +25,8 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.httpcomponents.client5</groupId>
-      <artifactId>httpclient5</artifactId>
+      <groupId>org.eclipse.jetty.http2</groupId>
+      <artifactId>http2-http-client-transport</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -44,11 +44,6 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.github.tomakehurst</groupId>
-      <artifactId>wiremock-jre8-standalone</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -72,21 +67,6 @@
                 <arg>-Xlint:-serial</arg>
               </compilerArgs>
               <release>${vespaClients.jdk.releaseVersion}</release>
-              <showDeprecation>true</showDeprecation>
-            </configuration>
-          </execution>
-          <execution>
-            <id>compile-java-9</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <release>9</release>
-              <compileSourceRoots>
-                <compileSourceRoot>${project.basedir}/src/main/java9</compileSourceRoot>
-              </compileSourceRoots>
-              <outputDirectory>${project.build.outputDirectory}/META-INF/versions/9</outputDirectory>
               <showDeprecation>true</showDeprecation>
             </configuration>
           </execution>

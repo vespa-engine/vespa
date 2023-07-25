@@ -15,6 +15,7 @@
 #include <vector>
 #include <limits>
 #include <unistd.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-gen-testdocs");
@@ -84,7 +85,7 @@ shafile(const string &baseDir, const string &file)
         LOG(error, "Could not open %s for sha256 checksum", fullFile.c_str());
         LOG_ABORT("should not be reached");
     }
-    int64_t flen = f.GetSize();
+    int64_t flen = f.getSize();
     int64_t remainder = flen;
     EvpMdCtxPtr md_ctx(EVP_MD_CTX_new());
     const EVP_MD* md = EVP_get_digestbyname("SHA256");
@@ -550,7 +551,7 @@ DocumentGenerator::generate(uint32_t docMin, uint32_t docIdLimit,
                             bool headers, bool json)
 {
     string fullName(prependBaseDir(baseDir, feedFileName));
-    FastOS_File::Delete(fullName.c_str());
+    std::filesystem::remove(std::filesystem::path(fullName));
     Fast_BufferedFile f(new FastOS_File);
     f.WriteOpen(fullName.c_str());
     if (json) {

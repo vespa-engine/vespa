@@ -5,7 +5,8 @@ import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Deserializer;
 
 import java.nio.ByteOrder;
-import java.io.UnsupportedEncodingException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class DocumentSummary {
 
@@ -27,21 +28,12 @@ public class DocumentSummary {
                 int summarySize = buf.getInt(null);
                 int end = start;
                 while (cArr[end++] != 0);
-                try {
-                    byte [] sb = new byte [summarySize];
-                    System.arraycopy(cArr, end, sb, 0, summarySize);
-                    summaries[i] = new Summary(new String(cArr, start, end-start-1, "utf-8"), sb);
-                    start = end + summarySize;
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException("UTF-8 apparently not supported");
-                }
+                byte [] sb = new byte [summarySize];
+                System.arraycopy(cArr, end, sb, 0, summarySize);
+                summaries[i] = new Summary(new String(cArr, start, end-start-1, UTF_8), sb);
+                start = end + summarySize;
             }
         }
-    }
-
-    /** Constructs a new message from a byte buffer. */
-    public DocumentSummary(byte[] buffer) {
-        this(BufferSerializer.wrap(buffer));
     }
 
     final public int getSummaryCount()         { return summaries.length; }
@@ -63,7 +55,6 @@ public class DocumentSummary {
 
         final public String getDocId()           { return docId; }
         final public byte [] getSummary()        { return summary; }
-        final public void setSummary(byte [] summary) { this.summary = summary; }
 
         public int compareTo(Summary s) {
             return getDocId().compareTo(s.getDocId());

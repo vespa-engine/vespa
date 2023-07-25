@@ -8,6 +8,7 @@ import com.yahoo.container.plugin.classanalysis.PackageTally;
 import com.yahoo.container.plugin.osgi.ExportPackages;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import com.yahoo.container.plugin.osgi.ImportPackages.Import;
+import com.yahoo.container.plugin.util.ArtifactId;
 import com.yahoo.container.plugin.util.Artifacts;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -18,6 +19,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +32,10 @@ import static com.yahoo.container.plugin.bundle.AnalyzeBundle.nonPublicApiPackag
 import static com.yahoo.container.plugin.classanalysis.Packages.disallowedImports;
 import static com.yahoo.container.plugin.osgi.ExportPackages.exportsByPackageName;
 import static com.yahoo.container.plugin.osgi.ImportPackages.calculateImports;
+import static com.yahoo.container.plugin.util.Artifacts.VESPA_GROUP_ID;
+import static com.yahoo.container.plugin.util.Artifacts.getVespaArtifact;
 import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
+import static com.yahoo.container.plugin.util.JarFiles.providedArtifactsFromManifest;
 
 
 /**
@@ -45,8 +50,6 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         INTERNAL,  // other vespa bundles (need not be set for groupId 'com.yahoo.vespa')
         USER
     }
-
-    private static final String VESPA_GROUP_ID = "com.yahoo.vespa";
 
     @Parameter
     private String discApplicationClass = null;
@@ -75,6 +78,8 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     private boolean suppressWarningPublicApi;
     @Parameter(defaultValue = "false")
     private boolean suppressWarningOverlappingPackages;
+    @Parameter
+    private List<String> allowEmbeddedArtifacts = List.of();
 
     @Parameter(defaultValue = "false")
     private boolean failOnWarnings;
@@ -89,8 +94,11 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
             Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(project);
             warnOnUnsupportedArtifacts(artifactSet.getNonJarArtifacts());
+
+            List<Artifact> artifactsToInclude = artifactSet.getJarArtifactsToInclude();
+
             if (! isContainerDiscArtifact(project.getArtifact()))
-                throwIfInternalContainerArtifactsAreIncluded(artifactSet.getJarArtifactsToInclude());
+                throwIfInternalContainerArtifactsAreIncluded(artifactsToInclude);
 
             List<Artifact> providedJarArtifacts = artifactSet.getJarArtifactsProvided();
             List<File> providedJarFiles = providedJarArtifacts.stream().map(Artifact::getFile).toList();
@@ -104,26 +112,27 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
             PackageTally projectPackages = getProjectClassesTally();
 
             // Packages defined in compile scoped jars
-            PackageTally compileJarsPackages = definedPackages(artifactSet.getJarArtifactsToInclude());
+            PackageTally compileJarsPackages = definedPackages(artifactsToInclude);
 
             // The union of packages in the project and compile scoped jars
             PackageTally includedPackages = projectPackages.combine(compileJarsPackages);
 
             logDebugPackageSets(exportedPackagesFromProvidedJars, includedPackages);
 
-            Optional<Artifact> jdiscCore = providedJarArtifacts.stream()
-                    .filter(artifact -> artifact.getArtifactId().equals("jdisc_core"))
-                    .findAny();
-
-            if (jdiscCore.isPresent()) {
-                // jdisc_core being provided guarantees that log output does not contain its exported packages
+            Optional<Artifact> jdisc_core = getVespaArtifact("jdisc_core", providedJarArtifacts);
+            Optional<Artifact> wantedProvidedArtifact = getVespaArtifact(wantedProvidedDependency(), providedJarArtifacts);
+            if (wantedProvidedArtifact.isPresent()) {
+                // Having our wanted artifact as provided guarantees that log output does not contain its exported packages
                 logMissingPackages(exportedPackagesFromProvidedDeps, projectPackages, compileJarsPackages, includedPackages);
-            } else if (! suppressWarningMissingImportPackages) {
+
+                logProvidedArtifactsIncluded(artifactsToInclude, providedArtifactsFromManifest(wantedProvidedArtifact.get().getFile()));
+            } else if (! suppressWarningMissingImportPackages && jdisc_core.isEmpty()) {
+                // TODO: Remove jdisc_core clause above and instead add suppressWarning to necessary vespa modules.
                 warnOrThrow(("This project does not have '%s' as provided dependency, so the generated 'Import-Package' " +
                         "OSGi header may be missing important packages.").formatted(wantedProvidedDependency()));
             }
+
             logOverlappingPackages(projectPackages, exportedPackagesFromProvidedDeps);
-            logUnnecessaryPackages(compileJarsPackages, exportedPackagesFromProvidedDeps);
 
             Map<String, Import> calculatedImports = calculateImports(includedPackages.referencedPackages(),
                                                                      includedPackages.definedPackages(),
@@ -132,10 +141,10 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
             List<String> nonPublicApiUsed = disallowedImports(calculatedImports, nonPublicApiPackagesFromProvidedJars);
             logNonPublicApiUsage(nonPublicApiUsed);
 
-            Map<String, String> manifestContent = generateManifestContent(artifactSet.getJarArtifactsToInclude(), calculatedImports, includedPackages);
+            Map<String, String> manifestContent = generateManifestContent(artifactsToInclude, calculatedImports, includedPackages);
             addAdditionalManifestProperties(manifestContent);
-            addManifestPropertiesForInternalBundles(manifestContent, includedPackages);
-            addManifestPropertiesForUserBundles(manifestContent, jdiscCore, nonPublicApiUsed);
+            addManifestPropertiesForInternalAndCoreBundles(manifestContent, includedPackages, providedJarArtifacts);
+            addManifestPropertiesForUserBundles(manifestContent, providedJarArtifacts, nonPublicApiUsed);
 
             createManifestFile(Paths.get(project.getBuild().getOutputDirectory()), manifestContent);
         } catch (Exception e) {
@@ -151,11 +160,6 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         };
     }
 
-    private BundleType effectiveBundleType() {
-        if (bundleType != BundleType.USER) return bundleType;
-        return isVespaInternalGroupId(project.getGroupId()) ? BundleType.INTERNAL : BundleType.USER;
-    }
-
     private void addAdditionalManifestProperties(Map<String, String> manifestContent) {
         addIfNotEmpty(manifestContent, "Bundle-Activator", bundleActivator);
         addIfNotEmpty(manifestContent, "X-JDisc-Privileged-Activator", jdiscPrivilegedActivator);
@@ -165,7 +169,9 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         addIfNotEmpty(manifestContent, "WebInfUrl", webInfUrl);
     }
 
-    private void addManifestPropertiesForInternalBundles(Map<String, String> manifestContent, PackageTally includedPackages) {
+    private void addManifestPropertiesForInternalAndCoreBundles(Map<String, String> manifestContent,
+                                                                PackageTally includedPackages,
+                                                                List<Artifact> providedJarArtifacts) {
         if (effectiveBundleType() == BundleType.USER) return;
 
         // TODO: this attribute is not necessary, remove?
@@ -175,11 +181,12 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
     }
 
     private void addManifestPropertiesForUserBundles(Map<String, String> manifestContent,
-                                                     Optional<Artifact> jdiscCore,
+                                                     List<Artifact> providedArtifacts,
                                                      List<String> nonPublicApiUsed) {
         if (effectiveBundleType() != BundleType.USER) return;
 
-        jdiscCore.ifPresent(
+        Optional<Artifact> jdisc_core = getVespaArtifact("jdisc_core", providedArtifacts);
+        jdisc_core.ifPresent(
                 artifact -> addIfNotEmpty(manifestContent, "X-JDisc-Vespa-Build-Version", artifact.getVersion()));
         addIfNotEmpty(manifestContent, "X-JDisc-Non-PublicApi-Import-Package", String.join(",", nonPublicApiUsed));
     }
@@ -237,19 +244,45 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
         }
     }
 
-    /*
-     * This mostly detects packages re-exported via composite bundles like jdisc_core and container-disc.
-     * An artifact can only be represented once, either in compile or provided scope. So if the project
-     * adds an artifact in compile scope that we deploy as a pre-installed bundle, we won't see the same
-     * artifact as provided via container-dev and hence can't detect the duplicate packages.
-     */
-    private void logUnnecessaryPackages(PackageTally compileJarsPackages,
-                                        Set<String> exportedPackagesFromProvidedDeps) {
-        Set<String> unnecessaryPackages = Sets.intersection(compileJarsPackages.definedPackages(), exportedPackagesFromProvidedDeps);
-        if (! unnecessaryPackages.isEmpty()) {
-            getLog().info("Compile scoped jars contain the following packages that are most likely " +
-                                  "available from jdisc runtime: " + unnecessaryPackages);
+    private void logProvidedArtifactsIncluded(List<Artifact> includedArtifacts,
+                                              List<ArtifactId> providedArtifacts) throws MojoExecutionException {
+        if (effectiveBundleType() == BundleType.CORE) return;
+
+        Set<ArtifactId> included = includedArtifacts.stream().map(ArtifactId::fromArtifact).collect(Collectors.toSet());
+        getLog().debug("Included  artifacts: " + included);
+        getLog().debug("Provided  artifacts: " + providedArtifacts);
+
+        Set<ArtifactId> includedProvided = Sets.intersection(included, new HashSet<>(providedArtifacts));
+        getLog().debug("Included provided artifacts: " + includedProvided);
+        HashSet<ArtifactId> allowed = getAllowedEmbeddedArtifacts(includedProvided);
+
+        List<String> violations = includedProvided.stream()
+                .filter(a -> ! allowed.contains(a))
+                .map(ArtifactId::stringValue)
+                .sorted().toList();
+
+        if (! violations.isEmpty()) {
+            warnOrThrow("Artifacts provided from Vespa runtime are included in compile scope: " + violations
+                                + ". Direct dependencies should be removed."
+                                + " For transitive dependencies, run 'mvn dependency:tree' and add necessary exclusions.");
         }
+    }
+
+    private HashSet<ArtifactId> getAllowedEmbeddedArtifacts(Set<ArtifactId> providedIncluded) throws MojoExecutionException {
+        if (allowEmbeddedArtifacts.isEmpty()) return new HashSet<>();
+
+        var allowed = new HashSet<ArtifactId>();
+        try {
+            allowEmbeddedArtifacts.stream().map(ArtifactId::fromStringValue).forEach(allowed::add);
+        } catch (Exception e) {
+            throw new MojoExecutionException("In config parameter 'allowEmbeddedArtifacts': " + e.getMessage(), e);
+        }
+        var allowedButUnused = Sets.difference(allowed, providedIncluded);
+        if (! allowedButUnused.isEmpty()) {
+            warnOrThrow("Configuration parameter 'allowEmbeddedArtifacts' contains artifact(s) not used in project: " + allowedButUnused);
+        }
+        getLog().info("Ignoring artifacts embedded in bundle: " + allowed);
+        return allowed;
     }
 
     private static String trimWhitespace(Optional<String> lines) {
@@ -274,6 +307,11 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                             " It must have scope 'provided' to avoid resource leaks in your application at runtime." +
                             " Please use 'mvn dependency:tree' to find the root cause.");
         }
+    }
+
+    private BundleType effectiveBundleType() {
+        if (bundleType != BundleType.USER) return bundleType;
+        return isVespaInternalGroupId(project.getGroupId()) ? BundleType.INTERNAL : BundleType.USER;
     }
 
     private boolean isVespaInternalGroupId(String groupId) {

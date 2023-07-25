@@ -26,13 +26,13 @@
   },
   "environment": "BARE_METAL",
   "owner": {
-    "tenant": "zoneapp",
-    "application": "zoneapp",
-    "instance": "zoneapp"
+    "tenant": "hosted-vespa",
+    "application": "tenant-host",
+    "instance": "default"
   },
   "membership": {
     "clustertype": "container",
-    "clusterid": "node-admin",
+    "clusterid": "tenant-host",
     "group": "0",
     "index": 3,
     "retired": false
@@ -58,6 +58,7 @@
   "preferToRetire": false,
   "wantToDeprovision": false,
   "wantToRebuild": false,
+  "wantToUpgradeFlavor": false,
   "down": false,
   "history": [
     {

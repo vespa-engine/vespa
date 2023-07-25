@@ -1,12 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.messagebus;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.ResourceReference;
@@ -25,7 +24,6 @@ import com.yahoo.messagebus.network.NetworkMultiplexer;
 import com.yahoo.messagebus.shared.SharedIntermediateSession;
 import com.yahoo.messagebus.shared.SharedMessageBus;
 import com.yahoo.messagebus.shared.SharedSourceSession;
-import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.yolean.concurrent.Memoized;
 
 import java.util.HashMap;
@@ -65,25 +63,18 @@ public final class SessionCache extends AbstractComponent {
     @Inject
     public SessionCache(NetworkMultiplexerProvider nets, ContainerMbusConfig containerMbusConfig,
                         DocumentTypeManager documentTypeManager,
-                        MessagebusConfig messagebusConfig,
-                        DocumentProtocolPoliciesConfig policiesConfig,
-                        DistributionConfig distributionConfig) {
-        this(nets::net, containerMbusConfig, documentTypeManager,
-             messagebusConfig, policiesConfig, distributionConfig);
+                        MessagebusConfig messagebusConfig) {
+        this(nets::net, containerMbusConfig, documentTypeManager, messagebusConfig);
 
     }
 
     public SessionCache(Supplier<NetworkMultiplexer> net, ContainerMbusConfig containerMbusConfig,
                         DocumentTypeManager documentTypeManager,
-                        MessagebusConfig messagebusConfig,
-                        DocumentProtocolPoliciesConfig policiesConfig,
-                        DistributionConfig distributionConfig) {
+                        MessagebusConfig messagebusConfig) {
         this(net,
              containerMbusConfig,
              messagebusConfig,
-             new DocumentProtocol(documentTypeManager,
-                                  policiesConfig,
-                                  distributionConfig));
+             new DocumentProtocol(documentTypeManager));
     }
 
     public SessionCache(Supplier<NetworkMultiplexer> net, ContainerMbusConfig containerMbusConfig,

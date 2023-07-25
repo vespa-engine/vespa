@@ -39,7 +39,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
     @Override
     protected boolean canDeployNow(ApplicationId application) {
-        return deployer().lastDeployTime(application)
+        return deployer().activationTime(application)
                 // Don't deploy if a regular deploy just happened
                 .map(lastDeployTime -> lastDeployTime.isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments)))
                 // We only know last deploy time for applications that were deployed on this config server,
@@ -57,7 +57,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
                                                                                .map(node -> node.allocation().get().owner())
                                                                                .distinct()
                                                                                .filter(this::canDeployNow)
-                                                                               .collect(Collectors.toMap(Function.identity(), this::getLastDeployTime));
+                                                                               .collect(Collectors.toMap(Function.identity(), this::activationTime));
 
         return deploymentTimes.entrySet().stream()
                               .sorted(Map.Entry.comparingByValue())

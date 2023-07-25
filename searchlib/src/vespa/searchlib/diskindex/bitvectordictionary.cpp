@@ -51,7 +51,7 @@ BitVectorDictionary::open(const vespalib::string &pathPrefix,
 
         _entries.resize(numEntries);
         size_t bufSize = sizeof(WordSingleKey) * numEntries;
-        assert(idxFile.GetSize() >= static_cast<int64_t>(idxHeaderLen + bufSize));
+        assert(idxFile.getSize() >= static_cast<int64_t>(idxHeaderLen + bufSize));
         if (bufSize > 0) {
             ssize_t has_read = idxFile.Read(&_entries[0], bufSize);
             assert(has_read == ssize_t(bufSize));
@@ -75,7 +75,7 @@ BitVectorDictionary::open(const vespalib::string &pathPrefix,
     }
     vespalib::FileHeader datHeader(64);
     _datHeaderLen = datHeader.readFile(*_datFile);
-    assert(_datFile->GetSize() >=
+    assert(_datFile->getSize() >=
            static_cast<int64_t>(_vectorSize * _entries.size() + _datHeaderLen));
     return true;
 }
@@ -86,8 +86,7 @@ BitVectorDictionary::lookup(uint64_t wordNum)
 {
     WordSingleKey key;
     key._wordNum = wordNum;
-    std::vector<WordSingleKey>::const_iterator itr =
-        std::lower_bound(_entries.begin(), _entries.end(), key);
+    auto itr = std::lower_bound(_entries.begin(), _entries.end(), key);
     if (itr == _entries.end() || key < *itr) {
         return BitVector::UP();
     }

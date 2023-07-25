@@ -168,7 +168,7 @@ public class ApplicationDeployTest {
     }
 
     @Test
-    void testThatAppWithIllegalDeploymentXmlIsNotValid() throws IOException {
+    void testThatAppWithIllegalDeploymentXmlIsNotValid() {
         assertThrows(IllegalArgumentException.class, () -> {
             File tmpDir = tmpFolder;
             IOUtils.copyDirectory(new File(TESTDIR, "app_invalid_deployment_xml"), tmpDir);
@@ -192,13 +192,15 @@ public class ApplicationDeployTest {
 
     @Test
     void testThatAppWithInvalidParallelDeploymentFails() throws IOException {
-        String expectedMessage = "4:  <staging/>\n" +
-                "5:  <prod global-service-id=\"query\">\n" +
-                "6:    <parallel>\n" +
-                "7:      <instance id=\"hello\" />\n" +
-                "8:    </parallel>\n" +
-                "9:  </prod>\n" +
-                "10:</deployment>\n";
+        String expectedMessage = """
+                4:  <staging/>
+                5:  <prod global-service-id="query">
+                6:    <parallel>
+                7:      <instance id="hello" />
+                8:    </parallel>
+                9:  </prod>
+                10:</deployment>
+                """;
         File tmpDir = tmpFolder;
         IOUtils.copyDirectory(new File(TESTDIR, "invalid_parallel_deployment_xml"), tmpDir);
         try {
@@ -220,7 +222,7 @@ public class ApplicationDeployTest {
 
     @Test
     void testMetaData() throws IOException {
-        File tmp = Files.createTempDir();
+        File tmp = tmpFolder;
         String appPkg = TESTDIR + "app1";
         IOUtils.copyDirectory(new File(appPkg), tmp);
         ApplicationId applicationId = ApplicationId.from("tenant1", "application1", "instance1");

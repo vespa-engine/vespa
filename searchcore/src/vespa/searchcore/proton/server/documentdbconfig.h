@@ -173,7 +173,8 @@ public:
                      const vespalib::string &configId,
                      const vespalib::string &docTypeName) noexcept;
 
-    DocumentDBConfig(const DocumentDBConfig &cfg);
+    DocumentDBConfig(const DocumentDBConfig &cfg) noexcept;
+    DocumentDBConfig & operator=(const DocumentDBConfig &cfg) = delete;
     ~DocumentDBConfig();
 
     const vespalib::string &getConfigId() const { return _configId; }
@@ -250,6 +251,7 @@ public:
      * reprocessing.
      */
     static SP makeDelayedAttributeAspectConfig(const SP &newCfg, const DocumentDBConfig &oldCfg);
+    SP make_copy() const;
 
     static std::shared_ptr<search::index::Schema>
     build_schema(const AttributesConfig& attributes_config,

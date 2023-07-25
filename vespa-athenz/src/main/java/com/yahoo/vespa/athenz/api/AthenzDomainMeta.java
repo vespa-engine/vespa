@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record AthenzDomainMeta(
         @JsonProperty("account") String account,
+        @JsonProperty("gcpProject") String gcpProject,
         @JsonProperty("name") String name
 ) {
 }

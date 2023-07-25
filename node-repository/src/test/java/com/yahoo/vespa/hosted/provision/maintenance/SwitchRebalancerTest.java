@@ -23,9 +23,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
@@ -235,7 +233,7 @@ public class SwitchRebalancerTest {
                                                      .map(spec -> new ClusterContext(app, spec, capacity))
                                                      .toList();
         ApplicationContext context = new ApplicationContext(app, clusterContexts);
-        return new MockDeployer(tester.provisioner(), tester.clock(), Map.of(app, context));
+        return new MockDeployer(tester.provisioner(), tester.clock(), List.of(context));
     }
 
 }

@@ -5,9 +5,9 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -57,8 +57,7 @@ public class InPlaceResizeProvisionTest {
     private final ProvisioningTester tester = new ProvisioningTester.Builder()
             .flagSource(flagSource)
             .zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-    private final ApplicationId infraApp = ProvisioningTester.applicationId();
-    private final ApplicationId app = ProvisioningTester.applicationId();
+    private final ApplicationId app = ProvisioningTester.applicationId("a1");
 
     @Test
     public void single_group_same_cluster_size_resource_increase() {
@@ -168,8 +167,6 @@ public class InPlaceResizeProvisionTest {
         assertEquals(0, listCluster(content1).retired().size());
     }
 
-
-    /** In this scenario there should be no resizing */
     @Test
     public void increase_size_decrease_resources() {
         addParentHosts(14, largeResources.with(fast));
@@ -199,15 +196,15 @@ public class InPlaceResizeProvisionTest {
         assertSizeAndResources(listCluster(content1).retired(), 4, resources);
         assertSizeAndResources(listCluster(content1).not().retired(), 8, halvedResources);
 
-        // ... same with setting a node to want to retire
-        Node nodeToWantoToRetire = listCluster(content1).not().retired().asList().get(0);
-        try (NodeMutex lock = tester.nodeRepository().nodes().lockAndGetRequired(nodeToWantoToRetire)) {
+        // Here we'll unretire and resize one of the previously retired nodes as there is no rule against it
+        Node nodeToWantToRetire = listCluster(content1).not().retired().asList().get(0);
+        try (NodeMutex lock = tester.nodeRepository().nodes().lockAndGetRequired(nodeToWantToRetire)) {
             tester.nodeRepository().nodes().write(lock.node().withWantToRetire(true, Agent.system,
                     tester.clock().instant()), lock);
         }
         new PrepareHelper(tester, app).prepare(content1, 8, 1, halvedResources).activate();
-        assertTrue(listCluster(content1).retired().stream().anyMatch(n -> n.equals(nodeToWantoToRetire)));
-        assertEquals(5, listCluster(content1).retired().size());
+        assertTrue(listCluster(content1).retired().stream().anyMatch(n -> n.equals(nodeToWantToRetire)));
+        assertEquals(4, listCluster(content1).retired().size());
         assertSizeAndResources(listCluster(content1).not().retired(), 8, halvedResources);
     }
 
@@ -243,7 +240,7 @@ public class InPlaceResizeProvisionTest {
 
     private void addParentHosts(int count, NodeResources resources) {
         tester.makeReadyNodes(count, resources, NodeType.host, 4);
-        tester.prepareAndActivateInfraApplication(infraApp, NodeType.host);
+        tester.activateTenantHosts();
     }
 
     private void assertSizeAndResources(ClusterSpec cluster, int clusterSize, NodeResources resources) {

@@ -25,15 +25,14 @@ struct CompareValue {
 void
 removeDupAdditions(PostingChange<AttributePosting>::A &additions)
 {
-    using Iterator = PostingChange<AttributePosting>::A::iterator;
     if (additions.empty())
         return;
     if (additions.size() == 1)
         return;
     std::sort(additions.begin(), additions.end());
-    Iterator i = additions.begin();
-    Iterator ie = additions.end();
-    Iterator d = i;
+    auto i = additions.begin();
+    auto ie = additions.end();
+    auto d = i;
     for (++i; i != ie; ++i, ++d) {
         if (d->_key == i->_key)
             break;
@@ -53,15 +52,14 @@ removeDupAdditions(PostingChange<AttributePosting>::A &additions)
 void
 removeDupAdditions(PostingChange<AttributeWeightPosting>::A &additions)
 {
-    using Iterator = PostingChange<AttributeWeightPosting>::A::iterator;
     if (additions.empty())
         return;
     if (additions.size() == 1u)
         return;
     std::sort(additions.begin(), additions.end());
-    Iterator i = additions.begin();
-    Iterator ie = additions.end();
-    Iterator d = i;
+    auto i = additions.begin();
+    auto ie = additions.end();
+    auto d = i;
     for (++i; i != ie; ++i, ++d) {
         if (d->_key == i->_key)
             break;
@@ -85,15 +83,14 @@ removeDupAdditions(PostingChange<AttributeWeightPosting>::A &additions)
 void
 removeDupRemovals(std::vector<uint32_t> &removals)
 {
-    using Iterator = std::vector<uint32_t>::iterator;
     if (removals.empty())
         return;
     if (removals.size() == 1u)
         return;
     std::sort(removals.begin(), removals.end());
-    Iterator i = removals.begin();
-    Iterator ie = removals.end();
-    Iterator d = i;
+    auto i = removals.begin();
+    auto ie = removals.end();
+    auto d = i;
     for (++i; i != ie; ++i, ++d) {
         if (*d == *i)
             break;

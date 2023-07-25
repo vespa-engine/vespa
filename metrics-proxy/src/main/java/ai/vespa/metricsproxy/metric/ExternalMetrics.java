@@ -36,7 +36,6 @@ public class ExternalMetrics {
 
     public static final DimensionId ROLE_DIMENSION = toDimensionId("role");
     public static final DimensionId STATE_DIMENSION = toDimensionId("state");
-    public static final DimensionId ORCHESTRATOR_STATE_DIMENSION = toDimensionId("orchestratorState");
 
     private volatile List<MetricsPacket.Builder> metrics = new ArrayList<>();
     private final MetricsConsumers consumers;
@@ -89,7 +88,7 @@ public class ExternalMetrics {
         for (MetricsPacket.Builder packet : packets) {
             dimensions.putAll(packet.build().dimensions());
         }
-        dimensions.keySet().retainAll(Set.of(ROLE_DIMENSION, STATE_DIMENSION, ORCHESTRATOR_STATE_DIMENSION));
+        dimensions.keySet().retainAll(Set.of(ROLE_DIMENSION, STATE_DIMENSION));
         return dimensions;
     }
 

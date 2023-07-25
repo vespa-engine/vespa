@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zms;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.athenz.auth.util.Crypto;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzAssertion;
@@ -51,6 +52,8 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 
 /**
@@ -226,23 +229,13 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void updateDomain(AthenzDomain domain, Map<String, Object> attributes) {
-        for (String attribute : attributes.keySet()) {
-            Object attrVal = attributes.get(attribute);
-
-            String val = attrVal instanceof String ? "\"" + attrVal.toString() + "\"" : attrVal.toString();
-            String domainMeta = """
-                    {
-                        "%s": %s
-                    }
-                    """
-                    .formatted(attribute, val);
-            HttpUriRequest request = RequestBuilder.put()
-                    .setUri(zmsUrl.resolve("domain/%s/meta/system/%s".formatted(domain.getName(), attribute)))
-                    .setEntity(new StringEntity(domainMeta, ContentType.APPLICATION_JSON))
-                    .build();
-            execute(request, response -> readEntity(response, Void.class));
-        }
+    public void updateDomain(AthenzDomain domain, String mainKey, Map<String, Object> attributes) {
+        String domainMeta = uncheck(() -> new ObjectMapper().writeValueAsString(attributes));
+        HttpUriRequest request = RequestBuilder.put()
+                                               .setUri(zmsUrl.resolve("domain/%s/meta/system/%s".formatted(domain.getName(), mainKey)))
+                                               .setEntity(new StringEntity(domainMeta, ContentType.APPLICATION_JSON))
+                                               .build();
+        execute(request, response -> readEntity(response, Void.class));
     }
 
     @Override
@@ -470,8 +463,8 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         var metaData = new HashMap<String, Object>();
         metaData.putAll(attributes);
         metaData.putAll(Map.of("name", name,
-                        "parent", parent.getName(),
-                        "adminUsers", List.of(identity.getFullName())) // TODO: createSubdomain should receive an adminUsers argument
+                               "parent", parent.getName(),
+                               "adminUsers", List.of(identity.getFullName())) // TODO: createSubdomain should receive an adminUsers argument
         );
         var entity = toJsonStringEntity(metaData);
         var request = RequestBuilder.post(uri)

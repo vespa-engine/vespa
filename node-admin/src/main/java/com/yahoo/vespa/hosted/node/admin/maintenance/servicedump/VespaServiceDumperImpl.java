@@ -203,18 +203,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         @Override
         public int servicePid() {
             if (pid == -1) {
-                try {
-                    pid = findServicePid(serviceId());
-                } catch (RuntimeException e1) {
-                    try {
-                        // Workaround for Vespa 7 container clusters having service name 'qrserver'
-                        if (serviceId().equals("container")) pid = findServicePid("qrserver");
-                        else throw e1;
-                    } catch (RuntimeException e2) {
-                        e1.addSuppressed(e2);
-                        throw e1;
-                    }
-                }
+                pid = findServicePid(serviceId());
             }
             return pid;
         }

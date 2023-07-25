@@ -33,7 +33,6 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -333,11 +332,7 @@ TEST("require that resume after interrupted save config works")
         std::cout << "Best config serial is " << best_config_snapshot.syncToken << std::endl;
         auto old_config_subdir = config_subdir(best_config_snapshot.syncToken);
         auto new_config_subdir = config_subdir(serialNum + 1);
-        std::filesystem::create_directories(std::filesystem::path(new_config_subdir));
-        auto config_files = vespalib::listDirectory(old_config_subdir);
-        for (auto &config_file : config_files) {
-            vespalib::copy(old_config_subdir + "/" + config_file, new_config_subdir + "/" + config_file, false, false);
-        }
+        std::filesystem::copy(std::filesystem::path(old_config_subdir), std::filesystem::path(new_config_subdir));
         info.addSnapshot({true, serialNum + 1, new_config_subdir.substr(new_config_subdir.rfind('/') + 1)});
         info.save();
     }

@@ -59,7 +59,7 @@ template <typename T>
 uint32_t
 getFieldId(vespalib::stringref name, const T &map)
 {
-    typename T::const_iterator it = map.find(name);
+    auto it = map.find(name);
     return (it != map.end()) ? it->second : Schema::UNKNOWN_FIELD_ID;
 }
 
@@ -433,13 +433,12 @@ struct IntersectHelper {
     void intersect(const std::vector<T> &set1, const std::vector<T> &set2,
                    const Map &set2_map,
                    std::vector<T> &intersection, Map &intersection_map) {
-        for (typename std::vector<T>::const_iterator
-                 it = set1.begin(); it != set1.end(); ++it) {
-            typename Map::const_iterator it2 = set2_map.find(it->getName());
+        for (const auto& elem : set1) {
+            auto it2 = set2_map.find(elem.getName());
             if (it2 != set2_map.end()) {
-                if (is_matching(*it, set2[it2->second])) {
-                    intersection_map[it->getName()] = intersection.size();
-                    intersection.push_back(*it);
+                if (is_matching(elem, set2[it2->second])) {
+                    intersection_map[elem.getName()] = intersection.size();
+                    intersection.push_back(elem);
                 }
             }
         }

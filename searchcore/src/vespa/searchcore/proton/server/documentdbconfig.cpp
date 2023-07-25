@@ -98,31 +98,8 @@ DocumentDBConfig::DocumentDBConfig(
 { }
 
 
-DocumentDBConfig::
-DocumentDBConfig(const DocumentDBConfig &cfg)
-    : _configId(cfg._configId),
-      _docTypeName(cfg._docTypeName),
-      _generation(cfg._generation),
-      _rankProfiles(cfg._rankProfiles),
-      _rankingConstants(cfg._rankingConstants),
-      _rankingExpressions(cfg._rankingExpressions),
-      _onnxModels(cfg._onnxModels),
-      _indexschema(cfg._indexschema),
-      _attributes(cfg._attributes),
-      _summary(cfg._summary),
-      _juniperrc(cfg._juniperrc),
-      _documenttypes(cfg._documenttypes),
-      _repo(cfg._repo),
-      _importedFields(cfg._importedFields),
-      _tuneFileDocumentDB(cfg._tuneFileDocumentDB),
-      _schema(cfg._schema),
-      _maintenance(cfg._maintenance),
-      _storeConfig(cfg._storeConfig),
-      _threading_service_config(cfg._threading_service_config),
-      _alloc_config(cfg._alloc_config),
-      _orig(cfg._orig),
-      _delayedAttributeAspects(false)
-{ }
+DocumentDBConfig::DocumentDBConfig(const DocumentDBConfig &cfg) noexcept = default;
+
 
 DocumentDBConfig::~DocumentDBConfig() = default;
 
@@ -346,6 +323,13 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
                    n._docTypeName);
     result->_delayedAttributeAspects = true;
     return result;
+}
+
+DocumentDBConfig::SP
+DocumentDBConfig::make_copy() const {
+    auto copy = std::make_shared<DocumentDBConfig>(*this);
+    copy->_delayedAttributeAspects = false;
+    return copy;
 }
 
 const document::DocumentType *

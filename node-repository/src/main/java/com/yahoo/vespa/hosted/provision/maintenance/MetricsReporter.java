@@ -21,11 +21,13 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
+import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.persistence.CacheStats;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,7 +66,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     @Override
     public double maintain() {
         // Sort by hostname to get deterministic metric reporting order (and hopefully avoid changes
-        // to metric reporting time so we get double reporting or no reporting within a minute)
+        // to metric reporting time, so we get double reporting or no reporting within a minute)
         NodeList nodes = nodeRepository().nodes().list().sortedBy(Comparator.comparing(Node::hostname));
         ServiceModel serviceModel = serviceMonitor.getServiceModelSnapshot();
 
@@ -79,6 +81,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         updateRepairTicketMetrics(nodes);
         updateAllocationMetrics(nodes);
         updateClusterMetrics(nodes);
+        updateEmptyExclusiveHosts(nodes);
         return 1.0;
     }
 
@@ -384,6 +387,19 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
              .map(report -> report.getInspector().field("status").asString())
              .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
              .forEach((status, number) -> metric.set(ConfigServerMetrics.HOSTED_VESPA_BREAKFIXED_HOSTS.baseName(), number, getContext(Map.of("status", status))));
+    }
+
+    private void updateEmptyExclusiveHosts(NodeList nodes) {
+        Instant now = nodeRepository().clock().instant();
+        Duration minActivePeriod = Duration.ofMinutes(10);
+        int emptyHosts = nodes.parents().state(State.active)
+                              .matching(node -> (node.type() != NodeType.host && node.type().isHost()) ||
+                                                node.exclusiveToApplicationId().isPresent())
+                              .matching(host -> host.history().hasEventBefore(History.Event.Type.activated,
+                                                                              now.minus(minActivePeriod)))
+                              .matching(host -> nodes.childrenOf(host).state(State.active).isEmpty())
+                              .size();
+        metric.set(ConfigServerMetrics.NODES_EMPTY_EXCLUSIVE.baseName(), emptyHosts, null);
     }
 
     static Map<String, String> dimensions(ApplicationId application, ClusterSpec.Id cluster) {

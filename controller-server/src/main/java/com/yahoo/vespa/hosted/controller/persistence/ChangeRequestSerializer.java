@@ -45,6 +45,7 @@ public class ChangeRequestSerializer {
     private static final String ACTION_STATE_FIELD = "state";
     private static final String LAST_UPDATED_FIELD = "lastUpdated";
     private static final String HOSTS_FIELD = "hosts";
+    private static final String CATEGORY_FIELD = "category";
 
 
     public static VespaChangeRequest fromSlime(Slime slime) {
@@ -56,6 +57,8 @@ public class ChangeRequestSerializer {
         var status = VespaChangeRequest.Status.valueOf(inspector.field(STATUS_FIELD).asString());
         var impact = ChangeRequest.Impact.valueOf(inspector.field(IMPACT_FIELD).asString());
         var approval = ChangeRequest.Approval.valueOf(inspector.field(APPROVAL_FIELD).asString());
+        var category = inspector.field(CATEGORY_FIELD).valid() ?
+                inspector.field(CATEGORY_FIELD).asString() : "Unknown";
 
         var impactedHosts = new ArrayList<String>();
         inspector.field(IMPACTED_HOSTS_FIELD)
@@ -111,22 +114,26 @@ public class ChangeRequestSerializer {
     }
 
     private static void writeChangeRequestSource(Cursor cursor, ChangeRequestSource source) {
-        cursor.setString(SOURCE_SYSTEM_FIELD, source.getSystem());
-        cursor.setString(ID_FIELD, source.getId());
-        cursor.setString(URL_FIELD, source.getUrl());
-        cursor.setString(START_TIME_FIELD, source.getPlannedStartTime().toString());
-        cursor.setString(END_TIME_FIELD, source.getPlannedEndTime().toString());
-        cursor.setString(STATUS_FIELD, source.getStatus().name());
+        cursor.setString(SOURCE_SYSTEM_FIELD, source.system());
+        cursor.setString(ID_FIELD, source.id());
+        cursor.setString(URL_FIELD, source.url());
+        cursor.setString(START_TIME_FIELD, source.plannedStartTime().toString());
+        cursor.setString(END_TIME_FIELD, source.plannedEndTime().toString());
+        cursor.setString(STATUS_FIELD, source.status().name());
+        cursor.setString(CATEGORY_FIELD, source.category());
     }
 
     public static ChangeRequestSource readChangeRequestSource(Inspector inspector) {
+        var category = inspector.field(CATEGORY_FIELD).valid() ?
+                inspector.field(CATEGORY_FIELD).asString() : "Unknown";
         return new ChangeRequestSource(
                 inspector.field(SOURCE_SYSTEM_FIELD).asString(),
                 inspector.field(ID_FIELD).asString(),
                 inspector.field(URL_FIELD).asString(),
                 ChangeRequestSource.Status.valueOf(inspector.field(STATUS_FIELD).asString()),
                 ZonedDateTime.parse(inspector.field(START_TIME_FIELD).asString()),
-                ZonedDateTime.parse(inspector.field(END_TIME_FIELD).asString())
+                ZonedDateTime.parse(inspector.field(END_TIME_FIELD).asString()),
+                category
         );
     }
 

@@ -40,6 +40,10 @@ protected:
     using WeightedInt = typename B::BaseClass::WeightedInt;
     using largeint_t = typename B::BaseClass::largeint_t;
 
+    template <bool asc>
+    long on_serialize_for_sort(DocId doc, void* serTo, long available) const;
+    long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
+    long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
 public:
     MultiValueNumericEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
 
@@ -103,7 +107,6 @@ public:
     // Implements attribute::IMultiValueAttribute
     const attribute::IArrayReadView<T>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<T>, vespalib::Stash& stash) const override;
     const attribute::IWeightedSetReadView<T>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<T>, vespalib::Stash& stash) const override;
-
 private:
     using AttributeReader = PrimitiveReader<typename B::LoadedValueType>;
     void loadAllAtOnce(AttributeReader & attrReader, size_t numDocs, size_t numValues);

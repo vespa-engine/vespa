@@ -7,13 +7,11 @@ search music {
 
     field title type string {
       indexing: summary | index   # How this field should be indexed
-      # index-to: title, default    # Create two indexes
       weight: 75 # Ranking importancy of this field, used by the built in nativeRank feature
     }
 
     field artist type string {
       indexing: summary | attribute | index
-      # index-to: artist, default
 
       weight: 25 
     }

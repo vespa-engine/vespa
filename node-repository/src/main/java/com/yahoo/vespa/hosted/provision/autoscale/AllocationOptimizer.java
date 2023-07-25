@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
 import java.util.Optional;
 
@@ -63,9 +64,8 @@ public class AllocationOptimizer {
                                                                             availableRealHostResources,
                                                                             nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
-                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get())) {
+                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                     bestAllocation = allocatableResources;
-                }
             }
         }
         return bestAllocation;
@@ -92,6 +92,7 @@ public class AllocationOptimizer {
                      .multiply(clusterModel.loadWith(nodes, groups)) // redundancy aware adjustment with these counts
                      .divide(clusterModel.redundancyAdjustment())    // correct for double redundancy adjustment
                      .scaled(current.realResources().nodeResources());
+
         // Combine the scaled resource values computed here
         // with the currently configured non-scaled values, given in the limits, if any
         var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()

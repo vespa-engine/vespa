@@ -20,7 +20,7 @@ ObjectStore::~ObjectStore()
 void
 ObjectStore::add(const vespalib::string & key, Anything::UP value)
 {
-    ObjectMap::iterator found = _objectMap.find(key);
+    auto found = _objectMap.find(key);
     if (found != _objectMap.end()) {
         delete found->second;
         found->second = NULL;
@@ -31,7 +31,7 @@ ObjectStore::add(const vespalib::string & key, Anything::UP value)
 const Anything *
 ObjectStore::get(const vespalib::string & key) const
 {
-    ObjectMap::const_iterator found = _objectMap.find(key);
+    auto found = _objectMap.find(key);
     return (found != _objectMap.end()) ? found->second : NULL;
 }
 

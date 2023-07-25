@@ -7,11 +7,11 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
-import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.schema.DocumentOnlySchema;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.schema.derived.SchemaInfo;
+import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchConfig.DistributionPolicy;
@@ -19,8 +19,6 @@ import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import com.yahoo.vespa.model.container.docproc.DocprocChain;
-import com.yahoo.vespa.model.content.DispatchSpec;
 import com.yahoo.vespa.model.content.DispatchTuning;
 import com.yahoo.vespa.model.content.SearchCoverage;
 
@@ -56,7 +54,6 @@ public class IndexedSearchCluster extends SearchCluster
     private int redundancy = 1;
 
     private final DispatchGroup rootDispatch;
-    private DispatchSpec dispatchSpec;
     private final List<SearchNode> searchNodes = new ArrayList<>();
     private final DispatchTuning.DispatchPolicy defaultDispatchPolicy;
     private final double dispatchWarmup;
@@ -224,20 +221,6 @@ public class IndexedSearchCluster extends SearchCluster
 
     public void setRedundancy(int redundancy) {
         this.redundancy = redundancy;
-    }
-
-    public void setDispatchSpec(DispatchSpec dispatchSpec) {
-        if (dispatchSpec.getNumDispatchGroups() != null) {
-            this.dispatchSpec = new DispatchSpec.Builder().setGroups
-                    (DispatchGroupBuilder.createDispatchGroups(getSearchNodes(),
-                                                               dispatchSpec.getNumDispatchGroups())).build();
-        } else {
-            this.dispatchSpec = dispatchSpec;
-        }
-    }
-
-    public DispatchSpec getDispatchSpec() {
-        return dispatchSpec;
     }
 
     private static DistributionPolicy.Enum toDistributionPolicy(DispatchTuning.DispatchPolicy tuning) {

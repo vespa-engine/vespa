@@ -40,7 +40,6 @@ public class StatusHandler implements HttpRequestHandler {
         private final Object answerMonitor = new Object();
 
         public int getPort() { return 0; }
-        public void shutdown() {}
         public StatusPageServer.HttpRequest getCurrentHttpRequest() {
             synchronized (answerMonitor) {
                 StatusPageServer.HttpRequest r = request;

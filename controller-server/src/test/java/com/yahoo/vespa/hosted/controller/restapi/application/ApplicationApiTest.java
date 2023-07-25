@@ -787,6 +787,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 },
                 200);
 
+        // GET searches deployments by endpoints
+        tester.assertResponse(request("/application/v4/search/deployment", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Missing 'endpoint' query parameter\"}", 400);
+        tester.assertResponse(request("/application/v4/search/deployment", GET).properties(Map.of("endpoint", "https://instance1.application1.tenant1.global.vespa.oath.cloud:4443"))
+                                                                               .userIdentity(HOSTED_VESPA_OPERATOR),
+                              new File("search-deployments-multi.json"), 200);
+        tester.assertResponse(request("/application/v4/search/deployment", GET).properties(Map.of("endpoint", "instance1.application1.tenant1.global.vespa.oath.cloud"))
+                                                                               .userIdentity(HOSTED_VESPA_OPERATOR),
+                              new File("search-deployments-multi.json"), 200);
+        tester.assertResponse(request("/application/v4/search/deployment", GET).properties(Map.of("endpoint", "instance1.application1.tenant1.us-central-1.vespa.oath.cloud"))
+                                                                               .userIdentity(HOSTED_VESPA_OPERATOR),
+                              new File("search-deployments-single.json"), 200);
+        tester.assertResponse(request("/application/v4/search/deployment", GET).properties(Map.of("endpoint", "non-existent"))
+                                                                               .userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"deployments\":[]}", 200);
+
         // DELETE application with active deployments fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
                         .userIdentity(USER_ID)

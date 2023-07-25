@@ -399,7 +399,7 @@ public class URI implements Cloneable, Comparable<URI> {
      *
      * @return true if the url is opaque, false if it is hierarchical
      */
-    public boolean isOpaque() {
+    public final boolean isOpaque() {
         return opaque;
     }
 

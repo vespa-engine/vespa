@@ -7,7 +7,9 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Serialize/deserialize dataplane tokens
@@ -20,6 +22,7 @@ public class DataplaneTokenSerializer {
     private static final String VERSIONS_FIELD = "versions";
     private static final String FINGERPRINT_FIELD = "fingerPrint";
     private static final String CHECKACCESSHASH_FIELD = "checkAccessHash";
+    private static final String EXPIRATION_FIELD = "expiration";
 
     private DataplaneTokenSerializer() {}
 
@@ -39,9 +42,13 @@ public class DataplaneTokenSerializer {
     }
 
     private static DataplaneToken.Version tokenValue(Inspector inspector) {
+        String expirationStr = inspector.field(EXPIRATION_FIELD).asString();
         return new DataplaneToken.Version(
                 inspector.field(FINGERPRINT_FIELD).asString(),
-                inspector.field(CHECKACCESSHASH_FIELD).asString());
+                inspector.field(CHECKACCESSHASH_FIELD).asString(),
+                expirationStr.equals("<none>") ? Optional.empty()
+                        : (expirationStr.isBlank()
+                        ? Optional.of(Instant.EPOCH) : Optional.of(Instant.parse(expirationStr))));
     }
 
     public static Slime toSlime(List<DataplaneToken> dataplaneTokens) {
@@ -55,6 +62,7 @@ public class DataplaneTokenSerializer {
                 Cursor val = versions.addObject();
                 val.setString(FINGERPRINT_FIELD, v.fingerprint());
                 val.setString(CHECKACCESSHASH_FIELD, v.checkAccessHash());
+                val.setString(EXPIRATION_FIELD, v.expiration().map(Instant::toString).orElse("<none>"));
             });
         }
         return slime;

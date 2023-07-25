@@ -62,6 +62,7 @@ public class SortingDegrader extends Searcher {
         if (index == null) return false;
         if ( ! index.isFastSearch()) return false;
         if ( ! index.isNumerical()) return false;
+        if ( index.isMultivalue()) return false;
 
         return true;
     }

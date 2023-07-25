@@ -5,6 +5,9 @@ import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.List;
 
+/**
+ * @author andreer
+ */
 public interface EndpointCertificateValidator {
-    void validate(EndpointCertificateMetadata endpointCertificateMetadata, String serializedInstanceId, ZoneId zone, List<String> requiredNamesForZone);
+    void validate(EndpointCertificate endpointCertificate, String serializedInstanceId, ZoneId zone, List<String> requiredNamesForZone);
 }

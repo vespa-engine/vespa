@@ -386,7 +386,12 @@ public class VersionStatusTest {
 
         // Check release status is correct (static data in MockMavenRepository, and upgradeSystem "releases" a version).
         assertTrue(versions.get(0).isReleased());
-        assertFalse(versions.get(1).isReleased()); // tesst quirk: maven repo lost during controller recreation; useful to test status though
+        assertFalse(versions.get(1).isReleased()); // test quirk: maven repo lost during controller recreation; useful to test status though
+        assertFalse(versions.get(2).isReleased());
+
+        tester.clock().advance(Duration.ofSeconds(10801));
+        tester.controllerTester().computeVersionStatus();
+        versions = tester.controller().readVersionStatus().versions();
         assertTrue(versions.get(2).isReleased());
 
         // A new major version is released and all canaries upgrade

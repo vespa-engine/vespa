@@ -59,7 +59,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>${protobuf.version}</version>
+      <version>${protobuf.vespa.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -300,6 +300,11 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
+        <configuration>
+          <allowEmbeddedArtifacts>com.fasterxml.jackson.core:jackson-annotations, com.fasterxml.jackson.core:jackson-core,
+            com.fasterxml.jackson.core:jackson-databind, com.yahoo.vespa:metrics, com.yahoo.vespa:predicate-search-core,
+            com.yahoo.vespa:searchcore</allowEmbeddedArtifacts>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

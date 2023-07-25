@@ -9,11 +9,11 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -98,9 +98,10 @@ public class CapacityPolicies {
             Architecture architecture = adminClusterArchitecture(applicationId);
 
             if (nodeRepository.exclusiveAllocation(clusterSpec)) {
-                var resources = smallestExclusiveResources();
+                var resources = legacySmallestExclusiveResources(); //TODO: use 8Gb as default when no apps are using 4Gb
                 return versioned(clusterSpec, Map.of(new Version(0), resources,
-                                                     new Version(8, 182, 12), resources.with(architecture)));
+                                                     new Version(8, 182, 12), resources.with(architecture),
+                                                     new Version(8, 187), smallestExclusiveResources().with(architecture)));
             }
 
             if (clusterSpec.id().value().equals("cluster-controllers")) {
@@ -112,10 +113,6 @@ public class CapacityPolicies {
             }
 
             return versioned(clusterSpec, Map.of(new Version(0), smallestSharedResources())).with(architecture);
-        }
-
-        if (zone.environment() == Environment.dev && zone.system() == SystemName.cd) {
-            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 4, 50, 0.3)));
         }
 
         if (clusterSpec.type() == ClusterSpec.Type.content) {
@@ -162,10 +159,17 @@ public class CapacityPolicies {
     }
 
     // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
+    private NodeResources legacySmallestExclusiveResources() {
+        return (zone.cloud().name().equals(CloudName.GCP))
+               ? new NodeResources(1, 4, 50, 0.3)
+               : new NodeResources(0.5, 4, 50, 0.3);
+    }
+
+    // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
     private NodeResources smallestExclusiveResources() {
         return (zone.cloud().name().equals(CloudName.GCP))
-                ? new NodeResources(1, 4, 50, 0.3)
-                : new NodeResources(0.5, 4, 50, 0.3);
+                ? new NodeResources(2, 8, 50, 0.3)
+                : new NodeResources(0.5, 8, 50, 0.3);
     }
 
     // The lowest amount of resources that can be shared (i.e. a matching host flavor for this exists)

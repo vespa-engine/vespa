@@ -97,6 +97,13 @@ public class SortingDegraderTestCase {
     }
 
     @Test
+    void testNoDegradingWhenMultiValueNumericAttribute() {
+        Query query = new Query("?ranking.sorting=%2ba3");
+        execute(query);
+        assertNull(query.getRanking().getMatchPhase().getAttribute());
+    }
+
+    @Test
     void testNoDegradingWhenTurnedOff() {
         Query query = new Query("?ranking.sorting=-a1%20-a2&sorting.degrading=false");
         execute(query);
@@ -157,6 +164,11 @@ public class SortingDegraderTestCase {
         fastSearchAttribute2.setFastSearch(true);
         fastSearchAttribute2.setNumerical(true);
 
+        Index fastSearchAttribute3 = new Index("a3");
+        fastSearchAttribute3.setFastSearch(true);
+        fastSearchAttribute3.setNumerical(true);
+        fastSearchAttribute3.setMultivalue(true);
+
         Index nonFastSearchAttribute = new Index("nonFastSearchAttribute");
         nonFastSearchAttribute.setNumerical(true);
 
@@ -165,6 +177,7 @@ public class SortingDegraderTestCase {
 
         test.addIndex(fastSearchAttribute1);
         test.addIndex(fastSearchAttribute2);
+        test.addIndex(fastSearchAttribute3);
         test.addIndex(nonFastSearchAttribute);
         test.addIndex(stringAttribute);
         return new IndexFacts(new IndexModel(test));

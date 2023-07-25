@@ -49,6 +49,8 @@ public class Fixture {
     final Capacity capacity;
     final Loader loader;
 
+    Autoscaling lastAutoscaling = Autoscaling.empty();
+
     public Fixture(Fixture.Builder builder, Optional<ClusterResources> initialResources, int hostCount) {
         applicationId = builder.application;
         clusterSpec = builder.cluster;
@@ -105,7 +107,7 @@ public class Fixture {
 
     /** Autoscale within the given capacity. */
     public Autoscaling autoscale(Capacity capacity) {
-        return tester().autoscale(applicationId, clusterSpec, capacity);
+        return lastAutoscaling = tester().autoscale(applicationId, clusterSpec, capacity);
     }
 
     /** Compute an autoscaling suggestion for this. */
@@ -121,6 +123,17 @@ public class Fixture {
     /** Redeploy with the given capacity. */
     public void deploy(Capacity capacity) {
         tester().deploy(applicationId, clusterSpec, capacity);
+    }
+
+    public void deployTarget() {
+        if (lastAutoscaling.isEmpty()) throw new IllegalStateException("Autoscaling is empty");
+        if (lastAutoscaling.resources().isEmpty()) throw new IllegalStateException("Autoscaling target is empty: " + lastAutoscaling);
+        try (var lock = tester().nodeRepository().applications().lock(applicationId)) {
+            var updated = tester().nodeRepository().applications().require(applicationId).with(cluster().withTarget(lastAutoscaling));
+            tester().nodeRepository().applications().put(updated, lock);
+        }
+        deploy(capacity);
+        deactivateRetired(capacity);
     }
 
     public void deactivateRetired(Capacity capacity) {

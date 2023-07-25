@@ -40,7 +40,7 @@ public class SystemUpgrader extends InfrastructureUpgrader<VespaVersionTarget> {
 
     @Override
     protected boolean convergedOn(VespaVersionTarget target, SystemApplication application, ZoneApi zone, NodeSlice nodeSlice) {
-        Optional<Version> currentVersion = versionOf(nodeSlice, zone, application, Node::currentVersion);
+        Optional<Version> currentVersion = versionOf(nodeSlice, zone, application, Node::currentVersion, target.downgrade());
         // Skip application convergence check if there are no nodes belonging to the application in the zone
         if (currentVersion.isEmpty()) return true;
 
@@ -78,7 +78,7 @@ public class SystemUpgrader extends InfrastructureUpgrader<VespaVersionTarget> {
             // For applications with package we do not have a zone-wide version target. This means that we must check
             // the wanted version of each node.
             boolean zoneHasSharedRouting = controller().zoneRegistry().routingMethod(zone.getId()).isShared();
-            return versionOf(NodeSlice.ALL, zone, application, Node::wantedVersion)
+            return versionOf(NodeSlice.ALL, zone, application, Node::wantedVersion, target.downgrade())
                     .map(wantedVersion -> !wantedVersion.equals(target.version()))
                     .orElse(zoneHasSharedRouting); // Always upgrade if zone uses shared routing, but has no nodes allocated yet
         }

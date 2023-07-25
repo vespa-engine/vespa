@@ -15,15 +15,15 @@ import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import org.junit.jupiter.api.Test;
 
+import java.net.URI;
 import java.security.KeyPair;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 
 import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.TENANT;
-import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION;
 import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION;
+import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.LEGACY_DEFAULT_DOCUMENT_VERSION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,7 +43,7 @@ public class IdentityDocumentSignerTest {
     private static final Instant createdAt = Instant.EPOCH;
     private static final HashSet<String> ipAddresses = new HashSet<>(Arrays.asList("1.2.3.4", "::1"));
     private static final ClusterType clusterType = ClusterType.CONTAINER;
-    private static final String ztsUrl = "https://foo";
+    private static final URI ztsUrl = URI.create("https://foo");
     private static final AthenzIdentity serviceIdentity = new AthenzService("vespa", "node");
 
     @Test
@@ -67,7 +67,7 @@ public class IdentityDocumentSignerTest {
         IdentityDocument identityDocument = new IdentityDocument(
                 id, providerService, configserverHostname,
                 instanceHostname, createdAt, ipAddresses, identityType, clusterType, ztsUrl, serviceIdentity);
-        String data = EntityBindingsMapper.toIdentityDocmentData(identityDocument);
+        String data = EntityBindingsMapper.toIdentityDocumentData(identityDocument);
         String signature =
         signer.generateSignature(data, keyPair.getPrivate());
 

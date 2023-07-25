@@ -7,13 +7,11 @@ search music {
 
     field title type string {
       indexing: summary | index   # How this field should be indexed
-      # index-to: title, default    # Create two indexes
       rank-type: about            # Type of ranking settings to apply
     }
 
     field artist type string {
       indexing: summary | attribute | index
-      # index-to: artist, default
       rank-type:about
     }
 

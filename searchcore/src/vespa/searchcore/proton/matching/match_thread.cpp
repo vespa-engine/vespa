@@ -3,6 +3,7 @@
 #include "match_thread.h"
 #include "document_scorer.h"
 #include "match_tools.h"
+#include "partial_result.h"
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchlib/engine/trace.h>
@@ -55,6 +56,43 @@ LazyValue get_score_feature(const RankProgram &rankProgram) {
     FeatureResolver resolver(rankProgram.get_seeds());
     assert(resolver.num_features() == 1u);
     return resolver.resolve(0);
+}
+
+void
+fillPartialResult(ResultProcessor::Context & context, size_t totalHits, size_t numHits,
+                  const search::RankedHit *hits, const search::BitVector * bits) __attribute__((noinline));
+
+void
+fillPartialResult(ResultProcessor::Context & context, size_t totalHits, size_t numHits,
+                  const search::RankedHit *hits, const search::BitVector * bits) {
+    PartialResult &pr = *context.result;
+    pr.totalHits(totalHits);
+    size_t maxHits = std::min(numHits, pr.maxSize());
+    const search::BitVector & validLids = context._validLids;
+    if (pr.hasSortData()) {
+        FastS_SortSpec &spec = context.sort->sortSpec;
+        for (size_t i = 0; i < maxHits; ++i) {
+            if (validLids.testBit(hits[i].getDocId())) {
+                pr.add(hits[i], spec.getSortRef(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < maxHits; ++i) {
+            if (validLids.testBit(hits[i].getDocId())) {
+                pr.add(hits[i]);
+            }
+        }
+        if ((bits != nullptr) && (pr.size() < pr.maxSize())) {
+            for (unsigned int bitId = bits->getFirstTrueBit();
+                 (bitId < bits->size()) && (pr.size() < pr.maxSize());
+                 bitId = bits->getNextTrueBit(bitId + 1))
+            {
+                if (validLids.testBit(bitId)) {
+                    pr.add(search::RankedHit(bitId));
+                }
+            }
+        }
+    }
 }
 
 } // namespace proton::matching::<unnamed>
@@ -328,9 +366,7 @@ MatchThread::findMatches(MatchTools &tools)
 }
 
 void
-MatchThread::processResult(const Doom & doom,
-                           search::ResultSet::UP result,
-                           ResultProcessor::Context &context)
+MatchThread::processResult(const Doom & doom, search::ResultSet::UP result, ResultProcessor::Context &context)
 {
     if (doom.hard_doom()) return;
     bool hasGrouping = bool(context.grouping);
@@ -338,7 +374,7 @@ MatchThread::processResult(const Doom & doom,
         result->mergeWithBitOverflow(fallback_rank_value());
     }
     if (doom.hard_doom()) return;
-    size_t             totalHits = result->getNumHits();
+    size_t totalHits = result->getNumHits(); // Must be done before modifying overflow
     const search::RankedHit *hits = result->getArray();
     size_t             numHits   = result->getArrayUsed();
     search::BitVector *bits  = result->getBitOverflow();
@@ -359,27 +395,7 @@ MatchThread::processResult(const Doom & doom,
         man.groupInRelevanceOrder(hits, numHits);
     }
     if (doom.hard_doom()) return;
-    PartialResult &pr = *context.result;
-    pr.totalHits(totalHits);
-    size_t maxHits = std::min(numHits, pr.maxSize());
-    if (pr.hasSortData()) {
-        FastS_SortSpec &spec = context.sort->sortSpec;
-        for (size_t i = 0; i < maxHits; ++i) {
-            pr.add(hits[i], spec.getSortRef(i));
-        }
-    } else {
-        for (size_t i = 0; i < maxHits; ++i) {
-            pr.add(hits[i]);
-        }
-        if ((bits != nullptr) && (pr.size() < pr.maxSize())) {
-            for (unsigned int bitId = bits->getFirstTrueBit();
-                 (bitId < bits->size()) && (pr.size() < pr.maxSize());
-                 bitId = bits->getNextTrueBit(bitId + 1))
-            {
-                pr.add(search::RankedHit(bitId));
-            }
-        }
-    }
+    fillPartialResult(context, totalHits, numHits, hits, bits);
 
     if (auto task = matchToolsFactory.createOnMatchTask()) {
         task->run(result->copyResult());
@@ -479,6 +495,11 @@ MatchThread::run()
         second_phase_profiler->report(trace->createCursor("second_phase_profiling"),
                                       [](const vespalib::string &name){ return BlueprintResolver::describe_feature(name); });
     }
+}
+
+std::unique_ptr<PartialResult>
+MatchThread::extract_result() {
+    return std::move(resultContext->result);
 }
 
 }

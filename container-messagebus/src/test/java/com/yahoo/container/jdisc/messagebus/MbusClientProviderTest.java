@@ -39,9 +39,7 @@ public class MbusClientProviderTest {
         SessionCache cache = new SessionCache(() -> NetworkMultiplexer.dedicated(new NullNetwork()),
                                               new ContainerMbusConfig.Builder().build(),
                                               new DocumentTypeManager(new DocumentmanagerConfig.Builder().build()),
-                                              new MessagebusConfig.Builder().build(),
-                                              new DocumentProtocolPoliciesConfig.Builder().build(),
-                                              new DistributionConfig.Builder().build());
+                                              new MessagebusConfig.Builder().build());
         MbusClientProvider p = new MbusClientProvider(cache, config);
         assertNotNull(p.get());
         p.deconstruct();

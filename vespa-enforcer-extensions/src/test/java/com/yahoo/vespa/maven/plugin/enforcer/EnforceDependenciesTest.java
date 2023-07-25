@@ -136,6 +136,34 @@ class EnforceDependenciesTest {
         assertEquals(expectedErrorMessage, exception.getMessage());
     }
 
+    @Test
+    void matches_on_version_in_allowed_range() {
+        var dependencies = Set.of(
+                artifact("com.yahoo.testing", "test", "1.2.3", "compile"));
+        var rules = Set.of("com.yahoo.testing:test:jar:[1.0,2):compile");
+        assertDoesNotThrow(() -> EnforceDependencies.validateDependencies(dependencies, rules, true));
+    }
+
+    @Test
+    void fails_on_version_outside_allowed_range() {
+        var dependencies = Set.of(
+                artifact("com.yahoo.testing", "test", "2", "compile"));
+        var rules = Set.of("com.yahoo.testing:test:jar:[1.0,2):compile");
+
+        var exception = assertThrows(
+                EnforcerRuleException.class,
+                () -> EnforceDependencies.validateDependencies(dependencies, rules, true));
+        String expectedErrorMessage =
+                """
+                Vespa dependency enforcer failed:
+                Dependencies not matching any rule:
+                 - com.yahoo.testing:test:jar:2:compile
+                Rules not matching any dependency:
+                 - com.yahoo.testing:test:jar:[1.0,2):compile
+                """;
+        assertEquals(expectedErrorMessage, exception.getMessage());
+    }
+
     private static Artifact artifact(String groupId, String artifactId, String version, String scope) {
         return artifact(groupId, artifactId, version, scope, null);
     }

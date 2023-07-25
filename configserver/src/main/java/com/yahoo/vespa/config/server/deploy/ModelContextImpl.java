@@ -188,7 +188,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useV8GeoPositions;
         private final int maxCompactBuffers;
         private final List<String> ignoredHttpUserAgents;
-        private final boolean useQrserverServiceName;
         private final boolean avoidRenamingSummaryFeatures;
         private final Architecture adminClusterArchitecture;
         private final boolean enableProxyProtocolMixedMode;
@@ -208,6 +207,8 @@ public class ModelContextImpl implements ModelContext {
         private final Predicate<ClusterSpec.Id> allowMoreThanOneContentGroupDown;
         private final boolean enableConditionalPutRemoveWriteRepair;
         private final boolean enableDataplaneProxy;
+        private final boolean enableNestedMultivalueGrouping;
+        private final boolean useReconfigurableDispatcher;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -236,7 +237,6 @@ public class ModelContextImpl implements ModelContext {
             this.useV8GeoPositions = flagValue(source, appId, version, Flags.USE_V8_GEO_POSITIONS);
             this.maxCompactBuffers = flagValue(source, appId, version, Flags.MAX_COMPACT_BUFFERS);
             this.ignoredHttpUserAgents = flagValue(source, appId, version, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
-            this.useQrserverServiceName = flagValue(source, appId, version, Flags.USE_QRSERVER_SERVICE_NAME);
             this.avoidRenamingSummaryFeatures = flagValue(source, appId, version, Flags.AVOID_RENAMING_SUMMARY_FEATURES);
             this.adminClusterArchitecture = Architecture.valueOf(flagValue(source, appId, version, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE));
             this.enableProxyProtocolMixedMode = flagValue(source, appId, version, Flags.ENABLE_PROXY_PROTOCOL_MIXED_MODE);
@@ -257,6 +257,8 @@ public class ModelContextImpl implements ModelContext {
             this.allowMoreThanOneContentGroupDown = clusterId -> flagValue(source, appId, version, clusterId, Flags.ALLOW_MORE_THAN_ONE_CONTENT_GROUP_DOWN);
             this.enableConditionalPutRemoveWriteRepair = flagValue(source, appId, version, Flags.ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR);
             this.enableDataplaneProxy = flagValue(source, appId, version, Flags.ENABLE_DATAPLANE_PROXY);
+            this.enableNestedMultivalueGrouping = flagValue(source, appId, version, Flags.ENABLE_NESTED_MULTIVALUE_GROUPING);
+            this.useReconfigurableDispatcher = flagValue(source, appId, version, Flags.USE_RECONFIGURABLE_DISPATCHER);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -291,7 +293,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
-        @Override public boolean useQrserverServiceName() { return useQrserverServiceName; }
         @Override public boolean avoidRenamingSummaryFeatures() { return avoidRenamingSummaryFeatures; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public boolean enableProxyProtocolMixedMode() { return enableProxyProtocolMixedMode; }
@@ -314,6 +315,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean allowMoreThanOneContentGroupDown(ClusterSpec.Id id) { return allowMoreThanOneContentGroupDown.test(id); }
         @Override public boolean enableConditionalPutRemoveWriteRepair() { return enableConditionalPutRemoveWriteRepair; }
         @Override public boolean enableDataplaneProxy() { return enableDataplaneProxy; }
+        @Override public boolean enableNestedMultivalueGrouping() { return enableNestedMultivalueGrouping; }
+        @Override public boolean useReconfigurableDispatcher() { return useReconfigurableDispatcher; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

@@ -14,7 +14,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
-import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -625,7 +624,9 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private File validateServicesFile() throws IOException {
         File servicesFile = getServicesFile();
-        if ( ! servicesFile.exists() || IOUtils.readFile(servicesFile).isEmpty())
+        if ( ! servicesFile.exists())
+            throw new IllegalArgumentException(SERVICES + " does not exist in application package");
+        if (IOUtils.readFile(servicesFile).isEmpty())
             throw new IllegalArgumentException(SERVICES + " in application package is empty");
         return servicesFile;
     }

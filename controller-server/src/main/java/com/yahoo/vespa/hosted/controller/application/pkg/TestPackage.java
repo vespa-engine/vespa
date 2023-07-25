@@ -51,7 +51,6 @@ import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.of;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.production;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging_setup;
@@ -74,7 +73,7 @@ public class TestPackage {
 
     // Must match exactly the advertised resources of an AWS instance type. Also consider that the container
     // will have ~1.8 GB less memory than equivalent resources in AWS (VESPA-16259).
-    static final NodeResources DEFAULT_TESTER_RESOURCES_AWS = new NodeResources(2, 8, 50, 0.3, NodeResources.DiskSpeed.any);
+    static final NodeResources DEFAULT_TESTER_RESOURCES_CLOUD = new NodeResources(2, 8, 50, 0.3, NodeResources.DiskSpeed.any);
     static final NodeResources DEFAULT_TESTER_RESOURCES = new NodeResources(1, 4, 50, 0.3, NodeResources.DiskSpeed.any);
 
     private final ApplicationPackageStream applicationPackageStream;
@@ -232,8 +231,8 @@ public class TestPackage {
                                           .findFirst()
                                           .flatMap(step -> step.zones().get(0).testerFlavor())
                                           .map(NodeResources::fromLegacyName)
-                                          .orElse(zone.region().value().contains("aws-") ? DEFAULT_TESTER_RESOURCES_AWS
-                                                                                         : DEFAULT_TESTER_RESOURCES);
+                                          .orElse(zone.region().value().matches("^(aws|gcp)-.*") ? DEFAULT_TESTER_RESOURCES_CLOUD
+                                                                                                 : DEFAULT_TESTER_RESOURCES);
         return nodeResources.with(NodeResources.DiskSpeed.any);
     }
 

@@ -9,13 +9,13 @@ import java.text.ParseException;
  */
 public class Group implements Comparable<Group> {
 
-    private String name;
+    private final String name;
     private Group parent = null;
-    private int index;
+    private final int index;
     private int distributionHash;
-    private Distribution distribution = null;
+    private final Distribution distribution;
     private double capacity;
-    private Map<Integer, Group> subgroups;
+    private final Map<Integer, Group> subgroups;
     private List<ConfiguredNode> nodes;
 
     public Group(int index, String name) {
@@ -63,8 +63,7 @@ public class Group implements Comparable<Group> {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof Group)) { return false; }
-        Group other = (Group) o;
+        if ( ! (o instanceof Group other)) { return false; }
         if ( ! name.equals(other.name)
             || index != other.index
             || (distribution == null ^ other.distribution == null)
@@ -210,7 +209,7 @@ public class Group implements Comparable<Group> {
             for (int i=0; i<distributionSpec.length; ++i) {
                 String token = st.nextToken();
                 try{
-                    distributionSpec[i] = (token.equals("*") ? 0 : Integer.valueOf(token));
+                    distributionSpec[i] = (token.equals("*") ? 0 : Integer.parseInt(token));
                 } catch (NumberFormatException e) {
                     throw new ParseException("Illegal distribution spec \"" + serialized + "\". Copy counts must be integer values in the range 1-255.", i);
                 }
@@ -243,9 +242,9 @@ public class Group implements Comparable<Group> {
             int asterixCount = distributionSpec.length - firstAsterix;
             int[][] preCalculations = new int[maxRedundancy + 1][];
             for (int i=1; i<=maxRedundancy; ++i) {
-                List<Integer> spec = new ArrayList<Integer>();
-                for (int j=0; j<distributionSpec.length; ++j) {
-                    spec.add(distributionSpec[j]);
+                List<Integer> spec = new ArrayList<>();
+                for (int k : distributionSpec) {
+                    spec.add(k);
                 }
                 int remainingRedundancy = i;
                 for (int j=0; j<firstAsterix; ++j) {
@@ -277,8 +276,7 @@ public class Group implements Comparable<Group> {
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if ( ! (o instanceof Distribution)) return false;
-            Distribution other = (Distribution) o;
+            if ( ! (o instanceof Distribution other)) return false;
             return (distributionSpec == other.distributionSpec && preCalculatedResults.length == other.preCalculatedResults.length);
         }
 

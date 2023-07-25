@@ -61,7 +61,7 @@ public:
      * didn't cover the whole word, probably need access to higher level
      * API above caches.
      */
-    search::queryeval::SearchIterator *
+    std::unique_ptr<search::queryeval::SearchIterator>
     createIterator(const PostingListCounts &counts,
                    const search::fef::TermFieldMatchDataArray &matchData,
                    bool useBitVector=false) const;

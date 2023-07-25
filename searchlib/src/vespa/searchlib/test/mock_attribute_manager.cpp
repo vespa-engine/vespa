@@ -6,7 +6,7 @@ namespace search::attribute::test {
 
 AttributeVector::SP
 MockAttributeManager::findAttribute(const vespalib::string &name) const {
-    AttributeMap::const_iterator itr = _attributes.find(name);
+    auto itr = _attributes.find(name);
     if (itr != _attributes.end()) {
         return itr->second;
     }

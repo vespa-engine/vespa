@@ -70,13 +70,13 @@ public class JDiscHttpRequestHandler extends ThreadedHttpRequestHandler {
     }
 
     static HttpRequest setOperation(HttpRequest request, com.yahoo.jdisc.http.HttpRequest.Method method) {
-        switch (method) {
-            case GET: return request.setHttpOperation(HttpRequest.HttpOp.GET);
-            case POST: return request.setHttpOperation(HttpRequest.HttpOp.POST);
-            case PUT: return request.setHttpOperation(HttpRequest.HttpOp.PUT);
-            case DELETE: return request.setHttpOperation(HttpRequest.HttpOp.DELETE);
-            default: throw new IllegalStateException("Unhandled method " + method);
-        }
+        return switch (method) {
+            case GET -> request.setHttpOperation(HttpRequest.HttpOp.GET);
+            case POST -> request.setHttpOperation(HttpRequest.HttpOp.POST);
+            case PUT -> request.setHttpOperation(HttpRequest.HttpOp.PUT);
+            case DELETE -> request.setHttpOperation(HttpRequest.HttpOp.DELETE);
+            default -> throw new IllegalStateException("Unhandled method " + method);
+        };
     }
 
     private com.yahoo.container.jdisc.HttpResponse copyResponse(final HttpResult result) {

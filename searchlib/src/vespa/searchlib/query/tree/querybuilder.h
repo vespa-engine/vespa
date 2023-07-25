@@ -82,7 +82,7 @@ public:
     /**
      * If build failed, the reason is stored here.
      */
-    vespalib::string error() { return _error_msg; }
+    vespalib::string error() const { return _error_msg; }
 
     /**
      * After an error, reset() must be called before attempting to

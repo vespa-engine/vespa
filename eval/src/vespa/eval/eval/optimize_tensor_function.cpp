@@ -34,6 +34,7 @@
 #include <vespa/eval/instruction/dense_tensor_peek_function.h>
 #include <vespa/eval/instruction/dense_hamming_distance.h>
 #include <vespa/eval/instruction/l2_distance.h>
+#include <vespa/eval/instruction/mixed_l2_distance.h>
 #include <vespa/eval/instruction/simple_join_count.h>
 #include <vespa/eval/instruction/mapped_lookup.h>
 
@@ -73,7 +74,8 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &, const Te
                           child.set(Sparse112DotProduct::optimize(child.get(), stash));
                           child.set(Mixed112DotProduct::optimize(child.get(), stash));
                           child.set(BestSimilarityFunction::optimize(child.get(), stash));
-                          child.set(L2Distance::optimize(child.get(), stash));                          
+                          child.set(L2Distance::optimize(child.get(), stash));
+                          child.set(MixedL2Distance::optimize(child.get(), stash));                                                    
                       });
     run_optimize_pass(root, [&stash](const Child &child)
                       {

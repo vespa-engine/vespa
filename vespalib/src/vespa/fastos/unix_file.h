@@ -30,18 +30,9 @@ protected:
     bool   _mmapEnabled;
 
     static unsigned int CalcAccessFlags(unsigned int openFlags);
-
 public:
-    static bool Rename (const char *currentFileName, const char *newFileName);
-    bool Rename (const char *newFileName) override {
-        return FastOS_FileInterface::Rename(newFileName);
-    }
-
     static bool Stat(const char *filename, FastOS_StatInfo *statInfo);
 
-    static std::string getCurrentDirectory();
-
-    static bool SetCurrentDirectory (const char *pathName);
     static int GetMaximumFilenameLength (const char *pathName);
     static int GetMaximumPathLength (const char *pathName);
 
@@ -80,14 +71,12 @@ public:
 
     bool IsMemoryMapped() const override { return _mmapbase != nullptr; }
     bool SetPosition(int64_t desiredPosition) override;
-    int64_t GetPosition() override;
-    int64_t GetSize() override;
-    bool Delete() override;
+    int64_t getPosition() const override;
+    int64_t getSize() const override;
     [[nodiscard]] bool Sync() override;
     bool SetSize(int64_t newSize) override;
     void dropFromCache() const override;
 
-    static bool Delete(const char *filename);
     static int GetLastOSError();
     static Error TranslateError(const int osError);
     static std::string getErrorString(const int osError);

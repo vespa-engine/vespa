@@ -5,11 +5,11 @@
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/fastos/file.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/resource_limits.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/alloc.h>
+#include <unistd.h>
 #include <filesystem>
 #include <thread>
 
@@ -107,7 +107,7 @@ double measureDiskWriteSpeed(const vespalib::string &path,
         double elapsed = vespalib::to_s(after - before);
         diskWriteSpeed = diskWriteLen / elapsed / 1_Mi;
     }
-    vespalib::unlink(fileName);
+    std::filesystem::remove(std::filesystem::path(fileName));
     return diskWriteSpeed;
 }
 

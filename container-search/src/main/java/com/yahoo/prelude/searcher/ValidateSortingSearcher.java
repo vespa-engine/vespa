@@ -61,9 +61,6 @@ public class ValidateSortingSearcher extends Searcher {
         HashMap<String, AttributesConfig.Attribute> attributes = new HashMap<>(config.attribute().size());
 
         for (AttributesConfig.Attribute attr : config.attribute()) {
-            if (AttributesConfig.Attribute.Collectiontype.SINGLE != attr.collectiontype()) {
-                continue; // cannot sort on multivalue attributes
-            }
             attributes.put(attr.name(), attr);
         }
         setAttributeNames(attributes);

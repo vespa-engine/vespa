@@ -126,7 +126,7 @@ public abstract class ControllerHttpClient {
     /** Sends the given deployment to the given application in the given zone, or throws if this fails. */
     public DeploymentResult deploy(Deployment deployment, ApplicationId id, ZoneId zone) {
         return toDeploymentResult(send(request(HttpRequest.newBuilder(deploymentJobPath(id, zone))
-                                                          .timeout(Duration.ofMinutes(20)),
+                                                          .timeout(Duration.ofMinutes(40)),
                                                POST,
                                                toDataStream(deployment)),
                                        1));

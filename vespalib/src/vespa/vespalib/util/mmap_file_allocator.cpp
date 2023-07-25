@@ -70,7 +70,7 @@ MmapFileAllocator::alloc(size_t sz) const
 }
 
 void
-MmapFileAllocator::free(PtrAndSize alloc) const
+MmapFileAllocator::free(PtrAndSize alloc) const noexcept
 {
     if (alloc.size() == 0) {
         assert(alloc.get() == nullptr);

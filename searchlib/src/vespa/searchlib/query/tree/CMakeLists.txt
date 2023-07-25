@@ -4,12 +4,13 @@ vespa_add_library(searchlib_query_tree OBJECT
     const_bool_nodes.cpp
     intermediate.cpp
     intermediatenodes.cpp
+    location.cpp
     querybuilder.cpp
+    range.cpp
     simplequery.cpp
     stackdumpcreator.cpp
+    stackdumpquerycreator.cpp
     term.cpp
-    location.cpp
-    range.cpp
     termnodes.cpp
     DEPENDS
 )

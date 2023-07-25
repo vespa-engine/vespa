@@ -66,7 +66,7 @@ public class ClusterMonitor<T> {
      * </ul>
      *
      * @param node the object representing the node
-     * @param internal whether or not this node is internal to this cluster
+     * @param internal whether this node is internal to this cluster
      */
     public void add(T node, boolean internal) {
         nodeMonitors.put(node, new TrafficNodeMonitor<>(node, configuration, internal));
@@ -96,11 +96,10 @@ public class ClusterMonitor<T> {
      * Ping all nodes which needs pinging to discover state changes
      */
     public void ping(Executor executor) {
-        for (Iterator<BaseNodeMonitor<T>> i = nodeMonitorIterator(); i.hasNext() && !closed.get(); ) {
-            BaseNodeMonitor<T> monitor= i.next();
-            nodeManager.ping(this, monitor.getNode(), executor); // Cause call to failed or responded
+        for (var monitor : nodeMonitors()) {
+            if (closed.get()) return; // Do nothing to change state if close has started.
+            nodeManager.ping(this, monitor.getNode(), executor);
         }
-        if (closed.get()) return; // Do nothing to change state if close has started.
         nodeManager.pingIterationCompleted();
     }
 
@@ -143,7 +142,7 @@ public class ClusterMonitor<T> {
             // for all pings when there are no problems (important because it ensures that
             // any thread local connections are reused) 2) a new thread will be started to execute
             // new pings when a ping is not responding
-            ExecutorService pingExecutor=Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("search.ping"));
+            ExecutorService pingExecutor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("search.ping"));
             while (!closed.get()) {
                 try {
                     log.finest("Activating ping");
@@ -165,7 +164,9 @@ public class ClusterMonitor<T> {
             }
             pingExecutor.shutdown();
             try {
-                pingExecutor.awaitTermination(10, TimeUnit.SECONDS);
+                if ( ! pingExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    log.warning("Timeout waiting for ping executor to terminate");
+                }
             } catch (InterruptedException e) { }
             log.info("Stopped cluster monitor thread " + getName());
         }

@@ -5,6 +5,7 @@ import com.yahoo.search.grouping.request.AllOperation;
 import com.yahoo.search.grouping.request.AttributeMapLookupValue;
 import com.yahoo.search.grouping.request.EachOperation;
 import com.yahoo.search.grouping.request.GroupingOperation;
+import com.yahoo.search.grouping.request.LongValue;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.yql.VespaGroupingStep;
@@ -15,7 +16,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -581,6 +586,8 @@ public class GroupingParserTestCase {
         assertTrue(assertParse("all(group(artist) max(inf))").get(0).hasUnlimitedMax());
         assertEquals(1, assertParse("all(group(artist) max(1))").get(0).getMax());
         assertFalse(assertParse("all(group(artist))").get(0).hasMax());
+        var res = assertParse("all(group(-9223372036854775808))");
+        assertEquals(Long.MIN_VALUE, ((LongValue)res.get(0).getGroupBy()).getValue());
     }
 
     @Test

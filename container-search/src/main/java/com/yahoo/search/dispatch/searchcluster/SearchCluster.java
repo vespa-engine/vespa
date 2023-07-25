@@ -6,15 +6,18 @@ import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
+import com.yahoo.yolean.UncheckedInterruptedException;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * A model of a search cluster we might want to dispatch queries to.
@@ -28,7 +31,7 @@ public class SearchCluster implements NodeManager<Node> {
     private final String clusterId;
     private final VipStatus vipStatus;
     private final PingFactory pingFactory;
-    private final SearchGroupsImpl groups;
+    private volatile SearchGroupsImpl groups;
     private volatile long nextLogTime = 0;
 
     /**
@@ -45,6 +48,7 @@ public class SearchCluster implements NodeManager<Node> {
                          VipStatus vipStatus, PingFactory pingFactory) {
         this(clusterId, toGroups(nodes, minActivedocsPercentage), vipStatus, pingFactory);
     }
+
     public SearchCluster(String clusterId, SearchGroupsImpl groups, VipStatus vipStatus, PingFactory pingFactory) {
         this.clusterId = clusterId;
         this.vipStatus = vipStatus;
@@ -55,13 +59,28 @@ public class SearchCluster implements NodeManager<Node> {
 
     @Override
     public String name() { return clusterId; }
-    public VipStatus getVipStatus() { return vipStatus; }
+
+    /** Sets the new nodes to monitor to be the new nodes, but keep any existing node instances which equal the new ones. */
+    public ClusterMonitor<Node> updateNodes(Collection<Node> newNodes, double minActivedocsPercentage) {
+        Collection<Node> retainedNodes = groups.nodes();
+        Collection<Node> currentNodes = new HashSet<>(newNodes);
+        retainedNodes.retainAll(currentNodes);          // Throw away all old nodes which are not in the new set.
+        currentNodes.removeIf(retainedNodes::contains); // Throw away all new nodes for which we have more information in an old object.
+        Collection<Node> addedNodes = List.copyOf(currentNodes);
+        currentNodes.addAll(retainedNodes);             // Keep the old nodes that were replaced in the new set.
+        SearchGroupsImpl groups = toGroups(currentNodes, minActivedocsPercentage);
+        ClusterMonitor<Node> monitor = new ClusterMonitor<>(this, false);
+        for (Node node : groups.nodes()) monitor.add(node, true);
+        monitor.start();
+        try { while (addedNodes.stream().anyMatch(node -> node.isWorking() == null)) { Thread.sleep(1); } }
+        catch (InterruptedException e) { throw new UncheckedInterruptedException(e, true); }
+        pingIterationCompleted(groups);
+        this.groups = groups;
+        return monitor;
+    }
 
     public void addMonitoring(ClusterMonitor<Node> clusterMonitor) {
-        for (var group : groups()) {
-            for (var node : group.nodes())
-                clusterMonitor.add(node, true);
-        }
+        for (Node node : groups.nodes()) clusterMonitor.add(node, true);
     }
 
     private static Node findLocalCorpusDispatchTarget(String selfHostname, SearchGroups groups) {
@@ -86,20 +105,20 @@ public class SearchCluster implements NodeManager<Node> {
 
     private static SearchGroupsImpl toGroups(Collection<Node> nodes, double minActivedocsPercentage) {
         Map<Integer, Group> groups = new HashMap<>();
-        for (Map.Entry<Integer, List<Node>> group : nodes.stream().collect(Collectors.groupingBy(Node::group)).entrySet()) {
-            Group g = new Group(group.getKey(), group.getValue());
-            groups.put(group.getKey(), g);
-        }
+        nodes.stream().collect(groupingBy(Node::group)).forEach((groupId, groupNodes) -> {
+            groups.put(groupId, new Group(groupId, groupNodes));
+        });
         return new SearchGroupsImpl(Map.copyOf(groups), minActivedocsPercentage);
     }
 
     public SearchGroups groupList() { return groups; }
+
     public Group group(int id) { return groups.get(id); }
 
     private Collection<Group> groups() { return groups.groups(); }
 
     public int groupsWithSufficientCoverage() {
-        return (int)groups().stream().filter(Group::hasSufficientCoverage).count();
+        return (int) groups().stream().filter(Group::hasSufficientCoverage).count();
     }
 
     /**
@@ -107,14 +126,14 @@ public class SearchCluster implements NodeManager<Node> {
      * or empty if we should not dispatch directly.
      */
     public Optional<Node> localCorpusDispatchTarget() {
-        if ( localCorpusDispatchTarget == null) return Optional.empty();
+        if (localCorpusDispatchTarget == null) return Optional.empty();
 
         // Only use direct dispatch if the local group has sufficient coverage
         Group localSearchGroup = groups.get(localCorpusDispatchTarget.group());
         if ( ! localSearchGroup.hasSufficientCoverage()) return Optional.empty();
 
         // Only use direct dispatch if the local search node is not down
-        if ( localCorpusDispatchTarget.isWorking() == Boolean.FALSE) return Optional.empty();
+        if (localCorpusDispatchTarget.isWorking() == Boolean.FALSE) return Optional.empty();
 
         return Optional.of(localCorpusDispatchTarget);
     }
@@ -176,7 +195,7 @@ public class SearchCluster implements NodeManager<Node> {
         return groups().stream().allMatch(group -> group.nodes().stream().allMatch(node -> node.isWorking() != null));
     }
 
-    public long nonWorkingNodeCount() {
+    long nonWorkingNodeCount() {
         return groups().stream().flatMap(group -> group.nodes().stream()).filter(node -> node.isWorking() == Boolean.FALSE).count();
     }
 
@@ -194,13 +213,13 @@ public class SearchCluster implements NodeManager<Node> {
 
     /** Used by the cluster monitor to manage node status */
     @Override
-    public void ping(ClusterMonitor clusterMonitor, Node node, Executor executor) {
+    public void ping(ClusterMonitor<Node> clusterMonitor, Node node, Executor executor) {
         Pinger pinger = pingFactory.createPinger(node, clusterMonitor, new PongCallback(node, clusterMonitor));
         pinger.ping();
     }
 
-    private void pingIterationCompletedSingleGroup() {
-        Group group = groups().iterator().next();
+    private void pingIterationCompletedSingleGroup(SearchGroupsImpl groups) {
+        Group group = groups.groups().iterator().next();
         group.aggregateNodeValues();
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
@@ -209,10 +228,10 @@ public class SearchCluster implements NodeManager<Node> {
         trackGroupCoverageChanges(group, sufficientCoverage, group.activeDocuments());
     }
 
-    private void pingIterationCompletedMultipleGroups() {
-        groups().forEach(Group::aggregateNodeValues);
+    private void pingIterationCompletedMultipleGroups(SearchGroupsImpl groups) {
+        groups.groups().forEach(Group::aggregateNodeValues);
         long medianDocuments = groups.medianDocumentsPerGroup();
-        for (Group group : groups()) {
+        for (Group group : groups.groups()) {
             boolean sufficientCoverage = groups.isGroupCoverageSufficient(group.activeDocuments(), medianDocuments);
             updateSufficientCoverage(group, sufficientCoverage);
             trackGroupCoverageChanges(group, sufficientCoverage, medianDocuments);
@@ -226,20 +245,20 @@ public class SearchCluster implements NodeManager<Node> {
      */
     @Override
     public void pingIterationCompleted() {
-        if (groups.size() == 1) {
-            pingIterationCompletedSingleGroup();
-        } else {
-            pingIterationCompletedMultipleGroups();
-        }
+        pingIterationCompleted(groups);
     }
 
-
+    private void pingIterationCompleted(SearchGroupsImpl groups) {
+        if (groups.size() == 1) {
+            pingIterationCompletedSingleGroup(groups);
+        } else {
+            pingIterationCompletedMultipleGroups(groups);
+        }
+    }
 
     /**
      * Calculate whether a subset of nodes in a group has enough coverage
      */
-
-
     private void trackGroupCoverageChanges(Group group, boolean fullCoverage, long medianDocuments) {
         if ( ! hasInformationAboutAllNodes()) return; // Be silent until we know what we are talking about.
         boolean changed = group.fullCoverageStatusChanged(fullCoverage);

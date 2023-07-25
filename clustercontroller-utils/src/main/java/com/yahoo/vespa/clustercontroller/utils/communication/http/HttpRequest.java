@@ -9,8 +9,8 @@ import java.util.List;
 public class HttpRequest extends CertainlyCloneable<HttpRequest> {
 
     public static class KeyValuePair {
-        public String key;
-        public String value;
+        public final String key;
+        public final String value;
 
         public KeyValuePair(String k, String v) { this.key = k; this.value = v; }
 
@@ -56,7 +56,6 @@ public class HttpRequest extends CertainlyCloneable<HttpRequest> {
         }
         return defaultValue;
     }
-    public long getTimeoutMillis() { return timeoutMillis; }
     public Object getPostContent() { return postContent; }
     public HttpOp getHttpOperation() { return httpOperation; }
 

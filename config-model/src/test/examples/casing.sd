@@ -31,7 +31,6 @@ search music {
 
     field Genre type string {
       indexing: index
-      # index-to: Foo
       alias Foo: sjanger
     }
 

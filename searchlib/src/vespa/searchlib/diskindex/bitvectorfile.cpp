@@ -22,7 +22,7 @@ readHeader(vespalib::FileHeader &h,
            const vespalib::string &name)
 {
     Fast_BufferedFile file(32_Ki);
-    file.OpenReadOnly(name.c_str());
+    file.ReadOpenExisting(name.c_str());
     h.readFile(file);
 }
 
@@ -58,8 +58,7 @@ BitVectorFileWrite::open(const vespalib::string &name,
     if (tuneFileWrite.getWantDirectIO()) {
         _datFile->EnableDirectIO();
     }
-    // XXX no checking for success:
-    _datFile->OpenWriteOnly(datname.c_str());
+    _datFile->WriteOpen(datname.c_str());
 
     if (_datHeaderLen == 0) {
         assert(_numKeys == 0);
@@ -74,13 +73,13 @@ BitVectorFileWrite::open(const vespalib::string &name,
     pos = static_cast<int64_t>(_numKeys) *
           static_cast<int64_t>(bitmapbytes) + _datHeaderLen;
 
-    int64_t olddatsize = _datFile->GetSize();
+    int64_t olddatsize = _datFile->getSize();
     assert(olddatsize >= pos);
     (void) olddatsize;
 
     _datFile->SetSize(pos);
 
-    assert(pos == _datFile->GetPosition());
+    assert(pos == _datFile->getPosition());
 }
 
 
@@ -158,7 +157,7 @@ BitVectorFileWrite::close()
 
     if (_datFile != nullptr) {
         if (_datFile->IsOpened()) {
-            uint64_t pos = _datFile->GetPosition();
+            uint64_t pos = _datFile->getPosition();
             assert(pos == static_cast<uint64_t>(_numKeys) *
                    static_cast<uint64_t>(bitmapbytes) + _datHeaderLen);
             (void) bitmapbytes;

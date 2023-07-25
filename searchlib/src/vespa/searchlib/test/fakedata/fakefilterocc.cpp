@@ -21,26 +21,17 @@ FakeFilterOcc::FakeFilterOcc(const FakeWord &fw)
 {
     std::vector<uint32_t> fake;
 
-    using FW = FakeWord;
-    using DWFL = FW::DocWordFeatureList;
-
-    DWFL::const_iterator d(fw._postings.begin());
-    DWFL::const_iterator de(fw._postings.end());
-
-    while (d != de) {
-        fake.push_back(d->_docId);
-        ++d;
+    for (const auto& elem : fw._postings) {
+        fake.push_back(elem._docId);
     }
     std::swap(_uncompressed, fake);
     _docIdLimit = fw._docIdLimit;
     _hitDocs = fw._postings.size();
 }
 
-
 FakeFilterOcc::~FakeFilterOcc()
 {
 }
-
 
 void
 FakeFilterOcc::forceLink()
@@ -185,13 +176,11 @@ FakeFilterOccArrayIterator::doUnpack(uint32_t docId)
 }
 
 
-search::queryeval::SearchIterator *
+std::unique_ptr<search::queryeval::SearchIterator>
 FakeFilterOcc::
 createIterator(const fef::TermFieldMatchDataArray &matchData) const
 {
-    return new FakeFilterOccArrayIterator(&*_uncompressed.begin(),
-            &*_uncompressed.end(),
-            matchData);
+    return std::make_unique<FakeFilterOccArrayIterator>(&*_uncompressed.begin(), &*_uncompressed.end(), matchData);
 }
 
 }

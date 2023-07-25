@@ -29,14 +29,10 @@ namespace {
 // a stack overflow if the stack usage increases.
 TEST("testveryLongQueryResultingInBug6850778") {
     uint32_t NUMITEMS=20000;
-#ifdef VESPA_USE_ADDRESS_SANITIZER
-    setMaxStackSize(12_Mi);
-#else
-#ifdef VESPA_USE_THREAD_SANITIZER
+#if defined(VESPA_USE_THREAD_SANITIZER) || defined(VESPA_USE_ADDRESS_SANITIZER)
     NUMITEMS = 10000;
 #else
     setMaxStackSize(4_Mi);
-#endif
 #endif
     QueryBuilder<SimpleQueryNodeTypes> builder;
     for (uint32_t i=0; i <= NUMITEMS; i++) {

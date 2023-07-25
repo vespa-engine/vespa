@@ -26,7 +26,7 @@ PropertiesMap::lookupCreate(vespalib::stringref name)
 const fef::Properties &
 PropertiesMap::lookup(vespalib::stringref name) const
 {
-    PropsMap::const_iterator pos = _propertiesMap.find(name);
+    auto pos = _propertiesMap.find(name);
     if (pos == _propertiesMap.end()) {
         return _emptyProperties;
     }

@@ -23,8 +23,8 @@ vespalib::asciistream & operator << (vespalib::asciistream & os, const FieldRef 
 
 vespalib::asciistream & operator << (vespalib::asciistream & os, const StringFieldIdTMap & f)
 {
-    for (StringFieldIdTMapT::const_iterator it=f._map.begin(), mt=f._map.end(); it != mt; it++) {
-        os << it->first << " = " << it->second << '\n';
+    for (const auto& elem : f._map) {
+        os << elem.first << " = " << elem.second << '\n';
     }
     return os;
 }
@@ -49,7 +49,7 @@ void StringFieldIdTMap::add(const vespalib::string & s)
 
 FieldIdT StringFieldIdTMap::fieldNo(const vespalib::string & fName) const
 {
-    StringFieldIdTMapT::const_iterator found = _map.find(fName);
+    auto found = _map.find(fName);
     FieldIdT fNo((found != _map.end()) ? found->second : npos);
     return fNo;
 }

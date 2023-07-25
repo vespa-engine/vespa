@@ -26,13 +26,13 @@
   },
   "environment": "BARE_METAL",
   "owner": {
-    "tenant": "cfg",
-    "application": "cfg",
-    "instance": "cfg"
+    "tenant": "hosted-vespa",
+    "application": "zone-config-servers",
+    "instance": "default"
   },
   "membership": {
-    "clustertype": "container",
-    "clusterid": "configservers",
+    "clustertype": "admin",
+    "clusterid": "zone-config-servers",
     "group": "0",
     "index": 0,
     "retired": false
@@ -57,6 +57,7 @@
   "preferToRetire": false,
   "wantToDeprovision": false,
   "wantToRebuild": false,
+  "wantToUpgradeFlavor": false,
   "down": false,
   "history": [
     {

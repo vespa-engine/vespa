@@ -102,17 +102,17 @@ vespalib::ConstBufferRef
 Chunk::getLid(uint32_t lid) const
 {
     vespalib::ConstBufferRef buf;
-    for (LidList::const_iterator it(_lids.begin()), mt(_lids.end()); it != mt; it++) {
-        if (it->getLid() == lid) {
+    for (const auto& elem : _lids) {
+        if (elem.getLid() == lid) {
 #if 1
             uint32_t bLid(0), bLen(0);
-            vespalib::nbostream is(getData().data() + it->getOffset(), it->size());
+            vespalib::nbostream is(getData().data() + elem.getOffset(), elem.size());
             is >> bLid >> bLen;
             assert(bLid == lid);
-            assert(bLen == it->netSize());
-            assert((bLen + 2*sizeof(uint32_t)) == it->size());
+            assert(bLen == elem.netSize());
+            assert((bLen + 2*sizeof(uint32_t)) == elem.size());
 #endif
-            buf = vespalib::ConstBufferRef(getData().data() + it->getNetOffset(), it->netSize());
+            buf = vespalib::ConstBufferRef(getData().data() + elem.getNetOffset(), elem.netSize());
         }
     }
     return buf;

@@ -36,8 +36,9 @@ ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom & doom, I
     }
 }
 
-ResultProcessor::Context::Context(Sort::UP s, PartialResult::UP r, GroupingContext::UP g)
-    : sort(std::move(s)),
+ResultProcessor::Context::Context(const search::BitVector & validLids, Sort::UP s, PartialResultUP r, GroupingContext::UP g)
+    : _validLids(validLids),
+      sort(std::move(s)),
       result(std::move(r)),
       grouping(std::move(g)),
       groupingSource(grouping.get())
@@ -90,7 +91,7 @@ ResultProcessor::prepareThreadContextCreation(size_t num_threads)
     }
 }
 
-ResultProcessor::Context::UP
+std::unique_ptr<ResultProcessor::Context>
 ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id, uint32_t distributionKey)
 {
     auto sort = std::make_unique<Sort>(distributionKey, hardDoom, _attrContext, _sortSpec);
@@ -99,7 +100,7 @@ ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thr
     if (_groupingSession) {
         groupingContext = _groupingSession->createThreadContext(thread_id, _attrContext);
     }
-    return std::make_unique<Context>(std::move(sort), std::move(result), std::move(groupingContext));
+    return std::make_unique<Context>(_metaStore.getValidLids(), std::move(sort), std::move(result), std::move(groupingContext));
 }
 
 std::vector<std::pair<uint32_t,uint32_t>>
@@ -119,7 +120,6 @@ ResultProcessor::Result::UP
 ResultProcessor::makeReply(PartialResultUP full_result)
 {
     auto reply = std::make_unique<search::engine::SearchReply>();
-    const search::IDocumentMetaStore &metaStore = _metaStore;
     search::engine::SearchReply &r = *reply;
     PartialResult &result = *full_result;
     size_t numFs4Hits(0);
@@ -127,7 +127,7 @@ ResultProcessor::makeReply(PartialResultUP full_result)
         if (_wasMerged) {
             _groupingSession->getGroupingManager().prune();
         }
-        _groupingSession->getGroupingManager().convertToGlobalId(metaStore);
+        _groupingSession->getGroupingManager().convertToGlobalId(_metaStore);
         _groupingSession->continueExecution(_groupingContext);
         numFs4Hits = _groupingContext.countFS4Hits();
         _groupingContext.getResult().swap(r.groupResult);
@@ -144,7 +144,7 @@ ResultProcessor::makeReply(PartialResultUP full_result)
         search::engine::SearchReply::Hit &dst = r.hits[i];
         const search::RankedHit &src = result.hit(hitOffset + i);
         uint32_t docId = src.getDocId();
-        if (metaStore.getGidEvenIfMoved(docId, gid)) {
+        if (_metaStore.getGidEvenIfMoved(docId, gid)) {
             dst.gid = gid;
         }
         dst.metric = src.getRank();

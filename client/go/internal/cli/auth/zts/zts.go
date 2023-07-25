@@ -80,17 +80,20 @@ func (c *Client) AccessToken() (Token, error) {
 		return Token{}, err
 	}
 	defer response.Body.Close()
-
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		return Token{}, err
+	}
 	if response.StatusCode != http.StatusOK {
-		return Token{}, fmt.Errorf("zts: got status %d from %s", response.StatusCode, c.tokenURL.String())
+		body := string(b)
+		if body == "" {
+			body = "no body"
+		}
+		return Token{}, fmt.Errorf("zts: got status %d (%s) from %s", response.StatusCode, body, c.tokenURL.String())
 	}
 	var ztsResponse struct {
 		AccessToken string `json:"access_token"`
 		ExpirySecs  int    `json:"expires_in"`
-	}
-	b, err := io.ReadAll(response.Body)
-	if err != nil {
-		return Token{}, err
 	}
 	if err := json.Unmarshal(b, &ztsResponse); err != nil {
 		return Token{}, err

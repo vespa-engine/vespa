@@ -16,9 +16,9 @@ class FileRandRead
 {
 public:
     using FSP = std::shared_ptr<FastOS_FileInterface>;
-    virtual ~FileRandRead() { }
+    virtual ~FileRandRead() = default;
     virtual FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) = 0;
-    virtual int64_t getSize() = 0;
+    virtual int64_t getSize() const = 0;
 };
 
 }

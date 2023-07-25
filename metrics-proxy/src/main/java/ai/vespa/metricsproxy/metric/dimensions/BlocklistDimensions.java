@@ -33,7 +33,6 @@ public enum BlocklistDimensions {
      * State related dimensions - will always be the same value for a given snapshot
      */
     METRIC_TYPE("metrictype"),
-    ORCHESTRATOR_STATE("orchestratorState"),
     ROLE("role"),
     STATE("state"),
     SYSTEM("system"),

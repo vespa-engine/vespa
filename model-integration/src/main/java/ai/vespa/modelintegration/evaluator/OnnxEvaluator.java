@@ -15,6 +15,8 @@ import com.yahoo.tensor.TensorType;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static ai.vespa.modelintegration.evaluator.OnnxRuntime.isCudaError;
 
@@ -25,6 +27,8 @@ import static ai.vespa.modelintegration.evaluator.OnnxRuntime.isCudaError;
  * @author lesters
  */
 public class OnnxEvaluator implements AutoCloseable {
+
+    private static final Logger LOG = Logger.getLogger(OnnxEvaluator.class.getName());
 
     private final ReferencedOrtSession session;
 
@@ -130,19 +134,25 @@ public class OnnxEvaluator implements AutoCloseable {
         }
     }
 
-    private static ReferencedOrtSession createSession(
-            ModelPathOrData model, OnnxRuntime runtime, OnnxEvaluatorOptions options, boolean tryCuda) {
+    private static ReferencedOrtSession createSession(ModelPathOrData model, OnnxRuntime runtime,
+                                                      OnnxEvaluatorOptions options, boolean tryCuda) {
         if (options == null) {
             options = new OnnxEvaluatorOptions();
         }
         try {
-            return runtime.acquireSession(model, options, tryCuda && options.requestingGpu());
+            boolean loadCuda = tryCuda && options.requestingGpu();
+            ReferencedOrtSession session = runtime.acquireSession(model, options, loadCuda);
+            if (loadCuda) {
+                LOG.log(Level.INFO, "Created session with CUDA using GPU device " + options.gpuDeviceNumber());
+            }
+            return session;
         } catch (OrtException e) {
             if (e.getCode() == OrtException.OrtErrorCode.ORT_NO_SUCHFILE) {
                 throw new IllegalArgumentException("No such file: " + model.path().get());
             }
             if (tryCuda && isCudaError(e) && !options.gpuDeviceRequired()) {
-                // Failed in CUDA native code, but GPU device is optional, so we can proceed without it
+                LOG.log(Level.WARNING, "Failed to create session with CUDA using GPU device " +
+                                       options.gpuDeviceNumber() + ". Falling back to CPU", e);
                 return createSession(model, runtime, options, false);
             }
             if (isCudaError(e)) {

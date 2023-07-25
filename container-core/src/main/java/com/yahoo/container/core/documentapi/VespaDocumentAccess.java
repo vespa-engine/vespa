@@ -17,9 +17,7 @@ import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
-import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.MessagebusConfig;
-import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.yolean.concurrent.Memoized;
 
 import java.util.logging.Level;
@@ -39,14 +37,9 @@ public class VespaDocumentAccess extends DocumentAccess {
 
     private final Memoized<DocumentAccess, RuntimeException> delegate;
 
-    VespaDocumentAccess(DocumentmanagerConfig documentmanagerConfig,
-                        String slobroksConfigId,
-                        MessagebusConfig messagebusConfig,
-                        DocumentProtocolPoliciesConfig policiesConfig,
-                        DistributionConfig distributionConfig) {
+    VespaDocumentAccess(DocumentmanagerConfig documentmanagerConfig, String slobroksConfigId, MessagebusConfig messagebusConfig) {
         super(new DocumentAccessParams().setDocumentmanagerConfig(documentmanagerConfig));
-        this.parameters = new MessageBusParams()
-                .setDocumentProtocolPoliciesConfig(policiesConfig, distributionConfig);
+        this.parameters = new MessageBusParams();
         this.parameters.setDocumentmanagerConfig(documentmanagerConfig);
         this.parameters.getRPCNetworkParams().setSlobrokConfigId(slobroksConfigId);
         this.parameters.getMessageBusParams().setMessageBusConfig(messagebusConfig);

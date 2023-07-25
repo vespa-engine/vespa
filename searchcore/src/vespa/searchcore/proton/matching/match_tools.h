@@ -120,18 +120,18 @@ private:
     using RankSetup = search::fef::RankSetup;
     using IIndexEnvironment = search::fef::IIndexEnvironment;
     using IDiversifier = search::queryeval::IDiversifier;
-    QueryLimiter              & _queryLimiter;
-    AttributeBlueprintParams    _global_filter_params;
-    Query                       _query;
-    MaybeMatchPhaseLimiter::UP  _match_limiter;
+    QueryLimiter                     & _queryLimiter;
+    AttributeBlueprintParams           _global_filter_params;
+    Query                              _query;
+    MaybeMatchPhaseLimiter::UP         _match_limiter;
     std::unique_ptr<RangeQueryLocator> _rangeLocator;
-    QueryEnvironment            _queryEnv;
-    RequestContext              _requestContext;
-    MatchDataLayout             _mdl;
-    const RankSetup           & _rankSetup;
-    const Properties          & _featureOverrides;
-    DiversityParams             _diversityParams;
-    bool                        _valid;
+    QueryEnvironment                   _queryEnv;
+    RequestContext                     _requestContext;
+    MatchDataLayout                    _mdl;
+    const RankSetup                  & _rankSetup;
+    const Properties                 & _featureOverrides;
+    DiversityParams                    _diversityParams;
+    bool                               _valid;
 
     std::unique_ptr<AttributeOperationTask>
     createTask(vespalib::stringref attribute, vespalib::stringref operation) const;
@@ -172,7 +172,7 @@ public:
     std::unique_ptr<AttributeOperationTask> createOnSummaryTask() const;
 
     const Query & query() const { return _query; }
-    const RequestContext & getRequestContext() const { return _requestContext; }
+    const RequestContext & get_request_context() const { return _requestContext; }
 
     const StringStringMap & get_feature_rename_map() const;
 

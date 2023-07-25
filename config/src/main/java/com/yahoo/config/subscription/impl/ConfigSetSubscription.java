@@ -3,7 +3,6 @@ package com.yahoo.config.subscription.impl;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigSet;
-import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.lang.reflect.Constructor;
@@ -48,11 +47,11 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
         if (hasConfigChanged()) return true;
         if (timeout <= 0) return false;
 
-        long end = System.nanoTime() + timeout * 1_000_000;
+        long startNanos = System.nanoTime();
         do {
             sleep();
             if (hasConfigChanged()) return true;
-        } while (System.nanoTime() < end);
+        } while (System.nanoTime() - startNanos < timeout * 1_000_000);
         return false;
     }
 

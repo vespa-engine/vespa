@@ -44,12 +44,12 @@ InvertTask::run()
     _context.set_data_type(_inv_context, _doc);
     auto document_field_itr = _context.get_document_fields().begin();
     for (auto field_id : _context.get_fields()) {
-        _inverters[field_id]->invertField(_lid, get_field_value(_doc, *document_field_itr));
+        _inverters[field_id]->invertField(_lid, get_field_value(_doc, *document_field_itr), _doc);
         ++document_field_itr;
     }
     auto document_uri_field_itr = _context.get_document_uri_fields().begin();
     for (auto uri_field_id : _context.get_uri_fields()) {
-        _uri_inverters[uri_field_id]->invertField(_lid, get_field_value(_doc, *document_uri_field_itr));
+        _uri_inverters[uri_field_id]->invertField(_lid, get_field_value(_doc, *document_uri_field_itr), _doc);
         ++document_uri_field_itr;
     }
 }

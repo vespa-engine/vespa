@@ -99,7 +99,6 @@ schema newrank{
 
     field artist type string {
       indexing: summary | index
-      # index-to: artist, default
     }
 
     field artistspid type string {

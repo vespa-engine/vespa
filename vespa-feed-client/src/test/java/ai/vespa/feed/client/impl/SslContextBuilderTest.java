@@ -57,13 +57,13 @@ class SslContextBuilderTest {
                         .withCaCertificates(certificateFile)
                         .withCertificateAndKey(certificateFile, privateKeyFile)
                         .build());
-        assertEquals("TLSv1.2", sslContext.getProtocol());
+        assertEquals("TLSv1.3", sslContext.getProtocol());
     }
 
     @Test
     void successfully_constructs_sslcontext_when_no_builder_parameter_given() {
         SSLContext sslContext = Assertions.assertDoesNotThrow(() -> new SslContextBuilder().build());
-        assertEquals("TLSv1.2", sslContext.getProtocol());
+        assertEquals("TLSv1.3", sslContext.getProtocol());
     }
 
     @Test
@@ -72,7 +72,7 @@ class SslContextBuilderTest {
                 new SslContextBuilder()
                         .withCertificateAndKey(certificateFile, privateKeyFile)
                         .build());
-        assertEquals("TLSv1.2", sslContext.getProtocol());
+        assertEquals("TLSv1.3", sslContext.getProtocol());
     }
 
     @Test
@@ -81,7 +81,7 @@ class SslContextBuilderTest {
                 new SslContextBuilder()
                         .withCaCertificates(certificateFile)
                         .build());
-        assertEquals("TLSv1.2", sslContext.getProtocol());
+        assertEquals("TLSv1.3", sslContext.getProtocol());
     }
 
     private static void writePem(Path file, String type, byte[] asn1DerEncodedObject) throws IOException {

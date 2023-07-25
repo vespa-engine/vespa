@@ -23,6 +23,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -91,7 +92,7 @@ public class VirtualNodeProvisioningTest {
 
     @Test
     public void allow_same_parent_host_for_nodes_in_a_cluster_in_cd_and_non_prod() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().build();
+        ProvisioningTester tester;
 
         final int containerNodeCount = 2;
         final int contentNodeCount = 2;
@@ -102,7 +103,7 @@ public class VirtualNodeProvisioningTest {
             NodeResources flavor = new NodeResources(1, 4, 10, 1);
             tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
             tester.makeReadyNodes(4, flavor, NodeType.host, 1);
-            tester.prepareAndActivateInfraApplication(ProvisioningTester.applicationId(), NodeType.host);
+            tester.activateTenantHosts();
 
             List<HostSpec> containerHosts = tester.prepare(applicationId, containerClusterSpec, containerNodeCount, groups, flavor);
             List<HostSpec> contentHosts = tester.prepare(applicationId,  contentClusterSpec, contentNodeCount, groups, flavor);
@@ -116,7 +117,7 @@ public class VirtualNodeProvisioningTest {
         {
             tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east"))).build();
             tester.makeReadyNodes(4, resources1, NodeType.host, 1);
-            tester.prepareAndActivateInfraApplication(ProvisioningTester.applicationId(), NodeType.host);
+            tester.activateTenantHosts();
 
             List<HostSpec> containerHosts = tester.prepare(applicationId, containerClusterSpec, containerNodeCount, groups, resources1);
             List<HostSpec> contentHosts = tester.prepare(applicationId, contentClusterSpec, contentNodeCount, groups, resources1);
@@ -442,9 +443,8 @@ public class VirtualNodeProvisioningTest {
                          "Could not satisfy request for 3 nodes with " +
                          "[vcpu: 2.0, memory: 4.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, architecture: any] " +
                          "in tenant2.app2 container cluster 'my-container' 6.39: " +
-                         "Node allocation failure on group 0: " +
                          "Not enough suitable nodes available due to host exclusivity constraints",
-                         e.getMessage());
+                         Exceptions.toMessageString(e));
         }
 
         // Adding 3 nodes of another application for the same tenant works
@@ -469,8 +469,8 @@ public class VirtualNodeProvisioningTest {
             assertEquals("Could not satisfy request for 2 nodes with " +
                          "[vcpu: 1.0, memory: 4.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote, architecture: any] " +
                          "in tenant.app1 content cluster 'my-content'" +
-                         " 6.42: Node allocation failure on group 0",
-                         e.getMessage());
+                         " 6.42",
+                         Exceptions.toMessageString(e));
         }
     }
 
@@ -513,18 +513,18 @@ public class VirtualNodeProvisioningTest {
                            2, 1, 20, 16, 50, 1.0,
                            app1, cluster1);
 
-        var newMinResources = new NodeResources( 5,  6, 11, 1);
-        var newMaxResources = new NodeResources(20, 10, 30, 1);
+        var newMinResources = new NodeResources( 5,  6, 18, 1);
+        var newMaxResources = new NodeResources(20, 10, 90, 1);
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(7, 1, newMinResources),
                                                       new ClusterResources(7, 1, newMaxResources)));
         tester.assertNodes("New allocation preserves total (redundancy adjusted) resources",
-                           7, 1, 5, 6.0, 11, 1.0,
+                           7, 1, 5, 6.0, 18, 1.0,
                            app1, cluster1);
 
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(7, 1, newMinResources),
                                                       new ClusterResources(7, 1, newMaxResources)));
         tester.assertNodes("Redeploying does not cause changes",
-                           7, 1, 5, 6.0, 11, 1.0,
+                           7, 1, 5, 6.0, 18, 1.0,
                            app1, cluster1);
     }
 

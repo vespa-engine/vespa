@@ -8,7 +8,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.restapi.RestApiException;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -42,7 +41,6 @@ import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
-import static com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiTest.createApplicationSubmissionData;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -476,7 +474,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                        (response) -> Assertions.assertThat(new String(response.getBody(), UTF_8)).matches(Pattern.compile(regexGenerateToken)),
                        200);
 
-        String regexListTokens = "\\{\"tokens\":\\[\\{\"id\":\"myTokenId\",\"versions\":\\[\\{\"fingerprint\":\".*\",\"created\":\".*\",\"author\":\"user@test\"}]}]}";
+        String regexListTokens = "\\{\"tokens\":\\[\\{\"id\":\"myTokenId\",\"versions\":\\[\\{\"fingerprint\":\".*\",\"created\":\".*\",\"author\":\"user@test\",\"expiration\":\".*\"}]}]}";
         tester.assertResponse(request("/application/v4/tenant/scoober/token", GET)
                                       .roles(Role.developer(tenantName)),
                               (response) -> Assertions.assertThat(new String(response.getBody(), UTF_8)).matches(Pattern.compile(regexListTokens)),

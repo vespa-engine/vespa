@@ -63,6 +63,10 @@ $top/dist/getversionmap.sh $top > $top/dist/vtag.map
 # must install parent poms first:
 echo "Downloading all dependencies. This may take a few minutes with an empty Maven cache."
 (
+  cd dependency-versions
+  mvn_install
+)
+(
   cd container-dependency-versions
   mvn_install
 )

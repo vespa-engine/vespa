@@ -65,6 +65,10 @@ class StateManager : public NodeStateUpdater,
     std::condition_variable                   _threadCond;
     std::deque<TimeSysStatePair>              _systemStateHistory;
     uint32_t                                  _systemStateHistorySize;
+    const vespalib::steady_time               _start_time;
+    std::optional<vespalib::steady_time>      _health_ping_time;
+    vespalib::duration                        _health_ping_warn_interval;
+    vespalib::steady_time                     _health_ping_warn_time;
     std::unique_ptr<HostInfo>                 _hostInfo;
     std::unique_ptr<framework::Thread>        _thread;
     // Controllers that have observed a GetNodeState response sent _after_
@@ -84,6 +88,7 @@ public:
     void onClose() override;
 
     void tick();
+    void warn_on_missing_health_ping();
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;

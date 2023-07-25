@@ -59,9 +59,7 @@ public class ConstantValidator extends Validator {
         }
 
         ApplicationFile tensorApplicationFile = application.getFile(Path.fromString(constantFile));
-        new ConstantTensorJsonValidator().validate(constantFile,
-                                                   rankingConstant.type(),
-                                                   tensorApplicationFile.createReader());
+        new ConstantTensorJsonValidator(rankingConstant.type()).validate(constantFile, tensorApplicationFile.createReader());
     }
 
     private static class ExceptionMessageCollector {

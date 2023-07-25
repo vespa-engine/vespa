@@ -51,7 +51,7 @@ public class IdentityDocumentSigner {
 
     // Cluster type is ignored due to old Vespa versions not forwarding unknown fields in signed identity document
     private String generateSignature(VespaUniqueInstanceId providerUniqueId,
-                                    AthenzService providerService,
+                                    AthenzIdentity providerService,
                                     String configServerHostname,
                                     String instanceHostname,
                                     Instant createdAt,
@@ -109,7 +109,7 @@ public class IdentityDocumentSigner {
 
     private static void writeToSigner(Signature signer,
                                       VespaUniqueInstanceId providerUniqueId,
-                                      AthenzService providerService,
+                                      AthenzIdentity providerService,
                                       String configServerHostname,
                                       String instanceHostname,
                                       Instant createdAt,

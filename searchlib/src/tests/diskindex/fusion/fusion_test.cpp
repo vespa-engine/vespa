@@ -383,12 +383,6 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
     fic.dump(ib);
     ib.close();
 
-    vespalib::string tsName = dump2dir + "/.teststamp";
-    using FileKit = search::FileKit;
-    ASSERT_TRUE(FileKit::createStamp(tsName));
-    ASSERT_TRUE(FileKit::hasStamp(tsName));
-    ASSERT_TRUE(FileKit::removeStamp(tsName));
-    ASSERT_FALSE(FileKit::hasStamp(tsName));
     vespalib::ThreadStackExecutor executor(4);
 
     do {

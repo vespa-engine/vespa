@@ -65,7 +65,7 @@ public:
     int lowLevelSinglePostingScanUnpack() const override;
     int lowLevelAndPairPostingScan(const FakePosting &rhs) const override;
     int lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const override;
-    queryeval::SearchIterator *createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
+    std::unique_ptr<queryeval::SearchIterator> createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
 };
 
 }

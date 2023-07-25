@@ -342,7 +342,7 @@ public:
     }
     const DiskIndex::LookupResult &
     lookup(const vespalib::string & word, uint32_t fieldId) {
-        Cache::const_iterator it = _cache.find(word);
+        auto it = _cache.find(word);
         if (it == _cache.end()) {
             _cache[word] = _diskIndex.lookup(_fieldIds, word);
             it = _cache.find(word);

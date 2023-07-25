@@ -62,5 +62,5 @@ func ExportSecurityEnvToSh() {
 			helper.overrideVar(envvars.VESPA_TLS_ENABLED, "1")
 		}
 	}
-	helper.dump()
+	helper.dump(os.Stdout)
 }

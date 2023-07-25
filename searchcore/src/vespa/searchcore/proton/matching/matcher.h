@@ -32,6 +32,7 @@ namespace search::engine {
     class SearchRequest;
     class DocsumRequest;
     class SearchReply;
+    class Coverage;
 }
 namespace search { struct IDocumentMetaStore; }
 namespace search::fef { class RankSetup; }
@@ -51,13 +52,16 @@ private:
     using IAttributeContext = search::attribute::IAttributeContext;
     using DocsumRequest = search::engine::DocsumRequest;
     using SearchRequest = search::engine::SearchRequest;
+    using Coverage = search::engine::Coverage;
+    using Request = search::engine::Request;
     using Properties = search::fef::Properties;
+    using RankSetup = search::fef::RankSetup;
     using my_clock = std::chrono::steady_clock;
     using MatchingElements = search::MatchingElements;
     using MatchingElementsFields = search::MatchingElementsFields;
     IndexEnvironment              _indexEnv;
     search::fef::BlueprintFactory _blueprintFactory;
-    std::shared_ptr<search::fef::RankSetup>  _rankSetup;
+    std::shared_ptr<RankSetup>    _rankSetup;
     ViewResolver                  _viewResolver;
     std::mutex                    _statsLock;
     MatchingStats                 _stats;
@@ -68,6 +72,8 @@ private:
 
     size_t computeNumThreadsPerSearch(search::queryeval::Blueprint::HitEstimate hits,
                                       const Properties & rankProperties) const;
+    void updateStats(const MatchingStats & stats, const search::engine::Request & request,
+                     const Coverage & coverage, bool isDoomExplicit);
 public:
     using SP = std::shared_ptr<Matcher>;
 

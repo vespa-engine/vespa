@@ -22,16 +22,28 @@ public class ClusterMembership {
     private ClusterMembership(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
                               ZoneEndpoint zoneEndpoint) {
         String[] components = stringValue.split("/");
-        if (components.length < 4)
+        if (components.length < 3)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
                                        "Expected 'clusterType/clusterId/groupId/index[/retired][/exclusive][/stateful][/combinedId]'");
+
+        Integer groupIndex = components[2].isEmpty() ? null : Integer.parseInt(components[2]);
+        Integer nodeIndex;
+        int missingElements = 0;
+        try {
+            nodeIndex = Integer.parseInt(components[3]);
+        } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+            // Legacy form missing the group component
+            nodeIndex = groupIndex;
+            groupIndex = null;
+            missingElements = 1;
+        }
 
         boolean exclusive = false;
         boolean stateful = false;
         var combinedId = Optional.<String>empty();
         boolean retired = false;
-        if (components.length > 4) {
-            for (int i = 4; i < components.length; i++) {
+        if (components.length > (4 - missingElements)) {
+            for (int i = (4 - missingElements); i < components.length; i++) {
                 String component = components[i];
                 switch (component) {
                     case "exclusive" -> exclusive = true;
@@ -44,7 +56,7 @@ public class ClusterMembership {
 
         this.cluster = ClusterSpec.specification(ClusterSpec.Type.valueOf(components[0]),
                                                  ClusterSpec.Id.from(components[1]))
-                                  .group(ClusterSpec.Group.from(Integer.parseInt(components[2])))
+                                  .group(groupIndex == null ? null : ClusterSpec.Group.from(groupIndex))
                                   .vespaVersion(vespaVersion)
                                   .exclusive(exclusive)
                                   .combinedId(combinedId.map(ClusterSpec.Id::from))
@@ -52,7 +64,7 @@ public class ClusterMembership {
                                   .loadBalancerSettings(zoneEndpoint)
                                   .stateful(stateful)
                                   .build();
-        this.index = Integer.parseInt(components[3]);
+        this.index = nodeIndex;
         this.retired = retired;
         this.stringValue = toStringValue();
     }
@@ -67,7 +79,7 @@ public class ClusterMembership {
     protected String toStringValue() {
         return cluster.type().name() +
                "/" + cluster.id().value() +
-               (cluster.group().isPresent() ? "/" + cluster.group().get().index() : "") +
+               (cluster.group().isPresent() ? "/" + cluster.group().get().index() : "/") +
                "/" + index +
                ( cluster.isExclusive() ? "/exclusive" : "") +
                ( retired ? "/retired" : "") +

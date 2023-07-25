@@ -229,8 +229,10 @@ public class TensorReader {
         } else {
             expectArrayStart(buffer.current());
             int initNesting = buffer.nesting();
-            for (buffer.next(); buffer.nesting() >= initNesting; buffer.next())
+            for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
+                if (buffer.current() == JsonToken.START_ARRAY || buffer.current() == JsonToken.END_ARRAY) continue; // nested arrays: Skip
                 values[index++] = readDouble(buffer);
+            }
             expectCompositeEnd(buffer.current());
         }
         if (index != size)

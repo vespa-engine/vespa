@@ -15,7 +15,7 @@ bool
 extract_file_size(const vespalib::GenericHeader& header,
                   FastOS_FileInterface& file, uint64_t& file_size)
 {
-    file_size = file.GetSize();
+    file_size = file.getSize();
     return FileSizeCalculator::extractFileSize(header, header.getSize(),file.GetFileName(), file_size);
 }
 

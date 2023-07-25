@@ -3,6 +3,8 @@
 
 #include "attrvector.h"
 #include "load_utils.h"
+#include "numeric_sort_blob_writer.h"
+#include "string_sort_blob_writer.h"
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/searchlib/util/filekit.h>
 
@@ -89,6 +91,39 @@ NumericDirectAttrVector(const vespalib::string & baseFileName)
     }
 }
 
+template <typename F, typename B>
+template <bool asc>
+long
+NumericDirectAttrVector<F, B>::on_serialize_for_sort(DocId doc, void* serTo, long available) const
+{
+    search::attribute::NumericSortBlobWriter<BaseType, asc> writer;
+    vespalib::ConstArrayRef<BaseType> values(this->_data.data() + this->_idx[doc], this->_idx[doc + 1] - this->_idx[doc]);
+    for (auto& v : values) {
+        writer.candidate(v);
+    }
+    return writer.write(serTo, available);
+}
+
+template <typename F, typename B>
+long
+NumericDirectAttrVector<F, B>::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const
+{
+    if (!F::IsMultiValue()) {
+        return search::NumericDirectAttribute<B>::onSerializeForAscendingSort(doc, serTo, available, bc);
+    }
+    return on_serialize_for_sort<true>(doc, serTo, available);
+}
+
+template <typename F, typename B>
+long
+NumericDirectAttrVector<F, B>::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const
+{
+    if (!F::IsMultiValue()) {
+        return search::NumericDirectAttribute<B>::onSerializeForDescendingSort(doc, serTo, available, bc);
+    }
+    return on_serialize_for_sort<false>(doc, serTo, available);
+}
+
 template <typename F>
 StringDirectAttrVector<F>::
 StringDirectAttrVector(const vespalib::string & baseFileName, const Config & c) :
@@ -111,3 +146,36 @@ StringDirectAttrVector(const vespalib::string & baseFileName) :
     setEnum();
 }
 
+template <typename F>
+long
+StringDirectAttrVector<F>::on_serialize_for_sort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc, bool asc) const
+{
+    search::attribute::StringSortBlobWriter writer(serTo, available, bc, asc);
+    vespalib::ConstArrayRef<uint32_t> offsets(this->_offsets.data() + this->_idx[doc], this->_idx[doc + 1] - this->_idx[doc]);
+    for (auto& offset : offsets) {
+        if (!writer.candidate(&this->_buffer[offset])) {
+            return -1;
+        }
+    }
+    return writer.write();
+}
+
+template <typename F>
+long
+StringDirectAttrVector<F>::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const
+{
+    if (!F::IsMultiValue()) {
+        return search::StringDirectAttribute::onSerializeForAscendingSort(doc, serTo, available, bc);
+    }
+    return on_serialize_for_sort(doc, serTo, available, bc, true);
+}
+
+template <typename F>
+long
+StringDirectAttrVector<F>::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const
+{
+    if (!F::IsMultiValue()) {
+        return search::StringDirectAttribute::onSerializeForDescendingSort(doc, serTo, available, bc);
+    }
+    return on_serialize_for_sort(doc, serTo, available, bc, false);
+}

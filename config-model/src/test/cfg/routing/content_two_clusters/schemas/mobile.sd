@@ -3,11 +3,9 @@ search mobile      {
         document mobile    {
                 field f1 type string    {
                         indexing: summary | index
-                        # index-to: f1, all
                 }
                 field f2 type string    {
                         indexing: summary | index
-                        # index-to: f2, all
                 }
         }
 }

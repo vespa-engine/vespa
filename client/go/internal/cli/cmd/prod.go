@@ -102,8 +102,17 @@ https://cloud.vespa.ai/en/reference/deployment`,
 	}
 }
 
+type prodDeployOptions struct {
+	copyCert    bool
+	risk        int
+	commit      string
+	description string
+	authorEmail string
+	sourceURL   string
+}
+
 func newProdDeployCmd(cli *CLI) *cobra.Command {
-	copyCert := false
+	var options prodDeployOptions
 	cmd := &cobra.Command{
 		Use:     "deploy",
 		Aliases: []string{"submit"}, // TODO: Remove in Vespa 9
@@ -118,7 +127,9 @@ services.xml.
 
 For more information about production deployments in Vespa Cloud see:
 https://cloud.vespa.ai/en/production-deployment
-https://cloud.vespa.ai/en/automated-deployments`,
+https://cloud.vespa.ai/en/automated-deployments
+https://cloud.vespa.ai/en/reference/vespa-cloud-api#submission-properties
+`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Example: `$ mvn package # when adding custom Java components
@@ -142,24 +153,33 @@ $ vespa prod deploy`,
 			if err := verifyTests(cli, pkg); err != nil {
 				return err
 			}
-			opts, err := cli.createDeploymentOptions(pkg, target)
-			if err != nil {
+			if err := maybeCopyCertificate(options.copyCert, true, cli, target, pkg); err != nil {
 				return err
 			}
-			if err := maybeCopyCertificate(copyCert, true, cli, target, pkg); err != nil {
-				return err
+			deployment := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
+			submission := vespa.Submission{
+				Risk:        options.risk,
+				Commit:      options.commit,
+				Description: options.description,
+				AuthorEmail: options.authorEmail,
+				SourceURL:   options.sourceURL,
 			}
-			if err := vespa.Submit(opts); err != nil {
+			if err := vespa.Submit(deployment, submission); err != nil {
 				return fmt.Errorf("could not deploy application: %w", err)
 			} else {
 				cli.printSuccess("Deployed ", color.CyanString(pkg.Path))
 				log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
-					opts.Target.Deployment().System.ConsoleURL, opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application)))
+					deployment.Target.Deployment().System.ConsoleURL, deployment.Target.Deployment().Application.Tenant, deployment.Target.Deployment().Application.Application)))
 			}
 			return nil
 		},
 	}
-	cmd.Flags().BoolVarP(&copyCert, "add-cert", "A", false, `Copy certificate of the configured application to the current application package`)
+	cmd.Flags().BoolVarP(&options.copyCert, "add-cert", "A", false, "Copy certificate of the configured application to the current application package (default false)")
+	cmd.Flags().IntVarP(&options.risk, "risk", "", 0, "The risk score of source code being deployed. 0 to ignore (default 0)")
+	cmd.Flags().StringVarP(&options.commit, "commit", "", "", "Identifier of the source code being deployed. For example a commit hash")
+	cmd.Flags().StringVarP(&options.description, "description", "", "", "Description of the source code being deployed. For example a git commit message")
+	cmd.Flags().StringVarP(&options.authorEmail, "author-email", "", "", "Email of the author of the commit being deployed")
+	cmd.Flags().StringVarP(&options.sourceURL, "source-url", "", "", "URL which points to the source code being deployed. For example the build job running the submission")
 	return cmd
 }
 
@@ -405,6 +425,6 @@ func verifyTest(cli *CLI, testsParent string, suite string, required bool) error
 		}
 		return nil
 	}
-	_, _, err = runTests(cli, testDirectory, true)
+	_, _, err = runTests(cli, testDirectory, true, 0)
 	return err
 }

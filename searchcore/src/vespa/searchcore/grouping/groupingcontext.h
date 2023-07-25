@@ -3,9 +3,8 @@
 
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/clock.h>
 #include <vector>
-#include <memory>
 
 namespace search::grouping {
 
@@ -18,15 +17,8 @@ class GroupingContext
 {
 public:
     using UP = std::unique_ptr<GroupingContext>;
-    using GroupingPtr =  std::shared_ptr<search::aggregation::Grouping>;
-    using GroupingList = std::vector<GroupingPtr>;
-
-private:
-    const vespalib::Clock & _clock;
-    vespalib::steady_time   _timeOfDoom;
-    vespalib::nbostream     _os;
-    GroupingList            _groupingList;
-public:
+    using Grouping = search::aggregation::Grouping;
+    using GroupingList = std::vector<std::shared_ptr<Grouping>>;
 
     /**
      * Deserialize a grouping spec into this context.
@@ -41,14 +33,15 @@ public:
      * @param groupSpec The grouping specification to use for initialization.
      * @param groupSpecLen The length of the grouping specification, in bytes.
      **/
-    GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom, const char *groupSpec, uint32_t groupSpecLen);
+    GroupingContext(const BitVector & validLids, const vespalib::Clock & clock, vespalib::steady_time timeOfDoom,
+                    const char *groupSpec, uint32_t groupSpecLen, bool enableNestedMultivalueGrouping);
 
     /**
      * Create a new grouping context from a byte buffer.
      * @param groupSpec The grouping specification to use for initialization.
      * @param groupSpecLen The length of the grouping specification, in bytes.
      **/
-    GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom);
+    GroupingContext(const BitVector & validLids, const vespalib::Clock & clock, vespalib::steady_time timeOfDoom);
 
     /**
      * Shallow copy of references
@@ -61,7 +54,7 @@ public:
      * Add another grouping to this context.
      * @param g Pointer to the grouping object to become part of this context.
      **/
-    void addGrouping(const GroupingPtr & g);
+    void addGrouping(std::shared_ptr<Grouping> g);
 
     /**
      * Reset the context to an empty state.
@@ -72,7 +65,7 @@ public:
      * Return the internal list of grouping expressions in this context.
      * @return a list of groupings.
      **/
-    GroupingList &getGroupingList() { return _groupingList; }
+    GroupingList &getGroupingList() noexcept { return _groupingList; }
 
     /**
      * Serialize the grouping expressions in this context.
@@ -82,7 +75,7 @@ public:
     /**
      * Check whether this context contains any groupings.
      **/
-    bool empty() const { return _groupingList.empty(); }
+    bool empty() const noexcept { return _groupingList.empty(); }
 
     /**
      * Obtain the grouping result.
@@ -106,12 +99,31 @@ public:
     /**
      * Obtain the time of doom.
      */
-    vespalib::steady_time getTimeOfDoom() const { return _timeOfDoom; }
+    vespalib::steady_time getTimeOfDoom() const noexcept { return _timeOfDoom; }
+    bool hasExpired() const noexcept { return _clock.getTimeNS() > _timeOfDoom; }
     /**
      * Figure out if ranking is necessary for any of the grouping requests here.
      * @return true if ranking is required.
      */
     bool needRanking() const;
+    bool enableNestedMultivalueGrouping() const noexcept { return _enableNestedMultivalueGrouping; }
+    const search::BitVector & getValidLids() const { return _validLids; }
+
+    void groupUnordered(const RankedHit *searchResults, uint32_t binSize, const search::BitVector * overflow);
+    void groupInRelevanceOrder(const RankedHit *searchResults, uint32_t binSize);
+private:
+    void aggregate(Grouping & grouping, const RankedHit * rankedHit, unsigned int len, const BitVector * bv) const;
+    void aggregate(Grouping & grouping, const RankedHit * rankedHit, unsigned int len) const;
+    void aggregate(Grouping & grouping, uint32_t docId, HitRank rank) const;
+    unsigned int aggregateRanked(Grouping & grouping, const RankedHit * rankedHit, unsigned int len) const;
+    void aggregate(Grouping & grouping, const BitVector * bv, unsigned int lidLimit) const;
+    void aggregate(Grouping & grouping, const BitVector * bv, unsigned int , unsigned int topN) const;
+    const BitVector       & _validLids;
+    const vespalib::Clock & _clock;
+    vespalib::steady_time   _timeOfDoom;
+    vespalib::nbostream     _os;
+    GroupingList            _groupingList;
+    bool                    _enableNestedMultivalueGrouping;
 };
 
 }

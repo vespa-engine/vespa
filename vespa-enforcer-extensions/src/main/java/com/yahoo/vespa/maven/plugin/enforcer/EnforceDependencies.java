@@ -3,9 +3,13 @@ package com.yahoo.vespa.maven.plugin.enforcer;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
+import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
+import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.enforcer.rule.api.EnforcerRule;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleHelper;
+import org.apache.maven.enforcer.rules.utils.ArtifactMatcher;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.MavenProject;
@@ -31,6 +35,7 @@ import java.util.regex.Pattern;
  *
  * @author bjorncs
  */
+@SuppressWarnings("deprecation")
 public class EnforceDependencies implements EnforcerRule {
 
     private List<String> allowedDependencies = List.of();
@@ -129,13 +134,23 @@ public class EnforceDependencies implements EnforcerRule {
     /** Matches simple glob like patterns using '?' and '*' */
     private static boolean segmentMatches(String value, String segmentPattern) {
         String regex = segmentPattern
-                .replace(".", "\\.").replace("*", ".*").replace(":", "\\:").replace('?', '.').replace("(", "\\(")
-                .replace(")", "\\)");
+                .replace(".", "\\.").replace("*", ".*").replace(":", "\\:")
+                .replace('?', '.').replace("(", "\\(").replace(")", "\\)")
+                .replace("[", "\\[").replace("]", "\\]");
         return Pattern.matches(regex, value);
     }
 
-    private static boolean versionMatches(String rawVersion, String segmentPattern) {
-        return segmentMatches(rawVersion, segmentPattern);
+    private static boolean versionMatches(String rawVersion, String segmentPattern) throws EnforcerRuleException {
+        if (segmentMatches(rawVersion, segmentPattern)) return true;
+
+        // Handle version ranges. Note that ArtifactMatcher treats a single version without brackets as a minimum version.
+        if (! (segmentPattern.startsWith("[") || segmentPattern.startsWith("("))) return false;
+        try {
+            var range = VersionRange.createFromVersionSpec(segmentPattern);
+            return ArtifactMatcher.containsVersion(range, new DefaultArtifactVersion(rawVersion));
+        } catch (InvalidVersionSpecificationException e) {
+            throw new EnforcerRuleException("Invalid version range: " + segmentPattern, e);
+        }
     }
 
     public void setAllowed(List<String> allowed) { this.allowedDependencies = allowed; }

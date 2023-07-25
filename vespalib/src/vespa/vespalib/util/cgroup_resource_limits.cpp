@@ -2,9 +2,9 @@
 
 #include "cgroup_resource_limits.h"
 #include "round_up_to_page_size.h"
-#include <vespa/vespalib/io/fileutil.h>
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <limits>
 #include <sstream>
@@ -111,7 +111,7 @@ void
 CGroupResourceLimits::foreach_cgroup_level(const std::string& controller, const std::string& cgroup_path, const std::function<void(const std::string&)>& callback)
 {
     auto dir = combine_paths(_base_path, controller, empty_std_string);
-    if (!isDirectory(dir)) {
+    if (!std::filesystem::is_directory(std::filesystem::path(dir))) {
         return;
     }
     callback(dir);
@@ -121,14 +121,14 @@ CGroupResourceLimits::foreach_cgroup_level(const std::string& controller, const 
     auto slash_pos = cgroup_path.find('/', 1);
     while (slash_pos != std::string::npos) {
         dir = combine_paths(_base_path, controller, cgroup_path.substr(0, slash_pos));
-        if (!isDirectory(dir)) {
+        if (!std::filesystem::is_directory(std::filesystem::path(dir))) {
             return;
         }
         callback(dir);
         slash_pos = cgroup_path.find('/', slash_pos + 1);
     }
     dir = combine_paths(_base_path, controller, cgroup_path);
-    if (isDirectory(dir)) {
+    if (std::filesystem::is_directory(std::filesystem::path(dir))) {
         callback(dir);
     }
 }

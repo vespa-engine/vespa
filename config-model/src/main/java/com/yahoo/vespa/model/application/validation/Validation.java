@@ -68,6 +68,7 @@ public class Validation {
         }
         new SchemasDirValidator().validate(model, deployState);
         new BundleValidator().validate(model, deployState);
+        new PublicApiBundleValidator().validate(model, deployState);
         new SearchDataTypeValidator().validate(model, deployState);
         new ComplexFieldsWithStructFieldAttributesValidator().validate(model, deployState);
         new ComplexFieldsWithStructFieldIndexesValidator().validate(model, deployState);

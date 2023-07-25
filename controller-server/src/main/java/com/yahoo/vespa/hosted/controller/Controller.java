@@ -27,26 +27,22 @@ import com.yahoo.vespa.hosted.controller.notification.NotificationsDb;
 import com.yahoo.vespa.hosted.controller.notification.Notifier;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
-import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.restapi.dataplanetoken.DataplaneTokenService;
+import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccessControl;
-import com.yahoo.vespa.hosted.controller.versions.OsVersion;
-import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
-import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.yolean.concurrent.Sleeper;
 
+import java.security.SecureRandom;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -83,6 +79,7 @@ public class Controller extends AbstractComponent {
     private final MavenRepository mavenRepository;
     private final Metric metric;
     private final RoutingController routingController;
+    private final OsController osController;
     private final ControllerConfig controllerConfig;
     private final SecretStore secretStore;
     private final CuratorArchiveBucketDb archiveBucketDb;
@@ -91,6 +88,8 @@ public class Controller extends AbstractComponent {
     private final Notifier notifier;
     private final MailVerifier mailVerifier;
     private final DataplaneTokenService dataplaneTokenService;
+    private final Random random;
+    private final Random secureRandom; // Type is Random to allow for test determinism
 
     /**
      * Creates a controller 
@@ -102,13 +101,14 @@ public class Controller extends AbstractComponent {
                       MavenRepository mavenRepository, ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore,
                       ControllerConfig controllerConfig) {
         this(curator, rotationsConfig, accessControl, flagSource,
-             mavenRepository, serviceRegistry, metric, secretStore, controllerConfig, Sleeper.DEFAULT);
+             mavenRepository, serviceRegistry, metric, secretStore, controllerConfig, Sleeper.DEFAULT, new Random(),
+             new SecureRandom());
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, AccessControl accessControl,
                       FlagSource flagSource, MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore,
-                      ControllerConfig controllerConfig, Sleeper sleeper) {
+                      ControllerConfig controllerConfig, Sleeper sleeper, Random random, Random secureRandom) {
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.serviceRegistry = Objects.requireNonNull(serviceRegistry, "ServiceRegistry cannot be null");
         this.zoneRegistry = Objects.requireNonNull(serviceRegistry.zoneRegistry(), "ZoneRegistry cannot be null");
@@ -119,12 +119,15 @@ public class Controller extends AbstractComponent {
         this.metric = Objects.requireNonNull(metric, "Metric cannot be null");
         this.controllerConfig = Objects.requireNonNull(controllerConfig, "ControllerConfig cannot be null");
         this.secretStore = Objects.requireNonNull(secretStore, "SecretStore cannot be null");
+        this.random = Objects.requireNonNull(random, "Random cannot be null");
+        this.secureRandom = Objects.requireNonNull(secureRandom, "SecureRandom cannot be null");
 
         nameServiceForwarder = new NameServiceForwarder(curator);
         jobController = new JobController(this);
         applicationController = new ApplicationController(this, curator, accessControl, clock, flagSource, serviceRegistry.billingController());
         tenantController = new TenantController(this, curator, accessControl);
         routingController = new RoutingController(this, rotationsConfig);
+        osController = new OsController(this);
         auditLogger = new AuditLogger(curator, clock);
         jobControl = new JobControl(new JobControlFlags(curator, flagSource));
         archiveBucketDb = new CuratorArchiveBucketDb(this);
@@ -152,6 +155,11 @@ public class Controller extends AbstractComponent {
     /** Returns the instance controlling routing */
     public RoutingController routing() {
         return routingController;
+    }
+
+    /** Returns the instance controlling OS upgrades */
+    public OsController os() {
+        return osController;
     }
 
     /** Returns the service registry of this */
@@ -225,80 +233,6 @@ public class Controller extends AbstractComponent {
                             .orElse(Vtag.currentVersion);
     }
 
-    /** Returns the target OS version for infrastructure in this system. The controller will drive infrastructure OS
-     * upgrades to this version */
-    public Optional<OsVersionTarget> osVersionTarget(CloudName cloud) {
-        return osVersionTargets().stream().filter(target -> target.osVersion().cloud().equals(cloud)).findFirst();
-    }
-
-    /** Returns all target OS versions in this system */
-    public Set<OsVersionTarget> osVersionTargets() {
-        return curator.readOsVersionTargets();
-    }
-
-    /** Set the target OS version for given cloud in this system */
-    public void upgradeOsIn(CloudName cloudName, Version version, boolean force) {
-        if (version.isEmpty()) {
-            throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
-        }
-        if (!clouds().contains(cloudName)) {
-            throw new IllegalArgumentException("Cloud '" + cloudName + "' does not exist in this system");
-        }
-        Instant scheduledAt = clock.instant();
-        try (Mutex lock = curator.lockOsVersions()) {
-            Map<CloudName, OsVersionTarget> targets = curator.readOsVersionTargets().stream()
-                                                             .collect(Collectors.toMap(t -> t.osVersion().cloud(),
-                                                                                       Function.identity()));
-
-            OsVersionTarget currentTarget = targets.get(cloudName);
-            if (!force && currentTarget != null) {
-                if (currentTarget.osVersion().version().isAfter(version)) {
-                    throw new IllegalArgumentException("Cannot downgrade cloud '" + cloudName.value() + "' to version " +
-                                                       version.toFullString());
-                }
-                if (currentTarget.osVersion().version().equals(version)) return; // Version unchanged
-            }
-
-            OsVersionTarget newTarget = new OsVersionTarget(new OsVersion(version, cloudName), scheduledAt);
-            targets.put(cloudName, newTarget);
-            curator.writeOsVersionTargets(new TreeSet<>(targets.values()));
-            log.info("Triggered OS upgrade to " + version.toFullString() + " in cloud " + cloudName.value());
-        }
-    }
-
-    /** Clear the target OS version for given cloud in this system */
-    public void cancelOsUpgradeIn(CloudName cloudName) {
-        try (Mutex lock = curator.lockOsVersions()) {
-            Map<CloudName, OsVersionTarget> targets = curator.readOsVersionTargets().stream()
-                                                             .collect(Collectors.toMap(t -> t.osVersion().cloud(),
-                                                                                       Function.identity()));
-            if (targets.remove(cloudName) == null) {
-                throw new IllegalArgumentException("Cloud '" + cloudName.value() + " has no OS upgrade target");
-            }
-            curator.writeOsVersionTargets(new TreeSet<>(targets.values()));
-        }
-    }
-
-    /** Returns the current OS version status */
-    public OsVersionStatus osVersionStatus() {
-        return curator.readOsVersionStatus();
-    }
-
-    /** Replace the current OS version status with a new one */
-    public void updateOsVersionStatus(OsVersionStatus newStatus) {
-        try (Mutex lock = curator.lockOsVersionStatus()) {
-            OsVersionStatus currentStatus = curator.readOsVersionStatus();
-            for (CloudName cloud : clouds()) {
-                Set<Version> newVersions = newStatus.versionsIn(cloud);
-                if (currentStatus.versionsIn(cloud).size() > 1 && newVersions.size() == 1) {
-                    log.info("All nodes in " + cloud + " cloud upgraded to OS version " +
-                             newVersions.iterator().next().toFullString());
-                }
-            }
-            curator.writeOsVersionStatus(newStatus);
-        }
-    }
-
     /** Returns the hostname of this controller */
     public HostName hostname() {
         return serviceRegistry.getHostname();
@@ -362,4 +296,11 @@ public class Controller extends AbstractComponent {
     public DataplaneTokenService dataplaneTokenService() {
         return dataplaneTokenService;
     }
+
+    /** Returns a random number generator. If secure is true, this returns a {@link SecureRandom} suitable for
+     * cryptographic purposes */
+    public Random random(boolean secure) {
+        return secure ? secureRandom : random;
+    }
+
 }
