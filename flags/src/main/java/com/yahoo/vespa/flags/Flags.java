@@ -58,6 +58,12 @@ public class Flags {
             // if any, or otherwise hosted-vespa:tenant-host:default.
             APPLICATION_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
 
+    public static final UnboundBooleanFlag SIMPLER_ACL = defineFeatureFlag(
+            "simpler-acl", true,
+            List.of("hakonhall"), "2023-07-04", "2023-08-04",
+            "Simplify ACL in hosted Vespa",
+            "Takes effect on the next fetch of ACL rules");
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2023-12-31",
