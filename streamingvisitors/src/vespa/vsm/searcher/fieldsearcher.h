@@ -20,6 +20,7 @@ using termsize_t = size_t;
   #define NEED_CHAR_STAT(a)
 #endif
 
+using ucs4_t = uint32_t;
 using cmptype_t = ucs4_t;
 using SearcherBuf = vespalib::Array<cmptype_t>;
 using SharedSearcherBuf = std::shared_ptr<SearcherBuf>;

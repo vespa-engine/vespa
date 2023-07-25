@@ -31,7 +31,7 @@ QueryTermUCS4::QueryTermUCS4(const string & termS, Type type) :
     }
 }
 
-const ucs4_t *
+const QueryTermUCS4::ucs4_t *
 QueryTermUCS4::fillUCS4() {
     /*
      * Double checked locking......
@@ -49,7 +49,7 @@ QueryTermUCS4::fillUCS4() {
     return next;
 }
 
-std::unique_ptr<ucs4_t[]>
+std::unique_ptr<QueryTermUCS4::ucs4_t[]>
 QueryTermUCS4::asUcs4() const {
     auto ucs4 = std::make_unique<ucs4_t[]>(_cachedTermLen + 1);
     vespalib::Utf8Reader r(getTermString());

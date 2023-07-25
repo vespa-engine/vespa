@@ -2,7 +2,6 @@
 #pragma once
 
 #include "strchrfieldsearcher.h"
-#include <vespa/fastlib/text/normwordfolder.h>
 
 namespace vsm {
 
@@ -15,7 +14,7 @@ namespace vsm {
  * Reuse of this buffer ensures better cache hit ratio because this is just a
  * scratchpad for tokenizing. It will grow till the max size and stay there.
  **/
-class UTF8StringFieldSearcherBase : public StrChrFieldSearcher, protected Fast_NormalizeWordFolder, public Fast_UnicodeUtil
+class UTF8StringFieldSearcherBase : public StrChrFieldSearcher
 {
 public:
     /**

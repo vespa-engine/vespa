@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/vespalib/regex/regex.h>
 
 namespace vespalib { class FuzzyMatcher; }
@@ -30,6 +29,7 @@ public:
     const vespalib::Regex & getRegex() const noexcept { return _regex; }
     const FuzzyMatcher & getFuzzyMatcher() const noexcept { return *_fuzzyMatcher; }
 private:
+    using ucs4_t = uint32_t;
     vespalib::Regex                _regex;
     std::unique_ptr<FuzzyMatcher>  _fuzzyMatcher;
     std::unique_ptr<ucs4_t[]>      _ucs4;
