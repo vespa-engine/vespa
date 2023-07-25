@@ -1159,7 +1159,7 @@
         <doclint>all</doclint>
         <test.hide>true</test.hide>
 
-        <vespaClients.jdk.releaseVersion>8</vespaClients.jdk.releaseVersion>
+        <vespaClients.jdk.releaseVersion>11</vespaClients.jdk.releaseVersion>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
