@@ -366,7 +366,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
-            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-07-31",
+            "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-08-31",
             "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",
             HOSTNAME);
 
@@ -377,13 +377,13 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag RANDOMIZED_ENDPOINT_NAMES = defineFeatureFlag(
-            "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-07-30",
+            "randomized-endpoint-names", false, List.of("andreer"), "2023-04-26", "2023-08-30",
             "Whether to use randomized endpoint names",
             "Takes effect on application deployment",
             APPLICATION_ID);
 
     public static final UnboundIntFlag CERT_POOL_SIZE = defineIntFlag(
-            "cert-pool-size", 0, List.of("andreer"), "2023-06-19", "2023-07-25",
+            "cert-pool-size", 0, List.of("andreer"), "2023-06-19", "2023-08-25",
             "Target number of preprovisioned endpoints certificates to maintain",
             "Takes effect on next run of CertPoolMaintainer"
     );
