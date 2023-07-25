@@ -5,7 +5,7 @@
 #include "extposocc.h"
 #include "pagedict4file.h"
 #include "field_length_scanner.h"
-#include <vespa/vespalib/util/error.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.fieldreader");
@@ -21,12 +21,12 @@ uint16_t cap_u16(uint32_t val) { return std::min(val, static_cast<uint32_t>(std:
 
 }
 
-using vespalib::getLastErrorString;
 using search::index::FieldLengthInfo;
 using search::index::Schema;
 using search::index::SchemaUtil;
 using search::bitcompression::PosOccFieldParams;
 using search::bitcompression::PosOccFieldsParams;
+namespace fs = std::filesystem;
 
 namespace search::diskindex {
 
@@ -124,11 +124,9 @@ FieldReader::open(const vespalib::string &prefix,
                   const TuneFileSeqRead &tuneFileRead)
 {
     vespalib::string name = prefix + "posocc.dat.compressed";
-    FastOS_StatInfo statInfo;
 
-    bool statres = FastOS_File::Stat(name.c_str(), &statInfo);
-    if (!statres) {
-        LOG(error, "Could not stat compressed posocc file %s: %s", name.c_str(), getLastErrorString().c_str());
+    if (!fs::exists(fs::path(name))) {
+        LOG(error, "Compressed posocc file %s does not exist.", name.c_str());
         return false;
     }
 

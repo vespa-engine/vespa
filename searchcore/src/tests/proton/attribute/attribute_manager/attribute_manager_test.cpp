@@ -39,7 +39,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/config-attributes.h>
-#include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_manager_test");
@@ -76,6 +75,8 @@ using vespalib::eval::ValueType;
 using AVConfig = search::attribute::Config;
 using AttrSpecList = proton::AttributeCollectionSpec::AttributeList;
 using AttrMgrSpec = proton::AttributeCollectionSpec;
+
+namespace fs = std::filesystem;
 
 namespace {
 
@@ -567,10 +568,9 @@ TEST_F("require that removed fields can be pruned", Fixture)
     SequentialAttributeManager sam(f._m, AttrMgrSpec(std::move(newSpec), 1, 11));
     sam.mgr.pruneRemovedFields(11);
 
-    FastOS_StatInfo si;
-    EXPECT_TRUE(!FastOS_File::Stat(vespalib::string(test_dir + "/a1").c_str(), &si));
-    EXPECT_TRUE(FastOS_File::Stat(vespalib::string(test_dir + "/a2").c_str(), &si));
-    EXPECT_TRUE(!FastOS_File::Stat(vespalib::string(test_dir + "/a3").c_str(), &si));
+    EXPECT_FALSE(fs::exists(fs::path(test_dir + "/a1")));
+    EXPECT_TRUE(fs::exists(fs::path(test_dir + "/a2")));
+    EXPECT_FALSE(fs::exists(fs::path(test_dir + "/a3")));
 }
 
 TEST_F("require that lid space can be compacted", Fixture)
@@ -905,6 +905,6 @@ TEST_F("late create serial number is set on new attributes", Fixture)
 
 TEST_MAIN()
 {
-    std::filesystem::remove_all(std::filesystem::path(test_dir));
+    fs::remove_all(fs::path(test_dir));
     TEST_RUN_ALL();
 }
