@@ -5,7 +5,6 @@
 #include "extposocc.h"
 #include "pagedict4file.h"
 #include "field_length_scanner.h"
-#include <vespa/vespalib/util/error.h>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -22,7 +21,6 @@ uint16_t cap_u16(uint32_t val) { return std::min(val, static_cast<uint32_t>(std:
 
 }
 
-using vespalib::getLastErrorString;
 using search::index::FieldLengthInfo;
 using search::index::Schema;
 using search::index::SchemaUtil;
@@ -128,7 +126,7 @@ FieldReader::open(const vespalib::string &prefix,
     vespalib::string name = prefix + "posocc.dat.compressed";
 
     if (!fs::exists(fs::path(name))) {
-        LOG(error, "Compressed posocc file %s does not exist: %s", name.c_str(), getLastErrorString().c_str());
+        LOG(error, "Compressed posocc file %s does not exist.", name.c_str());
         return false;
     }
 
