@@ -94,11 +94,11 @@ public class AllocationOptimizer {
 
         // Leave some headroom above the ideal allocation to avoid immediately needing to scale back up
         if (loadAdjustment.cpu() < 1 && (1.0 - loadWithTarget.cpu()) < headroomRequiredToScaleDown)
-            loadAdjustment = loadAdjustment.withCpu(1.0);
+            loadAdjustment = loadAdjustment.withCpu(Math.min(1.0, loadAdjustment.cpu() * (1.0 + headroomRequiredToScaleDown)));
         if (loadAdjustment.memory() < 1 && (1.0 - loadWithTarget.memory()) < headroomRequiredToScaleDown)
-            loadAdjustment = loadAdjustment.withMemory(1.0);
+            loadAdjustment = loadAdjustment.withMemory(Math.min(1.0, loadAdjustment.memory() * (1.0 + headroomRequiredToScaleDown)));
         if (loadAdjustment.disk() < 1 && (1.0 - loadWithTarget.disk()) < headroomRequiredToScaleDown)
-            loadAdjustment = loadAdjustment.withDisk(1.0);
+            loadAdjustment = loadAdjustment.withDisk(Math.min(1.0, loadAdjustment.disk() * (1.0 + headroomRequiredToScaleDown)));
 
         loadWithTarget = clusterModel.loadAdjustmentWith(nodes, groups, loadAdjustment);
 

@@ -88,7 +88,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(7));
         fixture.loader().applyCpuLoad(0.1f, 10);
         fixture.tester().assertResources("Scaling cpu down since usage has gone down significantly",
-                                         6, 1, 1.1, 9.8, 390.2,
+                                         6, 1, 1.1, 9.6, 381.5,
                                          fixture.autoscale());
     }
 
@@ -666,7 +666,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofHours(12 * 3 + 1));
         fixture.loader().applyCpuLoad(0.02, 5);
         fixture.tester().assertResources("Scaling down since enough time has passed",
-                                         5, 1, 1.0, 12.3, 50.7,
+                                         3, 1, 1.0, 26, 111.5,
                                          fixture.autoscale());
     }
 
