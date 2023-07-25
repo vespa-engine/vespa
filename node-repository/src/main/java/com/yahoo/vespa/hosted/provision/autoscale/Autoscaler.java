@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling.Status;
 
 import java.time.Duration;
-import java.util.Optional;
 
 /**
  * The autoscaler gives advice about what resources should be allocated to a cluster based on observed behavior.
@@ -23,7 +22,7 @@ public class Autoscaler {
     /** What resource difference is worth a reallocation? */
     private static final double resourceIncreaseWorthReallocation = 0.03;
     /** The load increase headroom (as a fraction) we should have before needing to scale up, to decide to scale down */
-    private static final double headroomRequiredToScaleDown = 0.1;
+    static final double headroomRequiredToScaleDown = 0.1;
 
     private final NodeRepository nodeRepository;
     private final AllocationOptimizer allocationOptimizer;
@@ -75,11 +74,6 @@ public class Autoscaler {
 
         // Ensure we only scale down if we'll have enough headroom to not scale up again given a small load increase
         var target = allocationOptimizer.findBestAllocation(loadAdjustment, current, clusterModel, limits);
-        var headroomAdjustedLoadAdjustment = adjustForHeadroom(loadAdjustment, clusterModel, target);
-        if ( ! headroomAdjustedLoadAdjustment.equals(loadAdjustment)) {
-            loadAdjustment = headroomAdjustedLoadAdjustment;
-            target = allocationOptimizer.findBestAllocation(loadAdjustment, current, clusterModel, limits);
-        }
 
         if (target.isEmpty())
             return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", clusterModel);
@@ -94,29 +88,6 @@ public class Autoscaler {
         }
 
         return Autoscaling.scaleTo(target.get().advertisedResources(), clusterModel);
-    }
-
-    /**
-     * When scaling down we may end up with resources that are just barely below the new ideal with the new number
-     * of nodes, as fewer nodes leads to a lower ideal load (due to redundancy).
-     * If that headroom is too small, then do not scale down as it will likely lead to scaling back up again soon.
-     */
-    private Load adjustForHeadroom(Load loadAdjustment, ClusterModel clusterModel,
-                                   Optional<AllocatableClusterResources> target) {
-        if (target.isEmpty()) return loadAdjustment;
-
-        // If we change to this target, what would our current peak be compared to the ideal
-        var relativeLoadWithTarget =
-                loadAdjustment // redundancy aware target relative to current load
-                .multiply(clusterModel.loadWith(target.get().nodes(), target.get().groups())) // redundancy aware adjustment with target
-                .divide(clusterModel.redundancyAdjustment()); // correct for double redundancy adjustment
-        if (loadAdjustment.cpu() < 1 && (1.0 - relativeLoadWithTarget.cpu()) < headroomRequiredToScaleDown)
-            loadAdjustment = loadAdjustment.withCpu(1.0);
-        if (loadAdjustment.memory() < 1 && (1.0 - relativeLoadWithTarget.memory()) < headroomRequiredToScaleDown)
-            loadAdjustment = loadAdjustment.withMemory(1.0);
-        if (loadAdjustment.disk() < 1 && (1.0 - relativeLoadWithTarget.disk()) < headroomRequiredToScaleDown)
-            loadAdjustment = loadAdjustment.withDisk(1.0);
-        return loadAdjustment;
     }
 
     /** Returns true if it is worthwhile to make the given resource change, false if it is too insignificant */

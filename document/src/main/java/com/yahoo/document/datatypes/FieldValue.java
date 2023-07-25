@@ -91,7 +91,7 @@ public abstract class FieldValue extends Identifiable implements Comparable<Fiel
     /**
      * Used to retrieve wrapped type for simple types, such that you can use get methods to retrieve ints and floats
      * directly instead of Int/Float field values. Complex types that can't be specified by simple java types just
-     * return themself.
+     * return themselves.
      */
     public Object getWrappedValue() {
         return this;

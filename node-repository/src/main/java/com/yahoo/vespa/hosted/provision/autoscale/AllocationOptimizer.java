@@ -9,6 +9,8 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
 import java.util.Optional;
 
+import static com.yahoo.vespa.hosted.provision.autoscale.Autoscaler.headroomRequiredToScaleDown;
+
 /**
  * A searcher of the space of possible allocation
  *
@@ -88,13 +90,19 @@ public class AllocationOptimizer {
                                             Load loadAdjustment,
                                             AllocatableClusterResources current,
                                             ClusterModel clusterModel) {
-        var scaled = loadAdjustment                                  // redundancy aware target relative to current load
-                     .multiply(clusterModel.loadWith(nodes, groups)) // redundancy aware adjustment with these counts
-                     .divide(clusterModel.redundancyAdjustment())    // correct for double redundancy adjustment
-                     .scaled(current.realResources().nodeResources());
+        var loadWithTarget = clusterModel.loadAdjustmentWith(nodes, groups, loadAdjustment);
 
-        // Combine the scaled resource values computed here
-        // with the currently configured non-scaled values, given in the limits, if any
+        // Leave some headroom above the ideal allocation to avoid immediately needing to scale back up
+        if (loadAdjustment.cpu() < 1 && (1.0 - loadWithTarget.cpu()) < headroomRequiredToScaleDown)
+            loadAdjustment = loadAdjustment.withCpu(Math.min(1.0, loadAdjustment.cpu() * (1.0 + headroomRequiredToScaleDown)));
+        if (loadAdjustment.memory() < 1 && (1.0 - loadWithTarget.memory()) < headroomRequiredToScaleDown)
+            loadAdjustment = loadAdjustment.withMemory(Math.min(1.0, loadAdjustment.memory() * (1.0 + headroomRequiredToScaleDown)));
+        if (loadAdjustment.disk() < 1 && (1.0 - loadWithTarget.disk()) < headroomRequiredToScaleDown)
+            loadAdjustment = loadAdjustment.withDisk(Math.min(1.0, loadAdjustment.disk() * (1.0 + headroomRequiredToScaleDown)));
+
+        loadWithTarget = clusterModel.loadAdjustmentWith(nodes, groups, loadAdjustment);
+
+        var scaled = loadWithTarget.scaled(current.realResources().nodeResources());
         var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
                         ? current.advertisedResources().nodeResources()
                         : limits.min().nodeResources(); // min=max for non-scaled

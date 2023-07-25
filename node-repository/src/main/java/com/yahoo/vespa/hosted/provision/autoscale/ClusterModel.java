@@ -171,6 +171,14 @@ public class ClusterModel {
         return Duration.ofMinutes(5);
     }
 
+    /** Transforms the given load adjustment to an equivalent adjustment given a target number of nodes and groups. */
+    public Load loadAdjustmentWith(int nodes, int groups, Load loadAdjustment) {
+        return loadAdjustment // redundancy adjusted target relative to current load
+               .multiply(loadWith(nodes, groups)) // redundancy aware adjustment with these counts
+               .divide(redundancyAdjustment());   // correct for double redundancy adjustment
+    }
+
+
     /**
      * Returns the relative load adjustment accounting for redundancy given these nodes+groups
      * relative to node nodes+groups in this.
@@ -206,7 +214,6 @@ public class ClusterModel {
         var ideal = new Load(cpu.idealLoad(), memory.idealLoad(), disk.idealLoad()).divide(redundancyAdjustment());
         if ( !cluster.bcpGroupInfo().isEmpty() && cluster.bcpGroupInfo().queryRate() > 0) {
             // Since we have little local information, use information about query cost in other groups
-
             Load bcpGroupIdeal = adjustQueryDependentIdealLoadByBcpGroupInfo(ideal);
 
             // Do a weighted sum of the ideal "vote" based on local and bcp group info.
