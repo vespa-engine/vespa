@@ -215,11 +215,11 @@ public class NodeRepository extends AbstractComponent {
      * @param host node for which to generate ACLs
      * @return the list of node ACLs
      */
-    public List<NodeAcl> getChildAcls(Node host) {
+    public List<NodeAcl> getChildAcls(Node host, boolean simplerAcl) {
         if ( ! host.type().isHost()) throw new IllegalArgumentException("Only hosts have children");
         NodeList allNodes = nodes().list();
         return allNodes.childrenOf(host)
-                       .mapToList(childNode -> childNode.acl(allNodes, loadBalancers, zone));
+                       .mapToList(childNode -> childNode.acl(allNodes, loadBalancers, zone, simplerAcl));
     }
 
     /** Removes this application: all nodes are set dirty. */

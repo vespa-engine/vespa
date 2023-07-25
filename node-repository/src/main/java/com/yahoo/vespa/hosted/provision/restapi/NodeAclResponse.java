@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.restapi;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
@@ -33,8 +34,9 @@ public class NodeAclResponse extends SlimeJsonResponse {
         Node node = nodeRepository.nodes().node(hostname)
                 .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
 
-        List<NodeAcl> acls = aclsForChildren ? nodeRepository.getChildAcls(node) :
-                                               List.of(node.acl(nodeRepository.nodes().list(), nodeRepository.loadBalancers(), nodeRepository.zone()));
+        boolean simplerAcl = Flags.SIMPLER_ACL.bindTo(nodeRepository.flagSource()).value();
+        List<NodeAcl> acls = aclsForChildren ? nodeRepository.getChildAcls(node, simplerAcl) :
+                                               List.of(node.acl(nodeRepository.nodes().list(), nodeRepository.loadBalancers(), nodeRepository.zone(), simplerAcl));
 
         Cursor trustedNodesArray = object.setArray("trustedNodes");
         acls.forEach(nodeAcl -> toSlime(nodeAcl, trustedNodesArray));

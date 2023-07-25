@@ -118,5 +118,6 @@
     "::201:1"
   ],
   "additionalIpAddresses": [],
+  "cloudAccount": "aws:111222333444",
   "wireguardPubkey":"lololololololololololololololololololololoo="
 }
