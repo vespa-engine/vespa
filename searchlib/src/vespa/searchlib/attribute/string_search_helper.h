@@ -29,7 +29,7 @@ public:
     const vespalib::Regex & getRegex() const noexcept { return _regex; }
     const FuzzyMatcher & getFuzzyMatcher() const noexcept { return *_fuzzyMatcher; }
 private:
-    using ucs4_t = unsigned int;
+    using ucs4_t = uint32_t;
     vespalib::Regex                _regex;
     std::unique_ptr<FuzzyMatcher>  _fuzzyMatcher;
     std::unique_ptr<ucs4_t[]>      _ucs4;
