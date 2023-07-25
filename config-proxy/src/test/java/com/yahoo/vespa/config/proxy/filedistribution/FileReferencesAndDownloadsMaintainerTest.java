@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.io.IOUtils;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -36,11 +37,12 @@ public class FileReferencesAndDownloadsMaintainerTest {
     public void setup() throws IOException {
         cachedFileReferences = newFolder(tempFolder, "cachedFileReferences");
         cachedDownloads = newFolder(tempFolder, "cachedDownloads");
-        maintainer = new FileReferencesAndDownloadsMaintainer(cachedFileReferences, cachedDownloads, keepDuration, outDatedFilesToKeep);
     }
 
     @Test
     void require_old_files_to_be_deleted() {
+        maintainer = new FileReferencesAndDownloadsMaintainer(cachedFileReferences, cachedDownloads, keepDuration, outDatedFilesToKeep,
+                                                              List.of("host1"));
         runMaintainerAndAssertFiles(0, 0);
 
         var fileReferences = writeFiles(20);
@@ -53,6 +55,20 @@ public class FileReferencesAndDownloadsMaintainerTest {
         updateLastModifiedTimestamp(6, 20, fileReferences, downloads);
         // Should keep at least outDatedFilesToKeep file references and downloads even if there are more that are old
         runMaintainerAndAssertFiles(outDatedFilesToKeep, outDatedFilesToKeep);
+    }
+
+    @Test
+    void require_no_files_deleted_when_running_on_config_server_host() {
+        maintainer = new FileReferencesAndDownloadsMaintainer(cachedFileReferences, cachedDownloads, keepDuration,
+                                                              outDatedFilesToKeep, List.of(ConfigUtils.getCanonicalHostName()));
+        runMaintainerAndAssertFiles(0, 0);
+
+        var fileReferences = writeFiles(10);
+        var downloads = writeDownloads(10);
+        runMaintainerAndAssertFiles(10, 10);
+
+        updateLastModifiedTimestamp(0, 10, fileReferences, downloads);
+        runMaintainerAndAssertFiles(10, 10);
     }
 
     private void updateLastModifiedTimestamp(int startInclusive, int endExclusive, List<File> fileReferences, List<File> downloads) {

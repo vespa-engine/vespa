@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.io.IOUtils;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 
 import java.io.File;
@@ -15,6 +16,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -23,6 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.nio.file.Files.readAttributes;
+import static java.util.logging.Level.INFO;
 
 /**
  * Deletes file references and url downloads that have not been used for some time.
@@ -40,30 +43,40 @@ class FileReferencesAndDownloadsMaintainer implements Runnable {
     private static final int defaultOutdatedFilesToKeep = 20;
     private static final Duration interval = Duration.ofMinutes(1);
 
-    private final ScheduledExecutorService executor =
-            new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("file references and downloads cleanup"));
+    private final Optional<ScheduledExecutorService> executor;
     private final File urlDownloadDir;
     private final File fileReferencesDownloadDir;
     private final Duration durationToKeepFiles;
     private final int outDatedFilesToKeep;
 
     FileReferencesAndDownloadsMaintainer() {
-        this(defaultFileReferencesDownloadDir, defaultUrlDownloadDir, keepFileReferencesDuration(), outDatedFilesToKeep());
+        this(defaultFileReferencesDownloadDir, defaultUrlDownloadDir, keepFileReferencesDuration(),
+             outDatedFilesToKeep(), configServers());
     }
 
     FileReferencesAndDownloadsMaintainer(File fileReferencesDownloadDir,
                                          File urlDownloadDir,
                                          Duration durationToKeepFiles,
-                                         int outdatedFilesToKeep) {
+                                         int outdatedFilesToKeep,
+                                         List<String> configServers) {
         this.fileReferencesDownloadDir = fileReferencesDownloadDir;
         this.urlDownloadDir = urlDownloadDir;
         this.durationToKeepFiles = durationToKeepFiles;
         this.outDatedFilesToKeep = outdatedFilesToKeep;
-        executor.scheduleAtFixedRate(this, interval.toSeconds(), interval.toSeconds(), TimeUnit.SECONDS);
+        // Do not run on config servers
+        if (configServers.contains(ConfigUtils.getCanonicalHostName())) {
+            log.log(INFO, "Not running maintainer, since this is on a config server host");
+            executor = Optional.empty();
+        } else {
+            executor = Optional.of(new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("file references and downloads cleanup")));
+            executor.get().scheduleAtFixedRate(this, interval.toSeconds(), interval.toSeconds(), TimeUnit.SECONDS);
+        }
     }
 
     @Override
     public void run() {
+        if (executor.isEmpty()) return;
+
         try {
             deleteUnusedFiles(fileReferencesDownloadDir);
             deleteUnusedFiles(urlDownloadDir);
@@ -73,13 +86,15 @@ class FileReferencesAndDownloadsMaintainer implements Runnable {
     }
 
     public void close() {
-        executor.shutdownNow();
-        try {
-            if ( ! executor.awaitTermination(10, TimeUnit.SECONDS))
-                throw new RuntimeException("Unable to shutdown " + executor + " before timeout");
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        executor.ifPresent(ex -> {
+            ex.shutdownNow();
+            try {
+                if (! ex.awaitTermination(10, TimeUnit.SECONDS))
+                    throw new RuntimeException("Unable to shutdown " + executor + " before timeout");
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private void deleteUnusedFiles(File directory) {
@@ -111,9 +126,10 @@ class FileReferencesAndDownloadsMaintainer implements Runnable {
 
         // Make sure we keep some files
         canBeDeleted = canBeDeleted.subList(0, Math.min(canBeDeleted.size(), deleteCount));
-        log.log(Level.INFO, "Files that can be deleted (not accessed since " + deleteNotUsedSinceInstant +
-                ", will also keep " + outDatedFilesToKeep +
-                " no matter when last accessed): " + canBeDeleted);
+        if (canBeDeleted.size() > 0)
+            log.log(INFO, "Files that can be deleted (not accessed since " + deleteNotUsedSinceInstant +
+                    ", will also keep " + outDatedFilesToKeep +
+                    " no matter when last accessed): " + canBeDeleted);
 
         return canBeDeleted;
     }
@@ -140,11 +156,20 @@ class FileReferencesAndDownloadsMaintainer implements Runnable {
     }
 
     private static int outDatedFilesToKeep() {
-        String env = System.getenv("VESPA_KEEP_OUTDATED_FILE_REFERENCES_COUNT");
+        String env = System.getenv("VESPA_KEEP_FILE_REFERENCES_COUNT");
         if (env != null && !env.isEmpty())
             return Integer.parseInt(env);
         else
             return defaultOutdatedFilesToKeep;
+    }
+
+    private static List<String> configServers() {
+        String env = System.getenv("VESPA_CONFIGSERVERS");
+        if (env == null || env.isEmpty())
+            return List.of(ConfigUtils.getCanonicalHostName());
+        else {
+            return List.of(env.split(","));
+        }
     }
 
 }
