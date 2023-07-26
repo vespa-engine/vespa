@@ -78,6 +78,11 @@ public class ResourceExhaustionCalculator {
         }
     }
 
+    public static String decoratedMessage(String msg) {
+        // Add a user-friendly documentation link to the error message
+        return "%s. See https://docs.vespa.ai/en/operations/feed-block.html".formatted(msg);
+    }
+
     public ClusterStateBundle.FeedBlock inferContentClusterFeedBlockOrNull(Collection<NodeInfo> nodeInfos) {
         if (!feedBlockEnabled) {
             return null;
@@ -94,6 +99,7 @@ public class ResourceExhaustionCalculator {
         if (exhaustions.size() > maxDescriptions) {
             description += String.format(" (... and %d more)", exhaustions.size() - maxDescriptions);
         }
+        description = decoratedMessage(description);
         // FIXME we currently will trigger a cluster state recomputation even if the number of
         // exhaustions is greater than what is returned as part of the description. Though at
         // that point, cluster state recomputations will be the least of your worries...!
