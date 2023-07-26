@@ -185,6 +185,9 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         /** The day of week new releases are published */
         private static final DayOfWeek RELEASE_DAY = DayOfWeek.TUESDAY;
 
+        /** How far into release day we should wait before triggering. This is to give the new release some time to propagate */
+        private static final Duration COOLDOWN = Duration.ofHours(6);
+
         public CalendarVersionedRelease {
             Objects.requireNonNull(system);
         }
@@ -197,13 +200,9 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
                 predicatedInstant = predicatedInstant.plus(Duration.ofDays(1));
                 version = findVersion(predicatedInstant, currentVersion);
             }
-            Duration cooldown = remainingCooldownOf(cooldown(), version.age(instant));
+            Duration cooldown = remainingCooldownOf(COOLDOWN, version.age(instant));
             Instant schedulingInstant = schedulingInstant(instant.plus(cooldown), system);
             return Optional.of(new Change(new OsVersion(version.version(), cloud), schedulingInstant));
-        }
-
-        private Duration cooldown() {
-            return Duration.ofDays(1); // Give new releases some time to propagate
         }
 
         /** Find the most recent version available according to the scheduling step, relative to now */
