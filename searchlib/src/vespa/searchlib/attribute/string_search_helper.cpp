@@ -41,7 +41,7 @@ StringSearchHelper::StringSearchHelper(StringSearchHelper&&) noexcept = default;
 StringSearchHelper::~StringSearchHelper() = default;
 
 bool
-StringSearchHelper::isMatch(const char *src) const {
+StringSearchHelper::isMatch(const char *src) const noexcept {
     if (__builtin_expect(isRegex(), false)) {
         return getRegex().valid() && getRegex().partial_match(std::string_view(src));
     }

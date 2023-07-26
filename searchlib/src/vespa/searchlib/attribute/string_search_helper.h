@@ -21,7 +21,7 @@ public:
     StringSearchHelper(const StringSearchHelper &) = delete;
     StringSearchHelper & operator =(const StringSearchHelper &) = delete;
     ~StringSearchHelper();
-    bool isMatch(const char *src) const;
+    bool isMatch(const char *src) const noexcept;
     bool isPrefix() const noexcept { return _isPrefix; }
     bool isRegex() const noexcept { return _isRegex; }
     bool isCased() const noexcept { return _isCased; }

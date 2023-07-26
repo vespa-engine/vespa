@@ -46,7 +46,7 @@ PtrAndSize
 MmapFileAllocator::alloc(size_t sz) const
 {
     if (sz == 0) {
-        return PtrAndSize(nullptr, 0); // empty allocation
+        return PtrAndSize(); // empty allocation
     }
     sz = round_up_to_page_size(sz);
     uint64_t offset = alloc_area(sz);
