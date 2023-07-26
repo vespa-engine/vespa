@@ -19,7 +19,13 @@ namespace search::queryeval {
 class FieldSpecBase
 {
 public:
-    FieldSpecBase(uint32_t fieldId, fef::TermFieldHandle handle, bool isFilter_ = false) noexcept;
+    FieldSpecBase(uint32_t fieldId, fef::TermFieldHandle handle) noexcept
+        : FieldSpecBase(fieldId, handle, false)
+    { }
+    FieldSpecBase(uint32_t fieldId, fef::TermFieldHandle handle, bool isFilter_) noexcept
+        : _fieldId(fieldId | (isFilter_ ? 0x1000000u : 0)),
+          _handle(handle)
+    { }
 
     // resolve where to put match information for this term/field combination
     fef::TermFieldMatchData *resolve(fef::MatchData &md) const;
@@ -29,7 +35,7 @@ public:
     /// a filter produces less detailed match data
     bool isFilter() const noexcept { return _fieldId & 0x1000000; }
 private:
-    uint32_t             _fieldId;  // field id in ranking framework
+    uint32_t             _fieldId;  // field id in ranking framework, and isFilter
     fef::TermFieldHandle _handle;   // handle used when exposing match data to ranking framework
 };
 
@@ -39,15 +45,10 @@ private:
 class FieldSpec : public FieldSpecBase
 {
 public:
+    FieldSpec(const vespalib::string & name, uint32_t fieldId, fef::TermFieldHandle handle) noexcept;
     FieldSpec(const vespalib::string & name, uint32_t fieldId,
-              fef::TermFieldHandle handle, bool isFilter_ = false) noexcept
-        : FieldSpecBase(fieldId, handle, isFilter_),
-          _name(name)
-    {}
-    FieldSpec(const vespalib::string & name, FieldSpecBase base) noexcept
-        : FieldSpecBase(base),
-          _name(name)
-    {}
+              fef::TermFieldHandle handle, bool isFilter_) noexcept;
+    FieldSpec(const vespalib::string & name, FieldSpecBase base) noexcept;
     ~FieldSpec();
 
     void setBase(FieldSpecBase base) noexcept {
