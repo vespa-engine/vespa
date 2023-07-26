@@ -41,7 +41,7 @@ public class RotationRepositoryTest {
         );
 
     private static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-            .globalServiceId("foo")
+            .endpoint("default", "foo")
             .region("us-east-3")
             .region("us-west-1")
             .build();
@@ -74,7 +74,7 @@ public class RotationRepositoryTest {
 
         // Adding region updates rotation
         var applicationPackage = new ApplicationPackageBuilder()
-                .globalServiceId("foo")
+                .endpoint("default", "foo")
                 .region("us-east-3")
                 .region("us-west-1")
                 .region("us-central-1")
@@ -116,15 +116,6 @@ public class RotationRepositoryTest {
     }
 
     @Test
-    void too_few_zones() {
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .globalServiceId("foo")
-                .region("us-east-3")
-                .build();
-        application.submit(applicationPackage).runJobExpectingFailure(DeploymentContext.systemTest, "less than 2 prod zones are defined");
-    }
-
-    @Test
     void no_rotation_assigned_for_application_without_service_id() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-east-3")
@@ -137,7 +128,7 @@ public class RotationRepositoryTest {
     @Test
     void prefixes_system_when_not_main() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .globalServiceId("foo")
+                .endpoint("default", "foo")
                 .region("cd-us-east-1")
                 .region("cd-us-west-1")
                 .build();
@@ -164,7 +155,7 @@ public class RotationRepositoryTest {
                 .instances("instance1,instance2")
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")
-                .globalServiceId("global")
+                .endpoint("default", "global")
                 .build();
         var instance1 = tester.newDeploymentContext("tenant1", "application1", "instance1")
                 .submit(applicationPackage)

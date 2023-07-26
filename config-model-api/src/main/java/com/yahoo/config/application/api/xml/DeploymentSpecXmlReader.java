@@ -93,7 +93,6 @@ public class DeploymentSpecXmlReader {
     private static final String athenzDomainAttribute = "athenz-domain";
     private static final String testerFlavorAttribute = "tester-flavor";
     private static final String majorVersionAttribute = "major-version";
-    private static final String globalServiceIdAttribute = "global-service-id";
     private static final String cloudAccountAttribute = "cloud-account";
     private static final String hostTTLAttribute = "empty-host-ttl";
 
@@ -234,7 +233,6 @@ public class DeploymentSpecXmlReader {
                                                              upgradeRollout,
                                                              minRisk, maxRisk, maxIdleHours,
                                                              changeBlockers,
-                                                             Optional.ofNullable(prodAttributes.get(globalServiceIdAttribute)),
                                                              athenzService,
                                                              cloudAccounts,
                                                              hostTTL,
@@ -267,12 +265,6 @@ public class DeploymentSpecXmlReader {
     private List<Step> readNonInstanceSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag, Bcp defaultBcp) {
         Optional<AthenzService> athenzService = mostSpecificAttribute(stepTag, athenzServiceAttribute).map(AthenzService::from);
         Optional<String> testerFlavor = mostSpecificAttribute(stepTag, testerFlavorAttribute);
-
-        if (prodTag.equals(stepTag.getTagName())) {
-            readGlobalServiceId(stepTag).ifPresent(id -> prodAttributes.put(globalServiceIdAttribute, id));
-        } else {
-            if (readGlobalServiceId(stepTag).isPresent()) illegal("Attribute '" + globalServiceIdAttribute + "' is only valid on 'prod' tag");
-        }
 
         switch (stepTag.getTagName()) {
             case testTag:
@@ -712,13 +704,6 @@ public class DeploymentSpecXmlReader {
 
     private Optional<Duration> readHostTTL(Element tag) {
         return mostSpecificAttribute(tag, hostTTLAttribute).map(s -> toDuration(s, "empty host TTL"));
-    }
-
-    private Optional<String> readGlobalServiceId(Element environmentTag) {
-        String globalServiceId = environmentTag.getAttribute(globalServiceIdAttribute);
-        if (globalServiceId.isEmpty()) return Optional.empty();
-        deprecate(environmentTag, List.of(globalServiceIdAttribute), 7, "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
-        return Optional.of(globalServiceId);
     }
 
     private List<DeploymentSpec.ChangeBlocker> readChangeBlockers(Element parent, Element globalBlockersParent) {
