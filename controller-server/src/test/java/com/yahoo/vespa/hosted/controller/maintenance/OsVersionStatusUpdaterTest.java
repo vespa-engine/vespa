@@ -79,7 +79,7 @@ public class OsVersionStatusUpdaterTest {
     }
 
     private static Set<OsVersion> certifiedOsVersions(ControllerTester tester) {
-        return tester.controller().curator().readCertifiedOsVersions().stream()
+        return tester.controller().os().readCertified().stream()
                      .map(CertifiedOsVersion::osVersion)
                      .collect(Collectors.toSet());
     }

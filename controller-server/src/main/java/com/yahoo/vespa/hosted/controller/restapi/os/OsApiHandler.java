@@ -86,6 +86,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/os/v1/")) return new SlimeJsonResponse(osVersions());
+        if (path.matches("/os/v1/certify")) return new SlimeJsonResponse(certifiedOsVersions());
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -179,6 +180,18 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         controller.os().upgradeTo(target, cloud, force, pin);
         return new MessageResponse("Set target OS version for cloud '" + cloud.value() + "' to " +
                                    target.toFullString() + (pin ? " (pinned)" : ""));
+    }
+
+    private Slime certifiedOsVersions() {
+        Slime slime = new Slime();
+        Cursor array = slime.setArray();
+        controller.os().readCertified().stream().sorted().forEach(cv -> {
+            Cursor object = array.addObject();
+            object.setString("version", cv.osVersion().version().toFullString());
+            object.setString("cloud", cv.osVersion().cloud().value());
+            object.setString("vespaVersion", cv.vespaVersion().toFullString());
+        });
+        return slime;
     }
 
     private Slime osVersions() {
