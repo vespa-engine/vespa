@@ -3,18 +3,21 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeAllocationException;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 /**
@@ -63,16 +66,18 @@ public class HostFlavorUpgrader extends NodeRepositoryMaintainer {
         for (var node : activeNodes) {
             Optional<Node> parent = allNodes.parentOf(node);
             if (parent.isEmpty()) continue;
-            if (!hostProvisioner.canUpgradeFlavor(parent.get(), node)) continue;
+            Allocation allocation = node.allocation().get();
+            Predicate<NodeResources> realHostResourcesWithinLimits = resources -> nodeRepository().nodeResourceLimits().isWithinRealLimits(resources, allocation.owner(), allocation.membership().cluster());
+            if (!hostProvisioner.canUpgradeFlavor(parent.get(), node, realHostResourcesWithinLimits)) continue;
             if (parent.get().status().wantToUpgradeFlavor()) continue; // Already upgrading
 
             boolean redeployed = false;
             boolean deploymentValid = false;
-            try (MaintenanceDeployment deployment = new MaintenanceDeployment(node.allocation().get().owner(), deployer, metric, nodeRepository(), true)) {
+            try (MaintenanceDeployment deployment = new MaintenanceDeployment(allocation.owner(), deployer, metric, nodeRepository(), true)) {
                 deploymentValid = deployment.isValid();
                 if (!deploymentValid) continue;
 
-                log.log(Level.INFO, () -> "Redeploying " + node.allocation().get().owner() + " to upgrade flavor (" +
+                log.log(Level.INFO, () -> "Redeploying " + allocation.owner() + " to upgrade flavor (" +
                                           parent.get().flavor().name() + ") of " + parent.get());
                 upgradeFlavor(parent.get(), true);
                 deployment.activate();

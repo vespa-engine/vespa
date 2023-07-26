@@ -2,17 +2,14 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Locale;
-import java.util.logging.Level;
 
 /**
  * Defines the resource limits for nodes in various zones
@@ -91,7 +88,7 @@ public class NodeResourceLimits {
     }
 
     // TODO: Move this check into the above when we are ready to fail, not just warn on this. */
-    private double minAdvertisedDiskGb(NodeResources requested, ClusterSpec cluster) {
+    private static double minAdvertisedDiskGb(NodeResources requested, ClusterSpec cluster) {
         return requested.memoryGb() * switch (cluster.type()) {
             case combined, content -> 3;
             case container -> 2;
@@ -111,16 +108,16 @@ public class NodeResourceLimits {
         return minAdvertisedVcpu(applicationId, cluster);
     }
 
-    private double minRealMemoryGb(ClusterSpec cluster) {
+    private static double minRealMemoryGb(ClusterSpec cluster) {
         if (cluster.type() == ClusterSpec.Type.admin) return 0.95; // TODO: Increase to 1.05 after March 2023
         return 2.3;
     }
 
-    private double minRealDiskGb() { return 6; }
+    private static double minRealDiskGb() { return 6; }
 
     private Zone zone() { return nodeRepository.zone(); }
 
-    private void illegal(String type, String resource, String unit, ClusterSpec cluster, double requested, double minAllowed) {
+    private static void illegal(String type, String resource, String unit, ClusterSpec cluster, double requested, double minAllowed) {
         if ( ! unit.isEmpty())
             unit = " " + unit;
         String message = String.format(Locale.ENGLISH,
