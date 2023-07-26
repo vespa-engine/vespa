@@ -30,13 +30,13 @@ public:
         bool attribute_field;
         bool filter_field;
 
-        FieldEntry(const vespalib::string &name, uint32_t fieldId)
+        FieldEntry(const vespalib::string &name, uint32_t fieldId) noexcept
             : SimpleTermFieldData(fieldId),
               field_name(name),
               attribute_field(false),
               filter_field(false) {}
 
-        [[nodiscard]] FieldSpec fieldSpec() const {
+        [[nodiscard]] FieldSpec fieldSpec() const noexcept {
             return {field_name, getFieldId(), getHandle(), filter_field};
         }
         using SimpleTermFieldData::getHandle;
@@ -55,11 +55,9 @@ protected:
                  bool forceFilter);
 
 public:
-    ProtonTermData();
-    ProtonTermData(const ProtonTermData &);
-    ProtonTermData & operator = (const ProtonTermData &);
-    ProtonTermData(ProtonTermData &&) = default;
-    ProtonTermData & operator = (ProtonTermData &&) = default;
+    ProtonTermData() noexcept;
+    ProtonTermData(const ProtonTermData &) = delete;
+    ProtonTermData & operator = (const ProtonTermData &) = delete;
     ~ProtonTermData() override;
     void resolveFromChildren(const std::vector<search::query::Node *> &children);
     void allocateTerms(search::fef::MatchDataLayout &mdl);
