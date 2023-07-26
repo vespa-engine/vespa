@@ -273,7 +273,7 @@ public class DeploymentSpecXmlReader {
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()), readHostTTL(stepTag))); // A production test
                 }
             case devTag, perfTag, stagingTag: // Intentional fallthrough from test tag.
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccounts(stepTag), readHostTTL(stepTag)));
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerFlavor, readCloudAccounts(stepTag), readHostTTL(stepTag)));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag, defaultBcp).stream())
@@ -682,7 +682,7 @@ public class DeploymentSpecXmlReader {
     private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService,
                                           Optional<String> testerFlavor, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
-                                readActive(regionTag), athenzService, testerFlavor,
+                                athenzService, testerFlavor,
                                 readCloudAccounts(regionTag), readHostTTL(regionTag));
     }
 
@@ -782,16 +782,6 @@ public class DeploymentSpecXmlReader {
             default -> throw new IllegalArgumentException("Illegal upgrade rollout '" + rollout + "': " +
                                                           "Must be one of 'separate', 'leading', 'simultaneous'");
         };
-    }
-
-    private boolean readActive(Element regionTag) {
-        String activeValue = regionTag.getAttribute("active");
-        if ("".equals(activeValue)) return true; // Default to active
-        deprecate(regionTag, List.of("active"), 7, "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
-        if ("true".equals(activeValue)) return true;
-        if ("false".equals(activeValue)) return false;
-        throw new IllegalArgumentException("Value of 'active' attribute in region tag must be 'true' or 'false' " +
-                                           "to control whether this region should receive traffic from the global endpoint of this application");
     }
 
     private void deprecate(Element element, List<String> attributes, int majorVersion, String message) {

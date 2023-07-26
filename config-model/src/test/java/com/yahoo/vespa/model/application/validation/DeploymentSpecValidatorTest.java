@@ -24,7 +24,7 @@ public class DeploymentSpecValidatorTest {
                 "<deployment version='1.0'>" +
                 "  <test />" +
                 "  <prod>" +
-                "    <region active='true'>us-east</region>" +
+                "    <region>us-east</region>" +
                 "  </prod>" +
                 "  <endpoints>" +
                 "    <endpoint container-id='non-existing'/>" +
