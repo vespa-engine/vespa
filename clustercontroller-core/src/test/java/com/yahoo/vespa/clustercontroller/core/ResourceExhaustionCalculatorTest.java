@@ -15,6 +15,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ResourceExhaustionCalculatorTest {
 
+    private static String decorate(String msg) {
+        return ResourceExhaustionCalculator.decoratedMessage(msg);
+    }
+
     @Test
     void no_feed_block_returned_when_no_resources_lower_than_limit() {
         var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.5), usage("memory", 0.8)));
@@ -32,7 +36,8 @@ public class ResourceExhaustionCalculatorTest {
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk on node 1 [storage.1.local] (0.510 > 0.500)", feedBlock.getDescription());
+        assertEquals(decorate("disk on node 1 [storage.1.local] is 51.0% full (the configured limit is 50.0%)"),
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -43,7 +48,8 @@ public class ResourceExhaustionCalculatorTest {
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk:a-fancy-disk on node 1 [storage.1.local] (0.510 > 0.500)", feedBlock.getDescription());
+        assertEquals(decorate("disk:a-fancy-disk on node 1 [storage.1.local] is 51.0% full (the configured limit is 50.0%)"),
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -56,8 +62,9 @@ public class ResourceExhaustionCalculatorTest {
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk on node 1 [unknown hostname] (0.510 > 0.500), " +
-                "memory on node 2 [unknown hostname] (0.850 > 0.800)", feedBlock.getDescription());
+        assertEquals(decorate("disk on node 1 [unknown hostname] is 51.0% full (the configured limit is 50.0%), " +
+                              "memory on node 2 [unknown hostname] is 85.0% full (the configured limit is 80.0%)"),
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -68,10 +75,10 @@ public class ResourceExhaustionCalculatorTest {
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk on node 1 [storage.1.local] (0.510 > 0.400), " +
-                "memory on node 1 [storage.1.local] (0.850 > 0.800), " +
-                "disk on node 2 [storage.2.local] (0.450 > 0.400)",
-                feedBlock.getDescription());
+        assertEquals(decorate("disk on node 1 [storage.1.local] is 51.0% full (the configured limit is 40.0%), " +
+                              "memory on node 1 [storage.1.local] is 85.0% full (the configured limit is 80.0%), " +
+                              "disk on node 2 [storage.2.local] is 45.0% full (the configured limit is 40.0%)"),
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -83,10 +90,10 @@ public class ResourceExhaustionCalculatorTest {
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk on node 1 [storage.1.local] (0.510 > 0.400), " +
-                "memory on node 1 [storage.1.local] (0.850 > 0.800), " +
-                "disk on node 2 [storage.2.local] (0.450 > 0.400) (... and 2 more)",
-                feedBlock.getDescription());
+        assertEquals(decorate("disk on node 1 [storage.1.local] is 51.0% full (the configured limit is 40.0%), " +
+                              "memory on node 1 [storage.1.local] is 85.0% full (the configured limit is 80.0%), " +
+                              "disk on node 2 [storage.2.local] is 45.0% full (the configured limit is 40.0%) (... and 2 more)"),
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -109,8 +116,8 @@ public class ResourceExhaustionCalculatorTest {
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
         assertNotNull(feedBlock);
         // TODO should we not change the limits themselves? Explicit mention of hysteresis state?
-        assertEquals("memory on node 1 [storage.1.local] (0.490 > 0.400)",
-                feedBlock.getDescription());
+        assertEquals(decorate("memory on node 1 [storage.1.local] is 49.0% full (the configured limit is 40.0%)"),
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -123,8 +130,8 @@ public class ResourceExhaustionCalculatorTest {
                 forNode(2, usage("disk", 0.3), usage("memory", 0.49)));
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
         assertNotNull(feedBlock);
-        assertEquals("memory on node 1 [storage.1.local] (0.480 > 0.400)",
-                feedBlock.getDescription());
+        assertEquals(decorate("memory on node 1 [storage.1.local] is 48.0% full (the configured limit is 40.0%)"),
+                     feedBlock.getDescription());
     }
 
     @Test

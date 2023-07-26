@@ -508,7 +508,7 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(2));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(1)),
-                nodeEventWithDescription("Added resource exhaustion: oil on node 1 [unknown hostname] (0.800 > 0.700)"),
+                nodeEventWithDescription("Added resource exhaustion: oil on node 1 [unknown hostname] is 80.0% full (the configured limit is 70.0%)"),
                 nodeEventForBaseline())));
         assertThat(events, hasItem(
                 clusterEventWithDescription("Cluster feed blocked due to resource exhaustion: we're closed")));
@@ -528,7 +528,7 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(1));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(1)),
-                nodeEventWithDescription("Added resource exhaustion: cpu_brake_fluid on node 1 [unknown hostname] (0.800 > 0.700)"),
+                nodeEventWithDescription("Added resource exhaustion: cpu_brake_fluid on node 1 [unknown hostname] is 80.0% full (the configured limit is 70.0%)"),
                 nodeEventForBaseline())));
     }
 
@@ -546,7 +546,7 @@ public class EventDiffCalculatorTest {
         assertThat(events.size(), equalTo(1));
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(2)),
-                nodeEventWithDescription("Removed resource exhaustion: cpu_brake_fluid on node 2 [unknown hostname] (<= 0.700)"),
+                nodeEventWithDescription("Removed resource exhaustion: cpu_brake_fluid on node 2 [unknown hostname] (<= 70.0%)"),
                 nodeEventForBaseline())));
     }
 
