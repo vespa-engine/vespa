@@ -210,7 +210,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
                 currentVersionObject.setString("upgradeBudget", Duration.ZERO.toString());
                 currentVersionObject.setLong("scheduledAt", t.scheduledAt().toEpochMilli());
                 currentVersionObject.setBool("pinned", t.pinned());
-                Optional<Change> nextChange = osUpgradeScheduler.changeIn(t.osVersion().cloud(), now);
+                Optional<Change> nextChange = osUpgradeScheduler.changeIn(t.osVersion().cloud(), now, true);
                 nextChange.ifPresent(c -> {
                     currentVersionObject.setString("nextVersion", c.osVersion().version().toFullString());
                     currentVersionObject.setLong("nextScheduledAt", c.scheduleAt().toEpochMilli());
