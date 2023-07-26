@@ -96,8 +96,8 @@ public class DeploymentSpecWithoutInstanceTest {
         StringReader r = new StringReader(
         "<deployment version='1.0'>" +
         "   <prod>" +
-        "      <region active='false'>us-east1</region>" +
-        "      <region active='true'>us-west1</region>" +
+        "      <region>us-east1</region>" +
+        "      <region>us-west1</region>" +
         "   </prod>" +
         "</deployment>"
         );
@@ -107,10 +107,8 @@ public class DeploymentSpecWithoutInstanceTest {
         assertEquals(2, spec.requireInstance("default").steps().size());
 
         assertTrue(spec.requireInstance("default").steps().get(0).concerns(prod, Optional.of(RegionName.from("us-east1"))));
-        assertFalse(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(0)).active());
 
         assertTrue(spec.requireInstance("default").steps().get(1).concerns(prod, Optional.of(RegionName.from("us-west1"))));
-        assertTrue(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(1)).active());
 
         assertFalse(spec.requireInstance("default").concerns(test, Optional.empty()));
         assertFalse(spec.requireInstance("default").concerns(Environment.staging, Optional.empty()));
@@ -129,9 +127,9 @@ public class DeploymentSpecWithoutInstanceTest {
         "   <test/>" +
         "   <staging/>" +
         "   <prod>" +
-        "      <region active='false'>us-east1</region>" +
+        "      <region>us-east1</region>" +
         "      <delay hours='3' minutes='30'/>" +
-        "      <region active='true'>us-west1</region>" +
+        "      <region>us-west1</region>" +
         "   </prod>" +
         "</deployment>"
         );
@@ -145,13 +143,11 @@ public class DeploymentSpecWithoutInstanceTest {
         assertTrue(spec.requireInstance("default").steps().get(1).concerns(Environment.staging));
 
         assertTrue(spec.requireInstance("default").steps().get(2).concerns(prod, Optional.of(RegionName.from("us-east1"))));
-        assertFalse(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(2)).active());
 
         assertTrue(spec.requireInstance("default").steps().get(3) instanceof DeploymentSpec.Delay);
         assertEquals(3 * 60 * 60 + 30 * 60, spec.requireInstance("default").steps().get(3).delay().getSeconds());
 
         assertTrue(spec.requireInstance("default").steps().get(4).concerns(prod, Optional.of(RegionName.from("us-west1"))));
-        assertTrue(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(4)).active());
 
         assertTrue(spec.requireInstance("default").concerns(test, Optional.empty()));
         assertTrue(spec.requireInstance("default").concerns(test, Optional.of(RegionName.from("region1")))); // test steps specify no region
@@ -168,8 +164,8 @@ public class DeploymentSpecWithoutInstanceTest {
                 "   <test/>" +
                 "   <staging/>" +
                 "   <prod>" +
-                "      <region active='false'>us-east-1</region>" +
-                "      <region active='true'>us-west-1</region>" +
+                "      <region>us-east-1</region>" +
+                "      <region>us-west-1</region>" +
                 "      <delay hours='1' />" +
                 "      <test>us-west-1</test>" +
                 "      <test>us-east-1</test>" +
@@ -194,7 +190,7 @@ public class DeploymentSpecWithoutInstanceTest {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
                 "   <prod>" +
-                "      <region active='true'>us-east1</region>" +
+                "      <region>us-east1</region>" +
                 "      <test>us-east1</test>" +
                 "      <test>us-east1</test>" +
                 "   </prod>" +
@@ -209,7 +205,7 @@ public class DeploymentSpecWithoutInstanceTest {
                 "<deployment version='1.0'>" +
                 "   <prod>" +
                 "      <test>us-east1</test>" +
-                "      <region active='true'>us-east1</region>" +
+                "      <region>us-east1</region>" +
                 "   </prod>" +
                 "</deployment>"
         );
@@ -222,30 +218,10 @@ public class DeploymentSpecWithoutInstanceTest {
                 "<deployment version='1.0'>" +
                 "   <prod>" +
                 "      <parallel>" +
-                "         <region active='true'>us-east1</region>" +
+                "         <region>us-east1</region>" +
                 "         <test>us-east1</test>" +
                 "      </parallel>" +
                 "   </prod>" +
-                "</deployment>"
-        );
-        DeploymentSpec.fromXml(r);
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void globalServiceIdInTest() {
-        StringReader r = new StringReader(
-                "<deployment version='1.0'>" +
-                "    <test global-service-id='query' />" +
-                "</deployment>"
-        );
-        DeploymentSpec.fromXml(r);
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void globalServiceIdInStaging() {
-        StringReader r = new StringReader(
-                "<deployment version='1.0'>" +
-                "    <staging global-service-id='query' />" +
                 "</deployment>"
         );
         DeploymentSpec.fromXml(r);
@@ -280,11 +256,11 @@ public class DeploymentSpecWithoutInstanceTest {
                     "<deployment>" +
                     "  <upgrade policy='canary'/>" +
                     "  <prod>" +
-                    "    <region active='true'>us-west-1</region>" +
+                    "    <region>us-west-1</region>" +
                     "    <delay hours='47'/>" +
-                    "    <region active='true'>us-central-1</region>" +
+                    "    <region>us-central-1</region>" +
                     "    <delay minutes='59' seconds='61'/>" +
-                    "    <region active='true'>us-east-3</region>" +
+                    "    <region>us-east-3</region>" +
                     "  </prod>" +
                     "</deployment>"
             );
@@ -323,10 +299,10 @@ public class DeploymentSpecWithoutInstanceTest {
         StringReader r = new StringReader(
                 "<deployment>\n" +
                         "  <prod>    \n" +
-                        "    <region active='true'>us-west-1</region>\n" +
+                        "    <region>us-west-1</region>\n" +
                         "    <parallel>\n" +
-                        "      <region active='true'>us-central-1</region>\n" +
-                        "      <region active='true'>us-east-3</region>\n" +
+                        "      <region>us-central-1</region>\n" +
+                        "      <region>us-east-3</region>\n" +
                         "    </parallel>\n" +
                         "  </prod>\n" +
                         "</deployment>"
@@ -345,25 +321,25 @@ public class DeploymentSpecWithoutInstanceTest {
                 "   <staging />" +
                 "   <prod>" +
                 "      <parallel>" +
-                "         <region active='true'>us-west-1</region>" +
+                "         <region>us-west-1</region>" +
                 "         <steps>" +
-                "            <region active='true'>us-east-3</region>" +
+                "            <region>us-east-3</region>" +
                 "            <delay hours='2' />" +
-                "            <region active='true'>eu-west-1</region>" +
+                "            <region>eu-west-1</region>" +
                 "            <delay hours='2' />" +
                 "         </steps>" +
                 "         <steps>" +
                 "            <delay hours='3' />" +
-                "            <region active='true'>aws-us-east-1a</region>" +
+                "            <region>aws-us-east-1a</region>" +
                 "            <parallel>" +
-                "               <region active='true' athenz-service='no-service'>ap-northeast-1</region>" +
-                "               <region active='true'>ap-southeast-2</region>" +
+                "               <region athenz-service='no-service'>ap-northeast-1</region>" +
+                "               <region>ap-southeast-2</region>" +
                 "               <test>aws-us-east-1a</test>" +
                 "            </parallel>" +
                 "         </steps>" +
                 "         <delay hours='3' minutes='30' />" +
                 "      </parallel>" +
-                "      <region active='true'>us-north-7</region>" +
+                "      <region>us-north-7</region>" +
                 "   </prod>" +
                 "</deployment>"
         );
@@ -414,11 +390,11 @@ public class DeploymentSpecWithoutInstanceTest {
         StringReader r = new StringReader(
                 "<deployment>\n" +
                         "  <prod>\n" +
-                        "    <region active='true'>us-west-1</region>\n" +
+                        "    <region>us-west-1</region>\n" +
                         "    <parallel>\n" +
-                        "      <region active='true'>us-west-1</region>\n" +
-                        "      <region active='true'>us-central-1</region>\n" +
-                        "      <region active='true'>us-east-3</region>\n" +
+                        "      <region>us-west-1</region>\n" +
+                        "      <region>us-central-1</region>\n" +
+                        "      <region>us-east-3</region>\n" +
                         "    </parallel>\n" +
                         "  </prod>\n" +
                         "</deployment>"
@@ -437,7 +413,7 @@ public class DeploymentSpecWithoutInstanceTest {
                 "<deployment>\n" +
                 "  <block-change days='sat' hours='10' time-zone='CET'/>\n" +
                 "  <prod>\n" +
-                "    <region active='true'>us-west-1</region>\n" +
+                "    <region>us-west-1</region>\n" +
                 "  </prod>\n" +
                 "  <block-change days='mon,tue' hours='15-16'/>\n" +
                 "</deployment>"
@@ -452,7 +428,7 @@ public class DeploymentSpecWithoutInstanceTest {
                 "  <block-change days='sat' hours='10' time-zone='CET'/>\n" +
                 "  <test/>\n" +
                 "  <prod>\n" +
-                "    <region active='true'>us-west-1</region>\n" +
+                "    <region>us-west-1</region>\n" +
                 "  </prod>\n" +
                 "</deployment>"
         );
@@ -466,7 +442,7 @@ public class DeploymentSpecWithoutInstanceTest {
                 "  <block-change revision='false' days='mon,tue' hours='15-16'/>\n" +
                 "  <block-change days='sat' hours='10' time-zone='CET'/>\n" +
                 "  <prod>\n" +
-                "    <region active='true'>us-west-1</region>\n" +
+                "    <region>us-west-1</region>\n" +
                 "  </prod>\n" +
                 "</deployment>"
         );
@@ -495,7 +471,7 @@ public class DeploymentSpecWithoutInstanceTest {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain' athenz-service='service'>\n" +
                 "  <prod>\n" +
-                "    <region active='true'>us-west-1</region>\n" +
+                "    <region>us-west-1</region>\n" +
                 "  </prod>\n" +
                 "</deployment>"
         );
@@ -509,10 +485,10 @@ public class DeploymentSpecWithoutInstanceTest {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain' athenz-service='service'>" +
                 "   <prod athenz-service='prod-service'>" +
-                "      <region active='true'>us-central-1</region>" +
+                "      <region>us-central-1</region>" +
                 "      <parallel>" +
-                "         <region active='true'>us-west-1</region>" +
-                "         <region active='true'>us-east-3</region>" +
+                "         <region>us-west-1</region>" +
+                "         <region>us-east-3</region>" +
                 "      </parallel>" +
                 "   </prod>" +
                 "</deployment>"
@@ -535,7 +511,7 @@ public class DeploymentSpecWithoutInstanceTest {
                 "  <test />\n" +
                 "  <staging athenz-service='staging-service' />\n" +
                 "  <prod athenz-service='prod-service'>\n" +
-                "    <region active='true'>us-west-1</region>\n" +
+                "    <region>us-west-1</region>\n" +
                 "  </prod>\n" +
                 "</deployment>"
         );
@@ -552,7 +528,7 @@ public class DeploymentSpecWithoutInstanceTest {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain'>\n" +
                 "  <prod>\n" +
-                "    <region active='true'>us-west-1</region>\n" +
+                "    <region>us-west-1</region>\n" +
                 "  </prod>\n" +
                 "</deployment>"
         );
@@ -564,7 +540,7 @@ public class DeploymentSpecWithoutInstanceTest {
         StringReader r = new StringReader(
                 "<deployment>\n" +
                 "  <prod athenz-service='service'>\n" +
-                "    <region active='true'>us-west-1</region>\n" +
+                "    <region>us-west-1</region>\n" +
                 "  </prod>\n" +
                 "</deployment>"
         );

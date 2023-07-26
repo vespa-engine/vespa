@@ -1312,19 +1312,19 @@ public class DeploymentTriggerTest {
                             <staging />
                             <prod>
                                 <parallel>
-                                    <region active='true'>us-west-1</region>
+                                    <region>us-west-1</region>
                                     <steps>
-                                        <region active='true'>us-east-3</region>
+                                        <region>us-east-3</region>
                                         <delay hours='2' />
-                                        <region active='true'>eu-west-1</region>
+                                        <region>eu-west-1</region>
                                         <delay hours='2' />
                                     </steps>
                                     <steps>
                                         <delay hours='3' />
-                                        <region active='true'>us-central-1</region>
+                                        <region>us-central-1</region>
                                         <parallel>
-                                            <region active='true' athenz-service='no-service'>ap-northeast-1</region>
-                                            <region active='true'>ap-northeast-2</region>
+                                            <region athenz-service='no-service'>ap-northeast-1</region>
+                                            <region>ap-northeast-2</region>
                                             <test>us-central-1</test>
                                         </parallel>
                                     </steps>
@@ -1335,7 +1335,7 @@ public class DeploymentTriggerTest {
                                    <test>ap-northeast-1</test>
                                 </parallel>
                                 <test>us-east-3</test>
-                                <region active='true'>ap-southeast-1</region>
+                                <region>ap-southeast-1</region>
                             </prod>
                             <endpoints>
                                 <endpoint id='foo' container-id='bar'>
@@ -1350,7 +1350,7 @@ public class DeploymentTriggerTest {
                             <test />
                             <block-change revision='true' version='false' days='sat' hours='0-23' time-zone='CET' />
                             <prod>
-                                <region active='true'>eu-west-1</region>
+                                <region>eu-west-1</region>
                                 <test>eu-west-1</test>
                             </prod>
                             <notifications when='failing'>
@@ -1363,7 +1363,7 @@ public class DeploymentTriggerTest {
                     <instance id='last'>
                         <upgrade policy='conservative' />
                         <prod>
-                            <region active='true'>eu-west-1</region>
+                            <region>eu-west-1</region>
                         </prod>
                     </instance>
                 </deployment>

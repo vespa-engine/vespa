@@ -156,15 +156,8 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
-    public ApplicationPackageBuilder region(RegionName regionName) {
-        return region(regionName, true);
-    }
-
     public ApplicationPackageBuilder region(String regionName) {
-        prodBody.append("      <region>")
-                .append(regionName)
-                .append("</region>\n");
-        return this;
+        return region(RegionName.from(regionName));
     }
 
     public ApplicationPackageBuilder region(String regionName, String cloudAccount) {
@@ -181,10 +174,8 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
-    public ApplicationPackageBuilder region(RegionName regionName, boolean active) {
-        prodBody.append("      <region active='")
-                .append(active)
-                .append("'>")
+    public ApplicationPackageBuilder region(RegionName regionName) {
+        prodBody.append("      <region>")
                 .append(regionName.value())
                 .append("</region>\n");
         return this;
