@@ -78,8 +78,8 @@ public class ApplicationSerializerTest {
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml("<deployment version='1.0'>\n" +
                 "   <staging/>\n" +
                 "   <instance id=\"i1\">\n" +
-                "      <prod global-service-id=\"default\">\n" +
-                "         <region active=\"true\">us-west-1</region>\n" +
+                "      <prod>\n" +
+                "         <region>us-west-1</region>\n" +
                 "      </prod>\n" +
                 "   </instance>\n" +
                 "</deployment>");

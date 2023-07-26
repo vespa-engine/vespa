@@ -8,8 +8,8 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import org.junit.Test;
 
 import java.io.StringReader;
@@ -27,7 +27,6 @@ import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
 import static com.yahoo.config.provision.CloudName.AWS;
-import static com.yahoo.config.provision.Environment.dev;
 import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.Environment.test;
 import static com.yahoo.config.provision.zone.ZoneId.defaultId;
@@ -59,7 +58,6 @@ public class DeploymentSpecWithoutInstanceTest {
         assertTrue(spec.requireInstance("default").concerns(test, Optional.of(RegionName.from("region1")))); // test steps specify no region
         assertFalse(spec.requireInstance("default").concerns(Environment.staging, Optional.empty()));
         assertFalse(spec.requireInstance("default").concerns(prod, Optional.empty()));
-        assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
     @Test
@@ -91,7 +89,6 @@ public class DeploymentSpecWithoutInstanceTest {
         assertFalse(spec.requireInstance("default").concerns(test, Optional.empty()));
         assertTrue(spec.requireInstance("default").concerns(Environment.staging, Optional.empty()));
         assertFalse(spec.requireInstance("default").concerns(prod, Optional.empty()));
-        assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
     @Test
@@ -120,8 +117,7 @@ public class DeploymentSpecWithoutInstanceTest {
         assertTrue(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("us-east1"))));
         assertTrue(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("us-west1"))));
         assertFalse(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("no-such-region"))));
-        assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
-        
+
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.requireInstance("default").upgradePolicy());
         assertEquals(DeploymentSpec.UpgradeRollout.separate, spec.requireInstance("default").upgradeRollout());
     }
@@ -163,7 +159,6 @@ public class DeploymentSpecWithoutInstanceTest {
         assertTrue(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("us-east1"))));
         assertTrue(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("us-west1"))));
         assertFalse(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("no-such-region"))));
-        assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
     @Test
@@ -236,21 +231,6 @@ public class DeploymentSpecWithoutInstanceTest {
         DeploymentSpec.fromXml(r);
     }
 
-    @Test
-    public void productionSpecWithGlobalServiceId() {
-        StringReader r = new StringReader(
-            "<deployment version='1.0'>" +
-            "    <prod global-service-id='query'>" +
-            "        <region active='true'>us-east-1</region>" +
-            "        <region active='true'>us-west-1</region>" +
-            "    </prod>" +
-            "</deployment>"
-        );
-
-        DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(spec.requireInstance("default").globalServiceId(), Optional.of("query"));
-    }
-
     @Test(expected=IllegalArgumentException.class)
     public void globalServiceIdInTest() {
         StringReader r = new StringReader(
@@ -269,24 +249,6 @@ public class DeploymentSpecWithoutInstanceTest {
                 "</deployment>"
         );
         DeploymentSpec.fromXml(r);
-    }
-
-    @Test
-    public void productionSpecWithGlobalServiceIdBeforeStaging() {
-        StringReader r = new StringReader(
-            "<deployment>" +
-            "  <test/>" +
-            "  <prod global-service-id='qrs'>" +
-            "    <region active='true'>us-west-1</region>" +
-            "    <region active='true'>us-central-1</region>" +
-            "    <region active='true'>us-east-3</region>" +
-            "  </prod>" +
-            "  <staging/>" +
-            "</deployment>"
-        );
-
-        DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals("qrs", spec.requireInstance("default").globalServiceId().get());
     }
 
     @Test

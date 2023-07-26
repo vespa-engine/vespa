@@ -13,8 +13,8 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -46,7 +46,6 @@ import static com.yahoo.config.provision.zone.ZoneId.from;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -74,7 +73,6 @@ public class DeploymentSpecTest {
         assertTrue(spec.requireInstance("default").concerns(test, Optional.of(RegionName.from("region1")))); // test steps specify no region
         assertFalse(spec.requireInstance("default").concerns(staging, Optional.empty()));
         assertFalse(spec.requireInstance("default").concerns(prod, Optional.empty()));
-        assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
     @Test
@@ -110,7 +108,6 @@ public class DeploymentSpecTest {
         assertFalse(spec.requireInstance("default").concerns(test, Optional.empty()));
         assertTrue(spec.requireInstance("default").concerns(staging, Optional.empty()));
         assertFalse(spec.requireInstance("default").concerns(prod, Optional.empty()));
-        assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
     @Test
@@ -141,7 +138,6 @@ public class DeploymentSpecTest {
         assertTrue(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("us-east1"))));
         assertTrue(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("us-west1"))));
         assertFalse(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("no-such-region"))));
-        assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
 
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.requireInstance("default").upgradePolicy());
         assertEquals(DeploymentSpec.RevisionTarget.latest, spec.requireInstance("default").revisionTarget());
@@ -350,68 +346,6 @@ public class DeploymentSpecTest {
         assertTrue(instance.concerns(prod, Optional.of(RegionName.from("us-east1"))));
         assertTrue(instance.concerns(prod, Optional.of(RegionName.from("us-west1"))));
         assertFalse(instance.concerns(prod, Optional.of(RegionName.from("no-such-region"))));
-        assertFalse(instance.globalServiceId().isPresent());
-    }
-
-    @Test
-    public void productionSpecWithGlobalServiceId() {
-        StringReader r = new StringReader(
-            "<deployment version='1.0'>" +
-            "   <instance id='default'>" +
-            "      <prod global-service-id='query'>" +
-            "         <region active='true'>us-east-1</region>" +
-            "         <region active='true'>us-west-1</region>" +
-            "      </prod>" +
-            "   </instance>" +
-            "</deployment>"
-        );
-
-        DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(spec.requireInstance("default").globalServiceId(), Optional.of("query"));
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void globalServiceIdInTest() {
-        StringReader r = new StringReader(
-                "<deployment version='1.0'>" +
-                "   <instance id='default'>" +
-                "      <test global-service-id='query' />" +
-                "   </instance>" +
-                "</deployment>"
-        );
-        DeploymentSpec.fromXml(r);
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void globalServiceIdInStaging() {
-        StringReader r = new StringReader(
-                "<deployment version='1.0'>" +
-                "   <instance id='default'>" +
-                "      <staging global-service-id='query' />" +
-                "   </instance>" +
-                "</deployment>"
-        );
-        DeploymentSpec.fromXml(r);
-    }
-
-    @Test
-    public void productionSpecWithGlobalServiceIdBeforeStaging() {
-        StringReader r = new StringReader(
-            "<deployment>" +
-            "   <instance id='default'>" +
-            "      <test/>" +
-            "      <prod global-service-id='qrs'>" +
-            "         <region active='true'>us-west-1</region>" +
-            "         <region active='true'>us-central-1</region>" +
-            "         <region active='true'>us-east-3</region>" +
-            "      </prod>" +
-            "      <staging/>" +
-            "   </instance>" +
-            "</deployment>"
-        );
-
-        DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals("qrs", spec.requireInstance("default").globalServiceId().get());
     }
 
     @Test
@@ -1729,16 +1663,6 @@ public class DeploymentSpecTest {
                                                <deployment athenz-domain='domain'>
                                                  <instance id='default'>
                                                    <prod athenz-service='prod'>
-                                                     <region>name</region>
-                                                   </prod>
-                                                 </instance>
-                                               </deployment>""").deployableHashCode());
-
-        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
-                        DeploymentSpec.fromXml("""
-                                               <deployment>
-                                                 <instance id='default'>
-                                                   <prod global-service-id='service'>
                                                      <region>name</region>
                                                    </prod>
                                                  </instance>
