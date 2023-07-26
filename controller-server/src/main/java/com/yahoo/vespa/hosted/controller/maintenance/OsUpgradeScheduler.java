@@ -43,9 +43,8 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         int attempts = 0;
         int failures = 0;
         for (var cloud : controller().clouds()) {
-            Optional<Change> change = changeIn(cloud, now);
+            Optional<Change> change = changeIn(cloud, now, false);
             if (change.isEmpty()) continue;
-            if (!change.get().scheduleAt(now)) continue;
             try {
                 attempts++;
                 controller().os().upgradeTo(change.get().osVersion().version(), cloud, false, false);
@@ -58,15 +57,22 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         return asSuccessFactorDeviation(attempts, failures);
     }
 
-    /** Returns the OS version change for cloud at given instant, if any */
-    public Optional<Change> changeIn(CloudName cloud, Instant instant) {
+    /**
+     * Returns the next OS version change
+     *
+     * @param cloud  The cloud where the change will be deployed
+     * @param now    Current time
+     * @param future Whether to return a change that cannot be scheduled now
+     */
+    public Optional<Change> changeIn(CloudName cloud, Instant now, boolean future) {
         Optional<OsVersionTarget> currentTarget = controller().os().target(cloud);
         if (currentTarget.isEmpty()) return Optional.empty();
         if (upgradingToNewMajor(cloud)) return Optional.empty(); // Skip further upgrades until major version upgrade is complete
 
         Version currentVersion = currentTarget.get().version();
-        Change change = releaseIn(cloud).change(currentVersion, instant);
+        Change change = releaseIn(cloud).change(currentVersion, now);
         if (!change.osVersion().version().isAfter(currentVersion)) return Optional.empty();
+        if (!future && !change.scheduleAt(now)) return Optional.empty();
         if (!certified(change)) return Optional.empty();
         return Optional.of(change);
     }

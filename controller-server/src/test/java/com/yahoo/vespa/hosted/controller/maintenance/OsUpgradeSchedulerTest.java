@@ -64,13 +64,13 @@ public class OsUpgradeSchedulerTest {
         assertEquals("2022-03-01T00:05:00", formatInstant(tester.clock().instant()));
 
         // Change does not become available until certification
-        assertFalse(scheduler.changeIn(cloud, tester.clock().instant()).isPresent());
+        assertFalse(scheduler.changeIn(cloud, tester.clock().instant(), true).isPresent());
         Version systemVersion = tester.controller().readSystemVersion();
         Version olderThanSystemVersion = new Version(systemVersion.getMajor(), systemVersion.getMinor() - 1, systemVersion.getMicro());
         tester.controller().os().certify(version1, cloud, olderThanSystemVersion);
 
         // Change is now certified
-        assertEquals(version1, scheduler.changeIn(cloud, tester.clock().instant()).get().osVersion().version());
+        assertEquals(version1, scheduler.changeIn(cloud, tester.clock().instant(), true).get().osVersion().version());
         scheduler.maintain();
         assertEquals(version0,
                      tester.controller().os().target(cloud).get().osVersion().version(),
@@ -86,7 +86,7 @@ public class OsUpgradeSchedulerTest {
 
         // Time constraints have now passed, but the current target has been pinned in the meantime
         tester.controller().os().upgradeTo(version0, cloud, false, true);
-        Optional<OsUpgradeScheduler.Change> change = scheduler.changeIn(cloud, tester.clock().instant());
+        Optional<OsUpgradeScheduler.Change> change = scheduler.changeIn(cloud, tester.clock().instant(), true);
         assertTrue(change.isPresent());
         assertEquals(-1, scheduler.maintain());
         assertEquals(version0,
@@ -108,7 +108,7 @@ public class OsUpgradeSchedulerTest {
         // Estimate next change
         Version expected = Version.fromString("7.0.0.20220426");
         tester.controller().os().certify(expected, cloud, systemVersion);
-        Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud, tester.clock().instant());
+        Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud, tester.clock().instant(), true);
         assertTrue(nextChange.isPresent());
         assertEquals(expected, nextChange.get().osVersion().version());
         assertEquals("2022-04-26T07:00:00", formatInstant(nextChange.get().scheduleAt()));
@@ -136,12 +136,12 @@ public class OsUpgradeSchedulerTest {
         assertEquals(version0, tester.controller().os().target(cloud).get().osVersion().version());
         // Cool-down passes
         tester.clock().advance(Duration.ofHours(4));
-        assertEquals(version1, scheduler.changeIn(cloud, tester.clock().instant()).get().osVersion().version());
+        assertEquals(version1, scheduler.changeIn(cloud, tester.clock().instant(), false).get().osVersion().version());
         scheduler.maintain();
         assertEquals(version1, tester.controller().os().target(cloud).get().osVersion().version());
 
         // Estimate next change
-        Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud, tester.clock().instant());
+        Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud, tester.clock().instant(), true);
         assertTrue(nextChange.isPresent());
         assertEquals("7.0.0.20220426", nextChange.get().osVersion().version().toFullString());
         assertEquals("2022-04-26T06:00:00", formatInstant(nextChange.get().scheduleAt()));
@@ -166,13 +166,13 @@ public class OsUpgradeSchedulerTest {
         scheduleUpgradeAfter(Duration.ZERO, version0, scheduler, tester);
 
         // No change yet because it hasn't been certified
-        Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud, tester.clock().instant());
+        Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud, tester.clock().instant(), true);
         assertFalse(nextChange.isPresent(), "No change");
 
         // Change is certified and upgrade is scheduled
         Version systemVersion = tester.controller().readSystemVersion();
         tester.controller().os().certify(version1, cloud, systemVersion);
-        nextChange = scheduler.changeIn(cloud, tester.clock().instant());
+        nextChange = scheduler.changeIn(cloud, tester.clock().instant(), true);
         assertTrue(nextChange.isPresent());
         assertEquals(version1, nextChange.get().osVersion().version());
         assertEquals("2021-06-22T07:00:00", formatInstant(nextChange.get().scheduleAt()));
@@ -184,7 +184,7 @@ public class OsUpgradeSchedulerTest {
 
         // Nothing happens in next iteration as tagged release is older than manually triggered version
         scheduleUpgradeAfter(Duration.ofDays(7), version3, scheduler, tester);
-        assertTrue(scheduler.changeIn(cloud, tester.clock().instant()).isEmpty());
+        assertTrue(scheduler.changeIn(cloud, tester.clock().instant(), true).isEmpty());
     }
 
     @Test
@@ -203,8 +203,8 @@ public class OsUpgradeSchedulerTest {
         Version version1 = Version.fromString("8.1");
         tester.serviceRegistry().artifactRepository().addRelease(new OsRelease(version1, OsRelease.Tag.latest,
                 tester.clock().instant()));
-        assertEquals(version1, scheduler.changeIn(cloud, tester.clock().instant()).get().osVersion().version());
-        assertEquals("2021-06-22T07:05:00", formatInstant(scheduler.changeIn(cloud, tester.clock().instant()).get().scheduleAt()),
+        assertEquals(version1, scheduler.changeIn(cloud, tester.clock().instant(), true).get().osVersion().version());
+        assertEquals("2021-06-22T07:05:00", formatInstant(scheduler.changeIn(cloud, tester.clock().instant(), true).get().scheduleAt()),
                      "Not valid until cool-down period passes");
         scheduleUpgradeAfter(Duration.ZERO, version0, scheduler, tester);
 
