@@ -58,15 +58,17 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         return asSuccessFactorDeviation(attempts, failures);
     }
 
-    /** Returns the wanted change for cloud at given instant, if any */
+    /** Returns the OS version change for cloud at given instant, if any */
     public Optional<Change> changeIn(CloudName cloud, Instant instant) {
         Optional<OsVersionTarget> currentTarget = controller().os().target(cloud);
         if (currentTarget.isEmpty()) return Optional.empty();
         if (upgradingToNewMajor(cloud)) return Optional.empty(); // Skip further upgrades until major version upgrade is complete
 
-        Release release = releaseIn(cloud);
-        Optional<Change> change = release.change(currentTarget.get().version(), instant);
-        return change.filter(this::certified);
+        Version currentVersion = currentTarget.get().version();
+        Change change = releaseIn(cloud).change(currentVersion, instant);
+        if (!change.osVersion().version().isAfter(currentVersion)) return Optional.empty();
+        if (!certified(change)) return Optional.empty();
+        return Optional.of(change);
     }
 
     private boolean certified(Change change) {
@@ -121,8 +123,8 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
     private interface Release {
 
-        /** The pending change for this release at given instant, if any */
-        Optional<Change> change(Version currentVersion, Instant instant);
+        /** The next available change of this release at given instant */
+        Change change(Version currentVersion, Instant instant);
 
     }
 
@@ -151,12 +153,11 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         }
 
         @Override
-        public Optional<Change> change(Version currentVersion, Instant instant) {
+        public Change change(Version currentVersion, Instant instant) {
             OsRelease release = artifactRepository.osRelease(currentVersion.getMajor(), tag());
-            if (!release.version().isAfter(currentVersion)) return Optional.empty();
             Duration cooldown = remainingCooldownOf(cooldown(), release.age(instant));
             Instant scheduleAt = schedulingInstant(instant.plus(cooldown), system);
-            return Optional.of(new Change(new OsVersion(release.version(), cloud), scheduleAt));
+            return new Change(new OsVersion(release.version(), cloud), scheduleAt);
         }
 
         /** Returns the release tag tracked by this system */
@@ -193,16 +194,16 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         }
 
         @Override
-        public Optional<Change> change(Version currentVersion, Instant instant) {
+        public Change change(Version currentVersion, Instant instant) {
             CalendarVersion version = findVersion(instant, currentVersion);
-            Instant predicatedInstant = instant;
+            Instant predicted = instant;
             while (!version.version().isAfter(currentVersion)) {
-                predicatedInstant = predicatedInstant.plus(Duration.ofDays(1));
-                version = findVersion(predicatedInstant, currentVersion);
+                predicted = predicted.plus(Duration.ofDays(1));
+                version = findVersion(predicted, currentVersion);
             }
             Duration cooldown = remainingCooldownOf(COOLDOWN, version.age(instant));
             Instant schedulingInstant = schedulingInstant(instant.plus(cooldown), system);
-            return Optional.of(new Change(new OsVersion(version.version(), cloud), schedulingInstant));
+            return new Change(new OsVersion(version.version(), cloud), schedulingInstant);
         }
 
         /** Find the most recent version available according to the scheduling step, relative to now */
