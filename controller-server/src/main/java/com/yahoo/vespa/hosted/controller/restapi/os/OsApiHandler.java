@@ -110,7 +110,11 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse certifyVersion(HttpRequest request, String versionString, String cloudName) {
         Version version = Version.fromString(versionString);
         CloudName cloud = CloudName.from(cloudName);
-        Version vespaVersion = Version.fromString(asString(request.getData()));
+        String vespaVersionString = asString(request.getData());
+        if (vespaVersionString.isEmpty()) {
+            throw new IllegalArgumentException("Missing Vespa version in request body");
+        }
+        Version vespaVersion = Version.fromString(vespaVersionString);
         CertifiedOsVersion certified = controller.os().certify(version, cloud, vespaVersion);
         if (certified.vespaVersion().equals(vespaVersion)) {
             return new MessageResponse("Certified " + version.toFullString() + " in cloud " + cloud +

@@ -130,7 +130,7 @@ public class OsApiTest extends ControllerContainerTest {
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"0.0.0\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version '0.0.0'\"}", 400);
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"foo\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version 'foo': For input string: \\\"foo\\\"\"}", 400);
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version 'foo': Invalid version component in 'foo': For input string: \\\"foo\\\"\"}", 400);
 
         // Error: Invalid cloud
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\", \"cloud\": \"foo\"}", Request.Method.PATCH),
@@ -159,6 +159,14 @@ public class OsApiTest extends ControllerContainerTest {
         // Error: Cancel firmware checks in an empty set of zones.
         assertResponse(new Request("http://localhost:8080/os/v1/firmware/dev/", "", Request.Method.DELETE),
                 "{\"error-code\":\"NOT_FOUND\",\"message\":\"No zones at path '/os/v1/firmware/dev/'\"}", 404);
+
+        // Error: Missing or invalid versions to certify
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud1/7.5.2", "", Request.Method.POST),
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Missing Vespa version in request body\"}", 400);
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud1/7.5.2", "foo", Request.Method.POST),
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version component in 'foo': For input string: \\\"foo\\\"\"}", 400);
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud1/bar", "1.2.3", Request.Method.POST),
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version component in 'bar': For input string: \\\"bar\\\"\"}", 400);
 
         assertFalse(tester.controller().auditLogger().readLog().entries().isEmpty(), "Actions are logged to audit log");
     }

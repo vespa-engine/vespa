@@ -64,7 +64,9 @@ public class OsVersionStatusUpdaterTest {
         assertTrue(osVersions.get(new OsVersion(version1, otherCloud)).isEmpty(), "No nodes on current target");
 
         // Updating status cleans up stale certifications
-        Set<OsVersion> knownVersions = osVersions.keySet();
+        Set<OsVersion> knownVersions = osVersions.keySet().stream()
+                                                 .filter(osVersion -> !osVersion.version().isEmpty())
+                                                 .collect(Collectors.toSet());
         List<OsVersion> versionsToCertify = new ArrayList<>(knownVersions);
         versionsToCertify.addAll(List.of(new OsVersion(Version.fromString("95.0.1"), cloud),
                                          new OsVersion(Version.fromString("98.0.2"), cloud)));
