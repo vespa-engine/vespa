@@ -60,8 +60,8 @@ public class OsUpgradeSchedulerTest {
         // New release becomes available, but is not triggered until cool-down period has passed, and we're inside a
         // trigger period
         Version version1 = Version.fromString("7.0.0.20220301");
-        tester.clock().advance(Duration.ofDays(14));
-        assertEquals("2022-03-01T09:05:00", formatInstant(tester.clock().instant()));
+        tester.clock().advance(Duration.ofDays(13).plusHours(15));
+        assertEquals("2022-03-01T00:05:00", formatInstant(tester.clock().instant()));
 
         // Change does not become available until certification
         assertFalse(scheduler.changeIn(cloud, tester.clock().instant()).isPresent());
@@ -76,12 +76,12 @@ public class OsUpgradeSchedulerTest {
                      tester.controller().os().target(cloud).get().osVersion().version(),
                      "Target is unchanged because cooldown hasn't passed");
         tester.clock().advance(Duration.ofDays(3).plusHours(18));
-        assertEquals("2022-03-05T03:05:00", formatInstant(tester.clock().instant()));
+        assertEquals("2022-03-04T18:05:00", formatInstant(tester.clock().instant()));
         scheduler.maintain();
         assertEquals(version0,
                      tester.controller().os().target(cloud).get().osVersion().version(),
                      "Target is unchanged because we're outside trigger period");
-        tester.clock().advance(Duration.ofDays(2).plusHours(5));
+        tester.clock().advance(Duration.ofDays(2).plusHours(14));
         assertEquals("2022-03-07T08:05:00", formatInstant(tester.clock().instant()));
 
         // Time constraints have now passed, but the current target has been pinned in the meantime
@@ -111,7 +111,7 @@ public class OsUpgradeSchedulerTest {
         Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud, tester.clock().instant());
         assertTrue(nextChange.isPresent());
         assertEquals(expected, nextChange.get().osVersion().version());
-        assertEquals("2022-04-27T07:00:00", formatInstant(nextChange.get().scheduleAt()));
+        assertEquals("2022-04-26T07:00:00", formatInstant(nextChange.get().scheduleAt()));
     }
 
     @Test
@@ -135,7 +135,7 @@ public class OsUpgradeSchedulerTest {
         scheduler.maintain();
         assertEquals(version0, tester.controller().os().target(cloud).get().osVersion().version());
         // Cool-down passes
-        tester.clock().advance(Duration.ofDays(1));
+        tester.clock().advance(Duration.ofHours(4));
         assertEquals(version1, scheduler.changeIn(cloud, tester.clock().instant()).get().osVersion().version());
         scheduler.maintain();
         assertEquals(version1, tester.controller().os().target(cloud).get().osVersion().version());
@@ -144,7 +144,7 @@ public class OsUpgradeSchedulerTest {
         Optional<OsUpgradeScheduler.Change> nextChange = scheduler.changeIn(cloud, tester.clock().instant());
         assertTrue(nextChange.isPresent());
         assertEquals("7.0.0.20220426", nextChange.get().osVersion().version().toFullString());
-        assertEquals("2022-04-27T02:00:00", formatInstant(nextChange.get().scheduleAt()));
+        assertEquals("2022-04-26T06:00:00", formatInstant(nextChange.get().scheduleAt()));
     }
 
     @Test
