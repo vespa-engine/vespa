@@ -519,10 +519,11 @@ TEST("requireThatSimpleIntermediatesGetProperBlending") {
 }
 
 TEST("control query nodes size") {
+    EXPECT_EQUAL(128u, sizeof(ProtonTermData));
     EXPECT_EQUAL(160u, sizeof(search::query::NumberTerm));
-    EXPECT_EQUAL(280u, sizeof(ProtonNodeTypes::NumberTerm));
+    EXPECT_EQUAL(288u, sizeof(ProtonNodeTypes::NumberTerm));
     EXPECT_EQUAL(160u, sizeof(search::query::StringTerm));
-    EXPECT_EQUAL(280u, sizeof(ProtonNodeTypes::StringTerm));
+    EXPECT_EQUAL(288u, sizeof(ProtonNodeTypes::StringTerm));
 }
 
 }  // namespace
