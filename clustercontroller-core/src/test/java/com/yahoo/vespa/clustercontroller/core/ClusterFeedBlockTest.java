@@ -117,8 +117,8 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
     }
 
-    private static String decorate(String msg) {
-        return ResourceExhaustionCalculator.decoratedMessage(msg);
+    private String decorate(String msg) {
+        return ResourceExhaustionCalculator.decoratedMessage(ctrl.getCluster(), msg);
     }
 
     @Test
