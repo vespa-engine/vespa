@@ -18,7 +18,7 @@ public:
     GrowStrategy() noexcept
         : GrowStrategy(1024, 0.5, 0, 0)
     {}
-    GrowStrategy(size_t initialCapacity, float growPercent, size_t growDelta, size_t minimumCapacity) noexcept
+    GrowStrategy(uint32_t initialCapacity, float growPercent, uint32_t growDelta, uint32_t minimumCapacity) noexcept
         : _initialCapacity(initialCapacity),
           _minimumCapacity(minimumCapacity),
           _growDelta(growDelta),

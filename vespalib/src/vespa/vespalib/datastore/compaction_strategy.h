@@ -56,10 +56,10 @@ public:
           _active_buffers_ratio(active_buffers_ratio),
           _max_buffers(max_buffers)
     { }
-    float getMaxDeadBytesRatio() const noexcept { return _maxDeadBytesRatio; }
-    float getMaxDeadAddressSpaceRatio() const noexcept { return _maxDeadAddressSpaceRatio; }
+    double getMaxDeadBytesRatio() const noexcept { return _maxDeadBytesRatio; }
+    double getMaxDeadAddressSpaceRatio() const noexcept { return _maxDeadAddressSpaceRatio; }
     uint32_t get_max_buffers() const noexcept { return _max_buffers; }
-    float get_active_buffers_ratio() const noexcept { return _active_buffers_ratio; }
+    double get_active_buffers_ratio() const noexcept { return _active_buffers_ratio; }
     bool operator==(const CompactionStrategy & rhs) const noexcept {
         return (_maxDeadBytesRatio == rhs._maxDeadBytesRatio) &&
             (_maxDeadAddressSpaceRatio == rhs._maxDeadAddressSpaceRatio) &&
