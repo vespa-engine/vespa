@@ -29,9 +29,6 @@ public class DeploymentSpecValidator extends Validator {
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(deploymentReader);
         List<ContainerModel> containers = model.getRoot().configModelRepo().getModels(ContainerModel.class);
         for (DeploymentInstanceSpec instance : deploymentSpec.instances()) {
-            instance.globalServiceId().ifPresent(globalServiceId -> {
-                requireClusterId(containers, instance.name(), "Attribute 'globalServiceId'", globalServiceId);
-            });
             instance.endpoints().forEach(endpoint -> {
                 requireClusterId(containers, instance.name(), "Endpoint '" + endpoint.endpointId() + "'",
                                  endpoint.containerId());

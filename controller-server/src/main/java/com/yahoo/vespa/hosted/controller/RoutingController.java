@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
@@ -158,15 +157,6 @@ public class RoutingController {
         DeploymentSpec deploymentSpec = application.deploymentSpec();
         for (var spec : deploymentSpec.instances()) {
             ApplicationId instance = application.id().instance(spec.name());
-            // Add endpoint declared with legacy syntax
-            spec.globalServiceId().ifPresent(clusterId -> {
-                List<DeploymentId> deployments = spec.zones().stream()
-                                                     .filter(zone -> zone.concerns(Environment.prod))
-                                                     .map(zone -> new DeploymentId(instance, ZoneId.from(Environment.prod, zone.region().get())))
-                                                     .toList();
-                RoutingId routingId = RoutingId.of(instance, EndpointId.defaultId());
-                endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(clusterId), deployments, generatedEndpoints));
-            });
             // Add endpoints declared with current syntax
             spec.endpoints().forEach(declaredEndpoint -> {
                 RoutingId routingId = RoutingId.of(instance, EndpointId.of(declaredEndpoint.endpointId()));
@@ -275,7 +265,6 @@ public class RoutingController {
         }
 
         // Add endpoints backed by a rotation, and register them in DNS if necessary
-        boolean registerLegacyNames = requiresLegacyNames(application.get().deploymentSpec(), instanceName);
         Instance instance = application.get().require(instanceName);
         Set<ContainerEndpoint> containerEndpoints = new HashSet<>();
         DeploymentId deployment = new DeploymentId(instance.id(), zone);
@@ -285,14 +274,9 @@ public class RoutingController {
             EndpointList rotationEndpoints = globalEndpoints.named(assignedRotation.endpointId(), Scope.global)
                                                             .requiresRotation();
 
-            // Skip rotations which do not apply to this zone. Legacy names always point to all zones
-            if (!registerLegacyNames && !assignedRotation.regions().contains(zone.region())) {
+            // Skip rotations which do not apply to this zone
+            if (!assignedRotation.regions().contains(zone.region())) {
                 continue;
-            }
-
-            // Omit legacy DNS names when assigning rotations using <endpoints/> syntax
-            if (!registerLegacyNames) {
-                rotationEndpoints = rotationEndpoints.not().legacy();
             }
 
             // Register names in DNS
@@ -478,13 +462,6 @@ public class RoutingController {
 
     public boolean randomizedEndpointsEnabled(ApplicationId instance) {
         return randomizedEndpoints.with(FetchVector.Dimension.APPLICATION_ID, instance.serializedForm()).value();
-    }
-
-    /** Whether legacy global DNS names should be available for given application */
-    private static boolean requiresLegacyNames(DeploymentSpec deploymentSpec, InstanceName instanceName) {
-        return deploymentSpec.instance(instanceName)
-                             .flatMap(DeploymentInstanceSpec::globalServiceId)
-                             .isPresent();
     }
 
     /** Create a common name based on a hash of given application. This must be less than 64 characters long. */

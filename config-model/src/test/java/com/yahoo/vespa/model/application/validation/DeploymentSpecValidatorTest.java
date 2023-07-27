@@ -19,25 +19,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class DeploymentSpecValidatorTest {
 
     @Test
-    void testDeploymentWithNonExistentGlobalId() {
-        var deploymentXml = "<?xml version='1.0' encoding='UTF-8'?>" +
-                "<deployment version='1.0'>" +
-                "  <test />" +
-                "  <prod global-service-id='non-existing'>" +
-                "    <region active='true'>us-east</region>" +
-                "  </prod>" +
-                "</deployment>";
-        assertValidationError("Attribute 'globalServiceId' in instance default: 'non-existing' specified in " +
-                "deployment.xml does not match any container cluster ID", deploymentXml);
-    }
-
-    @Test
     void testEndpointNonExistentContainerId() {
         var deploymentXml = "<?xml version='1.0' encoding='UTF-8'?>" +
                 "<deployment version='1.0'>" +
                 "  <test />" +
                 "  <prod>" +
-                "    <region active='true'>us-east</region>" +
+                "    <region>us-east</region>" +
                 "  </prod>" +
                 "  <endpoints>" +
                 "    <endpoint container-id='non-existing'/>" +

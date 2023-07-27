@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.routing.rotation;
 
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.provision.ApplicationId;
@@ -63,44 +62,10 @@ public class RotationRepository {
     }
 
     /**
-     * Returns a single rotation for the given application. This is only used when a rotation is assigned through the
-     * use of a global service ID.
-     *
-     * If a rotation is already assigned to the application, that rotation will be returned.
-     * If no rotation is assigned, return an available rotation. The caller is responsible for assigning the rotation.
-     *
-     * @param instanceSpec the instance deployment spec
-     * @param instance the instance requesting a rotation
-     * @param lock lock which must be acquired by the caller
-     */
-    private AssignedRotation assignRotationTo(String globalServiceId, DeploymentInstanceSpec instanceSpec,
-                                              Instance instance, RotationLock lock) {
-        RotationId rotation;
-        if (instance.rotations().isEmpty()) {
-            rotation = findAvailableRotation(instance.id(), lock).id();
-        } else {
-            rotation = instance.rotations().get(0).rotationId();
-        }
-        var productionRegions = instanceSpec.zones().stream()
-                                            .filter(zone -> zone.environment().isProduction())
-                                            .flatMap(zone -> zone.region().stream())
-                                            .collect(Collectors.toSet());
-        if (productionRegions.size() < 2) {
-            throw new IllegalArgumentException("global-service-id is set but less than 2 prod zones are defined " +
-                                               "in instance '" + instance.name() + "'");
-        }
-        return new AssignedRotation(new ClusterSpec.Id(globalServiceId),
-                                    EndpointId.defaultId(),
-                                    rotation,
-                                    productionRegions);
-    }
-
-    /**
      * Returns rotation assignments for all endpoints in application.
      *
      * If rotations are already assigned, these will be returned.
      * If rotations are not assigned, a new assignment will be created taking new rotations from the repository.
-     * This method supports both global-service-id as well as the new endpoints tag.
      *
      * @param deploymentSpec The deployment spec of the application
      * @param instance The application requesting rotations
@@ -112,19 +77,7 @@ public class RotationRepository {
         if (allRotations.isEmpty()) {
             return List.of();
         }
-
-        // Only allow one kind of configuration syntax
         var instanceSpec = deploymentSpec.requireInstance(instance.name());
-        if (     instanceSpec.globalServiceId().isPresent()
-            && ! instanceSpec.endpoints().isEmpty()) {
-            throw new IllegalArgumentException("Cannot provision rotations with both global-service-id and 'endpoints'");
-        }
-
-        // Support legacy global-service-id
-        if (instanceSpec.globalServiceId().isPresent()) {
-            return List.of(assignRotationTo(instanceSpec.globalServiceId().get(), instanceSpec, instance, lock));
-        }
-
         return assignRotationsTo(instanceSpec.endpoints(), instance, lock);
     }
 
