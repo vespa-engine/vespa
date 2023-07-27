@@ -235,6 +235,9 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     /** Returns time windows where upgrades are disallowed for these instances */
     public List<DeploymentSpec.ChangeBlocker> changeBlocker() { return changeBlockers; }
 
+    // TODO(mpolden): Remove after Vespa < 8.203 is no longer in use
+    public Optional<String> globalServiceId() { return Optional.empty(); }
+
     /** Returns whether the instances in this step can upgrade at the given instant */
     public boolean canUpgradeAt(Instant instant) {
         return changeBlockers.stream().filter(block -> block.blocksVersions())
