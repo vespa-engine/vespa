@@ -128,7 +128,6 @@ bool AttributeVector::hasArrayType() const { return _config->collectionType().is
 bool AttributeVector::getIsFilter() const  { return _config->getIsFilter(); }
 bool AttributeVector::getIsFastSearch() const { return _config->fastSearch(); }
 bool AttributeVector::isMutable() const { return _config->isMutable(); }
-bool AttributeVector::getEnableOnlyBitVector() const { return _config->getEnableOnlyBitVector(); }
 
 bool
 AttributeVector::isEnumerated(const vespalib::GenericHeader &header)
