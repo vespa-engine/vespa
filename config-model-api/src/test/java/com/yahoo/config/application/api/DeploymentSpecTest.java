@@ -13,8 +13,8 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
+import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -46,6 +46,7 @@ import static com.yahoo.config.provision.zone.ZoneId.from;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -73,6 +74,7 @@ public class DeploymentSpecTest {
         assertTrue(spec.requireInstance("default").concerns(test, Optional.of(RegionName.from("region1")))); // test steps specify no region
         assertFalse(spec.requireInstance("default").concerns(staging, Optional.empty()));
         assertFalse(spec.requireInstance("default").concerns(prod, Optional.empty()));
+        assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
     @Test
@@ -108,6 +110,7 @@ public class DeploymentSpecTest {
         assertFalse(spec.requireInstance("default").concerns(test, Optional.empty()));
         assertTrue(spec.requireInstance("default").concerns(staging, Optional.empty()));
         assertFalse(spec.requireInstance("default").concerns(prod, Optional.empty()));
+        assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
     @Test
@@ -116,8 +119,8 @@ public class DeploymentSpecTest {
                 <deployment version='1.0'>
                    <instance id='default'>
                       <prod>
-                         <region>us-east1</region>
-                         <region>us-west1</region>
+                         <region active='false'>us-east1</region>
+                         <region active='true'>us-west1</region>
                       </prod>
                    </instance>
                 </deployment>
@@ -128,14 +131,17 @@ public class DeploymentSpecTest {
         assertEquals(2, spec.requireInstance("default").steps().size());
 
         assertTrue(spec.requireInstance("default").steps().get(0).concerns(prod, Optional.of(RegionName.from("us-east1"))));
+        assertFalse(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(0)).active());
 
         assertTrue(spec.requireInstance("default").steps().get(1).concerns(prod, Optional.of(RegionName.from("us-west1"))));
+        assertTrue(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(1)).active());
 
         assertFalse(spec.requireInstance("default").concerns(test, Optional.empty()));
         assertFalse(spec.requireInstance("default").concerns(staging, Optional.empty()));
         assertTrue(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("us-east1"))));
         assertTrue(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("us-west1"))));
         assertFalse(spec.requireInstance("default").concerns(prod, Optional.of(RegionName.from("no-such-region"))));
+        assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
 
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.requireInstance("default").upgradePolicy());
         assertEquals(DeploymentSpec.RevisionTarget.latest, spec.requireInstance("default").revisionTarget());
@@ -152,14 +158,14 @@ public class DeploymentSpecTest {
                 "<deployment version='1.0'>" +
                 "   <instance id='a' tags='tag1 tag2'>" +
                 "      <prod>" +
-                "         <region>us-east1</region>" +
-                "         <region>us-west1</region>" +
+                "         <region active='false'>us-east1</region>" +
+                "         <region active='true'>us-west1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "   <instance id='b' tags='tag3'>" +
                 "      <prod>" +
-                "         <region>us-east1</region>" +
-                "         <region>us-west1</region>" +
+                "         <region active='false'>us-east1</region>" +
+                "         <region active='true'>us-west1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -177,9 +183,9 @@ public class DeploymentSpecTest {
                 "      <test/>" +
                 "      <staging/>" +
                 "      <prod>" +
-                "         <region>us-east1</region>" +
+                "         <region active='false'>us-east1</region>" +
                 "         <delay hours='3' minutes='30'/>" +
-                "         <region>us-west1</region>" +
+                "         <region active='true'>us-west1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -197,8 +203,8 @@ public class DeploymentSpecTest {
                 "      <test/>" +
                 "      <staging/>" +
                 "      <prod>" +
-                "         <region>us-east-1</region>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='false'>us-east-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "         <delay hours='1' />" +
                 "         <test>us-west-1</test>" +
                 "         <test>us-east-1</test>" +
@@ -225,7 +231,7 @@ public class DeploymentSpecTest {
                 "<deployment version='1.0'>" +
                 "   <instance id='default'>" +
                 "      <prod>" +
-                "         <region>us-east1</region>" +
+                "         <region active='true'>us-east1</region>" +
                 "         <test>us-east1</test>" +
                 "         <test>us-east1</test>" +
                 "      </prod>" +
@@ -242,7 +248,7 @@ public class DeploymentSpecTest {
                 "   <instance id='default'>" +
                 "      <prod>" +
                 "         <test>us-east1</test>" +
-                "         <region>us-east1</region>" +
+                "         <region active='true'>us-east1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -257,7 +263,7 @@ public class DeploymentSpecTest {
                 "   <instance id='default'>" +
                 "      <prod>" +
                 "         <parallel>" +
-                "            <region>us-east1</region>" +
+                "            <region active='true'>us-east1</region>" +
                 "            <test>us-east1</test>" +
                 "         </parallel>" +
                 "      </prod>" +
@@ -275,14 +281,14 @@ public class DeploymentSpecTest {
                 "      <test/>" +
                 "      <staging/>" +
                 "      <prod>" +
-                "         <region>us-east1</region>" +
+                "         <region active='false'>us-east1</region>" +
                 "         <delay hours='3' minutes='30'/>" +
-                "         <region>us-west1</region>" +
+                "         <region active='true'>us-west1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "   <instance id='instance2'>" +
                 "      <prod>" +
-                "         <region>us-central1</region>" +
+                "         <region active='true'>us-central1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -307,9 +313,9 @@ public class DeploymentSpecTest {
                 "      <test/>" +
                 "      <staging/>" +
                 "      <prod>" +
-                "         <region>us-east1</region>" +
+                "         <region active='false'>us-east1</region>" +
                 "         <delay hours='3' minutes='30'/>" +
-                "         <region>us-west1</region>" +
+                "         <region active='true'>us-west1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -330,11 +336,13 @@ public class DeploymentSpecTest {
         assertTrue(instance.steps().get(1).concerns(staging));
 
         assertTrue(instance.steps().get(2).concerns(prod, Optional.of(RegionName.from("us-east1"))));
+        assertFalse(((DeploymentSpec.DeclaredZone)instance.steps().get(2)).active());
 
         assertTrue(instance.steps().get(3) instanceof DeploymentSpec.Delay);
         assertEquals(3 * 60 * 60 + 30 * 60, instance.steps().get(3).delay().getSeconds());
 
         assertTrue(instance.steps().get(4).concerns(prod, Optional.of(RegionName.from("us-west1"))));
+        assertTrue(((DeploymentSpec.DeclaredZone)instance.steps().get(4)).active());
 
         assertTrue(instance.concerns(test, Optional.empty()));
         assertTrue(instance.concerns(test, Optional.of(RegionName.from("region1")))); // test steps specify no region
@@ -342,6 +350,68 @@ public class DeploymentSpecTest {
         assertTrue(instance.concerns(prod, Optional.of(RegionName.from("us-east1"))));
         assertTrue(instance.concerns(prod, Optional.of(RegionName.from("us-west1"))));
         assertFalse(instance.concerns(prod, Optional.of(RegionName.from("no-such-region"))));
+        assertFalse(instance.globalServiceId().isPresent());
+    }
+
+    @Test
+    public void productionSpecWithGlobalServiceId() {
+        StringReader r = new StringReader(
+            "<deployment version='1.0'>" +
+            "   <instance id='default'>" +
+            "      <prod global-service-id='query'>" +
+            "         <region active='true'>us-east-1</region>" +
+            "         <region active='true'>us-west-1</region>" +
+            "      </prod>" +
+            "   </instance>" +
+            "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(spec.requireInstance("default").globalServiceId(), Optional.of("query"));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void globalServiceIdInTest() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <instance id='default'>" +
+                "      <test global-service-id='query' />" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec.fromXml(r);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void globalServiceIdInStaging() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <instance id='default'>" +
+                "      <staging global-service-id='query' />" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec.fromXml(r);
+    }
+
+    @Test
+    public void productionSpecWithGlobalServiceIdBeforeStaging() {
+        StringReader r = new StringReader(
+            "<deployment>" +
+            "   <instance id='default'>" +
+            "      <test/>" +
+            "      <prod global-service-id='qrs'>" +
+            "         <region active='true'>us-west-1</region>" +
+            "         <region active='true'>us-central-1</region>" +
+            "         <region active='true'>us-east-3</region>" +
+            "      </prod>" +
+            "      <staging/>" +
+            "   </instance>" +
+            "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("qrs", spec.requireInstance("default").globalServiceId().get());
     }
 
     @Test
@@ -470,11 +540,11 @@ public class DeploymentSpecTest {
                     "   <instance id='default'>" +
                     "      <upgrade policy='canary'/>" +
                     "      <prod>" +
-                    "         <region>us-west-1</region>" +
+                    "         <region active='true'>us-west-1</region>" +
                     "         <delay hours='47'/>" +
-                    "         <region>us-central-1</region>" +
+                    "         <region active='true'>us-central-1</region>" +
                     "         <delay minutes='59' seconds='61'/>" +
-                    "         <region>us-east-3</region>" +
+                    "         <region active='true'>us-east-3</region>" +
                     "      </prod>" +
                     "   </instance>" +
                     "</deployment>"
@@ -511,10 +581,10 @@ public class DeploymentSpecTest {
                 "<deployment>" +
                 "   <instance id='default'>" +
                 "      <prod>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "         <parallel>" +
-                "            <region>us-central-1</region>" +
-                "            <region>us-east-3</region>" +
+                "            <region active='true'>us-central-1</region>" +
+                "            <region active='true'>us-east-3</region>" +
                 "         </parallel>" +
                 "      </prod>" +
                 "   </instance>" +
@@ -535,14 +605,14 @@ public class DeploymentSpecTest {
                 "   <staging/>" +
                 "   <instance id='instance0'>" +
                 "      <prod>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "   <instance id='instance1'>" +
                 "      <test/>" +
                 "      <staging/>" +
                 "      <prod>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -575,25 +645,25 @@ public class DeploymentSpecTest {
                 "   <instance id='instance' athenz-service='in-service'>" +
                 "      <prod>" +
                 "         <parallel>" +
-                "            <region>us-west-1</region>" +
+                "            <region active='true'>us-west-1</region>" +
                 "            <steps>" +
-                "               <region>us-east-3</region>" +
+                "               <region active='true'>us-east-3</region>" +
                 "               <delay hours='2' />" +
-                "               <region>eu-west-1</region>" +
+                "               <region active='true'>eu-west-1</region>" +
                 "               <delay hours='2' />" +
                 "            </steps>" +
                 "            <steps>" +
                 "               <delay hours='3' />" +
-                "               <region>aws-us-east-1a</region>" +
+                "               <region active='true'>aws-us-east-1a</region>" +
                 "               <parallel>" +
-                "                  <region athenz-service='no-service'>ap-northeast-1</region>" +
-                "                  <region>ap-southeast-2</region>" +
+                "                  <region active='true' athenz-service='no-service'>ap-northeast-1</region>" +
+                "                  <region active='true'>ap-southeast-2</region>" +
                 "                  <test>aws-us-east-1a</test>" +
                 "               </parallel>" +
                 "            </steps>" +
                 "            <delay hours='3' minutes='30' />" +
                 "         </parallel>" +
-                "         <region>us-north-7</region>" +
+                "         <region active='true'>us-north-7</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -647,12 +717,12 @@ public class DeploymentSpecTest {
                 "   <parallel>" +
                 "      <instance id='instance0'>" +
                 "         <prod>" +
-                "            <region>us-west-1</region>" +
+                "            <region active='true'>us-west-1</region>" +
                 "         </prod>" +
                 "      </instance>" +
                 "      <instance id='instance1'>" +
                 "         <prod>" +
-                "            <region>us-east-3</region>" +
+                "            <region active='true'>us-east-3</region>" +
                 "         </prod>" +
                 "      </instance>" +
                 "   </parallel>" +
@@ -675,13 +745,13 @@ public class DeploymentSpecTest {
                 "<deployment>" +
                 "    <instance id='instance0'>" +
                 "       <prod>" +
-                "          <region>us-west-1</region>" +
+                "          <region active='true'>us-west-1</region>" +
                 "       </prod>" +
                 "    </instance>" +
                 "    <delay hours='12'/>" +
                 "    <instance id='instance1'>" +
                 "       <prod>" +
-                "          <region>us-east-3</region>" +
+                "          <region active='true'>us-east-3</region>" +
                 "       </prod>" +
                 "    </instance>" +
                 "</deployment>"
@@ -701,11 +771,11 @@ public class DeploymentSpecTest {
                 "<deployment>" +
                 "   <instance id='default'>" +
                 "      <prod>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "         <parallel>" +
-                "            <region>us-west-1</region>" +
-                "            <region>us-central-1</region>" +
-                "            <region>us-east-3</region>" +
+                "            <region active='true'>us-west-1</region>" +
+                "            <region active='true'>us-central-1</region>" +
+                "            <region active='true'>us-east-3</region>" +
                 "         </parallel>" +
                 "      </prod>" +
                 "   </instance>" +
@@ -792,7 +862,7 @@ public class DeploymentSpecTest {
                 "   <instance id='default'>" +
                 "      <block-change days='sat' hours='10' time-zone='CET'/>" +
                 "      <prod>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
                 "      <block-change days='mon,tue' hours='15-16'/>" +
                 "   </instance>" +
@@ -809,7 +879,7 @@ public class DeploymentSpecTest {
                 "      <block-change days='sat' hours='10' time-zone='CET'/>" +
                 "      <test/>" +
                 "      <prod>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -826,7 +896,7 @@ public class DeploymentSpecTest {
                 "      <block-change days='sat' hours='10' time-zone='CET'/>" +
                 "      <block-change days='mon-sun' hours='0-23' time-zone='CET' from-date='2022-01-01' to-date='2022-01-15'/>" +
                 "      <prod>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -887,7 +957,7 @@ public class DeploymentSpecTest {
                 "<deployment athenz-domain='domain' athenz-service='service'>" +
                 "   <instance id='instance1'>" +
                 "      <prod>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -905,10 +975,10 @@ public class DeploymentSpecTest {
                 "<deployment athenz-domain='domain' athenz-service='service'>" +
                 "   <instance id='instance1'>" +
                 "      <prod athenz-service='prod-service'>" +
-                "         <region>us-central-1</region>" +
+                "         <region active='true'>us-central-1</region>" +
                 "         <parallel>" +
-                "            <region>us-west-1</region>" +
-                "            <region>us-east-3</region>" +
+                "            <region active='true'>us-west-1</region>" +
+                "            <region active='true'>us-east-3</region>" +
                 "         </parallel>" +
                 "      </prod>" +
                 "   </instance>" +
@@ -935,16 +1005,16 @@ public class DeploymentSpecTest {
                       <instance id='instance1'>
                          <prod>
                             <parallel>
-                               <region>us-west-1</region>
-                               <region>us-east-3</region>
+                               <region active='true'>us-west-1</region>
+                               <region active='true'>us-east-3</region>
                             </parallel>
                          </prod>
                       </instance>
                       <instance id='instance2'>
                          <prod>
                             <parallel>
-                               <region>us-west-1</region>
-                               <region>us-east-3</region>
+                               <region active='true'>us-west-1</region>
+                               <region active='true'>us-east-3</region>
                             </parallel>
                          </prod>
                       </instance>
@@ -967,7 +1037,7 @@ public class DeploymentSpecTest {
                 "<deployment athenz-domain='domain'>" +
                 "   <instance id='default' athenz-service='service'>" +
                 "      <prod>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -986,7 +1056,7 @@ public class DeploymentSpecTest {
                 "      <test />" +
                 "      <staging athenz-service='staging-service' />" +
                 "      <prod athenz-service='prod-service'>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -1009,7 +1079,7 @@ public class DeploymentSpecTest {
                 "<deployment athenz-domain='domain'>" +
                 "   <instance id='default'>" +
                 "      <prod>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -1023,7 +1093,7 @@ public class DeploymentSpecTest {
                 "<deployment>" +
                 "   <instance id='default'>" +
                 "      <prod athenz-service='service'>" +
-                "         <region>us-west-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
                 "   </instance>" +
                 "</deployment>"
@@ -1352,14 +1422,14 @@ public class DeploymentSpecTest {
                          <deployment>
                            <instance id="beta">
                              <prod>
-                               <region>us-west-1</region>
-                               <region>us-east-3</region>
+                               <region active='true'>us-west-1</region>
+                               <region active='true'>us-east-3</region>
                              </prod>
                            </instance>
                            <instance id="main">
                              <prod>
-                               <region>us-west-1</region>
-                               <region>us-east-3</region>
+                               <region active='true'>us-west-1</region>
+                               <region active='true'>us-east-3</region>
                              </prod>
                            </instance>
                            <endpoints>
@@ -1452,14 +1522,14 @@ public class DeploymentSpecTest {
                                                      <deployment>
                                                        <instance id="beta">
                                                          <prod>
-                                                           <region>us-west-1</region>
-                                                           <region>us-east-3</region>
+                                                           <region active='true'>us-west-1</region>
+                                                           <region active='true'>us-east-3</region>
                                                          </prod>
                                                        </instance>
                                                        <instance id="main">
                                                          <prod>
-                                                           <region>us-west-1</region>
-                                                           <region>us-east-3</region>
+                                                           <region active='true'>us-west-1</region>
+                                                           <region active='true'>us-east-3</region>
                                                          </prod>
                                                          <endpoints>
                                                            <endpoint id="glob" container-id="music"/>
@@ -1659,6 +1729,16 @@ public class DeploymentSpecTest {
                                                <deployment athenz-domain='domain'>
                                                  <instance id='default'>
                                                    <prod athenz-service='prod'>
+                                                     <region>name</region>
+                                                   </prod>
+                                                 </instance>
+                                               </deployment>""").deployableHashCode());
+
+        assertNotEquals(DeploymentSpec.fromXml(referenceSpec).deployableHashCode(),
+                        DeploymentSpec.fromXml("""
+                                               <deployment>
+                                                 <instance id='default'>
+                                                   <prod global-service-id='service'>
                                                      <region>name</region>
                                                    </prod>
                                                  </instance>

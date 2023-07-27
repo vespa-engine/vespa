@@ -10,6 +10,7 @@ import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
@@ -359,14 +360,22 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             context.getDeployState().getProperties().athenzDnsSuffix(),
                             context.getDeployState().zone(),
                             deploymentSpec);
-        addRotationProperties(cluster, context.getDeployState().getEndpoints());
+        addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getEndpoints(), deploymentSpec);
     }
 
-    private void addRotationProperties(ApplicationContainerCluster cluster, Set<ContainerEndpoint> endpoints) {
+    private void addRotationProperties(ApplicationContainerCluster cluster, Zone zone, Set<ContainerEndpoint> endpoints, DeploymentSpec spec) {
         cluster.getContainers().forEach(container -> {
             setRotations(container, endpoints, cluster.getName());
-            container.setProp("activeRotation", "true"); // TODO(mpolden): This is unused and should be removed
+            container.setProp("activeRotation", Boolean.toString(zoneHasActiveRotation(zone, spec)));
         });
+    }
+
+    private boolean zoneHasActiveRotation(Zone zone, DeploymentSpec spec) {
+        Optional<DeploymentInstanceSpec> instance = spec.instance(app.getApplicationId().instance());
+        if (instance.isEmpty()) return false;
+        return instance.get().zones().stream()
+                   .anyMatch(declaredZone -> declaredZone.concerns(zone.environment(), Optional.of(zone.region())) &&
+                                             declaredZone.active());
     }
 
     private void setRotations(Container container, Set<ContainerEndpoint> endpoints, String containerClusterName) {
@@ -585,7 +594,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addDefaultConnectorHostedFilterBinding(ApplicationContainerCluster cluster) {
         cluster.getHttp().getAccessControl()
-                .ifPresent(accessControl -> accessControl.configureDefaultHostedConnector(cluster.getHttp()));
+                .ifPresent(accessControl -> accessControl.configureDefaultHostedConnector(cluster.getHttp()));                                 ;
     }
 
     private void addCloudMtlsConnector(DeployState state, ApplicationContainerCluster cluster) {

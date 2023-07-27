@@ -275,7 +275,7 @@ public class MetricsReporterTest {
     void name_service_queue_size_metric() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .endpoint("default", "foo")
+                .globalServiceId("default")
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();

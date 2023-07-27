@@ -21,6 +21,8 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -29,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -176,10 +179,9 @@ public class ApplicationPackageValidator {
         if (applicationPackage.validationOverrides().allows(validationId, instant)) return;
 
         var endpoints = application.deploymentSpec().instance(instanceName)
-                                   .map(deploymentInstanceSpec1 -> deploymentInstanceSpec1.endpoints())
+                                   .map(ApplicationPackageValidator::allEndpointsOf)
                                    .orElseGet(List::of);
-        DeploymentInstanceSpec deploymentInstanceSpec = applicationPackage.deploymentSpec().requireInstance(instanceName);
-        var newEndpoints = new ArrayList<>(deploymentInstanceSpec.endpoints());
+        var newEndpoints = allEndpointsOf(applicationPackage.deploymentSpec().requireInstance(instanceName));
 
         if (newEndpoints.containsAll(endpoints)) return; // Adding new endpoints is fine
         if (containsAllDestinationsOf(endpoints, newEndpoints)) return; // Adding destinations is fine
@@ -253,6 +255,26 @@ public class ApplicationPackageValidator {
         return containsAllRegions && hasSameCluster;
     }
 
+    /** Returns all configued endpoints of given deployment instance spec */
+    private static List<Endpoint> allEndpointsOf(DeploymentInstanceSpec deploymentInstanceSpec) {
+        var endpoints = new ArrayList<>(deploymentInstanceSpec.endpoints());
+        legacyEndpoint(deploymentInstanceSpec).ifPresent(endpoints::add);
+        return endpoints;
+    }
+
+    /** Returns global service ID as an endpoint, if any global service ID is set */
+    private static Optional<Endpoint> legacyEndpoint(DeploymentInstanceSpec instance) {
+        return instance.globalServiceId().map(globalServiceId -> {
+            var targets = instance.zones().stream()
+                                  .filter(zone -> zone.environment().isProduction())
+                                  .flatMap(zone -> zone.region().stream())
+                                  .distinct()
+                                  .map(region -> new Endpoint.Target(region, instance.name(), 1))
+                                  .toList();
+            return new Endpoint(EndpointId.defaultId().id(), globalServiceId, Endpoint.Level.instance, targets);
+        });
+    }
+
     /** Returns a list of the non-compactable IDs of given instance and endpoint */
     private static List<String> nonCompactableIds(InstanceName instance, Endpoint endpoint) {
         List<String> ids = new ArrayList<>(2);
@@ -265,6 +287,16 @@ public class ApplicationPackageValidator {
         return ids;
     }
 
-    private record InstanceEndpoint(InstanceName instance, String endpointId) {}
+    private static class InstanceEndpoint {
+
+        private final InstanceName instance;
+        private final String endpointId;
+
+        public InstanceEndpoint(InstanceName instance, String endpointId) {
+            this.instance = instance;
+            this.endpointId = endpointId;
+        }
+
+    }
 
 }
