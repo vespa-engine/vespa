@@ -384,7 +384,7 @@ public class ControllerTest {
     void testDnsUpdatesForGlobalEndpointLegacySyntax() {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .endpoint("default", "foo")
+                .globalServiceId("foo")
                 .region("us-west-1")
                 .region("us-central-1") // Two deployments should result in each DNS alias being registered once
                 .build();
@@ -1529,6 +1529,22 @@ public class ControllerTest {
 
         assertEquals(cloudAccount, tester.controllerTester().configServer().cloudAccount(context.deploymentIdIn(prodZone1)).get().value());
         assertEquals(Optional.empty(), tester.controllerTester().configServer().cloudAccount(context.deploymentIdIn(prodZone2)));
+    }
+
+    @Test
+    void testSubmitWithElementDeprecatedOnPreviousMajor() {
+        DeploymentContext context = tester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder()
+                .compileVersion(Version.fromString("8.1"))
+                .region("us-west-1")
+                .globalServiceId("qrs")
+                .build();
+        try {
+            context.submit(applicationPackage).deploy();
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Element 'prod' contains attribute 'global-service-id' deprecated since major version 7"));
+        }
     }
 
     @Test

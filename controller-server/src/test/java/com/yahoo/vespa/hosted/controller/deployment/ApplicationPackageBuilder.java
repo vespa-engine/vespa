@@ -65,6 +65,7 @@ public class ApplicationPackageBuilder {
     private String revisionTarget = "latest";
     private String revisionChange = "always";
     private String upgradeRollout = null;
+    private String globalServiceId = null;
     private String athenzIdentityAttributes = "athenz-domain='domain' athenz-service='service'";
     private String searchDefinition = "search test { }";
     private Version compileVersion = Version.fromString("6.1");
@@ -97,6 +98,11 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder upgradeRollout(String upgradeRollout) {
         this.upgradeRollout = upgradeRollout;
+        return this;
+    }
+
+    public ApplicationPackageBuilder globalServiceId(String globalServiceId) {
+        this.globalServiceId = globalServiceId;
         return this;
     }
 
@@ -156,8 +162,15 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder region(RegionName regionName) {
+        return region(regionName, true);
+    }
+
     public ApplicationPackageBuilder region(String regionName) {
-        return region(RegionName.from(regionName));
+        prodBody.append("      <region>")
+                .append(regionName)
+                .append("</region>\n");
+        return this;
     }
 
     public ApplicationPackageBuilder region(String regionName, String cloudAccount) {
@@ -174,8 +187,10 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
-    public ApplicationPackageBuilder region(RegionName regionName) {
-        prodBody.append("      <region>")
+    public ApplicationPackageBuilder region(RegionName regionName, boolean active) {
+        prodBody.append("      <region active='")
+                .append(active)
+                .append("'>")
                 .append(regionName.value())
                 .append("</region>\n");
         return this;
@@ -320,7 +335,13 @@ public class ApplicationPackageBuilder {
                 xml.append(" />\n");
             });
             xml.append(blockChange);
-            xml.append("    <prod>\n");
+            xml.append("    <prod");
+            if (globalServiceId != null) {
+                xml.append(" global-service-id='");
+                xml.append(globalServiceId);
+                xml.append("'");
+            }
+            xml.append(">\n");
             xml.append(prodBody);
             xml.append("    </prod>\n");
             if (endpointsBody.length() > 0) {
