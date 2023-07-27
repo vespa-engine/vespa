@@ -463,6 +463,9 @@ public class DeploymentSpec {
         /** The region name, or empty if not declared */
         public Optional<RegionName> region() { return region; }
 
+        // TODO(mpolden): Remove after Vespa < 8.203 is no longer in use
+        public boolean active() { return true; }
+
         public Optional<String> testerFlavor() { return testerFlavor; }
 
         Optional<AthenzService> athenzService() { return athenzService; }
