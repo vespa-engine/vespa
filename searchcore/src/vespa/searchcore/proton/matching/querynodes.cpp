@@ -30,7 +30,7 @@ ProtonTermData::~ProtonTermData() = default;
 namespace {
 
 bool
-is_attribute(FieldType type) {
+is_attribute(FieldType type) noexcept {
     return (type == FieldType::ATTRIBUTE) || (type == FieldType::HIDDEN_ATTRIBUTE);
 }
 
