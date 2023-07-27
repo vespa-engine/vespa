@@ -56,8 +56,7 @@ public:
         if (c < 0x80) return 0;
         if (c > 0xC1 && c < 0xE0) return 1;
         if (c > 0xDF && c < 0xF0) return 2;
-        if (c > 0xEF && c < 0xF5) return 3;
-        return -1;
+        return 3;
     }
 
     /**

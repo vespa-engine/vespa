@@ -29,8 +29,6 @@ uint32_t Utf8Reader::getComplexChar(unsigned char firstbyte, uint32_t fallback) 
         return fallback;
     }
     int need = Utf8::numContBytes(firstbyte);
-    assert(need > 0);
-    assert(need < 4);
 
     if (_pos + need > size()) {
         LOG(debug, "incomplete data (first byte %02X, pos=%zu, need=%d, size=%zu) in Utf8Reader data block",
@@ -70,7 +68,6 @@ uint32_t Utf8Reader::getComplexChar(unsigned char firstbyte, uint32_t fallback) 
             return fallback;
         }
     }
-    assert(need == 3);
 
     unsigned char contbyte1 = (*this)[_pos];
     unsigned char contbyte2 = (*this)[_pos+1];
@@ -98,8 +95,6 @@ Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback) noe
         return fallback;
     }
     int need = Utf8::numContBytes(firstbyte);
-    assert(need > 0);
-    assert(need < 4);
 
     if (need == 1) {
         if (_p[0] == 0) {
@@ -141,7 +136,6 @@ Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback) noe
             return fallback;
         }
     }
-    assert(need == 3);
 
     if (_p[0] == 0 || _p[1] == 0 || _p[2] == 0) {
         LOG(debug, "incomplete character (first byte %02X) in Utf8ReaderZTS", firstbyte);
