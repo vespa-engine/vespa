@@ -660,7 +660,7 @@ public class MetricsReporterTest {
     }
 
     private Number getMetric(String name, ApplicationId id) {
-        return metrics.getMetric((dimensions) -> id.tenant().value().equals(dimensions.get("tenant")) &&
+        return metrics.getMetric((dimensions) -> id.tenant().value().equals(dimensions.get("tenantName")) &&
                                                  appDimension(id).equals(dimensions.get("app")),
                                  name)
                       .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + id));
