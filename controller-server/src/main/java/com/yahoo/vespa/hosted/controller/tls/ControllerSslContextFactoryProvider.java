@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.tls;
 
 import com.google.common.collect.Sets;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.http.ssl.impl.TlsContextBasedProvider;
 import com.yahoo.security.KeyStoreBuilder;
@@ -24,7 +23,6 @@ import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -75,18 +73,16 @@ public class ControllerSslContextFactoryProvider extends TlsContextBasedProvider
     record TlsCredentials(List<X509Certificate> certificates, PrivateKey privateKey){}
 
     private static TlsCredentials latestValidCredentials(SecretStore secretStore, TlsConfig tlsConfig) {
-        int version = latestVersionInSecretStore(secretStore, tlsConfig).orElseThrow();
+        int version = latestVersionInSecretStore(secretStore, tlsConfig);
         return new TlsCredentials(certificates(secretStore, tlsConfig, version), privateKey(secretStore, tlsConfig, version));
     }
 
-    private static OptionalInt latestVersionInSecretStore(SecretStore secretStore, TlsConfig tlsConfig) {
-        try {
-            var certVersions = new HashSet<>(secretStore.listSecretVersions(tlsConfig.certificateSecret()));
-            var keyVersions = new HashSet<>(secretStore.listSecretVersions(tlsConfig.privateKeySecret()));
-            return Sets.intersection(certVersions, keyVersions).stream().mapToInt(Integer::intValue).max();
-        } catch (SecretNotFoundException s) {
-            return OptionalInt.empty();
-        }
+    private static int latestVersionInSecretStore(SecretStore secretStore, TlsConfig tlsConfig) {
+        var certVersions = new HashSet<>(secretStore.listSecretVersions(tlsConfig.certificateSecret()));
+        var keyVersions = new HashSet<>(secretStore.listSecretVersions(tlsConfig.privateKeySecret()));
+        return Sets.intersection(certVersions, keyVersions).stream().mapToInt(Integer::intValue).max().orElseThrow(
+                () -> new RuntimeException("No valid certificate versions found in secret store!")
+        );
     }
 
     /** Get private key from secret store **/
