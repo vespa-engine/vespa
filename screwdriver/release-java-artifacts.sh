@@ -71,7 +71,7 @@ rm -f $TMPFILE
 mvn $COMMON_MAVEN_OPTS --file ./maven-plugins/pom.xml -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
 
 # Deploy the rest of the artifacts
-mvn $COMMON_MAVEN_OPTS --threads 8 -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
+mvn -X $COMMON_MAVEN_OPTS --threads 8 -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
 
 # Close with checks
 mvn $COMMON_MAVEN_OPTS -N org.sonatype.plugins:nexus-staging-maven-plugin:1.6.12:rc-close -DnexusUrl=https://oss.sonatype.org/ -DserverId=ossrh -DstagingRepositoryId=$STG_REPO
