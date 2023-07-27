@@ -2,7 +2,7 @@
 <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <deployment version='1.0'>
   <test/>
-  <prod global-service-id='mydisc'>
-    <region active='true'>us-east</region>
+  <prod>
+    <region>us-east</region>
   </prod>
 </deployment>

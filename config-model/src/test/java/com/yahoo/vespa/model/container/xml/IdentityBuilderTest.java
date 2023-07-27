@@ -24,7 +24,7 @@ public class IdentityBuilderTest extends ContainerModelBuilderTestBase {
         String deploymentXml = "<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
                 "    <test/>\n" +
                 "    <prod>\n" +
-                "        <region active='true'>default</region>\n" +
+                "        <region>default</region>\n" +
                 "    </prod>\n" +
                 "</deployment>\n";
 

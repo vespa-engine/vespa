@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterMembership;
@@ -102,8 +101,6 @@ public class ZKApplicationPackageTest {
         assertEquals(dockerImage, readInfo.getHosts().iterator().next().dockerImageRepo().get().asString());
         assertTrue(zkApp.getDeployment().isPresent());
         assertFalse(zkApp.getDeploymentSpec().isEmpty());
-        assertEquals("mydisc", DeploymentSpec.fromXml(zkApp.getDeployment().get()).requireInstance("default").globalServiceId().get());
-        assertEquals("mydisc", zkApp.getDeploymentSpec().requireInstance("default").globalServiceId().get());
     }
 
     private void feed(com.yahoo.vespa.curator.Curator zk, File dirToFeed) throws IOException {

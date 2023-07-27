@@ -122,7 +122,6 @@ Perf = element perf {
 }
 
 Prod = element prod {
-   attribute global-service-id { text }? &
    attribute athenz-service { xsd:string }? &
    attribute tester-flavor { xsd:string }? &
    attribute cloud-account { xsd:string }? &

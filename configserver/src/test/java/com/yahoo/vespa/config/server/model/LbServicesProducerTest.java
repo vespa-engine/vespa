@@ -22,8 +22,6 @@ import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -36,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.RoutingMethod.Enum.sharedLayer4;
 import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.Scope.Enum.application;
@@ -46,12 +43,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeFalse;
 
 /**
  * @author Ulf Lilleengen
  */
-@RunWith(Parameterized.class)
 public class LbServicesProducerTest {
 
     private static final Set<ContainerEndpoint> endpoints = Set.of(
@@ -61,16 +56,6 @@ public class LbServicesProducerTest {
     private static final List<String> zoneDnsSuffixes = List.of(".endpoint1.suffix", ".endpoint2.suffix");
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
-    private final boolean useGlobalServiceId;
-
-    @Parameterized.Parameters
-    public static Object[] useGlobalServiceId() {
-        return new Object[] { true, false };
-    }
-
-    public LbServicesProducerTest(boolean useGlobalServiceId) {
-        this.useGlobalServiceId = useGlobalServiceId;
-    }
 
     @Test
     public void testDeterministicGetConfig() {
@@ -88,17 +73,9 @@ public class LbServicesProducerTest {
 
     @Test
     public void testConfigActiveRotation() {
-        {
-            RegionName regionName = RegionName.from("us-east-1");
-            LbServicesConfig conf = createModelAndGetLbServicesConfig(regionName);
-            assertTrue(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").activeRotation());
-        }
-
-        {
-            RegionName regionName = RegionName.from("us-east-2");
-            LbServicesConfig conf = createModelAndGetLbServicesConfig(regionName);
-            assertFalse(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").activeRotation());
-        }
+        RegionName regionName = RegionName.from("us-east-1");
+        LbServicesConfig conf = createModelAndGetLbServicesConfig(regionName);
+        assertTrue(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").activeRotation());
     }
 
     private LbServicesConfig createModelAndGetLbServicesConfig(RegionName regionName) {
@@ -116,8 +93,6 @@ public class LbServicesProducerTest {
 
     @Test
     public void testConfigAliasesWithEndpoints() {
-        assumeFalse(useGlobalServiceId);
-
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder()
                 .endpoints(endpoints)
                 .properties(new TestProperties().setHostedVespa(true)));
@@ -150,8 +125,6 @@ public class LbServicesProducerTest {
 
     @Test
     public void testRoutingConfigForTesterApplication() {
-        assumeFalse(useGlobalServiceId);
-
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder());
 
         // No config for tester application
@@ -227,32 +200,17 @@ public class LbServicesProducerTest {
                           "  </container>" +
                           "</services>";
 
-        String deploymentInfo;
-
-        if (useGlobalServiceId) {
-            deploymentInfo ="<?xml version='1.0' encoding='UTF-8'?>" +
-                    "<deployment version='1.0'>" +
-                    "  <test />" +
-                    "  <prod global-service-id='mydisc'>" +
-                    "    <region active='true'>us-east-1</region>" +
-                    "    <region active='false'>us-east-2</region>" +
-                    "  </prod>" +
-                    "</deployment>";
-        } else {
-            deploymentInfo ="<?xml version='1.0' encoding='UTF-8'?>" +
-                    "<deployment version='1.0'>" +
-                    "  <test />" +
-                    "  <prod>" +
-                    "    <region active='true'>us-east-1</region>" +
-                    "    <region active='false'>us-east-2</region>" +
-                    "  </prod>" +
-                    "  <endpoints>" +
-                    "    <endpoint container-id='mydisc' />" +
-                    "  </endpoints>" +
-                    "</deployment>";
-        }
-
-
+        String deploymentInfo = "<?xml version='1.0' encoding='UTF-8'?>" +
+                                "<deployment version='1.0'>" +
+                                "  <test />" +
+                                "  <prod>" +
+                                "    <region>us-east-1</region>" +
+                                "    <region>us-east-2</region>" +
+                                "  </prod>" +
+                                "  <endpoints>" +
+                                "    <endpoint container-id='mydisc' />" +
+                                "  </endpoints>" +
+                                "</deployment>";
         return new MockApplicationPackage.Builder().withServices(services).withDeploymentSpec(deploymentInfo).build();
     }
 
