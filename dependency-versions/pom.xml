@@ -6,6 +6,7 @@
     <artifactId>dependency-versions</artifactId>
     <packaging>pom</packaging>
     <version>8-SNAPSHOT</version>
+    <name>dependency-versions</name>
     <description>Version properties for (almost) all Vespa dependencies.</description>
     <url>https://github.com/vespa-engine</url>
 
