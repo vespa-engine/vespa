@@ -62,10 +62,18 @@ index e2bdc987354..72af951d965 100644
  
  </project>
 diff --git a/dependency-versions/pom.xml b/dependency-versions/pom.xml
-index 088356dd685..81bd836dc28 100644
+index 088356dd685..f91ebab5c5d 100644
 --- a/dependency-versions/pom.xml
 +++ b/dependency-versions/pom.xml
-@@ -28,7 +28,6 @@
+@@ -6,6 +6,7 @@
+     <artifactId>dependency-versions</artifactId>
+     <packaging>pom</packaging>
+     <version>8-SNAPSHOT</version>
++    <name>dependency-versions</name>
+     <description>Version properties for (almost) all Vespa dependencies.</description>
+     <url>https://github.com/vespa-engine</url>
+ 
+@@ -28,7 +29,6 @@
      </scm>
  
      <properties>
@@ -73,7 +81,7 @@ index 088356dd685..81bd836dc28 100644
          <!-- BEGIN Dependencies available from the Jdisc container, see container-dependency-versions/pom.xml -->
  
          <!-- DO NOT UPGRADE THESE TO A NEW MAJOR VERSION WITHOUT CHECKING FOR BINARY COMPATIBILITY -->
-@@ -139,4 +138,58 @@
+@@ -139,4 +139,58 @@
          <versions-maven-plugin.vespa.version>2.8.1</versions-maven-plugin.vespa.version>
      </properties>
  
@@ -132,3 +140,142 @@ index 088356dd685..81bd836dc28 100644
 +        </profile>
 +    </profiles>
  </project>
+diff --git a/screwdriver/move-ossrh-deploy-profile.patch b/screwdriver/move-ossrh-deploy-profile.patch
+index 5ac9c85eeb3..c2757c69ab9 100644
+--- a/screwdriver/move-ossrh-deploy-profile.patch
++++ b/screwdriver/move-ossrh-deploy-profile.patch
+@@ -1,134 +0,0 @@
+-diff --git a/container-dependency-versions/pom.xml b/container-dependency-versions/pom.xml
+-index e2bdc987354..72af951d965 100644
+---- a/container-dependency-versions/pom.xml
+-+++ b/container-dependency-versions/pom.xml
+-@@ -189,58 +189,6 @@
+-                 </plugins>
+-             </build>
+-         </profile>
+--        <profile>
+--            <id>ossrh-deploy-vespa</id>
+--            <activation>
+--                <activeByDefault>false</activeByDefault>
+--            </activation>
+--            <properties>
+--            </properties>
+--            <build>
+--                <plugins>
+--                    <plugin>
+--                        <groupId>org.apache.maven.plugins</groupId>
+--                        <artifactId>maven-gpg-plugin</artifactId>
+--                        <version>${maven.gpg.plugin.version}</version>
+--                        <executions>
+--                            <execution>
+--                                <id>sign-artifacts</id>
+--                                <phase>verify</phase>
+--                                <goals>
+--                                    <goal>sign</goal>
+--                                </goals>
+--                                <configuration>
+--                                    <gpgArguments>
+--                                        <arg>--pinentry-mode</arg>
+--                                        <arg>loopback</arg>
+--                                    </gpgArguments>
+--                                </configuration>
+--                            </execution>
+--                        </executions>
+--                    </plugin>
+--                    <plugin>
+--                        <groupId>org.sonatype.plugins</groupId>
+--                        <artifactId>nexus-staging-maven-plugin</artifactId>
+--                        <version>${nexus.staging.maven.plugin.version}</version>
+--                        <extensions>true</extensions>
+--                        <configuration>
+--                            <serverId>ossrh</serverId>
+--                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+--                        </configuration>
+--                    </plugin>
+--                </plugins>
+--            </build>
+--            <distributionManagement>
+--                <snapshotRepository>
+--                    <id>ossrh</id>
+--                    <url>${snapshotDeploymentRepository}</url>
+--                </snapshotRepository>
+--                <repository>
+--                    <id>ossrh</id>
+--                    <url>${releaseDeploymentRepository}</url>
+--                </repository>
+--            </distributionManagement>
+--        </profile>
+-     </profiles>
+- 
+- </project>
+-diff --git a/dependency-versions/pom.xml b/dependency-versions/pom.xml
+-index 088356dd685..81bd836dc28 100644
+---- a/dependency-versions/pom.xml
+-+++ b/dependency-versions/pom.xml
+-@@ -28,7 +28,6 @@
+-     </scm>
+- 
+-     <properties>
+--        
+-         <!-- BEGIN Dependencies available from the Jdisc container, see container-dependency-versions/pom.xml -->
+- 
+-         <!-- DO NOT UPGRADE THESE TO A NEW MAJOR VERSION WITHOUT CHECKING FOR BINARY COMPATIBILITY -->
+-@@ -139,4 +138,58 @@
+-         <versions-maven-plugin.vespa.version>2.8.1</versions-maven-plugin.vespa.version>
+-     </properties>
+- 
+-+    <profiles>
+-+        <profile>
+-+            <id>ossrh-deploy-vespa</id>
+-+            <activation>
+-+                <activeByDefault>false</activeByDefault>
+-+            </activation>
+-+            <properties>
+-+            </properties>
+-+            <build>
+-+                <plugins>
+-+                    <plugin>
+-+                        <groupId>org.apache.maven.plugins</groupId>
+-+                        <artifactId>maven-gpg-plugin</artifactId>
+-+                        <version>${maven.gpg.plugin.version}</version>
+-+                        <executions>
+-+                            <execution>
+-+                                <id>sign-artifacts</id>
+-+                                <phase>verify</phase>
+-+                                <goals>
+-+                                    <goal>sign</goal>
+-+                                </goals>
+-+                                <configuration>
+-+                                    <gpgArguments>
+-+                                        <arg>--pinentry-mode</arg>
+-+                                        <arg>loopback</arg>
+-+                                    </gpgArguments>
+-+                                </configuration>
+-+                            </execution>
+-+                        </executions>
+-+                    </plugin>
+-+                    <plugin>
+-+                        <groupId>org.sonatype.plugins</groupId>
+-+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+-+                        <version>${nexus.staging.maven.plugin.version}</version>
+-+                        <extensions>true</extensions>
+-+                        <configuration>
+-+                            <serverId>ossrh</serverId>
+-+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+-+                        </configuration>
+-+                    </plugin>
+-+                </plugins>
+-+            </build>
+-+            <distributionManagement>
+-+                <snapshotRepository>
+-+                    <id>ossrh</id>
+-+                    <url>${snapshotDeploymentRepository}</url>
+-+                </snapshotRepository>
+-+                <repository>
+-+                    <id>ossrh</id>
+-+                    <url>${releaseDeploymentRepository}</url>
+-+                </repository>
+-+            </distributionManagement>
+-+        </profile>
+-+    </profiles>
+- </project>
