@@ -50,22 +50,20 @@ public:
 
         virtual ~Field();
 
-        virtual void
-        write(vespalib::asciistream & os,
-              vespalib::stringref prefix) const;
+        virtual void write(vespalib::asciistream & os, vespalib::stringref prefix) const;
 
-        const vespalib::string &getName() const { return _name; }
-        DataType getDataType() const { return _dataType; }
-        CollectionType getCollectionType() const { return _collectionType; }
-        const vespalib::string& get_tensor_spec() const { return _tensor_spec; }
+        const vespalib::string &getName() const noexcept { return _name; }
+        DataType getDataType() const noexcept { return _dataType; }
+        CollectionType getCollectionType() const noexcept { return _collectionType; }
+        const vespalib::string& get_tensor_spec() const noexcept { return _tensor_spec; }
 
-        bool matchingTypes(const Field &rhs) const {
+        bool matchingTypes(const Field &rhs) const noexcept {
             return getDataType() == rhs.getDataType() &&
              getCollectionType() == rhs.getCollectionType();
         }
 
-        bool operator==(const Field &rhs) const;
-        bool operator!=(const Field &rhs) const;
+        bool operator==(const Field &rhs) const noexcept;
+        bool operator!=(const Field &rhs) const noexcept;
     };
 
 
@@ -91,8 +89,8 @@ public:
          **/
         explicit IndexField(const config::StringVector &lines);
 
-        IndexField &setAvgElemLen(uint32_t avgElemLen) { _avgElemLen = avgElemLen; return *this; }
-        IndexField &set_interleaved_features(bool value) {
+        IndexField &setAvgElemLen(uint32_t avgElemLen) noexcept { _avgElemLen = avgElemLen; return *this; }
+        IndexField &set_interleaved_features(bool value) noexcept {
             _interleaved_features = value;
             return *this;
         }
@@ -100,11 +98,11 @@ public:
         void write(vespalib::asciistream &os,
                    vespalib::stringref prefix) const override;
 
-        uint32_t getAvgElemLen() const { return _avgElemLen; }
-        bool use_interleaved_features() const { return _interleaved_features; }
+        uint32_t getAvgElemLen() const noexcept { return _avgElemLen; }
+        bool use_interleaved_features() const noexcept { return _interleaved_features; }
 
-        bool operator==(const IndexField &rhs) const;
-        bool operator!=(const IndexField &rhs) const;
+        bool operator==(const IndexField &rhs) const noexcept;
+        bool operator!=(const IndexField &rhs) const noexcept;
     };
 
     using AttributeField = Field;
@@ -120,7 +118,7 @@ public:
         std::vector<vespalib::string> _fields;
 
     public:
-        explicit FieldSet(vespalib::stringref n) : _name(n), _fields() {}
+        explicit FieldSet(vespalib::stringref n) noexcept : _name(n), _fields() {}
         FieldSet(const FieldSet &);
         FieldSet & operator =(const FieldSet &);
         FieldSet(FieldSet &&) noexcept = default;
@@ -138,13 +136,11 @@ public:
             return *this;
         }
 
-        const vespalib::string &getName() const { return _name; }
-        const std::vector<vespalib::string> &getFields() const {
-            return _fields;
-        }
+        const vespalib::string &getName() const noexcept { return _name; }
+        const std::vector<vespalib::string> &getFields() const noexcept { return _fields; }
 
-        bool operator==(const FieldSet &rhs) const;
-        bool operator!=(const FieldSet &rhs) const;
+        bool operator==(const FieldSet &rhs) const noexcept;
+        bool operator!=(const FieldSet &rhs) const noexcept;
     };
 
     static const uint32_t UNKNOWN_FIELD_ID;
@@ -179,8 +175,7 @@ public:
      * @param fileName the name of the file.
      * @return true if the schema could be loaded.
      **/
-    bool
-    loadFromFile(const vespalib::string & fileName);
+    bool loadFromFile(const vespalib::string & fileName);
 
     /**
      * Save this schema to the file with the given name.
@@ -188,8 +183,7 @@ public:
      * @param fileName the name of the file.
      * @return true if the schema could be saved.
      **/
-    bool
-    saveToFile(const vespalib::string & fileName) const;
+    bool saveToFile(const vespalib::string & fileName) const;
 
     vespalib::string toString() const;
 
@@ -198,28 +192,24 @@ public:
      *
      * @param field the field to add
      **/
-    Schema &
-    addIndexField(const IndexField &field);
+    Schema & addIndexField(const IndexField &field);
 
     // Only used by tests.
-    Schema &
-    addUriIndexFields(const IndexField &field);
+    Schema & addUriIndexFields(const IndexField &field);
 
     /**
      * Add an attribute field to this schema
      *
      * @param field the field to add
      **/
-    Schema &
-    addAttributeField(const AttributeField &field);
+    Schema & addAttributeField(const AttributeField &field);
 
     /**
      * Add a field set to this schema.
      *
      * @param collection the field set to add.
      **/
-    Schema &
-    addFieldSet(const FieldSet &collection);
+    Schema & addFieldSet(const FieldSet &collection);
 
     Schema &addImportedAttributeField(const ImportedAttributeField &field);
 
@@ -228,23 +218,23 @@ public:
      *
      * @return number of fields
      **/
-    uint32_t getNumIndexFields() const { return _indexFields.size(); }
+    uint32_t getNumIndexFields() const noexcept { return _indexFields.size(); }
 
     /**
      * Obtain the number of attribute fields in this schema.
      *
      * @return number of fields
      **/
-    uint32_t getNumAttributeFields() const { return _attributeFields.size(); }
+    uint32_t getNumAttributeFields() const noexcept { return _attributeFields.size(); }
 
     /**
      * Obtain the number of field sets in this schema.
      *
      * @return number of field sets.
      **/
-    uint32_t getNumFieldSets() const { return _fieldSets.size(); }
+    uint32_t getNumFieldSets() const noexcept { return _fieldSets.size(); }
 
-    size_t getNumImportedAttributeFields() const { return _importedAttributeFields.size(); }
+    size_t getNumImportedAttributeFields() const noexcept { return _importedAttributeFields.size(); }
 
     /**
      * Get information about a specific index field using the given fieldId.
@@ -252,18 +242,12 @@ public:
      * @return the field
      * @param idx an index in the range [0, size - 1].
      **/
-    const IndexField &
-    getIndexField(uint32_t fieldId) const
-    {
-        return _indexFields[fieldId];
-    }
+    const IndexField & getIndexField(uint32_t fieldId) const noexcept { return _indexFields[fieldId]; }
 
     /**
      * Returns const view of the index fields.
      */
-    const std::vector<IndexField> &getIndexFields() const {
-        return _indexFields;
-    }
+    const std::vector<IndexField> &getIndexFields() const noexcept { return _indexFields; }
 
     /**
      * Get the field id for the index field with the given name.
@@ -271,7 +255,7 @@ public:
      * @return the field id or UNKNOWN_FIELD_ID if not found.
      * @param name the name of the field.
      **/
-    uint32_t getIndexFieldId(vespalib::stringref name) const;
+    uint32_t getIndexFieldId(vespalib::stringref name) const noexcept;
 
     /**
      * Check if a field is an index
@@ -279,7 +263,7 @@ public:
      * @return true if field is an index field.
      * @param name the name of the field.
      **/
-    bool isIndexField(vespalib::stringref name) const;
+    bool isIndexField(vespalib::stringref name) const noexcept;
 
     /**
      * Check if a field is a attribute field
@@ -287,7 +271,7 @@ public:
      * @return true if field is an attribute field.
      * @param name the name of the field.
      **/
-    bool isAttributeField(vespalib::stringref name) const;
+    bool isAttributeField(vespalib::stringref name) const noexcept;
 
     /**
      * Get information about a specific attribute field using the given fieldId.
@@ -295,18 +279,12 @@ public:
      * @return the field
      * @param idx an index in the range [0, size - 1].
      **/
-    const AttributeField &
-    getAttributeField(uint32_t fieldId) const
-    {
-        return _attributeFields[fieldId];
-    }
+    const AttributeField & getAttributeField(uint32_t fieldId) const noexcept { return _attributeFields[fieldId]; }
 
     /**
      * Returns const view of the attribute fields.
      */
-    const std::vector<AttributeField> &getAttributeFields() const {
-        return _attributeFields;
-    }
+    const std::vector<AttributeField> &getAttributeFields() const noexcept { return _attributeFields; }
 
     /**
      * Get the field id for the attribute field with the given name.
@@ -314,7 +292,7 @@ public:
      * @return the field id or UNKNOWN_FIELD_ID if not found.
      * @param name the name of the field.
      **/
-    uint32_t getAttributeFieldId(vespalib::stringref name) const;
+    uint32_t getAttributeFieldId(vespalib::stringref name) const noexcept;
 
     /**
      * Get information about a specific field set
@@ -322,11 +300,7 @@ public:
      * @return the field set.
      * @param idx an index in the range [0, size - 1].
      **/
-    const FieldSet &
-    getFieldSet(uint32_t idx) const
-    {
-        return _fieldSets[idx];
-    }
+    const FieldSet & getFieldSet(uint32_t idx) const noexcept { return _fieldSets[idx]; }
 
     /**
      * Get the field id for the field set with the given name.
@@ -334,10 +308,9 @@ public:
      * @return the field id or UNKNOWN_FIELD_ID if not found.
      * @param name the name of the field set.
      **/
-    uint32_t
-    getFieldSetId(vespalib::stringref name) const;
+    uint32_t getFieldSetId(vespalib::stringref name) const noexcept;
 
-    const std::vector<ImportedAttributeField> &getImportedAttributeFields() const {
+    const std::vector<ImportedAttributeField> &getImportedAttributeFields() const noexcept {
         return _importedAttributeFields;
     }
 
@@ -348,10 +321,10 @@ public:
     static Schema::UP make_union(const Schema &lhs, const Schema &rhs);
     static Schema::UP set_difference(const Schema &lhs, const Schema &rhs);
 
-    bool operator==(const Schema &rhs) const;
-    bool operator!=(const Schema &rhs) const;
+    bool operator==(const Schema &rhs) const noexcept ;
+    bool operator!=(const Schema &rhs) const noexcept;
 
-    bool empty() const;
+    bool empty() const noexcept;
 };
 
 }

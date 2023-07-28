@@ -21,14 +21,20 @@ public:
     /**
      * Side-cast copy constructor.
      **/
-    SimpleTermFieldData(const ITermFieldData &rhs);
+    SimpleTermFieldData(const ITermFieldData &rhs) noexcept
+        : ITermFieldData(rhs),
+          _handle(rhs.getHandle())
+    {}
 
     /**
      * Create a new instance for the given field.
      *
      * @param fieldId the field being searched
      **/
-    SimpleTermFieldData(uint32_t fieldId);
+    SimpleTermFieldData(uint32_t fieldId) noexcept
+        : ITermFieldData(fieldId),
+          _handle(IllegalHandle)
+    {}
 
     using ITermFieldData::getHandle;
 
@@ -40,7 +46,7 @@ public:
     /**
      * Sets the match handle for this field.
      **/
-    SimpleTermFieldData &setHandle(TermFieldHandle handle) {
+    SimpleTermFieldData &setHandle(TermFieldHandle handle) noexcept {
         _handle = handle;
         return *this;
     }

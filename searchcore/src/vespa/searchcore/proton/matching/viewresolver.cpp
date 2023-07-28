@@ -31,8 +31,7 @@ ViewResolver::createFromSchema(const search::index::Schema &schema)
 {
     ViewResolver resolver;
     for (uint32_t i = 0; i < schema.getNumFieldSets(); ++i) {
-        const search::index::Schema::FieldSet
-            &f = schema.getFieldSet(i);
+        const search::index::Schema::FieldSet &f = schema.getFieldSet(i);
         const vespalib::string &view = f.getName();
         const std::vector<vespalib::string> &fields = f.getFields();
         for (uint32_t j = 0; j < fields.size(); ++j) {
