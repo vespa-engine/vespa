@@ -57,7 +57,7 @@ class UriBindingsValidator extends Validator {
         if (binding instanceof SystemBindingPattern) return;
 
         // Allow binding to port if we are restricting data plane bindings
-        if (!binding.matchesAnyPort() && !deployState.featureFlags().useRestrictedDataPlaneBindings()) {
+        if (!binding.matchesAnyPort()) {
                 throw new IllegalArgumentException(createErrorMessage(binding, "binding with port is not allowed"));
         }
         if (!binding.host().equals(BindingPattern.WILDCARD_PATTERN)) {

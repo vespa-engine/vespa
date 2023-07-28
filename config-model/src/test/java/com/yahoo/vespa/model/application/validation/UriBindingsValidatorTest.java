@@ -59,7 +59,7 @@ public class UriBindingsValidatorTest {
 
     @Test
     void allows_portbinding_when_restricting_data_plane() throws IOException, SAXException {
-        runUriBindingValidator(new TestProperties().setHostedVespa(true).setUseRestrictedDataPlaneBindings(true), createServicesXmlWithHandler("http://*:4443/my-handler"));
+        runUriBindingValidator(new TestProperties().setHostedVespa(true), createServicesXmlWithHandler("http://*:4443/my-handler"));
     }
 
     @Test
