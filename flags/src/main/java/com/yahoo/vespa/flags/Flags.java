@@ -450,6 +450,12 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID);
 
+    public static final UnboundBooleanFlag USE_VESPA_USER_EVERYWHERE = defineFeatureFlag(
+            "use-vespa-user-everywhere", false,
+            List.of("aressem"), "2023-07-28", "2023-09-01",
+            "Use the vespa user for running Vespa everywhere",
+            "Takes effect immediately");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
