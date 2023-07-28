@@ -32,6 +32,7 @@ public:
     const fef::TermFieldMatchData *resolve(const fef::MatchData &md) const;
     uint32_t getFieldId() const noexcept { return _fieldId & 0xffffff; }
     fef::TermFieldHandle getHandle() const noexcept { return _handle; }
+    void setHandle(fef::TermFieldHandle handle) { _handle = handle; }
     /// a filter produces less detailed match data
     bool isFilter() const noexcept { return _fieldId & 0x1000000; }
 private:
@@ -48,7 +49,6 @@ public:
     FieldSpec(const vespalib::string & name, uint32_t fieldId, fef::TermFieldHandle handle) noexcept;
     FieldSpec(const vespalib::string & name, uint32_t fieldId,
               fef::TermFieldHandle handle, bool isFilter_) noexcept;
-    FieldSpec(const vespalib::string & name, FieldSpecBase base) noexcept;
     ~FieldSpec();
 
     void setBase(FieldSpecBase base) noexcept {
