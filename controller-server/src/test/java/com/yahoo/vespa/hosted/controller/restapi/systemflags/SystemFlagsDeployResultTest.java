@@ -20,9 +20,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author bjorncs
  */
 public class SystemFlagsDeployResultTest {
+    private final ZoneApiMock prodUsWest1Zone = ZoneApiMock.fromId("prod.us-west-1");
+    private final ZoneRegistryMock registry = new ZoneRegistryMock(SystemName.cd).setZones(prodUsWest1Zone);
+
     @Test
     void changes_and_errors_are_present_in_wire_format() {
-        FlagsTarget controllerTarget = FlagsTarget.forController(SystemName.cd);
+        FlagsTarget controllerTarget = FlagsTarget.forController(registry.systemZone());
         FlagId flagOne = new FlagId("flagone");
         FlagId flagTwo = new FlagId("flagtwo");
         SystemFlagsDeployResult result = new SystemFlagsDeployResult(
@@ -41,10 +44,8 @@ public class SystemFlagsDeployResultTest {
 
     @Test
     void identical_errors_and_changes_from_multiple_targets_are_merged() {
-        ZoneApiMock prodUsWest1Zone = ZoneApiMock.fromId("prod.us-west-1");
-        ZoneRegistryMock registry = new ZoneRegistryMock(SystemName.cd).setZones(prodUsWest1Zone);
-        FlagsTarget prodUsWest1Target = FlagsTarget.forConfigServer(registry, prodUsWest1Zone.getId());
-        FlagsTarget controllerTarget = FlagsTarget.forController(SystemName.cd);
+        FlagsTarget prodUsWest1Target = FlagsTarget.forConfigServer(registry, prodUsWest1Zone);
+        FlagsTarget controllerTarget = FlagsTarget.forController(registry.systemZone());
 
         FlagId flagOne = new FlagId("flagone");
         FlagId flagTwo = new FlagId("flagtwo");
