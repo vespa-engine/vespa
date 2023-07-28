@@ -30,6 +30,10 @@ git clone https://github.com/vespa-engine/vespa.git $VESPA_DIR
 cd $VESPA_DIR
 git checkout $VESPA_REF
 
+#TODO(aressem): Remove after validation
+patch -p1 < $SD_SOURCE_DIR/screwdriver/move-ossrh-deploy-profile.patch
+
+
 mkdir -p $SD_SOURCE_DIR/screwdriver/deploy
 # gpg-agent in RHEL 8 runs out of memory if we use Maven and sign in parallel. Add option to overcome this.
 echo "auto-expand-secmem" >> $SD_SOURCE_DIR/screwdriver/deploy/gpg-agent.conf
@@ -59,9 +63,9 @@ export VESPA_MAVEN_EXTRA_OPTS="--show-version --batch-mode"
 export FACTORY_VESPA_VERSION=$VESPA_RELEASE
 ./bootstrap.sh
 
-COMMON_MAVEN_OPTS="-X $VESPA_MAVEN_EXTRA_OPTS --no-snapshot-updates --settings $(pwd)/screwdriver/settings-publish.xml --activate-profiles ossrh-deploy-vespa -DskipTests"
+COMMON_MAVEN_OPTS="$VESPA_MAVEN_EXTRA_OPTS --no-snapshot-updates --settings $(pwd)/screwdriver/settings-publish.xml --activate-profiles ossrh-deploy-vespa -DskipTests"
 TMPFILE=$(mktemp)
-mvn $COMMON_MAVEN_OPTS  -pl :container-dependency-versions -DskipStagingRepositoryClose=true deploy 2>&1 | tee $TMPFILE
+mvn -X $COMMON_MAVEN_OPTS  -pl :dependency-versions -DskipStagingRepositoryClose=true deploy 2>&1 | tee $TMPFILE
 
 # Find the stage repo name
 STG_REPO=$(cat $TMPFILE | grep 'Staging repository at http' | head -1 | awk -F/ '{print $NF}')
