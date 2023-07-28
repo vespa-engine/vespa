@@ -288,7 +288,6 @@ public:
     bool getIsFilter() const override final;
     bool getIsFastSearch() const override final;
     bool isMutable() const;
-    bool getEnableOnlyBitVector() const;
 
     const Config &getConfig() const noexcept { return *_config; }
     void update_config(const Config& cfg);
@@ -320,8 +319,8 @@ public:
 
     AddressSpaceUsage getAddressSpaceUsage() const;
 
-    BasicType::Type getBasicType() const override final { return getInternalBasicType().type(); }
-    CollectionType::Type getCollectionType() const override final { return getInternalCollectionType().type(); }
+    BasicType::Type getBasicType() const override final;
+    CollectionType::Type getCollectionType() const override final;
     uint32_t getCommittedDocIdLimit() const override final { return _committedDocIdLimit.load(std::memory_order_acquire); }
     bool isImported() const override;
 

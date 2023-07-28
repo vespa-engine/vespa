@@ -2,8 +2,8 @@
 <deployment version="1.0">
   <test/>
   <staging/>
-  <prod global-service-id="query">
-    <region active="true">us-east-3</region>
-    <region active="false">us-west-1</region>
+  <prod>
+    <region>us-east-3</region>
+    <region>us-west-1</region>
   </prod>
 </deployment>

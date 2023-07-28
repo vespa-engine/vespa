@@ -25,13 +25,13 @@ public:
             : name(name_in), size(npos) {}
         Dimension(const vespalib::string &name_in, size_type size_in) noexcept
             : name(name_in), size(size_in) {}
-        bool operator==(const Dimension &rhs) const {
+        bool operator==(const Dimension &rhs) const noexcept {
             return ((name == rhs.name) && (size == rhs.size));
         }
-        bool operator!=(const Dimension &rhs) const { return !(*this == rhs); }
-        bool is_mapped() const { return (size == npos); }
-        bool is_indexed() const { return (size != npos); }
-        bool is_trivial() const { return (size == 1); }
+        bool operator!=(const Dimension &rhs) const noexcept { return !(*this == rhs); }
+        bool is_mapped() const noexcept { return (size == npos); }
+        bool is_indexed() const noexcept { return (size != npos); }
+        bool is_trivial() const noexcept { return (size == 1); }
     };
 
 private:
@@ -39,10 +39,10 @@ private:
     CellType               _cell_type;
     std::vector<Dimension> _dimensions;
 
-    ValueType()
+    ValueType() noexcept
         : _error(true), _cell_type(CellType::DOUBLE), _dimensions() {}
 
-    ValueType(CellType cell_type_in, std::vector<Dimension> &&dimensions_in)
+    ValueType(CellType cell_type_in, std::vector<Dimension> &&dimensions_in) noexcept
         : _error(false), _cell_type(cell_type_in), _dimensions(std::move(dimensions_in)) {}
 
     static ValueType error_if(bool has_error, ValueType else_type);
@@ -57,7 +57,7 @@ public:
     CellMeta cell_meta() const { return {_cell_type, is_double()}; }
     bool is_error() const { return _error; }
     bool is_double() const;
-    bool has_dimensions() const { return !_dimensions.empty(); }
+    bool has_dimensions() const noexcept { return !_dimensions.empty(); }
     bool is_sparse() const;
     bool is_dense() const;
     bool is_mixed() const;
@@ -70,12 +70,12 @@ public:
     std::vector<Dimension> mapped_dimensions() const;
     size_t dimension_index(const vespalib::string &name) const;
     std::vector<vespalib::string> dimension_names() const;
-    bool operator==(const ValueType &rhs) const {
+    bool operator==(const ValueType &rhs) const noexcept {
         return ((_error == rhs._error) &&
                 (_cell_type == rhs._cell_type) &&
                 (_dimensions == rhs._dimensions));
     }
-    bool operator!=(const ValueType &rhs) const { return !(*this == rhs); }
+    bool operator!=(const ValueType &rhs) const noexcept { return !(*this == rhs); }
 
     ValueType map() const;
     ValueType reduce(const std::vector<vespalib::string> &dimensions_in) const;

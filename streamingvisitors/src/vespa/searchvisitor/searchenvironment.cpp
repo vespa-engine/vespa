@@ -11,6 +11,7 @@
 #include <vespa/searchlib/fef/ranking_assets_repo.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/fastlib/text/normwordfolder.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -108,6 +109,7 @@ SearchEnvironment::Env::~Env()
 SearchEnvironment::SearchEnvironment(const config::ConfigUri & configUri, FNET_Transport* transport, const vespalib::string& file_distributor_connection_spec)
     : VisitorEnvironment(),
       _envMap(),
+      _wordFolder(std::make_unique<Fast_NormalizeWordFolder>()),
       _configUri(configUri),
       _transport(transport),
       _file_distributor_connection_spec(file_distributor_connection_spec)
@@ -137,7 +139,7 @@ SearchEnvironment::getEnv(const vespalib::string & searchCluster)
         auto found = _envMap.find(searchCluster);
         if (found == _envMap.end()) {
             LOG(debug, "Init VSMAdapter with config id = '%s'", searchCluster.c_str());
-            Env::SP env = std::make_shared<Env>(searchClusterUri, _wordFolder, _transport, _file_distributor_connection_spec);
+            Env::SP env = std::make_shared<Env>(searchClusterUri, *_wordFolder, _transport, _file_distributor_connection_spec);
             _envMap[searchCluster] = std::move(env);
             found = _envMap.find(searchCluster);
         }

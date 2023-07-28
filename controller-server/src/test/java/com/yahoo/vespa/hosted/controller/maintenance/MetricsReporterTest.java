@@ -275,7 +275,7 @@ public class MetricsReporterTest {
     void name_service_queue_size_metric() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .globalServiceId("default")
+                .endpoint("default", "foo")
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
@@ -660,7 +660,7 @@ public class MetricsReporterTest {
     }
 
     private Number getMetric(String name, ApplicationId id) {
-        return metrics.getMetric((dimensions) -> id.tenant().value().equals(dimensions.get("tenant")) &&
+        return metrics.getMetric((dimensions) -> id.tenant().value().equals(dimensions.get("tenantName")) &&
                                                  appDimension(id).equals(dimensions.get("app")),
                                  name)
                       .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + id));

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
-import ai.vespa.validation.Validation;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
@@ -58,7 +57,6 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final int maxRisk;
     private final int maxIdleHours;
     private final List<DeploymentSpec.ChangeBlocker> changeBlockers;
-    private final Optional<String> globalServiceId;
     private final Optional<AthenzService> athenzService;
     private final Map<CloudName, CloudAccount> cloudAccounts;
     private final Optional<Duration> hostTTL;
@@ -76,7 +74,6 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   DeploymentSpec.UpgradeRollout upgradeRollout,
                                   int minRisk, int maxRisk, int maxIdleHours,
                                   List<DeploymentSpec.ChangeBlocker> changeBlockers,
-                                  Optional<String> globalServiceId,
                                   Optional<AthenzService> athenzService,
                                   Map<CloudName, CloudAccount> cloudAccounts,
                                   Optional<Duration> hostTTL,
@@ -100,7 +97,6 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.maxRisk = require(maxRisk >= minRisk, maxRisk, "maximum risk cannot be less than minimum risk score");
         this.maxIdleHours = requireInRange(maxIdleHours, "maximum idle hours", 0, 168);
         this.changeBlockers = Objects.requireNonNull(changeBlockers);
-        this.globalServiceId = Objects.requireNonNull(globalServiceId);
         this.athenzService = Objects.requireNonNull(athenzService);
         this.cloudAccounts = Map.copyOf(cloudAccounts);
         this.hostTTL = Objects.requireNonNull(hostTTL);
@@ -111,7 +107,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.zoneEndpoints = Collections.unmodifiableMap(zoneEndpointsCopy);
         this.bcp = Objects.requireNonNull(bcp);
         validateZones(new HashSet<>(), new HashSet<>(), this);
-        validateEndpoints(globalServiceId, this.endpoints);
+        validateEndpoints(this.endpoints);
         validateChangeBlockers(changeBlockers, now);
         validateBcp(bcp);
         hostTTL.filter(Duration::isNegative).ifPresent(ttl -> illegal("Host TTL cannot be negative"));
@@ -155,11 +151,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     }
 
     /** Throw an IllegalArgumentException if an endpoint refers to a region that is not declared in 'prod' */
-    private void validateEndpoints(Optional<String> globalServiceId, List<Endpoint> endpoints) {
-        if (globalServiceId.isPresent() && ! endpoints.isEmpty()) {
-            throw new IllegalArgumentException("Providing both 'endpoints' and 'global-service-id'. Use only 'endpoints'.");
-        }
-
+    private void validateEndpoints(List<Endpoint> endpoints) {
         var regions = prodRegions();
         for (var endpoint : endpoints){
             for (var endpointRegion : endpoint.regions()) {
@@ -243,8 +235,8 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     /** Returns time windows where upgrades are disallowed for these instances */
     public List<DeploymentSpec.ChangeBlocker> changeBlocker() { return changeBlockers; }
 
-    /** Returns the ID of the service to expose through global routing, if present */
-    public Optional<String> globalServiceId() { return globalServiceId; }
+    // TODO(mpolden): Remove after Vespa < 8.203 is no longer in use
+    public Optional<String> globalServiceId() { return Optional.empty(); }
 
     /** Returns whether the instances in this step can upgrade at the given instant */
     public boolean canUpgradeAt(Instant instant) {
@@ -323,8 +315,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DeploymentInstanceSpec other = (DeploymentInstanceSpec) o;
-        return globalServiceId.equals(other.globalServiceId) &&
-               upgradePolicy == other.upgradePolicy &&
+        return upgradePolicy == other.upgradePolicy &&
                revisionTarget == other.revisionTarget &&
                upgradeRollout == other.upgradeRollout &&
                changeBlockers.equals(other.changeBlockers) &&
@@ -339,7 +330,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     @Override
     public int hashCode() {
-        return Objects.hash(globalServiceId, upgradePolicy, revisionTarget, upgradeRollout, changeBlockers, steps(), athenzService, notifications, endpoints, zoneEndpoints, bcp, tags);
+        return Objects.hash(upgradePolicy, revisionTarget, upgradeRollout, changeBlockers, steps(), athenzService, notifications, endpoints, zoneEndpoints, bcp, tags);
     }
 
     int deployableHashCode() {
@@ -349,7 +340,6 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         toHash[i++] = name;
         toHash[i++] = endpoints;
         toHash[i++] = zoneEndpoints;
-        toHash[i++] = globalServiceId;
         toHash[i++] = tags;
         toHash[i++] = bcp;
         toHash[i++] = cloudAccounts;

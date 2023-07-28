@@ -845,7 +845,7 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
                     .stateDeriver(createBucketSpaceStateDeriver())
                     .deferredActivation(options.enableTwoPhaseClusterStateActivation())
                     .feedBlock(createResourceExhaustionCalculator()
-                            .inferContentClusterFeedBlockOrNull(cluster.getNodeInfos()))
+                            .inferContentClusterFeedBlockOrNull(cluster))
                     .deriveAndBuild();
             stateVersionTracker.updateLatestCandidateStateBundle(candidateBundle);
             invokeCandidateStateListeners(candidateBundle);

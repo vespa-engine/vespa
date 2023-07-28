@@ -54,9 +54,7 @@ public record OsController(Controller controller) {
      * @param pin     Pin this version. This prevents automatic scheduling of upgrades until version is unpinned
      */
     public void upgradeTo(Version version, CloudName cloud, boolean force, boolean pin) {
-        if (version.isEmpty()) {
-            throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
-        }
+        requireNonEmpty(version);
         requireCloud(cloud);
         Instant scheduledAt = controller.clock().instant();
         try (Mutex lock = curator().lockOsVersions()) {
@@ -124,10 +122,12 @@ public record OsController(Controller controller) {
 
     /** Certify an OS version as compatible with given Vespa version */
     public CertifiedOsVersion certify(Version version, CloudName cloud, Version vespaVersion) {
+        requireNonEmpty(version);
+        requireNonEmpty(vespaVersion);
         requireCloud(cloud);
         try (Mutex lock = curator().lockCertifiedOsVersions()) {
             OsVersion osVersion = new OsVersion(version, cloud);
-            Set<CertifiedOsVersion> certifiedVersions = curator().readCertifiedOsVersions();
+            Set<CertifiedOsVersion> certifiedVersions = readCertified();
             Optional<CertifiedOsVersion> matching = certifiedVersions.stream()
                                                                      .filter(cv -> cv.osVersion().equals(osVersion))
                                                                      .findFirst();
@@ -145,12 +145,12 @@ public record OsController(Controller controller) {
     public void uncertify(Version version, CloudName cloud) {
         try (Mutex lock = curator().lockCertifiedOsVersions()) {
             OsVersion osVersion = new OsVersion(version, cloud);
-            Set<CertifiedOsVersion> certifiedVersions = curator().readCertifiedOsVersions();
+            Set<CertifiedOsVersion> certifiedVersions = readCertified();
             Optional<CertifiedOsVersion> existing = certifiedVersions.stream()
                                                                      .filter(cv -> cv.osVersion().equals(osVersion))
                                                                      .findFirst();
             if (existing.isEmpty()) {
-                throw new IllegalArgumentException(version + " is not certified");
+                throw new IllegalArgumentException(osVersion + " is not certified");
             }
             certifiedVersions = new HashSet<>(certifiedVersions);
             certifiedVersions.remove(existing.get());
@@ -162,7 +162,7 @@ public record OsController(Controller controller) {
     public void removeStaleCertifications(OsVersionStatus currentStatus) {
         try (Mutex lock = curator().lockCertifiedOsVersions()) {
             Set<OsVersion> knownVersions = currentStatus.versions().keySet();
-            Set<CertifiedOsVersion> certifiedVersions = new HashSet<>(curator().readCertifiedOsVersions());
+            Set<CertifiedOsVersion> certifiedVersions = new HashSet<>(readCertified());
             if (certifiedVersions.removeIf(cv -> !knownVersions.contains(cv.osVersion()))) {
                 curator().writeCertifiedOsVersions(certifiedVersions);
             }
@@ -174,16 +174,27 @@ public record OsController(Controller controller) {
         if (controller.system().isCd()) return true; // Always certified (this is the system doing the certifying)
 
         Version systemVersion = controller.readSystemVersion();
-        return controller.curator().readCertifiedOsVersions().stream()
-                         .anyMatch(certifiedOsVersion -> certifiedOsVersion.osVersion().equals(osVersion) &&
-                                                         // A later system version is fine, as we don't guarantee that
-                                                         // an OS upgrade will always coincide with a Vespa release
-                                                         !certifiedOsVersion.vespaVersion().isAfter(systemVersion));
+        return readCertified().stream()
+                              .anyMatch(certifiedOsVersion -> certifiedOsVersion.osVersion().equals(osVersion) &&
+                                                              // A later system version is fine, as we don't guarantee that
+                                                              // an OS upgrade will always coincide with a Vespa release
+                                                              !certifiedOsVersion.vespaVersion().isAfter(systemVersion));
+    }
+
+    /** Returns all certified versions */
+    public Set<CertifiedOsVersion> readCertified() {
+        return controller.curator().readCertifiedOsVersions();
     }
 
     private void requireCloud(CloudName cloud) {
         if (!controller.clouds().contains(cloud)) {
             throw new IllegalArgumentException("Cloud '" + cloud + "' does not exist in this system");
+        }
+    }
+
+    private void requireNonEmpty(Version version) {
+        if (version.isEmpty()) {
+            throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
         }
     }
 

@@ -57,7 +57,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private final Preparer preparer;
     private final Activator activator;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
-    private final NodeResourceLimits nodeResourceLimits;
 
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository,
@@ -70,7 +69,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.zone = zone;
         this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService()
                                                                .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
-        this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
                                      provisionServiceProvider.getHostProvisioner(),
                                      loadBalancerProvisioner,
@@ -115,8 +113,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private void validate(ApplicationId application, ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
 
-        nodeResourceLimits.ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), application, cluster);
-        nodeResourceLimits.ensureWithinAdvertisedLimits("Max", requested.maxResources().nodeResources(), application, cluster);
+        nodeRepository.nodeResourceLimits().ensureWithinAdvertisedLimits("Min", requested.minResources().nodeResources(), application, cluster);
+        nodeRepository.nodeResourceLimits().ensureWithinAdvertisedLimits("Max", requested.maxResources().nodeResources(), application, cluster);
 
         if ( ! requested.minResources().nodeResources().gpuResources().equals(requested.maxResources().nodeResources().gpuResources()))
             throw new IllegalArgumentException(requested + " is invalid: Gpu capacity cannot have ranges");
@@ -126,7 +124,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     private void logInsufficientDiskResources(ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         var resources = requested.minResources().nodeResources();
-        if ( ! nodeResourceLimits.isWithinAdvertisedDiskLimits(resources, cluster)) {
+        if ( ! nodeRepository.nodeResourceLimits().isWithinAdvertisedDiskLimits(resources, cluster)) {
             logger.logApplicationPackage(Level.WARNING, "Requested disk (" + resources.diskGb() +
                                                         "Gb) in " + cluster.id() + " is not large enough to fit " +
                                                         "core/heap dumps. Minimum recommended disk resources " +

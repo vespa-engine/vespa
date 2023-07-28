@@ -154,7 +154,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             DocIt postings;
             vespalib::ConstArrayRef<Posting> array = _merger.getArray();
             postings.set(&array[0], &array[array.size()]);
-            if (_postingList._isFilter) {
+            if (_postingList.isFilter()) {
                 return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, postings);
             } else {
                 return std::make_unique<AttributePostingListIteratorT<DocIt>>(_baseSearchCtx, _hasWeight, matchData, postings);
@@ -182,7 +182,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             DocIt postings;
             const Posting *array = postingList.getKeyDataEntry(_pidx, clusterSize);
             postings.set(array, array + clusterSize);
-            if (postingList._isFilter) {
+            if (postingList.isFilter()) {
                 return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, postings);
             } else {
                 return std::make_unique<AttributePostingListIteratorT<DocIt>>(_baseSearchCtx, _hasWeight, matchData, postings);
@@ -191,7 +191,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
         typename PostingList::BTreeType::FrozenView frozen(_frozenRoot, postingList.getAllocator());
 
         using DocIt = typename PostingList::ConstIterator;
-        if (_postingList._isFilter) {
+        if (_postingList.isFilter()) {
             return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, frozen.getRoot(), frozen.getAllocator());
         } else {
             return std::make_unique<AttributePostingListIteratorT<DocIt>> (_baseSearchCtx, _hasWeight, matchData, frozen.getRoot(), frozen.getAllocator());

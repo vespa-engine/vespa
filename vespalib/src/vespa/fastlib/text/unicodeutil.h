@@ -4,10 +4,12 @@
  */
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <sys/types.h>
 
 /** ucs4_t is the type of the 4-byte UCS4 characters */
-using ucs4_t = unsigned int;
+using ucs4_t = uint32_t;
 
 /**
  * Utility class for unicode character handling.

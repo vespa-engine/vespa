@@ -47,18 +47,19 @@ public class NodeResourceExhaustion {
     }
 
     public String toExhaustionAddedDescription() {
-        return String.format(Locale.US, "%s (%.3g > %.3g)", makeDescriptionPrefix(), resourceUsage.getUsage(), limit);
+        return String.format(Locale.US, "%s is %.1f%% full (the configured limit is %.1f%%)",
+                makeDescriptionPrefix(), resourceUsage.getUsage() * 100.0, limit * 100.0);
     }
 
     public String toExhaustionRemovedDescription() {
-        return String.format(Locale.US, "%s (<= %.3g)", makeDescriptionPrefix(), limit);
+        return String.format(Locale.US, "%s (<= %.1f%%)", makeDescriptionPrefix(), limit * 100.0);
     }
 
     public String toShorthandDescription() {
-        return String.format(Locale.US, "%s%s %.3g > %.3g",
+        return String.format(Locale.US, "%s%s %.1f%% > %.1f%%",
                 resourceType,
                 (resourceUsage.getName() != null ? ":" + resourceUsage.getName() : ""),
-                resourceUsage.getUsage(), limit);
+                resourceUsage.getUsage() * 100.0, limit * 100.0);
     }
 
     private String makeDescriptionPrefix() {

@@ -72,9 +72,9 @@ public:
     /**
      * Get the primary buffer id for the given type id.
      */
-    uint32_t primary_buffer_id(uint32_t typeId) const { return _primary_buffer_ids[typeId]; }
+    uint32_t primary_buffer_id(uint32_t typeId) const noexcept { return _primary_buffer_ids[typeId]; }
     BufferState &getBufferState(uint32_t buffer_id) noexcept;
-    const BufferAndMeta & getBufferMeta(uint32_t buffer_id) const { return _buffers[buffer_id]; }
+    const BufferAndMeta & getBufferMeta(uint32_t buffer_id) const noexcept { return _buffers[buffer_id]; }
     uint32_t getMaxNumBuffers() const noexcept { return _buffers.size(); }
     uint32_t get_bufferid_limit_acquire() const noexcept { return _bufferIdLimit.load(std::memory_order_acquire); }
     uint32_t get_bufferid_limit_relaxed() noexcept { return _bufferIdLimit.load(std::memory_order_relaxed); }

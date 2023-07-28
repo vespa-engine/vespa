@@ -5,9 +5,14 @@
 
 namespace search::queryeval {
 
-FieldSpecBase::FieldSpecBase(uint32_t fieldId, fef::TermFieldHandle handle, bool isFilter_) :
-    _fieldId(fieldId | (isFilter_ ? 0x1000000u : 0)),
-    _handle(handle)
+FieldSpec::FieldSpec(const vespalib::string & name, uint32_t fieldId, fef::TermFieldHandle handle) noexcept
+    : FieldSpec(name, fieldId, handle, false)
+{}
+
+FieldSpec::FieldSpec(const vespalib::string & name, uint32_t fieldId,
+                     fef::TermFieldHandle handle, bool isFilter_) noexcept
+    : FieldSpecBase(fieldId, handle, isFilter_),
+      _name(name)
 {
     assert(fieldId < 0x1000000);  // Can be represented by 24 bits
 }

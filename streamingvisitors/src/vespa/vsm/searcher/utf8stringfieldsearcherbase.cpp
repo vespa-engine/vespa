@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "utf8stringfieldsearcherbase.h"
+#include <vespa/fastlib/text/normwordfolder.h>
 #include <cassert>
 
 using search::streaming::QueryTerm;
@@ -24,8 +25,8 @@ UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * 
         if (c < 128) {
             if (!c) { break; }
             p++;
-            if (__builtin_expect(_isWord[c], false)) {
-                *q++ = _foldCase[c];
+            if (__builtin_expect(Fast_NormalizeWordFolder::_isWord[c], false)) {
+                *q++ = Fast_NormalizeWordFolder::_foldCase[c];
                 c = 0;
             } else {
                 c = *p;
@@ -35,19 +36,19 @@ UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * 
             c = Fast_UnicodeUtil::GetUTF8CharNonAscii(p);
             if (Fast_UnicodeUtil::IsWordChar(c)) {
                 _utf8Count[p-oldP-1]++;
-                const char *repl = ReplacementString(c);
+                const char *repl = Fast_NormalizeWordFolder::ReplacementString(c);
                 if (repl != NULL) {
                     size_t repllen = strlen(repl);
                     if (repllen > 0) {
                         q = Fast_UnicodeUtil::ucs4copy(q,repl);
                     }
                 } else {
-                    c = ToFold(c);
+                    c = Fast_NormalizeWordFolder::ToFold(c);
                     *q++ = c;
                 }
                 break;
             } else {
-                if (c == _BadUTF8Char) {
+                if (c == Fast_UnicodeUtil::_BadUTF8Char) {
                     _badUtf8Count++;
                 } else {
                     _utf8Count[p-oldP-1]++;
@@ -62,10 +63,10 @@ UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * 
         if (c < 128) {             // Common case, ASCII
             if (!c) { break; }
             p++;
-            if (__builtin_expect(!_isWord[c], false)) {
+            if (__builtin_expect(!Fast_NormalizeWordFolder::_isWord[c], false)) {
                 c = 0;
             } else {
-                *q++ = _foldCase[c];
+                *q++ = Fast_NormalizeWordFolder::_foldCase[c];
                 c = *p;
             }
         } else {
@@ -73,20 +74,20 @@ UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * 
             c = Fast_UnicodeUtil::GetUTF8CharNonAscii(p);
             if (__builtin_expect(Fast_UnicodeUtil::IsWordChar(c), false)) {
                 _utf8Count[p-oldP-1]++;
-                const char *repl = ReplacementString(c);
+                const char *repl = Fast_NormalizeWordFolder::ReplacementString(c);
                 if (repl != NULL) {
                     size_t repllen = strlen(repl);
                     if (repllen > 0) {
                         q = Fast_UnicodeUtil::ucs4copy(q,repl);
                     }
                 } else {
-                    c = ToFold(c);
+                    c = Fast_NormalizeWordFolder::ToFold(c);
                     *q++ = c;
                 }
 
                 c = *p;
             } else {
-                if (c == _BadUTF8Char) {
+                if (c == Fast_UnicodeUtil::_BadUTF8Char) {
                     _badUtf8Count++;
                 } else {
                     _utf8Count[p-oldP-1]++;
@@ -143,9 +144,9 @@ UTF8StringFieldSearcherBase::matchTermExact(const FieldRef & f, QueryTerm & qt)
         bool equal(true);
         for (; equal && (n < e) && (term < eterm); term++) {
             if (*term < 0x80) {
-                equal = (*term == _foldCase[*n++]);
+                equal = (*term == Fast_NormalizeWordFolder::_foldCase[*n++]);
             } else {
-                cmptype_t c = ToFold(Fast_UnicodeUtil::GetUTF8CharNonAscii(n));
+                cmptype_t c = Fast_NormalizeWordFolder::ToFold(Fast_UnicodeUtil::GetUTF8CharNonAscii(n));
                 equal = (*term == c);
             }
         }
@@ -220,20 +221,16 @@ UTF8StringFieldSearcherBase::matchTermSuffix(const FieldRef & f, QueryTerm & qt)
 }
 
 UTF8StringFieldSearcherBase::UTF8StringFieldSearcherBase() :
-    StrChrFieldSearcher(),
-    Fast_NormalizeWordFolder(),
-    Fast_UnicodeUtil()
+    StrChrFieldSearcher()
 {
 }
 
 UTF8StringFieldSearcherBase::UTF8StringFieldSearcherBase(FieldIdT fId) :
-    StrChrFieldSearcher(fId),
-    Fast_NormalizeWordFolder(),
-    Fast_UnicodeUtil()
+    StrChrFieldSearcher(fId)
 {
 }
 
-UTF8StringFieldSearcherBase::~UTF8StringFieldSearcherBase() {}
+UTF8StringFieldSearcherBase::~UTF8StringFieldSearcherBase() = default;
 
 void
 UTF8StringFieldSearcherBase::prepare(search::streaming::QueryTermList& qtl,
@@ -283,11 +280,11 @@ UTF8StringFieldSearcherBase::skipSeparators(const search::byte * p, size_t sz, T
         if (c < 128) {
             p++;
             if (!isSeparatorCharacter(c)) {
-                dstbuf.onCharacter(_foldCase[c], (oldP - b));
+                dstbuf.onCharacter(Fast_NormalizeWordFolder::_foldCase[c], (oldP - b));
             }
         } else {
             c = Fast_UnicodeUtil::GetUTF8CharNonAscii(p);
-            const char *repl = ReplacementString(c);
+            const char *repl = Fast_NormalizeWordFolder::ReplacementString(c);
             if (repl != NULL) {
                 size_t repllen = strlen(repl);
                 if (repllen > 0) {
@@ -303,10 +300,10 @@ UTF8StringFieldSearcherBase::skipSeparators(const search::byte * p, size_t sz, T
                     }
                 }
             } else {
-                c = ToFold(c);
+                c = Fast_NormalizeWordFolder::ToFold(c);
                 dstbuf.onCharacter(c, (oldP - b));
             }
-            if (c == _BadUTF8Char) {
+            if (c == Fast_UnicodeUtil::_BadUTF8Char) {
                 _badUtf8Count++;
             } else {
                 _utf8Count[p-oldP-1]++;

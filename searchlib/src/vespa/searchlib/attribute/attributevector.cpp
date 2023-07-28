@@ -25,6 +25,7 @@
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <thread>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attributevector");
@@ -39,6 +40,9 @@ using search::common::FileHeaderContext;
 using search::index::DummyFileHeaderContext;
 using search::queryeval::SearchIterator;
 using namespace vespalib::make_string_short;
+namespace fs = std::filesystem;
+
+namespace search {
 
 namespace {
 
@@ -46,12 +50,6 @@ const vespalib::string enumeratedTag = "enumerated";
 const vespalib::string dataTypeTag = "datatype";
 const vespalib::string collectionTypeTag = "collectiontype";
 const vespalib::string docIdLimitTag = "docIdLimit";
-
-}
-
-namespace search {
-
-namespace {
 
 bool
 allow_paged(const search::attribute::Config& config)
@@ -76,6 +74,11 @@ make_memory_allocator(const vespalib::string& name, const search::attribute::Con
         return vespalib::alloc::MmapFileAllocatorFactory::instance().make_memory_allocator(name);
     }
     return {};
+}
+
+bool
+exists(vespalib::stringref name) {
+    return fs::exists(fs::path(name)); 
 }
 
 }
@@ -125,7 +128,8 @@ bool AttributeVector::hasArrayType() const { return _config->collectionType().is
 bool AttributeVector::getIsFilter() const  { return _config->getIsFilter(); }
 bool AttributeVector::getIsFastSearch() const { return _config->fastSearch(); }
 bool AttributeVector::isMutable() const { return _config->isMutable(); }
-bool AttributeVector::getEnableOnlyBitVector() const { return _config->getEnableOnlyBitVector(); }
+attribute::BasicType::Type AttributeVector::getBasicType() const { return _config->basicType().type(); }
+attribute::CollectionType::Type AttributeVector::getCollectionType() const { return _config->collectionType().type(); }
 
 bool
 AttributeVector::isEnumerated(const vespalib::GenericHeader &header)
@@ -296,30 +300,24 @@ AttributeVector::createAttributeHeader(vespalib::stringref fileName) const {
                                       getVersion());
 }
 
-void AttributeVector::onSave(IAttributeSaveTarget &)
+void
+AttributeVector::onSave(IAttributeSaveTarget &)
 {
     LOG_ABORT("should not be reached");
 }
 
 bool
 AttributeVector::hasLoadData() const {
-    FastOS_StatInfo statInfo;
-    if (!FastOS_File::Stat(fmt("%s.dat", getBaseFileName().c_str()).c_str(), &statInfo)) {
+    if (!exists(getBaseFileName() + ".dat")) {
         return false;
     }
-    if (hasMultiValue() &&
-        !FastOS_File::Stat(fmt("%s.idx", getBaseFileName().c_str()).c_str(), &statInfo))
-    {
+    if (hasMultiValue() && !exists(getBaseFileName() + ".idx")) {
         return false;
     }
-    if (hasWeightedSetType() &&
-        !FastOS_File::Stat(fmt("%s.weight", getBaseFileName().c_str()).c_str(), &statInfo))
-    {
+    if (hasWeightedSetType() && !exists(getBaseFileName() + ".weight")) {
         return false;
     }
-    if (isEnumeratedSaveFormat() &&
-        !FastOS_File::Stat(fmt("%s.udat", getBaseFileName().c_str()).c_str(), &statInfo))
-    {
+    if (isEnumeratedSaveFormat() && !exists(getBaseFileName() + ".udat")) {
         return false;
     }
     return true;

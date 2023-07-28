@@ -19,19 +19,18 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_) noexcept
     : _basicType(bt),
       _type(ct),
       _fastSearch(fastSearch_),
-      _enableOnlyBitVector(false),
       _isFilter(false),
       _fastAccess(false),
       _mutable(false),
       _paged(false),
-      _maxUnCommittedMemory(MAX_UNCOMMITTED_MEMORY),
+      _distance_metric(DistanceMetric::Euclidean),
       _match(Match::UNCASED),
       _dictionary(),
+      _maxUnCommittedMemory(MAX_UNCOMMITTED_MEMORY),
       _growStrategy(),
       _compactionStrategy(),
       _predicateParams(),
       _tensorType(vespalib::eval::ValueType::error_type()),
-      _distance_metric(DistanceMetric::Euclidean),
       _hnsw_index_params()
 {
 }
@@ -43,12 +42,11 @@ Config & Config::operator = (Config &&) noexcept = default;
 Config::~Config() = default;
 
 bool
-Config::operator==(const Config &b) const
+Config::operator==(const Config &b) const noexcept
 {
     return _basicType == b._basicType &&
            _type == b._type &&
            _fastSearch == b._fastSearch &&
-           _enableOnlyBitVector == b._enableOnlyBitVector &&
            _isFilter == b._isFilter &&
            _fastAccess == b._fastAccess &&
            _mutable == b._mutable &&

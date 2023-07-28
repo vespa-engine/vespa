@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
 
+import java.util.Comparator;
 import java.util.Objects;
 
 /**
@@ -9,11 +10,19 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public record CertifiedOsVersion(OsVersion osVersion, Version vespaVersion) {
+public record CertifiedOsVersion(OsVersion osVersion, Version vespaVersion) implements Comparable<CertifiedOsVersion> {
+
+    private static final Comparator<CertifiedOsVersion> comparator = Comparator.comparing(CertifiedOsVersion::osVersion)
+                                                                               .thenComparing(CertifiedOsVersion::vespaVersion);
 
     public CertifiedOsVersion {
         Objects.requireNonNull(osVersion);
         Objects.requireNonNull(vespaVersion);
+    }
+
+    @Override
+    public int compareTo(CertifiedOsVersion that) {
+        return comparator.compare(this, that);
     }
 
 }

@@ -639,7 +639,11 @@ public:
                 return bitvector_iterator;
             }
         }
-        return std::make_unique<queryeval::DocumentWeightSearchIterator>(*tfmda[0], _attr, _dict_entry);
+        if (_attr.has_weight_iterator(_dict_entry.posting_idx)) {
+            return std::make_unique<queryeval::DocumentWeightSearchIterator>(*tfmda[0], _attr, _dict_entry);
+        } else {
+            return _attr.make_bitvector_iterator(_dict_entry.posting_idx, get_docid_limit(), *tfmda[0], strict);
+        }
     }
 
     SearchIteratorUP createFilterSearch(bool strict, FilterConstraint constraint) const override {

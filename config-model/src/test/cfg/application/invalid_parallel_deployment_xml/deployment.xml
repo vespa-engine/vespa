@@ -2,7 +2,7 @@
 <deployment version="1.0">
   <test/>
   <staging/>
-  <prod global-service-id="query">
+  <prod>
     <parallel>
       <instance id="hello" />
     </parallel>

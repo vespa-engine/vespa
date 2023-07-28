@@ -67,8 +67,6 @@ mvn $COMMON_MAVEN_OPTS  -pl :dependency-versions -DskipStagingRepositoryClose=tr
 STG_REPO=$(cat $TMPFILE | grep 'Staging repository at http' | head -1 | awk -F/ '{print $NF}')
 rm -f $TMPFILE
 
-mvn $COMMON_MAVEN_OPTS  -pl :container-dependency-versions -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
-
 # Deploy plugins
 mvn $COMMON_MAVEN_OPTS --file ./maven-plugins/pom.xml -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
 
@@ -83,3 +81,4 @@ mvn $COMMON_MAVEN_OPTS -N org.sonatype.plugins:nexus-staging-maven-plugin:1.6.12
 
 # Delete the GPG rings
 rm -rf $SD_SOURCE_DIR/screwdriver/deploy
+

@@ -10,10 +10,10 @@
 #include <vespa/config/retriever/simpleconfigurer.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vsm/vsm/vsm-adapter.h>
-#include <vespa/fastlib/text/normwordfolder.h>
 #include <mutex>
 
 class FNET_Transport;
+class Fast_NormalizeWordFolder;
 
 namespace search::fef {
 
@@ -70,7 +70,7 @@ private:
     EnvMap                   _envMap;
     ThreadLocals             _threadLocals;
     std::mutex               _lock;
-    Fast_NormalizeWordFolder _wordFolder;
+    std::unique_ptr<Fast_NormalizeWordFolder> _wordFolder;
     config::ConfigUri        _configUri;
     FNET_Transport* const    _transport;
     vespalib::string         _file_distributor_connection_spec;

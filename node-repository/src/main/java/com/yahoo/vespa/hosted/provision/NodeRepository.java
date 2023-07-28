@@ -17,6 +17,7 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
+import com.yahoo.vespa.hosted.provision.archive.ArchiveUriManager;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancers;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
@@ -28,10 +29,10 @@ import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
-import com.yahoo.vespa.hosted.provision.archive.ArchiveUriManager;
 import com.yahoo.vespa.hosted.provision.provisioning.ContainerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
+import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
@@ -52,6 +53,7 @@ public class NodeRepository extends AbstractComponent {
     private final Nodes nodes;
     private final NodeFlavors flavors;
     private final HostResourcesCalculator resourcesCalculator;
+    private final NodeResourceLimits nodeResourceLimits;
     private final NameResolver nameResolver;
     private final OsVersions osVersions;
     private final InfrastructureVersions infrastructureVersions;
@@ -129,6 +131,7 @@ public class NodeRepository extends AbstractComponent {
         this.nodes = new Nodes(db, zone, clock, orchestrator, applications);
         this.flavors = flavors;
         this.resourcesCalculator = provisionServiceProvider.getHostResourcesCalculator();
+        this.nodeResourceLimits = new NodeResourceLimits(this);
         this.nameResolver = nameResolver;
         this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
@@ -181,6 +184,8 @@ public class NodeRepository extends AbstractComponent {
 
     public HostResourcesCalculator resourcesCalculator() { return resourcesCalculator; }
 
+    public NodeResourceLimits nodeResourceLimits() { return nodeResourceLimits; }
+
     public FlagSource flagSource() { return flagSource; }
 
     public MetricsDb metricsDb() { return metricsDb; }
@@ -215,11 +220,11 @@ public class NodeRepository extends AbstractComponent {
      * @param host node for which to generate ACLs
      * @return the list of node ACLs
      */
-    public List<NodeAcl> getChildAcls(Node host) {
+    public List<NodeAcl> getChildAcls(Node host, boolean simplerAcl) {
         if ( ! host.type().isHost()) throw new IllegalArgumentException("Only hosts have children");
         NodeList allNodes = nodes().list();
         return allNodes.childrenOf(host)
-                       .mapToList(childNode -> childNode.acl(allNodes, loadBalancers, zone));
+                       .mapToList(childNode -> childNode.acl(allNodes, loadBalancers, zone, simplerAcl));
     }
 
     /** Removes this application: all nodes are set dirty. */

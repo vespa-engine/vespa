@@ -86,6 +86,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/os/v1/")) return new SlimeJsonResponse(osVersions());
+        if (path.matches("/os/v1/certify")) return new SlimeJsonResponse(certifiedOsVersions());
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -110,7 +111,11 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse certifyVersion(HttpRequest request, String versionString, String cloudName) {
         Version version = Version.fromString(versionString);
         CloudName cloud = CloudName.from(cloudName);
-        Version vespaVersion = Version.fromString(asString(request.getData()));
+        String vespaVersionString = asString(request.getData());
+        if (vespaVersionString.isEmpty()) {
+            throw new IllegalArgumentException("Missing Vespa version in request body");
+        }
+        Version vespaVersion = Version.fromString(vespaVersionString);
         CertifiedOsVersion certified = controller.os().certify(version, cloud, vespaVersion);
         if (certified.vespaVersion().equals(vespaVersion)) {
             return new MessageResponse("Certified " + version.toFullString() + " in cloud " + cloud +
@@ -177,6 +182,18 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
                                    target.toFullString() + (pin ? " (pinned)" : ""));
     }
 
+    private Slime certifiedOsVersions() {
+        Slime slime = new Slime();
+        Cursor array = slime.setArray();
+        controller.os().readCertified().stream().sorted().forEach(cv -> {
+            Cursor object = array.addObject();
+            object.setString("version", cv.osVersion().version().toFullString());
+            object.setString("cloud", cv.osVersion().cloud().value());
+            object.setString("vespaVersion", cv.vespaVersion().toFullString());
+        });
+        return slime;
+    }
+
     private Slime osVersions() {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
@@ -193,7 +210,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
                 currentVersionObject.setString("upgradeBudget", Duration.ZERO.toString());
                 currentVersionObject.setLong("scheduledAt", t.scheduledAt().toEpochMilli());
                 currentVersionObject.setBool("pinned", t.pinned());
-                Optional<Change> nextChange = osUpgradeScheduler.changeIn(t.osVersion().cloud(), now);
+                Optional<Change> nextChange = osUpgradeScheduler.changeIn(t.osVersion().cloud(), now, true);
                 nextChange.ifPresent(c -> {
                     currentVersionObject.setString("nextVersion", c.osVersion().version().toFullString());
                     currentVersionObject.setLong("nextScheduledAt", c.scheduleAt().toEpochMilli());

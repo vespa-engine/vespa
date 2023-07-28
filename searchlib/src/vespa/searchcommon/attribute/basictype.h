@@ -9,7 +9,7 @@ namespace search::attribute {
 class BasicType
 {
  public:
-    enum Type {
+    enum Type : uint8_t {
         NONE      =  0,
         STRING    =  1,
         BOOL      =  2,
@@ -28,33 +28,33 @@ class BasicType
         MAX_TYPE
     };
 
-    explicit BasicType(int t) : _type(Type(t)) { }
-    explicit BasicType(unsigned int t) : _type(Type(t)) { }
-    BasicType(Type t) : _type(t) { }
+    explicit BasicType(int t) noexcept : _type(Type(t)) { }
+    explicit BasicType(unsigned int t) noexcept : _type(Type(t)) { }
+    BasicType(Type t) noexcept : _type(t) { }
     explicit BasicType(const vespalib::string & t) : _type(asType(t)) { }
 
-    Type type() const { return _type; }
-    const char * asString() const { return asString(_type); }
-    size_t fixedSize() const { return fixedSize(_type); }
-    static BasicType fromType(bool) { return BOOL; }
-    static BasicType fromType(int8_t) { return INT8; }
-    static BasicType fromType(int16_t) { return INT16; }
-    static BasicType fromType(int32_t) { return INT32; }
-    static BasicType fromType(int64_t) { return INT64; }
-    static BasicType fromType(float) { return FLOAT; }
-    static BasicType fromType(double) { return DOUBLE; }
-    bool operator==(const BasicType &b) const { return _type == b._type; }
-    bool operator!=(const BasicType &b) const { return _type != b._type; }
+    Type type() const noexcept { return _type; }
+    const char * asString() const noexcept { return asString(_type); }
+    size_t fixedSize() const noexcept { return fixedSize(_type); }
+    static BasicType fromType(bool) noexcept { return BOOL; }
+    static BasicType fromType(int8_t)  noexcept { return INT8; }
+    static BasicType fromType(int16_t) noexcept { return INT16; }
+    static BasicType fromType(int32_t) noexcept { return INT32; }
+    static BasicType fromType(int64_t) noexcept { return INT64; }
+    static BasicType fromType(float)  noexcept { return FLOAT; }
+    static BasicType fromType(double) noexcept { return DOUBLE; }
+    bool operator==(const BasicType &b) const noexcept { return _type == b._type; }
+    bool operator!=(const BasicType &b) const noexcept { return _type != b._type; }
 
   private:
-    static const char * asString(Type t) { return _typeTable[t]._name; }
-    static size_t fixedSize(Type t) { return _typeTable[t]._fixedSize; }
+    static const char * asString(Type t) noexcept { return _typeTable[t]._name; }
+    static size_t fixedSize(Type t) noexcept { return _typeTable[t]._fixedSize; }
     static Type asType(const vespalib::string & t);
 
     Type _type;
 
     struct TypeInfo {
-        Type _type;
+        Type         _type;
         unsigned int _fixedSize;
         const char * _name;
     };

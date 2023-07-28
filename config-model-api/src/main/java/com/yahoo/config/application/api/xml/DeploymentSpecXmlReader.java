@@ -93,7 +93,6 @@ public class DeploymentSpecXmlReader {
     private static final String athenzDomainAttribute = "athenz-domain";
     private static final String testerFlavorAttribute = "tester-flavor";
     private static final String majorVersionAttribute = "major-version";
-    private static final String globalServiceIdAttribute = "global-service-id";
     private static final String cloudAccountAttribute = "cloud-account";
     private static final String hostTTLAttribute = "empty-host-ttl";
 
@@ -234,7 +233,6 @@ public class DeploymentSpecXmlReader {
                                                              upgradeRollout,
                                                              minRisk, maxRisk, maxIdleHours,
                                                              changeBlockers,
-                                                             Optional.ofNullable(prodAttributes.get(globalServiceIdAttribute)),
                                                              athenzService,
                                                              cloudAccounts,
                                                              hostTTL,
@@ -268,12 +266,6 @@ public class DeploymentSpecXmlReader {
         Optional<AthenzService> athenzService = mostSpecificAttribute(stepTag, athenzServiceAttribute).map(AthenzService::from);
         Optional<String> testerFlavor = mostSpecificAttribute(stepTag, testerFlavorAttribute);
 
-        if (prodTag.equals(stepTag.getTagName())) {
-            readGlobalServiceId(stepTag).ifPresent(id -> prodAttributes.put(globalServiceIdAttribute, id));
-        } else {
-            if (readGlobalServiceId(stepTag).isPresent()) illegal("Attribute '" + globalServiceIdAttribute + "' is only valid on 'prod' tag");
-        }
-
         switch (stepTag.getTagName()) {
             case testTag:
                 if (Stream.iterate(stepTag, Objects::nonNull, Node::getParentNode)
@@ -281,7 +273,7 @@ public class DeploymentSpecXmlReader {
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()), readHostTTL(stepTag))); // A production test
                 }
             case devTag, perfTag, stagingTag: // Intentional fallthrough from test tag.
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, readCloudAccounts(stepTag), readHostTTL(stepTag)));
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerFlavor, readCloudAccounts(stepTag), readHostTTL(stepTag)));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag, defaultBcp).stream())
@@ -690,7 +682,7 @@ public class DeploymentSpecXmlReader {
     private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService,
                                           Optional<String> testerFlavor, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
-                                readActive(regionTag), athenzService, testerFlavor,
+                                athenzService, testerFlavor,
                                 readCloudAccounts(regionTag), readHostTTL(regionTag));
     }
 
@@ -712,13 +704,6 @@ public class DeploymentSpecXmlReader {
 
     private Optional<Duration> readHostTTL(Element tag) {
         return mostSpecificAttribute(tag, hostTTLAttribute).map(s -> toDuration(s, "empty host TTL"));
-    }
-
-    private Optional<String> readGlobalServiceId(Element environmentTag) {
-        String globalServiceId = environmentTag.getAttribute(globalServiceIdAttribute);
-        if (globalServiceId.isEmpty()) return Optional.empty();
-        deprecate(environmentTag, List.of(globalServiceIdAttribute), 7, "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
-        return Optional.of(globalServiceId);
     }
 
     private List<DeploymentSpec.ChangeBlocker> readChangeBlockers(Element parent, Element globalBlockersParent) {
@@ -797,16 +782,6 @@ public class DeploymentSpecXmlReader {
             default -> throw new IllegalArgumentException("Illegal upgrade rollout '" + rollout + "': " +
                                                           "Must be one of 'separate', 'leading', 'simultaneous'");
         };
-    }
-
-    private boolean readActive(Element regionTag) {
-        String activeValue = regionTag.getAttribute("active");
-        if ("".equals(activeValue)) return true; // Default to active
-        deprecate(regionTag, List.of("active"), 7, "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
-        if ("true".equals(activeValue)) return true;
-        if ("false".equals(activeValue)) return false;
-        throw new IllegalArgumentException("Value of 'active' attribute in region tag must be 'true' or 'false' " +
-                                           "to control whether this region should receive traffic from the global endpoint of this application");
     }
 
     private void deprecate(Element element, List<String> attributes, int majorVersion, String message) {

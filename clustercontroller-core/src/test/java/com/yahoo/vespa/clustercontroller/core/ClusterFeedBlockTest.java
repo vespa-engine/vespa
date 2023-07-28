@@ -117,6 +117,10 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
     }
 
+    private String decorate(String msg) {
+        return ResourceExhaustionCalculator.decoratedMessage(ctrl.getCluster(), msg);
+    }
+
     @Test
     void cluster_feed_block_state_is_recomputed_when_resource_block_set_differs() throws Exception {
         initialize(createOptions(mapOf(usage("cheese", 0.7), usage("wine", 0.4))));
@@ -125,14 +129,15 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         reportResourceUsageFromNode(1, setOf(usage("cheese", 0.8), usage("wine", 0.3)));
         var bundle = ctrl.getClusterStateBundle();
         assertTrue(bundle.clusterFeedIsBlocked());
-        assertEquals("cheese on node 1 [unknown hostname] (0.800 > 0.700)", bundle.getFeedBlock().get().getDescription());
+        assertEquals(decorate("cheese on node 1 [unknown hostname] is 80.0% full (the configured limit is 70.0%)"),
+                     bundle.getFeedBlock().get().getDescription());
 
         reportResourceUsageFromNode(1, setOf(usage("cheese", 0.8), usage("wine", 0.5)));
         bundle = ctrl.getClusterStateBundle();
         assertTrue(bundle.clusterFeedIsBlocked());
-        assertEquals("cheese on node 1 [unknown hostname] (0.800 > 0.700), " +
-                "wine on node 1 [unknown hostname] (0.500 > 0.400)",
-                bundle.getFeedBlock().get().getDescription());
+        assertEquals(decorate("cheese on node 1 [unknown hostname] is 80.0% full (the configured limit is 70.0%), " +
+                              "wine on node 1 [unknown hostname] is 50.0% full (the configured limit is 40.0%)"),
+                     bundle.getFeedBlock().get().getDescription());
     }
 
     @Test
@@ -143,13 +148,15 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         reportResourceUsageFromNode(1, setOf(usage("cheese", 0.8), usage("wine", 0.3)));
         var bundle = ctrl.getClusterStateBundle();
         assertTrue(bundle.clusterFeedIsBlocked());
-        assertEquals("cheese on node 1 [unknown hostname] (0.800 > 0.700)", bundle.getFeedBlock().get().getDescription());
+        assertEquals(decorate("cheese on node 1 [unknown hostname] is 80.0% full (the configured limit is 70.0%)"),
+                     bundle.getFeedBlock().get().getDescription());
 
         // 80% -> 90%, should not trigger new state.
         reportResourceUsageFromNode(1, setOf(usage("cheese", 0.9), usage("wine", 0.3)));
         bundle = ctrl.getClusterStateBundle();
         assertTrue(bundle.clusterFeedIsBlocked());
-        assertEquals("cheese on node 1 [unknown hostname] (0.800 > 0.700)", bundle.getFeedBlock().get().getDescription());
+        assertEquals(decorate("cheese on node 1 [unknown hostname] is 80.0% full (the configured limit is 70.0%)"),
+                     bundle.getFeedBlock().get().getDescription());
     }
 
     @Test
@@ -160,7 +167,8 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         reportResourceUsageFromNode(1, setOf(usage("cheese", 0.75), usage("wine", 0.3)));
         var bundle = ctrl.getClusterStateBundle();
         assertTrue(bundle.clusterFeedIsBlocked());
-        assertEquals("cheese on node 1 [unknown hostname] (0.750 > 0.700)", bundle.getFeedBlock().get().getDescription());
+        assertEquals(decorate("cheese on node 1 [unknown hostname] is 75.0% full (the configured limit is 70.0%)"),
+                     bundle.getFeedBlock().get().getDescription());
 
         reportResourceUsageFromNode(1, setOf(usage("cheese", 0.68), usage("wine", 0.3)));
         bundle = ctrl.getClusterStateBundle();
@@ -168,23 +176,23 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         // FIXME Effective limit is modified by hysteresis but due to how we check state deltas this
         // is not discovered here. Still correct in terms of what resources are blocked or not, but
         // the description is not up to date here.
-        assertEquals("cheese on node 1 [unknown hostname] (0.750 > 0.700)",
-                bundle.getFeedBlock().get().getDescription());
+        assertEquals(decorate("cheese on node 1 [unknown hostname] is 75.0% full (the configured limit is 70.0%)"),
+                     bundle.getFeedBlock().get().getDescription());
 
         // Trigger an explicit recompute by adding a separate resource exhaustion
         reportResourceUsageFromNode(1, setOf(usage("cheese", 0.67), usage("wine", 0.5)));
         bundle = ctrl.getClusterStateBundle();
         assertTrue(bundle.clusterFeedIsBlocked());
-        assertEquals("cheese on node 1 [unknown hostname] (0.670 > 0.600), " +
-                "wine on node 1 [unknown hostname] (0.500 > 0.400)", // Not under hysteresis
-                bundle.getFeedBlock().get().getDescription());
+        assertEquals(decorate("cheese on node 1 [unknown hostname] is 67.0% full (the configured limit is 60.0%), " +
+                              "wine on node 1 [unknown hostname] is 50.0% full (the configured limit is 40.0%)"), // Not under hysteresis
+                     bundle.getFeedBlock().get().getDescription());
 
         // Wine usage drops beyond hysteresis range, should be unblocked immediately.
-        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.61), usage("wine", 0.2)));
+        reportResourceUsageFromNode(1, setOf(usage("cheese", 0.611), usage("wine", 0.2)));
         bundle = ctrl.getClusterStateBundle();
         assertTrue(bundle.clusterFeedIsBlocked());
-        assertEquals("cheese on node 1 [unknown hostname] (0.610 > 0.600)",
-                bundle.getFeedBlock().get().getDescription());
+        assertEquals(decorate("cheese on node 1 [unknown hostname] is 61.1% full (the configured limit is 60.0%)"),
+                     bundle.getFeedBlock().get().getDescription());
 
         // Cheese now drops below hysteresis range, should be unblocked as well.
         reportResourceUsageFromNode(1, setOf(usage("cheese", 0.59), usage("wine", 0.2)));

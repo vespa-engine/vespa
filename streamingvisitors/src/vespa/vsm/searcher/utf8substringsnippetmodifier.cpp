@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "utf8substringsnippetmodifier.h"
 #include <vespa/juniper/juniper_separators.h>
+#include <vespa/fastlib/text/unicodeutil.h>
 #include <cassert>
 
 using search::byte;

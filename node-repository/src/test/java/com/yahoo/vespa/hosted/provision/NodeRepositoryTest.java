@@ -1,8 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -53,7 +59,11 @@ public class NodeRepositoryTest {
 
     @Test
     public void test_ip_conflicts() {
-        NodeRepositoryTester tester = new NodeRepositoryTester();
+        var zone = new Zone(Cloud.builder().name(CloudName.AWS).account(CloudAccount.from("aws:123456789012")).allowEnclave(true).build(),
+                            SystemName.Public,
+                            Environment.prod,
+                            RegionName.from("aws-us-east-1a"));
+        NodeRepositoryTester tester = new NodeRepositoryTester(zone);
         IP.Config ipConfig = IP.Config.of(Set.of("1.2.3.4", "10.2.3.4"), Set.of("1.2.3.4", "10.2.3.4"));
         IP.Config publicIpConfig = IP.Config.of(Set.of("1.2.3.4"), Set.of("1.2.3.4"));
         IP.Config privateIpConfig = IP.Config.of(Set.of("10.2.3.4"), Set.of("10.2.3.4"));

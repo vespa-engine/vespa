@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
-import ai.vespa.validation.Validation;
 import com.yahoo.collections.Comparables;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
@@ -434,17 +433,16 @@ public class DeploymentSpec {
 
         private final Environment environment;
         private final Optional<RegionName> region;
-        private final boolean active;
         private final Optional<AthenzService> athenzService;
         private final Optional<String> testerFlavor;
         private final Map<CloudName, CloudAccount> cloudAccounts;
         private final Optional<Duration> hostTTL;
 
         public DeclaredZone(Environment environment) {
-            this(environment, Optional.empty(), false, Optional.empty(), Optional.empty(), Map.of(), Optional.empty());
+            this(environment, Optional.empty(), Optional.empty(), Optional.empty(), Map.of(), Optional.empty());
         }
 
-        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active,
+        public DeclaredZone(Environment environment, Optional<RegionName> region,
                             Optional<AthenzService> athenzService, Optional<String> testerFlavor,
                             Map<CloudName, CloudAccount> cloudAccounts, Optional<Duration> hostTTL) {
             if (environment != Environment.prod && region.isPresent())
@@ -454,7 +452,6 @@ public class DeploymentSpec {
             hostTTL.filter(Duration::isNegative).ifPresent(ttl -> illegal("Host TTL cannot be negative"));
             this.environment = Objects.requireNonNull(environment);
             this.region = Objects.requireNonNull(region);
-            this.active = active;
             this.athenzService = Objects.requireNonNull(athenzService);
             this.testerFlavor = Objects.requireNonNull(testerFlavor);
             this.cloudAccounts = Map.copyOf(cloudAccounts);
@@ -466,8 +463,8 @@ public class DeploymentSpec {
         /** The region name, or empty if not declared */
         public Optional<RegionName> region() { return region; }
 
-        /** Returns whether this zone should receive production traffic */
-        public boolean active() { return active; }
+        // TODO(mpolden): Remove after Vespa < 8.203 is no longer in use
+        public boolean active() { return true; }
 
         public Optional<String> testerFlavor() { return testerFlavor; }
 

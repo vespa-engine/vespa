@@ -340,7 +340,7 @@ public class MetricsReporter extends ControllerMaintainer {
     }
 
     private static Map<String, String> dimensions(ApplicationId application) {
-        return Map.of("tenant", application.tenant().value(),
+        return Map.of("tenantName", application.tenant().value(),
                       "app", application.application().value() + "." + application.instance().value(),
                       "applicationId", application.toFullString());
     }

@@ -43,9 +43,9 @@ public:
      * @param codepoint the character codepoint to be lowercased.
      * @return lowercase UCS-4 character (codepoint if no lowercasing is performed).
      **/
-    static uint32_t convert(uint32_t codepoint)
+    static uint32_t convert(uint32_t codepoint) noexcept
     {
-        if (codepoint < 0x100) {
+        if (codepoint < 0x100) [[likely]] {
             return lowercase_0_block[codepoint];
         } else if (codepoint < 0x600) {
             return lowercase_0_5_blocks[codepoint];
