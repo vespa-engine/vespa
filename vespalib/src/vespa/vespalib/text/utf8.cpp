@@ -16,23 +16,19 @@ void Utf8::throwX(const char *msg, unsigned int number)
     throw IllegalArgumentException(what);
 }
 
-uint32_t Utf8Reader::getComplexChar(unsigned char firstbyte, uint32_t fallback)
+uint32_t Utf8Reader::getComplexChar(unsigned char firstbyte, uint32_t fallback) noexcept
 {
     if (_pos == size()) {
         // this shouldn't happen ...
-        LOG(warning, "last byte %02X of Utf8Reader block was incomplete UTF-8",
-            firstbyte);
+        LOG(warning, "last byte %02X of Utf8Reader block was incomplete UTF-8", firstbyte);
         return fallback;
     }
     assert(hasMore()); // should never fall out of range
     if (! Utf8::validFirstByte(firstbyte)) {
-        LOG(debug, "invalid first byte %02X in Utf8Reader data block",
-            firstbyte);
+        LOG(debug, "invalid first byte %02X in Utf8Reader data block", firstbyte);
         return fallback;
     }
     int need = Utf8::numContBytes(firstbyte);
-    assert(need > 0);
-    assert(need < 4);
 
     if (_pos + need > size()) {
         LOG(debug, "incomplete data (first byte %02X, pos=%zu, need=%d, size=%zu) in Utf8Reader data block",
@@ -48,8 +44,7 @@ uint32_t Utf8Reader::getComplexChar(unsigned char firstbyte, uint32_t fallback)
             // check > 0x7F ?
             return r;
         } else {
-            LOG(debug, "invalid continuation byte %02X in Utf8Reader data block",
-                contbyte);
+            LOG(debug, "invalid continuation byte %02X in Utf8Reader data block", contbyte);
             return fallback;
         }
     }
@@ -69,12 +64,10 @@ uint32_t Utf8Reader::getComplexChar(unsigned char firstbyte, uint32_t fallback)
             // check > 0x7FF ?
             return r;
         } else {
-            LOG(debug, "invalid continuation bytes %02X/%02X in Utf8Reader data block",
-                contbyte1, contbyte2);
+            LOG(debug, "invalid continuation bytes %02X/%02X in Utf8Reader data block", contbyte1, contbyte2);
             return fallback;
         }
     }
-    assert(need == 3);
 
     unsigned char contbyte1 = (*this)[_pos];
     unsigned char contbyte2 = (*this)[_pos+1];
@@ -95,21 +88,17 @@ uint32_t Utf8Reader::getComplexChar(unsigned char firstbyte, uint32_t fallback)
 
 
 uint32_t
-Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback)
+Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback) noexcept
 {
     if (! Utf8::validFirstByte(firstbyte)) {
-        LOG(debug, "invalid first byte %02X in Utf8Reader data block",
-            firstbyte);
+        LOG(debug, "invalid first byte %02X in Utf8Reader data block", firstbyte);
         return fallback;
     }
     int need = Utf8::numContBytes(firstbyte);
-    assert(need > 0);
-    assert(need < 4);
 
     if (need == 1) {
         if (_p[0] == 0) {
-            LOG(debug, "incomplete character (first byte %02X) in Utf8ReaderZTS",
-                firstbyte);
+            LOG(debug, "incomplete character (first byte %02X) in Utf8ReaderZTS", firstbyte);
             return fallback;
         }
         unsigned char contbyte = _p[0];
@@ -119,16 +108,14 @@ Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback)
             // check > 0x7F ?
             return r;
         } else {
-            LOG(debug, "invalid continuation byte %02X in Utf8Reader data block",
-                contbyte);
+            LOG(debug, "invalid continuation byte %02X in Utf8Reader data block", contbyte);
             return fallback;
         }
     }
 
     if (need == 2) {
         if (_p[0] == 0 || _p[1] == 0) {
-            LOG(debug, "incomplete character (first byte %02X) in Utf8ReaderZTS",
-                firstbyte);
+            LOG(debug, "incomplete character (first byte %02X) in Utf8ReaderZTS", firstbyte);
             return fallback;
         }
         unsigned char contbyte1 = _p[0];
@@ -145,16 +132,13 @@ Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback)
             // check > 0x7FF ?
             return r;
         } else {
-            LOG(debug, "invalid continuation bytes %02X/%02X in Utf8Reader data block",
-                contbyte1, contbyte2);
+            LOG(debug, "invalid continuation bytes %02X/%02X in Utf8Reader data block", contbyte1, contbyte2);
             return fallback;
         }
     }
-    assert(need == 3);
 
     if (_p[0] == 0 || _p[1] == 0 || _p[2] == 0) {
-        LOG(debug, "incomplete character (first byte %02X) in Utf8ReaderZTS",
-            firstbyte);
+        LOG(debug, "incomplete character (first byte %02X) in Utf8ReaderZTS", firstbyte);
         return fallback;
     }
     unsigned char contbyte1 = _p[0];
@@ -168,8 +152,7 @@ Utf8ReaderForZTS::getComplexChar(unsigned char firstbyte, uint32_t fallback)
         // check > 0xFFFF?
         return decode4(firstbyte, contbyte1, contbyte2, contbyte3);
     } else {
-        LOG(debug, "invalid continuation bytes %02X/%02X/%02X in Utf8Reader data block",
-            contbyte1, contbyte2, contbyte3);
+        LOG(debug, "invalid continuation bytes %02X/%02X/%02X in Utf8Reader data block", contbyte1, contbyte2, contbyte3);
         return fallback;
     }
 }
@@ -234,7 +217,7 @@ template class Utf8Writer<vespalib::string>;
 template class Utf8Writer<std::string>;
 
 template <typename T>
-T Utf8::filter_invalid_sequences(const T& input)
+T Utf8::filter_invalid_sequences(const T& input) noexcept
 {
     T retval;
     Utf8Reader reader(input.c_str(), input.size());

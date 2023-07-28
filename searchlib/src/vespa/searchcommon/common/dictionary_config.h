@@ -3,6 +3,7 @@
 #pragma once
 
 #include <iosfwd>
+#include <cstdint>
 
 namespace search {
 
@@ -11,8 +12,8 @@ namespace search {
  */
 class DictionaryConfig {
 public:
-    enum class Type { BTREE, HASH, BTREE_AND_HASH };
-    enum class Match { CASED, UNCASED };
+    enum class Type : uint8_t { BTREE, HASH, BTREE_AND_HASH };
+    enum class Match : uint8_t { CASED, UNCASED };
     DictionaryConfig() noexcept : _type(Type::BTREE), _match(Match::UNCASED) {}
     DictionaryConfig(Type type) noexcept : _type(type), _match(Match::UNCASED) {}
     DictionaryConfig(Type type, Match match) noexcept : _type(type), _match(match) {}
@@ -20,8 +21,8 @@ public:
     Match getMatch() const { return _match; }
     bool operator == (const DictionaryConfig & b) const { return (_type == b._type) && (_match == b._match); }
 private:
-    Type  _type;
-    Match _match;
+    Type  _type : 4;
+    Match _match : 4;
 };
 
 std::ostream& operator<<(std::ostream& os, const DictionaryConfig & cfg);

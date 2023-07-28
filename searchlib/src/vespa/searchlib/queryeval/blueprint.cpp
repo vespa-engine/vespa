@@ -87,7 +87,7 @@ Blueprint::sat_sum(const std::vector<HitEstimate> &data, uint32_t docid_limit)
     return { uint32_t(std::min(sum, uint64_t(limit))), empty };
 }
 
-Blueprint::State::State()
+Blueprint::State::State() noexcept
     : _fields(),
       _estimateHits(0),
       _tree_size(1),
@@ -97,13 +97,13 @@ Blueprint::State::State()
       _cost_tier(COST_TIER_NORMAL)
 {}
 
-Blueprint::State::State(FieldSpecBase field)
+Blueprint::State::State(FieldSpecBase field) noexcept
     : State()
 {
     _fields.add(field);
 }
 
-Blueprint::State::State(FieldSpecBaseList fields_in)
+Blueprint::State::State(FieldSpecBaseList fields_in) noexcept
     : _fields(std::move(fields_in)),
       _estimateHits(0),
       _tree_size(1),
@@ -116,7 +116,7 @@ Blueprint::State::State(FieldSpecBaseList fields_in)
 
 Blueprint::State::~State() = default;
 
-Blueprint::Blueprint()
+Blueprint::Blueprint() noexcept
     : _parent(0),
       _sourceId(0xffffffff),
       _docid_limit(0),
@@ -383,7 +383,7 @@ StateCache::notifyChange() {
 IntermediateBlueprint::~IntermediateBlueprint() = default;
 
 void
-IntermediateBlueprint::setDocIdLimit(uint32_t limit)
+IntermediateBlueprint::setDocIdLimit(uint32_t limit) noexcept
 {
     Blueprint::setDocIdLimit(limit);
     for (Blueprint::UP &child : _children) {
@@ -576,7 +576,7 @@ IntermediateBlueprint::createSearch(fef::MatchData &md, bool strict) const
     return createIntermediateSearch(std::move(subSearches), strict, md);
 }
 
-IntermediateBlueprint::IntermediateBlueprint() = default;
+IntermediateBlueprint::IntermediateBlueprint() noexcept = default;
 
 IntermediateBlueprint &
 IntermediateBlueprint::addChild(Blueprint::UP child)
@@ -737,24 +737,10 @@ LeafBlueprint::optimize(Blueprint* &self)
 }
 
 void
-LeafBlueprint::setEstimate(HitEstimate est)
-{
-    _state.estimate(est);
-    notifyChange();
-}
-
-void
 LeafBlueprint::set_cost_tier(uint32_t value)
 {
     assert(value < 0x100);
     _state.cost_tier(value);
-    notifyChange();
-}
-
-void
-LeafBlueprint::set_allow_termwise_eval(bool value)
-{
-    _state.allow_termwise_eval(value);
     notifyChange();
 }
 
