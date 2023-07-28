@@ -82,7 +82,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int mbus_network_threads = 1;
     private int heapSizePercentage = ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
-    private boolean useRestrictedDataPlaneBindings = false;
     private Optional<CloudAccount> cloudAccount = Optional.empty();
     private boolean allowUserFilters = true;
     private boolean allowMoreThanOneContentGroupDown = false;
@@ -141,7 +140,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
     @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
     @Override public String summaryDecodePolicy() { return summaryDecodePolicy; }
-    @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
     @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public boolean enableGlobalPhase() { return true; } // Enable global-phase by default for unit tests only
@@ -363,11 +361,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setAdminClusterNodeResourcesArchitecture(Architecture architecture) {
         this.adminClusterNodeResourcesArchitecture = architecture;
-        return this;
-    }
-
-    public TestProperties setUseRestrictedDataPlaneBindings(boolean useRestrictedDataPlaneBindings) {
-        this.useRestrictedDataPlaneBindings = useRestrictedDataPlaneBindings;
         return this;
     }
 
