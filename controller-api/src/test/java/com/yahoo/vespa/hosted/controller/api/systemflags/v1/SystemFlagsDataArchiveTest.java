@@ -243,7 +243,7 @@ public class SystemFlagsDataArchiveTest {
         failNormalizeJson("node-type", "\"footype\"", "No enum constant com.yahoo.config.provision.NodeType.footype");
         failNormalizeJson("system", "\"bar\"", "'bar' is not a valid system");
         failNormalizeJson("tenant", "123", "Non-string value in tenant whitelist condition: 123");
-        failNormalizeJson("vespa-version", "\"not-a-version\"", "For input string: \"not-a-version\"");
+        failNormalizeJson("vespa-version", "\"not-a-version\"", "Invalid version component in 'not-a-version'");
         failNormalizeJson("zone", "\"dev.non-existing-zone\"", Set.of(ZoneId.from("prod.example-region")), "Unknown zone: dev.non-existing-zone");
     }
 
