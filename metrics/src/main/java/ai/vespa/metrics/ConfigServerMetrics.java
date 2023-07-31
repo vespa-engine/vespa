@@ -112,6 +112,7 @@ public enum ConfigServerMetrics implements VespaMetrics {
     HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_DISK("hostedVespa.docker.allocatedCapacityDisk", Unit.GIGABYTE, "Total amount of allocated disk space on tenant hosts managed by hosted Vespa in a zone"),
     HOSTED_VESPA_PENDING_REDEPLOYMENTS("hostedVespa.pendingRedeployments", Unit.TASK, "The number of hosted Vespa re-deployments pending"),
     HOSTED_VESPA_DOCKER_SKEW("hostedVespa.docker.skew", Unit.FRACTION, "A number in the range 0..1 indicating how well allocated resources are balanced with availability on hosts"),
+
     HOSTED_VESPA_ACTIVE_HOSTS("hostedVespa.activeHosts", Unit.HOST, "The number of managed hosts that are in state \"active\""),
     HOSTED_VESPA_BREAKFIXED_HOSTS("hostedVespa.breakfixedHosts", Unit.HOST, "The number of managed hosts that are in state \"breakfixed\""),
     HOSTED_VESPA_DEPROVISIONED_HOSTS("hostedVespa.deprovisionedHosts", Unit.HOST, "The number of managed hosts that are in state \"deprovisioned\""),
@@ -122,6 +123,17 @@ public enum ConfigServerMetrics implements VespaMetrics {
     HOSTED_VESPA_PROVISIONED_HOSTS("hostedVespa.provisionedHosts", Unit.HOST, "The number of managed hosts that are in state \"provisioned\""),
     HOSTED_VESPA_READY_HOSTS("hostedVespa.readyHosts", Unit.HOST, "The number of managed hosts that are in state \"ready\""),
     HOSTED_VESPA_RESERVED_HOSTS("hostedVespa.reservedHosts", Unit.HOST, "The number of managed hosts that are in state \"reserved\""),
+
+    HOSTED_VESPA_ACTIVE_NODES("hostedVespa.activeNodes", Unit.HOST, "The number of managed nodes that are in state \"active\""),
+    HOSTED_VESPA_BREAKFIXED_NODES("hostedVespa.breakfixedNodes", Unit.HOST, "The number of managed nodes that are in state \"breakfixed\""),
+    HOSTED_VESPA_DEPROVISIONED_NODES("hostedVespa.deprovisionedNodes", Unit.HOST, "The number of managed nodes that are in state \"deprovisioned\""),
+    HOSTED_VESPA_DIRTY_NODES("hostedVespa.dirtyNodes", Unit.HOST, "The number of managed nodes that are in state \"dirty\""),
+    HOSTED_VESPA_FAILED_NODES("hostedVespa.failedNodes", Unit.HOST, "The number of managed nodes that are in state \"failed\""),
+    HOSTED_VESPA_INACTIVE_NODES("hostedVespa.inactiveNodes", Unit.HOST, "The number of managed nodes that are in state \"inactive\""),
+    HOSTED_VESPA_PARKED_NODES("hostedVespa.parkedNodes", Unit.HOST, "The number of managed nodes that are in state \"parked\""),
+    HOSTED_VESPA_PROVISIONED_NODES("hostedVespa.provisionedNodes", Unit.HOST, "The number of managed nodes that are in state \"provisioned\""),
+    HOSTED_VESPA_READY_NODES("hostedVespa.readyNodes", Unit.HOST, "The number of managed nodes that are in state \"ready\""),
+    HOSTED_VESPA_RESERVED_NODES("hostedVespa.reservedNodes", Unit.HOST, "The number of managed nodes that are in state \"reserved\""),
 
 
     OVERCOMMITTED_HOSTS("overcommittedHosts", Unit.HOST, "The number of hosts with over-committed resources"),

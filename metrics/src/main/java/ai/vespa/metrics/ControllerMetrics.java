@@ -46,7 +46,16 @@ public enum ControllerMetrics implements VespaMetrics {
     OPERATION_FLAGS("operation.flags", Unit.REQUEST, "Controller: Requests for /flags API"),
     OPERATION_OS("operation.os", Unit.REQUEST, "Controller: Requests for /os API"),
     OPERATION_ROUTING("operation.routing", Unit.REQUEST, "Controller: Requests for /routing API"),
-    OPERATION_ZONE("operation.zone", Unit.REQUEST, "Controller: Requests for /zone API");
+    OPERATION_ZONE("operation.zone", Unit.REQUEST, "Controller: Requests for /zone API"),
+
+    // Metering metrics - not used - TODO: remove from controller code.
+    METERING_AGE_SECONDS("metering.age.seconds", Unit.SECOND, "Controller: Metering age seconds"),
+    METERING_COST_HOURLY("metering.cost.hourly", Unit.DOLLAR_PER_HOUR, "Controller: Metering cost hourly"),
+    METERING_DISK_GB("metering.diskGB", Unit.GIGABYTE, "Controller: Metering disk GB"),
+    METERING_MEMORY_GB("metering.memoryGB", Unit.GIGABYTE, "Controller: Metering memory GB"),
+    METERING_VCPU("metering.vcpu", Unit.VCPU, "Controller: Metering VCPU"),
+    METERING_LAST_REPORTED("metering_last_reported", Unit.SECONDS_SINCE_EPOCH, "Controller: Metering last reported"),
+    METERING_TOTAL_REPORTED("metering_total_reported", Unit.ITEM, "Controller: Metering total reported (sum of resources)");
 
 
     private final String name;

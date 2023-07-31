@@ -171,6 +171,7 @@ public class VespaMetricSet {
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_PROVISIONED_HOSTS.last());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_READY_HOSTS.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_RESERVED_HOSTS.max());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_FAILED_NODES.max());
 
         addMetric(metrics, ConfigServerMetrics.RPC_SERVER_WORK_QUEUE_SIZE.average());
         addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_ACTIVATE_MILLIS.last());
