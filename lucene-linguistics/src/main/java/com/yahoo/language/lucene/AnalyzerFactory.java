@@ -46,7 +46,7 @@ class AnalyzerFactory {
         this.config = config;
         this.configDir = config.configDir();
         this.analyzerComponents = analyzers;
-        this.defaultAnalyzers = DefaultAnalyzers.getInstance();
+        this.defaultAnalyzers = new DefaultAnalyzers();
         log.config("Available in classpath char filters: " + CharFilterFactory.availableCharFilters());
         log.config("Available in classpath tokenizers: " + TokenizerFactory.availableTokenizers());
         log.config("Available in classpath token filters: " + TokenFilterFactory.availableTokenFilters());

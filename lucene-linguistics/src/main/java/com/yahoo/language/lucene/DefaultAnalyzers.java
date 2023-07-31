@@ -49,10 +49,9 @@ import static java.util.Map.entry;
  */
 class DefaultAnalyzers {
 
-    private static DefaultAnalyzers INSTANCE;
     private final Map<Language, Analyzer> analyzerClasses;
 
-    private DefaultAnalyzers() {
+    public DefaultAnalyzers() {
         analyzerClasses = Map.ofEntries(
                 entry(Language.ARABIC, new ArabicAnalyzer()),
                 entry(Language.BULGARIAN, new BulgarianAnalyzer()),
@@ -96,19 +95,8 @@ class DefaultAnalyzers {
         );
     }
 
-    public static DefaultAnalyzers getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new DefaultAnalyzers();
-        }
-        return INSTANCE;
-    }
-
     public Analyzer get(Language language) {
         return analyzerClasses.get(language);
-    }
-
-    public Analyzer get(String languageCode) {
-        return analyzerClasses.get(Language.fromLanguageTag(languageCode));
     }
 
 }
