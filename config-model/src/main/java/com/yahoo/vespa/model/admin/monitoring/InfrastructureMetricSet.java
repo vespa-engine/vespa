@@ -147,6 +147,8 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.OPERATION_ZONE.last());
         addMetric(metrics, ControllerMetrics.ZMS_QUOTA_USAGE.last());
 
+        addMetric(metrics, ControllerMetrics.METERING_AGE_SECONDS.last());
+
         return metrics;
     }
 
