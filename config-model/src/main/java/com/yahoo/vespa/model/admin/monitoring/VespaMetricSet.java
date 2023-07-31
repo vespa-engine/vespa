@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.admin.monitoring;
 import ai.vespa.metrics.ClusterControllerMetrics;
 import ai.vespa.metrics.ConfigServerMetrics;
 import ai.vespa.metrics.ContainerMetrics;
+import ai.vespa.metrics.ControllerMetrics;
 import ai.vespa.metrics.DistributorMetrics;
 import ai.vespa.metrics.LogdMetrics;
 import ai.vespa.metrics.NodeAdminMetrics;
@@ -189,29 +190,29 @@ public class VespaMetricSet {
         addMetric(metrics, ConfigServerMetrics.THROTTLED_NODE_FAILURES.max());
 
         // Controller specific metrics
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_ABORT.count());
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_AVERAGE_DURATION, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last.
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_CONVERGENCE_FAILURE.count());
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_DEPLOYMENT_FAILURE.count());
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_ERROR.count());
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_FAILING_UPGRADES.last());
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_FAILURE_PERCENTAGE.last());
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_NODE_COUNT_BY_OS_VERSION.max());
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_OS_CHANGE_DURATION.max());
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_START.count());
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_SUCCESS.count());
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_TEST_FAILURE.count());
-        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_WARNINGS.last());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_ABORT.count());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_AVERAGE_DURATION, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last.
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_CONVERGENCE_FAILURE.count());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_DEPLOYMENT_FAILURE.count());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_ERROR.count());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_FAILING_UPGRADES.last());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_FAILURE_PERCENTAGE.last());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_NODE_COUNT_BY_OS_VERSION.max());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_OS_CHANGE_DURATION.max());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_START.count());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_SUCCESS.count());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_TEST_FAILURE.count());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_WARNINGS.last());
 
-        addMetric(metrics, ConfigServerMetrics.OPERATION_API.last());
-        addMetric(metrics, ConfigServerMetrics.OPERATION_APPLICATION.last());
-        addMetric(metrics, ConfigServerMetrics.OPERATION_CONFIGSERVER.last());
-        addMetric(metrics, ConfigServerMetrics.OPERATION_CONTROLLER.last());
-        addMetric(metrics, ConfigServerMetrics.OPERATION_FLAGS.last());
-        addMetric(metrics, ConfigServerMetrics.OPERATION_OS.last());
-        addMetric(metrics, ConfigServerMetrics.OPERATION_ROUTING.last());
-        addMetric(metrics, ConfigServerMetrics.OPERATION_ZONE.last());
-        addMetric(metrics, ConfigServerMetrics.ZMS_QUOTA_USAGE.last());
+        addMetric(metrics, ControllerMetrics.OPERATION_API.last());
+        addMetric(metrics, ControllerMetrics.OPERATION_APPLICATION.last());
+        addMetric(metrics, ControllerMetrics.OPERATION_CONFIGSERVER.last());
+        addMetric(metrics, ControllerMetrics.OPERATION_CONTROLLER.last());
+        addMetric(metrics, ControllerMetrics.OPERATION_FLAGS.last());
+        addMetric(metrics, ControllerMetrics.OPERATION_OS.last());
+        addMetric(metrics, ControllerMetrics.OPERATION_ROUTING.last());
+        addMetric(metrics, ControllerMetrics.OPERATION_ZONE.last());
+        addMetric(metrics, ControllerMetrics.ZMS_QUOTA_USAGE.last());
 
         // Container metrics that should be stored for the config-server
         addMetric(metrics, ContainerMetrics.HANDLED_LATENCY.max());

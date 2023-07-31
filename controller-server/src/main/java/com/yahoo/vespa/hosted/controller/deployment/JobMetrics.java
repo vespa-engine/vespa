@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import ai.vespa.metrics.ConfigServerMetrics;
+import ai.vespa.metrics.ControllerMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 
@@ -14,19 +14,19 @@ import java.util.Map;
  */
 public class JobMetrics {
 
-    public static final String start = ConfigServerMetrics.DEPLOYMENT_START.baseName();
-    public static final String nodeAllocationFailure = ConfigServerMetrics.DEPLOYMENT_NODE_ALLOCATION_FAILURE.baseName();
-    public static final String endpointCertificateTimeout = ConfigServerMetrics.DEPLOYMENT_ENDPOINT_CERTIFICATE_TIMEOUT.baseName();
-    public static final String deploymentFailure = ConfigServerMetrics.DEPLOYMENT_DEPLOYMENT_FAILURE.baseName();
-    public static final String invalidApplication = ConfigServerMetrics.DEPLOYMENT_INVALID_APPLICATION.baseName();
-    public static final String convergenceFailure = ConfigServerMetrics.DEPLOYMENT_CONVERGENCE_FAILURE.baseName();
-    public static final String testFailure = ConfigServerMetrics.DEPLOYMENT_TEST_FAILURE.baseName();
-    public static final String noTests = ConfigServerMetrics.DEPLOYMENT_NO_TESTS.baseName();
-    public static final String error = ConfigServerMetrics.DEPLOYMENT_ERROR.baseName();
-    public static final String abort = ConfigServerMetrics.DEPLOYMENT_ABORT.baseName();
-    public static final String cancel = ConfigServerMetrics.DEPLOYMENT_CANCEL.baseName();
-    public static final String success = ConfigServerMetrics.DEPLOYMENT_SUCCESS.baseName();
-    public static final String quotaExceeded = ConfigServerMetrics.DEPLOYMENT_QUOTA_EXCEEDED.baseName();
+    public static final String start = ControllerMetrics.DEPLOYMENT_START.baseName();
+    public static final String nodeAllocationFailure = ControllerMetrics.DEPLOYMENT_NODE_ALLOCATION_FAILURE.baseName();
+    public static final String endpointCertificateTimeout = ControllerMetrics.DEPLOYMENT_ENDPOINT_CERTIFICATE_TIMEOUT.baseName();
+    public static final String deploymentFailure = ControllerMetrics.DEPLOYMENT_DEPLOYMENT_FAILURE.baseName();
+    public static final String invalidApplication = ControllerMetrics.DEPLOYMENT_INVALID_APPLICATION.baseName();
+    public static final String convergenceFailure = ControllerMetrics.DEPLOYMENT_CONVERGENCE_FAILURE.baseName();
+    public static final String testFailure = ControllerMetrics.DEPLOYMENT_TEST_FAILURE.baseName();
+    public static final String noTests = ControllerMetrics.DEPLOYMENT_NO_TESTS.baseName();
+    public static final String error = ControllerMetrics.DEPLOYMENT_ERROR.baseName();
+    public static final String abort = ControllerMetrics.DEPLOYMENT_ABORT.baseName();
+    public static final String cancel = ControllerMetrics.DEPLOYMENT_CANCEL.baseName();
+    public static final String success = ControllerMetrics.DEPLOYMENT_SUCCESS.baseName();
+    public static final String quotaExceeded = ControllerMetrics.DEPLOYMENT_QUOTA_EXCEEDED.baseName();
 
     private final Metric metric;
 

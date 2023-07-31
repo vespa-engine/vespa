@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import ai.vespa.metrics.ConfigServerMetrics;
+import ai.vespa.metrics.ControllerMetrics;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.provision.ApplicationId;
@@ -49,22 +50,22 @@ import java.util.stream.Collectors;
  */
 public class MetricsReporter extends ControllerMaintainer {
 
-    public static final String TENANT_METRIC = "billing.tenants";
-    public static final String DEPLOYMENT_FAIL_METRIC = ConfigServerMetrics.DEPLOYMENT_FAILURE_PERCENTAGE.baseName();
-    public static final String DEPLOYMENT_AVERAGE_DURATION = ConfigServerMetrics.DEPLOYMENT_AVERAGE_DURATION.baseName();
-    public static final String DEPLOYMENT_FAILING_UPGRADES = ConfigServerMetrics.DEPLOYMENT_FAILING_UPGRADES.baseName();
-    public static final String DEPLOYMENT_BUILD_AGE_SECONDS = "deployment.buildAgeSeconds";
-    public static final String DEPLOYMENT_WARNINGS = ConfigServerMetrics.DEPLOYMENT_WARNINGS.baseName();
-    public static final String DEPLOYMENT_OVERDUE_UPGRADE = "deployment.overdueUpgradeSeconds";
-    public static final String OS_CHANGE_DURATION = ConfigServerMetrics.DEPLOYMENT_OS_CHANGE_DURATION.baseName();
-    public static final String PLATFORM_CHANGE_DURATION = "deployment.platformChangeDuration";
-    public static final String OS_NODE_COUNT = ConfigServerMetrics.DEPLOYMENT_NODE_COUNT_BY_OS_VERSION.baseName();
-    public static final String PLATFORM_NODE_COUNT = "deployment.nodeCountByPlatformVersion";
-    public static final String BROKEN_SYSTEM_VERSION = "deployment.brokenSystemVersion";
-    public static final String REMAINING_ROTATIONS = "remaining_rotations";
-    public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
+    public static final String TENANT_METRIC = ControllerMetrics.BILLING_TENANTS.baseName();
+    public static final String DEPLOYMENT_FAIL_METRIC = ControllerMetrics.DEPLOYMENT_FAILURE_PERCENTAGE.baseName();
+    public static final String DEPLOYMENT_AVERAGE_DURATION = ControllerMetrics.DEPLOYMENT_AVERAGE_DURATION.baseName();
+    public static final String DEPLOYMENT_FAILING_UPGRADES = ControllerMetrics.DEPLOYMENT_FAILING_UPGRADES.baseName();
+    public static final String DEPLOYMENT_BUILD_AGE_SECONDS = ControllerMetrics.DEPLOYMENT_BUILD_AGE_SECONDS.baseName();
+    public static final String DEPLOYMENT_WARNINGS = ControllerMetrics.DEPLOYMENT_WARNINGS.baseName();
+    public static final String DEPLOYMENT_OVERDUE_UPGRADE = ControllerMetrics.DEPLOYMENT_OVERDUE_UPGRADE_SECONDS.baseName();
+    public static final String OS_CHANGE_DURATION = ControllerMetrics.DEPLOYMENT_OS_CHANGE_DURATION.baseName();
+    public static final String PLATFORM_CHANGE_DURATION = ControllerMetrics.DEPLOYMENT_PLATFORM_CHANGE_DURATION.baseName();
+    public static final String OS_NODE_COUNT = ControllerMetrics.DEPLOYMENT_NODE_COUNT_BY_OS_VERSION.baseName();
+    public static final String PLATFORM_NODE_COUNT = ControllerMetrics.DEPLOYMENT_NODE_COUNT_BY_PLATFORM_VERSION.baseName();
+    public static final String BROKEN_SYSTEM_VERSION = ControllerMetrics.DEPLOYMENT_BROKEN_SYSTEM_VERSION.baseName();
+    public static final String REMAINING_ROTATIONS = ControllerMetrics.REMAINING_ROTATIONS.baseName();
+    public static final String NAME_SERVICE_REQUESTS_QUEUED = ControllerMetrics.DNS_QUEUED_REQUESTS.baseName();
     public static final String OPERATION_PREFIX = "operation.";
-    public static final String ZMS_QUOTA_USAGE = "zms.quota.usage";
+    public static final String ZMS_QUOTA_USAGE = ControllerMetrics.ZMS_QUOTA_USAGE.baseName();
 
     private final Metric metric;
     private final Clock clock;
