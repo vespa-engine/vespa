@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import ai.vespa.metrics.ConfigServerMetrics;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.provision.ApplicationId;
@@ -49,15 +50,15 @@ import java.util.stream.Collectors;
 public class MetricsReporter extends ControllerMaintainer {
 
     public static final String TENANT_METRIC = "billing.tenants";
-    public static final String DEPLOYMENT_FAIL_METRIC = "deployment.failurePercentage";
-    public static final String DEPLOYMENT_AVERAGE_DURATION = "deployment.averageDuration";
-    public static final String DEPLOYMENT_FAILING_UPGRADES = "deployment.failingUpgrades";
+    public static final String DEPLOYMENT_FAIL_METRIC = ConfigServerMetrics.DEPLOYMENT_FAILURE_PERCENTAGE.baseName();
+    public static final String DEPLOYMENT_AVERAGE_DURATION = ConfigServerMetrics.DEPLOYMENT_AVERAGE_DURATION.baseName();
+    public static final String DEPLOYMENT_FAILING_UPGRADES = ConfigServerMetrics.DEPLOYMENT_FAILING_UPGRADES.baseName();
     public static final String DEPLOYMENT_BUILD_AGE_SECONDS = "deployment.buildAgeSeconds";
-    public static final String DEPLOYMENT_WARNINGS = "deployment.warnings";
+    public static final String DEPLOYMENT_WARNINGS = ConfigServerMetrics.DEPLOYMENT_WARNINGS.baseName();
     public static final String DEPLOYMENT_OVERDUE_UPGRADE = "deployment.overdueUpgradeSeconds";
-    public static final String OS_CHANGE_DURATION = "deployment.osChangeDuration";
+    public static final String OS_CHANGE_DURATION = ConfigServerMetrics.DEPLOYMENT_OS_CHANGE_DURATION.baseName();
     public static final String PLATFORM_CHANGE_DURATION = "deployment.platformChangeDuration";
-    public static final String OS_NODE_COUNT = "deployment.nodeCountByOsVersion";
+    public static final String OS_NODE_COUNT = ConfigServerMetrics.DEPLOYMENT_NODE_COUNT_BY_OS_VERSION.baseName();
     public static final String PLATFORM_NODE_COUNT = "deployment.nodeCountByPlatformVersion";
     public static final String BROKEN_SYSTEM_VERSION = "deployment.brokenSystemVersion";
     public static final String REMAINING_ROTATIONS = "remaining_rotations";

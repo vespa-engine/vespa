@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
+import ai.vespa.metrics.ConfigServerMetrics;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
@@ -105,7 +106,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         if (prepared) return;
 
         PrepareParams params = this.params.get();
-        try (ActionTimer timer = applicationRepository.timerFor(params.getApplicationId(), "deployment.prepareMillis")) {
+        try (ActionTimer timer = applicationRepository.timerFor(params.getApplicationId(), ConfigServerMetrics.DEPLOYMENT_PREPARE_MILLIS.baseName())) {
             this.configChangeActions = sessionRepository().prepareLocalSession(session, deployLogger, params, clock.instant());
             this.prepared = true;
         } catch (Exception e) {
@@ -126,7 +127,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         waitForResourcesOrTimeout(params, session, provisioner);
 
         ApplicationId applicationId = session.getApplicationId();
-        try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.activateMillis")) {
+        try (ActionTimer timer = applicationRepository.timerFor(applicationId, ConfigServerMetrics.DEPLOYMENT_ACTIVATE_MILLIS.baseName())) {
             TimeoutBudget timeoutBudget = params.getTimeoutBudget();
             timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 

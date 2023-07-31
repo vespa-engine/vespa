@@ -125,11 +125,14 @@ public class VespaMetricSet {
         addMetric(metrics, ConfigServerMetrics.DELAYED_RESPONSES.count());
         addMetric(metrics, ConfigServerMetrics.SESSION_CHANGE_ERRORS.count());
 
-        addMetric(metrics, ConfigServerMetrics.ZK_Z_NODES.last());
-        addMetric(metrics, ConfigServerMetrics.ZK_AVG_LATENCY.last());
-        addMetric(metrics, ConfigServerMetrics.ZK_MAX_LATENCY.last());
-        addMetric(metrics, ConfigServerMetrics.ZK_CONNECTIONS.last());
-        addMetric(metrics, ConfigServerMetrics.ZK_OUTSTANDING_REQUESTS.last());
+        addMetric(metrics, ConfigServerMetrics.ZK_Z_NODES, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last.
+        addMetric(metrics, ConfigServerMetrics.ZK_AVG_LATENCY, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last.
+        addMetric(metrics, ConfigServerMetrics.ZK_MAX_LATENCY, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last.
+        addMetric(metrics, ConfigServerMetrics.ZK_CONNECTIONS, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last.
+        addMetric(metrics, ConfigServerMetrics.ZK_CONNECTION_LOST.count());
+        addMetric(metrics, ConfigServerMetrics.ZK_RECONNECTED.count());
+        addMetric(metrics, ConfigServerMetrics.ZK_SUSPENDED.count());
+        addMetric(metrics, ConfigServerMetrics.ZK_OUTSTANDING_REQUESTS, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last.
 
         // Node repository metrics
         addMetric(metrics, ConfigServerMetrics.NODES_NON_ACTIVE_FRACTION.last());
@@ -139,6 +142,7 @@ public class VespaMetricSet {
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_DISK.last());
         addMetric(metrics, ConfigServerMetrics.WANT_TO_REBOOT.max());
         addMetric(metrics, ConfigServerMetrics.WANT_TO_RESTART.max());
+        addMetric(metrics, ConfigServerMetrics.WANT_TO_RETIRE.max());
         addMetric(metrics, ConfigServerMetrics.RETIRED.max());
         addMetric(metrics, ConfigServerMetrics.WANT_TO_CHANGE_VESPA_VERSION.max());
         addMetric(metrics, ConfigServerMetrics.HAS_WIRE_GUARD_KEY.last());
@@ -159,6 +163,67 @@ public class VespaMetricSet {
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_MEM, EnumSet.of(max,average));
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_SKEW.last());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_PENDING_REDEPLOYMENTS.last());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_SKEW.last());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_CPU, EnumSet.of(max,average));
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_DISK, EnumSet.of(max,average));
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_MEM, EnumSet.of(max,average));
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_PENDING_REDEPLOYMENTS.last());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_ACTIVE_HOSTS.max());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DIRTY_HOSTS.max());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_FAILED_HOSTS.max());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_INACTIVE_HOSTS.max());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_PROVISIONED_HOSTS.last());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_READY_HOSTS.max());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_RESERVED_HOSTS.max());
+
+        addMetric(metrics, ConfigServerMetrics.RPC_SERVER_WORK_QUEUE_SIZE.average());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_ACTIVATE_MILLIS.last());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_PREPARE_MILLIS.last());
+
+        addMetric(metrics, ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LOAD, EnumSet.of(max, average));
+        addMetric(metrics, ConfigServerMetrics.MAINTENANCE_SUCCESS_FACTOR_DEVIATION.last());
+        addMetric(metrics, ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_FAILURE.count());
+        addMetric(metrics, ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_TRANSIENT_FAILURE.count());
+        addMetric(metrics, ConfigServerMetrics.OVERCOMMITTED_HOSTS.max());
+        addMetric(metrics, ConfigServerMetrics.SPARE_HOST_CAPACITY.last());
+        addMetric(metrics, ConfigServerMetrics.THROTTLED_NODE_FAILURES.max());
+
+        // Controller specific metrics
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_ABORT.count());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_AVERAGE_DURATION, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last.
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_CONVERGENCE_FAILURE.count());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_DEPLOYMENT_FAILURE.count());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_ERROR.count());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_FAILING_UPGRADES.last());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_FAILURE_PERCENTAGE.last());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_NODE_COUNT_BY_OS_VERSION.max());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_OS_CHANGE_DURATION.max());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_START.count());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_SUCCESS.count());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_TEST_FAILURE.count());
+        addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_WARNINGS.last());
+
+        addMetric(metrics, ConfigServerMetrics.OPERATION_API.last());
+        addMetric(metrics, ConfigServerMetrics.OPERATION_APPLICATION.last());
+        addMetric(metrics, ConfigServerMetrics.OPERATION_CONFIGSERVER.last());
+        addMetric(metrics, ConfigServerMetrics.OPERATION_CONTROLLER.last());
+        addMetric(metrics, ConfigServerMetrics.OPERATION_FLAGS.last());
+        addMetric(metrics, ConfigServerMetrics.OPERATION_OS.last());
+        addMetric(metrics, ConfigServerMetrics.OPERATION_ROUTING.last());
+        addMetric(metrics, ConfigServerMetrics.OPERATION_ZONE.last());
+        addMetric(metrics, ConfigServerMetrics.ZMS_QUOTA_USAGE.last());
+
+        // Container metrics that should be stored for the config-server
+        addMetric(metrics, ContainerMetrics.HANDLED_LATENCY.max());
+        addMetric(metrics, ContainerMetrics.HANDLED_REQUESTS.count());
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_2XX.count());
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_4XX.count());
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_5XX.count());
+        addMetric(metrics, ContainerMetrics.JDISC_GC_MS.last());
+        addMetric(metrics, ContainerMetrics.MEM_HEAP_USED.average());
+        addMetric(metrics, ContainerMetrics.SERVER_NUM_REQUESTS.count());
+        addMetric(metrics, ContainerMetrics.SERVER_STARTED_MILLIS.last());
+        addMetric(metrics, ContainerMetrics.SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY.last());
 
         return metrics;
     }

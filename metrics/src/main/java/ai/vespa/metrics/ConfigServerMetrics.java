@@ -27,8 +27,11 @@ public enum ConfigServerMetrics implements VespaMetrics {
     MAINTENANCE_DEPLOYMENT_TRANSIENT_FAILURE("maintenanceDeployment.transientFailure", Unit.OPERATION, "Number of maintenance deployments that failed with a transient failure"),
     MAINTENANCE_DEPLOYMENT_FAILURE("maintenanceDeployment.failure", Unit.OPERATION, "Number of maintenance deployments that failed with a permanent failure"),
 
+    MAINTENANCE_SUCCESS_FACTOR_DEVIATION("maintenance.successFactorDeviation", Unit.FRACTION, "Configserver: Maintenance Success Factor Deviation"),
+    MAINTENANCE_DURATION("maintenance.duration", Unit.MILLISECOND, "Configserver: Maintenance Duration"),
+
     // ZooKeeper related metrics
-    ZK_CONNECTIONS_LOST("configserver.zkConnectionLost", Unit.CONNECTION, "Number of ZooKeeper connections lost"),
+    ZK_CONNECTION_LOST("configserver.zkConnectionLost", Unit.CONNECTION, "Number of ZooKeeper connections lost"),
     ZK_RECONNECTED("configserver.zkReconnected", Unit.CONNECTION, "Number of ZooKeeper reconnections"),
     ZK_CONNECTED("configserver.zkConnected", Unit.NODE, "Number of ZooKeeper nodes connected"),
     ZK_SUSPENDED("configserver.zkSuspended", Unit.NODE, "Number of ZooKeeper nodes suspended"),
@@ -107,9 +110,75 @@ public enum ConfigServerMetrics implements VespaMetrics {
     HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_CPU("hostedVespa.docker.allocatedCapacityCpu", Unit.VCPU, "Total number of allocated VCPUs on tenant hosts managed by hosted Vespa in a zone"),
     HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_MEM("hostedVespa.docker.allocatedCapacityMem", Unit.GIGABYTE, "Total amount of allocated memory on tenant hosts managed by hosted Vespa in a zone"),
     HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_DISK("hostedVespa.docker.allocatedCapacityDisk", Unit.GIGABYTE, "Total amount of allocated disk space on tenant hosts managed by hosted Vespa in a zone"),
-    HOSTED_VESPA_BREAKFIXED_HOSTS("hostedVespa.breakfixedHosts", Unit.HOST, "Number of hosts managed that are breakfixed in a zone"),
     HOSTED_VESPA_PENDING_REDEPLOYMENTS("hostedVespa.pendingRedeployments", Unit.TASK, "The number of hosted Vespa re-deployments pending"),
-    HOSTED_VESPA_DOCKER_SKEW("hostedVespa.docker.skew", Unit.FRACTION, "A number in the range 0..1 indicating how well allocated resources are balanced with availability on hosts");
+    HOSTED_VESPA_DOCKER_SKEW("hostedVespa.docker.skew", Unit.FRACTION, "A number in the range 0..1 indicating how well allocated resources are balanced with availability on hosts"),
+    HOSTED_VESPA_ACTIVE_HOSTS("hostedVespa.activeHosts", Unit.HOST, "The number of managed hosts that are in state \"active\""),
+    HOSTED_VESPA_BREAKFIXED_HOSTS("hostedVespa.breakfixedHosts", Unit.HOST, "The number of managed hosts that are in state \"breakfixed\""),
+    HOSTED_VESPA_DEPROVISIONED_HOSTS("hostedVespa.deprovisionedHosts", Unit.HOST, "The number of managed hosts that are in state \"deprovisioned\""),
+    HOSTED_VESPA_DIRTY_HOSTS("hostedVespa.dirtyHosts", Unit.HOST, "The number of managed hosts that are in state \"dirty\""),
+    HOSTED_VESPA_FAILED_HOSTS("hostedVespa.failedHosts", Unit.HOST, "The number of managed hosts that are in state \"failed\""),
+    HOSTED_VESPA_INACTIVE_HOSTS("hostedVespa.inactiveHosts", Unit.HOST, "The number of managed hosts that are in state \"inactive\""),
+    HOSTED_VESPA_PARKED_HOSTS("hostedVespa.parkedHosts", Unit.HOST, "The number of managed hosts that are in state \"parked\""),
+    HOSTED_VESPA_PROVISIONED_HOSTS("hostedVespa.provisionedHosts", Unit.HOST, "The number of managed hosts that are in state \"provisioned\""),
+    HOSTED_VESPA_READY_HOSTS("hostedVespa.readyHosts", Unit.HOST, "The number of managed hosts that are in state \"ready\""),
+    HOSTED_VESPA_RESERVED_HOSTS("hostedVespa.reservedHosts", Unit.HOST, "The number of managed hosts that are in state \"reserved\""),
+
+
+    OVERCOMMITTED_HOSTS("overcommittedHosts", Unit.HOST, "The number of hosts with over-committed resources"),
+    SPARE_HOST_CAPACITY("spareHostCapacity", Unit.HOST, "The number of spare hosts"),
+    THROTTLED_HOST_FAILURES("throttledHostFailures", Unit.HOST, "Number of host failures stopped due to throttling"),
+    THROTTLED_NODE_FAILURES("throttledNodeFailures", Unit.HOST, "Number of node failures stopped due to throttling"),
+    NODE_FAIL_THROTTLING("nodeFailThrottling", Unit.BINARY, "Metric indicating when node failure throttling is active. The value 1 means active, 0 means inactive"),
+
+    DEPLOYMENT_PREPARE_MILLIS("deployment.prepareMillis", Unit.MILLISECOND, "Duration of deployment preparations"),
+    DEPLOYMENT_ACTIVATE_MILLIS("deployment.activateMillis", Unit.MILLISECOND, "Duration of deployment activations"),
+
+
+    // Controller specific metrics
+    // TODO: Separate out to separate class, don't document
+    DEPLOYMENT_START("deployment.start", Unit.DEPLOYMENT, "The number of started deployment jobs"),
+    DEPLOYMENT_NODE_ALLOCATION_FAILURE("deployment.nodeAllocationFailure", Unit.DEPLOYMENT, "The number of deployments failed due to node allocation failures"),
+    DEPLOYMENT_ENDPOINT_CERTIFICATE_TIMEOUT("deployment.endpointCertificateTimeout", Unit.DEPLOYMENT, "The number of deployments failed due to timeout acquiring endpoint certificate"),
+    DEPLOYMENT_DEPLOYMENT_FAILURE("deployment.deploymentFailure", Unit.DEPLOYMENT, "The number of deployments that failed"),
+    DEPLOYMENT_INVALID_APPLICATION("deployment.invalidApplication", Unit.DEPLOYMENT, "Deployments with invalid application package"),
+    DEPLOYMENT_CONVERGENCE_FAILURE("deployment.convergenceFailure", Unit.DEPLOYMENT, "The number of deployments with convergence failure"),
+    DEPLOYMENT_TEST_FAILURE("deployment.testFailure", Unit.DEPLOYMENT, "The number of test deployments with test failure"),
+    DEPLOYMENT_NO_TESTS("deployment.noTests", Unit.DEPLOYMENT, "Deployments with no tests"),
+    DEPLOYMENT_ERROR("deployment.error", Unit.DEPLOYMENT, "Deployments with error"),
+    DEPLOYMENT_ABORT("deployment.abort", Unit.DEPLOYMENT, "Deployments that were aborted"),
+    DEPLOYMENT_CANCEL("deployment.cancel", Unit.DEPLOYMENT, "Deployments that were canceled"),
+    DEPLOYMENT_SUCCESS("deployment.success", Unit.DEPLOYMENT, "Successful deployments"),
+    DEPLOYMENT_QUOTA_EXCEEDED("deployment.quotaExceeded", Unit.DEPLOYMENT, "Deployments stopped due to exceeding quota"),
+
+
+    BILLING_TENANTS("billing.tenants", Unit.TENANT, "Billing tenants"),
+    DEPLOYMENT_FAILURE_PERCENTAGE("deployment.failurePercentage", Unit.PERCENTAGE, "Deployment: Failure percentage"),
+    DEPLOYMENT_AVERAGE_DURATION("deployment.averageDuration", Unit.SECOND, "Deployment duration"),
+    DEPLOYMENT_FAILING_UPGRADES("deployment.failingUpgrades", Unit.DEPLOYMENT, "Deployment: Failing upgrades"),
+    DEPLOYMENT_BUILDING_AGE_SECONDS("deployment.buildAgeSeconds", Unit.SECOND, "Deployment: Build age"),
+    DEPLOYMENT_WARNINGS("deployment.warnings", Unit.ITEM, "The number of application related warnings during deployments"),
+    DEPLOYMENT_OVERDUE_UPGRADE_SECONDS("deployment.overdueUpgradeSeconds", Unit.SECOND, "Deployment: Overdue upgrade period"),
+    DEPLOYMENT_OS_CHANGE_DURATION("deployment.osChangeDuration", Unit.SECOND, "Deployment: OS change duration"),
+    DEPLOYMENT_PLATFORM_CHANGE_DURATION("deployment.platformChangeDuration", Unit.SECOND, "Deployment: Platform change duration"),
+    DEPLOYMENT_NODE_COUNT_BY_OS_VERSION("deployment.nodeCountByOsVersion", Unit.NODE, "Deployment: Node count by OS version"),
+    DEPLOYMENT_NODE_COUNT_BY_PLATFORM_VERSION("deployment.nodeCountByPlatformVersion", Unit.NODE, "Deployment: Node count by platform version"),
+    DEPLOYMENT_BROKEN_SYSTEM_VERSION("deployment.brokenSystemVersion", Unit.BINARY, "Deployment: Value 1 for broken system versions, 0 if not"),
+    REMAINING_ROTATIONS("remaining_rotations", Unit.ROTATION, "Remaining rotations"),
+    DNS_QUEUED_REQUESTS("dns.queuedRequests", Unit.REQUEST, "Queued DNS requests"),
+    ZMS_QUOTA_USAGE("zms.quota.usage", Unit.FRACTION, "ZMS Quota usage per resource type"),
+
+    
+    // Metrics per API, metrics created in ControllerMaintainer/MetricsReporter
+    OPERATION_API("operation.api.last", Unit.REQUEST, "Controller: Requests for /api API"),
+    OPERATION_APPLICATION("operation.application", Unit.REQUEST, "Controller: Requests for /application API"),
+    OPERATION_CONFIGSERVER("operation.configserver", Unit.REQUEST, "Controller: Requests for /configserver API"),
+    OPERATION_CONTROLLER("operation.controller", Unit.REQUEST, "Controller: Requests for /controller API"),
+    OPERATION_FLAGS("operation.flags", Unit.REQUEST, "Controller: Requests for /flags API"),
+    OPERATION_OS("operation.os", Unit.REQUEST, "Controller: Requests for /os API"),
+    OPERATION_ROUTING("operation.routing", Unit.REQUEST, "Controller: Requests for /routing API"),
+    OPERATION_ZONE("operation.zone", Unit.REQUEST, "Controller: Requests for /zone API");
+
+
 
     private final String name;
     private final Unit unit;
