@@ -1,0 +1,14 @@
+package=com.yahoo.language.lucene
+
+# The schema ("type") for an application specified config type
+# See
+#  - https://docs.vespa.ai/en/reference/config-files.html
+
+configDir                           path
+analysis{}.tokenizer.name           string  default=standard
+analysis{}.tokenizer.conf{}         string
+
+analysis{}.charFilters[].name       string
+analysis{}.charFilters[].conf{}     string
+analysis{}.tokenFilters[].name      string
+analysis{}.tokenFilters[].conf{}    string

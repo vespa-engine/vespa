@@ -95,6 +95,7 @@
         <module>linguistics-components</module>
         <module>logd</module>
         <module>logserver</module>
+        <module>lucene-linguistics</module>
         <module>messagebus</module>
         <module>metrics</module>
         <module>metrics-proxy</module>
