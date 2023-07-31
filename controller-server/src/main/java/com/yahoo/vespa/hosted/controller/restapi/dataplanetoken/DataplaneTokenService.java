@@ -54,12 +54,11 @@ public class DataplaneTokenService {
      *
      * @param tenantName name of the tenant to connect the token to
      * @param tokenId The user generated name/id of the token
-     * @param ttl The time to live of the token. Use {@link Duration#ZERO} for no TTL.
+     * @param expiration Token expiration
      * @param principal The principal making the request
      * @return a DataplaneToken containing the secret generated token
      */
-    public DataplaneToken generateToken(TenantName tenantName, TokenId tokenId, Duration ttl, Principal principal) {
-        Optional<Instant> expiration = ttl.isZero() ? Optional.empty() : Optional.ofNullable(controller.clock().instant().plus(ttl));
+    public DataplaneToken generateToken(TenantName tenantName, TokenId tokenId, Instant expiration, Principal principal) {
         TokenDomain tokenDomain = TokenDomain.of("Vespa Cloud tenant data plane:%s".formatted(tenantName.value()));
         Token token = TokenGenerator.generateToken(tokenDomain, TOKEN_PREFIX, TOKEN_BYTES);
         TokenCheckHash checkHash = TokenCheckHash.of(token, CHECK_HASH_BYTES);
@@ -67,7 +66,7 @@ public class DataplaneTokenService {
                 FingerPrint.of(token.fingerprint().toDelimitedHexString()),
                 checkHash.toHexString(),
                 controller.clock().instant(),
-                expiration,
+                Optional.ofNullable(expiration),
                 principal.getName());
 
         CuratorDb curator = controller.curator();
@@ -92,7 +91,7 @@ public class DataplaneTokenService {
 
             // Return the data plane token including the secret token.
             return new DataplaneToken(tokenId, FingerPrint.of(token.fingerprint().toDelimitedHexString()),
-                                      token.secretTokenString(), expiration);
+                                      token.secretTokenString(), Optional.ofNullable(expiration));
         }
     }
 
