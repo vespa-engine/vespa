@@ -29,7 +29,7 @@ public class LuceneLinguistics extends SimpleLinguistics {
 
     @Inject
     public LuceneLinguistics(LuceneAnalysisConfig config, ComponentRegistry<Analyzer> analyzers) {
-        log.info("Creating LuceneLinguistics with: " + config);
+        log.config("Creating LuceneLinguistics with: " + config);
         this.config = config;
         this.tokenizer = new LuceneTokenizer(config, analyzers);
     }

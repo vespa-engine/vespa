@@ -20,6 +20,7 @@ import java.util.logging.Logger;
  * @author dainiusjocas
  */
 class AnalyzerFactory {
+
     private static final Logger log = Logger.getLogger(AnalyzerFactory.class.getName());
 
     private final LuceneAnalysisConfig config;
@@ -44,9 +45,9 @@ class AnalyzerFactory {
         this.configDir = config.configDir();
         this.analyzerComponents = analyzers;
         this.defaultAnalyzers = DefaultAnalyzers.getInstance();
-        log.info("Available in classpath char filters: " + CharFilterFactory.availableCharFilters());
-        log.info("Available in classpath tokenizers: " + TokenizerFactory.availableTokenizers());
-        log.info("Available in classpath token filters: " + TokenFilterFactory.availableTokenFilters());
+        log.config("Available in classpath char filters: " + CharFilterFactory.availableCharFilters());
+        log.config("Available in classpath tokenizers: " + TokenizerFactory.availableTokenizers());
+        log.config("Available in classpath token filters: " + TokenFilterFactory.availableTokenFilters());
     }
 
     /**
@@ -69,15 +70,15 @@ class AnalyzerFactory {
             return setAndReturn(analyzerKey, setUpAnalyzer(analyzerKey));
         }
         if (null != analyzerComponents.getComponent(analyzerKey)) {
-            log.info("Analyzer for language=" + analyzerKey + " is from components.");
+            log.config("Analyzer for language=" + analyzerKey + " is from components.");
             return setAndReturn(analyzerKey, analyzerComponents.getComponent(analyzerKey));
         }
         if (null != defaultAnalyzers.get(language)) {
-            log.info("Analyzer for language=" + analyzerKey + " is from a list of default language analyzers.");
+            log.config("Analyzer for language=" + analyzerKey + " is from a list of default language analyzers.");
             return setAndReturn(analyzerKey, defaultAnalyzers.get(language));
         }
         // set the default analyzer for the language
-        log.info("StandardAnalyzer is used for language=" + analyzerKey);
+        log.config("StandardAnalyzer is used for language=" + analyzerKey);
         return setAndReturn(analyzerKey, defaultAnalyzer);
     }
 
@@ -95,7 +96,7 @@ class AnalyzerFactory {
     private Analyzer setUpAnalyzer(String analyzerKey) {
         try {
             LuceneAnalysisConfig.Analysis analysis = config.analysis(analyzerKey);
-            log.info("Creating analyzer for: '" + analyzerKey + "' with config: " + analysis);
+            log.config("Creating analyzer for: '" + analyzerKey + "' with config: " + analysis);
             CustomAnalyzer.Builder builder = CustomAnalyzer.builder(configDir);
             builder = withTokenizer(builder, analysis);
             builder = addCharFilters(builder, analysis);
