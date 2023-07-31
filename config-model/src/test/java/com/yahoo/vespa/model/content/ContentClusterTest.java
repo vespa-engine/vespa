@@ -44,6 +44,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -1525,7 +1526,7 @@ public class ContentClusterTest extends ContentBaseTest {
                                       i, i, i);
         }
         return services +
-                String.format("  </group>" +
+                String.format(Locale.US, "  </group>" +
                 "    <tuning>" +
                 "      <cluster-controller>" +
                 "        <groups-allowed-down-ratio>%f</groups-allowed-down-ratio>" +

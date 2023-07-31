@@ -161,7 +161,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public ZoneApi systemZone() {
-        return ZoneApiMock.fromId("prod.controller");
+        return ZoneApiMock.newBuilder().withSystem(system).withVirtualId(ZoneId.ofVirtualControllerZone()).build();
     }
 
     @Override
@@ -180,7 +180,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private ZoneApiMock systemAsZone() {
         return ZoneApiMock.newBuilder()
                           .with(ZoneId.from("prod.us-east-1"))
-                          .withVirtualId(ZoneId.from("prod.controller"))
+                          .withVirtualId(ZoneId.ofVirtualControllerZone())
                           .build();
     }
 

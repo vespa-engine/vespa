@@ -538,6 +538,15 @@ public class Flags {
      *                           For instance, if APPLICATION is one of the dimensions here, you should make sure
      *                           APPLICATION is set to the ApplicationId in the fetch vector when fetching the RawFlag
      *                           from the FlagSource.
+     *                           SYSTEM, CLOUD, ENVIRONMENT, and ZONE_ID are special:  These dimensions are resolved just
+     *                           before the flag data is published to a zone.  This means there is never any need to set
+     *                           these dimensions when resolving a flag, and setting these dimensions just before resolving
+     *                           the flag will have no effect.
+     *                           There is one exception.  If any of these dimensions are declared when defining a flag,
+     *                           then those dimensions are NOT resolved when published to the controllers.  This allows
+     *                           the controller to resolve the flag to different values based on which cloud or zone
+     *                           it is operating on.  Flags should NOT declare these dimensions unless they intend to
+     *                           use them in the controller in this way.
      * @param <T>                The boxed type of the flag value, e.g. Boolean for flags guarding features.
      * @param <U>                The type of the unbound flag, e.g. UnboundBooleanFlag.
      * @return An unbound flag with {@link FetchVector.Dimension#HOSTNAME HOSTNAME} and

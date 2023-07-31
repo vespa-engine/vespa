@@ -13,9 +13,10 @@ import com.yahoo.vespa.flags.json.wire.WireRule;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -53,6 +54,27 @@ public class FlagData {
 
     public boolean isEmpty() { return rules.isEmpty() && defaultFetchVector.isEmpty(); }
 
+    public FlagData partialResolve(FetchVector fetchVector) {
+        // Note:  As a result of partialResolve, there could be e.g. two identical rules, and the latter will always be ignored by resolve().
+        // Consider deduping.  Deduping is actually not specific to partialResolve and could be done e.g. at construction time.
+
+        List<Rule> newRules = new ArrayList<>();
+        for (var rule : rules) {
+            Optional<Rule> partialRule = rule.partialResolve(fetchVector);
+            if (partialRule.isPresent()) {
+                newRules.add(partialRule.get());
+                if (partialRule.get().conditions().isEmpty()) {
+                    // Any following rule will always be ignored during resolution.
+                    break;
+                }
+            }
+        }
+
+        FetchVector newDefaultFetchVector = defaultFetchVector.without(fetchVector.dimensions());
+
+        return new FlagData(id, newDefaultFetchVector, newRules);
+    }
+
     public Optional<RawFlag> resolve(FetchVector fetchVector) {
         return rules.stream()
                 .filter(rule -> rule.match(defaultFetchVector.with(fetchVector)))
@@ -89,6 +111,36 @@ public class FlagData {
         wireFlagData.defaultFetchVector = FetchVectorHelper.toWire(defaultFetchVector);
 
         return wireFlagData;
+    }
+
+    /** E.g. verify all RawFlag can be deserialized. */
+    public void validate(Deserializer<?> deserializer) {
+        rules.stream()
+             .flatMap(rule -> rule.getValueToApply().map(Stream::of).orElse(null))
+             .forEach(deserializer::deserialize);
+
+    }
+
+    @Override
+    public String toString() {
+        return "FlagData{" +
+               "id=" + id +
+               ", rules=" + rules +
+               ", defaultFetchVector=" + defaultFetchVector +
+               '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FlagData flagData = (FlagData) o;
+        return id.equals(flagData.id) && rules.equals(flagData.rules) && defaultFetchVector.equals(flagData.defaultFetchVector);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, rules, defaultFetchVector);
     }
 
     public static FlagData deserializeUtf8Json(byte[] bytes) {
@@ -137,14 +189,6 @@ public class FlagData {
     private static List<Rule> rulesFromWire(List<WireRule> wireRules) {
         if (wireRules == null) return List.of();
         return wireRules.stream().map(Rule::fromWire).toList();
-    }
-
-    /** E.g. verify all RawFlag can be deserialized. */
-    public void validate(Deserializer<?> deserializer) {
-        rules.stream()
-                .flatMap(rule -> rule.getValueToApply().map(Stream::of).orElse(null))
-                .forEach(deserializer::deserialize);
-
     }
 }
 
