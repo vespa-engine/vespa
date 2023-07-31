@@ -37,8 +37,8 @@ public:
 
     BufferTypeBase(const BufferTypeBase &rhs) = delete;
     BufferTypeBase & operator=(const BufferTypeBase &rhs) = delete;
-    BufferTypeBase(BufferTypeBase &&rhs) noexcept = default;
-    BufferTypeBase & operator=(BufferTypeBase &&rhs) noexcept = default;
+    BufferTypeBase(BufferTypeBase &&rhs) noexcept;
+    BufferTypeBase & operator=(BufferTypeBase &&rhs) noexcept;
     BufferTypeBase(uint32_t entry_size_in, uint32_t buffer_underflow_size_in, uint32_t arraySize, uint32_t min_entries, uint32_t max_entries) noexcept;
     BufferTypeBase(uint32_t entry_size_in, uint32_t buffer_underflow_size_in, uint32_t arraySize, uint32_t min_entries, uint32_t max_entries,
                    uint32_t num_entries_for_new_buffer, float allocGrowFactor) noexcept;
