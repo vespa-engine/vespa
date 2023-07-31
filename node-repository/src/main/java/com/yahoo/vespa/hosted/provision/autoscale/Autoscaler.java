@@ -22,7 +22,7 @@ public class Autoscaler {
     /** What resource difference is worth a reallocation? */
     private static final double resourceIncreaseWorthReallocation = 0.03;
     /** The load increase headroom (as a fraction) we should have before needing to scale up, to decide to scale down */
-    static final double headroomRequiredToScaleDown = 0.1;
+    static final double headroomRequiredToScaleDown = 0.15;
 
     private final NodeRepository nodeRepository;
     private final AllocationOptimizer allocationOptimizer;
