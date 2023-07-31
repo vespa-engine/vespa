@@ -164,11 +164,6 @@ public class VespaMetricSet {
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_MEM, EnumSet.of(max,average));
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_SKEW.last());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_PENDING_REDEPLOYMENTS.last());
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_SKEW.last());
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_CPU, EnumSet.of(max,average));
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_DISK, EnumSet.of(max,average));
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_MEM, EnumSet.of(max,average));
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_PENDING_REDEPLOYMENTS.last());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_ACTIVE_HOSTS.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DIRTY_HOSTS.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_FAILED_HOSTS.max());
