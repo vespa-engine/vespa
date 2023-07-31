@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLOUD;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.ENVIRONMENT;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.SYSTEM;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
@@ -79,7 +80,7 @@ public interface FlagsTarget {
     static String zoneFile(SystemName system, ZoneId zone) { return jsonFile(system.value() + "." + zone.environment().value() + "." + zone.region().value()); }
     static String controllerFile(SystemName system) { return jsonFile(system.value() + ".controller"); }
 
-    /** Partially resolve the system, cloud, and zone dimensions, except those dimensions defined by the flag for a controller zone. */
+    /** Partially resolve inter-zone dimensions, except those dimensions defined by the flag for a controller zone. */
     static FlagData partialResolve(FlagData data, SystemName system, CloudName cloud, ZoneId virtualZoneId) {
         Set<FetchVector.Dimension> flagDimensions =
                 virtualZoneId.equals(ZoneId.ofVirtualControllerZone()) ?
@@ -91,8 +92,9 @@ public interface FlagsTarget {
                 EnumSet.noneOf(FetchVector.Dimension.class);
 
         var fetchVector = new FetchVector();
-        if (!flagDimensions.contains(SYSTEM)) fetchVector = fetchVector.with(SYSTEM, system.value());
         if (!flagDimensions.contains(CLOUD)) fetchVector = fetchVector.with(CLOUD, cloud.value());
+        if (!flagDimensions.contains(ENVIRONMENT)) fetchVector = fetchVector.with(ENVIRONMENT, virtualZoneId.environment().value());
+        if (!flagDimensions.contains(SYSTEM)) fetchVector = fetchVector.with(SYSTEM, system.value());
         if (!flagDimensions.contains(ZONE_ID)) fetchVector = fetchVector.with(ZONE_ID, virtualZoneId.value());
         return fetchVector.isEmpty() ? data : data.partialResolve(fetchVector);
     }

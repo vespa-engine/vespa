@@ -20,6 +20,7 @@ public class DimensionHelper {
         serializedDimensions.put(FetchVector.Dimension.CLUSTER_ID, "cluster-id");
         serializedDimensions.put(FetchVector.Dimension.CLUSTER_TYPE, "cluster-type");
         serializedDimensions.put(FetchVector.Dimension.CONSOLE_USER_EMAIL, "console-user-email");
+        serializedDimensions.put(FetchVector.Dimension.ENVIRONMENT, "environment");
         serializedDimensions.put(FetchVector.Dimension.HOSTNAME, "hostname");
         serializedDimensions.put(FetchVector.Dimension.NODE_TYPE, "node-type");
         serializedDimensions.put(FetchVector.Dimension.SYSTEM, "system");

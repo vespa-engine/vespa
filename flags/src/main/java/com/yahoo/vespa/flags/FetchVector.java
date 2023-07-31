@@ -43,6 +43,9 @@ public class FetchVector {
         /** Email address of user - provided by auth0 in console. */
         CONSOLE_USER_EMAIL,
 
+        /** Hosted Vespa environment from com.yahoo.config.provision.Environment::value, e.g. prod, staging, test. */
+        ENVIRONMENT,
+
         /**
          * Fully qualified hostname.
          *

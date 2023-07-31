@@ -196,6 +196,9 @@ public class SystemFlagsDataArchiveTest {
         normalizeJson("cluster-type", "\"container\"");
         normalizeJson("cluster-type", "\"content\"");
         normalizeJson("console-user-email", "\"name@domain.com\"");
+        normalizeJson("environment", "\"prod\"");
+        normalizeJson("environment", "\"staging\"");
+        normalizeJson("environment", "\"test\"");
         normalizeJson("hostname", "\"2080046-v6-11.ostk.bm2.prod.gq1.yahoo.com\"");
         normalizeJson("node-type", "\"tenant\"");
         normalizeJson("node-type", "\"host\"");
@@ -239,6 +242,7 @@ public class SystemFlagsDataArchiveTest {
         // failNormalizeJson("cluster-id", ... any String is valid
         failNormalizeJson("cluster-type", "\"foo\"", "Illegal cluster type 'foo'");
         failNormalizeJson("console-user-email", "123", "Non-string value in console-user-email whitelist condition: 123");
+        failNormalizeJson("environment", "\"foo\"", "'foo' is not a valid environment identifier");
         failNormalizeJson("hostname", "\"not:a:hostname\"", "hostname must match '(([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])\\.?', but got: 'not:a:hostname'");
         failNormalizeJson("node-type", "\"footype\"", "No enum constant com.yahoo.config.provision.NodeType.footype");
         failNormalizeJson("system", "\"bar\"", "'bar' is not a valid system");

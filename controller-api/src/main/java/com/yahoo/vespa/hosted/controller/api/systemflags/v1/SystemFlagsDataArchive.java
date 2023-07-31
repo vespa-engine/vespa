@@ -8,6 +8,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
@@ -253,6 +254,7 @@ public class SystemFlagsDataArchive {
                 });
                 case CLUSTER_ID -> validateStringValues(condition, ClusterSpec.Id::from);
                 case CLUSTER_TYPE -> validateStringValues(condition, ClusterSpec.Type::from);
+                case ENVIRONMENT -> validateStringValues(condition, Environment::from);
                 case HOSTNAME -> validateStringValues(condition, HostName::of);
                 case NODE_TYPE -> validateStringValues(condition, NodeType::valueOf);
                 case SYSTEM -> validateStringValues(condition, system -> {
