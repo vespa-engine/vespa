@@ -3,6 +3,8 @@ package com.yahoo.language.lucene;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.FileReference;
 import com.yahoo.language.Language;
+import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.StemList;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import org.junit.Test;
@@ -20,11 +22,7 @@ public class LuceneTokenizerTest {
     @Test
     public void testTokenizer() {
         String text = "This is my Text";
-        var tokenizer = new LuceneTokenizer(new LuceneAnalysisConfig
-                .Builder()
-                .configDir(FileReference.mockFileReferenceForUnitTesting(new File(".")))
-                .build());
-        Iterable<Token> tokens = tokenizer
+        Iterable<Token> tokens = luceneLinguistics().getTokenizer()
                 .tokenize(text, Language.ENGLISH, StemMode.ALL, true);
         assertEquals(List.of("my", "text"), tokenStrings(tokens));
     }
@@ -32,13 +30,24 @@ public class LuceneTokenizerTest {
     @Test
     public void testLithuanianTokenizer() {
         String text = "Žalgirio mūšio data yra 1410 metai";
-        var tokenizer = new LuceneTokenizer(new LuceneAnalysisConfig
-                .Builder()
-                .configDir(FileReference.mockFileReferenceForUnitTesting(new File(".")))
-                .build());
-        Iterable<Token> tokens = tokenizer
+        Iterable<Token> tokens = luceneLinguistics().getTokenizer()
                 .tokenize(text, Language.LITHUANIAN, StemMode.ALL, true);
         assertEquals(List.of("žalgir", "mūš", "dat", "1410", "met"), tokenStrings(tokens));
+    }
+
+    @Test
+    public void testStemming() {
+        String text = "mūšio";
+        List<StemList> tokens = luceneLinguistics().getStemmer().stem(text, StemMode.ALL, Language.LITHUANIAN);
+        assertEquals(1, tokens.size());
+        assertEquals("mūš", tokens.get(0).get(0));
+    }
+
+    private Linguistics luceneLinguistics() {
+        return new LuceneLinguistics(new LuceneAnalysisConfig.Builder()
+                                              .configDir(FileReference.mockFileReferenceForUnitTesting(new File(".")))
+                                              .build(),
+                                     new ComponentRegistry<>());
     }
 
     private void assertToken(String tokenString, Iterator<Token> tokens) {

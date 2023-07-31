@@ -22,11 +22,7 @@ import java.util.logging.Logger;
 public class LuceneLinguistics extends SimpleLinguistics {
 
     private static final Logger log = Logger.getLogger(LuceneLinguistics.class.getName());
-    private final Normalizer normalizer;
-    private final Transformer transformer;
     private final Tokenizer tokenizer;
-    private final Stemmer stemmer;
-    private final Segmenter segmenter;
     private final LuceneAnalysisConfig config;
 
     @Inject
@@ -34,41 +30,10 @@ public class LuceneLinguistics extends SimpleLinguistics {
         log.info("Creating LuceneLinguistics with: " + config);
         this.config = config;
         this.tokenizer = new LuceneTokenizer(config, analyzers);
-        // NOOP stemmer
-        this.stemmer = (word, stemMode, language) -> {
-            ArrayList<StemList> stemLists = new ArrayList<>();
-            StemList stems = new StemList();
-            stems.add(word);
-            stemLists.add(stems);
-            return stemLists;
-        };
-        // Segmenter that just wraps a tokenizer
-        this.segmenter = (string, language) -> {
-            ArrayList<String> segments = new ArrayList<>();
-            Iterable<Token> tokens = tokenizer.tokenize(string, language, StemMode.NONE, false);
-            tokens.forEach(token -> segments.add(token.getTokenString()));
-            return segments;
-        };
-        // NOOP normalizer
-        this.normalizer = (string) -> string;
-        // NOOP transformer
-        this.transformer = (string, language) -> string;
     }
 
     @Override
-    public Stemmer getStemmer() { return stemmer; }
-
-    @Override
     public Tokenizer getTokenizer() { return tokenizer; }
-
-    @Override
-    public Normalizer getNormalizer() { return normalizer; }
-
-    @Override
-    public Transformer getTransformer() { return transformer; }
-
-    @Override
-    public Segmenter getSegmenter() { return segmenter; }
 
     public LuceneAnalysisConfig getConfig() {
         return config;
