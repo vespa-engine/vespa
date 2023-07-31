@@ -6,3 +6,11 @@ serviceMonitorConvergenceLatencySeconds int default=0
 
 # The number of services in the routing/container cluster of hosted-vespa.routing.default.
 numProxies int default=0
+
+# The number of of the services that are allowed to be down for the routing container cluster
+# in the hosted-vespa.routing.default infrastructure application.
+numProxiesAllowedDown int default=1
+
+# See numProxiesAllowedDown for background. Allow up to this ratio of services to be down,
+# unless already allowed by numProxiesAllowedDown.
+numProxiesAllowedDownRatio double default=0.1
