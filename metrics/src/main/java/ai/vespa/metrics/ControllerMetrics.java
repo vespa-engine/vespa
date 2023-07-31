@@ -5,7 +5,9 @@ package ai.vespa.metrics;
  */
 public enum ControllerMetrics implements VespaMetrics {
 
-    // The metrics enumerated in this file is intentionally not added to the metrics reference documentation.
+    ATHENZ_REQUEST_ERROR("athenz.request.error", Unit.REQUEST, "Controller: Athenz request error"),
+    ARCHIVE_BUCKET_COUNT("archive.bucketCount", Unit.BUCKET, "Controller: Archive bucket count"),
+
     DEPLOYMENT_START("deployment.start", Unit.DEPLOYMENT, "The number of started deployment jobs"),
     DEPLOYMENT_NODE_ALLOCATION_FAILURE("deployment.nodeAllocationFailure", Unit.DEPLOYMENT, "The number of deployments failed due to node allocation failures"),
     DEPLOYMENT_ENDPOINT_CERTIFICATE_TIMEOUT("deployment.endpointCertificateTimeout", Unit.DEPLOYMENT, "The number of deployments failed due to timeout acquiring endpoint certificate"),
@@ -37,10 +39,11 @@ public enum ControllerMetrics implements VespaMetrics {
     DNS_QUEUED_REQUESTS("dns.queuedRequests", Unit.REQUEST, "Queued DNS requests"),
     ZMS_QUOTA_USAGE("zms.quota.usage", Unit.FRACTION, "ZMS Quota usage per resource type"),
 
+    COREDUMP_PROCESSED("coredump.processed", Unit.FAILURE,"Controller: Core dumps processed"),
 
     // Metrics per API, metrics created in ControllerMaintainer/MetricsReporter
-    OPERATION_API("operation.api.last", Unit.REQUEST, "Controller: Requests for /api API"),
     OPERATION_APPLICATION("operation.application", Unit.REQUEST, "Controller: Requests for /application API"),
+    OPERATION_CHANGEMANAGEMENT("operation.changemanagement", Unit.REQUEST, "Controller: Requests for /changemanagement API"),
     OPERATION_CONFIGSERVER("operation.configserver", Unit.REQUEST, "Controller: Requests for /configserver API"),
     OPERATION_CONTROLLER("operation.controller", Unit.REQUEST, "Controller: Requests for /controller API"),
     OPERATION_FLAGS("operation.flags", Unit.REQUEST, "Controller: Requests for /flags API"),

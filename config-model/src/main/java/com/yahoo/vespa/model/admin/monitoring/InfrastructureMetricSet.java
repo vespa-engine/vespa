@@ -123,6 +123,10 @@ public class InfrastructureMetricSet {
     private static Set<Metric> getControllerMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
+        addMetric(metrics, ControllerMetrics.ATHENZ_REQUEST_ERROR.count());
+        addMetric(metrics, ControllerMetrics.ARCHIVE_BUCKET_COUNT.last());
+        addMetric(metrics, ControllerMetrics.BILLING_TENANTS.last());
+
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_ABORT.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_AVERAGE_DURATION, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last.
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_CONVERGENCE_FAILURE.count());
@@ -136,16 +140,22 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_SUCCESS.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_TEST_FAILURE.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_WARNINGS.last());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_ENDPOINT_CERTIFICATE_TIMEOUT.count());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_BROKEN_SYSTEM_VERSION.last());
 
-        addMetric(metrics, ControllerMetrics.OPERATION_API.last());
         addMetric(metrics, ControllerMetrics.OPERATION_APPLICATION.last());
+        addMetric(metrics, ControllerMetrics.OPERATION_CHANGEMANAGEMENT.last());
         addMetric(metrics, ControllerMetrics.OPERATION_CONFIGSERVER.last());
         addMetric(metrics, ControllerMetrics.OPERATION_CONTROLLER.last());
         addMetric(metrics, ControllerMetrics.OPERATION_FLAGS.last());
         addMetric(metrics, ControllerMetrics.OPERATION_OS.last());
         addMetric(metrics, ControllerMetrics.OPERATION_ROUTING.last());
         addMetric(metrics, ControllerMetrics.OPERATION_ZONE.last());
+
+        addMetric(metrics, ControllerMetrics.REMAINING_ROTATIONS.last());
+        addMetric(metrics, ControllerMetrics.DNS_QUEUED_REQUESTS.last());
         addMetric(metrics, ControllerMetrics.ZMS_QUOTA_USAGE.last());
+        addMetric(metrics, ControllerMetrics.COREDUMP_PROCESSED.count());
 
         addMetric(metrics, ControllerMetrics.METERING_AGE_SECONDS.last());
 

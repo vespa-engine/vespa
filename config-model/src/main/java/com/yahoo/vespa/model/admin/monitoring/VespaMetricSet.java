@@ -2,9 +2,7 @@
 package com.yahoo.vespa.model.admin.monitoring;
 
 import ai.vespa.metrics.ClusterControllerMetrics;
-import ai.vespa.metrics.ConfigServerMetrics;
 import ai.vespa.metrics.ContainerMetrics;
-import ai.vespa.metrics.ControllerMetrics;
 import ai.vespa.metrics.DistributorMetrics;
 import ai.vespa.metrics.LogdMetrics;
 import ai.vespa.metrics.NodeAdminMetrics;
