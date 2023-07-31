@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public class AnalyzerFactory {
+class AnalyzerFactory {
     private static final Logger log = Logger.getLogger(AnalyzerFactory.class.getName());
 
     private final LuceneAnalysisConfig config;

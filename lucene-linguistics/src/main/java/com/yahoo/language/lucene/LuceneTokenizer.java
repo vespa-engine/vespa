@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class LuceneTokenizer implements Tokenizer {
+class LuceneTokenizer implements Tokenizer {
 
     private static final Logger log = Logger.getLogger(LuceneTokenizer.class.getName());
 
