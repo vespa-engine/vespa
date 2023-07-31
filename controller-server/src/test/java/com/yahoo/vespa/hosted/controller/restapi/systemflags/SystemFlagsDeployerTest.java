@@ -87,7 +87,7 @@ public class SystemFlagsDeployerTest {
         // has the CLOUD dimension set.
         deployFlags(Optional.empty(), "partial/default.json", Optional.of("partial/put-controller.json"), true, PutType.CREATE, FetchVector.Dimension.CLOUD);
         deployFlags(Optional.empty(), "partial/default.json", Optional.empty(), false, PutType.NONE, FetchVector.Dimension.CLOUD);
-        deployFlags(Optional.of("partial/initial.json"), "partial/default.json", Optional.of("partial/put-controller-2.json"), true, PutType.UPDATE, FetchVector.Dimension.CLOUD);
+        deployFlags(Optional.of("partial/initial.json"), "partial/default.json", Optional.of("partial/put-controller.json"), true, PutType.UPDATE, FetchVector.Dimension.CLOUD);
         deployFlags(Optional.of("partial/initial.json"), "partial/default.json", Optional.empty(), false, PutType.DELETE, FetchVector.Dimension.CLOUD);
 
         // When the CLOUD dimension is NOT set on the dimension, the controller target will also resolve that dimension, and
