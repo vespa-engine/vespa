@@ -645,6 +645,8 @@ public class YqlParserTestCase {
                         "Invalid geoLocation coordinates 'Latitude: 2.0 degrees' and 'Latitude: 5.0 degrees'"));
         assertParse("select foo from bar where geoLocation(workplace, -12, -34, \"-77 d\")",
                 "GEO_LOCATION workplace:(2,-34000000,-12000000,-1,0,1,0,4201111954)");
+        assertParse("select * from test_index where geoLocation(coordinate, 0.000010, 0.000010, \"10.000000 km\")",
+                "GEO_LOCATION coordinate:(2,10,10,90133,0,1,0,4294967294)");
     }
 
     @Test
