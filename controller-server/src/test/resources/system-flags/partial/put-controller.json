@@ -1,0 +1,15 @@
+{
+  "id" : "my-flag",
+  "rules" : [
+    {
+      "conditions": [
+        {
+          "type": "whitelist",
+          "dimension": "cloud",
+          "values": [ "aws" ]
+        }
+      ],
+      "value" : "foo-value"
+    }
+  ]
+}

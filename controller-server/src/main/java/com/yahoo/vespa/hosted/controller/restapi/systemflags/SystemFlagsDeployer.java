@@ -78,8 +78,12 @@ class SystemFlagsDeployer  {
         return SystemFlagsDeployResult.merge(results);
     }
 
-    private SystemFlagsDeployResult deployFlags(FlagsTarget target, List<FlagData> flagData, boolean dryRun) {
-        Map<FlagId, FlagData> wantedFlagData = lookupTable(flagData);
+    private SystemFlagsDeployResult deployFlags(FlagsTarget target, List<FlagData> flagDataList, boolean dryRun) {
+        flagDataList = flagDataList.stream()
+                                   .map(target::partiallyResolveFlagData)
+                                   .filter(flagData -> !flagData.isEmpty())
+                                   .toList();
+        Map<FlagId, FlagData> wantedFlagData = lookupTable(flagDataList);
         Map<FlagId, FlagData> currentFlagData;
         List<FlagId> definedFlags;
         try {
