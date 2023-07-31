@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
+ * Analyzers for various languages.
+ *
  * @author dainiusjocas
  */
 class AnalyzerFactory {
@@ -54,10 +56,6 @@ class AnalyzerFactory {
      * Retrieves an analyzer with a given params.
      * Sets up the analyzer if config is provided.
      * Default analyzer is the `StandardAnalyzer`.
-     * @param language
-     * @param stemMode
-     * @param removeAccents
-     * @return
      */
     public Analyzer getAnalyzer(Language language, StemMode stemMode, boolean removeAccents) {
         String analyzerKey = generateKey(language, stemMode, removeAccents);
@@ -119,7 +117,7 @@ class AnalyzerFactory {
         }
         String tokenizerName = analysis.tokenizer().name();
         Map<String, String> conf = analysis.tokenizer().conf();
-        return builder.withTokenizer(tokenizerName, toModifiable(conf));
+        return builder.withTokenizer(tokenizerName, asModifiable(conf));
     }
 
     private CustomAnalyzer.Builder addCharFilters(CustomAnalyzer.Builder builder,
@@ -129,7 +127,7 @@ class AnalyzerFactory {
             return builder;
         }
         for (LuceneAnalysisConfig.Analysis.CharFilters charFilter : analysis.charFilters()) {
-            builder.addCharFilter(charFilter.name(), toModifiable(charFilter.conf()));
+            builder.addCharFilter(charFilter.name(), asModifiable(charFilter.conf()));
         }
         return builder;
     }
@@ -141,7 +139,7 @@ class AnalyzerFactory {
             return builder;
         }
         for (LuceneAnalysisConfig.Analysis.TokenFilters tokenFilter : analysis.tokenFilters()) {
-            builder.addTokenFilter(tokenFilter.name(), toModifiable(tokenFilter.conf()));
+            builder.addTokenFilter(tokenFilter.name(), asModifiable(tokenFilter.conf()));
         }
         return builder;
     }
@@ -150,10 +148,9 @@ class AnalyzerFactory {
      * A config map coming from the Vespa ConfigInstance is immutable while CustomAnalyzer builders
      * mutates the map to mark that a param was consumed. Immutable maps can't be mutated!
      * To overcome this conflict we can wrap the ConfigInstance map in a new HashMap.
-     * @param map
-     * @return Mutable Map
      */
-    private Map<String, String> toModifiable(Map<String, String> map) {
+    private Map<String, String> asModifiable(Map<String, String> map) {
         return new HashMap<>(map);
     }
+
 }

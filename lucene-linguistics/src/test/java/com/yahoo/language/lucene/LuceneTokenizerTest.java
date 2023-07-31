@@ -148,4 +148,5 @@ public class LuceneTokenizerTest {
                 .tokenize("Dogs and Cats", Language.ENGLISH, StemMode.ALL, false);
         assertEquals(List.of("Dog", "Cat"), tokenStrings(tokens));
     }
+
 }

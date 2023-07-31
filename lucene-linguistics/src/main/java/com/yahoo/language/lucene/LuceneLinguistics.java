@@ -3,28 +3,25 @@ package com.yahoo.language.lucene;
 import com.google.inject.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.*;
+import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import org.apache.lucene.analysis.Analyzer;
 
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
- * Factory of Lucene based linguistics processor.
+ * Factory of Lucene based linguistics processors.
  * As described in the Linguistics docstring
  * > the tokenizer should typically stem, transform and normalize
- * The Stemmer, Transformer, Normalizer, and Segmenter implementations are mostly NOOP.
  *
  * TODO: docs for all available analysis components.
- * TODO: some registry for available language Analyzers.
  *
  * @author dainiusjocas
  */
 public class LuceneLinguistics extends SimpleLinguistics {
 
     private static final Logger log = Logger.getLogger(LuceneLinguistics.class.getName());
-    private final Tokenizer tokenizer;
+    private final LuceneTokenizer tokenizer;
     private final LuceneAnalysisConfig config;
 
     @Inject
@@ -39,8 +36,8 @@ public class LuceneLinguistics extends SimpleLinguistics {
 
     @Override
     public boolean equals(Linguistics other) {
-        return (other instanceof LuceneLinguistics)
-                // Config actually determines if Linguistics are equal
-                && config.equals(((LuceneLinguistics) other).config); }
+        // Config actually determines if Linguistics are equal
+        return (other instanceof LuceneLinguistics) && config.equals(((LuceneLinguistics) other).config);
+    }
 
 }

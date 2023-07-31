@@ -110,4 +110,5 @@ class DefaultAnalyzers {
     public Analyzer get(String languageCode) {
         return analyzerClasses.get(Language.fromLanguageTag(languageCode));
     }
+
 }
