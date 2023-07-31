@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -33,7 +34,7 @@ class AnalyzerFactory {
     // Registry of analyzers per language
     // The idea is to create analyzers ONLY WHEN they are needed
     // Analyzers are thread safe so no need to recreate them for every document
-    private final Map<String, Analyzer> languageAnalyzers = new HashMap<>();
+    private final Map<AnalyzerKey, Analyzer> languageAnalyzers = new ConcurrentHashMap<>();
 
     private final Analyzer defaultAnalyzer = new StandardAnalyzer();
 
@@ -58,43 +59,30 @@ class AnalyzerFactory {
      * Default analyzer is the `StandardAnalyzer`.
      */
     public Analyzer getAnalyzer(Language language, StemMode stemMode, boolean removeAccents) {
-        String analyzerKey = generateKey(language, stemMode, removeAccents);
+        return languageAnalyzers.computeIfAbsent(new AnalyzerKey(language, stemMode, removeAccents),
+                                                 this::createAnalyzer);
+    }
 
-        // If analyzer for language is already known
-        if (null != languageAnalyzers.get(analyzerKey)) {
-            return languageAnalyzers.get(analyzerKey);
+    private Analyzer createAnalyzer(AnalyzerKey analyzerKey) {
+        if (null != config.analysis(analyzerKey.languageCode())) {
+            log.config("Creating analyzer for " + analyzerKey + " from config");
+            return createAnalyzer(analyzerKey, config.analysis(analyzerKey.languageCode()));
         }
-        if (null != config.analysis(analyzerKey)) {
-            return setAndReturn(analyzerKey, setUpAnalyzer(analyzerKey));
+        if (null != analyzerComponents.getComponent(analyzerKey.languageCode())) {
+            log.config("Using analyzer for " + analyzerKey + " from components");
+            return analyzerComponents.getComponent(analyzerKey.languageCode());
         }
-        if (null != analyzerComponents.getComponent(analyzerKey)) {
-            log.config("Analyzer for language=" + analyzerKey + " is from components.");
-            return setAndReturn(analyzerKey, analyzerComponents.getComponent(analyzerKey));
-        }
-        if (null != defaultAnalyzers.get(language)) {
-            log.config("Analyzer for language=" + analyzerKey + " is from a list of default language analyzers.");
-            return setAndReturn(analyzerKey, defaultAnalyzers.get(language));
+        if (null != defaultAnalyzers.get(analyzerKey.language())) {
+            log.config("Using Analyzer for " + analyzerKey + " from a list of default language analyzers");
+            return defaultAnalyzers.get(analyzerKey.language());
         }
         // set the default analyzer for the language
-        log.config("StandardAnalyzer is used for language=" + analyzerKey);
-        return setAndReturn(analyzerKey, defaultAnalyzer);
+        log.config("StandardAnalyzer is used for " + analyzerKey);
+        return defaultAnalyzer;
     }
 
-    private Analyzer setAndReturn(String analyzerKey, Analyzer analyzer) {
-        languageAnalyzers.put(analyzerKey, analyzer);
-        return analyzer;
-    }
-
-    // TODO: Would it make sense to combine language + stemMode + removeAccents to make
-    //  a composite key so we can have more variations possible?
-    private String generateKey(Language language, StemMode stemMode, boolean removeAccents) {
-        return language.languageCode();
-    }
-
-    private Analyzer setUpAnalyzer(String analyzerKey) {
+    private Analyzer createAnalyzer(AnalyzerKey analyzerKey, LuceneAnalysisConfig.Analysis analysis) {
         try {
-            LuceneAnalysisConfig.Analysis analysis = config.analysis(analyzerKey);
-            log.config("Creating analyzer for: '" + analyzerKey + "' with config: " + analysis);
             CustomAnalyzer.Builder builder = CustomAnalyzer.builder(configDir);
             builder = withTokenizer(builder, analysis);
             builder = addCharFilters(builder, analysis);
@@ -104,8 +92,8 @@ class AnalyzerFactory {
             // Failing to set up the Analyzer, should blow up during testing and VAP should not be deployed.
             // Most likely cause for problems is that a specified resource is not available in VAP.
             // Unit tests should catch such problems and prevent the VAP being deployed.
-            throw new RuntimeException("Failed to build analyzer: '" + analyzerKey +
-                                       "', with configuration: '" + config.analysis(analyzerKey), e);
+            throw new RuntimeException("Failed to build analyzer " + analyzerKey +
+                                       ", with configuration " + analysis, e);
         }
     }
 
@@ -151,6 +139,30 @@ class AnalyzerFactory {
      */
     private Map<String, String> asModifiable(Map<String, String> map) {
         return new HashMap<>(map);
+    }
+
+    private record AnalyzerKey(Language language, StemMode stemMode, boolean removeAccents) {
+
+        // TODO: Identity here is determined by language only.
+        //       Would it make sense to combine language + stemMode + removeAccents to make
+        //       a composite key so we can have more variations possible?
+
+        public String languageCode() {
+            return language.languageCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if ( ! (o instanceof AnalyzerKey other)) return false;
+            return other.language == this.language;
+        }
+
+        @Override
+        public int hashCode() {
+            return language.hashCode();
+        }
+
     }
 
 }
