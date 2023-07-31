@@ -39,7 +39,7 @@ class LuceneTokenizer implements Tokenizer {
         if (input.isEmpty()) return List.of();
 
         List<Token> tokens = textToTokens(input, analyzerFactory.getAnalyzer(language, stemMode, removeAccents));
-        log.log(Level.FINEST, "Tokenized '" + language + "' text='" + input + "' into: n=" + tokens.size() + ", tokens=" + tokens);
+        log.log(Level.FINEST, () -> "Tokenized '" + language + "' text='" + input + "' into: n=" + tokens.size() + ", tokens=" + tokens);
         return tokens;
     }
 
