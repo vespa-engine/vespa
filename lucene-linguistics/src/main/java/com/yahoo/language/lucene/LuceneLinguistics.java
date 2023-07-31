@@ -18,6 +18,8 @@ import java.util.logging.Logger;
  *
  * TODO: docs for all available analysis components.
  * TODO: some registry for available language Analyzers.
+ *
+ * @author dainiusjocas
  */
 public class LuceneLinguistics extends SimpleLinguistics {
 
@@ -35,13 +37,10 @@ public class LuceneLinguistics extends SimpleLinguistics {
     @Override
     public Tokenizer getTokenizer() { return tokenizer; }
 
-    public LuceneAnalysisConfig getConfig() {
-        return config;
-    }
-
     @Override
     public boolean equals(Linguistics other) {
         return (other instanceof LuceneLinguistics)
                 // Config actually determines if Linguistics are equal
-                && config.equals(((LuceneLinguistics) other).getConfig()); }
+                && config.equals(((LuceneLinguistics) other).config); }
+
 }

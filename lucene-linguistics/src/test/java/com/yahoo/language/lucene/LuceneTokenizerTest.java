@@ -17,6 +17,9 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * @author dainiusjocas
+ */
 public class LuceneTokenizerTest {
 
     @Test

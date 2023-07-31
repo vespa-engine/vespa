@@ -16,6 +16,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
+/**
+ * @author dainiusjocas
+ */
 class AnalyzerFactory {
     private static final Logger log = Logger.getLogger(AnalyzerFactory.class.getName());
 

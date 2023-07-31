@@ -44,6 +44,9 @@ import java.util.Map;
 
 import static java.util.Map.entry;
 
+/**
+ * @author dainiusjocas
+ */
 class DefaultAnalyzers {
 
     private static DefaultAnalyzers INSTANCE;
