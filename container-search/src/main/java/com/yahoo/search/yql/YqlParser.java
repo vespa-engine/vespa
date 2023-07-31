@@ -409,12 +409,31 @@ public class YqlParser implements Parser {
         return fillWeightedSet(ast, args.get(1), new DotProductItem(getIndex(args.get(0))));
     }
 
+    private ParsedDegree degreesFromArg(OperatorNode<ExpressionOperator> ast, boolean first) {
+        Object arg = null;
+        switch (ast.getOperator()) {
+        case LITERAL:
+            arg = ast.getArgument(0);
+	    break;
+        case READ_FIELD:
+            arg = ast.getArgument(1);
+	    break;
+        default:
+            throw newUnexpectedArgumentException(ast.getOperator(),
+                                                 ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
+        }
+        if (arg instanceof Number n) {
+            return new ParsedDegree(n.doubleValue(), first, !first);
+        }
+        return ParsedDegree.fromString(arg.toString(), first, !first);
+    }
+
     private Item buildGeoLocation(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 4, "Expected 4 arguments, got %s.", args.size());
         String field = fetchFieldName(args.get(0));
-        var coord_1 = ParsedDegree.fromString(fetchLiteral(args.get(1)), true, false);
-        var coord_2 = ParsedDegree.fromString(fetchLiteral(args.get(2)), false, true);
+        var coord_1 = degreesFromArg(args.get(1), true);
+        var coord_2 = degreesFromArg(args.get(2), false);
         double radius = DistanceParser.parse(fetchLiteral(args.get(3)));
         var loc = new Location();
         if (coord_1.isLatitude && coord_2.isLongitude) {
