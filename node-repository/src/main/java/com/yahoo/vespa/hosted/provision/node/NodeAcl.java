@@ -45,12 +45,12 @@ public record NodeAcl(Node node,
         this.trustedUdpPorts = ImmutableSet.copyOf(Objects.requireNonNull(trustedUdpPorts, "trustedUdpPorts must be non-null"));
     }
 
-    public static NodeAcl from(Node node, NodeList allNodes, LoadBalancers loadBalancers, Zone zone, boolean simplerAcl) {
+    public static NodeAcl from(Node node, NodeList allNodes, LoadBalancers loadBalancers, Zone zone) {
         Set<TrustedNode> trustedNodes = new TreeSet<>(Comparator.comparing(TrustedNode::hostname));
         Set<Integer> trustedPorts = new LinkedHashSet<>();
         Set<Integer> trustedUdpPorts = new LinkedHashSet<>();
         Set<String> trustedNetworks = new LinkedHashSet<>();
-        IP.Space ipSpace = simplerAcl ? IP.Space.of(zone, node.cloudAccount()) : (ip, account) -> true;
+        IP.Space ipSpace = IP.Space.of(zone, node.cloudAccount());
 
         // For all cases below, trust:
         // - SSH: If the host has one container, and it is using the host's network namespace,
