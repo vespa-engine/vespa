@@ -106,13 +106,8 @@ class AnalyzerFactory {
             // Failing to set up the Analyzer, should blow up during testing and VAP should not be deployed.
             // Most likely cause for problems is that a specified resource is not available in VAP.
             // Unit tests should catch such problems and prevent the VAP being deployed.
-            log.severe("Failed to build analyzer: '"
-                    + analyzerKey
-                    + "', with configuration: '"
-                    + config.analysis(analyzerKey)
-                    + "' with exception: '"
-                    + e.getMessage() + "'" );
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to build analyzer: '" + analyzerKey +
+                                       "', with configuration: '" + config.analysis(analyzerKey), e);
         }
     }
 
