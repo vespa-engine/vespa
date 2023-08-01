@@ -162,9 +162,9 @@ public enum ContainerMetrics implements VespaMetrics {
     ERROR_UNHANDLED_EXCEPTION("error.unhandled_exception", Unit.OPERATION, "Requests that failed due to an unhandled exception"),
 
     // Deprecated metrics. TODO: Remove in Vespa 9.
-    SERVER_REJECTED_REQUESTS("serverRejectedRequests", Unit.OPERATION, "Deprecated. Use jdisc.thread_pool.rejected_tasks instead."),
-    SERVER_THREAD_POOL_SIZE("serverThreadPoolSize", Unit.THREAD, "Deprecated. Use jdisc.thread_pool.size instead."),
-    SERVER_ACTIVE_THREADS("serverActiveThreads", Unit.THREAD, "Deprecated. Use jdisc.thread_pool.active_threads instead."),
+    SERVER_REJECTED_REQUESTS("serverRejectedRequests", Unit.OPERATION, "Deprecated. Use jdisc.thread_pool.rejected_tasks instead."), // TODO: Remove in Vespa 9.
+    SERVER_THREAD_POOL_SIZE("serverThreadPoolSize", Unit.THREAD, "Deprecated. Use jdisc.thread_pool.size instead."), // TODO: Remove in Vespa 9.
+    SERVER_ACTIVE_THREADS("serverActiveThreads", Unit.THREAD, "Deprecated. Use jdisc.thread_pool.active_threads instead."), // TODO: Remove in Vespa 9.
 
     // Java (JRT) TLS metrics
     JRT_TRANSPORT_TLS_CERTIFICATE_VERIFICATION_FAILURES("jrt.transport.tls-certificate-verification-failures", Unit.FAILURE, "TLS certificate verification failures"),
