@@ -163,6 +163,61 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
                 """;
         assertEquals(expectedResponse, response);
     }
+
+    @Test
+    public void test_metric_filtering() {
+        var context = StateMetricContext.newInstance(Map.of("dim-1", "value1"));
+        var snapshot = new MetricSnapshot();
+        snapshot.set(context, "gauge.metric", 0.2);
+        snapshot.add(context, "counter.metric", 5);
+        snapshot.add(context, "configserver.requests", 120);
+        // Infrastructure set only contains max and average
+        snapshot.set(context, "lockAttempt.lockedLoad", 500);
+
+        // Without filtering
+        snapshotProvider.setSnapshot(snapshot);
+        var response = requestAsString("http://localhost/metrics-packets");
+        var expectedResponse = """
+                {
+                  "application" : "state-handler-test-base",
+                  "timestamp" : 0,
+                  "dimensions" : {
+                    "dim-1" : "value1",
+                    "host" : "some-hostname"
+                  },
+                  "metrics" : {
+                    "gauge.metric.average" : 0.2,
+                    "gauge.metric.last" : 0.2,
+                    "gauge.metric.max" : 0.2,
+                    "configserver.requests.count" : 120,
+                    "lockAttempt.lockedLoad.average" : 500.0,
+                    "lockAttempt.lockedLoad.last" : 500.0,
+                    "lockAttempt.lockedLoad.max" : 500.0,
+                    "counter.metric.count" : 5
+                  }
+                }
+                """;
+        assertEquals(expectedResponse, response);
+
+        // With filtering
+        response = requestAsString("http://localhost/metrics-packets?metric-set=infrastructure");
+        expectedResponse = """
+                {
+                  "application" : "state-handler-test-base",
+                  "timestamp" : 0,
+                  "dimensions" : {
+                    "dim-1" : "value1",
+                    "host" : "some-hostname"
+                  },
+                  "metrics" : {
+                    "lockAttempt.lockedLoad.max" : 500.0,
+                    "configserver.requests.count" : 120,
+                    "lockAttempt.lockedLoad.average" : 500.0
+                  }
+                }
+                """;
+        assertEquals(expectedResponse, response);
+    }
     
     private List<JsonNode> incrementTimeAndGetJsonPackets() throws Exception {
         advanceToNextSnapshot();
