@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
+import ai.vespa.metrics.set.Metric;
 import com.yahoo.cloud.config.LogforwarderConfig;
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -15,7 +16,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import org.junit.jupiter.api.Test;

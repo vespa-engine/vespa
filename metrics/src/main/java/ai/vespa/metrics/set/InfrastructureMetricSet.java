@@ -1,7 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.model.admin.monitoring;
+package ai.vespa.metrics.set;
 
-import ai.vespa.metrics.*;
+import ai.vespa.metrics.ConfigServerMetrics;
+import ai.vespa.metrics.ContainerMetrics;
+import ai.vespa.metrics.ControllerMetrics;
+import ai.vespa.metrics.LogdMetrics;
+import ai.vespa.metrics.Suffix;
+import ai.vespa.metrics.VespaMetrics;
 
 import java.util.Collections;
 import java.util.EnumSet;

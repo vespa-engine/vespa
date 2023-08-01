@@ -1,13 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.metricsproxy;
 
+import ai.vespa.metrics.set.Metric;
+import ai.vespa.metrics.set.MetricSet;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.admin.monitoring.Metric;
-import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import org.junit.jupiter.api.Test;
 
+import static ai.vespa.metrics.set.DefaultMetrics.defaultMetricSet;
+import static ai.vespa.metrics.set.DefaultVespaMetrics.defaultVespaMetricSet;
+import static ai.vespa.metrics.set.NetworkMetrics.networkMetricSet;
+import static ai.vespa.metrics.set.SystemMetrics.systemMetricSet;
+import static ai.vespa.metrics.set.VespaMetricSet.vespaMetricSet;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.checkMetric;
@@ -16,11 +21,6 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.c
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getCustomConsumer;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
-import static com.yahoo.vespa.model.admin.monitoring.DefaultMetrics.defaultMetricSet;
-import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
-import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetricSet;
-import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
-import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricSet;
 import static java.util.Collections.singleton;
 import static org.junit.jupiter.api.Assertions.*;
 

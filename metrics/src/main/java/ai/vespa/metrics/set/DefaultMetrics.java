@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-package com.yahoo.vespa.model.admin.monitoring;
+package ai.vespa.metrics.set;
 
 import ai.vespa.metrics.ContainerMetrics;
 import ai.vespa.metrics.SearchNodeMetrics;
@@ -18,7 +18,7 @@ import static ai.vespa.metrics.Suffix.max;
 import static ai.vespa.metrics.Suffix.ninety_five_percentile;
 import static ai.vespa.metrics.Suffix.ninety_nine_percentile;
 import static ai.vespa.metrics.Suffix.sum;
-import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
+import static ai.vespa.metrics.set.DefaultVespaMetrics.defaultVespaMetricSet;
 
 /**
  * Metrics for the 'default' consumer, which is used by default for the generic metrics api and

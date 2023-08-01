@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.model.admin.monitoring;
+package ai.vespa.metrics.set;
 
 import ai.vespa.metrics.ContainerMetrics;
 import ai.vespa.metrics.SearchNodeMetrics;
-import com.google.common.collect.ImmutableSet;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -19,20 +19,11 @@ public class DefaultVespaMetrics {
     public static final MetricSet defaultVespaMetricSet = createDefaultVespaMetricSet();
 
     private static MetricSet createDefaultVespaMetricSet() {
+        Set<Metric> metrics = new LinkedHashSet<>();
 
-        Set<Metric> defaultContainerMetrics =
-                ImmutableSet.of(new Metric(ContainerMetrics.FEED_OPERATIONS.rate())
-                );
+        metrics.add(new Metric(ContainerMetrics.FEED_OPERATIONS.rate()));
+        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_FEEDING_BLOCKED.last()));
 
-        Set<Metric> defaultContentMetrics =
-                ImmutableSet.of(new Metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_FEEDING_BLOCKED.last())
-                );
-
-        Set<Metric> defaultMetrics = ImmutableSet.<Metric>builder()
-                .addAll(defaultContainerMetrics)
-                .addAll(defaultContentMetrics)
-                .build();
-
-        return new MetricSet("default-vespa", defaultMetrics);
+        return new MetricSet("default-vespa", metrics);
     }
 }
