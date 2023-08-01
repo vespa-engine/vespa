@@ -449,6 +449,7 @@ public class ApplicationHandler extends HttpHandler {
                 Cursor serviceObject = serviceArray.addObject();
                 String hostName = serviceInfo.getHostName();
                 int statePort = ConfigConvergenceChecker.getStatePort(serviceInfo).get();
+                serviceInfo.getProperty("clustername").ifPresent(clusterName -> serviceObject.setString("clusterName", clusterName));
                 serviceObject.setString("host", hostName);
                 serviceObject.setLong("port", statePort);
                 serviceObject.setString("type", serviceInfo.getServiceType());
