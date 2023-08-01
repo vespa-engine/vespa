@@ -70,6 +70,16 @@ public class FlagData {
             }
         }
 
+        // Remove trailing rules that have no conditions and no value to apply.
+        while (newRules.size() > 0) {
+            Rule lastRule = newRules.get(newRules.size() - 1);
+            if (lastRule.conditions().isEmpty() && lastRule.getValueToApply().isEmpty()) {
+                newRules.remove(newRules.size() - 1);
+            } else {
+                break;
+            }
+        }
+
         FetchVector newDefaultFetchVector = defaultFetchVector.without(fetchVector.dimensions());
 
         return new FlagData(id, newDefaultFetchVector, newRules);

@@ -5,6 +5,7 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.RawFlag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -210,6 +211,29 @@ public class FlagDataTest {
                                     "id": "id1"
                                 }"""));
         assertTrue(fullyResolved.isEmpty());
+    }
+
+    @Test
+    void testRemovalOfSentinelRuleWithNullValue() {
+        FlagData data = FlagData.deserialize("""
+                                             {
+                                                 "id": "id1",
+                                                 "rules": [
+                                                     {
+                                                         "conditions": [
+                                                             {
+                                                                 "type": "whitelist",
+                                                                 "dimension": "zone",
+                                                                 "values": [ "zone1", "zone2" ]
+                                                             }
+                                                         ],
+                                                         "value": null
+                                                     }
+                                                 ]
+                                             }""");
+        FlagData flagData = data.partialResolve(vector.with(FetchVector.Dimension.ZONE_ID, "zone3"));
+        assertEquals(flagData, new FlagData(data.id(), new FetchVector(), List.of()));
+        assertTrue(flagData.isEmpty());
     }
 
     private void verify(Optional<String> expectedValue, FetchVector vector) {
