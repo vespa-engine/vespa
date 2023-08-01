@@ -56,6 +56,9 @@ BufferTypeBase::BufferTypeBase(uint32_t entry_size_in,
 {
 }
 
+BufferTypeBase::BufferTypeBase(BufferTypeBase &&rhs) noexcept = default;
+BufferTypeBase & BufferTypeBase::operator=(BufferTypeBase &&rhs) noexcept = default;
+
 BufferTypeBase::~BufferTypeBase()
 {
     assert(_holdBuffers == 0);
