@@ -4,6 +4,8 @@ package com.yahoo.vespa.model.admin.monitoring;
 
 import ai.vespa.metrics.ContainerMetrics;
 import ai.vespa.metrics.SearchNodeMetrics;
+import ai.vespa.metrics.StorageMetrics;
+import ai.vespa.metrics.DistributorMetrics;
 import ai.vespa.metrics.Suffix;
 import ai.vespa.metrics.VespaMetrics;
 
@@ -15,9 +17,11 @@ import java.util.Set;
 import static ai.vespa.metrics.Suffix.average;
 import static ai.vespa.metrics.Suffix.count;
 import static ai.vespa.metrics.Suffix.max;
+import static ai.vespa.metrics.Suffix.min;
 import static ai.vespa.metrics.Suffix.ninety_five_percentile;
 import static ai.vespa.metrics.Suffix.ninety_nine_percentile;
 import static ai.vespa.metrics.Suffix.sum;
+
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 
 /**
@@ -41,9 +45,12 @@ public class DefaultMetrics {
     private static Set<Metric> getAllMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        addContentMetrics(metrics);
         addContainerMetrics(metrics);
         addSearchChainMetrics(metrics);
+        addDocprocMetrics(metrics);
+        addContentMetrics(metrics);
+        addStorageMetrics(metrics);
+        addDistributorMetrics(metrics);
         return Collections.unmodifiableSet(metrics);
     }
 
@@ -55,6 +62,13 @@ public class DefaultMetrics {
         addMetric(metrics, ContainerMetrics.HTTP_STATUS_5XX.rate());
         addMetric(metrics, ContainerMetrics.JDISC_GC_MS.average());
         addMetric(metrics, ContainerMetrics.MEM_HEAP_FREE.average());
+        addMetric(metrics, ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count));
+        addMetric(metrics, ContainerMetrics.JDISC_GC_MS.max());
+        // addMetric(metrics, ContainerMetrics.CPU.baseName()); // TODO: Add to container metrics
+        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_SIZE.max());
+        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_ACTIVE_THREADS, EnumSet.of(sum, count, min, max));
+        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY.max());
+        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_SIZE, EnumSet.of(sum, count, min, max));
     }
 
     private static void addSearchChainMetrics(Set<Metric> metrics) {
@@ -65,6 +79,10 @@ public class DefaultMetrics {
         addMetric(metrics, ContainerMetrics.DEGRADED_QUERIES.rate());
         addMetric(metrics, ContainerMetrics.FAILED_QUERIES.rate());
         addMetric(metrics, ContainerMetrics.SERVER_ACTIVE_THREADS.average()); // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
+    }
+
+    private static void addDocprocMetrics(Set<Metric> metrics) {
+        addMetric(metrics, ContainerMetrics.DOCPROC_DOCUMENTS.sum());
     }
 
     private static void addContentMetrics(Set<Metric> metrics) {
@@ -87,6 +105,16 @@ public class DefaultMetrics {
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_LATENCY, EnumSet.of(sum, count, max, average)); // TODO: Remove average with Vespa 9
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_RERANK_TIME, EnumSet.of(sum, count, max, average)); // TODO: Remove average with Vespa 9
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_TRANSACTIONLOG_DISK_USAGE.last());
+    }
+
+    private static void addStorageMetrics(Set<Metric> metrics) {
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_PUT_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_COUNT.rate());
+        addMetric(metrics, StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_COUNT.rate());
+    }
+
+    private static void addDistributorMetrics(Set<Metric> metrics) {
+        addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_DOCSSTORED.average());
     }
 
     private static void addMetric(Set<Metric> metrics, String nameWithSuffix) {
