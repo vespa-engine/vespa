@@ -21,8 +21,6 @@ public enum ControllerMetrics implements VespaMetrics {
     DEPLOYMENT_CANCEL("deployment.cancel", Unit.DEPLOYMENT, "Deployments that were canceled"),
     DEPLOYMENT_SUCCESS("deployment.success", Unit.DEPLOYMENT, "Successful deployments"),
     DEPLOYMENT_QUOTA_EXCEEDED("deployment.quotaExceeded", Unit.DEPLOYMENT, "Deployments stopped due to exceeding quota"),
-
-
     BILLING_TENANTS("billing.tenants", Unit.TENANT, "Billing tenants"),
     DEPLOYMENT_FAILURE_PERCENTAGE("deployment.failurePercentage", Unit.PERCENTAGE, "Deployment: Failure percentage"),
     DEPLOYMENT_AVERAGE_DURATION("deployment.averageDuration", Unit.SECOND, "Deployment duration"),
@@ -38,10 +36,9 @@ public enum ControllerMetrics implements VespaMetrics {
     REMAINING_ROTATIONS("remaining_rotations", Unit.ROTATION, "Remaining rotations"),
     DNS_QUEUED_REQUESTS("dns.queuedRequests", Unit.REQUEST, "Queued DNS requests"),
     ZMS_QUOTA_USAGE("zms.quota.usage", Unit.FRACTION, "ZMS Quota usage per resource type"),
-
     COREDUMP_PROCESSED("coredump.processed", Unit.FAILURE,"Controller: Core dumps processed"),
 
-    // Metrics per API, metrics created in ControllerMaintainer/MetricsReporter
+    // Metrics per API, metrics names generated in ControllerMaintainer/MetricsReporter
     OPERATION_APPLICATION("operation.application", Unit.REQUEST, "Controller: Requests for /application API"),
     OPERATION_CHANGEMANAGEMENT("operation.changemanagement", Unit.REQUEST, "Controller: Requests for /changemanagement API"),
     OPERATION_CONFIGSERVER("operation.configserver", Unit.REQUEST, "Controller: Requests for /configserver API"),
@@ -59,7 +56,6 @@ public enum ControllerMetrics implements VespaMetrics {
     METERING_VCPU("metering.vcpu", Unit.VCPU, "Controller: Metering VCPU"),
     METERING_LAST_REPORTED("metering_last_reported", Unit.SECONDS_SINCE_EPOCH, "Controller: Metering last reported"),
     METERING_TOTAL_REPORTED("metering_total_reported", Unit.ITEM, "Controller: Metering total reported (sum of resources)");
-
 
     private final String name;
     private final Unit unit;
