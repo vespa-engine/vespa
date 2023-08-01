@@ -37,10 +37,11 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
             return SuspensionReasons.nothingNoteworthy();
         }
 
-        int percentageOfServicesAllowedToBeDown = getConcurrentSuspensionLimit(clusterApi).asPercentage();
-        if (clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() <= percentageOfServicesAllowedToBeDown) {
+        SuspensionLimit limit = getConcurrentSuspensionLimit(clusterApi);
+        if (clusterApi.servicesDownIfGroupIsAllowedToBeDown() <= limit.allowedDown())
             return SuspensionReasons.nothingNoteworthy();
-        }
+        if (clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() <= limit.allowedDownPercentage())
+            return SuspensionReasons.nothingNoteworthy();
 
         // Be a bit more cautious when removing nodes permanently
         if (!permanent) {
@@ -50,19 +51,39 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
             }
         }
 
-        String message = percentageOfServicesAllowedToBeDown <= 0
-                ? clusterApi.percentageOfServicesDownOutsideGroup() + "% of the " + clusterApi.serviceDescription(true)
-                  + " are down or suspended already:" + clusterApi.downDescription()
-                : "The percentage of downed or suspended " + clusterApi.serviceDescription(true)
-                  + " would increase from " + clusterApi.percentageOfServicesDownOutsideGroup() + "% to "
-                  + clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() + "% (limit is "
-                  + percentageOfServicesAllowedToBeDown + "%):" + clusterApi.downDescription();
+        final String message;
+        if (limit.allowedDownPercentage() > 0) {
+            final String numberDescription;
+            final String fromDescription;
+            final String toDescription;
+            final String limitDescription;
+            if (limit.allowedDown() > 1) {
+                numberDescription = "number (percentage)";
+                fromDescription = clusterApi.servicesDownOutsideGroup() + " (" + clusterApi.percentageOfServicesDownOutsideGroup() + "%)";
+                toDescription = clusterApi.servicesDownIfGroupIsAllowedToBeDown() + " (" + clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() + "%)";
+                limitDescription = limit.allowedDown() + " (" + limit.allowedDownPercentage() + "%)";
+            } else {
+                numberDescription = "percentage";
+                fromDescription = clusterApi.percentageOfServicesDownOutsideGroup() + "%";
+                toDescription = clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() + "%";
+                limitDescription = limit.allowedDownPercentage() + "%";
+            }
 
-        throw new HostStateChangeDeniedException(clusterApi.getNodeGroup(), ENOUGH_SERVICES_UP_CONSTRAINT, message);
+            message = "The %s of %s that are down would increase from %s to %s which is beyond the limit of %s"
+                    .formatted(numberDescription, clusterApi.serviceDescription(true), fromDescription, toDescription, limitDescription);
+        } else {
+            message = "%d %s %s already down".formatted(clusterApi.servicesDownOutsideGroup(),
+                                                        clusterApi.serviceDescription(false),
+                                                        clusterApi.servicesDownOutsideGroup() == 1 ? "is" : "are");
+        }
+
+        throw new HostStateChangeDeniedException(clusterApi.getNodeGroup(),
+                                                 ENOUGH_SERVICES_UP_CONSTRAINT,
+                                                 message + ":" + clusterApi.downDescription());
     }
 
     // Non-private for testing purposes
-    ConcurrentSuspensionLimitForCluster getConcurrentSuspensionLimit(ClusterApi clusterApi) {
+    SuspensionLimit getConcurrentSuspensionLimit(ClusterApi clusterApi) {
         // Possible service clusters on a node as of 2021-01-22:
         //
         //       CLUSTER ID           SERVICE TYPE                  HEALTH       ASSOCIATION
@@ -102,45 +123,50 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
         //   H  proxy (same as B)
         //   I  proxy host
 
+        Optional<SuspensionLimit> override = clusterApi.clusterPolicyOverride().getSuspensionLimit();
+        if (override.isPresent()) {
+            return override.get();
+        }
+
         if (clusterApi.serviceType().equals(ServiceType.CLUSTER_CONTROLLER)) {
-            return ConcurrentSuspensionLimitForCluster.ONE_NODE;
+            return SuspensionLimit.fromAllowedDown(1);
         }
 
         if (Set.of(ServiceType.STORAGE, ServiceType.SEARCH, ServiceType.DISTRIBUTOR, ServiceType.TRANSACTION_LOG_SERVER)
                 .contains(clusterApi.serviceType())) {
             // Delegate to the cluster controller
-            return ConcurrentSuspensionLimitForCluster.ALL_NODES;
+            return SuspensionLimit.fromAllowedDownRatio(1);
         }
 
         if (clusterApi.serviceType().equals(ServiceType.CONTAINER)) {
-            return ConcurrentSuspensionLimitForCluster.TEN_PERCENT;
+            return SuspensionLimit.fromAllowedDownRatio(0.1);
         }
 
         if (VespaModelUtil.ADMIN_CLUSTER_ID.equals(clusterApi.clusterId())) {
             if (ServiceType.SLOBROK.equals(clusterApi.serviceType())) {
-                return ConcurrentSuspensionLimitForCluster.ONE_NODE;
+                return SuspensionLimit.fromAllowedDown(1);
             }
 
-            return ConcurrentSuspensionLimitForCluster.ALL_NODES;
+            return SuspensionLimit.fromAllowedDownRatio(1);
         } else if (ServiceType.METRICS_PROXY.equals(clusterApi.serviceType())) {
-            return ConcurrentSuspensionLimitForCluster.ALL_NODES;
+            return SuspensionLimit.fromAllowedDownRatio(1);
         }
 
         if (Set.of(ServiceType.CONFIG_SERVER, ServiceType.CONTROLLER).contains(clusterApi.serviceType())) {
-            return ConcurrentSuspensionLimitForCluster.ONE_NODE;
+            return SuspensionLimit.fromAllowedDown(1);
         }
 
         if (clusterApi.serviceType().equals(ServiceType.HOST_ADMIN)) {
             if (Set.of(ClusterId.CONFIG_SERVER_HOST, ClusterId.CONTROLLER_HOST).contains(clusterApi.clusterId())) {
-                return ConcurrentSuspensionLimitForCluster.ONE_NODE;
+                return SuspensionLimit.fromAllowedDown(1);
             }
 
             return zone.system().isCd()
-                    ? ConcurrentSuspensionLimitForCluster.FIFTY_PERCENT
-                    : ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT;
+                    ? SuspensionLimit.fromAllowedDownRatio(0.5)
+                    : SuspensionLimit.fromAllowedDownRatio(0.2);
         }
 
         // The above should cover all cases, but if not we'll return a reasonable default:
-        return ConcurrentSuspensionLimitForCluster.TEN_PERCENT;
+        return SuspensionLimit.fromAllowedDownRatio(0.1);
     }
 }

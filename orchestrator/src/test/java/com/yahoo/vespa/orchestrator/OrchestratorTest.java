@@ -103,7 +103,7 @@ public class OrchestratorTest {
             fail();
         } catch (HostStateChangeDeniedException e) {
             assertTrue(e.getMessage().contains("Changing the state of cfg2 would violate enough-services-up"));
-            assertTrue(e.getMessage().contains("[cfg1] are suspended."));
+            assertTrue(e.getMessage().contains("[cfg1] is suspended."));
         }
 
         // cfg1 is removed from the application
@@ -115,7 +115,7 @@ public class OrchestratorTest {
             fail();
         } catch (HostStateChangeDeniedException e) {
             assertTrue(e.getMessage().contains("Changing the state of cfg2 would violate enough-services-up"));
-            assertTrue(e.getMessage().contains("[1 missing config server] are down."));
+            assertTrue(e.getMessage().contains("[1 missing config server] is down."));
         }
 
         // cfg1 is reprovisioned, added to the node repo, and activated
@@ -130,7 +130,7 @@ public class OrchestratorTest {
             fail();
         } catch (HostStateChangeDeniedException e) {
             assertTrue(e.getMessage().contains("Changing the state of cfg1 would violate enough-services-up"));
-            assertTrue(e.getMessage().contains("[cfg2] are suspended"));
+            assertTrue(e.getMessage().contains("[cfg2] is suspended"));
         }
 
         // etc (should be the same as for cfg1)
