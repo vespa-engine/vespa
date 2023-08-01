@@ -30,7 +30,7 @@ public class DataplaneTokenServiceTest {
 
     @Test
     void generates_and_persists_token() {
-        DataplaneToken dataplaneToken = dataplaneTokenService.generateToken(tenantName, tokenId, Duration.ofDays(100), principal);
+        DataplaneToken dataplaneToken = dataplaneTokenService.generateToken(tenantName, tokenId, tester.clock().instant().plus(Duration.ofDays(100)), principal);
         List<DataplaneTokenVersions> dataplaneTokenVersions = dataplaneTokenService.listTokens(tenantName);
         assertEquals(dataplaneToken.fingerPrint(), dataplaneTokenVersions.get(0).tokenVersions().get(0).fingerPrint());
         assertEquals(dataplaneToken.expiration(), dataplaneTokenVersions.get(0).tokenVersions().get(0).expiration());
@@ -38,8 +38,8 @@ public class DataplaneTokenServiceTest {
 
     @Test
     void generating_new_token_appends() {
-        DataplaneToken dataplaneToken1 = dataplaneTokenService.generateToken(tenantName, tokenId, Duration.ofDays(1), principal);
-        DataplaneToken dataplaneToken2 = dataplaneTokenService.generateToken(tenantName, tokenId, Duration.ZERO, principal);
+        DataplaneToken dataplaneToken1 = dataplaneTokenService.generateToken(tenantName, tokenId, tester.clock().instant().plus(Duration.ofDays(1)), principal);
+        DataplaneToken dataplaneToken2 = dataplaneTokenService.generateToken(tenantName, tokenId, null, principal);
         assertNotEquals(dataplaneToken1.fingerPrint(), dataplaneToken2.fingerPrint());
 
         List<DataplaneTokenVersions> dataplaneTokenVersions = dataplaneTokenService.listTokens(tenantName);
@@ -54,8 +54,8 @@ public class DataplaneTokenServiceTest {
 
     @Test
     void delete_last_fingerprint_deletes_token() {
-        DataplaneToken dataplaneToken1 = dataplaneTokenService.generateToken(tenantName, tokenId, Duration.ZERO, principal);
-        DataplaneToken dataplaneToken2 = dataplaneTokenService.generateToken(tenantName, tokenId, Duration.ZERO, principal);
+        DataplaneToken dataplaneToken1 = dataplaneTokenService.generateToken(tenantName, tokenId, null, principal);
+        DataplaneToken dataplaneToken2 = dataplaneTokenService.generateToken(tenantName, tokenId, null, principal);
         dataplaneTokenService.deleteToken(tenantName, tokenId, dataplaneToken1.fingerPrint());
         dataplaneTokenService.deleteToken(tenantName, tokenId, dataplaneToken2.fingerPrint());
         assertEquals(List.of(), dataplaneTokenService.listTokens(tenantName));
@@ -63,8 +63,8 @@ public class DataplaneTokenServiceTest {
 
     @Test
     void deleting_nonexistent_fingerprint_throws() {
-        DataplaneToken dataplaneToken = dataplaneTokenService.generateToken(tenantName, tokenId, Duration.ZERO, principal);
-        DataplaneToken dataplaneToken2 = dataplaneTokenService.generateToken(tenantName, tokenId, Duration.ZERO, principal);
+        DataplaneToken dataplaneToken = dataplaneTokenService.generateToken(tenantName, tokenId, null, principal);
+        DataplaneToken dataplaneToken2 = dataplaneTokenService.generateToken(tenantName, tokenId, null, principal);
         dataplaneTokenService.deleteToken(tenantName, tokenId, dataplaneToken.fingerPrint());
 
         // Token currently contains value of "dataplaneToken2"
@@ -74,7 +74,7 @@ public class DataplaneTokenServiceTest {
 
     @Test
     void deleting_nonexistent_token_throws() {
-        DataplaneToken dataplaneToken = dataplaneTokenService.generateToken(tenantName, tokenId, Duration.ZERO, principal);
+        DataplaneToken dataplaneToken = dataplaneTokenService.generateToken(tenantName, tokenId, null, principal);
         dataplaneTokenService.deleteToken(tenantName, tokenId, dataplaneToken.fingerPrint());
 
         // Token is created and deleted above, no longer exists

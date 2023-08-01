@@ -987,9 +987,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
 
     private HttpResponse generateToken(String tenant, String tokenid, HttpRequest request) {
-        // 'expiration=PT0S' for no expiration, no 'expiration' for default TTL.
-        Duration expiration = Optional.ofNullable(request.getProperty("expiration"))
-                .map(Duration::parse).orElse(DataplaneTokenService.DEFAULT_TTL);
+        var expiration = resolveExpiration(request).orElse(null);
         DataplaneToken token = controller.dataplaneTokenService().generateToken(
                 TenantName.from(tenant), TokenId.of(tokenid), expiration, request.getJDiscRequest().getUserPrincipal());
         Slime slime = new Slime();
@@ -999,6 +997,22 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         tokenObject.setString("fingerprint", token.fingerPrint().value());
         tokenObject.setString("expiration", token.expiration().map(Instant::toString).orElse("<none>"));
         return new SlimeJsonResponse(slime);
+    }
+
+    /**
+     * Specify 'expiration=none' for no expiration, no parameter or 'expiration=default' for default TTL.
+     * Use ISO-8601 format for timestamp or period,
+     * e.g 'expiration=PT1H' for 1 hour, 'expiration=2021-01-01T12:00:00Z' for a specific time.
+     */
+    private Optional<Instant> resolveExpiration(HttpRequest r) {
+        var expirationParam = r.getProperty("expiration");
+        var now = controller.clock().instant();
+        if (expirationParam == null || expirationParam.equals("default"))
+            return Optional.of(now.plus(DataplaneTokenService.DEFAULT_TTL));
+        if (expirationParam.equals("none")) return Optional.empty();
+        return expirationParam.startsWith("P")
+                ? Optional.of(now.plus(Duration.parse(expirationParam)))
+                : Optional.of(Instant.parse(expirationParam));
     }
 
     private HttpResponse deleteToken(String tenant, String tokenid, HttpRequest request) {
