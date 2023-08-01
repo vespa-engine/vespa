@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import ai.vespa.metrics.ConfigServerMetrics;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
@@ -45,10 +46,10 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     private static final Logger log = Logger.getLogger(NodeFailer.class.getName());
 
     /** Metric for number of hosts that we want to fail, but cannot due to throttling */
-    static final String throttledHostFailuresMetric = "throttledHostFailures";
+    static final String throttledHostFailuresMetric = ConfigServerMetrics.THROTTLED_HOST_FAILURES.baseName();
 
     /** Metric for number of nodes that we want to fail, but cannot due to throttling */
-    static final String throttledNodeFailuresMetric = "throttledNodeFailures";
+    static final String throttledNodeFailuresMetric = ConfigServerMetrics.THROTTLED_NODE_FAILURES.baseName();
 
     /** Metric that indicates whether throttling is active where 1 means active and 0 means inactive */
     static final String throttlingActiveMetric = "nodeFailThrottling";

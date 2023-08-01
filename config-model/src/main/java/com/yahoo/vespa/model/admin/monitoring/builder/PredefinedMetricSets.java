@@ -13,6 +13,7 @@ import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetri
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricSet;
+import static com.yahoo.vespa.model.admin.monitoring.InfrastructureMetricSet.infrastructureMetricSet;
 
 /**
  * A data object for predefined metric sets.
@@ -27,7 +28,8 @@ public class PredefinedMetricSets {
             vespaMetricSet,
             systemMetricSet,
             networkMetricSet,
-            autoscalingMetricSet
+            autoscalingMetricSet,
+            infrastructureMetricSet
     );
 
     public static Map<String, MetricSet> get() { return sets; }

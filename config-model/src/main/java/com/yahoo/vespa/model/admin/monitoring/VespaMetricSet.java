@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.admin.monitoring;
 
 import ai.vespa.metrics.ClusterControllerMetrics;
-import ai.vespa.metrics.ConfigServerMetrics;
 import ai.vespa.metrics.ContainerMetrics;
 import ai.vespa.metrics.DistributorMetrics;
 import ai.vespa.metrics.LogdMetrics;
@@ -53,7 +52,6 @@ public class VespaMetricSet {
         metrics.addAll(getClusterControllerMetrics());
         metrics.addAll(getSearchChainMetrics());
         metrics.addAll(getContainerMetrics());
-        metrics.addAll(getConfigServerMetrics());
         metrics.addAll(getSentinelMetrics());
         metrics.addAll(getOtherMetrics());
 
@@ -113,55 +111,6 @@ public class VespaMetricSet {
         return metrics;
     }
 
-    private static Set<Metric> getConfigServerMetrics() {
-        Set<Metric> metrics = new LinkedHashSet<>();
-
-        addMetric(metrics, ConfigServerMetrics.REQUESTS.count());
-        addMetric(metrics, ConfigServerMetrics.FAILED_REQUESTS.count());
-        addMetric(metrics, ConfigServerMetrics.LATENCY, EnumSet.of(max, sum, count));
-        addMetric(metrics, ConfigServerMetrics.CACHE_CONFIG_ELEMS.last());
-        addMetric(metrics, ConfigServerMetrics.CACHE_CHECKSUM_ELEMS.last());
-        addMetric(metrics, ConfigServerMetrics.HOSTS.last());
-        addMetric(metrics, ConfigServerMetrics.DELAYED_RESPONSES.count());
-        addMetric(metrics, ConfigServerMetrics.SESSION_CHANGE_ERRORS.count());
-
-        addMetric(metrics, ConfigServerMetrics.ZK_Z_NODES.last());
-        addMetric(metrics, ConfigServerMetrics.ZK_AVG_LATENCY.last());
-        addMetric(metrics, ConfigServerMetrics.ZK_MAX_LATENCY.last());
-        addMetric(metrics, ConfigServerMetrics.ZK_CONNECTIONS.last());
-        addMetric(metrics, ConfigServerMetrics.ZK_OUTSTANDING_REQUESTS.last());
-
-        // Node repository metrics
-        addMetric(metrics, ConfigServerMetrics.NODES_NON_ACTIVE_FRACTION.last());
-        addMetric(metrics, ConfigServerMetrics.CLUSTER_COST.last());
-        addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_CPU.last());
-        addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_MEMORY.last());
-        addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_DISK.last());
-        addMetric(metrics, ConfigServerMetrics.WANT_TO_REBOOT.max());
-        addMetric(metrics, ConfigServerMetrics.WANT_TO_RESTART.max());
-        addMetric(metrics, ConfigServerMetrics.RETIRED.max());
-        addMetric(metrics, ConfigServerMetrics.WANT_TO_CHANGE_VESPA_VERSION.max());
-        addMetric(metrics, ConfigServerMetrics.HAS_WIRE_GUARD_KEY.last());
-        addMetric(metrics, ConfigServerMetrics.WANT_TO_DEPROVISION.max());
-        addMetric(metrics, ConfigServerMetrics.SUSPENDED.max());
-        addMetric(metrics, ConfigServerMetrics.SOME_SERVICES_DOWN.max());
-        addMetric(metrics, ConfigServerMetrics.NODE_FAILER_BAD_NODE.last());
-        addMetric(metrics, ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LOAD, EnumSet.of(max,average));
-
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_CPU.average());
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_MEM.average());
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_DISK.average());
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_CPU.max());
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_MEM.max());
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_DISK.max());
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_CPU, EnumSet.of(max,average));
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_DISK, EnumSet.of(max,average));
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_MEM, EnumSet.of(max,average));
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_SKEW.last());
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_PENDING_REDEPLOYMENTS.last());
-
-        return metrics;
-    }
 
     private static Set<Metric> getContainerMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();

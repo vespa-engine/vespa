@@ -196,7 +196,7 @@ public enum ContainerMetrics implements VespaMetrics {
     SERVER_NUM_SUCCESSFUL_RESPONSE_WRITES("serverNumSuccessfulResponseWrites", Unit.REQUEST, "Number of successful response writes"),
     SERVER_NUM_FAILED_RESPONSE_WRITES("serverNumFailedResponseWrites", Unit.REQUEST, "Number of failed response writes"),
 
-    SERVER_TOTAL_SUCCESFUL_RESPONSE_LATENCY("serverTotalSuccessfulResponseLatency", Unit.MILLISECOND, "Total duration for execution of successful responses"),
+    SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY("serverTotalSuccessfulResponseLatency", Unit.MILLISECOND, "Total duration for execution of successful responses"),
     SERVER_TOTAL_FAILED_RESPONSE_LATENCY("serverTotalFailedResponseLatency", Unit.MILLISECOND, "Total duration for execution of failed responses"),
     SERVER_TIME_TO_FIRST_BYTE("serverTimeToFirstByte", Unit.MILLISECOND, "Time from request has been received by the server until the first byte is returned to the client"),
 

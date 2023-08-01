@@ -290,7 +290,7 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
         Tuple latencySeconds = new Tuple(NULL_DIMENSIONS, "latencySeconds", null);
         for (Map.Entry<MetricDimensions, MetricSet> entry : snapshot) {
             MetricSet metricSet = entry.getValue();
-            MetricValue val = metricSet.get(ContainerMetrics.SERVER_TOTAL_SUCCESFUL_RESPONSE_LATENCY.baseName());
+            MetricValue val = metricSet.get(ContainerMetrics.SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY.baseName());
             if (val instanceof GaugeMetric gauge) {
                 latencySeconds.add(GaugeMetric.newInstance(gauge.getLast() / 1000,
                                                            gauge.getMax() / 1000,
