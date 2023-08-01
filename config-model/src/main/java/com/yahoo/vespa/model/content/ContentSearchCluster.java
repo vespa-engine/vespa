@@ -303,7 +303,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
-                                           fractionOfMemoryReserved, redundancy, deployState.featureFlags());
+                                           fractionOfMemoryReserved, deployState.featureFlags());
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState);
 
@@ -312,7 +312,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             tls.initService(deployState);
         } else {
             searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
-                                                tuning, resourceLimits, fractionOfMemoryReserved, redundancy)
+                                                tuning, resourceLimits, fractionOfMemoryReserved)
                     .build(deployState, parent, element.getXml());
             tls = new TransactionLogServer.Builder(clusterName, syncTransactionLog).build(deployState, searchNode, element.getXml());
         }
