@@ -41,6 +41,7 @@ class ClusterApiImpl implements ClusterApi {
     private final Clock clock;
     private final Set<ServiceInstance> servicesInGroup;
     private final Set<ServiceInstance> servicesNotInGroup;
+    private final ClusterPolicyOverride clusterPolicyOverride;
 
     /** Lazily initialized in servicesDownAndNotInGroup(), do not access directly. */
     private Set<ServiceInstance> servicesDownAndNotInGroup = null;
@@ -71,6 +72,10 @@ class ClusterApiImpl implements ClusterApi {
         this.hostInfos = hostInfos;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
         this.clock = clock;
+        this.clusterPolicyOverride = new ClusterPolicyOverride(serviceCluster.serviceInstances().size(),
+                                                               clusterParams.size(),
+                                                               clusterParams.allowedDown(),
+                                                               clusterParams.allowedDownRatio());
 
         Map<Boolean, Set<ServiceInstance>> serviceInstancesByLocality =
                 serviceCluster.serviceInstances().stream()

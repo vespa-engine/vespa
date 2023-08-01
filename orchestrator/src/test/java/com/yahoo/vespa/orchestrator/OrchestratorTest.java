@@ -57,7 +57,7 @@ public class OrchestratorTest {
         var flagSource = new InMemoryFlagSource();
         var timer = new TestTimer();
         var clustercontroller = new ClusterControllerClientFactoryMock();
-        var applicationApiFactory = new ApplicationApiFactory(3, 5, timer.toUtcClock());
+        var applicationApiFactory = new ApplicationApiFactory(3, 5, 1, 0.1, timer.toUtcClock());
         var clusterPolicy = new HostedVespaClusterPolicy(flagSource, zone);
         var policy = new HostedVespaPolicy(clusterPolicy, clustercontroller, applicationApiFactory, flagSource);
         var zone = new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-east-1"));

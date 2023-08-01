@@ -84,6 +84,8 @@ public class OrchestratorImpl implements Orchestrator {
              Clock.systemUTC(),
              new ApplicationApiFactory(configServerConfig.zookeeperserver().size(),
                                        orchestratorConfig.numProxies(),
+                                       orchestratorConfig.numProxiesAllowedDown(),
+                                       orchestratorConfig.numProxiesAllowedDownRatio(),
                                        Clock.systemUTC()),
              orchestratorConfig.serviceMonitorConvergenceLatencySeconds());
     }

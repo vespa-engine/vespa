@@ -11,7 +11,8 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
  * @author hakonhall
  */
 public class HostedVespaOrchestration {
-    public static OrchestrationParams create(int numConfigServers, int numProxies) {
+    public static OrchestrationParams create(int numConfigServers, int numProxies, int numProxiesAllowedDown,
+                                             double numProxiesAllowedDownRatio) {
         // We'll create parameters for both the controller and config server applications, even though
         // only one of them is present, as (a) no harm is done by having the extra parameters, and
         // (b) it leads to simpler code below.
@@ -75,6 +76,8 @@ public class HostedVespaOrchestration {
                                                    new ClusterParams
                                                            .Builder()
                                                            .setSize(numProxies)
+                                                           .setAllowedDown(numProxiesAllowedDown)
+                                                           .setAllowedDownRatio(numProxiesAllowedDownRatio)
                                                            .build())
                                               .build())
 
@@ -87,6 +90,8 @@ public class HostedVespaOrchestration {
                                                    new ClusterParams
                                                            .Builder()
                                                            .setSize(numProxies)
+                                                           .setAllowedDown(numProxiesAllowedDown)
+                                                           .setAllowedDownRatio(numProxiesAllowedDownRatio)
                                                            .build())
                                               .build())
 
