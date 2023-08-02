@@ -33,7 +33,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
@@ -95,7 +94,7 @@ public class ClusterApiImplTest {
         assertFalse(clusterApi.isStorageCluster());
         assertEquals(" [host3, host4] are suspended. [ServiceInstance{configId=service-2, hostName=host2, " +
                      "serviceStatus=ServiceStatusInfo{status=DOWN, since=Optional.empty, lastChecked=Optional.empty}}] " +
-                     "are down.",
+                     "is down.",
                 clusterApi.downDescription());
         assertEquals(60, clusterApi.percentageOfServicesDownOutsideGroup());
         assertEquals(80, clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown());
@@ -178,8 +177,9 @@ public class ClusterApiImplTest {
             policy.verifyGroupGoingDownIsFine(clusterApi);
             fail();
         } catch (HostStateChangeDeniedException e) {
-            assertTrue(e.getMessage().contains("Changing the state of cfg1 would violate enough-services-up: 33% of the config " +
-                    "servers are down or suspended already: [1 missing config server] are down."));
+            assertEquals("Changing the state of cfg1 would violate enough-services-up: 1 config server is already down: " +
+                         "[1 missing config server] is down.",
+                         e.getMessage());
         }
     }
 
@@ -197,8 +197,9 @@ public class ClusterApiImplTest {
             policy.verifyGroupGoingDownIsFine(clusterApi);
             fail();
         } catch (HostStateChangeDeniedException e) {
-            assertTrue(e.getMessage().contains("Changing the state of cfg1 would violate enough-services-up: 33% of the config " +
-                    "server hosts are down or suspended already: [1 missing config server host] are down."));
+            assertEquals("Changing the state of cfg1 would violate enough-services-up: 1 config server host is already down: " +
+                         "[1 missing config server host] is down.",
+                         e.getMessage());
         }
     }
 
@@ -212,8 +213,9 @@ public class ClusterApiImplTest {
             policy.verifyGroupGoingDownIsFine(clusterApi);
             fail();
         } catch (HostStateChangeDeniedException e) {
-            assertTrue(e.getMessage().contains("Changing the state of cfg1 would violate enough-services-up: 33% of the config " +
-                    "servers are down or suspended already: [1 missing config server] are down."));
+            assertEquals("Changing the state of cfg1 would violate enough-services-up: 1 config server is already down: " +
+                         "[1 missing config server] is down.",
+                         e.getMessage());
         }
     }
 

@@ -41,6 +41,7 @@ class ClusterApiImpl implements ClusterApi {
     private final Clock clock;
     private final Set<ServiceInstance> servicesInGroup;
     private final Set<ServiceInstance> servicesNotInGroup;
+    private final ClusterPolicyOverride clusterPolicyOverride;
 
     /** Lazily initialized in servicesDownAndNotInGroup(), do not access directly. */
     private Set<ServiceInstance> servicesDownAndNotInGroup = null;
@@ -71,6 +72,10 @@ class ClusterApiImpl implements ClusterApi {
         this.hostInfos = hostInfos;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
         this.clock = clock;
+        this.clusterPolicyOverride = new ClusterPolicyOverride(serviceCluster.serviceInstances().size(),
+                                                               clusterParams.size(),
+                                                               clusterParams.allowedDown(),
+                                                               clusterParams.allowedDownRatio());
 
         Map<Boolean, Set<ServiceInstance>> serviceInstancesByLocality =
                 serviceCluster.serviceInstances().stream()
@@ -168,15 +173,21 @@ class ClusterApiImpl implements ClusterApi {
     }
 
     @Override
-    public int percentageOfServicesDownOutsideGroup() {
-        int numberOfServicesDown = servicesDownAndNotInGroup().size() + missingServices;
-        return numberOfServicesDown * 100 / (serviceCluster.serviceInstances().size() + missingServices);
+    public int size() { return serviceCluster.serviceInstances().size() + missingServices; }
+
+    @Override
+    public int servicesDownOutsideGroup() {
+        return servicesDownAndNotInGroup().size() + missingServices;
     }
 
     @Override
-    public int percentageOfServicesDownIfGroupIsAllowedToBeDown() {
-        int numberOfServicesDown = servicesDownAndNotInGroup().size() + missingServices + servicesInGroup.size();
-        return numberOfServicesDown * 100 / (serviceCluster.serviceInstances().size() + missingServices);
+    public int servicesDownIfGroupIsAllowedToBeDown() {
+        return servicesDownAndNotInGroup().size() + servicesInGroup.size() + missingServices;
+    }
+
+    @Override
+    public ClusterPolicyOverride clusterPolicyOverride() {
+        return clusterPolicyOverride;
     }
 
     /**
@@ -201,7 +212,7 @@ class ClusterApiImpl implements ClusterApi {
             if (suspended.size() > nodeLimit) {
                 description.append(" and " + (suspended.size() - nodeLimit) + " others");
             }
-            description.append(" are suspended.");
+            description.append(" " + isOrAre(suspended.size()) + " suspended.");
         }
 
         Set<ServiceInstance> downElsewhere = servicesDownAndNotInGroup().stream()
@@ -223,11 +234,13 @@ class ClusterApiImpl implements ClusterApi {
             if (downElsewhereTotal > serviceLimit) {
                 description.append(" and " + (downElsewhereTotal - serviceLimit) + " others");
             }
-            description.append(" are down.");
+            description.append(" " + isOrAre(downElsewhereTotal) + " down.");
         }
 
         return description.toString();
     }
+
+    private static String isOrAre(int count) { return count == 1 ? "is" : "are"; }
 
     private Optional<StorageNode> storageNodeInGroup(Predicate<ServiceInstance> storageServicePredicate) {
         if (!VespaModelUtil.isStorage(serviceCluster)) {

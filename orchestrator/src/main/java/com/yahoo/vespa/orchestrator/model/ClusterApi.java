@@ -30,10 +30,19 @@ public interface ClusterApi {
 
     boolean noServicesOutsideGroupIsDown() throws HostStateChangeDeniedException;
 
-    int percentageOfServicesDownOutsideGroup();
-    int percentageOfServicesDownIfGroupIsAllowedToBeDown();
+    /** Returns the number of services currently in the cluster, plus the number of missing services. */
+    int size();
+
+    int servicesDownOutsideGroup();
+    default int percentageOfServicesDownOutsideGroup() { return sizePercentageOf(servicesDownOutsideGroup()); }
+    int servicesDownIfGroupIsAllowedToBeDown();
+    default int percentageOfServicesDownIfGroupIsAllowedToBeDown() { return sizePercentageOf(servicesDownIfGroupIsAllowedToBeDown()); }
+
+    ClusterPolicyOverride clusterPolicyOverride();
 
     Optional<StorageNode> storageNodeInGroup();
 
     String downDescription();
+
+    private int sizePercentageOf(int count) { return (int) Math.round(100.0 * count / size()); }
 }

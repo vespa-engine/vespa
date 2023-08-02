@@ -79,7 +79,7 @@ class HostRequestHandlerTest {
     private static final ServiceMonitor serviceMonitor = mock(ServiceMonitor.class);
     private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZkStatusService(
             new MockCurator(), mock(Metric.class), new TestTimer(), new DummyAntiServiceMonitor());
-    private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, 5, clock);
+    private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, 5, 1, 0.1, clock);
 
     static {
         when(serviceMonitor.getApplication(any(HostName.class)))

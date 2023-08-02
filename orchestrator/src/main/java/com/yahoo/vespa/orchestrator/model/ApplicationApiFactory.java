@@ -18,8 +18,10 @@ public class ApplicationApiFactory {
     private final OrchestrationParams orchestrationParams;
     private final Clock clock;
 
-    public ApplicationApiFactory(int numberOfConfigServers, int numProxies, Clock clock) {
-        this.orchestrationParams = HostedVespaOrchestration.create(numberOfConfigServers, numProxies);
+    public ApplicationApiFactory(int numberOfConfigServers, int numProxies, int numProxiesAllowedDown,
+                                 double numProxiesAllowedDownRatio, Clock clock) {
+        this.orchestrationParams = HostedVespaOrchestration.create(numberOfConfigServers, numProxies, numProxiesAllowedDown,
+                                                                   numProxiesAllowedDownRatio);
         this.clock = clock;
     }
 
