@@ -2,6 +2,7 @@
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
+import ai.vespa.metrics.set.Metric;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
@@ -11,7 +12,6 @@ import ai.vespa.metricsproxy.service.VespaServicesConfig;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.test.VespaModelTester;
 

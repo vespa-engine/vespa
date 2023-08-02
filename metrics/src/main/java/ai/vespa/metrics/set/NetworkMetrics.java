@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.model.admin.monitoring;
+package ai.vespa.metrics.set;
 
 import ai.vespa.metrics.HostedNodeAdminMetrics;
-import com.google.common.collect.ImmutableSet;
 
 import java.util.Set;
 
@@ -17,7 +16,7 @@ public class NetworkMetrics {
 
     private static MetricSet createNetworkMetricSet() {
         Set<Metric> dockerNetworkMetrics =
-                ImmutableSet.of(new Metric(HostedNodeAdminMetrics.NET_IN_BYTES.baseName()),
+                Set.of(new Metric(HostedNodeAdminMetrics.NET_IN_BYTES.baseName()),
                                 new Metric(HostedNodeAdminMetrics.NET_IN_ERROR.baseName()),
                                 new Metric(HostedNodeAdminMetrics.NET_IN_DROPPED.baseName()),
                                 new Metric(HostedNodeAdminMetrics.NET_OUT_BYTES.baseName()),

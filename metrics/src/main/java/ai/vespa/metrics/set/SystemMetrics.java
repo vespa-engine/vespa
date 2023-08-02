@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.model.admin.monitoring;
+package ai.vespa.metrics.set;
 
 import ai.vespa.metrics.HostedNodeAdminMetrics;
-import com.google.common.collect.ImmutableSet;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -17,7 +17,7 @@ public class SystemMetrics {
 
     private static MetricSet createSystemMetricSet() {
         Set<Metric> dockerNodeMetrics =
-                ImmutableSet.of(new Metric(HostedNodeAdminMetrics.CPU_UTIL.baseName()),
+                Set.of(new Metric(HostedNodeAdminMetrics.CPU_UTIL.baseName()),
                                 new Metric(HostedNodeAdminMetrics.CPU_SYS_UTIL.baseName()),
                                 new Metric(HostedNodeAdminMetrics.CPU_THROTTLED_TIME.baseName()),
                                 new Metric(HostedNodeAdminMetrics.CPU_THROTTLED_CPU_TIME.baseName()),
@@ -37,19 +37,19 @@ public class SystemMetrics {
 
         Set<Metric> nonDockerNodeMetrics =
                 // Disk metrics should be based on /home, or else '/' - or simply add filesystem as dimension
-                ImmutableSet.of(new Metric("cpu.busy.pct", HostedNodeAdminMetrics.CPU_UTIL.baseName()),
+                Set.of(new Metric("cpu.busy.pct", HostedNodeAdminMetrics.CPU_UTIL.baseName()),
                                 new Metric("mem.used.pct", HostedNodeAdminMetrics.MEM_UTIL.baseName()),
                                 new Metric("mem.active.kb", HostedNodeAdminMetrics.MEM_USED.baseName()),
                                 new Metric("mem.total.kb", HostedNodeAdminMetrics.MEM_LIMIT.baseName()),
                                 new Metric("used.kb", HostedNodeAdminMetrics.DISK_USED.baseName())
                 );
 
-        Set<Metric> systemMetrics = ImmutableSet.<Metric>builder()
-                .addAll(dockerNodeMetrics)
-                .addAll(nonDockerNodeMetrics)
-                .build();
 
-        return new MetricSet("system", systemMetrics);
+        Set<Metric> metrics = new LinkedHashSet<>();
+        metrics.addAll(dockerNodeMetrics);
+        metrics.addAll(nonDockerNodeMetrics);
+
+        return new MetricSet("system", metrics);
     }
 
 }
