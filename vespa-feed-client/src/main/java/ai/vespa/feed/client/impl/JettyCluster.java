@@ -158,6 +158,7 @@ class JettyCluster implements Cluster {
             return pool;
         });
         HttpClient httpClient = new HttpClient(transport);
+        httpClient.setMaxRequestsQueuedPerDestination(Integer.MAX_VALUE);
         httpClient.setFollowRedirects(false);
         httpClient.setUserAgentField(
                 new HttpField(HttpHeader.USER_AGENT, String.format("vespa-feed-client/%s (Jetty)", Vespa.VERSION)));
