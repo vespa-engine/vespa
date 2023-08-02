@@ -2,7 +2,11 @@ package com.yahoo.language.lucene;
 
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.language.Language;
-import com.yahoo.language.process.*;
+import com.yahoo.language.process.StemMode;
+import com.yahoo.language.process.Token;
+import com.yahoo.language.process.TokenScript;
+import com.yahoo.language.process.TokenType;
+import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleToken;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -15,7 +19,10 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class LuceneTokenizer implements Tokenizer {
+/**
+ * @author dainiusjocas
+ */
+class LuceneTokenizer implements Tokenizer {
 
     private static final Logger log = Logger.getLogger(LuceneTokenizer.class.getName());
 
@@ -36,7 +43,7 @@ public class LuceneTokenizer implements Tokenizer {
         if (input.isEmpty()) return List.of();
 
         List<Token> tokens = textToTokens(input, analyzerFactory.getAnalyzer(language, stemMode, removeAccents));
-        log.log(Level.FINEST, "Tokenized '" + language + "' text='" + input + "' into: n=" + tokens.size() + ", tokens=" + tokens);
+        log.log(Level.FINEST, () -> "Tokenized '" + language + "' text='" + input + "' into: n=" + tokens.size() + ", tokens=" + tokens);
         return tokens;
     }
 
@@ -49,7 +56,6 @@ public class LuceneTokenizer implements Tokenizer {
         try {
             tokenStream.reset();
             while (tokenStream.incrementToken()) {
-                // TODO: is SimpleToken good enough? Maybe a custom implementation.
                 // TODO: what to do with cases when multiple tokens are inserted into the position?
                 String originalString = text.substring(offsetAttribute.startOffset(), offsetAttribute.endOffset());
                 String tokenString = charTermAttribute.toString();
@@ -65,4 +71,5 @@ public class LuceneTokenizer implements Tokenizer {
         }
         return tokens;
     }
+
 }

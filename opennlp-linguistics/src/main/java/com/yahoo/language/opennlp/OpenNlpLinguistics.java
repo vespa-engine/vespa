@@ -8,7 +8,7 @@ import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
 
 /**
- * Returns a linguistics implementation based on OpenNlp.
+ * A linguistics implementation based on OpenNlp.
  *
  * @author bratseth
  * @author jonmv
