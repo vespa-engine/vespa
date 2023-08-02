@@ -2,7 +2,9 @@
 package com.yahoo.vespa.model.content.cluster;
 
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import com.yahoo.vespa.model.content.engines.*;
+import com.yahoo.vespa.model.content.engines.DummyPersistence;
+import com.yahoo.vespa.model.content.engines.PersistenceEngine;
+import com.yahoo.vespa.model.content.engines.ProtonEngine;
 
 /**
  * Creates the correct engine factory from XML.
@@ -18,7 +20,7 @@ public class EngineFactoryBuilder {
             if (persistence.child("proton") != null) {
                 return new ProtonEngine.Factory(c.getSearch());
             } else if (persistence.child("dummy") != null) {
-                return new com.yahoo.vespa.model.content.engines.DummyPersistence.Factory();
+                return new DummyPersistence.Factory();
             }
         }
 

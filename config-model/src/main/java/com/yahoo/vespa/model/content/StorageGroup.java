@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterMembership;
@@ -132,8 +131,7 @@ public class StorageGroup {
     public void getConfig(StorDistributionConfig.Group.Builder builder) {
         builder.index(index == null ? "invalid" : index);
         builder.name(name == null ? "invalid" : name);
-        if (partitions.isPresent())
-            builder.partitions(partitions.get());
+        partitions.ifPresent(builder::partitions);
         for (StorageNode node : nodes) {
             StorDistributionConfig.Group.Nodes.Builder nb = new StorDistributionConfig.Group.Nodes.Builder();
             nb.index(node.getDistributionKey());
@@ -384,11 +382,7 @@ public class StorageGroup {
                 Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostsPerGroup = new LinkedHashMap<>();
                 for (Map.Entry<HostResource, ClusterMembership> entry : hostMapping.entrySet()) {
                     Optional<ClusterSpec.Group> group = entry.getValue().cluster().group();
-                    Map<HostResource, ClusterMembership> hostsInGroup = hostsPerGroup.get(group);
-                    if (hostsInGroup == null) {
-                        hostsInGroup = new LinkedHashMap<>();
-                        hostsPerGroup.put(group, hostsInGroup);
-                    }
+                    Map<HostResource, ClusterMembership> hostsInGroup = hostsPerGroup.computeIfAbsent(group, k -> new LinkedHashMap<>());
                     hostsInGroup.put(entry.getKey(), entry.getValue());
                 }
                 return hostsPerGroup;
@@ -396,23 +390,15 @@ public class StorageGroup {
 
         }
 
-        private static class XmlNodeBuilder {
-
-            private final ModelElement clusterElement;
-            private final ModelElement element;
-
-            private XmlNodeBuilder(ModelElement clusterElement, ModelElement element) {
-                this.clusterElement = clusterElement;
-                this.element = element;
-            }
+        private record XmlNodeBuilder(ModelElement clusterElement, ModelElement element) {
 
             public StorageNode build(DeployState deployState, ContentCluster parent, StorageGroup storageGroup) {
-                StorageNode sNode = new StorageNode.Builder().build(deployState, parent.getStorageCluster(), element.getXml());
-                PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, element);
-                new Distributor.Builder(clusterElement, provider).build(deployState, parent.getDistributorNodes(), element.getXml());
-                return sNode;
-            }
-        }
+                        StorageNode sNode = new StorageNode.Builder().build(deployState, parent.getStorageCluster(), element.getXml());
+                        PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, element);
+                        new Distributor.Builder(clusterElement, provider).build(deployState, parent.getDistributorNodes(), element.getXml());
+                        return sNode;
+                    }
+                }
 
         /**
          * Creates a content group builder from a group and/or nodes element.
@@ -441,14 +427,13 @@ public class StorageGroup {
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG),
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG_STACKTRACE));
 
-            List<GroupBuilder> subGroups = groupElement.isPresent() ? collectSubGroups(isHosted, group, groupElement.get())
-                                                                    : List.of();
+            List<GroupBuilder> subGroups = groupElement.map(modelElement -> collectSubGroups(isHosted, group, modelElement)).orElseGet(List::of);
 
             List<XmlNodeBuilder> explicitNodes = new ArrayList<>();
             explicitNodes.addAll(collectExplicitNodes(groupElement));
             explicitNodes.addAll(collectExplicitNodes(nodesElement));
 
-            if (subGroups.size() > 0 && nodesElement.isPresent())
+            if (!subGroups.isEmpty() && nodesElement.isPresent())
                 throw new IllegalArgumentException("A group can contain either explicit subgroups or a nodes specification, but not both.");
 
             Optional<NodesSpecification> nodeRequirement;
@@ -474,12 +459,10 @@ public class StorageGroup {
             return Optional.ofNullable(element.get().childAsString(childTagName));
         }
         private Optional<Long> childAsLong(Optional<ModelElement> element, String childTagName) {
-            if (element.isEmpty()) return Optional.empty();
-            return Optional.ofNullable(element.get().childAsLong(childTagName));
+            return element.map(modelElement -> modelElement.childAsLong(childTagName));
         }
         private Optional<Boolean> childAsBoolean(Optional<ModelElement> element, String childTagName) {
-            if (element.isEmpty()) return Optional.empty();
-            return Optional.ofNullable(element.get().childAsBoolean(childTagName));
+            return element.map(modelElement -> modelElement.childAsBoolean(childTagName));
         }
 
         private boolean booleanAttributeOr(Optional<ModelElement> element, String attributeName, boolean defaultValue) {
