@@ -146,11 +146,31 @@ public class SystemFlagsDataArchiveTest {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-field-name/"));
         });
-        assertTrue(exception.getMessage().contains("flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields: after removing any comment fields the JSON is:\n" +
-                "  {\"id\":\"my-test-flag\",\"rules\":[{\"condition\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"foo.com\"]}],\"value\":\"default\"}]}\n" +
-                "but deserializing this ended up with a JSON that are missing some of the fields:\n" +
-                "  {\"id\":\"my-test-flag\",\"rules\":[{\"value\":\"default\"}]}\n" +
-                "See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax"));
+        assertEquals("""
+                     flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields or rules with null values: after removing any comment fields the JSON is:
+                       {"id":"my-test-flag","rules":[{"condition":[{"type":"whitelist","dimension":"hostname","values":["foo.com"]}],"value":"default"}]}
+                     but deserializing this ended up with:
+                       {"id":"my-test-flag","rules":[{"value":"default"}]}
+                     These fields may be spelled wrong, or remove them?
+                     See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax
+                     """,
+                     exception.getMessage());
+    }
+
+    @Test
+    void throws_on_null_value() {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-null-value/"));
+        });
+        assertEquals("""
+                     flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields or rules with null values: after removing any comment fields the JSON is:
+                       {"id":"my-test-flag","rules":[{"conditions":[{"type":"whitelist","dimension":"application","values":["a:b:c"]}],"value":null},{"conditions":[{"type":"whitelist","dimension":"hostname","values":["foo.com"]}],"value":true}]}
+                     but deserializing this ended up with:
+                       {"id":"my-test-flag","rules":[{"conditions":[{"type":"whitelist","dimension":"application","values":["a:b:c"]}]},{"conditions":[{"type":"whitelist","dimension":"hostname","values":["foo.com"]}],"value":true}]}
+                     These fields may be spelled wrong, or remove them?
+                     See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax
+                     """,
+                     exception.getMessage());
     }
 
     @Test

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json;
 
+import com.yahoo.text.JSON;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.RawFlag;
 import org.junit.jupiter.api.Test;
@@ -231,7 +232,40 @@ public class FlagDataTest {
                                                      }
                                                  ]
                                              }""");
-        FlagData flagData = data.partialResolve(vector.with(FetchVector.Dimension.ZONE_ID, "zone3"));
+        assertEquals(data, new FlagData(data.id(), new FetchVector(), List.of()));
+        assertTrue(data.isEmpty());
+    }
+
+    @Test
+    void testRemovalOfSentinelRuleWithoutValue() {
+        String json = """
+                        {
+                            "id": "id1",
+                            "rules": [
+                                {
+                                    "conditions": [
+                                        {
+                                            "type": "whitelist",
+                                            "dimension": "zone",
+                                            "values": [ "zone1", "zone2" ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "conditions": [
+                                        {
+                                            "type": "whitelist",
+                                            "dimension": "cloud",
+                                            "values": [ "aws" ]
+                                        }
+                                    ],
+                                    "value": true
+                                }
+                            ]
+                        }""";
+        FlagData data = FlagData.deserialize(json);
+        assertTrue(JSON.equals(data.serializeToJson(), json));
+        FlagData flagData = data.partialResolve(vector.with(FetchVector.Dimension.CLOUD, "gcp"));
         assertEquals(flagData, new FlagData(data.id(), new FetchVector(), List.of()));
         assertTrue(flagData.isEmpty());
     }

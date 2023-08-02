@@ -69,16 +69,7 @@ public class FlagData {
                 }
             }
         }
-
-        // Remove trailing rules that have no conditions and no value to apply.
-        while (newRules.size() > 0) {
-            Rule lastRule = newRules.get(newRules.size() - 1);
-            if (lastRule.conditions().isEmpty() && lastRule.getValueToApply().isEmpty()) {
-                newRules.remove(newRules.size() - 1);
-            } else {
-                break;
-            }
-        }
+        newRules = optimizeRules(newRules);
 
         FetchVector newDefaultFetchVector = defaultFetchVector.without(fetchVector.dimensions());
 
@@ -198,7 +189,26 @@ public class FlagData {
 
     private static List<Rule> rulesFromWire(List<WireRule> wireRules) {
         if (wireRules == null) return List.of();
-        return wireRules.stream().map(Rule::fromWire).toList();
+        return optimizeRules(wireRules.stream().map(Rule::fromWire).toList());
+    }
+
+    /** Take a raw list of rules from e.g. deserialization or partial resolution and normalize/simplify it. */
+    private static List<Rule> optimizeRules(List<Rule> rules) {
+        // Remove trailing rules without value, as absent value implies the code default.
+        // Removing trailing rules may further simplify when e.g. this results in no rules,
+        // which is equivalent to no flag data at all, and flag data may be deleted from a zone.
+        if (rules.isEmpty()) return rules;
+        if (rules.get(rules.size() - 1).getValueToApply().isPresent()) return rules;
+        var newRules = new ArrayList<>(rules);
+        while (newRules.size() > 0) {
+            Rule lastRule = newRules.get(newRules.size() - 1);
+            if (lastRule.getValueToApply().isEmpty()) {
+                newRules.remove(newRules.size() - 1);
+            } else {
+                break;
+            }
+        }
+        return newRules;
     }
 }
 

@@ -108,24 +108,25 @@ public class SerializationTest {
 
     @Test
     void jsonWithStrayFields() {
-        String json = "{\n" +
-                "    \"id\": \"id3\",\n" +
-                "    \"foo\": true,\n" +
-                "    \"rules\": [\n" +
-                "        {\n" +
-                "            \"conditions\": [\n" +
-                "                {\n" +
-                "                    \"type\": \"whitelist\",\n" +
-                "                    \"dimension\": \"zone\",\n" +
-                "                    \"bar\": \"zoo\"\n" +
-                "                }\n" +
-                "            ],\n" +
-                "            \"other\": true\n" +
-                "        }\n" +
-                "    ],\n" +
-                "    \"attributes\": {\n" +
-                "    }\n" +
-                "}";
+        String json = """
+                      {
+                          "id": "id3",
+                          "foo": true,
+                          "rules": [
+                              {
+                                  "conditions": [
+                                      {
+                                          "type": "whitelist",
+                                          "dimension": "zone",
+                                          "bar": "zoo"
+                                      }
+                                  ],
+                                  "other": true
+                              }
+                          ],
+                          "attributes": {
+                          }
+                      }""";
 
         WireFlagData wireData = WireFlagData.deserialize(json);
 
@@ -140,6 +141,6 @@ public class SerializationTest {
 
         assertThat(wireData.serializeToJson(), equalTo("{\"id\":\"id3\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"zone\"}]}],\"attributes\":{}}"));
 
-        assertThat(FlagData.deserialize(json).serializeToJson(), equalTo("{\"id\":\"id3\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"zone\"}]}]}"));
+        assertThat(FlagData.deserialize(json).serializeToJson(), equalTo("{\"id\":\"id3\"}"));
     }
 }

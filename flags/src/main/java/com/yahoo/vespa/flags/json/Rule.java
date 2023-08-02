@@ -83,9 +83,11 @@ public class Rule {
 
     public static Rule fromWire(WireRule wireRule) {
         List<Condition> conditions = wireRule.andConditions == null ?
-                Collections.emptyList() :
+                List.of() :
                 wireRule.andConditions.stream().map(Condition::fromWire).toList();
-        Optional<RawFlag> value = wireRule.value == null ? Optional.empty() : Optional.of(JsonNodeRawFlag.fromJsonNode(wireRule.value));
+        Optional<RawFlag> value = wireRule.value == null || wireRule.value.isNull() ?
+                                  Optional.empty() :
+                                  Optional.of(JsonNodeRawFlag.fromJsonNode(wireRule.value));
         return new Rule(value, conditions);
     }
 
