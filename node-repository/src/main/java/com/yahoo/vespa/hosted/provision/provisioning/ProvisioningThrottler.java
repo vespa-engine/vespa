@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import ai.vespa.metrics.ConfigServerMetrics;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -22,7 +23,7 @@ import java.util.logging.Logger;
 public class ProvisioningThrottler {
 
     /** Metric that indicates whether throttling is active where 1 means active and 0 means inactive */
-    private static final String throttlingActiveMetric = "throttledHostProvisioning";
+    private static final String throttlingActiveMetric = ConfigServerMetrics.THROTTLED_HOST_PROVISIONING.baseName();
 
     private static final Logger LOG = Logger.getLogger(ProvisioningThrottler.class.getName());
     private static final Duration WINDOW = Duration.ofDays(1);

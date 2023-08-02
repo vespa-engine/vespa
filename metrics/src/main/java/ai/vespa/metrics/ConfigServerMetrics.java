@@ -135,7 +135,6 @@ public enum ConfigServerMetrics implements VespaMetrics {
     HOSTED_VESPA_READY_NODES("hostedVespa.readyNodes", Unit.HOST, "The number of managed nodes that are in state \"ready\""),
     HOSTED_VESPA_RESERVED_NODES("hostedVespa.reservedNodes", Unit.HOST, "The number of managed nodes that are in state \"reserved\""),
 
-
     OVERCOMMITTED_HOSTS("overcommittedHosts", Unit.HOST, "The number of hosts with over-committed resources"),
     SPARE_HOST_CAPACITY("spareHostCapacity", Unit.HOST, "The number of spare hosts"),
     THROTTLED_HOST_FAILURES("throttledHostFailures", Unit.HOST, "Number of host failures stopped due to throttling"),
@@ -143,8 +142,9 @@ public enum ConfigServerMetrics implements VespaMetrics {
     NODE_FAIL_THROTTLING("nodeFailThrottling", Unit.BINARY, "Metric indicating when node failure throttling is active. The value 1 means active, 0 means inactive"),
 
     DEPLOYMENT_PREPARE_MILLIS("deployment.prepareMillis", Unit.MILLISECOND, "Duration of deployment preparations"),
-    DEPLOYMENT_ACTIVATE_MILLIS("deployment.activateMillis", Unit.MILLISECOND, "Duration of deployment activations");
+    DEPLOYMENT_ACTIVATE_MILLIS("deployment.activateMillis", Unit.MILLISECOND, "Duration of deployment activations"),
 
+    THROTTLED_HOST_PROVISIONING("throttledHostProvisioning", Unit.BINARY, "Value 1 if host provisioning is throttled, 0 if not");
 
     private final String name;
     private final Unit unit;
