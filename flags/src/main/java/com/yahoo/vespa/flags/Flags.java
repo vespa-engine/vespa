@@ -256,13 +256,6 @@ public class Flags {
                 "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_QRSERVER_SERVICE_NAME = defineFeatureFlag(
-            "use-qrserver-service-name", false,
-            List.of("arnej"), "2022-01-18", "2023-12-31",
-            "Use backwards-compatible 'qrserver' service name for containers with only 'search' API",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
             List.of("tokle"), "2022-05-09", "2023-09-01",
