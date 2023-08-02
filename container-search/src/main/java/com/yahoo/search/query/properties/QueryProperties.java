@@ -26,6 +26,7 @@ import com.yahoo.tensor.Tensor;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Maps between the query model and text properties.
@@ -46,6 +47,9 @@ public class QueryProperties extends Properties {
     private Query query;
     private final CompiledQueryProfileRegistry profileRegistry;
     private final Map<String, Embedder> embedders;
+
+    private static final Set<String> reservedPrefix = Set.of(Model.MODEL, Presentation.PRESENTATION, Select.SELECT, Ranking.RANKING, Trace.TRACE);
+
 
     private record GetterSetter(GetProperty getter, SetProperty setter) {
         static GetterSetter of(GetProperty getter, SetProperty setter) {
@@ -86,7 +90,6 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.ENABLE), GetterSetter.of(query -> query.getRanking().getSoftTimeout().getEnable(), (query, value) -> query.getRanking().getSoftTimeout().setEnable(asBoolean(value, true))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.FACTOR), GetterSetter.of(query -> query.getRanking().getSoftTimeout().getFactor(), (query, value) -> query.getRanking().getSoftTimeout().setFactor(asDouble(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.TAILCOST), GetterSetter.of(query -> query.getRanking().getSoftTimeout().getTailcost(), (query, value) -> query.getRanking().getSoftTimeout().setTailcost(asDouble(value, null))));
-
         map.put(CompoundName.fromComponents(Select.SELECT), GetterSetter.of(query -> query.getSelect().getGroupingExpressionString(), (query, value) -> query.getSelect().setGroupingExpressionString(asString(value, ""))));
         map.put(CompoundName.fromComponents(Select.SELECT, Select.WHERE), GetterSetter.of(query -> query.getSelect().getWhereString(), (query, value) -> query.getSelect().setWhereString(asString(value, ""))));
         map.put(CompoundName.fromComponents(Select.SELECT, Select.GROUPING), GetterSetter.of(query -> query.getSelect().getGroupingString(), (query, value) -> query.getSelect().setGroupingString(asString(value, ""))));
@@ -95,6 +98,9 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.PROFILE_DEPTH), GetterSetter.of(null, (query, value) -> query.getTrace().setProfileDepth(asInteger(value, 0))));
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.TIMESTAMPS), GetterSetter.of(query -> query.getTrace().getTimestamps(), (query, value) -> query.getTrace().setTimestamps(asBoolean(value, false))));
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.QUERY), GetterSetter.of(query -> query.getTrace().getQuery(), (query, value) -> query.getTrace().setQuery(asBoolean(value, true))));
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.PROFILING, Profiling.MATCHING, ProfilingParams.DEPTH), GetterSetter.of(query -> query.getTrace().getProfiling().getMatching().getDepth(), (query, value) -> query.getTrace().getProfiling().getMatching().setDepth(asInteger(value, 0))));
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.PROFILING, Profiling.FIRST_PHASE_RANKING, ProfilingParams.DEPTH), GetterSetter.of(query -> query.getTrace().getProfiling().getFirstPhaseRanking().getDepth(), (query, value) -> query.getTrace().getProfiling().getFirstPhaseRanking().setDepth(asInteger(value, 0))));
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.PROFILING, Profiling.SECOND_PHASE_RANKING, ProfilingParams.DEPTH), GetterSetter.of(query -> query.getTrace().getProfiling().getSecondPhaseRanking().getDepth(), (query, value) -> query.getTrace().getProfiling().getSecondPhaseRanking().setDepth(asInteger(value, 0))));
         map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.BOLDING), GetterSetter.of(query -> query.getPresentation().getBolding(), (query, value) -> query.getPresentation().setBolding(asBoolean(value, true))));
         map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.SUMMARY), GetterSetter.of(query -> query.getPresentation().getSummary(), (query, value) -> query.getPresentation().setSummary(asString(value, ""))));
         map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.FORMAT), GetterSetter.of(query -> query.getPresentation().getFormat(), (query, value) -> query.getPresentation().setFormat(asString(value, ""))));
@@ -158,30 +164,10 @@ public class QueryProperties extends Properties {
             return;
         }
 
-        // TODO: Simplify error handling
-        if (key.size() == 2 && key.first().equals(Model.MODEL)) {
-            throwIllegalParameter(key.last(), Model.MODEL);
-        }
-        else if (key.first().equals(Ranking.RANKING)) {
+        //TODO Why is there error handling in set path and not in get path ?
+        if (key.first().equals(Ranking.RANKING)) {
             Ranking ranking = query.getRanking();
-            if (key.size() == 2) {
-                throwIllegalParameter(key.last(), Ranking.RANKING);
-            }
-            else if (key.size() >= 3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
-                if (key.size() == 3) {
-                    throwIllegalParameter(key.rest().toString(), Ranking.MATCH_PHASE);
-                } else if (key.get(2).equals(Ranking.DIVERSITY)) {
-                    if ((key.size() > 4) && key.get(3).equals(Diversity.CUTOFF)) {
-                        throwIllegalParameter(key.rest().toString(), Diversity.CUTOFF);
-                    } else {
-                        throwIllegalParameter(key.rest().toString(), Ranking.DIVERSITY);
-                    }
-                }
-            }
-            else if (key.size() == 3 && key.get(1).equals(Ranking.SOFTTIMEOUT)) {
-                throwIllegalParameter(key.rest().toString(), Ranking.SOFTTIMEOUT);
-            }
-            else if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
+            if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
                 Matching matching = ranking.getMatching();
                 if (equalsWithLowerCaseAlias(key.last(), Matching.TERMWISELIMIT))
                     matching.setTermwiselimit(asDouble(value, 1.0));
@@ -201,45 +187,23 @@ public class QueryProperties extends Properties {
             else if (key.size() > 2) {
                 String restKey = key.rest().rest().toString();
                 chained().requireSettable(key, value, context);
-                if (key.get(1).equals(Ranking.FEATURES))
+                if (key.get(1).equals(Ranking.FEATURES)) {
                     setRankFeature(query, restKey, toSpecifiedType(restKey, value,
                             profileRegistry.getTypeRegistry().getComponent("features"),
                             context));
-                else if (key.get(1).equals(Ranking.PROPERTIES))
+                } else if (key.get(1).equals(Ranking.PROPERTIES)) {
                     ranking.getProperties().put(restKey, toSpecifiedType(restKey, value,
                             profileRegistry.getTypeRegistry().getComponent("properties"),
                             context));
-                else
+                } else {
                     throwIllegalParameter(key.rest().toString(), Ranking.RANKING);
-            }
-        }
-        else if (key.first().equals(Presentation.PRESENTATION)) {
-            if (key.size() == 2) {
-                throwIllegalParameter(key.last(), Presentation.PRESENTATION);
-            }
-            else if (key.size() == 3 && key.get(1).equals(Presentation.FORMAT)) {
-                throwIllegalParameter(key.last(), Presentation.FORMAT);
-            }
-            else
-                throwIllegalParameter(key.last(), Presentation.PRESENTATION);
-        }
-        else if ((key.size() == 4) &&
-                key.get(0).equals(Trace.TRACE) &&
-                key.get(1).equals(Trace.PROFILING) &&
-                key.get(3).equals(ProfilingParams.DEPTH)) {
-            var params = getProfilingParams(query.getTrace().getProfiling(), key.get(2));
-            if (params != null) {
-                params.setDepth(asInteger(value, 0));
-            }
-        }
-        else if (key.first().equals(Select.SELECT)) {
-            if (key.size() == 2) {
-                throwIllegalParameter(key.rest().toString(), Select.SELECT);
+                }
             } else {
-                throwIllegalParameter(key.last(), Select.SELECT);
+                throwIllegalParameter(key.rest().toString(), Ranking.RANKING);
             }
-        }
-        else {
+        } else if (reservedPrefix.contains(key.first())) {
+            throwIllegalParameter(key.rest().toString(), key.first());
+        } else {
             super.set(key, value, context);
         }
     }
@@ -258,18 +222,8 @@ public class QueryProperties extends Properties {
         }
     }
 
-    private static ProfilingParams getProfilingParams(Profiling prof, String name) {
-        return switch (name) {
-            case Profiling.MATCHING -> prof.getMatching();
-            case Profiling.FIRST_PHASE_RANKING -> prof.getFirstPhaseRanking();
-            case Profiling.SECOND_PHASE_RANKING -> prof.getSecondPhaseRanking();
-            default -> null;
-        };
-    }
-
     @Override
-    public Map<String, Object> listProperties(CompoundName prefix,
-                                              Map<String,String> context,
+    public Map<String, Object> listProperties(CompoundName prefix, Map<String, String> context,
                                               com.yahoo.processing.request.Properties substitution) {
         Map<String, Object> properties = super.listProperties(prefix, context, substitution);
         for (CompoundName queryProperty : Query.nativeProperties) {
@@ -308,7 +262,7 @@ public class QueryProperties extends Properties {
         return field.getType().convertFrom(value, new ConversionContext(key, profileRegistry, embedders, context));
     }
 
-    private void throwIllegalParameter(String key,String namespace) {
+    private void throwIllegalParameter(String key, String namespace) {
         throw new IllegalInputException("'" + key + "' is not a valid property in '" + namespace +
                                         "'. See the query api for valid keys starting by '" + namespace + "'.");
     }
