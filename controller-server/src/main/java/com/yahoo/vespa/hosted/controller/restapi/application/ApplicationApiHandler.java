@@ -979,7 +979,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 fingerprintObject.setString("fingerprint", tokenVersion.fingerPrint().value());
                 fingerprintObject.setString("created", tokenVersion.creationTime().toString());
                 fingerprintObject.setString("author", tokenVersion.author());
-                fingerprintObject.setString("expiration", tokenVersion.expiration().map(Instant::toString).orElse("<none>"));
+                fingerprintObject.setString("expiration", tokenVersion.expiration().map(Instant::toString).orElse("none"));
             }
         }
         return new SlimeJsonResponse(slime);
@@ -995,7 +995,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         tokenObject.setString("id", token.tokenId().value());
         tokenObject.setString("token", token.tokenValue());
         tokenObject.setString("fingerprint", token.fingerPrint().value());
-        tokenObject.setString("expiration", token.expiration().map(Instant::toString).orElse("<none>"));
+        tokenObject.setString("expiration", token.expiration().map(Instant::toString).orElse("none"));
         return new SlimeJsonResponse(slime);
     }
 
