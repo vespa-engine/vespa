@@ -57,6 +57,11 @@ public class QueryProperties extends Properties {
         }
     }
 
+    private static void addDualCasedRM(Map<CompoundName, GetterSetter> map, String last, GetterSetter accessor) {
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCHING, last), accessor);
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCHING, last.toLowerCase()), accessor);
+    }
+
     private static final Map<CompoundName, GetterSetter> properyAccessors = createPropertySetterMap();
     private static Map<CompoundName, GetterSetter> createPropertySetterMap() {
         Map<CompoundName, GetterSetter> map = new HashMap<>();
@@ -79,6 +84,14 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.KEEPRANKCOUNT), GetterSetter.of(query -> query.getRanking().getKeepRankCount(), (query, value) -> query.getRanking().setKeepRankCount(asInteger(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.RANKSCOREDROPLIMIT), GetterSetter.of(query -> query.getRanking().getRankScoreDropLimit(), (query, value) -> query.getRanking().setRankScoreDropLimit(asDouble(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.LIST_FEATURES), GetterSetter.of(query -> query.getRanking().getListFeatures(), (query, value) -> query.getRanking().setListFeatures(asBoolean(value,false))));
+
+        addDualCasedRM(map, Matching.TERMWISELIMIT, GetterSetter.of(query -> query.getRanking().getMatching().getTermwiseLimit(), (query, value) -> query.getRanking().getMatching().setTermwiselimit(asDouble(value, 1.0))));
+        addDualCasedRM(map, Matching.NUMTHREADSPERSEARCH, GetterSetter.of(query -> query.getRanking().getMatching().getNumThreadsPerSearch(), (query, value) -> query.getRanking().getMatching().setNumThreadsPerSearch(asInteger(value, 1))));
+        addDualCasedRM(map, Matching.NUMSEARCHPARTITIIONS, GetterSetter.of(query -> query.getRanking().getMatching().getNumSearchPartitions(), (query, value) -> query.getRanking().getMatching().setNumSearchPartitions(asInteger(value, 1))));
+        addDualCasedRM(map, Matching.MINHITSPERTHREAD, GetterSetter.of(query -> query.getRanking().getMatching().getMinHitsPerThread(), (query, value) -> query.getRanking().getMatching().setMinHitsPerThread(asInteger(value, 0))));
+        addDualCasedRM(map, Matching.POST_FILTER_THRESHOLD, GetterSetter.of(query -> query.getRanking().getMatching().getPostFilterThreshold(), (query, value) -> query.getRanking().getMatching().setPostFilterThreshold(asDouble(value, 1.0))));
+        addDualCasedRM(map, Matching.APPROXIMATE_THRESHOLD, GetterSetter.of(query -> query.getRanking().getMatching().getApproximateThreshold(), (query, value) -> query.getRanking().getMatching().setApproximateThreshold(asDouble(value, 0.05))));
+
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.ATTRIBUTE), GetterSetter.of(query -> query.getRanking().getMatchPhase().getAttribute(), (query, value) -> query.getRanking().getMatchPhase().setAttribute(asString(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.ASCENDING), GetterSetter.of(query -> query.getRanking().getMatchPhase().getAscending(), (query, value) -> query.getRanking().getMatchPhase().setAscending(asBoolean(value, false))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.MAX_HITS), GetterSetter.of(query -> query.getRanking().getMatchPhase().getMaxHits(), (query, value) -> query.getRanking().getMatchPhase().setMaxHits(asLong(value, null))));
@@ -139,15 +152,7 @@ public class QueryProperties extends Properties {
 
         if (key.first().equals(Ranking.RANKING)) {
             Ranking ranking = query.getRanking();
-            if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
-                Matching matching = ranking.getMatching();
-                if (equalsWithLowerCaseAlias(key.last(), Matching.TERMWISELIMIT)) return matching.getTermwiseLimit();
-                if (equalsWithLowerCaseAlias(key.last(), Matching.NUMTHREADSPERSEARCH)) return matching.getNumThreadsPerSearch();
-                if (equalsWithLowerCaseAlias(key.last(), Matching.NUMSEARCHPARTITIIONS)) return matching.getNumSearchPartitions();
-                if (equalsWithLowerCaseAlias(key.last(), Matching.MINHITSPERTHREAD)) return matching.getMinHitsPerThread();
-
-            }
-            else if (key.size() > 2) {
+            if (key.size() > 2) {
                 // pass the portion after "ranking.features/properties" down
                 if (key.get(1).equals(Ranking.FEATURES)) return ranking.getFeatures().getObject(key.rest().rest().toString());
                 if (key.get(1).equals(Ranking.PROPERTIES)) return ranking.getProperties().get(key.rest().rest().toString());
@@ -167,24 +172,7 @@ public class QueryProperties extends Properties {
         //TODO Why is there error handling in set path and not in get path ?
         if (key.first().equals(Ranking.RANKING)) {
             Ranking ranking = query.getRanking();
-            if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
-                Matching matching = ranking.getMatching();
-                if (equalsWithLowerCaseAlias(key.last(), Matching.TERMWISELIMIT))
-                    matching.setTermwiselimit(asDouble(value, 1.0));
-                else if (equalsWithLowerCaseAlias(key.last(), Matching.NUMTHREADSPERSEARCH))
-                    matching.setNumThreadsPerSearch(asInteger(value, 1));
-                else if (equalsWithLowerCaseAlias(key.last(), Matching.NUMSEARCHPARTITIIONS))
-                    matching.setNumSearchPartitions(asInteger(value, 1));
-                else if (equalsWithLowerCaseAlias(key.last(), Matching.MINHITSPERTHREAD))
-                    matching.setMinHitsPerThread(asInteger(value, 0));
-                else if (key.last().equals(Matching.POST_FILTER_THRESHOLD))
-                    matching.setPostFilterThreshold(asDouble(value, 1.0));
-                else if (key.last().equals(Matching.APPROXIMATE_THRESHOLD))
-                    matching.setApproximateThreshold(asDouble(value, 0.05));
-                else
-                    throwIllegalParameter(key.rest().toString(), Ranking.MATCHING);
-            }
-            else if (key.size() > 2) {
+            if (key.size() > 2) {
                 String restKey = key.rest().rest().toString();
                 chained().requireSettable(key, value, context);
                 if (key.get(1).equals(Ranking.FEATURES)) {
@@ -265,11 +253,6 @@ public class QueryProperties extends Properties {
     private void throwIllegalParameter(String key, String namespace) {
         throw new IllegalInputException("'" + key + "' is not a valid property in '" + namespace +
                                         "'. See the query api for valid keys starting by '" + namespace + "'.");
-    }
-
-    private boolean equalsWithLowerCaseAlias(String key, String property) {
-        // The lowercase alias is used to provide backwards compatibility of a query property that was wrongly named in the first place.
-        return key.equals(property) || key.equals(property.toLowerCase());
     }
 
     @Override
