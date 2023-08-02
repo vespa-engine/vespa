@@ -352,7 +352,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         if (hasIndexedCluster()) {
             // Important: these must all be the normalized "within a single leaf group" values,
             // _not_ the cluster-wide, cross-group values.
-            indexedCluster.setSearchableCopies(redundancy.readyCopies());
             indexedCluster.setRedundancy(redundancy.finalRedundancy());
         }
         this.redundancy = redundancy;

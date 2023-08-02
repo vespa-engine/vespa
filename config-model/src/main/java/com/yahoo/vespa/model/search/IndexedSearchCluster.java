@@ -50,10 +50,8 @@ public class IndexedSearchCluster extends SearchCluster
     private final List<DocumentDatabase> documentDbs = new LinkedList<>();
     private final MultipleDocumentDatabasesConfigProducer documentDbsConfigProducer;
 
-    private int searchableCopies = 1;
     private int redundancy = 1;
 
-    private final DispatchGroup rootDispatch;
     private final List<SearchNode> searchNodes = new ArrayList<>();
     private final DispatchTuning.DispatchPolicy defaultDispatchPolicy;
     private final double dispatchWarmup;
@@ -72,7 +70,6 @@ public class IndexedSearchCluster extends SearchCluster
         super(parent, clusterName, index);
         indexingDocproc = new IndexingDocproc();
         documentDbsConfigProducer = new MultipleDocumentDatabasesConfigProducer(this, documentDbs);
-        rootDispatch =  new DispatchGroup(this);
         defaultDispatchPolicy = DispatchTuning.Builder.toDispatchPolicy(featureFlags.queryDispatchPolicy());
         dispatchWarmup = featureFlags.queryDispatchWarmup();
         summaryDecodePolicy = featureFlags.summaryDecodePolicy();
@@ -83,11 +80,9 @@ public class IndexedSearchCluster extends SearchCluster
 
     public IndexingDocproc getIndexingDocproc() { return indexingDocproc; }
 
-    public DispatchGroup getRootDispatch() { return rootDispatch; }
 
     public void addSearcher(SearchNode searcher) {
         searchNodes.add(searcher);
-        rootDispatch.addSearcher(searcher);
     }
 
     public List<SearchNode> getSearchNodes() { return Collections.unmodifiableList(searchNodes); }
@@ -198,27 +193,6 @@ public class IndexedSearchCluster extends SearchCluster
         documentDbsConfigProducer.getConfig(builder);
     }
 
-    boolean useFixedRowInDispatch() {
-        for (SearchNode node : getSearchNodes()) {
-            if (node.getNodeSpec().groupIndex() > 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public int getSearchableCopies() {
-        return searchableCopies;
-    }
-
-    public void setSearchableCopies(int searchableCopies) {
-        this.searchableCopies = searchableCopies;
-    }
-
-    public int getRedundancy() {
-        return redundancy;
-    }
-
     public void setRedundancy(int redundancy) {
         this.redundancy = redundancy;
     }
@@ -258,7 +232,7 @@ public class IndexedSearchCluster extends SearchCluster
         if (tuning.dispatch.getMaxHitsPerPartition() != null)
             builder.maxHitsPerNode(tuning.dispatch.getMaxHitsPerPartition());
 
-        builder.redundancy(rootDispatch.getRedundancy());
+        builder.redundancy(redundancy);
         if (searchCoverage != null) {
             if (searchCoverage.getMinimum() != null)
                 builder.minSearchCoverage(searchCoverage.getMinimum() * 100.0);

@@ -3,13 +3,10 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.search.DispatchGroup;
-import com.yahoo.vespa.model.search.SearchInterface;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -190,30 +187,6 @@ public class IndexedHierarchicDistributionTest {
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("leaf group 'group0' contains 1 node(s) while leaf group 'group1' contains 2 node(s)"));
         }
-    }
-
-    @Test
-    void requireThatLeafGroupsCanHaveUnequalNumberOfNodesIfRandomPolicy() throws Exception {
-        ContentCluster c = getOddGroupsCluster();
-        DispatchGroup dg = c.getSearch().getIndexed().getRootDispatch();
-        assertEquals(8, dg.getRowBits());
-        assertEquals(3, dg.getNumPartitions());
-        assertTrue(dg.useFixedRowInDispatch());
-        ArrayList<SearchInterface> list = new ArrayList<>();
-        for (SearchInterface si : dg.getSearchersIterable()) {
-            list.add(si);
-        }
-        assertEquals(5, list.size());
-        assertEquals(0, list.get(0).getNodeSpec().partitionId());
-        assertEquals(0, list.get(0).getNodeSpec().groupIndex());
-        assertEquals(0, list.get(1).getNodeSpec().partitionId());
-        assertEquals(1, list.get(1).getNodeSpec().groupIndex());
-        assertEquals(1, list.get(2).getNodeSpec().partitionId());
-        assertEquals(0, list.get(2).getNodeSpec().groupIndex());
-        assertEquals(1, list.get(3).getNodeSpec().partitionId());
-        assertEquals(1, list.get(3).getNodeSpec().groupIndex());
-        assertEquals(2, list.get(4).getNodeSpec().partitionId());
-        assertEquals(1, list.get(4).getNodeSpec().groupIndex());
     }
 
     @Test

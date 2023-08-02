@@ -1327,7 +1327,7 @@ public class ModelProvisioningTest {
         assertEquals(4, cluster.getRedundancy().effectiveInitialRedundancy());
         assertEquals(4, cluster.getRedundancy().effectiveFinalRedundancy());
         assertEquals(4, cluster.getRedundancy().effectiveReadyCopies());
-        assertEquals(4, cluster.getSearch().getIndexed().getSearchableCopies());
+        assertEquals(4, cluster.getRedundancy().readyCopies());
         assertFalse(cluster.getRootGroup().getPartitions().isPresent());
         assertEquals(4, cluster.getRootGroup().getNodes().size());
         assertEquals(0, cluster.getRootGroup().getSubgroups().size());
