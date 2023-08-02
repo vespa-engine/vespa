@@ -105,27 +105,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag SKIP_COMMUNICATIONMANAGER_THREAD = defineFeatureFlag(
-            "skip-communicationmanager-thread", false,
-            List.of("baldersheim"), "2020-12-02", "2023-12-31",
-            "Should we skip the communicationmanager thread",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag SKIP_MBUS_REQUEST_THREAD = defineFeatureFlag(
-            "skip-mbus-request-thread", false,
-            List.of("baldersheim"), "2020-12-02", "2023-12-31",
-            "Should we skip the mbus request thread",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag SKIP_MBUS_REPLY_THREAD = defineFeatureFlag(
-            "skip-mbus-reply-thread", false,
-            List.of("baldersheim"), "2020-12-02", "2023-12-31",
-            "Should we skip the mbus reply thread",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", false,
             List.of("baldersheim"), "2020-12-02", "2023-12-31",
@@ -263,13 +242,6 @@ public class Flags {
             TENANT_ID, CONSOLE_USER_EMAIL
     );
 
-    public static final UnboundBooleanFlag IGNORE_THREAD_STACK_SIZES = defineFeatureFlag(
-            "ignore-thread-stack-sizes", false,
-            List.of("arnej"), "2021-11-12", "2023-12-31",
-            "Whether C++ thread creation should ignore any requested stack size",
-            "Triggers restart, takes effect immediately",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
             List.of("arnej"), "2021-11-15", "2023-12-31",
@@ -288,13 +260,6 @@ public class Flags {
             "use-qrserver-service-name", false,
             List.of("arnej"), "2022-01-18", "2023-12-31",
             "Use backwards-compatible 'qrserver' service name for containers with only 'search' API",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag AVOID_RENAMING_SUMMARY_FEATURES = defineFeatureFlag(
-            "avoid-renaming-summary-features", true,
-            List.of("arnej"), "2022-01-15", "2023-12-31",
-            "Tell backend about the original name of summary-features that were wrapped in a rankingExpression feature",
             "Takes effect at redeployment",
             APPLICATION_ID);
 
