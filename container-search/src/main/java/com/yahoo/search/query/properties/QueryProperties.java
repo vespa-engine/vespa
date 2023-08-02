@@ -36,16 +36,76 @@ import java.util.Map;
  */
 public class QueryProperties extends Properties {
 
-    static interface GetProperty {
+    interface GetProperty {
         Object get(Query query);
+    }
+    interface SetProperty {
+        void set(Query query, Object value);
     }
 
     private Query query;
     private final CompiledQueryProfileRegistry profileRegistry;
     private final Map<String, Embedder> embedders;
 
-    static final Map<CompoundName, GetProperty> getMap = createPropertyMap();
-    private static Map<CompoundName, GetProperty> createPropertyMap() {
+    //TODO: Make a common getter/setter map
+    private static final Map<CompoundName, GetProperty> getMap = createPropertyGetterMap();
+    private static final Map<CompoundName, SetProperty> setMap = createPropertySetterMap();
+    private static Map<CompoundName, SetProperty> createPropertySetterMap() {
+        Map<CompoundName, SetProperty> map = new HashMap<>();
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.QUERY_STRING), (query, value) -> query.getModel().setQueryString(asString(value, "")));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.TYPE), (query, value) -> query.getModel().setType(asString(value, "ANY")));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.FILTER), (query, value) -> query.getModel().setFilter(asString(value, "")));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.DEFAULT_INDEX), (query, value) -> query.getModel().setDefaultIndex(asString(value, "")));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.LANGUAGE), (query, value) -> query.getModel().setLanguage(asString(value, "")));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.LOCALE), (query, value) -> query.getModel().setLocale(asString(value, "")));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.ENCODING), (query, value) -> query.getModel().setEncoding(asString(value,"")));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.SOURCES), (query, value) -> query.getModel().setSources(asString(value,"")));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.SEARCH_PATH), (query, value) -> query.getModel().setSearchPath(asString(value,"")));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.RESTRICT), (query, value) -> query.getModel().setRestrict(asString(value,"")));
+
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.LOCATION), (query, value) -> query.getRanking().setLocation(asString(value,"")));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.PROFILE), (query, value) -> query.getRanking().setProfile(asString(value,"")));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SORTING), (query, value) -> query.getRanking().setSorting(asString(value,"")));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.FRESHNESS), (query, value) -> query.getRanking().setFreshness(asString(value, "")));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.QUERYCACHE), (query, value) -> query.getRanking().setQueryCache(asBoolean(value, false)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.RERANKCOUNT), (query, value) -> query.getRanking().setRerankCount(asInteger(value, null)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.KEEPRANKCOUNT), (query, value) -> query.getRanking().setKeepRankCount(asInteger(value, null)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.RANKSCOREDROPLIMIT), (query, value) -> query.getRanking().setRankScoreDropLimit(asDouble(value, null)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.LIST_FEATURES), (query, value) -> query.getRanking().setListFeatures(asBoolean(value,false)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.ATTRIBUTE), (query, value) -> query.getRanking().getMatchPhase().setAttribute(asString(value, null)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.ASCENDING), (query, value) -> query.getRanking().getMatchPhase().setAscending(asBoolean(value, false)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.MAX_HITS), (query, value) -> query.getRanking().getMatchPhase().setMaxHits(asLong(value, null)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.MAX_FILTER_COVERAGE), (query, value) -> query.getRanking().getMatchPhase().setMaxFilterCoverage(asDouble(value, 0.2)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, Ranking.DIVERSITY, Diversity.ATTRIBUTE), (query, value) -> query.getRanking().getMatchPhase().getDiversity().setAttribute(asString(value, null)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, Ranking.DIVERSITY, Diversity.MINGROUPS), (query, value) -> query.getRanking().getMatchPhase().getDiversity().setMinGroups(asLong(value, null)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, Ranking.DIVERSITY, Diversity.CUTOFF, Diversity.FACTOR), (query, value) -> query.getRanking().getMatchPhase().getDiversity().setCutoffFactor(asDouble(value, 10.0)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, Ranking.DIVERSITY, Diversity.CUTOFF, Diversity.STRATEGY), (query, value) -> query.getRanking().getMatchPhase().getDiversity().setCutoffStrategy(asString(value, "loose")));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.ENABLE), (query, value) -> query.getRanking().getSoftTimeout().setEnable(asBoolean(value, true)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.FACTOR), (query, value) -> query.getRanking().getSoftTimeout().setFactor(asDouble(value, null)));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.TAILCOST), (query, value) -> query.getRanking().getSoftTimeout().setTailcost(asDouble(value, null)));
+        map.put(CompoundName.fromComponents(Select.SELECT), (query, value) -> query.getSelect().setGroupingExpressionString(asString(value, "")));
+        map.put(CompoundName.fromComponents(Select.SELECT, Select.WHERE), (query, value) -> query.getSelect().setWhereString(asString(value, "")));
+        map.put(CompoundName.fromComponents(Select.SELECT, Select.GROUPING), (query, value) -> query.getSelect().setGroupingString(asString(value, "")));
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.LEVEL), (query, value) -> query.getTrace().setLevel(asInteger(value, 0)));
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.EXPLAIN_LEVEL), (query, value) -> query.getTrace().setExplainLevel(asInteger(value, 0)));
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.PROFILE_DEPTH), (query, value) -> query.getTrace().setProfileDepth(asInteger(value, 0)));
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.TIMESTAMPS), (query, value) -> query.getTrace().setTimestamps(asBoolean(value, false)));
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.QUERY), (query, value) -> query.getTrace().setQuery(asBoolean(value, true)));
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.BOLDING), (query, value) -> query.getPresentation().setBolding(asBoolean(value, true)));
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.SUMMARY), (query, value) -> query.getPresentation().setSummary(asString(value, "")));
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.FORMAT), (query, value) -> query.getPresentation().setFormat(asString(value, "")));
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.TIMING), (query, value) -> query.getPresentation().setTiming(asBoolean(value, true)));
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.SUMMARY_FIELDS), (query, value) -> query.getPresentation().setSummaryFields(asString(value, "")));
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.FORMAT, Presentation.TENSORS), (query, value) -> query.getPresentation().setTensorFormat(asString(value, "short"))); // TODO: Switch default to short-value on Vespa 9);
+
+        map.put(Query.HITS, (query, value) -> query.setHits(asInteger(value,10)));
+        map.put(Query.OFFSET, (query, value) -> query.setOffset(asInteger(value,0)));
+        map.put(Query.TIMEOUT, (query, value) -> query.setTimeout(value.toString()));
+        map.put(Query.NO_CACHE, (query, value) -> query.setNoCache(asBoolean(value,false)));
+        map.put(Query.GROUPING_SESSION_CACHE, (query, value) -> query.setGroupingSessionCache(asBoolean(value, true)));
+        return map;
+    }
+    private static Map<CompoundName, GetProperty> createPropertyGetterMap() {
         Map<CompoundName, GetProperty> map = new HashMap<>();
         map.put(CompoundName.fromComponents(Model.MODEL, Model.QUERY_STRING), query -> query.getModel().getQueryString());
         map.put(CompoundName.fromComponents(Model.MODEL, Model.TYPE), query -> query.getModel().getType());
@@ -79,7 +139,7 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.TAILCOST), query -> query.getRanking().getSoftTimeout().getTailcost());
         map.put(CompoundName.fromComponents(Select.SELECT), query -> query.getSelect().getGroupingExpressionString());
         map.put(CompoundName.fromComponents(Select.SELECT, Select.WHERE), query -> query.getSelect().getWhereString());
-        map.put(CompoundName.fromComponents(Select.SELECT, Select.GROUPING), query -> query.getSelect().getGrouping());
+        map.put(CompoundName.fromComponents(Select.SELECT, Select.GROUPING), query -> query.getSelect().getGroupingString());
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.LEVEL), query -> query.getTrace().getLevel());
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.EXPLAIN_LEVEL), query -> query.getTrace().getExplainLevel());
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.TIMESTAMPS), query -> query.getTrace().getTimestamps());
@@ -141,217 +201,103 @@ public class QueryProperties extends Properties {
         return super.get(key, context, substitution);
     }
 
+    private void setInternal(CompoundName key, Object value, Map<String,String> context) {
+        SetProperty setter = setMap.get(key);
+        if (setter != null) {
+            setter.set(query, value);
+            return;
+        }
+        // TODO: Simplify error handling
+        if (key.size() == 2 && key.first().equals(Model.MODEL)) {
+            throwIllegalParameter(key.last(), Model.MODEL);
+        }
+        else if (key.first().equals(Ranking.RANKING)) {
+            Ranking ranking = query.getRanking();
+            if (key.size() == 2) {
+                throwIllegalParameter(key.last(), Ranking.RANKING);
+            }
+            else if (key.size() >= 3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
+                if (key.size() == 3) {
+                    throwIllegalParameter(key.rest().toString(), Ranking.MATCH_PHASE);
+                } else if (key.get(2).equals(Ranking.DIVERSITY)) {
+                    if ((key.size() > 4) && key.get(3).equals(Diversity.CUTOFF)) {
+                        throwIllegalParameter(key.rest().toString(), Diversity.CUTOFF);
+                    } else {
+                        throwIllegalParameter(key.rest().toString(), Ranking.DIVERSITY);
+                    }
+                }
+            }
+            else if (key.size() == 3 && key.get(1).equals(Ranking.SOFTTIMEOUT)) {
+                throwIllegalParameter(key.rest().toString(), Ranking.SOFTTIMEOUT);
+            }
+            else if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
+                Matching matching = ranking.getMatching();
+                if (equalsWithLowerCaseAlias(key.last(), Matching.TERMWISELIMIT))
+                    matching.setTermwiselimit(asDouble(value, 1.0));
+                else if (equalsWithLowerCaseAlias(key.last(), Matching.NUMTHREADSPERSEARCH))
+                    matching.setNumThreadsPerSearch(asInteger(value, 1));
+                else if (equalsWithLowerCaseAlias(key.last(), Matching.NUMSEARCHPARTITIIONS))
+                    matching.setNumSearchPartitions(asInteger(value, 1));
+                else if (equalsWithLowerCaseAlias(key.last(), Matching.MINHITSPERTHREAD))
+                    matching.setMinHitsPerThread(asInteger(value, 0));
+                else if (key.last().equals(Matching.POST_FILTER_THRESHOLD))
+                    matching.setPostFilterThreshold(asDouble(value, 1.0));
+                else if (key.last().equals(Matching.APPROXIMATE_THRESHOLD))
+                    matching.setApproximateThreshold(asDouble(value, 0.05));
+                else
+                    throwIllegalParameter(key.rest().toString(), Ranking.MATCHING);
+            }
+            else if (key.size() > 2) {
+                String restKey = key.rest().rest().toString();
+                chained().requireSettable(key, value, context);
+                if (key.get(1).equals(Ranking.FEATURES))
+                    setRankFeature(query, restKey, toSpecifiedType(restKey, value,
+                            profileRegistry.getTypeRegistry().getComponent("features"),
+                            context));
+                else if (key.get(1).equals(Ranking.PROPERTIES))
+                    ranking.getProperties().put(restKey, toSpecifiedType(restKey, value,
+                            profileRegistry.getTypeRegistry().getComponent("properties"),
+                            context));
+                else
+                    throwIllegalParameter(key.rest().toString(), Ranking.RANKING);
+            }
+        }
+        else if (key.first().equals(Presentation.PRESENTATION)) {
+            if (key.size() == 2) {
+                throwIllegalParameter(key.last(), Presentation.PRESENTATION);
+            }
+            else if (key.size() == 3 && key.get(1).equals(Presentation.FORMAT)) {
+                throwIllegalParameter(key.last(), Presentation.FORMAT);
+            }
+            else
+                throwIllegalParameter(key.last(), Presentation.PRESENTATION);
+        }
+        else if ((key.size() == 4) &&
+                key.get(0).equals(Trace.TRACE) &&
+                key.get(1).equals(Trace.PROFILING) &&
+                key.get(3).equals(ProfilingParams.DEPTH)) {
+            var params = getProfilingParams(query.getTrace().getProfiling(), key.get(2));
+            if (params != null) {
+                params.setDepth(asInteger(value, 0));
+            }
+        }
+        else if (key.first().equals(Select.SELECT)) {
+            if (key.size() == 2) {
+                throwIllegalParameter(key.rest().toString(), Select.SELECT);
+            } else {
+                throwIllegalParameter(key.last(), Select.SELECT);
+            }
+        }
+        else {
+            super.set(key, value, context);
+        }
+    }
+
     @Override
     public void set(CompoundName key, Object value, Map<String,String> context) {
         // Note: The defaults here are never used
         try {
-            if (key.size() == 2 && key.first().equals(Model.MODEL)) {
-                Model model = query.getModel();
-                if (key.last().equals(Model.QUERY_STRING))
-                    model.setQueryString(asString(value, ""));
-                else if (key.last().equals(Model.TYPE))
-                    model.setType(asString(value, "ANY"));
-                else if (key.last().equals(Model.FILTER))
-                    model.setFilter(asString(value, ""));
-                else if (key.last().equals(Model.DEFAULT_INDEX))
-                    model.setDefaultIndex(asString(value, ""));
-                else if (key.last().equals(Model.LANGUAGE))
-                    model.setLanguage(asString(value, ""));
-                else if (key.last().equals(Model.LOCALE))
-                    model.setLocale(asString(value, ""));
-                else if (key.last().equals(Model.ENCODING))
-                    model.setEncoding(asString(value,""));
-                else if (key.last().equals(Model.SEARCH_PATH))
-                    model.setSearchPath(asString(value,""));
-                else if (key.last().equals(Model.SOURCES))
-                    model.setSources(asString(value,""));
-                else if (key.last().equals(Model.RESTRICT))
-                    model.setRestrict(asString(value,""));
-                else
-                    throwIllegalParameter(key.last(), Model.MODEL);
-            }
-            else if (key.first().equals(Ranking.RANKING)) {
-                Ranking ranking = query.getRanking();
-                if (key.size() == 2) {
-                    if (key.last().equals(Ranking.LOCATION))
-                        ranking.setLocation(asString(value,""));
-                    else if (key.last().equals(Ranking.PROFILE))
-                        ranking.setProfile(asString(value,""));
-                    else if (key.last().equals(Ranking.SORTING))
-                        ranking.setSorting(asString(value,""));
-                    else if (key.last().equals(Ranking.FRESHNESS))
-                        ranking.setFreshness(asString(value, ""));
-                    else if (key.last().equals(Ranking.QUERYCACHE))
-                        ranking.setQueryCache(asBoolean(value, false));
-                    else if (key.last().equals(Ranking.RERANKCOUNT))
-                        ranking.setRerankCount(asInteger(value, null));
-                    else if (key.last().equals(Ranking.KEEPRANKCOUNT))
-                        ranking.setKeepRankCount(asInteger(value, null));
-                    else if (key.last().equals(Ranking.RANKSCOREDROPLIMIT))
-                        ranking.setRankScoreDropLimit(asDouble(value, null));
-                    else if (key.last().equals(Ranking.LIST_FEATURES))
-                        ranking.setListFeatures(asBoolean(value,false));
-                    else
-                        throwIllegalParameter(key.last(), Ranking.RANKING);
-                }
-                else if (key.size() >= 3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
-                    if (key.size() == 3) {
-                        MatchPhase matchPhase = ranking.getMatchPhase();
-                        if (key.last().equals(MatchPhase.ATTRIBUTE))
-                            matchPhase.setAttribute(asString(value, null));
-                        else if (key.last().equals(MatchPhase.ASCENDING))
-                            matchPhase.setAscending(asBoolean(value, false));
-                        else if (key.last().equals(MatchPhase.MAX_HITS))
-                            matchPhase.setMaxHits(asLong(value, null));
-                        else if (key.last().equals(MatchPhase.MAX_FILTER_COVERAGE))
-                            matchPhase.setMaxFilterCoverage(asDouble(value, 0.2));
-                        else
-                            throwIllegalParameter(key.rest().toString(), Ranking.MATCH_PHASE);
-                    }
-                    else if (key.size() > 3 && key.get(2).equals(Ranking.DIVERSITY)) {
-                        Diversity diversity = ranking.getMatchPhase().getDiversity();
-                        if (key.last().equals(Diversity.ATTRIBUTE)) {
-                            diversity.setAttribute(asString(value, null));
-                        }
-                        else if (key.last().equals(Diversity.MINGROUPS)) {
-                            diversity.setMinGroups(asLong(value, null));
-                        }
-                        else if ((key.size() > 4) && key.get(3).equals(Diversity.CUTOFF)) {
-                            if (key.last().equals(Diversity.FACTOR))
-                                diversity.setCutoffFactor(asDouble(value, 10.0));
-                            else if (key.last().equals(Diversity.STRATEGY))
-                                diversity.setCutoffStrategy(asString(value, "loose"));
-                            else
-                                throwIllegalParameter(key.rest().toString(), Diversity.CUTOFF);
-                        }
-                        else {
-                            throwIllegalParameter(key.rest().toString(), Ranking.DIVERSITY);
-                        }
-                    }
-                }
-                else if (key.size() == 3 && key.get(1).equals(Ranking.SOFTTIMEOUT)) {
-                    SoftTimeout soft = ranking.getSoftTimeout();
-                    if (key.last().equals(SoftTimeout.ENABLE))
-                        soft.setEnable(asBoolean(value, true));
-                    else if (key.last().equals(SoftTimeout.FACTOR))
-                        soft.setFactor(asDouble(value, null));
-                    else if (key.last().equals(SoftTimeout.TAILCOST))
-                        soft.setTailcost(asDouble(value, null));
-                    else
-                        throwIllegalParameter(key.rest().toString(), Ranking.SOFTTIMEOUT);
-                }
-                else if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
-                    Matching matching = ranking.getMatching();
-                    if (equalsWithLowerCaseAlias(key.last(), Matching.TERMWISELIMIT))
-                        matching.setTermwiselimit(asDouble(value, 1.0));
-                    else if (equalsWithLowerCaseAlias(key.last(), Matching.NUMTHREADSPERSEARCH))
-                        matching.setNumThreadsPerSearch(asInteger(value, 1));
-                    else if (equalsWithLowerCaseAlias(key.last(), Matching.NUMSEARCHPARTITIIONS))
-                        matching.setNumSearchPartitions(asInteger(value, 1));
-                    else if (equalsWithLowerCaseAlias(key.last(), Matching.MINHITSPERTHREAD))
-                        matching.setMinHitsPerThread(asInteger(value, 0));
-                    else if (key.last().equals(Matching.POST_FILTER_THRESHOLD))
-                        matching.setPostFilterThreshold(asDouble(value, 1.0));
-                    else if (key.last().equals(Matching.APPROXIMATE_THRESHOLD))
-                        matching.setApproximateThreshold(asDouble(value, 0.05));
-                    else
-                        throwIllegalParameter(key.rest().toString(), Ranking.MATCHING);
-                }
-                else if (key.size() > 2) {
-                    String restKey = key.rest().rest().toString();
-                    chained().requireSettable(key, value, context);
-                    if (key.get(1).equals(Ranking.FEATURES))
-                        setRankFeature(query, restKey, toSpecifiedType(restKey,
-                                                                       value,
-                                                                       profileRegistry.getTypeRegistry().getComponent("features"),
-                                                                       context));
-                    else if (key.get(1).equals(Ranking.PROPERTIES))
-                        ranking.getProperties().put(restKey, toSpecifiedType(restKey,
-                                                                             value,
-                                                                             profileRegistry.getTypeRegistry().getComponent("properties"),
-                                                                             context));
-                    else
-                        throwIllegalParameter(key.rest().toString(), Ranking.RANKING);
-                }
-            }
-            else if (key.first().equals(Presentation.PRESENTATION)) {
-                if (key.size() == 2) {
-                    if (key.last().equals(Presentation.BOLDING))
-                        query.getPresentation().setBolding(asBoolean(value, true));
-                    else if (key.last().equals(Presentation.SUMMARY))
-                        query.getPresentation().setSummary(asString(value, ""));
-                    else if (key.last().equals(Presentation.FORMAT))
-                        query.getPresentation().setFormat(asString(value, ""));
-                    else if (key.last().equals(Presentation.TIMING))
-                        query.getPresentation().setTiming(asBoolean(value, true));
-                    else if (key.last().equals(Presentation.SUMMARY_FIELDS))
-                        query.getPresentation().setSummaryFields(asString(value, ""));
-                    else
-                        throwIllegalParameter(key.last(), Presentation.PRESENTATION);
-                }
-                else if (key.size() == 3 && key.get(1).equals(Presentation.FORMAT)) {
-                    if (key.last().equals(Presentation.TENSORS))
-                        query.getPresentation().setTensorFormat(asString(value, "short")); // TODO: Switch default to short-value on Vespa 9
-                    else
-                        throwIllegalParameter(key.last(), Presentation.FORMAT);
-                }
-                else
-                    throwIllegalParameter(key.last(), Presentation.PRESENTATION);
-            }
-            else if (key.size() == 2 && key.first().equals(Trace.TRACE)) {
-                if (key.last().equals(Trace.LEVEL))
-                    query.getTrace().setLevel(asInteger(value, 0));
-                if (key.last().equals(Trace.EXPLAIN_LEVEL))
-                    query.getTrace().setExplainLevel(asInteger(value, 0));
-                if (key.last().equals(Trace.PROFILE_DEPTH))
-                    query.getTrace().setProfileDepth(asInteger(value, 0));
-                if (key.last().equals(Trace.TIMESTAMPS))
-                    query.getTrace().setTimestamps(asBoolean(value, false));
-                if (key.last().equals(Trace.QUERY))
-                    query.getTrace().setQuery(asBoolean(value, true));
-            }
-            else if ((key.size() == 4) &&
-                    key.get(0).equals(Trace.TRACE) &&
-                    key.get(1).equals(Trace.PROFILING) &&
-                    key.get(3).equals(ProfilingParams.DEPTH)) {
-                var params = getProfilingParams(query.getTrace().getProfiling(), key.get(2));
-                if (params != null) {
-                    params.setDepth(asInteger(value, 0));
-                }
-            }
-            else if (key.first().equals(Select.SELECT)) {
-                if (key.size() == 1) {
-                    query.getSelect().setGroupingExpressionString(asString(value, ""));
-                }
-                else if (key.size() == 2) {
-                    if (key.last().equals(Select.WHERE))
-                        query.getSelect().setWhereString(asString(value, ""));
-                    else if (key.last().equals(Select.GROUPING))
-                        query.getSelect().setGroupingString(asString(value, ""));
-                    else
-                        throwIllegalParameter(key.rest().toString(), Select.SELECT);
-                }
-                else {
-                    throwIllegalParameter(key.last(), Select.SELECT);
-                }
-            }
-            else if (key.size() == 1) {
-                if (key.equals(Query.HITS))
-                    query.setHits(asInteger(value,10));
-                else if (key.equals(Query.OFFSET))
-                    query.setOffset(asInteger(value,0));
-                else if (key.equals(Query.TIMEOUT))
-                    query.setTimeout(value.toString());
-                else if (key.equals(Query.NO_CACHE))
-                    query.setNoCache(asBoolean(value,false));
-                else if (key.equals(Query.GROUPING_SESSION_CACHE))
-                    query.setGroupingSessionCache(asBoolean(value, true));
-                else
-                    super.set(key,value,context);
-            }
-            else {
-                super.set(key, value, context);
-            }
+            setInternal(key, value, context);
         }
         catch (Exception e) { // Make sure error messages are informative. This should be moved out of this properties implementation
             if (e.getMessage() != null && e.getMessage().startsWith("Could not set"))
@@ -362,14 +308,12 @@ public class QueryProperties extends Properties {
     }
 
     private static ProfilingParams getProfilingParams(Profiling prof, String name) {
-        if (name.equals(Profiling.MATCHING)) {
-            return prof.getMatching();
-        } else if (name.equals(Profiling.FIRST_PHASE_RANKING)) {
-            return prof.getFirstPhaseRanking();
-        } else if (name.equals(Profiling.SECOND_PHASE_RANKING)) {
-            return prof.getSecondPhaseRanking();
-        }
-        return null;
+        return switch (name) {
+            case Profiling.MATCHING -> prof.getMatching();
+            case Profiling.FIRST_PHASE_RANKING -> prof.getFirstPhaseRanking();
+            case Profiling.SECOND_PHASE_RANKING -> prof.getSecondPhaseRanking();
+            default -> null;
+        };
     }
 
     @Override
