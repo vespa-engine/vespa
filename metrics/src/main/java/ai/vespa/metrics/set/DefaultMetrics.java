@@ -67,7 +67,9 @@ public class DefaultMetrics {
         addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_SIZE.max());
         addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_ACTIVE_THREADS, EnumSet.of(sum, count, min, max));
         addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY.max());
-        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_SIZE, EnumSet.of(sum, count, min, max));}
+        addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_SIZE, EnumSet.of(sum, count, min, max));
+        addMetric(metrics, ContainerMetrics.SERVER_ACTIVE_THREADS.average());
+    }
 
     private static void addSearchChainMetrics(Set<Metric> metrics) {
         addMetric(metrics, ContainerMetrics.QUERIES.rate());
@@ -76,7 +78,6 @@ public class DefaultMetrics {
         addMetric(metrics, ContainerMetrics.TOTAL_HITS_PER_QUERY, EnumSet.of(sum, count, max, average)); // TODO: Remove average with Vespa 9
         addMetric(metrics, ContainerMetrics.DEGRADED_QUERIES.rate());
         addMetric(metrics, ContainerMetrics.FAILED_QUERIES.rate());
-        addMetric(metrics, ContainerMetrics.SERVER_ACTIVE_THREADS.average()); // TODO: Remove on Vespa 9. Use jdisc.thread_pool.active_threads.
     }
 
     private static void addDocprocMetrics(Set<Metric> metrics) {
