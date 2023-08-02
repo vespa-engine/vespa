@@ -1,0 +1,24 @@
+{
+    "id" : "my-test-flag",
+    "rules" : [
+        {
+            "conditions": [
+                {
+                    "type": "whitelist",
+                    "dimension": "application",
+                    "values": ["a:b:c"]
+                }
+            ]
+        },
+        {
+            "conditions": [
+                {
+                    "type": "whitelist",
+                    "dimension": "hostname",
+                    "values": ["foo.com"]
+                }
+            ],
+            "value" : true
+        }
+    ]
+}

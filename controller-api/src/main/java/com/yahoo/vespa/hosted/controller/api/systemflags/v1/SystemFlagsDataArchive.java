@@ -213,12 +213,14 @@ public class SystemFlagsDataArchive {
 
             String serializedData = flagData.serializeToJson();
             if (!JSON.equals(serializedData, normalizedRawData)) {
-                throw new IllegalArgumentException(filePath + " contains unknown non-comment fields: " +
-                        "after removing any comment fields the JSON is:\n  " +
-                        normalizedRawData +
-                        "\nbut deserializing this ended up with a JSON that are missing some of the fields:\n  " +
-                        serializedData +
-                        "\nSee https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax");
+                throw new IllegalArgumentException("""
+                                                   %s contains unknown non-comment fields or rules with null values: after removing any comment fields the JSON is:
+                                                     %s
+                                                   but deserializing this ended up with:
+                                                     %s
+                                                   These fields may be spelled wrong, or remove them?
+                                                   See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax
+                                                   """.formatted(filePath, normalizedRawData, serializedData));
             }
         }
 
@@ -234,6 +236,7 @@ public class SystemFlagsDataArchive {
     static String normalizeJson(String json, Set<ZoneId> zones) {
         JsonNode root = uncheck(() -> mapper.readTree(json));
         removeCommentsRecursively(root);
+        removeNullRuleValues(root);
         verifyValues(root, zones);
         return root.toString();
     }
@@ -295,6 +298,22 @@ public class SystemFlagsDataArchive {
         }
 
         node.forEach(SystemFlagsDataArchive::removeCommentsRecursively);
+    }
+
+    private static void removeNullRuleValues(JsonNode root) {
+        if (root instanceof ObjectNode objectNode) {
+            JsonNode rules = objectNode.get("rules");
+            if (rules != null) {
+                rules.forEach(ruleNode -> {
+                    if (ruleNode instanceof ObjectNode rule) {
+                        JsonNode value = rule.get("value");
+                        if (value != null && value.isNull()) {
+                            rule.remove("value");
+                        }
+                    }
+                });
+            }
+        }
     }
 
     private static String toFilePath(FlagId flagId, String filename) {

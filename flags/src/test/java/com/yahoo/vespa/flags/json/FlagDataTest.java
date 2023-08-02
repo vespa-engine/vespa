@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json;
 
+import com.yahoo.text.JSON;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.RawFlag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -210,6 +212,62 @@ public class FlagDataTest {
                                     "id": "id1"
                                 }"""));
         assertTrue(fullyResolved.isEmpty());
+    }
+
+    @Test
+    void testRemovalOfSentinelRuleWithNullValue() {
+        FlagData data = FlagData.deserialize("""
+                                             {
+                                                 "id": "id1",
+                                                 "rules": [
+                                                     {
+                                                         "conditions": [
+                                                             {
+                                                                 "type": "whitelist",
+                                                                 "dimension": "zone",
+                                                                 "values": [ "zone1", "zone2" ]
+                                                             }
+                                                         ],
+                                                         "value": null
+                                                     }
+                                                 ]
+                                             }""");
+        assertEquals(data, new FlagData(data.id(), new FetchVector(), List.of()));
+        assertTrue(data.isEmpty());
+    }
+
+    @Test
+    void testRemovalOfSentinelRuleWithoutValue() {
+        String json = """
+                        {
+                            "id": "id1",
+                            "rules": [
+                                {
+                                    "conditions": [
+                                        {
+                                            "type": "whitelist",
+                                            "dimension": "zone",
+                                            "values": [ "zone1", "zone2" ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "conditions": [
+                                        {
+                                            "type": "whitelist",
+                                            "dimension": "cloud",
+                                            "values": [ "aws" ]
+                                        }
+                                    ],
+                                    "value": true
+                                }
+                            ]
+                        }""";
+        FlagData data = FlagData.deserialize(json);
+        assertTrue(JSON.equals(data.serializeToJson(), json));
+        FlagData flagData = data.partialResolve(vector.with(FetchVector.Dimension.CLOUD, "gcp"));
+        assertEquals(flagData, new FlagData(data.id(), new FetchVector(), List.of()));
+        assertTrue(flagData.isEmpty());
     }
 
     private void verify(Optional<String> expectedValue, FetchVector vector) {

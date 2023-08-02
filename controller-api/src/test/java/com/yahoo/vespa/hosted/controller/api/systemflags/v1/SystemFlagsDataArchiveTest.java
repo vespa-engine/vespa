@@ -32,6 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -146,43 +147,110 @@ public class SystemFlagsDataArchiveTest {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-field-name/"));
         });
-        assertTrue(exception.getMessage().contains("flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields: after removing any comment fields the JSON is:\n" +
-                "  {\"id\":\"my-test-flag\",\"rules\":[{\"condition\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"foo.com\"]}],\"value\":\"default\"}]}\n" +
-                "but deserializing this ended up with a JSON that are missing some of the fields:\n" +
-                "  {\"id\":\"my-test-flag\",\"rules\":[{\"value\":\"default\"}]}\n" +
-                "See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax"));
+        assertEquals("""
+                     flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields or rules with null values: after removing any comment fields the JSON is:
+                       {"id":"my-test-flag","rules":[{"condition":[{"type":"whitelist","dimension":"hostname","values":["foo.com"]}],"value":"default"}]}
+                     but deserializing this ended up with:
+                       {"id":"my-test-flag","rules":[{"value":"default"}]}
+                     These fields may be spelled wrong, or remove them?
+                     See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax
+                     """,
+                     exception.getMessage());
     }
 
     @Test
-    void remove_comments() {
-        assertTrue(JSON.equals("{\n" +
-                "    \"a\": {\n" +
-                "        \"b\": 1\n" +
-                "    },\n" +
-                "    \"list\": [\n" +
-                "        {\n" +
-                "            \"c\": 2\n" +
-                "        },\n" +
-                "        {\n" +
-                "        }\n" +
-                "    ]\n" +
-                "}",
-                SystemFlagsDataArchive.normalizeJson("{\n" +
-                "    \"comment\": \"comment a\",\n" +
-                "    \"a\": {\n" +
-                "        \"comment\": \"comment b\",\n" +
-                "        \"b\": 1\n" +
-                "    },\n" +
-                "    \"list\": [\n" +
-                "        {\n" +
-                "            \"comment\": \"comment c\",\n" +
-                "            \"c\": 2\n" +
-                "        },\n" +
-                "        {\n" +
-                "            \"comment\": \"comment d\"\n" +
-                "        }\n" +
-                "    ]\n" +
-                "}", Set.of())));
+    void handles_absent_rule_value() {
+        SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-null-value/"));
+
+        // west has null value on first rule
+        List<FlagData> westFlagData = archive.flagData(prodUsWestCfgTarget);
+        assertEquals(1, westFlagData.size());
+        assertEquals(2, westFlagData.get(0).rules().size());
+        assertEquals(Optional.empty(), westFlagData.get(0).rules().get(0).getValueToApply());
+
+        // east has no value on first rule
+        List<FlagData> eastFlagData = archive.flagData(prodUsEast3CfgTarget);
+        assertEquals(1, eastFlagData.size());
+        assertEquals(2, eastFlagData.get(0).rules().size());
+        assertEquals(Optional.empty(), eastFlagData.get(0).rules().get(0).getValueToApply());
+    }
+
+    @Test
+    void remove_comments_and_null_value_in_rules() {
+        assertTrue(JSON.equals("""
+                               {
+                                 "rules": [
+                                   {
+                                     "conditions": [
+                                       {
+                                         "type": "whitelist",
+                                         "dimension": "hostname",
+                                         "values": [ "foo.com" ]
+                                       }
+                                     ]
+                                   },
+                                   {
+                                     "conditions": [
+                                       {
+                                         "type": "whitelist",
+                                         "dimension": "zone",
+                                         "values": [ "prod.us-west-1" ]
+                                       }
+                                     ]
+                                   },
+                                   {
+                                     "conditions": [
+                                       {
+                                         "type": "whitelist",
+                                         "dimension": "application",
+                                         "values": [ "f:o:o" ]
+                                       }
+                                     ],
+                                     "value": true
+                                   }
+                                 ]
+                               }""",
+                               SystemFlagsDataArchive.normalizeJson("""
+                               {
+                                 "comment": "bar",
+                                 "rules": [
+                                   {
+                                     "comment": "bar",
+                                     "conditions": [
+                                       {
+                                         "comment": "bar",
+                                         "type": "whitelist",
+                                         "dimension": "hostname",
+                                         "values": [ "foo.com" ]
+                                       }
+                                     ],
+                                     "value": null
+                                   },
+                                   {
+                                     "comment": "bar",
+                                     "conditions": [
+                                       {
+                                         "comment": "bar",
+                                         "type": "whitelist",
+                                         "dimension": "zone",
+                                         "values": [ "prod.us-west-1" ]
+                                       }
+                                     ]
+                                   },
+                                   {
+                                     "comment": "bar",
+                                     "conditions": [
+                                       {
+                                         "comment": "bar",
+                                         "type": "whitelist",
+                                         "dimension": "application",
+                                         "values": [ "f:o:o" ]
+                                       }
+                                     ],
+                                     "value": true
+                                   }
+                                 ]
+                               }""", Set.of(ZoneId.from("prod.us-west-1")))));
     }
 
     @Test
