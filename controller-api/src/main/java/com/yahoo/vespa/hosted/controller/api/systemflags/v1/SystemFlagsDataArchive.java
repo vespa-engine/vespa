@@ -236,6 +236,7 @@ public class SystemFlagsDataArchive {
     static String normalizeJson(String json, Set<ZoneId> zones) {
         JsonNode root = uncheck(() -> mapper.readTree(json));
         removeCommentsRecursively(root);
+        removeNullRuleValues(root);
         verifyValues(root, zones);
         return root.toString();
     }
@@ -297,6 +298,22 @@ public class SystemFlagsDataArchive {
         }
 
         node.forEach(SystemFlagsDataArchive::removeCommentsRecursively);
+    }
+
+    private static void removeNullRuleValues(JsonNode root) {
+        if (root instanceof ObjectNode objectNode) {
+            JsonNode rules = objectNode.get("rules");
+            if (rules != null) {
+                rules.forEach(ruleNode -> {
+                    if (ruleNode instanceof ObjectNode rule) {
+                        JsonNode value = rule.get("value");
+                        if (value != null && value.isNull()) {
+                            rule.remove("value");
+                        }
+                    }
+                });
+            }
+        }
     }
 
     private static String toFilePath(FlagId flagId, String filename) {
