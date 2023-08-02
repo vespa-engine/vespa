@@ -24,6 +24,7 @@ import com.yahoo.search.query.ranking.Matching;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.tensor.Tensor;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -35,9 +36,72 @@ import java.util.Map;
  */
 public class QueryProperties extends Properties {
 
+    static interface GetProperty {
+        Object get(Query query);
+    }
+
     private Query query;
     private final CompiledQueryProfileRegistry profileRegistry;
     private final Map<String, Embedder> embedders;
+
+    static final Map<CompoundName, GetProperty> getMap = createPropertyMap();
+    private static Map<CompoundName, GetProperty> createPropertyMap() {
+        Map<CompoundName, GetProperty> map = new HashMap<>();
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.QUERY_STRING), query -> query.getModel().getQueryString());
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.TYPE), query -> query.getModel().getType());
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.FILTER), query -> query.getModel().getFilter());
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.DEFAULT_INDEX), query -> query.getModel().getDefaultIndex());
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.LANGUAGE), query -> query.getModel().getLanguage());
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.LOCALE), query -> query.getModel().getLocale());
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.ENCODING), query -> query.getModel().getEncoding());
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.SOURCES), query -> query.getModel().getSources());
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.SEARCH_PATH), query -> query.getModel().getSearchPath());
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.RESTRICT), query -> query.getModel().getRestrict());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.LOCATION), query -> query.getRanking().getLocation());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.PROFILE), query -> query.getRanking().getProfile());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SORTING), query -> query.getRanking().getSorting());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.FRESHNESS), query -> query.getRanking().getFreshness());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.QUERYCACHE), query -> query.getRanking().getQueryCache());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.RERANKCOUNT), query -> query.getRanking().getRerankCount());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.KEEPRANKCOUNT), query -> query.getRanking().getKeepRankCount());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.RANKSCOREDROPLIMIT), query -> query.getRanking().getRankScoreDropLimit());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.LIST_FEATURES), query -> query.getRanking().getListFeatures());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.ATTRIBUTE), query -> query.getRanking().getMatchPhase().getAttribute());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.ASCENDING), query -> query.getRanking().getMatchPhase().getAscending());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.MAX_HITS), query -> query.getRanking().getMatchPhase().getMaxHits());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.MAX_FILTER_COVERAGE), query -> query.getRanking().getMatchPhase().getMaxFilterCoverage());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, Ranking.DIVERSITY, Diversity.ATTRIBUTE), query -> query.getRanking().getMatchPhase().getDiversity().getAttribute());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, Ranking.DIVERSITY, Diversity.MINGROUPS), query -> query.getRanking().getMatchPhase().getDiversity().getMinGroups());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, Ranking.DIVERSITY, Diversity.CUTOFF, Diversity.FACTOR), query -> query.getRanking().getMatchPhase().getDiversity().getCutoffFactor());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, Ranking.DIVERSITY, Diversity.CUTOFF, Diversity.STRATEGY), query -> query.getRanking().getMatchPhase().getDiversity().getCutoffStrategy());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.ENABLE), query -> query.getRanking().getSoftTimeout().getEnable());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.FACTOR), query -> query.getRanking().getSoftTimeout().getFactor());
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.TAILCOST), query -> query.getRanking().getSoftTimeout().getTailcost());
+        map.put(CompoundName.fromComponents(Select.SELECT), query -> query.getSelect().getGroupingExpressionString());
+        map.put(CompoundName.fromComponents(Select.SELECT, Select.WHERE), query -> query.getSelect().getWhereString());
+        map.put(CompoundName.fromComponents(Select.SELECT, Select.GROUPING), query -> query.getSelect().getGrouping());
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.LEVEL), query -> query.getTrace().getLevel());
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.EXPLAIN_LEVEL), query -> query.getTrace().getExplainLevel());
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.TIMESTAMPS), query -> query.getTrace().getTimestamps());
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.QUERY), query -> query.getTrace().getQuery());
+        map.put(CompoundName.fromComponents(Model.MODEL), Query::getModel);
+        map.put(CompoundName.fromComponents(Ranking.RANKING), Query::getRanking);
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION), Query::getPresentation);
+
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.BOLDING), query -> query.getPresentation().getBolding());
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.SUMMARY), query -> query.getPresentation().getSummary());
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.FORMAT), query -> query.getPresentation().getFormat());
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.TIMING), query -> query.getPresentation().getTiming());
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.SUMMARY_FIELDS), query -> query.getPresentation().getSummaryFields());
+        map.put(CompoundName.fromComponents(Presentation.PRESENTATION, Presentation.FORMAT, Presentation.TENSORS), query -> query.getPresentation().getTensorShortForm());
+
+        map.put(Query.HITS, Query::getHits);
+        map.put(Query.OFFSET, Query::getOffset);
+        map.put(Query.TIMEOUT, Query::getTimeout);
+        map.put(Query.NO_CACHE, Query::getNoCache);
+        map.put(Query.GROUPING_SESSION_CACHE, Query::getGroupingSessionCache);
+        return map;
+    };
 
     public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry, Map<String, Embedder> embedders) {
         this.query = query;
@@ -54,57 +118,12 @@ public class QueryProperties extends Properties {
     public Object get(CompoundName key,
                       Map<String, String> context,
                       com.yahoo.processing.request.Properties substitution) {
-        if (key.size() == 2 && key.first().equals(Model.MODEL)) {
-            Model model = query.getModel();
-            if (key.last().equals(Model.QUERY_STRING)) return model.getQueryString();
-            if (key.last().equals(Model.TYPE)) return model.getType();
-            if (key.last().equals(Model.FILTER)) return model.getFilter();
-            if (key.last().equals(Model.DEFAULT_INDEX)) return model.getDefaultIndex();
-            if (key.last().equals(Model.LANGUAGE)) return model.getLanguage();
-            if (key.last().equals(Model.LOCALE)) return model.getLocale();
-            if (key.last().equals(Model.ENCODING)) return model.getEncoding();
-            if (key.last().equals(Model.SOURCES)) return model.getSources();
-            if (key.last().equals(Model.SEARCH_PATH)) return model.getSearchPath();
-            if (key.last().equals(Model.RESTRICT)) return model.getRestrict();
-        }
-        else if (key.first().equals(Ranking.RANKING)) {
+        GetProperty getter = getMap.get(key);
+        if (getter != null) return getter.get(query);
+
+        if (key.first().equals(Ranking.RANKING)) {
             Ranking ranking = query.getRanking();
-            if (key.size() == 2) {
-                if (key.last().equals(Ranking.LOCATION)) return ranking.getLocation();
-                if (key.last().equals(Ranking.PROFILE)) return ranking.getProfile();
-                if (key.last().equals(Ranking.SORTING)) return ranking.getSorting();
-                if (key.last().equals(Ranking.FRESHNESS)) return ranking.getFreshness();
-                if (key.last().equals(Ranking.QUERYCACHE)) return ranking.getQueryCache();
-                if (key.last().equals(Ranking.RERANKCOUNT)) return ranking.getRerankCount();
-                if (key.last().equals(Ranking.KEEPRANKCOUNT)) return ranking.getKeepRankCount();
-                if (key.last().equals(Ranking.RANKSCOREDROPLIMIT)) return ranking.getRankScoreDropLimit();
-                if (key.last().equals(Ranking.LIST_FEATURES)) return ranking.getListFeatures();
-            }
-            else if (key.size() >= 3 && key.get(1).equals(Ranking.MATCH_PHASE)) {
-                if (key.size() == 3) {
-                    MatchPhase matchPhase = ranking.getMatchPhase();
-                    if (key.last().equals(MatchPhase.ATTRIBUTE)) return matchPhase.getAttribute();
-                    if (key.last().equals(MatchPhase.ASCENDING)) return matchPhase.getAscending();
-                    if (key.last().equals(MatchPhase.MAX_HITS)) return matchPhase.getMaxHits();
-                    if (key.last().equals(MatchPhase.MAX_FILTER_COVERAGE)) return matchPhase.getMaxFilterCoverage();
-                } else if (key.size() >= 4 && key.get(2).equals(Ranking.DIVERSITY)) {
-                    Diversity diversity = ranking.getMatchPhase().getDiversity();
-                    if (key.size() == 4) {
-                        if (key.last().equals(Diversity.ATTRIBUTE)) return diversity.getAttribute();
-                        if (key.last().equals(Diversity.MINGROUPS)) return diversity.getMinGroups();
-                    } else if ((key.size() == 5)  && key.get(3).equals(Diversity.CUTOFF)) {
-                        if (key.last().equals(Diversity.FACTOR)) return diversity.getCutoffFactor();
-                        if (key.last().equals(Diversity.STRATEGY)) return diversity.getCutoffStrategy();
-                    }
-                }
-            }
-            else if (key.size() == 3 && key.get(1).equals(Ranking.SOFTTIMEOUT)) {
-                SoftTimeout soft = ranking.getSoftTimeout();
-                if (key.last().equals(SoftTimeout.ENABLE)) return soft.getEnable();
-                if (key.last().equals(SoftTimeout.FACTOR)) return soft.getFactor();
-                if (key.last().equals(SoftTimeout.TAILCOST)) return soft.getTailcost();
-            }
-            else if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
+            if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
                 Matching matching = ranking.getMatching();
                 if (equalsWithLowerCaseAlias(key.last(), Matching.TERMWISELIMIT)) return matching.getTermwiseLimit();
                 if (equalsWithLowerCaseAlias(key.last(), Matching.NUMTHREADSPERSEARCH)) return matching.getNumThreadsPerSearch();
@@ -117,42 +136,6 @@ public class QueryProperties extends Properties {
                 if (key.get(1).equals(Ranking.FEATURES)) return ranking.getFeatures().getObject(key.rest().rest().toString());
                 if (key.get(1).equals(Ranking.PROPERTIES)) return ranking.getProperties().get(key.rest().rest().toString());
             }
-        }
-        else if (key.first().equals(Select.SELECT)) {
-            if (key.size() == 1) {
-                return query.getSelect().getGroupingExpressionString();
-            }
-            else if (key.size() == 2) {
-                if (key.last().equals(Select.WHERE)) return query.getSelect().getWhereString();
-                if (key.last().equals(Select.GROUPING)) return query.getSelect().getGroupingString();
-            }
-        }
-        else if (key.first().equals(Presentation.PRESENTATION)) {
-            if (key.size() == 2) {
-                if (key.last().equals(Presentation.BOLDING)) return query.getPresentation().getBolding();
-                if (key.last().equals(Presentation.SUMMARY)) return query.getPresentation().getSummary();
-                if (key.last().equals(Presentation.FORMAT)) return query.getPresentation().getFormat();
-                if (key.last().equals(Presentation.TIMING)) return query.getPresentation().getTiming();
-                if (key.last().equals(Presentation.SUMMARY_FIELDS)) return query.getPresentation().getSummaryFields();
-            } else if (key.size() == 3 && key.get(1).equals(Presentation.FORMAT)) {
-                if (key.last().equals(Presentation.TENSORS)) return query.getPresentation().getTensorShortForm();
-            }
-        }
-        else if (key.size() == 2 && key.first().equals(Trace.TRACE)) {
-            if (key.last().equals(Trace.LEVEL)) return query.getTrace().getLevel();
-            if (key.last().equals(Trace.EXPLAIN_LEVEL)) return query.getTrace().getExplainLevel();
-            if (key.last().equals(Trace.TIMESTAMPS)) return query.getTrace().getTimestamps();
-            if (key.last().equals(Trace.QUERY)) return query.getTrace().getQuery();
-        }
-        else if (key.size() == 1) {
-            if (key.equals(Query.HITS)) return query.getHits();
-            if (key.equals(Query.OFFSET)) return query.getOffset();
-            if (key.equals(Query.TIMEOUT)) return query.getTimeout();
-            if (key.equals(Query.NO_CACHE)) return query.getNoCache();
-            if (key.equals(Query.GROUPING_SESSION_CACHE)) return query.getGroupingSessionCache();
-            if (key.toString().equals(Model.MODEL)) return query.getModel();
-            if (key.toString().equals(Ranking.RANKING)) return query.getRanking();
-            if (key.toString().equals(Presentation.PRESENTATION)) return query.getPresentation();
         }
 
         return super.get(key, context, substitution);
