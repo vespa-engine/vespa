@@ -6,6 +6,9 @@ import ai.vespa.metrics.ContainerMetrics;
 import ai.vespa.metrics.SearchNodeMetrics;
 import ai.vespa.metrics.StorageMetrics;
 import ai.vespa.metrics.DistributorMetrics;
+import ai.vespa.metrics.ClusterControllerMetrics;
+import ai.vespa.metrics.SentinelMetrics;
+import ai.vespa.metrics.NodeAdminMetrics;
 import ai.vespa.metrics.Suffix;
 import ai.vespa.metrics.VespaMetrics;
 
@@ -16,6 +19,7 @@ import java.util.Set;
 
 import static ai.vespa.metrics.Suffix.average;
 import static ai.vespa.metrics.Suffix.count;
+import static ai.vespa.metrics.Suffix.last;
 import static ai.vespa.metrics.Suffix.max;
 import static ai.vespa.metrics.Suffix.min;
 import static ai.vespa.metrics.Suffix.ninety_five_percentile;
@@ -47,9 +51,12 @@ public class DefaultMetrics {
         addContainerMetrics(metrics);
         addSearchChainMetrics(metrics);
         addDocprocMetrics(metrics);
+        addSearchNodeMetrics(metrics);
         addContentMetrics(metrics);
         addStorageMetrics(metrics);
         addDistributorMetrics(metrics);
+        addClusterControllerMetrics(metrics);
+        addOtherMetrics(metrics);
         return Collections.unmodifiableSet(metrics);
     }
 
@@ -69,6 +76,15 @@ public class DefaultMetrics {
         addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY.max());
         addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_SIZE, EnumSet.of(sum, count, min, max));
         addMetric(metrics, ContainerMetrics.SERVER_ACTIVE_THREADS.average());
+
+        // Metrics needed for alerting
+        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_IS_ACTIVE.last());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CHIFERS.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_UNKNOWN.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS.rate());
+        addMetric(metrics, ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS.last());
     }
 
     private static void addSearchChainMetrics(Set<Metric> metrics) {
@@ -82,6 +98,13 @@ public class DefaultMetrics {
 
     private static void addDocprocMetrics(Set<Metric> metrics) {
         addMetric(metrics, ContainerMetrics.DOCPROC_DOCUMENTS.sum());
+    }
+
+    private static void addSearchNodeMetrics(Set<Metric> metrics) {
+        // Metrics needed for alerting
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_FEEDING_BLOCKED, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
     }
 
     private static void addContentMetrics(Set<Metric> metrics) {
@@ -114,6 +137,31 @@ public class DefaultMetrics {
 
     private static void addDistributorMetrics(Set<Metric> metrics) {
         addMetric(metrics, DistributorMetrics.VDS_DISTRIBUTOR_DOCSSTORED.average());
+
+        // Metrics needed for alerting
+        addMetric(metrics, DistributorMetrics.VDS_BOUNCER_CLOCK_SKEW_ABORTS.count());
+    }
+
+    private static void addClusterControllerMetrics(Set<Metric> metrics) {
+        // Metrics needed for alerting
+        addMetric(metrics, ClusterControllerMetrics.DOWN_COUNT.last());
+        addMetric(metrics, ClusterControllerMetrics.MAINTENANCE_COUNT.last());
+        addMetric(metrics, ClusterControllerMetrics.UP_COUNT.last());
+        addMetric(metrics, ClusterControllerMetrics.IS_MASTER.last());
+        addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION, EnumSet.of(last, max)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_MAX_DISK_UTILIZATION, EnumSet.of(last, max)); // TODO: Vespa 9: Remove last
+    }
+
+    private static void addSentinelMetrics(Set<Metric> metrics) {
+        // Metrics needed for alerting
+        addMetric(metrics, SentinelMetrics.SENTINEL_TOTAL_RESTARTS.last());
+    }
+
+    private static void addOtherMetrics(Set<Metric> metrics) {
+        // Metrics needed for alerting
+        addMetric(metrics, NodeAdminMetrics.ENDPOINT_CERTIFICATE_EXPIRY_SECONDS.baseName());
+        addMetric(metrics, NodeAdminMetrics.NODE_CERTIFICATE_EXPIRY_SECONDS.baseName());
     }
 
     private static void addMetric(Set<Metric> metrics, String nameWithSuffix) {

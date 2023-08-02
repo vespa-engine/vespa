@@ -73,14 +73,14 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.WANT_TO_CHANGE_VESPA_VERSION.max());
         addMetric(metrics, ConfigServerMetrics.HAS_WIRE_GUARD_KEY.last());
         addMetric(metrics, ConfigServerMetrics.WANT_TO_DEPROVISION.max());
-        addMetric(metrics, ConfigServerMetrics.SUSPENDED.max());
+        addMetric(metrics, ConfigServerMetrics.SUSPENDED, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ConfigServerMetrics.SOME_SERVICES_DOWN.max());
         addMetric(metrics, ConfigServerMetrics.NODE_FAILER_BAD_NODE.last());
         addMetric(metrics, ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LOAD, EnumSet.of(max,average));
 
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_CPU.average());
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_MEM.average());
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_DISK.average());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_CPU, EnumSet.of(average, last)); // TODO: Vespa 9: Remove last?
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_MEM, EnumSet.of(average, last)); // TODO: Vespa 9: Remove last?
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_DISK, EnumSet.of(average, last)); // TODO: Vespa 9: Remove last?
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_CPU.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_MEM.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_DISK.max());
@@ -96,7 +96,10 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_PROVISIONED_HOSTS.last());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_READY_HOSTS.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_RESERVED_HOSTS.max());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_PARKED_HOSTS, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_ACTIVE_NODES.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_FAILED_NODES.max());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_PARKED_NODES, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
 
         addMetric(metrics, ConfigServerMetrics.RPC_SERVER_WORK_QUEUE_SIZE.average());
         addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_ACTIVATE_MILLIS.last());
@@ -108,7 +111,13 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_TRANSIENT_FAILURE.count());
         addMetric(metrics, ConfigServerMetrics.OVERCOMMITTED_HOSTS.max());
         addMetric(metrics, ConfigServerMetrics.SPARE_HOST_CAPACITY.last());
-        addMetric(metrics, ConfigServerMetrics.THROTTLED_NODE_FAILURES.max());
+        addMetric(metrics, ConfigServerMetrics.THROTTLED_NODE_FAILURES, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, ConfigServerMetrics.NODE_FAIL_THROTTLING.last());
+
+        addMetric(metrics, ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_SUCCESS.count());
+        addMetric(metrics, ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_TIMEOUT.count());
+        addMetric(metrics, ConfigServerMetrics.ZONE_WORKING.last());
+        addMetric(metrics, ConfigServerMetrics.THROTTLED_HOST_PROVISIONING.max());
 
         // Container metrics that should be stored for the config-server
         addMetric(metrics, ContainerMetrics.HANDLED_LATENCY.max());
