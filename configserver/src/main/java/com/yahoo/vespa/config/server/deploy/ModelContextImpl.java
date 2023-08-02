@@ -200,7 +200,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableGlobalPhase;
         private final String summaryDecodePolicy;
         private final Predicate<ClusterSpec.Id> allowMoreThanOneContentGroupDown;
-        private final boolean enableConditionalPutRemoveWriteRepair;
         private final boolean enableDataplaneProxy;
         private final boolean enableNestedMultivalueGrouping;
         private final boolean useReconfigurableDispatcher;
@@ -245,7 +244,6 @@ public class ModelContextImpl implements ModelContext {
             this.enableGlobalPhase = flagValue(source, appId, version, Flags.ENABLE_GLOBAL_PHASE);
             this.summaryDecodePolicy = flagValue(source, appId, version, Flags.SUMMARY_DECODE_POLICY);
             this.allowMoreThanOneContentGroupDown = clusterId -> flagValue(source, appId, version, clusterId, Flags.ALLOW_MORE_THAN_ONE_CONTENT_GROUP_DOWN);
-            this.enableConditionalPutRemoveWriteRepair = flagValue(source, appId, version, Flags.ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR);
             this.enableDataplaneProxy = flagValue(source, appId, version, Flags.ENABLE_DATAPLANE_PROXY);
             this.enableNestedMultivalueGrouping = flagValue(source, appId, version, Flags.ENABLE_NESTED_MULTIVALUE_GROUPING);
             this.useReconfigurableDispatcher = flagValue(source, appId, version, Flags.USE_RECONFIGURABLE_DISPATCHER);
@@ -298,7 +296,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
         @Override public boolean enableGlobalPhase() { return enableGlobalPhase; }
         @Override public boolean allowMoreThanOneContentGroupDown(ClusterSpec.Id id) { return allowMoreThanOneContentGroupDown.test(id); }
-        @Override public boolean enableConditionalPutRemoveWriteRepair() { return enableConditionalPutRemoveWriteRepair; }
         @Override public boolean enableDataplaneProxy() { return enableDataplaneProxy; }
         @Override public boolean enableNestedMultivalueGrouping() { return enableNestedMultivalueGrouping; }
         @Override public boolean useReconfigurableDispatcher() { return useReconfigurableDispatcher; }

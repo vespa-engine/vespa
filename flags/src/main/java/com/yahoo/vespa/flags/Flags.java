@@ -355,15 +355,6 @@ public class Flags {
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
 
-    public static final UnboundBooleanFlag ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR = defineFeatureFlag(
-            "enable-conditional-put-remove-write-repair", true,
-            List.of("vekterli", "havardpe"), "2023-05-10", "2023-09-01",
-            "If set, a conditional Put or Remove operation for a document in an inconsistent bucket " +
-            "will initiate a write-repair that evaluates the condition across all mutually inconsistent " +
-            "replicas, with the newest document version (if any) being authoritative",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_DATAPLANE_PROXY = defineFeatureFlag(
             "enable-dataplane-proxy", false,
             List.of("mortent", "olaa"), "2023-05-15", "2023-09-01",
