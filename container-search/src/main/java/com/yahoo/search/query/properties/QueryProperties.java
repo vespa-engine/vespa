@@ -171,7 +171,6 @@ public class QueryProperties extends Properties {
 
         //TODO Why is there error handling in set path and not in get path ?
         if (key.first().equals(Ranking.RANKING)) {
-            Ranking ranking = query.getRanking();
             if (key.size() > 2) {
                 String restKey = key.rest().rest().toString();
                 chained().requireSettable(key, value, context);
@@ -179,17 +178,17 @@ public class QueryProperties extends Properties {
                     setRankFeature(query, restKey, toSpecifiedType(restKey, value,
                             profileRegistry.getTypeRegistry().getComponent("features"),
                             context));
+                    return;
                 } else if (key.get(1).equals(Ranking.PROPERTIES)) {
+                    Ranking ranking = query.getRanking();
                     ranking.getProperties().put(restKey, toSpecifiedType(restKey, value,
                             profileRegistry.getTypeRegistry().getComponent("properties"),
                             context));
-                } else {
-                    throwIllegalParameter(key.rest().toString(), Ranking.RANKING);
+                    return;
                 }
-            } else {
-                throwIllegalParameter(key.rest().toString(), Ranking.RANKING);
             }
-        } else if (reservedPrefix.contains(key.first())) {
+        }
+        if (reservedPrefix.contains(key.first())) {
             throwIllegalParameter(key.rest().toString(), key.first());
         } else {
             super.set(key, value, context);
