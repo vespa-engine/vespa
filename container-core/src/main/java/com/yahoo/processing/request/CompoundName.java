@@ -63,7 +63,7 @@ public final class CompoundName {
     }
 
     private CompoundName(String [] compounds) {
-        this(toCompoundString(compounds), compounds, false);
+        this(toCompoundString(compounds), compounds, true);
     }
 
     /**
