@@ -377,8 +377,7 @@ public abstract class Container extends AbstractService implements
 
     @Override
     public void getConfig(ContainerHttpConfig.Builder builder) {
-        if (hostResponseHeaderKey.isPresent())
-            builder.hostResponseHeaderKey(hostResponseHeaderKey.get());
+        hostResponseHeaderKey.ifPresent(builder::hostResponseHeaderKey);
     }
 
     @Override
