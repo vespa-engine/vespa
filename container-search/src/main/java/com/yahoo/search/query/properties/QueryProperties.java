@@ -169,7 +169,6 @@ public class QueryProperties extends Properties {
             return;
         }
 
-        //TODO Why is there error handling in set path and not in get path ?
         if (key.first().equals(Ranking.RANKING)) {
             if (key.size() > 2) {
                 String restKey = key.rest().rest().toString();
@@ -189,6 +188,7 @@ public class QueryProperties extends Properties {
             }
         }
         if (reservedPrefix.contains(key.first())) {
+            // Setting a property under the reserved paths are illegal, while retrieving(get) one is not.
             throwIllegalParameter(key.rest().toString(), key.first());
         } else {
             super.set(key, value, context);
