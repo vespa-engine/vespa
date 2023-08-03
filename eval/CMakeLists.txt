@@ -76,6 +76,7 @@ vespa_define_module(
     src/tests/instruction/mixed_112_dot_product
     src/tests/instruction/mixed_inner_product_function
     src/tests/instruction/mixed_l2_distance
+    src/tests/instruction/mixed_weighted_average
     src/tests/instruction/mixed_simple_join_function
     src/tests/instruction/pow_as_map_optimizer
     src/tests/instruction/remove_trivial_dimension_optimizer

@@ -229,4 +229,20 @@ bool operator==(const SmallVector<T,N> &a,
     return true;
 }
 
+template <typename T, size_t N, size_t M>
+bool operator< (const SmallVector<T,N> &a,
+                const SmallVector<T,M> &b) noexcept
+{
+    if (a.size() != b.size()) {
+        return a.size() < b.size();
+    }
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (!(a[i] == b[i])) {
+            return a[i] < b[i];
+        }
+    }
+    return false;
+}
+
+
 } // namespace
