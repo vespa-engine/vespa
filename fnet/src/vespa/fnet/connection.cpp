@@ -555,11 +555,12 @@ FNET_Connection::server_adapter()
 bool
 FNET_Connection::handle_add_event()
 {
-    if (_resolve_handler.load()) {
+    std::shared_ptr<ResolveHandler> resolve_handler = _resolve_handler.exchange({});
+    if (resolve_handler) {
         auto tweak = [this](vespalib::SocketHandle &handle) { return Owner()->tune(handle); };
-        _socket = Owner()->owner().create_client_crypto_socket(_resolve_handler.load()->address.connect(tweak), vespalib::SocketSpec(GetSpec()));
+        _socket = Owner()->owner().create_client_crypto_socket(resolve_handler->address.connect(tweak), vespalib::SocketSpec(GetSpec()));
         _ioc_socket_fd = _socket->get_fd();
-        _resolve_handler.store({});
+        resolve_handler.reset();
     }
     return (_socket && (_socket->get_fd() >= 0));
 }
