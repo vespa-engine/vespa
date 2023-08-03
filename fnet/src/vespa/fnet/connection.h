@@ -71,7 +71,7 @@ private:
         void handle_result(vespalib::SocketAddress result) override;
         ~ResolveHandler();
     };
-    using ResolveHandlerSP = std::shared_ptr<ResolveHandler>;
+    using ResolveHandlerSP = std::atomic<std::shared_ptr<ResolveHandler>>;
     FNET_IPacketStreamer    *_streamer;        // custom packet streamer
     FNET_IServerAdapter     *_serverAdapter;   // only on server side
     vespalib::CryptoSocket::UP _socket;        // socket for this conn
