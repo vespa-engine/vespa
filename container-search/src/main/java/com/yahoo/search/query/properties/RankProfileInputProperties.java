@@ -3,6 +3,7 @@ package com.yahoo.search.query.properties;
 
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.schema.SchemaInfo;
@@ -46,7 +47,7 @@ public class RankProfileInputProperties extends Properties {
                                                       query.getModel().getLanguage());
                 }
                 catch (IllegalArgumentException e) {
-                    throw new IllegalArgumentException("Could not set '" + name + "' to '" + value + "'", e);
+                    throw new IllegalInputException("Could not set '" + name + "' to '" + value + "'", e);
                 }
             }
         }
@@ -84,7 +85,7 @@ public class RankProfileInputProperties extends Properties {
     }
 
     private void throwIllegalInput(CompoundName name, Object value, TensorType expectedType) {
-        throw new IllegalArgumentException("Could not set '" + name + "' to '" + value + "': " +
+        throw new IllegalInputException("Could not set '" + name + "' to '" + value + "': " +
                                            "This input is declared in rank profile '" + query.getRanking().getProfile() +
                                            "' as " + expectedType);
     }
