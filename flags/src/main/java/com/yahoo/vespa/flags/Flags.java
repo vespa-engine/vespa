@@ -105,27 +105,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag SKIP_COMMUNICATIONMANAGER_THREAD = defineFeatureFlag(
-            "skip-communicationmanager-thread", false,
-            List.of("baldersheim"), "2020-12-02", "2023-12-31",
-            "Should we skip the communicationmanager thread",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag SKIP_MBUS_REQUEST_THREAD = defineFeatureFlag(
-            "skip-mbus-request-thread", false,
-            List.of("baldersheim"), "2020-12-02", "2023-12-31",
-            "Should we skip the mbus request thread",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag SKIP_MBUS_REPLY_THREAD = defineFeatureFlag(
-            "skip-mbus-reply-thread", false,
-            List.of("baldersheim"), "2020-12-02", "2023-12-31",
-            "Should we skip the mbus reply thread",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", false,
             List.of("baldersheim"), "2020-12-02", "2023-12-31",
@@ -263,13 +242,6 @@ public class Flags {
             TENANT_ID, CONSOLE_USER_EMAIL
     );
 
-    public static final UnboundBooleanFlag IGNORE_THREAD_STACK_SIZES = defineFeatureFlag(
-            "ignore-thread-stack-sizes", false,
-            List.of("arnej"), "2021-11-12", "2023-12-31",
-            "Whether C++ thread creation should ignore any requested stack size",
-            "Triggers restart, takes effect immediately",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
             List.of("arnej"), "2021-11-15", "2023-12-31",
@@ -282,20 +254,6 @@ public class Flags {
                 List.of("baldersheim", "geirst", "toregge"), "2021-12-15", "2023-12-31",
                 "Upper limit of buffers to compact in a data store at the same time for each reason (memory usage, address space usage)",
                 "Takes effect at redeployment",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag USE_QRSERVER_SERVICE_NAME = defineFeatureFlag(
-            "use-qrserver-service-name", false,
-            List.of("arnej"), "2022-01-18", "2023-12-31",
-            "Use backwards-compatible 'qrserver' service name for containers with only 'search' API",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag AVOID_RENAMING_SUMMARY_FEATURES = defineFeatureFlag(
-            "avoid-renaming-summary-features", true,
-            List.of("arnej"), "2022-01-15", "2023-12-31",
-            "Tell backend about the original name of summary-features that were wrapped in a rankingExpression feature",
-            "Takes effect at redeployment",
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
@@ -396,15 +354,6 @@ public class Flags {
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
-
-    public static final UnboundBooleanFlag ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR = defineFeatureFlag(
-            "enable-conditional-put-remove-write-repair", true,
-            List.of("vekterli", "havardpe"), "2023-05-10", "2023-09-01",
-            "If set, a conditional Put or Remove operation for a document in an inconsistent bucket " +
-            "will initiate a write-repair that evaluates the condition across all mutually inconsistent " +
-            "replicas, with the newest document version (if any) being authoritative",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
 
     public static final UnboundBooleanFlag ENABLE_DATAPLANE_PROXY = defineFeatureFlag(
             "enable-dataplane-proxy", false,

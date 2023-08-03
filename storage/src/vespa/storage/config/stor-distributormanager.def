@@ -312,4 +312,4 @@ enable_two_phase_garbage_collection bool default=true
 ## If true, a conditional Put or Remove operation received for a bucket with inconsistent
 ## replicas will trigger an implicit distributed condition probe to resolve the outcome of
 ## the condition across all divergent replicas.
-enable_condition_probing bool default=false
+enable_condition_probing bool default=true

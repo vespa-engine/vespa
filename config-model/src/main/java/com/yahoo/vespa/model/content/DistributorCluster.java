@@ -34,7 +34,6 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
     private final GcOptions gc;
     private final boolean hasIndexedDocumentType;
     private final int maxActivationInhibitedOutOfSyncGroups;
-    private final boolean enableConditionalPutRemoveWriteRepair;
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<DistributorCluster> {
 
         ContentCluster parent;
@@ -95,20 +94,17 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
             final GcOptions gc = parseGcOptions(documentsNode);
             final boolean hasIndexedDocumentType = clusterContainsIndexedDocumentType(documentsNode);
             int maxInhibitedGroups = deployState.getProperties().featureFlags().maxActivationInhibitedOutOfSyncGroups();
-            boolean enableConditionalPutRemoveWriteRepair = deployState.getProperties().featureFlags().enableConditionalPutRemoveWriteRepair();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
                     hasIndexedDocumentType,
-                    maxInhibitedGroups,
-                    enableConditionalPutRemoveWriteRepair);
+                    maxInhibitedGroups);
         }
     }
 
     private DistributorCluster(ContentCluster parent, BucketSplitting bucketSplitting,
                                GcOptions gc, boolean hasIndexedDocumentType,
-                               int maxActivationInhibitedOutOfSyncGroups,
-                               boolean enableConditionalPutRemoveWriteRepair)
+                               int maxActivationInhibitedOutOfSyncGroups)
     {
         super(parent, "distributor");
         this.parent = parent;
@@ -116,7 +112,6 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         this.gc = gc;
         this.hasIndexedDocumentType = hasIndexedDocumentType;
         this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
-        this.enableConditionalPutRemoveWriteRepair = enableConditionalPutRemoveWriteRepair;
     }
 
     @Override
@@ -129,7 +124,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         builder.enable_revert(parent.getPersistence().supportRevert());
         builder.disable_bucket_activation(!hasIndexedDocumentType);
         builder.max_activation_inhibited_out_of_sync_groups(maxActivationInhibitedOutOfSyncGroups);
-        builder.enable_condition_probing(enableConditionalPutRemoveWriteRepair);
+        builder.enable_condition_probing(true);
         bucketSplitting.getConfig(builder);
     }
 

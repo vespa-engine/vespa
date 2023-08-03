@@ -86,7 +86,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Optional<CloudAccount> cloudAccount = Optional.empty();
     private boolean allowUserFilters = true;
     private boolean allowMoreThanOneContentGroupDown = false;
-    private boolean enableConditionalPutRemoveWriteRepair = false;
     private List<DataplaneToken> dataplaneTokens;
     private boolean enableDataplaneProxy;
 
@@ -147,7 +146,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public boolean enableGlobalPhase() { return true; } // Enable global-phase by default for unit tests only
     @Override public boolean allowMoreThanOneContentGroupDown(ClusterSpec.Id id) { return allowMoreThanOneContentGroupDown; }
-    @Override public boolean enableConditionalPutRemoveWriteRepair() { return enableConditionalPutRemoveWriteRepair; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
     @Override public boolean enableDataplaneProxy() { return enableDataplaneProxy; }
 
@@ -380,11 +378,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setAllowMoreThanOneContentGroupDown(boolean allowMoreThanOneContentGroupDown) {
         this.allowMoreThanOneContentGroupDown = allowMoreThanOneContentGroupDown;
-        return this;
-    }
-
-    public TestProperties setEnableConditionalPutRemoveWriteRepair(boolean enable) {
-        this.enableConditionalPutRemoveWriteRepair = enable;
         return this;
     }
 

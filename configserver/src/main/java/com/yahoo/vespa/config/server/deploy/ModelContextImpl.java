@@ -167,9 +167,6 @@ public class ModelContextImpl implements ModelContext {
         private final String feedSequencer;
         private final String responseSequencer;
         private final int numResponseThreads;
-        private final boolean skipCommunicationManagerThread;
-        private final boolean skipMbusRequestThread;
-        private final boolean skipMbusReplyThread;
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final double feedConcurrency;
         private final double feedNiceness;
@@ -184,11 +181,9 @@ public class ModelContextImpl implements ModelContext {
         private final double containerShutdownTimeout;
         private final int maxUnCommittedMemory;
         private final boolean forwardIssuesAsErrors;
-        private final boolean ignoreThreadStackSizes;
         private final boolean useV8GeoPositions;
         private final int maxCompactBuffers;
         private final List<String> ignoredHttpUserAgents;
-        private final boolean avoidRenamingSummaryFeatures;
         private final Architecture adminClusterArchitecture;
         private final boolean enableProxyProtocolMixedMode;
         private final boolean sharedStringRepoNoReclaim;
@@ -205,7 +200,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableGlobalPhase;
         private final String summaryDecodePolicy;
         private final Predicate<ClusterSpec.Id> allowMoreThanOneContentGroupDown;
-        private final boolean enableConditionalPutRemoveWriteRepair;
         private final boolean enableDataplaneProxy;
         private final boolean enableNestedMultivalueGrouping;
         private final boolean useReconfigurableDispatcher;
@@ -215,9 +209,6 @@ public class ModelContextImpl implements ModelContext {
             this.feedSequencer = flagValue(source, appId, version, Flags.FEED_SEQUENCER_TYPE);
             this.responseSequencer = flagValue(source, appId, version, Flags.RESPONSE_SEQUENCER_TYPE);
             this.numResponseThreads = flagValue(source, appId, version, Flags.RESPONSE_NUM_THREADS);
-            this.skipCommunicationManagerThread = flagValue(source, appId, version, Flags.SKIP_COMMUNICATIONMANAGER_THREAD);
-            this.skipMbusRequestThread = flagValue(source, appId, version, Flags.SKIP_MBUS_REQUEST_THREAD);
-            this.skipMbusReplyThread = flagValue(source, appId, version, Flags.SKIP_MBUS_REPLY_THREAD);
             this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, version, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
             this.feedConcurrency = flagValue(source, appId, version, Flags.FEED_CONCURRENCY);
             this.feedNiceness = flagValue(source, appId, version, Flags.FEED_NICENESS);
@@ -233,11 +224,9 @@ public class ModelContextImpl implements ModelContext {
             this.containerShutdownTimeout = flagValue(source, appId, version, Flags.CONTAINER_SHUTDOWN_TIMEOUT);
             this.maxUnCommittedMemory = flagValue(source, appId, version, Flags.MAX_UNCOMMITTED_MEMORY);
             this.forwardIssuesAsErrors = flagValue(source, appId, version, PermanentFlags.FORWARD_ISSUES_AS_ERRORS);
-            this.ignoreThreadStackSizes = flagValue(source, appId, version, Flags.IGNORE_THREAD_STACK_SIZES);
             this.useV8GeoPositions = flagValue(source, appId, version, Flags.USE_V8_GEO_POSITIONS);
             this.maxCompactBuffers = flagValue(source, appId, version, Flags.MAX_COMPACT_BUFFERS);
             this.ignoredHttpUserAgents = flagValue(source, appId, version, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
-            this.avoidRenamingSummaryFeatures = flagValue(source, appId, version, Flags.AVOID_RENAMING_SUMMARY_FEATURES);
             this.adminClusterArchitecture = Architecture.valueOf(flagValue(source, appId, version, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE));
             this.enableProxyProtocolMixedMode = flagValue(source, appId, version, Flags.ENABLE_PROXY_PROTOCOL_MIXED_MODE);
             this.sharedStringRepoNoReclaim = flagValue(source, appId, version, Flags.SHARED_STRING_REPO_NO_RECLAIM);
@@ -255,7 +244,6 @@ public class ModelContextImpl implements ModelContext {
             this.enableGlobalPhase = flagValue(source, appId, version, Flags.ENABLE_GLOBAL_PHASE);
             this.summaryDecodePolicy = flagValue(source, appId, version, Flags.SUMMARY_DECODE_POLICY);
             this.allowMoreThanOneContentGroupDown = clusterId -> flagValue(source, appId, version, clusterId, Flags.ALLOW_MORE_THAN_ONE_CONTENT_GROUP_DOWN);
-            this.enableConditionalPutRemoveWriteRepair = flagValue(source, appId, version, Flags.ENABLE_CONDITIONAL_PUT_REMOVE_WRITE_REPAIR);
             this.enableDataplaneProxy = flagValue(source, appId, version, Flags.ENABLE_DATAPLANE_PROXY);
             this.enableNestedMultivalueGrouping = flagValue(source, appId, version, Flags.ENABLE_NESTED_MULTIVALUE_GROUPING);
             this.useReconfigurableDispatcher = flagValue(source, appId, version, Flags.USE_RECONFIGURABLE_DISPATCHER);
@@ -269,9 +257,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public String feedSequencerType() { return feedSequencer; }
         @Override public String responseSequencerType() { return responseSequencer; }
         @Override public int defaultNumResponseThreads() { return numResponseThreads; }
-        @Override public boolean skipCommunicationManagerThread() { return skipCommunicationManagerThread; }
-        @Override public boolean skipMbusRequestThread() { return skipMbusRequestThread; }
-        @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public double feedConcurrency() { return feedConcurrency; }
         @Override public double feedNiceness() { return feedNiceness; }
@@ -289,11 +274,9 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean loadCodeAsHugePages() { return loadCodeAsHugePages; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
         @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
-        @Override public boolean ignoreThreadStackSizes() { return ignoreThreadStackSizes; }
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
-        @Override public boolean avoidRenamingSummaryFeatures() { return avoidRenamingSummaryFeatures; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public boolean enableProxyProtocolMixedMode() { return enableProxyProtocolMixedMode; }
         @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
@@ -313,7 +296,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useRestrictedDataPlaneBindings() { return useRestrictedDataPlaneBindings; }
         @Override public boolean enableGlobalPhase() { return enableGlobalPhase; }
         @Override public boolean allowMoreThanOneContentGroupDown(ClusterSpec.Id id) { return allowMoreThanOneContentGroupDown.test(id); }
-        @Override public boolean enableConditionalPutRemoveWriteRepair() { return enableConditionalPutRemoveWriteRepair; }
         @Override public boolean enableDataplaneProxy() { return enableDataplaneProxy; }
         @Override public boolean enableNestedMultivalueGrouping() { return enableNestedMultivalueGrouping; }
         @Override public boolean useReconfigurableDispatcher() { return useReconfigurableDispatcher; }
