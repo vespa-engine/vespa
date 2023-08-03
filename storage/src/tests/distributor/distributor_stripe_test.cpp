@@ -1043,13 +1043,13 @@ TEST_F(DistributorStripeTest, enable_condition_probing_config_is_propagated_to_i
 {
     setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
-    EXPECT_FALSE(getConfig().enable_condition_probing());
-
-    configure_enable_condition_probing(true);
     EXPECT_TRUE(getConfig().enable_condition_probing());
 
     configure_enable_condition_probing(false);
     EXPECT_FALSE(getConfig().enable_condition_probing());
+
+    configure_enable_condition_probing(true);
+    EXPECT_TRUE(getConfig().enable_condition_probing());
 }
 
 }
