@@ -146,6 +146,11 @@ public class PermanentFlags {
             "Takes effect on next deployment from controller",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag SEND_LIMITED_METRIC_SET = defineFeatureFlag(
+            "send-limited-metric-set", true,
+            "Whether a limited metric set should be fetched from metrics-proxy (CD systems only)",
+            "Takes effect on next host admin tick");
+
     private static final String VERSION_QUALIFIER_REGEX = "[a-zA-Z0-9_-]+";
     private static final Pattern QUALIFIER_PATTERN = Pattern.compile("^" + VERSION_QUALIFIER_REGEX + "$");
     private static final Pattern VERSION_PATTERN = Pattern.compile("^\\d\\.\\d\\.\\d(\\." + VERSION_QUALIFIER_REGEX + ")?$");
