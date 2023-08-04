@@ -50,10 +50,10 @@ public class IoController {
     /**
      * Defines max allowed IO:
      * <ul>
-     *     <ol><b>rbps</b>: Read bytes per seconds</ol>
-     *     <ol><b>riops</b>: Read IO operations per seconds</ol>
-     *     <ol><b>wbps</b>: Write bytes per seconds</ol>
-     *     <ol><b>wiops</b>: Write IO operations per seconds</ol>
+     *     <li><b>rbps</b>: Read bytes per seconds</li>
+     *     <li><b>riops</b>: Read IO operations per seconds</li>
+     *     <li><b>wbps</b>: Write bytes per seconds</li>
+     *     <li><b>wiops</b>: Write IO operations per seconds</li>
      * </ul>.
      */
     public record Max(Size rbps, Size wbps, Size riops, Size wiops) {
