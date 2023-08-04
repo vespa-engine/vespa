@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.cgroup;
 
 import org.junit.jupiter.api.Test;
 
-import static com.yahoo.vespa.hosted.node.admin.cgroup.IoController.Device;
 import static com.yahoo.vespa.hosted.node.admin.cgroup.IoController.Max;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -11,12 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @author freva
  */
 class IoControllerTest {
-
-    @Test
-    void device_number_parsing() {
-        assertEquals(new Device(253, 15), Device.fromDeviceNumber(253 * 256 + 15));
-        assertEquals(new Device(345, 123), Device.fromDeviceNumber(345 * 256 + 123));
-    }
 
     @Test
     void parse_io_max() {

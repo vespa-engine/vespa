@@ -37,9 +37,6 @@ public class IoController {
             String[] parts = device.split(":");
             return new Device(parseInt(parts[0]), parseInt(parts[1]));
         }
-        public static Device fromDeviceNumber(int deviceNumber) {
-            return new Device(deviceNumber >>> 8, deviceNumber & 0xFF);
-        }
 
         @Override
         public int compareTo(Device o) {
