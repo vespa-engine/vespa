@@ -3,6 +3,7 @@ package ai.vespa.embedding;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
@@ -69,7 +70,7 @@ public class BertBaseEmbedderTest {
     }
 
     private static BertBaseEmbedder newBertBaseEmbedder(BertBaseEmbedderConfig cfg) {
-        return new BertBaseEmbedder(new OnnxRuntime(), cfg);
+        return new BertBaseEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), cfg);
     }
 
 }

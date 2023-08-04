@@ -52,11 +52,12 @@ public class TensorConverter {
             throw new IllegalArgumentException("Expected any string enclosed in embed(), but the argument does not end by ')'");
         String argument = s.substring("embed(".length(), s.length() - 1);
         Embedder embedder;
+        String embedderId;
 
         // Check if arguments specifies an embedder with the format embed(embedder, "text to encode")
         Matcher matcher = embedderArgumentRegexp.matcher(argument);
         if (matcher.matches()) {
-            String embedderId = matcher.group(1);
+            embedderId = matcher.group(1);
             argument = matcher.group(2);
             if ( ! embedders.containsKey(embedderId)) {
                 throw new IllegalArgumentException("Can't find embedder '" + embedderId + "'. " +
@@ -69,10 +70,11 @@ public class TensorConverter {
             throw new IllegalArgumentException("Multiple embedders are provided but no embedder id is given. " +
                                                "Valid embedders are " + validEmbedders(embedders));
         } else {
-            embedder = embedders.entrySet().stream().findFirst().get().getValue();
+            var entry = embedders.entrySet().stream().findFirst().get();
+            embedderId = entry.getKey();
+            embedder = entry.getValue();
         }
-
-        return embedder.embed(removeQuotes(argument), embedderContext, type);
+        return embedder.embed(removeQuotes(argument), embedderContext.copy().setEmbedderId(embedderId), type);
     }
 
     private static String removeQuotes(String s) {

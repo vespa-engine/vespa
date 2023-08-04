@@ -16,6 +16,8 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -27,6 +29,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     private static final Logger log = Logger.getLogger(HuggingFaceEmbedder.class.getName());
 
+    private final Embedder.Runtime runtime;
     private final String inputIdsName;
     private final String attentionMaskName;
     private final String tokenTypeIdsName;
@@ -37,7 +40,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     private final PoolingStrategy poolingStrategy;
 
     @Inject
-    public HuggingFaceEmbedder(OnnxRuntime onnx, HuggingFaceEmbedderConfig config) {
+    public HuggingFaceEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, HuggingFaceEmbedderConfig config) {
+        this.runtime = runtime;
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
         tokenTypeIdsName = config.transformerTokenTypeIds();
@@ -87,7 +91,11 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public List<Integer> embed(String s, Context context) {
-        return tokenizer.embed(s, context);
+        var start = Instant.now();
+        var tokens = tokenizer.embed(s, context);
+        runtime.sampleSequenceLength(tokens.size(), context);
+        runtime.sampleEmbeddingLatency(Duration.between(start, Instant.now()), context);
+        return tokens;
     }
 
     @Override
@@ -98,7 +106,9 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public Tensor embed(String s, Context context, TensorType tensorType) {
+        var start = Instant.now();
         var encoding = tokenizer.encode(s, context.getLanguage());
+        runtime.sampleSequenceLength(encoding.ids().size(), context);
         Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1");
         Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1");
         Tensor tokenTypeIds = tokenTypeIdsName.isEmpty() ? null : createTensorRepresentation(encoding.typeIds(), "d1");
@@ -117,7 +127,9 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         Map<String, Tensor> outputs = evaluator.evaluate(inputs);
         Tensor tokenEmbeddings = outputs.get(outputName);
         var result = poolingStrategy.toSentenceEmbedding(tensorType, tokenEmbeddings, attentionMask);
-        return normalize ? normalize(result, tensorType) : result;
+        var normalized = normalize ? normalize(result, tensorType) : result;
+        runtime.sampleEmbeddingLatency(Duration.between(start, Instant.now()), context);
+        return normalized;
     }
 
     Tensor normalize(Tensor embedding, TensorType tensorType) {

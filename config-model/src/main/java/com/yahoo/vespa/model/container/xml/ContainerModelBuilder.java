@@ -792,6 +792,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         /* The ONNX runtime is always available for injection to any component */
         cluster.addSimpleComponent(
                 ContainerModelEvaluation.ONNX_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
+        /* Add runtime providing utilities such as metrics to embedder implementations */
+        cluster.addSimpleComponent(
+                "ai.vespa.embedding.EmbedderRuntime", null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
     }
 
     private void addProcessing(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {

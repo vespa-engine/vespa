@@ -200,9 +200,10 @@ public enum ContainerMetrics implements VespaMetrics {
     SERVER_TOTAL_FAILED_RESPONSE_LATENCY("serverTotalFailedResponseLatency", Unit.MILLISECOND, "Total duration for execution of failed responses"),
     SERVER_TIME_TO_FIRST_BYTE("serverTimeToFirstByte", Unit.MILLISECOND, "Time from request has been received by the server until the first byte is returned to the client"),
 
-    SERVER_STARTED_MILLIS("serverStartedMillis", Unit.MILLISECOND, "Time since the service was started");
+    SERVER_STARTED_MILLIS("serverStartedMillis", Unit.MILLISECOND, "Time since the service was started"),
 
-
+    EMBEDDER_LATENCY("embedder.latency", Unit.MILLISECOND, "Time spent creating an embedding"),
+    EMBEDDER_SEQUENCE_LENGTH("embedder.sequence_length", Unit.BYTE, "Size of sequence produced by tokenizer");
 
     private final String name;
     private final Unit unit;

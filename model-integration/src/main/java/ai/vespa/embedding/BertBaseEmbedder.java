@@ -12,6 +12,8 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,11 +42,13 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
     private final String outputName;
     private final PoolingStrategy poolingStrategy;
 
+    private final Embedder.Runtime runtime;
     private final WordPieceEmbedder tokenizer;
     private final OnnxEvaluator evaluator;
 
     @Inject
-    public BertBaseEmbedder(OnnxRuntime onnx, BertBaseEmbedderConfig config) {
+    public BertBaseEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, BertBaseEmbedderConfig config) {
+        this.runtime = runtime;
         maxTokens = config.transformerMaxTokens();
         startSequenceToken = config.transformerStartSequenceToken();
         endSequenceToken = config.transformerEndSequenceToken();
@@ -87,11 +91,16 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public List<Integer> embed(String text, Context context) {
-        return tokenizer.embed(text, context);
+        var start = Instant.now();
+        var tokens = tokenize(text, context);
+        runtime.sampleSequenceLength(tokens.size(), context);
+        runtime.sampleEmbeddingLatency(Duration.between(start, Instant.now()), context);
+        return tokens;
     }
 
     @Override
     public Tensor embed(String text, Context context, TensorType type) {
+        var start = Instant.now();
         if (type.dimensions().size() != 1) {
             throw new IllegalArgumentException("Error in embedding to type '" + type + "': should only have one dimension.");
         }
@@ -99,10 +108,15 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
             throw new IllegalArgumentException("Error in embedding to type '" + type + "': dimension should be indexed.");
         }
         List<Integer> tokens = embedWithSeparatorTokens(text, context, maxTokens);
-        return embedTokens(tokens, type);
+        runtime.sampleSequenceLength(tokens.size(), context);
+        var embedding = embedTokens(tokens, type);
+        runtime.sampleEmbeddingLatency(Duration.between(start, Instant.now()), context);
+        return embedding;
     }
 
     @Override public void deconstruct() { evaluator.close(); }
+
+    private List<Integer> tokenize(String text, Context ctx) { return tokenizer.embed(text, ctx); }
 
     Tensor embedTokens(List<Integer> tokens, TensorType type) {
         Tensor inputSequence = createTensorRepresentation(tokens, "d1");
@@ -129,7 +143,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
     private List<Integer> embedWithSeparatorTokens(String text, Context context, int maxLength) {
         List<Integer> tokens = new ArrayList<>();
         tokens.add(startSequenceToken);
-        tokens.addAll(embed(text, context));
+        tokens.addAll(tokenize(text, context));
         tokens.add(endSequenceToken);
         if (tokens.size() > maxLength) {
             tokens = tokens.subList(0, maxLength-1);
