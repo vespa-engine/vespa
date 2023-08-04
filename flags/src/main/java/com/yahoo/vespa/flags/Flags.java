@@ -344,6 +344,11 @@ public class Flags {
             "Takes effect on next run of CertPoolMaintainer"
     );
 
+    public static final UnboundStringFlag CONTAINER_IMAGE_PULL_IO_MAX = defineStringFlag(
+            "container-image-pull-io-max", "", List.of("freva"), "2023-08-04", "2023-09-15",
+            "The value (excluding the device name) of io.max cgroup used by container image pull, e.g. 'wiops=100', or 'wbps=10000 riops=20', or empty for unlimited",
+            "Takes effect at next host-admin tick");
+
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
             "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-08-15",
             "Whether to enable the one program that should not be named",
