@@ -28,9 +28,9 @@ private:
 
 public:
     TensorFromAttributeExecutor(const search::attribute::IAttributeVector *attribute,
-                                const vespalib::string &dimension)
+                                const vespalib::eval::ValueType &valueType)
         : _attribute(attribute),
-          _type(vespalib::eval::ValueType::make_type(CellType::DOUBLE, {{dimension}})),
+          _type(valueType),
           _attrBuffer(),
           _addr_ref(),
           _tensor()
