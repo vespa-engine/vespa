@@ -184,7 +184,8 @@ public class SystemFlagsDataArchive {
         if (rawData.isBlank()) {
             flagData = new FlagData(directoryDeducedFlagId);
         } else {
-            Set<ZoneId> zones = zoneRegistry.zones().all().zones().stream().map(ZoneApi::getVirtualId).collect(Collectors.toSet());
+            Set<ZoneId> zones = force ? zoneRegistry.zones().all().zones().stream().map(ZoneApi::getVirtualId).collect(Collectors.toSet())
+                                      : Set.of();
             String normalizedRawData = normalizeJson(rawData, zones);
             flagData = FlagData.deserialize(normalizedRawData);
             if (!directoryDeducedFlagId.equals(flagData.id())) {
@@ -250,7 +251,8 @@ public class SystemFlagsDataArchive {
                         throw new FlagValidationException("Major Vespa version must be at least 8: " + versionString);
                 });
                 case ZONE_ID -> validateStringValues(condition, zoneIdString -> {
-                    if (!zones.contains(ZoneId.from(zoneIdString)))
+                    ZoneId zoneId = ZoneId.from(zoneIdString);
+                    if (!zones.isEmpty() && !zones.contains(zoneId))
                         throw new FlagValidationException("Unknown zone: " + zoneIdString);
                 });
             }
