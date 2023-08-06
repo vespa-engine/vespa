@@ -23,6 +23,7 @@ import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,7 +33,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -74,7 +74,7 @@ public class SystemFlagsDataArchive {
         this.files = files;
     }
 
-    public static SystemFlagsDataArchive fromZip(InputStream rawIn) {
+    public static SystemFlagsDataArchive fromZip(InputStream rawIn, ZoneRegistry zoneRegistry) {
         Builder builder = new Builder();
         try (ZipInputStream zipIn = new ZipInputStream(new BufferedInputStream(rawIn))) {
             ZipEntry entry;
@@ -83,7 +83,7 @@ public class SystemFlagsDataArchive {
                 if (!entry.isDirectory() && name.startsWith("flags/")) {
                     Path filePath = Paths.get(name);
                     String rawData = new String(zipIn.readAllBytes(), StandardCharsets.UTF_8);
-                    addFile(builder, rawData, filePath, Set.of(), null);
+                    addFile(builder, rawData, filePath, zoneRegistry, true);
                 }
             }
             return builder.build();
@@ -92,27 +92,19 @@ public class SystemFlagsDataArchive {
         }
     }
 
-    public static SystemFlagsDataArchive fromDirectoryAndSystem(Path directory, ZoneRegistry systemDefinition) {
-        return fromDirectory(directory, systemDefinition);
-    }
-
-    public static SystemFlagsDataArchive fromDirectory(Path directory) { return fromDirectory(directory, null); }
-
-    private static SystemFlagsDataArchive fromDirectory(Path directory, ZoneRegistry systemDefinition) {
-        Set<String> filenamesForSystem = getFilenamesForSystem(systemDefinition);
+    public static SystemFlagsDataArchive fromDirectory(Path directory, ZoneRegistry zoneRegistry, boolean forceAddFiles) {
         Path root = directory.toAbsolutePath();
         Path flagsDirectory = directory.resolve("flags");
         if (!Files.isDirectory(flagsDirectory)) {
-            throw new IllegalArgumentException("Sub-directory 'flags' does not exist: " + flagsDirectory);
+            throw new FlagValidationException("Sub-directory 'flags' does not exist: " + flagsDirectory);
         }
-        try (Stream<Path> directoryStream = Files.walk(root)) {
+        try (Stream<Path> directoryStream = Files.walk(flagsDirectory)) {
             Builder builder = new Builder();
-            directoryStream.forEach(absolutePath -> {
-                Path relativePath = root.relativize(absolutePath);
-                if (!Files.isDirectory(absolutePath) &&
-                        relativePath.startsWith("flags")) {
-                    String rawData = uncheck(() -> Files.readString(absolutePath, StandardCharsets.UTF_8));
-                    addFile(builder, rawData, relativePath, filenamesForSystem, systemDefinition);
+            directoryStream.forEach(path -> {
+                Path relativePath = root.relativize(path.toAbsolutePath());
+                if (Files.isRegularFile(path)) {
+                    String rawData = uncheck(() -> Files.readString(path, StandardCharsets.UTF_8));
+                    addFile(builder, rawData, relativePath, zoneRegistry, forceAddFiles);
                 }
             });
             return builder.build();
@@ -121,6 +113,14 @@ public class SystemFlagsDataArchive {
         }
     }
 
+    public byte[] toZipBytes() {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            toZip(out);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 
     public void toZip(OutputStream out) {
         ZipOutputStream zipOut = new ZipOutputStream(out);
@@ -153,67 +153,48 @@ public class SystemFlagsDataArchive {
         return targetData;
     }
 
-    public void validateAllFilesAreForTargets(SystemName currentSystem, Set<FlagsTarget> targets) throws IllegalArgumentException {
+    public void validateAllFilesAreForTargets(Set<FlagsTarget> targets) throws FlagValidationException {
         Set<String> validFiles = targets.stream()
-                .flatMap(target -> target.flagDataFilesPrioritized().stream())
-                .collect(Collectors.toSet());
-        Set<SystemName> otherSystems = Arrays.stream(SystemName.values())
-                .filter(systemName -> systemName != currentSystem)
-                .collect(Collectors.toSet());
-        files.forEach((flagId, fileMap) -> {
-            for (String filename : fileMap.keySet()) {
-                boolean isFileForOtherSystem = otherSystems.stream()
-                        .anyMatch(system -> filename.startsWith(system.value() + "."));
-                boolean isFileForCurrentSystem = validFiles.contains(filename);
-                if (!isFileForOtherSystem && !isFileForCurrentSystem) {
-                    throw new IllegalArgumentException("Unknown flag file: " + toFilePath(flagId, filename));
-                }
+                                        .flatMap(target -> target.flagDataFilesPrioritized().stream())
+                                        .collect(Collectors.toSet());
+        files.forEach((flagId, fileMap) -> fileMap.keySet().forEach(filename -> {
+            if (!validFiles.contains(filename)) {
+                throw new FlagValidationException("Unknown flag file: " + toFilePath(flagId, filename));
             }
-        });
+        }));
     }
 
-    private static Set<String> getFilenamesForSystem(ZoneRegistry systemDefinition) {
-        if (systemDefinition == null) return Set.of();
-        return FlagsTarget.getAllTargetsInSystem(systemDefinition, false).stream()
-                .flatMap(target -> target.flagDataFilesPrioritized().stream())
-                .collect(Collectors.toSet());
+    boolean hasFlagData(FlagId flagId, String filename) {
+        return files.getOrDefault(flagId, Map.of()).containsKey(filename);
     }
 
-    private static void addFile(Builder builder, String rawData, Path filePath, Set<String> filenamesForSystem,
-                                ZoneRegistry systemDefinition) {
+    private static void addFile(Builder builder, String rawData, Path filePath, ZoneRegistry zoneRegistry, boolean force) {
         String filename = filePath.getFileName().toString();
-        if (filename.startsWith(".")) {
-            return; // Ignore files starting with '.'
+
+        if (!force) {
+            if (filename.startsWith("."))
+                return; // Ignore files starting with '.'
+
+            if (!FlagsTarget.filenameForSystem(filename, zoneRegistry.system()))
+                return; // Ignore files for other systems
         }
-        if (!filenamesForSystem.isEmpty() && !filenamesForSystem.contains(filename)) {
-            if (systemDefinition != null && filename.startsWith(systemDefinition.system().value() + '.')) {
-                throw new IllegalArgumentException(String.format(
-                        "Environment or zone in filename '%s' does not exist", filename));
-            }
-            return; // Ignore files irrelevant for system
-        }
-        if (!filename.endsWith(".json")) {
-            throw new IllegalArgumentException(String.format("Only JSON files are allowed in 'flags/' directory (found '%s')", filePath.toString()));
-        }
+
         FlagId directoryDeducedFlagId = new FlagId(filePath.getName(filePath.getNameCount()-2).toString());
         FlagData flagData;
         if (rawData.isBlank()) {
             flagData = new FlagData(directoryDeducedFlagId);
         } else {
-            Set<ZoneId> zones = systemDefinition == null ?
-                                Set.of() :
-                                systemDefinition.zones().all().zones().stream().map(ZoneApi::getVirtualId).collect(Collectors.toSet());
+            Set<ZoneId> zones = zoneRegistry.zones().all().zones().stream().map(ZoneApi::getVirtualId).collect(Collectors.toSet());
             String normalizedRawData = normalizeJson(rawData, zones);
             flagData = FlagData.deserialize(normalizedRawData);
             if (!directoryDeducedFlagId.equals(flagData.id())) {
-                throw new IllegalArgumentException(
-                        String.format("Flag data file with flag id '%s' in directory for '%s'",
-                                flagData.id(), directoryDeducedFlagId.toString()));
+                throw new FlagValidationException("Flag data file with flag id '%s' in directory for '%s'"
+                                                          .formatted(flagData.id(), directoryDeducedFlagId.toString()));
             }
 
             String serializedData = flagData.serializeToJson();
             if (!JSON.equals(serializedData, normalizedRawData)) {
-                throw new IllegalArgumentException("""
+                throw new FlagValidationException("""
                                                    %s contains unknown non-comment fields or rules with null values: after removing any comment fields the JSON is:
                                                      %s
                                                    but deserializing this ended up with:
@@ -225,9 +206,8 @@ public class SystemFlagsDataArchive {
         }
 
         if (builder.hasFile(filename, flagData)) {
-            throw new IllegalArgumentException(
-                String.format("Flag data file in '%s' contains redundant flag data for id '%s' already set in another directory!",
-                              filePath, flagData.id()));
+            throw new FlagValidationException("Flag data file in '%s' contains redundant flag data for id '%s' already set in another directory!"
+                                                      .formatted(filePath, flagData.id()));
         }
 
         builder.addFile(filename, flagData);
@@ -247,13 +227,13 @@ public class SystemFlagsDataArchive {
             FetchVector.Dimension dimension = DimensionHelper
                     .fromWire(condition.get("dimension")
                                        .asString()
-                                       .orElseThrow(() -> new IllegalArgumentException("Invalid dimension in condition: " + condition)));
+                                       .orElseThrow(() -> new FlagValidationException("Invalid dimension in condition: " + condition)));
             switch (dimension) {
                 case APPLICATION_ID -> validateStringValues(condition, ApplicationId::fromSerializedForm);
                 case CONSOLE_USER_EMAIL -> validateStringValues(condition, email -> {});
                 case CLOUD -> validateStringValues(condition, cloud -> {
                     if (!Set.of(YAHOO, AWS, GCP).contains(CloudName.from(cloud)))
-                        throw new IllegalArgumentException("Unknown cloud: " + cloud);
+                        throw new FlagValidationException("Unknown cloud: " + cloud);
                 });
                 case CLUSTER_ID -> validateStringValues(condition, ClusterSpec.Id::from);
                 case CLUSTER_TYPE -> validateStringValues(condition, ClusterSpec.Type::from);
@@ -261,18 +241,17 @@ public class SystemFlagsDataArchive {
                 case HOSTNAME -> validateStringValues(condition, HostName::of);
                 case NODE_TYPE -> validateStringValues(condition, NodeType::valueOf);
                 case SYSTEM -> validateStringValues(condition, system -> {
-                    if (!Set.of(SystemName.cd, SystemName.main, SystemName.PublicCd, SystemName.Public).contains(SystemName.from(system)))
-                        throw new IllegalArgumentException("Unknown system: " + system);
+                    if (!SystemName.hostedVespa().contains(SystemName.from(system)))
+                        throw new FlagValidationException("Unknown system: " + system);
                 });
                 case TENANT_ID -> validateStringValues(condition, TenantName::from);
                 case VESPA_VERSION -> validateStringValues(condition, versionString -> {
-                    Version vespaVersion = Version.fromString(versionString);
-                    if (vespaVersion.getMajor() < 8)
-                        throw new IllegalArgumentException("Major Vespa version must be at least 8: " + versionString);
+                    if (Version.fromString(versionString).getMajor() < 8)
+                        throw new FlagValidationException("Major Vespa version must be at least 8: " + versionString);
                 });
-                case ZONE_ID -> validateStringValues(condition, zoneId -> {
-                    if (!zones.contains(ZoneId.from(zoneId)))
-                        throw new IllegalArgumentException("Unknown zone: " + zoneId);
+                case ZONE_ID -> validateStringValues(condition, zoneIdString -> {
+                    if (!zones.contains(ZoneId.from(zoneIdString)))
+                        throw new FlagValidationException("Unknown zone: " + zoneIdString);
                 });
             }
         }));
@@ -284,10 +263,16 @@ public class SystemFlagsDataArchive {
                                          .orElseThrow(() -> {
                                              String dimension = condition.get("dimension").asString().orElseThrow();
                                              String type = condition.get("type").asString().orElseThrow();
-                                             return new IllegalArgumentException("Non-string value in %s %s condition: %s".formatted(
+                                             return new FlagValidationException("Non-string %s in %s condition: %s".formatted(
                                                      dimension, type, conditionValue));
                                          });
-            valueValidator.accept(value);
+            try {
+                valueValidator.accept(value);
+            } catch (IllegalArgumentException e) {
+                String dimension = condition.get("dimension").asString().orElseThrow();
+                String type = condition.get("type").asString().orElseThrow();
+                throw new FlagValidationException("Invalid %s '%s' in %s condition: %s".formatted(dimension, value, type, e.getMessage()));
+            }
         });
     }
 

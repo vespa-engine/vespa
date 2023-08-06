@@ -8,6 +8,7 @@ import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.integration.ControllerIdentityProvider;
+import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagValidationException;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.SystemFlagsDataArchive;
 import com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.OperationError;
@@ -57,6 +58,12 @@ class SystemFlagsDeployer  {
     }
 
     SystemFlagsDeployResult deployFlags(SystemFlagsDataArchive archive, boolean dryRun) {
+        try {
+            archive.validateAllFilesAreForTargets(targets);
+        } catch (FlagValidationException e) {
+            return new SystemFlagsDeployResult(List.of(OperationError.archiveValidationFailed(e.getMessage())));
+        }
+
         Map<FlagsTarget, Future<SystemFlagsDeployResult>> futures = new HashMap<>();
         for (FlagsTarget target : targets) {
             futures.put(target, executor.submit(() -> deployFlags(target, archive.flagData(target), dryRun)));
@@ -70,11 +77,6 @@ class SystemFlagsDeployer  {
                 throw new RuntimeException(e);
             }
         });
-        try {
-            archive.validateAllFilesAreForTargets(system, targets);
-        } catch (IllegalArgumentException e) {
-            results.add(new SystemFlagsDeployResult(List.of(OperationError.archiveValidationFailed(e.getMessage()))));
-        }
         return SystemFlagsDeployResult.merge(results);
     }
 

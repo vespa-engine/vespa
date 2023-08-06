@@ -80,6 +80,54 @@ public interface FlagsTarget {
     static String zoneFile(SystemName system, ZoneId zone) { return jsonFile(system.value() + "." + zone.environment().value() + "." + zone.region().value()); }
     static String controllerFile(SystemName system) { return jsonFile(system.value() + ".controller"); }
 
+    /** Return true if the filename applies to the system.  Throws on invalid filename format. */
+    static boolean filenameForSystem(String filename, SystemName system) throws FlagValidationException {
+        if (filename.equals(defaultFile())) return true;
+
+        String[] parts = filename.split("\\.", -1);
+        if (parts.length < 2) throw new FlagValidationException("Invalid flag filename: " + filename);
+
+        if (!parts[parts.length - 1].equals("json")) throw new FlagValidationException("Invalid flag filename: " + filename);
+
+        SystemName systemFromFile;
+        try {
+            systemFromFile = SystemName.from(parts[0]);
+        } catch (IllegalArgumentException e) {
+            throw new FlagValidationException("First part of flag filename is neither 'default' nor a valid system: " + filename);
+        }
+        if (!SystemName.hostedVespa().contains(systemFromFile))
+            throw new FlagValidationException("Unknown system in flag filename: " + filename);
+        if (!systemFromFile.equals(system)) return false;
+
+        if (parts.length == 2) return true;  // systemFile
+
+        if (parts.length == 3) {
+            if (parts[1].equals("controller")) return true;  // controllerFile
+            try {
+                Environment.from(parts[1]);
+            } catch (IllegalArgumentException e) {
+                throw new FlagValidationException("Invalid environment in flag filename: " + filename);
+            }
+            return true;  // environmentFile
+        }
+
+        if (parts.length == 4) {
+            try {
+                Environment.from(parts[1]);
+            } catch (IllegalArgumentException e) {
+                throw new FlagValidationException("Invalid environment in flag filename: " + filename);
+            }
+            try {
+                RegionName.from(parts[2]);
+            } catch (IllegalArgumentException e) {
+                throw new FlagValidationException("Invalid region in flag filename: " + filename);
+            }
+            return true;  // zoneFile
+        }
+
+        throw new FlagValidationException("Invalid flag filename: " + filename);
+    }
+
     /** Partially resolve inter-zone dimensions, except those dimensions defined by the flag for a controller zone. */
     static FlagData partialResolve(FlagData data, SystemName system, CloudName cloud, ZoneId virtualZoneId) {
         Set<FetchVector.Dimension> flagDimensions =

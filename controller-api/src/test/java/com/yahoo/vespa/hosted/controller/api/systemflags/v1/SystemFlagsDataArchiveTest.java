@@ -28,10 +28,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -76,40 +74,73 @@ public class SystemFlagsDataArchiveTest {
 
     @Test
     void can_serialize_and_deserialize_archive() throws IOException {
+        can_serialize_and_deserialize_archive(false);
+        can_serialize_and_deserialize_archive(true);
+    }
+
+    private void can_serialize_and_deserialize_archive(boolean forceAddFiles) throws IOException {
         File tempFile = File.createTempFile("serialized-flags-archive", null, temporaryFolder);
         try (OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile))) {
-            var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags/"));
+            var archive = fromDirectory("system-flags", forceAddFiles);
+            if (forceAddFiles)
+                archive.validateAllFilesAreForTargets(Set.of(mainControllerTarget, prodUsWestCfgTarget));
             archive.toZip(out);
         }
         try (InputStream in = new BufferedInputStream(new FileInputStream(tempFile))) {
-            SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromZip(in);
+            SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromZip(in, createZoneRegistryMock());
             assertArchiveReturnsCorrectTestFlagDataForTarget(archive);
         }
     }
 
     @Test
     void retrieves_correct_flag_data_for_target() {
-        var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags/"));
+        retrieves_correct_flag_data_for_target(false);
+        retrieves_correct_flag_data_for_target(true);
+    }
+
+    private void retrieves_correct_flag_data_for_target(boolean forceAddFiles) {
+        var archive = fromDirectory("system-flags", forceAddFiles);
+        if (forceAddFiles)
+            archive.validateAllFilesAreForTargets(Set.of(mainControllerTarget, prodUsWestCfgTarget));
         assertArchiveReturnsCorrectTestFlagDataForTarget(archive);
     }
 
     @Test
     void supports_multi_level_flags_directory() {
-        var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-multi-level/"));
+        supports_multi_level_flags_directory(false);
+        supports_multi_level_flags_directory(true);
+    }
+
+    private void supports_multi_level_flags_directory(boolean forceAddFiles) {
+        var archive = fromDirectory("system-flags-multi-level", forceAddFiles);
+        if (forceAddFiles)
+            archive.validateAllFilesAreForTargets(Set.of(mainControllerTarget, prodUsWestCfgTarget));
         assertFlagDataHasValue(archive, MY_TEST_FLAG, mainControllerTarget, "default");
     }
 
     @Test
     void duplicated_flagdata_is_detected() {
-        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
-            var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-multi-level-with-duplicated-flagdata/"));
-        });
+        duplicated_flagdata_is_detected(false);
+        duplicated_flagdata_is_detected(true);
+    }
+
+    private void duplicated_flagdata_is_detected(boolean forceAddFiles) {
+        Throwable exception = assertThrows(FlagValidationException.class, () -> {
+            fromDirectory("system-flags-multi-level-with-duplicated-flagdata", forceAddFiles);
+       });
         assertTrue(exception.getMessage().contains("contains redundant flag data for id 'my-test-flag' already set in another directory!"));
     }
 
     @Test
     void empty_files_are_handled_as_no_flag_data_for_target() {
-        var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags/"));
+        empty_files_are_handled_as_no_flag_data_for_target(false);
+        empty_files_are_handled_as_no_flag_data_for_target(true);
+    }
+
+    private void empty_files_are_handled_as_no_flag_data_for_target(boolean forceAddFiles) {
+        var archive = fromDirectory("system-flags", forceAddFiles);
+        if (forceAddFiles)
+            archive.validateAllFilesAreForTargets(Set.of(mainControllerTarget, prodUsWestCfgTarget));
         assertNoFlagData(archive, FLAG_WITH_EMPTY_DATA, mainControllerTarget);
         assertFlagDataHasValue(archive, FLAG_WITH_EMPTY_DATA, prodUsWestCfgTarget, "main.prod.us-west-1");
         assertNoFlagData(archive, FLAG_WITH_EMPTY_DATA, prodUsEast3CfgTarget);
@@ -117,35 +148,43 @@ public class SystemFlagsDataArchiveTest {
     }
 
     @Test
-    void throws_exception_on_non_json_file() {
-        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
-            SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-invalid-file-name/"));
+    void hv_throws_exception_on_non_json_file() {
+        Throwable exception = assertThrows(FlagValidationException.class, () -> {
+            fromDirectory("system-flags-with-invalid-file-name", false);
         });
-        assertTrue(exception.getMessage().contains("Only JSON files are allowed in 'flags/' directory (found 'flags/my-test-flag/file-name-without-dot-json')"));
+        assertEquals("Invalid flag filename: file-name-without-dot-json",
+                     exception.getMessage());
     }
 
     @Test
     void throws_exception_on_unknown_file() {
-        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
-            SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-file-name/"));
-            archive.validateAllFilesAreForTargets(SystemName.main, Set.of(mainControllerTarget, prodUsWestCfgTarget));
+        Throwable exception = assertThrows(FlagValidationException.class, () -> {
+            SystemFlagsDataArchive archive = fromDirectory("system-flags-with-unknown-file-name", true);
+            archive.validateAllFilesAreForTargets(Set.of(mainControllerTarget, prodUsWestCfgTarget));
         });
-        assertTrue(exception.getMessage().contains("Unknown flag file: flags/my-test-flag/main.prod.unknown-region.json"));
+        assertEquals("Unknown flag file: flags/my-test-flag/main.prod.unknown-region.json", exception.getMessage());
+    }
+
+    @Test
+    void unknown_region_is_still_zipped() {
+        // This is useful when the program zipping the files is on a different version than the controller
+        var archive = fromDirectory("system-flags-with-unknown-file-name", false);
+        assertTrue(archive.hasFlagData(MY_TEST_FLAG, "main.prod.unknown-region.json"));
     }
 
     @Test
     void throws_exception_on_unknown_region() {
-        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
-            Path directory = Paths.get("src/test/resources/system-flags-with-unknown-file-name/");
-            SystemFlagsDataArchive.fromDirectoryAndSystem(directory, createZoneRegistryMock());
+        Throwable exception = assertThrows(FlagValidationException.class, () -> {
+            var archive = fromDirectory("system-flags-with-unknown-file-name", true);
+            archive.validateAllFilesAreForTargets(Set.of(mainControllerTarget, prodUsWestCfgTarget));
         });
-        assertTrue(exception.getMessage().contains("Environment or zone in filename 'main.prod.unknown-region.json' does not exist"));
+        assertEquals("Unknown flag file: flags/my-test-flag/main.prod.unknown-region.json", exception.getMessage());
     }
 
     @Test
     void throws_on_unknown_field() {
-        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
-            SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-unknown-field-name/"));
+        Throwable exception = assertThrows(FlagValidationException.class, () -> {
+            fromDirectory("system-flags-with-unknown-field-name", true);
         });
         assertEquals("""
                      flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields or rules with null values: after removing any comment fields the JSON is:
@@ -160,7 +199,7 @@ public class SystemFlagsDataArchiveTest {
 
     @Test
     void handles_absent_rule_value() {
-        SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags-with-null-value/"));
+        SystemFlagsDataArchive archive = fromDirectory("system-flags-with-null-value", true);
 
         // west has null value on first rule
         List<FlagData> westFlagData = archive.flagData(prodUsWestCfgTarget);
@@ -305,17 +344,18 @@ public class SystemFlagsDataArchiveTest {
 
     @Test
     void normalize_json_fail_on_invalid_values() {
-        failNormalizeJson("application", "\"a.b.c\"", "Application ids must be on the form tenant:application:instance, but was a.b.c");
+        failNormalizeJson("application", "\"a.b.c\"", "Invalid application 'a.b.c' in whitelist condition: Application ids must be on the form tenant:application:instance, but was a.b.c");
         failNormalizeJson("cloud", "\"foo\"", "Unknown cloud: foo");
         // failNormalizeJson("cluster-id", ... any String is valid
-        failNormalizeJson("cluster-type", "\"foo\"", "Illegal cluster type 'foo'");
-        failNormalizeJson("console-user-email", "123", "Non-string value in console-user-email whitelist condition: 123");
-        failNormalizeJson("environment", "\"foo\"", "'foo' is not a valid environment identifier");
-        failNormalizeJson("hostname", "\"not:a:hostname\"", "hostname must match '(([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])\\.?', but got: 'not:a:hostname'");
-        failNormalizeJson("node-type", "\"footype\"", "No enum constant com.yahoo.config.provision.NodeType.footype");
-        failNormalizeJson("system", "\"bar\"", "'bar' is not a valid system");
-        failNormalizeJson("tenant", "123", "Non-string value in tenant whitelist condition: 123");
-        failNormalizeJson("vespa-version", "\"not-a-version\"", "Invalid version component in 'not-a-version'");
+        failNormalizeJson("cluster-type", "\"foo\"", "Invalid cluster-type 'foo' in whitelist condition: Illegal cluster type 'foo'");
+        failNormalizeJson("console-user-email", "123", "Non-string console-user-email in whitelist condition: 123");
+        failNormalizeJson("environment", "\"foo\"", "Invalid environment 'foo' in whitelist condition: 'foo' is not a valid environment identifier");
+        failNormalizeJson("hostname", "\"not:a:hostname\"", "Invalid hostname 'not:a:hostname' in whitelist condition: hostname must match '(([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])\\.?', but got: 'not:a:hostname'");
+        failNormalizeJson("node-type", "\"footype\"", "Invalid node-type 'footype' in whitelist condition: No enum constant com.yahoo.config.provision.NodeType.footype");
+        failNormalizeJson("system", "\"bar\"", "Invalid system 'bar' in whitelist condition: 'bar' is not a valid system");
+        failNormalizeJson("tenant", "123", "Non-string tenant in whitelist condition: 123");
+        failNormalizeJson("vespa-version", "\"not-a-version\"", "Invalid vespa-version 'not-a-version' in whitelist condition: Invalid version component in 'not-a-version'");
+        failNormalizeJson("zone", "\"dev.%illegal\"", Set.of(ZoneId.from("prod.example-region")), "Invalid zone 'dev.%illegal' in whitelist condition: region name must match '[a-z]([a-z0-9-]*[a-z0-9])*', but got: '%illegal'");
         failNormalizeJson("zone", "\"dev.non-existing-zone\"", Set.of(ZoneId.from("prod.example-region")), "Unknown zone: dev.non-existing-zone");
     }
 
@@ -334,12 +374,14 @@ public class SystemFlagsDataArchiveTest {
 
     @Test
     void ignores_files_not_related_to_specified_system_definition() {
-        ZoneRegistry registry = createZoneRegistryMock();
-        Path testDirectory = Paths.get("src/test/resources/system-flags-for-multiple-systems/");
-        var archive = SystemFlagsDataArchive.fromDirectoryAndSystem(testDirectory, registry);
+        var archive = fromDirectory("system-flags-for-multiple-systems", false);
         assertFlagDataHasValue(archive, MY_TEST_FLAG, cdControllerTarget, "default"); // Would be 'cd.controller' if files for CD system were included
         assertFlagDataHasValue(archive, MY_TEST_FLAG, mainControllerTarget, "default");
         assertFlagDataHasValue(archive, MY_TEST_FLAG, prodUsWestCfgTarget, "main.prod.us-west-1");
+    }
+
+    private SystemFlagsDataArchive fromDirectory(String testDirectory, boolean forceAddFiles) {
+        return SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/" + testDirectory), createZoneRegistryMock(), forceAddFiles);
     }
 
     @SuppressWarnings("unchecked") // workaround for mocking a method for generic return type
@@ -373,7 +415,7 @@ public class SystemFlagsDataArchiveTest {
         List<FlagData> data = getData(archive, flagId, target);
         assertEquals(1, data.size());
         FlagData flagData = data.get(0);
-        RawFlag rawFlag = flagData.resolve(FetchVector.fromMap(Map.of())).get();
+        RawFlag rawFlag = flagData.resolve(new FetchVector()).get();
         assertEquals(String.format("\"%s\"", value), rawFlag.asJson());
     }
 
