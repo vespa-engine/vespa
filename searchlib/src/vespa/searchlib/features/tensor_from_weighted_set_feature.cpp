@@ -54,6 +54,9 @@ TensorFromWeightedSetBlueprint::setup(const search::fef::IIndexEnvironment &env,
     // _params[0] = source ('attribute(name)' OR 'query(param)');
     // _params[1] = dimension (optional);
     bool validSource = extractSource(params[0].getValue());
+    if (! validSource) {
+        return fail("invalid source: '%s'", params[0].getValue().c_str());
+    }
     if (params.size() == 2) {
         _dimension = params[1].getValue();
     } else {
@@ -61,10 +64,13 @@ TensorFromWeightedSetBlueprint::setup(const search::fef::IIndexEnvironment &env,
     }
     auto vt = ValueType::make_type(CellType::DOUBLE, {{_dimension}});
     _valueType = ValueType::from_spec(vt.to_spec());
+    if (_valueType.is_error()) {
+        return fail("invalid dimension name: '%s'", _dimension.c_str());
+    }
     describeOutput("tensor",
                    "The tensor created from the given weighted set source (attribute field or query parameter)",
                    FeatureType::object(_valueType));
-    return validSource && ! _valueType.is_error();
+    return true;
 }
 
 namespace {
