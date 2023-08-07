@@ -144,30 +144,6 @@ public class IndexedHierarchicDistributionTest {
                 "</tuning>");
     }
 
-    private String getRandomDispatchXml() {
-        return joinLines("<tuning>",
-                "  <dispatch>",
-                "    <dispatch-policy>random</dispatch-policy>",
-                "  </dispatch>",
-                "</tuning>");
-    }
-
-    private ContentCluster getOddGroupsCluster() throws Exception {
-        String groupXml = joinLines("  <group>",
-                "    <distribution partitions='2|*'/>",
-                "    <group distribution-key='0' name='group0'>",
-                "      <node distribution-key='0' hostalias='mockhost'/>",
-                "      <node distribution-key='1' hostalias='mockhost'/>",
-                "    </group>",
-                "    <group distribution-key='1' name='group1'>",
-                "      <node distribution-key='3' hostalias='mockhost'/>",
-                "      <node distribution-key='4' hostalias='mockhost'/>",
-                "      <node distribution-key='5' hostalias='mockhost'/>",
-                "    </group>",
-                "  </group>", "");
-        return createCluster(createClusterXml(groupXml, Optional.of(getRandomDispatchXml()), 4, 4));
-    }
-
     @Test
     void requireThatWeMustHaveOnlyOneGroupLevel() {
         try {
