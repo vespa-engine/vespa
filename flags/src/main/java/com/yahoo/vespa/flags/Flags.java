@@ -313,14 +313,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag NODE_ADMIN_TENANT_SERVICE_REGISTRY = defineFeatureFlag(
-            "node-admin-tenant-service-registry", true,
-            List.of("olaa"), "2023-04-12", "2023-08-07",
-            "Whether AthenzCredentialsMaintainer in node-admin should create tenant service identity certificate",
-            "Takes effect on next tick",
-            HOSTNAME, VESPA_VERSION, APPLICATION_ID
-    );
-
     public static final UnboundBooleanFlag ENABLE_CROWDSTRIKE = defineFeatureFlag(
             "enable-crowdstrike", true, List.of("andreer"), "2023-04-13", "2023-08-31",
             "Whether to enable CrowdStrike.", "Takes effect on next host admin tick",

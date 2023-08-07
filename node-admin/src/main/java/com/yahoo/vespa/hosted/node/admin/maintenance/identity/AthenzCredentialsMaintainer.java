@@ -80,7 +80,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private final String certificateDnsSuffix;
     private final ServiceIdentityProvider hostIdentityProvider;
     private final IdentityDocumentClient identityDocumentClient;
-    private final BooleanFlag tenantServiceIdentityFlag;
 
     // Used as an optimization to ensure ZTS is not DDoS'ed on continuously failing refresh attempts
     private final Map<ContainerName, Instant> lastRefreshAttempt = new ConcurrentHashMap<>();
@@ -89,7 +88,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                        ConfigServerInfo configServerInfo,
                                        String certificateDnsSuffix,
                                        ServiceIdentityProvider hostIdentityProvider,
-                                       FlagSource flagSource,
                                        Timer timer) {
         this.ztsTrustStorePath = ztsTrustStorePath;
         this.certificateDnsSuffix = certificateDnsSuffix;
@@ -99,7 +97,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 hostIdentityProvider,
                 new AthenzIdentityVerifier(Set.of(configServerInfo.getConfigServerIdentity())));
         this.timer = timer;
-        this.tenantServiceIdentityFlag = Flags.NODE_ADMIN_TENANT_SERVICE_REGISTRY.bindTo(flagSource);
     }
 
     public boolean converge(NodeAgentContext context) {
@@ -109,11 +106,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         if (context.zone().getSystemName().isPublic())
             return modified;
 
-        if (shouldWriteTenantServiceIdentity(context)) {
-            modified |= maintain(context, TENANT);
-        } else {
-            modified |= deleteTenantCredentials(context);
-        }
+        modified |= maintain(context, TENANT);
         return modified;
     }
 
@@ -268,24 +261,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         return "node-certificate";
     }
 
-    private boolean deleteTenantCredentials(NodeAgentContext context) {
-        var siaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY, context.users().vespa());
-        var identityDocumentFile = siaDirectory.resolve(TENANT.getIdentityDocument());
-        if (!Files.exists(identityDocumentFile)) return false;
-        return getAthenzIdentity(context, TENANT, identityDocumentFile).map(athenzIdentity -> {
-            var privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(siaDirectory, athenzIdentity);
-            var certificateFile = (ContainerPath) SiaUtils.getCertificateFile(siaDirectory, athenzIdentity);
-            try {
-                var modified = Files.deleteIfExists(identityDocumentFile);
-                modified |= Files.deleteIfExists(privateKeyFile);
-                modified |= Files.deleteIfExists(certificateFile);
-                return modified;
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }).orElse(false);
-    }
-
     private boolean shouldRefreshCredentials(Duration age) {
         return age.compareTo(REFRESH_PERIOD) >= 0;
     }
@@ -397,16 +372,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
             return identityDocumentClient.getTenantIdentityDocument(context.hostname().value(), documentVersion(context))
                     .map(doc -> doc.identityDocument().serviceIdentity());
         }
-    }
-
-    private boolean shouldWriteTenantServiceIdentity(NodeAgentContext context) {
-        var version = context.node().currentVespaVersion()
-                .orElse(context.node().wantedVespaVersion().orElse(Version.emptyVersion));
-        var appId = context.node().owner().orElse(ApplicationId.defaultId());
-        return tenantServiceIdentityFlag
-                .with(FetchVector.Dimension.VESPA_VERSION, version.toFullString())
-                .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
-                .value();
     }
 
     private void copyCredsToLegacyPath(NodeAgentContext context, ContainerPath privateKeyFile, ContainerPath certificateFile) throws IOException {
