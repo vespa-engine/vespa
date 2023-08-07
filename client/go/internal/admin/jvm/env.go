@@ -5,10 +5,12 @@ package jvm
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/defaults"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
 	"github.com/vespa-engine/vespa/client/go/internal/admin/prog"
+	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
 )
 
@@ -29,8 +31,19 @@ func (opts *Options) exportEnvSettings(ps *prog.Spec) {
 	ps.Setenv(envvars.LD_LIBRARY_PATH, dlp)
 	ps.Setenv(envvars.MALLOC_ARENA_MAX, "1")
 	if preload := ps.Getenv(envvars.PRELOAD); preload != "" {
-		ps.Setenv(envvars.JAVAVM_LD_PRELOAD, preload)
-		ps.Setenv(envvars.LD_PRELOAD, preload)
+		checked := []string{}
+		for _, fileName := range strings.Split(preload, ":") {
+			if util.PathExists(fileName) {
+				checked = append(checked, fileName)
+			} else {
+				trace.Info("File in PRELOAD missing, skipped:", fileName)
+			}
+		}
+		if len(checked) > 0 {
+			preload := strings.Join(checked, ":")
+			ps.Setenv(envvars.JAVAVM_LD_PRELOAD, preload)
+			ps.Setenv(envvars.LD_PRELOAD, preload)
+		}
 	}
 	util.OptionallyReduceTimerFrequency()
 	c.exportExtraEnv(ps)
