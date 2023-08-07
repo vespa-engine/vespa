@@ -25,6 +25,7 @@ LOG_SETUP(".proton.matching.matcher");
 
 using search::fef::Properties;
 using namespace search::fef::indexproperties::matching;
+using namespace search::fef::indexproperties;
 using namespace search::engine;
 using namespace search::grouping;
 using search::DocumentMetaData;
@@ -122,7 +123,7 @@ Matcher::Matcher(const search::index::Schema &schema, Properties props, const ve
     _rankSetup(),
     _viewResolver(ViewResolver::createFromSchema(schema)),
     _statsLock(),
-    _stats(),
+    _stats(softtimeout::Factor::lookup(_indexEnv.getProperties())),
     _startTime(my_clock::now()),
     _clock(clock),
     _queryLimiter(queryLimiter),
@@ -149,9 +150,6 @@ Matcher::getStats()
     return stats;
 }
 
-using search::fef::indexproperties::softtimeout::Enabled;
-using search::fef::indexproperties::softtimeout::Factor;
-
 std::unique_ptr<MatchToolsFactory>
 Matcher::create_match_tools_factory(const search::engine::Request &request, ISearchContext &searchContext,
                                     IAttributeContext &attrContext, const search::IDocumentMetaStore &metaStore,
@@ -160,11 +158,11 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
                                     bool is_search) const
 {
     const Properties & rankProperties = request.propertiesMap.rankProperties();
-    bool softTimeoutEnabled = Enabled::lookup(rankProperties, _rankSetup->getSoftTimeoutEnabled());
-    bool hasFactorOverride = Factor::isPresent(rankProperties);
+    bool softTimeoutEnabled = softtimeout::Enabled::lookup(rankProperties, _rankSetup->getSoftTimeoutEnabled());
+    bool hasFactorOverride = softtimeout::Factor::isPresent(rankProperties);
     double factor = softTimeoutEnabled
                     ? ( hasFactorOverride
-                        ? Factor::lookup(rankProperties, _stats.softDoomFactor())
+                        ? softtimeout::Factor::lookup(rankProperties, _stats.softDoomFactor())
                         : _stats.softDoomFactor())
                     : 0.95;
     vespalib::duration safeLeft = std::chrono::duration_cast<vespalib::duration>(request.getTimeLeft() * factor);
