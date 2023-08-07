@@ -316,7 +316,7 @@ public class Properties implements Cloneable {
      * Converts a value to boolean - this will be true only if the value is either the empty string,
      * or any Object which has a toString which is case-insensitive equal to "true"
      */
-    protected final boolean asBoolean(Object value, boolean defaultValue) {
+    protected static boolean asBoolean(Object value, boolean defaultValue) {
         if (value == null) return defaultValue;
 
         String s = value.toString();
@@ -371,7 +371,7 @@ public class Properties implements Cloneable {
         return asString(get(key), defaultValue);
     }
 
-    protected final String asString(Object value, String defaultValue) {
+    protected static String asString(Object value, String defaultValue) {
         if (value == null) return defaultValue;
         return value.toString();
     }
@@ -424,7 +424,7 @@ public class Properties implements Cloneable {
         return asInteger(get(name), defaultValue);
     }
 
-    protected final Integer asInteger(Object value, Integer defaultValue) {
+    protected static Integer asInteger(Object value, Integer defaultValue) {
         try {
             if (value == null)
                 return defaultValue;
@@ -490,7 +490,7 @@ public class Properties implements Cloneable {
         return asLong(get(name), defaultValue);
     }
 
-    protected final Long asLong(Object value, Long defaultValue) {
+    protected static Long asLong(Object value, Long defaultValue) {
         try {
             if (value == null)
                 return defaultValue;
@@ -556,7 +556,7 @@ public class Properties implements Cloneable {
         return asDouble(get(name), defaultValue);
     }
 
-    protected final Double asDouble(Object value, Double defaultValue) {
+    protected static Double asDouble(Object value, Double defaultValue) {
         try {
             if (value == null)
                 return defaultValue;

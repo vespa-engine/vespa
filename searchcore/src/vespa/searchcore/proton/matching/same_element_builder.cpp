@@ -37,7 +37,7 @@ public:
             assert(field.getFieldId() != search::fef::IllegalFieldId);
             assert(field.getHandle() == search::fef::IllegalHandle);
             FieldSpecList field_spec;
-            field_spec.add(_result.getNextChildField(field.field_name, field.getFieldId()));
+            field_spec.add(_result.getNextChildField(field.getName(), field.getFieldId()));
             Searchable &searchable = field.attribute_field ? _context.getAttributes() : _context.getIndexes();
             _result.addTerm(searchable.createBlueprint(_requestContext, field_spec, n));
         }

@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 
+import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
@@ -74,5 +75,27 @@ public class RelationalCondition implements Condition {
         condition.dimension = DimensionHelper.toWire(dimension);
         condition.predicate = relationalPredicate.toWire();
         return condition;
+    }
+
+    @Override
+    public String toString() {
+        return "RelationalCondition{" +
+               "relationalPredicate=" + relationalPredicate +
+               ", predicate=" + predicate +
+               ", dimension=" + dimension +
+               '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RelationalCondition that = (RelationalCondition) o;
+        return relationalPredicate.equals(that.relationalPredicate) && predicate.equals(that.predicate) && dimension == that.dimension;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(relationalPredicate, predicate, dimension);
     }
 }

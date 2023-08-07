@@ -5,6 +5,7 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author hakonhall
@@ -54,5 +55,28 @@ public abstract class ListCondition implements Condition {
         condition.dimension = DimensionHelper.toWire(dimension);
         condition.values = values.isEmpty() ? null : values;
         return condition;
+    }
+
+    @Override
+    public String toString() {
+        return "ListCondition{" +
+               "type=" + type +
+               ", dimension=" + dimension +
+               ", values=" + values +
+               ", isWhitelist=" + isWhitelist +
+               '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ListCondition that = (ListCondition) o;
+        return isWhitelist == that.isWhitelist && type == that.type && dimension == that.dimension && values.equals(that.values);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, dimension, values, isWhitelist);
     }
 }

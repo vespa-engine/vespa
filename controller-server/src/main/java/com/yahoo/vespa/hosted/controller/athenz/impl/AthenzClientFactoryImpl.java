@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.impl;
 
+import ai.vespa.metrics.ControllerMetrics;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -22,7 +23,7 @@ import java.util.Map;
  */
 public class AthenzClientFactoryImpl implements AthenzClientFactory {
 
-    private static final String METRIC_NAME = "athenz.request.error";
+    private static final String METRIC_NAME = ControllerMetrics.ATHENZ_REQUEST_ERROR.baseName();
     private static final String ATHENZ_SERVICE_DIMENSION = "athenz-service";
     private static final String EXCEPTION_DIMENSION = "exception";
 

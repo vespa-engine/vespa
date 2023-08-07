@@ -97,6 +97,8 @@ org.apache.httpcomponents:httpmime:4.5.14
 org.apache.httpcomponents.client5:httpclient5:5.2.1
 org.apache.httpcomponents.core5:httpcore5:5.2.2
 org.apache.httpcomponents.core5:httpcore5-h2:5.2.2
+org.apache.lucene:lucene-analysis-common:9.7.0
+org.apache.lucene:lucene-core:9.7.0
 org.apache.maven:maven-archiver:3.6.0
 org.apache.maven:maven-artifact:3.8.7
 org.apache.maven:maven-artifact-manager:2.2.1

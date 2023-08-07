@@ -27,8 +27,11 @@ public enum ConfigServerMetrics implements VespaMetrics {
     MAINTENANCE_DEPLOYMENT_TRANSIENT_FAILURE("maintenanceDeployment.transientFailure", Unit.OPERATION, "Number of maintenance deployments that failed with a transient failure"),
     MAINTENANCE_DEPLOYMENT_FAILURE("maintenanceDeployment.failure", Unit.OPERATION, "Number of maintenance deployments that failed with a permanent failure"),
 
+    MAINTENANCE_SUCCESS_FACTOR_DEVIATION("maintenance.successFactorDeviation", Unit.FRACTION, "Configserver: Maintenance Success Factor Deviation"),
+    MAINTENANCE_DURATION("maintenance.duration", Unit.MILLISECOND, "Configserver: Maintenance Duration"),
+
     // ZooKeeper related metrics
-    ZK_CONNECTIONS_LOST("configserver.zkConnectionLost", Unit.CONNECTION, "Number of ZooKeeper connections lost"),
+    ZK_CONNECTION_LOST("configserver.zkConnectionLost", Unit.CONNECTION, "Number of ZooKeeper connections lost"),
     ZK_RECONNECTED("configserver.zkReconnected", Unit.CONNECTION, "Number of ZooKeeper reconnections"),
     ZK_CONNECTED("configserver.zkConnected", Unit.NODE, "Number of ZooKeeper nodes connected"),
     ZK_SUSPENDED("configserver.zkSuspended", Unit.NODE, "Number of ZooKeeper nodes suspended"),
@@ -107,9 +110,41 @@ public enum ConfigServerMetrics implements VespaMetrics {
     HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_CPU("hostedVespa.docker.allocatedCapacityCpu", Unit.VCPU, "Total number of allocated VCPUs on tenant hosts managed by hosted Vespa in a zone"),
     HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_MEM("hostedVespa.docker.allocatedCapacityMem", Unit.GIGABYTE, "Total amount of allocated memory on tenant hosts managed by hosted Vespa in a zone"),
     HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_DISK("hostedVespa.docker.allocatedCapacityDisk", Unit.GIGABYTE, "Total amount of allocated disk space on tenant hosts managed by hosted Vespa in a zone"),
-    HOSTED_VESPA_BREAKFIXED_HOSTS("hostedVespa.breakfixedHosts", Unit.HOST, "Number of hosts managed that are breakfixed in a zone"),
     HOSTED_VESPA_PENDING_REDEPLOYMENTS("hostedVespa.pendingRedeployments", Unit.TASK, "The number of hosted Vespa re-deployments pending"),
-    HOSTED_VESPA_DOCKER_SKEW("hostedVespa.docker.skew", Unit.FRACTION, "A number in the range 0..1 indicating how well allocated resources are balanced with availability on hosts");
+    HOSTED_VESPA_DOCKER_SKEW("hostedVespa.docker.skew", Unit.FRACTION, "A number in the range 0..1 indicating how well allocated resources are balanced with availability on hosts"),
+
+    HOSTED_VESPA_ACTIVE_HOSTS("hostedVespa.activeHosts", Unit.HOST, "The number of managed hosts that are in state \"active\""),
+    HOSTED_VESPA_BREAKFIXED_HOSTS("hostedVespa.breakfixedHosts", Unit.HOST, "The number of managed hosts that are in state \"breakfixed\""),
+    HOSTED_VESPA_DEPROVISIONED_HOSTS("hostedVespa.deprovisionedHosts", Unit.HOST, "The number of managed hosts that are in state \"deprovisioned\""),
+    HOSTED_VESPA_DIRTY_HOSTS("hostedVespa.dirtyHosts", Unit.HOST, "The number of managed hosts that are in state \"dirty\""),
+    HOSTED_VESPA_FAILED_HOSTS("hostedVespa.failedHosts", Unit.HOST, "The number of managed hosts that are in state \"failed\""),
+    HOSTED_VESPA_INACTIVE_HOSTS("hostedVespa.inactiveHosts", Unit.HOST, "The number of managed hosts that are in state \"inactive\""),
+    HOSTED_VESPA_PARKED_HOSTS("hostedVespa.parkedHosts", Unit.HOST, "The number of managed hosts that are in state \"parked\""),
+    HOSTED_VESPA_PROVISIONED_HOSTS("hostedVespa.provisionedHosts", Unit.HOST, "The number of managed hosts that are in state \"provisioned\""),
+    HOSTED_VESPA_READY_HOSTS("hostedVespa.readyHosts", Unit.HOST, "The number of managed hosts that are in state \"ready\""),
+    HOSTED_VESPA_RESERVED_HOSTS("hostedVespa.reservedHosts", Unit.HOST, "The number of managed hosts that are in state \"reserved\""),
+
+    HOSTED_VESPA_ACTIVE_NODES("hostedVespa.activeNodes", Unit.HOST, "The number of managed nodes that are in state \"active\""),
+    HOSTED_VESPA_BREAKFIXED_NODES("hostedVespa.breakfixedNodes", Unit.HOST, "The number of managed nodes that are in state \"breakfixed\""),
+    HOSTED_VESPA_DEPROVISIONED_NODES("hostedVespa.deprovisionedNodes", Unit.HOST, "The number of managed nodes that are in state \"deprovisioned\""),
+    HOSTED_VESPA_DIRTY_NODES("hostedVespa.dirtyNodes", Unit.HOST, "The number of managed nodes that are in state \"dirty\""),
+    HOSTED_VESPA_FAILED_NODES("hostedVespa.failedNodes", Unit.HOST, "The number of managed nodes that are in state \"failed\""),
+    HOSTED_VESPA_INACTIVE_NODES("hostedVespa.inactiveNodes", Unit.HOST, "The number of managed nodes that are in state \"inactive\""),
+    HOSTED_VESPA_PARKED_NODES("hostedVespa.parkedNodes", Unit.HOST, "The number of managed nodes that are in state \"parked\""),
+    HOSTED_VESPA_PROVISIONED_NODES("hostedVespa.provisionedNodes", Unit.HOST, "The number of managed nodes that are in state \"provisioned\""),
+    HOSTED_VESPA_READY_NODES("hostedVespa.readyNodes", Unit.HOST, "The number of managed nodes that are in state \"ready\""),
+    HOSTED_VESPA_RESERVED_NODES("hostedVespa.reservedNodes", Unit.HOST, "The number of managed nodes that are in state \"reserved\""),
+
+    OVERCOMMITTED_HOSTS("overcommittedHosts", Unit.HOST, "The number of hosts with over-committed resources"),
+    SPARE_HOST_CAPACITY("spareHostCapacity", Unit.HOST, "The number of spare hosts"),
+    THROTTLED_HOST_FAILURES("throttledHostFailures", Unit.HOST, "Number of host failures stopped due to throttling"),
+    THROTTLED_NODE_FAILURES("throttledNodeFailures", Unit.HOST, "Number of node failures stopped due to throttling"),
+    NODE_FAIL_THROTTLING("nodeFailThrottling", Unit.BINARY, "Metric indicating when node failure throttling is active. The value 1 means active, 0 means inactive"),
+
+    DEPLOYMENT_PREPARE_MILLIS("deployment.prepareMillis", Unit.MILLISECOND, "Duration of deployment preparations"),
+    DEPLOYMENT_ACTIVATE_MILLIS("deployment.activateMillis", Unit.MILLISECOND, "Duration of deployment activations"),
+
+    THROTTLED_HOST_PROVISIONING("throttledHostProvisioning", Unit.BINARY, "Value 1 if host provisioning is throttled, 0 if not");
 
     private final String name;
     private final Unit unit;

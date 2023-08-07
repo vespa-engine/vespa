@@ -21,7 +21,6 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
 /**
  * Definition for permanent feature flags
@@ -43,19 +42,19 @@ public class PermanentFlags {
             "jvm-gc-options", "",
             "Sets default jvm gc options",
             "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
+            APPLICATION_ID);
 
     public static final UnboundIntFlag HEAP_SIZE_PERCENTAGE = defineIntFlag(
             "heap-size-percentage", 70,
             "Sets default jvm heap size percentage",
             "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
+            APPLICATION_ID);
 
     public static final UnboundDoubleFlag QUERY_DISPATCH_WARMUP = defineDoubleFlag(
             "query-dispatch-warmup", 5,
             "Warmup duration for query dispatcher",
             "Takes effect at redeployment (requires restart)",
-            ZONE_ID, APPLICATION_ID);
+            APPLICATION_ID);
 
     public static final UnboundBooleanFlag FLEET_CANARY = defineFeatureFlag(
             "fleet-canary", false,
@@ -126,13 +125,13 @@ public class PermanentFlags {
             "min-disk-throughput-mb-s", 0,
             "Minimum required disk throughput performance, 0 = default, Only when using remote disk",
             "Takes effect when node is provisioned",
-            ZONE_ID, APPLICATION_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
+            APPLICATION_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
 
     public static final UnboundIntFlag MIN_DISK_IOPS_K = defineIntFlag(
             "min-disk-iops-k", 0,
             "Minimum required disk I/O operations per second, unit is kilo, 0 = default, Only when using remote disk",
             "Takes effect when node is provisioned",
-            ZONE_ID, APPLICATION_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
+            APPLICATION_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
 
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
@@ -145,7 +144,12 @@ public class PermanentFlags {
             "docker-image-repo", "",
             "Override default docker image repo. Docker image version will be Vespa version.",
             "Takes effect on next deployment from controller",
-            ZONE_ID, APPLICATION_ID);
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag SEND_LIMITED_METRIC_SET = defineFeatureFlag(
+            "send-limited-metric-set", true,
+            "Whether a limited metric set should be fetched from metrics-proxy (CD systems only)",
+            "Takes effect on next host admin tick");
 
     private static final String VERSION_QUALIFIER_REGEX = "[a-zA-Z0-9_-]+";
     private static final Pattern QUALIFIER_PATTERN = Pattern.compile("^" + VERSION_QUALIFIER_REGEX + "$");
@@ -250,29 +254,28 @@ public class PermanentFlags {
             "A list of environment variables set for all services. " +
                     "Each item should be on the form <ENV_VAR>=<VALUE>",
             "Takes effect on service restart",
-            ZONE_ID, APPLICATION_ID
+            APPLICATION_ID
     );
 
     public static final UnboundStringFlag CONFIG_PROXY_JVM_ARGS = defineStringFlag(
             "config-proxy-jvm-args", "",
             "Sets jvm args for config proxy (added at the end of startup command, will override existing ones)",
             "Takes effect on restart of Docker container",
-            ZONE_ID, APPLICATION_ID
+            APPLICATION_ID
     );
 
     // This must be set in a feature flag to avoid flickering between the new and old value during config server upgrade
     public static final UnboundDoubleFlag HOST_MEMORY = defineDoubleFlag(
             "host-memory", 0.6,
             "The memory in GB required by a host's management processes.",
-            "Takes effect immediately",
-            ZONE_ID
+            "Takes effect immediately"
     );
 
     public static final UnboundBooleanFlag FORWARD_ISSUES_AS_ERRORS = defineFeatureFlag(
             "forward-issues-as-errors", true,
             "When the backend detects a problematic issue with a query, it will by default send it as an error message to the QRS, which adds it in an ErrorHit in the result.  May be disabled using this flag.",
             "Takes effect immediately",
-            ZONE_ID, APPLICATION_ID);
+            APPLICATION_ID);
 
     public static final UnboundBooleanFlag DEACTIVATE_ROUTING = defineFeatureFlag(
             "deactivate-routing", false,
@@ -285,7 +288,7 @@ public class PermanentFlags {
             "ignored-http-user-agents", List.of(), String.class,
             "List of user agents to ignore (crawlers etc)",
             "Takes effect immediately.",
-            ZONE_ID, APPLICATION_ID);
+            APPLICATION_ID);
 
     public static final UnboundListFlag<String> INCOMPATIBLE_VERSIONS = defineListFlag(
             "incompatible-versions", List.of("8"), String.class,
@@ -308,7 +311,7 @@ public class PermanentFlags {
             "(logserver and clustercontroller clusters).",
             "Takes effect on next redeployment",
             value -> Set.of("any", "arm64", "x86_64").contains(value),
-            ZONE_ID, APPLICATION_ID);
+            APPLICATION_ID);
 
     public static final UnboundListFlag<String> CLOUD_ACCOUNTS = defineListFlag(
             "cloud-accounts", List.of(), String.class,
@@ -320,7 +323,7 @@ public class PermanentFlags {
             "fail-deployment-for-files-with-unknown-extension", "FAIL",
             "Whether to log or fail for deployments when app has a file with unknown extension (valid values: LOG, FAIL)",
             "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
+            APPLICATION_ID);
 
     public static final UnboundListFlag<String> DISABLED_DEPLOYMENT_ZONES = defineListFlag(
             "disabled-deployment-zones", List.of(), String.class,
@@ -339,8 +342,7 @@ public class PermanentFlags {
             "config-server-session-expiry-time", 3600,
             "Expiry time in seconds for remote sessions (session in ZooKeeper). Default should be equal to session lifetime, " +
             "but can be lowered if there are incidents/bugs where one needs to delete sessions",
-            "Takes effect immediately",
-            ZONE_ID
+            "Takes effect immediately"
     );
 
     public static final UnboundBooleanFlag NOTIFICATION_DISPATCH_FLAG = defineFeatureFlag(
@@ -353,7 +355,7 @@ public class PermanentFlags {
             "keep-file-references-on-tenant-nodes", 30,
             "How many days to keep file references on tenant nodes (based on last modification time)",
             "Takes effect on restart of Docker container",
-            ZONE_ID, APPLICATION_ID
+            APPLICATION_ID
     );
 
     public static final UnboundIntFlag ENDPOINT_CONNECTION_TTL = defineIntFlag(

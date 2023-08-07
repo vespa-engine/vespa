@@ -16,10 +16,6 @@ FieldSpec::FieldSpec(const vespalib::string & name, uint32_t fieldId,
 {
     assert(fieldId < 0x1000000);  // Can be represented by 24 bits
 }
-FieldSpec::FieldSpec(const vespalib::string & name, FieldSpecBase base) noexcept
-    : FieldSpecBase(base),
-      _name(name)
-{}
 
 FieldSpecBaseList::~FieldSpecBaseList() = default;
 

@@ -3,10 +3,13 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.flags.json.DimensionHelper;
 
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -20,20 +23,28 @@ public class FetchVector {
      * Note: If this enum is changed, you must also change {@link DimensionHelper}.
      */
     public enum Dimension {
-        /** Value from TenantName::value, e.g. vespa-team */
-        TENANT_ID,
-
         /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
         APPLICATION_ID,
 
-        /** Node type from com.yahoo.config.provision.NodeType::name, e.g. tenant, host, confighost, controller, etc. */
-        NODE_TYPE,
+        /**
+         * Cloud from com.yahoo.config.provision.CloudName::value, e.g. yahoo, aws, gcp.
+         *
+         * <p><em>Eager resolution</em>:  This dimension is resolved before putting the flag data to the config server
+         * or controller, unless controller and the flag has declared this dimension.
+         */
+        CLOUD,
+
+        /** Cluster ID from com.yahoo.config.provision.ClusterSpec.Id::value, e.g. cluster-controllers, logserver. */
+        CLUSTER_ID,
 
         /** Cluster type from com.yahoo.config.provision.ClusterSpec.Type::name, e.g. content, container, admin */
         CLUSTER_TYPE,
 
-        /** Cluster ID from com.yahoo.config.provision.ClusterSpec.Id::value, e.g. cluster-controllers, logserver. */
-        CLUSTER_ID,
+        /** Email address of user - provided by auth0 in console. */
+        CONSOLE_USER_EMAIL,
+
+        /** Hosted Vespa environment from com.yahoo.config.provision.Environment::value, e.g. prod, staging, test. */
+        ENVIRONMENT,
 
         /**
          * Fully qualified hostname.
@@ -44,6 +55,18 @@ public class FetchVector {
          */
         HOSTNAME,
 
+        /** Node type from com.yahoo.config.provision.NodeType::name, e.g. tenant, host, confighost, controller, etc. */
+        NODE_TYPE,
+
+        /**
+         * Hosted Vespa system from com.yahoo.config.provision.SystemName::value, e.g. main, cd, public, publiccd.
+         * <em>Eager resolution</em>, see {@link #CLOUD}.
+         */
+        SYSTEM,
+
+        /** Value from TenantName::value, e.g. vespa-team */
+        TENANT_ID,
+
         /**
          * Vespa version from Version::toFullString of the form Major.Minor.Micro.
          *
@@ -53,14 +76,9 @@ public class FetchVector {
          */
         VESPA_VERSION,
 
-        /** Email address of user - provided by auth0 in console. */
-        CONSOLE_USER_EMAIL,
-
         /**
-         * Zone from ZoneId::value of the form environment.region.
-         *
-         * <p>NOTE: There is seldom any need to set ZONE_ID, as all flags are set per zone anyways. The controller
-         * could PERHAPS use this where it handles multiple zones.
+         * Virtual zone ID from com.yahoo.config.provision.zone.ZoneId::value of the form environment.region,
+         * see com.yahoo.config.provision.zone.ZoneApi::getVirtualId.  <em>Eager resolution</em>, see {@link #CLOUD}.
          */
         ZONE_ID
     }
@@ -83,15 +101,13 @@ public class FetchVector {
         return Optional.ofNullable(map.get(dimension));
     }
 
-    public Map<Dimension, String> toMap() {
-        return map;
-    }
+    public Map<Dimension, String> toMap() { return map; }
 
     public boolean isEmpty() { return map.isEmpty(); }
 
-    public boolean hasDimension(FetchVector.Dimension dimension) {
-        return map.containsKey(dimension);
-    }
+    public boolean hasDimension(FetchVector.Dimension dimension) { return map.containsKey(dimension);}
+
+    public Set<Dimension> dimensions() { return map.keySet(); }
 
     /**
      * Returns a new FetchVector, identical to {@code this} except for its value in {@code dimension}.
@@ -107,11 +123,26 @@ public class FetchVector {
         return makeFetchVector(vector -> vector.putAll(override.map));
     }
 
-    private FetchVector makeFetchVector(Consumer<EnumMap<Dimension, String>> mapModifier) {
-        EnumMap<Dimension, String> mergedMap = new EnumMap<>(Dimension.class);
+    private FetchVector makeFetchVector(Consumer<Map<Dimension, String>> mapModifier) {
+        Map<Dimension, String> mergedMap = new EnumMap<>(Dimension.class);
         mergedMap.putAll(map);
         mapModifier.accept(mergedMap);
         return new FetchVector(mergedMap);
+    }
+
+    public FetchVector without(Dimension dimension) {
+        return makeFetchVector(merged -> merged.remove(dimension));
+    }
+
+    public FetchVector without(Collection<Dimension> dimensions) {
+        return makeFetchVector(merged -> merged.keySet().removeAll(dimensions));
+    }
+
+    @Override
+    public String toString() {
+        return "FetchVector{" +
+               "map=" + map +
+               '}';
     }
 
     @Override

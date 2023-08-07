@@ -64,4 +64,8 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
         builder.distribution(distBuilder);
     }
 
+    public interface Provider {
+        Redundancy redundancy();
+    }
+
 }

@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring.builder.xml;
 
+import ai.vespa.metrics.set.Metric;
+import ai.vespa.metrics.set.MetricSet;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.model.admin.monitoring.Metric;
-import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import org.w3c.dom.Element;
@@ -14,8 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
-import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
+import static ai.vespa.metrics.set.DefaultVespaMetrics.defaultVespaMetricSet;
+import static ai.vespa.metrics.set.SystemMetrics.systemMetricSet;
+
 
 /**
  * @author gjoranv

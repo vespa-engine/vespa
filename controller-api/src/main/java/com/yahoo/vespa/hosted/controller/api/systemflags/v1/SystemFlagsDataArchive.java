@@ -4,9 +4,17 @@ package com.yahoo.vespa.hosted.controller.api.systemflags.v1;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.JSON;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
@@ -38,6 +46,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import static com.yahoo.config.provision.CloudName.AWS;
+import static com.yahoo.config.provision.CloudName.GCP;
+import static com.yahoo.config.provision.CloudName.YAHOO;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
@@ -189,7 +200,10 @@ public class SystemFlagsDataArchive {
         if (rawData.isBlank()) {
             flagData = new FlagData(directoryDeducedFlagId);
         } else {
-            String normalizedRawData = normalizeJson(rawData);
+            Set<ZoneId> zones = systemDefinition == null ?
+                                Set.of() :
+                                systemDefinition.zones().all().zones().stream().map(ZoneApi::getVirtualId).collect(Collectors.toSet());
+            String normalizedRawData = normalizeJson(rawData, zones);
             flagData = FlagData.deserialize(normalizedRawData);
             if (!directoryDeducedFlagId.equals(flagData.id())) {
                 throw new IllegalArgumentException(
@@ -199,12 +213,14 @@ public class SystemFlagsDataArchive {
 
             String serializedData = flagData.serializeToJson();
             if (!JSON.equals(serializedData, normalizedRawData)) {
-                throw new IllegalArgumentException(filePath + " contains unknown non-comment fields: " +
-                        "after removing any comment fields the JSON is:\n  " +
-                        normalizedRawData +
-                        "\nbut deserializing this ended up with a JSON that are missing some of the fields:\n  " +
-                        serializedData +
-                        "\nSee https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax");
+                throw new IllegalArgumentException("""
+                                                   %s contains unknown non-comment fields or rules with null values: after removing any comment fields the JSON is:
+                                                     %s
+                                                   but deserializing this ended up with:
+                                                     %s
+                                                   These fields may be spelled wrong, or remove them?
+                                                   See https://git.ouroath.com/vespa/hosted-feature-flags for more info on the JSON syntax
+                                                   """.formatted(filePath, normalizedRawData, serializedData));
             }
         }
 
@@ -217,39 +233,62 @@ public class SystemFlagsDataArchive {
         builder.addFile(filename, flagData);
     }
 
-    static String normalizeJson(String json) {
+    static String normalizeJson(String json, Set<ZoneId> zones) {
         JsonNode root = uncheck(() -> mapper.readTree(json));
         removeCommentsRecursively(root);
-        verifyValues(root);
+        removeNullRuleValues(root);
+        verifyValues(root, zones);
         return root.toString();
     }
 
-    private static void verifyValues(JsonNode root) {
+    private static void verifyValues(JsonNode root, Set<ZoneId> zones) {
         var cursor = new JsonAccessor(root);
         cursor.get("rules").forEachArrayElement(rule -> rule.get("conditions").forEachArrayElement(condition -> {
-            var dimension = condition.get("dimension");
-            if (dimension.isEqualTo(DimensionHelper.toWire(FetchVector.Dimension.APPLICATION_ID))) {
-                condition.get("values").forEachArrayElement(conditionValue -> {
-                    String applicationIdString = conditionValue.asString()
-                            .orElseThrow(() -> new IllegalArgumentException("Non-string application ID: " + conditionValue));
-                    // Throws exception if not recognized
-                    ApplicationId.fromSerializedForm(applicationIdString);
+            FetchVector.Dimension dimension = DimensionHelper
+                    .fromWire(condition.get("dimension")
+                                       .asString()
+                                       .orElseThrow(() -> new IllegalArgumentException("Invalid dimension in condition: " + condition)));
+            switch (dimension) {
+                case APPLICATION_ID -> validateStringValues(condition, ApplicationId::fromSerializedForm);
+                case CONSOLE_USER_EMAIL -> validateStringValues(condition, email -> {});
+                case CLOUD -> validateStringValues(condition, cloud -> {
+                    if (!Set.of(YAHOO, AWS, GCP).contains(CloudName.from(cloud)))
+                        throw new IllegalArgumentException("Unknown cloud: " + cloud);
                 });
-            } else if (dimension.isEqualTo(DimensionHelper.toWire(FetchVector.Dimension.NODE_TYPE))) {
-                condition.get("values").forEachArrayElement(conditionValue -> {
-                    String nodeTypeString = conditionValue.asString()
-                            .orElseThrow(() -> new IllegalArgumentException("Non-string node type: " + conditionValue));
-                    // Throws exception if not recognized
-                    NodeType.valueOf(nodeTypeString);
+                case CLUSTER_ID -> validateStringValues(condition, ClusterSpec.Id::from);
+                case CLUSTER_TYPE -> validateStringValues(condition, ClusterSpec.Type::from);
+                case ENVIRONMENT -> validateStringValues(condition, Environment::from);
+                case HOSTNAME -> validateStringValues(condition, HostName::of);
+                case NODE_TYPE -> validateStringValues(condition, NodeType::valueOf);
+                case SYSTEM -> validateStringValues(condition, system -> {
+                    if (!Set.of(SystemName.cd, SystemName.main, SystemName.PublicCd, SystemName.Public).contains(SystemName.from(system)))
+                        throw new IllegalArgumentException("Unknown system: " + system);
                 });
-            } else if (dimension.isEqualTo(DimensionHelper.toWire(FetchVector.Dimension.CONSOLE_USER_EMAIL))) {
-                condition.get("values").forEachArrayElement(conditionValue -> conditionValue.asString()
-                        .orElseThrow(() -> new IllegalArgumentException("Non-string email address: " + conditionValue)));
-            } else if (dimension.isEqualTo(DimensionHelper.toWire(FetchVector.Dimension.TENANT_ID))) {
-                condition.get("values").forEachArrayElement(conditionValue -> conditionValue.asString()
-                        .orElseThrow(() -> new IllegalArgumentException("Non-string tenant ID: " + conditionValue)));
+                case TENANT_ID -> validateStringValues(condition, TenantName::from);
+                case VESPA_VERSION -> validateStringValues(condition, versionString -> {
+                    Version vespaVersion = Version.fromString(versionString);
+                    if (vespaVersion.getMajor() < 8)
+                        throw new IllegalArgumentException("Major Vespa version must be at least 8: " + versionString);
+                });
+                case ZONE_ID -> validateStringValues(condition, zoneId -> {
+                    if (!zones.contains(ZoneId.from(zoneId)))
+                        throw new IllegalArgumentException("Unknown zone: " + zoneId);
+                });
             }
         }));
+    }
+
+    private static void validateStringValues(JsonAccessor condition, Consumer<String> valueValidator) {
+        condition.get("values").forEachArrayElement(conditionValue -> {
+            String value = conditionValue.asString()
+                                         .orElseThrow(() -> {
+                                             String dimension = condition.get("dimension").asString().orElseThrow();
+                                             String type = condition.get("type").asString().orElseThrow();
+                                             return new IllegalArgumentException("Non-string value in %s %s condition: %s".formatted(
+                                                     dimension, type, conditionValue));
+                                         });
+            valueValidator.accept(value);
+        });
     }
 
     private static void removeCommentsRecursively(JsonNode node) {
@@ -259,6 +298,22 @@ public class SystemFlagsDataArchive {
         }
 
         node.forEach(SystemFlagsDataArchive::removeCommentsRecursively);
+    }
+
+    private static void removeNullRuleValues(JsonNode root) {
+        if (root instanceof ObjectNode objectNode) {
+            JsonNode rules = objectNode.get("rules");
+            if (rules != null) {
+                rules.forEach(ruleNode -> {
+                    if (ruleNode instanceof ObjectNode rule) {
+                        JsonNode value = rule.get("value");
+                        if (value != null && value.isNull()) {
+                            rule.remove("value");
+                        }
+                    }
+                });
+            }
+        }
     }
 
     private static String toFilePath(FlagId flagId, String filename) {

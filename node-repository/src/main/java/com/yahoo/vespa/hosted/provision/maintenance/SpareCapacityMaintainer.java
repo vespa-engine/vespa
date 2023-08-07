@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import ai.vespa.metrics.ConfigServerMetrics;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
@@ -75,7 +76,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         CapacityChecker capacityChecker = new CapacityChecker(allNodes);
 
         List<Node> overcommittedHosts = capacityChecker.findOvercommittedHosts();
-        metric.set("overcommittedHosts", overcommittedHosts.size(), null);
+        metric.set(ConfigServerMetrics.OVERCOMMITTED_HOSTS.baseName(), overcommittedHosts.size(), null);
         retireOvercommitedHosts(allNodes, overcommittedHosts);
 
         boolean success = true;
@@ -93,7 +94,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                     success = false;
                 }
             }
-            metric.set("spareHostCapacity", spareHostCapacity, null);
+            metric.set(ConfigServerMetrics.SPARE_HOST_CAPACITY.baseName(), spareHostCapacity, null);
         }
         return success ? 1.0 : 0.0;
     }

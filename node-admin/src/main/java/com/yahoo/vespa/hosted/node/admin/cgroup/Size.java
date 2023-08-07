@@ -10,12 +10,13 @@ import java.util.Objects;
  */
 public class Size {
     private static final String MAX = "max";
+    private static final Size MAX_SIZE = new Size(true, 0);
 
     private final boolean max;
     private final long value;
 
     public static Size max() {
-        return new Size(true, 0);
+        return MAX_SIZE;
     }
 
     public static Size from(long value) {
@@ -23,7 +24,7 @@ public class Size {
     }
 
     public static Size from(String value) {
-        return value.equals(MAX) ? new Size(true, 0) : new Size(false, Long.parseLong(value));
+        return value.equals(MAX) ? MAX_SIZE : new Size(false, Long.parseLong(value));
     }
 
     private Size(boolean max, long value) {

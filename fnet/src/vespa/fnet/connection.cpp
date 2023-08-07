@@ -526,7 +526,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
 
 FNET_Connection::~FNET_Connection()
 {
-    assert(!_resolve_handler);
+    assert(!_resolve_handler.load());
     _num_connections.fetch_sub(1, std::memory_order_relaxed);
 }
 
@@ -541,7 +541,7 @@ FNET_Connection::Init()
     // initiate async resolve
     if (IsClient()) {
         _resolve_handler = std::make_shared<ResolveHandler>(this);
-        Owner()->owner().resolve_async(GetSpec(), _resolve_handler);
+        Owner()->owner().resolve_async(GetSpec(), _resolve_handler.load());
     }
     return true;
 }
@@ -555,11 +555,12 @@ FNET_Connection::server_adapter()
 bool
 FNET_Connection::handle_add_event()
 {
-    if (_resolve_handler) {
+    std::shared_ptr<ResolveHandler> resolve_handler = _resolve_handler.exchange({});
+    if (resolve_handler) {
         auto tweak = [this](vespalib::SocketHandle &handle) { return Owner()->tune(handle); };
-        _socket = Owner()->owner().create_client_crypto_socket(_resolve_handler->address.connect(tweak), vespalib::SocketSpec(GetSpec()));
+        _socket = Owner()->owner().create_client_crypto_socket(resolve_handler->address.connect(tweak), vespalib::SocketSpec(GetSpec()));
         _ioc_socket_fd = _socket->get_fd();
-        _resolve_handler.reset();
+        resolve_handler.reset();
     }
     return (_socket && (_socket->get_fd() >= 0));
 }
@@ -680,7 +681,7 @@ FNET_Connection::Sync()
 void
 FNET_Connection::Close()
 {
-    _resolve_handler.reset();
+    _resolve_handler.store({});
     detach_selector();
     SetState(FNET_CLOSED);
     _ioc_socket_fd = -1;

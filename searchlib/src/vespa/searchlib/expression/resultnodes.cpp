@@ -438,7 +438,9 @@ void
 RawResultNode::setBuffer(const void *buf, size_t sz)
 {
     _value.resize(sz + 1);
-    memcpy(_value.data(), buf, sz);
+    if (sz > 0) {
+        memcpy(_value.data(), buf, sz);
+    }
     _value.back() = 0;
     _value.resize(sz);
 }

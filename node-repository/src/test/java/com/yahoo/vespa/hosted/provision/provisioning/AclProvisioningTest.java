@@ -58,7 +58,7 @@ public class AclProvisioningTest {
         // Get trusted nodes for the first active node
         Node node = activeNodes.get(0);
         List<Node> hostOfNode = node.parentHostname().flatMap(tester.nodeRepository().nodes()::node).map(List::of).orElseGet(List::of);
-        Supplier<NodeAcl> nodeAcls = () -> node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone(), true);
+        Supplier<NodeAcl> nodeAcls = () -> node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
         // Trusted nodes are active nodes in same application, proxy nodes and config servers
         assertAcls(trustedNodesOf(List.of(activeNodes, proxyNodes, configServers.asList(), hostOfNode), node.cloudAccount()),
@@ -83,7 +83,7 @@ public class AclProvisioningTest {
 
         // Get trusted nodes for a parked tenant node
         Node node = tester.nodeRepository().nodes().list(Node.State.parked).nodeType(NodeType.tenant).first().get();
-        NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone(), true);
+        NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
         // Trusted nodes are all config-nodes
         assertAcls(trustedNodesOf(List.of(proxyNodes, configServers.asList()), node.cloudAccount()), List.of(nodeAcl));
@@ -108,7 +108,7 @@ public class AclProvisioningTest {
         // Get trusted nodes for the first config server
         Node node = tester.nodeRepository().nodes().node("cfg1")
                 .orElseThrow(() -> new RuntimeException("Failed to find cfg1"));
-        NodeAcl nodeAcl = node.acl(nodes, tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone(), true);
+        NodeAcl nodeAcl = node.acl(nodes, tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
         // Trusted nodes is all tenant nodes, all proxy nodes, all config servers and load balancer subnets
         // All tenant hosts because nodes are IPv6 and cfg are IPv4, so traffic is NATed.
@@ -128,7 +128,7 @@ public class AclProvisioningTest {
         publicTester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
         Node publicCfgNode = publicTester.nodeRepository().nodes().node("cfg1")
                 .orElseThrow(() -> new RuntimeException("Failed to find cfg1"));
-        NodeAcl publicNodeAcl = publicCfgNode.acl(nodes, publicTester.nodeRepository().loadBalancers(), publicTester.nodeRepository().zone(), true);
+        NodeAcl publicNodeAcl = publicCfgNode.acl(nodes, publicTester.nodeRepository().loadBalancers(), publicTester.nodeRepository().zone());
         assertEquals(Set.of(51820), publicNodeAcl.trustedUdpPorts());
     }
 
@@ -146,7 +146,7 @@ public class AclProvisioningTest {
         // Get trusted nodes for first proxy node
         NodeList proxyNodes = tester.nodeRepository().nodes().list().nodeType(NodeType.proxy);
         Node node = proxyNodes.first().get();
-        NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone(), true);
+        NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
         // Trusted nodes is all config servers and all proxy nodes
         assertAcls(trustedNodesOf(List.of(proxyNodes.asList(), configServers.asList()), node.cloudAccount()), List.of(nodeAcl));
@@ -164,7 +164,7 @@ public class AclProvisioningTest {
         List<Node> nodes = tester.makeReadyChildren(5, new NodeResources(1, 4, 10, 1),
                                                           host.hostname());
 
-        List<NodeAcl> acls = tester.nodeRepository().getChildAcls(host, true);
+        List<NodeAcl> acls = tester.nodeRepository().getChildAcls(host);
 
         // ACLs for each container on the host
         assertFalse(nodes.isEmpty());
@@ -188,7 +188,7 @@ public class AclProvisioningTest {
         List<Node> controllers = tester.nodeRepository().nodes().list().nodeType(NodeType.controller).asList();
 
         // Controllers and hosts all trust each other
-        NodeAcl controllerAcl = controllers.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone(), true);
+        NodeAcl controllerAcl = controllers.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
         assertAcls(trustedNodesOf(List.of(controllers), controllers.get(0).cloudAccount()), Set.of("10.2.3.0/24", "10.4.5.0/24"), List.of(controllerAcl));
         assertEquals(Set.of(22, 4443, 443), controllerAcl.trustedPorts());
         assertEquals(Set.of(), controllerAcl.trustedUdpPorts());
@@ -217,7 +217,7 @@ public class AclProvisioningTest {
 
         // ACL for nodes with allocation trust their respective load balancer networks, if any
         for (var host : hosts) {
-            List<NodeAcl> acls = tester.nodeRepository().getChildAcls(host, true);
+            List<NodeAcl> acls = tester.nodeRepository().getChildAcls(host);
             assertEquals(2, acls.size());
             for (var acl : acls) {
                 if (acl.node().allocation().isPresent()) {
@@ -235,7 +235,7 @@ public class AclProvisioningTest {
         tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         List<Node> readyNodes = tester.makeReadyNodes(1, "default", NodeType.proxy);
-        NodeAcl nodeAcl = readyNodes.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone(), true);
+        NodeAcl nodeAcl = readyNodes.get(0).acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers(), tester.nodeRepository().zone());
 
         assertEquals(3, nodeAcl.trustedNodes().size());
         assertEquals(List.of(Set.of("127.0.1.1"), Set.of("127.0.1.2"), Set.of("127.0.1.3")),

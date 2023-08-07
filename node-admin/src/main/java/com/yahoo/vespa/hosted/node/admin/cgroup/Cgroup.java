@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 public class Cgroup {
     private static final Logger logger = Logger.getLogger(Cgroup.class.getName());
 
-    private static Map<String, Consumer<UnixPath>> cgroupDirectoryCallbacks = new HashMap<>();
+    private static final Map<String, Consumer<UnixPath>> cgroupDirectoryCallbacks = new HashMap<>();
 
     private final Path root;
     private final Path relativePath;
@@ -134,6 +134,9 @@ public class Cgroup {
 
     /** Returns the memory controller of this cgroup (memory.* files). */
     public MemoryController memory() { return new MemoryController(this); }
+
+    /** Returns the IO controller of this cgroup (io.* files). */
+    public IoController io() { return new IoController(this); }
 
     /**
      * Wraps {@code command} to ensure it is executed in this cgroup.

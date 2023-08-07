@@ -44,6 +44,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -1308,17 +1309,6 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(2, resolveMaxInhibitedGroupsConfigWithFeatureFlag(2));
     }
 
-    private boolean resolveConditionProbingFromWriteRepairFeatureFlag(boolean enable) throws Exception {
-        var cfg = resolveStorDistributormanagerConfig(new TestProperties().setEnableConditionalPutRemoveWriteRepair(enable));
-        return cfg.enable_condition_probing();
-    }
-
-    @Test
-    void distributor_condition_probing_is_controlled_by_write_repair_feature_flag() throws Exception {
-        assertFalse(resolveConditionProbingFromWriteRepairFeatureFlag(false));
-        assertTrue(resolveConditionProbingFromWriteRepairFeatureFlag(true));
-    }
-
     private int resolveNumDistributorStripesConfig(Optional<Flavor> flavor) throws Exception {
         var cc = createOneNodeCluster(new TestProperties(), flavor);
         var builder = new StorDistributormanagerConfig.Builder();
@@ -1525,7 +1515,7 @@ public class ContentClusterTest extends ContentBaseTest {
                                       i, i, i);
         }
         return services +
-                String.format("  </group>" +
+                String.format(Locale.US, "  </group>" +
                 "    <tuning>" +
                 "      <cluster-controller>" +
                 "        <groups-allowed-down-ratio>%f</groups-allowed-down-ratio>" +

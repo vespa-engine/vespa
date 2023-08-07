@@ -43,7 +43,7 @@ class MetricDefinitions {
     static final String NUM_SUCCESSFUL_WRITES = ContainerMetrics.SERVER_NUM_SUCCESSFUL_RESPONSE_WRITES.baseName();
     static final String NUM_FAILED_WRITES = ContainerMetrics.SERVER_NUM_FAILED_RESPONSE_WRITES.baseName();
 
-    static final String TOTAL_SUCCESSFUL_LATENCY = ContainerMetrics.SERVER_TOTAL_SUCCESFUL_RESPONSE_LATENCY.baseName();
+    static final String TOTAL_SUCCESSFUL_LATENCY = ContainerMetrics.SERVER_TOTAL_SUCCESSFUL_RESPONSE_LATENCY.baseName();
     static final String TOTAL_FAILED_LATENCY = ContainerMetrics.SERVER_TOTAL_FAILED_RESPONSE_LATENCY.baseName();
     static final String TIME_TO_FIRST_BYTE = ContainerMetrics.SERVER_TIME_TO_FIRST_BYTE.baseName();
 

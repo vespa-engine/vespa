@@ -10,6 +10,7 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.content.Redundancy;
 import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.TransactionLogServer;
@@ -49,7 +50,7 @@ public class SearchNodeTest {
     private static SearchNode createSearchNode(MockRoot root, String name, int distributionKey, NodeSpec nodeSpec,
                                                boolean flushOnShutDown, boolean isHosted, ModelContext.FeatureFlags featureFlags) {
         return SearchNode.create(root, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown,
-                Optional.empty(), Optional.empty(), isHosted, 0.0, featureFlags);
+                Optional.empty(), Optional.empty(), isHosted, 0.0, () -> new Redundancy(1,1,1,1,1), featureFlags);
     }
 
     private static SearchNode createSearchNode(MockRoot root) {

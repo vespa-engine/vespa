@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.state;
 
+import ai.vespa.metrics.set.InfrastructureMetricSet;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,11 +23,15 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.yahoo.container.jdisc.state.JsonUtil.sanitizeDouble;
 import static com.yahoo.container.jdisc.state.StateHandler.getSnapshotProviderOrThrow;
@@ -60,6 +65,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     private final SnapshotProvider snapshotProvider;
     private final String applicationName;
     private final String hostDimension;
+    private final Map<String, Set<String>> metricSets;
 
     @Inject
     public MetricsPacketsHandler(Timer timer,
@@ -69,6 +75,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
         snapshotProvider = getSnapshotProviderOrThrow(snapshotProviders);
         applicationName = config.application();
         hostDimension = config.hostname();
+        metricSets = getMetricSets();
     }
 
 
@@ -93,14 +100,19 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
 
     private byte[] buildMetricOutput(String query) {
         try {
-            if (query != null && query.equals("array-formatted")) {
-                return getMetricsArray();
+            var queryMap = parseQuery(query);
+            var metricSetId = queryMap.get("metric-set");
+            var format = queryMap.get("format");
+
+            // TODO: Remove "array-formatted"
+            if ("array".equals(format) || queryMap.containsKey("array-formatted")) {
+                return getMetricsArray(metricSetId);
             }
-            if ("format=prometheus".equals(query)) {
+            if ("prometheus".equals(format)) {
                 return buildPrometheusOutput();
             }
 
-            String output = getAllMetricsPackets() + "\n";
+            String output = getAllMetricsPackets(metricSetId) + "\n";
             return output.getBytes(StandardCharsets.UTF_8);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Bad JSON construction.", e);
@@ -109,10 +121,10 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
         }
     }
 
-    private byte[] getMetricsArray() throws JsonProcessingException {
+    private byte[] getMetricsArray(String metricSetId) throws JsonProcessingException {
         ObjectNode root = jsonMapper.createObjectNode();
         ArrayNode jsonArray = jsonMapper.createArrayNode();
-        getPacketsForSnapshot(getSnapshot(), applicationName, timer.currentTimeMillis())
+        getPacketsForSnapshot(getSnapshot(), metricSetId, applicationName, timer.currentTimeMillis())
                 .forEach(jsonArray::add);
         MetricGatherer.getAdditionalMetrics().forEach(jsonArray::add);
         root.set("metrics", jsonArray);
@@ -132,9 +144,9 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
                 .writeValueAsString(jsonObject);
     }
 
-    private String getAllMetricsPackets() throws JsonProcessingException {
+    private String getAllMetricsPackets(String metricSetId) throws JsonProcessingException {
         StringBuilder ret = new StringBuilder();
-        List<JsonNode> metricsPackets = getPacketsForSnapshot(getSnapshot(), applicationName, timer.currentTimeMillis());
+        List<JsonNode> metricsPackets = getPacketsForSnapshot(getSnapshot(), metricSetId, applicationName, timer.currentTimeMillis());
         String delimiter = "";
         for (JsonNode packet : metricsPackets) {
             ret.append(delimiter); // For legibility and parsing in unit tests
@@ -162,6 +174,29 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
             addDimensions(metricDimensions, packet);
             addMetrics(metricSet, packet);
             packets.add(packet);
+        }
+        return packets;
+    }
+
+    private List<JsonNode> getPacketsForSnapshot(MetricSnapshot metricSnapshot, String metricSetId, String application, long timestamp) {
+        if (metricSnapshot == null) return Collections.emptyList();
+        if (metricSetId == null) return getPacketsForSnapshot(metricSnapshot, application, timestamp);
+        Set<String> configuredMetrics = metricSets.getOrDefault(metricSetId, Collections.emptySet());
+        List<JsonNode> packets = new ArrayList<>();
+
+        for (Map.Entry<MetricDimensions, MetricSet> snapshotEntry : metricSnapshot) {
+            MetricDimensions metricDimensions = snapshotEntry.getKey();
+            MetricSet metricSet = snapshotEntry.getValue();
+
+            ObjectNode packet = jsonMapper.createObjectNode();
+            addMetaData(timestamp, application, packet);
+            addDimensions(metricDimensions, packet);
+            var metrics = getMetrics(metricSet);
+            metrics.keySet().retainAll(configuredMetrics);
+            if (!metrics.isEmpty()) {
+                addMetrics(metrics, packet);
+                packets.add(packet);
+            }
         }
         return packets;
     }
@@ -208,6 +243,39 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
         }
     }
 
+    private Map<String, Number> getMetrics(MetricSet metricSet) {
+        var metrics = new HashMap<String, Number>();
+        for (Map.Entry<String, MetricValue> metric : metricSet) {
+            String name = metric.getKey();
+            MetricValue value = metric.getValue();
+            if (value instanceof CountMetric) {
+                metrics.put(name + ".count", ((CountMetric) value).getCount());
+            } else if (value instanceof GaugeMetric) {
+                GaugeMetric gauge = (GaugeMetric) value;
+                metrics.put(name + ".average", sanitizeDouble(gauge.getAverage()));
+                metrics.put(name + ".last", sanitizeDouble(gauge.getLast()));
+                metrics.put(name + ".max", sanitizeDouble(gauge.getMax()));
+                if (gauge.getPercentiles().isPresent()) {
+                    for (Tuple2<String, Double> prefixAndValue : gauge.getPercentiles().get()) {
+                        metrics.put(name + "." + prefixAndValue.first + "percentile", prefixAndValue.second.doubleValue());
+                    }
+                }
+            } else {
+                throw new UnsupportedOperationException("Unknown metric class: " + value.getClass().getName());
+            }
+        }
+        return metrics;
+    }
+
+    private void addMetrics(Map<String, Number> metrics, ObjectNode packet) {
+        ObjectNode metricsObject = jsonMapper.createObjectNode();
+        packet.set(METRICS_KEY, metricsObject);
+        metrics.forEach((name, value) -> {
+            if (value instanceof Double) metricsObject.put(name, (Double) value);
+            else metricsObject.put(name, (Long) value);
+        });
+    }
+
     private String getContentType(String query) {
         if ("format=prometheus".equals(query)) {
             return "text/plain;charset=utf-8";
@@ -215,4 +283,17 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
         return "application/json";
     }
 
+    private Map<String, String> parseQuery(String query) {
+        if (query == null) return Map.of();
+        return Arrays.stream(query.split("&"))
+                .map(s -> s.split("="))
+                .collect(Collectors.toMap(s -> s[0], s -> s.length < 2 ? "" : s[1]));
+    }
+
+    private Map<String, Set<String>> getMetricSets() {
+        // For now - single infrastructure metric set
+        return Map.of(
+                InfrastructureMetricSet.infrastructureMetricSet.getId(), InfrastructureMetricSet.infrastructureMetricSet.getMetrics().keySet()
+        );
+    }
 }

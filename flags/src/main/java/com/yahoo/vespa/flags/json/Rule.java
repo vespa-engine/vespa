@@ -6,10 +6,11 @@ import com.yahoo.vespa.flags.JsonNodeRawFlag;
 import com.yahoo.vespa.flags.RawFlag;
 import com.yahoo.vespa.flags.json.wire.WireRule;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * @author hakonhall
@@ -45,6 +46,25 @@ public class Rule {
                 .allMatch(condition -> !fetchVector.hasDimension(condition.dimension()) || condition.test(fetchVector));
     }
 
+    /**
+     * Returns a copy of this rule without those conditions that can be resolved by the fetch vector.  Returns empty
+     * if any of those conditions are false.
+     */
+    public Optional<Rule> partialResolve(FetchVector fetchVector) {
+        List<Condition> newConditions = new ArrayList<>();
+        for (var condition : andConditions) {
+            if (fetchVector.hasDimension(condition.dimension())) {
+                if (!condition.test(fetchVector)) {
+                    return Optional.empty();
+                }
+            } else {
+                newConditions.add(condition);
+            }
+        }
+
+        return Optional.of(new Rule(valueToApply, newConditions));
+    }
+
     public Optional<RawFlag> getValueToApply() {
         return valueToApply;
     }
@@ -63,9 +83,32 @@ public class Rule {
 
     public static Rule fromWire(WireRule wireRule) {
         List<Condition> conditions = wireRule.andConditions == null ?
-                Collections.emptyList() :
+                List.of() :
                 wireRule.andConditions.stream().map(Condition::fromWire).toList();
-        Optional<RawFlag> value = wireRule.value == null ? Optional.empty() : Optional.of(JsonNodeRawFlag.fromJsonNode(wireRule.value));
+        Optional<RawFlag> value = wireRule.value == null || wireRule.value.isNull() ?
+                                  Optional.empty() :
+                                  Optional.of(JsonNodeRawFlag.fromJsonNode(wireRule.value));
         return new Rule(value, conditions);
+    }
+
+    @Override
+    public String toString() {
+        return "Rule{" +
+               "andConditions=" + andConditions +
+               ", valueToApply=" + valueToApply +
+               '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Rule rule = (Rule) o;
+        return andConditions.equals(rule.andConditions) && valueToApply.equals(rule.valueToApply);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(andConditions, valueToApply);
     }
 }

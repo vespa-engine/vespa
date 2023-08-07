@@ -37,7 +37,7 @@ public class HostedVespaPolicyTest {
     private final ClusterControllerClientFactory clientFactory = mock(ClusterControllerClientFactory.class);
     private final ClusterControllerClient client = mock(ClusterControllerClient.class);
     private final ManualClock clock = new ManualClock();
-    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, 5, clock);
+    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, 5, 1, 0.1, clock);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     @Before
