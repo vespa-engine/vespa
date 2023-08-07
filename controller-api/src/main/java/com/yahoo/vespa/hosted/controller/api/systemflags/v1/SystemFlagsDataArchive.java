@@ -171,13 +171,11 @@ public class SystemFlagsDataArchive {
     private static void addFile(Builder builder, String rawData, Path filePath, ZoneRegistry zoneRegistry, boolean force) {
         String filename = filePath.getFileName().toString();
 
-        if (!force) {
-            if (filename.startsWith("."))
-                return; // Ignore files starting with '.'
+        if (filename.startsWith("."))
+            return; // Ignore files starting with '.'
 
-            if (!FlagsTarget.filenameForSystem(filename, zoneRegistry.system()))
-                return; // Ignore files for other systems
-        }
+        if (!force && !FlagsTarget.filenameForSystem(filename, zoneRegistry.system()))
+            return; // Ignore files for other systems
 
         FlagId directoryDeducedFlagId = new FlagId(filePath.getName(filePath.getNameCount()-2).toString());
         FlagData flagData;
