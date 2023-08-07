@@ -72,7 +72,7 @@ public class ClusterTest {
                 "",
                 joinLines(
                         "<max-hits-per-partition>77</max-hits-per-partition>",
-                        "<dispatch-policy>round-robin</dispatch-policy>",
+                        "<dispatch-policy>best-of-random-2</dispatch-policy>",
                         "<min-active-docs-coverage>93</min-active-docs-coverage>",
                         "<top-k-probability>0.777</top-k-probability>"),
                 false);
@@ -81,7 +81,7 @@ public class ClusterTest {
         DispatchConfig config = new DispatchConfig(builder);
         assertEquals(3, config.redundancy());
         assertEquals(93.0, config.minActivedocsPercentage(), DELTA);
-        assertEquals(DispatchConfig.DistributionPolicy.ROUNDROBIN, config.distributionPolicy());
+        assertEquals(DispatchConfig.DistributionPolicy.BEST_OF_RANDOM_2, config.distributionPolicy());
         assertEquals(77, config.maxHitsPerNode());
         assertEquals(0.777, config.topKProbability(), DELTA);
     }
