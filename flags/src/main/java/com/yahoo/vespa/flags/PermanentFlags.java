@@ -376,6 +376,14 @@ public class PermanentFlags {
             "triggered",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
+            "drop-caches", false,
+            "Drop caches on tenant hosts",
+            "Takes effect on next tick",
+            // The application ID is the exclusive application ID associated with the host,
+            // if any, or otherwise hosted-vespa:tenant-host:default.
+            APPLICATION_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
