@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/eval/eval/value_type.h>
 
 namespace search::features {
 
@@ -19,6 +20,7 @@ protected:
     vespalib::string _sourceType;
     vespalib::string _sourceParam;
     vespalib::string _dimension;
+    vespalib::eval::ValueType _valueType;
 
     bool extractSource(const vespalib::string &source);
     TensorFactoryBlueprint(const vespalib::string &baseName);
