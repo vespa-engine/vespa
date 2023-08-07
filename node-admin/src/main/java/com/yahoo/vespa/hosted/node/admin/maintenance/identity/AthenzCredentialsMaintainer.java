@@ -88,7 +88,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                        ConfigServerInfo configServerInfo,
                                        String certificateDnsSuffix,
                                        ServiceIdentityProvider hostIdentityProvider,
-                                       FlagSource flagSource,
                                        Timer timer) {
         this.ztsTrustStorePath = ztsTrustStorePath;
         this.certificateDnsSuffix = certificateDnsSuffix;
