@@ -32,12 +32,17 @@ class CloudAccountTest {
 
     @Test
     void gcp_accounts() {
-        CloudAccount account = CloudAccount.from("gcp:my-project");
-        assertFalse(account.isUnspecified());
-        assertEquals(account, CloudAccount.from(account.value()));
-        assertEquals("my-project", account.account());
-        assertEquals(CloudName.GCP, account.cloudName());
-        assertEquals("gcp:my-project", account.value());
+        CloudAccount oldFormat = CloudAccount.from("my-project");
+        CloudAccount newFormat = CloudAccount.from("gcp:my-project");
+        assertEquals(oldFormat, newFormat);
+
+        for (CloudAccount account : List.of(oldFormat, newFormat)) {
+            assertFalse(account.isUnspecified());
+            assertEquals(account, CloudAccount.from(account.value()));
+            assertEquals("my-project", account.account());
+            assertEquals(CloudName.GCP, account.cloudName());
+            assertEquals("gcp:my-project", account.value());
+        }
     }
 
     @Test

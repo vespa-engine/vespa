@@ -20,8 +20,8 @@ public class ArchiveBucketsSerializerTest {
         ArchiveBuckets archiveBuckets = new ArchiveBuckets(
                 Set.of(new VespaManagedArchiveBucket("bucket1Name", "key1Arn").withTenants(Set.of(TenantName.from("t1"), TenantName.from("t2"))),
                        new VespaManagedArchiveBucket("bucket2Name", "key2Arn").withTenant(TenantName.from("t3"))),
-                Set.of(new TenantManagedArchiveBucket("bucket3Name", CloudAccount.from("gcp:acct-1"), Instant.ofEpochMilli(1234)),
-                       new TenantManagedArchiveBucket("bucket4Name", CloudAccount.from("gcp:acct-2"), Instant.ofEpochMilli(5678))));
+                Set.of(new TenantManagedArchiveBucket("bucket3Name", CloudAccount.from("acct-1"), Instant.ofEpochMilli(1234)),
+                       new TenantManagedArchiveBucket("bucket4Name", CloudAccount.from("acct-2"), Instant.ofEpochMilli(5678))));
 
         assertEquals(archiveBuckets, ArchiveBucketsSerializer.fromSlime(ArchiveBucketsSerializer.toSlime(archiveBuckets)));
     }
