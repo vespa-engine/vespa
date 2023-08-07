@@ -14,8 +14,6 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
@@ -46,15 +44,6 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
-
-    public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
-            "drop-caches", false,
-            List.of("hakonhall", "baldersheim"), "2023-03-06", "2023-08-05",
-            "Drop caches on tenant hosts",
-            "Takes effect on next tick",
-            // The application ID is the exclusive application ID associated with the host,
-            // if any, or otherwise hosted-vespa:tenant-host:default.
-            APPLICATION_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
