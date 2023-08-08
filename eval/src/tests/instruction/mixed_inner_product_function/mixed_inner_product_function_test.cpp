@@ -96,6 +96,43 @@ TEST(MixedInnerProduct, check_compatibility_with_complex_types) {
     EXPECT_EQ(MixedInnerProductFunction::compatible_types(res_type, vec_type, mix_type), false);
 }
 
+void assert_dp_inside_optimized(const vespalib::string &expr) {
+    SCOPED_TRACE(expr.c_str());
+    auto same_stable_types = CellTypeSpace(CellTypeUtils::list_stable_types(), 2).same();
+    auto same_unstable_types = CellTypeSpace(CellTypeUtils::list_unstable_types(), 2).same();
+    auto different_types = CellTypeSpace(CellTypeUtils::list_types(), 2).different();
+    using DIM = FunInfo<DotproductInsideMixed>;
+    EvalFixture::verify<DIM>(expr, {DIM{}}, same_stable_types);
+    EvalFixture::verify<DIM>(expr, {}, same_unstable_types);
+    EvalFixture::verify<DIM>(expr, {}, different_types);
+}
+
+TEST(DotproductInsideMixed, trigger_optimizer_when_possible) {
+    assert_dp_inside_optimized("reduce(a3_1x8 * b4_2x8, sum, x)");
+    assert_dp_inside_optimized("reduce(a3_1x8 * a3_1b4_2x8, sum, x, a)");
+    assert_dp_inside_optimized("reduce(a3_1x8 * a3_1b4_2x8, sum, x, b)");
+    assert_dp_inside_optimized("reduce(a3_1b3_1x8 * a3_1b4_2x8, sum, x, a)");
+    assert_dp_inside_optimized("reduce(a3_1b3_1x8 * a3_1b4_2x8, sum, x, b)");
+    assert_dp_inside_optimized("reduce(a3_1b3_1x8 * b4_2c2_1x8, sum, x, a)");
+    assert_dp_inside_optimized("reduce(a3_1b3_1x8 * b4_2c2_1x8, sum, x, b)");
+    assert_dp_inside_optimized("reduce(a3_1b3_1x8 * b4_2c2_1x8, sum, x, c)");
+    assert_dp_inside_optimized("reduce(a3_1b3_1x8 * b4_2c2_1x8, sum, x, a, b)");
+    assert_dp_inside_optimized("reduce(a3_1b3_1x8 * b4_2c2_1x8, sum, x, a, c)");
+    assert_dp_inside_optimized("reduce(a3_1b3_1x8 * b4_2c2_1x8, sum, x, b, c)");
+    assert_dp_inside_optimized("reduce(a1_1x8 * b4_2x8, sum, x)");
+    assert_dp_inside_optimized("reduce(a1_1x8 * a3_1b4_2x8, sum, x, a)");
+    assert_dp_inside_optimized("reduce(a1_1x8 * a3_1b4_2x8, sum, x, b)");
+    assert_dp_inside_optimized("reduce(a1_1b1_1x8 * a3_1b4_2x8, sum, x, a)");
+    assert_dp_inside_optimized("reduce(a1_1b1_1x8 * a3_1b4_2x8, sum, x, b)");
+    assert_dp_inside_optimized("reduce(a1_1b1_1x8 * b4_2c2_1x8, sum, x, a)");
+    assert_dp_inside_optimized("reduce(a1_1b1_1x8 * b4_2c2_1x8, sum, x, b)");
+    assert_dp_inside_optimized("reduce(a1_1b1_1x8 * b4_2c2_1x8, sum, x, c)");
+    assert_dp_inside_optimized("reduce(a1_1b1_1x8 * b4_2c2_1x8, sum, x, a, b)");
+    assert_dp_inside_optimized("reduce(a1_1b1_1x8 * b4_2c2_1x8, sum, x, a, c)");
+    assert_dp_inside_optimized("reduce(a1_1b1_1x8 * b4_2c2_1x8, sum, x, b, c)");
+}
+
+
 //-----------------------------------------------------------------------------
 
 GTEST_MAIN_RUN_ALL_TESTS()

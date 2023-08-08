@@ -63,6 +63,7 @@ public:
     bool is_mixed() const;
     size_t count_indexed_dimensions() const;
     size_t count_mapped_dimensions() const;
+    size_t count_nontrivial_indexed_dimensions() const;
     size_t dense_subspace_size() const;
     const std::vector<Dimension> &dimensions() const { return _dimensions; }
     std::vector<Dimension> nontrivial_indexed_dimensions() const;

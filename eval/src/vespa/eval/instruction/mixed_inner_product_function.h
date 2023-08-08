@@ -43,4 +43,16 @@ public:
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 
+class DotproductInsideMixed : public tensor_function::Op2
+{
+public:
+    DotproductInsideMixed(const ValueType &res_type_in,
+                          const TensorFunction &left_child,
+                          const TensorFunction &right_child);
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    bool result_is_mutable() const override { return true; }
+    static bool compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs);
+    static bool prefer_swap(const ValueType &lhs, const ValueType &rhs);
+};
+
 } // namespace
