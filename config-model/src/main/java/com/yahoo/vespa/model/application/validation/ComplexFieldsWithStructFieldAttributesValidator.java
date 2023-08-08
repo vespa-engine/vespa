@@ -39,19 +39,15 @@ public class ComplexFieldsWithStructFieldAttributesValidator extends Validator {
     }
 
     private static void validateComplexFields(String clusterName, Schema schema, DeployLogger logger) {
-        String unsupportedFields = validateComplexFields(clusterName, schema, false);
+        String unsupportedFields = validateComplexFields(schema);
         if (!unsupportedFields.isEmpty()) {
             throw new IllegalArgumentException(getErrorMessage(clusterName, schema, unsupportedFields));
         }
-        unsupportedFields = validateComplexFields(clusterName, schema, true);
-        if (!unsupportedFields.isEmpty()) {
-            logger.logApplicationPackage(Level.WARNING, getErrorMessage(clusterName, schema, unsupportedFields));
-        }
     }
 
-    private static String validateComplexFields(String clusterName, Schema schema, boolean stricterValidation) {
+    private static String validateComplexFields(Schema schema) {
         return schema.allFields()
-                .filter(field -> isUnsupportedComplexField(field, stricterValidation))
+                .filter(field -> isUnsupportedComplexField(field))
                 .map(ComplexFieldsWithStructFieldAttributesValidator::toString)
                 .collect(Collectors.joining(", "));
     }
@@ -63,14 +59,14 @@ public class ComplexFieldsWithStructFieldAttributesValidator extends Validator {
                              clusterName, schema.getName(), unsupportedFields);
     }
 
-    private static boolean isUnsupportedComplexField(ImmutableSDField field, boolean stricterValidation) {
+    private static boolean isUnsupportedComplexField(ImmutableSDField field) {
         return (field.usesStructOrMap() &&
-                !isSupportedComplexField(field, stricterValidation) &&
+                !isSupportedComplexField(field) &&
                 hasStructFieldAttributes(field.getStructFields()));
     }
 
-    private static boolean isSupportedComplexField(ImmutableSDField field, boolean stricterValidation) {
-        return (ComplexAttributeFieldUtils.isSupportedComplexField(field, stricterValidation) ||
+    private static boolean isSupportedComplexField(ImmutableSDField field) {
+        return (ComplexAttributeFieldUtils.isSupportedComplexField(field) ||
                 GeoPos.isAnyPos(field));
     }
 
