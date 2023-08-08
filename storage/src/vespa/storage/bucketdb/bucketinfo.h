@@ -102,7 +102,7 @@ public:
        array. This operation has undefined behaviour if the index given
        is not within the node count.
     */
-    const BucketCopy& getNodeRef(uint16_t idx) const {
+    const BucketCopy& getNodeRef(uint16_t idx) const noexcept {
         return _nodes[idx];
     }
 

@@ -49,28 +49,25 @@ private:
 
 public:
         // Create leaf node
-    Group(uint16_t index, vespalib::stringref name);
+    Group(uint16_t index, vespalib::stringref name) noexcept;
         // Create branch node
     Group(uint16_t index, vespalib::stringref name,
           const Distribution&, uint16_t redundancy);
     virtual ~Group();
 
-    bool isLeafGroup() const { return _nodes.size() > 0; }
-    bool operator==(const Group& other) const;
+    bool isLeafGroup() const noexcept { return ! _nodes.empty(); }
+    bool operator==(const Group& other) const noexcept;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    vespalib::Double getCapacity() const { return _capacity; }
-    const vespalib::string & getName() const { return _name; }
-    uint16_t getIndex() const { return _index; }
+    vespalib::Double getCapacity() const noexcept { return _capacity; }
+    const vespalib::string & getName() const noexcept { return _name; }
+    uint16_t getIndex() const noexcept { return _index; }
     std::map<uint16_t, Group*>& getSubGroups() { return _subGroups; }
-    const std::map<uint16_t, Group*>& getSubGroups() const
-        { return _subGroups; }
-    const std::vector<uint16_t>& getNodes() const { return _nodes; };
-    const Distribution& getDistributionSpec() const
-        { return _distributionSpec; }
-    const Distribution& getDistribution(uint16_t redundancy) const
-        { return _preCalculated[redundancy]; }
-    uint32_t getDistributionHash() const { return _distributionHash; }
+    const std::map<uint16_t, Group*>& getSubGroups() const noexcept { return _subGroups; }
+    const std::vector<uint16_t>& getNodes() const noexcept { return _nodes; };
+    const Distribution& getDistributionSpec() const noexcept { return _distributionSpec; }
+    const Distribution& getDistribution(uint16_t redundancy) const noexcept { return _preCalculated[redundancy]; }
+    uint32_t getDistributionHash() const noexcept { return _distributionHash; }
 
     void addSubGroup(Group::UP);
     void setCapacity(vespalib::Double capacity);
