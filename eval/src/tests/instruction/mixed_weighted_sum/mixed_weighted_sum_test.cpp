@@ -4,7 +4,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/gen_spec.h>
-#include <vespa/eval/instruction/mixed_weighted_average.h>
+#include <vespa/eval/instruction/mixed_weighted_sum.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -17,7 +17,7 @@ using namespace vespalib::eval::test;
 using namespace vespalib::eval::tensor_function;
 
 struct FunInfo {
-    using LookFor = MixedWeightedAverageFunction;
+    using LookFor = MixedWeightedSumFunction;
     bool debug_dump;
     void verify(const LookFor &fun) const {
         EXPECT_TRUE(fun.result_is_mutable());
@@ -47,7 +47,7 @@ void verify_not_optimized(const vespalib::string &expr) {
 
 //-----------------------------------------------------------------------------
 
-TEST(MixedWeightedAverageTest, weighted_average_can_be_optimized) {
+TEST(MixedWeightedSumTest, weighted_sum_can_be_optimized) {
     verify_optimized("reduce(join(x1_1, a7_1x9_1z8, f(a, b)(a * b)), sum, x)");
     verify_optimized("reduce(join(x1_1, x9_1y1_1z8, f(a, b)(a * b)), sum, x)");
     verify_optimized("reduce(join(x1_1, x9_1y7_1z8, f(a, b)(a * b)), sum, x)");
@@ -60,7 +60,7 @@ TEST(MixedWeightedAverageTest, weighted_average_can_be_optimized) {
     verify_optimized("reduce(join(c1_1, a7_1b7_1c7_1x8, f(a, b)(a * b)), sum, c)");
 }
 
-TEST(MixedWeightedAverageTest, not_optimizing_close_match) {
+TEST(MixedWeightedSumTest, not_optimizing_close_match) {
     // optimized by MappedLookup:
     verify_not_optimized("reduce(join(x1_1, x9_1z8, f(a, b)(a * b)), sum, x)");
     // dense subspace too small:
@@ -75,7 +75,7 @@ TEST(MixedWeightedAverageTest, not_optimizing_close_match) {
     verify_not_optimized("reduce(join(x1_1y1_1, x9_2y7_1z8, f(a, b)(a * b)), sum, x)");
 }
 
-TEST(MixedWeightedAverageTest, result_must_have_same_dense_subspace) {
+TEST(MixedWeightedSumTest, result_must_have_same_dense_subspace) {
     // reducing wrong dimension:
     verify_not_optimized("reduce(join(x1_1, x9_2y7_1z8, f(a, b)(a * b)), sum, z)");
     // reducing dense dimension also:

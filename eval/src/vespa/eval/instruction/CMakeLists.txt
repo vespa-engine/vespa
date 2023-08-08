@@ -36,7 +36,7 @@ vespa_add_library(eval_instruction OBJECT
     mixed_inner_product_function.cpp
     mixed_l2_distance.cpp
     mixed_simple_join_function.cpp
-    mixed_weighted_average.cpp
+    mixed_weighted_sum.cpp
     pow_as_map_optimizer.cpp
     remove_trivial_dimension_optimizer.cpp
     replace_type_function.cpp

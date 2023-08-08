@@ -8,19 +8,19 @@
 namespace vespalib::eval {
 
 /**
- * Tensor function for mixed weighted average or optimized select;
+ * Tensor function for mixed weighted sum or optimized select;
  * very similar to MappedLookup when the selector has a single value which equals 1.0
  **/
-class MixedWeightedAverageFunction : public tensor_function::Op2
+class MixedWeightedSumFunction : public tensor_function::Op2
 {
 private:
     const vespalib::string _select_dim;
 public:
-    MixedWeightedAverageFunction(const ValueType &result_type,
+    MixedWeightedSumFunction(const ValueType &result_type,
                                const TensorFunction &lhs,
                                const TensorFunction &rhs,
                                const vespalib::string &dim);
-    ~MixedWeightedAverageFunction() override;
+    ~MixedWeightedSumFunction() override;
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);

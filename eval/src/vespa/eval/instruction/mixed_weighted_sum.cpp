@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "mixed_weighted_average.h"
+#include "mixed_weighted_sum.h"
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_builder_factory.h>
@@ -12,7 +12,7 @@
 #include <algorithm>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".eval.instruction.mixed_weighted_average");
+LOG_SETUP(".eval.instruction.mixed_weighted_sum");
 
 namespace vespalib::eval {
 
@@ -28,13 +28,13 @@ using State = InterpretedFunction::State;
 
 namespace {
 
-struct MixedWeightedAverageParam {
+struct MixedWeightedSumParam {
     const ValueType res_type;
     const size_t dense_subspace_size;
     const size_t res_mapped_dims;
     const ValueBuilderFactory &factory;
     const size_t select_dim_idx;
-    MixedWeightedAverageParam(const ValueType & res_type_in,
+    MixedWeightedSumParam(const ValueType & res_type_in,
                               const ValueBuilderFactory &factory_in,
                               size_t select_dim_idx_in)
         : res_type(res_type_in),
@@ -78,8 +78,8 @@ struct MySparseState {
 MySparseState::~MySparseState() = default;
 
 template <typename CT>
-void my_weighted_average_op(State &state, uint64_t param_in) {
-    const auto &params = unwrap_param<MixedWeightedAverageParam>(param_in);
+void my_weighted_sum_op(State &state, uint64_t param_in) {
+    const auto &params = unwrap_param<MixedWeightedSumParam>(param_in);
     auto sel_cells = state.peek(0).cells().typify<CT>();
     auto mix_cells = state.peek(1).cells().typify<CT>();
     const auto &sel_index = state.peek(0).index();
@@ -111,7 +111,7 @@ void my_weighted_average_op(State &state, uint64_t param_in) {
         ok = ! sel_view->next_result(sparse_state.select_label_ref, subspace_idx);
         LOG_ASSERT(ok);
     } else {
-        // weighted average
+        // weighted sum
         size_t sel_dim_idx = 0;
         auto sel_view = sel_index.create_view({&sel_dim_idx, 1});
         size_t mix_subspace_idx;
@@ -147,11 +147,11 @@ void my_weighted_average_op(State &state, uint64_t param_in) {
 
 //-----------------------------------------------------------------------------
 
-struct SelectMixedWeightedAverageOp {
+struct SelectMixedWeightedSumOp {
     template<typename CM>
     static auto invoke() {
         using CT = CellValueType<CM::value.cell_type>;
-        return my_weighted_average_op<CT>;
+        return my_weighted_sum_op<CT>;
     }
 };
 
@@ -184,7 +184,7 @@ size_t find_idx(const std::vector<ValueType::Dimension> & dim_list, const vespal
 
 //-----------------------------------------------------------------------------
 
-MixedWeightedAverageFunction::MixedWeightedAverageFunction(const ValueType &result_type,
+MixedWeightedSumFunction::MixedWeightedSumFunction(const ValueType &result_type,
                                                        const TensorFunction &lhs,
                                                        const TensorFunction &rhs,
                                                        const vespalib::string &dim)
@@ -193,20 +193,20 @@ MixedWeightedAverageFunction::MixedWeightedAverageFunction(const ValueType &resu
 {
 }
 
-MixedWeightedAverageFunction::~MixedWeightedAverageFunction() = default;
+MixedWeightedSumFunction::~MixedWeightedSumFunction() = default;
 
 Instruction
-MixedWeightedAverageFunction::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+MixedWeightedSumFunction::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
     size_t mix_dim_idx = find_idx(lhs().result_type().mapped_dimensions(), _select_dim);
-    const MixedWeightedAverageParam &params = stash.create<MixedWeightedAverageParam>(result_type(), factory, mix_dim_idx);
+    const MixedWeightedSumParam &params = stash.create<MixedWeightedSumParam>(result_type(), factory, mix_dim_idx);
     auto res_meta = result_type().cell_meta().decay().limit();
-    auto op = typify_invoke<1,TypifyCellMeta,SelectMixedWeightedAverageOp>(res_meta);
-    return Instruction(op, wrap_param<MixedWeightedAverageParam>(params));
+    auto op = typify_invoke<1,TypifyCellMeta,SelectMixedWeightedSumOp>(res_meta);
+    return Instruction(op, wrap_param<MixedWeightedSumParam>(params));
 }
 
 const TensorFunction &
-MixedWeightedAverageFunction::optimize(const TensorFunction &expr, Stash &stash)
+MixedWeightedSumFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     auto reduce = as<Reduce>(expr);
     if (reduce && (reduce->aggr() == Aggr::SUM) && (reduce->dimensions().size() == 1)) {
@@ -219,10 +219,10 @@ MixedWeightedAverageFunction::optimize(const TensorFunction &expr, Stash &stash)
             const auto & left_type = lhs.result_type();
             const auto & right_type = rhs.result_type();
             if (compatible_types(res_type, left_type, right_type, dim)) {
-                return stash.create<MixedWeightedAverageFunction>(res_type, lhs, rhs, dim);
+                return stash.create<MixedWeightedSumFunction>(res_type, lhs, rhs, dim);
             }
             if (compatible_types(res_type, right_type, left_type, dim)) {
-                return stash.create<MixedWeightedAverageFunction>(res_type, rhs, lhs, dim);
+                return stash.create<MixedWeightedSumFunction>(res_type, rhs, lhs, dim);
             }
         }
     }
