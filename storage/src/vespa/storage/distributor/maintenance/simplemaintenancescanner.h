@@ -47,7 +47,7 @@ public:
                              const DistributorBucketSpaceRepo& bucketSpaceRepo);
     SimpleMaintenanceScanner(const SimpleMaintenanceScanner&) = delete;
     SimpleMaintenanceScanner& operator=(const SimpleMaintenanceScanner&) = delete;
-    ~SimpleMaintenanceScanner();
+    ~SimpleMaintenanceScanner() override;
 
     ScanResult scanNext() override;
     void reset() override;

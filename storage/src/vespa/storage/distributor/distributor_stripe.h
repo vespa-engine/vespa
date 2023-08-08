@@ -122,7 +122,6 @@ public:
     StripeAccessGuard::PendingOperationStats pending_operation_stats() const override;
 
     std::string getActiveIdealStateOperations() const;
-    std::string getActiveOperations() const;
 
     framework::ThreadWaitInfo doNonCriticalTick(framework::ThreadIndex);
 
