@@ -66,7 +66,6 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 public class SystemFlagsDataArchive {
 
-    private static final ZoneId CONTROLLER_ZONE_ID = ZoneId.from("prod.controller");
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private final Map<FlagId, Map<String, FlagData>> files;
