@@ -37,7 +37,13 @@ struct NodeMaintenanceStats
         return !(*this == other);
     }
 
-    void merge(const NodeMaintenanceStats& rhs);
+    void merge(const NodeMaintenanceStats& rhs) noexcept {
+        movingOut  += rhs.movingOut;
+        syncing    += rhs.syncing;
+        copyingIn  += rhs.copyingIn;
+        copyingOut += rhs.copyingOut;
+        total      += rhs.total;
+    }
 };
 
 std::ostream& operator<<(std::ostream&, const NodeMaintenanceStats&);
