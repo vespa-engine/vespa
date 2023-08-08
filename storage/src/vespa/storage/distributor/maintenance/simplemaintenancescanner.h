@@ -13,14 +13,14 @@ class SimpleMaintenanceScanner : public MaintenanceScanner
 {
 public:
     struct GlobalMaintenanceStats {
-        std::vector<uint64_t> pending;
+        std::array<uint64_t, MaintenanceOperation::OPERATION_COUNT> pending;
 
-        GlobalMaintenanceStats()
-            : pending(MaintenanceOperation::OPERATION_COUNT)
+        GlobalMaintenanceStats() noexcept
+            : pending()
         { }
 
-        bool operator==(const GlobalMaintenanceStats& rhs) const;
-        void merge(const GlobalMaintenanceStats& rhs);
+        bool operator==(const GlobalMaintenanceStats& rhs) const noexcept;
+        void merge(const GlobalMaintenanceStats& rhs) noexcept;
     };
     struct PendingMaintenanceStats {
         PendingMaintenanceStats();
