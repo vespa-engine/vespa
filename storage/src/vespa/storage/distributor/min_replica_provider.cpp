@@ -5,8 +5,7 @@
 namespace storage::distributor {
 
 void
-merge_min_replica_stats(std::unordered_map<uint16_t, uint32_t>& dest,
-                        const std::unordered_map<uint16_t, uint32_t>& src)
+merge_min_replica_stats(MinReplicaMap & dest, const MinReplicaMap & src)
 {
     for (const auto& entry : src) {
         auto node_index = entry.first;

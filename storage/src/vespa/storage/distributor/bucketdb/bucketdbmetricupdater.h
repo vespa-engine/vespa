@@ -2,10 +2,11 @@
 
 #pragma once
 
+#include <vespa/storage/distributor/min_replica_provider.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/vespalib/util/memoryusage.h>
-#include <unordered_map>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 namespace storage::distributor {
 
@@ -48,7 +49,7 @@ public:
          * Note: If no buckets have been found for a node, that node is not in
          * this map.
          */
-        std::unordered_map<uint16_t, uint32_t> _minBucketReplica;
+        MinReplicaMap _minBucketReplica;
 
         /**
          * Propagate state values to the appropriate metric values.
@@ -59,10 +60,10 @@ public:
     using ReplicaCountingMode = vespa::config::content::core::StorDistributormanagerConfig::MinimumReplicaCountingMode;
 
 private:
-    Stats _workingStats;
-    Stats _lastCompleteStats;
+    Stats               _workingStats;
+    Stats               _lastCompleteStats;
     ReplicaCountingMode _replicaCountingMode;
-    bool _hasCompleteStats;
+    bool                _hasCompleteStats;
 
 public:
     BucketDBMetricUpdater() noexcept;

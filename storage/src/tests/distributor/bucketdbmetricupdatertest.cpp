@@ -18,7 +18,7 @@ struct BucketDBMetricUpdaterTest : Test {
     void visitBucketWith2CopiesBothTrusted(BucketDBMetricUpdater& metricUpdater);
     void visitBucketWith1Copy(BucketDBMetricUpdater& metricUpdater);
 
-    using NodeToReplicasMap = std::unordered_map<uint16_t, uint32_t>;
+    using NodeToReplicasMap = MinReplicaMap;
     NodeToReplicasMap replicaStatsOf(BucketDBMetricUpdater& metricUpdater);
 
     BucketDBMetricUpdaterTest();
