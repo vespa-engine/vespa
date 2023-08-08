@@ -38,6 +38,8 @@ public class SyncFileInfoTest {
     private static final Path vespaLogPath2 = fileSystem.getPath("/opt/vespa/logs/vespa.log-2021-02-12");
     private static final Path zkLogPath0 = fileSystem.getPath("/opt/vespa/logs/zookeeper.configserver.0.log");
     private static final Path zkLogPath1 = fileSystem.getPath("/opt/vespa/logs/zookeeper.configserver.1.log");
+    private static final Path startServicesPath1 = fileSystem.getPath("/opt/vespa/logs/start-services.out");
+    private static final Path startServicesPath2 = fileSystem.getPath("/opt/vespa/logs/start-services.out-20230808100143");
 
     @Test
     void access_logs() {
@@ -91,6 +93,12 @@ public class SyncFileInfoTest {
         new UnixPath(zkLogPath1).createParents().createNewFile().setLastModifiedTime(Instant.parse("2022-05-09T14:22:11Z"));
         assertForLogFile(zkLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log-2022-05-09.14-22-11.zst", ZSTD, true);
         assertForLogFile(zkLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log-2022-05-09.14-22-11.zst", ZSTD, false);
+    }
+
+    @Test
+    void start_services() {
+        assertForLogFile(startServicesPath1, null, null, true);
+        assertForLogFile(startServicesPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/start-services/start-services.out-20230808100143.zst", ZSTD, true);
     }
 
     private static void assertForLogFile(Path srcPath, String destination, SyncFileInfo.Compression compression, boolean rotatedOnly) {
