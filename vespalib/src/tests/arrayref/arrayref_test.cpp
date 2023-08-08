@@ -53,4 +53,24 @@ TEST("require that references can be unconstified") {
     EXPECT_EQUAL(data[1], 5);
 }
 
+TEST("require that std::array references can be constified") {
+    std::array<int,3> data({1,2,3});
+    const ArrayRef<int> array_ref(data);
+    ConstArrayRef<int> const_ref(array_ref);
+    EXPECT_EQUAL(const_ref.size(), 3u);
+    EXPECT_EQUAL(const_ref.end() - const_ref.begin(), 3);
+    EXPECT_EQUAL(const_ref[2], 3);
+}
+
+TEST("require that references can be unconstified") {
+    std::array<int, 3> data({1,2,3});
+    const ConstArrayRef<int> const_ref(data);
+    ArrayRef<int> array_ref = unconstify(const_ref);
+    EXPECT_EQUAL(array_ref.size(), 3u);
+    EXPECT_EQUAL(array_ref.end() - array_ref.begin(), 3);
+    EXPECT_EQUAL(array_ref[1], 2);
+    array_ref[1] = 5;
+    EXPECT_EQUAL(data[1], 5);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
