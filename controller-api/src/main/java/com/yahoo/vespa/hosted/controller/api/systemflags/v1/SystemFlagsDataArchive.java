@@ -66,6 +66,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 public class SystemFlagsDataArchive {
 
+    private static final ZoneId CONTROLLER_ZONE_ID = ZoneId.from("prod.controller");
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private final Map<FlagId, Map<String, FlagData>> files;
@@ -182,7 +183,9 @@ public class SystemFlagsDataArchive {
         if (rawData.isBlank()) {
             flagData = new FlagData(directoryDeducedFlagId);
         } else {
-            Set<ZoneId> zones = force ? zoneRegistry.zones().all().zones().stream().map(ZoneApi::getVirtualId).collect(Collectors.toSet())
+            Set<ZoneId> zones = force ? Stream.concat(Stream.of(ZoneId.ofVirtualControllerZone()),
+                                                      zoneRegistry.zones().all().zones().stream().map(ZoneApi::getVirtualId))
+                                              .collect(Collectors.toSet())
                                       : Set.of();
             String normalizedRawData = normalizeJson(rawData, zones);
             flagData = FlagData.deserialize(normalizedRawData);
