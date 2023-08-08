@@ -1,12 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cstdint>
-#include <unordered_map>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 namespace storage::distributor {
 
-using MinReplicaMap = std::unordered_map<uint16_t, uint32_t>;
+using MinReplicaMap = vespalib::hash_map<uint16_t, uint32_t>;
 
 class MinReplicaProvider
 {
