@@ -25,11 +25,12 @@ public:
         vespalib::MemoryUsage _mutable_db_mem_usage;
         vespalib::MemoryUsage _read_only_db_mem_usage;
 
-        Stats();
+        Stats() noexcept;
+        Stats(Stats &&rhs) noexcept;
+        Stats & operator=(Stats &&rhs) noexcept;
         Stats(const Stats &rhs);
-        ~Stats() = default;
-
-        Stats &operator=(const Stats &rhs) = default;
+        Stats & operator=(const Stats &rhs);
+        ~Stats();
 
         /**
          * For each node N, look at all the buckets that have or should have a
@@ -52,7 +53,7 @@ public:
         /**
          * Propagate state values to the appropriate metric values.
          */
-        void propagateMetrics(IdealStateMetricSet&, DistributorMetricSet&);
+        void propagateMetrics(IdealStateMetricSet&, DistributorMetricSet&) const;
     };
 
     using ReplicaCountingMode = vespa::config::content::core::StorDistributormanagerConfig::MinimumReplicaCountingMode;
@@ -64,7 +65,7 @@ private:
     bool _hasCompleteStats;
 
 public:
-    BucketDBMetricUpdater();
+    BucketDBMetricUpdater() noexcept;
     ~BucketDBMetricUpdater();
 
     void setMinimumReplicaCountingMode(ReplicaCountingMode mode) noexcept {
@@ -91,11 +92,11 @@ public:
     /**
      * Returns true iff completeRound() has been called at least once.
      */
-    bool hasCompletedRound() const {
+    bool hasCompletedRound() const noexcept {
         return _hasCompleteStats;
     }
 
-    Stats getLastCompleteStats() const {
+    const Stats & getLastCompleteStats() const noexcept {
         return _lastCompleteStats;
     }
 

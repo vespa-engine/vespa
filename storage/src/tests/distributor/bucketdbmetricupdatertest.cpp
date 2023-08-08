@@ -7,7 +7,6 @@
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <string>
-#include <sstream>
 
 namespace storage::distributor {
 
@@ -16,8 +15,7 @@ using namespace ::testing;
 
 struct BucketDBMetricUpdaterTest : Test {
     void visitBucketWith2Copies1Trusted(BucketDBMetricUpdater& metricUpdater);
-    void visitBucketWith2CopiesBothTrusted(
-            BucketDBMetricUpdater& metricUpdater);
+    void visitBucketWith2CopiesBothTrusted(BucketDBMetricUpdater& metricUpdater);
     void visitBucketWith1Copy(BucketDBMetricUpdater& metricUpdater);
 
     using NodeToReplicasMap = std::unordered_map<uint16_t, uint32_t>;
@@ -26,9 +24,7 @@ struct BucketDBMetricUpdaterTest : Test {
     BucketDBMetricUpdaterTest();
 };
 
-BucketDBMetricUpdaterTest::BucketDBMetricUpdaterTest()
-{
-}
+BucketDBMetricUpdaterTest::BucketDBMetricUpdaterTest() = default;
 
 namespace {
 
@@ -37,8 +33,6 @@ void addNode(BucketInfo& info, uint16_t node, uint32_t crc) {
     std::vector<uint16_t> order;
     info.addNode(BucketCopy(1234, node, apiInfo), order);
 }
-
-using Trusted = bool;
 
 BucketInfo
 makeInfo(uint32_t copy0Crc)
@@ -271,8 +265,7 @@ TEST_F(BucketDBMetricUpdaterTest, complete_round_clears_working_state) {
 
 // Replicas on nodes 0 and 1.
 void
-BucketDBMetricUpdaterTest::visitBucketWith2Copies1Trusted(
-        BucketDBMetricUpdater& metricUpdater)
+BucketDBMetricUpdaterTest::visitBucketWith2Copies1Trusted(BucketDBMetricUpdater& metricUpdater)
 {
     BucketInfo info;
     addNode(info, 0, 100);
@@ -283,8 +276,7 @@ BucketDBMetricUpdaterTest::visitBucketWith2Copies1Trusted(
 
 // Replicas on nodes 0 and 2.
 void
-BucketDBMetricUpdaterTest::visitBucketWith2CopiesBothTrusted(
-        BucketDBMetricUpdater& metricUpdater)
+BucketDBMetricUpdaterTest::visitBucketWith2CopiesBothTrusted(BucketDBMetricUpdater& metricUpdater)
 {
     BucketInfo info;
     addNode(info, 0, 200);
