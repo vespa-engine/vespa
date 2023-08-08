@@ -30,11 +30,11 @@ public class ComplexAttributeFieldUtilsTestCase {
         }
 
         boolean isArrayOfSimpleStruct() {
-            return ComplexAttributeFieldUtils.isArrayOfSimpleStruct(field(), false);
+            return ComplexAttributeFieldUtils.isArrayOfSimpleStruct(field());
         }
 
         boolean isMapOfSimpleStruct() {
-            return ComplexAttributeFieldUtils.isMapOfSimpleStruct(field(), false);
+            return ComplexAttributeFieldUtils.isMapOfSimpleStruct(field());
         }
 
         boolean isMapOfPrimitiveType() {
