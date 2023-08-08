@@ -66,10 +66,9 @@ public class DefaultMetrics {
         addMetric(metrics, ContainerMetrics.HTTP_STATUS_3XX.rate());
         addMetric(metrics, ContainerMetrics.HTTP_STATUS_4XX.rate());
         addMetric(metrics, ContainerMetrics.HTTP_STATUS_5XX.rate());
-        addMetric(metrics, ContainerMetrics.JDISC_GC_MS.average());
+        addMetric(metrics, ContainerMetrics.JDISC_GC_MS, EnumSet.of(max, average));
         addMetric(metrics, ContainerMetrics.MEM_HEAP_FREE.average());
         addMetric(metrics, ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count));
-        addMetric(metrics, ContainerMetrics.JDISC_GC_MS.max());
         // addMetric(metrics, ContainerMetrics.CPU.baseName()); // TODO: Add to container metrics
         addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_SIZE.max());
         addMetric(metrics, ContainerMetrics.JDISC_THREAD_POOL_ACTIVE_THREADS, EnumSet.of(sum, count, min, max));
@@ -78,13 +77,13 @@ public class DefaultMetrics {
         addMetric(metrics, ContainerMetrics.SERVER_ACTIVE_THREADS.average());
 
         // Metrics needed for alerting
-        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_IS_ACTIVE.last());
+        addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_IS_ACTIVE, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT.rate());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS.rate());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CHIFERS.rate());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_UNKNOWN.rate());
         addMetric(metrics, ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS.rate());
-        addMetric(metrics, ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS.last());
+        addMetric(metrics, ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
     }
 
     private static void addSearchChainMetrics(Set<Metric> metrics) {
@@ -112,9 +111,9 @@ public class DefaultMetrics {
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_LATENCY, EnumSet.of(sum, count, max, average)); // TODO: Remove average with Vespa 9
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_LATENCY, EnumSet.of(sum, count, max, average)); // TODO: Remove average with Vespa 9
 
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_TOTAL.last());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_READY.last());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_ACTIVE.last());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_TOTAL, EnumSet.of(max,last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_READY, EnumSet.of(max,last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_ACTIVE, EnumSet.of(max,last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DISK_USAGE.last());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MEMORY_USAGE_ALLOCATED_BYTES.last());
 
@@ -144,10 +143,10 @@ public class DefaultMetrics {
 
     private static void addClusterControllerMetrics(Set<Metric> metrics) {
         // Metrics needed for alerting
-        addMetric(metrics, ClusterControllerMetrics.DOWN_COUNT.last());
-        addMetric(metrics, ClusterControllerMetrics.MAINTENANCE_COUNT.last());
+        addMetric(metrics, ClusterControllerMetrics.DOWN_COUNT, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, ClusterControllerMetrics.MAINTENANCE_COUNT, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ClusterControllerMetrics.UP_COUNT.last());
-        addMetric(metrics, ClusterControllerMetrics.IS_MASTER.last());
+        addMetric(metrics, ClusterControllerMetrics.IS_MASTER, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION, EnumSet.of(last, max)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ClusterControllerMetrics.RESOURCE_USAGE_MAX_DISK_UTILIZATION, EnumSet.of(last, max)); // TODO: Vespa 9: Remove last
@@ -155,7 +154,7 @@ public class DefaultMetrics {
 
     private static void addSentinelMetrics(Set<Metric> metrics) {
         // Metrics needed for alerting
-        addMetric(metrics, SentinelMetrics.SENTINEL_TOTAL_RESTARTS.last());
+        addMetric(metrics, SentinelMetrics.SENTINEL_TOTAL_RESTARTS, EnumSet.of(sum, last)); // TODO: Vespa 9: Remove last
     }
 
     private static void addOtherMetrics(Set<Metric> metrics) {
