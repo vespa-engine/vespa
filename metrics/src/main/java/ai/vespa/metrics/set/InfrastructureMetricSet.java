@@ -173,6 +173,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.DNS_QUEUED_REQUESTS, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ControllerMetrics.ZMS_QUOTA_USAGE, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ControllerMetrics.COREDUMP_PROCESSED.count());
+        addMetric(metrics, ControllerMetrics.AUTH0_EXCEPTIONS.count());
 
         addMetric(metrics, ControllerMetrics.METERING_AGE_SECONDS, EnumSet.of(min, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ControllerMetrics.METERING_LAST_REPORTED, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
