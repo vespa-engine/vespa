@@ -856,9 +856,8 @@ SynchronizeAndMoveStateChecker::check(Context& c) const
     result += checkIfBucketsAreOutOfSyncAndNeedMerging(c);
 
     if (result.shouldMerge()) {
-        IdealStateOperation::UP op(
-                new MergeOperation(BucketAndNodes(c.getBucket(), result.nodes()),
-                                   c.distributorConfig.getMaxNodesPerMerge()));
+        auto op = std::make_unique<MergeOperation>(BucketAndNodes(c.getBucket(), result.nodes()),
+                                                   c.distributorConfig.getMaxNodesPerMerge());
         op->setDetailedReason(result.reason());
         MaintenancePriority::Priority schedPri;
         if ((c.getBucketSpace() == document::FixedBucketSpaces::default_space())

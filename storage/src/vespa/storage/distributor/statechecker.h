@@ -6,7 +6,7 @@
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <unordered_set>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <map>
 #include <set>
 
@@ -74,7 +74,7 @@ public:
         // well as have the ability to quickly check if a node is in an ideal
         // location.
         std::vector<uint16_t>        idealState;
-        std::unordered_set<uint16_t> unorderedIdealState;
+        vespalib::hash_set<uint16_t> unorderedIdealState;
 
         const DistributorNodeContext&            node_ctx;
         const DistributorStripeOperationContext& op_ctx;

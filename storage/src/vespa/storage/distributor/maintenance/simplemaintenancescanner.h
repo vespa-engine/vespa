@@ -50,7 +50,7 @@ public:
     ~SimpleMaintenanceScanner();
 
     ScanResult scanNext() override;
-    void reset() override;
+    void reset();
 
     // TODO: move out into own interface!
     void prioritizeBucket(const document::Bucket &id);

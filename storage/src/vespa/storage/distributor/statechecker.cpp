@@ -4,6 +4,7 @@
 #include "distributor_stripe_component.h"
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vespalib/stllike/hash_set_insert.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.statechecker");
