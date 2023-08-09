@@ -155,13 +155,13 @@ DistributorBucketSpace::get_ideal_service_layer_nodes_bundle(document::BucketId 
     document::BucketId lookup_bucket(is_split_group_bucket(bucket) ? bucket.getUsedBits() : _distribution_bits, bucket.getId());
     auto itr = _ideal_nodes.find(lookup_bucket);
     if (itr != _ideal_nodes.end()) {
-        return itr->second;
+        return *itr->second;
     }
-    IdealServiceLayerNodesBundle ideal_nodes_bundle;
-    setup_ideal_nodes_bundle(ideal_nodes_bundle, *_distribution, *_clusterState, lookup_bucket);
+    auto ideal_nodes_bundle = std::make_unique<IdealServiceLayerNodesBundle>();
+    setup_ideal_nodes_bundle(*ideal_nodes_bundle, *_distribution, *_clusterState, lookup_bucket);
     auto insres = _ideal_nodes.insert(std::make_pair(lookup_bucket, std::move(ideal_nodes_bundle)));
     assert(insres.second);
-    return insres.first->second;
+    return *insres.first->second;
 }
 
 BucketOwnershipFlags

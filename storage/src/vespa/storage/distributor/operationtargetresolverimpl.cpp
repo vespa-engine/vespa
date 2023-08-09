@@ -56,15 +56,12 @@ BucketInstanceList::contains(lib::Node node) const {
 }
 
 void
-BucketInstanceList::add(BucketDatabase::Entry& e,
-                        const lib::IdealNodeList& idealState)
+BucketInstanceList::add(const BucketDatabase::Entry& e, const lib::IdealNodeList& idealState)
 {
     for (uint32_t i = 0; i < e.getBucketInfo().getNodeCount(); ++i) {
         const BucketCopy& copy(e.getBucketInfo().getNodeRef(i));
         lib::Node node(lib::NodeType::STORAGE, copy.getNode());
-        _instances.push_back(BucketInstance(
-                e.getBucketId(), copy.getBucketInfo(), node,
-                idealState.indexOf(node), copy.trusted()));
+        _instances.emplace_back(e.getBucketId(), copy.getBucketInfo(), node, idealState.indexOf(node), copy.trusted());
     }
 }
 
@@ -73,9 +70,9 @@ BucketInstanceList::populate(const document::BucketId& specificId, const Distrib
 {
     std::vector<BucketDatabase::Entry> entries;
     db.getParents(specificId, entries);
-    for (uint32_t i=0; i<entries.size(); ++i) {
-        lib::IdealNodeList idealNodes(make_node_list(distributor_bucket_space.get_ideal_service_layer_nodes_bundle(entries[i].getBucketId()).get_available_nonretired_or_maintenance_nodes()));
-        add(entries[i], idealNodes);
+    for (const auto & entry : entries) {
+        lib::IdealNodeList idealNodes(make_node_list(distributor_bucket_space.get_ideal_service_layer_nodes_bundle(entry.getBucketId()).get_available_nonretired_or_maintenance_nodes()));
+        add(entry, idealNodes);
     }
 }
 

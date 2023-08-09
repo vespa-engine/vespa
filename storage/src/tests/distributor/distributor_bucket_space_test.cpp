@@ -102,7 +102,7 @@ DistributorBucketSpaceTest::count_service_layer_buckets(const std::vector<Bucket
     CountVector result(3);
     std::vector<uint16_t> ideal_nodes;
     for (auto& bucket : buckets) {
-        auto &ideal_nodes_bundle = bucket_space.get_ideal_service_layer_nodes_bundle(bucket);
+        const auto & ideal_nodes_bundle = bucket_space.get_ideal_service_layer_nodes_bundle(bucket);
         for (uint32_t i = 0; i < 3; ++i) {
             switch (i) {
             case 0:
