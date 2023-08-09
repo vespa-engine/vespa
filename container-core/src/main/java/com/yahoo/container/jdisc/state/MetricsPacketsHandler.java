@@ -231,7 +231,10 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
                 GaugeMetric gauge = (GaugeMetric) value;
                 metrics.put(name + ".average", sanitizeDouble(gauge.getAverage()))
                         .put(name + ".last", sanitizeDouble(gauge.getLast()))
-                        .put(name + ".max", sanitizeDouble(gauge.getMax()));
+                        .put(name + ".max", sanitizeDouble(gauge.getMax()))
+                        .put(name + ".min", sanitizeDouble(gauge.getMin()))
+                        .put(name + ".sum", sanitizeDouble(gauge.getSum()))
+                        .put(name + ".count", gauge.getCount());
                 if (gauge.getPercentiles().isPresent()) {
                     for (Tuple2<String, Double> prefixAndValue : gauge.getPercentiles().get()) {
                         metrics.put(name + "." + prefixAndValue.first + "percentile", prefixAndValue.second.doubleValue());
@@ -255,6 +258,9 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
                 metrics.put(name + ".average", sanitizeDouble(gauge.getAverage()));
                 metrics.put(name + ".last", sanitizeDouble(gauge.getLast()));
                 metrics.put(name + ".max", sanitizeDouble(gauge.getMax()));
+                metrics.put(name + ".min", sanitizeDouble(gauge.getMin()));
+                metrics.put(name + ".sum", sanitizeDouble(gauge.getSum()));
+                metrics.put(name + ".count", gauge.getCount());
                 if (gauge.getPercentiles().isPresent()) {
                     for (Tuple2<String, Double> prefixAndValue : gauge.getPercentiles().get()) {
                         metrics.put(name + "." + prefixAndValue.first + "percentile", prefixAndValue.second.doubleValue());
