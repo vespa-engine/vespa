@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <unordered_set>
+#include <vespa/vespalib/stllike/hash_set.h>
 
 namespace storage::distributor::dbtransition {
 
-using OutdatedNodes = std::unordered_set<uint16_t>;
+using OutdatedNodes = vespalib::hash_set<uint16_t>;
 
 }

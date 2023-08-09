@@ -23,7 +23,7 @@ struct MockTickableStripe : TickableStripe {
                                const lib::Distribution&,
                                const lib::ClusterState&,
                                const char*,
-                               const std::unordered_set<uint16_t>&,
+                               const OutdatedNodes &,
                                const std::vector<dbtransition::Entry>&) override
     {
         abort();

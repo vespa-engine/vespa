@@ -25,7 +25,7 @@ struct AggregationTestingMockTickableStripe : MockTickableStripe {
     }
 
     void merge_entries_into_db(document::BucketSpace, api::Timestamp, const lib::Distribution&,
-                               const lib::ClusterState&, const char*, const std::unordered_set<uint16_t>&,
+                               const lib::ClusterState&, const char*, const OutdatedNodes &,
                                const std::vector<dbtransition::Entry>& entries_in) override {
         entries = entries_in;
     }
