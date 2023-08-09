@@ -44,7 +44,7 @@ OutputBuf::~OutputBuf() = default;
 
 vespalib::string serialize_state(const lib::ClusterState& state) {
     vespalib::asciistream as;
-    state.serialize(as, false);
+    state.serialize(as);
     return as.str();
 }
 

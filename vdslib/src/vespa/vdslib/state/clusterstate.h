@@ -38,7 +38,7 @@ public:
     ~ClusterState();
 
     std::string getTextualDifference(const ClusterState& other) const;
-    void serialize(vespalib::asciistream & out, bool ignoreNewFeatures) const;
+    void serialize(vespalib::asciistream & out) const;
 
     bool operator==(const ClusterState& other) const noexcept;
     bool operator!=(const ClusterState& other) const noexcept;
@@ -72,8 +72,8 @@ private:
     void printStateGroupwise(std::ostream& out, const Group&, bool verbose, const std::string& indent, bool rootGroup) const;
     void getTextualDifference(std::ostringstream& builder, const NodeType& type, const ClusterState& other) const;
     size_t printStateGroupwise(std::ostream& out, const Group&, bool verbose, const std::string& indent, const NodeType& type) const;
-    void serialize_nodes(vespalib::asciistream & out, bool ignoreNewFeatures, SeparatorPrinter & sep,
-                         const NodeType & nodeType, const std::vector<NodeStatePair> & nodeStates) const;
+    void serialize_nodes(vespalib::asciistream & out, SeparatorPrinter & sep, const NodeType & nodeType,
+                         const std::vector<NodeStatePair> & nodeStates) const;
     uint32_t           _version;
     NodeCounts         _nodeCount;
     const State*       _clusterState;

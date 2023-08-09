@@ -209,12 +209,11 @@ serialize_node(vespalib::asciistream & out, const Node & node, const NodeState &
 }
 
 void
-ClusterState::serialize_nodes(vespalib::asciistream & out, bool ignoreNewFeatures,
-                              SeparatorPrinter & sep, const NodeType & nodeType,
+ClusterState::serialize_nodes(vespalib::asciistream & out, SeparatorPrinter & sep, const NodeType & nodeType,
                               const std::vector<NodeStatePair> & nodeStates) const
 {
     uint16_t nodeCount = getNodeCount(nodeType);
-    if (ignoreNewFeatures || nodeCount > 0) {
+    if (nodeCount > 0) {
         out << sep.toString() << nodeType.serialize() << ":" << nodeCount;
         for (const auto & entry : nodeStates) {
             if (entry.first.getType() == nodeType) {
@@ -225,25 +224,25 @@ ClusterState::serialize_nodes(vespalib::asciistream & out, bool ignoreNewFeature
 }
 
 void
-ClusterState::serialize(vespalib::asciistream & out, bool ignoreNewFeatures) const
+ClusterState::serialize(vespalib::asciistream & out) const
 {
     SeparatorPrinter sep;
-    if (!ignoreNewFeatures && _version != 0) {
+    if (_version != 0) {
         out << sep.toString() << "version:" << _version;
     }
-    if (!ignoreNewFeatures && *_clusterState != State::UP) {
+    if (*_clusterState != State::UP) {
         out << sep.toString() << "cluster:" << _clusterState->serialize();
     }
-    if (!ignoreNewFeatures && _distributionBits != 16) {
+    if (_distributionBits != 16) {
         out << sep.toString() << "bits:" << _distributionBits;
     }
 
-    if (! ignoreNewFeatures && ((getNodeCount(NodeType::DISTRIBUTOR) + getNodeCount(NodeType::STORAGE)) == 0u)) return;
+    if ((getNodeCount(NodeType::DISTRIBUTOR) + getNodeCount(NodeType::STORAGE)) == 0u) return;
 
     std::vector<NodeStatePair> nodeStates(_nodeStates.cbegin(), _nodeStates.cend());
     std::sort(nodeStates.begin(), nodeStates.end(), [](const NodeStatePair &a, const NodeStatePair &b) { return a.first < b.first; });
-    serialize_nodes(out, ignoreNewFeatures, sep, NodeType::DISTRIBUTOR, nodeStates);
-    serialize_nodes(out, ignoreNewFeatures, sep, NodeType::STORAGE, nodeStates);
+    serialize_nodes(out, sep, NodeType::DISTRIBUTOR, nodeStates);
+    serialize_nodes(out, sep, NodeType::STORAGE, nodeStates);
 }
 
 bool
@@ -327,7 +326,7 @@ ClusterState::print(std::ostream& out, bool verbose, const std::string&) const
 {
     (void) verbose;
     vespalib::asciistream tmp;
-    serialize(tmp, false);
+    serialize(tmp);
     out << tmp.str();
 }
 

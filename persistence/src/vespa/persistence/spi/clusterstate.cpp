@@ -97,7 +97,7 @@ void ClusterState::serialize(vespalib::nbostream& o) const {
     assert(_distribution);
     assert(_state);
     vespalib::asciistream tmp;
-    _state->serialize(tmp, false);
+    _state->serialize(tmp);
     o << tmp.str() << _nodeIndex;
     o << _distribution->serialize();
 }
