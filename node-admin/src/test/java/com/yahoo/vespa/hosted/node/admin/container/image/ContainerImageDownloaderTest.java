@@ -25,11 +25,11 @@ public class ContainerImageDownloaderTest {
         TaskContext context = new TestTaskContext();
         DockerImage image = DockerImage.fromString("registry.example.com/repo/vespa:7.42");
 
-        assertFalse(downloader.get(context, image, RegistryCredentials.none), "Download started");
-        assertFalse(downloader.get(context, image, RegistryCredentials.none), "Download pending");
+        assertFalse(downloader.get(context, image, () -> RegistryCredentials.none), "Download started");
+        assertFalse(downloader.get(context, image, () -> RegistryCredentials.none), "Download pending");
         podman.completeDownloadOf(image);
         boolean downloadCompleted;
-        while (!(downloadCompleted = downloader.get(context, image, RegistryCredentials.none))) ;
+        while (!(downloadCompleted = downloader.get(context, image, () -> RegistryCredentials.none))) ;
         assertTrue(downloadCompleted, "Download completed");
     }
 

@@ -62,8 +62,8 @@ public class ContainerOperations {
     }
 
     /** Pull image asynchronously. Returns true if image is still downloading and false if download is complete */
-    public boolean pullImageAsyncIfNeeded(TaskContext context, DockerImage dockerImage, RegistryCredentials registryCredentials) {
-        return !imageDownloader.get(context, dockerImage, registryCredentials);
+    public boolean pullImageAsyncIfNeeded(TaskContext context, DockerImage dockerImage, RegistryCredentialsProvider credentialsProvider) {
+        return !imageDownloader.get(context, dockerImage, credentialsProvider);
     }
 
     /** Executes a command inside container identified by given context. Does NOT throw on non-zero exit code */

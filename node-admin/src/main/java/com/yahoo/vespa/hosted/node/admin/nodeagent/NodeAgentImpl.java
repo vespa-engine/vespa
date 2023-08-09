@@ -21,7 +21,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorE
 import com.yahoo.vespa.hosted.node.admin.container.Container;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerResources;
-import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
 import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentialsProvider;
 import com.yahoo.vespa.hosted.node.admin.maintenance.ContainerWireguardTask;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
@@ -431,9 +430,8 @@ public class NodeAgentImpl implements NodeAgent {
         NodeSpec node = context.node();
         if (node.wantedDockerImage().equals(container.map(c -> c.image()))) return false;
 
-        RegistryCredentials credentials = registryCredentialsProvider.get();
         return node.wantedDockerImage()
-                   .map(image -> containerOperations.pullImageAsyncIfNeeded(context, image, credentials))
+                   .map(image -> containerOperations.pullImageAsyncIfNeeded(context, image, registryCredentialsProvider))
                    .orElse(false);
     }
 

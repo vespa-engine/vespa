@@ -5,7 +5,7 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerEngine;
-import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
+import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentialsProvider;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,12 +40,12 @@ public class ContainerImageDownloader {
      *
      * @return true if the image download has completed.
      */
-    public boolean get(TaskContext context, DockerImage image, RegistryCredentials registryCredentials) {
+    public boolean get(TaskContext context, DockerImage image, RegistryCredentialsProvider credentialsProvider) {
         if (pendingDownloads.contains(image)) return false;
         if (containerEngine.hasImage(context, image)) return true;
         executorService.submit(() -> {
             try {
-                containerEngine.pullImage(context, image, registryCredentials);
+                containerEngine.pullImage(context, image, credentialsProvider.get());
             } catch (RuntimeException e) {
                 LOG.log(Level.SEVERE, "Failed to download container image " + image, e);
             } finally {
