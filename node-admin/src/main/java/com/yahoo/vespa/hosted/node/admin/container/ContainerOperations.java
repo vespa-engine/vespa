@@ -36,7 +36,7 @@ public class ContainerOperations {
 
     public ContainerOperations(ContainerEngine containerEngine, Cgroup cgroup, FileSystem fileSystem, Timer timer) {
         this.containerEngine = Objects.requireNonNull(containerEngine);
-        this.imageDownloader = new ContainerImageDownloader(containerEngine);
+        this.imageDownloader = new ContainerImageDownloader(containerEngine, timer);
         this.imagePruner = new ContainerImagePruner(containerEngine, timer);
         this.containerStatsCollector = new ContainerStatsCollector(containerEngine, cgroup, fileSystem);
     }
@@ -62,8 +62,8 @@ public class ContainerOperations {
     }
 
     /** Pull image asynchronously. Returns true if image is still downloading and false if download is complete */
-    public boolean pullImageAsyncIfNeeded(TaskContext context, DockerImage dockerImage, RegistryCredentials registryCredentials) {
-        return !imageDownloader.get(context, dockerImage, registryCredentials);
+    public boolean pullImageAsyncIfNeeded(TaskContext context, DockerImage dockerImage, RegistryCredentialsProvider credentialsProvider) {
+        return !imageDownloader.get(context, dockerImage, credentialsProvider);
     }
 
     /** Executes a command inside container identified by given context. Does NOT throw on non-zero exit code */

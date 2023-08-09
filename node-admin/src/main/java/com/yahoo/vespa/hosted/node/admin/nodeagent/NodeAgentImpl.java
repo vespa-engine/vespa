@@ -21,7 +21,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorE
 import com.yahoo.vespa.hosted.node.admin.container.Container;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerResources;
-import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
 import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentialsProvider;
 import com.yahoo.vespa.hosted.node.admin.maintenance.ContainerWireguardTask;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
@@ -431,9 +430,8 @@ public class NodeAgentImpl implements NodeAgent {
         NodeSpec node = context.node();
         if (node.wantedDockerImage().equals(container.map(c -> c.image()))) return false;
 
-        RegistryCredentials credentials = registryCredentialsProvider.get();
         return node.wantedDockerImage()
-                   .map(image -> containerOperations.pullImageAsyncIfNeeded(context, image, credentials))
+                   .map(image -> containerOperations.pullImageAsyncIfNeeded(context, image, registryCredentialsProvider))
                    .orElse(false);
     }
 
@@ -487,17 +485,14 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         switch (node.state()) {
-            case ready:
-            case reserved:
-            case failed:
-            case inactive:
-            case parked:
+            case ready, reserved, failed, inactive, parked -> {
                 storageMaintainer.syncLogs(context, true);
+                if (node.state() == NodeState.reserved) downloadImageIfNeeded(context, container);
                 removeContainerIfNeededUpdateContainerState(context, container);
                 updateNodeRepoWithCurrentAttributes(context, Optional.empty());
                 stopServicesIfNeeded(context);
-                break;
-            case active:
+            }
+            case active -> {
                 storageMaintainer.syncLogs(context, true);
                 storageMaintainer.cleanDiskIfFull(context);
                 storageMaintainer.handleCoreDumpsForContainer(context, container, false);
@@ -550,11 +545,9 @@ public class NodeAgentImpl implements NodeAgent {
                     orchestrator.resume(context.hostname().value());
                     suspendedInOrchestrator = false;
                 }
-                break;
-            case provisioned:
-                nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
-                break;
-            case dirty:
+            }
+            case provisioned -> nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
+            case dirty -> {
                 removeContainerIfNeededUpdateContainerState(context, container);
                 context.log(logger, "State is " + node.state() + ", will delete application storage and mark node as ready");
                 credentialsMaintainers.forEach(maintainer -> maintainer.clearCredentials(context));
@@ -562,9 +555,7 @@ public class NodeAgentImpl implements NodeAgent {
                 storageMaintainer.archiveNodeStorage(context);
                 updateNodeRepoWithCurrentAttributes(context, Optional.empty());
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
-                break;
-            default:
-                throw ConvergenceException.ofError("UNKNOWN STATE " + node.state().name());
+            }
         }
     }
 
