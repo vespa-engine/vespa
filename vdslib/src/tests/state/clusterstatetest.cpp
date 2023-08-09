@@ -13,10 +13,10 @@ using ::testing::ContainsRegex;
 
 namespace storage::lib {
 
-#define VERIFY3(source, result, type, typestr) { \
+#define VERIFY3(source, result, typestr) { \
     vespalib::asciistream ost; \
     try { \
-        state->serialize(ost, type); \
+        state->serialize(ost); \
     } catch (std::exception& e) { \
         FAIL() << ("Failed to serialize system state " \
                 + state->toString(true) + " in " + std::string(typestr) \
@@ -26,24 +26,18 @@ namespace storage::lib {
               vespalib::string(typestr) + " \"" + ost.str() + "\"") << state->toString(true); \
 }
 
-#define VERIFY2(serialized, result, testOld, testNew) { \
+#define VERIFY2(serialized, result) { \
     std::unique_ptr<ClusterState> state; \
     try { \
         state.reset(new ClusterState(serialized)); \
     } catch (std::exception& e) { \
-        FAIL() << ("Failed to parse '" + std::string(serialized) \
-                     + "': " + e.what()); \
+        FAIL() << ("Failed to parse '" + std::string(serialized) + "': " + e.what()); \
     } \
-    if (testOld) VERIFY3(serialized, result, true, "Old") \
-    if (testNew) VERIFY3(serialized, result, false, "New") \
+    VERIFY3(serialized, result, "New") \
 }
 
-#define VERIFYSAMEOLD(serialized) VERIFY2(serialized, serialized, true, false)
-#define VERIFYOLD(serialized, result) VERIFY2(serialized, result, true, false)
-#define VERIFYSAMENEW(serialized) VERIFY2(serialized, serialized, false, true)
-#define VERIFYNEW(serialized, result) VERIFY2(serialized, result, false, true)
-#define VERIFYSAME(serialized) VERIFY2(serialized, serialized, true, true)
-#define VERIFY(serialized, result) VERIFY2(serialized, result, true, true)
+#define VERIFYSAMENEW(serialized) VERIFY2(serialized, serialized)
+#define VERIFYNEW(serialized, result) VERIFY2(serialized, result)
 
 #define VERIFY_FAIL(serialized, error) { \
     try{ \
