@@ -74,7 +74,6 @@ private:
     vespalib::string         _diversityCutoffStrategy;
     bool                     _softTimeoutEnabled;
     double                   _softTimeoutTailCost;
-    double                   _softTimeoutFactor;
     double                   _global_filter_lower_limit;
     double                   _global_filter_upper_limit;
     MutateOperation          _mutateOnMatch;
@@ -210,11 +209,6 @@ public:
      * @return the array size
      **/
     uint32_t getArraySize() const { return _arraySize; }
-
-    /** whether match phase should do graceful degradation */
-    bool hasMatchPhaseDegradation() const {
-        return (_degradationAttribute.size() > 0);
-    }
 
     /** get name of attribute to use for graceful degradation in match phase */
     vespalib::string getDegradationAttribute() const {
@@ -390,20 +384,10 @@ public:
      **/
     void setIgnoreDefaultRankFeatures(bool flag) { _ignoreDefaultRankFeatures = flag; }
 
-    /**
-     * Get the flag indicating whether we should ignore the default
-     * rank features (the ones specified by the plugins themselves)
-     *
-     * @return true means ignore default rank features
-     **/
-    bool getIgnoreDefaultRankFeatures() { return _ignoreDefaultRankFeatures; }
-
     void setSoftTimeoutEnabled(bool v) { _softTimeoutEnabled = v; }
     bool getSoftTimeoutEnabled() const { return _softTimeoutEnabled; }
     void setSoftTimeoutTailCost(double v) { _softTimeoutTailCost = v; }
     double getSoftTimeoutTailCost() const { return _softTimeoutTailCost; }
-    void setSoftTimeoutFactor(double v) { _softTimeoutFactor = v; }
-    double getSoftTimeoutFactor() const { return _softTimeoutFactor; }
 
     void set_global_filter_lower_limit(double v) { _global_filter_lower_limit = v; }
     double get_global_filter_lower_limit() const { return _global_filter_lower_limit; }
