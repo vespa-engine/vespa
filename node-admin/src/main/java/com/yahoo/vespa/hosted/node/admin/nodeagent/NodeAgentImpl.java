@@ -487,6 +487,7 @@ public class NodeAgentImpl implements NodeAgent {
         switch (node.state()) {
             case ready, reserved, failed, inactive, parked -> {
                 storageMaintainer.syncLogs(context, true);
+                if (node.state() == NodeState.reserved) downloadImageIfNeeded(context, container);
                 removeContainerIfNeededUpdateContainerState(context, container);
                 updateNodeRepoWithCurrentAttributes(context, Optional.empty());
                 stopServicesIfNeeded(context);
