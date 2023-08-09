@@ -27,10 +27,19 @@ void verify(const SmallVector<T,N> &vec, std::vector<uint32_t> expect, size_t ex
     EXPECT_EQ(pos, end);
 }
 
+struct EqOnly {
+    int value;
+    bool operator==(const EqOnly &rhs) const { return (value == rhs.value); }
+};
+
 template <typename T, size_t N, size_t M>
 void verify_eq(const SmallVector<T,N> &a, const SmallVector<T,M> &b) {
     EXPECT_TRUE(a == b);
     EXPECT_TRUE(b == a);
+    if constexpr (! std::is_same<T,EqOnly>::value) {
+        EXPECT_FALSE(a < b);
+        EXPECT_FALSE(b < a);
+    }
 }
 
 template <typename T, size_t N, size_t M>
@@ -227,11 +236,6 @@ TEST(SmallVectorTest, auto_select_N) {
     EXPECT_EQ(vec3.capacity(), 4);
 }
 
-struct EqOnly {
-    int value;
-    bool operator==(const EqOnly &rhs) const { return (value == rhs.value); }
-};
-
 TEST(SmallVectorTest, equal_operator) {
     verify_eq(SmallVector<int,2>(), SmallVector<int,8>());
     verify_eq(SmallVector<int,2>({1,2,3}), SmallVector<int,8>({1,2,3}));
@@ -241,6 +245,30 @@ TEST(SmallVectorTest, equal_operator) {
                   SmallVector<EqOnly>({EqOnly{1},EqOnly{2}}));
     verify_not_eq(SmallVector<EqOnly>({EqOnly{1},EqOnly{2},EqOnly{3}}),
                   SmallVector<EqOnly>({EqOnly{1},EqOnly{5},EqOnly{3}}));
+}
+
+template <typename T, size_t N, size_t M>
+void verify_le(const SmallVector<T,N> &a, const SmallVector<T,M> &b) {
+    EXPECT_TRUE(a < b);
+    EXPECT_FALSE(b < a);
+}
+
+TEST(SmallVectorTest, less_operator) {
+    const auto a = SmallVector<int>({});
+    const auto b = SmallVector<int>({1,2,3});
+    const auto c = SmallVector<int>({1,2,3,4});
+    const auto d = SmallVector<int>({1,2,4});
+    const auto e = SmallVector<int>({3,2});
+    verify_le(a, b);
+    verify_le(a, c);
+    verify_le(a, d);
+    verify_le(a, e);
+    verify_le(b, c);
+    verify_le(b, d);
+    verify_le(b, e);
+    verify_le(c, d);
+    verify_le(c, e);
+    verify_le(d, e);
 }
 
 // to check "back() const"

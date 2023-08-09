@@ -233,15 +233,13 @@ template <typename T, size_t N, size_t M>
 bool operator< (const SmallVector<T,N> &a,
                 const SmallVector<T,M> &b) noexcept
 {
-    if (a.size() != b.size()) {
-        return a.size() < b.size();
-    }
-    for (size_t i = 0; i < a.size(); ++i) {
+    size_t common_sz = std::min(a.size(), b.size());
+    for (size_t i = 0; i < common_sz; ++i) {
         if (!(a[i] == b[i])) {
             return a[i] < b[i];
         }
     }
-    return false;
+    return a.size() < b.size();
 }
 
 
