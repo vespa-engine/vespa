@@ -470,7 +470,7 @@ ClusterState::printStateGroupwise(std::ostream& out, const Group& group, bool ve
             << getNumberSpec(group.getNodes()) << "] {";
         size_t printed = printStateGroupwise(out, group, verbose, indent, NodeType::DISTRIBUTOR) +
                          printStateGroupwise(out, group, verbose, indent, NodeType::STORAGE);
-        if (printed > 0 ) {
+        if (printed == 0) {
             out << "\n" << indent << "  All nodes in group up and available.";
         }
     } else {
