@@ -17,6 +17,8 @@ TEST("sync execute") {
     DoIt exe2;
     DoIt exe3;
     DoIt exe4;
+    DoIt exe5;
+    DoIt exe6;
     FNET_Transport transport;
     ASSERT_TRUE(transport.execute(&exe1));
     ASSERT_TRUE(transport.Start());
@@ -26,14 +28,16 @@ TEST("sync execute") {
     ASSERT_TRUE(exe2.gate.getCount() == 0u);
     ASSERT_TRUE(transport.execute(&exe3));
     transport.ShutDown(false);
-    ASSERT_TRUE(!transport.execute(&exe4));
+    uint32_t expect_cnt_4 = transport.execute(&exe4) ? 0 : 1;
     transport.sync();
     transport.WaitFinished();
+    ASSERT_TRUE(!transport.execute(&exe5));
     transport.sync();
     ASSERT_TRUE(exe1.gate.getCount() == 0u);
     ASSERT_TRUE(exe2.gate.getCount() == 0u);
     ASSERT_TRUE(exe3.gate.getCount() == 0u);
-    ASSERT_TRUE(exe4.gate.getCount() == 1u);
+    ASSERT_TRUE(exe4.gate.getCount() == expect_cnt_4);
+    ASSERT_TRUE(exe5.gate.getCount() == 1u);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
