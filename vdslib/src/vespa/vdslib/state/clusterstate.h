@@ -69,7 +69,7 @@ private:
     void removeExtraElements(const NodeType& type);
     void printStateGroupwise(std::ostream& out, const Group&, bool verbose, const std::string& indent, bool rootGroup) const;
     void getTextualDifference(std::ostringstream& builder, const NodeType& type, const ClusterState& other) const;
-    bool printStateGroupwise(std::ostream& out, const Group&, bool verbose, const std::string& indent, const NodeType& type) const;
+    size_t printStateGroupwise(std::ostream& out, const Group&, bool verbose, const std::string& indent, const NodeType& type) const;
     uint32_t           _version;
     NodeCounts         _nodeCount;
     const State*       _clusterState;

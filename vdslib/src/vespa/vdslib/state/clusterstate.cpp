@@ -432,22 +432,22 @@ std::string getNumberSpec(const std::vector<T>& numbers) {
 
 }
 
-bool
+size_t
 ClusterState::printStateGroupwise(std::ostream& out, const Group& group, bool verbose,
                                   const std::string& indent, const NodeType& nodeType) const
 {
     NodeState defState(nodeType, State::UP);
-    bool printedAny = false;
+    size_t printed = 0;
     for (uint16_t nodeId : group.getNodes()) {
         Node node(nodeType, nodeId);
         const NodeState& state(getNodeState(node));
         if (state != defState) {
             out << "\n" << indent << "  " << node << ": ";
             state.print(out, verbose, indent + "    ");
-            printedAny = true;
+            printed++;
         }
     }
-    return printedAny;
+    return printed;
 }
 
 void
@@ -468,9 +468,9 @@ ClusterState::printStateGroupwise(std::ostream& out, const Group& group, bool ve
         out << " " << group.getNodes().size() << " node"
             << (group.getNodes().size() != 1 ? "s" : "") << " ["
             << getNumberSpec(group.getNodes()) << "] {";
-        bool printedAny = printStateGroupwise(out, group, verbose, indent, NodeType::DISTRIBUTOR);
-        printedAny = printedAny || printStateGroupwise(out, group, verbose, indent, NodeType::STORAGE);
-        if (!printedAny) {
+        size_t printed = printStateGroupwise(out, group, verbose, indent, NodeType::DISTRIBUTOR) +
+                         printStateGroupwise(out, group, verbose, indent, NodeType::STORAGE);
+        if (printed > 0 ) {
             out << "\n" << indent << "  All nodes in group up and available.";
         }
     } else {
