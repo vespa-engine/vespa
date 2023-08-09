@@ -41,11 +41,20 @@ SimpleMaintenanceScanner::PendingMaintenanceStats::merge(const PendingMaintenanc
     perNodeStats.merge(rhs.perNodeStats);
 }
 
-SimpleMaintenanceScanner::PendingMaintenanceStats::PendingMaintenanceStats() = default;
+SimpleMaintenanceScanner::PendingMaintenanceStats::PendingMaintenanceStats() noexcept = default;
 SimpleMaintenanceScanner::PendingMaintenanceStats::~PendingMaintenanceStats() = default;
 SimpleMaintenanceScanner::PendingMaintenanceStats::PendingMaintenanceStats(const PendingMaintenanceStats &) = default;
+SimpleMaintenanceScanner::PendingMaintenanceStats::PendingMaintenanceStats(PendingMaintenanceStats &&) noexcept = default;
 SimpleMaintenanceScanner::PendingMaintenanceStats &
-SimpleMaintenanceScanner::PendingMaintenanceStats::operator = (const PendingMaintenanceStats &) = default;
+SimpleMaintenanceScanner::PendingMaintenanceStats::operator = (PendingMaintenanceStats &&) noexcept = default;
+
+SimpleMaintenanceScanner::PendingMaintenanceStats
+SimpleMaintenanceScanner::PendingMaintenanceStats::reset() {
+    PendingMaintenanceStats prev = std::move(*this);
+    global = GlobalMaintenanceStats();
+    perNodeStats.reset(prev.perNodeStats.numNodes());
+    return prev;
+}
 
 MaintenanceScanner::ScanResult
 SimpleMaintenanceScanner::scanNext()
@@ -68,12 +77,12 @@ SimpleMaintenanceScanner::scanNext()
     }
 }
 
-void
+SimpleMaintenanceScanner::PendingMaintenanceStats
 SimpleMaintenanceScanner::reset()
 {
     _bucketCursor = document::BucketId();
     _bucketSpaceItr = _bucketSpaceRepo.begin();
-    _pendingMaintenance = PendingMaintenanceStats();
+    return _pendingMaintenance.reset();
 }
 
 void

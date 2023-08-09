@@ -23,11 +23,14 @@ public:
         void merge(const GlobalMaintenanceStats& rhs) noexcept;
     };
     struct PendingMaintenanceStats {
-        PendingMaintenanceStats();
+        PendingMaintenanceStats() noexcept;
         PendingMaintenanceStats(const PendingMaintenanceStats &);
-        PendingMaintenanceStats &operator = (const PendingMaintenanceStats &);
+        PendingMaintenanceStats &operator = (const PendingMaintenanceStats &) = delete;
+        PendingMaintenanceStats(PendingMaintenanceStats &&) noexcept;
+        PendingMaintenanceStats &operator = (PendingMaintenanceStats &&) noexcept;
         ~PendingMaintenanceStats();
-        GlobalMaintenanceStats global;
+        PendingMaintenanceStats reset();
+        GlobalMaintenanceStats      global;
         NodeMaintenanceStatsTracker perNodeStats;
 
         void merge(const PendingMaintenanceStats& rhs);
@@ -50,11 +53,12 @@ public:
     ~SimpleMaintenanceScanner() override;
 
     ScanResult scanNext() override;
-    void reset();
+    PendingMaintenanceStats reset();
 
     // TODO: move out into own interface!
     void prioritizeBucket(const document::Bucket &id);
 
+    // TODO Only for testing
     const PendingMaintenanceStats& getPendingMaintenanceStats() const noexcept {
         return _pendingMaintenance;
     }

@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "node_maintenance_stats_tracker.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_map_equal.hpp>
 #include <ostream>
 
 namespace storage::distributor {
@@ -19,6 +21,54 @@ merge_bucket_spaces_stats(NodeMaintenanceStatsTracker::BucketSpacesStats& dest,
     }
 }
 
+}
+
+void
+NodeMaintenanceStatsTracker::incMovingOut(uint16_t node, document::BucketSpace bucketSpace) {
+    ++_node_stats[node][bucketSpace].movingOut;
+    ++_total_stats.movingOut;
+}
+
+void
+NodeMaintenanceStatsTracker::incSyncing(uint16_t node, document::BucketSpace bucketSpace) {
+    ++_node_stats[node][bucketSpace].syncing;
+    ++_total_stats.syncing;
+}
+
+void
+NodeMaintenanceStatsTracker::incCopyingIn(uint16_t node, document::BucketSpace bucketSpace) {
+    ++_node_stats[node][bucketSpace].copyingIn;
+    ++_total_stats.copyingIn;
+}
+
+void
+NodeMaintenanceStatsTracker::incCopyingOut(uint16_t node, document::BucketSpace bucketSpace) {
+    ++_node_stats[node][bucketSpace].copyingOut;
+    ++_total_stats.copyingOut;
+}
+
+void
+NodeMaintenanceStatsTracker::NodeMaintenanceStatsTracker::incTotal(uint16_t node, document::BucketSpace bucketSpace) {
+    ++_node_stats[node][bucketSpace].total;
+    ++_total_stats.total;
+}
+
+const NodeMaintenanceStats&
+NodeMaintenanceStatsTracker::forNode(uint16_t node, document::BucketSpace bucketSpace) const {
+    auto nodeItr = _node_stats.find(node);
+    if (nodeItr != _node_stats.end()) {
+        auto bucketSpaceItr = nodeItr->second.find(bucketSpace);
+        if (bucketSpaceItr != nodeItr->second.end()) {
+            return bucketSpaceItr->second;
+        }
+    }
+    return _emptyNodeMaintenanceStats;
+}
+
+bool
+NodeMaintenanceStatsTracker::operator==(const NodeMaintenanceStatsTracker& rhs) const noexcept {
+    return ((_node_stats == rhs._node_stats) &&
+            (_max_observed_time_since_last_gc == rhs._max_observed_time_since_last_gc));
 }
 
 void
@@ -45,13 +95,22 @@ operator<<(std::ostream& os, const NodeMaintenanceStats& stats)
     return os;
 }
 
-NodeMaintenanceStatsTracker::NodeMaintenanceStatsTracker()
+NodeMaintenanceStatsTracker::NodeMaintenanceStatsTracker() noexcept
     : _node_stats(),
       _total_stats(),
       _max_observed_time_since_last_gc(0)
 {}
 
+NodeMaintenanceStatsTracker::NodeMaintenanceStatsTracker(NodeMaintenanceStatsTracker &&) noexcept = default;
+NodeMaintenanceStatsTracker & NodeMaintenanceStatsTracker::operator =(NodeMaintenanceStatsTracker &&) noexcept = default;
+NodeMaintenanceStatsTracker::NodeMaintenanceStatsTracker(const NodeMaintenanceStatsTracker &) = default;
 NodeMaintenanceStatsTracker::~NodeMaintenanceStatsTracker() = default;
+
+void
+NodeMaintenanceStatsTracker::reset(size_t nodes) {
+    _node_stats.resize(nodes);
+    _total_stats = NodeMaintenanceStats();
+}
 
 }
 
