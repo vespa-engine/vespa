@@ -79,13 +79,11 @@ RemoveLocationOperation::onStart(DistributorStripeMessageSender& sender)
         std::vector<uint16_t> nodes = e->getNodes();
 
         for (uint32_t i = 0; i < nodes.size(); i++) {
-            std::shared_ptr<api::RemoveLocationCommand> command(
-                    new api::RemoveLocationCommand(
-                            _msg->getDocumentSelection(),
-                            document::Bucket(_msg->getBucket().getBucketSpace(), e.getBucketId())));
+            auto command = std::make_shared<api::RemoveLocationCommand>(_msg->getDocumentSelection(),
+                                                                        document::Bucket(_msg->getBucket().getBucketSpace(), e.getBucketId()));
 
             copyMessageSettings(*_msg, *command);
-            _tracker.queueCommand(command, nodes[i]);
+            _tracker.queueCommand(std::move(command), nodes[i]);
             sent = true;
         }
     }

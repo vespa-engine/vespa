@@ -101,15 +101,18 @@ PersistenceMessageTrackerImpl::revert(
 }
 
 void
-PersistenceMessageTrackerImpl::queueMessageBatch(const std::vector<MessageTracker::ToSend>& messages) {
+PersistenceMessageTrackerImpl::queueMessageBatch(std::vector<MessageTracker::ToSend> messages) {
     _messageBatches.emplace_back();
-    for (const auto & message : messages) {
+    auto & batch = _messageBatches.back();
+    batch.reserve(messages.size());
+    reserve_more_commands(messages.size());
+    for (auto & message : messages) {
         if (_reply) {
             message._msg->getTrace().setLevel(_reply->getTrace().getLevel());
         }
 
-        _messageBatches.back().push_back(message._msg->getMsgId());
-        queueCommand(message._msg, message._target);
+        batch.push_back(message._msg->getMsgId());
+        queueCommand(std::move(message._msg), message._target);
     }
 }
 

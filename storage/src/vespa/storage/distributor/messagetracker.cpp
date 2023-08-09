@@ -33,21 +33,14 @@ MessageTracker::flushQueue(MessageSender& sender)
 uint16_t
 MessageTracker::handleReply(api::BucketReply& reply)
 {
-    std::map<uint64_t, uint16_t>::iterator found = _sentMessages.find(reply.getMsgId());
-    if (found == _sentMessages.end()) {
+    const auto found = _sentMessages.find(reply.getMsgId());
+    if (found == _sentMessages.end()) [[unlikely]] {
         LOG(warning, "Received reply %" PRIu64 " for callback which we have no recollection of", reply.getMsgId());
         return (uint16_t)-1;
-    } else {
-        uint16_t node = found->second;
-        _sentMessages.erase(found);
-        return node;
     }
-}
-
-bool
-MessageTracker::finished()
-{
-    return _sentMessages.empty();
+    uint16_t node = found->second;
+    _sentMessages.erase(found);
+    return node;
 }
 
 }
