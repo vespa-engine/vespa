@@ -18,6 +18,7 @@ namespace storage::lib {
 class Distribution;
 class Group;
 struct NodeData;
+struct SeparatorPrinter;
 
 class ClusterState : public document::Printable {
 public:
@@ -70,6 +71,7 @@ private:
     void printStateGroupwise(std::ostream& out, const Group&, bool verbose, const std::string& indent, bool rootGroup) const;
     void getTextualDifference(std::ostringstream& builder, const NodeType& type, const ClusterState& other) const;
     size_t printStateGroupwise(std::ostream& out, const Group&, bool verbose, const std::string& indent, const NodeType& type) const;
+    void serialize_nodes(vespalib::asciistream & out, bool ignoreNewFeatures, SeparatorPrinter & sep, const NodeType & nodeType) const;
     uint32_t           _version;
     NodeCounts         _nodeCount;
     const State*       _clusterState;
