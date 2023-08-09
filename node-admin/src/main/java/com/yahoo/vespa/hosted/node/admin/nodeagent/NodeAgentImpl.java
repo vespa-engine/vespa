@@ -546,7 +546,6 @@ public class NodeAgentImpl implements NodeAgent {
                     suspendedInOrchestrator = false;
                 }
             }
-            case provisioned -> nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
             case dirty -> {
                 removeContainerIfNeededUpdateContainerState(context, container);
                 context.log(logger, "State is " + node.state() + ", will delete application storage and mark node as ready");
@@ -556,6 +555,7 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(context, Optional.empty());
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
             }
+            default -> throw ConvergenceException.ofError("Unexpected state " + node.state().name());
         }
     }
 
