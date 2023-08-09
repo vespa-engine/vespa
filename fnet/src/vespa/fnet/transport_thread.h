@@ -52,6 +52,7 @@ private:
     std::atomic<bool>        _shutdown;       // should stop event loop ?
     std::atomic<bool>        _finished;       // event loop stopped ?
     std::set<FNET_IServerAdapter*> _detaching; // server adapters being detached
+    bool _reject_events; // the transport thread does not want any more events
 
     /**
      * Add an IOComponent to the list of components. This operation is
@@ -169,12 +170,12 @@ private:
      **/
     bool EventLoopIteration();
 
-    bool IsShutDown() const noexcept {
+    [[nodiscard]] bool should_shut_down() const noexcept {
         return _shutdown.load(std::memory_order_relaxed);
     }
 
     [[nodiscard]] bool is_finished() const noexcept {
-        return _finished.load(std::memory_order_relaxed);
+        return _finished.load(std::memory_order_acquire);
     }
 
 public:

@@ -119,7 +119,7 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
     size_t qLen;
     {
         std::unique_lock<std::mutex> guard(_lock);
-        if (IsShutDown()) {
+        if (_reject_events) {
             guard.unlock();
             DiscardEvent(cpacket, context);
             return false;
@@ -243,7 +243,8 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _started(false),
       _shutdown(false),
       _finished(false),
-      _detaching()
+      _detaching(),
+      _reject_events(false)
 {
     trapsigpipe();
 }
@@ -384,9 +385,9 @@ FNET_TransportThread::ShutDown(bool waitFinished)
     bool wasEmpty = false;
     {
         std::lock_guard<std::mutex> guard(_lock);
-        if (!IsShutDown()) {
+        if (!should_shut_down()) {
             _shutdown.store(true, std::memory_order_relaxed);
-            wasEmpty  = _queue.IsEmpty_NoLock();
+            wasEmpty = _queue.IsEmpty_NoLock();
         }
     }
     if (wasEmpty) {
@@ -503,7 +504,7 @@ FNET_TransportThread::handle_event(FNET_IOComponent &ctx, bool read, bool write)
 bool
 FNET_TransportThread::EventLoopIteration() {
 
-    if (!IsShutDown()) {
+    if (!should_shut_down()) {
         int msTimeout = vespalib::count_ms(time_tools().event_timeout());
         // obtain I/O events
         _selector.poll(msTimeout);
@@ -530,7 +531,7 @@ FNET_TransportThread::EventLoopIteration() {
         FlushDeleteList();
     }                      // -- END OF MAIN EVENT LOOP --
 
-    if (!IsShutDown())
+    if (!should_shut_down())
         return true;
     if (is_finished())
         return false;
@@ -552,10 +553,22 @@ FNET_TransportThread::checkTimedoutComponents(vespalib::duration timeout) {
 
 void
 FNET_TransportThread::endEventLoop() {
+    // close and remove all I/O Components
+    FNET_IOComponent *component = _componentsHead;
+    while (component != nullptr) {
+        assert(component == _componentsHead);
+        FNET_IOComponent *tmp = component;
+        component = component->_ioc_next;
+        RemoveComponent(tmp);
+        tmp->Close();
+        tmp->internal_subref();
+    }
+
     // flush event queue
     {
         std::lock_guard<std::mutex> guard(_lock);
         _queue.FlushPackets_NoLock(&_myQueue);
+        _reject_events = true;
     }
 
     // discard remaining events
@@ -569,16 +582,6 @@ FNET_TransportThread::endEventLoop() {
         }
     }
 
-    // close and remove all I/O Components
-    FNET_IOComponent *component = _componentsHead;
-    while (component != nullptr) {
-        assert(component == _componentsHead);
-        FNET_IOComponent *tmp = component;
-        component = component->_ioc_next;
-        RemoveComponent(tmp);
-        tmp->Close();
-        tmp->internal_subref();
-    }
     assert(_componentsHead == nullptr &&
            _componentsTail == nullptr &&
            _timeOutHead    == nullptr &&
@@ -588,7 +591,7 @@ FNET_TransportThread::endEventLoop() {
 
     {
         std::lock_guard<std::mutex> guard(_shutdownLock);
-        _finished.store(true, std::memory_order_relaxed);
+        _finished.store(true, std::memory_order_release);
         _shutdownCond.notify_all();
     }
 
