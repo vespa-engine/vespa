@@ -27,9 +27,9 @@ public:
     void set_available_nonretired_or_maintenance_nodes(std::vector<uint16_t> available_nonretired_or_maintenance_nodes) {
         _available_nonretired_or_maintenance_nodes = std::move(available_nonretired_or_maintenance_nodes);
     }
-    const std::vector<uint16_t> & get_available_nodes() const { return _available_nodes; }
-    const std::vector<uint16_t> & get_available_nonretired_nodes() const { return _available_nonretired_nodes; }
-    const std::vector<uint16_t> & get_available_nonretired_or_maintenance_nodes() const {
+    const std::vector<uint16_t> & get_available_nodes() const noexcept { return _available_nodes; }
+    const std::vector<uint16_t> & get_available_nonretired_nodes() const noexcept { return _available_nonretired_nodes; }
+    const std::vector<uint16_t> & get_available_nonretired_or_maintenance_nodes() const noexcept {
         return _available_nonretired_or_maintenance_nodes;
     }
 };

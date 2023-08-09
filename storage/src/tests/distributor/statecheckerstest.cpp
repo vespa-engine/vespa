@@ -1383,9 +1383,8 @@ std::string StateCheckersTest::testGarbageCollection(
     getBucketDatabase().update(e);
 
     NodeMaintenanceStatsTracker statsTracker;
-    StateChecker::Context c(node_context(), operation_context(),
-                            getDistributorBucketSpace(), statsTracker,
-                            makeDocumentBucket(e.getBucketId()));
+    StateChecker::Context c(node_context(), operation_context(), getDistributorBucketSpace(),
+                            statsTracker, makeDocumentBucket(e.getBucketId()));
     getClock().setAbsoluteTimeInSeconds(nowTimestamp);
     return testStateChecker(checker, c, false, PendingMessage(), includePriority, includeSchedulingPri);
 }
@@ -1394,38 +1393,29 @@ TEST_F(StateCheckersTest, garbage_collection) {
     // BucketId(17, 0) has id (and thus 'hash') 0x4400000000000000. With a
     // check interval modulo of 3600, this implies a start point of 848.
 
-    EXPECT_EQ("NO OPERATIONS GENERATED",
-              testGarbageCollection(900, 3600 + 847, 3600));
+    EXPECT_EQ("NO OPERATIONS GENERATED", testGarbageCollection(900, 3600 + 847, 3600));
 
-    EXPECT_EQ("[Needs garbage collection: Last check at 900, current time 4448, "
-              "configured interval 3600]",
+    EXPECT_EQ("[Needs garbage collection: Last check at 900, current time 4448, configured interval 3600]",
               testGarbageCollection(900, 3600 + 848, 3600));
 
-    EXPECT_EQ("[Needs garbage collection: Last check at 3, current time 4000, "
-              "configured interval 3600]",
+    EXPECT_EQ("[Needs garbage collection: Last check at 3, current time 4000, configured interval 3600]",
               testGarbageCollection(3, 4000, 3600));
 
     // GC start point 3648.
-    EXPECT_EQ("NO OPERATIONS GENERATED",
-              testGarbageCollection(3, 3647, 8000));
+    EXPECT_EQ("NO OPERATIONS GENERATED", testGarbageCollection(3, 3647, 8000));
 
-    EXPECT_EQ("[Needs garbage collection: Last check at 3, current time 4000, "
-              "configured interval 3600]",
+    EXPECT_EQ("[Needs garbage collection: Last check at 3, current time 4000, configured interval 3600]",
               testGarbageCollection(3, 4000, 3600));
 
     // GC explicitly disabled.
-    EXPECT_EQ("NO OPERATIONS GENERATED",
-              testGarbageCollection(3, 4000, 0));
+    EXPECT_EQ("NO OPERATIONS GENERATED", testGarbageCollection(3, 4000, 0));
 
-    EXPECT_EQ("NO OPERATIONS GENERATED",
-              testGarbageCollection(3, 3, 1));
+    EXPECT_EQ("NO OPERATIONS GENERATED", testGarbageCollection(3, 3, 1));
 
-    EXPECT_EQ("[Needs garbage collection: Last check at 3, current time 4000, "
-              "configured interval 300] (pri 200)",
+    EXPECT_EQ("[Needs garbage collection: Last check at 3, current time 4000, configured interval 300] (pri 200)",
               testGarbageCollection(3, 4000, 300, 1, true));
 
-    EXPECT_EQ("NO OPERATIONS GENERATED",
-              testGarbageCollection(3850, 4000, 300, 1));
+    EXPECT_EQ("NO OPERATIONS GENERATED", testGarbageCollection(3850, 4000, 300, 1));
 }
 
 TEST_F(StateCheckersTest, gc_ops_are_prioritized_with_low_priority_category) {
@@ -1597,7 +1587,7 @@ TEST_F(StateCheckersTest, context_populates_ideal_state_containers) {
     StateChecker::Context c(node_context(), operation_context(),
                             getDistributorBucketSpace(), statsTracker, makeDocumentBucket({17, 0}));
 
-    ASSERT_THAT(c.idealState, ElementsAre(1, 3));
+    ASSERT_THAT(c.idealState(), ElementsAre(1, 3));
     // TODO replace with UnorderedElementsAre once we can build gmock without issues
     std::vector<uint16_t> ideal_state(c.unorderedIdealState.begin(), c.unorderedIdealState.end());
     std::sort(ideal_state.begin(), ideal_state.end());
