@@ -3,6 +3,7 @@
 #include "messagetracker.h"
 #include <vespa/storageapi/messageapi/bucketcommand.h>
 #include <vespa/storageapi/messageapi/bucketreply.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -19,10 +20,11 @@ MessageTracker::~MessageTracker() = default;
 void
 MessageTracker::flushQueue(MessageSender& sender)
 {
-    for (uint32_t i = 0; i < _commandQueue.size(); i++) {
-        _commandQueue[i]._msg->setAddress(api::StorageMessageAddress::create(_cluster_ctx.cluster_name_ptr(), lib::NodeType::STORAGE, _commandQueue[i]._target));
-        _sentMessages[_commandQueue[i]._msg->getMsgId()] = _commandQueue[i]._target;
-        sender.sendCommand(_commandQueue[i]._msg);
+    _sentMessages.resize(_commandQueue.size());
+    for (const auto & toSend : _commandQueue) {
+        toSend._msg->setAddress(api::StorageMessageAddress::create(_cluster_ctx.cluster_name_ptr(), lib::NodeType::STORAGE, toSend._target));
+        _sentMessages[toSend._msg->getMsgId()] = toSend._target;
+        sender.sendCommand(toSend._msg);
     }
 
     _commandQueue.clear();

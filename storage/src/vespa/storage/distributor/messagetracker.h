@@ -4,8 +4,7 @@
 #include <vespa/storage/common/cluster_context.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vector>
-#include <map>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 namespace storage::api {
     class BucketCommand;
@@ -49,10 +48,10 @@ public:
     bool finished();
 
 protected:
-    std::vector<ToSend>          _commandQueue;
+    std::vector<ToSend>                    _commandQueue;
     // Keeps track of which node a message was sent to.
-    std::map<uint64_t, uint16_t> _sentMessages;
-    const ClusterContext&        _cluster_ctx;
+    vespalib::hash_map<uint64_t, uint16_t> _sentMessages;
+    const ClusterContext&                  _cluster_ctx;
 };
 
 }
