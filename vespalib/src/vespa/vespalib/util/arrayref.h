@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <array>
 
 namespace vespalib {
 
@@ -17,6 +18,8 @@ public:
     constexpr ArrayRef(T * v, size_t sz) noexcept : _v(v), _sz(sz) { }
     template<typename A=std::allocator<T>>
     ArrayRef(std::vector<T, A> & v) noexcept : _v(v.data()), _sz(v.size()) { }
+    template<size_t SZ>
+    ArrayRef(std::array<T, SZ> & v) noexcept : _v(v.data()), _sz(SZ) { }
     T & operator [] (size_t i) noexcept { return _v[i]; }
     const T & operator [] (size_t i) const noexcept { return _v[i]; }
     T * data() noexcept { return _v; }
@@ -36,6 +39,8 @@ public:
     constexpr ConstArrayRef(const T *v, size_t sz) noexcept : _v(v), _sz(sz) { }
     template<typename A=std::allocator<T>>
     ConstArrayRef(const std::vector<T, A> & v) noexcept : _v(v.data()), _sz(v.size()) { }
+    template<size_t SZ>
+    ConstArrayRef(const std::array<T, SZ> & v) noexcept : _v(v.data()), _sz(SZ) { }
     ConstArrayRef(const ArrayRef<T> & v) noexcept : _v(v.data()), _sz(v.size()) { }
     constexpr ConstArrayRef() noexcept : _v(nullptr), _sz(0) {}
     const T & operator [] (size_t i) const noexcept { return _v[i]; }

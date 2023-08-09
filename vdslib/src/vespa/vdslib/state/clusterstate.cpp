@@ -250,7 +250,7 @@ ClusterState::serialize(vespalib::asciistream & out, bool ignoreNewFeatures) con
 }
 
 bool
-ClusterState::operator==(const ClusterState& other) const
+ClusterState::operator==(const ClusterState& other) const noexcept
 {
     return (_version == other._version &&
             *_clusterState == *other._clusterState &&
@@ -260,13 +260,13 @@ ClusterState::operator==(const ClusterState& other) const
 }
 
 bool
-ClusterState::operator!=(const ClusterState& other) const
+ClusterState::operator!=(const ClusterState& other) const noexcept
 {
     return !(*this == other);
 }
 
 uint16_t
-ClusterState::getNodeCount(const NodeType& type) const
+ClusterState::getNodeCount(const NodeType& type) const noexcept
 {
     return _nodeCount[type];
 }
@@ -282,7 +282,7 @@ const NodeState&
 ClusterState::getNodeState(const Node& node) const
 {
     // If it actually has an entry in map, return that
-    std::map<Node, NodeState>::const_iterator it = _nodeStates.find(node);
+    auto it = _nodeStates.find(node);
     if (it != _nodeStates.end()) return it->second;
 
     // If beyond node count, the node is down.

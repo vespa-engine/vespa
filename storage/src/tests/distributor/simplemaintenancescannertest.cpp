@@ -165,7 +165,7 @@ TEST_F(SimpleMaintenanceScannerTest, pending_maintenance_operation_statistics) {
                               "split bucket: 0, join bucket: 0, "
                               "set bucket state: 0, garbage collection: 0");
     {
-        auto stats(_scanner->getPendingMaintenanceStats());
+        const auto & stats = _scanner->getPendingMaintenanceStats();
         EXPECT_EQ(expectedEmpty, stringifyGlobalPendingStats(stats));
     }
 
@@ -173,7 +173,7 @@ TEST_F(SimpleMaintenanceScannerTest, pending_maintenance_operation_statistics) {
 
     // All mock operations generated have the merge type.
     {
-        auto stats(_scanner->getPendingMaintenanceStats());
+        const auto & stats = _scanner->getPendingMaintenanceStats();
         std::string expected("delete bucket: 0, merge bucket: 2, "
                              "split bucket: 0, join bucket: 0, "
                              "set bucket state: 0, garbage collection: 0");
@@ -182,7 +182,7 @@ TEST_F(SimpleMaintenanceScannerTest, pending_maintenance_operation_statistics) {
 
     _scanner->reset();
     {
-        auto stats(_scanner->getPendingMaintenanceStats());
+        const auto & stats = _scanner->getPendingMaintenanceStats();
         EXPECT_EQ(expectedEmpty, stringifyGlobalPendingStats(stats));
     }
 }
@@ -191,14 +191,14 @@ TEST_F(SimpleMaintenanceScannerTest, per_node_maintenance_stats_are_tracked) {
     addBucketToDb(1);
     addBucketToDb(3);
     {
-        auto stats(_scanner->getPendingMaintenanceStats());
+        const auto & stats = _scanner->getPendingMaintenanceStats();
         NodeMaintenanceStats emptyStats;
         EXPECT_EQ(emptyStats, stats.perNodeStats.forNode(0, makeBucketSpace()));
     }
     ASSERT_TRUE(scanEntireDatabase(2));
     // Mock is currently hardwired to increment movingOut for node 1 and
     // copyingIn for node 2 per bucket iterated (we've got 2).
-    auto stats(_scanner->getPendingMaintenanceStats());
+        const auto & stats = _scanner->getPendingMaintenanceStats();
     {
         NodeMaintenanceStats wantedNode1Stats;
         wantedNode1Stats.movingOut = 2;

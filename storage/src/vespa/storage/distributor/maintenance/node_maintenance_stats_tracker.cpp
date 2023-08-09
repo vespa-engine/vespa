@@ -7,16 +7,6 @@ namespace storage::distributor {
 
 const NodeMaintenanceStats NodeMaintenanceStatsTracker::_emptyNodeMaintenanceStats;
 
-void
-NodeMaintenanceStats::merge(const NodeMaintenanceStats& rhs)
-{
-    movingOut  += rhs.movingOut;
-    syncing    += rhs.syncing;
-    copyingIn  += rhs.copyingIn;
-    copyingOut += rhs.copyingOut;
-    total      += rhs.total;
-}
-
 namespace {
 
 void

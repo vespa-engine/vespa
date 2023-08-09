@@ -145,7 +145,6 @@ private:
     std::unordered_map<uint16_t, uint32_t> getMinReplica() const override;
 
     PerNodeBucketSpacesStats getBucketSpacesStats() const override;
-    SimpleMaintenanceScanner::PendingMaintenanceStats pending_maintenance_stats() const;
 
     /**
      * Atomically publish internal metrics to external ideal state metrics.

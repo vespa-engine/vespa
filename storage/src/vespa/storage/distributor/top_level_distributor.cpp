@@ -360,15 +360,6 @@ TopLevelDistributor::getBucketSpacesStats() const
     return result;
 }
 
-SimpleMaintenanceScanner::PendingMaintenanceStats
-TopLevelDistributor::pending_maintenance_stats() const {
-    SimpleMaintenanceScanner::PendingMaintenanceStats result;
-    for (const auto& stripe : _stripes) {
-        result.merge(stripe->pending_maintenance_stats());
-    }
-    return result;
-}
-
 void
 TopLevelDistributor::propagateInternalScanMetricsToExternal()
 {

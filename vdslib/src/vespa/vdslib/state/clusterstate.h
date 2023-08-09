@@ -45,23 +45,23 @@ public:
     std::string getTextualDifference(const ClusterState& other) const;
     void serialize(vespalib::asciistream & out, bool ignoreNewFeatures) const;
 
-    bool operator==(const ClusterState& other) const;
-    bool operator!=(const ClusterState& other) const;
+    bool operator==(const ClusterState& other) const noexcept;
+    bool operator!=(const ClusterState& other) const noexcept;
 
     uint32_t getVersion() const { return _version; }
     /**
      * Returns the smallest number above the highest node index found of the
      * given type that is not down.
      */
-    uint16_t getNodeCount(const NodeType& type) const;
-    uint16_t getDistributionBitCount() const { return _distributionBits; }
-    const State& getClusterState() const { return *_clusterState; }
+    uint16_t getNodeCount(const NodeType& type) const noexcept;
+    uint16_t getDistributionBitCount() const noexcept { return _distributionBits; }
+    const State& getClusterState() const noexcept { return *_clusterState; }
     const NodeState& getNodeState(const Node& node) const;
 
-    void setVersion(uint32_t version) { _version = version; }
+    void setVersion(uint32_t version) noexcept { _version = version; }
     void setClusterState(const State& state);
     void setNodeState(const Node& node, const NodeState& state);
-    void setDistributionBitCount(uint16_t count) { _distributionBits = count; }
+    void setDistributionBitCount(uint16_t count) noexcept { _distributionBits = count; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 

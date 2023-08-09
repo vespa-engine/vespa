@@ -13,22 +13,22 @@ SimpleMaintenanceScanner::SimpleMaintenanceScanner(BucketPriorityDatabase& bucke
       _priorityGenerator(priorityGenerator),
       _bucketSpaceRepo(bucketSpaceRepo),
       _bucketSpaceItr(_bucketSpaceRepo.begin()),
-      _bucketCursor()
+      _bucketCursor(),
+      _pendingMaintenance()
 {
 }
 
 SimpleMaintenanceScanner::~SimpleMaintenanceScanner() = default;
 
 bool
-SimpleMaintenanceScanner::GlobalMaintenanceStats::operator==(const GlobalMaintenanceStats& rhs) const
+SimpleMaintenanceScanner::GlobalMaintenanceStats::operator==(const GlobalMaintenanceStats& rhs) const noexcept
 {
     return pending == rhs.pending;
 }
 
 void
-SimpleMaintenanceScanner::GlobalMaintenanceStats::merge(const GlobalMaintenanceStats& rhs)
+SimpleMaintenanceScanner::GlobalMaintenanceStats::merge(const GlobalMaintenanceStats& rhs) noexcept
 {
-    assert(pending.size() == rhs.pending.size());
     for (size_t i = 0; i < pending.size(); ++i) {
         pending[i] += rhs.pending[i];
     }
@@ -99,8 +99,7 @@ SimpleMaintenanceScanner::prioritizeBucket(const document::Bucket &bucket)
 }
 
 std::ostream&
-operator<<(std::ostream& os,
-           const SimpleMaintenanceScanner::GlobalMaintenanceStats& stats)
+operator<<(std::ostream& os, const SimpleMaintenanceScanner::GlobalMaintenanceStats& stats)
 {
     using MO = MaintenanceOperation;
     os << "delete bucket: "        << stats.pending[MO::DELETE_BUCKET]
