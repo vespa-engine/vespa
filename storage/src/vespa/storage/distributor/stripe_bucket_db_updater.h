@@ -33,6 +33,7 @@ class StripeBucketDBUpdater final
       public api::MessageHandler
 {
 public:
+    using OutdatedNodes = dbtransition::OutdatedNodes;
     StripeBucketDBUpdater(const DistributorNodeContext& node_ctx,
                           DistributorStripeOperationContext& op_ctx,
                           DistributorStripeInterface& owner,
@@ -178,7 +179,7 @@ private:
                                const lib::Distribution& distribution,
                                const lib::ClusterState& new_state,
                                const char* storage_up_states,
-                               const std::unordered_set<uint16_t>& outdated_nodes,
+                               const OutdatedNodes & outdated_nodes,
                                const std::vector<dbtransition::Entry>& entries);
 
     void enqueueRecheckUntilPendingStateEnabled(uint16_t node, const document::Bucket&);

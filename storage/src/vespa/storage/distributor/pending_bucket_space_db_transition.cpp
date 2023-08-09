@@ -113,10 +113,7 @@ PendingBucketSpaceDbTransition::DbMerger::removeCopiesFromNodesThatWereRequested
             && (info.getTimestamp() < _creation_timestamp)
             && e->removeNode(entryNode, TrustedUpdate::DEFER))
         {
-            LOG(spam,
-                "Removed bucket %s from node %d",
-                bucketId.toString().c_str(),
-                entryNode);
+            LOG(spam, "Removed bucket %s from node %d", bucketId.toString().c_str(), entryNode);
             updated = true;
             // After removing current node, getNodeRef(i) will point to the _next_ node, so don't increment `i`.
         } else {
@@ -391,8 +388,7 @@ PendingBucketSpaceDbTransition::markAllAvailableNodesAsRequiringRequest()
 }
 
 void
-PendingBucketSpaceDbTransition::addAdditionalNodesToOutdatedSet(
-        const std::unordered_set<uint16_t>& nodes)
+PendingBucketSpaceDbTransition::addAdditionalNodesToOutdatedSet(const OutdatedNodes & nodes)
 {
     const uint16_t nodeCount(newStateStorageNodeCount());
     for (uint16_t node : nodes) {
