@@ -71,7 +71,8 @@ BucketInstanceList::populate(const document::BucketId& specificId, const Distrib
     std::vector<BucketDatabase::Entry> entries;
     db.getParents(specificId, entries);
     for (const auto & entry : entries) {
-        lib::IdealNodeList idealNodes(make_node_list(distributor_bucket_space.get_ideal_service_layer_nodes_bundle(entry.getBucketId()).get_available_nonretired_or_maintenance_nodes()));
+        lib::IdealNodeList idealNodes(make_node_list(distributor_bucket_space.get_ideal_service_layer_nodes_bundle(
+                entry.getBucketId()).available_nonretired_or_maintenance_nodes()));
         add(entry, idealNodes);
     }
 }
@@ -127,7 +128,8 @@ BucketInstanceList::extendToEnoughCopies(
                                                     : _instances[0]._bucket);
     newTarget = leastSpecificLeafBucketInSubtree(newTarget, mostSpecificId, db);
 
-    lib::IdealNodeList idealNodes(make_node_list(distributor_bucket_space.get_ideal_service_layer_nodes_bundle(newTarget).get_available_nonretired_nodes()));
+    lib::IdealNodeList idealNodes(make_node_list(
+            distributor_bucket_space.get_ideal_service_layer_nodes_bundle(newTarget).available_nonretired_nodes()));
     for (uint32_t i=0; i<idealNodes.size(); ++i) {
         if (!contains(idealNodes[i])) {
             _instances.push_back(BucketInstance(

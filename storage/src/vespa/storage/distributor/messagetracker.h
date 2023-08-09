@@ -26,8 +26,8 @@ public:
     };
 
     MessageTracker(const ClusterContext& cluster_context);
-    MessageTracker(MessageTracker&&) = default;
-    MessageTracker& operator=(MessageTracker&&) = delete;
+    MessageTracker(MessageTracker&&) noexcept = default;
+    MessageTracker& operator=(MessageTracker&&) noexcept = delete;
     MessageTracker(const MessageTracker &) = delete;
     MessageTracker& operator=(const MessageTracker&) = delete;
     ~MessageTracker();

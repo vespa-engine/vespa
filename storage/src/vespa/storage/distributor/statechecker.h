@@ -75,7 +75,6 @@ public:
         // well as have the ability to quickly check if a node is in an ideal
         // location.
         const IdealServiceLayerNodesBundle & idealStateBundle;
-        vespalib::hash_set<uint16_t> unorderedIdealState;
 
         const DistributorNodeContext&            node_ctx;
         const DistributorStripeOperationContext& op_ctx;
@@ -84,7 +83,7 @@ public:
         const bool                               merges_inhibited_in_bucket_space;
 
         const BucketDatabase::Entry& getSiblingEntry() const noexcept { return siblingEntry; }
-        const std::vector<uint16_t> & idealState() const noexcept { return idealStateBundle.get_available_nonretired_or_maintenance_nodes(); }
+        const std::vector<uint16_t> & idealState() const noexcept { return idealStateBundle.available_nonretired_or_maintenance_nodes(); }
 
         document::Bucket getBucket() const noexcept { return bucket; }
         document::BucketId getBucketId() const noexcept { return bucket.getBucketId(); }

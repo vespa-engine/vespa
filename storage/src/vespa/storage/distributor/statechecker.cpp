@@ -78,9 +78,7 @@ StateChecker::Context::Context(const DistributorNodeContext& node_ctx_in,
       db(distributorBucketSpace.getBucketDatabase()),
       stats(statsTracker),
       merges_inhibited_in_bucket_space(distributorBucketSpace.merges_inhibited())
-{
-    unorderedIdealState.insert(idealState().begin(), idealState().end());
-}
+{ }
 
 StateChecker::Context::~Context() = default;
 

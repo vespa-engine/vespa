@@ -1588,10 +1588,9 @@ TEST_F(StateCheckersTest, context_populates_ideal_state_containers) {
                             getDistributorBucketSpace(), statsTracker, makeDocumentBucket({17, 0}));
 
     ASSERT_THAT(c.idealState(), ElementsAre(1, 3));
-    // TODO replace with UnorderedElementsAre once we can build gmock without issues
-    std::vector<uint16_t> ideal_state(c.unorderedIdealState.begin(), c.unorderedIdealState.end());
-    std::sort(ideal_state.begin(), ideal_state.end());
-    ASSERT_THAT(ideal_state, ElementsAre(1, 3));
+    for (uint16_t node : c.idealState()) {
+        ASSERT_TRUE(c.idealStateBundle.is_nonretired_or_maintenance(node));
+    }
 }
 
 namespace {
@@ -1606,8 +1605,7 @@ public:
     explicit StateCheckerRunner(StateCheckersTest& fixture);
     ~StateCheckerRunner();
 
-    StateCheckerRunner& addToDb(const document::BucketId& bid,
-                                const std::string& bucketInfo)
+    StateCheckerRunner& addToDb(const document::BucketId& bid, const std::string& bucketInfo)
     {
         _fixture.addNodesToBucketDB(bid, bucketInfo);
         return *this;
@@ -1642,8 +1640,7 @@ public:
         Checker checker;
         StateChecker::Context c(_fixture.node_context(), _fixture.operation_context(),
                                 _fixture.getDistributorBucketSpace(), _statsTracker, makeDocumentBucket(bid));
-        _result = _fixture.testStateChecker(
-                checker, c, false, StateCheckersTest::PendingMessage(), false);
+        _result = _fixture.testStateChecker(checker, c, false, StateCheckersTest::PendingMessage(), false);
     }
 
     const std::string& result() const { return _result; }
