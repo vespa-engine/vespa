@@ -3,15 +3,9 @@
 #include "bucket_spaces_stats_provider.h"
 #include "distributor_host_info_reporter.h"
 #include "min_replica_provider.h"
-#include "pendingmessagetracker.h"
-
 #include <set>
 
-using std::set;
-using std::unordered_map;
-
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 using BucketSpacesStats = BucketSpacesStatsProvider::BucketSpacesStats;
 using PerNodeBucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats;
@@ -48,10 +42,10 @@ writeBucketSpacesStats(vespalib::JsonStream& stream,
 
 void
 outputStorageNodes(vespalib::JsonStream& output,
-                   const unordered_map<uint16_t, uint32_t>& minReplica,
+                   const MinReplicaMap & minReplica,
                    const PerNodeBucketSpacesStats& bucketSpacesStats)
 {
-    set<uint16_t> nodes;
+    std::set<uint16_t> nodes;
     for (const auto& element : minReplica) {
         nodes.insert(element.first);
     }
@@ -104,6 +98,5 @@ DistributorHostInfoReporter::report(vespalib::JsonStream& output)
     output << End();
 }
 
-} // distributor
-} // storage
+}
 

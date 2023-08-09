@@ -550,7 +550,7 @@ void DistributorStripe::startExternalOperations() {
     _fetchedMessages.clear();
 }
 
-std::unordered_map<uint16_t, uint32_t>
+MinReplicaMap
 DistributorStripe::getMinReplica() const
 {
     std::lock_guard guard(_metricLock);

@@ -218,7 +218,7 @@ private:
     /**
      * Return a copy of the latest min replica data, see MinReplicaProvider.
      */
-    std::unordered_map<uint16_t, uint32_t> getMinReplica() const override;
+    MinReplicaMap getMinReplica() const override;
 
     PerNodeBucketSpacesStats getBucketSpacesStats() const override;
 

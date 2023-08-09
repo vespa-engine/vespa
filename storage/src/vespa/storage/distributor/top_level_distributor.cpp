@@ -340,10 +340,10 @@ TopLevelDistributor::propagate_default_distribution_thread_unsafe(
     }
 }
 
-std::unordered_map<uint16_t, uint32_t>
+MinReplicaMap
 TopLevelDistributor::getMinReplica() const
 {
-    std::unordered_map<uint16_t, uint32_t> result;
+    MinReplicaMap result;
     for (const auto& stripe : _stripes) {
         merge_min_replica_stats(result, stripe->getMinReplica());
     }
