@@ -75,7 +75,7 @@ public abstract class BindingPattern implements Comparable<BindingPattern> {
     /** Returns true if pattern will match any port (if present) in uri **/
     public boolean matchesAnyPort() { return originalPort().filter(p -> !p.equals(WILDCARD_PATTERN)).isEmpty(); }
 
-    protected Optional<String> originalPort() {
+    public Optional<String> originalPort() {
         return port();
     }
 

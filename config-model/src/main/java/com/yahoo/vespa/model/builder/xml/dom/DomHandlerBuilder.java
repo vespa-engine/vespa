@@ -64,7 +64,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilderB
         UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
         if (portBindingOverride.isEmpty()) return Set.of(bindingPattern);
         return portBindingOverride.stream()
-                .map(bindingPattern::withPort)
+                .map(bindingPattern::withOverriddenPort)
                 .toList();
     }
 

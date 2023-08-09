@@ -1149,7 +1149,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
         if (portBindingOverride.isEmpty()) return Set.of(bindingPattern);
         return portBindingOverride.stream()
-                .map(bindingPattern::withPort)
+                .map(bindingPattern::withOverriddenPort)
                 .toList();
     }
 
