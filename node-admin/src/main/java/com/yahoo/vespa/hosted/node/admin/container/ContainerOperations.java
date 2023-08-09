@@ -36,7 +36,7 @@ public class ContainerOperations {
 
     public ContainerOperations(ContainerEngine containerEngine, Cgroup cgroup, FileSystem fileSystem, Timer timer) {
         this.containerEngine = Objects.requireNonNull(containerEngine);
-        this.imageDownloader = new ContainerImageDownloader(containerEngine);
+        this.imageDownloader = new ContainerImageDownloader(containerEngine, timer);
         this.imagePruner = new ContainerImagePruner(containerEngine, timer);
         this.containerStatsCollector = new ContainerStatsCollector(containerEngine, cgroup, fileSystem);
     }

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.container.image;
 
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerEngineMock;
@@ -21,7 +22,7 @@ public class ContainerImageDownloaderTest {
     @Timeout(5_000)
     void test_download() {
         ContainerEngineMock podman = new ContainerEngineMock().asyncImageDownload(true);
-        ContainerImageDownloader downloader = new ContainerImageDownloader(podman);
+        ContainerImageDownloader downloader = new ContainerImageDownloader(podman, new TestTimer());
         TaskContext context = new TestTaskContext();
         DockerImage image = DockerImage.fromString("registry.example.com/repo/vespa:7.42");
 
