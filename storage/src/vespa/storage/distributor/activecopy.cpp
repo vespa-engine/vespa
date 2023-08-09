@@ -24,9 +24,9 @@ namespace std {
 
 namespace storage::distributor {
 
-ActiveCopy::ActiveCopy(uint16_t node, const BucketDatabase::Entry& e, const std::vector<uint16_t>& idealState) :
-    _nodeIndex(node),
-    _ideal(0xffff)
+ActiveCopy::ActiveCopy(uint16_t node, const BucketDatabase::Entry& e, const std::vector<uint16_t>& idealState)
+    : _nodeIndex(node),
+      _ideal(0xffff)
 {
     const BucketCopy* copy = e->getNode(node);
     assert(copy != nullptr);

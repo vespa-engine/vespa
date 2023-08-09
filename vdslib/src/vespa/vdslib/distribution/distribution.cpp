@@ -494,8 +494,7 @@ Distribution::splitNodesIntoLeafGroups(IndexList nodeList) const
     for (auto node : nodeList) {
         const Group* group((node < _node2Group.size()) ? _node2Group[node] : nullptr);
         if (group == nullptr) {
-            LOGBP(warning, "Node %u is not assigned to a group. "
-                           "Should not happen?", node);
+            LOGBP(warning, "Node %u is not assigned to a group. Should not happen?", node);
         } else {
             assert(group->isLeafGroup());
             nodes[group->getIndex()].push_back(node);
