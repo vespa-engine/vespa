@@ -189,10 +189,16 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
                     "gauge.metric.average" : 0.2,
                     "gauge.metric.last" : 0.2,
                     "gauge.metric.max" : 0.2,
+                    "gauge.metric.min" : 0.2,
+                    "gauge.metric.sum" : 0.2,
+                    "gauge.metric.count" : 1,
                     "configserver.requests.count" : 120,
                     "lockAttempt.lockedLoad.average" : 500.0,
                     "lockAttempt.lockedLoad.last" : 500.0,
                     "lockAttempt.lockedLoad.max" : 500.0,
+                    "lockAttempt.lockedLoad.min" : 500.0,
+                    "lockAttempt.lockedLoad.sum" : 500.0,
+                    "lockAttempt.lockedLoad.count" : 1,
                     "counter.metric.count" : 5
                   }
                 }
@@ -210,9 +216,9 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
                     "host" : "some-hostname"
                   },
                   "metrics" : {
-                    "lockAttempt.lockedLoad.max" : 500.0,
                     "configserver.requests.count" : 120,
-                    "lockAttempt.lockedLoad.average" : 500.0
+                    "lockAttempt.lockedLoad.average" : 500.0,
+                    "lockAttempt.lockedLoad.max" : 500.0
                   }
                 }
                 """;
