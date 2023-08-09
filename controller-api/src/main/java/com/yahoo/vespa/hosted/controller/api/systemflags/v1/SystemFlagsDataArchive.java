@@ -182,7 +182,9 @@ public class SystemFlagsDataArchive {
         if (rawData.isBlank()) {
             flagData = new FlagData(directoryDeducedFlagId);
         } else {
-            Set<ZoneId> zones = force ? zoneRegistry.zones().all().zones().stream().map(ZoneApi::getVirtualId).collect(Collectors.toSet())
+            Set<ZoneId> zones = force ? Stream.concat(Stream.of(ZoneId.ofVirtualControllerZone()),
+                                                      zoneRegistry.zones().all().zones().stream().map(ZoneApi::getVirtualId))
+                                              .collect(Collectors.toSet())
                                       : Set.of();
             String normalizedRawData = normalizeJson(rawData, zones);
             flagData = FlagData.deserialize(normalizedRawData);
