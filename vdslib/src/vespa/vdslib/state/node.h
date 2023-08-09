@@ -22,6 +22,7 @@ public:
 
     const NodeType& getType() const noexcept { return *_type; }
     uint16_t getIndex() const noexcept { return _index; }
+    uint32_t hash() const noexcept { return (_index << 1) | *_type; }
 
     bool operator==(const Node& other) const noexcept {
         return (other._index == _index && *other._type == *_type);
