@@ -63,11 +63,10 @@ BucketInfoBase<NodeSeq>::getTrustedCount() const noexcept {
 
 template <typename NodeSeq>
 bool
-BucketInfoBase<NodeSeq>::consistentNodes(bool countInvalidAsConsistent) const noexcept {
+BucketInfoBase<NodeSeq>::consistentNodes() const noexcept {
     int compareIndex = 0;
     for (uint32_t i = 1; i < _nodes.size(); i++) {
-        if (!_nodes[i].consistentWith(_nodes[compareIndex],
-                                      countInvalidAsConsistent)) return false;
+        if (!_nodes[i].consistentWith(_nodes[compareIndex])) return false;
     }
     return true;
 }

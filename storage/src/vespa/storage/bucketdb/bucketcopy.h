@@ -7,10 +7,10 @@ namespace storage {
 
 class BucketCopy {
 private:
-    uint64_t _timestamp;
+    uint64_t        _timestamp;
     api::BucketInfo _info;
-    uint16_t _flags;
-    uint16_t _node;
+    uint16_t        _flags;
+    uint16_t        _node;
 
 public:
     static const int TRUSTED = 1;
@@ -18,9 +18,7 @@ public:
     BucketCopy() noexcept
         : _timestamp(0), _flags(0), _node(0xffff) {}
 
-    BucketCopy(uint64_t timestamp,
-               uint16_t nodeIdx,
-               const api::BucketInfo& info) noexcept
+    BucketCopy(uint64_t timestamp, uint16_t nodeIdx, const api::BucketInfo& info) noexcept
         : _timestamp(timestamp),
           _info(info),
           _flags(0),
@@ -76,16 +74,14 @@ public:
         _info.setActive(setactive);
     }
 
-    bool consistentWith(const BucketCopy& other,
-                        bool countInvalidAsConsistent = false) const noexcept
-    {
+    bool consistentWith(const BucketCopy& other) const noexcept {
         // If both are valid, check checksum and doc count.
         if (valid() && other.valid()) {
             return (getChecksum() == other.getChecksum()
                     && getDocumentCount() == other.getDocumentCount());
         }
 
-        return countInvalidAsConsistent;
+        return false;
     }
 
     void print(std::ostream&, bool verbose, const std::string& indent) const;
@@ -93,9 +89,7 @@ public:
     std::string toString() const;
 
     bool operator==(const BucketCopy& other) const noexcept {
-        return
-            getBucketInfo() == other.getBucketInfo() &&
-            _flags == other._flags;
+        return (getBucketInfo() == other.getBucketInfo()) && (_flags == other._flags);
     }
 };
 

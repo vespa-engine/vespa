@@ -78,7 +78,7 @@ public:
      * @param countInCompleteAsInconsistent If false, nodes that are incomplete
      *       are always counted as consistent with complete nodes.
      */
-    bool consistentNodes(bool countInvalidAsConsistent = false) const noexcept;
+    bool consistentNodes() const noexcept;
 
     void print(std::ostream&, bool verbose, const std::string& indent) const;
 
@@ -140,8 +140,8 @@ public:
 
 class BucketInfo : public BucketInfoBase<std::vector<BucketCopy>> {
 public:
-    BucketInfo();
-    BucketInfo(uint32_t lastGarbageCollection, std::vector<BucketCopy> nodes);
+    BucketInfo() noexcept;
+    BucketInfo(uint32_t lastGarbageCollection, std::vector<BucketCopy> nodes) noexcept;
     ~BucketInfo();
 
     BucketInfo(const BucketInfo&);
@@ -159,13 +159,13 @@ public:
     /**
        Update trusted flags if bucket is now complete and consistent.
     */
-    void updateTrusted();
+    void updateTrusted() noexcept;
 
     /**
        Removes any historical information on trustedness, and sets the bucket copies to
        trusted if they are now complete and consistent.
     */
-    void resetTrusted();
+    void resetTrusted() noexcept;
 
     /**
        Adds the given node.
@@ -184,8 +184,7 @@ public:
     /**
        Simplified API for the common case of inserting one node. See addNodes().
     */
-    void addNode(const BucketCopy& newCopy,
-                 const std::vector<uint16_t>& recommendedOrder);
+    void addNode(const BucketCopy& newCopy, const std::vector<uint16_t>& recommendedOrder);
 
     /**
        Updates bucket information for a node. Does nothing if the node
