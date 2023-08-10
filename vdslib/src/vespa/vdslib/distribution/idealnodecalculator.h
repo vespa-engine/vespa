@@ -22,25 +22,20 @@ class ClusterState;
  * unneeded details, and make it easily printable.
  */
 class IdealNodeList : public document::Printable {
-    std::vector<Node> _idealNodes;
-
 public:
-    IdealNodeList();
+    IdealNodeList() noexcept;
     ~IdealNodeList();
 
     void push_back(const Node& node) {
         _idealNodes.push_back(node);
     }
 
-    const Node& operator[](uint32_t i) const { return _idealNodes[i]; }
-    uint32_t size() const { return _idealNodes.size(); }
-    bool contains(const Node& n) const {
-        for (uint32_t i=0; i<_idealNodes.size(); ++i) {
-            if (n == _idealNodes[i]) return true;
-        }
-        return false;
+    const Node& operator[](uint32_t i) const noexcept { return _idealNodes[i]; }
+    uint32_t size() const noexcept { return _idealNodes.size(); }
+    bool contains(const Node& n) const noexcept {
+        return indexOf(n) != 0xffff;
     }
-    uint16_t indexOf(const Node& n) const {
+    uint16_t indexOf(const Node& n) const noexcept {
         for (uint16_t i=0; i<_idealNodes.size(); ++i) {
             if (n == _idealNodes[i]) return i;
         }
@@ -48,6 +43,8 @@ public:
     }
 
     void print(std::ostream& out, bool, const std::string &) const override;
+private:
+    std::vector<Node> _idealNodes;
 };
 
 /**
@@ -64,17 +61,15 @@ public:
 
     virtual ~IdealNodeCalculator() = default;
 
-    virtual IdealNodeList getIdealNodes(const NodeType&,
-                                        const document::BucketId&,
-                                        UpStates upStates = UpInit) const = 0;
+    virtual IdealNodeList getIdealNodes(const NodeType&, const document::BucketId&, UpStates upStates = UpInit) const = 0;
 
     // Wrapper functions to make prettier call if nodetype is given.
-    IdealNodeList getIdealDistributorNodes(const document::BucketId& bucket,
-                                           UpStates upStates = UpInit) const
-        { return getIdealNodes(NodeType::DISTRIBUTOR, bucket, upStates); }
-    IdealNodeList getIdealStorageNodes(const document::BucketId& bucket,
-                                       UpStates upStates = UpInit) const
-        { return getIdealNodes(NodeType::STORAGE, bucket, upStates); }
+    IdealNodeList getIdealDistributorNodes(const document::BucketId& bucket, UpStates upStates = UpInit) const {
+        return getIdealNodes(NodeType::DISTRIBUTOR, bucket, upStates);
+    }
+    IdealNodeList getIdealStorageNodes(const document::BucketId& bucket, UpStates upStates = UpInit) const {
+        return getIdealNodes(NodeType::STORAGE, bucket, upStates);
+    }
 };
 
 
