@@ -459,9 +459,7 @@ Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCou
 }
 
 std::vector<uint16_t>
-Distribution::getIdealStorageNodes(
-            const ClusterState& state, const document::BucketId& bucket,
-            const char* upStates) const
+Distribution::getIdealStorageNodes(const ClusterState& state, const document::BucketId& bucket, const char* upStates) const
 {
     std::vector<uint16_t> nodes;
     getIdealNodes(NodeType::STORAGE, state, bucket, nodes, upStates);
@@ -469,10 +467,7 @@ Distribution::getIdealStorageNodes(
 }
 
 uint16_t
-Distribution::getIdealDistributorNode(
-            const ClusterState& state,
-            const document::BucketId& bucket,
-            const char* upStates) const
+Distribution::getIdealDistributorNode(const ClusterState& state, const document::BucketId& bucket, const char* upStates) const
 {
     std::vector<uint16_t> nodes;
     getIdealNodes(NodeType::DISTRIBUTOR, state, bucket, nodes, upStates);

@@ -108,9 +108,7 @@ DistributorBucketSpace::owns_bucket_in_state(
 }
 
 bool
-DistributorBucketSpace::owns_bucket_in_state(
-        const lib::ClusterState& clusterState,
-        document::BucketId bucket) const
+DistributorBucketSpace::owns_bucket_in_state(const lib::ClusterState& clusterState, document::BucketId bucket) const
 {
     return owns_bucket_in_state(*_distribution, clusterState, bucket);
 }

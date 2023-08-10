@@ -656,9 +656,9 @@ private:
 MergeNodes::~MergeNodes() = default;
 
 bool
-presentInIdealState(const StateChecker::Context& c, uint16_t node)
+presentInIdealState(const StateChecker::Context& c, uint16_t node) noexcept
 {
-    return c.unorderedIdealState.find(node) != c.unorderedIdealState.end();
+    return c.idealStateBundle.is_nonretired_or_maintenance(node);
 }
 
 void
