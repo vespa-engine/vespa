@@ -26,11 +26,9 @@ SetBucketStateOperation::enqueueSetBucketStateCommand(uint16_t node, bool active
                                                             active
                                                                 ? api::SetBucketStateCommand::ACTIVE
                                                                 : api::SetBucketStateCommand::INACTIVE);
-    LOG(debug, "Enqueuing %s for %s to node %u",
-        active ? "Activate" : "Deactivate",
-        getBucketId().toString().c_str(), node);
+    LOG(debug, "Enqueuing %s for %s to node %u", active ? "Activate" : "Deactivate", getBucketId().toString().c_str(), node);
     setCommandMeta(*msg);
-    _tracker.queueCommand(msg, node);
+    _tracker.queueCommand(std::move(msg), node);
 }
 
 bool

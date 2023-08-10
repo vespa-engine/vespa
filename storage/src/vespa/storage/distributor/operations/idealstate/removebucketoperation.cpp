@@ -24,16 +24,11 @@ RemoveBucketOperation::onStartInternal(DistributorStripeMessageSender& sender)
         uint16_t node = getNodes()[i];
         const BucketCopy* copy(entry->getNode(node));
         if (!copy) {
-            LOG(debug, "Node %u was removed between scheduling remove "
-                "operation and starting it; not sending DeleteBucket to it",
-                node);
+            LOG(debug, "Node %u was removed between scheduling remove operation and starting it; not sending DeleteBucket to it", node);
             continue;
         }
-        LOG(debug, "Sending DeleteBucket for %s to node %u",
-            getBucketId().toString().c_str(),
-            node);
-        std::shared_ptr<api::DeleteBucketCommand> msg(
-                new api::DeleteBucketCommand(getBucket()));
+        LOG(debug, "Sending DeleteBucket for %s to node %u", getBucketId().toString().c_str(), node);
+        auto msg = std::make_shared<api::DeleteBucketCommand>(getBucket());
         setCommandMeta(*msg);
         msg->setBucketInfo(copy->getBucketInfo());
         msgs.push_back(std::make_pair(node, msg));
@@ -42,8 +37,8 @@ RemoveBucketOperation::onStartInternal(DistributorStripeMessageSender& sender)
     _ok = true;
     if (!getNodes().empty()) {
         _manager->operation_context().remove_nodes_from_bucket_database(getBucket(), getNodes());
-        for (uint32_t i = 0; i < msgs.size(); ++i) {
-            _tracker.queueCommand(msgs[i].second, msgs[i].first);
+        for (auto & msg : msgs) {
+            _tracker.queueCommand(std::move(msg.second), msg.first);
         }
         _tracker.flushQueue(sender);
     }

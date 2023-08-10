@@ -65,9 +65,7 @@ void RemoveOperation::start_conditional_remove(DistributorStripeMessageSender& s
 void RemoveOperation::start_direct_remove_dispatch(DistributorStripeMessageSender& sender) {
     LOG(spam, "Started remove on document %s", _msg->getDocumentId().toString().c_str());
 
-    document::BucketId bucketId(
-            _node_ctx.bucket_id_factory().getBucketId(
-                    _msg->getDocumentId()));
+    document::BucketId bucketId(_node_ctx.bucket_id_factory().getBucketId(_msg->getDocumentId()));
 
     std::vector<BucketDatabase::Entry> entries;
     _bucket_space.getBucketDatabase().getParents(bucketId, entries);
@@ -79,8 +77,7 @@ void RemoveOperation::start_direct_remove_dispatch(DistributorStripeMessageSende
         messages.reserve(e->getNodeCount());
         for (uint32_t i = 0; i < e->getNodeCount(); i++) {
             auto command = std::make_shared<api::RemoveCommand>(document::Bucket(_msg->getBucket().getBucketSpace(), e.getBucketId()),
-                                                                _msg->getDocumentId(),
-                                                                _msg->getTimestamp());
+                                                                _msg->getDocumentId(), _msg->getTimestamp());
 
             copyMessageSettings(*_msg, *command);
             command->getTrace().setLevel(_msg->getTrace().getLevel());
@@ -90,7 +87,7 @@ void RemoveOperation::start_direct_remove_dispatch(DistributorStripeMessageSende
             sent = true;
         }
 
-        _tracker.queueMessageBatch(messages);
+        _tracker.queueMessageBatch(std::move(messages));
     }
 
     if (!sent) {

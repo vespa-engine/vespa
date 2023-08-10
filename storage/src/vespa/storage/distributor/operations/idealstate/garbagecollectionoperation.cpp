@@ -87,7 +87,7 @@ void GarbageCollectionOperation::send_current_phase_remove_locations(Distributor
         command->setPriority((_phase != Phase::WriteRemovesPhase)
                              ? _priority
                              : _manager->operation_context().distributor_config().default_external_feed_priority());
-        _tracker.queueCommand(command, nodes[i]);
+        _tracker.queueCommand(std::move(command), nodes[i]);
     }
     _tracker.flushQueue(sender);
 }

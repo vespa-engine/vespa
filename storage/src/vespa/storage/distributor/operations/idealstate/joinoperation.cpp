@@ -81,12 +81,11 @@ JoinOperation::enqueueJoinMessagePerTargetNode(
         return false;
     }
     for (const auto& node : nodeToBuckets) {
-        std::shared_ptr<api::JoinBucketsCommand> msg(
-                new api::JoinBucketsCommand(getBucket()));
+        auto msg = std::make_shared<api::JoinBucketsCommand>(getBucket());
         msg->getSourceBuckets() = node.second;
         msg->setTimeout(MAX_TIMEOUT);
         setCommandMeta(*msg);
-        _tracker.queueCommand(msg, node.first);
+        _tracker.queueCommand(std::move(msg), node.first);
     }
     return true;
 }

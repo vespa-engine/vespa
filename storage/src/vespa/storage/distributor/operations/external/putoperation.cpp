@@ -210,11 +210,11 @@ void PutOperation::start_direct_put_dispatch(DistributorStripeMessageSender& sen
         }
 
         if (!createBucketBatch.empty()) {
-            _tracker.queueMessageBatch(createBucketBatch);
+            _tracker.queueMessageBatch(std::move(createBucketBatch));
         }
 
         std::vector<PersistenceMessageTracker::ToSend> putBatch;
-
+        putBatch.reserve(targets.size());
         // Now send PUTs
         for (const auto& target : targets) {
             sendPutToBucketOnNode(_msg->getBucket().getBucketSpace(), target.getBucketId(),
@@ -222,7 +222,7 @@ void PutOperation::start_direct_put_dispatch(DistributorStripeMessageSender& sen
         }
 
         if (!putBatch.empty()) {
-            _tracker.queueMessageBatch(putBatch);
+            _tracker.queueMessageBatch(std::move(putBatch));
         } else {
             const char* error = "Can't store document: No storage nodes available";
             LOG(debug, "%s", error);

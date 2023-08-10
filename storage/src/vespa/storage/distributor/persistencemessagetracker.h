@@ -16,7 +16,7 @@ struct PersistenceMessageTracker {
     using ToSend = MessageTracker::ToSend;
 
     virtual void fail(MessageSender&, const api::ReturnCode&) = 0;
-    virtual void queueMessageBatch(const std::vector<ToSend>&) = 0;
+    virtual void queueMessageBatch(std::vector<ToSend> messages) = 0;
     virtual uint16_t receiveReply(MessageSender&, api::BucketInfoReply&) = 0;
     virtual std::shared_ptr<api::BucketInfoReply>& getReply() = 0;
     virtual void updateFromReply(MessageSender&, api::BucketInfoReply&, uint16_t node) = 0;
@@ -65,7 +65,7 @@ public:
        have at most (messages.size() - initial redundancy) messages left in the
        queue and have it's first message be done.
     */
-    void queueMessageBatch(const std::vector<MessageTracker::ToSend>& messages) override;
+    void queueMessageBatch(std::vector<MessageTracker::ToSend> messages) override;
 
 private:
     using MessageBatch = std::vector<uint64_t>;
