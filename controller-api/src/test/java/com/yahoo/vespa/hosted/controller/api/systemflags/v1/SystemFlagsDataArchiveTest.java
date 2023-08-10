@@ -14,6 +14,7 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.RawFlag;
+import com.yahoo.vespa.flags.json.Condition;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import org.junit.jupiter.api.Test;
@@ -28,10 +29,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -78,11 +81,11 @@ public class SystemFlagsDataArchiveTest {
         can_serialize_and_deserialize_archive(true);
     }
 
-    private void can_serialize_and_deserialize_archive(boolean forceAddFiles) throws IOException {
+    private void can_serialize_and_deserialize_archive(boolean simulateInController) throws IOException {
         File tempFile = File.createTempFile("serialized-flags-archive", null, temporaryFolder);
         try (OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile))) {
-            var archive = fromDirectory("system-flags", forceAddFiles);
-            if (forceAddFiles)
+            var archive = fromDirectory("system-flags", simulateInController);
+            if (simulateInController)
                 archive.validateAllFilesAreForTargets(Set.of(mainControllerTarget, prodUsWestCfgTarget));
             archive.toZip(out);
         }
@@ -98,9 +101,9 @@ public class SystemFlagsDataArchiveTest {
         retrieves_correct_flag_data_for_target(true);
     }
 
-    private void retrieves_correct_flag_data_for_target(boolean forceAddFiles) {
-        var archive = fromDirectory("system-flags", forceAddFiles);
-        if (forceAddFiles)
+    private void retrieves_correct_flag_data_for_target(boolean simulateInController) {
+        var archive = fromDirectory("system-flags", simulateInController);
+        if (simulateInController)
             archive.validateAllFilesAreForTargets(Set.of(mainControllerTarget, prodUsWestCfgTarget));
         assertArchiveReturnsCorrectTestFlagDataForTarget(archive);
     }
@@ -111,9 +114,9 @@ public class SystemFlagsDataArchiveTest {
         supports_multi_level_flags_directory(true);
     }
 
-    private void supports_multi_level_flags_directory(boolean forceAddFiles) {
-        var archive = fromDirectory("system-flags-multi-level", forceAddFiles);
-        if (forceAddFiles)
+    private void supports_multi_level_flags_directory(boolean simulateInController) {
+        var archive = fromDirectory("system-flags-multi-level", simulateInController);
+        if (simulateInController)
             archive.validateAllFilesAreForTargets(Set.of(mainControllerTarget, prodUsWestCfgTarget));
         assertFlagDataHasValue(archive, MY_TEST_FLAG, mainControllerTarget, "default");
     }
@@ -124,9 +127,9 @@ public class SystemFlagsDataArchiveTest {
         duplicated_flagdata_is_detected(true);
     }
 
-    private void duplicated_flagdata_is_detected(boolean forceAddFiles) {
+    private void duplicated_flagdata_is_detected(boolean simulateInController) {
         Throwable exception = assertThrows(FlagValidationException.class, () -> {
-            fromDirectory("system-flags-multi-level-with-duplicated-flagdata", forceAddFiles);
+            fromDirectory("system-flags-multi-level-with-duplicated-flagdata", simulateInController);
        });
         assertTrue(exception.getMessage().contains("contains redundant flag data for id 'my-test-flag' already set in another directory!"));
     }
@@ -137,9 +140,9 @@ public class SystemFlagsDataArchiveTest {
         empty_files_are_handled_as_no_flag_data_for_target(true);
     }
 
-    private void empty_files_are_handled_as_no_flag_data_for_target(boolean forceAddFiles) {
-        var archive = fromDirectory("system-flags", forceAddFiles);
-        if (forceAddFiles)
+    private void empty_files_are_handled_as_no_flag_data_for_target(boolean simulateInController) {
+        var archive = fromDirectory("system-flags", simulateInController);
+        if (simulateInController)
             archive.validateAllFilesAreForTargets(Set.of(mainControllerTarget, prodUsWestCfgTarget));
         assertNoFlagData(archive, FLAG_WITH_EMPTY_DATA, mainControllerTarget);
         assertFlagDataHasValue(archive, FLAG_WITH_EMPTY_DATA, prodUsWestCfgTarget, "main.prod.us-west-1");
@@ -187,7 +190,7 @@ public class SystemFlagsDataArchiveTest {
             fromDirectory("system-flags-with-unknown-field-name", true);
         });
         assertEquals("""
-                     flags/my-test-flag/main.prod.us-west-1.json contains unknown non-comment fields or rules with null values: after removing any comment fields the JSON is:
+                     In file flags/my-test-flag/main.prod.us-west-1.json: Unknown non-comment fields or rules with null values: after removing any comment fields the JSON is:
                        {"id":"my-test-flag","rules":[{"condition":[{"type":"whitelist","dimension":"hostname","values":["foo.com"]}],"value":"default"}]}
                      but deserializing this ended up with:
                        {"id":"my-test-flag","rules":[{"value":"default"}]}
@@ -218,6 +221,7 @@ public class SystemFlagsDataArchiveTest {
     void remove_comments_and_null_value_in_rules() {
         assertTrue(JSON.equals("""
                                {
+                                 "id": "foo",
                                  "rules": [
                                    {
                                      "conditions": [
@@ -249,8 +253,9 @@ public class SystemFlagsDataArchiveTest {
                                    }
                                  ]
                                }""",
-                               SystemFlagsDataArchive.normalizeJson("""
+                               normalizeJson("""
                                {
+                                 "id": "foo",
                                  "comment": "bar",
                                  "rules": [
                                    {
@@ -289,83 +294,91 @@ public class SystemFlagsDataArchiveTest {
                                      "value": true
                                    }
                                  ]
-                               }""", Set.of(ZoneId.from("prod.us-west-1")))));
+                               }""")));
+    }
+
+    private static String normalizeJson(String json) {
+        SystemFlagsDataArchive.Builder builder = new SystemFlagsDataArchive.Builder();
+        assertTrue(builder.maybeAddFile(Path.of("flags/temporary/foo/default.json"), json, createZoneRegistryMock(), true));
+        List<FlagData> flagData = builder.build().flagData(prodUsWestCfgTarget);
+        assertEquals(1, flagData.size());
+        return JSON.canonical(flagData.get(0).serializeToJson());
     }
 
     @Test
     void normalize_json_succeed_on_valid_values() {
-        normalizeJson("application", "\"a:b:c\"");
-        normalizeJson("cloud", "\"yahoo\"");
-        normalizeJson("cloud", "\"aws\"");
-        normalizeJson("cloud", "\"gcp\"");
-        normalizeJson("cluster-id", "\"some-id\"");
-        normalizeJson("cluster-type", "\"admin\"");
-        normalizeJson("cluster-type", "\"container\"");
-        normalizeJson("cluster-type", "\"content\"");
-        normalizeJson("console-user-email", "\"name@domain.com\"");
-        normalizeJson("environment", "\"prod\"");
-        normalizeJson("environment", "\"staging\"");
-        normalizeJson("environment", "\"test\"");
-        normalizeJson("hostname", "\"2080046-v6-11.ostk.bm2.prod.gq1.yahoo.com\"");
-        normalizeJson("node-type", "\"tenant\"");
-        normalizeJson("node-type", "\"host\"");
-        normalizeJson("node-type", "\"config\"");
-        normalizeJson("node-type", "\"host\"");
-        normalizeJson("system", "\"main\"");
-        normalizeJson("system", "\"public\"");
-        normalizeJson("tenant", "\"vespa\"");
-        normalizeJson("vespa-version", "\"8.201.13\"");
-        normalizeJson("zone", "\"prod.us-west-1\"", Set.of(ZoneId.from("prod.us-west-1")));
+        addFile(Condition.Type.WHITELIST, "application", "a:b:c");
+        addFile(Condition.Type.WHITELIST, "cloud", "yahoo");
+        addFile(Condition.Type.WHITELIST, "cloud", "aws");
+        addFile(Condition.Type.WHITELIST, "cloud", "gcp");
+        addFile(Condition.Type.WHITELIST, "cluster-id", "some-id");
+        addFile(Condition.Type.WHITELIST, "cluster-type", "admin");
+        addFile(Condition.Type.WHITELIST, "cluster-type", "container");
+        addFile(Condition.Type.WHITELIST, "cluster-type", "content");
+        addFile(Condition.Type.WHITELIST, "console-user-email", "name@domain.com");
+        addFile(Condition.Type.WHITELIST, "environment", "prod");
+        addFile(Condition.Type.WHITELIST, "environment", "staging");
+        addFile(Condition.Type.WHITELIST, "environment", "test");
+        addFile(Condition.Type.WHITELIST, "hostname", "2080046-v6-11.ostk.bm2.prod.gq1.yahoo.com");
+        addFile(Condition.Type.WHITELIST, "node-type", "tenant");
+        addFile(Condition.Type.WHITELIST, "node-type", "host");
+        addFile(Condition.Type.WHITELIST, "node-type", "config");
+        addFile(Condition.Type.WHITELIST, "node-type", "host");
+        addFile(Condition.Type.WHITELIST, "system", "main");
+        addFile(Condition.Type.WHITELIST, "system", "public");
+        addFile(Condition.Type.WHITELIST, "tenant", "vespa");
+        addFile(Condition.Type.RELATIONAL, "vespa-version", ">=8.201.13");
+        addFile(Condition.Type.WHITELIST, "zone", "prod.us-west-1");
     }
 
-    private void normalizeJson(String dimension, String jsonValue) {
-        normalizeJson(dimension, jsonValue, Set.of());
-    }
+    private void addFile(Condition.Type type, String dimension, String jsonValue) {
+        SystemFlagsDataArchive.Builder builder = new SystemFlagsDataArchive.Builder();
 
-    private void normalizeJson(String dimension, String jsonValue, Set<ZoneId> zones) {
-        SystemFlagsDataArchive.normalizeJson("""
+        String valuesField = type == Condition.Type.RELATIONAL ?
+                             "\"predicate\": \"%s\"".formatted(jsonValue) :
+                             "\"values\": [ \"%s\" ]".formatted(jsonValue);
+
+        assertTrue(builder.maybeAddFile(Path.of("flags/temporary/foo/default.json"), """
                                              {
                                                  "id": "foo",
                                                  "rules": [
                                                      {
                                                          "conditions": [
                                                              {
-                                                                 "type": "whitelist",
+                                                                 "type": "%s",
                                                                  "dimension": "%s",
-                                                                 "values": [ %s ]
+                                                                 %s
                                                              }
                                                          ],
                                                          "value": true
                                                      }
                                                  ]
                                              }
-                                             """.formatted(dimension, jsonValue), zones);
+                                             """.formatted(type.toWire(), dimension, valuesField),
+                                        createZoneRegistryMock(),
+                                        true));
     }
 
     @Test
     void normalize_json_fail_on_invalid_values() {
-        failNormalizeJson("application", "\"a.b.c\"", "Invalid application 'a.b.c' in whitelist condition: Application ids must be on the form tenant:application:instance, but was a.b.c");
-        failNormalizeJson("cloud", "\"foo\"", "Unknown cloud: foo");
-        // failNormalizeJson("cluster-id", ... any String is valid
-        failNormalizeJson("cluster-type", "\"foo\"", "Invalid cluster-type 'foo' in whitelist condition: Illegal cluster type 'foo'");
-        failNormalizeJson("console-user-email", "123", "Non-string console-user-email in whitelist condition: 123");
-        failNormalizeJson("environment", "\"foo\"", "Invalid environment 'foo' in whitelist condition: 'foo' is not a valid environment identifier");
-        failNormalizeJson("hostname", "\"not:a:hostname\"", "Invalid hostname 'not:a:hostname' in whitelist condition: hostname must match '(([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])\\.?', but got: 'not:a:hostname'");
-        failNormalizeJson("node-type", "\"footype\"", "Invalid node-type 'footype' in whitelist condition: No enum constant com.yahoo.config.provision.NodeType.footype");
-        failNormalizeJson("system", "\"bar\"", "Invalid system 'bar' in whitelist condition: 'bar' is not a valid system");
-        failNormalizeJson("tenant", "123", "Non-string tenant in whitelist condition: 123");
-        failNormalizeJson("vespa-version", "\"not-a-version\"", "Invalid vespa-version 'not-a-version' in whitelist condition: Invalid version component in 'not-a-version'");
-        failNormalizeJson("zone", "\"dev.%illegal\"", Set.of(ZoneId.from("prod.example-region")), "Invalid zone 'dev.%illegal' in whitelist condition: region name must match '[a-z]([a-z0-9-]*[a-z0-9])*', but got: '%illegal'");
-        failNormalizeJson("zone", "\"dev.non-existing-zone\"", Set.of(ZoneId.from("prod.example-region")), "Unknown zone: dev.non-existing-zone");
+        failAddFile(Condition.Type.WHITELIST, "application", "a.b.c", "In file flags/temporary/foo/default.json: Invalid application 'a.b.c' in whitelist condition: Application ids must be on the form tenant:application:instance, but was a.b.c");
+        failAddFile(Condition.Type.WHITELIST, "cloud", "foo", "In file flags/temporary/foo/default.json: Unknown cloud: foo");
+        // cluster-id: any String is valid
+        failAddFile(Condition.Type.WHITELIST, "cluster-type", "foo", "In file flags/temporary/foo/default.json: Invalid cluster-type 'foo' in whitelist condition: Illegal cluster type 'foo'");
+        failAddFile(Condition.Type.WHITELIST, "console-user-email", "not-valid-email-address", "In file flags/temporary/foo/default.json: Invalid email address: not-valid-email-address");
+        failAddFile(Condition.Type.WHITELIST, "environment", "foo", "In file flags/temporary/foo/default.json: Invalid environment 'foo' in whitelist condition: 'foo' is not a valid environment identifier");
+        failAddFile(Condition.Type.WHITELIST, "hostname", "not:a:hostname", "In file flags/temporary/foo/default.json: Invalid hostname 'not:a:hostname' in whitelist condition: hostname must match '(([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]{0,61}[A-Za-z0-9])\\.?', but got: 'not:a:hostname'");
+        failAddFile(Condition.Type.WHITELIST, "node-type", "footype", "In file flags/temporary/foo/default.json: Invalid node-type 'footype' in whitelist condition: No enum constant com.yahoo.config.provision.NodeType.footype");
+        failAddFile(Condition.Type.WHITELIST, "system", "bar", "In file flags/temporary/foo/default.json: Invalid system 'bar' in whitelist condition: 'bar' is not a valid system");
+        failAddFile(Condition.Type.WHITELIST, "tenant", "a tenant", "In file flags/temporary/foo/default.json: Invalid tenant 'a tenant' in whitelist condition: tenant name must match '[a-zA-Z0-9_-]{1,256}', but got: 'a tenant'");
+        failAddFile(Condition.Type.WHITELIST, "vespa-version", "not-a-version", "In file flags/temporary/foo/default.json: whitelist vespa-version condition is not supported");
+        failAddFile(Condition.Type.RELATIONAL, "vespa-version", ">7.1.2", "In file flags/temporary/foo/default.json: Major Vespa version must be at least 8: 7.1.2");
+        failAddFile(Condition.Type.WHITELIST, "zone", "dev.%illegal", "In file flags/temporary/foo/default.json: Invalid zone 'dev.%illegal' in whitelist condition: region name must match '[a-z]([a-z0-9-]*[a-z0-9])*', but got: '%illegal'");
     }
 
-    private void failNormalizeJson(String dimension, String jsonValue, String expectedExceptionMessage) {
-        failNormalizeJson(dimension, jsonValue, Set.of(), expectedExceptionMessage);
-    }
-
-    private void failNormalizeJson(String dimension, String jsonValue, Set<ZoneId> zones, String expectedExceptionMessage) {
+    private void failAddFile(Condition.Type type, String dimension, String jsonValue, String expectedExceptionMessage) {
         try {
-            normalizeJson(dimension, jsonValue, zones);
+            addFile(type, dimension, jsonValue);
             fail();
         } catch (RuntimeException e) {
             assertEquals(expectedExceptionMessage, e.getMessage());
@@ -380,8 +393,8 @@ public class SystemFlagsDataArchiveTest {
         assertFlagDataHasValue(archive, MY_TEST_FLAG, prodUsWestCfgTarget, "main.prod.us-west-1");
     }
 
-    private SystemFlagsDataArchive fromDirectory(String testDirectory, boolean forceAddFiles) {
-        return SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/" + testDirectory), createZoneRegistryMock(), forceAddFiles);
+    private SystemFlagsDataArchive fromDirectory(String testDirectory, boolean simulateInController) {
+        return SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/" + testDirectory), createZoneRegistryMock(), simulateInController);
     }
 
     @SuppressWarnings("unchecked") // workaround for mocking a method for generic return type
@@ -396,12 +409,21 @@ public class SystemFlagsDataArchiveTest {
         when(registryMock.systemZone()).thenReturn(zoneApi);
         when(registryMock.getConfigServerVipUri(any())).thenReturn(URI.create("http://localhost:8080/"));
         when(registryMock.getConfigServerHttpsIdentity(any())).thenReturn(new AthenzService("domain", "servicename"));
+        ZoneList zones = mockZoneList("prod.us-west-1", "prod.us-east-3");
+        when(registryMock.zones()).thenReturn(zones);
+        ZoneList zonesIncludingSystem = mockZoneList("prod.us-west-1", "prod.us-east-3", "prod.controller");
+        when(registryMock.zonesIncludingSystem()).thenReturn(zonesIncludingSystem);
+        return registryMock;
+    }
+
+    @SuppressWarnings("unchecked") // workaround for mocking a method for generic return type
+    private static ZoneList mockZoneList(String... zones) {
         ZoneList zoneListMock = mock(ZoneList.class);
         when(zoneListMock.reachable()).thenReturn(zoneListMock);
         when(zoneListMock.all()).thenReturn(zoneListMock);
-        when(zoneListMock.zones()).thenReturn((List)List.of(new SimpleZone("prod.us-west-1"), new SimpleZone("prod.us-east-3")));
-        when(registryMock.zones()).thenReturn(zoneListMock);
-        return registryMock;
+        List<? extends ZoneApi> zoneList = Stream.of(zones).map(SimpleZone::new).toList();
+        when(zoneListMock.zones()).thenReturn((List) zoneList);
+        return zoneListMock;
     }
 
     private static void assertArchiveReturnsCorrectTestFlagDataForTarget(SystemFlagsDataArchive archive) {
