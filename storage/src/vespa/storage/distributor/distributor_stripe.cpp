@@ -314,7 +314,7 @@ DistributorStripe::enterRecoveryMode()
 {
     LOG(debug, "Entering recovery mode");
     _schedulingMode = MaintenanceScheduler::RECOVERY_SCHEDULING_MODE;
-    _scanner->reset();
+    _scanner->reset(); // Just drop accumulated stat on the floor.
     // We enter recovery mode due to cluster state or distribution config changes.
     // Until we have completed a new DB scan round, we don't know the state of our
     // newly owned buckets and must not report stats for these out to the cluster
@@ -643,7 +643,7 @@ DistributorStripe::updateInternalMetricsForCompletedScan()
 
     _bucketDBMetricUpdater.completeRound();
     _bucketDbStats = _bucketDBMetricUpdater.getLastCompleteStats();
-    _maintenanceStats = _scanner->getPendingMaintenanceStats();
+    _maintenanceStats = _scanner->reset();
     auto new_space_stats = toBucketSpacesStats(_maintenanceStats.perNodeStats);
     if (merge_no_longer_pending_edge(_bucketSpacesStats, new_space_stats)) {
         _must_send_updated_host_info = true;
@@ -684,7 +684,6 @@ DistributorStripe::scanNextBucket()
         updateInternalMetricsForCompletedScan();
         leaveRecoveryMode();
         send_updated_host_info_if_required();
-        _scanner->reset();
     } else {
         const auto &distribution(_bucketSpaceRepo->get(scanResult.getBucketSpace()).getDistribution());
         _bucketDBMetricUpdater.visit(scanResult.getEntry(), distribution.getRedundancy());
