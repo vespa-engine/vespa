@@ -12,7 +12,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vdslib/state/nodetype.h>
 #include <vespa/vespalib/util/exception.h>
-#include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/small_vector.h>
 
 namespace vespa::config::content::internal {
     class InternalStorDistributionType;
@@ -148,7 +148,7 @@ public:
      * Utility function used by distributor to split copies into groups to
      * handle active per group feature.
      */
-    using IndexList = std::vector<uint16_t>;
+    using IndexList = vespalib::SmallVector<uint16_t, 4>;
     std::vector<IndexList> splitNodesIntoLeafGroups(vespalib::ConstArrayRef<uint16_t> nodes) const;
 
     static bool allDistributorsDown(const Group&, const ClusterState&);

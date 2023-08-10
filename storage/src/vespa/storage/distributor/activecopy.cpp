@@ -9,20 +9,24 @@
 #include <cassert>
 
 namespace std {
-    template<typename T>
-    std::ostream& operator<<(std::ostream& out, const std::vector<T>& v) {
-        out << "[";
-        for (uint32_t i=0; i<v.size(); ++i) {
-            out << "\n  " << v[i];
-        }
-        if (!v.empty()) {
-            out << "\n";
-        }
-        return out << "]";
+
+template<typename T>
+std::ostream& operator<<(std::ostream& out, const std::vector<T>& v) {
+    out << "[";
+    for (uint32_t i=0; i<v.size(); ++i) {
+        out << "\n  " << v[i];
     }
+    if (!v.empty()) {
+        out << "\n";
+    }
+    return out << "]";
+}
+
 }
 
 namespace storage::distributor {
+
+using IndexList = lib::Distribution::IndexList;
 
 ActiveCopy::ActiveCopy(uint16_t node, const BucketDatabase::Entry& e, const std::vector<uint16_t>& idealState)
     : _nodeIndex(node),
@@ -109,22 +113,21 @@ struct ActiveStateOrder {
     }
 };
 
-std::vector<uint16_t>
+IndexList
 buildValidNodeIndexList(BucketDatabase::Entry& e) {
-    std::vector<uint16_t> result;
+    IndexList result;
     result.reserve(e->getNodeCount());
     for (uint32_t i=0, n=e->getNodeCount(); i < n; ++i) {
         const BucketCopy& cp = e->getNodeRef(i);
-        if (!cp.valid()) {
-            continue;
+        if (cp.valid()) {
+            result.push_back(cp.getNode());
         }
-        result.push_back(cp.getNode());
     }
     return result;
 }
 
 std::vector<ActiveCopy>
-buildNodeList(BucketDatabase::Entry& e, const std::vector<uint16_t>& nodeIndexes, const std::vector<uint16_t>& idealState)
+buildNodeList(BucketDatabase::Entry& e,vespalib::ConstArrayRef<uint16_t> nodeIndexes, const std::vector<uint16_t>& idealState)
 {
     std::vector<ActiveCopy> result;
     result.reserve(nodeIndexes.size());
@@ -140,11 +143,11 @@ ActiveList
 ActiveCopy::calculate(const std::vector<uint16_t>& idealState, const lib::Distribution& distribution,
                       BucketDatabase::Entry& e, uint32_t max_activation_inhibited_out_of_sync_groups)
 {
-    std::vector<uint16_t> validNodesWithCopy = buildValidNodeIndexList(e);
+    IndexList validNodesWithCopy = buildValidNodeIndexList(e);
     if (validNodesWithCopy.empty()) {
         return ActiveList();
     }
-    std::vector<lib::Distribution::IndexList> groups;
+    std::vector<IndexList> groups;
     if (distribution.activePerGroup()) {
         groups = distribution.splitNodesIntoLeafGroups(validNodesWithCopy);
     } else {
