@@ -2,6 +2,7 @@
 #pragma once
 
 #include "bucketgctimecalculator.h"
+#include "ideal_service_layer_nodes_bundle.h"
 #include <vespa/storage/distributor/maintenance/maintenancepriority.h>
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
 #include <vespa/storage/common/storagecomponent.h>
@@ -73,7 +74,7 @@ public:
         // need to both know the actual order (activation prioritization etc) as
         // well as have the ability to quickly check if a node is in an ideal
         // location.
-        std::vector<uint16_t>        idealState;
+        const IdealServiceLayerNodesBundle & idealStateBundle;
         vespalib::hash_set<uint16_t> unorderedIdealState;
 
         const DistributorNodeContext&            node_ctx;
@@ -82,9 +83,8 @@ public:
         NodeMaintenanceStatsTracker&             stats;
         const bool                               merges_inhibited_in_bucket_space;
 
-        const BucketDatabase::Entry& getSiblingEntry() const noexcept {
-            return siblingEntry;
-        }
+        const BucketDatabase::Entry& getSiblingEntry() const noexcept { return siblingEntry; }
+        const std::vector<uint16_t> & idealState() const noexcept { return idealStateBundle.get_available_nonretired_or_maintenance_nodes(); }
 
         document::Bucket getBucket() const noexcept { return bucket; }
         document::BucketId getBucketId() const noexcept { return bucket.getBucketId(); }

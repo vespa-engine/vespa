@@ -152,7 +152,7 @@ DistributorBucketSpace::get_ideal_service_layer_nodes_bundle(document::BucketId 
         setup_ideal_nodes_bundle(ideal_nodes_bundle, *_distribution, *_clusterState, bucket);
         return ideal_nodes_bundle;
     }
-    document::BucketId lookup_bucket(is_split_group_bucket(bucket) ? bucket.getUsedBits() : _distribution_bits, bucket.getId());
+    document::BucketId lookup_bucket(_distribution_bits, bucket.getId());
     auto itr = _ideal_nodes.find(lookup_bucket);
     if (itr != _ideal_nodes.end()) {
         return *itr->second;
