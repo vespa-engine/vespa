@@ -102,6 +102,17 @@ public class Metrics {
         }
     }
 
+    public void deleteMetricByName(String application, String metricName, DimensionType type) {
+        synchronized (monitor) {
+            Optional.ofNullable(metrics.get(type))
+                    .map(m -> m.get(application))
+                    .map(ApplicationMetrics::metricsByDimensions)
+                    .ifPresent(dims ->
+                        dims.values().forEach(metrics -> metrics.remove(metricName))
+                    );
+        }
+    }
+
     Map<Dimensions, Map<String, MetricValue>> getOrCreateApplicationMetrics(String application, DimensionType type) {
         return metrics.computeIfAbsent(type, m -> new HashMap<>())
                 .computeIfAbsent(application, app -> new ApplicationMetrics())
