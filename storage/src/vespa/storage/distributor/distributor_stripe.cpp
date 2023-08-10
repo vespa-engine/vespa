@@ -314,7 +314,7 @@ DistributorStripe::enterRecoveryMode()
 {
     LOG(debug, "Entering recovery mode");
     _schedulingMode = MaintenanceScheduler::RECOVERY_SCHEDULING_MODE;
-    auto stats = _scanner->reset();
+    _scanner->reset(); // Just drop accumulated stat on the floor.
     // We enter recovery mode due to cluster state or distribution config changes.
     // Until we have completed a new DB scan round, we don't know the state of our
     // newly owned buckets and must not report stats for these out to the cluster
