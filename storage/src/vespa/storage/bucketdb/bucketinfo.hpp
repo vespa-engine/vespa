@@ -9,14 +9,16 @@
 namespace storage {
 
 template <typename NodeSeq>
-std::string BucketInfoBase<NodeSeq>::toString() const {
+std::string
+BucketInfoBase<NodeSeq>::toString() const {
     std::ostringstream ost;
     print(ost, true, "");
     return ost.str();
 }
 
 template <typename NodeSeq>
-bool BucketInfoBase<NodeSeq>::emptyAndConsistent() const {
+bool
+BucketInfoBase<NodeSeq>::emptyAndConsistent() const noexcept {
     for (uint32_t i = 0; i < _nodes.size(); i++) {
         if (!_nodes[i].empty()) {
             return false;
@@ -26,7 +28,8 @@ bool BucketInfoBase<NodeSeq>::emptyAndConsistent() const {
 }
 
 template <typename NodeSeq>
-bool BucketInfoBase<NodeSeq>::validAndConsistent() const {
+bool
+BucketInfoBase<NodeSeq>::validAndConsistent() const noexcept {
     for (uint32_t i = 0; i < _nodes.size(); i++) {
         if (!_nodes[i].valid()) {
             return false;
@@ -36,7 +39,8 @@ bool BucketInfoBase<NodeSeq>::validAndConsistent() const {
 }
 
 template <typename NodeSeq>
-bool BucketInfoBase<NodeSeq>::hasInvalidCopy() const {
+bool
+BucketInfoBase<NodeSeq>::hasInvalidCopy() const noexcept {
     for (uint32_t i = 0; i < _nodes.size(); i++) {
         if (!_nodes[i].valid()) {
             return true;
@@ -46,7 +50,8 @@ bool BucketInfoBase<NodeSeq>::hasInvalidCopy() const {
 }
 
 template <typename NodeSeq>
-uint16_t BucketInfoBase<NodeSeq>::getTrustedCount() const {
+uint16_t
+BucketInfoBase<NodeSeq>::getTrustedCount() const noexcept {
     uint32_t trustedCount = 0;
     for (uint32_t i = 0; i < _nodes.size(); i++) {
         if (_nodes[i].trusted()) {
@@ -57,7 +62,8 @@ uint16_t BucketInfoBase<NodeSeq>::getTrustedCount() const {
 }
 
 template <typename NodeSeq>
-bool BucketInfoBase<NodeSeq>::consistentNodes(bool countInvalidAsConsistent) const {
+bool
+BucketInfoBase<NodeSeq>::consistentNodes(bool countInvalidAsConsistent) const noexcept {
     int compareIndex = 0;
     for (uint32_t i = 1; i < _nodes.size(); i++) {
         if (!_nodes[i].consistentWith(_nodes[compareIndex],
@@ -90,14 +96,16 @@ struct ReplicaMetadata {
     };
 };
 
-constexpr bool is_majority(size_t n, size_t m) {
+constexpr bool
+is_majority(size_t n, size_t m) noexcept {
     return (n >= (m / 2) + 1);
 }
 
 }
 
 template <typename NodeSeq>
-api::BucketInfo BucketInfoBase<NodeSeq>::majority_consistent_bucket_info() const noexcept {
+api::BucketInfo
+BucketInfoBase<NodeSeq>::majority_consistent_bucket_info() const noexcept {
     if (_nodes.size() < 3) {
         return {};
     }
@@ -116,7 +124,8 @@ api::BucketInfo BucketInfoBase<NodeSeq>::majority_consistent_bucket_info() const
 }
 
 template <typename NodeSeq>
-void BucketInfoBase<NodeSeq>::print(std::ostream& out, bool verbose, const std::string& indent) const {
+void
+BucketInfoBase<NodeSeq>::print(std::ostream& out, bool verbose, const std::string& indent) const {
     if (_nodes.size() == 0) {
         out << "no nodes";
     }
@@ -129,7 +138,8 @@ void BucketInfoBase<NodeSeq>::print(std::ostream& out, bool verbose, const std::
 }
 
 template <typename NodeSeq>
-const BucketCopy* BucketInfoBase<NodeSeq>::getNode(uint16_t node) const {
+const BucketCopy*
+BucketInfoBase<NodeSeq>::getNode(uint16_t node) const noexcept {
     for (const auto& n : _nodes) {
         if (n.getNode() == node) {
             return &n;
@@ -139,7 +149,8 @@ const BucketCopy* BucketInfoBase<NodeSeq>::getNode(uint16_t node) const {
 }
 
 template <typename NodeSeq>
-std::vector<uint16_t> BucketInfoBase<NodeSeq>::getNodes() const {
+std::vector<uint16_t>
+BucketInfoBase<NodeSeq>::getNodes() const noexcept {
     std::vector<uint16_t> result;
     for (uint32_t i = 0; i < _nodes.size(); i++) {
         result.emplace_back(_nodes[i].getNode());
@@ -148,7 +159,8 @@ std::vector<uint16_t> BucketInfoBase<NodeSeq>::getNodes() const {
 }
 
 template <typename NodeSeq>
-uint32_t BucketInfoBase<NodeSeq>::getHighestDocumentCount() const {
+uint32_t
+BucketInfoBase<NodeSeq>::getHighestDocumentCount() const noexcept {
     uint32_t highest = 0;
     for (uint32_t i = 0; i < _nodes.size(); ++i) {
         highest = std::max(highest, _nodes[i].getDocumentCount());
@@ -157,7 +169,8 @@ uint32_t BucketInfoBase<NodeSeq>::getHighestDocumentCount() const {
 }
 
 template <typename NodeSeq>
-uint32_t BucketInfoBase<NodeSeq>::getHighestTotalDocumentSize() const {
+uint32_t
+BucketInfoBase<NodeSeq>::getHighestTotalDocumentSize() const noexcept {
     uint32_t highest = 0;
     for (uint32_t i = 0; i < _nodes.size(); ++i) {
         highest = std::max(highest, _nodes[i].getTotalDocumentSize());
@@ -166,7 +179,8 @@ uint32_t BucketInfoBase<NodeSeq>::getHighestTotalDocumentSize() const {
 }
 
 template <typename NodeSeq>
-uint32_t BucketInfoBase<NodeSeq>::getHighestMetaCount() const {
+uint32_t
+BucketInfoBase<NodeSeq>::getHighestMetaCount() const noexcept {
     uint32_t highest = 0;
     for (uint32_t i = 0; i < _nodes.size(); ++i) {
         highest = std::max(highest, _nodes[i].getMetaCount());
@@ -175,7 +189,8 @@ uint32_t BucketInfoBase<NodeSeq>::getHighestMetaCount() const {
 }
 
 template <typename NodeSeq>
-uint32_t BucketInfoBase<NodeSeq>::getHighestUsedFileSize() const {
+uint32_t
+BucketInfoBase<NodeSeq>::getHighestUsedFileSize() const noexcept {
     uint32_t highest = 0;
     for (uint32_t i = 0; i < _nodes.size(); ++i) {
         highest = std::max(highest, _nodes[i].getUsedFileSize());
@@ -184,7 +199,8 @@ uint32_t BucketInfoBase<NodeSeq>::getHighestUsedFileSize() const {
 }
 
 template <typename NodeSeq>
-bool BucketInfoBase<NodeSeq>::hasRecentlyCreatedEmptyCopy() const {
+bool
+BucketInfoBase<NodeSeq>::hasRecentlyCreatedEmptyCopy() const noexcept {
     for (uint32_t i = 0; i < _nodes.size(); ++i) {
         if (_nodes[i].wasRecentlyCreated()) {
             return true;
@@ -194,7 +210,8 @@ bool BucketInfoBase<NodeSeq>::hasRecentlyCreatedEmptyCopy() const {
 }
 
 template <typename NodeSeq>
-bool BucketInfoBase<NodeSeq>::operator==(const BucketInfoBase<NodeSeq>& other) const {
+bool
+BucketInfoBase<NodeSeq>::operator==(const BucketInfoBase<NodeSeq>& other) const noexcept {
     if (_nodes.size() != other._nodes.size()) {
         return false;
     }
@@ -210,6 +227,6 @@ bool BucketInfoBase<NodeSeq>::operator==(const BucketInfoBase<NodeSeq>& other) c
     }
 
     return true;
-};
+}
 
 }

@@ -25,15 +25,15 @@ protected:
     uint32_t _lastGarbageCollection;
     NodeSeq _nodes;
 public:
-    BucketInfoBase()
+    BucketInfoBase() noexcept
         : _lastGarbageCollection(0),
           _nodes()
     {}
-    BucketInfoBase(uint32_t lastGarbageCollection, const NodeSeq& nodes)
+    BucketInfoBase(uint32_t lastGarbageCollection, const NodeSeq& nodes) noexcept
         : _lastGarbageCollection(lastGarbageCollection),
           _nodes(nodes)
     {}
-    BucketInfoBase(uint32_t lastGarbageCollection, NodeSeq&& nodes)
+    BucketInfoBase(uint32_t lastGarbageCollection, NodeSeq&& nodes) noexcept
         : _lastGarbageCollection(lastGarbageCollection),
           _nodes(std::move(nodes))
     {}
@@ -47,28 +47,28 @@ public:
     /**
      * @return Returns the last time when this bucket was "garbage collected".
      */
-    uint32_t getLastGarbageCollectionTime() const { return _lastGarbageCollection; }
+    uint32_t getLastGarbageCollectionTime() const noexcept { return _lastGarbageCollection; }
 
     /** True if the bucket contains no documents and is consistent. */
-    bool emptyAndConsistent() const;
+    bool emptyAndConsistent() const noexcept;
 
     /**
        Check that all copies have complete bucket information and are
        consistent with eachother.
     */
-    bool validAndConsistent() const;
+    bool validAndConsistent() const noexcept;
 
     /**
      * True if the bucket contains at least one invalid copy
      */
-    bool hasInvalidCopy() const;
+    bool hasInvalidCopy() const noexcept;
 
     /**
      * Returns the number of trusted nodes this entry has.
      */
-    uint16_t getTrustedCount() const;
+    uint16_t getTrustedCount() const noexcept;
 
-    bool hasTrusted() const {
+    bool hasTrusted() const noexcept {
         return getTrustedCount() != 0;
     }
 
@@ -78,14 +78,14 @@ public:
      * @param countInCompleteAsInconsistent If false, nodes that are incomplete
      *       are always counted as consistent with complete nodes.
      */
-    bool consistentNodes(bool countInvalidAsConsistent = false) const;
+    bool consistentNodes(bool countInvalidAsConsistent = false) const noexcept;
 
     void print(std::ostream&, bool verbose, const std::string& indent) const;
 
     /**
      * Returns the bucket copy struct for the given node, null if nonexisting
      */
-    const BucketCopy* getNode(uint16_t node) const;
+    const BucketCopy* getNode(uint16_t node) const noexcept;
 
     /**
      * Returns the number of nodes this entry has.
@@ -95,7 +95,7 @@ public:
     /**
      * Returns a list of the nodes this entry has.
      */
-    std::vector<uint16_t> getNodes() const;
+    std::vector<uint16_t> getNodes() const noexcept;
 
     /**
        Returns a reference to the node with the given index in the node
@@ -117,14 +117,14 @@ public:
 
     std::string toString() const;
 
-    uint32_t getHighestDocumentCount() const;
-    uint32_t getHighestTotalDocumentSize() const;
-    uint32_t getHighestMetaCount() const;
-    uint32_t getHighestUsedFileSize() const;
+    uint32_t getHighestDocumentCount() const noexcept;
+    uint32_t getHighestTotalDocumentSize() const noexcept;
+    uint32_t getHighestMetaCount() const noexcept;
+    uint32_t getHighestUsedFileSize() const noexcept;
 
-    bool hasRecentlyCreatedEmptyCopy() const;
+    bool hasRecentlyCreatedEmptyCopy() const noexcept;
 
-    bool operator==(const BucketInfoBase& other) const;
+    bool operator==(const BucketInfoBase& other) const noexcept;
 };
 
 template <typename NodeSeq>
@@ -152,7 +152,7 @@ public:
     /**
      * Sets the last time the bucket was "garbage collected".
      */
-    void setLastGarbageCollectionTime(uint32_t timestamp) {
+    void setLastGarbageCollectionTime(uint32_t timestamp) noexcept {
         _lastGarbageCollection = timestamp;
     }
 
