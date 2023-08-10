@@ -64,23 +64,17 @@ public:
         std::vector<BucketDatabase::Entry> entries;
 
         // Common
-        const lib::ClusterState&        systemState;
-        const lib::ClusterState*        pending_cluster_state; // nullptr if no state is pending.
-        const DistributorConfiguration& distributorConfig;
-        const lib::Distribution&        distribution;
-        BucketGcTimeCalculator          gcTimeCalculator;
-
-        // Separate ideal state into ordered sequence and unordered set, as we
-        // need to both know the actual order (activation prioritization etc) as
-        // well as have the ability to quickly check if a node is in an ideal
-        // location.
-        const IdealServiceLayerNodesBundle & idealStateBundle;
-
-        const DistributorNodeContext&            node_ctx;
-        const DistributorStripeOperationContext& op_ctx;
-        const BucketDatabase&                    db;
-        NodeMaintenanceStatsTracker&             stats;
-        const bool                               merges_inhibited_in_bucket_space;
+        const lib::ClusterState                 & systemState;
+        const lib::ClusterState                 * pending_cluster_state; // nullptr if no state is pending.
+        const DistributorConfiguration          & distributorConfig;
+        const lib::Distribution                 & distribution;
+        BucketGcTimeCalculator                    gcTimeCalculator;
+        const IdealServiceLayerNodesBundle      & idealStateBundle;
+        const DistributorNodeContext            & node_ctx;
+        const DistributorStripeOperationContext & op_ctx;
+        const BucketDatabase                    & db;
+        NodeMaintenanceStatsTracker             & stats;
+        const bool                                merges_inhibited_in_bucket_space;
 
         const BucketDatabase::Entry& getSiblingEntry() const noexcept { return siblingEntry; }
         const std::vector<uint16_t> & idealState() const noexcept { return idealStateBundle.available_nonretired_or_maintenance_nodes(); }
@@ -106,28 +100,19 @@ public:
         std::unique_ptr<ResultImpl> _impl;
     public:
         IdealStateOperation::UP createOperation() {
-            return (_impl
-                    ? _impl->createOperation()
-                    : IdealStateOperation::UP());
+            return (_impl ? _impl->createOperation() : IdealStateOperation::UP());
         }
 
         MaintenancePriority getPriority() const {
-            return (_impl
-                    ? _impl->getPriority()
-                    : MaintenancePriority());
+            return (_impl ? _impl->getPriority() : MaintenancePriority());
         }
 
         MaintenanceOperation::Type getType() const {
-            return (_impl
-                    ? _impl->getType()
-                    : MaintenanceOperation::OPERATION_COUNT);
-            
+            return (_impl ? _impl->getType() : MaintenanceOperation::OPERATION_COUNT);
         }
 
         static Result noMaintenanceNeeded();
-        static Result createStoredResult(
-                IdealStateOperation::UP operation,
-                MaintenancePriority::Priority priority);
+        static Result createStoredResult(IdealStateOperation::UP operation, MaintenancePriority::Priority priority);
     private:
         explicit Result(std::unique_ptr<ResultImpl> impl)
             : _impl(std::move(impl))
