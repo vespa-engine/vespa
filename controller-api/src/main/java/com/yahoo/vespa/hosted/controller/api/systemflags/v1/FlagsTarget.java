@@ -142,7 +142,7 @@ public interface FlagsTarget {
         var fetchVector = new FetchVector();
         if (!flagDimensions.contains(CLOUD)) fetchVector = fetchVector.with(CLOUD, cloud.value());
         if (!flagDimensions.contains(ENVIRONMENT)) fetchVector = fetchVector.with(ENVIRONMENT, virtualZoneId.environment().value());
-        if (!flagDimensions.contains(SYSTEM)) fetchVector = fetchVector.with(SYSTEM, system.value());
+        fetchVector = fetchVector.with(SYSTEM, system.value());
         if (!flagDimensions.contains(ZONE_ID)) fetchVector = fetchVector.with(ZONE_ID, virtualZoneId.value());
         return fetchVector.isEmpty() ? data : data.partialResolve(fetchVector);
     }
