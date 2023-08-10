@@ -29,8 +29,7 @@ struct HtmlStatusReporter : public StatusReporter {
      * some code in the <head></head> part of the HTML, such as javascript
      * functions.
      */
-    virtual void reportHtmlHeaderAdditions(std::ostream&,
-                                           const HttpUrlPath&) const {}
+    virtual void reportHtmlHeaderAdditions(std::ostream&, const HttpUrlPath&) const {}
 
     /**
      * Write a default HTML header. It writes the start of an HTML
