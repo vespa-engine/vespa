@@ -50,7 +50,7 @@ private:
         ResultGroup(const Group& group, uint16_t redundancy) noexcept
             : _group(&group), _redundancy(redundancy) {}
 
-        bool operator<(const ResultGroup& other) const {
+        bool operator<(const ResultGroup& other) const noexcept {
             return _group->getIndex() < other._group->getIndex();
         }
     };
@@ -59,32 +59,23 @@ private:
      * Get seed to use for ideal state algorithm's random number generator
      * to decide which hierarchical group we should pick.
      */
-    uint32_t getGroupSeed(
-                const document::BucketId&, const ClusterState&,
-                const Group&) const;
+    uint32_t getGroupSeed(const document::BucketId&, const ClusterState&, const Group&) const;
 
     /**
      * Get seed to use for ideal state algorithm's random number generator
      * to decide which distributor node this bucket should be mapped to.
      */
-    uint32_t getDistributorSeed(
-                const document::BucketId&, const ClusterState&) const;
+    uint32_t getDistributorSeed(const document::BucketId&, const ClusterState&) const;
     /**
      * Get seed to use for ideal state algorithm's random number generator
      * to decide which storage node this bucket should be mapped to.
      */
-    uint32_t getStorageSeed(
-                const document::BucketId&, const ClusterState&) const;
+    uint32_t getStorageSeed(const document::BucketId&, const ClusterState&) const;
 
-    void getIdealGroups(const document::BucketId& bucket,
-                        const ClusterState& clusterState,
-                        const Group& parent,
-                        uint16_t redundancy,
-                        std::vector<ResultGroup>& results) const;
+    void getIdealGroups(const document::BucketId& bucket, const ClusterState& clusterState, const Group& parent,
+                        uint16_t redundancy, std::vector<ResultGroup>& results) const;
 
-    const Group* getIdealDistributorGroup(const document::BucketId& bucket,
-                                          const ClusterState& clusterState,
-                                          const Group& parent) const;
+    const Group* getIdealDistributorGroup(const document::BucketId& bucket, const ClusterState& clusterState, const Group& parent) const;
 
     /**
      * Since distribution object may be used often in ideal state calculations
@@ -97,9 +88,9 @@ private:
 public:
     class ConfigWrapper {
     public:
-        ConfigWrapper(ConfigWrapper && rhs) = default;
-        ConfigWrapper & operator = (ConfigWrapper && rhs) = default;
-        ConfigWrapper(std::unique_ptr<DistributionConfig> cfg);
+        ConfigWrapper(ConfigWrapper && rhs) noexcept = default;
+        ConfigWrapper & operator = (ConfigWrapper && rhs) noexcept = default;
+        ConfigWrapper(std::unique_ptr<DistributionConfig> cfg) noexcept;
         ~ConfigWrapper();
         const DistributionConfig & get() const { return *_cfg; }
     private:

@@ -10,7 +10,6 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/assert.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation.queue");
@@ -21,10 +20,9 @@ using storage::lib::NodeType;
 
 namespace storage::distributor {
 
-IdealStateManager::IdealStateManager(
-        const DistributorNodeContext& node_ctx,
-        DistributorStripeOperationContext& op_ctx,
-        IdealStateMetricSet& metrics)
+IdealStateManager::IdealStateManager(const DistributorNodeContext& node_ctx,
+                                     DistributorStripeOperationContext& op_ctx,
+                                     IdealStateMetricSet& metrics)
     : _metrics(metrics),
       _stateCheckers(),
       _splitBucketStateChecker(nullptr),
@@ -56,9 +54,7 @@ IdealStateManager::fillParentAndChildBuckets(StateChecker::Context& c)
 {
     c.db.getAll(c.getBucketId(), c.entries);
     if (c.entries.empty()) {
-        LOG(spam,
-            "Did not find bucket %s in bucket database",
-            c.bucket.toString().c_str());
+        LOG(spam, "Did not find bucket %s in bucket database", c.bucket.toString().c_str());
     }
 }
 void
@@ -85,8 +81,7 @@ namespace {
  * overwriting if already explicitly set.
  */
 bool
-canOverwriteResult(const StateChecker::Result& existing,
-                   const StateChecker::Result& candidate)
+canOverwriteResult(const StateChecker::Result& existing, const StateChecker::Result& candidate)
 {
     return (!existing.getPriority().requiresMaintenance()
             && candidate.getPriority().requiresMaintenance());
@@ -101,9 +96,7 @@ IdealStateManager::runStateCheckers(StateChecker::Context& c) const
     // We go through _all_ active state checkers so that statistics can be
     // collected across all checkers, not just the ones that are highest pri.
     for (const auto & checker : _stateCheckers) {
-        if (!operation_context().distributor_config().stateCheckerIsActive(
-                checker->getName()))
-        {
+        if (!operation_context().distributor_config().stateCheckerIsActive(checker->getName())) {
             LOG(spam, "Skipping state checker %s", checker->getName());
             continue;
         }
@@ -125,11 +118,8 @@ void IdealStateManager::verify_only_live_nodes_in_context(const StateChecker::Co
         const auto& state = c.systemState.getNodeState(lib::Node(lib::NodeType::STORAGE, index));
         // Only nodes in Up, Initializing or Retired should ever be present in the DB.
         if (!state.getState().oneOf("uir")) {
-            LOG(error, "%s in bucket DB is on node %u, which is in unavailable state %s. "
-                       "Current cluster state is '%s'",
-                       c.entry.getBucketId().toString().c_str(),
-                       index,
-                       state.getState().toString().c_str(),
+            LOG(error, "%s in bucket DB is on node %u, which is in unavailable state %s. Current cluster state is '%s'",
+                       c.entry.getBucketId().toString().c_str(), index, state.getState().toString().c_str(),
                        c.systemState.toString().c_str());
             ASSERT_ONCE_OR_LOG(false, "Bucket DB contains replicas on unavailable node", 10000);
             _has_logged_phantom_replica_warning = true;
@@ -159,9 +149,7 @@ IdealStateManager::generateHighestPriority(
 }
 
 MaintenancePriorityAndType
-IdealStateManager::prioritize(
-        const document::Bucket& bucket,
-        NodeMaintenanceStatsTracker& statsTracker) const
+IdealStateManager::prioritize(const document::Bucket& bucket, NodeMaintenanceStatsTracker& statsTracker) const
 {
     StateChecker::Result generated(generateHighestPriority(bucket, statsTracker));
     MaintenancePriority priority(generated.getPriority());
@@ -172,8 +160,7 @@ IdealStateManager::prioritize(
 }
 
 IdealStateOperation::SP
-IdealStateManager::generateInterceptingSplit(BucketSpace bucketSpace,
-                                             const BucketDatabase::Entry& e,
+IdealStateManager::generateInterceptingSplit(BucketSpace bucketSpace, const BucketDatabase::Entry& e,
                                              api::StorageMessage::Priority pri)
 {
     NodeMaintenanceStatsTracker statsTracker;
@@ -199,18 +186,15 @@ MaintenanceOperation::SP
 IdealStateManager::generate(const document::Bucket& bucket) const
 {
     NodeMaintenanceStatsTracker statsTracker;
-    IdealStateOperation::SP op(
-            generateHighestPriority(bucket, statsTracker).createOperation());
+    IdealStateOperation::SP op(generateHighestPriority(bucket, statsTracker).createOperation());
     if (op.get()) {
-        op->setIdealStateManager(
-                const_cast<IdealStateManager*>(this));
+        op->setIdealStateManager(const_cast<IdealStateManager*>(this));
     }
     return op;
 }
 
 std::vector<MaintenanceOperation::SP>
-IdealStateManager::generateAll(const document::Bucket &bucket,
-                               NodeMaintenanceStatsTracker& statsTracker) const
+IdealStateManager::generateAll(const document::Bucket &bucket, NodeMaintenanceStatsTracker& statsTracker) const
 {
     auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
     StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
@@ -234,15 +218,11 @@ IdealStateManager::generateAll(const document::Bucket &bucket,
 }
 
 void
-IdealStateManager::getBucketStatus(
-        BucketSpace bucketSpace,
-        const BucketDatabase::ConstEntryRef& entry,
-        NodeMaintenanceStatsTracker& statsTracker,
-        std::ostream& out) const
+IdealStateManager::getBucketStatus(BucketSpace bucketSpace, const BucketDatabase::ConstEntryRef& entry,
+                                   NodeMaintenanceStatsTracker& statsTracker, std::ostream& out) const
 {
     document::Bucket bucket(bucketSpace, entry.getBucketId());
-    std::vector<MaintenanceOperation::SP> operations(
-            generateAll(bucket, statsTracker));
+    std::vector<MaintenanceOperation::SP> operations(generateAll(bucket, statsTracker));
     if (operations.empty()) {
         out << entry.getBucketId() << " : ";
     } else {
