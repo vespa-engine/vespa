@@ -12,7 +12,7 @@
 #include <vespa/vespalib/util/assert.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor.operation.queue");
+LOG_SETUP(".distributor.idealstatemanager");
 
 using document::BucketSpace;
 using storage::lib::Node;
@@ -109,7 +109,8 @@ IdealStateManager::runStateCheckers(StateChecker::Context& c) const
     return highestPri;
 }
 
-void IdealStateManager::verify_only_live_nodes_in_context(const StateChecker::Context& c) const {
+void
+IdealStateManager::verify_only_live_nodes_in_context(const StateChecker::Context& c) const {
     if (_has_logged_phantom_replica_warning) {
         return;
     }
@@ -128,9 +129,7 @@ void IdealStateManager::verify_only_live_nodes_in_context(const StateChecker::Co
 }
 
 StateChecker::Result
-IdealStateManager::generateHighestPriority(
-        const document::Bucket& bucket,
-        NodeMaintenanceStatsTracker& statsTracker) const
+IdealStateManager::generateHighestPriority(const document::Bucket& bucket, NodeMaintenanceStatsTracker& statsTracker) const
 {
     auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
     StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
@@ -241,13 +240,15 @@ IdealStateManager::getBucketStatus(BucketSpace bucketSpace, const BucketDatabase
     out << "[" << entry->toString() << "]<br>\n";
 }
 
-void IdealStateManager::dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const {
+void
+IdealStateManager::dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const {
     StatusBucketVisitor proc(*this, bucket_space, out);
     auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket_space);
     distributorBucketSpace.getBucketDatabase().for_each_upper_bound(proc);
 }
 
-void IdealStateManager::getBucketStatus(std::ostream& out) const {
+void
+IdealStateManager::getBucketStatus(std::ostream& out) const {
     LOG(debug, "Dumping bucket database valid at cluster state version %u",
         operation_context().cluster_state_bundle().getVersion());
 

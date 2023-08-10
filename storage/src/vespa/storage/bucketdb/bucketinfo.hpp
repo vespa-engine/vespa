@@ -19,8 +19,8 @@ BucketInfoBase<NodeSeq>::toString() const {
 template <typename NodeSeq>
 bool
 BucketInfoBase<NodeSeq>::emptyAndConsistent() const noexcept {
-    for (uint32_t i = 0; i < _nodes.size(); i++) {
-        if (!_nodes[i].empty()) {
+    for (const auto & n : _nodes) {
+        if (!n.empty()) {
             return false;
         }
     }
@@ -30,8 +30,8 @@ BucketInfoBase<NodeSeq>::emptyAndConsistent() const noexcept {
 template <typename NodeSeq>
 bool
 BucketInfoBase<NodeSeq>::validAndConsistent() const noexcept {
-    for (uint32_t i = 0; i < _nodes.size(); i++) {
-        if (!_nodes[i].valid()) {
+    for (const auto & n : _nodes) {
+        if (!n.valid()) {
             return false;
         }
     }
@@ -41,8 +41,8 @@ BucketInfoBase<NodeSeq>::validAndConsistent() const noexcept {
 template <typename NodeSeq>
 bool
 BucketInfoBase<NodeSeq>::hasInvalidCopy() const noexcept {
-    for (uint32_t i = 0; i < _nodes.size(); i++) {
-        if (!_nodes[i].valid()) {
+    for (const auto & n : _nodes){
+        if (!n.valid()) {
             return true;
         }
     }
@@ -53,8 +53,8 @@ template <typename NodeSeq>
 uint16_t
 BucketInfoBase<NodeSeq>::getTrustedCount() const noexcept {
     uint32_t trustedCount = 0;
-    for (uint32_t i = 0; i < _nodes.size(); i++) {
-        if (_nodes[i].trusted()) {
+    for (const auto & n : _nodes) {
+        if (n.trusted()) {
             trustedCount++;
         }
     }
@@ -151,8 +151,9 @@ template <typename NodeSeq>
 std::vector<uint16_t>
 BucketInfoBase<NodeSeq>::getNodes() const noexcept {
     std::vector<uint16_t> result;
-    for (uint32_t i = 0; i < _nodes.size(); i++) {
-        result.emplace_back(_nodes[i].getNode());
+    result.reserve(_nodes.size());
+    for (const auto & n : _nodes) {
+        result.emplace_back(n.getNode());
     }
     return result;
 }
@@ -161,8 +162,8 @@ template <typename NodeSeq>
 uint32_t
 BucketInfoBase<NodeSeq>::getHighestDocumentCount() const noexcept {
     uint32_t highest = 0;
-    for (uint32_t i = 0; i < _nodes.size(); ++i) {
-        highest = std::max(highest, _nodes[i].getDocumentCount());
+    for (const auto & n : _nodes) {
+        highest = std::max(highest, n.getDocumentCount());
     }
     return highest;
 }
@@ -171,8 +172,8 @@ template <typename NodeSeq>
 uint32_t
 BucketInfoBase<NodeSeq>::getHighestTotalDocumentSize() const noexcept {
     uint32_t highest = 0;
-    for (uint32_t i = 0; i < _nodes.size(); ++i) {
-        highest = std::max(highest, _nodes[i].getTotalDocumentSize());
+    for (const auto & n : _nodes) {
+        highest = std::max(highest, n.getTotalDocumentSize());
     }
     return highest;
 }
@@ -181,8 +182,8 @@ template <typename NodeSeq>
 uint32_t
 BucketInfoBase<NodeSeq>::getHighestMetaCount() const noexcept {
     uint32_t highest = 0;
-    for (uint32_t i = 0; i < _nodes.size(); ++i) {
-        highest = std::max(highest, _nodes[i].getMetaCount());
+    for (const auto & n : _nodes) {
+        highest = std::max(highest, n.getMetaCount());
     }
     return highest;
 }
@@ -191,8 +192,8 @@ template <typename NodeSeq>
 uint32_t
 BucketInfoBase<NodeSeq>::getHighestUsedFileSize() const noexcept {
     uint32_t highest = 0;
-    for (uint32_t i = 0; i < _nodes.size(); ++i) {
-        highest = std::max(highest, _nodes[i].getUsedFileSize());
+    for (const auto & n : _nodes) {
+        highest = std::max(highest, n.getUsedFileSize());
     }
     return highest;
 }
@@ -200,8 +201,8 @@ BucketInfoBase<NodeSeq>::getHighestUsedFileSize() const noexcept {
 template <typename NodeSeq>
 bool
 BucketInfoBase<NodeSeq>::hasRecentlyCreatedEmptyCopy() const noexcept {
-    for (uint32_t i = 0; i < _nodes.size(); ++i) {
-        if (_nodes[i].wasRecentlyCreated()) {
+    for (const auto & n : _nodes) {
+        if (n.wasRecentlyCreated()) {
             return true;
         }
     }

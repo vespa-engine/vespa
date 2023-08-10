@@ -49,18 +49,14 @@ public:
     MaintenanceOperation::SP generate(const document::Bucket& bucket) const override;
 
     // MaintenanceOperationGenerator
-    std::vector<MaintenanceOperation::SP> generateAll(
-            const document::Bucket& bucket,
-            NodeMaintenanceStatsTracker& statsTracker) const override;
+    std::vector<MaintenanceOperation::SP> generateAll(const document::Bucket& bucket, NodeMaintenanceStatsTracker& statsTracker) const override;
 
     /**
      * If the given bucket is too large, generate a split operation for it,
      * with higher priority than the given one.
      */
-    IdealStateOperation::SP generateInterceptingSplit(
-            document::BucketSpace bucketSpace,
-            const BucketDatabase::Entry& e,
-            api::StorageMessage::Priority pri);
+    IdealStateOperation::SP generateInterceptingSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e,
+                                                      api::StorageMessage::Priority pri);
 
     IdealStateMetricSet& getMetrics() noexcept { return _metrics; }
 
@@ -78,9 +74,7 @@ private:
     void verify_only_live_nodes_in_context(const StateChecker::Context& c) const;
     static void fillParentAndChildBuckets(StateChecker::Context& c);
     static void fillSiblingBucket(StateChecker::Context& c);
-    StateChecker::Result generateHighestPriority(
-            const document::Bucket& bucket,
-            NodeMaintenanceStatsTracker& statsTracker) const;
+    StateChecker::Result generateHighestPriority(const document::Bucket& bucket, NodeMaintenanceStatsTracker& statsTracker) const;
     StateChecker::Result runStateCheckers(StateChecker::Context& c) const;
 
     static BucketDatabase::Entry* getEntryForPrimaryBucket(StateChecker::Context& c);
