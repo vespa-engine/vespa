@@ -111,7 +111,7 @@ NodeMaintenanceStatsTracker::reset(size_t nodes) {
     _node_stats.clear();
     _node_stats.resize(nodes);
     _total_stats = NodeMaintenanceStats();
-    _max_observed_time_since_last_gc = 0;
+    _max_observed_time_since_last_gc = vespalib::duration::zero();
 }
 
 }
