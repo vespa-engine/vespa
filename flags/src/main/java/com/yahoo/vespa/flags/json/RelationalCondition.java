@@ -68,6 +68,10 @@ public class RelationalCondition implements Condition {
         return fetchVector.getValue(dimension).map(predicate::test).orElse(false);
     }
 
+    public RelationalPredicate relationalPredicate() {
+        return relationalPredicate;
+    }
+
     @Override
     public WireCondition toWire() {
         var condition = new WireCondition();
