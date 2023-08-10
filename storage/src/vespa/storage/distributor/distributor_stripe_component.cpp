@@ -53,18 +53,19 @@ class UpdateBucketDatabaseProcessor : public BucketDatabase::EntryUpdateProcesso
     const std::vector<BucketCopy>& _changed_nodes;
     std::vector<uint16_t> _ideal_nodes;
     bool _reset_trusted;
+    using ConstNodesRef = IdealServiceLayerNodesBundle::ConstNodesRef;
 public:
-    UpdateBucketDatabaseProcessor(const framework::Clock& clock, const std::vector<BucketCopy>& changed_nodes, std::vector<uint16_t> ideal_nodes, bool reset_trusted);
+    UpdateBucketDatabaseProcessor(const framework::Clock& clock, const std::vector<BucketCopy>& changed_nodes, ConstNodesRef ideal_nodes, bool reset_trusted);
     ~UpdateBucketDatabaseProcessor() override;
     BucketDatabase::Entry create_entry(const document::BucketId& bucket) const override;
     bool process_entry(BucketDatabase::Entry &entry) const override;
 };
 
-UpdateBucketDatabaseProcessor::UpdateBucketDatabaseProcessor(const framework::Clock& clock, const std::vector<BucketCopy>& changed_nodes, std::vector<uint16_t> ideal_nodes, bool reset_trusted)
+UpdateBucketDatabaseProcessor::UpdateBucketDatabaseProcessor(const framework::Clock& clock, const std::vector<BucketCopy>& changed_nodes, ConstNodesRef ideal_nodes, bool reset_trusted)
     : BucketDatabase::EntryUpdateProcessor(),
       _clock(clock),
       _changed_nodes(changed_nodes),
-      _ideal_nodes(std::move(ideal_nodes)),
+      _ideal_nodes(ideal_nodes.cbegin(), ideal_nodes.cend()),
       _reset_trusted(reset_trusted)
 {
 }

@@ -15,23 +15,23 @@ namespace storage::distributor {
 class OperationTarget : public vespalib::AsciiPrintable
 {
     document::Bucket _bucket;
-    lib::Node _node;
-    bool _newCopy;
+    lib::Node        _node;
+    bool             _newCopy;
 
 public:
-    OperationTarget() : _newCopy(true) {} 
-    OperationTarget(const document::Bucket& bucket, const lib::Node& node, bool newCopy)
+    OperationTarget() noexcept : _newCopy(true) {}
+    OperationTarget(const document::Bucket& bucket, const lib::Node& node, bool newCopy) noexcept
         : _bucket(bucket), _node(node), _newCopy(newCopy) {}
 
-    document::BucketId getBucketId() const { return _bucket.getBucketId(); }
-    document::Bucket getBucket() const { return _bucket; }
-    const lib::Node& getNode() const { return _node; }
-    bool isNewCopy() const { return _newCopy; }
+    document::BucketId getBucketId() const noexcept { return _bucket.getBucketId(); }
+    document::Bucket getBucket() const noexcept { return _bucket; }
+    const lib::Node& getNode() const noexcept { return _node; }
+    bool isNewCopy() const noexcept { return _newCopy; }
 
-    bool operator==(const OperationTarget& o) const {
+    bool operator==(const OperationTarget& o) const noexcept {
         return (_bucket == o._bucket && _node == o._node && _newCopy == o._newCopy);
     }
-    bool operator!=(const OperationTarget& o) const {
+    bool operator!=(const OperationTarget& o) const noexcept {
         return !(operator==(o));
     }
 
@@ -40,13 +40,13 @@ public:
 
 class OperationTargetList : public std::vector<OperationTarget> {
 public:
-    bool hasAnyNewCopies() const {
+    bool hasAnyNewCopies() const noexcept {
         for (size_t i=0; i<size(); ++i) {
             if (operator[](i).isNewCopy()) return true;
         }
         return false;
     }
-    bool hasAnyExistingCopies() const {
+    bool hasAnyExistingCopies() const noexcept {
         for (size_t i=0; i<size(); ++i) {
             if (!operator[](i).isNewCopy()) return true;
         }
@@ -63,8 +63,7 @@ public:
         PUT
     };
     
-    virtual OperationTargetList getTargets(OperationType type,
-                                           const document::BucketId& id) = 0;
+    virtual OperationTargetList getTargets(OperationType type, const document::BucketId& id) = 0;
 };
 
 }

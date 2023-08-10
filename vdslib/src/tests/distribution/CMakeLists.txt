@@ -3,7 +3,6 @@ vespa_add_library(vdslib_testdistribution
     SOURCES
     distributiontest.cpp
     grouptest.cpp
-    idealnodecalculatorimpltest.cpp
     DEPENDS
     vdslib
     GTest::GTest

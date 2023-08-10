@@ -3,8 +3,8 @@
 #pragma once
 
 #include "operationtargetresolver.h"
+#include "ideal_service_layer_nodes_bundle.h"
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/vdslib/distribution/idealnodecalculator.h>
 #include <algorithm>
 
 namespace storage::distributor {
@@ -19,11 +19,11 @@ struct BucketInstance : public vespalib::AsciiPrintable {
     bool               _trusted;
     bool               _exist;
 
-    BucketInstance() : _idealLocationPriority(0xffff),
-                       _trusted(false), _exist(false) {}
+    BucketInstance() noexcept
+        : _idealLocationPriority(0xffff), _trusted(false), _exist(false) {}
     BucketInstance(const document::BucketId& id, const api::BucketInfo& info,
                    lib::Node node, uint16_t idealLocationPriority, bool trusted,
-                   bool exist = true);
+                   bool exist) noexcept;
 
     void print(vespalib::asciistream& out, const PrintProperties&) const override;
 };
@@ -42,10 +42,9 @@ class BucketInstanceList : public vespalib::AsciiPrintable {
      * Postconditions:
      *   <return value>.contains(mostSpecificId)
      */
-    document::BucketId leastSpecificLeafBucketInSubtree(
-            const document::BucketId& candidateId,
-            const document::BucketId& mostSpecificId,
-            const BucketDatabase& db) const;
+    document::BucketId leastSpecificLeafBucketInSubtree(const document::BucketId& candidateId,
+                                                        const document::BucketId& mostSpecificId,
+                                                        const BucketDatabase& db) const;
 
 public:
     void add(const BucketInstance& instance) { _instances.push_back(instance); }
@@ -59,13 +58,11 @@ public:
      *   _instances.size() >= configured redundancy level, unless insufficient
      *   number of nodes are available
      */
-    void extendToEnoughCopies(const DistributorBucketSpace& distributor_bucket_space,
-                              const BucketDatabase& db,
-                              const document::BucketId& targetIfNonPreExisting,
-                              const document::BucketId& mostSpecificId);
+    void extendToEnoughCopies(const DistributorBucketSpace& distributor_bucket_space, const BucketDatabase& db,
+                              const document::BucketId& targetIfNonPreExisting, const document::BucketId& mostSpecificId);
 
     void populate(const document::BucketId&, const DistributorBucketSpace&, BucketDatabase&);
-    void add(const BucketDatabase::Entry& e, const lib::IdealNodeList& idealState);
+    void add(const BucketDatabase::Entry& e, const IdealServiceLayerNodesBundle::Node2Index & idealState);
 
     template <typename Order>
     void sort(const Order& order) {
@@ -79,17 +76,14 @@ public:
 
 class OperationTargetResolverImpl : public OperationTargetResolver {
     const DistributorBucketSpace& _distributor_bucket_space;
-    BucketDatabase& _bucketDatabase;
-    uint32_t _minUsedBucketBits;
-    uint16_t _redundancy;
+    BucketDatabase&       _bucketDatabase;
+    uint32_t              _minUsedBucketBits;
+    uint16_t              _redundancy;
     document::BucketSpace _bucketSpace;
 
 public:
-    OperationTargetResolverImpl(const DistributorBucketSpace& distributor_bucket_space,
-                                BucketDatabase& bucketDatabase,
-                                uint32_t minUsedBucketBits,
-                                uint16_t redundancy,
-                                document::BucketSpace bucketSpace)
+    OperationTargetResolverImpl(const DistributorBucketSpace& distributor_bucket_space, BucketDatabase& bucketDatabase,
+                                uint32_t minUsedBucketBits, uint16_t redundancy, document::BucketSpace bucketSpace)
         : _distributor_bucket_space(distributor_bucket_space),
           _bucketDatabase(bucketDatabase),
           _minUsedBucketBits(minUsedBucketBits),
@@ -97,8 +91,7 @@ public:
           _bucketSpace(bucketSpace)
     {}
 
-    BucketInstanceList getAllInstances(OperationType type,
-                                       const document::BucketId& id);
+    BucketInstanceList getAllInstances(OperationType type, const document::BucketId& id);
     BucketInstanceList getInstances(OperationType type, const document::BucketId& id) {
         BucketInstanceList result(getAllInstances(type, id));
         result.limitToRedundancyCopies(_redundancy);

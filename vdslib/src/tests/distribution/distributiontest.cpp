@@ -5,7 +5,6 @@
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/fastos/file.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vdslib/distribution/idealnodecalculator.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -83,6 +82,51 @@ TEST(DistributionTest, test_verify_java_distributions)
 }
 
 namespace {
+
+/**
+* A list of ideal nodes, sorted in preferred order. Wraps a vector to hide
+* unneeded details, and make it easily printable.
+*/
+class IdealNodeList : public document::Printable {
+public:
+    IdealNodeList() noexcept;
+    ~IdealNodeList();
+
+    void push_back(const Node& node) {
+        _idealNodes.push_back(node);
+    }
+
+    const Node& operator[](uint32_t i) const noexcept { return _idealNodes[i]; }
+    uint32_t size() const noexcept { return _idealNodes.size(); }
+    bool contains(const Node& n) const noexcept {
+        return indexOf(n) != 0xffff;
+    }
+    uint16_t indexOf(const Node& n) const noexcept {
+        for (uint16_t i=0; i<_idealNodes.size(); ++i) {
+            if (n == _idealNodes[i]) return i;
+        }
+        return 0xffff;
+    }
+
+    void print(std::ostream& out, bool, const std::string &) const override;
+private:
+    std::vector<Node> _idealNodes;
+};
+
+IdealNodeList::IdealNodeList() noexcept = default;
+IdealNodeList::~IdealNodeList() = default;
+
+void
+IdealNodeList::print(std::ostream& out, bool , const std::string &) const
+{
+    out << "[";
+    for (uint32_t i=0; i<_idealNodes.size(); ++i) {
+        if (i != 0) out << ", ";
+        out << _idealNodes[i];
+    }
+    out << "]";
+}
+
 
 struct ExpectedResult {
     ExpectedResult() { }

@@ -9,22 +9,8 @@
 
 namespace storage::distributor {
 
-namespace {
-
-lib::IdealNodeList
-make_node_list(const std::vector<uint16_t>& nodes)
-{
-    lib::IdealNodeList list;
-    for (auto node : nodes) {
-        list.push_back(lib::Node(lib::NodeType::STORAGE, node));
-    }
-    return list;
-}
-
-}
-
 BucketInstance::BucketInstance(const document::BucketId& id, const api::BucketInfo& info, lib::Node node,
-                               uint16_t idealLocationPriority, bool trusted, bool exist)
+                               uint16_t idealLocationPriority, bool trusted, bool exist) noexcept
     : _bucket(id), _info(info), _node(node),
       _idealLocationPriority(idealLocationPriority), _trusted(trusted), _exist(exist)
 {
@@ -44,19 +30,19 @@ BucketInstance::print(vespalib::asciistream& out, const PrintProperties&) const
 
 bool
 BucketInstanceList::contains(lib::Node node) const {
-    for (uint32_t i=0; i<_instances.size(); ++i) {
-        if (_instances[i]._node == node) return true;
+    for (const auto & instance : _instances) {
+        if (instance._node == node) return true;
     }
     return false;
 }
 
 void
-BucketInstanceList::add(const BucketDatabase::Entry& e, const lib::IdealNodeList& idealState)
+BucketInstanceList::add(const BucketDatabase::Entry& e, const IdealServiceLayerNodesBundle::Node2Index & idealState)
 {
     for (uint32_t i = 0; i < e.getBucketInfo().getNodeCount(); ++i) {
         const BucketCopy& copy(e.getBucketInfo().getNodeRef(i));
         lib::Node node(lib::NodeType::STORAGE, copy.getNode());
-        _instances.emplace_back(e.getBucketId(), copy.getBucketInfo(), node, idealState.indexOf(node), copy.trusted());
+        _instances.emplace_back(e.getBucketId(), copy.getBucketInfo(), node, idealState.lookup(copy.getNode()), copy.trusted(), true);
     }
 }
 
@@ -66,8 +52,8 @@ BucketInstanceList::populate(const document::BucketId& specificId, const Distrib
     std::vector<BucketDatabase::Entry> entries;
     db.getParents(specificId, entries);
     for (const auto & entry : entries) {
-        lib::IdealNodeList idealNodes(make_node_list(distributor_bucket_space.get_ideal_service_layer_nodes_bundle(entry.getBucketId()).available_nonretired_or_maintenance_nodes()));
-        add(entry, idealNodes);
+        auto node2Index = distributor_bucket_space.get_ideal_service_layer_nodes_bundle(entry.getBucketId()).nonRetiredOrMaintenance2Index();
+        add(entry, node2Index);
     }
 }
 
@@ -110,18 +96,17 @@ BucketInstanceList::leastSpecificLeafBucketInSubtree(const document::BucketId& c
 }
 
 void
-BucketInstanceList::extendToEnoughCopies(const DistributorBucketSpace& distributor_bucket_space,
-                                         const BucketDatabase& db,
-                                         const document::BucketId& targetIfNonPreExisting,
-                                         const document::BucketId& mostSpecificId)
+BucketInstanceList::extendToEnoughCopies(const DistributorBucketSpace& distributor_bucket_space, const BucketDatabase& db,
+                                         const document::BucketId& targetIfNonPreExisting, const document::BucketId& mostSpecificId)
 {
     document::BucketId newTarget(_instances.empty() ? targetIfNonPreExisting : _instances[0]._bucket);
     newTarget = leastSpecificLeafBucketInSubtree(newTarget, mostSpecificId, db);
 
-    lib::IdealNodeList idealNodes(make_node_list(distributor_bucket_space.get_ideal_service_layer_nodes_bundle(newTarget).available_nonretired_nodes()));
+    const auto & idealNodes = distributor_bucket_space.get_ideal_service_layer_nodes_bundle(newTarget).available_nonretired_nodes();
     for (uint32_t i=0; i<idealNodes.size(); ++i) {
-        if (!contains(idealNodes[i])) {
-            _instances.emplace_back(newTarget, api::BucketInfo(), idealNodes[i], i, false, false);
+        lib::Node node(lib::NodeType::STORAGE, idealNodes[i]);
+        if (!contains(node)) {
+            _instances.emplace_back(newTarget, api::BucketInfo(), node, i, false, false);
         }
     }
 }
@@ -131,7 +116,7 @@ BucketInstanceList::createTargets(document::BucketSpace bucketSpace)
 {
     OperationTargetList result;
     for (const auto& bi : _instances) {
-        result.push_back(OperationTarget(document::Bucket(bucketSpace, bi._bucket), bi._node, !bi._exist));
+        result.emplace_back(document::Bucket(bucketSpace, bi._bucket), bi._node, !bi._exist);
     }
     return result;
 }

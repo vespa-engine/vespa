@@ -77,7 +77,9 @@ public:
         const bool                                merges_inhibited_in_bucket_space;
 
         const BucketDatabase::Entry& getSiblingEntry() const noexcept { return siblingEntry; }
-        const std::vector<uint16_t> & idealState() const noexcept { return idealStateBundle.available_nonretired_or_maintenance_nodes(); }
+        IdealServiceLayerNodesBundle::ConstNodesRef idealState() const noexcept {
+            return idealStateBundle.available_nonretired_or_maintenance_nodes();
+        }
 
         document::Bucket getBucket() const noexcept { return bucket; }
         document::BucketId getBucketId() const noexcept { return bucket.getBucketId(); }
