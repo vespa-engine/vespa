@@ -97,7 +97,7 @@ RPCTargetPool::getTarget(FRT_Supervisor &orb, const RPCServiceAddress &address)
     std::vector<RPCTarget::SP> targets;
     targets.reserve(_numTargetsPerSpec);
     for (size_t i(0); i < _numTargetsPerSpec; i++) {
-        targets.push_back(std::make_shared<RPCTarget>(spec, orb));
+        targets.push_back(RPCTarget::create(spec, orb));
     }
     _targets.insert(TargetMap::value_type(spec, Entry(std::move(targets), currentTime)));
     return _targets.find(spec)->second.getTarget(guard, currentTime);
