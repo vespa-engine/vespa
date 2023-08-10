@@ -144,10 +144,9 @@ ActiveCopy::calculate(const std::vector<uint16_t>& idealState, const lib::Distri
     if (validNodesWithCopy.empty()) {
         return ActiveList();
     }
-    using IndexList = std::vector<uint16_t>;
-    std::vector<IndexList> groups;
+    std::vector<lib::Distribution::IndexList> groups;
     if (distribution.activePerGroup()) {
-        groups = distribution.splitNodesIntoLeafGroups(std::move(validNodesWithCopy));
+        groups = distribution.splitNodesIntoLeafGroups(validNodesWithCopy);
     } else {
         groups.push_back(std::move(validNodesWithCopy));
     }

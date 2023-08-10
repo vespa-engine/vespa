@@ -12,6 +12,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vdslib/state/nodetype.h>
 #include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/util/arrayref.h>
 
 namespace vespa::config::content::internal {
     class InternalStorDistributionType;
@@ -38,9 +39,9 @@ private:
     uint16_t _redundancy;
     uint16_t _initialRedundancy;
     uint16_t _readyCopies;
-    bool _activePerGroup;
-    bool _ensurePrimaryPersisted;
-    bool _distributorAutoOwnershipTransferOnWholeGroupDown;
+    bool     _activePerGroup;
+    bool     _ensurePrimaryPersisted;
+    bool     _distributorAutoOwnershipTransferOnWholeGroupDown;
     vespalib::string _serialized;
 
     struct ResultGroup {
@@ -105,33 +106,26 @@ public:
 
     Distribution& operator=(const Distribution&) = delete;
 
-    const vespalib::string& serialize() const { return _serialized; }
+    const vespalib::string& serialize() const noexcept { return _serialized; }
 
-    const Group& getNodeGraph() const { return *_nodeGraph; }
-    uint16_t getRedundancy() const { return _redundancy; }
-    uint16_t getInitialRedundancy() const { return _initialRedundancy; }
-    uint16_t getReadyCopies() const { return _readyCopies; }
-    bool ensurePrimaryPersisted() const { return _ensurePrimaryPersisted; }
-    bool distributorAutoOwnershipTransferOnWholeGroupDown() const
-        { return _distributorAutoOwnershipTransferOnWholeGroupDown; }
-    bool activePerGroup() const { return _activePerGroup; }
+    const Group& getNodeGraph() const noexcept { return *_nodeGraph; }
+    uint16_t getRedundancy() const noexcept { return _redundancy; }
+    uint16_t getInitialRedundancy() const noexcept { return _initialRedundancy; }
+    uint16_t getReadyCopies() const noexcept { return _readyCopies; }
+    bool ensurePrimaryPersisted() const noexcept { return _ensurePrimaryPersisted; }
+    bool distributorAutoOwnershipTransferOnWholeGroupDown() const noexcept { return _distributorAutoOwnershipTransferOnWholeGroupDown; }
+    bool activePerGroup() const noexcept { return _activePerGroup; }
 
-    bool operator==(const Distribution& o) const
-        { return (_serialized == o._serialized); }
-    bool operator!=(const Distribution& o) const
-        { return (_serialized != o._serialized); }
+    bool operator==(const Distribution& o) const noexcept { return (_serialized == o._serialized); }
+    bool operator!=(const Distribution& o) const noexcept { return (_serialized != o._serialized); }
 
     void print(std::ostream& out, bool, const std::string&) const override;
 
     /** Simplified wrapper for getIdealNodes() */
-    std::vector<uint16_t> getIdealStorageNodes(
-            const ClusterState&, const document::BucketId&,
-            const char* upStates = "uim") const;
+    std::vector<uint16_t> getIdealStorageNodes(const ClusterState&, const document::BucketId&, const char* upStates = "uim") const;
 
     /** Simplified wrapper for getIdealNodes() */
-    uint16_t getIdealDistributorNode(
-            const ClusterState&, const document::BucketId&,
-            const char* upStates = "uim") const;
+    uint16_t getIdealDistributorNode(const ClusterState&, const document::BucketId&, const char* upStates = "uim") const;
 
     /**
      * @throws TooFewBucketBitsInUseException If distribution bit count is
@@ -140,25 +134,22 @@ public:
      *         in any upstate.
      */
     enum { DEFAULT_REDUNDANCY = 0xffff };
-    void getIdealNodes(const NodeType&, const ClusterState&,
-                       const document::BucketId&, std::vector<uint16_t>& nodes,
-                       const char* upStates = "uim",
-                       uint16_t redundancy = DEFAULT_REDUNDANCY) const;
+    void getIdealNodes(const NodeType&, const ClusterState&, const document::BucketId&, std::vector<uint16_t>& nodes,
+                       const char* upStates, uint16_t redundancy = DEFAULT_REDUNDANCY) const;
 
     /**
      * Unit tests can use this function to get raw config for this class to use
      * with a really simple setup with no hierarchical grouping. This function
      * should not be used by any production code.
      */
-    static ConfigWrapper getDefaultDistributionConfig(
-            uint16_t redundancy = 2, uint16_t nodeCount = 10);
+    static ConfigWrapper getDefaultDistributionConfig(uint16_t redundancy = 2, uint16_t nodeCount = 10);
 
     /**
      * Utility function used by distributor to split copies into groups to
      * handle active per group feature.
      */
     using IndexList = std::vector<uint16_t>;
-    std::vector<IndexList> splitNodesIntoLeafGroups(IndexList nodes) const;
+    std::vector<IndexList> splitNodesIntoLeafGroups(vespalib::ConstArrayRef<uint16_t> nodes) const;
 
     static bool allDistributorsDown(const Group&, const ClusterState&);
 };

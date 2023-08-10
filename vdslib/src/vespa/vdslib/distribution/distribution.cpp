@@ -467,7 +467,7 @@ Distribution::getIdealDistributorNode(const ClusterState& state, const document:
 }
 
 std::vector<Distribution::IndexList>
-Distribution::splitNodesIntoLeafGroups(IndexList nodeList) const
+Distribution::splitNodesIntoLeafGroups(vespalib::ConstArrayRef<uint16_t> nodeList) const
 {
     std::vector<IndexList> result;
     std::map<uint16_t, IndexList> nodes;

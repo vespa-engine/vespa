@@ -40,34 +40,22 @@ DistributorStripeTestUtil::createLinks()
     _node = std::make_unique<TestDistributorApp>(_config.getConfigId());
     _metrics = std::make_shared<DistributorMetricSet>();
     _ideal_state_metrics = std::make_shared<IdealStateMetricSet>();
-    _stripe = std::make_unique<DistributorStripe>(_node->getComponentRegister(),
-                                                  *_metrics,
-                                                  *_ideal_state_metrics,
-                                                  _node->node_identity(),
-                                                  _messageSender,
-                                                  *this,
-                                                  _done_initializing);
+    _stripe = std::make_unique<DistributorStripe>(_node->getComponentRegister(), *_metrics, *_ideal_state_metrics,
+                                                  _node->node_identity(), _messageSender, *this, _done_initializing);
 }
 
 void
-DistributorStripeTestUtil::setup_stripe(int redundancy,
-                                        int nodeCount,
-                                        const std::string& systemState,
-                                        uint32_t earlyReturn,
-                                        bool requirePrimaryToBeWritten)
+DistributorStripeTestUtil::setup_stripe(int redundancy, int nodeCount, const std::string& systemState,
+                                        uint32_t earlyReturn, bool requirePrimaryToBeWritten)
 {
     setup_stripe(redundancy, nodeCount, lib::ClusterStateBundle(lib::ClusterState(systemState)), earlyReturn, requirePrimaryToBeWritten);
 }
 
 void
-DistributorStripeTestUtil::setup_stripe(int redundancy,
-                                        int node_count,
-                                        const lib::ClusterStateBundle& state,
-                                        uint32_t early_return,
-                                        bool require_primary_to_be_written)
+DistributorStripeTestUtil::setup_stripe(int redundancy, int node_count, const lib::ClusterStateBundle& state,
+                                        uint32_t early_return, bool require_primary_to_be_written)
 {
-    lib::Distribution::DistributionConfigBuilder config(
-            lib::Distribution::getDefaultDistributionConfig(redundancy, node_count).get());
+    lib::Distribution::DistributionConfigBuilder config(lib::Distribution::getDefaultDistributionConfig(redundancy, node_count).get());
     config.redundancy = redundancy;
     config.initialRedundancy = early_return;
     config.ensurePrimaryPersisted = require_primary_to_be_written;
@@ -93,8 +81,7 @@ DistributorStripeTestUtil::setup_stripe(int redundancy,
 void
 DistributorStripeTestUtil::set_redundancy(uint32_t redundancy)
 {
-    auto distribution = std::make_shared<lib::Distribution>(
-            lib::Distribution::getDefaultDistributionConfig(redundancy, 100));
+    auto distribution = std::make_shared<lib::Distribution>(lib::Distribution::getDefaultDistributionConfig(redundancy, 100));
     // Same rationale for not triggering a full distribution change as
     // in setup_stripe() above
     _node->getComponentRegister().setDistribution(distribution);
@@ -217,8 +204,7 @@ DistributorStripeTestUtil::getIdealStr(document::BucketId id, const lib::Cluster
     }
 
     std::vector<uint16_t> nodes;
-    getDistribution().getIdealNodes(
-            lib::NodeType::STORAGE, state, id, nodes);
+    getDistribution().getIdealNodes(lib::NodeType::STORAGE, state, id, nodes, "uim");
     std::sort(nodes.begin(), nodes.end());
     std::ostringstream ost;
     ost << id << ": " << dumpVector(nodes);
@@ -226,8 +212,7 @@ DistributorStripeTestUtil::getIdealStr(document::BucketId id, const lib::Cluster
 }
 
 void
-DistributorStripeTestUtil::addIdealNodes(const lib::ClusterState& state,
-                                         const document::BucketId& id)
+DistributorStripeTestUtil::addIdealNodes(const lib::ClusterState& state, const document::BucketId& id)
 {
     BucketDatabase::Entry entry = getBucket(id);
 
@@ -236,15 +221,11 @@ DistributorStripeTestUtil::addIdealNodes(const lib::ClusterState& state,
     }
 
     std::vector<uint16_t> res;
-    getDistribution().getIdealNodes(
-            lib::NodeType::STORAGE, state, id, res);
+    getDistribution().getIdealNodes(lib::NodeType::STORAGE, state, id, res, "uim");
 
     for (uint32_t i = 0; i < res.size(); ++i) {
-        if (state.getNodeState(lib::Node(lib::NodeType::STORAGE, res[i])).getState() !=
-            lib::State::MAINTENANCE)
-        {
-            entry->addNode(BucketCopy(0, res[i], api::BucketInfo(1,1,1)),
-                           toVector<uint16_t>(0));
+        if (state.getNodeState(lib::Node(lib::NodeType::STORAGE, res[i])).getState() != lib::State::MAINTENANCE) {
+            entry->addNode(BucketCopy(0, res[i], api::BucketInfo(1,1,1)), toVector<uint16_t>(0));
         }
     }
 
@@ -292,10 +273,7 @@ DistributorStripeTestUtil::addNodesToBucketDB(const document::Bucket& bucket, co
         }
 
         uint16_t idx = atoi(tok2[0].data());
-        BucketCopy node(
-                0,
-                idx,
-                info);
+        BucketCopy node(0, idx, info);
 
         // Allow user to manually override trusted and active.
         if (tok3.size() > flagsIdx && tok3[flagsIdx] == "t") {
@@ -309,44 +287,32 @@ DistributorStripeTestUtil::addNodesToBucketDB(const document::Bucket& bucket, co
 }
 
 void
-DistributorStripeTestUtil::addNodesToBucketDB(const document::BucketId& id,
-                                              const std::string& nodeStr)
-{
+DistributorStripeTestUtil::addNodesToBucketDB(const document::BucketId& id, const std::string& nodeStr) {
     addNodesToBucketDB(document::Bucket(makeBucketSpace(), id), nodeStr);
 }
 
 void
-DistributorStripeTestUtil::removeFromBucketDB(const document::BucketId& id)
-{
+DistributorStripeTestUtil::removeFromBucketDB(const document::BucketId& id) {
     getBucketDatabase().remove(id);
 }
 
 void
-DistributorStripeTestUtil::addIdealNodes(const document::BucketId& id)
-{
+DistributorStripeTestUtil::addIdealNodes(const document::BucketId& id) {
     // TODO STRIPE roundabout way of getting state bundle..!
     addIdealNodes(*operation_context().cluster_state_bundle().getBaselineClusterState(), id);
 }
 
 void
-DistributorStripeTestUtil::insertBucketInfo(document::BucketId id,
-                                            uint16_t node,
-                                            uint32_t checksum,
-                                            uint32_t count,
-                                            uint32_t size,
-                                            bool trusted,
-                                            bool active)
+DistributorStripeTestUtil::insertBucketInfo(document::BucketId id, uint16_t node, uint32_t checksum,
+                                            uint32_t count, uint32_t size, bool trusted, bool active)
 {
     api::BucketInfo info(checksum, count, size);
     insertBucketInfo(id, node, info, trusted, active);
 }
 
 void
-DistributorStripeTestUtil::insertBucketInfo(document::BucketId id,
-                                            uint16_t node,
-                                            const api::BucketInfo& info,
-                                            bool trusted,
-                                            bool active)
+DistributorStripeTestUtil::insertBucketInfo(document::BucketId id, uint16_t node, const api::BucketInfo& info,
+                                            bool trusted, bool active)
 {
     BucketDatabase::Entry entry = getBucketDatabase().get(id);
     if (!entry.valid()) {
@@ -358,9 +324,7 @@ DistributorStripeTestUtil::insertBucketInfo(document::BucketId id,
         info2.setActive();
     }
     BucketCopy copy(operation_context().generate_unique_timestamp(), node, info2);
-
     entry->addNode(copy.setTrusted(trusted), toVector<uint16_t>(0));
-
     getBucketDatabase().update(entry);
 }
 
@@ -371,9 +335,7 @@ DistributorStripeTestUtil::dumpBucket(const document::BucketId& bid)
 }
 
 void
-DistributorStripeTestUtil::sendReply(Operation& op,
-                                     int idx,
-                                     api::ReturnCode::Result result)
+DistributorStripeTestUtil::sendReply(Operation& op, int idx, api::ReturnCode::Result result)
 {
     if (idx == -1) {
         idx = _sender.commands().size() - 1;
@@ -387,20 +349,17 @@ DistributorStripeTestUtil::sendReply(Operation& op,
 }
 
 BucketDatabase::Entry
-DistributorStripeTestUtil::getBucket(const document::Bucket& bucket) const
-{
+DistributorStripeTestUtil::getBucket(const document::Bucket& bucket) const {
     return getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId());
 }
 
 BucketDatabase::Entry
-DistributorStripeTestUtil::getBucket(const document::BucketId& bId) const
-{
+DistributorStripeTestUtil::getBucket(const document::BucketId& bId) const {
     return getBucketDatabase().get(bId);
 }
 
 void
-DistributorStripeTestUtil::disableBucketActivationInConfig(bool disable)
-{
+DistributorStripeTestUtil::disableBucketActivationInConfig(bool disable) {
     ConfigBuilder builder;
     builder.disableBucketActivation = disable;
     configure_stripe(builder);
@@ -437,14 +396,12 @@ DistributorStripeTestUtil::doc_selection_parser() const {
 }
 
 DistributorMetricSet&
-DistributorStripeTestUtil::metrics()
-{
+DistributorStripeTestUtil::metrics() {
     return *_metrics;
 }
 
 bool
-DistributorStripeTestUtil::tick()
-{
+DistributorStripeTestUtil::tick() {
     return _stripe->tick();
 }
 
@@ -553,8 +510,7 @@ DistributorStripeTestUtil::getBucketSpaces() const
 void
 DistributorStripeTestUtil::enable_cluster_state(vespalib::stringref state)
 {
-    getBucketDBUpdater().simulate_cluster_state_bundle_activation(
-            lib::ClusterStateBundle(lib::ClusterState(state)));
+    getBucketDBUpdater().simulate_cluster_state_bundle_activation(lib::ClusterStateBundle(lib::ClusterState(state)));
 }
 
 void

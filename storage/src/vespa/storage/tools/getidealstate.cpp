@@ -64,18 +64,13 @@ Options::Options(int argc, const char* const* argv)
 Options::~Options() {}
 
 
-void processBucket(const lib::Distribution& distribution,
-                   const lib::ClusterState& clusterState,
-                   const std::string& upStates,
-                   const document::BucketId& bucket)
+void processBucket(const lib::Distribution& distribution, const lib::ClusterState& clusterState,
+                   const std::string& upStates, const document::BucketId& bucket)
 {
     std::ostringstream ost;
-    std::vector<uint16_t> storageNodes(distribution.getIdealStorageNodes(
-                clusterState, bucket, upStates.c_str()));
-    uint16_t distributorNode(distribution.getIdealDistributorNode(
-                clusterState, bucket, upStates.c_str()));
-    ost << bucket << " distributor: " << distributorNode
-              << ", storage:";
+    std::vector<uint16_t> storageNodes(distribution.getIdealStorageNodes(clusterState, bucket, upStates.c_str()));
+    uint16_t distributorNode(distribution.getIdealDistributorNode(clusterState, bucket, upStates.c_str()));
+    ost << bucket << " distributor: " << distributorNode << ", storage:";
     for (uint32_t i=0; i<storageNodes.size(); ++i) {
         ost << " " << storageNodes[i];
     }
