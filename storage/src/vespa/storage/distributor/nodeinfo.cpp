@@ -5,14 +5,16 @@
 
 namespace storage::distributor {
 
-NodeInfo::NodeInfo(const framework::Clock& clock)
+NodeInfo::NodeInfo(const framework::Clock& clock) noexcept
     : _clock(clock) {}
 
-uint32_t NodeInfo::getPendingCount(uint16_t idx) const {
+uint32_t
+NodeInfo::getPendingCount(uint16_t idx) const {
     return getNode(idx)._pending;
 }
 
-bool NodeInfo::isBusy(uint16_t idx) const {
+bool
+NodeInfo::isBusy(uint16_t idx) const {
     const SingleNodeInfo& info = getNode(idx);
     if (info._busyUntilTime.time_since_epoch().count() != 0) {
         if (_clock.getMonotonicTime() > info._busyUntilTime) {
@@ -25,15 +27,18 @@ bool NodeInfo::isBusy(uint16_t idx) const {
     return false;
 }
 
-void NodeInfo::setBusy(uint16_t idx, vespalib::duration for_duration) {
+void
+NodeInfo::setBusy(uint16_t idx, vespalib::duration for_duration) {
     getNode(idx)._busyUntilTime = _clock.getMonotonicTime() + for_duration;
 }
 
-void NodeInfo::incPending(uint16_t idx) {
+void
+NodeInfo::incPending(uint16_t idx) {
     getNode(idx)._pending++;
 }
 
-void NodeInfo::decPending(uint16_t idx) {
+void
+NodeInfo::decPending(uint16_t idx) {
     SingleNodeInfo& info = getNode(idx);
 
     if (info._pending > 0) {
@@ -41,12 +46,14 @@ void NodeInfo::decPending(uint16_t idx) {
     }
 }
 
-void NodeInfo::clearPending(uint16_t idx) {
+void
+NodeInfo::clearPending(uint16_t idx) {
     SingleNodeInfo& info = getNode(idx);
     info._pending = 0;
 }
 
-NodeInfo::SingleNodeInfo& NodeInfo::getNode(uint16_t idx) {
+NodeInfo::SingleNodeInfo&
+NodeInfo::getNode(uint16_t idx) {
     const auto index_lbound = static_cast<size_t>(idx) + 1;
     while (_nodes.size() < index_lbound) {
         _nodes.emplace_back();
@@ -55,7 +62,8 @@ NodeInfo::SingleNodeInfo& NodeInfo::getNode(uint16_t idx) {
     return _nodes[idx];
 }
 
-const NodeInfo::SingleNodeInfo& NodeInfo::getNode(uint16_t idx) const {
+const NodeInfo::SingleNodeInfo&
+NodeInfo::getNode(uint16_t idx) const {
     const auto index_lbound = static_cast<size_t>(idx) + 1;
     while (_nodes.size() < index_lbound) {
         _nodes.emplace_back();

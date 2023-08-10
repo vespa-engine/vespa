@@ -162,10 +162,14 @@ TEST_F(PendingMessageTrackerTest, simple) {
     clock.setAbsoluteTimeInSeconds(1);
     PendingMessageTracker tracker(compReg, 0);
 
+    std::ostringstream dummy; // Enable time tracking
+    tracker.reportStatus(dummy, framework::HttpUrlPath("/pendingmessages?order=bucket"));
+
     auto remove = std::make_shared<api::RemoveCommand>(
                     makeDocumentBucket(document::BucketId(16, 1234)),
                     document::DocumentId("id:footype:testdoc:n=1234:foo"), 1001);
     remove->setAddress(makeStorageAddress(0));
+
     tracker.insert(remove);
 
     {
@@ -238,6 +242,8 @@ TEST_F(PendingMessageTrackerTest, multiple_messages) {
     compReg.setClock(clock);
     clock.setAbsoluteTimeInSeconds(1);
     PendingMessageTracker tracker(compReg, 0);
+    std::ostringstream dummy; // Enable time tracking
+    tracker.reportStatus(dummy, framework::HttpUrlPath("/pendingmessages?order=bucket"));
 
     insertMessages(tracker);
 

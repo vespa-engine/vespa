@@ -4,17 +4,14 @@
 
 namespace storage::framework {
 
-HtmlStatusReporter::HtmlStatusReporter(vespalib::stringref id,
-                                       vespalib::stringref name)
+HtmlStatusReporter::HtmlStatusReporter(vespalib::stringref id, vespalib::stringref name)
     : StatusReporter(id, name)
-{
-}
+{ }
 
 HtmlStatusReporter::~HtmlStatusReporter() = default;
 
 void
-HtmlStatusReporter::reportHtmlHeader(std::ostream& out,
-                                     const HttpUrlPath& path) const
+HtmlStatusReporter::reportHtmlHeader(std::ostream& out, const HttpUrlPath& path) const
 {
     out << "<html>\n"
         << "<head>\n"
@@ -26,8 +23,7 @@ HtmlStatusReporter::reportHtmlHeader(std::ostream& out,
 }
 
 void
-HtmlStatusReporter::reportHtmlFooter(std::ostream& out,
-                                     const HttpUrlPath&) const
+HtmlStatusReporter::reportHtmlFooter(std::ostream& out, const HttpUrlPath&) const
 {
     out << "</body>\n</html>\n";
 }
@@ -39,8 +35,7 @@ HtmlStatusReporter::getReportContentType(const HttpUrlPath&) const
 }
 
 bool
-HtmlStatusReporter::reportStatus(std::ostream& out,
-                                 const HttpUrlPath& path) const
+HtmlStatusReporter::reportStatus(std::ostream& out, const HttpUrlPath& path) const
 {
     if (!isValidStatusRequest()) return false;
     reportHtmlHeader(out, path);

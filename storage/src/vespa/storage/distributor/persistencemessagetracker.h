@@ -8,7 +8,6 @@
 #include <vespa/storageapi/messageapi/bucketinfocommand.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 
-
 namespace storage::distributor {
 
 struct PersistenceMessageTracker {
