@@ -65,7 +65,7 @@ public:
                               const document::BucketId& mostSpecificId);
 
     void populate(const document::BucketId&, const DistributorBucketSpace&, BucketDatabase&);
-    void add(BucketDatabase::Entry& e, const lib::IdealNodeList& idealState);
+    void add(const BucketDatabase::Entry& e, const lib::IdealNodeList& idealState);
 
     template <typename Order>
     void sort(const Order& order) {
