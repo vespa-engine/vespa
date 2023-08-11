@@ -24,10 +24,17 @@ com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.15.2
 com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.15.2
 com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.15.2
 com.github.spotbugs:spotbugs-annotations:3.1.9
+com.google.auth:google-auth-library-credentials:1.19.0
+com.google.auth:google-auth-library-oauth2-http:1.19.0
+com.google.auto.value:auto-value-annotations:1.10.1
 com.google.code.findbugs:jsr305:3.0.2
+com.google.code.gson:gson:2.10
 com.google.errorprone:error_prone_annotations:2.18.0
 com.google.guava:failureaccess:1.0.1
 com.google.guava:guava:32.1.1-jre
+com.google.http-client:google-http-client:1.43.3
+com.google.http-client:google-http-client-apache-v2:1.43.3
+com.google.http-client:google-http-client-gson:1.42.3
 com.google.inject:guice:4.2.3:no_aop
 com.google.j2objc:j2objc-annotations:2.8
 com.google.protobuf:protobuf-java:3.21.7
@@ -53,6 +60,7 @@ commons-io:commons-io:2.11.0
 commons-logging:commons-logging:1.2
 io.airlift:airline:0.9
 io.dropwizard.metrics:metrics-core:3.2.5
+io.grpc:grpc-context:1.27.2
 io.jsonwebtoken:jjwt-api:0.11.5
 io.jsonwebtoken:jjwt-impl:0.11.5
 io.jsonwebtoken:jjwt-jackson:0.11.5
@@ -67,6 +75,8 @@ io.netty:netty-transport:4.1.94.Final
 io.netty:netty-transport-classes-epoll:4.1.94.Final
 io.netty:netty-transport-native-epoll:4.1.94.Final
 io.netty:netty-transport-native-unix-common:4.1.94.Final
+io.opencensus:opencensus-api:0.31.1
+io.opencensus:opencensus-contrib-http-util:0.31.1
 io.prometheus:simpleclient:0.6.0
 io.prometheus:simpleclient_common:0.6.0
 javax.annotation:javax.annotation-api:1.2
