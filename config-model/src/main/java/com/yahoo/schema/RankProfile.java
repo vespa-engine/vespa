@@ -100,6 +100,7 @@ public class RankProfile implements Cloneable {
     private Double termwiseLimit = null;
     private Double postFilterThreshold = null;
     private Double approximateThreshold = null;
+    private Double targetHitsMaxAdjustmentFactor = null;
 
     /** The drop limit used to drop hits with rank score less than or equal to this value */
     private double rankScoreDropLimit = -Double.MAX_VALUE;
@@ -768,6 +769,7 @@ public class RankProfile implements Cloneable {
     public void setTermwiseLimit(double termwiseLimit) { this.termwiseLimit = termwiseLimit; }
     public void setPostFilterThreshold(double threshold) { this.postFilterThreshold = threshold; }
     public void setApproximateThreshold(double threshold) { this.approximateThreshold = threshold; }
+    public void setTargetHitsMaxAdjustmentFactor(double factor) { this.targetHitsMaxAdjustmentFactor = factor; }
 
     public OptionalDouble getTermwiseLimit() {
         if (termwiseLimit != null) return OptionalDouble.of(termwiseLimit);
@@ -787,6 +789,13 @@ public class RankProfile implements Cloneable {
             return OptionalDouble.of(approximateThreshold);
         }
         return uniquelyInherited(p -> p.getApproximateThreshold(), l -> l.isPresent(), "approximate-threshold").orElse(OptionalDouble.empty());
+    }
+
+    public OptionalDouble getTargetHitsMaxAdjustmentFactor() {
+        if (targetHitsMaxAdjustmentFactor != null) {
+            return OptionalDouble.of(targetHitsMaxAdjustmentFactor);
+        }
+        return uniquelyInherited(p -> p.getTargetHitsMaxAdjustmentFactor(), l -> l.isPresent(), "target-hits-max-adjustment-factor").orElse(OptionalDouble.empty());
     }
 
     /** Whether we should ignore the default rank features. Set to null to use inherited */

@@ -842,14 +842,16 @@ public:
         }
         try {
             auto calc = tensor::DistanceCalculator::make_with_validation(_attr, *query_tensor);
+            const auto& params = getRequestContext().get_attribute_blueprint_params();
             setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field,
                                                                             std::move(calc),
                                                                             n.get_target_num_hits(),
                                                                             n.get_allow_approximate(),
                                                                             n.get_explore_additional_hits(),
                                                                             n.get_distance_threshold(),
-                                                                            getRequestContext().get_attribute_blueprint_params().global_filter_lower_limit,
-                                                                            getRequestContext().get_attribute_blueprint_params().global_filter_upper_limit,
+                                                                            params.global_filter_lower_limit,
+                                                                            params.global_filter_upper_limit,
+                                                                            params.target_hits_max_adjustment_factor,
                                                                             getRequestContext().getDoom()));
         } catch (const vespalib::IllegalArgumentException& ex) {
             return fail_nearest_neighbor_term(n, ex.getMessage());

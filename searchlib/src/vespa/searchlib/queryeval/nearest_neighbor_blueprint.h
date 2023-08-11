@@ -38,6 +38,7 @@ private:
     double _distance_threshold;
     double _global_filter_lower_limit;
     double _global_filter_upper_limit;
+    double _target_hits_max_adjustment_factor;
     mutable NearestNeighborDistanceHeap _distance_heap;
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
     Algorithm _algorithm;
@@ -55,6 +56,7 @@ public:
                              double distance_threshold,
                              double global_filter_lower_limit,
                              double global_filter_upper_limit,
+                             double target_hits_max_adjustment_factor,
                              const vespalib::Doom& doom);
     NearestNeighborBlueprint(const NearestNeighborBlueprint&) = delete;
     NearestNeighborBlueprint& operator=(const NearestNeighborBlueprint&) = delete;

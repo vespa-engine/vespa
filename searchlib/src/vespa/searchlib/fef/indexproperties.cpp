@@ -422,6 +422,22 @@ GlobalFilterUpperLimit::lookup(const Properties &props, double defaultValue)
     return lookupDouble(props, NAME, defaultValue);
 }
 
+const vespalib::string TargetHitsMaxAdjustmentFactor::NAME("vespa.matching.nns.target_hits_max_adjustment_factor");
+
+const double TargetHitsMaxAdjustmentFactor::DEFAULT_VALUE(20.0);
+
+double
+TargetHitsMaxAdjustmentFactor::lookup(const Properties& props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+TargetHitsMaxAdjustmentFactor::lookup(const Properties& props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
+}
+
 } // namespace matching
 
 namespace softtimeout {

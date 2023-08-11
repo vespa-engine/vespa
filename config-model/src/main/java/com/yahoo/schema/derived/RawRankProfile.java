@@ -153,6 +153,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final double termwiseLimit;
         private final OptionalDouble postFilterThreshold;
         private final OptionalDouble approximateThreshold;
+        private final OptionalDouble targetHitsMaxAdjustmentFactor;
         private final double rankScoreDropLimit;
         private final boolean enableNestedMultivalueGrouping;
 
@@ -197,6 +198,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             enableNestedMultivalueGrouping = deployProperties.featureFlags().enableNestedMultivalueGrouping();
             postFilterThreshold = compiled.getPostFilterThreshold();
             approximateThreshold = compiled.getApproximateThreshold();
+            targetHitsMaxAdjustmentFactor = compiled.getTargetHitsMaxAdjustmentFactor();
             keepRankCount = compiled.getKeepRankCount();
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
             ignoreDefaultRankFeatures = compiled.getIgnoreDefaultRankFeatures();
@@ -428,6 +430,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             }
             if (approximateThreshold.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.global_filter.lower_limit", String.valueOf(approximateThreshold.getAsDouble())));
+            }
+            if (targetHitsMaxAdjustmentFactor.isPresent()) {
+                properties.add(new Pair<>("vespa.matching.nns.target_hits_max_adjustment_factor", String.valueOf(targetHitsMaxAdjustmentFactor.getAsDouble())));
             }
             if (matchPhaseSettings != null) {
                 properties.add(new Pair<>("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute()));

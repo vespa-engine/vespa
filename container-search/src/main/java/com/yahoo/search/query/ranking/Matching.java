@@ -24,6 +24,7 @@ public class Matching implements Cloneable {
     public static final String MINHITSPERTHREAD = "minHitsPerThread";
     public static final String POST_FILTER_THRESHOLD = "postFilterThreshold";
     public static final String APPROXIMATE_THRESHOLD = "approximateThreshold";
+    public static final String TARGET_HITS_MAX_ADJUSTMENT_FACTOR = "targetHitsMaxAdjustmentFactor";
 
     static {
         argumentType =new QueryProfileType(Ranking.MATCHING);
@@ -35,6 +36,7 @@ public class Matching implements Cloneable {
         argumentType.addField(new FieldDescription(MINHITSPERTHREAD, "integer"));
         argumentType.addField(new FieldDescription(POST_FILTER_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(APPROXIMATE_THRESHOLD, "double"));
+        argumentType.addField(new FieldDescription(TARGET_HITS_MAX_ADJUSTMENT_FACTOR, "double"));
         argumentType.freeze();
     }
 
@@ -46,6 +48,7 @@ public class Matching implements Cloneable {
     private Integer minHitsPerThread = null;
     private Double postFilterThreshold = null;
     private Double approximateThreshold = null;
+    private Double targetHitsMaxAdjustmentFactor = null;
 
     public Double getTermwiseLimit() { return termwiseLimit; }
     public Integer getNumThreadsPerSearch() { return numThreadsPerSearch; }
@@ -53,6 +56,7 @@ public class Matching implements Cloneable {
     public Integer getMinHitsPerThread() { return minHitsPerThread; }
     public Double getPostFilterThreshold() { return postFilterThreshold; }
     public Double getApproximateThreshold() { return approximateThreshold; }
+    public Double getTargetHitsMaxAdjustmentFactor() { return targetHitsMaxAdjustmentFactor; }
 
     public void setTermwiselimit(double value) {
         if ((value < 0.0) || (value > 1.0)) {
@@ -74,6 +78,9 @@ public class Matching implements Cloneable {
     }
     public void setApproximateThreshold(double threshold) {
         approximateThreshold = threshold;
+    }
+    public void setTargetHitsMaxAdjustmentFactor(double factor) {
+        targetHitsMaxAdjustmentFactor = factor;
     }
 
     /** Internal operation - DO NOT USE */
@@ -97,6 +104,9 @@ public class Matching implements Cloneable {
         if (approximateThreshold != null) {
             rankProperties.put("vespa.matching.global_filter.lower_limit", String.valueOf(approximateThreshold));
         }
+        if (targetHitsMaxAdjustmentFactor != null) {
+            rankProperties.put("vespa.matching.nns.target_hits_max_adjustment_factor", String.valueOf(targetHitsMaxAdjustmentFactor));
+        }
     }
 
     @Override
@@ -119,12 +129,14 @@ public class Matching implements Cloneable {
                 Objects.equals(numSearchPartitions, matching.numSearchPartitions) &&
                 Objects.equals(minHitsPerThread, matching.minHitsPerThread) &&
                 Objects.equals(postFilterThreshold, matching.postFilterThreshold) &&
-                Objects.equals(approximateThreshold, matching.approximateThreshold);
+                Objects.equals(approximateThreshold, matching.approximateThreshold) &&
+                Objects.equals(targetHitsMaxAdjustmentFactor, matching.targetHitsMaxAdjustmentFactor);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(termwiseLimit, numThreadsPerSearch, numSearchPartitions, minHitsPerThread, postFilterThreshold, approximateThreshold);
+        return Objects.hash(termwiseLimit, numThreadsPerSearch, numSearchPartitions, minHitsPerThread,
+                postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor);
     }
 }
 

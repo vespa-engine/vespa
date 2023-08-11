@@ -313,6 +313,21 @@ namespace matching {
         static double lookup(const Properties &props);
         static double lookup(const Properties &props, double defaultValue);
     };
+
+    /**
+     * Property to control the auto-adjustment of targetHits in a nearestNeighbor search using HNSW index with post-filtering.
+     *
+     * The targetHits is auto-adjusted in an effort to expose targetHits hits to first-phase ranking after post-filtering:
+     * adjustedTargetHits = min(targetHits / estimatedHitRatio, targetHits * targetHitsMaxAdjustmentFactor).
+     *
+     * This property ensures an upper bound of adjustedTargetHits, avoiding that the search in the HNSW index takes too long.
+     **/
+    struct TargetHitsMaxAdjustmentFactor {
+        static const vespalib::string NAME;
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties &props);
+        static double lookup(const Properties &props, double defaultValue);
+    };
 }
 
 namespace softtimeout {

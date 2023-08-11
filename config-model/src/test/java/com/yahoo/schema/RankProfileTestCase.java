@@ -459,17 +459,9 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     private void verifyApproximateNearestNeighborThresholdSettings(Double postFilterThreshold, Double approximateThreshold) throws ParseException {
-        var rankProfileRegistry = new RankProfileRegistry();
-        var props = new TestProperties();
-        var queryProfileRegistry = new QueryProfileRegistry();
-        var builder = new ApplicationBuilder(rankProfileRegistry, queryProfileRegistry, props);
-        builder.addSchema(createSDWithRankProfileThresholds(postFilterThreshold, approximateThreshold));
-        builder.build(true);
-
-        var schema = builder.getSchema();
-        var rankProfile = rankProfileRegistry.get(schema, "my_profile");
-        var rawRankProfile = new RawRankProfile(rankProfile, new LargeRankingExpressions(new MockFileRegistry()), queryProfileRegistry,
-                                                new ImportedMlModels(), new AttributeFields(schema), props);
+        var rp = createRankProfile(postFilterThreshold, approximateThreshold, null);
+        var rankProfile = rp.getFirst();
+        var rawRankProfile = rp.getSecond();
 
         if (postFilterThreshold != null) {
             assertEquals((double)postFilterThreshold, rankProfile.getPostFilterThreshold().getAsDouble(), 0.000001);
@@ -488,13 +480,52 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
         }
     }
 
-    private String createSDWithRankProfileThresholds(Double postFilterThreshold, Double approximateThreshold) {
+    @Test
+    void target_hits_max_adjustment_factor_is_configurable() throws ParseException {
+        verifyTargetHitsMaxAdjustmentFactor(null);
+        verifyTargetHitsMaxAdjustmentFactor(2.0);
+    }
+
+    private void verifyTargetHitsMaxAdjustmentFactor(Double targetHitsMaxAdjustmentFactor) throws ParseException {
+        var rp = createRankProfile(null, null, targetHitsMaxAdjustmentFactor);
+        var rankProfile = rp.getFirst();
+        var rawRankProfile = rp.getSecond();
+        if (targetHitsMaxAdjustmentFactor != null) {
+            assertEquals((double)targetHitsMaxAdjustmentFactor, rankProfile.getTargetHitsMaxAdjustmentFactor().getAsDouble(), 0.000001);
+            assertEquals(String.valueOf(targetHitsMaxAdjustmentFactor), findProperty(rawRankProfile.configProperties(), "vespa.matching.nns.target_hits_max_adjustment_factor").get());
+        } else {
+            assertTrue(rankProfile.getTargetHitsMaxAdjustmentFactor().isEmpty());
+            assertFalse(findProperty(rawRankProfile.configProperties(), "vespa.matching.nns.target_hits_max_adjustment_factor").isPresent());
+        }
+    }
+
+    private Pair<RankProfile, RawRankProfile> createRankProfile(Double postFilterThreshold,
+                                                                Double approximateThreshold,
+                                                                Double targetHitsMaxAdjustmentFactor) throws ParseException {
+        var rankProfileRegistry = new RankProfileRegistry();
+        var props = new TestProperties();
+        var queryProfileRegistry = new QueryProfileRegistry();
+        var builder = new ApplicationBuilder(rankProfileRegistry, queryProfileRegistry, props);
+        builder.addSchema(createSDWithRankProfile(postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor));
+        builder.build(true);
+
+        var schema = builder.getSchema();
+        var rankProfile = rankProfileRegistry.get(schema, "my_profile");
+        var rawRankProfile = new RawRankProfile(rankProfile, new LargeRankingExpressions(new MockFileRegistry()), queryProfileRegistry,
+                new ImportedMlModels(), new AttributeFields(schema), props);
+        return new Pair<>(rankProfile, rawRankProfile);
+    }
+
+    private String createSDWithRankProfile(Double postFilterThreshold,
+                                           Double approximateThreshold,
+                                           Double targetHitsMaxAdjustmentFactor) {
         return joinLines(
                 "search test {",
                 "    document test {}",
                 "    rank-profile my_profile {",
-                (postFilterThreshold != null ? ("        post-filter-threshold: " + postFilterThreshold) : ""),
-                (approximateThreshold != null ? ("        approximate-threshold: " + approximateThreshold) : ""),
+                (postFilterThreshold != null ?           ("        post-filter-threshold: " + postFilterThreshold) : ""),
+                (approximateThreshold != null ?          ("        approximate-threshold: " + approximateThreshold) : ""),
+                (targetHitsMaxAdjustmentFactor != null ? ("        target-hits-max-adjustment-factor: " + targetHitsMaxAdjustmentFactor) : ""),
                 "    }",
                 "}");
     }
