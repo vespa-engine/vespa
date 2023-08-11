@@ -5,11 +5,11 @@
   "steps": [
     {
       "type": "instance",
-      "dependencies": [ ],
+      "dependencies": [],
       "declared": true,
       "instance": "default",
       "readyAt": 0,
-      "deploying": { },
+      "deploying": {},
       "latestVersions": {
         "platform": {
           "platform": "6.1.0",
@@ -21,7 +21,7 @@
               "upgrade": false
             }
           ],
-          "blockers": [ ]
+          "blockers": []
         },
         "application": {
           "application": {
@@ -42,21 +42,24 @@
               }
             }
           ],
-          "blockers": [ ]
+          "blockers": []
         }
       },
       "delayCause": null
     },
     {
       "type": "test",
-      "dependencies": [ ],
+      "dependencies": [],
       "declared": true,
       "instance": "default",
       "readyAt": 0,
       "jobName": "staging-test",
       "url": "https://some.url:43/instance/default/job/staging-test",
       "environment": "staging",
-      "toRun": [ ],
+      "toRun": [],
+      "enclave": {
+        "cloudAccount": "aws:123456789012"
+      },
       "runs": [
         {
           "id": 1,
@@ -137,14 +140,17 @@
     },
     {
       "type": "test",
-      "dependencies": [ ],
+      "dependencies": [],
       "declared": true,
       "instance": "default",
       "readyAt": 0,
       "jobName": "system-test",
       "url": "https://some.url:43/instance/default/job/system-test",
       "environment": "test",
-      "toRun": [ ],
+      "toRun": [],
+      "enclave": {
+        "cloudAccount": "aws:123456789012"
+      },
       "runs": [
         {
           "id": 1,
@@ -209,11 +215,7 @@
     },
     {
       "type": "deployment",
-      "dependencies": [
-        0,
-        1,
-        2
-      ],
+      "dependencies": [0, 1, 2],
       "declared": true,
       "instance": "default",
       "readyAt": 1600000000000,
@@ -228,7 +230,7 @@
         "sourceUrl": "repository1/tree/commit1",
         "commit": "commit1"
       },
-      "toRun": [ ],
+      "toRun": [],
       "enclave": {
         "cloudAccount": "aws:123456789012"
       },

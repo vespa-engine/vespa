@@ -148,8 +148,8 @@ public class TestPackageTest {
                             "components/foo-tests.jar",
                             "artifacts/key"),
                      bundlePackage.keySet());
-        assertEquals(Map.of(),
-                     unzip(bundleTests.asApplicationPackage().truncatedPackage().zippedContent()));
+        assertEquals(Set.of("deployment.xml", "services.xml"),
+                     unzip(bundleTests.asApplicationPackage().truncatedPackage().zippedContent()).keySet());
     }
 
     @Test
