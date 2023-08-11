@@ -20,16 +20,19 @@ LOG_SETUP(".vdslib.distribution");
 namespace storage::lib {
 
 namespace {
-    std::vector<uint32_t> getDistributionBitMasks() {
-        std::vector<uint32_t> masks;
-        masks.resize(32 + 1);
-        uint32_t mask = 0;
-        for (uint32_t i=0; i<=32; ++i) {
-            masks[i] = mask;
-            mask = (mask << 1) | 1;
-        }
-        return masks;
+
+std::vector<uint32_t>
+getDistributionBitMasks() {
+    std::vector<uint32_t> masks;
+    masks.resize(32 + 1);
+    uint32_t mask = 0;
+    for (uint32_t i=0; i<=32; ++i) {
+        masks[i] = mask;
+        mask = (mask << 1) | 1;
     }
+    return masks;
+}
+
 }
 
 VESPA_IMPLEMENT_EXCEPTION(NoDistributorsAvailableException, vespalib::Exception);
@@ -65,8 +68,8 @@ Distribution::Distribution(const Distribution& d)
     configure(*reader.read());
 }
 
-Distribution::ConfigWrapper::ConfigWrapper(std::unique_ptr<DistributionConfig> cfg) :
-    _cfg(std::move(cfg))
+Distribution::ConfigWrapper::ConfigWrapper(std::unique_ptr<DistributionConfig> cfg) noexcept
+    : _cfg(std::move(cfg))
 { }
 
 Distribution::ConfigWrapper::~ConfigWrapper() = default;
@@ -150,8 +153,7 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
     if ( ! nodeGraph) {
         throw vespalib::IllegalStateException(
             "Got config that didn't seem to specify even a root group. Must "
-            "have a root group at minimum:\n"
-            + _serialized, VESPA_STRLOC);
+            "have a root group at minimum:\n" + _serialized, VESPA_STRLOC);
     }
     nodeGraph->calculateDistributionHashValues();
     _nodeGraph = std::move(nodeGraph);
@@ -161,14 +163,11 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
     _ensurePrimaryPersisted = config.ensurePrimaryPersisted;
     _readyCopies = config.readyCopies;
     _activePerGroup = config.activePerLeafGroup;
-    _distributorAutoOwnershipTransferOnWholeGroupDown
-            = config.distributorAutoOwnershipTransferOnWholeGroupDown;
+    _distributorAutoOwnershipTransferOnWholeGroupDown = config.distributorAutoOwnershipTransferOnWholeGroupDown;
 }
 
 uint32_t
-Distribution::getGroupSeed(
-        const document::BucketId& bucket, const ClusterState& clusterState,
-        const Group& group) const
+Distribution::getGroupSeed(const document::BucketId& bucket, const ClusterState& clusterState, const Group& group) const
 {
     uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
             & _distributionBitMasks[clusterState.getDistributionBitCount()]);
@@ -177,8 +176,7 @@ Distribution::getGroupSeed(
 }
 
 uint32_t
-Distribution::getDistributorSeed(
-        const document::BucketId& bucket, const ClusterState& state) const
+Distribution::getDistributorSeed(const document::BucketId& bucket, const ClusterState& state) const
 {
     uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
             & _distributionBitMasks[state.getDistributionBitCount()]);
@@ -186,8 +184,7 @@ Distribution::getDistributorSeed(
 }
 
 uint32_t
-Distribution::getStorageSeed(
-        const document::BucketId& bucket, const ClusterState& state) const
+Distribution::getStorageSeed(const document::BucketId& bucket, const ClusterState& state) const
 {
     uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
             & _distributionBitMasks[state.getDistributionBitCount()]);
@@ -262,11 +259,8 @@ namespace {
 }
 
 void
-Distribution::getIdealGroups(const document::BucketId& bucket,
-                             const ClusterState& clusterState,
-                             const Group& parent,
-                             uint16_t redundancy,
-                             std::vector<ResultGroup>& results) const
+Distribution::getIdealGroups(const document::BucketId& bucket, const ClusterState& clusterState, const Group& parent,
+                             uint16_t redundancy, std::vector<ResultGroup>& results) const
 {
     if (parent.isLeafGroup()) {
         results.emplace_back(parent, redundancy);
@@ -300,15 +294,12 @@ Distribution::getIdealGroups(const document::BucketId& bucket,
         // This should never happen. Config should verify that each group
         // has enough groups beneath them.
         assert(group._group != nullptr);
-        getIdealGroups(bucket, clusterState, *group._group,
-                       redundancyArray[i], results);
+        getIdealGroups(bucket, clusterState, *group._group, redundancyArray[i], results);
     }
 }
 
 const Group*
-Distribution::getIdealDistributorGroup(const document::BucketId& bucket,
-                                       const ClusterState& clusterState,
-                                       const Group& parent) const
+Distribution::getIdealDistributorGroup(const document::BucketId& bucket, const ClusterState& clusterState, const Group& parent) const
 {
     if (parent.isLeafGroup()) {
         return &parent;
@@ -357,12 +348,8 @@ Distribution::allDistributorsDown(const Group& g, const ClusterState& cs)
 }
 
 void
-Distribution::getIdealNodes(const NodeType& nodeType,
-                            const ClusterState& clusterState,
-                            const document::BucketId& bucket,
-                            std::vector<uint16_t>& resultNodes,
-                            const char* upStates,
-                            uint16_t redundancy) const
+Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& clusterState, const document::BucketId& bucket,
+                            std::vector<uint16_t>& resultNodes, const char* upStates, uint16_t redundancy) const
 {
     if (redundancy == DEFAULT_REDUNDANCY) redundancy = _redundancy;
     resultNodes.clear();
@@ -388,8 +375,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
         const Group* group(getIdealDistributorGroup(bucket, clusterState, *_nodeGraph));
         if (group == nullptr) {
             vespalib::asciistream ss;
-            ss << "There is no legal distributor target in state with version "
-               << clusterState.getVersion();
+            ss << "There is no legal distributor target in state with version " << clusterState.getVersion();
             throw NoDistributorsAvailableException(ss.str(), VESPA_STRLOC);
         }
         _groupDistribution.push_back(ResultGroup(*group, 1));
@@ -474,15 +460,14 @@ Distribution::getIdealDistributorNode(const ClusterState& state, const document:
     assert(nodes.size() <= 1);
     if (nodes.empty()) {
         vespalib::asciistream ss;
-        ss << "There is no legal distributor target in state with version "
-           << state.getVersion();
+        ss << "There is no legal distributor target in state with version " << state.getVersion();
         throw NoDistributorsAvailableException(ss.str(), VESPA_STRLOC);
     }
     return nodes[0];
 }
 
 std::vector<Distribution::IndexList>
-Distribution::splitNodesIntoLeafGroups(IndexList nodeList) const
+Distribution::splitNodesIntoLeafGroups(vespalib::ConstArrayRef<uint16_t> nodeList) const
 {
     std::vector<IndexList> result;
     std::map<uint16_t, IndexList> nodes;

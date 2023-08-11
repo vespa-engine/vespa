@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
+
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
 
@@ -9,9 +10,7 @@ namespace storage {
 class DistributorStateCache
 {
 public:
-    DistributorStateCache(
-            const lib::Distribution& distr,
-            const lib::ClusterState& state)
+    DistributorStateCache(const lib::Distribution& distr, const lib::ClusterState& state)
         : _distribution(distr),
           _state(state),
           _distrBitMask(0xffffffffffffffffull),
@@ -22,8 +21,7 @@ public:
         _distrBitMask >>= (64 - state.getDistributionBitCount());
     }
 
-    uint16_t getOwner(const document::BucketId& bid,
-                      const char* upStates = "ui")
+    uint16_t getOwner(const document::BucketId& bid, const char* upStates = "ui")
     {
         uint64_t distributionBits = bid.getRawId() & _distrBitMask;
 

@@ -91,66 +91,62 @@ operator<<(std::ostream& out, const ActiveCopy & e) {
 
 namespace {
 
-    struct ActiveStateOrder {
-        bool operator()(const ActiveCopy & e1, const ActiveCopy & e2) {
-            if (e1._ready != e2._ready) {
-                return e1._ready;
-            }
-            if (e1._doc_count != e2._doc_count) {
-                return e1._doc_count > e2._doc_count;
-            }
-            if (e1._ideal != e2._ideal) {
-                return e1._ideal < e2._ideal;
-            }
-            if (e1._active != e2._active) {
-                return e1._active;
-            }
-            return e1._nodeIndex < e2._nodeIndex;
+struct ActiveStateOrder {
+    bool operator()(const ActiveCopy & e1, const ActiveCopy & e2) noexcept {
+        if (e1._ready != e2._ready) {
+            return e1._ready;
         }
-    };
-
-    std::vector<uint16_t>
-    buildValidNodeIndexList(BucketDatabase::Entry& e) {
-        std::vector<uint16_t> result;
-        result.reserve(e->getNodeCount());
-        for (uint32_t i=0, n=e->getNodeCount(); i < n; ++i) {
-            const BucketCopy& cp = e->getNodeRef(i);
-            if (!cp.valid()) {
-                continue;
-            }
-            result.push_back(cp.getNode());
+        if (e1._doc_count != e2._doc_count) {
+            return e1._doc_count > e2._doc_count;
         }
-        return result;
+        if (e1._ideal != e2._ideal) {
+            return e1._ideal < e2._ideal;
+        }
+        if (e1._active != e2._active) {
+            return e1._active;
+        }
+        return e1._nodeIndex < e2._nodeIndex;
     }
+};
 
-    std::vector<ActiveCopy>
-    buildNodeList(BucketDatabase::Entry& e,
-                  const std::vector<uint16_t>& nodeIndexes,
-                  const std::vector<uint16_t>& idealState)
-    {
-        std::vector<ActiveCopy> result;
-        result.reserve(nodeIndexes.size());
-        for (uint16_t nodeIndex : nodeIndexes) {
-            result.emplace_back(nodeIndex, e, idealState);
+std::vector<uint16_t>
+buildValidNodeIndexList(BucketDatabase::Entry& e) {
+    std::vector<uint16_t> result;
+    result.reserve(e->getNodeCount());
+    for (uint32_t i=0, n=e->getNodeCount(); i < n; ++i) {
+        const BucketCopy& cp = e->getNodeRef(i);
+        if (!cp.valid()) {
+            continue;
         }
-        return result;
+        result.push_back(cp.getNode());
     }
+    return result;
+}
+
+std::vector<ActiveCopy>
+buildNodeList(BucketDatabase::Entry& e, const std::vector<uint16_t>& nodeIndexes, const std::vector<uint16_t>& idealState)
+{
+    std::vector<ActiveCopy> result;
+    result.reserve(nodeIndexes.size());
+    for (uint16_t nodeIndex : nodeIndexes) {
+        result.emplace_back(nodeIndex, e, idealState);
+    }
+    return result;
+}
+
 }
 
 ActiveList
-ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
-                      const lib::Distribution& distribution,
-                      BucketDatabase::Entry& e,
-                      uint32_t max_activation_inhibited_out_of_sync_groups)
+ActiveCopy::calculate(const std::vector<uint16_t>& idealState, const lib::Distribution& distribution,
+                      BucketDatabase::Entry& e, uint32_t max_activation_inhibited_out_of_sync_groups)
 {
     std::vector<uint16_t> validNodesWithCopy = buildValidNodeIndexList(e);
     if (validNodesWithCopy.empty()) {
         return ActiveList();
     }
-    using IndexList = std::vector<uint16_t>;
-    std::vector<IndexList> groups;
+    std::vector<lib::Distribution::IndexList> groups;
     if (distribution.activePerGroup()) {
-        groups = distribution.splitNodesIntoLeafGroups(std::move(validNodesWithCopy));
+        groups = distribution.splitNodesIntoLeafGroups(validNodesWithCopy);
     } else {
         groups.push_back(std::move(validNodesWithCopy));
     }
