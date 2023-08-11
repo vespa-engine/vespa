@@ -14,13 +14,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
-import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
-import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -34,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devAwsUsEast2a;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devUsEast1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsCentral1;
@@ -42,8 +40,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.pro
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.testUsCentral1;
-import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.invalidApplication;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
@@ -208,16 +204,18 @@ public class JobControllerApiHandlerHelperTest {
     void testEnclave() {
         var cloudAccount = CloudAccount.from("aws:123456789012");
         var applicationPackage = new ApplicationPackageBuilder()
+                .cloudAccount(cloudAccount.value())
                 .stagingTest()
                 .systemTest()
-                .region("aws-us-east-1c", cloudAccount.value())
+                .region("aws-us-east-1c")
                 .build();
         var tester = new DeploymentTester(new ControllerTester(SystemName.Public));
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount.value()), String.class);
-        tester.controllerTester().zoneRegistry().configureCloudAccount(cloudAccount, ZoneId.from("prod.aws-us-east-1c"));
+        tester.controllerTester().zoneRegistry().configureCloudAccount(cloudAccount, systemTest.zone(), stagingTest.zone(), ZoneId.from("prod.aws-us-east-1c"));
 
         var app = tester.newDeploymentContext();
         app.submit(applicationPackage).deploy();
+        assertEquals(Optional.of(cloudAccount), tester.controllerTester().configServer().cloudAccount(app.deploymentIdIn(systemTest.zone())));
 
         assertResponse(JobControllerApiHandlerHelper.overviewResponse(tester.controller(), app.application().id(), URI.create("https://some.url:43/root/")), "overview-enclave.json");
     }

@@ -61,8 +61,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     public ZoneRegistryMock(SystemName system) {
         this.system = system;
         if (system.isPublic()) {
-            this.zones = List.of(ZoneApiMock.fromId("test.us-east-1"),
-                                 ZoneApiMock.fromId("staging.us-east-3"),
+            this.zones = List.of(ZoneApiMock.newBuilder().withId("test.us-east-1").withCloud("aws").withCloudNativeAvailabilityZone("use1-az4").build(),
+                                 ZoneApiMock.newBuilder().withId("staging.us-east-3").withCloud("aws").withCloudNativeAvailabilityZone("use3-az1").build(),
                                  ZoneApiMock.newBuilder().withId("prod.aws-us-east-1c").withCloud("aws").withCloudNativeAvailabilityZone("use1-az2").build(),
                                  ZoneApiMock.newBuilder().withId("prod.aws-eu-west-1a").withCloud("aws").withCloudNativeAvailabilityZone("euw1-az3").build(),
                                  ZoneApiMock.newBuilder().withId("dev.aws-us-east-1c").withCloud("aws").withCloudNativeAvailabilityZone("use1-az2").build());
