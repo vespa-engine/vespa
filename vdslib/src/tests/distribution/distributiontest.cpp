@@ -1031,4 +1031,8 @@ TEST(DistributionTest, DISABLED_benchmark_ideal_state_for_many_groups) {
     fprintf(stderr, "%.10f seconds\n", min_time);
 }
 
+TEST(DistributionTest, control_size_of_IndexList) {
+    EXPECT_EQ(24u, sizeof(Distribution::IndexList));
+}
+
 }
