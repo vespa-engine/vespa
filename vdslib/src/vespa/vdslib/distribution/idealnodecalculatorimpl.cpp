@@ -8,7 +8,7 @@
 
 namespace storage::lib {
 
-IdealNodeList::IdealNodeList() = default;
+IdealNodeList::IdealNodeList() noexcept = default;
 IdealNodeList::~IdealNodeList() = default;
 
 void
@@ -63,9 +63,10 @@ IdealNodeCalculatorImpl::initUpStateMapping() {
     _upStates[UpInit] = "ui";
     _upStates[UpInitMaintenance] = "uim";
     for (uint32_t i=0; i<_upStates.size(); ++i) {
-        if (_upStates[i] == 0) throw vespalib::IllegalStateException(
-                "Failed to initialize up state. Code likely not updated "
-                "after another upstate was added.", VESPA_STRLOC);
+        if (_upStates[i] == 0) {
+            throw vespalib::IllegalStateException("Failed to initialize up state. Code likely not updated "
+                                                  "after another upstate was added.", VESPA_STRLOC);
+        }
     }
 }
 
