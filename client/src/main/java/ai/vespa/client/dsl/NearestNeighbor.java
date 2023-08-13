@@ -14,7 +14,7 @@ public class NearestNeighbor extends QueryChain {
         this.nonEmpty = true;
     }
 
-    NearestNeighbor annotate(Annotation annotation) {
+    public NearestNeighbor annotate(Annotation annotation) {
         this.annotation = annotation;
         return this;
     }
