@@ -21,6 +21,7 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
 /**
  * Definition for permanent feature flags
@@ -351,11 +352,26 @@ public class PermanentFlags {
             "Takes effect immediately",
             TENANT_ID);
 
+    // TODO: Remove when not in use anymore, replaced by KEEP_FILE_REFERENCES_DAYS
     public static final UnboundIntFlag KEEP_FILE_REFERENCES_ON_TENANT_NODES = defineIntFlag(
             "keep-file-references-on-tenant-nodes", 30,
             "How many days to keep file references on tenant nodes (based on last modification time)",
             "Takes effect on restart of Docker container",
             APPLICATION_ID
+    );
+
+    public static final UnboundIntFlag KEEP_FILE_REFERENCES_DAYS = defineIntFlag(
+            "keep-file-references-days", 30,
+            "How many days to keep file references on tenant nodes (based on last modification time)",
+            "Takes effect on restart of Docker container",
+            APPLICATION_ID
+    );
+
+    public static final UnboundIntFlag KEEP_FILE_REFERENCES_COUNT = defineIntFlag(
+            "keep-file-references-count", 20,
+            "How many file references to keep on tenant nodes (no matter what last modification time is)",
+            "Takes effect on restart of Docker container",
+            ZONE_ID, APPLICATION_ID
     );
 
     public static final UnboundIntFlag ENDPOINT_CONNECTION_TTL = defineIntFlag(
