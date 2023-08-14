@@ -29,7 +29,7 @@ public enum SystemApplication {
     configServerHost(InfrastructureApplication.CONFIG_SERVER_HOST),
     configServer(InfrastructureApplication.CONFIG_SERVER),
     proxyHost(InfrastructureApplication.PROXY_HOST),
-    proxy(InfrastructureApplication.PROXY, proxyHost, configServer),
+    proxy(InfrastructureApplication.PROXY, configServer),
     tenantHost(InfrastructureApplication.TENANT_HOST);
 
     /** The tenant owning all system applications */
