@@ -101,4 +101,5 @@ public interface ImmutableSDField {
     boolean existsIndex(String name);
     SummaryField getSummaryField(String name);
     boolean hasIndex();
+
 }

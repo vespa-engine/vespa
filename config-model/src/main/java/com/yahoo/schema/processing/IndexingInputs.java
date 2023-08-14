@@ -96,11 +96,11 @@ public class IndexingInputs extends Processor {
         @Override
         protected void doVisit(Expression exp) {
             if ( ! (exp instanceof InputExpression)) return;
-            String inputField = ((InputExpression)exp).getFieldName();
-            if (schema.getField(inputField).hasFullIndexingDocprocRights()) return;
-
-            fail(schema, field, "Indexing script refers to field '" + inputField + "' which does not exist " +
-                                "in document type '" + schema.getDocument().getName() + "', and is not a mutable attribute.");
+            var referencedFieldName = ((InputExpression)exp).getFieldName();
+            var referencedField = schema.getField(referencedFieldName);
+            if (referencedField == null || ! referencedField.hasFullIndexingDocprocRights())
+                fail(schema, field, "Indexing script refers to field '" + referencedFieldName +
+                                    "' which is neither a field in " + schema.getDocument() + " nor a mutable attribute");
         }
     }
 }
