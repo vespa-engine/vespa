@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.DropDocumentsReport;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.container.Container;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerResources;
@@ -484,6 +483,11 @@ public class NodeAgentImpl implements NodeAgent {
             lastNode = node;
         }
 
+        // Run this here and now, even though we may immediately remove the container below.
+        // This ensures these maintainers are run even if something fails or returns early.
+        // These maintainers should also run immediately after starting the container (see below).
+        container.ifPresent(c -> runImportantContainerMaintainers(context, c));
+
         switch (node.state()) {
             case ready, reserved, failed, inactive, parked -> {
                 storageMaintainer.syncLogs(context, true);
@@ -508,13 +512,11 @@ public class NodeAgentImpl implements NodeAgent {
                     containerState = STARTING;
                     container = Optional.of(startContainer(context));
                     containerState = UNKNOWN;
+                    runImportantContainerMaintainers(context, container.get());
                 } else {
                     container = Optional.of(updateContainerIfNeeded(context, container.get()));
                 }
 
-                aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
-                final Optional<Container> finalContainer = container;
-                wireguardTasks.forEach(task -> task.converge(context, finalContainer.get().id()));
                 startServicesIfNeeded(context);
                 resumeNodeIfNeeded(context);
                 if (healthChecker.isPresent()) {
@@ -559,6 +561,11 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
+    private void runImportantContainerMaintainers(NodeAgentContext context, Container container) {
+        aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
+        wireguardTasks.forEach(task -> task.converge(context, container.id()));
+    }
+
     private static void logChangesToNodeSpec(NodeAgentContext context, NodeSpec lastNode, NodeSpec node) {
         StringBuilder builder = new StringBuilder();
         appendIfDifferent(builder, "state", lastNode, node, NodeSpec::state);
@@ -600,23 +607,8 @@ public class NodeAgentImpl implements NodeAgent {
         if (context.node().state() != NodeState.active) return;
 
         context.log(logger, "Ask Orchestrator for permission to suspend node");
-        try {
-            orchestrator.suspend(context.hostname().value());
-            suspendedInOrchestrator = true;
-        } catch (OrchestratorException e) {
-            // Ensure the ACLs are up to date: The reason we're unable to suspend may be because some other
-            // node is unable to resume because the ACL rules of SOME Docker container is wrong...
-            // Same can happen with stale WireGuard config, so update that too
-            try {
-                aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
-                wireguardTasks.forEach(task -> getContainer(context).ifPresent(c -> task.converge(context, c.id())));
-            } catch (RuntimeException suppressed) {
-                logger.log(Level.WARNING, "Suppressing ACL update failure: " + suppressed);
-                e.addSuppressed(suppressed);
-            }
-
-            throw e;
-        }
+        orchestrator.suspend(context.hostname().value());
+        suspendedInOrchestrator = true;
     }
 
     protected void writeContainerData(NodeAgentContext context, ContainerData containerData) { }
