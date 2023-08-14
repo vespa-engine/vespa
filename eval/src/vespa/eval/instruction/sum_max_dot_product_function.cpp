@@ -1,9 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sum_max_dot_product_function.h"
-#include <vespa/eval/eval/operation.h>
+#include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/value.h>
-#include <cblas.h>
 
 namespace vespalib::eval {
 
@@ -16,11 +15,12 @@ void my_sum_max_dot_product_op(InterpretedFunction::State &state, uint64_t dp_si
     double result = 0.0;
     auto query_cells = state.peek(1).cells().typify<float>();
     auto document_cells = state.peek(0).cells().typify<float>();
+    using dot_product = DotProduct<float,float>;
     if ((query_cells.size() > 0) && (document_cells.size() > 0)) {
         for (const float *query = query_cells.begin(); query < query_cells.end(); query += dp_size) {
             float max_dp = aggr::Max<float>::null_value();
             for (const float *document = document_cells.begin(); document < document_cells.end(); document += dp_size) {
-                max_dp = aggr::Max<float>::combine(max_dp, cblas_sdot(dp_size, query, 1, document, 1));
+                max_dp = aggr::Max<float>::combine(max_dp, dot_product::apply(query, document, dp_size));
             }
             result += max_dp;
         }

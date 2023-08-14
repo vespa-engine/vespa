@@ -1,10 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "best_similarity_function.h"
-#include <vespa/eval/eval/operation.h>
+#include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/util/binary_hamming_distance.h>
-#include <cblas.h>
 
 namespace vespalib::eval {
 
@@ -22,7 +21,7 @@ struct BestSimParam {
 
 struct UseDotProduct {
     static float calc(const float *pri, const float *sec, size_t size) {
-        return cblas_sdot(size, pri, 1, sec, 1);
+        return DotProduct<float,float>::apply(pri, sec, size);
     }
 };
 
