@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -161,9 +162,12 @@ public record OsController(Controller controller) {
     /** Remove certifications for non-existent OS versions */
     public void removeStaleCertifications(OsVersionStatus currentStatus) {
         try (Mutex lock = curator().lockCertifiedOsVersions()) {
-            Set<OsVersion> knownVersions = currentStatus.versions().keySet();
+            Optional<OsVersion> minKnownVersion = currentStatus.versions().keySet().stream()
+                                                               .filter(v -> !v.version().isEmpty())
+                                                               .min(Comparator.naturalOrder());
+            if (minKnownVersion.isEmpty()) return;
             Set<CertifiedOsVersion> certifiedVersions = new HashSet<>(readCertified());
-            if (certifiedVersions.removeIf(cv -> !knownVersions.contains(cv.osVersion()))) {
+            if (certifiedVersions.removeIf(cv -> cv.osVersion().version().isBefore(minKnownVersion.get().version()))) {
                 curator().writeCertifiedOsVersions(certifiedVersions);
             }
         }

@@ -68,12 +68,14 @@ public class OsVersionStatusUpdaterTest {
                                                  .filter(osVersion -> !osVersion.version().isEmpty())
                                                  .collect(Collectors.toSet());
         List<OsVersion> versionsToCertify = new ArrayList<>(knownVersions);
-        versionsToCertify.addAll(List.of(new OsVersion(Version.fromString("95.0.1"), cloud),
-                                         new OsVersion(Version.fromString("98.0.2"), cloud)));
+        OsVersion futureVersion = new OsVersion(Version.fromString("98.0.2"), cloud); // Keep future version
+        versionsToCertify.addAll(List.of(new OsVersion(Version.fromString("3.11"), cloud),
+                                         futureVersion));
         for (OsVersion version : versionsToCertify) {
             tester.controller().os().certify(version.version(), version.cloud(), Version.fromString("1.2.3"));
         }
-        assertEquals(knownVersions.size() + 2, certifiedOsVersions(tester).size());
+        knownVersions.add(futureVersion);
+        assertEquals(knownVersions.size() + 1, certifiedOsVersions(tester).size());
         statusUpdater.maintain();
         assertEquals(knownVersions, certifiedOsVersions(tester));
     }
