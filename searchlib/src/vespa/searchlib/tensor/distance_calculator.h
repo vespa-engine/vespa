@@ -29,12 +29,6 @@ public:
     DistanceCalculator(const tensor::ITensorAttribute& attr_tensor,
                        const vespalib::eval::Value& query_tensor_in);
 
-    /**
-     * Only used by unit tests where ownership of query tensor and distance function is handled outside.
-     */
-    DistanceCalculator(const tensor::ITensorAttribute& attr_tensor,
-                       BoundDistanceFunction::UP function_in);
-
     ~DistanceCalculator();
 
     const tensor::ITensorAttribute& attribute_tensor() const { return _attr_tensor; }

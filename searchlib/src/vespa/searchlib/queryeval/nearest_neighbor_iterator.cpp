@@ -23,9 +23,8 @@ template <bool strict, bool has_filter>
 class NearestNeighborImpl : public NearestNeighborIterator
 {
 public:
-
     NearestNeighborImpl(Params params_in)
-        : NearestNeighborIterator(params_in),
+        : NearestNeighborIterator(std::move(params_in)),
           _lastScore(0.0)
     {
     }
@@ -53,7 +52,7 @@ public:
     }
 
     void doUnpack(uint32_t docId) override {
-        double score = params().distance_calc.function().to_rawscore(_lastScore);
+        double score = params().distance_calc->function().to_rawscore(_lastScore);
         params().tfmd.setRawScore(docId, score);
         params().distanceHeap.used(_lastScore);
     }
@@ -62,7 +61,7 @@ public:
 
 private:
     double computeDistance(uint32_t docId, double limit) {
-        return params().distance_calc.calc_with_limit(docId, limit);
+        return params().distance_calc->calc_with_limit(docId, limit);
     }
 
     double                 _lastScore;
@@ -75,14 +74,14 @@ namespace {
 
 template <bool has_filter>
 std::unique_ptr<NearestNeighborIterator>
-resolve_strict(bool strict, const NearestNeighborIterator::Params &params)
+resolve_strict(bool strict, NearestNeighborIterator::Params params)
 {
     if (strict) {
         using NNI = NearestNeighborImpl<true, has_filter>;
-        return std::make_unique<NNI>(params);
+        return std::make_unique<NNI>(std::move(params));
     } else {
         using NNI = NearestNeighborImpl<false, has_filter>;
-        return std::make_unique<NNI>(params);
+        return std::make_unique<NNI>(std::move(params));
     }
 }
 
@@ -92,15 +91,15 @@ std::unique_ptr<NearestNeighborIterator>
 NearestNeighborIterator::create(
         bool strict,
         fef::TermFieldMatchData &tfmd,
-        const search::tensor::DistanceCalculator &distance_calc,
+        std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
         NearestNeighborDistanceHeap &distanceHeap,
         const GlobalFilter &filter)
 {
-    Params params(tfmd, distance_calc, distanceHeap, filter);
+    Params params(tfmd, std::move(distance_calc), distanceHeap, filter);
     if (filter.is_active()) {
-        return resolve_strict<true>(strict, params);
+        return resolve_strict<true>(strict, std::move(params));
     } else  {
-        return resolve_strict<false>(strict, params);
+        return resolve_strict<false>(strict, std::move(params));
     }
 }
 

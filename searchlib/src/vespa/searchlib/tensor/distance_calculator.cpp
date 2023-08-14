@@ -30,14 +30,6 @@ DistanceCalculator::DistanceCalculator(const tensor::ITensorAttribute& attr_tens
     assert(_dist_fun);
 }
 
-DistanceCalculator::DistanceCalculator(const tensor::ITensorAttribute& attr_tensor,
-                                       BoundDistanceFunction::UP function_in)
-    : _attr_tensor(attr_tensor),
-      _query_tensor(nullptr),
-      _dist_fun(std::move(function_in))
-{
-}
-
 DistanceCalculator::~DistanceCalculator() = default;
 
 namespace {
