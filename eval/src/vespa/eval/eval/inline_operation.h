@@ -4,6 +4,7 @@
 
 #include "operation.h"
 #include <vespa/vespalib/util/typify.h>
+#include <cblas.h>
 #include <cmath>
 
 namespace vespalib::eval::operation {
@@ -145,6 +146,33 @@ void apply_op2_vec_vec(D *dst, const A *a, const B *b, size_t n, OP2 &&f) {
         dst[i] = f(a[i], b[i]);
     }
 }
+
+//-----------------------------------------------------------------------------
+
+template <typename LCT, typename RCT>
+struct DotProduct {
+    static double apply(const LCT * lhs, const RCT * rhs, size_t count) {
+        double result = 0.0;
+        for (size_t i = 0; i < count; ++i) {
+            result += lhs[i] * rhs[i];
+        }
+        return result;
+    }
+};
+
+template <>
+struct DotProduct<float,float> {
+    static float apply(const float * lhs, const float * rhs, size_t count) {
+        return cblas_sdot(count, lhs, 1, rhs, 1);
+    }
+};
+
+template <>
+struct DotProduct<double,double> {
+    static double apply(const double * lhs, const double * rhs, size_t count) {
+        return cblas_ddot(count, lhs, 1, rhs, 1);
+    }
+};
 
 //-----------------------------------------------------------------------------
 

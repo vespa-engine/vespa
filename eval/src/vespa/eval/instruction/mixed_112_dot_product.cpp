@@ -5,7 +5,6 @@
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/eval/eval/visit_stuff.h>
-#include <cblas.h>
 #include <algorithm>
 #include <optional>
 
@@ -16,14 +15,6 @@ using namespace operation;
 using namespace instruction;
 
 namespace {
-
-template <typename CT> double my_dot_product(const CT * lhs, const CT * rhs, size_t count);
-template <> double my_dot_product<double>(const double * lhs, const double * rhs, size_t count) {
-    return cblas_ddot(count, lhs, 1, rhs, 1);
-}
-template <> double my_dot_product<float>(const float * lhs, const float * rhs, size_t count) {
-    return cblas_sdot(count, lhs, 1, rhs, 1);
-}
 
 template <typename T, size_t N>
 ConstArrayRef<const T *> as_ccar(std::array<T *, N> &array) {
@@ -54,10 +45,11 @@ double my_mixed_112_dot_product_fallback(const Value::Index &a_idx, const Value:
     auto outer = a_idx.create_view({});
     auto model = c_idx.create_view({&single_dim[0], 1});
     outer->lookup({});
+    using dot_product = DotProduct<CT,CT>;
     while (outer->next_result(as_car(c_addr_ref[0]), a_space)) {
         model->lookup(as_ccar(c_addr_ref));
         if (model->next_result({}, c_space)) {
-            result += my_dot_product<CT>(b_cells, c_cells + (c_space * dense_size), dense_size) * a_cells[a_space];
+            result += dot_product::apply(b_cells, c_cells + (c_space * dense_size), dense_size) * a_cells[a_space];
         }
     }
     return result;
@@ -70,11 +62,12 @@ double my_fast_mixed_112_dot_product(const FastAddrMap *a_map, const FastAddrMap
 {
     double result = 0.0;
     const auto &a_labels = a_map->labels();
+    using dot_product = DotProduct<CT,CT>;
     for (size_t a_space = 0; a_space < a_labels.size(); ++a_space) {
         if (a_cells[a_space] != 0.0) { // handle pseudo-sparse input
             auto c_space = c_map->lookup_singledim(a_labels[a_space]);
             if (c_space != FastAddrMap::npos()) {
-                result += my_dot_product<CT>(b_cells, c_cells + (c_space * dense_size), dense_size) * a_cells[a_space];
+                result += dot_product::apply(b_cells, c_cells + (c_space * dense_size), dense_size) * a_cells[a_space];
             }
         }
     }
