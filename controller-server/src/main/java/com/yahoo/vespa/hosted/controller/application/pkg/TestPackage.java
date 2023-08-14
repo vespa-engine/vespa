@@ -97,6 +97,8 @@ public class TestPackage {
             keyPair = null;
             this.certificate = null;
         }
+        boolean isEnclave = isPublicSystem &&
+                !spec.cloudAccount(cloud, id.application().instance(), id.type().zone()).isUnspecified();
         this.applicationPackageStream = new ApplicationPackageStream(inZip, () -> name -> name.endsWith(".xml"), () -> new Replacer() {
 
             // Initially skips all declared entries, ensuring they're generated and appended after all input entries.
@@ -127,7 +129,7 @@ public class TestPackage {
                             __ -> new ByteArrayInputStream(servicesXml( ! isPublicSystem,
                                                                        certificateValidFrom != null,
                                                                        hasLegacyTests,
-                                                                       testerResourcesFor(id.type().zone(), spec.requireInstance(id.application().instance())),
+                                                                       testerResourcesFor(id.type().zone(), spec.requireInstance(id.application().instance()), isEnclave),
                                                                        testerApp)));
 
                 entries.put(deploymentFile,
@@ -225,7 +227,7 @@ public class TestPackage {
         return new TestSummary(problems, suites);
     }
 
-    static NodeResources testerResourcesFor(ZoneId zone, DeploymentInstanceSpec spec) {
+    static NodeResources testerResourcesFor(ZoneId zone, DeploymentInstanceSpec spec, boolean isEnclave) {
         NodeResources nodeResources = spec.steps().stream()
                                           .filter(step -> step.concerns(zone.environment()))
                                           .findFirst()
@@ -233,6 +235,7 @@ public class TestPackage {
                                           .map(NodeResources::fromLegacyName)
                                           .orElse(zone.region().value().matches("^(aws|gcp)-.*") ? DEFAULT_TESTER_RESOURCES_CLOUD
                                                                                                  : DEFAULT_TESTER_RESOURCES);
+        if (isEnclave) nodeResources = nodeResources.with(NodeResources.Architecture.x86_64);
         return nodeResources.with(NodeResources.DiskSpeed.any);
     }
 
@@ -245,8 +248,8 @@ public class TestPackage {
         // Of the remaining memory, split 50/50 between Surefire running the tests and the rest
         int testMemoryMb = (int) (1024 * (resources.memoryGb() - jdiscMemoryGb) / 2);
 
-        String resourceString = Text.format("<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\" disk-speed=\"%s\" storage-type=\"%s\"/>",
-                                            resources.vcpu(), resources.memoryGb(), resources.diskGb(), resources.diskSpeed().name(), resources.storageType().name());
+        String resourceString = Text.format("<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\" disk-speed=\"%s\" storage-type=\"%s\" architecture=\"%s\"/>",
+                                            resources.vcpu(), resources.memoryGb(), resources.diskGb(), resources.diskSpeed().name(), resources.storageType().name(), resources.architecture().name());
 
         String runtimeProviderClass = config.runtimeProviderClass();
         String tenantCdBundle = config.tenantCdBundle();

@@ -221,10 +221,10 @@ public class TestPackageTest {
                                                      </deployment>
                                                      """);
 
-        NodeResources firstResources = TestPackage.testerResourcesFor(ZoneId.from("prod", "gcp-us-west-1"), spec.requireInstance("first"));
-        assertEquals(TestPackage.DEFAULT_TESTER_RESOURCES_CLOUD, firstResources);
+        NodeResources firstResources = TestPackage.testerResourcesFor(ZoneId.from("prod", "gcp-us-west-1"), spec.requireInstance("first"), true);
+        assertEquals(TestPackage.DEFAULT_TESTER_RESOURCES_CLOUD.with(NodeResources.Architecture.x86_64), firstResources);
 
-        NodeResources secondResources = TestPackage.testerResourcesFor(ZoneId.from("prod", "us-west-1"), spec.requireInstance("second"));
+        NodeResources secondResources = TestPackage.testerResourcesFor(ZoneId.from("prod", "us-west-1"), spec.requireInstance("second"), false);
         assertEquals(6, secondResources.vcpu(), 1e-9);
         assertEquals(16, secondResources.memoryGb(), 1e-9);
         assertEquals(100, secondResources.diskGb(), 1e-9);
