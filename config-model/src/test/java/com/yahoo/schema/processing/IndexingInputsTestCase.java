@@ -17,29 +17,29 @@ public class IndexingInputsTestCase {
     void requireThatExtraFieldInputExtraFieldThrows() throws IOException, ParseException {
         assertBuildFails("src/test/examples/indexing_extra_field_input_extra_field.sd",
                 "For schema 'indexing_extra_field_input_extra_field', field 'bar': Indexing script refers " +
-                        "to field 'bar' which does not exist in document type " +
-                        "'indexing_extra_field_input_extra_field', and is not a mutable attribute.");
+                        "to field 'bar' which is neither a field in document type " +
+                        "'indexing_extra_field_input_extra_field' nor a mutable attribute");
     }
 
     @Test
     void requireThatExtraFieldInputImplicitThrows() throws IOException, ParseException {
         assertBuildFails("src/test/examples/indexing_extra_field_input_implicit.sd",
                 "For schema 'indexing_extra_field_input_implicit', field 'foo': Indexing script refers to " +
-                        "field 'foo' which does not exist in document type 'indexing_extra_field_input_implicit', and is not a mutable attribute.");
+                        "field 'foo' which is neither a field in document type 'indexing_extra_field_input_implicit' nor a mutable attribute");
     }
 
     @Test
     void requireThatExtraFieldInputNullThrows() throws IOException, ParseException {
         assertBuildFails("src/test/examples/indexing_extra_field_input_null.sd",
                 "For schema 'indexing_extra_field_input_null', field 'foo': Indexing script refers to field " +
-                        "'foo' which does not exist in document type 'indexing_extra_field_input_null', and is not a mutable attribute.");
+                        "'foo' which is neither a field in document type 'indexing_extra_field_input_null' nor a mutable attribute");
     }
 
     @Test
     void requireThatExtraFieldInputSelfThrows() throws IOException, ParseException {
         assertBuildFails("src/test/examples/indexing_extra_field_input_self.sd",
                 "For schema 'indexing_extra_field_input_self', field 'foo': Indexing script refers to field " +
-                        "'foo' which does not exist in document type 'indexing_extra_field_input_self', and is not a mutable attribute.");
+                        "'foo' which is neither a field in document type 'indexing_extra_field_input_self' nor a mutable attribute");
     }
 
 }

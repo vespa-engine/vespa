@@ -319,16 +319,12 @@ public class Schema implements ImmutableSchema {
         return null;
     }
 
-    /**
-     * @return true if the document has been added.
-     */
+    /** Returns true if the document has been added. */
     public boolean hasDocument() {
         return documentType != null;
     }
 
-    /**
-     * @return The document in this search.
-     */
+    /** Returns the document in this search. */
     @Override
     public SDDocumentType getDocument() {
         return documentType;
@@ -384,7 +380,7 @@ public class Schema implements ImmutableSchema {
     }
 
     /**
-     * Returns a field defined in one of the documents of this search definition.
+     * Returns a field defined in one of the documents of this schema.
      * This does not include the extra fields defined outside the document
      * (those accessible through the getExtraField() method).
      *
