@@ -21,6 +21,7 @@ import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -121,19 +122,15 @@ public class FileServer {
         File file = fileDirectory.getFile(reference);
         if ( ! file.exists()) return;
 
-        FileReferenceData fileData =
-                uncheck(() -> fileReferenceData(reference, acceptedCompressionTypes, file),
-                        "For " + reference.value() + ": failed reading file '" + file.getAbsolutePath() + "'" +
-                                " for sending to '" + target.toString() + "'. ");
-
-        try {
+        try (FileReferenceData fileData = fileReferenceData(reference, acceptedCompressionTypes, file)) {
             log.log(Level.FINE, () -> "Start serving " + reference.value() + " with file '" + file.getAbsolutePath() + "'");
             target.receive(fileData, new ReplayStatus(0, "OK"));
             log.log(Level.FINE, () -> "Done serving " + reference.value() + " with file '" + file.getAbsolutePath() + "'");
+        } catch (IOException ioe) {
+            throw new UncheckedIOException("For " + reference.value() + ": failed reading file '" + file.getAbsolutePath() + "'" +
+                                           " for sending to '" + target.toString() + "'. ", ioe);
         } catch (Exception e) {
             throw new RuntimeException("Failed serving " + reference.value() + " to '" + target + "': ", e);
-        } finally {
-            fileData.close();
         }
     }
 
