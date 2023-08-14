@@ -141,7 +141,12 @@
     </handler>
 
     <http>
-      <server port="19071" id="configserver" />
+      <server port="19071" id="configserver">
+        <config name="jdisc.http.connector">
+          <!-- Limit max request content size accepted -->
+          <maxContentSize>2000000000</maxContentSize> <!-- ~2GB -->
+        </config>
+      </server>
       <preprocess:include file='http-server.xml' required='false' />
     </http>
 

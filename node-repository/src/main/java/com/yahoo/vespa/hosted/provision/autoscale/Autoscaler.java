@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -10,8 +9,6 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling.Status;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Optional;
 
 /**
  * The autoscaler gives advice about what resources should be allocated to a cluster based on observed behavior.
@@ -23,7 +20,9 @@ public class Autoscaler {
     /** What cost difference is worth a reallocation? */
     private static final double costDifferenceWorthReallocation = 0.1;
     /** What resource difference is worth a reallocation? */
-    private static final double resourceDifferenceWorthReallocation = 0.03;
+    private static final double resourceIncreaseWorthReallocation = 0.03;
+    /** The load increase headroom (as a fraction) we should have before needing to scale up, to decide to scale down */
+    static final double headroomRequiredToScaleDown = 0.15;
 
     private final NodeRepository nodeRepository;
     private final AllocationOptimizer allocationOptimizer;
@@ -70,22 +69,25 @@ public class Autoscaler {
         if ( ! clusterModel.isStable(nodeRepository))
             return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", clusterModel);
 
-        var currentAllocation = new AllocatableClusterResources(clusterNodes.not().retired(), nodeRepository);
-        Optional<AllocatableClusterResources> bestAllocation =
-                allocationOptimizer.findBestAllocation(clusterModel.loadAdjustment(), currentAllocation, clusterModel, limits);
-        if (bestAllocation.isEmpty())
+        var current = new AllocatableClusterResources(clusterNodes.not().retired(), nodeRepository);
+        var loadAdjustment = clusterModel.loadAdjustment();
+
+        // Ensure we only scale down if we'll have enough headroom to not scale up again given a small load increase
+        var target = allocationOptimizer.findBestAllocation(loadAdjustment, current, clusterModel, limits);
+
+        if (target.isEmpty())
             return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", clusterModel);
 
-        if (! worthRescaling(currentAllocation.realResources(), bestAllocation.get().realResources())) {
-            if (bestAllocation.get().fulfilment() < 0.9999999)
+        if (! worthRescaling(current.realResources(), target.get().realResources())) {
+            if (target.get().fulfilment() < 0.9999999)
                 return Autoscaling.dontScale(Status.insufficient, "Configured limits prevents ideal scaling of this cluster", clusterModel);
             else if ( ! clusterModel.safeToScaleDown() && clusterModel.idealLoad().any(v -> v < 1.0))
                 return Autoscaling.dontScale(Status.ideal, "Cooling off before considering to scale down", clusterModel);
             else
-                return Autoscaling.dontScale(Status.ideal, "Cluster is ideally scaled (within limits)", clusterModel);
+                return Autoscaling.dontScale(Status.ideal, "Cluster is ideally scaled (within configured limits)", clusterModel);
         }
 
-        return Autoscaling.scaleTo(bestAllocation.get().advertisedResources(), clusterModel);
+        return Autoscaling.scaleTo(target.get().advertisedResources(), clusterModel);
     }
 
     /** Returns true if it is worthwhile to make the given resource change, false if it is too insignificant */
@@ -95,12 +97,14 @@ public class Autoscaler {
         if (meaningfulIncrease(from.totalResources().memoryGb(), to.totalResources().memoryGb())) return true;
         if (meaningfulIncrease(from.totalResources().diskGb(), to.totalResources().diskGb())) return true;
 
-        // Otherwise, only *decrease* if it reduces cost meaningfully
+        // Otherwise, only *decrease* if
+        // - cost is reduced meaningfully
+        // - the new resources won't be so much smaller that a small fluctuation in load will cause an increase
         return ! similar(from.cost(), to.cost(), costDifferenceWorthReallocation);
     }
 
     public static boolean meaningfulIncrease(double from, double to) {
-        return from < to && ! similar(from, to, resourceDifferenceWorthReallocation);
+        return from < to && ! similar(from, to, resourceIncreaseWorthReallocation);
     }
 
     private static boolean similar(double r1, double r2, double threshold) {

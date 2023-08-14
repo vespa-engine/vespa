@@ -32,8 +32,6 @@ public:
     };
 
     virtual ScanResult scanNext() = 0;
-
-    virtual void reset() = 0;
 };
 
 }

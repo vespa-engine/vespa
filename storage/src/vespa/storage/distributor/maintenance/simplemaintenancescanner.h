@@ -13,21 +13,24 @@ class SimpleMaintenanceScanner : public MaintenanceScanner
 {
 public:
     struct GlobalMaintenanceStats {
-        std::vector<uint64_t> pending;
+        std::array<uint64_t, MaintenanceOperation::OPERATION_COUNT> pending;
 
-        GlobalMaintenanceStats()
-            : pending(MaintenanceOperation::OPERATION_COUNT)
+        GlobalMaintenanceStats() noexcept
+            : pending()
         { }
 
-        bool operator==(const GlobalMaintenanceStats& rhs) const;
-        void merge(const GlobalMaintenanceStats& rhs);
+        bool operator==(const GlobalMaintenanceStats& rhs) const noexcept;
+        void merge(const GlobalMaintenanceStats& rhs) noexcept;
     };
     struct PendingMaintenanceStats {
-        PendingMaintenanceStats();
+        PendingMaintenanceStats() noexcept;
         PendingMaintenanceStats(const PendingMaintenanceStats &);
-        PendingMaintenanceStats &operator = (const PendingMaintenanceStats &);
+        PendingMaintenanceStats &operator = (const PendingMaintenanceStats &) = delete;
+        PendingMaintenanceStats(PendingMaintenanceStats &&) noexcept;
+        PendingMaintenanceStats &operator = (PendingMaintenanceStats &&) noexcept;
         ~PendingMaintenanceStats();
-        GlobalMaintenanceStats global;
+        PendingMaintenanceStats reset();
+        GlobalMaintenanceStats      global;
         NodeMaintenanceStatsTracker perNodeStats;
 
         void merge(const PendingMaintenanceStats& rhs);
@@ -47,14 +50,15 @@ public:
                              const DistributorBucketSpaceRepo& bucketSpaceRepo);
     SimpleMaintenanceScanner(const SimpleMaintenanceScanner&) = delete;
     SimpleMaintenanceScanner& operator=(const SimpleMaintenanceScanner&) = delete;
-    ~SimpleMaintenanceScanner();
+    ~SimpleMaintenanceScanner() override;
 
     ScanResult scanNext() override;
-    void reset() override;
+    PendingMaintenanceStats reset();
 
     // TODO: move out into own interface!
     void prioritizeBucket(const document::Bucket &id);
 
+    // TODO Only for testing
     const PendingMaintenanceStats& getPendingMaintenanceStats() const noexcept {
         return _pendingMaintenance;
     }

@@ -13,7 +13,7 @@ namespace mbus {
  * target. Instances of this class are returned by {@link RPCService}, and
  * cached by {@link RPCTargetPool}.
  */
-class RPCTarget : public FRT_IRequestWait {
+class RPCTarget : public FRT_IRequestWait, public std::enable_shared_from_this<RPCTarget> {
 public:
     /**
      * Declares a version handler used when resolving the version of a target.
@@ -58,6 +58,7 @@ private:
     Version_UP                 _version;
     HandlerList                _versionHandlers;
 
+    struct ctor_tag {};
 public:
     /**
      * Convenience typedefs.
@@ -72,7 +73,10 @@ public:
      * @param spec The connection spec of this target.
      * @param orb  The FRT supervisor to use when connecting to target.
      */
-    RPCTarget(const string &name, FRT_Supervisor &orb);
+    RPCTarget(const string &name, FRT_Supervisor &orb, ctor_tag);
+    static SP create(const string &name, FRT_Supervisor &orb) {
+        return std::make_shared<RPCTarget>(name, orb, ctor_tag{});
+    }
 
     /**
      * Destructor. Subrefs the contained FRT target.

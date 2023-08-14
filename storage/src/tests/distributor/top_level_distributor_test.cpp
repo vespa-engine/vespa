@@ -92,7 +92,7 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
         return _distributor->getBucketSpacesStats();
     }
 
-    std::unordered_map<uint16_t, uint32_t> distributor_min_replica_stats() {
+    MinReplicaMap distributor_min_replica_stats() {
         return _distributor->getMinReplica();
     }
 
@@ -504,7 +504,7 @@ void assert_invalid_bucket_stats_for_all_spaces(
     ASSERT_FALSE(space_iter->second.valid());
 }
 
-void assert_min_replica_stats_zeroed(const std::unordered_map<uint16_t, uint32_t>& stats, uint16_t node_index) {
+void assert_min_replica_stats_zeroed(const MinReplicaMap & stats, uint16_t node_index) {
     auto iter = stats.find(node_index);
     ASSERT_TRUE(iter != stats.cend());
     EXPECT_EQ(iter->second, 0);

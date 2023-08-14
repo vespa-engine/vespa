@@ -79,6 +79,7 @@ public class OsApiTest extends ControllerContainerTest {
 
         // All nodes are initially on empty version
         upgradeAndUpdateStatus();
+
         // Upgrade OS to a different version in each cloud
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
                 "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2\"}", 200);
@@ -96,12 +97,33 @@ public class OsApiTest extends ControllerContainerTest {
         assertFile(new Request("http://localhost:8080/os/v1/"), "versions-all-upgraded.json");
 
         // Downgrade with force is permitted
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.1\", \"cloud\": \"cloud1\", \"force\": true}", Request.Method.PATCH),
-                "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.1\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"8.2.0\", \"cloud\": \"cloud2\", \"force\": true}", Request.Method.PATCH),
+                       "{\"message\":\"Set target OS version for cloud 'cloud2' to 8.2.0\"}", 200);
 
         // Clear target for a given cloud
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": null, \"cloud\": \"cloud2\"}", Request.Method.PATCH),
-                "{\"message\":\"Cleared target OS version for cloud 'cloud2'\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": null, \"cloud\": \"cloud1\"}", Request.Method.PATCH),
+                "{\"message\":\"Cleared target OS version for cloud 'cloud1'\"}", 200);
+
+        // Pin/unpin a version
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\", \"pin\": true}", Request.Method.PATCH),
+                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2 (pinned)\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\", \"pin\": false}", Request.Method.PATCH),
+                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\", \"pin\": true}", Request.Method.PATCH),
+                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2 (pinned)\"}", 200);
+
+        // Certify an OS and Vespa version pair
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud1/7.5.2", "8.200.37", Request.Method.POST),
+                       "{\"message\":\"Certified 7.5.2 in cloud cloud1 as compatible with Vespa version 8.200.37\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud2/7.5.2", "8.200.33", Request.Method.POST),
+                       "{\"message\":\"Certified 7.5.2 in cloud cloud2 as compatible with Vespa version 8.200.33\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud1/7.5.2", "8.200.42", Request.Method.POST),
+                       "{\"message\":\"7.5.2 is already certified in cloud cloud1 as compatible with Vespa version 8.200.37. Leaving certification unchanged\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/certify", "", Request.Method.GET),
+                       """
+[{"version":"7.5.2","cloud":"cloud1","vespaVersion":"8.200.37"},{"version":"7.5.2","cloud":"cloud2","vespaVersion":"8.200.33"}]""", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud1/7.5.2", "", Request.Method.DELETE),
+                       "{\"message\":\"Removed certification of 7.5.2 in cloud cloud1\"}", 200);
 
         // Error: Missing fields
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\"}", Request.Method.PATCH),
@@ -113,15 +135,19 @@ public class OsApiTest extends ControllerContainerTest {
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"0.0.0\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version '0.0.0'\"}", 400);
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"foo\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version 'foo': For input string: \\\"foo\\\"\"}", 400);
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version 'foo': Invalid version component in 'foo': For input string: \\\"foo\\\"\"}", 400);
 
         // Error: Invalid cloud
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\", \"cloud\": \"foo\"}", Request.Method.PATCH),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cloud 'foo' does not exist in this system\"}", 400);
 
         // Error: Downgrade OS
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.4.1\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot downgrade cloud 'cloud1' to version 7.4.1\"}", 400);
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.4.1\", \"cloud\": \"cloud2\"}", Request.Method.PATCH),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot downgrade cloud 'cloud2' to version 7.4.1: Missing 'force' parameter\"}", 400);
+
+        // Error: Change a pinned version
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.3\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot upgrade cloud cloud1' to version 7.5.3: Current target is pinned. Add 'force' parameter to override\"}", 400);
 
         // Request firmware checks in all zones.
         assertResponse(new Request("http://localhost:8080/os/v1/firmware/", "", Request.Method.POST),
@@ -139,6 +165,14 @@ public class OsApiTest extends ControllerContainerTest {
         assertResponse(new Request("http://localhost:8080/os/v1/firmware/dev/", "", Request.Method.DELETE),
                 "{\"error-code\":\"NOT_FOUND\",\"message\":\"No zones at path '/os/v1/firmware/dev/'\"}", 404);
 
+        // Error: Missing or invalid versions to certify
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud1/7.5.2", "", Request.Method.POST),
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Missing Vespa version in request body\"}", 400);
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud1/7.5.2", "foo", Request.Method.POST),
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version component in 'foo': For input string: \\\"foo\\\"\"}", 400);
+        assertResponse(new Request("http://localhost:8080/os/v1/certify/cloud1/bar", "1.2.3", Request.Method.POST),
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version component in 'bar': For input string: \\\"bar\\\"\"}", 400);
+
         assertFalse(tester.controller().auditLogger().readLog().entries().isEmpty(), "Actions are logged to audit log");
     }
 
@@ -148,7 +182,7 @@ public class OsApiTest extends ControllerContainerTest {
     }
 
     private void updateVersionStatus() {
-        tester.controller().updateOsVersionStatus(OsVersionStatus.compute(tester.controller()));
+        tester.controller().os().updateStatus(OsVersionStatus.compute(tester.controller()));
     }
 
     private void completeUpgrade(ZoneId... zones) {

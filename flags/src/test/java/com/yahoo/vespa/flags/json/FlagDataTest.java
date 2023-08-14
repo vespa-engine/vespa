@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json;
 
+import com.yahoo.text.JSON;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.RawFlag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,44 +17,45 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author hakonhall
  */
 public class FlagDataTest {
-    private final String json = "{\n" +
-            "    \"id\": \"id1\",\n" +
-            "    \"rules\": [\n" +
-            "        {\n" +
-            "            \"conditions\": [\n" +
-            "                {\n" +
-            "                    \"type\": \"whitelist\",\n" +
-            "                    \"dimension\": \"hostname\",\n" +
-            "                    \"values\": [ \"host1\", \"host2\" ]\n" +
-            "                },\n" +
-            "                {\n" +
-            "                    \"type\": \"blacklist\",\n" +
-            "                    \"dimension\": \"application\",\n" +
-            "                    \"values\": [ \"app1\", \"app2\" ]\n" +
-            "                }\n" +
-            "            ],\n" +
-            "            \"value\": true\n" +
-            "        },\n" +
-            "        {\n" +
-            "            \"conditions\": [\n" +
-            "                {\n" +
-            "                    \"type\": \"whitelist\",\n" +
-            "                    \"dimension\": \"zone\",\n" +
-            "                    \"values\": [ \"zone1\", \"zone2\" ]\n" +
-            "                }\n" +
-            "            ],\n" +
-            "            \"value\": false\n" +
-            "        }\n" +
-            "    ],\n" +
-            "    \"attributes\": {\n" +
-            "        \"zone\": \"zone1\"\n" +
-            "    }\n" +
-            "}";
+    private final String json = """
+                                {
+                                    "id": "id1",
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "type": "whitelist",
+                                                    "dimension": "hostname",
+                                                    "values": [ "host1", "host2" ]
+                                                },
+                                                {
+                                                    "type": "blacklist",
+                                                    "dimension": "application",
+                                                    "values": [ "app1", "app2" ]
+                                                }
+                                            ],
+                                            "value": true
+                                        },
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "type": "whitelist",
+                                                    "dimension": "zone",
+                                                    "values": [ "zone1", "zone2" ]
+                                                }
+                                            ],
+                                            "value": false
+                                        }
+                                    ],
+                                    "attributes": {
+                                        "zone": "zone1"
+                                    }
+                                }""";
 
     private final FetchVector vector = new FetchVector();
 
     @Test
-    void test() {
+    void testResolve() {
         // Second rule matches with the default zone matching
         verify(Optional.of("false"), vector);
 
@@ -72,6 +75,199 @@ public class FlagDataTest {
 
         // No rules apply if zone is overridden to an unknown zone
         verify(Optional.empty(), vector.with(FetchVector.Dimension.ZONE_ID, "unknown zone"));
+    }
+
+    @Test
+    void testPartialResolve() {
+        FlagData data = FlagData.deserialize(json);
+        assertEquals(data.partialResolve(vector), data);
+        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app1")),
+                     FlagData.deserialize("""
+                                {
+                                    "id": "id1",
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "type": "whitelist",
+                                                    "dimension": "zone",
+                                                    "values": [ "zone1", "zone2" ]
+                                                }
+                                            ],
+                                            "value": false
+                                        }
+                                    ],
+                                    "attributes": {
+                                        "zone": "zone1"
+                                    }
+                                }"""));
+
+        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app1")),
+                     FlagData.deserialize("""
+                                {
+                                    "id": "id1",
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "type": "whitelist",
+                                                    "dimension": "zone",
+                                                    "values": [ "zone1", "zone2" ]
+                                                }
+                                            ],
+                                            "value": false
+                                        }
+                                    ],
+                                    "attributes": {
+                                        "zone": "zone1"
+                                    }
+                                }"""));
+
+        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app3")),
+                     FlagData.deserialize("""
+                                {
+                                    "id": "id1",
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "type": "whitelist",
+                                                    "dimension": "hostname",
+                                                    "values": [ "host1", "host2" ]
+                                                }
+                                            ],
+                                            "value": true
+                                        },
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "type": "whitelist",
+                                                    "dimension": "zone",
+                                                    "values": [ "zone1", "zone2" ]
+                                                }
+                                            ],
+                                            "value": false
+                                        }
+                                    ],
+                                    "attributes": {
+                                        "zone": "zone1"
+                                    }
+                                }"""));
+
+        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app3")
+                                               .with(FetchVector.Dimension.HOSTNAME, "host1")),
+                     FlagData.deserialize("""
+                                {
+                                    "id": "id1",
+                                    "rules": [
+                                        {
+                                            "value": true
+                                        }
+                                    ],
+                                    "attributes": {
+                                        "zone": "zone1"
+                                    }
+                                }"""));
+
+        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app3")
+                                               .with(FetchVector.Dimension.HOSTNAME, "host3")),
+                     FlagData.deserialize("""
+                                {
+                                    "id": "id1",
+                                    "rules": [
+                                        {
+                                            "conditions": [
+                                                {
+                                                    "type": "whitelist",
+                                                    "dimension": "zone",
+                                                    "values": [ "zone1", "zone2" ]
+                                                }
+                                            ],
+                                            "value": false
+                                        }
+                                    ],
+                                    "attributes": {
+                                        "zone": "zone1"
+                                    }
+                                }"""));
+
+        assertEquals(data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app3")
+                                               .with(FetchVector.Dimension.HOSTNAME, "host3")
+                                               .with(FetchVector.Dimension.ZONE_ID, "zone2")),
+                     FlagData.deserialize("""
+                                {
+                                    "id": "id1",
+                                    "rules": [
+                                        {
+                                            "value": false
+                                        }
+                                    ]
+                                }"""));
+
+        FlagData fullyResolved = data.partialResolve(vector.with(FetchVector.Dimension.APPLICATION_ID, "app3")
+                                                           .with(FetchVector.Dimension.HOSTNAME, "host3")
+                                                           .with(FetchVector.Dimension.ZONE_ID, "zone3"));
+        assertEquals(fullyResolved, FlagData.deserialize("""
+                                {
+                                    "id": "id1"
+                                }"""));
+        assertTrue(fullyResolved.isEmpty());
+    }
+
+    @Test
+    void testRemovalOfSentinelRuleWithNullValue() {
+        FlagData data = FlagData.deserialize("""
+                                             {
+                                                 "id": "id1",
+                                                 "rules": [
+                                                     {
+                                                         "conditions": [
+                                                             {
+                                                                 "type": "whitelist",
+                                                                 "dimension": "zone",
+                                                                 "values": [ "zone1", "zone2" ]
+                                                             }
+                                                         ],
+                                                         "value": null
+                                                     }
+                                                 ]
+                                             }""");
+        assertEquals(data, new FlagData(data.id(), new FetchVector(), List.of()));
+        assertTrue(data.isEmpty());
+    }
+
+    @Test
+    void testRemovalOfSentinelRuleWithoutValue() {
+        String json = """
+                        {
+                            "id": "id1",
+                            "rules": [
+                                {
+                                    "conditions": [
+                                        {
+                                            "type": "whitelist",
+                                            "dimension": "zone",
+                                            "values": [ "zone1", "zone2" ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "conditions": [
+                                        {
+                                            "type": "whitelist",
+                                            "dimension": "cloud",
+                                            "values": [ "aws" ]
+                                        }
+                                    ],
+                                    "value": true
+                                }
+                            ]
+                        }""";
+        FlagData data = FlagData.deserialize(json);
+        assertTrue(JSON.equals(data.serializeToJson(), json));
+        FlagData flagData = data.partialResolve(vector.with(FetchVector.Dimension.CLOUD, "gcp"));
+        assertEquals(flagData, new FlagData(data.id(), new FetchVector(), List.of()));
+        assertTrue(flagData.isEmpty());
     }
 
     private void verify(Optional<String> expectedValue, FetchVector vector) {

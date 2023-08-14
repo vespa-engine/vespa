@@ -48,11 +48,11 @@ public:
         uint32_t estHits;
         bool     empty;
 
-        HitEstimate() : estHits(0), empty(true) {}
-        HitEstimate(uint32_t estHits_, bool empty_)
+        HitEstimate() noexcept : estHits(0), empty(true) {}
+        HitEstimate(uint32_t estHits_, bool empty_) noexcept
             : estHits(estHits_), empty(empty_) {}
 
-        bool operator < (const HitEstimate &other) const {
+        bool operator < (const HitEstimate &other) const noexcept {
             if (empty == other.empty) {
                 return (estHits < other.estHits);
             } else {
@@ -77,21 +77,21 @@ public:
         static constexpr uint8_t COST_TIER_EXPENSIVE = 2;
         static constexpr uint8_t COST_TIER_MAX = 255;
 
-        State();
-        State(FieldSpecBase field);
-        State(FieldSpecBaseList fields_in);
+        State() noexcept;
+        State(FieldSpecBase field) noexcept;
+        State(FieldSpecBaseList fields_in) noexcept;
         State(const State &rhs) = delete;
         State(State &&rhs) noexcept = default;
         State &operator=(const State &rhs) = delete;
         State &operator=(State &&rhs) noexcept = default;
         ~State();
 
-        bool isTermLike() const { return !_fields.empty(); }
-        const FieldSpecBaseList &fields() const { return _fields; }
+        bool isTermLike() const noexcept { return !_fields.empty(); }
+        const FieldSpecBaseList &fields() const noexcept { return _fields; }
 
-        size_t numFields() const { return _fields.size(); }
-        const FieldSpecBase &field(size_t idx) const { return _fields[idx]; }
-        const FieldSpecBase *lookupField(uint32_t fieldId) const {
+        size_t numFields() const noexcept { return _fields.size(); }
+        const FieldSpecBase &field(size_t idx) const noexcept { return _fields[idx]; }
+        const FieldSpecBase *lookupField(uint32_t fieldId) const noexcept {
             for (const FieldSpecBase & field : _fields) {
                 if (field.getFieldId() == fieldId) {
                     return &field;
@@ -100,27 +100,27 @@ public:
             return nullptr;
         }
 
-        void estimate(HitEstimate est) {
+        void estimate(HitEstimate est) noexcept {
             _estimateHits = est.estHits;
             _estimateEmpty = est.empty;
         }
-        HitEstimate estimate() const { return HitEstimate(_estimateHits, _estimateEmpty); }
-        double hit_ratio(uint32_t docid_limit) const {
+        HitEstimate estimate() const noexcept { return HitEstimate(_estimateHits, _estimateEmpty); }
+        double hit_ratio(uint32_t docid_limit) const noexcept {
             uint32_t total_hits = _estimateHits;
             uint32_t total_docs = std::max(total_hits, docid_limit);
             return (total_docs == 0) ? 0.0 : double(total_hits) / double(total_docs);
         }
-        void tree_size(uint32_t value) {
+        void tree_size(uint32_t value) noexcept {
             assert(value < 0x100000);
             _tree_size = value;
         }
-        uint32_t tree_size() const { return _tree_size; }
-        void allow_termwise_eval(bool value) { _allow_termwise_eval = value; }
-        bool allow_termwise_eval() const { return _allow_termwise_eval; }
-        void want_global_filter(bool value) { _want_global_filter = value; }
-        bool want_global_filter() const { return _want_global_filter; }
-        void cost_tier(uint8_t value) { _cost_tier = value; }
-        uint8_t cost_tier() const { return _cost_tier; }
+        uint32_t tree_size() const noexcept { return _tree_size; }
+        void allow_termwise_eval(bool value) noexcept { _allow_termwise_eval = value; }
+        bool allow_termwise_eval() const noexcept { return _allow_termwise_eval; }
+        void want_global_filter(bool value) noexcept { _want_global_filter = value; }
+        bool want_global_filter() const noexcept { return _want_global_filter; }
+        void cost_tier(uint8_t value) noexcept { _cost_tier = value; }
+        uint8_t cost_tier() const noexcept { return _cost_tier; }
     };
 
     // utility that just takes maximum estimate
@@ -137,7 +137,7 @@ public:
 
     // utility to get the greater estimate to sort first, higher tiers last
     struct TieredGreaterEstimate {
-        bool operator () (const auto &a, const auto &b) const {
+        bool operator () (const auto &a, const auto &b) const noexcept {
             const auto &lhs = a->getState();
             const auto &rhs = b->getState();
             if (lhs.cost_tier() != rhs.cost_tier()) {
@@ -149,7 +149,7 @@ public:
 
     // utility to get the lesser estimate to sort first, higher tiers last
     struct TieredLessEstimate {
-        bool operator () (const auto &a, const auto &b) const {
+        bool operator () (const auto &a, const auto &b) const noexcept {
             const auto &lhs = a->getState();
             const auto &rhs = b->getState();
             if (lhs.cost_tier() != rhs.cost_tier()) {
@@ -189,20 +189,20 @@ public:
     // hit that isn't certain to be a match).
     enum class FilterConstraint { UPPER_BOUND, LOWER_BOUND };
 
-    Blueprint();
+    Blueprint() noexcept;
     Blueprint(const Blueprint &) = delete;
     Blueprint &operator=(const Blueprint &) = delete;
     virtual ~Blueprint();
 
-    void setParent(Blueprint *parent) { _parent = parent; }
-    Blueprint *getParent() const { return _parent; }
+    void setParent(Blueprint *parent) noexcept { _parent = parent; }
+    Blueprint *getParent() const noexcept { return _parent; }
     bool has_parent() const { return (_parent != nullptr); }
 
-    Blueprint &setSourceId(uint32_t sourceId) { _sourceId = sourceId; return *this; }
-    uint32_t getSourceId() const { return _sourceId; }
+    Blueprint &setSourceId(uint32_t sourceId) noexcept { _sourceId = sourceId; return *this; }
+    uint32_t getSourceId() const noexcept { return _sourceId; }
 
-    virtual void setDocIdLimit(uint32_t limit) { _docid_limit = limit; }
-    uint32_t get_docid_limit() const { return _docid_limit; }
+    virtual void setDocIdLimit(uint32_t limit) noexcept { _docid_limit = limit; }
+    uint32_t get_docid_limit() const noexcept { return _docid_limit; }
 
     static Blueprint::UP optimize(Blueprint::UP bp);
     virtual void optimize(Blueprint* &self) = 0;
@@ -227,7 +227,7 @@ public:
     virtual const State &getState() const = 0;
     const Blueprint &root() const;
 
-    double hit_ratio() const { return getState().hit_ratio(_docid_limit); }
+    double hit_ratio() const noexcept { return getState().hit_ratio(_docid_limit); }
 
     virtual void fetchPostings(const ExecuteInfo &execInfo) = 0;
     virtual void freeze() = 0;
@@ -319,10 +319,10 @@ protected:
 
 public:
     using IndexList = std::vector<size_t>;
-    IntermediateBlueprint();
+    IntermediateBlueprint() noexcept;
     ~IntermediateBlueprint() override;
 
-    void setDocIdLimit(uint32_t limit) final;
+    void setDocIdLimit(uint32_t limit) noexcept final;
 
     void optimize(Blueprint* &self) final;
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
@@ -360,24 +360,30 @@ private:
     State _state;
 protected:
     void optimize(Blueprint* &self) final;
-    void setEstimate(HitEstimate est);
+    void setEstimate(HitEstimate est) {
+        _state.estimate(est);
+        notifyChange();
+    }
     void set_cost_tier(uint32_t value);
-    void set_allow_termwise_eval(bool value);
+    void set_allow_termwise_eval(bool value) {
+        _state.allow_termwise_eval(value);
+        notifyChange();
+    }
     void set_want_global_filter(bool value);
     void set_tree_size(uint32_t value);
 
-    LeafBlueprint(bool allow_termwise_eval)
+    LeafBlueprint(bool allow_termwise_eval) noexcept
         : _state()
     {
         _state.allow_termwise_eval(allow_termwise_eval);
     }
 
-    LeafBlueprint(FieldSpecBase field, bool allow_termwise_eval)
+    LeafBlueprint(FieldSpecBase field, bool allow_termwise_eval) noexcept
         : _state(field)
     {
         _state.allow_termwise_eval(allow_termwise_eval);
     }
-    LeafBlueprint(FieldSpecBaseList fields, bool allow_termwise_eval)
+    LeafBlueprint(FieldSpecBaseList fields, bool allow_termwise_eval) noexcept
         : _state(std::move(fields))
     {
         _state.allow_termwise_eval(allow_termwise_eval);
@@ -386,7 +392,7 @@ protected:
 public:
     ~LeafBlueprint() override = default;
     const State &getState() const final { return _state; }
-    void setDocIdLimit(uint32_t limit) final { Blueprint::setDocIdLimit(limit); }
+    void setDocIdLimit(uint32_t limit) noexcept final { Blueprint::setDocIdLimit(limit); }
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
@@ -397,15 +403,15 @@ public:
 
 // for leaf nodes representing a single term
 struct SimpleLeafBlueprint : LeafBlueprint {
-    explicit SimpleLeafBlueprint() : LeafBlueprint(true) {}
-    explicit SimpleLeafBlueprint(FieldSpecBase field) : LeafBlueprint(field, true) {}
-    explicit SimpleLeafBlueprint(FieldSpecBaseList fields) : LeafBlueprint(std::move(fields), true) {}
+    explicit SimpleLeafBlueprint() noexcept : LeafBlueprint(true) {}
+    explicit SimpleLeafBlueprint(FieldSpecBase field) noexcept : LeafBlueprint(field, true) {}
+    explicit SimpleLeafBlueprint(FieldSpecBaseList fields) noexcept: LeafBlueprint(std::move(fields), true) {}
 };
 
 // for leaf nodes representing more complex structures like wand/phrase
 struct ComplexLeafBlueprint : LeafBlueprint {
-    explicit ComplexLeafBlueprint(FieldSpecBase field) : LeafBlueprint(field, false) {}
-    explicit ComplexLeafBlueprint(FieldSpecBaseList fields) : LeafBlueprint(std::move(fields), false) {}
+    explicit ComplexLeafBlueprint(FieldSpecBase field) noexcept : LeafBlueprint(field, false) {}
+    explicit ComplexLeafBlueprint(FieldSpecBaseList fields) noexcept : LeafBlueprint(std::move(fields), false) {}
 };
 
 //-----------------------------------------------------------------------------

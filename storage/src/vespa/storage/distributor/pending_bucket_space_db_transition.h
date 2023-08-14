@@ -76,7 +76,7 @@ public:
         const lib::Distribution& _distribution;
         const lib::ClusterState& _new_state;
         const char* _storage_up_states;
-        const std::unordered_set<uint16_t>& _outdated_nodes; // TODO hash_set
+        const OutdatedNodes & _outdated_nodes; // TODO hash_set
         const std::vector<dbtransition::Entry>& _entries;
         uint32_t _iter;
     public:
@@ -84,7 +84,7 @@ public:
                  const lib::Distribution& distribution,
                  const lib::ClusterState& new_state,
                  const char* storage_up_states,
-                 const std::unordered_set<uint16_t>& outdated_nodes,
+                 const OutdatedNodes & outdated_nodes,
                  const std::vector<dbtransition::Entry>& entries)
             : _creation_timestamp(creation_timestamp),
               _distribution(distribution),

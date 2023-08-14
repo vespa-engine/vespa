@@ -119,11 +119,15 @@ public final class Version implements Comparable<Version> {
      * @throws IllegalArgumentException If <code>version</code> is improperly formatted.
      */
     public Version(String versionString) {
-        if (! "".equals(versionString)) {
-            String[] components=versionString.split("\\."); // Split on dot
-            major = (components.length > 0) ? Integer.parseInt(components[0]) : 0;
-            minor =  (components.length > 1) ? Integer.parseInt(components[1]) : 0;
-            micro = (components.length > 2) ? Integer.parseInt(components[2]) : 0;
+        if (!versionString.isEmpty()) {
+            String[] components = versionString.split("\\."); // Split on dot
+            try {
+                major = (components.length > 0) ? Integer.parseInt(components[0]) : 0;
+                minor = (components.length > 1) ? Integer.parseInt(components[1]) : 0;
+                micro = (components.length > 2) ? Integer.parseInt(components[2]) : 0;
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid version component in '" + versionString + "'", e);
+            }
             qualifier = (components.length > 3) ? components[3] : "";
             if (components.length > 4)
                 throw new IllegalArgumentException("Too many components in '" + versionString + "'");
@@ -199,7 +203,7 @@ public final class Version implements Comparable<Version> {
 
     /** Returns new Version(versionString), or Version.emptyVersion if the input string is null or "" */
     public static Version fromString(String versionString) {
-        return (versionString == null) ? emptyVersion :new Version(versionString);
+        return versionString == null ? emptyVersion : new Version(versionString);
     }
 
     public Version withQualifier(String qualifier) {
@@ -315,7 +319,7 @@ public final class Version implements Comparable<Version> {
         if (this.major != other.major) return false;
         if (this.minor != other.minor) return false;
         if (this.micro != other.micro) return false;
-        return (this.qualifier.equals(other.qualifier));
+        return this.qualifier.equals(other.qualifier);
     }
 
     @SuppressWarnings("unused")
@@ -382,7 +386,7 @@ public final class Version implements Comparable<Version> {
 
     /** Creates a version specification that only matches this version */
     public VersionSpecification toSpecification() {
-        return (this == emptyVersion)
+        return this == emptyVersion
                 ? VersionSpecification.emptyVersionSpecification
                 : new VersionSpecification(getMajor(), getMinor(), getMicro(), getQualifier());
     }

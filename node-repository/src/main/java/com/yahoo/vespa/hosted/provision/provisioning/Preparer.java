@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -103,6 +104,10 @@ public class Preparer {
                     allocation.offer(candidates);
                 };
                 try {
+                    if (throttler.throttle(allNodes, Agent.system)) {
+                        throw new NodeAllocationException("Host provisioning is being throttled", true);
+                    }
+
                     HostProvisionRequest request = new HostProvisionRequest(allocation.provisionIndices(deficit.count()),
                                                                             hostType,
                                                                             deficit.resources(),
@@ -113,10 +118,8 @@ public class Preparer {
                                                                             Optional.of(cluster.id()),
                                                                             requested.cloudAccount(),
                                                                             deficit.dueToFlavorUpgrade());
-                    if (throttler.throttle(allNodes, Agent.system)) {
-                        throw new NodeAllocationException("Host provisioning is being throttled", true);
-                    }
-                    hostProvisioner.get().provisionHosts(request, whenProvisioned);
+                    Predicate<NodeResources> realHostResourcesWithinLimits = resources -> nodeRepository.nodeResourceLimits().isWithinRealLimits(resources, application, cluster);
+                    hostProvisioner.get().provisionHosts(request, realHostResourcesWithinLimits, whenProvisioned);
                 } catch (NodeAllocationException e) {
                     // Mark the nodes that were written to ZK in the consumer for deprovisioning. While these hosts do
                     // not exist, we cannot remove them from ZK here because other nodes may already have been

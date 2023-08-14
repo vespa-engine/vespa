@@ -81,6 +81,9 @@ public class SyncFileInfo {
             remoteFilename = rotatedOnly && filename.endsWith(".0.log") ? "zookeeper.log" :
                     "zookeeper.log-" + DATE_TIME_FORMATTER.format(new UnixPath(logFile).getLastModifiedTime());
             minDurationBetweenSync = filename.endsWith(".0.log") ? rotatedOnly ? Duration.ofHours(1) : Duration.ZERO : null;
+        } else if (filename.startsWith("start-services.out-")) {
+            compression = Compression.ZSTD;
+            dir = "logs/start-services/";
         } else {
             compression = filename.endsWith(".zst") ? Compression.NONE : Compression.ZSTD;
             if (rotatedOnly && compression != Compression.NONE)

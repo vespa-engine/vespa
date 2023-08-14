@@ -61,8 +61,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     public ZoneRegistryMock(SystemName system) {
         this.system = system;
         if (system.isPublic()) {
-            this.zones = List.of(ZoneApiMock.fromId("test.us-east-1"),
-                                 ZoneApiMock.fromId("staging.us-east-3"),
+            this.zones = List.of(ZoneApiMock.newBuilder().withId("test.us-east-1").withCloud("aws").withCloudNativeAvailabilityZone("use1-az4").build(),
+                                 ZoneApiMock.newBuilder().withId("staging.us-east-3").withCloud("aws").withCloudNativeAvailabilityZone("use3-az1").build(),
                                  ZoneApiMock.newBuilder().withId("prod.aws-us-east-1c").withCloud("aws").withCloudNativeAvailabilityZone("use1-az2").build(),
                                  ZoneApiMock.newBuilder().withId("prod.aws-eu-west-1a").withCloud("aws").withCloudNativeAvailabilityZone("euw1-az3").build(),
                                  ZoneApiMock.newBuilder().withId("dev.aws-us-east-1c").withCloud("aws").withCloudNativeAvailabilityZone("use1-az2").build());
@@ -161,7 +161,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public ZoneApi systemZone() {
-        return ZoneApiMock.fromId("prod.controller");
+        return ZoneApiMock.newBuilder().withSystem(system).withVirtualId(ZoneId.ofVirtualControllerZone()).build();
     }
 
     @Override
@@ -180,7 +180,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private ZoneApiMock systemAsZone() {
         return ZoneApiMock.newBuilder()
                           .with(ZoneId.from("prod.us-east-1"))
-                          .withVirtualId(ZoneId.from("prod.controller"))
+                          .withVirtualId(ZoneId.ofVirtualControllerZone())
                           .build();
     }
 

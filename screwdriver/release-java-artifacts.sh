@@ -61,7 +61,7 @@ export FACTORY_VESPA_VERSION=$VESPA_RELEASE
 
 COMMON_MAVEN_OPTS="$VESPA_MAVEN_EXTRA_OPTS --no-snapshot-updates --settings $(pwd)/screwdriver/settings-publish.xml --activate-profiles ossrh-deploy-vespa -DskipTests"
 TMPFILE=$(mktemp)
-mvn $COMMON_MAVEN_OPTS  -pl :container-dependency-versions -DskipStagingRepositoryClose=true deploy 2>&1 | tee $TMPFILE
+mvn $COMMON_MAVEN_OPTS  -pl :dependency-versions -DskipStagingRepositoryClose=true deploy 2>&1 | tee $TMPFILE
 
 # Find the stage repo name
 STG_REPO=$(cat $TMPFILE | grep 'Staging repository at http' | head -1 | awk -F/ '{print $NF}')

@@ -7,6 +7,7 @@
 #include <vespa/vespalib/data/memory_input.h>
 #include <vespa/vespalib/net/tls/capability_set.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <filesystem>
 
 namespace vespalib::net::tls {
 
@@ -39,7 +40,7 @@ using namespace slime::convenience;
 namespace {
 
 void verify_referenced_file_exists(const vespalib::string& file_path) {
-    if (!fileExists(file_path)) {
+    if (!std::filesystem::exists(std::filesystem::path(file_path))) {
         throw IllegalArgumentException(make_string("File '%s' referenced by TLS config does not exist", file_path.c_str()));
     }
 }

@@ -146,12 +146,17 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::make_bi
 }
 
 template <typename B, typename M>
+bool
+MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::has_weight_iterator(vespalib::datastore::EntryRef idx) const noexcept
+{
+    return self.getPostingList().has_btree(idx);
+}
+
+template <typename B, typename M>
 const IDocumentWeightAttribute *
 MultiValueNumericPostingAttribute<B, M>::asDocumentWeightAttribute() const
 {
-    if (this->hasWeightedSetType() &&
-        this->getBasicType() == AttributeVector::BasicType::INT64 &&
-        !this->getConfig().getIsFilter()) {
+    if (this->hasWeightedSetType() && (this->getBasicType() == AttributeVector::BasicType::INT64) && !this->getIsFilter()) {
         return &_document_weight_attribute_adapter;
     }
     return nullptr;

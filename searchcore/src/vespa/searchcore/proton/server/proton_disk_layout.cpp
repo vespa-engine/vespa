@@ -54,7 +54,7 @@ void scanDir(const vespalib::string documentsDir, DocumentDBDirScan &dirs)
 {
     auto names = vespalib::listDirectory(documentsDir);
     for (const auto &name : names) {
-        if (vespalib::isDirectory(documentsDir + "/" + name)) {
+        if (std::filesystem::is_directory(std::filesystem::path(documentsDir + "/" + name))) {
             if (isRemovedName(name)) {
                 dirs[DocTypeName(getNormalName(name))].removed = true;
             } else {
@@ -83,7 +83,9 @@ ProtonDiskLayout::remove(const DocTypeName &docTypeName)
     vespalib::string name(docTypeName.toString());
     vespalib::string normalDir(documentsDir + "/" + name);
     vespalib::string removedDir(documentsDir + "/" + getRemovedName(name));
-    vespalib::rename(normalDir, removedDir, false, false);
+    if (std::filesystem::exists(std::filesystem::path(normalDir))) {
+        std::filesystem::rename(std::filesystem::path(normalDir), std::filesystem::path(removedDir));
+    }
     vespalib::File::sync(documentsDir);
     TransLogClient tlc(_transport, _tlsSpec);
     if (!tlc.remove(name)) {

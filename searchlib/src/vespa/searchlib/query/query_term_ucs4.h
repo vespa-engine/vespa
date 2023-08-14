@@ -2,7 +2,6 @@
 #pragma once
 
 #include "query_term_simple.h"
-#include <vespa/fastlib/text/unicodeutil.h>
 #include <atomic>
 
 namespace search {
@@ -12,6 +11,7 @@ namespace search {
  */
 class QueryTermUCS4 : public QueryTermSimple {
 public:
+    using ucs4_t = uint32_t;
     QueryTermUCS4(const QueryTermUCS4 &) = delete;
     QueryTermUCS4 & operator = (const QueryTermUCS4 &) = delete;
     QueryTermUCS4(QueryTermUCS4 &&) = delete;

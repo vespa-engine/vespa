@@ -156,9 +156,16 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
 }
 
 func maybeCopyCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pkg vespa.ApplicationPackage) error {
-	if pkg.IsZip() && !ignoreZip {
-		hint := "Try running 'mvn clean', then 'vespa auth cert add' and finally 'mvn package'"
-		return errHint(fmt.Errorf("cannot add certificate to compressed application package: %s", pkg.Path), hint)
+	if pkg.IsZip() {
+		if ignoreZip {
+			cli.printWarning("Cannot verify existence of "+color.CyanString("security/clients.pem")+" since "+pkg.Path+" is compressed",
+				"Deployment to Vespa Cloud requires certificate in application package",
+				"See https://cloud.vespa.ai/en/security/guide")
+			return nil
+		} else {
+			hint := "Try running 'mvn clean', then 'vespa auth cert add' and finally 'mvn package'"
+			return errHint(fmt.Errorf("cannot add certificate to compressed application package: %s", pkg.Path), hint)
+		}
 	}
 	if force {
 		return copyCertificate(cli, target, pkg)

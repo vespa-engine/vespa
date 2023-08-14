@@ -33,6 +33,10 @@ public class NodeRepositoryTester {
     private final MockCurator curator;
 
     public NodeRepositoryTester() {
+        this(Zone.defaultZone());
+    }
+
+    public NodeRepositoryTester(Zone zone) {
         nodeFlavors = new NodeFlavors(createConfig());
         clock = new ManualClock();
         curator = new MockCurator();
@@ -41,7 +45,7 @@ public class NodeRepositoryTester {
                                             new EmptyProvisionServiceProvider(),
                                             curator,
                                             clock,
-                                            Zone.defaultZone(),
+                                            zone,
                                             new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                             Optional.empty(),

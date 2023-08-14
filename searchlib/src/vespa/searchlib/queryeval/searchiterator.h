@@ -56,7 +56,7 @@ protected:
      *
      * @param id docid for hit
      **/
-    void setDocId(uint32_t id) { _docid = id; }
+    void setDocId(uint32_t id) noexcept { _docid = id; }
 
     /**
      * Used to adjust the end of the legal docid range.
@@ -64,13 +64,13 @@ protected:
      *
      * @param end_id the first docid outside the legal iterator range
      */
-    void setEndId(uint32_t end_id) { _endid = end_id; }
+    void setEndId(uint32_t end_id) noexcept { _endid = end_id; }
 
     /**
      * Will terminate the iterator by setting it past the end.
      * Further calls to isAtEnd() will then return true.
      */
-    void setAtEnd() { _docid = search::endDocId; }
+    void setAtEnd() noexcept { _docid = search::endDocId; }
 
 public:
     using Trinary=vespalib::Trinary;
@@ -180,7 +180,7 @@ public:
     /**
      * The constructor sets the current document id to @ref beginId.
      **/
-    SearchIterator() : _docid(0), _endid(0) { }
+    SearchIterator() noexcept : _docid(0), _endid(0) { }
     SearchIterator(const SearchIterator &) = delete;
     SearchIterator &operator=(const SearchIterator &) = delete;
 
@@ -192,15 +192,15 @@ public:
      *
      * @return constant
      **/
-    static uint32_t beginId() { return beginDocId; }
+    static uint32_t beginId() noexcept { return beginDocId; }
 
     /**
      * Tell if the iterator has reached the end.
      *
      * @return true if the iterator has reached its end.
      **/
-    bool isAtEnd() const { return isAtEnd(_docid); }
-    bool isAtEnd(uint32_t docid) const {
+    bool isAtEnd() const noexcept { return isAtEnd(_docid); }
+    bool isAtEnd(uint32_t docid) const noexcept {
         if (__builtin_expect(docid >= _endid, false)) {
             return true;
         }
@@ -214,9 +214,9 @@ public:
      *
      * @return current document id
      **/
-    uint32_t getDocId() const { return _docid; }
+    uint32_t getDocId() const noexcept { return _docid; }
 
-    uint32_t getEndId() const { return _endid; }
+    uint32_t getEndId() const noexcept { return _endid; }
 
     /**
      * Check if the given document id is a hit. If it is a hit, the

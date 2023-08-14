@@ -4,6 +4,7 @@
 #include "bucket_space_distribution_configs.h"
 #include "pending_bucket_space_db_transition_entry.h"
 #include "potential_data_loss_report.h"
+#include "outdated_nodes.h"
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/storageapi/defs.h>
 #include <unordered_set> // TODO use hash_set instead
@@ -30,6 +31,7 @@ class NodeSupportedFeaturesRepo;
  */
 class StripeAccessGuard {
 public:
+    using OutdatedNodes = dbtransition::OutdatedNodes;
     virtual ~StripeAccessGuard() = default;
 
     virtual void flush_and_close() = 0;
@@ -51,7 +53,7 @@ public:
                                        const lib::Distribution& distribution,
                                        const lib::ClusterState& new_state,
                                        const char* storage_up_states,
-                                       const std::unordered_set<uint16_t>& outdated_nodes,
+                                       const OutdatedNodes& outdated_nodes,
                                        const std::vector<dbtransition::Entry>& entries) = 0;
 
     virtual void update_read_snapshot_before_db_pruning() = 0;

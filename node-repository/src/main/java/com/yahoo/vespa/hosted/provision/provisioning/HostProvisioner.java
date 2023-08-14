@@ -4,10 +4,12 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.HostEvent;
 import com.yahoo.config.provision.NodeAllocationException;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * A service which supports provisioning container hosts dynamically.
@@ -33,13 +35,14 @@ public interface HostProvisioner {
      * Schedule provisioning of a given number of hosts.
      *
      * @param request         details of the host provision request.
+     * @param realHostResourcesWithinLimits  predicate that returns true if the given resources are within allowed limits
      * @param whenProvisioned consumer of {@link ProvisionedHost}s describing the provisioned nodes,
      *                        the {@link Node} returned from {@link ProvisionedHost#generateHost} must be
      *                        written to ZK immediately in case the config server goes down while waiting
      *                        for the provisioning to finish.
      * @throws NodeAllocationException if the cloud provider cannot satisfy the request
      */
-    void provisionHosts(HostProvisionRequest request, Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException;
+    void provisionHosts(HostProvisionRequest request, Predicate<NodeResources> realHostResourcesWithinLimits, Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException;
 
     /**
      * Continue provisioning of given list of Nodes.
@@ -75,6 +78,6 @@ public interface HostProvisioner {
     List<HostEvent> hostEventsIn(List<CloudAccount> cloudAccounts);
 
     /** Returns whether flavor for given host can be upgraded to a newer generation */
-    boolean canUpgradeFlavor(Node host, Node child);
+    boolean canUpgradeFlavor(Node host, Node child, Predicate<NodeResources> realHostResourcesWithinLimits);
 
 }

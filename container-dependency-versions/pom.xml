@@ -2,13 +2,19 @@
 <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.yahoo.vespa</groupId>
     <artifactId>container-dependency-versions</artifactId>
     <packaging>pom</packaging>
     <version>8-SNAPSHOT</version>
     <name>container-dependency-versions</name>
     <description>Versions for all 3rd party dependencies provided from the Vespa container.</description>
     <url>https://github.com/vespa-engine</url>
+
+    <parent>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>dependency-versions</artifactId>
+        <version>8-SNAPSHOT</version>
+        <relativePath>../dependency-versions/pom.xml</relativePath>
+    </parent>
 
     <licenses>
         <license>
@@ -33,76 +39,75 @@
             <dependency>
                 <groupId>aopalliance</groupId>
                 <artifactId>aopalliance</artifactId>
-                <version>${aopalliance.version}</version>
+                <version>${aopalliance.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${jackson2.version}</version>
+                <version>${jackson2.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
-                <version>${jackson2.version}</version>
+                <version>${jackson2.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson-databind.version}</version>
+                <version>${jackson-databind.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jdk8</artifactId>
-                <version>${jackson2.version}</version>
+                <version>${jackson2.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>${jackson2.version}</version>
+                <version>${jackson2.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>${guava.version}</version>
+                <version>${guava.vespa.version}</version>
             </dependency>
             <dependency>
                 <!-- Only listed because it's a dependency of Guava -->
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
-                <version>${error-prone-annotations.version}</version>
+                <version>${error-prone-annotations.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
-                <version>${guice.version}</version>
+                <version>${guice.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
-                <version>${guice.version}</version>
+                <version>${guice.vespa.version}</version>
                 <classifier>no_aop</classifier>
             </dependency>
             <dependency>
               <groupId>commons-logging</groupId>
               <artifactId>commons-logging</artifactId>
-                <!-- This version is exported by jdisc via jcl-over-slf4j. -->
-              <version>1.2</version>
+              <version>${commons-logging.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
-                <version>${javax.inject.version}</version>
+                <version>${javax.inject.vespa.version}</version>
             </dependency>
             <dependency>
                 <!-- TODO Vespa 9 Stop providing servlet-api 3.x -->
                 <groupId>javax.servlet</groupId>
               <artifactId>javax.servlet-api</artifactId>
-              <version>${javax.servlet-api.version}</version>
+              <version>${javax.servlet-api.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.ws.rs</groupId>
                 <artifactId>javax.ws.rs-api</artifactId>
-                <version>${javax.ws.rs-api.version}</version>
+                <version>${javax.ws.rs-api.vespa.version}</version>
             </dependency>
 
             <!-- jaxb start -->
@@ -111,19 +116,19 @@
                 <!-- TODO Vespa 9: stop exporting/providing and move to parent? -->
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
-                <version>${jaxb.version}</version>
+                <version>${jaxb.vespa.version}</version>
             </dependency>
             <dependency>
                 <!-- TODO Vespa 9: stop exporting/providing and move to parent? -->
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-core</artifactId>
-                <version>${jaxb.version}</version>
+                <version>${jaxb.vespa.version}</version>
             </dependency>
             <dependency>
                 <!-- TODO Vespa 9: stop exporting/providing and move to parent? -->
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-impl</artifactId>
-                <version>${jaxb.version}</version>
+                <version>${jaxb.vespa.version}</version>
             </dependency>
             <dependency>
                 <!-- Needed by jaxb-api, and possibly guice -->
@@ -137,27 +142,27 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jcl-over-slf4j</artifactId>
-                <version>${slf4j.version}</version>
+                <version>${slf4j.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>log4j-over-slf4j</artifactId>
-                <version>${slf4j.version}</version>
+                <version>${slf4j.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.version}</version>
+                <version>${slf4j.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-jdk14</artifactId>
-                <version>${slf4j.version}</version>
+                <version>${slf4j.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>xml-apis</groupId>
                 <artifactId>xml-apis</artifactId>
-                <version>${xml-apis.version}</version>
+                <version>${xml-apis.vespa.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -170,7 +175,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>versions-maven-plugin</artifactId>
-                        <version>${versions-maven-plugin.version}</version>
+                        <version>${versions-maven-plugin.vespa.version}</version>
                         <executions>
                             <execution>
                                 <phase>verify</phase>
@@ -184,76 +189,6 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>ossrh-deploy-vespa</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <properties>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven.gpg.plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                                <configuration>
-                                    <gpgArguments>
-                                        <arg>--pinentry-mode</arg>
-                                        <arg>loopback</arg>
-                                    </gpgArguments>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>${nexus.staging.maven.plugin.version}</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>ossrh</id>
-                    <url>${snapshotDeploymentRepository}</url>
-                </snapshotRepository>
-                <repository>
-                    <id>ossrh</id>
-                    <url>${releaseDeploymentRepository}</url>
-                </repository>
-            </distributionManagement>
-        </profile>
     </profiles>
-
-    <properties>
-        <aopalliance.version>1.0</aopalliance.version>
-        <error-prone-annotations.version>2.18.0</error-prone-annotations.version>
-        <guava.version>32.1.1-jre</guava.version>
-        <guice.version>4.2.3</guice.version>
-        <jackson2.version>2.15.2</jackson2.version>
-        <jackson-databind.version>2.15.2</jackson-databind.version>
-        <javax.inject.version>1</javax.inject.version>
-        <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
-        <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
-        <jaxb.version>2.3.0</jaxb.version>
-        <slf4j.version>1.7.32</slf4j.version> <!-- WARNING: when updated, also update c.y.v.tenant:base pom -->
-        <xml-apis.version>1.4.01</xml-apis.version>
-
-        <!-- Not a dependency. Only included to allow the versions-maven-plugin to check for updates of itself  -->
-        <versions-maven-plugin.version>2.8.1</versions-maven-plugin.version>
-    </properties>
 
 </project>

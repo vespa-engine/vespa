@@ -7,7 +7,9 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.OsRelease;
+import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -19,6 +21,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Automatically schedule upgrades to the next OS version.
@@ -27,6 +31,8 @@ import java.util.Optional;
  */
 public class OsUpgradeScheduler extends ControllerMaintainer {
 
+    private static final Logger LOG = Logger.getLogger(OsUpgradeScheduler.class.getName());
+
     public OsUpgradeScheduler(Controller controller, Duration interval) {
         super(controller, interval);
     }
@@ -34,27 +40,54 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     @Override
     protected double maintain() {
         Instant now = controller().clock().instant();
+        int attempts = 0;
+        int failures = 0;
         for (var cloud : controller().clouds()) {
-            Optional<Change> change = changeIn(cloud, now);
+            Optional<Change> change = changeIn(cloud, now, false);
             if (change.isEmpty()) continue;
-            if (!change.get().scheduleAt(now)) continue;
-            controller().upgradeOsIn(cloud, change.get().version(), false);
+            try {
+                attempts++;
+                controller().os().upgradeTo(change.get().osVersion().version(), cloud, false, false);
+            } catch (IllegalArgumentException e) {
+                failures++;
+                LOG.log(Level.WARNING, "Failed to schedule OS upgrade: " + Exceptions.toMessageString(e) +
+                                       ". Retrying in " + interval());
+            }
         }
-        return 0.0;
+        return asSuccessFactorDeviation(attempts, failures);
     }
 
-    /** Returns the wanted change for cloud at given instant, if any */
-    public Optional<Change> changeIn(CloudName cloud, Instant instant) {
-        Optional<OsVersionTarget> currentTarget = controller().osVersionTarget(cloud);
+    /**
+     * Returns the next OS version change
+     *
+     * @param cloud  The cloud where the change will be deployed
+     * @param now    Current time
+     * @param future Whether to return a change that cannot be scheduled now
+     */
+    public Optional<Change> changeIn(CloudName cloud, Instant now, boolean future) {
+        Optional<OsVersionTarget> currentTarget = controller().os().target(cloud);
         if (currentTarget.isEmpty()) return Optional.empty();
         if (upgradingToNewMajor(cloud)) return Optional.empty(); // Skip further upgrades until major version upgrade is complete
 
-        Release release = releaseIn(cloud);
-        return release.change(currentTarget.get().version(), instant);
+        Version currentVersion = currentTarget.get().version();
+        Change change = releaseIn(cloud).change(currentVersion, now);
+        if (!change.osVersion().version().isAfter(currentVersion)) return Optional.empty();
+        if (!future && !change.scheduleAt(now)) return Optional.empty();
+        if (!certified(change)) return Optional.empty();
+        return Optional.of(change);
+    }
+
+    private boolean certified(Change change) {
+        boolean certified = controller().os().certified(change.osVersion());
+        if (!certified) {
+            LOG.log(Level.WARNING, "Want to schedule " + change + ", but this change is not certified for " +
+                                   "the current system version");
+        }
+        return certified;
     }
 
     private boolean upgradingToNewMajor(CloudName cloud) {
-        return controller().osVersionStatus().versionsIn(cloud).stream()
+        return controller().os().status().versionsIn(cloud).stream()
                            .filter(version -> !version.isEmpty()) // Ignore empty/unknown versions
                            .map(Version::getMajor)
                            .distinct()
@@ -65,9 +98,9 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         boolean useTaggedRelease = controller().zoneRegistry().zones().all().dynamicallyProvisioned().in(cloud)
                                                .zones().isEmpty();
         if (useTaggedRelease) {
-            return new TaggedRelease(controller().system(), controller().serviceRegistry().artifactRepository());
+            return new TaggedRelease(controller().system(), cloud, controller().serviceRegistry().artifactRepository());
         }
-        return new CalendarVersionedRelease(controller().system());
+        return new CalendarVersionedRelease(controller().system(), cloud);
     }
 
     private static boolean canTriggerAt(Instant instant, boolean isCd) {
@@ -96,16 +129,16 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
     private interface Release {
 
-        /** The pending change for this release at given instant, if any */
-        Optional<Change> change(Version currentVersion, Instant instant);
+        /** The next available change of this release at given instant */
+        Change change(Version currentVersion, Instant instant);
 
     }
 
     /** OS version change and the earliest time it can be scheduled */
-    public record Change(Version version, Instant scheduleAt) {
+    public record Change(OsVersion osVersion, Instant scheduleAt) {
 
         public Change {
-            Objects.requireNonNull(version);
+            Objects.requireNonNull(osVersion);
             Objects.requireNonNull(scheduleAt);
         }
 
@@ -117,20 +150,20 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     /** OS release based on a tag */
-    private record TaggedRelease(SystemName system, ArtifactRepository artifactRepository) implements Release {
+    private record TaggedRelease(SystemName system, CloudName cloud, ArtifactRepository artifactRepository) implements Release {
 
         public TaggedRelease {
             Objects.requireNonNull(system);
+            Objects.requireNonNull(cloud);
             Objects.requireNonNull(artifactRepository);
         }
 
         @Override
-        public Optional<Change> change(Version currentVersion, Instant instant) {
+        public Change change(Version currentVersion, Instant instant) {
             OsRelease release = artifactRepository.osRelease(currentVersion.getMajor(), tag());
-            if (!release.version().isAfter(currentVersion)) return Optional.empty();
             Duration cooldown = remainingCooldownOf(cooldown(), release.age(instant));
             Instant scheduleAt = schedulingInstant(instant.plus(cooldown), system);
-            return Optional.of(new Change(release.version(), scheduleAt));
+            return new Change(new OsVersion(release.version(), cloud), scheduleAt);
         }
 
         /** Returns the release tag tracked by this system */
@@ -146,7 +179,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     /** OS release based on calendar-versioning */
-    record CalendarVersionedRelease(SystemName system) implements Release {
+    record CalendarVersionedRelease(SystemName system, CloudName cloud) implements Release {
 
         /** A fixed point in time which the release schedule is calculated from */
         private static final Instant START_OF_SCHEDULE = LocalDate.of(2022, 1, 1)
@@ -159,27 +192,24 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         /** The day of week new releases are published */
         private static final DayOfWeek RELEASE_DAY = DayOfWeek.TUESDAY;
 
+        /** How far into release day we should wait before triggering. This is to give the new release some time to propagate */
+        private static final Duration COOLDOWN = Duration.ofHours(6);
+
         public CalendarVersionedRelease {
             Objects.requireNonNull(system);
         }
 
         @Override
-        public Optional<Change> change(Version currentVersion, Instant instant) {
+        public Change change(Version currentVersion, Instant instant) {
             CalendarVersion version = findVersion(instant, currentVersion);
-            Instant predicatedInstant = instant;
+            Instant predicted = instant;
             while (!version.version().isAfter(currentVersion)) {
-                predicatedInstant = predicatedInstant.plus(Duration.ofDays(1));
-                version = findVersion(predicatedInstant, currentVersion);
+                predicted = predicted.plus(Duration.ofDays(1));
+                version = findVersion(predicted, currentVersion);
             }
-            Duration cooldown = remainingCooldownOf(cooldown(), version.age(instant));
+            Duration cooldown = remainingCooldownOf(COOLDOWN, version.age(instant));
             Instant schedulingInstant = schedulingInstant(instant.plus(cooldown), system);
-            return Optional.of(new Change(version.version(), schedulingInstant));
-        }
-
-        private Duration cooldown() {
-            return system.isCd()
-                    ? Duration.ofDays(1)                          // CD: Give new releases some time to propagate
-                    : Duration.ofDays(7 - RELEASE_DAY.ordinal()); // non-CD: Wait until start of the following week
+            return new Change(new OsVersion(version.version(), cloud), schedulingInstant);
         }
 
         /** Find the most recent version available according to the scheduling step, relative to now */

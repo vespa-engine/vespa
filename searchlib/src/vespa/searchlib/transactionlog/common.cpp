@@ -2,17 +2,17 @@
 
 #include "common.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/fastos/file.h>
 #include <filesystem>
 #include <stdexcept>
 #include <system_error>
-
-namespace search::transactionlog {
 
 using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
 using vespalib::make_string_short::fmt;
 using std::runtime_error;
+namespace fs = std::filesystem;
+
+namespace search::transactionlog {
 
 namespace {
 
@@ -26,20 +26,14 @@ throwRangeError(SerialNum prev, SerialNum next) {
 }
 
 int
-makeDirectory(const char * dir)
+makeDirectory(vespalib::stringref dir)
 {
-    int retval(-1);
-
-    FastOS_StatInfo st;
-    if ( FastOS_File::Stat(dir, &st) ) {
-        retval = st._isDirectory ? 0 : -2;
-    } else {
-        std::error_code ec;
-        std::filesystem::create_directory(std::filesystem::path(dir), ec);
-        retval = (!ec) ? 0 : -3;
+    if ( fs::exists(fs::path(dir)) ) {
+        return fs::is_directory(fs::path(dir)) ? 0 : -2;
     }
-
-    return retval;
+    std::error_code ec;
+    fs::create_directory(fs::path(dir), ec);
+    return (!ec) ? 0 : -3;
 }
 
 int64_t

@@ -2,7 +2,7 @@
   "id": "tenant1:app1",
   "internal": true,
   "deploymentIssueId": "321",
-  "deploymentSpecField": "<deployment version='1.0'>\n  <test />\n  <!--<staging />-->\n  <prod global-service-id=\"foo\">\n    <region active=\"true\">us-east-3</region>\n    <region active=\"true\">us-west-1</region>\n  </prod>\n</deployment>\n",
+  "deploymentSpecField": "<deployment version='1.0'>\n  <test />\n  <!--<staging />-->\n  <prod>\n    <region>us-east-3</region>\n    <region>us-west-1</region>\n  </prod>\n</deployment>\n",
   "validationOverrides": "<validation-overrides>\n    <allow until=\"2016-04-28\" comment=\"Renaming content cluster\">content-cluster-removal</allow>\n    <allow until=\"2016-08-22\" comment=\"Migrating us-east-3 to C-2E\">cluster-size-reduction</allow>\n    <allow until=\"2017-06-30\" comment=\"Test Vespa upgrade tests\">force-automatic-tenant-upgrade-test</allow>\n</validation-overrides>\n",
   "projectId": 102889,
   "deployingField": {

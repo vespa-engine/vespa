@@ -15,12 +15,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ResourceExhaustionCalculatorTest {
 
+    private static String decorate(ClusterFixture cf, String msg) {
+        return ResourceExhaustionCalculator.decoratedMessage(cf.cluster(), msg);
+    }
+
     @Test
     void no_feed_block_returned_when_no_resources_lower_than_limit() {
         var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.5), usage("memory", 0.8)));
         var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.49), usage("memory", 0.79)),
                 forNode(2, usage("disk", 0.4), usage("memory", 0.6)));
-        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNull(feedBlock);
     }
 
@@ -29,10 +33,13 @@ public class ResourceExhaustionCalculatorTest {
         var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.5), usage("memory", 0.8)));
         var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.51), usage("memory", 0.79)),
                 forNode(2, usage("disk", 0.4), usage("memory", 0.6)));
-        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk on node 1 [storage.1.local] (0.510 > 0.500)", feedBlock.getDescription());
+        // Manually verify message decoration in this test
+        assertEquals("in content cluster 'foo': disk on node 1 [storage.1.local] is 51.0% full " +
+                     "(the configured limit is 50.0%). See https://docs.vespa.ai/en/operations/feed-block.html",
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -40,10 +47,11 @@ public class ResourceExhaustionCalculatorTest {
         var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.5), usage("memory", 0.8)));
         var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", "a-fancy-disk", 0.51), usage("memory", 0.79)),
                 forNode(2, usage("disk", 0.4), usage("memory", 0.6)));
-        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk:a-fancy-disk on node 1 [storage.1.local] (0.510 > 0.500)", feedBlock.getDescription());
+        assertEquals(decorate(cf, "disk:a-fancy-disk on node 1 [storage.1.local] is 51.0% full (the configured limit is 50.0%)"),
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -53,11 +61,12 @@ public class ResourceExhaustionCalculatorTest {
                 forNode(2, usage("disk", 0.4), usage("memory", 0.85)));
         cf.cluster().getNodeInfo(storageNode(1)).setRpcAddress(null);
         cf.cluster().getNodeInfo(storageNode(2)).setRpcAddress("max mekker");
-        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk on node 1 [unknown hostname] (0.510 > 0.500), " +
-                "memory on node 2 [unknown hostname] (0.850 > 0.800)", feedBlock.getDescription());
+        assertEquals(decorate(cf, "disk on node 1 [unknown hostname] is 51.0% full (the configured limit is 50.0%), " +
+                                  "memory on node 2 [unknown hostname] is 85.0% full (the configured limit is 80.0%)"),
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -65,13 +74,13 @@ public class ResourceExhaustionCalculatorTest {
         var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.4), usage("memory", 0.8)));
         var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.51), usage("memory", 0.85)),
                 forNode(2, usage("disk", 0.45), usage("memory", 0.6)));
-        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk on node 1 [storage.1.local] (0.510 > 0.400), " +
-                "memory on node 1 [storage.1.local] (0.850 > 0.800), " +
-                "disk on node 2 [storage.2.local] (0.450 > 0.400)",
-                feedBlock.getDescription());
+        assertEquals(decorate(cf, "disk on node 1 [storage.1.local] is 51.0% full (the configured limit is 40.0%), " +
+                                  "memory on node 1 [storage.1.local] is 85.0% full (the configured limit is 80.0%), " +
+                                  "disk on node 2 [storage.2.local] is 45.0% full (the configured limit is 40.0%)"),
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -80,13 +89,13 @@ public class ResourceExhaustionCalculatorTest {
         var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.51), usage("memory", 0.85)),
                 forNode(2, usage("disk", 0.45), usage("memory", 0.6)),
                 forNode(3, usage("disk", 0.6), usage("memory", 0.9)));
-        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNotNull(feedBlock);
         assertTrue(feedBlock.blockFeedInCluster());
-        assertEquals("disk on node 1 [storage.1.local] (0.510 > 0.400), " +
-                "memory on node 1 [storage.1.local] (0.850 > 0.800), " +
-                "disk on node 2 [storage.2.local] (0.450 > 0.400) (... and 2 more)",
-                feedBlock.getDescription());
+        assertEquals(decorate(cf, "disk on node 1 [storage.1.local] is 51.0% full (the configured limit is 40.0%), " +
+                                  "memory on node 1 [storage.1.local] is 85.0% full (the configured limit is 80.0%), " +
+                                  "disk on node 2 [storage.2.local] is 45.0% full (the configured limit is 40.0%) (... and 2 more)"),
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -94,7 +103,7 @@ public class ResourceExhaustionCalculatorTest {
         var calc = new ResourceExhaustionCalculator(false, mapOf(usage("disk", 0.5), usage("memory", 0.8)));
         var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.51), usage("memory", 0.79)),
                 forNode(2, usage("disk", 0.4), usage("memory", 0.6)));
-        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNull(feedBlock);
     }
 
@@ -106,11 +115,11 @@ public class ResourceExhaustionCalculatorTest {
         // Node 2 is at 0.49 but was not previously blocked and should not be blocked now either.
         var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.3), usage("memory", 0.49)),
                 forNode(2, usage("disk", 0.3), usage("memory", 0.49)));
-        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNotNull(feedBlock);
         // TODO should we not change the limits themselves? Explicit mention of hysteresis state?
-        assertEquals("memory on node 1 [storage.1.local] (0.490 > 0.400)",
-                feedBlock.getDescription());
+        assertEquals(decorate(cf, "memory on node 1 [storage.1.local] is 49.0% full (the configured limit is 40.0%)"),
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -121,10 +130,10 @@ public class ResourceExhaustionCalculatorTest {
         // Node 2 is at 0.49 but was not previously blocked and should not be blocked now either.
         var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.3), usage("memory", 0.48)),
                 forNode(2, usage("disk", 0.3), usage("memory", 0.49)));
-        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNotNull(feedBlock);
-        assertEquals("memory on node 1 [storage.1.local] (0.480 > 0.400)",
-                feedBlock.getDescription());
+        assertEquals(decorate(cf, "memory on node 1 [storage.1.local] is 48.0% full (the configured limit is 40.0%)"),
+                     feedBlock.getDescription());
     }
 
     @Test
@@ -135,7 +144,7 @@ public class ResourceExhaustionCalculatorTest {
         // Node 2 is at 0.49 but was not previously blocked and should not be blocked now either.
         var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.3), usage("memory", 0.39)),
                 forNode(2, usage("disk", 0.3), usage("memory", 0.49)));
-        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNull(feedBlock);
     }
 
@@ -146,7 +155,7 @@ public class ResourceExhaustionCalculatorTest {
                 forNode(2, usage("disk", 0.6), usage("memory", 0.6)));
         cf.reportStorageNodeState(1, State.DOWN);
         cf.reportStorageNodeState(2, State.DOWN);
-        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNull(feedBlock);
     }
 
@@ -157,7 +166,7 @@ public class ResourceExhaustionCalculatorTest {
                 forNode(2, usage("disk", 0.6), usage("memory", 0.6)));
         cf.proposeStorageNodeWantedState(1, State.DOWN);
         cf.proposeStorageNodeWantedState(2, State.MAINTENANCE);
-        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfos());
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNull(feedBlock);
     }
 

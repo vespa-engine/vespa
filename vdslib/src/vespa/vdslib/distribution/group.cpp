@@ -11,7 +11,7 @@
 
 namespace storage::lib {
 
-Group::Group(uint16_t index, vespalib::stringref name)
+Group::Group(uint16_t index, vespalib::stringref name) noexcept
     : _name(name),
       _index(index),
       _distributionHash(0),
@@ -46,7 +46,7 @@ Group::~Group()
 }
 
 bool
-Group::operator==(const Group& other) const
+Group::operator==(const Group& other) const noexcept
 {
     return (_name == other._name &&
             _index == other._index &&

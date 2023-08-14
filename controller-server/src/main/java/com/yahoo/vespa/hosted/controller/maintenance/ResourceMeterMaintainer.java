@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.component.Version;
+import ai.vespa.metrics.ControllerMetrics;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
@@ -71,8 +71,8 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     private final Metric metric;
     private final Clock clock;
 
-    private static final String METERING_LAST_REPORTED = "metering_last_reported";
-    private static final String METERING_TOTAL_REPORTED = "metering_total_reported";
+    private static final String METERING_LAST_REPORTED = ControllerMetrics.METERING_LAST_REPORTED.baseName();
+    private static final String METERING_TOTAL_REPORTED = ControllerMetrics.METERING_TOTAL_REPORTED.baseName();
     private static final int METERING_REFRESH_INTERVAL_SECONDS = 1800;
 
     @SuppressWarnings("WeakerAccess")

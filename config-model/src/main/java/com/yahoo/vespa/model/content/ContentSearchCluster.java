@@ -35,7 +35,6 @@ import java.util.Optional;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * Encapsulates the various options for search in a content model.
@@ -44,7 +43,8 @@ import java.util.stream.Collectors;
 public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> implements
         ProtonConfig.Producer,
         DispatchNodesConfig.Producer,
-        DispatchConfig.Producer
+        DispatchConfig.Producer,
+        Redundancy.Provider
 {
 
     private static final int DEFAULT_DOC_STORE_COMPRESSION_LEVEL = 3;
@@ -303,7 +303,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
-                                           fractionOfMemoryReserved, deployState.featureFlags());
+                                           fractionOfMemoryReserved, this, deployState.featureFlags());
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState);
 
@@ -312,7 +312,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             tls.initService(deployState);
         } else {
             searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
-                                                tuning, resourceLimits, fractionOfMemoryReserved)
+                                                tuning, resourceLimits, fractionOfMemoryReserved, this)
                     .build(deployState, parent, element.getXml());
             tls = new TransactionLogServer.Builder(clusterName, syncTransactionLog).build(deployState, searchNode, element.getXml());
         }
@@ -352,7 +352,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         if (hasIndexedCluster()) {
             // Important: these must all be the normalized "within a single leaf group" values,
             // _not_ the cluster-wide, cross-group values.
-            indexedCluster.setSearchableCopies(redundancy.readyCopies());
             indexedCluster.setRedundancy(redundancy.finalRedundancy());
         }
         this.redundancy = redundancy;
@@ -494,5 +493,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
     @Override
     public String toString() { return "content cluster '" + clusterName + "'"; }
+
+    public Redundancy redundancy() { return redundancy; }
 
 }

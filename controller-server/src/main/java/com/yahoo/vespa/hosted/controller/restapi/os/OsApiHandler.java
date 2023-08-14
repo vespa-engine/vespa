@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
 import com.yahoo.vespa.hosted.controller.maintenance.OsUpgradeScheduler;
 import com.yahoo.vespa.hosted.controller.maintenance.OsUpgradeScheduler.Change;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
+import com.yahoo.vespa.hosted.controller.versions.CertifiedOsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.yolean.Exceptions;
 
@@ -36,10 +37,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * This implements the /os/v1 API which provides operators with information about, and scheduling of OS upgrades for
@@ -85,11 +86,13 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/os/v1/")) return new SlimeJsonResponse(osVersions());
+        if (path.matches("/os/v1/certify")) return new SlimeJsonResponse(certifiedOsVersions());
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri());
+        if (path.matches("/os/v1/certify/{cloud}/{version}")) return certifyVersion(request, path.get("version"), path.get("cloud"));
         if (path.matches("/os/v1/firmware/")) return requestFirmwareCheckResponse(path);
         if (path.matches("/os/v1/firmware/{environment}/")) return requestFirmwareCheckResponse(path);
         if (path.matches("/os/v1/firmware/{environment}/{region}/")) return requestFirmwareCheckResponse(path);
@@ -98,10 +101,36 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse delete(HttpRequest request) {
         Path path = new Path(request.getUri());
+        if (path.matches("/os/v1/certify/{cloud}/{version}")) return uncertifyVersion(request, path.get("version"), path.get("cloud"));
         if (path.matches("/os/v1/firmware/")) return cancelFirmwareCheckResponse(path);
         if (path.matches("/os/v1/firmware/{environment}/")) return cancelFirmwareCheckResponse(path);
         if (path.matches("/os/v1/firmware/{environment}/{region}/")) return cancelFirmwareCheckResponse(path);
         return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse certifyVersion(HttpRequest request, String versionString, String cloudName) {
+        Version version = Version.fromString(versionString);
+        CloudName cloud = CloudName.from(cloudName);
+        String vespaVersionString = asString(request.getData());
+        if (vespaVersionString.isEmpty()) {
+            throw new IllegalArgumentException("Missing Vespa version in request body");
+        }
+        Version vespaVersion = Version.fromString(vespaVersionString);
+        CertifiedOsVersion certified = controller.os().certify(version, cloud, vespaVersion);
+        if (certified.vespaVersion().equals(vespaVersion)) {
+            return new MessageResponse("Certified " + version.toFullString() + " in cloud " + cloud +
+                                       " as compatible with Vespa version " + vespaVersion.toFullString());
+        }
+        return new MessageResponse(version.toFullString() + " is already certified in cloud " + cloud +
+                                   " as compatible with Vespa version " + certified.vespaVersion().toFullString() +
+                                   ". Leaving certification unchanged");
+    }
+
+    private HttpResponse uncertifyVersion(HttpRequest request, String versionString, String cloudName) {
+        Version version = Version.fromString(versionString);
+        CloudName cloud = CloudName.from(cloudName);
+        controller.os().uncertify(version, cloud);
+        return new MessageResponse("Removed certification of " + version.toFullString() + " in cloud " + cloud);
     }
 
     private HttpResponse requestFirmwareCheckResponse(Path path) {
@@ -142,24 +171,37 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         Inspector root = requestData.get();
         CloudName cloud = parseStringField("cloud", root, CloudName::from);
         if (requireField("version", root).type() == Type.NIX) {
-            controller.cancelOsUpgradeIn(cloud);
+            controller.os().cancelUpgrade(cloud);
             return new MessageResponse("Cleared target OS version for cloud '" + cloud.value() + "'");
         }
         Version target = parseStringField("version", root, Version::fromString);
         boolean force = root.field("force").asBool();
-        controller.upgradeOsIn(cloud, target, force);
+        boolean pin = root.field("pin").asBool();
+        controller.os().upgradeTo(target, cloud, force, pin);
         return new MessageResponse("Set target OS version for cloud '" + cloud.value() + "' to " +
-                                   target.toFullString());
+                                   target.toFullString() + (pin ? " (pinned)" : ""));
+    }
+
+    private Slime certifiedOsVersions() {
+        Slime slime = new Slime();
+        Cursor array = slime.setArray();
+        controller.os().readCertified().stream().sorted().forEach(cv -> {
+            Cursor object = array.addObject();
+            object.setString("version", cv.osVersion().version().toFullString());
+            object.setString("cloud", cv.osVersion().cloud().value());
+            object.setString("vespaVersion", cv.vespaVersion().toFullString());
+        });
+        return slime;
     }
 
     private Slime osVersions() {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        Set<OsVersionTarget> targets = controller.osVersionTargets();
+        Set<OsVersionTarget> targets = controller.os().targets();
 
         Cursor versions = root.setArray("versions");
         Instant now = controller.clock().instant();
-        controller.osVersionStatus().versions().forEach((osVersion, nodeVersions) -> {
+        controller.os().status().versions().forEach((osVersion, nodeVersions) -> {
             Cursor currentVersionObject = versions.addObject();
             currentVersionObject.setString("version", osVersion.version().toFullString());
             Optional<OsVersionTarget> target = targets.stream().filter(t -> t.osVersion().equals(osVersion)).findFirst();
@@ -167,9 +209,10 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
             target.ifPresent(t -> {
                 currentVersionObject.setString("upgradeBudget", Duration.ZERO.toString());
                 currentVersionObject.setLong("scheduledAt", t.scheduledAt().toEpochMilli());
-                Optional<Change> nextChange = osUpgradeScheduler.changeIn(t.osVersion().cloud(), now);
+                currentVersionObject.setBool("pinned", t.pinned());
+                Optional<Change> nextChange = osUpgradeScheduler.changeIn(t.osVersion().cloud(), now, true);
                 nextChange.ifPresent(c -> {
-                    currentVersionObject.setString("nextVersion", c.version().toFullString());
+                    currentVersionObject.setString("nextVersion", c.osVersion().version().toFullString());
                     currentVersionObject.setLong("nextScheduledAt", c.scheduleAt().toEpochMilli());
                 });
             });
@@ -208,6 +251,14 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         Inspector field = root.field(name);
         if (!field.valid()) throw new IllegalArgumentException("Field '" + name + "' is required");
         return field;
+    }
+
+    private static String asString(InputStream in) {
+        Scanner scanner = new Scanner(in).useDelimiter("\\A");
+        if (scanner.hasNext()) {
+            return scanner.next();
+        }
+        return "";
     }
 
 }

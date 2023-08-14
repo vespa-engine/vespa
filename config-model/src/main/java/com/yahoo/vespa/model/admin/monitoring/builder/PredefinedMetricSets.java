@@ -1,18 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring.builder;
 
-import com.yahoo.vespa.model.admin.monitoring.MetricSet;
+import ai.vespa.metrics.set.MetricSet;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static com.yahoo.vespa.model.admin.monitoring.AutoscalingMetrics.autoscalingMetricSet;
-import static com.yahoo.vespa.model.admin.monitoring.DefaultMetrics.defaultMetricSet;
-import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetricSet;
-import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
-import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
-import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricSet;
+import static ai.vespa.metrics.set.AutoscalingMetrics.autoscalingMetricSet;
+import static ai.vespa.metrics.set.DefaultMetrics.defaultMetricSet;
+import static ai.vespa.metrics.set.DefaultVespaMetrics.defaultVespaMetricSet;
+import static ai.vespa.metrics.set.InfrastructureMetricSet.infrastructureMetricSet;
+import static ai.vespa.metrics.set.NetworkMetrics.networkMetricSet;
+import static ai.vespa.metrics.set.SystemMetrics.systemMetricSet;
+import static ai.vespa.metrics.set.VespaMetricSet.vespaMetricSet;
 
 /**
  * A data object for predefined metric sets.
@@ -27,7 +28,8 @@ public class PredefinedMetricSets {
             vespaMetricSet,
             systemMetricSet,
             networkMetricSet,
-            autoscalingMetricSet
+            autoscalingMetricSet,
+            infrastructureMetricSet
     );
 
     public static Map<String, MetricSet> get() { return sets; }

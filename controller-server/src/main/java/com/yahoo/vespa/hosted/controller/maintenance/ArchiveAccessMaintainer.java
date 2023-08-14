@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import ai.vespa.metrics.ControllerMetrics;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.Metric;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
  */
 public class ArchiveAccessMaintainer extends ControllerMaintainer {
 
-    private static final String bucketCountMetricName = "archive.bucketCount";
+    private static final String bucketCountMetricName = ControllerMetrics.ARCHIVE_BUCKET_COUNT.baseName();
 
     private final CuratorArchiveBucketDb archiveBucketDb;
     private final ArchiveService archiveService;

@@ -36,7 +36,8 @@ TensorFactoryBlueprint::TensorFactoryBlueprint(const vespalib::string &baseName)
     : Blueprint(baseName),
       _sourceType(),
       _sourceParam(),
-      _dimension("0") // default dimension is set to the source param if not specified.
+      _dimension("0"), // default dimension is set to the source param if not specified.
+      _valueType(vespalib::eval::ValueType::error_type())
 {
 }
 

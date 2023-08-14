@@ -107,8 +107,8 @@ TransLogServer::TransLogServer(FNET_Transport & transport, const vespalib::strin
       _closed(false)
 {
     int retval(0);
-    if ((retval = makeDirectory(_baseDir.c_str())) == 0) {
-        if ((retval = makeDirectory(dir().c_str())) == 0) {
+    if ((retval = makeDirectory(_baseDir)) == 0) {
+        if ((retval = makeDirectory(dir())) == 0) {
             std::ifstream domainDir(domainList().c_str());
             while (domainDir.good() && !domainDir.eof()) {
                 vespalib::string domainName;

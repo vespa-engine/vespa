@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/simpletermfielddata.h>
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
+#include <algorithm>
 #include <cmath>
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.rankprocessor");
@@ -48,6 +49,11 @@ getFeature(const RankProgram &rankProgram) {
     search::fef::FeatureResolver resolver(rankProgram.get_seeds());
     assert(resolver.num_features() == 1u);
     return resolver.resolve(0);
+}
+
+uint16_t
+cap_16_bits(uint32_t value) {
+    return std::min(value, static_cast<uint32_t>(std::numeric_limits<uint16_t>::max()));
 }
 
 }
@@ -284,6 +290,7 @@ RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrap
                 uint32_t lastFieldId = -1;
                 TermFieldMatchData *tmd = nullptr;
                 uint32_t fieldLen = search::fef::FieldPositionsIterator::UNKNOWN_LENGTH;
+                uint32_t num_occs = 0;
 
                 // optimize for hitlist giving all hits for a single field in one chunk
                 for (const Hit & hit : hitList) {
@@ -292,6 +299,7 @@ RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrap
                         // reset to notfound/unknown values
                         tmd = nullptr;
                         fieldLen = search::fef::FieldPositionsIterator::UNKNOWN_LENGTH;
+                        num_occs = 0;
 
                         // setup for new field that had a hit
                         const ITermFieldData *tfd = td.lookupField(fieldId);
@@ -306,11 +314,15 @@ RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrap
                         // find fieldLen for new field
                         if (isPhrase) {
                             if (fieldId < term.getParent()->getFieldInfoSize()) {
-                                fieldLen = term.getParent()->getFieldInfo(fieldId).getFieldLength();
+                                auto& field_info = term.getParent()->getFieldInfo(fieldId);
+                                fieldLen = field_info.getFieldLength();
+                                num_occs = field_info.getHitCount();
                             }
                         } else {
                             if (fieldId < term.getTerm()->getFieldInfoSize()) {
-                                fieldLen = term.getTerm()->getFieldInfo(fieldId).getFieldLength();
+                                auto& field_info = term.getTerm()->getFieldInfo(fieldId);
+                                fieldLen = field_info.getFieldLength();
+                                num_occs = field_info.getHitCount();
                             }
                         }
                         lastFieldId = fieldId;
@@ -322,6 +334,10 @@ RankProcessor::unpack_match_data(uint32_t docid, MatchData &matchData, QueryWrap
                         tmd->appendPosition(pos);
                         LOG(debug, "Append elemId(%u),position(%u), weight(%d), tfmd.weight(%d)",
                                    pos.getElementId(), pos.getPosition(), pos.getElementWeight(), tmd->getWeight());
+                        if (tmd->needs_interleaved_features()) {
+                            tmd->setFieldLength(cap_16_bits(fieldLen));
+                            tmd->setNumOccs(cap_16_bits(num_occs));
+                        }
                     }
                 }
             }

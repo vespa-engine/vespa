@@ -4,8 +4,6 @@
 #include "termdatafromnode.h"
 #include "viewresolver.h"
 #include "handlerecorder.h"
-#include <vespa/searchlib/query/tree/templatetermvisitor.h>
-#include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
@@ -15,25 +13,25 @@ using search::fef::FieldInfo;
 using search::fef::FieldType;
 using search::fef::IIndexEnvironment;
 using search::fef::MatchData;
-using search::fef::MatchDataDetails;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::query::Node;
-using search::query::TemplateTermVisitor;
-using search::query::Weight;
-using search::queryeval::OrSearch;
-using search::queryeval::SearchIterator;
-using std::map;
-using std::vector;
 using vespalib::string;
 using vespalib::Issue;
 
 namespace proton::matching {
 
-ProtonTermData::ProtonTermData() = default;
-ProtonTermData::ProtonTermData(const ProtonTermData &) = default;
-ProtonTermData & ProtonTermData::operator = (const ProtonTermData &) = default;
+ProtonTermData::ProtonTermData() noexcept = default;
 ProtonTermData::~ProtonTermData() = default;
+
+namespace {
+
+bool
+is_attribute(FieldType type) noexcept {
+    return (type == FieldType::ATTRIBUTE) || (type == FieldType::HIDDEN_ATTRIBUTE);
+}
+
+}
 
 void
 ProtonTermData::propagate_document_frequency(uint32_t matching_doc_count, uint32_t total_doc_count)
@@ -44,10 +42,8 @@ ProtonTermData::propagate_document_frequency(uint32_t matching_doc_count, uint32
 }
 
 void
-ProtonTermData::resolve(const ViewResolver &resolver,
-                        const IIndexEnvironment &idxEnv,
-                        const string &view,
-                        bool forceFilter)
+ProtonTermData::resolve(const ViewResolver &resolver, const IIndexEnvironment &idxEnv,
+                        const string &view, bool forceFilter)
 {
     std::vector<string> fields;
     resolver.resolve(((view == "") ? "default" : view), fields);
@@ -55,12 +51,10 @@ ProtonTermData::resolve(const ViewResolver &resolver,
     _fields.reserve(fields.size());
     for (size_t i = 0; i < fields.size(); ++i) {
         const FieldInfo *info = idxEnv.getFieldByName(fields[i]);
-        if (info != 0) {
-            _fields.emplace_back(fields[i], info->id());
-            _fields.back().attribute_field =
-                (info->type() == FieldType::ATTRIBUTE) ||
-                (info->type() == FieldType::HIDDEN_ATTRIBUTE);
-            _fields.back().filter_field = forceFilter ? true : info->isFilter();
+        if (info != nullptr) {
+            _fields.emplace_back(fields[i], info->id(), forceFilter || info->isFilter());
+            FieldEntry & field = _fields.back();
+            field.attribute_field = is_attribute(info->type());
         } else {
             LOG(debug, "ignoring undefined field: '%s'", fields[i].c_str());
         }
@@ -72,16 +66,16 @@ ProtonTermData::resolveFromChildren(const std::vector<Node *> &subterms)
 {
     for (size_t i = 0; i < subterms.size(); ++i) {
         const ProtonTermData *child = termDataFromNode(*subterms[i]);
-        if (child == 0) {
+        if (child == nullptr) {
             Issue::report("child of equiv is not a term");
             continue;
         }
         for (size_t j = 0; j < child->numFields(); ++j) {
-            FieldSpec subSpec = child->field(j).fieldSpec();
-            if (lookupField(subSpec.getFieldId()) == 0) {
+            const FieldEntry & subSpec = child->field(j);
+            if (lookupField(subSpec.getFieldId()) == nullptr) {
                 // this must happen before handles are reserved
                 LOG_ASSERT(subSpec.getHandle() == search::fef::IllegalHandle);
-                _fields.emplace_back(subSpec.getName(), subSpec.getFieldId());
+                _fields.emplace_back(subSpec._field_spec.getName(), subSpec.getFieldId(), false);
             }
         }
     }
@@ -91,7 +85,7 @@ void
 ProtonTermData::allocateTerms(MatchDataLayout &mdl)
 {
     for (size_t i = 0; i < _fields.size(); ++i) {
-        _fields[i].setHandle(mdl.allocTermField(_fields[i].getFieldId()));
+        _fields[i]._field_spec.setHandle(mdl.allocTermField(_fields[i].getFieldId()));
     }
 }
 
@@ -119,7 +113,7 @@ ProtonTermData::lookupField(uint32_t fieldId) const
 TermFieldHandle
 ProtonTermData::FieldEntry::getHandle(MatchDataDetails requested_details) const
 {
-    TermFieldHandle handle(search::fef::SimpleTermFieldData::getHandle(requested_details));
+    TermFieldHandle handle(_field_spec.getHandle());
     HandleRecorder::register_handle(handle, requested_details);
     return handle;
 }

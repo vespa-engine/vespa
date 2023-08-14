@@ -12,7 +12,6 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.ConnectionPool;
-import com.yahoo.vespa.filedistribution.EmptyFileReferenceData;
 import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceCompressor;
@@ -20,9 +19,9 @@ import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
-import com.yahoo.yolean.Exceptions;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -35,10 +34,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
+import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.NOT_FOUND;
+import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.OK;
+import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.TIMEOUT;
+import static com.yahoo.vespa.config.server.filedistribution.FileServer.FileApiErrorCodes.TRANSFER_FAILED;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 public class FileServer {
 
@@ -54,10 +58,11 @@ public class FileServer {
     private final List<CompressionType> compressionTypes; // compression types to use, in preferred order
 
     // TODO: Move to filedistribution module, so that it can be used by both clients and servers
-    private enum FileApiErrorCodes {
+    enum FileApiErrorCodes {
         OK(0, "OK"),
         NOT_FOUND(1, "File reference not found"),
-        TIMEOUT(2, "Timeout");
+        TIMEOUT(2, "Timeout"),
+        TRANSFER_FAILED(3, "Failed transferring file");
         private final int code;
         private final String description;
         FileApiErrorCodes(int code, String description) {
@@ -114,29 +119,24 @@ public class FileServer {
     FileDirectory getRootDir() { return fileDirectory; }
 
     void startFileServing(FileReference reference, Receiver target, Set<CompressionType> acceptedCompressionTypes) {
-        if ( ! fileDirectory.getFile(reference).exists()) return;
+        File file = fileDirectory.getFile(reference);
+        if ( ! file.exists()) return;
 
-        File file = this.fileDirectory.getFile(reference);
-        log.log(Level.FINE, () -> "Start serving " + reference + " with file '" + file.getAbsolutePath() + "'");
-        FileReferenceData fileData = EmptyFileReferenceData.empty(reference, file.getName());
-        try {
-            fileData = readFileReferenceData(reference, acceptedCompressionTypes);
+        try (FileReferenceData fileData = fileReferenceData(reference, acceptedCompressionTypes, file)) {
+            log.log(Level.FINE, () -> "Start serving " + reference.value() + " with file '" + file.getAbsolutePath() + "'");
             target.receive(fileData, new ReplayStatus(0, "OK"));
             log.log(Level.FINE, () -> "Done serving " + reference.value() + " with file '" + file.getAbsolutePath() + "'");
-        } catch (IOException e) {
-            String errorDescription = "For" + reference.value() + ": failed reading file '" + file.getAbsolutePath() + "'";
-            log.warning(errorDescription + " for sending to '" + target.toString() + "'. " + e.getMessage());
-            target.receive(fileData, new ReplayStatus(1, errorDescription));
+        } catch (IOException ioe) {
+            throw new UncheckedIOException("For " + reference.value() + ": failed reading file '" + file.getAbsolutePath() + "'" +
+                                           " for sending to '" + target.toString() + "'. ", ioe);
         } catch (Exception e) {
-            log.log(Level.WARNING, "Failed serving " + reference + ": " + Exceptions.toMessageString(e));
-        } finally {
-            fileData.close();
+            throw new RuntimeException("Failed serving " + reference.value() + " to '" + target + "': ", e);
         }
     }
 
-    private FileReferenceData readFileReferenceData(FileReference reference, Set<CompressionType> acceptedCompressionTypes) throws IOException {
-        File file = this.fileDirectory.getFile(reference);
-
+    private FileReferenceData fileReferenceData(FileReference reference,
+                                                Set<CompressionType> acceptedCompressionTypes,
+                                                File file) throws IOException {
         if (file.isDirectory()) {
             Path tempFile = Files.createTempFile("filereferencedata", reference.value());
             CompressionType compressionType = chooseCompressionType(acceptedCompressionTypes);
@@ -172,20 +172,21 @@ public class FileServer {
                                                 Set<CompressionType> acceptedCompressionTypes) {
         if (Instant.now().isAfter(deadline)) {
             log.log(Level.INFO, () -> "Deadline exceeded for request for file reference '" + fileReference + "' from " + client);
-            return FileApiErrorCodes.TIMEOUT;
+            return TIMEOUT;
         }
 
-        boolean fileExists;
         try {
             var fileReferenceDownload = new FileReferenceDownload(fileReference, client, downloadFromOtherSourceIfNotFound);
-            fileExists = hasFileDownloadIfNeeded(fileReferenceDownload);
-            if (fileExists) startFileServing(fileReference, receiver, acceptedCompressionTypes);
-        } catch (IllegalArgumentException e) {
-            fileExists = false;
+            boolean fileExists = hasFileDownloadIfNeeded(fileReferenceDownload);
+            if ( ! fileExists) return NOT_FOUND;
+
+            startFileServing(fileReference, receiver, acceptedCompressionTypes);
+        } catch (Exception e) {
             log.warning("Failed serving file reference '" + fileReference + "', request from " + client + " failed with: " + e.getMessage());
+            return TRANSFER_FAILED;
         }
 
-        return (fileExists ? FileApiErrorCodes.OK : FileApiErrorCodes.NOT_FOUND);
+        return OK;
     }
 
     /* Choose the first compression type (list is in preferred order) that matches an accepted compression type, or fail */

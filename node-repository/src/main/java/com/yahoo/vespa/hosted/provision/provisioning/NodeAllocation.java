@@ -83,7 +83,6 @@ class NodeAllocation {
     private final Supplier<Integer> nextIndex;
 
     private final NodeRepository nodeRepository;
-    private final NodeResourceLimits nodeResourceLimits;
     private final Optional<String> requiredHostFlavor;
 
     NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requested,
@@ -94,7 +93,6 @@ class NodeAllocation {
         this.requested = requested;
         this.nextIndex = nextIndex;
         this.nodeRepository = nodeRepository;
-        this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.requiredHostFlavor = Optional.of(PermanentFlags.HOST_FLAVOR.bindTo(nodeRepository.flagSource())
                                                                         .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
                                                                         .with(FetchVector.Dimension.CLUSTER_TYPE, cluster.type().name())
@@ -133,7 +131,7 @@ class NodeAllocation {
                 }
             }
             else if (! saturated() && hasCompatibleResources(candidate)) {
-                if (! nodeResourceLimits.isWithinRealLimits(candidate, application, cluster)) {
+                if (! nodeRepository.nodeResourceLimits().isWithinRealLimits(candidate, application, cluster)) {
                     ++rejectedDueToInsufficientRealResources;
                     continue;
                 }
@@ -165,7 +163,7 @@ class NodeAllocation {
             boolean alreadyRetired = candidate.allocation().map(a -> a.membership().retired()).orElse(false);
             return alreadyRetired ? Retirement.alreadyRetired : Retirement.none;
         }
-        if ( ! nodeResourceLimits.isWithinRealLimits(candidate, application, cluster)) return Retirement.outsideRealLimits;
+        if ( ! nodeRepository.nodeResourceLimits().isWithinRealLimits(candidate, application, cluster)) return Retirement.outsideRealLimits;
         if (violatesParentHostPolicy(candidate)) return Retirement.violatesParentHostPolicy;
         if ( ! hasCompatibleResources(candidate)) return Retirement.incompatibleResources;
         if (candidate.parent.map(node -> node.status().wantToUpgradeFlavor()).orElse(false)) return Retirement.violatesHostFlavorGeneration;

@@ -171,13 +171,21 @@ public class ClusterModel {
         return Duration.ofMinutes(5);
     }
 
+    /** Transforms the given load adjustment to an equivalent adjustment given a target number of nodes and groups. */
+    public Load loadAdjustmentWith(int nodes, int groups, Load loadAdjustment) {
+        return loadAdjustment // redundancy adjusted target relative to current load
+               .multiply(loadWith(nodes, groups)) // redundancy aware adjustment with these counts
+               .divide(redundancyAdjustment());   // correct for double redundancy adjustment
+    }
+
+
     /**
      * Returns the relative load adjustment accounting for redundancy given these nodes+groups
      * relative to node nodes+groups in this.
      */
-    public Load loadWith(int trueNodes, int trueGroups) {
-        int nodes = nodesAdjustedForRedundancy(trueNodes, trueGroups);
-        int groups = groupsAdjustedForRedundancy(trueNodes, trueGroups);
+    public Load loadWith(int givenNodes, int givenGroups) {
+        int nodes = nodesAdjustedForRedundancy(givenNodes, givenGroups);
+        int groups = groupsAdjustedForRedundancy(givenNodes, givenGroups);
         if (clusterSpec().type() == ClusterSpec.Type.content) { // load scales with node share of content
             int groupSize = nodes / groups;
 
@@ -206,7 +214,6 @@ public class ClusterModel {
         var ideal = new Load(cpu.idealLoad(), memory.idealLoad(), disk.idealLoad()).divide(redundancyAdjustment());
         if ( !cluster.bcpGroupInfo().isEmpty() && cluster.bcpGroupInfo().queryRate() > 0) {
             // Since we have little local information, use information about query cost in other groups
-
             Load bcpGroupIdeal = adjustQueryDependentIdealLoadByBcpGroupInfo(ideal);
 
             // Do a weighted sum of the ideal "vote" based on local and bcp group info.
@@ -272,7 +279,7 @@ public class ClusterModel {
 
     /** The number of nodes this cluster has, or will have if not deployed yet. */
     // TODO: Make this the deployed, not current count
-    private int nodeCount() {
+    public int nodeCount() {
         if ( ! nodes.isEmpty()) return (int)nodes.not().retired().stream().count();
         return cluster.minResources().nodes();
     }
@@ -289,12 +296,12 @@ public class ClusterModel {
         return (int)Math.ceil((double)nodeCount() / groupCount());
     }
 
-    private int nodesAdjustedForRedundancy(int nodes, int groups) {
+    private static int nodesAdjustedForRedundancy(int nodes, int groups) {
         int groupSize = (int)Math.ceil((double)nodes / groups);
         return nodes > 1 ? (groups == 1 ? nodes - 1 : nodes - groupSize) : nodes;
     }
 
-    private int groupsAdjustedForRedundancy(int nodes, int groups) {
+    private static int groupsAdjustedForRedundancy(int nodes, int groups) {
         return nodes > 1 ? (groups == 1 ? 1 : groups - 1) : groups;
     }
 
@@ -340,8 +347,7 @@ public class ClusterModel {
         /** Ideal cpu load must take the application traffic fraction into account. */
         double idealLoad() {
             double queryCpuFraction = queryFraction();
-
-            // Assumptions: 1) Write load is not organic so we should not grow to handle more.
+            // Assumptions: 1) Write load is not organic so we should not increase to handle potential future growth.
             //                 (TODO: But allow applications to set their target write rate and size for that)
             //              2) Write load does not change in BCP scenarios.
             return queryCpuFraction * 1/growthRateHeadroom() * 1/trafficShiftHeadroom() * idealQueryCpuLoad +

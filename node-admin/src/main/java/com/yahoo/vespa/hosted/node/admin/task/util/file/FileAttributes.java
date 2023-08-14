@@ -13,36 +13,13 @@ import java.util.Set;
  *
  * @author hakonhall
  */
-public class FileAttributes {
-
-    private final Instant lastModifiedTime;
-    private final int ownerId;
-    private final int groupId;
-    private final String permissions;
-    private final boolean isRegularFile;
-    private final boolean isDirectory;
-    private final long size;
-
-    public FileAttributes(Instant lastModifiedTime, int ownerId, int groupId, String permissions, boolean isRegularFile, boolean isDirectory, long size) {
-        this.lastModifiedTime = lastModifiedTime;
-        this.ownerId = ownerId;
-        this.groupId = groupId;
-        this.permissions = permissions;
-        this.isRegularFile = isRegularFile;
-        this.isDirectory = isDirectory;
-        this.size = size;
-    }
-
-    public Instant lastModifiedTime() { return lastModifiedTime; }
-    public int ownerId() { return ownerId; }
-    public int groupId() { return groupId; }
-    public String permissions() { return permissions; }
-    public boolean isRegularFile() { return isRegularFile; }
-    public boolean isDirectory() { return isDirectory; }
-    public long size() { return size; }
+public record FileAttributes(Instant lastModifiedTime, int ownerId, int groupId, String permissions,
+                             boolean isRegularFile, boolean isDirectory, long size, int deviceMajor, int deviceMinor) {
 
     @SuppressWarnings("unchecked")
     static FileAttributes fromAttributes(Map<String, Object> attributes) {
+        long dev_t = (long) attributes.get("dev");
+
         return new FileAttributes(
                 ((FileTime) attributes.get("lastModifiedTime")).toInstant(),
                 (int) attributes.get("uid"),
@@ -50,6 +27,11 @@ public class FileAttributes {
                 PosixFilePermissions.toString(((Set<PosixFilePermission>) attributes.get("permissions"))),
                 (boolean) attributes.get("isRegularFile"),
                 (boolean) attributes.get("isDirectory"),
-                (long) attributes.get("size"));
+                (long) attributes.get("size"),
+                deviceMajor(dev_t), deviceMinor(dev_t));
     }
+
+    // Encoded as MMMM Mmmm mmmM MMmm, where M is a hex digit of the major number and m is a hex digit of the minor number.
+    static int deviceMajor(long dev_t) { return (int) (((dev_t & 0xFFFFF00000000000L) >> 32) | ((dev_t & 0xFFF00) >> 8)); }
+    static int deviceMinor(long dev_t) { return (int) (((dev_t & 0x00000FFFFFF00000L) >> 12) |  (dev_t & 0x000FF)); }
 }

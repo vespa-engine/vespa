@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.Host;
+import com.yahoo.vespa.model.content.Redundancy;
 
 import static java.lang.Long.min;
 import static java.lang.Long.max;
@@ -27,13 +28,16 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final NodeResources resources;
     private final int threadsPerSearch;
     private final double fractionOfMemoryReserved;
+    private final Redundancy redundancy;
 
     public NodeResourcesTuning(NodeResources resources,
                                int threadsPerSearch,
-                               double fractionOfMemoryReserved) {
+                               double fractionOfMemoryReserved,
+                               Redundancy redundancy) {
         this.resources = resources;
         this.threadsPerSearch = threadsPerSearch;
         this.fractionOfMemoryReserved = fractionOfMemoryReserved;
+        this.redundancy = redundancy;
     }
 
     @Override
@@ -57,7 +61,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
         ProtonConfig.Documentdb dbCfg = builder.build();
         if (dbCfg.mode() != ProtonConfig.Documentdb.Mode.Enum.INDEX) {
             long numDocs = (long)usableMemoryGb() * GB / MEMORY_COST_PER_DOCUMENT_STORE_ONLY;
-            builder.allocation.initialnumdocs(numDocs);
+            builder.allocation.initialnumdocs(numDocs/redundancy.readyCopies());
         }
     }
 

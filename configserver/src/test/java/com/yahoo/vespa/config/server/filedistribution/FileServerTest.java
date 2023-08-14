@@ -29,6 +29,7 @@ import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class FileServerTest {
 
@@ -130,6 +131,25 @@ public class FileServerTest {
         assertEquals(1, fileServer.downloader().connectionPool().getSize());
     }
 
+    @Test
+    public void requireThatErrorsAreHandled() throws IOException, ExecutionException, InterruptedException {
+        File dir = getFileServerRootDir();
+        IOUtils.writeFile(dir + "/12y/f1", "dummy-data", true);
+        CompletableFuture<byte []> content = new CompletableFuture<>();
+        FailingFileReceiver fileReceiver = new FailingFileReceiver(content);
+
+        // Should fail the first time, see FailingFileReceiver
+        try {
+            fileServer.startFileServing(new FileReference("12y"), fileReceiver, Set.of(gzip));
+            fail("Should have failed");
+        } catch (RuntimeException e) {
+            // expected
+        }
+
+        fileServer.startFileServing(new FileReference("12y"), fileReceiver, Set.of(gzip));
+        assertEquals(new String(content.get()), "dummy-data");
+    }
+
     private void writeFile(String dir) throws IOException {
         File rootDir = getFileServerRootDir();
         IOUtils.createDirectory(rootDir + "/" + dir);
@@ -150,6 +170,23 @@ public class FileServerTest {
         @Override
         public void receive(FileReferenceData fileData, FileServer.ReplayStatus status) {
             this.content.complete(fileData.content().array());
+        }
+    }
+
+    private static class FailingFileReceiver implements FileServer.Receiver {
+        final CompletableFuture<byte []> content;
+        int counter = 0;
+        FailingFileReceiver(CompletableFuture<byte []> content) {
+            this.content = content;
+        }
+        @Override
+        public void receive(FileReferenceData fileData, FileServer.ReplayStatus status) {
+            counter++;
+            if (counter <= 1)
+                throw new RuntimeException("Failed to receive file");
+            else {
+                this.content.complete(fileData.content().array());
+            }
         }
     }
 

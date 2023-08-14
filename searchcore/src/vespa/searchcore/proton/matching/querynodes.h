@@ -5,8 +5,6 @@
 #include <vespa/searchlib/queryeval/field_spec.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/itermdata.h>
-#include <vespa/searchlib/fef/simpletermdata.h>
-#include <vespa/searchlib/fef/simpletermfielddata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
@@ -24,23 +22,27 @@ class ProtonTermData : public search::fef::ITermData
 {
 public:
     using FieldSpec = search::queryeval::FieldSpec;
+    using ITermFieldData = search::fef::ITermFieldData;
+    using TermFieldHandle = search::fef::TermFieldHandle;
+    using MatchDataDetails = search::fef::MatchDataDetails;
 
-    struct FieldEntry final : search::fef::SimpleTermFieldData {
-        vespalib::string field_name;
+    struct FieldEntry final : ITermFieldData {
+        FieldSpec _field_spec;
         bool attribute_field;
-        bool filter_field;
 
-        FieldEntry(const vespalib::string &name, uint32_t fieldId)
-            : SimpleTermFieldData(fieldId),
-              field_name(name),
-              attribute_field(false),
-              filter_field(false) {}
+        FieldEntry(const vespalib::string &name, uint32_t fieldId, bool is_filter) noexcept
+            : ITermFieldData(fieldId),
+              _field_spec(name, fieldId, search::fef::IllegalHandle, is_filter),
+              attribute_field(false)
+        {}
 
-        [[nodiscard]] FieldSpec fieldSpec() const {
-            return {field_name, getFieldId(), getHandle(), filter_field};
+        [[nodiscard]] const FieldSpec & fieldSpec() const noexcept {
+            return _field_spec;
         }
-        using SimpleTermFieldData::getHandle;
-        [[nodiscard]] search::fef::TermFieldHandle getHandle(search::fef::MatchDataDetails requested_details) const override;
+        [[nodiscard]] TermFieldHandle getHandle() const { return getHandle(MatchDataDetails::Normal); }
+        [[nodiscard]] TermFieldHandle getHandle(MatchDataDetails requested_details) const override;
+        [[nodiscard]] const vespalib::string & getName() const noexcept { return _field_spec.getName(); }
+        [[nodiscard]] bool is_filter() const noexcept { return _field_spec.isFilter(); }
     };
 
 private:
@@ -49,17 +51,13 @@ private:
     void propagate_document_frequency(uint32_t matching_count_doc, uint32_t total_doc_count);
 
 protected:
-    void resolve(const ViewResolver &resolver,
-                 const search::fef::IIndexEnvironment &idxEnv,
-                 const vespalib::string &view,
-                 bool forceFilter);
+    void resolve(const ViewResolver &resolver, const search::fef::IIndexEnvironment &idxEnv,
+                 const vespalib::string &view, bool forceFilter);
 
 public:
-    ProtonTermData();
-    ProtonTermData(const ProtonTermData &);
-    ProtonTermData & operator = (const ProtonTermData &);
-    ProtonTermData(ProtonTermData &&) = default;
-    ProtonTermData & operator = (ProtonTermData &&) = default;
+    ProtonTermData() noexcept;
+    ProtonTermData(const ProtonTermData &) = delete;
+    ProtonTermData & operator = (const ProtonTermData &) = delete;
     ~ProtonTermData() override;
     void resolveFromChildren(const std::vector<search::query::Node *> &children);
     void allocateTerms(search::fef::MatchDataLayout &mdl);

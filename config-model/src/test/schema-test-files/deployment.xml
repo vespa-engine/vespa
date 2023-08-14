@@ -5,19 +5,19 @@
     <staging/>
     <block-change revision='true' version='false' days="mon,tue" hours="14,15"/>
     <block-change days="mon,tue" hours="14,15" time-zone="CET"/>
-    <prod global-service-id='qrs' athenz-service='other-service'>
-        <region active='true'>us-west-1</region>
+    <prod athenz-service='other-service'>
+        <region>us-west-1</region>
         <delay hours='3'/>
-        <region active='true'>us-central-1</region>
+        <region>us-central-1</region>
         <delay hours='3' minutes='7' seconds='13'/>
-        <region active='true'>us-east-3</region>
+        <region>us-east-3</region>
         <parallel>
-            <region active='true'>us-north-1</region>
-            <region active='true'>us-south-1</region>
+            <region>us-north-1</region>
+            <region>us-south-1</region>
         </parallel>
         <parallel>
-            <region active='true'>us-north-2</region>
-            <region active='true'>us-south-2</region>
+            <region>us-north-2</region>
+            <region>us-south-2</region>
         </parallel>
     </prod>
     <endpoints>

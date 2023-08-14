@@ -43,10 +43,8 @@ struct Fixture {
     IndexEnvironment index_environment;
 
     Fixture() {
-        index_environment.getFields().push_back(FieldInfo(
-                        FieldType::INDEX, CollectionType::SINGLE, field1, 0));
-        index_environment.getFields().push_back(FieldInfo(
-                        FieldType::INDEX, CollectionType::SINGLE, field2, 1));
+        index_environment.getFields().emplace_back(FieldType::INDEX, CollectionType::SINGLE, field1, 0);
+        index_environment.getFields().emplace_back(FieldType::INDEX, CollectionType::SINGLE, field2, 1);
     }
 };
 
@@ -61,11 +59,10 @@ TEST_F("requireThatFieldsResolveToThemselves", Fixture) {
     node->accept(visitor);
 
     EXPECT_EQUAL(1u, base.numFields());
-    EXPECT_EQUAL(field1, base.field(0).field_name);
+    EXPECT_EQUAL(field1, base.field(0).getName());
 }
 
-void checkResolveAlias(const string &view_name, const string &alias,
-                       const Fixture &f) {
+void checkResolveAlias(const string &view_name, const string &alias, const Fixture &f) {
     ViewResolver resolver = getResolver(view_name);
 
     QueryBuilder<ProtonNodeTypes> builder;
@@ -76,8 +73,8 @@ void checkResolveAlias(const string &view_name, const string &alias,
     node->accept(visitor);
 
     ASSERT_EQUAL(2u, base.numFields());
-    EXPECT_EQUAL(field1, base.field(0).field_name);
-    EXPECT_EQUAL(field2, base.field(1).field_name);
+    EXPECT_EQUAL(field1, base.field(0).getName());
+    EXPECT_EQUAL(field2, base.field(1).getName());
 }
 
 TEST_F("requireThatViewsCanResolveToMultipleFields", Fixture) {
@@ -97,24 +94,22 @@ TEST_F("requireThatWeCanForceFilterField", Fixture) {
 
     { // use filter field settings from index environment
         QueryBuilder<ProtonNodeTypes> builder;
-        ProtonStringTerm &sterm =
-            builder.addStringTerm(term, view, id, weight);
+        ProtonStringTerm &sterm = builder.addStringTerm(term, view, id, weight);
         Node::UP node = builder.build();
         node->accept(visitor);
         ASSERT_EQUAL(2u, sterm.numFields());
-        EXPECT_TRUE(!sterm.field(0).filter_field);
-        EXPECT_TRUE(sterm.field(1).filter_field);
+        EXPECT_TRUE(!sterm.field(0).is_filter());
+        EXPECT_TRUE(sterm.field(1).is_filter());
     }
     { // force filter on all fields
         QueryBuilder<ProtonNodeTypes> builder;
-        ProtonStringTerm &sterm =
-            builder.addStringTerm(term, view, id, weight);
+        ProtonStringTerm &sterm = builder.addStringTerm(term, view, id, weight);
         sterm.setPositionData(false); // force filter
         Node::UP node = builder.build();
         node->accept(visitor);
         ASSERT_EQUAL(2u, sterm.numFields());
-        EXPECT_TRUE(sterm.field(0).filter_field);
-        EXPECT_TRUE(sterm.field(1).filter_field);
+        EXPECT_TRUE(sterm.field(0).is_filter());
+        EXPECT_TRUE(sterm.field(1).is_filter());
     }
 }
 
@@ -132,8 +127,8 @@ TEST_F("require that equiv nodes resolve view from children", Fixture) {
     node->accept(visitor);
 
     ASSERT_EQUAL(2u, base.numFields());
-    EXPECT_EQUAL(field1, base.field(0).field_name);
-    EXPECT_EQUAL(field2, base.field(1).field_name);
+    EXPECT_EQUAL(field1, base.field(0).getName());
+    EXPECT_EQUAL(field2, base.field(1).getName());
 }
 
 TEST_F("require that view is resolved for SameElement and its children", Fixture) {
@@ -151,10 +146,10 @@ TEST_F("require that view is resolved for SameElement and its children", Fixture
     node->accept(visitor);
 
     ASSERT_EQUAL(1u, same_elem.numFields());
-    EXPECT_EQUAL(field2, same_elem.field(0).field_name);
+    EXPECT_EQUAL(field2, same_elem.field(0).getName());
 
     ASSERT_EQUAL(1u, my_term.numFields());
-    EXPECT_EQUAL(field1, my_term.field(0).field_name);
+    EXPECT_EQUAL(field1, my_term.field(0).getName());
 }
 
 }  // namespace

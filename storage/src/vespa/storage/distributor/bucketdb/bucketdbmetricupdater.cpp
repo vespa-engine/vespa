@@ -6,19 +6,26 @@
 
 namespace storage::distributor {
 
-BucketDBMetricUpdater::Stats::Stats()
+BucketDBMetricUpdater::Stats::Stats() noexcept
     : _docCount(0),
       _byteCount(0),
       _tooFewCopies(0),
       _tooManyCopies(0),
       _noTrusted(0),
-      _totalBuckets(0)
+      _totalBuckets(0),
+      _mutable_db_mem_usage(),
+      _read_only_db_mem_usage(),
+      _minBucketReplica()
 {
 }
 
 BucketDBMetricUpdater::Stats::Stats(const Stats &rhs) = default;
+BucketDBMetricUpdater::Stats & BucketDBMetricUpdater::Stats::operator=(const Stats &rhs) = default;
+BucketDBMetricUpdater::Stats::Stats(Stats &&rhs) noexcept = default;
+BucketDBMetricUpdater::Stats & BucketDBMetricUpdater::Stats::operator=(Stats &&rhs) noexcept = default;
+BucketDBMetricUpdater::Stats::~Stats() = default;
 
-BucketDBMetricUpdater::BucketDBMetricUpdater()
+BucketDBMetricUpdater::BucketDBMetricUpdater() noexcept
     : _workingStats(),
       _lastCompleteStats(),
       _replicaCountingMode(ReplicaCountingMode::TRUSTED),
@@ -35,8 +42,7 @@ BucketDBMetricUpdater::resetStats()
 }
 
 void
-BucketDBMetricUpdater::visit(const BucketDatabase::Entry& entry,
-                             uint32_t redundancy)
+BucketDBMetricUpdater::visit(const BucketDatabase::Entry& entry, uint32_t redundancy)
 {
     if (entry->getNodeCount() == 0) {
         // We used to have an assert on >0 but that caused some crashes, see
@@ -90,9 +96,7 @@ BucketDBMetricUpdater::visit(const BucketDatabase::Entry& entry,
 }
 
 void
-BucketDBMetricUpdater::updateMinReplicationStats(
-        const BucketDatabase::Entry& entry,
-        uint32_t trustedCopies)
+BucketDBMetricUpdater::updateMinReplicationStats(const BucketDatabase::Entry& entry, uint32_t trustedCopies)
 {
     auto& minBucketReplica = _workingStats._minBucketReplica;
     for (uint32_t i = 0; i < entry->getNodeCount(); i++) {
@@ -103,9 +107,9 @@ BucketDBMetricUpdater::updateMinReplicationStats(
         // sync across each other.
         // Regardless of counting mode we still have to take the minimum
         // replica count across all buckets present on any given node.
-        const uint32_t countedReplicas(
-                (_replicaCountingMode == ReplicaCountingMode::TRUSTED)
-                 ? trustedCopies : entry->getNodeCount());
+        const uint32_t countedReplicas = (_replicaCountingMode == ReplicaCountingMode::TRUSTED)
+                 ? trustedCopies
+                 : entry->getNodeCount();
         auto it = minBucketReplica.find(node);
         if (it == minBucketReplica.end()) {
             minBucketReplica[node] = countedReplicas;
@@ -118,17 +122,18 @@ BucketDBMetricUpdater::updateMinReplicationStats(
 void
 BucketDBMetricUpdater::completeRound(bool resetWorkingStats)
 {
-    _lastCompleteStats = _workingStats;
+
     _hasCompleteStats = true;
     if (resetWorkingStats) {
+        _lastCompleteStats = std::move(_workingStats);
         resetStats();
+    } else {
+        _lastCompleteStats = _workingStats;
     }
 }
 
 void
-BucketDBMetricUpdater::Stats::propagateMetrics(
-        IdealStateMetricSet& idealStateMetrics,
-        DistributorMetricSet& distributorMetrics)
+BucketDBMetricUpdater::Stats::propagateMetrics(IdealStateMetricSet& idealStateMetrics, DistributorMetricSet& distributorMetrics) const
 {
     distributorMetrics.docsStored.set(_docCount);
     distributorMetrics.bytesStored.set(_byteCount);

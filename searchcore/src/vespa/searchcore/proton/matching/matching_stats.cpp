@@ -19,7 +19,7 @@ constexpr double MAX_CHANGE_FACTOR = 5;
 
 } // namespace proton::matching::<unnamed>
 
-MatchingStats::MatchingStats(double prev_soft_doom_factor)
+MatchingStats::MatchingStats(double prev_soft_doom_factor) noexcept
     : _queries(0),
       _limited_queries(0),
       _docidSpaceCovered(0),
@@ -57,7 +57,7 @@ MatchingStats::merge_partition(const Partition &partition, size_t id)
 }
 
 MatchingStats &
-MatchingStats::add(const MatchingStats &rhs)
+MatchingStats::add(const MatchingStats &rhs) noexcept
 {
     _queries += rhs._queries;
     _limited_queries += rhs._limited_queries;

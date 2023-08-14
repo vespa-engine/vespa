@@ -17,7 +17,7 @@ namespace search::fef {
 class ITermFieldData
 {
 public:
-    ITermFieldData(uint32_t fieldId)
+    ITermFieldData(uint32_t fieldId) noexcept
         : _fieldId(fieldId),
           _matching_doc_count(0),
           _total_doc_count(1)
@@ -27,17 +27,17 @@ public:
      *
      * @return field id
      **/
-    uint32_t getFieldId() const { return _fieldId; }
+    uint32_t getFieldId() const noexcept { return _fieldId; }
 
     /**
      * Returns the number of documents matching this term.
      */
-    uint32_t get_matching_doc_count() const { return _matching_doc_count; }
+    uint32_t get_matching_doc_count() const noexcept { return _matching_doc_count; }
 
     /**
      * Returns the total number of documents in the corpus.
      */
-    uint32_t get_total_doc_count() const { return _total_doc_count; }
+    uint32_t get_total_doc_count() const noexcept { return _total_doc_count; }
 
     /**
      * Obtain the document frequency. This is a value between 0 and 1
@@ -45,14 +45,14 @@ public:
      *
      * @return document frequency
     **/
-    double getDocFreq() const {
+    double getDocFreq() const noexcept {
         return (double)get_matching_doc_count() / (double)get_total_doc_count();
     }
 
     /**
      * Sets the document frequency.
      **/
-    ITermFieldData &setDocFreq(uint32_t matching_doc_count, uint32_t total_doc_count) {
+    ITermFieldData &setDocFreq(uint32_t matching_doc_count, uint32_t total_doc_count) noexcept {
         _matching_doc_count = matching_doc_count;
         _total_doc_count = total_doc_count;
         return *this;
@@ -64,7 +64,7 @@ public:
      *
      * @return match handle (or IllegalHandle)
      **/
-    TermFieldHandle getHandle() const {
+    TermFieldHandle getHandle() const noexcept {
         return getHandle(MatchDataDetails::Normal);
     }
 

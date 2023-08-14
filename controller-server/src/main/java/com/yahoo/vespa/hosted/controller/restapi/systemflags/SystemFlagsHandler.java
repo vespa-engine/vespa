@@ -10,10 +10,13 @@ import com.yahoo.restapi.JacksonJsonResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.api.integration.ControllerIdentityProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagValidationException;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.SystemFlagsDataArchive;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponses;
 
+import java.io.InputStream;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -27,12 +30,14 @@ public class SystemFlagsHandler extends ThreadedHttpRequestHandler {
     private static final String API_PREFIX = "/system-flags/v1";
 
     private final SystemFlagsDeployer deployer;
+    private final ZoneRegistry zoneRegistry;
 
     @Inject
     public SystemFlagsHandler(ZoneRegistry zoneRegistry,
                               ControllerIdentityProvider identityProvider,
                               Executor executor) {
         super(executor);
+        this.zoneRegistry = zoneRegistry;
         this.deployer = new SystemFlagsDeployer(identityProvider, zoneRegistry.system(), FlagsTarget.getAllTargetsInSystem(zoneRegistry, true));
     }
 
@@ -57,12 +62,22 @@ public class SystemFlagsHandler extends ThreadedHttpRequestHandler {
             if (!contentType.equalsIgnoreCase("application/zip")) {
                 return ErrorResponse.badRequest("Invalid content type: " + contentType);
             }
-            SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromZip(request.getData());
-            SystemFlagsDeployResult result = deployer.deployFlags(archive, dryRun);
+            SystemFlagsDeployResult result = deploy(request.getData(), dryRun);
             return new JacksonJsonResponse<>(200, result.toWire());
         } catch (Exception e) {
             return ErrorResponses.logThrowing(request, log, e);
         }
+    }
+
+    private SystemFlagsDeployResult deploy(InputStream zipStream, boolean dryRun) {
+        SystemFlagsDataArchive archive;
+        try {
+            archive = SystemFlagsDataArchive.fromZip(zipStream, zoneRegistry);
+        } catch (FlagValidationException e) {
+            return new SystemFlagsDeployResult(List.of(SystemFlagsDeployResult.OperationError.archiveValidationFailed(e.getMessage())));
+        }
+
+        return deployer.deployFlags(archive, dryRun);
     }
 
 }

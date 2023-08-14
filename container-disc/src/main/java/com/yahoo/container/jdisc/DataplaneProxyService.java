@@ -103,7 +103,8 @@ public class DataplaneProxyService extends AbstractComponent {
                                                    proxyCredentialsKey,
                                                    serverCertificateFile,
                                                    serverKeyFile,
-                                                   config.port(),
+                                                   config.mtlsPort(),
+                                                   config.tokenPort(),
                                                    root
                                            ));
                 if (configChanged && state == NginxState.RUNNING) {
@@ -191,7 +192,8 @@ public class DataplaneProxyService extends AbstractComponent {
             Path clientKey,
             Path serverCert,
             Path serverKey,
-            int vespaPort,
+            int vespaMtlsPort,
+            int vespaTokenPort,
             Path root) {
 
         try {
@@ -200,7 +202,8 @@ public class DataplaneProxyService extends AbstractComponent {
             nginxTemplate = replace(nginxTemplate, "client_key", clientKey.toString());
             nginxTemplate = replace(nginxTemplate, "server_cert", serverCert.toString());
             nginxTemplate = replace(nginxTemplate, "server_key", serverKey.toString());
-            nginxTemplate = replace(nginxTemplate, "vespa_port", Integer.toString(vespaPort));
+            nginxTemplate = replace(nginxTemplate, "vespa_mtls_port", Integer.toString(vespaMtlsPort));
+            nginxTemplate = replace(nginxTemplate, "vespa_token_port", Integer.toString(vespaTokenPort));
             nginxTemplate = replace(nginxTemplate, "prefix", root.toString());
 
             // TODO: verify that all template vars have been expanded

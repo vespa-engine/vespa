@@ -21,7 +21,8 @@ public class OsVersionStatusUpdater extends ControllerMaintainer {
     protected double maintain() {
         try {
             OsVersionStatus newStatus = OsVersionStatus.compute(controller());
-            controller().updateOsVersionStatus(newStatus);
+            controller().os().updateStatus(newStatus);
+            controller().os().removeStaleCertifications(newStatus);
             return 0.0;
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to compute OS version status: " + Exceptions.toMessageString(e) +

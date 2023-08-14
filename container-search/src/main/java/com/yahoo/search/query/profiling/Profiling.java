@@ -33,9 +33,9 @@ public class Profiling implements Cloneable {
 
     public static QueryProfileType getArgumentType() { return argumentType; }
 
-    private ProfilingParams matching = new ProfilingParams();
-    private ProfilingParams firstPhaseRanking = new ProfilingParams();
-    private ProfilingParams secondPhaseRanking = new ProfilingParams();
+    private final ProfilingParams matching = new ProfilingParams();
+    private final ProfilingParams firstPhaseRanking = new ProfilingParams();
+    private final ProfilingParams secondPhaseRanking = new ProfilingParams();
 
     public ProfilingParams getMatching() {
         return matching;

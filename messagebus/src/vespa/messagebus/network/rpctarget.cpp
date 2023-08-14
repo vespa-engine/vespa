@@ -5,8 +5,8 @@
 
 namespace mbus {
 
-RPCTarget::RPCTarget(const string &spec, FRT_Supervisor &orb) :
-    _lock(),
+RPCTarget::RPCTarget(const string &spec, FRT_Supervisor &orb, ctor_tag)
+  : _lock(),
     _orb(orb),
     _name(spec),
     _target(*_orb.GetTarget(spec.c_str())),
@@ -48,6 +48,7 @@ RPCTarget::resolveVersion(duration timeout, RPCTarget::IVersionHandler &handler)
         handler.handleVersion(_version.get());
     } else if (shouldInvoke) {
         FRT_RPCRequest *req = _orb.AllocRPCRequest();
+        req->getStash().create<SP>(shared_from_this());
         req->SetMethodName("mbus.getVersion");
         _target.InvokeAsync(req, vespalib::to_s(timeout), this);
     }
@@ -67,8 +68,9 @@ RPCTarget::isValid() const
 }
 
 void
-RPCTarget::RequestDone(FRT_RPCRequest *req)
+RPCTarget::RequestDone(FRT_RPCRequest *raw_req)
 {
+    auto req = vespalib::ref_counted<FRT_RPCRequest>::internal_attach(raw_req);
     HandlerList handlers;
     {
         std::lock_guard guard(_lock);
@@ -94,7 +96,6 @@ RPCTarget::RequestDone(FRT_RPCRequest *req)
         _state = (_version.get() ? VERSION_RESOLVED : VERSION_NOT_RESOLVED);
     }
     _cond.notify_all();
-    req->internal_subref();
 }
 
 } // namespace mbus

@@ -275,7 +275,7 @@ public class MetricsReporterTest {
     void name_service_queue_size_metric() {
         var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .globalServiceId("default")
+                .endpoint("default", "foo")
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
@@ -365,7 +365,7 @@ public class MetricsReporterTest {
 
         // All nodes upgrade to initial OS version
         var version0 = Version.fromString("8.0");
-        tester.controller().upgradeOsIn(cloud, version0, false);
+        tester.controller().os().upgradeTo(version0, cloud, false, false);
         osUpgrader.maintain();
         tester.configServer().setOsVersion(version0, SystemApplication.tenantHost.id(), zone);
         tester.configServer().setOsVersion(version0, SystemApplication.configServerHost.id(), zone);
@@ -379,7 +379,7 @@ public class MetricsReporterTest {
             var currentVersion = i == 0 ? version0 : targets.get(i - 1);
             var nextVersion = targets.get(i);
             // System starts upgrading to next OS version
-            tester.controller().upgradeOsIn(cloud, nextVersion, false);
+            tester.controller().os().upgradeTo(nextVersion, cloud, false, false);
             runAll(osUpgrader, statusUpdater, reporter);
             assertOsChangeDuration(Duration.ZERO, hosts);
             assertOsNodeCount(hosts.size(), currentVersion);
@@ -660,7 +660,7 @@ public class MetricsReporterTest {
     }
 
     private Number getMetric(String name, ApplicationId id) {
-        return metrics.getMetric((dimensions) -> id.tenant().value().equals(dimensions.get("tenant")) &&
+        return metrics.getMetric((dimensions) -> id.tenant().value().equals(dimensions.get("tenantName")) &&
                                                  appDimension(id).equals(dimensions.get("app")),
                                  name)
                       .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + id));

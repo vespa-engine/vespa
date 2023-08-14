@@ -66,6 +66,7 @@
         <module>controller-api</module>
         <module>controller-server</module>
         <module>defaults</module>
+        <module>dependency-versions</module>
         <module>docproc</module>
         <module>docprocs</module>
         <module>document</module>
@@ -94,6 +95,7 @@
         <module>linguistics-components</module>
         <module>logd</module>
         <module>logserver</module>
+        <module>lucene-linguistics</module>
         <module>messagebus</module>
         <module>metrics</module>
         <module>metrics-proxy</module>

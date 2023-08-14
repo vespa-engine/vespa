@@ -62,6 +62,11 @@ to_string(system_time time) {
     return to_string(time.time_since_epoch());
 }
 
+string
+to_string(file_time time) {
+    return to_string(time.time_since_epoch());
+}
+
 steady_time saturated_add(steady_time time, duration diff) {
     auto td = time.time_since_epoch();
     using dur_t = decltype(td);

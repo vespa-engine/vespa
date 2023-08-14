@@ -17,6 +17,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/time.h>
 #include <fstream>
 
 #include <vespa/log/log.h>
@@ -68,6 +69,10 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _threadLock(),
       _systemStateHistory(),
       _systemStateHistorySize(50),
+      _start_time(vespalib::steady_clock::now()),
+      _health_ping_time(),
+      _health_ping_warn_interval(5min),
+      _health_ping_warn_time(_start_time + _health_ping_warn_interval),
       _hostInfo(std::move(hostInfo)),
       _controllers_observed_explicit_node_state(),
       _noThreadTestMode(testMode),
@@ -391,6 +396,8 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
     std::shared_ptr<api::GetNodeStateReply> reply;
     {
         std::unique_lock guard(_stateLock);
+        _health_ping_time = vespalib::steady_clock::now();
+        _health_ping_warn_time = _health_ping_time.value() + _health_ping_warn_interval;
         const bool is_up_to_date = (_controllers_observed_explicit_node_state.find(cmd->getSourceIndex())
                                     != _controllers_observed_explicit_node_state.end());
         if ((cmd->getExpectedState() != nullptr)
@@ -479,6 +486,28 @@ StateManager::run(framework::ThreadHandle& thread)
 }
 
 void
+StateManager::warn_on_missing_health_ping()
+{
+    vespalib::steady_time now(vespalib::steady_clock::now());
+    std::optional<vespalib::steady_time> health_ping_time;
+    {
+        std::lock_guard lock(_stateLock);
+        if (now <= _health_ping_warn_time) {
+            return;
+        }
+        health_ping_time = _health_ping_time;
+        _health_ping_warn_time = now + _health_ping_warn_interval;
+    }
+    if (health_ping_time.has_value()) {
+        vespalib::duration duration = now - health_ping_time.value();
+        LOG(warning, "Last health ping from cluster controller was %1.1f seconds ago", vespalib::to_s(duration));
+    } else {
+        vespalib::duration duration = now - _start_time;
+        LOG(warning, "No health pings from cluster controller since startup %1.1f seconds ago", vespalib::to_s(duration));
+    }
+}
+
+void
 StateManager::tick() {
     bool almost_immediate_replies = _requested_almost_immediate_node_state_replies.load(std::memory_order_relaxed);
     if (almost_immediate_replies) {
@@ -487,6 +516,7 @@ StateManager::tick() {
     } else {
         sendGetNodeStateReplies(_component.getClock().getMonotonicTime());
     }
+    warn_on_missing_health_ping();
 }
 
 bool

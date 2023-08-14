@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/util/sanitizers.h>
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -81,6 +82,9 @@ public:
             static_assert(std::is_same_v<uint8_t,  std::decay_t<decltype(s.costs[0])>>);
             // FIXME GCC 12.2 worse-than-useless(tm) warning false positives :I
 #pragma GCC diagnostic push
+#ifdef VESPA_USE_SANITIZER
+#  pragma GCC diagnostic ignored "-Wstringop-overread" // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98465 etc.
+#endif
 #pragma GCC diagnostic ignored "-Warray-bounds"
             return (XXH3_64bits(s.indices.data(), s.sz * sizeof(uint32_t)) ^
                     XXH3_64bits(s.costs.data(), s.sz));

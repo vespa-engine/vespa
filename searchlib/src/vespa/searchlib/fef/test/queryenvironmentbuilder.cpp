@@ -11,7 +11,7 @@ QueryEnvironmentBuilder::QueryEnvironmentBuilder(QueryEnvironment &env,
 {
 }
 
-QueryEnvironmentBuilder::~QueryEnvironmentBuilder() { }
+QueryEnvironmentBuilder::~QueryEnvironmentBuilder() = default;
 
 SimpleTermData &
 QueryEnvironmentBuilder::addAllFields()

@@ -35,6 +35,9 @@ using steady_time  = std::chrono::steady_clock::time_point;
 using system_clock = std::chrono::system_clock;
 using system_time  = std::chrono::system_clock::time_point;
 
+using file_clock = std::chrono::file_clock;
+using file_time  = std::chrono::file_clock::time_point;
+
 using duration = std::chrono::nanoseconds;
 
 constexpr double to_s(duration d) {
@@ -73,6 +76,7 @@ constexpr duration from_timespec(const timespec & ts) {
 }
 
 vespalib::string to_string(system_time time);
+vespalib::string to_string(file_time time);
 
 steady_time saturated_add(steady_time time, duration diff);
 

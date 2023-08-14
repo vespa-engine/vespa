@@ -71,9 +71,9 @@ public class ComplexFieldsValidatorTestCase {
     }
 
     @Test
-    void logs_warning_when_struct_field_inside_nested_struct_array_is_specified_as_attribute() throws IOException, SAXException {
-        var logger = new MyLogger();
-        createModelAndValidate(joinLines(
+    void throws_exception_when_struct_field_inside_nested_struct_array_is_specified_as_attribute() throws IOException, SAXException {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            createModelAndValidate(joinLines(
                     "schema test {",
                     "document test {",
                     "struct item {",
@@ -92,8 +92,10 @@ public class ComplexFieldsValidatorTestCase {
                         "}",
                     "}",
                     "}",
-                    "}"), logger);
-        assertTrue(logger.message.toString().contains(getExpectedMessage("cabinet (cabinet.value.items.name, cabinet.value.items.color)")));
+                    "}"));
+
+        });
+        assertTrue(exception.getMessage().contains(getExpectedMessage("cabinet (cabinet.value.items.name, cabinet.value.items.color)")));
     }
 
     private String getExpectedMessage(String unsupportedFields) {

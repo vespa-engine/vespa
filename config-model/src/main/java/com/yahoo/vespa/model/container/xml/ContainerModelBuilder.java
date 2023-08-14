@@ -10,13 +10,11 @@ import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
@@ -95,6 +93,7 @@ import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.HttpFilterChain;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
+import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory.SslClientAuth;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
@@ -109,7 +108,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -139,9 +137,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     // Default path to vip status file for container in Hosted Vespa.
     static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/vespa/load-balancer/status.html");
-
-    // Data plane port for hosted Vespa
-    public static final int HOSTED_VESPA_DATAPLANE_PORT = 4443;
 
     //Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
@@ -364,22 +359,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             context.getDeployState().getProperties().athenzDnsSuffix(),
                             context.getDeployState().zone(),
                             deploymentSpec);
-        addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getEndpoints(), deploymentSpec);
+        addRotationProperties(cluster, context.getDeployState().getEndpoints());
     }
 
-    private void addRotationProperties(ApplicationContainerCluster cluster, Zone zone, Set<ContainerEndpoint> endpoints, DeploymentSpec spec) {
+    private void addRotationProperties(ApplicationContainerCluster cluster, Set<ContainerEndpoint> endpoints) {
         cluster.getContainers().forEach(container -> {
             setRotations(container, endpoints, cluster.getName());
-            container.setProp("activeRotation", Boolean.toString(zoneHasActiveRotation(zone, spec)));
+            container.setProp("activeRotation", "true"); // TODO(mpolden): This is unused and should be removed
         });
-    }
-
-    private boolean zoneHasActiveRotation(Zone zone, DeploymentSpec spec) {
-        Optional<DeploymentInstanceSpec> instance = spec.instance(app.getApplicationId().instance());
-        if (instance.isEmpty()) return false;
-        return instance.get().zones().stream()
-                   .anyMatch(declaredZone -> declaredZone.concerns(zone.environment(), Optional.of(zone.region())) &&
-                                             declaredZone.active());
     }
 
     private void setRotations(Container container, Set<ContainerEndpoint> endpoints, String containerClusterName) {
@@ -462,15 +449,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             addHostedImplicitHttpIfNotPresent(deployState, cluster);
             addHostedImplicitAccessControlIfNotPresent(deployState, cluster);
             addDefaultConnectorHostedFilterBinding(cluster);
-            addAdditionalHostedConnector(deployState, cluster);
+            addCloudMtlsConnector(deployState, cluster);
             addCloudDataPlaneFilter(deployState, cluster);
+            addCloudTokenSupport(deployState, cluster);
         }
     }
 
     private static void addCloudDataPlaneFilter(DeployState deployState, ApplicationContainerCluster cluster) {
         if (!deployState.isHosted() || !deployState.zone().system().isPublic()) return;
 
-        var dataplanePort = getDataplanePort(deployState);
+        var dataplanePort = getMtlsDataplanePort(deployState);
         // Setup secure filter chain
         var secureChain = new HttpFilterChain("cloud-data-plane-secure", HttpFilterChain.Type.SYSTEM);
         secureChain.addInnerComponent(new CloudDataPlaneFilter(cluster, deployState));
@@ -597,62 +585,84 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addDefaultConnectorHostedFilterBinding(ApplicationContainerCluster cluster) {
         cluster.getHttp().getAccessControl()
-                .ifPresent(accessControl -> accessControl.configureDefaultHostedConnector(cluster.getHttp()));                                 ;
+                .ifPresent(accessControl -> accessControl.configureDefaultHostedConnector(cluster.getHttp()));
     }
 
-    private void addAdditionalHostedConnector(DeployState deployState, ApplicationContainerCluster cluster) {
+    private void addCloudMtlsConnector(DeployState state, ApplicationContainerCluster cluster) {
         JettyHttpServer server = cluster.getHttp().getHttpServer().get();
         String serverName = server.getComponentId().getName();
 
         // If the deployment contains certificate/private key reference, setup TLS port
-        HostedSslConnectorFactory connectorFactory;
-        Collection<String> tlsCiphersOverride = deployState.getProperties().tlsCiphersOverride();
-        boolean proxyProtocolMixedMode = deployState.getProperties().featureFlags().enableProxyProtocolMixedMode();
-        Duration endpointConnectionTtl = deployState.getProperties().endpointConnectionTtl();
-        var port = getDataplanePort(deployState);
-        if (deployState.endpointCertificateSecrets().isPresent()) {
-            boolean authorizeClient = deployState.zone().system().isPublic();
+        var builder = HostedSslConnectorFactory.builder(serverName, getMtlsDataplanePort(state))
+                .proxyProtocol(true, state.getProperties().featureFlags().enableProxyProtocolMixedMode())
+                .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
+                .endpointConnectionTtl(state.getProperties().endpointConnectionTtl());
+        var endpointCert = state.endpointCertificateSecrets().orElse(null);
+        if (endpointCert != null) {
+            builder.endpointCertificate(endpointCert);
+            boolean isPublic = state.zone().system().isPublic();
             List<X509Certificate> clientCertificates = getClientCertificates(cluster);
-            if (authorizeClient && clientCertificates.isEmpty()) {
-                throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
-                                                   "see: https://cloud.vespa.ai/en/security/guide#data-plane");
+            if (isPublic) {
+                if (clientCertificates.isEmpty())
+                    throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
+                                                               "see: https://cloud.vespa.ai/en/security/guide#data-plane");
+                builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates))
+                        .clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
+            } else {
+                builder.tlsCaCertificatesPath("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem");
+                var needAuth = cluster.getHttp().getAccessControl()
+                        .map(accessControl -> accessControl.clientAuthentication)
+                        .map(clientAuth -> clientAuth == AccessControl.ClientAuthentication.need)
+                        .orElse(false);
+                builder.clientAuth(needAuth ? SslClientAuth.NEED : SslClientAuth.WANT);
             }
-            EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
-
-            boolean enforceHandshakeClientAuth = cluster.getHttp().getAccessControl()
-                    .map(accessControl -> accessControl.clientAuthentication)
-                    .map(clientAuth -> clientAuth == AccessControl.ClientAuthentication.need)
-                    .orElse(false);
-
-            boolean enableTokenSupport = deployState.featureFlags().enableDataplaneProxy()
-                    && cluster.getClients().stream().anyMatch(c -> !c.tokens().isEmpty());
-
-            // Set up component to generate proxy cert if token support is enabled
-            if (enableTokenSupport) {
-                cluster.addSimpleComponent(DataplaneProxyCredentials.class);
-                cluster.addSimpleComponent(DataplaneProxyService.class);
-
-                var dataplaneProxy = new DataplaneProxy(
-                        getDataplanePort(deployState),
-                        endpointCertificateSecrets.certificate(),
-                        endpointCertificateSecrets.key());
-                cluster.addComponent(dataplaneProxy);
-            }
-
-            connectorFactory = authorizeClient
-                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
-                    serverName, endpointCertificateSecrets, X509CertificateUtils.toPem(clientCertificates),
-                    tlsCiphersOverride, proxyProtocolMixedMode, port, endpointConnectionTtl, enableTokenSupport)
-                    : HostedSslConnectorFactory.withProvidedCertificate(
-                    serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride,
-                    proxyProtocolMixedMode, port, endpointConnectionTtl, enableTokenSupport);
         } else {
-            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(
-                    serverName, tlsCiphersOverride, proxyProtocolMixedMode, port,
-                    endpointConnectionTtl);
+            builder.clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
         }
+        var connectorFactory = builder.build();
         cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
         server.addConnector(connectorFactory);
+    }
+
+    private void addCloudTokenSupport(DeployState state, ApplicationContainerCluster cluster) {
+        var server = cluster.getHttp().getHttpServer().get();
+        boolean enableTokenSupport = state.isHosted() && state.zone().system().isPublic()
+                && state.featureFlags().enableDataplaneProxy()
+                && cluster.getClients().stream().anyMatch(c -> !c.tokens().isEmpty());
+        if (!enableTokenSupport) return;
+        var endpointCert = state.endpointCertificateSecrets().orElseThrow();
+        int tokenPort = getTokenDataplanePort(state).orElseThrow();
+
+        // Set up component to generate proxy cert if token support is enabled
+        cluster.addSimpleComponent(DataplaneProxyCredentials.class);
+        cluster.addSimpleComponent(DataplaneProxyService.class);
+        var dataplaneProxy = new DataplaneProxy(
+                getMtlsDataplanePort(state),
+                tokenPort,
+                endpointCert.certificate(),
+                endpointCert.key());
+        cluster.addComponent(dataplaneProxy);
+
+        // Setup dedicated connector
+        var connector = HostedSslConnectorFactory.builder(server.getComponentId().getName()+"-token", tokenPort)
+                .tokenEndpoint(true)
+                .proxyProtocol(false, false)
+                .endpointCertificate(endpointCert)
+                .remoteAddressHeader("X-Forwarded-For")
+                .remotePortHeader("X-Forwarded-Port")
+                .clientAuth(SslClientAuth.NEED)
+                .build();
+        server.addConnector(connector);
+
+        // Setup token filter chain
+        var tokenChain = new HttpFilterChain("cloud-token-data-plane-secure", HttpFilterChain.Type.SYSTEM);
+        tokenChain.addInnerComponent(new CloudTokenDataPlaneFilter(cluster, state));
+        cluster.getHttp().getFilterChains().add(tokenChain);
+
+        // Set as default filter for token port
+        cluster.getHttp().getHttpServer().orElseThrow().getConnectorFactories().stream()
+                .filter(c -> c.getListenPort() == tokenPort).findAny().orElseThrow()
+                .setDefaultRequestFilterChain(tokenChain.getComponentId());
     }
 
     // Returns the client certificates of the clients defined for an application cluster
@@ -814,7 +824,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addUserHandlers(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
-        OptionalInt portBindingOverride = isHostedTenantApplication(context) ? OptionalInt.of(getDataplanePort(deployState)) : OptionalInt.empty();
+        var portBindingOverride = isHostedTenantApplication(context) ? getDataplanePorts(deployState) : Set.<Integer>of();
         for (Element component: XML.getChildren(spec, "handler")) {
             cluster.addComponent(
                     new DomHandlerBuilder(cluster, portBindingOverride).build(deployState, cluster, component));
@@ -1103,12 +1113,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addSearchHandler(DeployState deployState, ApplicationContainerCluster cluster, Element searchElement, ConfigModelContext context) {
-        BindingPattern bindingPattern = SearchHandler.DEFAULT_BINDING;
+        var bindingPatterns = List.<BindingPattern>of(SearchHandler.DEFAULT_BINDING);
         if (isHostedTenantApplication(context) && deployState.featureFlags().useRestrictedDataPlaneBindings()) {
-            bindingPattern = SearchHandler.bindingPattern(Optional.of(Integer.toString(getDataplanePort(deployState))));
+            bindingPatterns = SearchHandler.bindingPattern(getDataplanePorts(deployState));
         }
         SearchHandler searchHandler = new SearchHandler(cluster,
-                                                        serverBindings(deployState, context, searchElement, bindingPattern),
+                                                        serverBindings(deployState, context, searchElement, bindingPatterns),
                                                         ContainerThreadpool.UserOptions.fromXml(searchElement).orElse(null));
         cluster.addComponent(searchHandler);
 
@@ -1116,31 +1126,33 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
     }
 
-    private List<BindingPattern> serverBindings(DeployState deployState, ConfigModelContext context, Element searchElement, BindingPattern... defaultBindings) {
+    private List<BindingPattern> serverBindings(DeployState deployState, ConfigModelContext context, Element searchElement, Collection<BindingPattern> defaultBindings) {
         List<Element> bindings = XML.getChildren(searchElement, "binding");
         if (bindings.isEmpty())
-            return List.of(defaultBindings);
+            return List.copyOf(defaultBindings);
 
         return toBindingList(deployState, context, bindings);
     }
 
     private List<BindingPattern> toBindingList(DeployState deployState, ConfigModelContext context, List<Element> bindingElements) {
         List<BindingPattern> result = new ArrayList<>();
-        OptionalInt portOverride = isHostedTenantApplication(context) && deployState.featureFlags().useRestrictedDataPlaneBindings() ? OptionalInt.of(getDataplanePort(deployState)) : OptionalInt.empty();
+        var portOverride = isHostedTenantApplication(context) && deployState.featureFlags().useRestrictedDataPlaneBindings() ? getDataplanePorts(deployState) : Set.<Integer>of();
         for (Element element: bindingElements) {
             String text = element.getTextContent().trim();
             if (!text.isEmpty())
-                result.add(userBindingPattern(text, portOverride));
+                result.addAll(userBindingPattern(text, portOverride));
         }
 
         return result;
     }
-    private static UserBindingPattern userBindingPattern(String path, OptionalInt portOverride) {
+    private static Collection<UserBindingPattern> userBindingPattern(String path, Set<Integer> portBindingOverride) {
         UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
-        return portOverride.isPresent()
-                ? bindingPattern.withPort(portOverride.getAsInt())
-                : bindingPattern;
+        if (portBindingOverride.isEmpty()) return Set.of(bindingPattern);
+        return portBindingOverride.stream()
+                .map(bindingPattern::withPort)
+                .toList();
     }
+
 
     private ContainerDocumentApi buildDocumentApi(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         Element documentApiElement = XML.getChild(spec, "document-api");
@@ -1148,9 +1160,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         ContainerDocumentApi.HandlerOptions documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
         Element ignoreUndefinedFields = XML.getChild(documentApiElement, "ignore-undefined-fields");
-        OptionalInt portBindingOverride = deployState.featureFlags().useRestrictedDataPlaneBindings() && isHostedTenantApplication(context)
-                ? OptionalInt.of(getDataplanePort(deployState))
-                : OptionalInt.empty();
+        var portBindingOverride = deployState.featureFlags().useRestrictedDataPlaneBindings() && isHostedTenantApplication(context)
+                ? getDataplanePorts(deployState)
+                : Set.<Integer>of();
         return new ContainerDocumentApi(cluster, documentApiOptions,
                                         "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride);
     }
@@ -1410,8 +1422,18 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     }
 
-    private static int getDataplanePort(DeployState deployState) {
-        return deployState.featureFlags().enableDataplaneProxy() ? 8443 : HOSTED_VESPA_DATAPLANE_PORT;
+    private static Set<Integer> getDataplanePorts(DeployState ds) {
+        var tokenPort = getTokenDataplanePort(ds);
+        var mtlsPort = getMtlsDataplanePort(ds);
+        return tokenPort.isPresent() ? Set.of(mtlsPort, tokenPort.getAsInt()) : Set.of(mtlsPort);
+    }
+
+    private static int getMtlsDataplanePort(DeployState ds) {
+        return ds.featureFlags().enableDataplaneProxy() ? 8443 : 4443;
+    }
+
+    private static OptionalInt getTokenDataplanePort(DeployState ds) {
+        return ds.featureFlags().enableDataplaneProxy() ? OptionalInt.of(8444) : OptionalInt.empty();
     }
 
 }

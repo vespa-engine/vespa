@@ -2,10 +2,11 @@
 
 #pragma once
 
+#include <vespa/storage/distributor/min_replica_provider.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/vespalib/util/memoryusage.h>
-#include <unordered_map>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 namespace storage::distributor {
 
@@ -25,11 +26,12 @@ public:
         vespalib::MemoryUsage _mutable_db_mem_usage;
         vespalib::MemoryUsage _read_only_db_mem_usage;
 
-        Stats();
+        Stats() noexcept;
+        Stats(Stats &&rhs) noexcept;
+        Stats & operator=(Stats &&rhs) noexcept;
         Stats(const Stats &rhs);
-        ~Stats() = default;
-
-        Stats &operator=(const Stats &rhs) = default;
+        Stats & operator=(const Stats &rhs);
+        ~Stats();
 
         /**
          * For each node N, look at all the buckets that have or should have a
@@ -47,24 +49,24 @@ public:
          * Note: If no buckets have been found for a node, that node is not in
          * this map.
          */
-        std::unordered_map<uint16_t, uint32_t> _minBucketReplica;
+        MinReplicaMap _minBucketReplica;
 
         /**
          * Propagate state values to the appropriate metric values.
          */
-        void propagateMetrics(IdealStateMetricSet&, DistributorMetricSet&);
+        void propagateMetrics(IdealStateMetricSet&, DistributorMetricSet&) const;
     };
 
     using ReplicaCountingMode = vespa::config::content::core::StorDistributormanagerConfig::MinimumReplicaCountingMode;
 
 private:
-    Stats _workingStats;
-    Stats _lastCompleteStats;
+    Stats               _workingStats;
+    Stats               _lastCompleteStats;
     ReplicaCountingMode _replicaCountingMode;
-    bool _hasCompleteStats;
+    bool                _hasCompleteStats;
 
 public:
-    BucketDBMetricUpdater();
+    BucketDBMetricUpdater() noexcept;
     ~BucketDBMetricUpdater();
 
     void setMinimumReplicaCountingMode(ReplicaCountingMode mode) noexcept {
@@ -91,11 +93,11 @@ public:
     /**
      * Returns true iff completeRound() has been called at least once.
      */
-    bool hasCompletedRound() const {
+    bool hasCompletedRound() const noexcept {
         return _hasCompleteStats;
     }
 
-    Stats getLastCompleteStats() const {
+    const Stats & getLastCompleteStats() const noexcept {
         return _lastCompleteStats;
     }
 

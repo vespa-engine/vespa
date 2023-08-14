@@ -518,7 +518,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
             request.parameters().add(new StringValue(fileData.filename()));
             request.parameters().add(new StringValue(fileData.type().name()));
             request.parameters().add(new Int64Value(fileData.size()));
-            // Only add paramter if not gzip, this is default and old clients will not handle the extra parameter
+            // Only add parameter if not gzip, this is default and old clients will not handle the extra parameter
             if (fileData.compressionType() != CompressionType.gzip)
                 request.parameters().add(new StringValue(fileData.compressionType().name()));
             return request;
@@ -532,7 +532,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
             request.parameters().add(new DataValue(buf));
             invokeRpcIfValidConnection(request);
             if (request.isError()) {
-                throw new IllegalArgumentException("Failed delivering reference '" + ref.value() + "' to " +
+                throw new IllegalArgumentException("Failed delivering part of reference '" + ref.value() + "' to " +
                                                            target.toString() + " with error: '" + request.errorMessage() + "'.");
             } else {
                 if (request.returnValues().get(0).asInt32() != 0) {
@@ -550,7 +550,8 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
             request.parameters().add(new StringValue(status.getDescription()));
             invokeRpcIfValidConnection(request);
             if (request.isError()) {
-                throw new IllegalArgumentException("Failed delivering reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
+                throw new IllegalArgumentException("Failed delivering eof for reference '" + fileData.fileReference().value() +
+                                                           "' with file '" + fileData.filename() + "' to " +
                                                            target.toString() + " with error: '" + request.errorMessage() + "'.");
             } else {
                 if (request.returnValues().get(0).asInt32() != 0) {

@@ -6,6 +6,8 @@ import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.Chains;
 
+import java.util.List;
+
 /**
  * Root config producer for processing
  *
@@ -13,7 +15,7 @@ import com.yahoo.vespa.model.container.component.chain.Chains;
  */
 public class ProcessingChains extends Chains<ProcessingChain> {
 
-    public static final BindingPattern[] defaultBindings = new BindingPattern[]{SystemBindingPattern.fromHttpPath("/processing/*")};
+    public static final List<BindingPattern> defaultBindings = List.of(SystemBindingPattern.fromHttpPath("/processing/*"));
 
 
     public ProcessingChains(TreeConfigProducer<? super Chains> parent, String subId) {

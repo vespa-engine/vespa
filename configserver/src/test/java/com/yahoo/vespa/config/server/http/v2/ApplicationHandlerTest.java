@@ -668,7 +668,7 @@ public class ApplicationHandlerTest {
 
         {
             HttpServiceListResponse response =
-                    new HttpServiceListResponse(new ServiceListResponse(Map.of(createServiceInfo(hostname, port), 3L),
+                    new HttpServiceListResponse(new ServiceListResponse(Map.of(createServiceInfo(hostname, port, Optional.empty()), 3L),
                                                                         3L,
                                                                         3L),
                                                 requestUrl);
@@ -698,8 +698,8 @@ public class ApplicationHandlerTest {
             URI serviceUrl2 = URI.create("https://configserver/serviceconvergence/" + hostAndPort2);
 
             Map<ServiceInfo, Long> serviceInfos = new HashMap<>();
-            serviceInfos.put(createServiceInfo(hostname, port), 4L);
-            serviceInfos.put(createServiceInfo(hostname2, port2), 3L);
+            serviceInfos.put(createServiceInfo(hostname, port, Optional.empty()), 4L);
+            serviceInfos.put(createServiceInfo(hostname2, port2, Optional.of("foo")), 3L);
 
             HttpServiceListResponse response =
                     new HttpServiceListResponse(new ServiceListResponse(serviceInfos,
@@ -712,18 +712,19 @@ public class ApplicationHandlerTest {
                            "      \"host\": \"" + hostname + "\",\n" +
                            "      \"port\": " + port + ",\n" +
                            "      \"type\": \"container\",\n" +
-                           "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
+                           "      \"url\": \"" + serviceUrl + "\",\n" +
                            "      \"currentGeneration\":" + 4 + "\n" +
                            "    },\n" +
                            "    {\n" +
+                           "      \"clusterName\": \"foo\",\n" +
                            "      \"host\": \"" + hostname2 + "\",\n" +
                            "      \"port\": " + port2 + ",\n" +
                            "      \"type\": \"container\",\n" +
-                           "      \"url\": \"" + serviceUrl2.toString() + "\",\n" +
+                           "      \"url\": \"" + serviceUrl2 + "\",\n" +
                            "      \"currentGeneration\":" + 3 + "\n" +
                            "    }\n" +
                            "  ],\n" +
-                           "  \"url\": \"" + requestUrl.toString() + "\",\n" +
+                           "  \"url\": \"" + requestUrl + "\",\n" +
                            "  \"currentGeneration\": 3,\n" +
                            "  \"wantedGeneration\": 4,\n" +
                            "  \"converged\": false\n" +
@@ -899,11 +900,12 @@ public class ApplicationHandlerTest {
         assertEquals(status, response.getStatus());
     }
 
-    private ServiceInfo createServiceInfo(String hostname, int port) {
+    private ServiceInfo createServiceInfo(String hostname, int port, Optional<String> clusterName) {
         return new ServiceInfo("container",
                                "container",
                                List.of(new PortInfo(port, List.of("state"))),
-                               Map.of(),
+                               clusterName.map(name -> Map.of("clustername", name))
+                                          .orElseGet(Map::of),
                                "configId",
                                hostname);
     }

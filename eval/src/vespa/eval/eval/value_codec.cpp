@@ -335,7 +335,9 @@ std::unique_ptr<Value> decode_value(nbostream &input, const ValueBuilderFactory 
 
 std::unique_ptr<Value> value_from_spec(const TensorSpec &spec, const ValueBuilderFactory &factory) {
     ValueType type = ValueType::from_spec(spec.type());
-    assert(!type.is_error());
+    if (type.is_error()) {
+        throw IllegalArgumentException(fmt("Failed decoding value type from tensorspec(%s)", spec.type().c_str()), VESPA_STRLOC);
+    }
     return typify_invoke<1,TypifyCellType,CreateValueFromTensorSpec>(type.cell_type(), type, spec, factory);
 }
 

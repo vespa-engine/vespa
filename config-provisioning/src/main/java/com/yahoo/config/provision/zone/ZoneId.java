@@ -15,6 +15,17 @@ import java.util.Objects;
  */
 public class ZoneId {
 
+    private static final ZoneId CONTROLLER = from(Environment.prod, RegionName.from("controller"));
+
+    /**
+     * The ZoneId associated with the controller, distinct from all other zones in the system, but a constant across systems.
+     *
+     * <p>The controller may also be associated with a real zone, i.e. with a region defining the location like
+     * aws-us-east-1a.  Because such a zone ID is different for different systems, and may clash with a prod zone in the
+     * same region and system, the virtual zone ID is often used.</p>
+     */
+    public static ZoneId ofVirtualControllerZone() { return CONTROLLER; }
+
     private final Environment environment;
     private final RegionName region;
 

@@ -15,15 +15,18 @@ public class DimensionHelper {
     private static final Map<FetchVector.Dimension, String> serializedDimensions = new HashMap<>();
 
     static {
-        serializedDimensions.put(FetchVector.Dimension.ZONE_ID, "zone");
-        serializedDimensions.put(FetchVector.Dimension.HOSTNAME, "hostname");
         serializedDimensions.put(FetchVector.Dimension.APPLICATION_ID, "application");
-        serializedDimensions.put(FetchVector.Dimension.NODE_TYPE, "node-type");
+        serializedDimensions.put(FetchVector.Dimension.CLOUD, "cloud");
         serializedDimensions.put(FetchVector.Dimension.CLUSTER_ID, "cluster-id");
         serializedDimensions.put(FetchVector.Dimension.CLUSTER_TYPE, "cluster-type");
-        serializedDimensions.put(FetchVector.Dimension.VESPA_VERSION, "vespa-version");
         serializedDimensions.put(FetchVector.Dimension.CONSOLE_USER_EMAIL, "console-user-email");
+        serializedDimensions.put(FetchVector.Dimension.ENVIRONMENT, "environment");
+        serializedDimensions.put(FetchVector.Dimension.HOSTNAME, "hostname");
+        serializedDimensions.put(FetchVector.Dimension.NODE_TYPE, "node-type");
+        serializedDimensions.put(FetchVector.Dimension.SYSTEM, "system");
         serializedDimensions.put(FetchVector.Dimension.TENANT_ID, "tenant");
+        serializedDimensions.put(FetchVector.Dimension.VESPA_VERSION, "vespa-version");
+        serializedDimensions.put(FetchVector.Dimension.ZONE_ID, "zone");
 
         if (serializedDimensions.size() != FetchVector.Dimension.values().length) {
             throw new IllegalStateException(FetchVectorHelper.class.getName() + " is not in sync with " +

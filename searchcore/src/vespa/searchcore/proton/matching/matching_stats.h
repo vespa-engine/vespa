@@ -24,21 +24,21 @@ private:
         double _min;
         double _max;
     public:
-        Avg() : _value(0.0), _count(0), _min(0.0), _max(0.0) {}
-        Avg & set(double value) {
+        Avg() noexcept : _value(0.0), _count(0), _min(0.0), _max(0.0) {}
+        Avg & set(double value) noexcept {
             _value = value;
             _count = 1;
             _min = value;
             _max = value;
             return *this;
         }
-        double avg() const {
+        double avg() const noexcept {
             return (_count > 0) ? (_value / _count) : 0;
         }
-        size_t count() const { return _count; }
-        double min() const { return _min; }
-        double max() const { return _max; }
-        void add(const Avg &other) {
+        size_t count() const noexcept { return _count; }
+        double min() const noexcept { return _min; }
+        double max() const noexcept { return _max; }
+        void add(const Avg &other) noexcept {
             if (_count == 0) {
                 _min = other._min;
                 _max = other._max;
@@ -78,31 +78,31 @@ public:
               _active_time(),
               _wait_time() { }
 
-        Partition &docsCovered(size_t value) { _docsCovered = value; return *this; }
-        size_t docsCovered() const { return _docsCovered; }
-        Partition &docsMatched(size_t value) { _docsMatched = value; return *this; }
-        size_t docsMatched() const { return _docsMatched; }
-        Partition &docsRanked(size_t value) { _docsRanked = value; return *this; }
-        size_t docsRanked() const { return _docsRanked; }
-        Partition &docsReRanked(size_t value) { _docsReRanked = value; return *this; }
-        size_t docsReRanked() const { return _docsReRanked; }
-        Partition &softDoomed(bool v) { _softDoomed += v ? 1 : 0; return *this; }
-        size_t softDoomed() const { return _softDoomed; }
-        Partition & doomOvertime(vespalib::duration overtime) { _doomOvertime.set(vespalib::to_s(overtime)); return *this; }
-        vespalib::duration doomOvertime() const { return vespalib::from_s(_doomOvertime.max()); }
+        Partition &docsCovered(size_t value) noexcept { _docsCovered = value; return *this; }
+        size_t docsCovered() const noexcept { return _docsCovered; }
+        Partition &docsMatched(size_t value) noexcept { _docsMatched = value; return *this; }
+        size_t docsMatched() const noexcept { return _docsMatched; }
+        Partition &docsRanked(size_t value) noexcept { _docsRanked = value; return *this; }
+        size_t docsRanked() const noexcept { return _docsRanked; }
+        Partition &docsReRanked(size_t value) noexcept { _docsReRanked = value; return *this; }
+        size_t docsReRanked() const noexcept { return _docsReRanked; }
+        Partition &softDoomed(bool v) noexcept { _softDoomed += v ? 1 : 0; return *this; }
+        size_t softDoomed() const noexcept { return _softDoomed; }
+        Partition & doomOvertime(vespalib::duration overtime) noexcept { _doomOvertime.set(vespalib::to_s(overtime)); return *this; }
+        vespalib::duration doomOvertime() const noexcept { return vespalib::from_s(_doomOvertime.max()); }
 
-        Partition &active_time(double time_s) { _active_time.set(time_s); return *this; }
-        double active_time_avg() const { return _active_time.avg(); }
-        size_t active_time_count() const { return _active_time.count(); }
-        double active_time_min() const { return _active_time.min(); }
-        double active_time_max() const { return _active_time.max(); }
-        Partition &wait_time(double time_s) { _wait_time.set(time_s); return *this; }
-        double wait_time_avg() const { return _wait_time.avg(); }
-        size_t wait_time_count() const { return _wait_time.count(); }
-        double wait_time_min() const { return _wait_time.min(); }
-        double wait_time_max() const { return _wait_time.max(); }
+        Partition &active_time(double time_s) noexcept { _active_time.set(time_s); return *this; }
+        double active_time_avg() const noexcept { return _active_time.avg(); }
+        size_t active_time_count() const noexcept { return _active_time.count(); }
+        double active_time_min() const noexcept { return _active_time.min(); }
+        double active_time_max() const noexcept { return _active_time.max(); }
+        Partition &wait_time(double time_s) noexcept { _wait_time.set(time_s); return *this; }
+        double wait_time_avg() const noexcept { return _wait_time.avg(); }
+        size_t wait_time_count() const noexcept { return _wait_time.count(); }
+        double wait_time_min() const noexcept { return _wait_time.min(); }
+        double wait_time_max() const noexcept { return _wait_time.max(); }
 
-        Partition &add(const Partition &rhs) {
+        Partition &add(const Partition &rhs) noexcept {
             _docsCovered += rhs.docsCovered();
             _docsMatched += rhs._docsMatched;
             _docsRanked += rhs._docsRanked;
@@ -138,9 +138,10 @@ public:
     static constexpr double INITIAL_SOFT_DOOM_FACTOR = 0.5;
     MatchingStats(const MatchingStats &) = delete;
     MatchingStats & operator = (const MatchingStats &) = delete;
-    MatchingStats(MatchingStats &&) = default;
-    MatchingStats & operator =  (MatchingStats &&) = default;
-    MatchingStats(double prev_soft_doom_factor = INITIAL_SOFT_DOOM_FACTOR);
+    MatchingStats(MatchingStats &&) noexcept = default;
+    MatchingStats & operator =  (MatchingStats &&) noexcept = default;
+    MatchingStats() noexcept : MatchingStats(INITIAL_SOFT_DOOM_FACTOR) {}
+    MatchingStats(double prev_soft_doom_factor) noexcept;
     ~MatchingStats();
 
     MatchingStats &queries(size_t value) { _queries = value; return *this; }
@@ -206,7 +207,7 @@ public:
     const Partition &getPartition(size_t index) const { return _partitions[index]; }
 
     // used to aggregate accross searches (and configurations)
-    MatchingStats &add(const MatchingStats &rhs);
+    MatchingStats &add(const MatchingStats &rhs) noexcept;
 };
 
 }

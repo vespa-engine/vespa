@@ -131,6 +131,11 @@ func TestFindApplicationPackage(t *testing.T) {
 		existingFile: filepath.Join(dir, "services.xml"),
 	})
 	assertFindApplicationPackage(t, dir, pkgFixture{
+		expectedPath:     dir,
+		expectedTestPath: dir,
+		existingFiles:    []string{filepath.Join(dir, "services.xml"), filepath.Join(dir, "tests", "foo.json")},
+	})
+	assertFindApplicationPackage(t, dir, pkgFixture{
 		expectedPath: filepath.Join(dir, "src", "main", "application"),
 		existingFile: filepath.Join(dir, "src", "main", "application") + string(os.PathSeparator),
 	})
@@ -149,11 +154,17 @@ func TestFindApplicationPackage(t *testing.T) {
 		existingFiles:    []string{filepath.Join(dir, "pom.xml"), filepath.Join(dir, "target", "application.zip")},
 		requirePackaging: true,
 	})
-	dir2 := t.TempDir()
-	assertFindApplicationPackage(t, dir2, pkgFixture{
-		expectedPath:     dir2,
-		expectedTestPath: dir2,
-		existingFiles:    []string{filepath.Join(dir2, "services.xml"), filepath.Join(dir2, "tests", "foo.json")},
+	assertFindApplicationPackage(t, dir, pkgFixture{
+		expectedPath:  filepath.Join(dir, "target", "application.zip"),
+		existingFiles: []string{filepath.Join(dir, "target", "application.zip")},
+	})
+	assertFindApplicationPackage(t, dir, pkgFixture{
+		expectedPath:  filepath.Join(dir, "target", "application"),
+		existingFiles: []string{filepath.Join(dir, "target", "application"), filepath.Join(dir, "target", "application.zip")},
+	})
+	zip := filepath.Join(dir, "myapp.zip")
+	assertFindApplicationPackage(t, zip, pkgFixture{
+		expectedPath: zip,
 	})
 }
 

@@ -542,7 +542,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var applicationPackage = new ApplicationPackageBuilder()
                 .trustDefaultCertificate()
                 .instances("default")
-                .globalServiceId("foo")
+                .endpoint("default", "foo")
                 .region("aws-us-east-1c")
                 .build();
         new ControllerTester(tester).upgradeSystem(new Version("6.1"));

@@ -4,7 +4,6 @@
 #include "hit.h"
 #include "querynode.h"
 #include "querynoderesultbase.h"
-#include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/query/weight.h>
 #include <vespa/vespalib/objects/objectvisitor.h>

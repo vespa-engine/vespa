@@ -340,10 +340,10 @@ TopLevelDistributor::propagate_default_distribution_thread_unsafe(
     }
 }
 
-std::unordered_map<uint16_t, uint32_t>
+MinReplicaMap
 TopLevelDistributor::getMinReplica() const
 {
-    std::unordered_map<uint16_t, uint32_t> result;
+    MinReplicaMap result;
     for (const auto& stripe : _stripes) {
         merge_min_replica_stats(result, stripe->getMinReplica());
     }
@@ -356,15 +356,6 @@ TopLevelDistributor::getBucketSpacesStats() const
     BucketSpacesStatsProvider::PerNodeBucketSpacesStats result;
     for (const auto& stripe : _stripes) {
         merge_per_node_bucket_spaces_stats(result, stripe->getBucketSpacesStats());
-    }
-    return result;
-}
-
-SimpleMaintenanceScanner::PendingMaintenanceStats
-TopLevelDistributor::pending_maintenance_stats() const {
-    SimpleMaintenanceScanner::PendingMaintenanceStats result;
-    for (const auto& stripe : _stripes) {
-        result.merge(stripe->pending_maintenance_stats());
     }
     return result;
 }

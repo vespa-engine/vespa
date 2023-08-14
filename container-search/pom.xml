@@ -214,7 +214,7 @@
       <plugin> <!-- For the YQL query language -->
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
-        <version>${antlr4.version}</version>
+        <version>${antlr4.vespa.version}</version>
         <executions>
           <execution>
             <configuration>

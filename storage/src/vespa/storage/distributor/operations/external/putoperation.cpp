@@ -67,8 +67,8 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTargetLi
         assert(!multipleBuckets);
         (void) multipleBuckets;
         BucketDatabase::Entry entry(_bucket_space.getBucketDatabase().get(lastBucket));
-        std::vector<uint16_t> idealState(
-                _bucket_space.get_ideal_service_layer_nodes_bundle(lastBucket).get_available_nodes());
+        const std::vector<uint16_t> & idealState = _bucket_space.get_ideal_service_layer_nodes_bundle(
+                lastBucket).available_nodes();
         active = ActiveCopy::calculate(idealState, _bucket_space.getDistribution(), entry,
                                        _op_ctx.distributor_config().max_activation_inhibited_out_of_sync_groups());
         LOG(debug, "Active copies for bucket %s: %s", entry.getBucketId().toString().c_str(), active.toString().c_str());
@@ -211,11 +211,11 @@ void PutOperation::start_direct_put_dispatch(DistributorStripeMessageSender& sen
         }
 
         if (!createBucketBatch.empty()) {
-            _tracker.queueMessageBatch(createBucketBatch);
+            _tracker.queueMessageBatch(std::move(createBucketBatch));
         }
 
         std::vector<PersistenceMessageTracker::ToSend> putBatch;
-
+        putBatch.reserve(targets.size());
         // Now send PUTs
         for (const auto& target : targets) {
             sendPutToBucketOnNode(_msg->getBucket().getBucketSpace(), target.getBucketId(),
@@ -223,7 +223,7 @@ void PutOperation::start_direct_put_dispatch(DistributorStripeMessageSender& sen
         }
 
         if (!putBatch.empty()) {
-            _tracker.queueMessageBatch(putBatch);
+            _tracker.queueMessageBatch(std::move(putBatch));
         } else {
             const char* error = "Can't store document: No storage nodes available";
             LOG(debug, "%s", error);

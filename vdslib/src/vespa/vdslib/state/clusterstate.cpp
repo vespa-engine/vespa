@@ -7,7 +7,10 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_map_equal.hpp>
 #include <sstream>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vdslib.state.cluster");
@@ -24,9 +27,9 @@ namespace storage::lib {
 ClusterState::ClusterState()
     : Printable(),
       _version(0),
+      _nodeCount(),
       _clusterState(&State::DOWN),
       _nodeStates(),
-      _nodeCount(2),
       _description(),
       _distributionBits(16)
 { }
@@ -41,14 +44,10 @@ struct NodeData {
 
     NodeData() : empty(true), node(NodeType::STORAGE, 0), ost() {}
 
-    void addTo(std::map<Node, NodeState>& nodeStates,
-               std::vector<uint16_t>& nodeCount)
-    {
+    void addTo(ClusterState::NodeMap & nodeStates, ClusterState::NodeCounts & nodeCount) {
         if (!empty) {
             NodeState state(ost.str(), &node.getType());
-            if (state != NodeState(node.getType(), State::UP)
-                || state.getDescription().size() > 0)
-            {
+            if ((state != NodeState(node.getType(), State::UP)) || (state.getDescription().size() > 0)) {
                 nodeStates.insert(std::make_pair(node, state));
             }
             if (nodeCount[node.getType()] <= node.getIndex()) {
@@ -63,9 +62,9 @@ struct NodeData {
 ClusterState::ClusterState(const vespalib::string& serialized)
     : Printable(),
       _version(0),
+      _nodeCount(),
       _clusterState(&State::UP),
       _nodeStates(),
-      _nodeCount(2),
       _description(),
       _distributionBits(16)
 {
@@ -74,13 +73,13 @@ ClusterState::ClusterState(const vespalib::string& serialized)
     NodeData nodeData;
     vespalib::string lastAbsolutePath;
 
-    for (vespalib::StringTokenizer::Iterator it = st.begin(); it != st.end(); ++it) {
-        vespalib::string::size_type index = it->find(':');
+    for (const auto & token : st) {
+        vespalib::string::size_type index = token.find(':');
         if (index == vespalib::string::npos) {
-            throw IllegalArgumentException("Token " + *it + " does not contain ':': " + serialized, VESPA_STRLOC);
+            throw IllegalArgumentException("Token " + token + " does not contain ':': " + serialized, VESPA_STRLOC);
         }
-        vespalib::string key = it->substr(0, index);
-        vespalib::stringref value = it->substr(index + 1);
+        vespalib::string key = token.substr(0, index);
+        vespalib::stringref value = token.substr(index + 1);
         if (key.size() > 0 && key[0] == '.') {
             if (lastAbsolutePath == "") {
                 throw IllegalArgumentException("The first path in system state string needs to be absolute", VESPA_STRLOC);
@@ -111,7 +110,9 @@ ClusterState::parse(vespalib::stringref key, vespalib::stringref value, NodeData
         break;
     case 'b':
         if (key == "bits") {
-            _distributionBits = atoi(value.data());
+            uint32_t numBits = atoi(value.data());
+            assert(numBits <= 64);
+            _distributionBits = numBits;
             return true;
         }
         break;
@@ -138,7 +139,7 @@ ClusterState::parse(vespalib::stringref key, vespalib::stringref value, NodeData
 
 bool
 ClusterState::parseSorD(vespalib::stringref key, vespalib::stringref value, NodeData & nodeData) {
-    const NodeType* nodeType(0);
+    const NodeType* nodeType = nullptr;
     vespalib::string::size_type dot = key.find('.');
     vespalib::stringref type(dot == vespalib::string::npos
                              ? key : key.substr(0, dot));
@@ -147,10 +148,9 @@ ClusterState::parseSorD(vespalib::stringref key, vespalib::stringref value, Node
     } else if (type == "distributor") {
         nodeType = &NodeType::DISTRIBUTOR;
     }
-    if (nodeType == 0) return false;
+    if (nodeType == nullptr) return false;
     if (dot == vespalib::string::npos) { // Entry that set node counts
-        uint16_t nodeCount = 0;
-        nodeCount = atoi(value.data());
+        uint16_t nodeCount = atoi(value.data());
 
         if (nodeCount > _nodeCount[*nodeType] ) {
             _nodeCount[*nodeType] = nodeCount;
@@ -158,12 +158,9 @@ ClusterState::parseSorD(vespalib::stringref key, vespalib::stringref value, Node
         return true;
     }
     vespalib::string::size_type dot2 = key.find('.', dot + 1);
-    Node node;
-    if (dot2 == vespalib::string::npos) {
-        node = Node(*nodeType, atoi(key.substr(dot + 1).data()));
-    } else {
-        node = Node(*nodeType, atoi(key.substr(dot + 1, dot2 - dot - 1).data()));
-    }
+    Node node(*nodeType, (dot2 == vespalib::string::npos)
+                         ? atoi(key.substr(dot + 1).data())
+                         : atoi(key.substr(dot + 1, dot2 - dot - 1).data()));
 
     if (node.getIndex() >= _nodeCount[*nodeType]) {
         vespalib::asciistream ost;
@@ -183,74 +180,73 @@ ClusterState::parseSorD(vespalib::stringref key, vespalib::stringref value, Node
     return true;
 }
 
-namespace {
-    struct SeparatorPrinter {
-        bool first;
-        SeparatorPrinter() : first(true) {}
-        const char * toString() {
-            if (first) {
-                first = false;
-                return "";
-            }
-            return " ";
+struct SeparatorPrinter {
+    bool first;
+    SeparatorPrinter() : first(true) {}
+    const char * toString() {
+        if (first) {
+            first = false;
+            return "";
         }
-    };
+        return " ";
+    }
+};
+
+namespace {
+
+void
+serialize_node(vespalib::asciistream & out, const Node & node, const NodeState & state) {
+    vespalib::asciistream prefix;
+    prefix << "." << node.getIndex() << ".";
+    vespalib::asciistream ost;
+    state.serialize(ost, prefix.str(), false);
+    vespalib::stringref content = ost.str();
+    if ( !content.empty()) {
+        out << " " << content;
+    }
+}
+
 }
 
 void
-ClusterState::serialize(vespalib::asciistream & out, bool ignoreNewFeatures) const
+ClusterState::serialize_nodes(vespalib::asciistream & out, SeparatorPrinter & sep, const NodeType & nodeType,
+                              const std::vector<NodeStatePair> & nodeStates) const
 {
-    SeparatorPrinter sep;
-    if (!ignoreNewFeatures && _version != 0) {
-        out << sep.toString() << "version:" << _version;
-    }
-    if (!ignoreNewFeatures && *_clusterState != State::UP) {
-        out << sep.toString() << "cluster:" << _clusterState->serialize();
-    }
-    if (!ignoreNewFeatures && _distributionBits != 16) {
-        out << sep.toString() << "bits:" << _distributionBits;
-    }
-
-    uint16_t distCount = getNodeCount(NodeType::DISTRIBUTOR);
-    if (ignoreNewFeatures || distCount > 0) {
-        out << sep.toString() << "distributor:" << distCount;
-        for (std::map<Node, NodeState>::const_iterator it =
-                 _nodeStates.begin();
-             it != _nodeStates.end(); ++it)
-        {
-            if (it->first.getType() != NodeType::DISTRIBUTOR) continue;
-            vespalib::asciistream prefix;
-            prefix << "." << it->first.getIndex() << ".";
-            vespalib::asciistream ost;
-            it->second.serialize(ost, prefix.str(), false);
-            vespalib::stringref content = ost.str();
-            if (content.size() > 0) {
-                out << " " << content;
-            }
-        }
-    }
-    uint16_t storCount = getNodeCount(NodeType::STORAGE);
-    if (ignoreNewFeatures || storCount > 0) {
-        out << sep.toString() << "storage:" << storCount;
-        for (std::map<Node, NodeState>::const_iterator it =
-                 _nodeStates.begin();
-             it != _nodeStates.end(); ++it)
-        {
-            if (it->first.getType() != NodeType::STORAGE) continue;
-            vespalib::asciistream prefix;
-            prefix << "." << it->first.getIndex() << ".";
-            vespalib::asciistream ost;
-            it->second.serialize(ost, prefix.str(), false);
-            vespalib::stringref content = ost.str();
-            if ( !content.empty()) {
-                out << " " << content;
+    uint16_t nodeCount = getNodeCount(nodeType);
+    if (nodeCount > 0) {
+        out << sep.toString() << nodeType.serialize() << ":" << nodeCount;
+        for (const auto & entry : nodeStates) {
+            if (entry.first.getType() == nodeType) {
+                serialize_node(out, entry.first, entry.second);
             }
         }
     }
 }
 
+void
+ClusterState::serialize(vespalib::asciistream & out) const
+{
+    SeparatorPrinter sep;
+    if (_version != 0) {
+        out << sep.toString() << "version:" << _version;
+    }
+    if (*_clusterState != State::UP) {
+        out << sep.toString() << "cluster:" << _clusterState->serialize();
+    }
+    if (_distributionBits != 16) {
+        out << sep.toString() << "bits:" << _distributionBits;
+    }
+
+    if ((getNodeCount(NodeType::DISTRIBUTOR) + getNodeCount(NodeType::STORAGE)) == 0u) return;
+
+    std::vector<NodeStatePair> nodeStates(_nodeStates.cbegin(), _nodeStates.cend());
+    std::sort(nodeStates.begin(), nodeStates.end(), [](const NodeStatePair &a, const NodeStatePair &b) { return a.first < b.first; });
+    serialize_nodes(out, sep, NodeType::DISTRIBUTOR, nodeStates);
+    serialize_nodes(out, sep, NodeType::STORAGE, nodeStates);
+}
+
 bool
-ClusterState::operator==(const ClusterState& other) const
+ClusterState::operator==(const ClusterState& other) const noexcept
 {
     return (_version == other._version &&
             *_clusterState == *other._clusterState &&
@@ -260,15 +256,9 @@ ClusterState::operator==(const ClusterState& other) const
 }
 
 bool
-ClusterState::operator!=(const ClusterState& other) const
+ClusterState::operator!=(const ClusterState& other) const noexcept
 {
     return !(*this == other);
-}
-
-uint16_t
-ClusterState::getNodeCount(const NodeType& type) const
-{
-    return _nodeCount[type];
 }
 
 namespace {
@@ -282,7 +272,7 @@ const NodeState&
 ClusterState::getNodeState(const Node& node) const
 {
     // If it actually has an entry in map, return that
-    std::map<Node, NodeState>::const_iterator it = _nodeStates.find(node);
+    const auto it = _nodeStates.find(node);
     if (it != _nodeStates.end()) return it->second;
 
     // If beyond node count, the node is down.
@@ -307,9 +297,7 @@ void
 ClusterState::setClusterState(const State& state)
 {
     if (!state.validClusterState()) {
-        throw vespalib::IllegalStateException(
-            state.toString(true) + " is not a legal cluster state",
-            VESPA_STRLOC);
+        throw vespalib::IllegalStateException(state.toString(true) + " is not a legal cluster state", VESPA_STRLOC);
     }
     _clusterState = &state;
 }
@@ -319,17 +307,12 @@ ClusterState::setNodeState(const Node& node, const NodeState& state)
 {
     state.verifySupportForNodeType(node.getType());
     if (node.getIndex() >= _nodeCount[node.getType()]) {
-        for (uint32_t i = _nodeCount[node.getType()]; i < node.getIndex(); ++i)
-        {
-            _nodeStates.insert(std::make_pair(
-                        Node(node.getType(), i),
-                        NodeState(node.getType(), State::DOWN)));
+        for (uint32_t i = _nodeCount[node.getType()]; i < node.getIndex(); ++i) {
+            _nodeStates.insert(std::make_pair(Node(node.getType(), i), NodeState(node.getType(), State::DOWN)));
         }
         _nodeCount[node.getType()] = node.getIndex() + 1;
     }
-    if (state == NodeState(node.getType(), State::UP)
-        && state.getDescription().size() == 0)
-    {
+    if ((state == NodeState(node.getType(), State::UP)) && state.getDescription().empty()) {
         _nodeStates.erase(node);
     } else {
         _nodeStates.insert(std::make_pair(node, state));
@@ -339,32 +322,34 @@ ClusterState::setNodeState(const Node& node, const NodeState& state)
 }
 
 void
-ClusterState::print(std::ostream& out, bool verbose,
-                   const std::string&) const
+ClusterState::print(std::ostream& out, bool verbose, const std::string&) const
 {
     (void) verbose;
     vespalib::asciistream tmp;
-    serialize(tmp, false);
+    serialize(tmp);
     out << tmp.str();
 }
 
 void
 ClusterState::removeExtraElements()
 {
+    removeExtraElements(NodeType::STORAGE);
+    removeExtraElements(NodeType::DISTRIBUTOR);
+}
+
+void
+ClusterState::removeExtraElements(const NodeType & type)
+{
     // Simplify the system state by removing the last indexes if the nodes
     // are down.
-    for (uint32_t i=0; i<2; ++i) {
-        const NodeType& type(i == 0 ? NodeType::STORAGE
-                                    : NodeType::DISTRIBUTOR);
-        for (int32_t index = _nodeCount[type]; index >= 0; --index) {
-            Node node(type, index - 1);
-            std::map<Node, NodeState>::iterator it(_nodeStates.find(node));
-            if (it == _nodeStates.end()) break;
-            if (it->second.getState() != State::DOWN) break;
-            if (it->second.getDescription() != "") break;
-            _nodeStates.erase(it);
-            --_nodeCount[type];
-        }
+    for (int32_t index = _nodeCount[type]; index >= 0; --index) {
+        Node node(type, index - 1);
+        const auto it = _nodeStates.find(node);
+        if (it == _nodeStates.end()) break;
+        if (it->second.getState() != State::DOWN) break;
+        if (it->second.getDescription() != "") break;
+        _nodeStates.erase(it);
+        --_nodeCount[type];
     }
 }
 
@@ -413,90 +398,89 @@ void
 ClusterState::printStateGroupwise(std::ostream& out, const Distribution& dist,
                                   bool verbose, const std::string& indent) const
 {
-    out << "ClusterState(Version: " << _version << ", Cluster state: "
-        << _clusterState->toString(true) << ", Distribution bits: "
-        << _distributionBits << ") {";
+    out << "ClusterState(Version: " << _version << ", Cluster state: " << _clusterState->toString(true)
+        << ", Distribution bits: " << _distributionBits << ") {";
     printStateGroupwise(out, dist.getNodeGraph(), verbose, indent + "  ", true);
     out << "\n" << indent << "}";
 }
 
 namespace {
-    template<typename T>
-    std::string getNumberSpec(const std::vector<T>& numbers) {
-        std::ostringstream ost;
-        bool first = true;
-        uint32_t firstInRange = numbers.size() == 0 ? 0 : numbers[0];;
-        uint32_t lastInRange = firstInRange;
-        for (uint32_t i=1; i<=numbers.size(); ++i) {
-            if (i < numbers.size() && numbers[i] == lastInRange + 1) {
-                ++lastInRange;
+
+template<typename T>
+std::string getNumberSpec(const std::vector<T>& numbers) {
+    std::ostringstream ost;
+    bool first = true;
+    uint32_t firstInRange = numbers.size() == 0 ? 0 : numbers[0];;
+    uint32_t lastInRange = firstInRange;
+    for (uint32_t i=1; i<=numbers.size(); ++i) {
+        if (i < numbers.size() && numbers[i] == lastInRange + 1) {
+            ++lastInRange;
+        } else {
+            if (first) {
+                first = false;
             } else {
-                if (first) {
-                    first = false;
-                } else {
-                    ost << ",";
-                }
-                if (firstInRange == lastInRange) {
-                    ost << firstInRange;
-                } else {
-                    ost << firstInRange << "-" << lastInRange;
-                }
-                if (i < numbers.size()) {
-                    firstInRange = lastInRange = numbers[i];
-                }
+                ost << ",";
+            }
+            if (firstInRange == lastInRange) {
+                ost << firstInRange;
+            } else {
+                ost << firstInRange << "-" << lastInRange;
+            }
+            if (i < numbers.size()) {
+                firstInRange = lastInRange = numbers[i];
             }
         }
-        return ost.str();
     }
+    return ost.str();
+}
+
+}
+
+size_t
+ClusterState::printStateGroupwise(std::ostream& out, const Group& group, bool verbose,
+                                  const std::string& indent, const NodeType& nodeType) const
+{
+    NodeState defState(nodeType, State::UP);
+    size_t printed = 0;
+    for (uint16_t nodeId : group.getNodes()) {
+        Node node(nodeType, nodeId);
+        const NodeState& state(getNodeState(node));
+        if (state != defState) {
+            out << "\n" << indent << "  " << node << ": ";
+            state.print(out, verbose, indent + "    ");
+            printed++;
+        }
+    }
+    return printed;
 }
 
 void
-ClusterState::printStateGroupwise(std::ostream& out, const Group& group,
-                                  bool verbose, const std::string& indent,
-                                  bool rootGroup) const
+ClusterState::printStateGroupwise(std::ostream& out, const Group& group, bool verbose,
+                                  const std::string& indent, bool rootGroup) const
 {
     if (rootGroup) {
         out << "\n" << indent << "Top group";
     } else {
-        out << "\n" << indent << "Group " << group.getIndex() << ": "
-            << group.getName();
+        out << "\n" << indent << "Group " << group.getIndex() << ": " << group.getName();
         if (group.getCapacity() != 1.0) {
             out << ", capacity " << group.getCapacity();
         }
     }
     out << ".";
     if (group.isLeafGroup()) {
-        out << " " << group.getNodes().size() << " node"
-            << (group.getNodes().size() != 1 ? "s" : "") << " ["
-            << getNumberSpec(group.getNodes()) << "] {";
-        bool printedAny = false;
-        for (uint32_t j=0; j<2; ++j) {
-            const NodeType& nodeType(
-                    j == 0 ? NodeType::DISTRIBUTOR : NodeType::STORAGE);
-            NodeState defState(nodeType, State::UP);
-            for (uint32_t i=0; i<group.getNodes().size(); ++i) {
-                Node node(nodeType, group.getNodes()[i]);
-                const NodeState& state(getNodeState(node));
-                if (state != defState) {
-                    out << "\n" << indent << "  " << node << ": ";
-                    state.print(out, verbose, indent + "    ");
-                    printedAny = true;
-                }
-            }
-        }
-        if (!printedAny) {
+        out << " " << group.getNodes().size() << " node" << (group.getNodes().size() != 1 ? "s" : "")
+            << " [" << getNumberSpec(group.getNodes()) << "] {";
+        size_t printed = printStateGroupwise(out, group, verbose, indent, NodeType::DISTRIBUTOR) +
+                         printStateGroupwise(out, group, verbose, indent, NodeType::STORAGE);
+        if (printed == 0) {
             out << "\n" << indent << "  All nodes in group up and available.";
         }
     } else {
-        const std::map<uint16_t, Group*>& children(group.getSubGroups());
-        out << " " << children.size() << " branch"
-            << (children.size() != 1 ? "es" : "") << " with distribution "
-            << group.getDistributionSpec() << " {";
-        for (std::map<uint16_t, Group*>::const_iterator it = children.begin();
-             it != children.end(); ++it)
-        {
-            printStateGroupwise(out, *it->second, verbose,
-                                indent + "  ", false);
+        const auto & children(group.getSubGroups());
+        out << " " << children.size() << " branch" << (children.size() != 1 ? "es" : "")
+            << " with distribution " << group.getDistributionSpec() << " {";
+        for (const auto & child : children) {
+            printStateGroupwise(out, *child.second, verbose,indent + "  ", false);
         }
     }
     out << "\n" << indent << "}";

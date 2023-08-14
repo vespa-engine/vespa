@@ -34,14 +34,14 @@ public:
      * UTF-8 encoded surrogates are also considered invalid.
      **/
     template <typename T>
-    static T filter_invalid_sequences(const T& input);
+    static T filter_invalid_sequences(const T& input) noexcept;
 
     /**
      * check if a byte is valid as the first byte of an UTF-8 character.
      * @param c the byte to be checked
      * @return true if a valid UTF-8 character can start with this byte
      **/
-    static bool validFirstByte(unsigned char c) {
+    static bool validFirstByte(unsigned char c) noexcept {
         return (c < 0x80 ||
                 (c > 0xC1 && c < 0xF5));
     }
@@ -52,12 +52,11 @@ public:
      * @param c the first byte (must pass validFirstByte check)
      * @return 0, 1, 2, or 3
      **/
-    static int numContBytes(unsigned char c) {
+    static int numContBytes(unsigned char c) noexcept {
         if (c < 0x80) return 0;
         if (c > 0xC1 && c < 0xE0) return 1;
         if (c > 0xDF && c < 0xF0) return 2;
-        if (c > 0xEF && c < 0xF5) return 3;
-        throwX("invalid first byte of UTF8 sequence", c);
+        return 3;
     }
 
     /**
@@ -65,7 +64,7 @@ public:
      * @param c the byte to be checked
      * @return true if a valid UTF-8 character can contain this byte
      **/
-    static bool validContByte(unsigned char c) {
+    static bool validContByte(unsigned char c) noexcept {
         return (c > 0x7F && c < 0xC0);
     }
 
@@ -82,8 +81,7 @@ public:
      * @param contbyte second byte in this UTF-8 character
      * @return decoded UCS-4 codepoint in range [0, 0x7FF]
      **/
-    static uint32_t decode2(unsigned char firstbyte,
-                            unsigned char contbyte)
+    static uint32_t decode2(unsigned char firstbyte, unsigned char contbyte) noexcept
     {
         uint32_t r = (firstbyte & low_5bits_mask);
         r <<= 6;
@@ -108,7 +106,7 @@ public:
      **/
     static uint32_t decode3(unsigned char firstbyte,
                             unsigned char contbyte1,
-                            unsigned char contbyte2)
+                            unsigned char contbyte2) noexcept
     {
         uint32_t r = (firstbyte & low_4bits_mask);
         r <<= 6;
@@ -138,7 +136,7 @@ public:
     static uint32_t decode4(unsigned char firstbyte,
                             unsigned char contbyte1,
                             unsigned char contbyte2,
-                            unsigned char contbyte3)
+                            unsigned char contbyte3) noexcept
     {
         uint32_t r = (firstbyte & low_3bits_mask);
         r <<= 6;
@@ -177,14 +175,14 @@ class Utf8Reader
 private:
     size_type _pos;
 
-    uint32_t getComplexChar(unsigned char firstbyte, uint32_t fallback);
+    uint32_t getComplexChar(unsigned char firstbyte, uint32_t fallback) noexcept;
 public:
 
     /**
      * Construct a reader for the given block of data
      * @param input data to read UTF-8 from (can be read-only)
      **/
-    Utf8Reader(stringref input)
+    Utf8Reader(stringref input) noexcept
         : stringref(input), _pos(0)
     {}
 
@@ -193,7 +191,7 @@ public:
      * @param start pointer to the start of the block
      * @param sz size of the block in bytes
      **/
-    Utf8Reader(const char *start, size_t sz)
+    Utf8Reader(const char *start, size_t sz) noexcept
         : stringref(start, sz), _pos(0)
     {}
 
@@ -201,7 +199,7 @@ public:
      * check if the buffer has more data.
      * @return true if there is more data
      **/
-    bool hasMore() const { return _pos < size(); }
+    bool hasMore() const noexcept { return _pos < size(); }
 
     /**
      * Decode the UTF-8 character at the current position.
@@ -211,7 +209,7 @@ public:
      * @param fallback the value to return if invalid UTF-8 is found
      * @return a valid UCS-4 codepoint (or the fallback value)
      **/
-    uint32_t getChar(uint32_t fallback) {
+    uint32_t getChar(uint32_t fallback) noexcept {
         unsigned char firstbyte = (*this)[_pos++]; // always steps at least 1 position
         if (firstbyte < 0x80) {
             return firstbyte;
@@ -232,13 +230,13 @@ public:
      *
      * @return a valid UCS-4 codepoint
      **/
-    uint32_t getChar() { return getChar(Utf8::REPLACEMENT_CHAR); }
+    uint32_t getChar() noexcept { return getChar(Utf8::REPLACEMENT_CHAR); }
 
     /**
      * obtain the current byte offset position
      * @return position in bytes
      **/
-    size_type getPos() const { return _pos; }
+    size_type getPos() const noexcept { return _pos; }
 };
 
 
@@ -252,7 +250,7 @@ class Utf8ReaderForZTS
 {
 private:
     const char * &_p;
-    uint32_t getComplexChar(unsigned char firstbyte, uint32_t fallback);
+    uint32_t getComplexChar(unsigned char firstbyte, uint32_t fallback) noexcept;
 public:
 
     /**
@@ -265,7 +263,7 @@ public:
      *
      * @param start pointer to the start of the block
      **/
-    Utf8ReaderForZTS(const char * &start)
+    Utf8ReaderForZTS(const char * &start) noexcept
         : _p(start)
     {}
 
@@ -273,7 +271,7 @@ public:
      * check if the buffer has more data.
      * @return true if there is more data
      **/
-    bool hasMore() const {
+    bool hasMore() const noexcept {
         return (*_p) != '\0';
     }
 
@@ -285,9 +283,9 @@ public:
      * @param fallback the value to return if invalid UTF-8 is found
      * @return a valid UCS-4 codepoint (or the fallback value)
      **/
-    uint32_t getChar(uint32_t fallback) {
+    uint32_t getChar(uint32_t fallback) noexcept {
         unsigned char firstbyte = *_p++; // always steps at least 1 position
-        if (firstbyte < 0x80) {
+        if (firstbyte < 0x80) [[likely]] {
             return firstbyte;
         } else {
             return getComplexChar(firstbyte, fallback);
@@ -306,7 +304,7 @@ public:
      *
      * @return a valid UCS-4 codepoint
      **/
-    uint32_t getChar() { return getChar(Utf8::REPLACEMENT_CHAR); }
+    uint32_t getChar() noexcept{ return getChar(Utf8::REPLACEMENT_CHAR); }
 
     /**
      * count the number of UCS-4 characters will be returned when
@@ -314,7 +312,7 @@ public:
      * "strlen" does not count the zero termination, but bytes
      * that aren't valid UTF-8 will count as one character each.
      **/
-    static size_t countChars(const char *p) {
+    static size_t countChars(const char *p) noexcept {
         Utf8ReaderForZTS reader(p);
         size_t i;
         for (i = 0; reader.hasMore(); ++i) {
@@ -340,7 +338,7 @@ public:
      * that the writer will append to.  Must be writable
      * and must be kept alive while the writer is active.
      **/
-    Utf8Writer(Target &target) : _target(target) {}
+    Utf8Writer(Target &target) noexcept : _target(target) {}
 
     /**
      * append the given character to the target string.

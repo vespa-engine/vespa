@@ -83,7 +83,7 @@ MultiThreadedStripeAccessGuard::merge_entries_into_db(document::BucketSpace buck
                                                       const lib::Distribution& distribution,
                                                       const lib::ClusterState& new_state,
                                                       const char* storage_up_states,
-                                                      const std::unordered_set<uint16_t>& outdated_nodes,
+                                                      const OutdatedNodes & outdated_nodes,
                                                       const std::vector<dbtransition::Entry>& entries)
 {
     if (entries.empty()) {

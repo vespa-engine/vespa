@@ -21,7 +21,7 @@ namespace search::attribute {
  */
 class Config {
 public:
-    enum class Match { CASED, UNCASED };
+    enum class Match : uint8_t { CASED, UNCASED };
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     Config() noexcept;
     Config(BasicType bt) noexcept : Config(bt, CollectionType::SINGLE) { }
@@ -33,29 +33,27 @@ public:
     Config & operator = (Config &&) noexcept;
     ~Config();
 
-    BasicType basicType()                 const { return _basicType; }
-    CollectionType collectionType()       const { return _type; }
-    bool fastSearch()                     const { return _fastSearch; }
-    bool paged()                          const { return _paged; }
-    const PredicateParams &predicateParams() const { return _predicateParams; }
-    const vespalib::eval::ValueType & tensorType() const { return _tensorType; }
-    DistanceMetric distance_metric() const { return _distance_metric; }
+    BasicType basicType()                 const noexcept { return _basicType; }
+    CollectionType collectionType()       const noexcept { return _type; }
+    bool fastSearch()                     const noexcept { return _fastSearch; }
+    bool paged()                          const noexcept { return _paged; }
+    const PredicateParams &predicateParams() const noexcept { return _predicateParams; }
+    const vespalib::eval::ValueType & tensorType() const noexcept { return _tensorType; }
+    DistanceMetric distance_metric() const noexcept { return _distance_metric; }
     const std::optional<HnswIndexParams>& hnsw_index_params() const { return _hnsw_index_params; }
 
     /**
      * Check if attribute posting list can consist of only a bitvector with
      * no corresponding btree.
      */
-    bool getEnableOnlyBitVector() const { return _enableOnlyBitVector; }
-
-    bool getIsFilter() const { return _isFilter; }
-    bool isMutable() const { return _mutable; }
+    bool getIsFilter() const noexcept { return _isFilter; }
+    bool isMutable() const noexcept { return _mutable; }
 
     /**
      * Check if this attribute should be fast accessible at all times.
      * If so, attribute is kept in memory also for non-searchable documents.
      */
-    bool fastAccess() const { return _fastAccess; }
+    bool fastAccess() const noexcept { return _fastAccess; }
 
     const GrowStrategy & getGrowStrategy() const { return _growStrategy; }
     const CompactionStrategy &getCompactionStrategy() const { return _compactionStrategy; }
@@ -83,14 +81,6 @@ public:
      * document frequency goes down, since recreated btree representation
      * will then have lost weight information.
      */
-    Config & setEnableOnlyBitVector(bool enableOnlyBitVector) {
-        _enableOnlyBitVector = enableOnlyBitVector;
-        return *this;
-    }
-
-    /**
-     * Hide weight information when searching in attributes.
-     */
     Config & setIsFilter(bool isFilter) { _isFilter = isFilter; return *this; }
     Config & setMutable(bool isMutable) { _mutable = isMutable; return *this; }
     Config & setPaged(bool paged_in) { _paged = paged_in; return *this; }
@@ -102,29 +92,28 @@ public:
     }
     Config & set_dictionary_config(const DictionaryConfig & cfg) { _dictionary = cfg; return *this; }
     Config & set_match(Match match) { _match = match; return *this; }
-    bool operator!=(const Config &b) const { return !(operator==(b)); }
-    bool operator==(const Config &b) const;
+    bool operator!=(const Config &b) const noexcept { return !(operator==(b)); }
+    bool operator==(const Config &b) const noexcept ;
 
-    uint64_t getMaxUnCommittedMemory() const { return _maxUnCommittedMemory; }
+    uint64_t getMaxUnCommittedMemory() const noexcept { return _maxUnCommittedMemory; }
     Config & setMaxUnCommittedMemory(uint64_t value) { _maxUnCommittedMemory = value; return *this; }
 
 private:
     BasicType      _basicType;
     CollectionType _type;
-    bool           _fastSearch;
-    bool           _enableOnlyBitVector;
-    bool           _isFilter;
-    bool           _fastAccess;
-    bool           _mutable;
-    bool           _paged;
-    uint64_t       _maxUnCommittedMemory;
+    bool           _fastSearch : 1;
+    bool           _isFilter : 1;
+    bool           _fastAccess : 1;
+    bool           _mutable : 1;
+    bool           _paged : 1;
+    DistanceMetric                 _distance_metric;
     Match                          _match;
     DictionaryConfig               _dictionary;
+    uint64_t                       _maxUnCommittedMemory;
     GrowStrategy                   _growStrategy;
     CompactionStrategy             _compactionStrategy;
     PredicateParams                _predicateParams;
     vespalib::eval::ValueType      _tensorType;
-    DistanceMetric                 _distance_metric;
     std::optional<HnswIndexParams> _hnsw_index_params;
 };
 

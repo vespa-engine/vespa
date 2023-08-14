@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_library(fsamanagers
+vespa_add_library(vespafsamanagers
     SOURCES
     conceptnetmanager.cpp
     fsamanager.cpp
@@ -9,10 +9,10 @@ vespa_add_library(fsamanagers
     singleton.cpp
     INSTALL lib64
     DEPENDS
-    fsa
+    vespafsa
 )
 find_package(Threads REQUIRED)
-target_link_libraries(fsamanagers PUBLIC ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(vespafsamanagers PUBLIC ${CMAKE_THREAD_LIBS_INIT})
 
 install(FILES
     conceptnethandle.h

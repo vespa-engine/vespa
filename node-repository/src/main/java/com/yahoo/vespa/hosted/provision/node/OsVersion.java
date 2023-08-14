@@ -43,6 +43,11 @@ public class OsVersion {
         return wanted.isPresent() && !current.equals(wanted);
     }
 
+    /** Returns whether this node is downgrading its version */
+    public boolean downgrading() {
+        return (wanted.isPresent() && current.isPresent()) && wanted.get().isBefore(current.get());
+    }
+
     /** Returns whether this is before the given version */
     public boolean isBefore(Version version) {
         return current.isEmpty() || current.get().isBefore(version);

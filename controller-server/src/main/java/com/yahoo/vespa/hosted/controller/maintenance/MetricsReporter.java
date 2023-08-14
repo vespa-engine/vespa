@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import ai.vespa.metrics.ConfigServerMetrics;
+import ai.vespa.metrics.ControllerMetrics;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.provision.ApplicationId;
@@ -48,22 +50,22 @@ import java.util.stream.Collectors;
  */
 public class MetricsReporter extends ControllerMaintainer {
 
-    public static final String TENANT_METRIC = "billing.tenants";
-    public static final String DEPLOYMENT_FAIL_METRIC = "deployment.failurePercentage";
-    public static final String DEPLOYMENT_AVERAGE_DURATION = "deployment.averageDuration";
-    public static final String DEPLOYMENT_FAILING_UPGRADES = "deployment.failingUpgrades";
-    public static final String DEPLOYMENT_BUILD_AGE_SECONDS = "deployment.buildAgeSeconds";
-    public static final String DEPLOYMENT_WARNINGS = "deployment.warnings";
-    public static final String DEPLOYMENT_OVERDUE_UPGRADE = "deployment.overdueUpgradeSeconds";
-    public static final String OS_CHANGE_DURATION = "deployment.osChangeDuration";
-    public static final String PLATFORM_CHANGE_DURATION = "deployment.platformChangeDuration";
-    public static final String OS_NODE_COUNT = "deployment.nodeCountByOsVersion";
-    public static final String PLATFORM_NODE_COUNT = "deployment.nodeCountByPlatformVersion";
-    public static final String BROKEN_SYSTEM_VERSION = "deployment.brokenSystemVersion";
-    public static final String REMAINING_ROTATIONS = "remaining_rotations";
-    public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
+    public static final String TENANT_METRIC = ControllerMetrics.BILLING_TENANTS.baseName();
+    public static final String DEPLOYMENT_FAIL_METRIC = ControllerMetrics.DEPLOYMENT_FAILURE_PERCENTAGE.baseName();
+    public static final String DEPLOYMENT_AVERAGE_DURATION = ControllerMetrics.DEPLOYMENT_AVERAGE_DURATION.baseName();
+    public static final String DEPLOYMENT_FAILING_UPGRADES = ControllerMetrics.DEPLOYMENT_FAILING_UPGRADES.baseName();
+    public static final String DEPLOYMENT_BUILD_AGE_SECONDS = ControllerMetrics.DEPLOYMENT_BUILD_AGE_SECONDS.baseName();
+    public static final String DEPLOYMENT_WARNINGS = ControllerMetrics.DEPLOYMENT_WARNINGS.baseName();
+    public static final String DEPLOYMENT_OVERDUE_UPGRADE = ControllerMetrics.DEPLOYMENT_OVERDUE_UPGRADE_SECONDS.baseName();
+    public static final String OS_CHANGE_DURATION = ControllerMetrics.DEPLOYMENT_OS_CHANGE_DURATION.baseName();
+    public static final String PLATFORM_CHANGE_DURATION = ControllerMetrics.DEPLOYMENT_PLATFORM_CHANGE_DURATION.baseName();
+    public static final String OS_NODE_COUNT = ControllerMetrics.DEPLOYMENT_NODE_COUNT_BY_OS_VERSION.baseName();
+    public static final String PLATFORM_NODE_COUNT = ControllerMetrics.DEPLOYMENT_NODE_COUNT_BY_PLATFORM_VERSION.baseName();
+    public static final String BROKEN_SYSTEM_VERSION = ControllerMetrics.DEPLOYMENT_BROKEN_SYSTEM_VERSION.baseName();
+    public static final String REMAINING_ROTATIONS = ControllerMetrics.REMAINING_ROTATIONS.baseName();
+    public static final String NAME_SERVICE_REQUESTS_QUEUED = ControllerMetrics.DNS_QUEUED_REQUESTS.baseName();
     public static final String OPERATION_PREFIX = "operation.";
-    public static final String ZMS_QUOTA_USAGE = "zms.quota.usage";
+    public static final String ZMS_QUOTA_USAGE = ControllerMetrics.ZMS_QUOTA_USAGE.baseName();
 
     private final Metric metric;
     private final Clock clock;
@@ -276,7 +278,7 @@ public class MetricsReporter extends ControllerMaintainer {
     }
 
     private Map<NodeVersion, Duration> osChangeDurations() {
-        return changeDurations(controller().osVersionStatus().versions().values(), Function.identity());
+        return changeDurations(controller().os().status().versions().values(), Function.identity());
     }
 
     private <V> Map<NodeVersion, Duration> changeDurations(Collection<V> versions, Function<V, List<NodeVersion>> versionsGetter) {
@@ -340,7 +342,7 @@ public class MetricsReporter extends ControllerMaintainer {
     }
 
     private static Map<String, String> dimensions(ApplicationId application) {
-        return Map.of("tenant", application.tenant().value(),
+        return Map.of("tenantName", application.tenant().value(),
                       "app", application.application().value() + "." + application.instance().value(),
                       "applicationId", application.toFullString());
     }

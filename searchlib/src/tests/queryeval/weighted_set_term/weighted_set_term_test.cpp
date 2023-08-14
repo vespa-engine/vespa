@@ -3,7 +3,6 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 
-#include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/field_spec.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
@@ -55,11 +54,11 @@ struct WS {
     WS& set_term_is_not_needed(bool value) { term_is_not_needed = value; return *this; }
 
     [[nodiscard]] Node::UP createNode() const {
-        auto *node = new SimpleWeightedSetTerm(tokens.size(), "view", 0, Weight(0));
+        auto node = std::make_unique<SimpleWeightedSetTerm>(tokens.size(), "view", 0, Weight(0));
         for (const auto & token : tokens) {
             node->addTerm(token.first,Weight(token.second));
         }
-        return Node::UP(node);
+        return node;
     }
 
     bool isGenericSearch(Searchable &searchable, const std::string &field, bool strict) const {
@@ -68,9 +67,9 @@ struct WS {
         Node::UP node = createNode();
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle));
-        queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
+        auto bp = searchable.createBlueprint(requestContext, fields, *node);
         bp->fetchPostings(ExecuteInfo::create(strict));
-        SearchIterator::UP sb = bp->createSearch(*md, strict);
+        auto sb = bp->createSearch(*md, strict);
         return (dynamic_cast<WeightedSetTermSearch*>(sb.get()) != nullptr);
     }
 
@@ -83,9 +82,9 @@ struct WS {
         Node::UP node = createNode();
         FieldSpecList fields;
         fields.add(FieldSpec(field, fieldId, handle, field_is_filter));
-        queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
+        auto bp = searchable.createBlueprint(requestContext, fields, *node);
         bp->fetchPostings(ExecuteInfo::create(strict));
-        SearchIterator::UP sb = bp->createSearch(*md, strict);
+        auto sb = bp->createSearch(*md, strict);
         sb->initFullRange();
         FakeResult result;
         for (uint32_t docId = 1; docId < 10; ++docId) {
@@ -142,7 +141,7 @@ struct MockFixture {
         mock = new MockSearch(initial);
         children.push_back(mock);
         weights.push_back(1);
-        search = WeightedSetTermSearch::create(children, tfmd, false, weights, MatchData::UP(nullptr));
+        search = WeightedSetTermSearch::create(children, tfmd, false, weights, {});
     }
 };
 
@@ -258,14 +257,14 @@ TEST_F("test Eager Matching Child", MockFixture(5)) {
 class IteratorChildrenVerifier : public search::test::IteratorChildrenVerifier {
 private:
     SearchIterator::UP create(const std::vector<SearchIterator*> &children) const override {
-        return SearchIterator::UP(WeightedSetTermSearch::create(children, _tfmd, false, _weights, MatchData::UP(nullptr)));
+        return WeightedSetTermSearch::create(children, _tfmd, false, _weights, {});
     }
 };
 
 class WeightIteratorChildrenVerifier : public search::test::DwaIteratorChildrenVerifier {
 private:
     SearchIterator::UP create(std::vector<DocumentWeightIterator> && children) const override {
-        return SearchIterator::UP(WeightedSetTermSearch::create(_tfmd, false, _weights, std::move(children)));
+        return WeightedSetTermSearch::create(_tfmd, false, _weights, std::move(children));
     }
 };
 
@@ -282,7 +281,7 @@ TEST("verify search iterator conformance with document weight iterator children"
 struct VerifyMatchData {
     struct MyBlueprint : search::queryeval::SimpleLeafBlueprint {
         VerifyMatchData &vmd;
-        MyBlueprint(VerifyMatchData &vmd_in, const FieldSpec & spec_in)
+        MyBlueprint(VerifyMatchData &vmd_in, FieldSpecBase spec_in)
             : SimpleLeafBlueprint(spec_in), vmd(vmd_in) {}
         [[nodiscard]] SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const override {
             EXPECT_EQUAL(tfmda.size(), 1u);
@@ -301,7 +300,7 @@ struct VerifyMatchData {
     };
     size_t child_cnt = 0;
     TermFieldMatchData *child_tfmd = nullptr;
-    search::queryeval::Blueprint::UP create(const FieldSpec &spec) {
+    search::queryeval::Blueprint::UP create(FieldSpecBase spec) {
         return std::make_unique<MyBlueprint>(*this, spec);
     }
 };

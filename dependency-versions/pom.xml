@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.yahoo.vespa</groupId>
+    <artifactId>dependency-versions</artifactId>
+    <packaging>pom</packaging>
+    <version>8-SNAPSHOT</version>
+    <name>dependency-versions</name>
+    <description>Version properties for (almost) all Vespa dependencies.</description>
+    <url>https://github.com/vespa-engine</url>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Vespa</name>
+            <url>https://github.com/vespa-engine</url>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
+        <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
+        <url>git@github.com:vespa-engine/vespa.git</url>
+    </scm>
+
+    <properties>
+        <!-- BEGIN Dependencies available from the Jdisc container, see container-dependency-versions/pom.xml -->
+
+        <!-- DO NOT UPGRADE THESE TO A NEW MAJOR VERSION WITHOUT CHECKING FOR BINARY COMPATIBILITY -->
+        <aopalliance.vespa.version>1.0</aopalliance.vespa.version>
+        <commons-logging.vespa.version>1.2</commons-logging.vespa.version>  <!-- This version is exported by jdisc via jcl-over-slf4j. -->
+        <error-prone-annotations.vespa.version>2.18.0</error-prone-annotations.vespa.version>
+        <guava.vespa.version>32.1.1-jre</guava.vespa.version>
+        <guice.vespa.version>4.2.3</guice.vespa.version>
+        <jackson2.vespa.version>2.15.2</jackson2.vespa.version>
+        <jackson-databind.vespa.version>2.15.2</jackson-databind.vespa.version>
+        <javax.inject.vespa.version>1</javax.inject.vespa.version>
+        <javax.servlet-api.vespa.version>3.1.0</javax.servlet-api.vespa.version>
+        <javax.ws.rs-api.vespa.version>2.0.1</javax.ws.rs-api.vespa.version>
+        <jaxb.vespa.version>2.3.0</jaxb.vespa.version>
+        <slf4j.vespa.version>1.7.32</slf4j.vespa.version>
+        <xml-apis.vespa.version>1.4.01</xml-apis.vespa.version>
+
+        <!-- END Dependencies available from the Jdisc container -->
+
+
+        <!-- Dependencies used internally in Vespa, not visible for users, or only visible in test classpath -->
+
+        <airline.vespa.version>0.9</airline.vespa.version>
+        <antlr.vespa.version>3.5.3</antlr.vespa.version>
+        <antlr4.vespa.version>4.11.1</antlr4.vespa.version>
+        <apache.httpclient.vespa.version>4.5.14</apache.httpclient.vespa.version>
+        <apache.httpcore.vespa.version>4.4.16</apache.httpcore.vespa.version>
+        <apache.httpclient5.vespa.version>5.2.1</apache.httpclient5.vespa.version>
+        <apache.httpcore5.vespa.version>5.2.2</apache.httpcore5.vespa.version>
+        <apiguardian.vespa.version>1.1.2</apiguardian.vespa.version>
+        <asm.vespa.version>9.3</asm.vespa.version>
+
+        <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
+        <athenz.vespa.version>1.11.34</athenz.vespa.version>
+        <aws-sdk.vespa.version>1.12.460</aws-sdk.vespa.version>
+        <!-- Athenz END -->
+
+        <!-- WARNING: If you change curator version, you also need to update
+                 zkfacade/src/main/java/org/apache/curator/**/package-info.java
+             using something like
+                 find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
+                     xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
+        -->
+        <bouncycastle.vespa.version>1.74</bouncycastle.vespa.version>
+        <curator.vespa.version>5.4.0</curator.vespa.version>
+        <commons-codec.vespa.version>1.15</commons-codec.vespa.version>
+        <commons-exec.vespa.version>1.3</commons-exec.vespa.version>
+        <commons-io.vespa.version>2.11.0</commons-io.vespa.version>
+        <commons.math3.vespa.version>3.6.1</commons.math3.vespa.version>
+        <commons-compress.vespa.version>1.23.0</commons-compress.vespa.version>
+        <eclipse-collections.vespa.version>11.0.0</eclipse-collections.vespa.version>
+        <felix.vespa.version>7.0.5</felix.vespa.version>
+        <felix.log.vespa.version>1.0.1</felix.log.vespa.version>
+        <findbugs.vespa.version>3.0.2</findbugs.vespa.version> <!-- Should be kept in sync with guava -->
+        <hamcrest.vespa.version>1.3</hamcrest.vespa.version>
+        <hdrhistogram.vespa.version>2.1.12</hdrhistogram.vespa.version>
+        <icu4j.vespa.version>70.1</icu4j.vespa.version>
+        <java-jjwt.vespa.version>0.11.5</java-jjwt.vespa.version>
+        <java-jwt.vespa.version>3.10.0</java-jwt.vespa.version>
+        <jaxb.runtime.vespa.version>2.3.2</jaxb.runtime.vespa.version> <!-- 2.3.3 has a BROKEN manifest -->
+        <jersey.vespa.version>2.25</jersey.vespa.version>
+        <jetty.vespa.version>11.0.15</jetty.vespa.version>
+        <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
+        <jna.vespa.version>5.11.0</jna.vespa.version>
+        <joda-time.vespa.version>2.12.2</joda-time.vespa.version>
+        <junit.vespa.version>5.8.1</junit.vespa.version>
+        <junit.platform.vespa.version>1.8.1</junit.platform.vespa.version>
+        <junit4.vespa.version>4.13.2</junit4.vespa.version>
+        <lucene.vespa.version>9.7.0</lucene.vespa.version>
+        <maven-archiver.vespa.version>3.6.0</maven-archiver.vespa.version>
+        <maven-wagon.vespa.version>2.10</maven-wagon.vespa.version>
+        <mimepull.vespa.version>1.9.6</mimepull.vespa.version>
+        <mockito.vespa.version>4.0.0</mockito.vespa.version>
+        <netty.vespa.version>4.1.94.Final</netty.vespa.version>
+        <netty-tcnative.vespa.version>2.0.61.Final</netty-tcnative.vespa.version>
+        <onnxruntime.vespa.version>1.13.1</onnxruntime.vespa.version>
+        <opennlp.vespa.version>1.9.3</opennlp.vespa.version>
+        <opentest4j.vespa.version>1.2.0</opentest4j.vespa.version>
+        <org.json.vespa.version>20230227</org.json.vespa.version>
+        <org.lz4.vespa.version>1.8.0</org.lz4.vespa.version>
+        <prometheus.client.vespa.version>0.6.0</prometheus.client.vespa.version>
+        <protobuf.vespa.version>3.21.7</protobuf.vespa.version>
+        <spifly.vespa.version>1.3.6</spifly.vespa.version>
+        <surefire.vespa.version>3.0.0-M9</surefire.vespa.version>
+        <wiremock.vespa.version>2.35.0</wiremock.vespa.version>
+        <xerces.vespa.version>2.12.2</xerces.vespa.version>
+        <zero-allocation-hashing.vespa.version>0.16</zero-allocation-hashing.vespa.version>
+        <zookeeper.client.vespa.version>3.8.0</zookeeper.client.vespa.version>
+
+
+        <!-- Maven plugins -->
+        <maven-assembly-plugin.vespa.version>3.3.0</maven-assembly-plugin.vespa.version>
+        <maven-bundle-plugin.vespa.version>5.1.9</maven-bundle-plugin.vespa.version>
+        <maven-compiler-plugin.vespa.version>3.10.1</maven-compiler-plugin.vespa.version>
+        <maven-core.vespa.version>3.8.7</maven-core.vespa.version>
+        <maven-dependency-plugin.vespa.version>3.6.0</maven-dependency-plugin.vespa.version>
+        <maven-deploy-plugin.vespa.version>2.8.2</maven-deploy-plugin.vespa.version>
+        <maven-enforcer-plugin.vespa.version>3.3.0</maven-enforcer-plugin.vespa.version>
+        <maven-failsafe-plugin.vespa.version>3.0.0-M6</maven-failsafe-plugin.vespa.version>
+        <maven-install-plugin.vespa.version>3.1.1</maven-install-plugin.vespa.version>
+        <maven-jar-plugin.vespa.version>3.2.0</maven-jar-plugin.vespa.version>
+        <maven-javadoc-plugin.vespa.version>3.3.1</maven-javadoc-plugin.vespa.version>
+        <maven-plugin-api.vespa.version>${maven-core.vespa.version}</maven-plugin-api.vespa.version>
+        <maven-plugin-tools.vespa.version>3.6.4</maven-plugin-tools.vespa.version>
+        <maven-resources-plugin.vespa.version>3.2.0</maven-resources-plugin.vespa.version>
+        <maven-shade-plugin.vespa.version>3.4.1</maven-shade-plugin.vespa.version>
+        <maven-site-plugin.vespa.version>3.9.1</maven-site-plugin.vespa.version>
+        <maven-source-plugin.vespa.version>3.2.1</maven-source-plugin.vespa.version>
+        <versions-maven-plugin.vespa.version>2.8.1</versions-maven-plugin.vespa.version>
+    </properties>
+
+    <profiles>
+        <profile>
+            <id>ossrh-deploy-vespa</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven.gpg.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>${nexus.staging.maven.plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <url>${snapshotDeploymentRepository}</url>
+                </snapshotRepository>
+                <repository>
+                    <id>ossrh</id>
+                    <url>${releaseDeploymentRepository}</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+    </profiles>
+</project>

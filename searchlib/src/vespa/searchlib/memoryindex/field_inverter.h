@@ -15,6 +15,7 @@ namespace search::index {
 }
 
 namespace document {
+    class Document;
     class FieldValue;
     class StringFieldValue;
     class ArrayFieldValue;
@@ -91,6 +92,9 @@ public:
             return _wordPos < rhs._wordPos;
         }
     };
+
+    // Max length of an indexed word. Longer words are dropped.
+    static constexpr size_t max_word_len = 1_Mi;
 
 private:
     using WordBuffer = std::vector<char, vespalib::allocator_large<char>>;
@@ -188,7 +192,7 @@ private:
     IOrderedFieldIndexInserter       &_inserter;
     index::FieldLengthCalculator     &_calculator;
 
-    void invertNormalDocTextField(const document::FieldValue &val);
+    void invertNormalDocTextField(const document::FieldValue &val, const document::Document& doc);
 
 public:
     void startElement(int32_t weight);
@@ -198,12 +202,12 @@ private:
     /**
      * Save the given word in the word buffer and return the word reference.
      */
-    VESPA_DLL_LOCAL uint32_t saveWord(const vespalib::stringref word);
+    VESPA_DLL_LOCAL uint32_t saveWord(const vespalib::stringref word, const document::Document* doc);
 
     /**
      * Save the field value as a word in the word buffer and return the word reference.
      */
-    VESPA_DLL_LOCAL uint32_t saveWord(const document::FieldValue &fv);
+    VESPA_DLL_LOCAL uint32_t saveWord(const document::FieldValue &fv, const document::Document& doc);
 
     /**
      * Get pointer to saved word from a word reference.
@@ -246,14 +250,14 @@ private:
 
 public:
     VESPA_DLL_LOCAL void
-    processAnnotations(const document::StringFieldValue &value);
+    processAnnotations(const document::StringFieldValue &value, const document::Document& doc);
 
     void push_documents_internal();
 
 private:
-    void processNormalDocTextField(const document::StringFieldValue &field);
-    void processNormalDocArrayTextField(const document::ArrayFieldValue &field);
-    void processNormalDocWeightedSetTextField(const document::WeightedSetFieldValue &field);
+    void processNormalDocTextField(const document::StringFieldValue &field, const document::Document& doc);
+    void processNormalDocArrayTextField(const document::ArrayFieldValue &field, const document::Document& doc);
+    void processNormalDocWeightedSetTextField(const document::WeightedSetFieldValue &field, const document::Document& doc);
 
     const index::Schema &getSchema() const { return _schema; }
 
@@ -306,7 +310,7 @@ public:
     /**
      * Invert a normal text field, based on annotations.
      */
-    void invertField(uint32_t docId, const std::unique_ptr<document::FieldValue> &val);
+    void invertField(uint32_t docId, const std::unique_ptr<document::FieldValue> &val, const document::Document& doc);
 
     /**
      * Setup remove of word in old version of document.
@@ -322,8 +326,8 @@ public:
 
     void endDoc();
 
-    void addWord(const vespalib::stringref word) {
-        uint32_t wordRef = saveWord(word);
+    void addWord(const vespalib::stringref word, const document::Document& doc) {
+        uint32_t wordRef = saveWord(word, &doc);
         if (wordRef != 0u) {
             add(wordRef);
             stepWordPos();

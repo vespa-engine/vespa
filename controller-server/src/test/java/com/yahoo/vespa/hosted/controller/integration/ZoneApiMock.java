@@ -36,8 +36,8 @@ public class ZoneApiMock implements ZoneApi {
         }
     }
 
-    public static ZoneApiMock fromId(String id) {
-        return from(ZoneId.from(id));
+    public static ZoneApiMock fromId(String zoneId) {
+        return from(ZoneId.from(zoneId));
     }
 
     public static ZoneApiMock from(Environment environment, RegionName region) {

@@ -43,6 +43,8 @@ using namespace std::literals;
 
 using GateSP = std::shared_ptr<Gate>;
 
+namespace fs = std::filesystem;
+
 namespace proton {
 
 namespace {
@@ -436,9 +438,9 @@ Test::requireThatCleanUpIsPerformedAfterFlush()
     std::string base = "flush/a6";
     std::string snap10 = "flush/a6/snapshot-10";
     std::string snap20 = "flush/a6/snapshot-20";
-    std::filesystem::create_directory(std::filesystem::path(base));
-    std::filesystem::create_directory(std::filesystem::path(snap10));
-    std::filesystem::create_directory(std::filesystem::path(snap20));
+    fs::create_directory(fs::path(base));
+    fs::create_directory(fs::path(snap10));
+    fs::create_directory(fs::path(snap20));
     IndexMetaInfo info("flush/a6");
     info.addSnapshot(IndexMetaInfo::Snapshot(true, 10, "snapshot-10"));
     info.addSnapshot(IndexMetaInfo::Snapshot(false, 20, "snapshot-20"));
@@ -454,9 +456,8 @@ Test::requireThatCleanUpIsPerformedAfterFlush()
     EXPECT_EQUAL(1u, info.snapshots().size()); // snapshots 10 & 20 removed
     EXPECT_TRUE(info.snapshots()[0].valid);
     EXPECT_EQUAL(30u, info.snapshots()[0].syncToken);
-    FastOS_StatInfo statInfo;
-    EXPECT_TRUE(!FastOS_File::Stat(snap10.c_str(), &statInfo));
-    EXPECT_TRUE(!FastOS_File::Stat(snap20.c_str(), &statInfo));
+    EXPECT_FALSE(fs::exists(fs::path(snap10)));
+    EXPECT_FALSE(fs::exists(fs::path(snap20)));
 }
 
 
@@ -662,7 +663,7 @@ Test::Main()
     if (_argc > 0) {
         DummyFileHeaderContext::setCreator(_argv[0]);
     }
-    std::filesystem::remove_all(std::filesystem::path(test_dir));
+    fs::remove_all(fs::path(test_dir));
     TEST_DO(requireThatUpdaterAndFlusherCanRunConcurrently());
     TEST_DO(requireThatFlushableAttributeReportsMemoryUsage());
     TEST_DO(requireThatFlushableAttributeManagesSyncTokenInfo());

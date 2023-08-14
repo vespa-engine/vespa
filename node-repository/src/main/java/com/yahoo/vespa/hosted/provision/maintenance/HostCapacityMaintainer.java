@@ -224,6 +224,7 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                                                                     nodeRepository().zone().cloud().account(), false);
             List<Node> hosts = new ArrayList<>();
             hostProvisioner.provisionHosts(request,
+                                           resources -> true,
                                            provisionedHosts -> {
                                                hosts.addAll(provisionedHosts.stream().map(host -> host.generateHost(Duration.ZERO)).toList());
                                                nodeRepository().nodes().addNodes(hosts, Agent.HostCapacityMaintainer);

@@ -9,7 +9,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
 import java.util.List;
 import java.util.Optional;
@@ -161,7 +160,7 @@ public class AllocatableClusterResources {
                                                              Limits applicationLimits,
                                                              List<NodeResources> availableRealHostResources,
                                                              NodeRepository nodeRepository) {
-        var systemLimits = new NodeResourceLimits(nodeRepository);
+        var systemLimits = nodeRepository.nodeResourceLimits();
         boolean exclusive = nodeRepository.exclusiveAllocation(clusterSpec);
         if (! exclusive) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
@@ -245,7 +244,7 @@ public class AllocatableClusterResources {
                                                                              Limits applicationLimits,
                                                                              boolean exclusive,
                                                                              boolean bestCase) {
-        var systemLimits = new NodeResourceLimits(nodeRepository);
+        var systemLimits = nodeRepository.nodeResourceLimits();
         var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive, bestCase);
         advertisedResources = systemLimits.enlargeToLegal(advertisedResources, applicationId, clusterSpec, exclusive, true); // Ask for something legal
         advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail

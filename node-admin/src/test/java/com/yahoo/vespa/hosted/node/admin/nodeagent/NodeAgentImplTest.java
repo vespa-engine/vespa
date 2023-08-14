@@ -487,20 +487,6 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    void provisionedNodeIsMarkedAsReady() {
-        final NodeSpec node = nodeBuilder(NodeState.provisioned)
-                .wantedDockerImage(dockerImage)
-                .build();
-
-        NodeAgentContext context = createContext(node);
-        NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
-        when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
-
-        nodeAgent.doConverge(context);
-        verify(nodeRepository, times(1)).setNodeState(eq(hostName), eq(NodeState.ready));
-    }
-
-    @Test
     void testRestartDeadContainerAfterNodeAdminRestart() {
         final NodeSpec node = nodeBuilder(NodeState.active)
                 .currentDockerImage(dockerImage).wantedDockerImage(dockerImage)

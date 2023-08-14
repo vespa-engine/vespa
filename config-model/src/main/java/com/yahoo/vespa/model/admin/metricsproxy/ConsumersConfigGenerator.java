@@ -2,17 +2,16 @@
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
+import ai.vespa.metrics.set.Metric;
+import ai.vespa.metrics.set.MetricSet;
 import ai.vespa.metricsproxy.core.ConsumersConfig.Consumer;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.model.admin.monitoring.Metric;
-import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Helper class to generate config for metrics consumers.

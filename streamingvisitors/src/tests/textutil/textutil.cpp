@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
 
-#include <vespa/fastlib/text/unicodeutil.h>
+#include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vsm/searcher/fold.h>
 #include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>

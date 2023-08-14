@@ -178,11 +178,12 @@ private:
             document::Bucket::hash
         >;
 
-    Messages              _messages;
-    framework::Component  _component;
-    NodeInfo              _nodeInfo;
-    vespalib::duration    _nodeBusyDuration;
-    DeferredBucketTaskMap _deferred_read_tasks;
+    Messages                   _messages;
+    framework::Component       _component;
+    NodeInfo                   _nodeInfo;
+    vespalib::duration         _nodeBusyDuration;
+    DeferredBucketTaskMap      _deferred_read_tasks;
+    mutable std::atomic<bool>  _trackTime;
 
     // Since distributor is currently single-threaded, this will only
     // contend when status page is being accessed. It is, however, required

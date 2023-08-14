@@ -65,9 +65,7 @@ PersistenceMessageTrackerImpl::fail(MessageSender& sender, const api::ReturnCode
 }
 
 uint16_t
-PersistenceMessageTrackerImpl::receiveReply(
-        MessageSender& sender,
-        api::BucketInfoReply& reply)
+PersistenceMessageTrackerImpl::receiveReply(MessageSender& sender, api::BucketInfoReply& reply)
 {
     uint16_t node = handleReply(reply);
 
@@ -79,9 +77,7 @@ PersistenceMessageTrackerImpl::receiveReply(
 }
 
 void
-PersistenceMessageTrackerImpl::revert(
-        MessageSender& sender,
-        const std::vector<BucketNodePair>& revertNodes)
+PersistenceMessageTrackerImpl::revert(MessageSender& sender, const std::vector<BucketNodePair>& revertNodes)
 {
     if (_revertTimestamp != 0) {
         // Since we're reverting, all received bucket info is voided.
@@ -101,15 +97,18 @@ PersistenceMessageTrackerImpl::revert(
 }
 
 void
-PersistenceMessageTrackerImpl::queueMessageBatch(const std::vector<MessageTracker::ToSend>& messages) {
+PersistenceMessageTrackerImpl::queueMessageBatch(std::vector<MessageTracker::ToSend> messages) {
     _messageBatches.emplace_back();
-    for (const auto & message : messages) {
+    auto & batch = _messageBatches.back();
+    batch.reserve(messages.size());
+    reserve_more_commands(messages.size());
+    for (auto & message : messages) {
         if (_reply) {
             message._msg->getTrace().setLevel(_reply->getTrace().getLevel());
         }
 
-        _messageBatches.back().push_back(message._msg->getMsgId());
-        queueCommand(message._msg, message._target);
+        batch.push_back(message._msg->getMsgId());
+        queueCommand(std::move(message._msg), message._target);
     }
 }
 
@@ -153,24 +152,18 @@ PersistenceMessageTrackerImpl::canSendReplyEarly() const
 }
 
 void
-PersistenceMessageTrackerImpl::addBucketInfoFromReply(
-        uint16_t node,
-        const api::BucketInfoReply& reply)
+PersistenceMessageTrackerImpl::addBucketInfoFromReply(uint16_t node, const api::BucketInfoReply& reply)
 {
     document::Bucket bucket(reply.getBucket());
     const api::BucketInfo& bucketInfo(reply.getBucketInfo());
 
     if (reply.hasBeenRemapped()) {
         LOG(debug, "Bucket %s: Received remapped bucket info %s from node %d",
-            bucket.toString().c_str(),
-            bucketInfo.toString().c_str(),
-            node);
+            bucket.toString().c_str(), bucketInfo.toString().c_str(), node);
         _remapBucketInfo[bucket].emplace_back(_op_ctx.generate_unique_timestamp(), node, bucketInfo);
     } else {
         LOG(debug, "Bucket %s: Received bucket info %s from node %d",
-            bucket.toString().c_str(),
-            bucketInfo.toString().c_str(),
-            node);
+            bucket.toString().c_str(), bucketInfo.toString().c_str(), node);
         _bucketInfo[bucket].emplace_back(_op_ctx.generate_unique_timestamp(), node, bucketInfo);
     }
 }
@@ -179,17 +172,12 @@ void
 PersistenceMessageTrackerImpl::logSuccessfulReply(uint16_t node, const api::BucketInfoReply& reply) const
 {
     LOG(spam, "Bucket %s: Received successful reply %s",
-        reply.getBucketId().toString().c_str(),
-        reply.toString().c_str());
+        reply.getBucketId().toString().c_str(), reply.toString().c_str());
     
     if (!reply.getBucketInfo().valid()) {
-        LOG(error,
-            "Reply %s from node %d contained invalid bucket "
-            "information %s. This is a bug! Please report "
-            "this to the Vespa team",
-            reply.toString().c_str(),
-            node,
-            reply.getBucketInfo().toString().c_str());
+        LOG(error, "Reply %s from node %d contained invalid bucket information %s. This is a bug! "
+                   "Please report this to the Vespa team",
+            reply.toString().c_str(), node, reply.getBucketInfo().toString().c_str());
     }
 }
 
@@ -233,12 +221,8 @@ void
 PersistenceMessageTrackerImpl::updateFailureResult(const api::BucketInfoReply& reply)
 {
     LOG(debug, "Bucket %s: Received failed reply %s with result %s",
-        reply.getBucketId().toString().c_str(),
-        reply.toString().c_str(),
-        reply.getResult().toString().c_str());
-    if (reply.getResult().getResult() >
-        _reply->getResult().getResult())
-    {
+        reply.getBucketId().toString().c_str(), reply.toString().c_str(), reply.getResult().toString().c_str());
+    if (reply.getResult().getResult() > _reply->getResult().getResult()) {
         _reply->setResult(reply.getResult());
     }
     
@@ -246,12 +230,9 @@ PersistenceMessageTrackerImpl::updateFailureResult(const api::BucketInfoReply& r
 }
 
 void
-PersistenceMessageTrackerImpl::handleCreateBucketReply(
-        api::BucketInfoReply& reply,
-        uint16_t node)
+PersistenceMessageTrackerImpl::handleCreateBucketReply(api::BucketInfoReply& reply, uint16_t node)
 {
-    LOG(spam, "Received CreateBucket reply for %s from node %u",
-        reply.getBucketId().toString().c_str(), node);
+    LOG(spam, "Received CreateBucket reply for %s from node %u", reply.getBucketId().toString().c_str(), node);
     if (!reply.getResult().success()
         && reply.getResult().getResult() != api::ReturnCode::EXISTS)
     {
@@ -268,9 +249,7 @@ PersistenceMessageTrackerImpl::handleCreateBucketReply(
 }
 
 void
-PersistenceMessageTrackerImpl::handlePersistenceReply(
-        api::BucketInfoReply& reply,
-        uint16_t node)
+PersistenceMessageTrackerImpl::handlePersistenceReply(api::BucketInfoReply& reply, uint16_t node)
 {
     ++_n_persistence_replies_total;
     if (reply.getBucketInfo().valid()) {
@@ -295,10 +274,7 @@ PersistenceMessageTrackerImpl::transfer_trace_state_to_reply()
 }
 
 void
-PersistenceMessageTrackerImpl::updateFromReply(
-        MessageSender& sender,
-        api::BucketInfoReply& reply,
-        uint16_t node)
+PersistenceMessageTrackerImpl::updateFromReply(MessageSender& sender, api::BucketInfoReply& reply, uint16_t node)
 {
     _trace.addChild(reply.steal_trace());
 

@@ -2,11 +2,15 @@
 
 #include "mmap_file_allocator.h"
 #include "round_up_to_page_size.h"
+#include "exceptions.h"
+#include "stringfmt.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <cassert>
 #include <filesystem>
+
+using vespalib::make_string_short::fmt;
 
 namespace vespalib::alloc {
 
@@ -46,16 +50,16 @@ PtrAndSize
 MmapFileAllocator::alloc(size_t sz) const
 {
     if (sz == 0) {
-        return PtrAndSize(nullptr, 0); // empty allocation
+        return PtrAndSize(); // empty allocation
     }
     sz = round_up_to_page_size(sz);
     uint64_t offset = alloc_area(sz);
-    void *buf = mmap(nullptr, sz,
-                     PROT_READ | PROT_WRITE,
-                     MAP_SHARED,
-                     _file.getFileDescriptor(),
-                     offset);
-    assert(buf != MAP_FAILED);
+    void *buf = mmap(nullptr, sz, PROT_READ | PROT_WRITE, MAP_SHARED, _file.getFileDescriptor(), offset);
+    if (buf == MAP_FAILED) {
+        throw IoException(fmt("Failed mmap(nullptr, %zu, PROT_READ | PROT_WRITE, MAP_SHARED, %s(fd=%d), %lu). Reason given by OS = '%s'",
+                              sz, _file.getFilename().c_str(), _file.getFileDescriptor(), offset, getLastErrorString().c_str()),
+                          IoException::getErrorType(errno), VESPA_STRLOC);
+    }
     assert(buf != nullptr);
     // Register allocation
     auto ins_res = _allocations.insert(std::make_pair(buf, SizeAndOffset(sz, offset)));

@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 /**
@@ -68,13 +69,14 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public void provisionHosts(HostProvisionRequest request, Consumer<List<ProvisionedHost>> whenProvisioned) {
+    public void provisionHosts(HostProvisionRequest request, Predicate<NodeResources> realHostResourcesWithinLimits, Consumer<List<ProvisionedHost>> whenProvisioned) throws NodeAllocationException {
         if (behaviour(Behaviour.failProvisionRequest)) throw new NodeAllocationException("No capacity for provision request", true);
         Flavor hostFlavor = hostFlavors.get(request.clusterType().orElse(ClusterSpec.Type.content));
         if (hostFlavor == null)
             hostFlavor = flavors.stream()
                                 .filter(f -> request.sharing() == HostSharing.exclusive ? compatible(f, request.resources())
                                                                               : f.resources().satisfies(request.resources()))
+                                .filter(f -> realHostResourcesWithinLimits.test(f.resources()))
                                 .findFirst()
                                 .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + request.resources(), true));
 
@@ -130,7 +132,7 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public boolean canUpgradeFlavor(Node host, Node child) {
+    public boolean canUpgradeFlavor(Node host, Node child, Predicate<NodeResources> realHostResourcesWithinLimits) {
         return upgradableFlavors.contains(host.flavor().name());
     }
 
@@ -248,7 +250,7 @@ public class MockHostProvisioner implements HostProvisioner {
         /** Fail call to {@link MockHostProvisioner#provision(com.yahoo.vespa.hosted.provision.Node)} */
         failProvisioning,
 
-        /** Fail call to {@link MockHostProvisioner#provisionHosts(HostProvisionRequest, Consumer)} */
+        /** Fail call to {@link MockHostProvisioner#provisionHosts(HostProvisionRequest, Predicate, Consumer)} */
         failProvisionRequest,
 
         /** Fail call to {@link MockHostProvisioner#deprovision(com.yahoo.vespa.hosted.provision.Node)} */

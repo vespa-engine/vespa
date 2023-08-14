@@ -63,7 +63,7 @@
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
-            <version>${maven-shade-plugin.version}</version>
+            <version>${maven-shade-plugin.vespa.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

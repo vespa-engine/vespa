@@ -15,13 +15,13 @@ public class DispatchTuningTest {
     void requireThatAccessorWork() {
         DispatchTuning dispatch = new DispatchTuning.Builder()
                 .setMaxHitsPerPartition(69)
-                .setDispatchPolicy("round-robin")
+                .setDispatchPolicy("best-of-random-2")
                 .setMinActiveDocsCoverage(12.5)
                 .setTopKProbability(18.3)
                 .build();
         assertEquals(69, dispatch.getMaxHitsPerPartition().intValue());
         assertEquals(12.5, dispatch.getMinActiveDocsCoverage(), 0.0);
-        assertEquals(DispatchTuning.DispatchPolicy.ROUNDROBIN, dispatch.getDispatchPolicy());
+        assertEquals(DispatchTuning.DispatchPolicy.BEST_OF_RANDOM_2, dispatch.getDispatchPolicy());
         assertEquals(18.3, dispatch.getTopkProbability(), 0.0);
     }
 

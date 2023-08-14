@@ -4,8 +4,7 @@
 #include <vespa/storage/common/cluster_context.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vector>
-#include <map>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 namespace storage::api {
     class BucketCommand;
@@ -18,22 +17,26 @@ class MessageTracker {
 public:
     class ToSend {
     public:
-        ToSend(std::shared_ptr<api::BucketCommand> msg, uint16_t target) noexcept :
-            _msg(std::move(msg)), _target(target) {};
+        ToSend(std::shared_ptr<api::BucketCommand> msg, uint16_t target) noexcept
+            : _msg(std::move(msg)), _target(target)
+        {}
 
         std::shared_ptr<api::BucketCommand> _msg;
         uint16_t _target;
     };
 
     MessageTracker(const ClusterContext& cluster_context);
-    MessageTracker(MessageTracker&&) = default;
-    MessageTracker& operator=(MessageTracker&&) = delete;
+    MessageTracker(MessageTracker&&) noexcept = default;
+    MessageTracker& operator=(MessageTracker&&) noexcept = delete;
     MessageTracker(const MessageTracker &) = delete;
     MessageTracker& operator=(const MessageTracker&) = delete;
     ~MessageTracker();
 
     void queueCommand(std::shared_ptr<api::BucketCommand> msg, uint16_t target) {
         _commandQueue.emplace_back(std::move(msg), target);
+    }
+    void reserve_more_commands(size_t sz) {
+        _commandQueue.reserve(_commandQueue.size() + sz);
     }
 
     void flushQueue(MessageSender& sender);
@@ -46,13 +49,15 @@ public:
     /**
        Returns true if all messages sent have been received.
     */
-    bool finished();
+    bool finished() const noexcept {
+        return _sentMessages.empty();
+    }
 
 protected:
-    std::vector<ToSend>          _commandQueue;
+    std::vector<ToSend>                    _commandQueue;
     // Keeps track of which node a message was sent to.
-    std::map<uint64_t, uint16_t> _sentMessages;
-    const ClusterContext&        _cluster_ctx;
+    vespalib::hash_map<uint64_t, uint16_t> _sentMessages;
+    const ClusterContext&                  _cluster_ctx;
 };
 
 }

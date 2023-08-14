@@ -14,7 +14,7 @@ public class SideChannelSafeTest {
 
     @Test
     void all_zeros_checks_length_and_array_contents() {
-        assertFalse(SideChannelSafe.allZeros(new byte[0]));
+        assertTrue(SideChannelSafe.allZeros(new byte[0]));
         assertFalse(SideChannelSafe.allZeros(new byte[]{ 1 }));
         assertTrue(SideChannelSafe.allZeros(new byte[]{ 0 }));
         assertFalse(SideChannelSafe.allZeros(new byte[]{ 0, 0, 127, 0 }));

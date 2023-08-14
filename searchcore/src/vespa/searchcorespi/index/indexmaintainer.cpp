@@ -21,7 +21,6 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/fastos/file.h>
 #include <filesystem>
 #include <sstream>
 
@@ -45,6 +44,7 @@ using vespalib::string;
 using vespalib::Executor;
 using vespalib::Runnable;
 using vespalib::IDestructorCallback;
+namespace fs = std::filesystem;
 
 namespace searchcorespi::index {
 
@@ -1081,11 +1081,10 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
         _activeFusionPrunedSchema.reset();
         args._schema = _schema;
     }
-    FastOS_StatInfo statInfo;
     string lastFlushDir(getFlushDir(fusion_spec.flush_ids.back()));
     string lastSerialFile = IndexDiskLayout::getSerialNumFileName(lastFlushDir);
     SerialNum serialNum = 0;
-    if (FastOS_File::Stat(lastSerialFile.c_str(), &statInfo)) {
+    if (fs::exists(fs::path(lastSerialFile))) {
         serialNum = IndexReadUtilities::readSerialNum(lastFlushDir);
     }
     IndexDiskDir fusion_index_disk_dir(fusion_spec.flush_ids.back(), true);
@@ -1104,7 +1103,7 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
         } else {
             LOG(error, "Fusion failed, fusion dir \"%s\".", fail_dir.c_str());
         }
-        std::filesystem::remove_all(std::filesystem::path(fail_dir));
+        fs::remove_all(fs::path(fail_dir));
         {
             LockGuard slock(_state_lock);
             LockGuard ilock(_index_update_lock);

@@ -17,6 +17,7 @@ PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr, u
       _nodeInfo(_component.getClock()),
       _nodeBusyDuration(60s),
       _deferred_read_tasks(),
+      _trackTime(false),
       _lock()
 {
     _component.registerStatusPage(*this);
@@ -69,6 +70,13 @@ pairAsRange(Pair pair)
     return PairAsRange<Pair>(std::move(pair));
 }
 
+document::Bucket
+getBucket(const api::StorageMessage & msg) {
+    return (msg.getType() != api::MessageType::REQUESTBUCKETINFO)
+           ? msg.getBucket()
+           : document::Bucket(msg.getBucket().getBucketSpace(), dynamic_cast<const api::RequestBucketInfoCommand&>(msg).super_bucket_id());
+}
+
 }
 
 std::vector<uint64_t>
@@ -91,17 +99,19 @@ PendingMessageTracker::clearMessagesForNode(uint16_t node)
 void
 PendingMessageTracker::insert(const std::shared_ptr<api::StorageMessage>& msg)
 {
-    std::lock_guard guard(_lock);
     if (msg->getAddress()) {
         // TODO STRIPE reevaluate if getBucket() on RequestBucketInfo msgs should transparently return superbucket..!
-        document::Bucket bucket = (msg->getType() != api::MessageType::REQUESTBUCKETINFO)
-                ? msg->getBucket()
-                : document::Bucket(msg->getBucket().getBucketSpace(),
-                                   dynamic_cast<api::RequestBucketInfoCommand&>(*msg).super_bucket_id());
-        _messages.emplace(currentTime(), msg->getType().getId(), msg->getPriority(), msg->getMsgId(),
-                          bucket, msg->getAddress()->getIndex());
+        document::Bucket bucket = getBucket(*msg);
+        {
+            // We will not start tracking time until we have been asked for html at least once.
+            // Time tracking is only used for presenting pending messages for debugging.
+            TimePoint now = (_trackTime.load(std::memory_order_relaxed)) ? currentTime() : TimePoint();
+            std::lock_guard guard(_lock);
+            _messages.emplace(now, msg->getType().getId(), msg->getPriority(), msg->getMsgId(),
+                              bucket, msg->getAddress()->getIndex());
 
-        _nodeInfo.incPending(msg->getAddress()->getIndex());
+            _nodeInfo.incPending(msg->getAddress()->getIndex());
+        }
 
         LOG(debug, "Sending message %s with id %" PRIu64 " to %s",
             msg->toString().c_str(), msg->getMsgId(), msg->getAddress()->toString().c_str());
@@ -111,15 +121,13 @@ PendingMessageTracker::insert(const std::shared_ptr<api::StorageMessage>& msg)
 document::Bucket
 PendingMessageTracker::reply(const api::StorageReply& r)
 {
-    std::unique_lock guard(_lock);
     document::Bucket bucket;
-
     LOG(debug, "Got reply: %s", r.toString().c_str());
     uint64_t msgId = r.getMsgId();
 
+    std::unique_lock guard(_lock);
     MessagesByMsgId& msgs = boost::multi_index::get<0>(_messages);
     MessagesByMsgId::iterator iter = msgs.find(msgId);
-
     if (iter != msgs.end()) {
         bucket = iter->bucket;
         _nodeInfo.decPending(r.getAddress()->getIndex());
@@ -127,7 +135,6 @@ PendingMessageTracker::reply(const api::StorageReply& r)
         if (code == api::ReturnCode::BUSY || code == api::ReturnCode::TIMEOUT) {
             _nodeInfo.setBusy(r.getAddress()->getIndex(), _nodeBusyDuration);
         }
-        LOG(debug, "Erased message with id %" PRIu64 " for bucket %s", msgId, bucket.toString().c_str());
         msgs.erase(msgId);
         auto deferred_tasks = get_deferred_ops_if_bucket_writes_drained(bucket);
         // Deferred tasks may try to send messages, which in turn will invoke the PendingMessageTracker.
@@ -139,6 +146,7 @@ PendingMessageTracker::reply(const api::StorageReply& r)
         for (auto& task : deferred_tasks) {
             task->run(TaskRunState::OK);
         }
+        LOG(debug, "Erased message with id %" PRIu64 " for bucket %s", msgId, bucket.toString().c_str());
     }
 
     return bucket;
@@ -328,6 +336,7 @@ PendingMessageTracker::getStatusPerNode(std::ostream& out) const
 void
 PendingMessageTracker::reportHtmlStatus(std::ostream& out, const framework::HttpUrlPath& path) const
 {
+    _trackTime.store(true, std::memory_order_relaxed);
     if (!path.hasAttribute("order")) {
         getStatusStartPage(out);
     } else if (path.getAttribute("order") == "bucket") {

@@ -35,7 +35,7 @@ SplitOperation::onStart(DistributorStripeMessageSender& sender)
         msg->setMinByteSize(_splitSize);
         msg->setTimeout(MAX_TIMEOUT);
         setCommandMeta(*msg);
-        _tracker.queueCommand(msg, entry->getNodeRef(i).getNode());
+        _tracker.queueCommand(std::move(msg), entry->getNodeRef(i).getNode());
         _ok = true;
     }
 

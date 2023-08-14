@@ -65,12 +65,9 @@ public:
         close();
     }
 
-    std::shared_ptr<RequestBucketInfoReply> make_fake_bucket_reply(
-            const lib::ClusterState& state,
-            const RequestBucketInfoCommand& cmd,
-            int storageIndex,
-            uint32_t bucketCount,
-            uint32_t invalidBucketCount = 0)
+    std::shared_ptr<RequestBucketInfoReply>
+    make_fake_bucket_reply(const lib::ClusterState& state, const RequestBucketInfoCommand& cmd,
+                           int storageIndex, uint32_t bucketCount,uint32_t invalidBucketCount = 0)
     {
         auto sreply = std::make_shared<RequestBucketInfoReply>(cmd);
         sreply->setAddress(storage_address(storageIndex));
@@ -84,19 +81,14 @@ public:
             }
 
             std::vector<uint16_t> nodes;
-            distributor_bucket_space(bucket).getDistribution().getIdealNodes(
-                    lib::NodeType::STORAGE, state, bucket, nodes);
+            distributor_bucket_space(bucket).getDistribution().getIdealNodes(lib::NodeType::STORAGE, state, bucket, nodes, "uim");
 
             for (uint32_t j = 0; j < nodes.size(); ++j) {
                 if (nodes[j] == storageIndex) {
                     if (i >= bucketCount) {
-                        vec.push_back(api::RequestBucketInfoReply::Entry(
-                                document::BucketId(16, i),
-                                api::BucketInfo()));
+                        vec.emplace_back(document::BucketId(16, i), api::BucketInfo());
                     } else {
-                        vec.push_back(api::RequestBucketInfoReply::Entry(
-                                document::BucketId(16, i),
-                                api::BucketInfo(10,1,1)));
+                        vec.emplace_back(document::BucketId(16, i), api::BucketInfo(10,1,1));
                     }
                 }
             }
@@ -105,45 +97,34 @@ public:
         return sreply;
     }
 
-    void fake_bucket_reply(const lib::ClusterState &state,
-                           const api::StorageCommand &cmd,
-                           uint32_t bucket_count,
-                           uint32_t invalid_bucket_count = 0)
+    void fake_bucket_reply(const lib::ClusterState &state, const api::StorageCommand &cmd,
+                           uint32_t bucket_count, uint32_t invalid_bucket_count = 0)
     {
         ASSERT_EQ(cmd.getType(), MessageType::REQUESTBUCKETINFO);
         const api::StorageMessageAddress& address(*cmd.getAddress());
         bucket_db_updater().onRequestBucketInfoReply(
-                make_fake_bucket_reply(state,
-                                       dynamic_cast<const RequestBucketInfoCommand &>(cmd),
-                                       address.getIndex(),
-                                       bucket_count,
-                                       invalid_bucket_count));
+                make_fake_bucket_reply(state, dynamic_cast<const RequestBucketInfoCommand &>(cmd),
+                                       address.getIndex(), bucket_count, invalid_bucket_count));
     }
 
-    void fake_bucket_reply(const lib::ClusterState &state,
-                           const api::StorageCommand &cmd,
-                           uint32_t bucket_count,
+    void fake_bucket_reply(const lib::ClusterState &state, const api::StorageCommand &cmd, uint32_t bucket_count,
                            const std::function<void(api::RequestBucketInfoReply&)>& reply_decorator)
     {
         ASSERT_EQ(cmd.getType(), MessageType::REQUESTBUCKETINFO);
         const api::StorageMessageAddress& address(*cmd.getAddress());
-        auto reply = make_fake_bucket_reply(state,
-                                            dynamic_cast<const RequestBucketInfoCommand &>(cmd),
-                                            address.getIndex(),
-                                            bucket_count, 0);
+        auto reply = make_fake_bucket_reply(state, dynamic_cast<const RequestBucketInfoCommand &>(cmd),
+                                            address.getIndex(), bucket_count, 0);
         reply_decorator(*reply);
         bucket_db_updater().onRequestBucketInfoReply(reply);
     }
 
-    void send_fake_reply_for_single_bucket_request(
-            const api::RequestBucketInfoCommand& rbi)
+    void send_fake_reply_for_single_bucket_request(const api::RequestBucketInfoCommand& rbi)
     {
         ASSERT_EQ(size_t(1), rbi.getBuckets().size());
         const document::BucketId& bucket(rbi.getBuckets()[0]);
 
         auto reply = std::make_shared<api::RequestBucketInfoReply>(rbi);
-        reply->getBucketInfo().push_back(
-                api::RequestBucketInfoReply::Entry(bucket, api::BucketInfo(20, 10, 12, 50, 60, true, true)));
+        reply->getBucketInfo().emplace_back(bucket, api::BucketInfo(20, 10, 12, 50, 60, true, true));
         stripe_of_bucket(bucket).bucket_db_updater().onRequestBucketInfoReply(reply);
     }
 
@@ -154,15 +135,11 @@ public:
         }
 
         std::vector<uint16_t> nodes;
-        distributor_bucket_space(id).getDistribution().getIdealNodes(
-                lib::NodeType::STORAGE, state, document::BucketId(id), nodes);
+        distributor_bucket_space(id).getDistribution().getIdealNodes(lib::NodeType::STORAGE, state, document::BucketId(id), nodes, "uim");
 
         if (nodes.size() != entry->getNodeCount()) {
-            return vespalib::make_string("Bucket Id %s has %d nodes in "
-                                         "ideal state, but has only %d in DB",
-                                         id.toString().c_str(),
-                                         (int)nodes.size(),
-                                         (int)entry->getNodeCount());
+            return vespalib::make_string("Bucket Id %s has %d nodes in ideal state, but has only %d in DB",
+                                         id.toString().c_str(), (int)nodes.size(), (int)entry->getNodeCount());
         }
 
         for (uint32_t i = 0; i<nodes.size(); i++) {
@@ -175,10 +152,7 @@ public:
             }
 
             if (!found) {
-                return vespalib::make_string(
-                        "Bucket Id %s has no copy from node %d",
-                        id.toString().c_str(),
-                        nodes[i]);
+                return vespalib::make_string("Bucket Id %s has no copy from node %d", id.toString().c_str(), nodes[i]);
             }
         }
 
@@ -188,13 +162,11 @@ public:
     struct OrderByIncreasingNodeIndex {
         template <typename T>
         bool operator()(const T& lhs, const T& rhs) {
-            return (lhs->getAddress()->getIndex()
-                    < rhs->getAddress()->getIndex());
+            return (lhs->getAddress()->getIndex() < rhs->getAddress()->getIndex());
         }
     };
 
-    void sort_sent_messages_by_index(DistributorMessageSenderStub& sender,
-                                     size_t sortFromOffset = 0)
+    void sort_sent_messages_by_index(DistributorMessageSenderStub& sender, size_t sortFromOffset = 0)
     {
         std::sort(sender.commands().begin() + sortFromOffset,
                   sender.commands().end(),

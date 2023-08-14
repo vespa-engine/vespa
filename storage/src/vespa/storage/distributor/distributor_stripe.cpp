@@ -120,8 +120,7 @@ DistributorStripe::sendReply(const std::shared_ptr<api::StorageReply>& reply)
 }
 
 void DistributorStripe::send_shutdown_abort_reply(const std::shared_ptr<api::StorageMessage>& msg) {
-    api::StorageReply::UP reply(
-            std::dynamic_pointer_cast<api::StorageCommand>(msg)->makeReply());
+    auto reply = std::dynamic_pointer_cast<api::StorageCommand>(msg)->makeReply();
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Distributor is shutting down"));
     send_up_with_tracking(std::shared_ptr<api::StorageMessage>(reply.release()));
 }
@@ -179,8 +178,7 @@ DistributorStripe::handle_or_enqueue_message(const std::shared_ptr<api::StorageM
 }
 
 void
-DistributorStripe::handleCompletedMerge(
-        const std::shared_ptr<api::MergeBucketReply>& reply)
+DistributorStripe::handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>& reply)
 {
     _maintenanceOperationOwner.handleReply(reply);
 }
@@ -236,9 +234,7 @@ DistributorStripe::handleReply(const std::shared_ptr<api::StorageReply>& reply)
 }
 
 bool
-DistributorStripe::generateOperation(
-        const std::shared_ptr<api::StorageMessage>& msg,
-        Operation::SP& operation)
+DistributorStripe::generateOperation(const std::shared_ptr<api::StorageMessage>& msg, Operation::SP& operation)
 {
     return _externalOperationHandler.handleMessage(msg, operation);
 }
@@ -277,7 +273,6 @@ DistributorStripe::getClusterStateBundle() const
 void
 DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state)
 {
-    lib::Node my_node(lib::NodeType::DISTRIBUTOR, getDistributorIndex());
     lib::ClusterStateBundle oldState = _clusterStateBundle;
     _clusterStateBundle = state;
     propagateClusterStates();
@@ -319,7 +314,7 @@ DistributorStripe::enterRecoveryMode()
 {
     LOG(debug, "Entering recovery mode");
     _schedulingMode = MaintenanceScheduler::RECOVERY_SCHEDULING_MODE;
-    _scanner->reset();
+    _scanner->reset(); // Just drop accumulated stat on the floor.
     // We enter recovery mode due to cluster state or distribution config changes.
     // Until we have completed a new DB scan round, we don't know the state of our
     // newly owned buckets and must not report stats for these out to the cluster
@@ -415,7 +410,6 @@ public:
 
     bool check(uint32_t msgType, uint16_t node, uint8_t pri) override {
         (void) node;
-        (void) pri;
         if (msgType == api::MessageType::SPLITBUCKET_ID && pri <= maxPri) {
             found = true;
             return false;
@@ -428,9 +422,7 @@ public:
 }
 
 void
-DistributorStripe::checkBucketForSplit(document::BucketSpace bucketSpace,
-                                 const BucketDatabase::Entry& e,
-                                 uint8_t priority)
+DistributorStripe::checkBucketForSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e, uint8_t priority)
 {
     if (!getConfig().doInlineSplit()) {
        return;
@@ -440,16 +432,13 @@ DistributorStripe::checkBucketForSplit(document::BucketSpace bucketSpace,
     // appropriate priority.
     SplitChecker checker(priority);
     for (uint32_t i = 0; i < e->getNodeCount(); ++i) {
-        _pendingMessageTracker.checkPendingMessages(e->getNodeRef(i).getNode(),
-                                                    document::Bucket(bucketSpace, e.getBucketId()),
-                                                    checker);
+        _pendingMessageTracker.checkPendingMessages(e->getNodeRef(i).getNode(), document::Bucket(bucketSpace, e.getBucketId()), checker);
         if (checker.found) {
             return;
         }
     }
 
-    Operation::SP operation =
-        _idealStateManager.generateInterceptingSplit(bucketSpace, e, priority);
+    Operation::SP operation = _idealStateManager.generateInterceptingSplit(bucketSpace, e, priority);
 
     if (operation.get()) {
         _maintenanceOperationOwner.start(operation, priority);
@@ -458,8 +447,7 @@ DistributorStripe::checkBucketForSplit(document::BucketSpace bucketSpace,
 
 // TODO STRIPE must be invoked by top-level bucket db updater probably
 void
-DistributorStripe::propagateDefaultDistribution(
-        std::shared_ptr<const lib::Distribution> distribution)
+DistributorStripe::propagateDefaultDistribution(std::shared_ptr<const lib::Distribution> distribution)
 {
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
     for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
@@ -562,7 +550,7 @@ void DistributorStripe::startExternalOperations() {
     _fetchedMessages.clear();
 }
 
-std::unordered_map<uint16_t, uint32_t>
+MinReplicaMap
 DistributorStripe::getMinReplica() const
 {
     std::lock_guard guard(_metricLock);
@@ -655,7 +643,7 @@ DistributorStripe::updateInternalMetricsForCompletedScan()
 
     _bucketDBMetricUpdater.completeRound();
     _bucketDbStats = _bucketDBMetricUpdater.getLastCompleteStats();
-    _maintenanceStats = _scanner->getPendingMaintenanceStats();
+    _maintenanceStats = _scanner->reset();
     auto new_space_stats = toBucketSpacesStats(_maintenanceStats.perNodeStats);
     if (merge_no_longer_pending_edge(_bucketSpacesStats, new_space_stats)) {
         _must_send_updated_host_info = true;
@@ -696,12 +684,9 @@ DistributorStripe::scanNextBucket()
         updateInternalMetricsForCompletedScan();
         leaveRecoveryMode();
         send_updated_host_info_if_required();
-        _scanner->reset();
     } else {
         const auto &distribution(_bucketSpaceRepo->get(scanResult.getBucketSpace()).getDistribution());
-        _bucketDBMetricUpdater.visit(
-                scanResult.getEntry(),
-                distribution.getRedundancy());
+        _bucketDBMetricUpdater.visit(scanResult.getEntry(), distribution.getRedundancy());
     }
     return scanResult;
 }
@@ -823,12 +808,6 @@ DistributorStripe::getActiveIdealStateOperations() const
     return _maintenanceOperationOwner.toString();
 }
 
-std::string
-DistributorStripe::getActiveOperations() const
-{
-    return _operationOwner.toString();
-}
-
 StripeAccessGuard::PendingOperationStats
 DistributorStripe::pending_operation_stats() const
 {
@@ -881,7 +860,7 @@ DistributorStripe::merge_entries_into_db(document::BucketSpace bucket_space,
                                          const lib::Distribution& distribution,
                                          const lib::ClusterState& new_state,
                                          const char* storage_up_states,
-                                         const std::unordered_set<uint16_t>& outdated_nodes,
+                                         const OutdatedNodes& outdated_nodes,
                                          const std::vector<dbtransition::Entry>& entries)
 {
     bucket_db_updater().merge_entries_into_db(bucket_space, gathered_at_timestamp, distribution,

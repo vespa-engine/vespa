@@ -11,12 +11,16 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancers;
 
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
@@ -46,6 +50,7 @@ public record NodeAcl(Node node,
         Set<Integer> trustedPorts = new LinkedHashSet<>();
         Set<Integer> trustedUdpPorts = new LinkedHashSet<>();
         Set<String> trustedNetworks = new LinkedHashSet<>();
+        IP.Space ipSpace = IP.Space.of(zone, node.cloudAccount());
 
         // For all cases below, trust:
         // - SSH: If the host has one container, and it is using the host's network namespace,
@@ -53,12 +58,13 @@ public record NodeAcl(Node node,
         //   SSH opened (which is safe for 2 reasons: SSH daemon is not run inside containers, and NPT networks
         //   will (should) not forward port 22 traffic to container).
         // - parent host (for health checks and metrics)
-        // - nodes in same application
+        // - nodes in same application (Slobrok for tenant nodes, file distribution and ZK for config servers, etc),
+        //   and parents if necessary due to NAT.
         // - load balancers allocated to application
         trustedPorts.add(22);
-        allNodes.parentOf(node).map(TrustedNode::of).ifPresent(trustedNodes::add);
+        allNodes.parentOf(node).map(parent -> TrustedNode.of(parent, ipSpace)).ifPresent(trustedNodes::add);
         node.allocation().ifPresent(allocation -> {
-            trustedNodes.addAll(TrustedNode.of(allNodes.owner(allocation.owner())));
+            trustedNodes.addAll(trustedNodesForChildrenMatching(node, allNodes, n -> n.allocation().map(Allocation::owner).equals(Optional.of(allocation.owner())), Set.of(), ipSpace));
             loadBalancers.list(allocation.owner()).asList()
                          .stream()
                          .map(LoadBalancer::instance)
@@ -72,19 +78,8 @@ public record NodeAcl(Node node,
                 // Tenant nodes in other states than ready, trust:
                 // - config servers
                 // - proxy nodes
-                // - parents of the nodes in the same application: If some nodes are on a different IP version
-                //   or only a subset of them are dual-stacked, the communication between the nodes may be NAT-ed
-                //   via parent's IP address
-                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.config)));
-                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.proxy)));
-                node.allocation().ifPresent(allocation -> trustedNodes.addAll(TrustedNode.of(allNodes.parentsOf(allNodes.owner(allocation.owner())))));
-                if (node.state() == Node.State.ready) {
-                    // Tenant nodes in state ready, trust:
-                    // - All tenant nodes in zone. When a ready node is allocated to an application there's a brief
-                    //   window where current ACLs have not yet been applied on the node. To avoid service disruption
-                    //   during this window, ready tenant nodes trust all other tenant nodes
-                    trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.tenant)));
-                }
+                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.config), ipSpace));
+                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.proxy), ipSpace));
             }
             case config -> {
                 // Config servers trust:
@@ -92,9 +87,7 @@ public record NodeAcl(Node node,
                 // - port 19070 (RPC) from all proxy nodes (and their hosts, in case traffic is NAT-ed via parent)
                 // - port 4443 from the world
                 // - udp port 51820 from the world
-                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.host, NodeType.tenant,
-                                                                     NodeType.proxyhost, NodeType.proxy),
-                                                   RPC_PORTS));
+                trustedNodes.addAll(trustedNodesForChildrenMatching(node, allNodes, n -> EnumSet.of(NodeType.tenant, NodeType.proxy).contains(n.type()), RPC_PORTS, ipSpace));
                 trustedPorts.add(4443);
                 if (zone.system().isPublic() && zone.cloud().allowEnclave()) {
                     trustedUdpPorts.add(WIREGUARD_PORT);
@@ -104,7 +97,7 @@ public record NodeAcl(Node node,
                 // Proxy nodes trust:
                 // - config servers
                 // - all connections from the world on 443 (production traffic) and 4443 (health checks)
-                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.config)));
+                trustedNodes.addAll(TrustedNode.of(allNodes.nodeType(NodeType.config), ipSpace));
                 trustedPorts.add(443);
                 trustedPorts.add(4443);
             }
@@ -121,26 +114,54 @@ public record NodeAcl(Node node,
         return new NodeAcl(node, trustedNodes, trustedNetworks, trustedPorts, trustedUdpPorts);
     }
 
+    /** Returns the set of children matching the selector, and their parent host if traffic from child may be NATed */
+    private static Set<TrustedNode> trustedNodesForChildrenMatching(Node node, NodeList allNodes, Predicate<Node> childNodeSelector,
+                                                                    Set<Integer> ports, IP.Space ipSpace) {
+        if (node.type().isHost())
+            throw new IllegalArgumentException("Host nodes cannot have NAT parents");
+
+        boolean hasIp4 = node.ipConfig().primary().stream().anyMatch(IP::isV4);
+        boolean hasIp6 = node.ipConfig().primary().stream().anyMatch(IP::isV6);
+        return allNodes.stream()
+                       .filter(n -> !n.type().isHost())
+                       .filter(childNodeSelector)
+                       .mapMulti((Node otherNode, Consumer<TrustedNode> consumer) -> {
+                           consumer.accept(TrustedNode.of(otherNode, ports, ipSpace));
+
+                           // And parent host if traffic from otherNode may be NATed
+                           if (hasIp4 && otherNode.ipConfig().primary().stream().noneMatch(IP::isV4) ||
+                               hasIp6 && otherNode.ipConfig().primary().stream().noneMatch(IP::isV6)) {
+                               consumer.accept(TrustedNode.of(allNodes.parentOf(otherNode).orElseThrow(), ports, ipSpace));
+                           }
+                       })
+                       .collect(Collectors.toSet());
+    }
+
     public record TrustedNode(String hostname, NodeType type, Set<String> ipAddresses, Set<Integer> ports) {
 
-        /** Trust given ports from node */
-        public static TrustedNode of(Node node, Set<Integer> ports) {
-            return new TrustedNode(node.hostname(), node.type(), node.ipConfig().primary(), ports);
+        /** Trust given ports from node, and primary IP addresses shared with given cloud account */
+        public static TrustedNode of(Node node, Set<Integer> ports, IP.Space ipSpace) {
+            Set<String> ipAddresses = node.ipConfig()
+                                          .primary()
+                                          .stream()
+                                          .filter(ip -> ipSpace.contains(ip, node.cloudAccount()))
+                                          .collect(Collectors.toSet());
+            return new TrustedNode(node.hostname(), node.type(), ipAddresses, ports);
         }
 
-        /** Trust all ports from given node */
-        public static TrustedNode of(Node node) {
-            return of(node, Set.of());
+        /** The node in the given sourceCloudAccount should trust all ports from given node */
+        public static TrustedNode of(Node node, IP.Space ipSpace) {
+            return of(node, Set.of(), ipSpace);
         }
 
-        public static List<TrustedNode> of(Iterable<Node> nodes, Set<Integer> ports) {
+        public static List<TrustedNode> of(Iterable<Node> nodes, Set<Integer> ports, IP.Space ipSpace) {
             return StreamSupport.stream(nodes.spliterator(), false)
-                                .map(node -> TrustedNode.of(node, ports))
+                                .map(node -> TrustedNode.of(node, ports, ipSpace))
                                 .toList();
         }
 
-        public static List<TrustedNode> of(Iterable<Node> nodes) {
-            return of(nodes, Set.of());
+        public static List<TrustedNode> of(Iterable<Node> nodes, IP.Space ipSpace) {
+            return of(nodes, Set.of(), ipSpace);
         }
 
     }

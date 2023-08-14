@@ -19,17 +19,24 @@ namespace search::queryeval {
 class FieldSpecBase
 {
 public:
-    FieldSpecBase(uint32_t fieldId, fef::TermFieldHandle handle, bool isFilter_ = false);
+    FieldSpecBase(uint32_t fieldId, fef::TermFieldHandle handle) noexcept
+        : FieldSpecBase(fieldId, handle, false)
+    { }
+    FieldSpecBase(uint32_t fieldId, fef::TermFieldHandle handle, bool isFilter_) noexcept
+        : _fieldId(fieldId | (isFilter_ ? 0x1000000u : 0)),
+          _handle(handle)
+    { }
 
     // resolve where to put match information for this term/field combination
     fef::TermFieldMatchData *resolve(fef::MatchData &md) const;
     const fef::TermFieldMatchData *resolve(const fef::MatchData &md) const;
-    uint32_t getFieldId() const { return _fieldId & 0xffffff; }
-    fef::TermFieldHandle getHandle() const { return _handle; }
+    uint32_t getFieldId() const noexcept { return _fieldId & 0xffffff; }
+    fef::TermFieldHandle getHandle() const noexcept { return _handle; }
+    void setHandle(fef::TermFieldHandle handle) { _handle = handle; }
     /// a filter produces less detailed match data
-    bool isFilter() const { return _fieldId & 0x1000000; }
+    bool isFilter() const noexcept { return _fieldId & 0x1000000; }
 private:
-    uint32_t             _fieldId;  // field id in ranking framework
+    uint32_t             _fieldId;  // field id in ranking framework, and isFilter
     fef::TermFieldHandle _handle;   // handle used when exposing match data to ranking framework
 };
 
@@ -39,14 +46,15 @@ private:
 class FieldSpec : public FieldSpecBase
 {
 public:
+    FieldSpec(const vespalib::string & name, uint32_t fieldId, fef::TermFieldHandle handle) noexcept;
     FieldSpec(const vespalib::string & name, uint32_t fieldId,
-              fef::TermFieldHandle handle, bool isFilter_ = false)
-        : FieldSpecBase(fieldId, handle, isFilter_),
-          _name(name)
-    {}
+              fef::TermFieldHandle handle, bool isFilter_) noexcept;
     ~FieldSpec();
 
-    const vespalib::string & getName() const { return _name; }
+    void setBase(FieldSpecBase base) noexcept {
+	    FieldSpecBase::operator =(base);
+    }
+    const vespalib::string & getName() const noexcept { return _name; }
 private:
     vespalib::string     _name;     // field name
 };
@@ -61,7 +69,7 @@ private:
     List _list;
 
 public:
-    FieldSpecBaseList() = default;
+    FieldSpecBaseList() noexcept = default;
     FieldSpecBaseList(FieldSpecBaseList &&) noexcept = default;
     FieldSpecBaseList & operator=(FieldSpecBaseList &&) noexcept = default;
     FieldSpecBaseList(const FieldSpecBaseList &) = default;
@@ -69,15 +77,15 @@ public:
     ~FieldSpecBaseList();
     void reserve(size_t sz) { _list.reserve(sz); }
     using const_iterator = const FieldSpecBase *;
-    FieldSpecBaseList &add(const FieldSpecBase &spec) {
+    FieldSpecBaseList &add(const FieldSpecBase &spec) noexcept {
         _list.push_back(spec);
         return *this;
     }
-    bool empty() const { return _list.empty(); }
-    size_t size() const { return _list.size(); }
-    const_iterator begin() const { return _list.begin(); }
-    const_iterator end() const { return _list.end(); }
-    const FieldSpecBase &operator[](size_t i) const { return _list[i]; }
+    bool empty() const noexcept { return _list.empty(); }
+    size_t size() const noexcept { return _list.size(); }
+    const_iterator begin() const noexcept { return _list.begin(); }
+    const_iterator end() const noexcept { return _list.end(); }
+    const FieldSpecBase &operator[](size_t i) const noexcept { return _list[i]; }
 };
 
 /**
@@ -89,7 +97,7 @@ private:
     vespalib::SmallVector<FieldSpec, 1> _list;
 
 public:
-    FieldSpecList() = default;
+    FieldSpecList() noexcept = default;
     FieldSpecList(FieldSpecList &&) noexcept = delete;
     FieldSpecList & operator=(FieldSpecList &&) noexcept = delete;
     FieldSpecList(const FieldSpecList &) noexcept = delete;
@@ -99,9 +107,9 @@ public:
         _list.push_back(spec);
         return *this;
     }
-    bool empty() const { return _list.empty(); }
-    size_t size() const { return _list.size(); }
-    const FieldSpec &operator[](size_t i) const { return _list[i]; }
+    bool empty() const noexcept { return _list.empty(); }
+    size_t size() const noexcept { return _list.size(); }
+    const FieldSpec &operator[](size_t i) const noexcept { return _list[i]; }
     void clear() { _list.clear(); }
 };
 

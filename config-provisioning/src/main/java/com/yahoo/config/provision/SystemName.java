@@ -75,4 +75,6 @@ public enum SystemName {
         return Stream.of(values()).filter(predicate).collect(Collectors.toUnmodifiableSet());
     }
 
+    public static Set<SystemName> hostedVespa() { return EnumSet.of(main, cd, Public, PublicCd); }
+
 }

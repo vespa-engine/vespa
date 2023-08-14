@@ -17,11 +17,9 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.DropDocumentsReport;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.container.Container;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerResources;
-import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
 import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentialsProvider;
 import com.yahoo.vespa.hosted.node.admin.maintenance.ContainerWireguardTask;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
@@ -431,9 +429,8 @@ public class NodeAgentImpl implements NodeAgent {
         NodeSpec node = context.node();
         if (node.wantedDockerImage().equals(container.map(c -> c.image()))) return false;
 
-        RegistryCredentials credentials = registryCredentialsProvider.get();
         return node.wantedDockerImage()
-                   .map(image -> containerOperations.pullImageAsyncIfNeeded(context, image, credentials))
+                   .map(image -> containerOperations.pullImageAsyncIfNeeded(context, image, registryCredentialsProvider))
                    .orElse(false);
     }
 
@@ -486,18 +483,20 @@ public class NodeAgentImpl implements NodeAgent {
             lastNode = node;
         }
 
+        // Run this here and now, even though we may immediately remove the container below.
+        // This ensures these maintainers are run even if something fails or returns early.
+        // These maintainers should also run immediately after starting the container (see below).
+        container.ifPresent(c -> runImportantContainerMaintainers(context, c));
+
         switch (node.state()) {
-            case ready:
-            case reserved:
-            case failed:
-            case inactive:
-            case parked:
+            case ready, reserved, failed, inactive, parked -> {
                 storageMaintainer.syncLogs(context, true);
+                if (node.state() == NodeState.reserved) downloadImageIfNeeded(context, container);
                 removeContainerIfNeededUpdateContainerState(context, container);
                 updateNodeRepoWithCurrentAttributes(context, Optional.empty());
                 stopServicesIfNeeded(context);
-                break;
-            case active:
+            }
+            case active -> {
                 storageMaintainer.syncLogs(context, true);
                 storageMaintainer.cleanDiskIfFull(context);
                 storageMaintainer.handleCoreDumpsForContainer(context, container, false);
@@ -513,13 +512,11 @@ public class NodeAgentImpl implements NodeAgent {
                     containerState = STARTING;
                     container = Optional.of(startContainer(context));
                     containerState = UNKNOWN;
+                    runImportantContainerMaintainers(context, container.get());
                 } else {
                     container = Optional.of(updateContainerIfNeeded(context, container.get()));
                 }
 
-                aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
-                final Optional<Container> finalContainer = container;
-                wireguardTasks.forEach(task -> task.converge(context, finalContainer.get().id()));
                 startServicesIfNeeded(context);
                 resumeNodeIfNeeded(context);
                 if (healthChecker.isPresent()) {
@@ -550,11 +547,8 @@ public class NodeAgentImpl implements NodeAgent {
                     orchestrator.resume(context.hostname().value());
                     suspendedInOrchestrator = false;
                 }
-                break;
-            case provisioned:
-                nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
-                break;
-            case dirty:
+            }
+            case dirty -> {
                 removeContainerIfNeededUpdateContainerState(context, container);
                 context.log(logger, "State is " + node.state() + ", will delete application storage and mark node as ready");
                 credentialsMaintainers.forEach(maintainer -> maintainer.clearCredentials(context));
@@ -562,10 +556,14 @@ public class NodeAgentImpl implements NodeAgent {
                 storageMaintainer.archiveNodeStorage(context);
                 updateNodeRepoWithCurrentAttributes(context, Optional.empty());
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
-                break;
-            default:
-                throw ConvergenceException.ofError("UNKNOWN STATE " + node.state().name());
+            }
+            default -> throw ConvergenceException.ofError("Unexpected state " + node.state().name());
         }
+    }
+
+    private void runImportantContainerMaintainers(NodeAgentContext context, Container container) {
+        aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
+        wireguardTasks.forEach(task -> task.converge(context, container.id()));
     }
 
     private static void logChangesToNodeSpec(NodeAgentContext context, NodeSpec lastNode, NodeSpec node) {
@@ -609,23 +607,8 @@ public class NodeAgentImpl implements NodeAgent {
         if (context.node().state() != NodeState.active) return;
 
         context.log(logger, "Ask Orchestrator for permission to suspend node");
-        try {
-            orchestrator.suspend(context.hostname().value());
-            suspendedInOrchestrator = true;
-        } catch (OrchestratorException e) {
-            // Ensure the ACLs are up to date: The reason we're unable to suspend may be because some other
-            // node is unable to resume because the ACL rules of SOME Docker container is wrong...
-            // Same can happen with stale WireGuard config, so update that too
-            try {
-                aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
-                wireguardTasks.forEach(task -> getContainer(context).ifPresent(c -> task.converge(context, c.id())));
-            } catch (RuntimeException suppressed) {
-                logger.log(Level.WARNING, "Suppressing ACL update failure: " + suppressed);
-                e.addSuppressed(suppressed);
-            }
-
-            throw e;
-        }
+        orchestrator.suspend(context.hostname().value());
+        suspendedInOrchestrator = true;
     }
 
     protected void writeContainerData(NodeAgentContext context, ContainerData containerData) { }

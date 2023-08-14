@@ -9,9 +9,9 @@ namespace storage {
 template class BucketInfoBase<std::vector<BucketCopy>>;
 template class BucketInfoBase<vespalib::ConstArrayRef<BucketCopy>>;
 
-BucketInfo::BucketInfo() : BucketInfoBase() {}
+BucketInfo::BucketInfo() noexcept : BucketInfoBase() {}
 
-BucketInfo::BucketInfo(uint32_t lastGarbageCollection, std::vector<BucketCopy> nodes)
+BucketInfo::BucketInfo(uint32_t lastGarbageCollection, std::vector<BucketCopy> nodes) noexcept
     : BucketInfoBase(lastGarbageCollection, std::move(nodes))
 {}
 
@@ -23,7 +23,7 @@ BucketInfo::BucketInfo(BucketInfo&&) noexcept = default;
 BucketInfo& BucketInfo::operator=(BucketInfo&&) noexcept = default;
 
 void
-BucketInfo::updateTrusted() {
+BucketInfo::updateTrusted() noexcept {
     if (validAndConsistent()) {
         for (uint32_t i = 0; i < _nodes.size(); i++) {
             _nodes[i].setTrusted();
@@ -51,7 +51,7 @@ BucketInfo::updateTrusted() {
 }
 
 void
-BucketInfo::resetTrusted() {
+BucketInfo::resetTrusted() noexcept {
     for (uint32_t i = 0; i < _nodes.size(); i++) {
         _nodes[i].clearTrusted();
     }
@@ -63,10 +63,10 @@ namespace {
 struct Sorter {
     const std::vector<uint16_t>& _order;
 
-    Sorter(const std::vector<uint16_t>& recommendedOrder) :
+    Sorter(const std::vector<uint16_t>& recommendedOrder) noexcept :
         _order(recommendedOrder) {}
 
-    bool operator() (const BucketCopy& a, const BucketCopy& b) {
+    bool operator() (const BucketCopy& a, const BucketCopy& b) noexcept {
         int order_a = -1;
         for (uint32_t i = 0; i < _order.size(); i++) {
             if (_order[i] == a.getNode()) {
@@ -119,8 +119,7 @@ BucketInfo::addNodes(const std::vector<BucketCopy>& newCopies,
 
         if (found) {
             if (found->getTimestamp() < newCopies[i].getTimestamp()) {
-                found->setBucketInfo(newCopies[i].getTimestamp(),
-                                     newCopies[i].getBucketInfo());
+                found->setBucketInfo(newCopies[i].getTimestamp(), newCopies[i].getBucketInfo());
             }
         } else {
             _nodes.push_back(newCopies[i]);
@@ -135,19 +134,15 @@ BucketInfo::addNodes(const std::vector<BucketCopy>& newCopies,
 }
 
 void
-BucketInfo::addNode(const BucketCopy& newCopy,
-                    const std::vector<uint16_t>& recommendedOrder)
+BucketInfo::addNode(const BucketCopy& newCopy, const std::vector<uint16_t>& recommendedOrder)
 {
-    addNodes(toVector<BucketCopy>(newCopy),
-             recommendedOrder);
+    addNodes(toVector<BucketCopy>(newCopy), recommendedOrder);
 }
 
 bool
 BucketInfo::removeNode(unsigned short node, TrustedUpdate update)
 {
-    for (std::vector<BucketCopy>::iterator iter = _nodes.begin();
-         iter != _nodes.end();
-         iter++) {
+    for (auto iter = _nodes.begin(); iter != _nodes.end(); iter++) {
         if (iter->getNode() == node) {
             _nodes.erase(iter);
             if (update == TrustedUpdate::UPDATE) {
@@ -162,11 +157,9 @@ BucketInfo::removeNode(unsigned short node, TrustedUpdate update)
 BucketCopy*
 BucketInfo::getNodeInternal(uint16_t node)
 {
-    for (std::vector<BucketCopy>::iterator iter = _nodes.begin();
-         iter != _nodes.end();
-         iter++) {
-        if (iter->getNode() == node) {
-            return &*iter;
+    for (BucketCopy & copy : _nodes) {
+        if (copy.getNode() == node) {
+            return &copy;
         }
     }
     return 0;

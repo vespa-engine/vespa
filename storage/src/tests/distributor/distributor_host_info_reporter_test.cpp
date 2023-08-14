@@ -14,7 +14,7 @@ namespace storage::distributor {
 
 using End = vespalib::JsonStream::End;
 using File = vespalib::File;
-using MinReplicaStats = std::unordered_map<uint16_t, uint32_t>;
+using MinReplicaStats = MinReplicaMap;
 using Object = vespalib::JsonStream::Object;
 using PerNodeBucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats;
 using BucketSpacesStats = BucketSpacesStatsProvider::BucketSpacesStats;
@@ -36,7 +36,7 @@ struct MockedMinReplicaProvider : MinReplicaProvider
     MinReplicaStats minReplica;
 
     ~MockedMinReplicaProvider() override;
-    std::unordered_map<uint16_t, uint32_t> getMinReplica() const override {
+    MinReplicaMap getMinReplica() const override {
         return minReplica;
     }
 };

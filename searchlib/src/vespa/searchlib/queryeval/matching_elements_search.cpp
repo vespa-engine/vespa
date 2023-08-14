@@ -45,7 +45,6 @@ template <typename BufferType, typename AttributeType>
 class FilterMatchingElementsSearch : public MatchingElementsSearch {
     const AttributeType&           _attr;
     AttributeContent<BufferType>   _content;
-    vespalib::string               _field_name;
     using EqualFunc = std::conditional_t<std::is_same_v<BufferType, const char *>, EqualCStringValue, std::equal_to<>>;
     vespalib::hash_set<BufferType, vespalib::hash<BufferType>, EqualFunc> _matches;
 
@@ -59,7 +58,6 @@ template <typename BufferType, typename AttributeType>
 FilterMatchingElementsSearch<BufferType, AttributeType>::FilterMatchingElementsSearch(const IAttributeVector &attr, EntryRef dictionary_snapshot, vespalib::ConstArrayRef<IDocumentWeightAttribute::LookupResult> dict_entries)
     : _attr(dynamic_cast<const AttributeType &>(attr)),
       _content(),
-      _field_name(_attr.getName()),
       _matches()
 {
     auto dwa = attr.asDocumentWeightAttribute();
@@ -86,7 +84,7 @@ FilterMatchingElementsSearch<BufferType, AttributeType>::find_matching_elements(
         ++element_id;
     }
     if (!_matching_elements.empty()) {
-        result.add_matching_elements(doc_id, _field_name, _matching_elements);
+        result.add_matching_elements(doc_id, _attr.getName(), _matching_elements);
     }
 }
 

@@ -3,9 +3,12 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -23,7 +26,8 @@ public class FileAttributesCacheTest {
         verify(unixPath, times(1)).getAttributesIfExists();
         verifyNoMoreInteractions(unixPath);
 
-        FileAttributes attributes = mock(FileAttributes.class);
+        FileAttributes attributes = new FileAttributes(Instant.EPOCH, 0, 0, "", false, false, 0, 0, 0);
+        when(unixPath.getAttributesIfExists()).thenReturn(Optional.of(attributes));
         when(unixPath.getAttributesIfExists()).thenReturn(Optional.of(attributes));
         assertTrue(cache.get().isPresent());
         verify(unixPath, times(1 + 1)).getAttributesIfExists();

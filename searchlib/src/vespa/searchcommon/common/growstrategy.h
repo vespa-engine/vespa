@@ -23,17 +23,17 @@ public:
     {
     }
 
-    static GrowStrategy make(uint32_t docsInitialCapacity, float docsGrowFactor, uint32_t docsGrowDelta) {
+    static GrowStrategy make(uint32_t docsInitialCapacity, float docsGrowFactor, uint32_t docsGrowDelta) noexcept {
         return {docsInitialCapacity, docsGrowFactor, docsGrowDelta, 0, 0.2};
     }
 
-    float getMultiValueAllocGrowFactor() const { return _multiValueAllocGrowFactor; }
+    float getMultiValueAllocGrowFactor() const noexcept { return _multiValueAllocGrowFactor; }
 
-    bool operator==(const GrowStrategy & rhs) const {
+    bool operator==(const GrowStrategy & rhs) const noexcept {
         return vespalib::GrowStrategy::operator==(rhs) &&
                 (_multiValueAllocGrowFactor == rhs._multiValueAllocGrowFactor);
     }
-    bool operator!=(const GrowStrategy & rhs) const {
+    bool operator!=(const GrowStrategy & rhs) const noexcept {
         return !(operator==(rhs));
     }
 };

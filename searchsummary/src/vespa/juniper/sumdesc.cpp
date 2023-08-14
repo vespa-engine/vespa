@@ -623,9 +623,8 @@ int SummaryDesc::complete_extended_token(unsigned char* start, ssize_t length,
 /* Return a highlight tagged summary string from this summary
  * description
  */
-std::string SummaryDesc::get_summary(const char* buffer, size_t bytes,
-                                     const SummaryConfig* sumconf,
-                                     size_t& char_size)
+std::string
+SummaryDesc::get_summary(const char* buffer, size_t bytes, const SummaryConfig* sumconf, size_t& char_size)
 {
     std::vector<char> s;
     ssize_t prev_end = 0;
@@ -759,7 +758,7 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes,
                s.size(), a.charLen());
     _sumconf = NULL; // Not valid after this call.
     char_size = a.charLen();
-    return std::string(&s[0], s.size());
+    return std::string(s.begin(), s.end());
 }
 
 

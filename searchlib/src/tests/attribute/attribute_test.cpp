@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -40,6 +39,7 @@ using search::attribute::BasicType;
 using search::attribute::IAttributeVector;
 using vespalib::stringref;
 using vespalib::string;
+namespace fs = std::filesystem;
 
 namespace {
 
@@ -98,14 +98,10 @@ expectZero(const string &b)
 uint64_t
 statSize(const string &fileName)
 {
-    FastOS_StatInfo statInfo;
-    bool stat_result = true;
-    EXPECT_TRUE(FastOS_File::Stat(fileName.c_str(), &statInfo)) << (stat_result = false, "");
-    if (stat_result) {
-        return statInfo._size;
-    } else {
-        return 0u;
-    }
+    std::error_code ec;
+    uint64_t sz = fs::file_size(fs::path(fileName), ec);
+    EXPECT_FALSE(ec);
+    return sz;
 }
 
 uint64_t
@@ -698,15 +694,12 @@ AttributeTest::testMemorySaver(const AttributePtr & a)
     auto b = createAttribute(replace_suffix(*a, "2ms"), a->getConfig());
     AttributeMemorySaveTarget saveTarget;
     EXPECT_TRUE(a->save(saveTarget, b->getBaseFileName()));
-    FastOS_StatInfo statInfo;
     vespalib::string datFile = vespalib::make_string("%s.dat", b->getBaseFileName().c_str());
-    EXPECT_TRUE(!FastOS_File::Stat(datFile.c_str(), &statInfo));
-    EXPECT_TRUE(saveTarget.writeToFile(TuneFileAttributes(),
-                                       DummyFileHeaderContext()));
-    EXPECT_TRUE(FastOS_File::Stat(datFile.c_str(), &statInfo));
+    EXPECT_FALSE(fs::exists(fs::path(datFile)));
+    EXPECT_TRUE(saveTarget.writeToFile(TuneFileAttributes(), DummyFileHeaderContext()));
+    EXPECT_TRUE(fs::exists(fs::path(datFile)));
     EXPECT_TRUE(b->load());
-    compare<VectorType, BufferType>
-        (*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(b.get())));
+    compare<VectorType, BufferType>(*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(b.get())));
 }
 
 void
@@ -2353,10 +2346,10 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
     if (failed) {
         return 0;
     }
-    auto size1 = std::filesystem::file_size(std::filesystem::path(swapfile));
+    auto size1 = fs::file_size(fs::path(swapfile));
     // Grow mapping from lid to value or multivalue index
     addClearedDocs(av, lid_mapping_size);
-    auto size2 = std::filesystem::file_size(std::filesystem::path(swapfile));
+    auto size2 = fs::file_size(fs::path(swapfile));
     auto size3 = size2;
     EXPECT_LT(size1, size2);
     if (cfg.collectionType().isMultiValue()) {
@@ -2368,7 +2361,7 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
             }
             av->commit();
         }
-        size3 = std::filesystem::file_size(std::filesystem::path(swapfile));
+        size3 = fs::file_size(fs::path(swapfile));
         EXPECT_LT(size2, size3);
         result += 2;
     }
@@ -2386,7 +2379,7 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
             }
             av->commit();
         }
-        auto size4 = std::filesystem::file_size(std::filesystem::path(swapfile));
+        auto size4 = fs::file_size(fs::path(swapfile));
         EXPECT_LT(size3, size4);
         result += 4;
     }
@@ -2416,7 +2409,7 @@ AttributeTest::test_paged_attributes()
     cfg5.setPaged(true);
     EXPECT_EQ(1, test_paged_attribute("std-bool-sv-paged", basedir + "/4.std-bool-sv-paged/swapfile", cfg5));
     vespalib::alloc::MmapFileAllocatorFactory::instance().setup("");
-    std::filesystem::remove_all(std::filesystem::path(basedir));
+    fs::remove_all(fs::path(basedir));
 }
 
 void testNamePrefix() {
@@ -2576,17 +2569,17 @@ TEST_F(AttributeTest, paged_attributes)
 void
 deleteDataDirs()
 {
-    std::filesystem::remove_all(std::filesystem::path(tmpDir));
-    std::filesystem::remove_all(std::filesystem::path(clsDir));
-    std::filesystem::remove_all(std::filesystem::path(asuDir));
+    fs::remove_all(fs::path(tmpDir));
+    fs::remove_all(fs::path(clsDir));
+    fs::remove_all(fs::path(asuDir));
 }
 
 void
 createDataDirs()
 {
-    std::filesystem::create_directories(std::filesystem::path(tmpDir));
-    std::filesystem::create_directories(std::filesystem::path(clsDir));
-    std::filesystem::create_directories(std::filesystem::path(asuDir));
+    fs::create_directories(fs::path(tmpDir));
+    fs::create_directories(fs::path(clsDir));
+    fs::create_directories(fs::path(asuDir));
 }
 
 int

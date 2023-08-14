@@ -186,6 +186,17 @@ public class DynamicProvisioningTester {
                         resources);
     }
 
+    public void assertResources(String message,
+                                int nodeCount, int groupCount,
+                                NodeResources expectedResources,
+                                Autoscaling autoscaling) {
+        assertTrue("Resources are present: " + message + " (" + autoscaling + ": " + autoscaling.status() + ")",
+                   autoscaling.resources().isPresent());
+        assertResources(message, nodeCount, groupCount,
+                        expectedResources.vcpu(), expectedResources.memoryGb(), expectedResources.diskGb(),
+                        autoscaling.resources().get());
+    }
+
     public ClusterResources assertResources(String message,
                                             int nodeCount, int groupCount,
                                             double approxCpu, double approxMemory, double approxDisk,

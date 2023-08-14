@@ -106,19 +106,18 @@ UpdateOperation::onStart(DistributorStripeMessageSender& sender)
         const std::vector<uint16_t>& nodes = entry->getNodes();
 
         std::vector<MessageTracker::ToSend> messages;
+        messages.reserve(nodes.size());
 
         for (uint16_t node : nodes) {
-            auto command = std::make_shared<api::UpdateCommand>(
-                    document::Bucket(_msg->getBucket().getBucketSpace(), entry.getBucketId()),
-                    _msg->getUpdate(),
-                    _msg->getTimestamp());
+            auto command = std::make_shared<api::UpdateCommand>(document::Bucket(_msg->getBucket().getBucketSpace(), entry.getBucketId()),
+                                                                _msg->getUpdate(), _msg->getTimestamp());
             copyMessageSettings(*_msg, *command);
             command->setOldTimestamp(_msg->getOldTimestamp());
             command->setCondition(_msg->getCondition());
             messages.emplace_back(std::move(command), node);
         }
 
-        _tracker.queueMessageBatch(messages);
+        _tracker.queueMessageBatch(std::move(messages));
     }
 
     _tracker.flushQueue(sender);

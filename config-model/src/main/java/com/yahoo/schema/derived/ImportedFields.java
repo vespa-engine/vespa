@@ -61,9 +61,9 @@ public class ImportedFields extends Derived implements ImportedFieldsConfig.Prod
         ImmutableSDField targetField = field.targetField();
         if (GeoPos.isAnyPos(targetField)) {
             // no action needed
-        } else if (isArrayOfSimpleStruct(targetField, false)) {
+        } else if (isArrayOfSimpleStruct(targetField)) {
             considerNestedFields(builder, field);
-        } else if (isMapOfSimpleStruct(targetField, false)) {
+        } else if (isMapOfSimpleStruct(targetField)) {
             considerSimpleField(builder, field.getNestedField("key"));
             considerNestedFields(builder, field.getNestedField("value"));
         } else if (isMapOfPrimitiveType(targetField)) {

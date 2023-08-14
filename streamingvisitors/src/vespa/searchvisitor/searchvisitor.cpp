@@ -26,6 +26,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/fnet/databuffer.h>
+#include <vespa/fastlib/text/normwordfolder.h>
 #include <optional>
 
 #include <vespa/log/log.h>

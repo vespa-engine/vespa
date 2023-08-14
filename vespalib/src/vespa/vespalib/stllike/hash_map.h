@@ -35,6 +35,8 @@ public:
     constexpr iterator end()                           noexcept { return _ht.end(); }
     constexpr const_iterator begin()             const noexcept { return _ht.begin(); }
     constexpr const_iterator end()               const noexcept { return _ht.end(); }
+    constexpr const_iterator cbegin()            const noexcept { return _ht.begin(); }
+    constexpr const_iterator cend()              const noexcept { return _ht.end(); }
     constexpr size_t capacity()                  const noexcept { return _ht.capacity(); }
     constexpr size_t size()                      const noexcept { return _ht.size(); }
     constexpr bool empty()                       const noexcept { return _ht.empty(); }
