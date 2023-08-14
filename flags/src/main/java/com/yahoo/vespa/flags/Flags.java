@@ -308,7 +308,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundBooleanFlag ALLOW_MORE_THAN_ONE_CONTENT_GROUP_DOWN = defineFeatureFlag(
-            "allow-more-than-one-content-group-down", false, List.of("hmusum"), "2023-04-14", "2023-08-15",
+            "allow-more-than-one-content-group-down", true, List.of("hmusum"), "2023-04-14", "2023-09-01",
             "Whether to enable possible configuration of letting more than one content group down",
             "Takes effect at redeployment",
             APPLICATION_ID);
