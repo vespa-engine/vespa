@@ -243,7 +243,7 @@ public class FileReceiver {
         synchronized (sessions) {
             if (sessions.containsKey(sessionId)) {
                 retval = 1;
-                log.severe("Session id " + sessionId + " already exist, impossible. Request from(" + req.target() + ")");
+                log.severe("Session id " + sessionId + " already exist, impossible. Request from " + req.target());
             } else {
                 try {
                     sessions.put(sessionId, new Session(downloadDirectory, sessionId, reference,
