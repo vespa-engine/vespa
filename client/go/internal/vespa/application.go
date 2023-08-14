@@ -216,17 +216,28 @@ func copyFile(src *zip.File, dst string) error {
 
 // FindApplicationPackage finds the path to an application package from the zip file or directory zipOrDir. If
 // requirePackaging is true, the application package is required to be packaged with mvn package.
+//
+// Package to use is preferred in this order:
+// 1. Given path, if it's a zip
+// 2. target/application
+// 3. target/application.zip
+// 4. src/main/application
+// 5. Given path, if it contains services.xml
 func FindApplicationPackage(zipOrDir string, requirePackaging bool) (ApplicationPackage, error) {
 	if isZip(zipOrDir) {
 		return ApplicationPackage{Path: zipOrDir}, nil
 	}
-	if util.PathExists(filepath.Join(zipOrDir, "pom.xml")) {
-		zip := filepath.Join(zipOrDir, "target", "application.zip")
-		if util.PathExists(zip) {
+	// Prefer uncompressed application because this allows us to add security/clients.pem to the package on-demand
+	if path := filepath.Join(zipOrDir, "target", "application"); util.PathExists(path) {
+		return ApplicationPackage{Path: path}, nil
+	}
+	appZip := filepath.Join(zipOrDir, "target", "application.zip")
+	if util.PathExists(filepath.Join(zipOrDir, "pom.xml")) || util.PathExists(appZip) {
+		if util.PathExists(appZip) {
 			if testZip := filepath.Join(zipOrDir, "target", "application-test.zip"); util.PathExists(testZip) {
-				return ApplicationPackage{Path: zip, TestPath: testZip}, nil
+				return ApplicationPackage{Path: appZip, TestPath: testZip}, nil
 			}
-			return ApplicationPackage{Path: zip}, nil
+			return ApplicationPackage{Path: appZip}, nil
 		}
 		if requirePackaging {
 			return ApplicationPackage{}, errors.New("found pom.xml, but target/application.zip does not exist: run 'mvn package' first")
