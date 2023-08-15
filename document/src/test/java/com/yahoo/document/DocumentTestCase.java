@@ -42,7 +42,7 @@ import static org.junit.Assert.fail;
 /**
  * Test for Document and all its features, including (de)serialization.
  *
- * @author <a href="thomasg@yahoo-inc.com>Thomas Gundersen</a>
+ * @author Thomas Gundersen
  * @author bratseth
  */
 public class DocumentTestCase extends DocumentTestCaseBase {

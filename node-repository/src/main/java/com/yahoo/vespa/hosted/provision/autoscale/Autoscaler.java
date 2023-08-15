@@ -54,40 +54,40 @@ public class Autoscaler {
     }
 
     private Autoscaling autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
-        ClusterModel clusterModel = new ClusterModel(nodeRepository,
-                                                     application,
-                                                     clusterNodes.not().retired().clusterSpec(),
-                                                     cluster,
-                                                     clusterNodes,
-                                                     nodeRepository.metricsDb(),
-                                                     nodeRepository.clock());
-        if (clusterModel.isEmpty()) return Autoscaling.empty();
+        var model = new ClusterModel(nodeRepository,
+                                     application,
+                                     clusterNodes.not().retired().clusterSpec(),
+                                     cluster,
+                                     clusterNodes,
+                                     new AllocatableResources(clusterNodes.not().retired(), nodeRepository),
+                                     nodeRepository.metricsDb(),
+                                     nodeRepository.clock());
+        if (model.isEmpty()) return Autoscaling.empty();
 
         if (! limits.isEmpty() && cluster.minResources().equals(cluster.maxResources()))
-            return Autoscaling.dontScale(Autoscaling.Status.unavailable, "Autoscaling is not enabled", clusterModel);
+            return Autoscaling.dontScale(Autoscaling.Status.unavailable, "Autoscaling is not enabled", model);
 
-        if ( ! clusterModel.isStable(nodeRepository))
-            return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", clusterModel);
+        if ( ! model.isStable(nodeRepository))
+            return Autoscaling.dontScale(Status.waiting, "Cluster change in progress", model);
 
-        var current = new AllocatableClusterResources(clusterNodes.not().retired(), nodeRepository);
-        var loadAdjustment = clusterModel.loadAdjustment();
+        var loadAdjustment = model.loadAdjustment();
 
         // Ensure we only scale down if we'll have enough headroom to not scale up again given a small load increase
-        var target = allocationOptimizer.findBestAllocation(loadAdjustment, current, clusterModel, limits);
+        var target = allocationOptimizer.findBestAllocation(loadAdjustment, model, limits);
 
         if (target.isEmpty())
-            return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", clusterModel);
+            return Autoscaling.dontScale(Status.insufficient, "No allocations are possible within configured limits", model);
 
-        if (! worthRescaling(current.realResources(), target.get().realResources())) {
+        if (! worthRescaling(model.current().realResources(), target.get().realResources())) {
             if (target.get().fulfilment() < 0.9999999)
-                return Autoscaling.dontScale(Status.insufficient, "Configured limits prevents ideal scaling of this cluster", clusterModel);
-            else if ( ! clusterModel.safeToScaleDown() && clusterModel.idealLoad().any(v -> v < 1.0))
-                return Autoscaling.dontScale(Status.ideal, "Cooling off before considering to scale down", clusterModel);
+                return Autoscaling.dontScale(Status.insufficient, "Configured limits prevents ideal scaling of this cluster", model);
+            else if ( ! model.safeToScaleDown() && model.idealLoad().any(v -> v < 1.0))
+                return Autoscaling.dontScale(Status.ideal, "Cooling off before considering to scale down", model);
             else
-                return Autoscaling.dontScale(Status.ideal, "Cluster is ideally scaled (within configured limits)", clusterModel);
+                return Autoscaling.dontScale(Status.ideal, "Cluster is ideally scaled (within configured limits)", model);
         }
 
-        return Autoscaling.scaleTo(target.get().advertisedResources(), clusterModel);
+        return Autoscaling.scaleTo(target.get().advertisedResources(), model);
     }
 
     /** Returns true if it is worthwhile to make the given resource change, false if it is too insignificant */

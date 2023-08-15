@@ -23,7 +23,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
+import com.yahoo.vespa.hosted.provision.autoscale.AllocatableResources;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocationOptimizer;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
 import com.yahoo.vespa.hosted.provision.autoscale.Limits;
@@ -182,12 +182,12 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                        .not().retired()
                                        .not().removable();
         boolean firstDeployment = nodes.isEmpty();
-        AllocatableClusterResources currentResources =
+        var current =
                 firstDeployment // start at min, preserve current resources otherwise
-                ? new AllocatableClusterResources(initialResourcesFrom(requested, clusterSpec, application.id()), clusterSpec, nodeRepository)
-                : new AllocatableClusterResources(nodes, nodeRepository);
-        var clusterModel = new ClusterModel(nodeRepository, application, clusterSpec, cluster, nodes, nodeRepository.metricsDb(), nodeRepository.clock());
-        return within(Limits.of(requested), currentResources, firstDeployment, clusterModel);
+                ? new AllocatableResources(initialResourcesFrom(requested, clusterSpec, application.id()), clusterSpec, nodeRepository)
+                : new AllocatableResources(nodes, nodeRepository);
+        var model = new ClusterModel(nodeRepository, application, clusterSpec, cluster, nodes, current, nodeRepository.metricsDb(), nodeRepository.clock());
+        return within(Limits.of(requested), model, firstDeployment);
     }
 
     private ClusterResources initialResourcesFrom(Capacity requested, ClusterSpec clusterSpec, ApplicationId applicationId) {
@@ -197,21 +197,19 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     /** Make the minimal adjustments needed to the current resources to stay within the limits */
     private ClusterResources within(Limits limits,
-                                    AllocatableClusterResources current,
-                                    boolean firstDeployment,
-                                    ClusterModel clusterModel) {
+                                    ClusterModel model,
+                                    boolean firstDeployment) {
         if (limits.min().equals(limits.max())) return limits.min();
 
         // Don't change current deployments that are still legal
-        if (! firstDeployment && current.advertisedResources().isWithin(limits.min(), limits.max()))
-            return current.advertisedResources();
+        if (! firstDeployment && model.current().advertisedResources().isWithin(limits.min(), limits.max()))
+            return model.current().advertisedResources();
 
         // Otherwise, find an allocation that preserves the current resources as well as possible
         return allocationOptimizer.findBestAllocation(Load.one(),
-                                                      current,
-                                                      clusterModel,
+                                                      model,
                                                       limits)
-                                  .orElseThrow(() -> newNoAllocationPossible(current.clusterSpec(), limits))
+                                  .orElseThrow(() -> newNoAllocationPossible(model.current().clusterSpec(), limits))
                                   .advertisedResources();
     }
 

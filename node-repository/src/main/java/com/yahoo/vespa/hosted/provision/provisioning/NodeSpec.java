@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.autoscale.ResourceChange;
 
 import java.time.Duration;
 import java.util.Map;
@@ -162,16 +163,11 @@ public interface NodeSpec {
         @Override
         public boolean canResize(NodeResources currentNodeResources, NodeResources currentSpareHostResources,
                                  ClusterSpec.Type type, boolean hasTopologyChange, int currentClusterSize) {
-            if (exclusive) return false; // exclusive resources must match the host
-            // Never allow in-place resize when also changing topology or decreasing cluster size
-            if (hasTopologyChange || count < currentClusterSize) return false;
+            return ResourceChange.canInPlaceResize(currentClusterSize, currentNodeResources, count, requestedNodeResources,
+                                                   type, exclusive, hasTopologyChange)
+                   &&
+                   currentSpareHostResources.add(currentNodeResources.justNumbers()).satisfies(requestedNodeResources);
 
-            // Do not allow increasing cluster size and decreasing node resources at the same time for content nodes
-            if (type.isContent() && count > currentClusterSize && !requestedNodeResources.satisfies(currentNodeResources.justNumbers()))
-                return false;
-
-            // Otherwise, allowed as long as the host can satisfy the new requested resources
-            return currentSpareHostResources.add(currentNodeResources.justNumbers()).satisfies(requestedNodeResources);
         }
 
         @Override

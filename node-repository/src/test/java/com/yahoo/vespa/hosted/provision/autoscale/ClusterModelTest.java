@@ -5,17 +5,12 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
-import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -36,10 +31,10 @@ public class ClusterModelTest {
     public void unit_adjustment_should_cause_no_change() {
         var model = clusterModelWithNoData(); // 5 nodes, 1 group
         assertEquals(Load.one(), model.loadAdjustment());
-        var target = model.loadAdjustment().scaled(resources());
+        var target = model.loadAdjustment().scaled(nodeResources());
         int testingNodes = 5 - 1;
         int currentNodes = 5 - 1;
-        assertEquals(resources(), model.loadWith(testingNodes, 1).scaled(Load.one().divide(model.loadWith(currentNodes, 1)).scaled(target)));
+        assertEquals(nodeResources(), model.loadWith(testingNodes, 1).scaled(Load.one().divide(model.loadWith(currentNodes, 1)).scaled(target)));
     }
 
     @Test
@@ -91,16 +86,23 @@ public class ClusterModelTest {
         ManualClock clock = new ManualClock();
         Application application = Application.empty(ApplicationId.from("t1", "a1", "i1"));
         ClusterSpec clusterSpec = clusterSpec();
-        Cluster cluster = cluster(resources());
+        Cluster cluster = cluster();
         application = application.with(cluster);
-        return new ClusterModel(new ProvisioningTester.Builder().build().nodeRepository(),
+        var nodeRepository = new ProvisioningTester.Builder().build().nodeRepository();
+        return new ClusterModel(nodeRepository,
                                 application.with(status),
-                                clusterSpec, cluster, clock, Duration.ofMinutes(10),
+                                clusterSpec, cluster,
+                                new AllocatableResources(clusterResources(), clusterSpec, nodeRepository),
+                                clock, Duration.ofMinutes(10), Duration.ofMinutes(5),
                                 timeseries(cluster,100, queryRate, writeRate, clock),
                                 ClusterNodesTimeseries.empty());
     }
 
-    private NodeResources resources() {
+    private ClusterResources clusterResources() {
+        return new ClusterResources(5, 1, nodeResources());
+    }
+
+    private NodeResources nodeResources() {
         return new NodeResources(1, 10, 100, 1);
     }
 
@@ -111,10 +113,10 @@ public class ClusterModelTest {
                           .build();
     }
 
-    private Cluster cluster(NodeResources resources) {
+    private Cluster cluster() {
         return Cluster.create(ClusterSpec.Id.from("test"),
                               false,
-                              Capacity.from(new ClusterResources(5, 1, resources)));
+                              Capacity.from(clusterResources()));
     }
 
     /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
