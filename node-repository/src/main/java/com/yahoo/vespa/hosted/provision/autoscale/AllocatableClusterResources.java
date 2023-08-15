@@ -130,14 +130,13 @@ public class AllocatableClusterResources {
         return (vcpuFulfilment + memoryGbFulfilment + diskGbFulfilment) / 3;
     }
 
-    public boolean preferableTo(AllocatableClusterResources other,
-                                AllocatableClusterResources current, ClusterModel clusterModel) {
+    public boolean preferableTo(AllocatableClusterResources other, ClusterModel model) {
         if (other.fulfilment() < 1 || this.fulfilment() < 1) // always fulfil as much as possible
             return this.fulfilment() > other.fulfilment();
 
-        return this.cost() * toHours(clusterModel.allocationDuration()) + this.costChangingFrom(current, clusterModel)
+        return this.cost() * toHours(model.allocationDuration()) + this.costChangingFrom(model)
                <
-               other.cost() * toHours(clusterModel.allocationDuration()) + other.costChangingFrom(current, clusterModel);
+               other.cost() * toHours(model.allocationDuration()) + other.costChangingFrom(model);
     }
 
     private double toHours(Duration duration) {
@@ -145,8 +144,8 @@ public class AllocatableClusterResources {
     }
 
     /** The estimated cost of changing from the given current resources to this. */
-    public double costChangingFrom(AllocatableClusterResources current, ClusterModel clusterModel) {
-        return new ResourceChange(current, this, clusterModel).cost();
+    public double costChangingFrom(ClusterModel model) {
+        return new ResourceChange(model, this).cost();
     }
 
     @Override
@@ -173,8 +172,7 @@ public class AllocatableClusterResources {
                                                              ClusterSpec clusterSpec,
                                                              Limits applicationLimits,
                                                              List<NodeResources> availableRealHostResources,
-                                                             AllocatableClusterResources current,
-                                                             ClusterModel clusterModel,
+                                                             ClusterModel model,
                                                              NodeRepository nodeRepository) {
         var systemLimits = nodeRepository.nodeResourceLimits();
         boolean exclusive = nodeRepository.exclusiveAllocation(clusterSpec);
@@ -238,12 +236,12 @@ public class AllocatableClusterResources {
                                                                 clusterSpec);
 
                 if ( ! systemLimits.isWithinAdvertisedDiskLimits(advertisedResources, clusterSpec)) { // TODO: Remove when disk limit is enforced
-                    if (bestDisregardingDiskLimit.isEmpty() || candidate.preferableTo(bestDisregardingDiskLimit.get(), current, clusterModel)) {
+                    if (bestDisregardingDiskLimit.isEmpty() || candidate.preferableTo(bestDisregardingDiskLimit.get(), model)) {
                         bestDisregardingDiskLimit = Optional.of(candidate);
                     }
                     continue;
                 }
-                if (best.isEmpty() || candidate.preferableTo(best.get(), current, clusterModel)) {
+                if (best.isEmpty() || candidate.preferableTo(best.get(), model)) {
                     best = Optional.of(candidate);
                 }
             }

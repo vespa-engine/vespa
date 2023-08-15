@@ -89,6 +89,7 @@ public class Fixture {
                                 clusterSpec,
                                 cluster(),
                                 nodes(),
+                                new AllocatableClusterResources(nodes(), tester.nodeRepository()),
                                 tester.nodeRepository().metricsDb(),
                                 tester.nodeRepository().clock());
     }

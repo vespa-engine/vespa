@@ -14,23 +14,23 @@ import java.time.Duration;
 public class ResourceChange {
 
     private final AllocatableClusterResources from, to;
-    private final ClusterModel clusterModel;
+    private final ClusterModel model;
 
-    public ResourceChange(AllocatableClusterResources from, AllocatableClusterResources to, ClusterModel clusterModel) {
-        this.from = from;
+    public ResourceChange(ClusterModel model, AllocatableClusterResources to) {
+        this.from = model.current();
         this.to = to;
-        this.clusterModel = clusterModel;
+        this.model = model;
     }
 
     /** Returns the estimated total cost of this resource change (coming in addition to the "to" resource cost). */
     public double cost() {
-        if (requiresRedistribution()) return toHours(clusterModel.redistributionDuration()) * from.cost();
-        if (requiresNodeReplacement()) return toHours(clusterModel.nodeReplacementDuration()) * from.cost();
+        if (requiresRedistribution()) return toHours(model.redistributionDuration()) * from.cost();
+        if (requiresNodeReplacement()) return toHours(model.nodeReplacementDuration()) * from.cost();
         return 0;
     }
 
     private boolean requiresRedistribution() {
-        if ( ! clusterModel.clusterSpec().type().isContent()) return false;
+        if ( ! model.clusterSpec().type().isContent()) return false;
         if (from.nodes() != to.nodes()) return true;
         if (from.groups() != to.groups()) return true;
         if (requiresNodeReplacement()) return true;
@@ -42,7 +42,7 @@ public class ResourceChange {
         var fromNodes = from.advertisedResources().nodeResources();
         var toNodes = to.advertisedResources().nodeResources();
 
-        if (clusterModel.isExclusive()) {
+        if (model.isExclusive()) {
             return ! fromNodes.equals(toNodes);
         }
         else {
@@ -59,7 +59,7 @@ public class ResourceChange {
     private boolean canInPlaceResize() {
         return canInPlaceResize(from.nodes(), from.advertisedResources().nodeResources(),
                                 to.nodes(), to.advertisedResources().nodeResources(),
-                                clusterModel.clusterSpec().type(), clusterModel.isExclusive(), from.groups() != to.groups());
+                                model.clusterSpec().type(), model.isExclusive(), from.groups() != to.groups());
     }
 
     public static boolean canInPlaceResize(int fromCount, NodeResources fromResources,

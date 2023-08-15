@@ -50,6 +50,7 @@ public class ClusterModel {
     private final Application application;
     private final ClusterSpec clusterSpec;
     private final Cluster cluster;
+    private final AllocatableClusterResources current;
 
     private final CpuModel cpu = new CpuModel();
     private final MemoryModel memory = new MemoryModel();
@@ -78,6 +79,7 @@ public class ClusterModel {
                         ClusterSpec clusterSpec,
                         Cluster cluster,
                         NodeList clusterNodes,
+                        AllocatableClusterResources current,
                         MetricsDb metricsDb,
                         Clock clock) {
         this.nodeRepository = nodeRepository;
@@ -85,6 +87,7 @@ public class ClusterModel {
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
         this.nodes = clusterNodes;
+        this.current = current;
         this.clock = clock;
         this.scalingDuration = cluster.scalingDuration(clusterSpec);
         this.allocationDuration = cluster.allocationDuration(clusterSpec);
@@ -97,6 +100,7 @@ public class ClusterModel {
                  Application application,
                  ClusterSpec clusterSpec,
                  Cluster cluster,
+                 AllocatableClusterResources current,
                  Clock clock,
                  Duration scalingDuration,
                  Duration allocationDuration,
@@ -107,6 +111,7 @@ public class ClusterModel {
         this.clusterSpec = clusterSpec;
         this.cluster = cluster;
         this.nodes = NodeList.of();
+        this.current = current;
         this.clock = clock;
 
         this.scalingDuration = scalingDuration;
@@ -118,6 +123,7 @@ public class ClusterModel {
 
     public Application application() { return application; }
     public ClusterSpec clusterSpec() { return clusterSpec; }
+    public AllocatableClusterResources current() { return current; }
     private ClusterNodesTimeseries nodeTimeseries() { return nodeTimeseries; }
     private ClusterTimeseries clusterTimeseries() { return clusterTimeseries; }
 

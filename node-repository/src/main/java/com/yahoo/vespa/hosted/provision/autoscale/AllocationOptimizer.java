@@ -37,20 +37,19 @@ public class AllocationOptimizer {
      *         fully or partially, within the limits
      */
     public Optional<AllocatableClusterResources> findBestAllocation(Load loadAdjustment,
-                                                                    AllocatableClusterResources current,
-                                                                    ClusterModel clusterModel,
+                                                                    ClusterModel model,
                                                                     Limits limits) {
         if (limits.isEmpty())
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()),
                                IntRange.empty());
         else
-            limits = atLeast(minimumNodes, limits).fullySpecified(current.clusterSpec(), nodeRepository, clusterModel.application().id());
+            limits = atLeast(minimumNodes, limits).fullySpecified(model.current().clusterSpec(), nodeRepository, model.application().id());
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
         var availableRealHostResources = nodeRepository.zone().cloud().dynamicProvisioning()
                                          ? nodeRepository.flavors().getFlavors().stream().map(flavor -> flavor.resources()).toList()
                                          : nodeRepository.nodes().list().hosts().stream().map(host -> host.flavor().resources())
-                                                         .map(hostResources -> maxResourcesOf(hostResources, clusterModel))
+                                                         .map(hostResources -> maxResourcesOf(hostResources, model))
                                                          .toList();
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
@@ -59,17 +58,16 @@ public class AllocationOptimizer {
                 var resources = new ClusterResources(nodes,
                                                      groups,
                                                      nodeResourcesWith(nodes, groups,
-                                                                       limits, loadAdjustment, current, clusterModel));
+                                                                       limits, loadAdjustment, model));
                 var allocatableResources = AllocatableClusterResources.from(resources,
-                                                                            clusterModel.application().id(),
-                                                                            current.clusterSpec(),
+                                                                            model.application().id(),
+                                                                            model.current().clusterSpec(),
                                                                             limits,
                                                                             availableRealHostResources,
-                                                                            current,
-                                                                            clusterModel,
+                                                                            model,
                                                                             nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
-                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get(), current, clusterModel))
+                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get(), model))
                     bestAllocation = allocatableResources;
             }
         }
@@ -77,8 +75,8 @@ public class AllocationOptimizer {
     }
 
     /** Returns the max resources of a host one node may allocate. */
-    private NodeResources maxResourcesOf(NodeResources hostResources, ClusterModel clusterModel) {
-        if (nodeRepository.exclusiveAllocation(clusterModel.clusterSpec())) return hostResources;
+    private NodeResources maxResourcesOf(NodeResources hostResources, ClusterModel model) {
+        if (nodeRepository.exclusiveAllocation(model.clusterSpec())) return hostResources;
         // static, shared hosts: Allocate at most half of the host cpu to simplify management
         return hostResources.withVcpu(hostResources.vcpu() / 2);
     }
@@ -91,9 +89,8 @@ public class AllocationOptimizer {
                                             int groups,
                                             Limits limits,
                                             Load loadAdjustment,
-                                            AllocatableClusterResources current,
-                                            ClusterModel clusterModel) {
-        var loadWithTarget = clusterModel.loadAdjustmentWith(nodes, groups, loadAdjustment);
+                                            ClusterModel model) {
+        var loadWithTarget = model.loadAdjustmentWith(nodes, groups, loadAdjustment);
 
         // Leave some headroom above the ideal allocation to avoid immediately needing to scale back up
         if (loadAdjustment.cpu() < 1 && (1.0 - loadWithTarget.cpu()) < headroomRequiredToScaleDown)
@@ -103,11 +100,11 @@ public class AllocationOptimizer {
         if (loadAdjustment.disk() < 1 && (1.0 - loadWithTarget.disk()) < headroomRequiredToScaleDown)
             loadAdjustment = loadAdjustment.withDisk(Math.min(1.0, loadAdjustment.disk() * (1.0 + headroomRequiredToScaleDown)));
 
-        loadWithTarget = clusterModel.loadAdjustmentWith(nodes, groups, loadAdjustment);
+        loadWithTarget = model.loadAdjustmentWith(nodes, groups, loadAdjustment);
 
-        var scaled = loadWithTarget.scaled(current.realResources().nodeResources());
+        var scaled = loadWithTarget.scaled(model.current().realResources().nodeResources());
         var nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
-                        ? current.advertisedResources().nodeResources()
+                        ? model.current().advertisedResources().nodeResources()
                         : limits.min().nodeResources(); // min=max for non-scaled
         return nonScaled.withVcpu(scaled.vcpu()).withMemoryGb(scaled.memoryGb()).withDiskGb(scaled.diskGb());
     }

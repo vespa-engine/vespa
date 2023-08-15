@@ -120,25 +120,25 @@ public class Autoscaling {
     }
 
     /** Creates an autoscaling conclusion which does not change the current allocation for a specified reason. */
-    public static Autoscaling dontScale(Status status, String description, ClusterModel clusterModel) {
+    public static Autoscaling dontScale(Status status, String description, ClusterModel model) {
         return new Autoscaling(status,
                                description,
                                Optional.empty(),
-                               clusterModel.at(),
-                               clusterModel.peakLoad(),
-                               clusterModel.idealLoad(),
-                               clusterModel.metrics());
+                               model.at(),
+                               model.peakLoad(),
+                               model.idealLoad(),
+                               model.metrics());
     }
 
     /** Creates an autoscaling conclusion to scale. */
-    public static Autoscaling scaleTo(ClusterResources target, ClusterModel clusterModel) {
+    public static Autoscaling scaleTo(ClusterResources target, ClusterModel model) {
         return new Autoscaling(Status.rescaling,
                                "Rescaling initiated due to load changes",
                                Optional.of(target),
-                               clusterModel.at(),
-                               clusterModel.peakLoad(),
-                               clusterModel.idealLoad(),
-                               clusterModel.metrics());
+                               model.at(),
+                               model.peakLoad(),
+                               model.idealLoad(),
+                               model.metrics());
     }
 
     public enum Status {
