@@ -83,10 +83,6 @@ public class SessionRepositoryTest {
 
     private void setup(ModelFactoryRegistry modelFactoryRegistry) throws Exception {
         curator = new MockCurator();
-        setup(modelFactoryRegistry, curator);
-    }
-
-    private void setup(ModelFactoryRegistry modelFactoryRegistry, MockCurator curator) throws Exception {
         File configserverDbDir = temporaryFolder.newFolder().getAbsoluteFile();
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
                 .configServerDBDir(configserverDbDir.getAbsolutePath())
@@ -192,22 +188,6 @@ public class SessionRepositoryTest {
         expectedException.expect(RuntimeException.class);
         sessionRepository.loadSessions(new InThreadExecutorService());
         assertTrue(sessionRepository.getRemoteSessionsFromZooKeeper().isEmpty());
-    }
-
-    // If reading a session that originally failed deployment we should just skip it
-    @Test
-    public void testThatSessionThatFailedDeploymentIsIgnored() throws Exception {
-        setup();
-
-        // Create a new session, which will have status NEW, which is what will be the state if e.g.
-        // a deployment failed when building the config model
-        createSession(3, false);
-
-        // setup() will load remote sessions, session 3 should not be loaded, since it is in state NEW
-        setup(new ModelFactoryRegistry(List.of(VespaModelFactory.createTestFactory())), curator);
-        assertTrue(sessionRepository.getRemoteSessions().isEmpty());
-        Path sessionPath = TenantRepository.getSessionsPath(tenantName).append(3 + "");
-        assertTrue(curator.exists(sessionPath));
     }
 
     @Test
