@@ -7,20 +7,7 @@
 
 using namespace vespalib;
 
-class Test : public TestApp
-{
-public:
-    void testFilePointer();
-    void testFileDescriptor();
-    void testDirPointer();
-    void testValueGuard();
-    void testMaxValueGuard();
-    void testCounterGuard();
-    int Main() override;
-};
-
-void
-Test::testFilePointer()
+TEST("testFilePointer")
 {
     {
         FilePointer file(fopen("bogus", "r"));
@@ -72,8 +59,7 @@ Test::testFilePointer()
     }
 }
 
-void
-Test::testFileDescriptor()
+TEST("testFileDescriptor")
 {
     {
         FileDescriptor file(open("bogus", O_RDONLY));
@@ -126,124 +112,7 @@ Test::testFileDescriptor()
     }
 }
 
-void
-Test::testDirPointer()
-{
-    {
-        DirPointer dir(opendir("bogus"));
-        EXPECT_TRUE(!dir.valid());
-    }
-    {
-        DirPointer dir(opendir(TEST_PATH("").c_str()));
-        EXPECT_TRUE(dir.valid());
-
-        dirent *de;
-        bool foundGuardCpp = false;
-        while ((de = readdir(dir)) != NULL) {
-            if (strcmp(de->d_name, "guard_test.cpp") == 0) {
-                foundGuardCpp = true;
-            }
-        }
-        EXPECT_TRUE(foundGuardCpp);
-    }
-    {
-        DIR *dp = NULL;
-        {
-            DirPointer dir(opendir("."));
-            EXPECT_TRUE(dir.valid());
-            dp = dir;
-        }
-        EXPECT_TRUE(dp != NULL);
-        // EXPECT_TRUE(readdir(dp) == NULL);
-    }
-    {
-        DirPointer dir(opendir("."));
-        EXPECT_TRUE(dir.valid());
-        dir.reset(opendir("."));
-        EXPECT_TRUE(dir.valid());
-
-        DIR *ref = dir.dp();
-        DIR *dp = dir.release();
-        EXPECT_TRUE(dp != NULL);
-        EXPECT_TRUE(dp == ref);
-        EXPECT_TRUE(!dir.valid());
-        EXPECT_TRUE(dir.dp() == NULL);
-        closedir(dp);
-    }
-}
-
-void
-Test::testValueGuard()
-{
-    int value = 10;
-    {
-        ValueGuard<int> guard(value);
-        value = 20;
-        EXPECT_TRUE(value == 20);
-    }
-    EXPECT_TRUE(value == 10);
-    {
-        ValueGuard<int> guard(value, 50);
-        value = 20;
-        EXPECT_TRUE(value == 20);
-    }
-    EXPECT_TRUE(value == 50);
-    {
-        ValueGuard<int> guard(value);
-        value = 20;
-        guard.update(100);
-        EXPECT_TRUE(value == 20);
-    }
-    EXPECT_TRUE(value == 100);
-    {
-        ValueGuard<int> guard(value);
-        value = 20;
-        guard.dismiss();
-        EXPECT_TRUE(value == 20);
-    }
-    EXPECT_TRUE(value == 20);
-}
-
-void
-Test::testMaxValueGuard()
-{
-    int value = 10;
-    {
-        MaxValueGuard<int> guard(value);
-        value = 20;
-        EXPECT_TRUE(value == 20);
-    }
-    EXPECT_TRUE(value == 10);
-    {
-        MaxValueGuard<int> guard(value);
-        value = 5;
-        EXPECT_TRUE(value == 5);
-    }
-    EXPECT_TRUE(value == 5);
-    {
-        MaxValueGuard<int> guard(value, 50);
-        value = 100;
-        EXPECT_TRUE(value == 100);
-    }
-    EXPECT_TRUE(value == 50);
-    {
-        MaxValueGuard<int> guard(value);
-        value = 200;
-        guard.update(100);
-        EXPECT_TRUE(value == 200);
-    }
-    EXPECT_TRUE(value == 100);
-    {
-        MaxValueGuard<int> guard(value);
-        value = 200;
-        guard.dismiss();
-        EXPECT_TRUE(value == 200);
-    }
-    EXPECT_TRUE(value == 200);
-}
-
-void
-Test::testCounterGuard()
+TEST("testCounterGuard")
 {
     int cnt = 10;
     {
@@ -254,17 +123,4 @@ Test::testCounterGuard()
     EXPECT_TRUE(cnt == 10);
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("guard_test");
-    testFilePointer();
-    testFileDescriptor();
-    testDirPointer();
-    testValueGuard();
-    testMaxValueGuard();
-    testCounterGuard();
-    TEST_DONE();
-}
-
-TEST_APPHOOK(Test)
+TEST_MAIN() { TEST_RUN_ALL(); }

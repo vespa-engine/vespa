@@ -61,10 +61,10 @@ std::ostream& operator<<(std::ostream&, const FileInfo&);
  */
 class File {
 private:
-    int _fd;
-    int _flags;
-    vespalib::string _filename;
-    bool _close;
+    int         _fd;
+    int         _flags;
+    string      _filename;
+    bool        _close;
     mutable int _fileReads; // Tracks number of file reads done on this file
     mutable int _fileWrites; // Tracks number of file writes done in this file
 
@@ -74,6 +74,9 @@ private:
      */
     void verifyDirectIO(uint64_t buf, size_t bufsize, off_t offset) const;
 
+    /** Copying a file instance, moves any open file descriptor. */
+    File(File& f);
+    File& operator=(File& f);
 public:
     using UP = std::unique_ptr<File>;
 
@@ -83,25 +86,15 @@ public:
     enum Flag { READONLY = 1, CREATE = 2, DIRECTIO = 4, TRUNC = 8 };
 
     /** Create a file instance, without opening the file. */
-    File(vespalib::stringref filename);
+    File(stringref filename);
 
     /** Create a file instance of an already open file. */
-    File(int fileDescriptor, vespalib::stringref filename);
-
-    /** Copying a file instance, moves any open file descriptor. */
-    File(File& f);
-    File& operator=(File& f);
+    File(int fileDescriptor, stringref filename);
 
     /** Closes the file if not instructed to do otherwise. */
     virtual ~File();
 
-    /**
-     * Make this instance point at another file.
-     * Closes the old file it it was open.
-     */
-    void setFilename(vespalib::stringref filename);
-
-    const vespalib::string& getFilename() const { return _filename; }
+    const string& getFilename() const { return _filename; }
 
     virtual void open(int flags, bool autoCreateDirectories = false);
 
@@ -177,7 +170,7 @@ public:
      * @throw   IoException If we failed to read from file.
      * @return  The content of the file.
      */
-    vespalib::string readAll() const;
+    string readAll() const;
 
     /**
      * Read a file into a string.
@@ -188,7 +181,7 @@ public:
      * @throw   IoException If we failed to read from file.
      * @return  The content of the file.
      */
-    static vespalib::string readAll(vespalib::stringref path);
+    static string readAll(stringref path);
 
     /**
      * Sync file or directory.
@@ -198,24 +191,18 @@ public:
      *
      * @throw IoException If we failed to sync the file.
      */
-    static void sync(vespalib::stringref path);
+    static void sync(stringref path);
 
     virtual void sync();
     virtual bool close();
     virtual bool unlink();
-
-    int getFileReadCount() const { return _fileReads; }
-    int getFileWriteCount() const { return _fileWrites; }
 };
 
 /**
  * List the contents of the given directory.
  */
-using DirectoryList = std::vector<vespalib::string>;
-extern DirectoryList listDirectory(const vespalib::string & path);
-
-extern MallocAutoPtr getAlignedBuffer(size_t size);
-
+using DirectoryList = std::vector<string>;
+extern DirectoryList listDirectory(const string & path);
 string dirname(stringref name);
 string getOpenErrorString(const int osError, stringref name);
 

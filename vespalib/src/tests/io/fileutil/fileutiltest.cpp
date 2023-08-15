@@ -204,47 +204,6 @@ TEST("require that vespalib::File::resize works")
     EXPECT_EQUAL(std::string("foo"), std::string(&vec[0], 3));
 }
 
-TEST("require that copy constructor and assignment for vespalib::File works")
-{
-        // Copy file not opened.
-    {
-        File f("myfile");
-        File f2(f);
-        EXPECT_EQUAL(f.getFilename(), f2.getFilename());
-    }
-        // Copy file opened
-    {
-        File f("myfile");
-        f.open(File::CREATE);
-        File f2(f);
-        EXPECT_EQUAL(f.getFilename(), f2.getFilename());
-        ASSERT_TRUE(f2.isOpen());
-        ASSERT_TRUE(!f.isOpen());
-    }
-        // Assign file opened to another file opened
-    {
-        File f("myfile");
-        f.open(File::CREATE);
-        int fd = f.getFileDescriptor();
-        File f2("targetfile");
-        f2.open(File::CREATE);
-        f = f2;
-        EXPECT_EQUAL(std::string("targetfile"), f2.getFilename());
-        EXPECT_EQUAL(f.getFilename(), f2.getFilename());
-        ASSERT_TRUE(!f2.isOpen());
-        ASSERT_TRUE(f.isOpen());
-        try{
-            File f3(fd, "myfile");
-            f3.closeFileWhenDestructed(false); // Already closed
-            f3.write("foo", 3, 0);
-            TEST_FATAL("This file descriptor should have been closed");
-        } catch (IoException& e) {
-            //std::cerr << e.what() << "\n";
-            EXPECT_EQUAL(IoException::INTERNAL_FAILURE, e.getType());
-        }
-    }
-}
-
 TEST("require that we can read all data written to file")
 {
     // Write text into a file.

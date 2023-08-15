@@ -20,31 +20,29 @@ namespace vespalib {
 
 namespace {
 
-    FileInfo::UP
-    processStat(struct stat& filestats, bool result, stringref path) {
-        FileInfo::UP resval;
-        if (result) {
-            resval.reset(new FileInfo);
-            resval->_plainfile = S_ISREG(filestats.st_mode);
-            resval->_directory = S_ISDIR(filestats.st_mode);
-            resval->_symlink = S_ISLNK(filestats.st_mode);
-            resval->_size = filestats.st_size;
-        } else if (errno != ENOENT) {
-            asciistream ost;
-            ost << "An IO error occured while statting '" << path << "'. "
-                << "errno(" << errno << "): " << getErrorString(errno);
-            throw IoException(ost.str(), IoException::getErrorType(errno),
-                              VESPA_STRLOC);
-        }
-        LOG(debug, "stat(%s): Existed? %s, Plain file? %s, Directory? %s, "
-                   "Size: %" PRIu64,
-            string(path).c_str(),
-            resval.get() ? "true" : "false",
-            resval.get() && resval->_plainfile ? "true" : "false",
-            resval.get() && resval->_directory ? "true" : "false",
-            resval.get() ? resval->_size : 0);
-        return resval;
+FileInfo::UP
+processStat(struct stat& filestats, bool result, stringref path) {
+    FileInfo::UP resval;
+    if (result) {
+        resval = std::make_unique<FileInfo>();
+        resval->_plainfile = S_ISREG(filestats.st_mode);
+        resval->_directory = S_ISDIR(filestats.st_mode);
+        resval->_symlink = S_ISLNK(filestats.st_mode);
+        resval->_size = filestats.st_size;
+    } else if (errno != ENOENT) {
+        asciistream ost;
+        ost << "An IO error occured while statting '" << path << "'. "
+            << "errno(" << errno << "): " << getErrorString(errno);
+        throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
+    LOG(debug, "stat(%s): Existed? %s, Plain file? %s, Directory? %s, Size: %" PRIu64,
+        string(path).c_str(),
+        resval.get() ? "true" : "false",
+        resval.get() && resval->_plainfile ? "true" : "false",
+        resval.get() && resval->_directory ? "true" : "false",
+        resval.get() ? resval->_size : 0);
+    return resval;
+}
 
 string
 safeStrerror(int errnum)
@@ -129,36 +127,24 @@ File::operator=(File& f)
     return *this;
 }
 
-void
-File::setFilename(stringref filename)
-{
-    if (_filename == filename) return;
-    if (_close && _fd != -1) close();
-    _filename = filename;
-    _fd = -1;
-    _flags = 0;
-    _close = true;
-}
-
 namespace {
-    int openAndCreateDirsIfMissing(const string & filename, int flags,
-                                   bool createDirsIfMissing)
+int openAndCreateDirsIfMissing(const string & filename, int flags, bool createDirsIfMissing)
+{
+    int fd = ::open(filename.c_str(), flags, 0644);
+    if (fd < 0 && errno == ENOENT && ((flags & O_CREAT) != 0)
+        && createDirsIfMissing)
     {
-        int fd = ::open(filename.c_str(), flags, 0644);
-        if (fd < 0 && errno == ENOENT && ((flags & O_CREAT) != 0)
-            && createDirsIfMissing)
-        {
-            auto pos = filename.rfind('/');
-            if (pos != string::npos) {
-                string path(filename.substr(0, pos));
-                std::filesystem::create_directories(std::filesystem::path(path));
-                LOG(spam, "open(%s, %d): Retrying open after creating parent "
-                          "directories.", filename.c_str(), flags);
-                fd = ::open(filename.c_str(), flags, 0644);
-            }
+        auto pos = filename.rfind('/');
+        if (pos != string::npos) {
+            string path(filename.substr(0, pos));
+            std::filesystem::create_directories(std::filesystem::path(path));
+            LOG(spam, "open(%s, %d): Retrying open after creating parent "
+                      "directories.", filename.c_str(), flags);
+            fd = ::open(filename.c_str(), flags, 0644);
         }
-        return fd;
     }
+    return fd;
+}
 }
 
 void
@@ -436,12 +422,6 @@ File::unlink()
     return std::filesystem::remove(std::filesystem::path(_filename));
 }
 
-namespace {
-
-    uint32_t diskAlignmentSize = 4_Ki;
-
-}
-
 DirectoryList
 listDirectory(const string & path)
 {
@@ -463,16 +443,6 @@ listDirectory(const string & path)
     }
     ::closedir(dir);
     return result;
-}
-
-MallocAutoPtr
-getAlignedBuffer(size_t size)
-{
-    void *ptr;
-    int result = posix_memalign(&ptr, diskAlignmentSize, size);
-    assert(result == 0);
-    (void)result;
-    return MallocAutoPtr(ptr);
 }
 
 string dirname(stringref name)
