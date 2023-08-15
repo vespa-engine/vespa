@@ -182,7 +182,7 @@ public class SessionRepository {
         loadSessions(executor);
     }
 
-    // non-private for testing
+    // For testing
     void loadSessions(ExecutorService executor) {
         loadRemoteSessions(executor);
         try {
@@ -410,15 +410,14 @@ public class SessionRepository {
     }
 
     private void loadRemoteSessions(ExecutorService executor) throws NumberFormatException {
-        Map<Long, Future<Boolean>> futures = new HashMap<>();
+        Map<Long, Future<?>> futures = new HashMap<>();
         for (long sessionId : getRemoteSessionsFromZooKeeper()) {
-            futures.put(sessionId, executor.submit(() -> addSession(sessionId, true)));
+            futures.put(sessionId, executor.submit(() -> sessionAdded(sessionId)));
         }
         futures.forEach((sessionId, future) -> {
             try {
-                boolean loaded = future.get();
-                if (loaded)
-                    log.log(Level.FINE, () -> "Remote session " + sessionId + " loaded");
+                future.get();
+                log.log(Level.FINE, () -> "Remote session " + sessionId + " loaded");
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException("Could not load remote session " + sessionId, e);
             }
@@ -426,32 +425,26 @@ public class SessionRepository {
     }
 
     /**
-     * Add session if it is not already added and is not in a state where it should be ignored.
+     * A session for which we don't have a watcher, i.e. hitherto unknown to us.
      *
      * @param sessionId session id for the new session
-     * @return true if added, false otherwise
      */
-    public boolean addSession(long sessionId, boolean initializing) {
-        if (sessionShouldBeIgnored(sessionId, initializing)) return false;
+    public void sessionAdded(long sessionId) {
+        if (hasStatusDeleted(sessionId)) return;
 
         log.log(Level.FINE, () -> "Adding remote session " + sessionId);
         Session session = createRemoteSession(sessionId);
-        if (session.getStatus() == Session.Status.NEW)
+        if (session.getStatus() == Session.Status.NEW) {
+            log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
             confirmUpload(session);
+        }
         createLocalSessionFromDistributedApplicationPackage(sessionId);
-        return true;
     }
 
-    private boolean sessionShouldBeIgnored(long sessionId, boolean initializing) {
-        var ignorableStates = new HashSet<>(Set.of(Session.Status.DELETE));
-        // Also ignore sessions in NEW state when initializing, they are missing application package
-        // and other session data, usually because deployment failed
-        if (initializing)
-            ignorableStates.add(Session.Status.NEW);
-
+    private boolean hasStatusDeleted(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient);
-        return ignorableStates.contains(session.getStatus());
+        return session.getStatus() == Session.Status.DELETE;
     }
 
     void activate(long sessionId) {
@@ -967,7 +960,7 @@ public class SessionRepository {
     private void checkForAddedSessions(List<Long> sessions) {
         for (Long sessionId : sessions)
             if (remoteSessionCache.get(sessionId) == null)
-                addSession(sessionId, false);
+                sessionAdded(sessionId);
     }
 
     public Transaction createActivateTransaction(Session session) {
