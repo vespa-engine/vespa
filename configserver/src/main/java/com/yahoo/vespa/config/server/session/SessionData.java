@@ -59,7 +59,7 @@ public record SessionData(ApplicationId applicationId,
             return SlimeUtils.toJsonBytes(slime);
         }
         catch (IOException e) {
-            throw new RuntimeException("Serialization of " + this + " to json failed", e);
+            throw new RuntimeException("Serialization of session data to json failed", e);
         }
     }
 
