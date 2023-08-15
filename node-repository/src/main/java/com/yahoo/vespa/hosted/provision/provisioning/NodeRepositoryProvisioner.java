@@ -23,7 +23,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
+import com.yahoo.vespa.hosted.provision.autoscale.AllocatableResources;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocationOptimizer;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
 import com.yahoo.vespa.hosted.provision.autoscale.Limits;
@@ -184,8 +184,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
         boolean firstDeployment = nodes.isEmpty();
         var current =
                 firstDeployment // start at min, preserve current resources otherwise
-                ? new AllocatableClusterResources(initialResourcesFrom(requested, clusterSpec, application.id()), clusterSpec, nodeRepository)
-                : new AllocatableClusterResources(nodes, nodeRepository);
+                ? new AllocatableResources(initialResourcesFrom(requested, clusterSpec, application.id()), clusterSpec, nodeRepository)
+                : new AllocatableResources(nodes, nodeRepository);
         var model = new ClusterModel(nodeRepository, application, clusterSpec, cluster, nodes, current, nodeRepository.metricsDb(), nodeRepository.clock());
         return within(Limits.of(requested), model, firstDeployment);
     }

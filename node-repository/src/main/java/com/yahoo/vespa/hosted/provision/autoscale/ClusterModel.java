@@ -50,7 +50,7 @@ public class ClusterModel {
     private final Application application;
     private final ClusterSpec clusterSpec;
     private final Cluster cluster;
-    private final AllocatableClusterResources current;
+    private final AllocatableResources current;
 
     private final CpuModel cpu = new CpuModel();
     private final MemoryModel memory = new MemoryModel();
@@ -79,7 +79,7 @@ public class ClusterModel {
                         ClusterSpec clusterSpec,
                         Cluster cluster,
                         NodeList clusterNodes,
-                        AllocatableClusterResources current,
+                        AllocatableResources current,
                         MetricsDb metricsDb,
                         Clock clock) {
         this.nodeRepository = nodeRepository;
@@ -100,7 +100,7 @@ public class ClusterModel {
                  Application application,
                  ClusterSpec clusterSpec,
                  Cluster cluster,
-                 AllocatableClusterResources current,
+                 AllocatableResources current,
                  Clock clock,
                  Duration scalingDuration,
                  Duration allocationDuration,
@@ -123,7 +123,7 @@ public class ClusterModel {
 
     public Application application() { return application; }
     public ClusterSpec clusterSpec() { return clusterSpec; }
-    public AllocatableClusterResources current() { return current; }
+    public AllocatableResources current() { return current; }
     private ClusterNodesTimeseries nodeTimeseries() { return nodeTimeseries; }
     private ClusterTimeseries clusterTimeseries() { return clusterTimeseries; }
 

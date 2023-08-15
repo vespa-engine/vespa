@@ -13,10 +13,10 @@ import java.time.Duration;
  */
 public class ResourceChange {
 
-    private final AllocatableClusterResources from, to;
+    private final AllocatableResources from, to;
     private final ClusterModel model;
 
-    public ResourceChange(ClusterModel model, AllocatableClusterResources to) {
+    public ResourceChange(ClusterModel model, AllocatableResources to) {
         this.from = model.current();
         this.to = to;
         this.model = model;

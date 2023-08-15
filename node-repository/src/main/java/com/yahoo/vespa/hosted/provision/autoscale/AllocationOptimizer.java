@@ -5,9 +5,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
-import java.time.Duration;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.provision.autoscale.Autoscaler.headroomRequiredToScaleDown;
@@ -36,16 +34,16 @@ public class AllocationOptimizer {
      * @return the best allocation, if there are any possible legal allocations, fulfilling the target
      *         fully or partially, within the limits
      */
-    public Optional<AllocatableClusterResources> findBestAllocation(Load loadAdjustment,
-                                                                    ClusterModel model,
-                                                                    Limits limits) {
+    public Optional<AllocatableResources> findBestAllocation(Load loadAdjustment,
+                                                             ClusterModel model,
+                                                             Limits limits) {
         if (limits.isEmpty())
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()),
                                IntRange.empty());
         else
             limits = atLeast(minimumNodes, limits).fullySpecified(model.current().clusterSpec(), nodeRepository, model.application().id());
-        Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
+        Optional<AllocatableResources> bestAllocation = Optional.empty();
         var availableRealHostResources = nodeRepository.zone().cloud().dynamicProvisioning()
                                          ? nodeRepository.flavors().getFlavors().stream().map(flavor -> flavor.resources()).toList()
                                          : nodeRepository.nodes().list().hosts().stream().map(host -> host.flavor().resources())
@@ -59,13 +57,13 @@ public class AllocationOptimizer {
                                                      groups,
                                                      nodeResourcesWith(nodes, groups,
                                                                        limits, loadAdjustment, model));
-                var allocatableResources = AllocatableClusterResources.from(resources,
-                                                                            model.application().id(),
-                                                                            model.current().clusterSpec(),
-                                                                            limits,
-                                                                            availableRealHostResources,
-                                                                            model,
-                                                                            nodeRepository);
+                var allocatableResources = AllocatableResources.from(resources,
+                                                                     model.application().id(),
+                                                                     model.current().clusterSpec(),
+                                                                     limits,
+                                                                     availableRealHostResources,
+                                                                     model,
+                                                                     nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
                 if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get(), model))
                     bestAllocation = allocatableResources;

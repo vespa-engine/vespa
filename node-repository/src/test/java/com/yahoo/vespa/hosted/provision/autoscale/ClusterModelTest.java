@@ -92,7 +92,7 @@ public class ClusterModelTest {
         return new ClusterModel(nodeRepository,
                                 application.with(status),
                                 clusterSpec, cluster,
-                                new AllocatableClusterResources(clusterResources(), clusterSpec, nodeRepository),
+                                new AllocatableResources(clusterResources(), clusterSpec, nodeRepository),
                                 clock, Duration.ofMinutes(10), Duration.ofMinutes(5),
                                 timeseries(cluster,100, queryRate, writeRate, clock),
                                 ClusterNodesTimeseries.empty());

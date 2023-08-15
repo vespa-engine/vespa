@@ -59,7 +59,7 @@ public class Autoscaler {
                                      clusterNodes.not().retired().clusterSpec(),
                                      cluster,
                                      clusterNodes,
-                                     new AllocatableClusterResources(clusterNodes.not().retired(), nodeRepository),
+                                     new AllocatableResources(clusterNodes.not().retired(), nodeRepository),
                                      nodeRepository.metricsDb(),
                                      nodeRepository.clock());
         if (model.isEmpty()) return Autoscaling.empty();

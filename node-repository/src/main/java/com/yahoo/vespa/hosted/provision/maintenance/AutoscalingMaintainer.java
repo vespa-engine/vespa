@@ -16,7 +16,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
+import com.yahoo.vespa.hosted.provision.autoscale.AllocatableResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaling;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
@@ -87,7 +87,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
             NodeList clusterNodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId);
             cluster = updateCompletion(cluster, clusterNodes);
 
-            var current = new AllocatableClusterResources(clusterNodes.not().retired(), nodeRepository()).advertisedResources();
+            var current = new AllocatableResources(clusterNodes.not().retired(), nodeRepository()).advertisedResources();
 
             // Autoscale unless an autoscaling is already in progress
             Autoscaling autoscaling = null;

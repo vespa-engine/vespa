@@ -5,17 +5,14 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
-import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.HostResources;
@@ -29,7 +26,6 @@ import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsHostResourcesCalcu
 import com.yahoo.vespa.hosted.provision.autoscale.awsnodes.AwsNodeTypes;
 import com.yahoo.vespa.hosted.provision.provisioning.DynamicProvisioningTester;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
-import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -72,9 +68,9 @@ public class Fixture {
         return tester().nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId));
     }
 
-    public AllocatableClusterResources currentResources() {
-        return new AllocatableClusterResources(tester.nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId()),
-                                               tester.nodeRepository());
+    public AllocatableResources currentResources() {
+        return new AllocatableResources(tester.nodeRepository().nodes().list(Node.State.active).owner(applicationId).cluster(clusterId()),
+                                        tester.nodeRepository());
     }
 
     public Cluster cluster() {
@@ -89,7 +85,7 @@ public class Fixture {
                                 clusterSpec,
                                 cluster(),
                                 nodes(),
-                                new AllocatableClusterResources(nodes(), tester.nodeRepository()),
+                                new AllocatableResources(nodes(), tester.nodeRepository()),
                                 tester.nodeRepository().metricsDb(),
                                 tester.nodeRepository().clock());
     }
