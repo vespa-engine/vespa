@@ -17,8 +17,10 @@ void
 small_string<StackSize>::_reserveBytes(size_type newBufferSize) noexcept {
     if (isAllocated()) {
          _buf = (char *) realloc(_buf, newBufferSize);
+         assert(_buf);
     } else {
         char *tmp = (char *) malloc(newBufferSize);
+        assert(tmp);
         memcpy(tmp, _stack, _sz);
         tmp[_sz] = '\0';
         _buf = tmp;
@@ -96,6 +98,7 @@ void small_string<StackSize>::init_slower(const void *s) noexcept
 {   
     _bufferSize = _sz+1;
     _buf = (char *) malloc(_bufferSize);
+    assert(_buf);
     memcpy(_buf, s, _sz);
     _buf[_sz] = '\0';
 }
@@ -105,6 +108,7 @@ void small_string<StackSize>::appendAlloc(const void * s, size_type addSz) noexc
 {   
     size_type newBufferSize = roundUp2inN(_sz+addSz+1);
     char * buf = (char *) malloc(newBufferSize);
+    assert(buf);
     memcpy(buf, buffer(), _sz);
     if (isAllocated()) {
         free(_buf);
