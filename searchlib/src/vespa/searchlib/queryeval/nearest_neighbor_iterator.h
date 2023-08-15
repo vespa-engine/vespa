@@ -24,29 +24,29 @@ public:
 
     struct Params {
         fef::TermFieldMatchData &tfmd;
-        const search::tensor::DistanceCalculator &distance_calc;
+        std::unique_ptr<search::tensor::DistanceCalculator> distance_calc;
         NearestNeighborDistanceHeap &distanceHeap;
         const GlobalFilter &filter;
 
         Params(fef::TermFieldMatchData &tfmd_in,
-               const search::tensor::DistanceCalculator &distance_calc_in,
+               std::unique_ptr<search::tensor::DistanceCalculator> distance_calc_in,
                NearestNeighborDistanceHeap &distanceHeap_in,
                const GlobalFilter &filter_in)
           : tfmd(tfmd_in),
-            distance_calc(distance_calc_in),
+            distance_calc(std::move(distance_calc_in)),
             distanceHeap(distanceHeap_in),
             filter(filter_in)
         {}
     };
 
     NearestNeighborIterator(Params params_in)
-        : _params(params_in)
+        : _params(std::move(params_in))
     {}
 
     static std::unique_ptr<NearestNeighborIterator> create(
             bool strict,
             fef::TermFieldMatchData &tfmd,
-            const search::tensor::DistanceCalculator &distance_calc,
+            std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
             NearestNeighborDistanceHeap &distanceHeap,
             const GlobalFilter &filter);
 

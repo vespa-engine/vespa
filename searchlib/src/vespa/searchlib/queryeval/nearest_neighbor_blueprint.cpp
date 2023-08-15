@@ -133,7 +133,8 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     default:
         ;
     }
-    return NearestNeighborIterator::create(strict, tfmd, *_distance_calc,
+    return NearestNeighborIterator::create(strict, tfmd,
+                                           std::make_unique<search::tensor::DistanceCalculator>(_attr_tensor, _query_tensor),
                                            _distance_heap, *_global_filter);
 }
 

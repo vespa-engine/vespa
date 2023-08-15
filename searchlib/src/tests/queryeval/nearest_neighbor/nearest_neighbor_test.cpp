@@ -126,11 +126,12 @@ SimpleResult find_matches(Fixture &env, const Value &qtv, double threshold = std
     auto dff = search::tensor::make_distance_function_factory(DistanceMetric::Euclidean, qtv.cells().type);
     auto df = dff->for_query_vector(qtv.cells());
     threshold = df->convert_threshold(threshold);
-    DistanceCalculator dist_calc(attr, std::move(df));
     NearestNeighborDistanceHeap dh(2);
     dh.set_distance_threshold(threshold);
     const GlobalFilter &filter = *env._global_filter;
-    auto search = NearestNeighborIterator::create(strict, tfmd, dist_calc, dh, filter);
+    auto search = NearestNeighborIterator::create(strict, tfmd,
+                                                  std::make_unique<DistanceCalculator>(attr, qtv),
+                                                  dh, filter);
     if (strict) {
         return SimpleResult().searchStrict(*search, attr.getNumDocs());
     } else {
@@ -253,10 +254,11 @@ std::vector<feature_t> get_rawscores(Fixture &env, const Value &qtv) {
     auto &tfmd = *(md->resolveTermField(0));
     auto &attr = *(env._attr);
     auto dff = search::tensor::make_distance_function_factory(DistanceMetric::Euclidean, qtv.cells().type);
-    DistanceCalculator dist_calc(attr, dff->for_query_vector(qtv.cells()));
     NearestNeighborDistanceHeap dh(2);
     auto dummy_filter = GlobalFilter::create();
-    auto search = NearestNeighborIterator::create(strict, tfmd, dist_calc, dh, *dummy_filter);
+    auto search = NearestNeighborIterator::create(strict, tfmd,
+                                                  std::make_unique<DistanceCalculator>(attr, qtv),
+                                                  dh, *dummy_filter);
     uint32_t limit = attr.getNumDocs();
     uint32_t docid = 1;
     search->initRange(docid, limit);
