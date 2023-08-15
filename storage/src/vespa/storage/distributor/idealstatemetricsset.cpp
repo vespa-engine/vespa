@@ -134,7 +134,7 @@ IdealStateMetricSet::IdealStateMetricSet()
 
 IdealStateMetricSet::~IdealStateMetricSet() = default;
 
-void IdealStateMetricSet::setPendingOperations(vespalib::ConstArrayRef<uint64_t> newMetrics) {
+void IdealStateMetricSet::setPendingOperations(std::span<uint64_t, IdealStateOperation::OPERATION_COUNT> newMetrics) {
     for (uint32_t i = 0; i < IdealStateOperation::OPERATION_COUNT; i++) {
         operations[i]->pending.set(newMetrics[i]);
     }
