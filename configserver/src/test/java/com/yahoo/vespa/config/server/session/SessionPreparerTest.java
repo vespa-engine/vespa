@@ -67,8 +67,8 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.logging.Level;
 
+import static com.yahoo.vespa.config.server.session.SessionData.APPLICATION_PACKAGE_REFERENCE_PATH;
 import static com.yahoo.vespa.config.server.session.SessionPreparer.PrepareResult;
-import static com.yahoo.vespa.config.server.session.SessionZooKeeperClient.APPLICATION_PACKAGE_REFERENCE_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

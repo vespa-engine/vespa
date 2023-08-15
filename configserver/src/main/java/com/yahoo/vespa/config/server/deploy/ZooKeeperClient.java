@@ -96,8 +96,8 @@ public class ZooKeeperClient {
         Path zkPath = getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(SCHEMAS_DIR);
         curator.create(zkPath);
         // Ensures that ranking expressions and other files are also written
-        writeDir(app.getFile(ApplicationPackage.SEARCH_DEFINITIONS_DIR), zkPath, true);
-        writeDir(app.getFile(ApplicationPackage.SCHEMAS_DIR), zkPath, true);
+        writeDir(app.getFile(ApplicationPackage.SEARCH_DEFINITIONS_DIR), zkPath);
+        writeDir(app.getFile(ApplicationPackage.SCHEMAS_DIR), zkPath);
         for (NamedReader sd : schemas) {
             curator.set(zkPath.append(sd.getName()), Utf8.toBytes(com.yahoo.io.IOUtils.readAll(sd.getReader())));
             sd.getReader().close();
@@ -105,7 +105,7 @@ public class ZooKeeperClient {
     }
 
     /**
-     * Puts some of the application package files into ZK - see write(app).
+     * Writes some application package files into ZK - see write(app).
      *
      * @param app the application package to use as input.
      * @throws java.io.IOException if not able to write to Zookeeper
@@ -118,45 +118,40 @@ public class ZooKeeperClient {
         writeFile(app.getFile(Path.fromString(VALIDATION_OVERRIDES.getName())), getZooKeeperAppPath(USERAPP_ZK_SUBPATH));
         writeDir(app.getFile(RULES_DIR),
                  getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(RULES_DIR),
-                 (path) -> path.getName().endsWith(ApplicationPackage.RULES_NAME_SUFFIX),
-                 true);
+                 (path) -> path.getName().endsWith(ApplicationPackage.RULES_NAME_SUFFIX));
         writeDir(app.getFile(QUERY_PROFILES_DIR),
                  getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(QUERY_PROFILES_DIR),
-                 xmlFilter, true);
+                 xmlFilter);
         writeDir(app.getFile(PAGE_TEMPLATES_DIR),
                  getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(PAGE_TEMPLATES_DIR),
-                 xmlFilter, true);
+                 xmlFilter);
         writeDir(app.getFile(Path.fromString(SEARCHCHAINS_DIR)),
                  getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(SEARCHCHAINS_DIR),
-                 xmlFilter, true);
+                 xmlFilter);
         writeDir(app.getFile(Path.fromString(DOCPROCCHAINS_DIR)),
                  getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(DOCPROCCHAINS_DIR),
-                 xmlFilter, true);
+                 xmlFilter);
         writeDir(app.getFile(Path.fromString(ROUTINGTABLES_DIR)),
                  getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(ROUTINGTABLES_DIR),
-                 xmlFilter, true);
+                 xmlFilter);
         writeDir(app.getFile(MODELS_GENERATED_REPLICATED_DIR),
-                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(MODELS_GENERATED_REPLICATED_DIR),
-                 true);
+                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(MODELS_GENERATED_REPLICATED_DIR));
         writeDir(app.getFile(SECURITY_DIR),
-                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(SECURITY_DIR),
-                 true);
+                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(SECURITY_DIR));
     }
 
-    private void writeDir(ApplicationFile file, Path zooKeeperAppPath, boolean recurse) throws IOException {
-        writeDir(file, zooKeeperAppPath, (__) -> true, recurse);
+    private void writeDir(ApplicationFile file, Path zooKeeperAppPath) throws IOException {
+        writeDir(file, zooKeeperAppPath, (__) -> true);
     }
 
-    private void writeDir(ApplicationFile dir, Path path, ApplicationFile.PathFilter filenameFilter, boolean recurse) throws IOException {
+    private void writeDir(ApplicationFile dir, Path path, ApplicationFile.PathFilter filenameFilter) throws IOException {
         if ( ! dir.isDirectory()) return;
         for (ApplicationFile file : listFiles(dir, filenameFilter)) {
             String name = file.getPath().getName();
             if (name.startsWith(".")) continue; //.svn , .git ...
             if (file.isDirectory()) {
                 curator.create(path.append(name));
-                if (recurse) {
-                    writeDir(file, path.append(name), filenameFilter, recurse);
-                }
+                writeDir(file, path.append(name), filenameFilter);
             } else {
                 writeFile(file, path);
             }
@@ -202,9 +197,7 @@ public class ZooKeeperClient {
             if (files == null || files.isEmpty()) {
                 curator.create(getZooKeeperAppPath(USERAPP_ZK_SUBPATH + "/" + userInclude));
             }
-            writeDir(dir,
-                     getZooKeeperAppPath(USERAPP_ZK_SUBPATH + "/" + userInclude),
-                     xmlFilter, true);
+            writeDir(dir, getZooKeeperAppPath(USERAPP_ZK_SUBPATH + "/" + userInclude), xmlFilter);
         }
     }
 
@@ -249,7 +242,7 @@ public class ZooKeeperClient {
                 .forEach(path -> curator.delete(getZooKeeperAppPath(path)));
         } catch (Exception e) {
             logger.log(Level.WARNING, "Could not clean up in zookeeper: " + Exceptions.toMessageString(e));
-            //Might be called in an exception handler before re-throw, so do not throw here.
+            // Might be called in an exception handler before re-throw, so do not throw here.
         }
     }
 
