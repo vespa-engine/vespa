@@ -7,6 +7,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
+import java.time.Duration;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.provision.autoscale.Autoscaler.headroomRequiredToScaleDown;
@@ -66,11 +67,25 @@ public class AllocationOptimizer {
                                                                             availableRealHostResources,
                                                                             nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
-                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
+                if (bestAllocation.isEmpty() || preferableTo(bestAllocation.get(), allocatableResources.get(), current, clusterModel))
                     bestAllocation = allocatableResources;
             }
         }
         return bestAllocation;
+    }
+
+    private boolean preferableTo(AllocatableClusterResources best, AllocatableClusterResources considered,
+                                 AllocatableClusterResources current, ClusterModel clusterModel) {
+        if (best.fulfilment() < 1 || considered.fulfilment() < 1) // always fulfil as much as possible
+            return considered.fulfilment() > best.fulfilment();
+
+        return considered.cost() * toHours(clusterModel.allocationDuration()) + considered.costChangingFrom(current, clusterModel)
+               <
+               best.cost() * toHours(clusterModel.allocationDuration()) + best.costChangingFrom(current, clusterModel);
+    }
+
+    private double toHours(Duration duration) {
+        return duration.toMillis() / 3600000.0;
     }
 
     /** Returns the max resources of a host one node may allocate. */

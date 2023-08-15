@@ -63,6 +63,7 @@ public class ClusterModel {
 
     private final Clock clock;
     private final Duration scalingDuration;
+    private final Duration allocationDuration;
     private final ClusterTimeseries clusterTimeseries;
     private final ClusterNodesTimeseries nodeTimeseries;
     private final Instant at;
@@ -86,6 +87,7 @@ public class ClusterModel {
         this.nodes = clusterNodes;
         this.clock = clock;
         this.scalingDuration = cluster.scalingDuration(clusterSpec);
+        this.allocationDuration = cluster.allocationDuration(clusterSpec);
         this.clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
         this.nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
         this.at = clock.instant();
@@ -97,6 +99,7 @@ public class ClusterModel {
                  Cluster cluster,
                  Clock clock,
                  Duration scalingDuration,
+                 Duration allocationDuration,
                  ClusterTimeseries clusterTimeseries,
                  ClusterNodesTimeseries nodeTimeseries) {
         this.nodeRepository = nodeRepository;
@@ -107,6 +110,7 @@ public class ClusterModel {
         this.clock = clock;
 
         this.scalingDuration = scalingDuration;
+        this.allocationDuration = allocationDuration;
         this.clusterTimeseries = clusterTimeseries;
         this.nodeTimeseries = nodeTimeseries;
         this.at = clock.instant();
@@ -127,6 +131,23 @@ public class ClusterModel {
     /** Returns the predicted duration of a rescaling of this cluster */
     public Duration scalingDuration() { return scalingDuration; }
 
+    /**
+     * Returns the predicted duration of a resource change in this cluster,
+     * until we, or the application , will change it again.
+     */
+    public Duration allocationDuration() { return allocationDuration; }
+
+    /** Returns the predicted duration of data redistribution in this cluster. */
+    public Duration redistributionDuration() {
+        if (clusterSpec.type().isContent()) return Duration.ofMinutes(0);
+        return scalingDuration(); // TODO: Estimate separately
+    }
+
+    /** Returns the predicted duration of replacing all the nodes in this cluster. */
+    public Duration nodeReplacementDuration() {
+        return Duration.ofMinutes(5); // TODO: Estimate?
+    }
+
     /** Returns the average of the peak load measurement in each dimension, from each node. */
     public Load peakLoad() {
         return nodeTimeseries().peakLoad();
@@ -135,6 +156,10 @@ public class ClusterModel {
     /** Returns the relative load adjustment accounting for redundancy in this. */
     public Load redundancyAdjustment() {
         return loadWith(nodeCount(), groupCount());
+    }
+
+    public boolean isExclusive() {
+        return nodeRepository.exclusiveAllocation(clusterSpec);
     }
 
     /** Returns the relative load adjustment that should be made to this cluster given available measurements. */

@@ -112,6 +112,7 @@ public class AllocatableClusterResources {
 
     public ClusterSpec clusterSpec() { return clusterSpec; }
 
+    /** Returns the standard cost of these resources, in dollars per hour */
     public double cost() { return nodes * advertisedResources.cost(); }
 
     /**
@@ -133,6 +134,11 @@ public class AllocatableClusterResources {
             return this.fulfilment > other.fulfilment;
 
         return this.cost() < other.cost(); // otherwise, prefer lower cost
+    }
+
+    /** The estimated cost of changing from the given current resources to this. */
+    public double costChangingFrom(AllocatableClusterResources current, ClusterModel clusterModel) {
+        return new ResourceChange(current, this, clusterModel).cost();
     }
 
     @Override

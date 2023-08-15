@@ -208,6 +208,16 @@ public class Cluster {
         return minimum(ClusterModel.minScalingDuration(clusterSpec), totalDuration.dividedBy(completedEventCount));
     }
 
+    /** The predicted time this cluster will stay in each resource configuration (including the scaling duration). */
+    public Duration allocationDuration(ClusterSpec clusterSpec) {
+        if (scalingEvents.size() < 2) return Duration.ofHours(12); // Default
+
+        long totalDurationMs = 0;
+        for (int i = 1; i < scalingEvents().size(); i++)
+            totalDurationMs += scalingEvents().get(i).at().toEpochMilli() - scalingEvents().get(i - 1).at().toEpochMilli();
+        return Duration.ofMillis(totalDurationMs / (scalingEvents.size() - 1));
+    }
+
     private static Duration minimum(Duration smallestAllowed, Duration duration) {
         if (duration.minus(smallestAllowed).isNegative())
             return smallestAllowed;

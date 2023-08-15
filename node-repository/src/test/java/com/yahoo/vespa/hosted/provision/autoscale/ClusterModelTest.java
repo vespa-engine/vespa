@@ -95,7 +95,7 @@ public class ClusterModelTest {
         application = application.with(cluster);
         return new ClusterModel(new ProvisioningTester.Builder().build().nodeRepository(),
                                 application.with(status),
-                                clusterSpec, cluster, clock, Duration.ofMinutes(10),
+                                clusterSpec, cluster, clock, Duration.ofMinutes(10), Duration.ofMinutes(5),
                                 timeseries(cluster,100, queryRate, writeRate, clock),
                                 ClusterNodesTimeseries.empty());
     }
