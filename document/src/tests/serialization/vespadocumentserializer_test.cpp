@@ -686,7 +686,7 @@ void deserializeAndCheck(const string &file_name, FieldValueT &value,
                          const string &field_name) {
     File file(file_name);
     file.open(File::READONLY);
-    vector<char> content(file.stat()._size);
+    vector<char> content(file.getFileSize());
     size_t r = file.read(&content[0], content.size(), 0);
     ASSERT_EQUAL(content.size(), r);
 
