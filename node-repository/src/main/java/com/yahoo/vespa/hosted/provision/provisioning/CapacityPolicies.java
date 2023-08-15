@@ -98,10 +98,7 @@ public class CapacityPolicies {
             Architecture architecture = adminClusterArchitecture(applicationId);
 
             if (nodeRepository.exclusiveAllocation(clusterSpec)) {
-                var resources = legacySmallestExclusiveResources(); //TODO: use 8Gb as default when no apps are using 4Gb
-                return versioned(clusterSpec, Map.of(new Version(0), resources,
-                                                     new Version(8, 182, 12), resources.with(architecture),
-                                                     new Version(8, 187), smallestExclusiveResources().with(architecture)));
+                return smallestExclusiveResources().with(architecture);
             }
 
             if (clusterSpec.id().value().equals("cluster-controllers")) {
@@ -131,8 +128,7 @@ public class CapacityPolicies {
         // 1.32 fits floor(8/1.32) = 6 cluster controllers on each 8Gb host, and each will have
         // 1.32-(0.7+0.6)*(1.32/8) = 1.1 Gb real memory given current taxes.
         if (architecture == Architecture.x86_64)
-            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.14, 10, 0.3),
-                                                 new Version(8, 129, 4), new NodeResources(0.25, 1.32, 10, 0.3)));
+            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.32, 10, 0.3)));
         else
             // arm64 nodes need more memory
             return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.50, 10, 0.3)));
@@ -156,13 +152,6 @@ public class CapacityPolicies {
         return requireNonNull(new TreeMap<>(resources).floorEntry(spec.vespaVersion()),
                               "no default resources applicable for " + spec + " among: " + resources)
                 .getValue();
-    }
-
-    // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
-    private NodeResources legacySmallestExclusiveResources() {
-        return (zone.cloud().name().equals(CloudName.GCP))
-               ? new NodeResources(1, 4, 50, 0.3)
-               : new NodeResources(0.5, 4, 50, 0.3);
     }
 
     // The lowest amount of resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
