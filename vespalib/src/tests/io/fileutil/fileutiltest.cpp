@@ -102,15 +102,6 @@ TEST("require that vespalib::File::open works")
         ASSERT_TRUE(fileExists("mydir/myfile"));
         f.unlink();
     }
-        // Opening with direct IO support works.
-    {
-        File f("mydir/myfile");
-        f.open(File::CREATE | File::DIRECTIO, false);
-        ASSERT_TRUE(fileExists("mydir/myfile"));
-        if (!f.isOpenWithDirectIO()) {
-            std::cerr << "This platform does not support direct IO\n";
-        }
-    }
         // Opening plain file works
     {
         File f("myfile");

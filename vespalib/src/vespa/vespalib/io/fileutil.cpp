@@ -54,7 +54,6 @@ safeStrerror(int errnum)
 
 File::File(stringref filename)
     : _fd(-1),
-      _flags(0),
       _filename(filename)
 { }
 
@@ -97,27 +96,14 @@ File::open(int flags, bool autoCreateDirectories) {
     }
     int openflags = ((flags & File::READONLY) != 0 ? O_RDONLY : O_RDWR)
                   | ((flags & File::CREATE)  != 0 ? O_CREAT : 0)
-#ifdef __linux__
-                  | ((flags & File::DIRECTIO) != 0 ? O_DIRECT : 0)
-#endif
                   | ((flags & File::TRUNC) != 0 ? O_TRUNC: 0);
     int fd = openAndCreateDirsIfMissing(_filename, openflags, autoCreateDirectories);
-#ifdef __linux__
-    if (fd < 0 && ((flags & File::DIRECTIO) != 0)) {
-        openflags = (openflags ^ O_DIRECT);
-        flags = (flags ^ DIRECTIO);
-        LOG(debug, "open(%s, %d): Retrying without direct IO due to failure opening with errno(%d): %s",
-            _filename.c_str(), flags, errno, safeStrerror(errno).c_str());
-        fd = openAndCreateDirsIfMissing(_filename, openflags, autoCreateDirectories);
-    }
-#endif
     if (fd < 0) {
         asciistream ost;
         ost << "open(" << _filename << ", 0x" << hex << flags << dec
             << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
         throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
-    _flags = flags;
     if (_fd != -1) close();
     _fd = fd;
     LOG(debug, "open(%s, %d). File opened with file descriptor %d.", _filename.c_str(), flags, fd);
@@ -135,7 +121,7 @@ File::stat() const
         result = processStat(filestats, ::stat(_filename.c_str(), &filestats) == 0, _filename);
             // If the file does not exist yet, act like it does. It will
             // probably be created when opened.
-        if (result.get() == 0) {
+        if ( ! result) {
             result = std::make_unique<FileInfo>();
             result->_size = 0;
             result->_directory = false;
@@ -156,41 +142,11 @@ File::resize(off_t size)
     LOG(debug, "resize(%s): Resized to %" PRIu64 " bytes.", _filename.c_str(), size);
 }
 
-void
-File::verifyDirectIO(uint64_t buf, size_t bufsize, off_t offset) const
-{
-    if (offset % 512 != 0) {
-        LOG(error,
-            "Access to file %s failed because offset %" PRIu64 " wasn't 512-byte "
-            "aligned. Buffer memory address was %" PRIx64 ", length %zu",
-            _filename.c_str(), static_cast<uint64_t>(offset), buf, bufsize);
-        assert(false);
-    }
-    if (buf % 512 != 0) {
-        LOG(error,
-            "Access to file %s failed because buffer memory address %" PRIx64 " "
-            "wasn't 512-byte aligned. Offset was %" PRIu64 ", length %zu",
-            _filename.c_str(), buf, static_cast<uint64_t>(offset), bufsize);
-        assert(false);
-    }
-    if (bufsize % 512 != 0) {
-        LOG(error,
-            "Access to file %s failed because buffer size %zu wasn't 512-byte "
-            "aligned. Buffer memory address was %" PRIx64 ", offset %" PRIu64,
-            _filename.c_str(), bufsize, buf, static_cast<uint64_t>(offset));
-        assert(false);
-    }
-}
-
 off_t
 File::write(const void *buf, size_t bufsize, off_t offset)
 {
     size_t left = bufsize;
     LOG(debug, "write(%s): Writing %zu bytes at offset %" PRIu64 ".", _filename.c_str(), bufsize, offset);
-
-    if (_flags & DIRECTIO) {
-        verifyDirectIO((uint64_t)buf, bufsize, offset);
-    }
 
     while (left > 0) {
         ssize_t written = ::pwrite(_fd, buf, left, offset);
@@ -218,10 +174,6 @@ File::read(void *buf, size_t bufsize, off_t offset) const
     size_t remaining = bufsize;
     LOG(debug, "read(%s): Reading %zu bytes from offset %" PRIu64 ".", _filename.c_str(), bufsize, offset);
 
-    if (_flags & DIRECTIO) {
-        verifyDirectIO((uint64_t)buf, bufsize, offset);
-    }
-
     while (remaining > 0) {
         ssize_t bytesread = ::pread(_fd, buf, remaining, offset);
         if (bytesread > 0) {
@@ -229,14 +181,8 @@ File::read(void *buf, size_t bufsize, off_t offset) const
             remaining -= bytesread;
             buf = ((char*) buf) + bytesread;
             offset += bytesread;
-            if (((_flags & DIRECTIO) != 0) && ((bytesread % 512) != 0) && (offset == getFileSize())) {
-                LOG(spam, "read(%s): Found EOF. Directio read to unaligned file end at offset %" PRIu64 ".",
-                    _filename.c_str(), offset);
-                break;
-            }
         } else if (bytesread == 0) { // EOF
-            LOG(spam, "read(%s): Found EOF. Zero bytes read from offset %" PRIu64 ".",
-                _filename.c_str(), offset);
+            LOG(spam, "read(%s): Found EOF. Zero bytes read from offset %" PRIu64 ".", _filename.c_str(), offset);
             break;
         } else if (errno != EINTR && errno != EAGAIN) {
             asciistream ost;

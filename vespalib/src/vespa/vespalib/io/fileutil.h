@@ -58,13 +58,8 @@ struct FileInfo {
 class File {
 private:
     int         _fd;
-    int         _flags;
     string      _filename;
-    /**
-     * Verify that direct I/O alignment preconditions hold. Triggers assertion
-     * failure on violations.
-     */
-    void verifyDirectIO(uint64_t buf, size_t bufsize, off_t offset) const;
+
     void sync();
     /**
      * Get information about the current file. If file is opened, file descriptor
@@ -78,7 +73,7 @@ public:
     /**
      * If failing to open file using direct IO it will retry using cached IO.
      */
-    enum Flag { READONLY = 1, CREATE = 2, DIRECTIO = 4, TRUNC = 8 };
+    enum Flag { READONLY = 1, CREATE = 2, TRUNC = 8 };
 
     /** Create a file instance, without opening the file. */
     File(stringref filename);
@@ -91,7 +86,6 @@ public:
     void open(int flags, bool autoCreateDirectories = false);
 
     bool isOpen() const { return (_fd != -1); }
-    bool isOpenWithDirectIO() const { return ((_flags & DIRECTIO) != 0); }
 
     int getFileDescriptor() const { return _fd; }
 
