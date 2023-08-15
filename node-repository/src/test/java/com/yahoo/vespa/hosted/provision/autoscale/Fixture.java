@@ -177,6 +177,7 @@ public class Fixture {
                                                                new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any)));
         HostResourcesCalculator resourceCalculator = new DynamicProvisioningTester.MockHostResourcesCalculator(zone);
         final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        boolean reversedFlavorOrder = false;
         int hostCount = 0;
 
         public Fixture.Builder zone(Zone zone) {
@@ -225,12 +226,16 @@ public class Fixture {
         public Fixture.Builder awsSetup(boolean allowHostSharing, Environment environment) {
             return this.awsHostFlavors()
                        .awsResourceCalculator()
-                       .zone(new Zone(Cloud.builder().dynamicProvisioning(true)
-                                           .allowHostSharing(allowHostSharing)
-                                           .build(),
-                                      SystemName.Public,
-                                      environment,
-                                      RegionName.from("aws-eu-west-1a")));
+                       .awsZone(allowHostSharing, environment);
+        }
+
+        public Fixture.Builder awsZone(boolean allowHostSharing, Environment environment) {
+            return zone(new Zone(Cloud.builder().dynamicProvisioning(true)
+                                       .allowHostSharing(allowHostSharing)
+                                       .build(),
+                                  SystemName.Public,
+                                  environment,
+                                  RegionName.from("aws-eu-west-1a")));
         }
 
         public Fixture.Builder vespaVersion(Version version) {
@@ -240,6 +245,11 @@ public class Fixture {
 
         public Fixture.Builder hostFlavors(NodeResources ... hostResources) {
             this.hostFlavors = Arrays.stream(hostResources).map(r -> new Flavor(r)).toList();
+            return this;
+        }
+
+        public Fixture.Builder hostFlavors(List<Flavor> hostFlavors) {
+            this.hostFlavors = hostFlavors;
             return this;
         }
 
