@@ -63,6 +63,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final boolean failOnValidateXml;
     private final QueryProfileRegistry queryProfileRegistry;
     private final ApplicationMetaData applicationMetaData;
+    private final TenantName tenantName;
 
     private DeploymentSpec deploymentSpec = null;
 
@@ -70,7 +71,7 @@ public class MockApplicationPackage implements ApplicationPackage {
                                      Map<Path, MockApplicationFile> files,
                                      String schemaDir,
                                      String deploymentSpec, String validationOverrides, boolean failOnValidateXml,
-                                     String queryProfile, String queryProfileType) {
+                                     String queryProfile, String queryProfileType, TenantName tenantName) {
         this.root = root;
         this.hostsS = hosts;
         this.servicesS = services;
@@ -85,19 +86,20 @@ public class MockApplicationPackage implements ApplicationPackage {
         applicationMetaData = new ApplicationMetaData("dir",
                                                       0L,
                                                       false,
-                                                      ApplicationId.from(TenantName.defaultName(),
+                                                      ApplicationId.from(tenantName,
                                                                          ApplicationName.from(APPLICATION_NAME),
                                                                          InstanceName.defaultName()),
                                                       "checksum",
                                                       APPLICATION_GENERATION,
                                                       0L);
+        this.tenantName = tenantName;
     }
 
     /** Returns the root of this application package relative to the current dir */
     protected File root() { return root; }
 
     @Override
-    public ApplicationId getApplicationId() { return ApplicationId.from("default", "mock-application", "default"); }
+    public ApplicationId getApplicationId() { return ApplicationId.from(tenantName.value(), "mock-application", "default"); }
 
     @Override
     public Reader getServices() {
@@ -246,6 +248,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         private boolean failOnValidateXml = false;
         private String queryProfile = null;
         private String queryProfileType = null;
+        private TenantName tenantName = TenantName.defaultName();
 
         public Builder() {
         }
@@ -323,10 +326,15 @@ public class MockApplicationPackage implements ApplicationPackage {
             return this;
         }
 
+        public Builder withTenantname(TenantName tenantName) {
+            this.tenantName = tenantName;
+            return this;
+        }
+
         public ApplicationPackage build() {
             return new MockApplicationPackage(root, hosts, services, schemas, files, schemaDir,
                                               deploymentSpec, validationOverrides, failOnValidateXml,
-                                              queryProfile, queryProfileType);
+                                              queryProfile, queryProfileType, tenantName);
         }
     }
 
