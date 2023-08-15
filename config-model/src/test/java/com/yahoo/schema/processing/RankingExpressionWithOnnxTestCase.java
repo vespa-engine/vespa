@@ -4,6 +4,8 @@ package com.yahoo.schema.processing;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
@@ -400,7 +402,7 @@ public class RankingExpressionWithOnnxTestCase {
         StoringApplicationPackage(Path applicationPackageWritableRoot, String queryProfile, String queryProfileType) {
             super(new File(applicationPackageWritableRoot.toString()),
                   null, null, List.of(), Map.of(), null,
-                  null, null, false, queryProfile, queryProfileType);
+                  null, null, false, queryProfile, queryProfileType, TenantName.defaultName());
         }
 
         @Override
