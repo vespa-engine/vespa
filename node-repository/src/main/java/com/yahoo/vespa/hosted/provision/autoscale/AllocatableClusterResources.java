@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -129,11 +130,18 @@ public class AllocatableClusterResources {
         return (vcpuFulfilment + memoryGbFulfilment + diskGbFulfilment) / 3;
     }
 
-    public boolean preferableTo(AllocatableClusterResources other) {
-        if (this.fulfilment < 1 || other.fulfilment < 1) // always fulfil as much as possible
-            return this.fulfilment > other.fulfilment;
+    public boolean preferableTo(AllocatableClusterResources other,
+                                AllocatableClusterResources current, ClusterModel clusterModel) {
+        if (other.fulfilment() < 1 || this.fulfilment() < 1) // always fulfil as much as possible
+            return this.fulfilment() > other.fulfilment();
 
-        return this.cost() < other.cost(); // otherwise, prefer lower cost
+        return this.cost() * toHours(clusterModel.allocationDuration()) + this.costChangingFrom(current, clusterModel)
+               <
+               other.cost() * toHours(clusterModel.allocationDuration()) + other.costChangingFrom(current, clusterModel);
+    }
+
+    private double toHours(Duration duration) {
+        return duration.toMillis() / 3600000.0;
     }
 
     /** The estimated cost of changing from the given current resources to this. */
@@ -165,6 +173,8 @@ public class AllocatableClusterResources {
                                                              ClusterSpec clusterSpec,
                                                              Limits applicationLimits,
                                                              List<NodeResources> availableRealHostResources,
+                                                             AllocatableClusterResources current,
+                                                             ClusterModel clusterModel,
                                                              NodeRepository nodeRepository) {
         var systemLimits = nodeRepository.nodeResourceLimits();
         boolean exclusive = nodeRepository.exclusiveAllocation(clusterSpec);
@@ -228,12 +238,12 @@ public class AllocatableClusterResources {
                                                                 clusterSpec);
 
                 if ( ! systemLimits.isWithinAdvertisedDiskLimits(advertisedResources, clusterSpec)) { // TODO: Remove when disk limit is enforced
-                    if (bestDisregardingDiskLimit.isEmpty() || candidate.preferableTo(bestDisregardingDiskLimit.get())) {
+                    if (bestDisregardingDiskLimit.isEmpty() || candidate.preferableTo(bestDisregardingDiskLimit.get(), current, clusterModel)) {
                         bestDisregardingDiskLimit = Optional.of(candidate);
                     }
                     continue;
                 }
-                if (best.isEmpty() || candidate.preferableTo(best.get())) {
+                if (best.isEmpty() || candidate.preferableTo(best.get(), current, clusterModel)) {
                     best = Optional.of(candidate);
                 }
             }

@@ -65,27 +65,15 @@ public class AllocationOptimizer {
                                                                             current.clusterSpec(),
                                                                             limits,
                                                                             availableRealHostResources,
+                                                                            current,
+                                                                            clusterModel,
                                                                             nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
-                if (bestAllocation.isEmpty() || preferableTo(bestAllocation.get(), allocatableResources.get(), current, clusterModel))
+                if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get(), current, clusterModel))
                     bestAllocation = allocatableResources;
             }
         }
         return bestAllocation;
-    }
-
-    private boolean preferableTo(AllocatableClusterResources best, AllocatableClusterResources considered,
-                                 AllocatableClusterResources current, ClusterModel clusterModel) {
-        if (best.fulfilment() < 1 || considered.fulfilment() < 1) // always fulfil as much as possible
-            return considered.fulfilment() > best.fulfilment();
-
-        return considered.cost() * toHours(clusterModel.allocationDuration()) + considered.costChangingFrom(current, clusterModel)
-               <
-               best.cost() * toHours(clusterModel.allocationDuration()) + best.costChangingFrom(current, clusterModel);
-    }
-
-    private double toHours(Duration duration) {
-        return duration.toMillis() / 3600000.0;
     }
 
     /** Returns the max resources of a host one node may allocate. */
