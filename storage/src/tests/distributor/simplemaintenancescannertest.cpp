@@ -82,7 +82,7 @@ TEST_F(SimpleMaintenanceScannerTest, prioritize_single_bucket) {
 TEST_F(SimpleMaintenanceScannerTest, prioritize_single_bucket_alt_bucket_space) {
     document::BucketSpace bucketSpace(4);
     _bucketSpaceRepo->add(bucketSpace, std::make_unique<DistributorBucketSpace>());
-    _scanner->reset();
+    (void)_scanner->fetch_and_reset();
     addBucketToDb(bucketSpace, 1);
     std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000004), BucketId(0x4000000000000001)), pri VERY_HIGH)\n");
 
@@ -148,7 +148,7 @@ TEST_F(SimpleMaintenanceScannerTest, reset) {
     ASSERT_TRUE(scanEntireDatabase(0));
     EXPECT_EQ(expected, _priorityDb->toString());
 
-    _scanner->reset();
+    (void)_scanner->fetch_and_reset();
     ASSERT_TRUE(scanEntireDatabase(3));
 
     expected = "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
@@ -180,7 +180,7 @@ TEST_F(SimpleMaintenanceScannerTest, pending_maintenance_operation_statistics) {
         EXPECT_EQ(expected, stringifyGlobalPendingStats(stats));
     }
 
-    _scanner->reset();
+    (void)_scanner->fetch_and_reset();
     {
         const auto & stats = _scanner->getPendingMaintenanceStats();
         EXPECT_EQ(expectedEmpty, stringifyGlobalPendingStats(stats));
@@ -301,7 +301,7 @@ TEST_F(SimpleMaintenanceScannerTest, merge_pending_maintenance_stats) {
 TEST_F(SimpleMaintenanceScannerTest, empty_bucket_db_is_immediately_done_by_default) {
     auto res = _scanner->scanNext();
     EXPECT_TRUE(res.isDone());
-    _scanner->reset();
+    (void)_scanner->fetch_and_reset();
     res = _scanner->scanNext();
     EXPECT_TRUE(res.isDone());
 }

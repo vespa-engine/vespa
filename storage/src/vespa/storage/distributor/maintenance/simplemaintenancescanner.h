@@ -29,7 +29,7 @@ public:
         PendingMaintenanceStats(PendingMaintenanceStats &&) noexcept;
         PendingMaintenanceStats &operator = (PendingMaintenanceStats &&) noexcept;
         ~PendingMaintenanceStats();
-        PendingMaintenanceStats reset();
+        [[nodiscard]] PendingMaintenanceStats fetch_and_reset();
         GlobalMaintenanceStats      global;
         NodeMaintenanceStatsTracker perNodeStats;
 
@@ -53,7 +53,7 @@ public:
     ~SimpleMaintenanceScanner() override;
 
     ScanResult scanNext() override;
-    PendingMaintenanceStats reset();
+    [[nodiscard]] PendingMaintenanceStats fetch_and_reset();
 
     // TODO: move out into own interface!
     void prioritizeBucket(const document::Bucket &id);

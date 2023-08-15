@@ -49,7 +49,7 @@ SimpleMaintenanceScanner::PendingMaintenanceStats &
 SimpleMaintenanceScanner::PendingMaintenanceStats::operator = (PendingMaintenanceStats &&) noexcept = default;
 
 SimpleMaintenanceScanner::PendingMaintenanceStats
-SimpleMaintenanceScanner::PendingMaintenanceStats::reset() {
+SimpleMaintenanceScanner::PendingMaintenanceStats::fetch_and_reset() {
     PendingMaintenanceStats prev = std::move(*this);
     global = GlobalMaintenanceStats();
     perNodeStats.reset(prev.perNodeStats.numNodes());
@@ -78,11 +78,11 @@ SimpleMaintenanceScanner::scanNext()
 }
 
 SimpleMaintenanceScanner::PendingMaintenanceStats
-SimpleMaintenanceScanner::reset()
+SimpleMaintenanceScanner::fetch_and_reset()
 {
     _bucketCursor = document::BucketId();
     _bucketSpaceItr = _bucketSpaceRepo.begin();
-    return _pendingMaintenance.reset();
+    return _pendingMaintenance.fetch_and_reset();
 }
 
 void
