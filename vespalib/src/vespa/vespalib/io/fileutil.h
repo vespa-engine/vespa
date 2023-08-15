@@ -43,13 +43,9 @@ struct FileInfo {
 
     bool  _plainfile;
     bool  _directory;
-    bool  _symlink;
     off_t _size;
 
-    bool operator==(const FileInfo&) const;
 };
-
-std::ostream& operator<<(std::ostream&, const FileInfo&);
 
 /**
  * @brief A File instance is used to access a single open file.
@@ -64,19 +60,18 @@ private:
     int         _fd;
     int         _flags;
     string      _filename;
-    bool        _close;
-    mutable int _fileReads; // Tracks number of file reads done on this file
-    mutable int _fileWrites; // Tracks number of file writes done in this file
-
     /**
      * Verify that direct I/O alignment preconditions hold. Triggers assertion
      * failure on violations.
      */
     void verifyDirectIO(uint64_t buf, size_t bufsize, off_t offset) const;
-
-    /** Copying a file instance, moves any open file descriptor. */
-    File(File& f);
-    File& operator=(File& f);
+    void sync();
+    /**
+     * Get information about the current file. If file is opened, file descriptor
+     * will be used for stat. If file is not open, and the file does not exist
+     * yet, you will get fileinfo describing an empty file.
+     */
+    FileInfo stat() const;
 public:
     using UP = std::unique_ptr<File>;
 
@@ -88,40 +83,24 @@ public:
     /** Create a file instance, without opening the file. */
     File(stringref filename);
 
-    /** Create a file instance of an already open file. */
-    File(int fileDescriptor, stringref filename);
-
     /** Closes the file if not instructed to do otherwise. */
-    virtual ~File();
+    ~File();
 
     const string& getFilename() const { return _filename; }
 
-    virtual void open(int flags, bool autoCreateDirectories = false);
+    void open(int flags, bool autoCreateDirectories = false);
 
     bool isOpen() const { return (_fd != -1); }
     bool isOpenWithDirectIO() const { return ((_flags & DIRECTIO) != 0); }
 
-    /**
-     * Whether or not file should be closed when this instance is destructed.
-     * By default it will be closed.
-     */
-    void closeFileWhenDestructed(bool close);
-
-    virtual int getFileDescriptor() const { return _fd; }
-
-    /**
-     * Get information about the current file. If file is opened, file descriptor
-     * will be used for stat. If file is not open, and the file does not exist
-     * yet, you will get fileinfo describing an empty file.
-     */
-    virtual FileInfo stat() const;
+    int getFileDescriptor() const { return _fd; }
 
     /**
      * Get the filesize of a file, specified by a file descriptor.
      *
      * @throw IoException If we failed to stat the file.
      */
-    virtual off_t getFileSize() const { return stat()._size; }
+    off_t getFileSize() const { return stat()._size; }
 
     /**
      * Resize the currently open file to a given size,
@@ -131,7 +110,7 @@ public:
      * @param size new size of file
      * @throw IoException If we failed to resize the file.
      */
-    virtual void resize(off_t size);
+    void resize(off_t size);
 
     /**
      * Writes data to file.
@@ -145,7 +124,7 @@ public:
      * @throw IoException If we failed to write to the file.
      * @return            Always return bufsize.
      */
-    virtual off_t write(const void *buf, size_t bufsize, off_t offset);
+    off_t write(const void *buf, size_t bufsize, off_t offset);
 
     /**
      * Read characters from a file.
@@ -160,7 +139,7 @@ public:
      * @return            The number of bytes actually read. If less than
      *                    bufsize, this indicates that EOF was reached.
      */
-    virtual size_t read(void *buf, size_t bufsize, off_t offset) const;
+    size_t read(void *buf, size_t bufsize, off_t offset) const;
 
     /**
      * Read the file into a string.
@@ -193,9 +172,8 @@ public:
      */
     static void sync(stringref path);
 
-    virtual void sync();
-    virtual bool close();
-    virtual bool unlink();
+    bool close();
+    bool unlink();
 };
 
 /**

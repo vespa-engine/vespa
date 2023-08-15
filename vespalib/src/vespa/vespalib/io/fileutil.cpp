@@ -5,7 +5,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <ostream>
 #include <cassert>
 #include <filesystem>
 #include <dirent.h>
@@ -15,6 +14,8 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.io.fileutil");
+
+namespace fs = std::filesystem;
 
 namespace vespalib {
 
@@ -27,7 +28,6 @@ processStat(struct stat& filestats, bool result, stringref path) {
         resval = std::make_unique<FileInfo>();
         resval->_plainfile = S_ISREG(filestats.st_mode);
         resval->_directory = S_ISDIR(filestats.st_mode);
-        resval->_symlink = S_ISLNK(filestats.st_mode);
         resval->_size = filestats.st_size;
     } else if (errno != ENOENT) {
         asciistream ost;
@@ -52,79 +52,15 @@ safeStrerror(int errnum)
 
 }
 
-bool
-FileInfo::operator==(const FileInfo& fi) const
-{
-    return (_size == fi._size && _plainfile == fi._plainfile
-            && _directory == fi._directory);
-}
-
-std::ostream&
-operator<<(std::ostream& out, const FileInfo& info)
-{
-    out << "FileInfo(size: " << info._size;
-    if (info._plainfile) out << ", plain file";
-    if (info._directory) out << ", directory";
-    out << ")";
-    return out;
-}
-
 File::File(stringref filename)
     : _fd(-1),
       _flags(0),
-      _filename(filename),
-      _close(true),
-      _fileReads(0),
-      _fileWrites(0)
-{
-}
-
-File::File(int fileDescriptor, stringref filename)
-    : _fd(fileDescriptor),
-      _flags(0),
-      _filename(filename),
-      _close(true),
-      _fileReads(0),
-      _fileWrites(0)
-{
-}
+      _filename(filename)
+{ }
 
 File::~File()
 {
-    if (_close && _fd != -1) close();
-}
-
-File::File(File& f)
-    : _fd(f._fd),
-      _flags(f._flags),
-      _filename(f._filename),
-      _close(f._close),
-      _fileReads(f._fileReads),
-      _fileWrites(f._fileWrites)
-{
-    f._fd = -1;
-    f._flags = 0;
-    f._close = true;
-    f._fileReads = 0;
-    f._fileWrites = 0;
-}
-
-File&
-File::operator=(File& f)
-{
-    if (_close && _fd != -1) close();
-    _fd = f._fd;
-    _flags = f._flags;
-    _filename = f._filename;
-    _close = f._close;
-    _fileReads = f._fileReads;
-    _fileWrites = f._fileWrites;
-    f._fd = -1;
-    f._flags = 0;
-    f._close = true;
-    f._fileReads = 0;
-    f._fileWrites = 0;
-    return *this;
+    if (_fd != -1) close();
 }
 
 namespace {
@@ -137,9 +73,8 @@ int openAndCreateDirsIfMissing(const string & filename, int flags, bool createDi
         auto pos = filename.rfind('/');
         if (pos != string::npos) {
             string path(filename.substr(0, pos));
-            std::filesystem::create_directories(std::filesystem::path(path));
-            LOG(spam, "open(%s, %d): Retrying open after creating parent "
-                      "directories.", filename.c_str(), flags);
+            fs::create_directories(fs::path(path));
+            LOG(spam, "open(%s, %d): Retrying open after creating parent directories.", filename.c_str(), flags);
             fd = ::open(filename.c_str(), flags, 0644);
         }
     }
@@ -151,19 +86,13 @@ void
 File::open(int flags, bool autoCreateDirectories) {
     if ((flags & File::READONLY) != 0) {
         if ((flags & File::CREATE) != 0) {
-            throw IllegalArgumentException(
-                    "Cannot use READONLY and CREATE options at the same time",
-                    VESPA_STRLOC);
+            throw IllegalArgumentException("Cannot use READONLY and CREATE options at the same time", VESPA_STRLOC);
         }
         if ((flags & File::TRUNC) != 0) {
-            throw IllegalArgumentException(
-                    "Cannot use READONLY and TRUNC options at the same time",
-                    VESPA_STRLOC);
+            throw IllegalArgumentException("Cannot use READONLY and TRUNC options at the same time", VESPA_STRLOC);
         }
         if (autoCreateDirectories) {
-            throw IllegalArgumentException(
-                    "No point in auto-creating directories on read only access",
-                    VESPA_STRLOC);
+            throw IllegalArgumentException("No point in auto-creating directories on read only access", VESPA_STRLOC);
         }
     }
     int openflags = ((flags & File::READONLY) != 0 ? O_RDONLY : O_RDWR)
@@ -177,30 +106,21 @@ File::open(int flags, bool autoCreateDirectories) {
     if (fd < 0 && ((flags & File::DIRECTIO) != 0)) {
         openflags = (openflags ^ O_DIRECT);
         flags = (flags ^ DIRECTIO);
-        LOG(debug, "open(%s, %d): Retrying without direct IO due to failure "
-                   "opening with errno(%d): %s",
+        LOG(debug, "open(%s, %d): Retrying without direct IO due to failure opening with errno(%d): %s",
             _filename.c_str(), flags, errno, safeStrerror(errno).c_str());
         fd = openAndCreateDirsIfMissing(_filename, openflags, autoCreateDirectories);
     }
 #endif
     if (fd < 0) {
         asciistream ost;
-        ost << "open(" << _filename << ", 0x"
-            << hex << flags << dec << "): Failed, errno(" << errno
-            << "): " << safeStrerror(errno);
+        ost << "open(" << _filename << ", 0x" << hex << flags << dec
+            << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
         throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
     _flags = flags;
-    if (_close && _fd != -1) close();
+    if (_fd != -1) close();
     _fd = fd;
-    LOG(debug, "open(%s, %d). File opened with file descriptor %d.",
-        _filename.c_str(), flags, fd);
-}
-
-void
-File::closeFileWhenDestructed(bool closeOnDestruct)
-{
-    _close = closeOnDestruct;
+    LOG(debug, "open(%s, %d). File opened with file descriptor %d.", _filename.c_str(), flags, fd);
 }
 
 FileInfo
@@ -212,13 +132,11 @@ File::stat() const
         result = processStat(filestats, fstat(_fd, &filestats) == 0, _filename);
         assert(result.get()); // The file must exist in a file instance
     } else {
-        result = processStat(filestats,
-                             ::stat(_filename.c_str(), &filestats) == 0,
-                             _filename);
+        result = processStat(filestats, ::stat(_filename.c_str(), &filestats) == 0, _filename);
             // If the file does not exist yet, act like it does. It will
             // probably be created when opened.
         if (result.get() == 0) {
-            result.reset(new FileInfo());
+            result = std::make_unique<FileInfo>();
             result->_size = 0;
             result->_directory = false;
             result->_plainfile = true;
@@ -232,12 +150,10 @@ File::resize(off_t size)
 {
     if (ftruncate(_fd, size) != 0) {
         asciistream ost;
-        ost << "resize(" << _filename << ", " << size << "): Failed, errno("
-            << errno << "): " << safeStrerror(errno);
+        ost << "resize(" << _filename << ", " << size << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
         throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
-    LOG(debug, "resize(%s): Resized to %" PRIu64 " bytes.",
-        _filename.c_str(), size);
+    LOG(debug, "resize(%s): Resized to %" PRIu64 " bytes.", _filename.c_str(), size);
 }
 
 void
@@ -269,10 +185,8 @@ File::verifyDirectIO(uint64_t buf, size_t bufsize, off_t offset) const
 off_t
 File::write(const void *buf, size_t bufsize, off_t offset)
 {
-    ++_fileWrites;
     size_t left = bufsize;
-    LOG(debug, "write(%s): Writing %zu bytes at offset %" PRIu64 ".",
-        _filename.c_str(), bufsize, offset);
+    LOG(debug, "write(%s): Writing %zu bytes at offset %" PRIu64 ".", _filename.c_str(), bufsize, offset);
 
     if (_flags & DIRECTIO) {
         verifyDirectIO((uint64_t)buf, bufsize, offset);
@@ -281,20 +195,17 @@ File::write(const void *buf, size_t bufsize, off_t offset)
     while (left > 0) {
         ssize_t written = ::pwrite(_fd, buf, left, offset);
         if (written > 0) {
-            LOG(spam, "write(%s): Wrote %zd bytes at offset %" PRIu64 ".",
-                _filename.c_str(), written, offset);
+            LOG(spam, "write(%s): Wrote %zd bytes at offset %" PRIu64 ".", _filename.c_str(), written, offset);
             left -= written;
             buf = ((const char*) buf) + written;
             offset += written;
         } else if (written == 0) {
-            LOG(spam, "write(%s): Wrote %zd bytes at offset %" PRIu64 ".",
-                _filename.c_str(), written, offset);
+            LOG(spam, "write(%s): Wrote %zd bytes at offset %" PRIu64 ".", _filename.c_str(), written, offset);
             assert(false); // Can this happen?
         } else if (errno != EINTR && errno != EAGAIN) {
             asciistream ost;
-            ost << "write(" << _fd << ", " << buf
-                << ", " << left << ", " << offset << "), Failed, errno("
-                << errno << "): " << safeStrerror(errno);
+            ost << "write(" << _fd << ", " << buf << ", " << left << ", " << offset
+                << "), Failed, errno(" << errno << "): " << safeStrerror(errno);
             throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
         }
     }
@@ -304,10 +215,8 @@ File::write(const void *buf, size_t bufsize, off_t offset)
 size_t
 File::read(void *buf, size_t bufsize, off_t offset) const
 {
-    ++_fileReads;
     size_t remaining = bufsize;
-    LOG(debug, "read(%s): Reading %zu bytes from offset %" PRIu64 ".",
-        _filename.c_str(), bufsize, offset);
+    LOG(debug, "read(%s): Reading %zu bytes from offset %" PRIu64 ".", _filename.c_str(), bufsize, offset);
 
     if (_flags & DIRECTIO) {
         verifyDirectIO((uint64_t)buf, bufsize, offset);
@@ -316,8 +225,7 @@ File::read(void *buf, size_t bufsize, off_t offset) const
     while (remaining > 0) {
         ssize_t bytesread = ::pread(_fd, buf, remaining, offset);
         if (bytesread > 0) {
-            LOG(spam, "read(%s): Read %zd bytes from offset %" PRIu64 ".",
-                _filename.c_str(), bytesread, offset);
+            LOG(spam, "read(%s): Read %zd bytes from offset %" PRIu64 ".", _filename.c_str(), bytesread, offset);
             remaining -= bytesread;
             buf = ((char*) buf) + bytesread;
             offset += bytesread;
@@ -333,8 +241,7 @@ File::read(void *buf, size_t bufsize, off_t offset) const
         } else if (errno != EINTR && errno != EAGAIN) {
             asciistream ost;
             ost << "read(" << _fd << ", " << buf << ", " << remaining << ", "
-                << offset << "): Failed, errno(" << errno << "): "
-                << safeStrerror(errno);
+                << offset << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
             throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
         }
     }
@@ -419,7 +326,7 @@ bool
 File::unlink()
 {
     close();
-    return std::filesystem::remove(std::filesystem::path(_filename));
+    return fs::remove(fs::path(_filename));
 }
 
 DirectoryList
@@ -487,8 +394,7 @@ getOpenErrorString(const int osError, stringref filename)
 {
     asciistream os;
     string dirName(dirname(filename));
-    os << "error="  << osError << "(\"" <<
-        getErrorString(osError) << "\") fileStat";
+    os << "error="  << osError << "(\"" << getErrorString(osError) << "\") fileStat";
     addStat(os, filename);
     os << " dirStat";
     addStat(os, dirName);

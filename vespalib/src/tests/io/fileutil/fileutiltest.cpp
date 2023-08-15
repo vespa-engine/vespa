@@ -126,16 +126,6 @@ TEST("require that vespalib::File::open works")
         //std::cerr << e.what() << "\n";
         EXPECT_EQUAL(IoException::ILLEGAL_PATH, e.getType());
     }
-        // Test opening already open file
-    {
-        std::unique_ptr<File> f(new File("myfile"));
-        f->open(File::CREATE, false);
-        f->closeFileWhenDestructed(false);
-        File f2(f->getFileDescriptor(), "myfile");
-        f.reset();
-        ASSERT_TRUE(f2.isOpen());
-        f2.write(" ", 1, 0);
-    }
         // Test reopening file in same object
     {
         File f("myfile");
@@ -159,29 +149,6 @@ TEST("require that vespalib::File::isOpen works")
     ASSERT_TRUE(f.isOpen());
     f.close();
     ASSERT_TRUE(!f.isOpen());
-}
-
-TEST("require that vespalib::File::stat works")
-{
-    std::filesystem::remove(std::filesystem::path("myfile"));
-    std::filesystem::remove_all(std::filesystem::path("mydir"));
-    EXPECT_EQUAL(false, fileExists("myfile"));
-    EXPECT_EQUAL(false, fileExists("mydir"));
-    std::filesystem::create_directory(std::filesystem::path("mydir"));
-    File f("myfile");
-    f.open(File::CREATE, false);
-    f.write("foobar", 6, 0);
-
-    FileInfo info = f.stat();
-    EXPECT_EQUAL(6, info._size);
-    EXPECT_EQUAL(true, info._plainfile);
-    EXPECT_EQUAL(false, info._directory);
-
-    EXPECT_EQUAL(6, f.getFileSize());
-    f.close();
-
-    EXPECT_EQUAL(true, fileExists("myfile"));
-    EXPECT_EQUAL(true, fileExists("mydir"));
 }
 
 TEST("require that vespalib::File::resize works")
