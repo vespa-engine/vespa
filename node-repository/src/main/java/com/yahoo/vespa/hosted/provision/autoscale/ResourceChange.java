@@ -24,9 +24,14 @@ public class ResourceChange {
 
     /** Returns the estimated total cost of this resource change (coming in addition to the "to" resource cost). */
     public double cost() {
-        if (requiresRedistribution()) return toHours(model.redistributionDuration()) * from.cost();
-        if (requiresNodeReplacement()) return toHours(model.nodeReplacementDuration()) * from.cost();
-        return 0;
+        if (model.isContent()) {
+            if (requiresNodeReplacement()) return toHours(model.redistributionDuration()) * from.cost();
+            return toHours(model.redistributionDuration()) * from.advertisedResources().cost() * nodesToRetire();
+        }
+        else {
+            if (requiresNodeReplacement()) return toHours(model.nodeReplacementDuration()) * from.cost();
+            return 0;
+        }
     }
 
     private boolean requiresRedistribution() {
@@ -35,6 +40,15 @@ public class ResourceChange {
         if (from.groups() != to.groups()) return true;
         if (requiresNodeReplacement()) return true;
         return false;
+    }
+
+    /**
+     * Returns the estimated number of nodes that will be retired by this change,
+     * given that it is a content cluster and no node replacement is necessary.
+     * This is not necessarily always perfectly correct if this changes group layout.
+     */
+    private int nodesToRetire() {
+        return Math.max(0, from.nodes() - to.nodes());
     }
 
     /** Returns true if the *existing* nodes of this needs to be replaced in this change. */

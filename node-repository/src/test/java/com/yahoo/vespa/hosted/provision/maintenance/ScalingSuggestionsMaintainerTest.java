@@ -75,7 +75,7 @@ public class ScalingSuggestionsMaintainerTest {
 
         assertEquals("8 nodes with [vcpu: 3.2, memory: 4.5 Gb, disk: 10.0 Gb, bandwidth: 0.1 Gbps, architecture: any]",
                      suggestionOf(app1, cluster1, tester).resources().get().toString());
-        assertEquals("8 nodes with [vcpu: 3.6, memory: 4.7 Gb, disk: 14.2 Gb, bandwidth: 0.1 Gbps, architecture: any]",
+        assertEquals("7 nodes with [vcpu: 4.1, memory: 5.3 Gb, disk: 16.5 Gb, bandwidth: 0.1 Gbps, architecture: any]",
                      suggestionOf(app2, cluster2, tester).resources().get().toString());
 
         // Utilization goes way down
