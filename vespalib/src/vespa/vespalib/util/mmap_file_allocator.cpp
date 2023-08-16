@@ -11,6 +11,7 @@
 #include <filesystem>
 
 using vespalib::make_string_short::fmt;
+namespace fs = std::filesystem;
 
 namespace vespalib::alloc {
 
@@ -21,7 +22,7 @@ MmapFileAllocator::MmapFileAllocator(const vespalib::string& dir_name)
       _allocations(),
       _freelist()
 {
-    std::filesystem::create_directories(std::filesystem::path(_dir_name));
+    fs::create_directories(fs::path(_dir_name));
     _file.open(O_RDWR | O_CREAT | O_TRUNC, false);
 }
 
@@ -30,7 +31,7 @@ MmapFileAllocator::~MmapFileAllocator()
     assert(_allocations.empty());
     _file.close();
     _file.unlink();
-    std::filesystem::remove_all(std::filesystem::path(_dir_name));
+    fs::remove_all(fs::path(_dir_name));
 }
 
 uint64_t

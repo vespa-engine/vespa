@@ -5,6 +5,7 @@
 #include "distributor_bucket_space.h"
 #include "pendingmessagetracker.h"
 #include "storage_node_up_states.h"
+#include <vespa/storage/storageutil/utils.h>
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
@@ -53,18 +54,19 @@ class UpdateBucketDatabaseProcessor : public BucketDatabase::EntryUpdateProcesso
     const std::vector<BucketCopy>& _changed_nodes;
     std::vector<uint16_t> _ideal_nodes;
     bool _reset_trusted;
+    using ConstNodesRef = IdealServiceLayerNodesBundle::ConstNodesRef;
 public:
-    UpdateBucketDatabaseProcessor(const framework::Clock& clock, const std::vector<BucketCopy>& changed_nodes, std::vector<uint16_t> ideal_nodes, bool reset_trusted);
+    UpdateBucketDatabaseProcessor(const framework::Clock& clock, const std::vector<BucketCopy>& changed_nodes, ConstNodesRef ideal_nodes, bool reset_trusted);
     ~UpdateBucketDatabaseProcessor() override;
     BucketDatabase::Entry create_entry(const document::BucketId& bucket) const override;
     bool process_entry(BucketDatabase::Entry &entry) const override;
 };
 
-UpdateBucketDatabaseProcessor::UpdateBucketDatabaseProcessor(const framework::Clock& clock, const std::vector<BucketCopy>& changed_nodes, std::vector<uint16_t> ideal_nodes, bool reset_trusted)
+UpdateBucketDatabaseProcessor::UpdateBucketDatabaseProcessor(const framework::Clock& clock, const std::vector<BucketCopy>& changed_nodes, ConstNodesRef ideal_nodes, bool reset_trusted)
     : BucketDatabase::EntryUpdateProcessor(),
       _clock(clock),
       _changed_nodes(changed_nodes),
-      _ideal_nodes(std::move(ideal_nodes)),
+      _ideal_nodes(ideal_nodes.cbegin(), ideal_nodes.cend()),
       _reset_trusted(reset_trusted)
 {
 }
@@ -242,6 +244,16 @@ DistributorStripeComponent::parse_selection(const vespalib::string& selection) c
 {
     document::select::Parser parser(*getTypeRepo()->documentTypeRepo, getBucketIdFactory());
     return parser.parse(selection);
+}
+
+void
+DistributorStripeComponent::update_bucket_database(const document::Bucket& bucket, const BucketCopy& changed_node, uint32_t update_flags) {
+    update_bucket_database(bucket, toVector<BucketCopy>(changed_node),update_flags);
+}
+
+void
+DistributorStripeComponent::remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) {
+    remove_nodes_from_bucket_database(bucket, toVector<uint16_t>(node_index));
 }
 
 }

@@ -3,7 +3,6 @@
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -14,7 +13,6 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::BucketId;
@@ -112,14 +110,10 @@ struct TestTargets {
 } // anonymous
 
 BucketInstanceList
-OperationTargetResolverTest::getInstances(const BucketId& id,
-                                          bool stripToRedundancy)
+OperationTargetResolverTest::getInstances(const BucketId& id, bool stripToRedundancy)
 {
-    lib::IdealNodeCalculatorImpl idealNodeCalc;
     auto &bucketSpaceRepo(operation_context().bucket_space_repo());
     auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
-    idealNodeCalc.setDistribution(distributorBucketSpace.getDistribution());
-    idealNodeCalc.setClusterState(distributorBucketSpace.getClusterState());
     OperationTargetResolverImpl resolver(
             distributorBucketSpace, distributorBucketSpace.getBucketDatabase(), 16,
             distributorBucketSpace.getDistribution().getRedundancy(),
@@ -140,24 +134,6 @@ TEST_F(OperationTargetResolverTest, simple) {
 
     MY_ASSERT_THAT(BucketId(32, 0)).sendsTo(BucketId(16, 0), 1)
                                    .sendsTo(BucketId(16, 0), 0);
-}
-
-TEST_F(OperationTargetResolverTest, multiple_nodes) {
-    setup_stripe(1, 2, "storage:2 distributor:1");
-
-    auto &bucketSpaceRepo(operation_context().bucket_space_repo());
-    auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
-    for (int i = 0; i < 100; ++i) {
-        addNodesToBucketDB(BucketId(16, i), "0=0,1=0");
-
-        lib::IdealNodeCalculatorImpl idealNodeCalc;
-        idealNodeCalc.setDistribution(distributorBucketSpace.getDistribution());
-        idealNodeCalc.setClusterState(distributorBucketSpace.getClusterState());
-        lib::IdealNodeList idealNodes(
-                idealNodeCalc.getIdealStorageNodes(BucketId(16, i)));
-        uint16_t expectedNode = idealNodes[0].getIndex();
-        MY_ASSERT_THAT(BucketId(32, i)).sendsTo(BucketId(16, i), expectedNode);
-    }
 }
 
 TEST_F(OperationTargetResolverTest, choose_ideal_state_when_many_copies) {

@@ -3,6 +3,7 @@
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
+#include <vespa/storage/storageutil/utils.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include "dummy_cluster_context.h"

@@ -10,6 +10,7 @@
 #include <vespa/storage/distributor/distributor_stripe_pool.h>
 #include <vespa/storage/distributor/distributor_stripe_thread.h>
 #include <vespa/storage/distributor/distributor_total_metrics.h>
+#include <vespa/storage/storageutil/utils.h>
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/text/stringtokenizer.h>

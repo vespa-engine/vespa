@@ -10,6 +10,7 @@
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/ideal_state_total_metrics.h>
 #include <vespa/storage/distributor/node_supported_features_repo.h>
+#include <vespa/storage/storageutil/utils.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -225,7 +226,7 @@ DistributorStripeTestUtil::addIdealNodes(const lib::ClusterState& state, const d
 
     for (uint32_t i = 0; i < res.size(); ++i) {
         if (state.getNodeState(lib::Node(lib::NodeType::STORAGE, res[i])).getState() != lib::State::MAINTENANCE) {
-            entry->addNode(BucketCopy(0, res[i], api::BucketInfo(1,1,1)), toVector<uint16_t>(0));
+            entry->addNode(BucketCopy(0, res[i], api::BucketInfo(1,1,1)), {0});
         }
     }
 
@@ -324,7 +325,7 @@ DistributorStripeTestUtil::insertBucketInfo(document::BucketId id, uint16_t node
         info2.setActive();
     }
     BucketCopy copy(operation_context().generate_unique_timestamp(), node, info2);
-    entry->addNode(copy.setTrusted(trusted), toVector<uint16_t>(0));
+    entry->addNode(copy.setTrusted(trusted), {0});
     getBucketDatabase().update(entry);
 }
 

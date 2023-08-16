@@ -2,25 +2,43 @@
 
 #pragma once
 
+#include "ideal_service_layer_nodes_bundle.h"
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 
 namespace storage::lib { class Distribution; }
 namespace storage::distributor {
 
 class ActiveList;
+struct ActiveStateOrder;
 
-struct ActiveCopy {
-    constexpr ActiveCopy() noexcept : _nodeIndex(-1), _ideal(-1), _doc_count(0), _ready(false), _active(false) { }
-    ActiveCopy(uint16_t node, const BucketDatabase::Entry& e, const std::vector<uint16_t>& idealState);
+class ActiveCopy {
+    using Index = IdealServiceLayerNodesBundle::Index;
+    using Node2Index = IdealServiceLayerNodesBundle::Node2Index;
+public:
+    constexpr ActiveCopy() noexcept
+        : _nodeIndex(Index::invalid()),
+          _ideal(Index::invalid()),
+          _doc_count(0),
+          _ready(false),
+          _active(false)
+    { }
+    ActiveCopy(uint16_t node, const BucketCopy & copy, uint16_t ideal) noexcept
+        : _nodeIndex(node),
+          _ideal(ideal),
+          _doc_count(copy.getDocumentCount()),
+          _ready(copy.ready()),
+          _active(copy.active())
+    { }
 
     vespalib::string getReason() const;
     friend std::ostream& operator<<(std::ostream& out, const ActiveCopy& e);
 
-    static ActiveList calculate(const std::vector<uint16_t>& idealState,
-                                const lib::Distribution&,
-                                BucketDatabase::Entry&,
-                                uint32_t max_activation_inhibited_out_of_sync_groups);
-
+    static ActiveList calculate(const Node2Index & idealState, const lib::Distribution&,
+                                const BucketDatabase::Entry&, uint32_t max_activation_inhibited_out_of_sync_groups);
+    uint16_t nodeIndex() const noexcept { return _nodeIndex; }
+private:
+    friend ActiveStateOrder;
+    bool valid_ideal() const noexcept { return _ideal < Index::invalid(); }
     uint16_t _nodeIndex;
     uint16_t _ideal;
     uint32_t _doc_count;
@@ -29,8 +47,6 @@ struct ActiveCopy {
 };
 
 class ActiveList : public vespalib::Printable {
-    std::vector<ActiveCopy> _v;
-
 public:
     ActiveList() {}
     ActiveList(std::vector<ActiveCopy>&& v) : _v(std::move(v)) { }
@@ -41,6 +57,8 @@ public:
     [[nodiscard]] bool empty() const noexcept { return _v.empty(); }
     size_t size() const noexcept { return _v.size(); }
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
+private:
+    std::vector<ActiveCopy> _v;
 };
 
 }

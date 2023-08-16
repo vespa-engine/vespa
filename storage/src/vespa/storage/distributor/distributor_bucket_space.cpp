@@ -121,9 +121,9 @@ setup_ideal_nodes_bundle(IdealServiceLayerNodesBundle& ideal_nodes_bundle,
                          const lib::ClusterState& cluster_state,
                          document::BucketId bucket)
 {
-    ideal_nodes_bundle.set_available_nodes(distribution.getIdealStorageNodes(cluster_state, bucket, up_states));
-    ideal_nodes_bundle.set_available_nonretired_nodes(distribution.getIdealStorageNodes(cluster_state, bucket, nonretired_up_states));
-    ideal_nodes_bundle.set_available_nonretired_or_maintenance_nodes(distribution.getIdealStorageNodes(cluster_state, bucket, nonretired_or_maintenance_up_states));
+    ideal_nodes_bundle.set_nodes(distribution.getIdealStorageNodes(cluster_state, bucket, up_states),
+                                 distribution.getIdealStorageNodes(cluster_state, bucket, nonretired_up_states),
+                                 distribution.getIdealStorageNodes(cluster_state, bucket, nonretired_or_maintenance_up_states));
 }
 
 /*

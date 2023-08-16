@@ -10,7 +10,6 @@
 #include <vespa/storage/distributor/storage_node_up_states.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <algorithm>
 
@@ -67,13 +66,11 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTargetLi
         assert(!multipleBuckets);
         (void) multipleBuckets;
         BucketDatabase::Entry entry(_bucket_space.getBucketDatabase().get(lastBucket));
-        const std::vector<uint16_t> & idealState = _bucket_space.get_ideal_service_layer_nodes_bundle(
-                lastBucket).available_nodes();
-        active = ActiveCopy::calculate(idealState, _bucket_space.getDistribution(), entry,
+        active = ActiveCopy::calculate(_bucket_space.get_ideal_service_layer_nodes_bundle(lastBucket).available_to_index(), _bucket_space.getDistribution(), entry,
                                        _op_ctx.distributor_config().max_activation_inhibited_out_of_sync_groups());
         LOG(debug, "Active copies for bucket %s: %s", entry.getBucketId().toString().c_str(), active.toString().c_str());
         for (uint32_t i=0; i<active.size(); ++i) {
-            BucketCopy copy(*entry->getNode(active[i]._nodeIndex));
+            BucketCopy copy(*entry->getNode(active[i].nodeIndex()));
             copy.setActive(true);
             entry->updateNode(copy);
         }

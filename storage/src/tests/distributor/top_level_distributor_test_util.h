@@ -7,7 +7,6 @@
 #include <tests/common/teststorageapp.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/frameworkimpl/component/distributorcomponentregisterimpl.h>
-#include <vespa/storage/storageutil/utils.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 

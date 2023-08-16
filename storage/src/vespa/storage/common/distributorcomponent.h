@@ -34,13 +34,6 @@
 
 namespace storage {
 
-namespace bucketdb {
-    class DistrBucketDatabase;
-}
-namespace lib {
-    class IdealNodeCalculator;
-}
-
 using DistributorConfig = vespa::config::content::core::internal::InternalStorDistributormanagerType;
 using VisitorConfig = vespa::config::content::core::internal::InternalStorVisitordispatcherType;
 

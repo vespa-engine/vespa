@@ -7,6 +7,7 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/top_level_bucket_db_updater.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
+#include <vespa/storage/distributor/activecopy.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
@@ -1587,7 +1588,9 @@ TEST_F(StateCheckersTest, context_populates_ideal_state_containers) {
     StateChecker::Context c(node_context(), operation_context(),
                             getDistributorBucketSpace(), statsTracker, makeDocumentBucket({17, 0}));
 
-    ASSERT_THAT(c.idealState(), ElementsAre(1, 3));
+    ASSERT_EQ(2, c.idealState().size());
+    ASSERT_EQ(1, c.idealState()[0]);
+    ASSERT_EQ(3, c.idealState()[1]);
     for (uint16_t node : c.idealState()) {
         ASSERT_TRUE(c.idealStateBundle.is_nonretired_or_maintenance(node));
     }
@@ -1734,6 +1737,11 @@ TEST_F(StateCheckersTest, stats_updates_for_maximum_time_since_gc_run) {
           .runFor({17, 0});
 
     EXPECT_EQ(runner.stats().max_observed_time_since_last_gc(), 1900s);
+}
+
+TEST(ActiveCopyTest, control_size) {
+    EXPECT_EQ(12, sizeof(ActiveCopy));
+    EXPECT_EQ(64, sizeof(IdealServiceLayerNodesBundle));
 }
 
 }

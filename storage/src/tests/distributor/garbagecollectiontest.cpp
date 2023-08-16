@@ -71,8 +71,7 @@ struct GarbageCollectionOperationTest : Test, DistributorStripeTestUtil {
 
     std::shared_ptr<GarbageCollectionOperation> create_op() {
         auto op = std::make_shared<GarbageCollectionOperation>(
-                dummy_cluster_context, BucketAndNodes(makeDocumentBucket(_bucket_id),
-                                                            toVector<uint16_t>(0, 1)));
+                dummy_cluster_context, BucketAndNodes(makeDocumentBucket(_bucket_id), {0, 1}));
         op->setIdealStateManager(&getIdealStateManager());
         return op;
     }

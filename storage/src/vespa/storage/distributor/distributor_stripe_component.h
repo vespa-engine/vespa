@@ -8,7 +8,6 @@
 #include "operationowner.h"
 #include "statechecker.h"
 #include <vespa/storage/common/distributorcomponent.h>
-#include <vespa/storage/storageutil/utils.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/buckets/bucketinfo.h>
 
@@ -68,10 +67,7 @@ public:
     /**
      * Simple API for the common case of modifying a single node.
      */
-    void update_bucket_database(const document::Bucket& bucket, const BucketCopy& changed_node, uint32_t update_flags) override {
-        update_bucket_database(bucket, toVector<BucketCopy>(changed_node),update_flags);
-    }
-
+    void update_bucket_database(const document::Bucket& bucket, const BucketCopy& changed_node, uint32_t update_flags) override;
     /**
      * Adds the given copies to the bucket database.
      */
@@ -82,9 +78,7 @@ public:
      * If the resulting bucket is empty afterwards, removes the entire
      * bucket entry from the bucket database.
      */
-    void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) override {
-        remove_nodes_from_bucket_database(bucket, toVector<uint16_t>(node_index));
-    }
+    void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) override;
 
     /**
      * Removes the given bucket copies from the bucket database.
