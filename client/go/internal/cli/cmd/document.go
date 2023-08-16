@@ -171,7 +171,7 @@ https://docs.vespa.ai/en/reference/document-json-format.html#document-operations
 When this returns successfully, the document is guaranteed to be visible in any
 subsequent get or query operation.
 
-To feed with high throughput, https://docs.vespa.ai/en/vespa-feed-client.html
+To feed with high throughput, https://docs.vespa.ai/en/reference/vespa-cli/vespa_feed.html
 should be used instead of this.`,
 		Example:           `$ vespa document src/test/resources/A-Head-Full-of-Dreams.json`,
 		DisableAutoGenTag: true,
