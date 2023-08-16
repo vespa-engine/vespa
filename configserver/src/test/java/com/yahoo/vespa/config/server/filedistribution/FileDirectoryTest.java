@@ -37,9 +37,9 @@ public class FileDirectoryTest {
         FileReference foo = createFile("foo");
         FileReference bar = createFile("bar");
 
-        assertTrue(fileDirectory.getFile(foo).exists());
+        assertTrue(fileDirectory.getFile(foo).get().exists());
         assertEquals("ea315b7acac56246", foo.value());
-        assertTrue(fileDirectory.getFile(bar).exists());
+        assertTrue(fileDirectory.getFile(bar).get().exists());
         assertEquals("2b8e97f15c854e1d", bar.value());
     }
 
@@ -49,7 +49,7 @@ public class FileDirectoryTest {
         File subDirectory = new File(temporaryFolder.getRoot(), subdirName);
         createFileInSubDir(subDirectory, "foo", "some content");
         FileReference fileReference = fileDirectory.addFile(subDirectory);
-        File dir = fileDirectory.getFile(fileReference);
+        File dir = fileDirectory.getFile(fileReference).get();
         assertTrue(dir.exists());
         assertTrue(new File(dir, "foo").exists());
         assertFalse(new File(dir, "doesnotexist").exists());
@@ -58,7 +58,7 @@ public class FileDirectoryTest {
         // Change contents of a file, file reference value should change
         createFileInSubDir(subDirectory, "foo", "new content");
         FileReference fileReference2 = fileDirectory.addFile(subDirectory);
-        dir = fileDirectory.getFile(fileReference2);
+        dir = fileDirectory.getFile(fileReference2).get();
         assertTrue(new File(dir, "foo").exists());
         assertNotEquals(fileReference + " should not be equal to " + fileReference2, fileReference, fileReference2);
         assertEquals("e5d4b3fe5ee3ede3", fileReference2.value());
@@ -66,7 +66,7 @@ public class FileDirectoryTest {
         // Add a file, should be available and file reference should have another value
         createFileInSubDir(subDirectory, "bar", "some other content");
         FileReference fileReference3 = fileDirectory.addFile(subDirectory);
-        dir = fileDirectory.getFile(fileReference3);
+        dir = fileDirectory.getFile(fileReference3).get();
         assertTrue(new File(dir, "foo").exists());
         assertTrue(new File(dir, "bar").exists());
         assertEquals("894bced3fc9d199b", fileReference3.value());
@@ -78,7 +78,7 @@ public class FileDirectoryTest {
         File subDirectory = new File(temporaryFolder.getRoot(), subdirName);
         createFileInSubDir(subDirectory, "foo", "some content");
         FileReference fileReference = fileDirectory.addFile(subDirectory);
-        File dir = fileDirectory.getFile(fileReference);
+        File dir = fileDirectory.getFile(fileReference).get();
         assertTrue(dir.exists());
         File foo = new File(dir, "foo");
         assertTrue(foo.exists());
@@ -90,7 +90,7 @@ public class FileDirectoryTest {
         try { Thread.sleep(1000);} catch (InterruptedException e) {/*ignore */} // Needed since we have timestamp resolution of 1 second
         Files.delete(Paths.get(fileDirectory.getPath(fileReference)).resolve("subdir").resolve("foo"));
         fileReference = fileDirectory.addFile(subDirectory);
-        dir = fileDirectory.getFile(fileReference);
+        dir = fileDirectory.getFile(fileReference).get();
         File foo2 = new File(dir, "foo");
         assertTrue(dir.exists());
         assertTrue(foo2.exists());
@@ -107,7 +107,7 @@ public class FileDirectoryTest {
         File subDirectory = new File(temporaryFolder.getRoot(), subdirName);
         createFileInSubDir(subDirectory, "foo", "some content");
         FileReference fileReference = fileDirectory.addFile(subDirectory);
-        File dir = fileDirectory.getFile(fileReference);
+        File dir = fileDirectory.getFile(fileReference).get();
         assertTrue(dir.exists());
         File foo = new File(dir, "foo");
         assertTrue(foo.exists());
@@ -119,7 +119,7 @@ public class FileDirectoryTest {
         // Add a file that already exists, nothing should happen
         createFileInSubDir(subDirectory, "foo", "some content"); // same as before, nothing should happen
         FileReference fileReference3 = fileDirectory.addFile(subDirectory);
-        dir = fileDirectory.getFile(fileReference3);
+        dir = fileDirectory.getFile(fileReference3).get();
         assertTrue(new File(dir, "foo").exists());
         assertEquals("bebc5a1aee74223d", fileReference3.value()); // same hash
 

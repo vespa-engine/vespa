@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,7 +43,6 @@ import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 public class FileServer {
 
@@ -108,26 +108,27 @@ public class FileServer {
     }
 
     private boolean hasFile(FileReference reference) {
-        try {
-            return fileDirectory.getFile(reference).exists();
-        } catch (IllegalArgumentException e) {
-            log.log(Level.FINE, () -> "Failed locating " + reference + ": " + e.getMessage());
-        }
+        Optional<File> file = fileDirectory.getFile(reference);
+        if (file.isPresent())
+            return file.get().exists();
+
+        log.log(Level.FINE, () -> "Failed locating " + reference);
         return false;
     }
 
     FileDirectory getRootDir() { return fileDirectory; }
 
     void startFileServing(FileReference reference, Receiver target, Set<CompressionType> acceptedCompressionTypes) {
-        File file = fileDirectory.getFile(reference);
-        if ( ! file.exists()) return;
+        Optional<File> file = fileDirectory. getFile(reference);
+        if (file.isEmpty()) return;
 
-        try (FileReferenceData fileData = fileReferenceData(reference, acceptedCompressionTypes, file)) {
-            log.log(Level.FINE, () -> "Start serving " + reference.value() + " with file '" + file.getAbsolutePath() + "'");
+        var absolutePath = file.get().getAbsolutePath();
+        try (FileReferenceData fileData = fileReferenceData(reference, acceptedCompressionTypes, file.get())) {
+            log.log(Level.FINE, () -> "Start serving " + reference.value() + " with file '" + absolutePath + "'");
             target.receive(fileData, new ReplayStatus(0, "OK"));
-            log.log(Level.FINE, () -> "Done serving " + reference.value() + " with file '" + file.getAbsolutePath() + "'");
+            log.log(Level.FINE, () -> "Done serving " + reference.value() + " with file '" + absolutePath + "'");
         } catch (IOException ioe) {
-            throw new UncheckedIOException("For " + reference.value() + ": failed reading file '" + file.getAbsolutePath() + "'" +
+            throw new UncheckedIOException("For " + reference.value() + ": failed reading file '" + absolutePath + "'" +
                                            " for sending to '" + target.toString() + "'. ", ioe);
         } catch (Exception e) {
             throw new RuntimeException("Failed serving " + reference.value() + " to '" + target + "': ", e);
