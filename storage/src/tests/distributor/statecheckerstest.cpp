@@ -1588,6 +1588,7 @@ TEST_F(StateCheckersTest, context_populates_ideal_state_containers) {
     StateChecker::Context c(node_context(), operation_context(),
                             getDistributorBucketSpace(), statsTracker, makeDocumentBucket({17, 0}));
 
+    ASSERT_EQ(2, c.idealState().size());
     ASSERT_EQ(1, c.idealState()[0]);
     ASSERT_EQ(3, c.idealState()[1]);
     for (uint16_t node : c.idealState()) {
