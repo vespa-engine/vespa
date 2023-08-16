@@ -251,15 +251,12 @@ public class ClusterModel {
             // Since we have little local information, use information about query cost in other groups
             Load bcpGroupIdeal = adjustQueryDependentIdealLoadByBcpGroupInfo(ideal);
 
-            System.out.println("Bcp group ideal: " + bcpGroupIdeal);
             // Do a weighted sum of the ideal "vote" based on local and bcp group info.
             // This avoids any discontinuities with a near-zero local query rate.
             double localInformationWeight = Math.min(1, averageQueryRate().orElse(0) /
                                                         Math.min(queryRateGivingFullConfidence, cluster.bcpGroupInfo().queryRate()));
             ideal = ideal.multiply(localInformationWeight).add(bcpGroupIdeal.multiply(1 - localInformationWeight));
-            System.out.println("local information weight: " + localInformationWeight);
         }
-        System.out.println("Adjusted ideal: " + ideal);
         return ideal;
     }
 
