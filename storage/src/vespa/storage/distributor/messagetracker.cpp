@@ -20,7 +20,7 @@ MessageTracker::~MessageTracker() = default;
 void
 MessageTracker::flushQueue(MessageSender& sender)
 {
-    _sentMessages.resize(_commandQueue.size());
+    _sentMessages.resize(_sentMessages.size() + _commandQueue.size());
     for (const auto & toSend : _commandQueue) {
         toSend._msg->setAddress(api::StorageMessageAddress::create(_cluster_ctx.cluster_name_ptr(), lib::NodeType::STORAGE, toSend._target));
         _sentMessages[toSend._msg->getMsgId()] = toSend._target;
