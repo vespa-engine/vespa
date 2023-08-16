@@ -393,7 +393,7 @@ public class PermanentFlags {
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
-            "drop-caches", false,
+            "drop-caches", true,
             "Drop caches on tenant hosts",
             "Takes effect on next tick",
             // The application ID is the exclusive application ID associated with the host,
