@@ -139,7 +139,7 @@ public class SessionZooKeeperClientTest {
         final FileReference testRef = new FileReference("test-ref");
         SessionZooKeeperClient zkc = createSessionZKClient(3);
         zkc.writeApplicationPackageReference(Optional.of(testRef));
-        assertEquals(testRef, zkc.readApplicationPackageReference());
+        assertEquals(testRef, zkc.readApplicationPackageReference().get());
     }
 
     @Test

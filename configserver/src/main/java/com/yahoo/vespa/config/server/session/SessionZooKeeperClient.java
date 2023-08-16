@@ -180,11 +180,8 @@ public class SessionZooKeeperClient {
                 reference -> curator.set(applicationPackageReferencePath(), Utf8.toBytes(reference.value())));
     }
 
-    FileReference readApplicationPackageReference() {
-        Optional<byte[]> data = curator.getData(applicationPackageReferencePath());
-        if (data.isEmpty()) return null; // This should not happen.
-
-        return new FileReference(Utf8.toString(data.get()));
+    Optional<FileReference> readApplicationPackageReference() {
+        return curator.getData(applicationPackageReferencePath()).map(d -> new FileReference(Utf8.toString(d)));
     }
 
     private Path applicationPackageReferencePath() {

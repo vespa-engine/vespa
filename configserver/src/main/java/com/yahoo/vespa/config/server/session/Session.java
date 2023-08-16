@@ -120,8 +120,8 @@ public abstract class Session implements Comparable<Session>  {
         sessionZooKeeperClient.writeApplicationId(applicationId);
     }
 
-    void setApplicationPackageReference(FileReference applicationPackageReference) {
-        sessionZooKeeperClient.writeApplicationPackageReference(Optional.ofNullable(applicationPackageReference));
+    void setApplicationPackageReference(Optional<FileReference> applicationPackageReference) {
+        sessionZooKeeperClient.writeApplicationPackageReference(applicationPackageReference);
     }
 
     public void setVespaVersion(Version version) {
@@ -168,7 +168,7 @@ public abstract class Session implements Comparable<Session>  {
         }
     }
 
-    public FileReference getApplicationPackageReference() {return sessionZooKeeperClient.readApplicationPackageReference(); }
+    public Optional<FileReference> getApplicationPackageReference() { return sessionZooKeeperClient.readApplicationPackageReference(); }
 
     public Optional<DockerImage> getDockerImageRepository() { return sessionZooKeeperClient.readDockerImageRepository(); }
 

@@ -6,7 +6,6 @@ import com.google.common.collect.Multiset;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.StripedExecutor;
-import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
@@ -854,14 +853,14 @@ public class SessionRepository {
         }
 
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        FileReference fileReference = sessionZKClient.readApplicationPackageReference();
+        var fileReference = sessionZKClient.readApplicationPackageReference();
         log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference);
-        if (fileReference == null) return;
+        if (fileReference.isEmpty()) return;
 
         File sessionDir;
         FileDirectory fileDirectory = fileDistributionFactory.fileDirectory();
         try {
-            sessionDir = fileDirectory.getFile(fileReference);
+            sessionDir = fileDirectory.getFile(fileReference.get());
         } catch (IllegalArgumentException e) {
             // We cannot be guaranteed that the file reference exists (it could be that it has not
             // been downloaded yet), and e.g. when bootstrapping we cannot throw an exception in that case
