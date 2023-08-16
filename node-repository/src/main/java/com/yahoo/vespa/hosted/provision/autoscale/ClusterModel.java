@@ -143,9 +143,13 @@ public class ClusterModel {
      */
     public Duration allocationDuration() { return allocationDuration; }
 
+    public boolean isContent() {
+        return clusterSpec.type().isContent();
+    }
+
     /** Returns the predicted duration of data redistribution in this cluster. */
     public Duration redistributionDuration() {
-        if (! clusterSpec.type().isContent()) return Duration.ofMinutes(0);
+        if (! isContent()) return Duration.ofMinutes(0);
         return scalingDuration(); // TODO: Estimate separately
     }
 

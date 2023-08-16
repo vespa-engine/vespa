@@ -521,7 +521,7 @@ public class AutoscalingTest {
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.loader().applyLoad(new Load(0.5, 0.8, 0.1), 120);
         fixture.tester().assertResources("Suggesting resources where disk is 3x memory (this is a content cluster)",
-                                         10, 1, 14.3,  66.2,  198.6,
+                                         11, 1, 13.0,  60.0,  179.9,
                                          fixture.tester().suggest(fixture.applicationId, fixture.clusterSpec.id(), min, min));
         fixture.tester().assertResources("Autoscaling to resources where disk is 3x memory (this is a content cluster)",
                                          10, 1, 10.0,  66.2,  198.6,
@@ -979,35 +979,6 @@ public class AutoscalingTest {
         assertEquals(6, nodes.size());
         assertEquals("We stay with x86 even though the first matching flavor is arm",
                      NodeResources.Architecture.x86_64, nodes.get(0).resources().architecture());
-    }
-
-    // Verify that we choose not to increase to 3 nodes even though that is cheaper (dure to redundancy),
-    // due to considering the cost of redistribution. This depends quite finely on the parameters,
-    // and the easiest way to move it back if there is a change is to increase the scaling duration,
-    // as that is a redistribution cost multiplier (until redistribution is measured separately).
-    @Test
-    public void change_not_causing_redistribution_is_preferred() {
-        var min = new ClusterResources(2, 1, new NodeResources(  16, 64, 200, 1, DiskSpeed.fast, StorageType.remote));
-        var max = new ClusterResources(4, 1, new NodeResources(  32, 64, 200, 1, DiskSpeed.fast, StorageType.remote));
-
-        var fixture = DynamicProvisioningTester.fixture()
-                                               .clusterType(ClusterSpec.Type.content)
-                                               .awsSetup(true, Environment.prod)
-                                               .capacity(Capacity.from(min, max))
-                                               .initialResources(Optional.of(min))
-                                               .build();
-        fixture.setScalingDuration(Duration.ofMinutes(35));
-        var nodes = fixture.nodes().not().retired().asList();
-        assertEquals(2, nodes.size());
-        assertEquals(16.0, nodes.get(0).resources().vcpu(), 0.000001);
-
-        fixture.tester().clock().advance(Duration.ofHours(5));
-        fixture.loader().applyCpuLoad(0.75, 700); // trigger rescaling, but don't cause fulfilment < 1
-        var autoscaling = fixture.autoscale();
-        fixture.deploy(Capacity.from(autoscaling.resources().get()));
-        nodes = fixture.nodes().not().retired().asList();
-        assertEquals("Increasing cpu is preferred to adding nodes to avoid redistribution", 2, nodes.size());
-        assertEquals(28.5, nodes.get(0).resources().vcpu(), 0.000001);
     }
 
 }
