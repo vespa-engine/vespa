@@ -354,7 +354,9 @@ func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
 	}
 	if !c.isCloudCI() { // Vespa Cloud always runs an up-to-date version
 		if err := target.CheckVersion(c.version); err != nil {
-			c.printWarning(err, "This version may not work as expected", "Try 'vespa version' to check for a new version")
+			c.printWarning(err, "This version may not work as expected",
+				"Try 'vespa version' to check for a new version",
+				"This warning will occur when the API key is empty and can be ignored for dataplane-only usage")
 		}
 	}
 	return target, nil
