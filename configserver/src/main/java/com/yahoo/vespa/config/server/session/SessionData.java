@@ -70,7 +70,7 @@ public record SessionData(ApplicationId applicationId,
         object.setLong(CREATE_TIME_PATH, System.currentTimeMillis());
         dockerImageRepository.ifPresent(image -> object.setString(DOCKER_IMAGE_REPOSITORY_PATH, image.asString()));
         athenzDomain.ifPresent(domain -> object.setString(ATHENZ_DOMAIN, domain.value()));
-        quota.ifPresent(q -> object.setString(QUOTA_PATH, q.toString()));
+        quota.ifPresent(q -> q.toSlime(object.setObject(QUOTA_PATH)));
 
         Cursor tenantSecretStoresArray = object.setArray(TENANT_SECRET_STORES_PATH);
         TenantSecretStoreSerializer.toSlime(tenantSecretStores, tenantSecretStoresArray);
