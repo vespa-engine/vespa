@@ -19,6 +19,7 @@ import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -118,12 +119,9 @@ public class FileServer {
 
     FileDirectory getRootDir() { return fileDirectory; }
 
-    void startFileServing(FileReference reference, Receiver target, Set<CompressionType> acceptedCompressionTypes) {
-        Optional<File> file = fileDirectory. getFile(reference);
-        if (file.isEmpty()) return;
-
-        var absolutePath = file.get().getAbsolutePath();
-        try (FileReferenceData fileData = fileReferenceData(reference, acceptedCompressionTypes, file.get())) {
+    void startFileServing(FileReference reference, File file, Receiver target, Set<CompressionType> acceptedCompressionTypes) {
+        var absolutePath = file.getAbsolutePath();
+        try (FileReferenceData fileData = fileReferenceData(reference, acceptedCompressionTypes, file)) {
             log.log(Level.FINE, () -> "Start serving " + reference.value() + " with file '" + absolutePath + "'");
             target.receive(fileData, new ReplayStatus(0, "OK"));
             log.log(Level.FINE, () -> "Done serving " + reference.value() + " with file '" + absolutePath + "'");
@@ -178,10 +176,10 @@ public class FileServer {
 
         try {
             var fileReferenceDownload = new FileReferenceDownload(fileReference, client, downloadFromOtherSourceIfNotFound);
-            boolean fileExists = hasFileDownloadIfNeeded(fileReferenceDownload);
-            if ( ! fileExists) return NOT_FOUND;
+            var file = getFileDownloadIfNeeded(fileReferenceDownload);
+            if (file.isEmpty()) return NOT_FOUND;
 
-            startFileServing(fileReference, receiver, acceptedCompressionTypes);
+            startFileServing(fileReference, file.get(), receiver, acceptedCompressionTypes);
         } catch (Exception e) {
             log.warning("Failed serving file reference '" + fileReference + "', request from " + client + " failed with: " + e.getMessage());
             return TRANSFER_FAILED;
@@ -200,9 +198,11 @@ public class FileServer {
                                            acceptedCompressionTypes + ", compression types server can use: " + compressionTypes);
     }
 
-    boolean hasFileDownloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
+    public Optional<File> getFileDownloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
-        if (hasFile(fileReference)) return true;
+        Optional<File> file = fileDirectory.getFile(fileReference);
+        if (file.isPresent())
+            return file;
 
         if (fileReferenceDownload.downloadFromOtherSourceIfNotFound()) {
             log.log(Level.FINE, "File not found, downloading from another source");
@@ -211,13 +211,13 @@ public class FileServer {
             FileReferenceDownload newDownload = new FileReferenceDownload(fileReference,
                                                                           fileReferenceDownload.client(),
                                                                           false);
-            boolean fileExists = downloader.getFile(newDownload).isPresent();
-            if ( ! fileExists)
+            file = downloader.getFile(newDownload);
+            if (file.isEmpty())
                 log.log(Level.INFO, "Failed downloading '" + fileReferenceDownload + "'");
-            return fileExists;
+            return file;
         } else {
             log.log(Level.FINE, "File not found, will not download from another source");
-            return false;
+            return Optional.empty();
         }
     }
 
