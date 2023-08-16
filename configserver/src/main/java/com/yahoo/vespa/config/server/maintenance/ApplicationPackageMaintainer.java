@@ -66,15 +66,15 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
             Optional<Session> session = applicationRepository.getActiveSession(applicationId);
             if (session.isEmpty()) continue; // App might be deleted after call to listApplications() or not activated yet (bootstrap phase)
 
-            FileReference appFileReference = session.get().getApplicationPackageReference();
-            if (appFileReference != null) {
+            Optional<FileReference> appFileReference = session.get().getApplicationPackageReference();
+            if (appFileReference.isPresent()) {
                 long sessionId = session.get().getSessionId();
                 attempts++;
-                if (!fileReferenceExistsOnDisk(downloadDirectory, appFileReference)) {
+                if (!fileReferenceExistsOnDisk(downloadDirectory, appFileReference.get())) {
                     log.fine(() -> "Downloading application package with file reference " + appFileReference +
                             " for " + applicationId + " (session " + sessionId + ")");
 
-                    FileReferenceDownload download = new FileReferenceDownload(appFileReference,
+                    FileReferenceDownload download = new FileReferenceDownload(appFileReference.get(),
                                                                                this.getClass().getSimpleName(),
                                                                                false);
                     if (fileDownloader.getFile(download).isEmpty()) {

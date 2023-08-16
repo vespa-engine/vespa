@@ -697,10 +697,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Optional<String> applicationPackage = Optional.empty();
         Optional<Session> session = getActiveSession(applicationId);
         if (session.isPresent()) {
-            FileReference applicationPackageReference = session.get().getApplicationPackageReference();
+            Optional<FileReference> applicationPackageReference = session.get().getApplicationPackageReference();
             File downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig().fileReferencesDir()));
-            if (applicationPackageReference != null && ! fileReferenceExistsOnDisk(downloadDirectory, applicationPackageReference))
-                applicationPackage = Optional.of(applicationPackageReference.value());
+            if (applicationPackageReference.isPresent() && ! fileReferenceExistsOnDisk(downloadDirectory, applicationPackageReference.get()))
+                applicationPackage = Optional.of(applicationPackageReference.get().value());
         }
         return applicationPackage;
     }
