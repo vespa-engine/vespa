@@ -173,7 +173,7 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.store(new BcpGroupInfo(100, 1.1, 0.45));
         fixture.loader().addCpuMeasurements(0.7f, 10);
         fixture.tester().assertResources("No need for traffic shift headroom",
-                                         2, 1, 2.0, 16.0, 40.8,
+                                         3, 1, 4.0, 16.0, 40.8,
                                          fixture.autoscale());
     }
 
@@ -267,6 +267,21 @@ public class AutoscalingUsingBcpGroupInfoTest {
         fixture.loader().addQueryRateMeasurements(10, __ -> 40.0);
         fixture.tester().assertResources("Scaling up cpu using bcp group cpu info",
                                          8, 1, 1.8, 7.4, 29.0,
+                                         fixture.autoscale());
+    }
+
+    @Test
+    public void test_autoscaling_containers_with_some_local_traffic() {
+        var fixture = DynamicProvisioningTester.fixture().clusterType(ClusterSpec.Type.container).awsProdSetup(true).build();
+
+        // Some local traffic
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.store(new BcpGroupInfo(200, 1.9, 500));
+        Duration duration1 = fixture.loader().addCpuMeasurements(0.01f, 10);
+        fixture.tester().clock().advance(duration1.negated());
+        fixture.loader().addQueryRateMeasurements(10, __ -> 10.0);
+        fixture.tester().assertResources("Not scaling up by group info since remote queries are much cheaper than local",
+                                         2, 1, 2.0, 16.0, 40.8,
                                          fixture.autoscale());
     }
 

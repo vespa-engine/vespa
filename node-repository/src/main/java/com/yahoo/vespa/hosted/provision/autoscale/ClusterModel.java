@@ -280,7 +280,8 @@ public class ClusterModel {
                                         ( 1 - cpu.queryFraction()) * cpu.idealLoad() *
                                         (clusterSpec.type().isContainer() ? 1 : groupSize());
 
-        double cpuAdjustment = neededTotalVcpPerGroup / currentClusterTotalVcpuPerGroup;
+        // Max 1: Only use bcp group info if it indicates that we need to scale *up*
+        double cpuAdjustment = Math.max(1.0, neededTotalVcpPerGroup / currentClusterTotalVcpuPerGroup);
         return ideal.withCpu(peakLoad().cpu() / cpuAdjustment);
     }
 
