@@ -247,16 +247,21 @@ public class ClusterModel {
      */
     public Load idealLoad() {
         var ideal = new Load(cpu.idealLoad(), memory.idealLoad(), disk.idealLoad()).divide(redundancyAdjustment());
+        System.out.println("---------------------------------");
+        System.out.println("Initial ideal: " + ideal);
         if ( !cluster.bcpGroupInfo().isEmpty() && cluster.bcpGroupInfo().queryRate() > 0) {
             // Since we have little local information, use information about query cost in other groups
             Load bcpGroupIdeal = adjustQueryDependentIdealLoadByBcpGroupInfo(ideal);
 
+            System.out.println("Bcp group ideal: " + bcpGroupIdeal);
             // Do a weighted sum of the ideal "vote" based on local and bcp group info.
             // This avoids any discontinuities with a near-zero local query rate.
             double localInformationWeight = Math.min(1, averageQueryRate().orElse(0) /
                                                         Math.min(queryRateGivingFullConfidence, cluster.bcpGroupInfo().queryRate()));
             ideal = ideal.multiply(localInformationWeight).add(bcpGroupIdeal.multiply(1 - localInformationWeight));
+            System.out.println("local information weight: " + localInformationWeight);
         }
+        System.out.println("Adjusted ideal: " + ideal);
         return ideal;
     }
 
@@ -272,17 +277,15 @@ public class ClusterModel {
 
     private Load adjustQueryDependentIdealLoadByBcpGroupInfo(Load ideal) {
         double currentClusterTotalVcpuPerGroup = nodes.not().retired().first().get().resources().vcpu() * groupSize();
-
         double targetQueryRateToHandle = ( canRescaleWithinBcpDeadline() ? averageQueryRate().orElse(0)
                                                                          : cluster.bcpGroupInfo().queryRate() )
                                          * cluster.bcpGroupInfo().growthRateHeadroom() * trafficShiftHeadroom();
-        double neededTotalVcpPerGroup = cluster.bcpGroupInfo().cpuCostPerQuery() * targetQueryRateToHandle / groupCount() +
+        double neededTotalVcpuPerGroup = cluster.bcpGroupInfo().cpuCostPerQuery() * targetQueryRateToHandle / groupCount() +
                                         ( 1 - cpu.queryFraction()) * cpu.idealLoad() *
                                         (clusterSpec.type().isContainer() ? 1 : groupSize());
-
         // Max 1: Only use bcp group info if it indicates that we need to scale *up*
-        double cpuAdjustment = Math.max(1.0, neededTotalVcpPerGroup / currentClusterTotalVcpuPerGroup);
-        return ideal.withCpu(peakLoad().cpu() / cpuAdjustment);
+        double cpuAdjustment = Math.max(1.0, neededTotalVcpuPerGroup / currentClusterTotalVcpuPerGroup);
+        return ideal.withCpu(ideal.cpu() / cpuAdjustment);
     }
 
     private boolean hasScaledIn(Duration period) {
