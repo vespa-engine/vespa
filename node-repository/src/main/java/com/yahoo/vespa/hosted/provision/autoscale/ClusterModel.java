@@ -247,8 +247,6 @@ public class ClusterModel {
      */
     public Load idealLoad() {
         var ideal = new Load(cpu.idealLoad(), memory.idealLoad(), disk.idealLoad()).divide(redundancyAdjustment());
-        System.out.println("---------------------------------");
-        System.out.println("Initial ideal: " + ideal);
         if ( !cluster.bcpGroupInfo().isEmpty() && cluster.bcpGroupInfo().queryRate() > 0) {
             // Since we have little local information, use information about query cost in other groups
             Load bcpGroupIdeal = adjustQueryDependentIdealLoadByBcpGroupInfo(ideal);
