@@ -52,7 +52,7 @@ BucketInstanceList::populate(const document::BucketId& specificId, const Distrib
     std::vector<BucketDatabase::Entry> entries;
     db.getParents(specificId, entries);
     for (const auto & entry : entries) {
-        auto node2Index = distributor_bucket_space.get_ideal_service_layer_nodes_bundle(entry.getBucketId()).nonRetiredOrMaintenance2Index();
+        auto node2Index = distributor_bucket_space.get_ideal_service_layer_nodes_bundle(entry.getBucketId()).nonretired_or_maintenance_to_index();
         add(entry, node2Index);
     }
 }
@@ -82,7 +82,7 @@ BucketInstanceList::limitToRedundancyCopies(uint16_t redundancy)
 document::BucketId
 BucketInstanceList::leastSpecificLeafBucketInSubtree(const document::BucketId& candidateId,
                                                      const document::BucketId& mostSpecificId,
-                                                     const BucketDatabase& db) const
+                                                     const BucketDatabase& db)
 {
     assert(candidateId.contains(mostSpecificId));
     document::BucketId treeNode = candidateId;

@@ -66,7 +66,7 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTargetLi
         assert(!multipleBuckets);
         (void) multipleBuckets;
         BucketDatabase::Entry entry(_bucket_space.getBucketDatabase().get(lastBucket));
-        active = ActiveCopy::calculate(_bucket_space.get_ideal_service_layer_nodes_bundle(lastBucket).available2Index(), _bucket_space.getDistribution(), entry,
+        active = ActiveCopy::calculate(_bucket_space.get_ideal_service_layer_nodes_bundle(lastBucket).available_to_index(), _bucket_space.getDistribution(), entry,
                                        _op_ctx.distributor_config().max_activation_inhibited_out_of_sync_groups());
         LOG(debug, "Active copies for bucket %s: %s", entry.getBucketId().toString().c_str(), active.toString().c_str());
         for (uint32_t i=0; i<active.size(); ++i) {

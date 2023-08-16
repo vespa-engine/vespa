@@ -970,7 +970,8 @@ BucketStateStateChecker::check(Context& c) const
         return Result::noMaintenanceNeeded();
     }
 
-    ActiveList activeNodes = ActiveCopy::calculate(c.idealStateBundle.nonRetiredOrMaintenance2Index(), c.distribution, c.entry,
+    ActiveList activeNodes = ActiveCopy::calculate(c.idealStateBundle.nonretired_or_maintenance_to_index(),
+                                                   c.distribution, c.entry,
                                                    c.distributorConfig.max_activation_inhibited_out_of_sync_groups());
     if (activeNodes.empty()) {
         return Result::noMaintenanceNeeded();

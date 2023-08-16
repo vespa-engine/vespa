@@ -42,9 +42,10 @@ class BucketInstanceList : public vespalib::AsciiPrintable {
      * Postconditions:
      *   <return value>.contains(mostSpecificId)
      */
-    document::BucketId leastSpecificLeafBucketInSubtree(const document::BucketId& candidateId,
-                                                        const document::BucketId& mostSpecificId,
-                                                        const BucketDatabase& db) const;
+    static document::BucketId
+    leastSpecificLeafBucketInSubtree(const document::BucketId& candidateId,
+                                     const document::BucketId& mostSpecificId,
+                                     const BucketDatabase& db);
 
 public:
     void add(const BucketInstance& instance) { _instances.push_back(instance); }

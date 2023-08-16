@@ -57,12 +57,8 @@ public:
     bool is_nonretired_or_maintenance(uint16_t node) const noexcept {
         return nonretired_or_maintenance_index(node) != Index::invalid();
     }
-    NonRetiredOrMaintenance2Index nonRetiredOrMaintenance2Index() const noexcept {
-        return NonRetiredOrMaintenance2Index(*this);
-    }
-    ConstNodesRef2Index available2Index() const noexcept {
-        return ConstNodesRef2Index(available_nodes());
-    }
+    NonRetiredOrMaintenance2Index nonretired_or_maintenance_to_index() const noexcept { return {*this}; }
+    ConstNodesRef2Index available_to_index() const noexcept { return {available_nodes()}; }
 private:
     struct LookupMap;
     Index nonretired_or_maintenance_index(uint16_t node) const noexcept;
