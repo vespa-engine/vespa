@@ -195,6 +195,36 @@ isInconsistentlySplit(const StateChecker::Context& c)
     return (c.entries.size() > 1);
 }
 
+// We don't want to invoke joins on buckets that have more replicas than
+// required. This is in particular because joins cause ideal states to change
+// for the target buckets and trigger merges. Since the removal of the non-
+// ideal replicas is done by the DeleteBuckets state-checker, it will become
+// preempted by potential follow-up joins unless we explicitly avoid these.
+bool
+contextBucketHasTooManyReplicas(const StateChecker::Context& c)
+{
+    return (c.entry->getNodeCount() > c.distribution.getRedundancy());
+}
+
+bool
+bucketAtDistributionBitLimit(const document::BucketId& bucket, const StateChecker::Context& c)
+{
+    return (bucket.getUsedBits() <= std::max(uint32_t(c.systemState.getDistributionBitCount()),
+                                             c.distributorConfig.getMinimalBucketSplit()));
+}
+
+bool
+legalBucketSplitLevel(const document::BucketId& bucket, const StateChecker::Context& c)
+{
+    return bucket.getUsedBits() >= c.distributorConfig.getMinimalBucketSplit();
+}
+
+bool
+bucketHasMultipleChildren(const document::BucketId& bucket, const StateChecker::Context& c)
+{
+    return c.db.childCount(bucket) > 1;
+}
+
 } // anon ns
 
 bool
@@ -252,28 +282,6 @@ bool
 JoinBucketsStateChecker::singleBucketJoinIsEnabled(const Context& c)
 {
     return c.distributorConfig.getEnableJoinForSiblingLessBuckets();
-}
-
-namespace {
-
-// We don't want to invoke joins on buckets that have more replicas than
-// required. This is in particular because joins cause ideal states to change
-// for the target buckets and trigger merges. Since the removal of the non-
-// ideal replicas is done by the DeleteBuckets state-checker, it will become
-// preempted by potential follow-up joins unless we explicitly avoid these.
-bool
-contextBucketHasTooManyReplicas(const StateChecker::Context& c)
-{
-    return (c.entry->getNodeCount() > c.distribution.getRedundancy());
-}
-
-bool
-bucketAtDistributionBitLimit(const document::BucketId& bucket, const StateChecker::Context& c)
-{
-    return (bucket.getUsedBits() <= std::max(uint32_t(c.systemState.getDistributionBitCount()),
-                                             c.distributorConfig.getMinimalBucketSplit()));
-}
-
 }
 
 bool
@@ -367,22 +375,6 @@ JoinBucketsStateChecker::smallEnoughToJoin(const Context& c)
         }
     }
     return true;
-}
-
-namespace {
-
-bool
-legalBucketSplitLevel(const document::BucketId& bucket, const StateChecker::Context& c)
-{
-    return bucket.getUsedBits() >= c.distributorConfig.getMinimalBucketSplit();
-}
-
-bool
-bucketHasMultipleChildren(const document::BucketId& bucket, const StateChecker::Context& c)
-{
-    return c.db.childCount(bucket) > 1;
-}
-
 }
 
 document::Bucket
@@ -490,12 +482,6 @@ SplitInconsistentStateChecker::getReason(const document::BucketId& bucketId, con
     return reason.str();
 }
 
-namespace {
-
-
-
-}
-
 StateChecker::Result
 SplitInconsistentStateChecker::check(Context& c) const
 {
@@ -517,7 +503,8 @@ SplitInconsistentStateChecker::check(Context& c) const
 
 namespace {
 
-bool containsMaintenanceNode(ConstNodesRef ideal, const StateChecker::Context& c)
+bool
+containsMaintenanceNode(ConstNodesRef ideal, const StateChecker::Context& c)
 {
     for (uint16_t n : ideal) {
         if (c.systemState.getNodeState(lib::Node(lib::NodeType::STORAGE, n)).getState() == lib::State::MAINTENANCE) {
@@ -527,7 +514,8 @@ bool containsMaintenanceNode(ConstNodesRef ideal, const StateChecker::Context& c
     return false;
 }
 
-bool ideal_node_is_unavailable_in_pending_state(const StateChecker::Context& c) {
+bool
+ideal_node_is_unavailable_in_pending_state(const StateChecker::Context& c) {
     if (!c.pending_cluster_state) {
         return false;
     }
