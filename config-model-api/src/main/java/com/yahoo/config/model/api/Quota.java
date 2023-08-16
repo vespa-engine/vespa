@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -50,10 +51,13 @@ public class Quota {
 
     public Slime toSlime() {
         var slime = new Slime();
-        var root = slime.setObject();
+        toSlime(slime.setObject());
+        return slime;
+    }
+
+    public void toSlime(Cursor root) {
         maxClusterSize.ifPresent(clusterSize -> root.setLong("clusterSize", clusterSize));
         budget.ifPresent(b -> root.setString("budget", b.toPlainString()));
-        return slime;
     }
 
     public static Quota unlimited() { return UNLIMITED; }
