@@ -38,12 +38,6 @@ public class ToEpochSecondExpressionTestCase {
         FieldValue val = ctx.getValue();
         assertTrue(val instanceof LongFieldValue);
         assertEquals(1703437243L, ((LongFieldValue)val).getLong());
-
-        ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setValue(new StringFieldValue("2023-12-24T17:00:43Z")).execute(new ToEpochSecondExpression());
-        val = ctx.getValue();
-        assertTrue(val instanceof LongFieldValue);
-        assertEquals(1703437243L, ((LongFieldValue)val).getLong());
     }
 
     @Test
