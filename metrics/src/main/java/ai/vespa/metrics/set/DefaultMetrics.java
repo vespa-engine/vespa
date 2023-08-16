@@ -154,7 +154,7 @@ public class DefaultMetrics {
 
     private static void addSentinelMetrics(Set<Metric> metrics) {
         // Metrics needed for alerting
-        addMetric(metrics, SentinelMetrics.SENTINEL_TOTAL_RESTARTS, EnumSet.of(sum, last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, SentinelMetrics.SENTINEL_TOTAL_RESTARTS, EnumSet.of(max, sum, last)); // TODO: Vespa 9: Remove last, sum?
     }
 
     private static void addOtherMetrics(Set<Metric> metrics) {
