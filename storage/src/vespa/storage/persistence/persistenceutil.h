@@ -10,7 +10,6 @@
 #include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/context.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/storage/storageutil/utils.h>
 
 namespace storage::api {
     class StorageMessage;

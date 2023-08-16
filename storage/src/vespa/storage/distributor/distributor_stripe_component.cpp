@@ -5,6 +5,7 @@
 #include "distributor_bucket_space.h"
 #include "pendingmessagetracker.h"
 #include "storage_node_up_states.h"
+#include <vespa/storage/storageutil/utils.h>
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
@@ -243,6 +244,16 @@ DistributorStripeComponent::parse_selection(const vespalib::string& selection) c
 {
     document::select::Parser parser(*getTypeRepo()->documentTypeRepo, getBucketIdFactory());
     return parser.parse(selection);
+}
+
+void
+DistributorStripeComponent::update_bucket_database(const document::Bucket& bucket, const BucketCopy& changed_node, uint32_t update_flags) {
+    update_bucket_database(bucket, toVector<BucketCopy>(changed_node),update_flags);
+}
+
+void
+DistributorStripeComponent::remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) {
+    remove_nodes_from_bucket_database(bucket, toVector<uint16_t>(node_index));
 }
 
 }

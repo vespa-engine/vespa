@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketdatabasetest.h"
+#include <vespa/storage/storageutil/utils.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <chrono>
-#include <iomanip>
 #include <algorithm>
 
 namespace storage::distributor {
@@ -16,21 +16,21 @@ void BucketDatabaseTest::SetUp() {
 
 namespace {
 
-BucketCopy BC(uint32_t nodeIdx) {
+BucketCopy BC(uint16_t nodeIdx) {
     return BucketCopy(0, nodeIdx, api::BucketInfo());
 }
 
-BucketInfo BI(uint32_t nodeIdx) {
+BucketInfo BI(uint16_t nodeIdx) {
     BucketInfo bi;
-    bi.addNode(BC(nodeIdx), toVector<uint16_t>(0));
+    bi.addNode(BC(nodeIdx), {0});
     return bi;
 }
 
-BucketInfo BI3(uint32_t node0, uint32_t node1, uint32_t node2) {
+BucketInfo BI3(uint16_t node0, uint16_t node1, uint16_t node2) {
     BucketInfo bi;
-    bi.addNode(BC(node0), toVector<uint16_t>(node0, node1, node2));
-    bi.addNode(BC(node1), toVector<uint16_t>(node0, node1, node2));
-    bi.addNode(BC(node2), toVector<uint16_t>(node0, node1, node2));
+    bi.addNode(BC(node0), {node0, node1, node2});
+    bi.addNode(BC(node1), {node0, node1, node2});
+    bi.addNode(BC(node2), {node0, node1, node2});
     return bi;
 }
 

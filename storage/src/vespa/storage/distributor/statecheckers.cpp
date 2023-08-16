@@ -812,7 +812,7 @@ DeleteExtraCopiesStateChecker::bucketHasNoData(const Context& c)
 bool
 DeleteExtraCopiesStateChecker::copyIsInIdealState(const BucketCopy& cp, const Context& c)
 {
-    return hasItem(c.idealState(), cp.getNode());
+    return c.idealStateBundle.is_nonretired_or_maintenance(cp.getNode());
 }
 
 bool

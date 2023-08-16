@@ -19,15 +19,15 @@ using document::BucketId;
 
 namespace {
 
-BucketCopy BC(uint32_t node_idx, uint32_t state) {
+BucketCopy BC(uint16_t node_idx, uint32_t state) {
     api::BucketInfo info(0x123, state, state);
-    return BucketCopy(0, node_idx, info);
+    return {0, node_idx, info};
 }
 
 
 BucketInfo BI(uint32_t node_idx, uint32_t state) {
     BucketInfo bi;
-    bi.addNode(BC(node_idx, state), toVector<uint16_t>(0));
+    bi.addNode(BC(node_idx, state), {0});
     return bi;
 }
 

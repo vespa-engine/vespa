@@ -7,6 +7,7 @@
 #include <tests/common/teststorageapp.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/distributor/stripe_host_info_notifier.h>
+#include <vespa/storage/storageutil/utils.h>
 
 namespace storage {
 
