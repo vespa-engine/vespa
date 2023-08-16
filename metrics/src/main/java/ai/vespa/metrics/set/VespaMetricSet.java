@@ -62,7 +62,7 @@ public class VespaMetricSet {
         Set<Metric> metrics = new LinkedHashSet<>();
 
         addMetric(metrics, SentinelMetrics.SENTINEL_RESTARTS.count());
-        addMetric(metrics, SentinelMetrics.SENTINEL_TOTAL_RESTARTS, EnumSet.of(sum, last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, SentinelMetrics.SENTINEL_TOTAL_RESTARTS, EnumSet.of(max, sum, last)); // TODO: Vespa 9: Remove last, sum?
         addMetric(metrics, SentinelMetrics.SENTINEL_UPTIME.last());
         addMetric(metrics, SentinelMetrics.SENTINEL_RUNNING, EnumSet.of(count, last));
 
