@@ -59,8 +59,10 @@ public:
      *   _instances.size() >= configured redundancy level, unless insufficient
      *   number of nodes are available
      */
-    void extendToEnoughCopies(const DistributorBucketSpace& distributor_bucket_space, const BucketDatabase& db,
-                              const document::BucketId& targetIfNonPreExisting, const document::BucketId& mostSpecificId);
+    void extendToEnoughCopies(const DistributorBucketSpace& distributor_bucket_space,
+                              const BucketDatabase& db,
+                              const document::BucketId& targetIfNonPreExisting,
+                              const document::BucketId& mostSpecificId);
 
     void populate(const document::BucketId&, const DistributorBucketSpace&, BucketDatabase&);
     void add(const BucketDatabase::Entry& e, const IdealServiceLayerNodesBundle::Node2Index & idealState);
@@ -83,8 +85,11 @@ class OperationTargetResolverImpl : public OperationTargetResolver {
     document::BucketSpace _bucketSpace;
 
 public:
-    OperationTargetResolverImpl(const DistributorBucketSpace& distributor_bucket_space, BucketDatabase& bucketDatabase,
-                                uint32_t minUsedBucketBits, uint16_t redundancy, document::BucketSpace bucketSpace)
+    OperationTargetResolverImpl(const DistributorBucketSpace& distributor_bucket_space,
+                                BucketDatabase& bucketDatabase,
+                                uint32_t minUsedBucketBits,
+                                uint16_t redundancy,
+                                document::BucketSpace bucketSpace)
         : _distributor_bucket_space(distributor_bucket_space),
           _bucketDatabase(bucketDatabase),
           _minUsedBucketBits(minUsedBucketBits),
