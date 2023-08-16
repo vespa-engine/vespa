@@ -272,16 +272,15 @@ public class ClusterModel {
 
     private Load adjustQueryDependentIdealLoadByBcpGroupInfo(Load ideal) {
         double currentClusterTotalVcpuPerGroup = nodes.not().retired().first().get().resources().vcpu() * groupSize();
-
         double targetQueryRateToHandle = ( canRescaleWithinBcpDeadline() ? averageQueryRate().orElse(0)
                                                                          : cluster.bcpGroupInfo().queryRate() )
                                          * cluster.bcpGroupInfo().growthRateHeadroom() * trafficShiftHeadroom();
-        double neededTotalVcpPerGroup = cluster.bcpGroupInfo().cpuCostPerQuery() * targetQueryRateToHandle / groupCount() +
+        double neededTotalVcpuPerGroup = cluster.bcpGroupInfo().cpuCostPerQuery() * targetQueryRateToHandle / groupCount() +
                                         ( 1 - cpu.queryFraction()) * cpu.idealLoad() *
                                         (clusterSpec.type().isContainer() ? 1 : groupSize());
-
-        double cpuAdjustment = neededTotalVcpPerGroup / currentClusterTotalVcpuPerGroup;
-        return ideal.withCpu(peakLoad().cpu() / cpuAdjustment);
+        // Max 1: Only use bcp group info if it indicates that we need to scale *up*
+        double cpuAdjustment = Math.max(1.0, neededTotalVcpuPerGroup / currentClusterTotalVcpuPerGroup);
+        return ideal.withCpu(ideal.cpu() / cpuAdjustment);
     }
 
     private boolean hasScaledIn(Duration period) {
