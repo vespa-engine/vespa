@@ -4,9 +4,6 @@ package ai.vespa.metrics.set;
 import ai.vespa.metrics.ContainerMetrics;
 import ai.vespa.metrics.SearchNodeMetrics;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 /**
  * Encapsulates a minimal set of Vespa metrics to be used as default for all metrics consumers.
  *
@@ -19,11 +16,11 @@ public class DefaultVespaMetrics {
     public static final MetricSet defaultVespaMetricSet = createDefaultVespaMetricSet();
 
     private static MetricSet createDefaultVespaMetricSet() {
-        Set<Metric> metrics = new LinkedHashSet<>();
 
-        metrics.add(new Metric(ContainerMetrics.FEED_OPERATIONS.rate()));
-        metrics.add(new Metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_FEEDING_BLOCKED.last()));
-
-        return new MetricSet("default-vespa", metrics);
+        return new MetricSet.Builder("default-vespa")
+                .metric(ContainerMetrics.FEED_OPERATIONS.rate())
+                .metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_FEEDING_BLOCKED.last())
+                .build();
     }
+
 }
