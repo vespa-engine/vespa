@@ -95,7 +95,9 @@ public class RankFeatures implements Cloneable {
         if (feature == null) return Optional.empty();
         if (feature instanceof Tensor) return Optional.of((Tensor)feature);
         if (feature instanceof Double) return Optional.of(Tensor.from((Double)feature));
-        throw new IllegalArgumentException("Expected '" + name + "' to be a tensor, but it is the string '" + feature + "'");
+        throw new IllegalArgumentException("Expected '" + name + "' to be a tensor, but it is the string '" + feature +
+                "', this usually means that '" + name + "' is not defined in the schema. " +
+                "See https://docs.vespa.ai/en/tensor-user-guide.html#querying-with-tensors");
     }
 
     /**
