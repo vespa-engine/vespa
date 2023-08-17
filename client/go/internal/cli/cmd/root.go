@@ -100,7 +100,7 @@ type ztsFactory func(httpClient util.HTTPClient, domain, url string) (vespa.Auth
 // New creates the Vespa CLI, writing output to stdout and stderr, and reading environment variables from environment.
 func New(stdout, stderr io.Writer, environment []string) (*CLI, error) {
 	cmd := &cobra.Command{
-		Use:   "vespa command-name",
+		Use:   "vespa",
 		Short: "The command-line tool for Vespa.ai",
 		Long: `The command-line tool for Vespa.ai.
 
@@ -267,8 +267,6 @@ func (c *CLI) configureCommands() {
 	prodCmd.AddCommand(newProdDeployCmd(c))         // prod deploy
 	rootCmd.AddCommand(prodCmd)                     // prod
 	rootCmd.AddCommand(newQueryCmd(c))              // query
-	statusCmd.AddCommand(newStatusQueryCmd(c))      // status query
-	statusCmd.AddCommand(newStatusDocumentCmd(c))   // status document
 	statusCmd.AddCommand(newStatusDeployCmd(c))     // status deploy
 	rootCmd.AddCommand(statusCmd)                   // status
 	rootCmd.AddCommand(newTestCmd(c))               // test
@@ -294,6 +292,10 @@ func (c *CLI) printErr(err error, hints ...string) {
 
 func (c *CLI) printSuccess(msg ...interface{}) {
 	fmt.Fprintln(c.Stdout, color.GreenString("Success:"), fmt.Sprint(msg...))
+}
+
+func (c *CLI) printInfo(msg ...interface{}) {
+	fmt.Fprintln(c.Stderr, "Info:", fmt.Sprint(msg...))
 }
 
 func (c *CLI) printDebug(msg ...interface{}) {
@@ -504,22 +506,38 @@ func (c *CLI) system(targetType string) (vespa.System, error) {
 	return vespa.System{}, fmt.Errorf("no default system found for %s target", targetType)
 }
 
-// service returns the service of given name located at target. If non-empty, cluster specifies a cluster to query. This
-// function blocks according to the wait period configured in this CLI. The parameter sessionOrRunID specifies either
-// the session ID (local target) or run ID (cloud target) to wait for.
-func (c *CLI) service(target vespa.Target, name string, sessionOrRunID int64, cluster string, timeout time.Duration) (*vespa.Service, error) {
-	if timeout > 0 {
-		log.Printf("Waiting up to %s for %s service to become available ...", color.CyanString(timeout.String()), color.CyanString(name))
-	}
-	s, err := target.Service(name, timeout, sessionOrRunID, cluster)
+// service returns the service identified by cluster ID, located at target. If timeout is positive, this waits for the
+// service to become ready.
+func (c *CLI) service(target vespa.Target, cluster string, timeout time.Duration) (*vespa.Service, error) {
+	targetType, err := c.targetType()
 	if err != nil {
-		err := fmt.Errorf("service '%s' is unavailable: %w", name, err)
-		if target.IsCloud() {
-			return nil, errHint(err, "Confirm that you're communicating with the correct zone and cluster", "The -z option controls the zone", "The -C option controls the cluster")
-		}
 		return nil, err
 	}
-	return s, nil
+	if targetType.url != "" && cluster != "" {
+		return nil, fmt.Errorf("cluster cannot be specified when target is an URL")
+	}
+	services, err := c.services(target, timeout)
+	if err != nil {
+		return nil, err
+	}
+	service, err := vespa.FindService(cluster, services)
+	if err != nil {
+		return nil, errHint(err, "The --cluster option specifies the service to use")
+	}
+	if timeout > 0 {
+		c.printInfo("Waiting up to ", color.CyanString(timeout.String()), " for ", color.CyanString(service.Description()), " to become available ...")
+		if err := service.Wait(timeout); err != nil {
+			return nil, err
+		}
+	}
+	return service, nil
+}
+
+func (c *CLI) services(target vespa.Target, timeout time.Duration) ([]*vespa.Service, error) {
+	if timeout > 0 {
+		c.printInfo("Waiting up to ", color.CyanString(timeout.String()), " for cluster discovery ...")
+	}
+	return target.ContainerServices(timeout)
 }
 
 // isCI returns true if running inside a continuous integration environment.

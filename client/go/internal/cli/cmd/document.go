@@ -298,7 +298,7 @@ func documentService(cli *CLI, waitSecs int) (*vespa.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cli.service(target, vespa.DocumentService, 0, cli.config.cluster(), time.Duration(waitSecs)*time.Second)
+	return cli.service(target, cli.config.cluster(), time.Duration(waitSecs)*time.Second)
 }
 
 func printResult(cli *CLI, result util.OperationResult, payloadOnlyOnSuccess bool) error {

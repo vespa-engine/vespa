@@ -43,7 +43,7 @@ func TestFeed(t *testing.T) {
 
 	httpClient.NextResponseString(200, `{"message":"OK"}`)
 	httpClient.NextResponseString(200, `{"message":"OK"}`)
-	require.Nil(t, cli.Run("feed", jsonFile1, jsonFile2))
+	require.Nil(t, cli.Run("feed", "-t", "http://127.0.0.1:8080", jsonFile1, jsonFile2))
 
 	assert.Equal(t, "", stderr.String())
 	want := `{
@@ -113,7 +113,7 @@ func TestFeedInvalid(t *testing.T) {
 	jsonFile := filepath.Join(td, "docs.jsonl")
 	require.Nil(t, os.WriteFile(jsonFile, doc, 0644))
 	httpClient.NextResponseString(200, `{"message":"OK"}`)
-	require.NotNil(t, cli.Run("feed", jsonFile))
+	require.NotNil(t, cli.Run("feed", "-t", "http://127.0.0.1:8080", jsonFile))
 
 	want := `{
   "feeder.seconds": 3.000,

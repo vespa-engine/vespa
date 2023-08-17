@@ -26,7 +26,7 @@ func TestQueryVerbose(t *testing.T) {
 	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = client
 
-	assert.Nil(t, cli.Run("query", "-v", "select from sources * where title contains 'foo'"))
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "-v", "select from sources * where title contains 'foo'"))
 	assert.Equal(t, "curl 'http://127.0.0.1:8080/search/?timeout=10s&yql=select+from+sources+%2A+where+title+contains+%27foo%27'\n", stderr.String())
 	assert.Equal(t, "{\n    \"query\": \"result\"\n}\n", stdout.String())
 }
@@ -75,7 +75,7 @@ func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 	cli, stdout, _ := newTestCLI(t)
 	cli.httpClient = client
 
-	args := []string{"query"}
+	args := []string{"-t", "http://127.0.0.1:8080", "query"}
 	assert.Nil(t, cli.Run(append(args, query...)...))
 	assert.Equal(t,
 		"{\n    \"query\": \"result\"\n}\n",
@@ -91,7 +91,7 @@ func assertQueryError(t *testing.T, status int, errorMessage string) {
 	client.NextResponseString(status, errorMessage)
 	cli, _, stderr := newTestCLI(t)
 	cli.httpClient = client
-	assert.NotNil(t, cli.Run("query", "yql=select from sources * where title contains 'foo'"))
+	assert.NotNil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "yql=select from sources * where title contains 'foo'"))
 	assert.Equal(t,
 		"Error: invalid query: Status "+strconv.Itoa(status)+"\n"+errorMessage+"\n",
 		stderr.String(),
@@ -103,7 +103,7 @@ func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
 	client.NextResponseString(status, errorMessage)
 	cli, _, stderr := newTestCLI(t)
 	cli.httpClient = client
-	assert.NotNil(t, cli.Run("query", "yql=select from sources * where title contains 'foo'"))
+	assert.NotNil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "yql=select from sources * where title contains 'foo'"))
 	assert.Equal(t,
 		"Error: Status "+strconv.Itoa(status)+" from container at 127.0.0.1:8080\n"+errorMessage+"\n",
 		stderr.String(),

@@ -7,6 +7,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -17,48 +18,43 @@ import (
 func newStatusCmd(cli *CLI) *cobra.Command {
 	var waitSecs int
 	cmd := &cobra.Command{
-		Use:               "status",
-		Short:             "Verify that a service is ready to use (query by default)",
-		Example:           `$ vespa status query`,
+		Use: "status",
+		Aliases: []string{
+			"status container",
+			"status document", // TODO: Remove on Vespa 9
+			"status query",    // TODO: Remove on Vespa 9
+		},
+		Short: "Verify that container service(s) are ready to use",
+		Example: `$ vespa status
+$ vespa status --cluster mycluster`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return printServiceStatus(cli, vespa.QueryService, waitSecs)
-		},
-	}
-	cli.bindWaitFlag(cmd, 0, &waitSecs)
-	return cmd
-}
-
-func newStatusQueryCmd(cli *CLI) *cobra.Command {
-	var waitSecs int
-	cmd := &cobra.Command{
-		Use:               "query",
-		Short:             "Verify that the query service is ready to use (default)",
-		Example:           `$ vespa status query`,
-		DisableAutoGenTag: true,
-		SilenceUsage:      true,
-		Args:              cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return printServiceStatus(cli, vespa.QueryService, waitSecs)
-		},
-	}
-	cli.bindWaitFlag(cmd, 0, &waitSecs)
-	return cmd
-}
-
-func newStatusDocumentCmd(cli *CLI) *cobra.Command {
-	var waitSecs int
-	cmd := &cobra.Command{
-		Use:               "document",
-		Short:             "Verify that the document service is ready to use",
-		Example:           `$ vespa status document`,
-		DisableAutoGenTag: true,
-		SilenceUsage:      true,
-		Args:              cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return printServiceStatus(cli, vespa.DocumentService, waitSecs)
+			cluster := cli.config.cluster()
+			t, err := cli.target(targetOptions{})
+			if err != nil {
+				return err
+			}
+			if cluster == "" {
+				timeout := time.Duration(waitSecs) * time.Second
+				services, err := t.ContainerServices(timeout)
+				if err != nil {
+					return err
+				}
+				if len(services) == 0 {
+					return errHint(fmt.Errorf("no services exist"), "Deployment may not be ready yet", "Try 'vespa status deployment'")
+				}
+				for _, service := range services {
+					if err := printServiceStatus(service, service.Wait(timeout), cli); err != nil {
+						return err
+					}
+				}
+				return nil
+			} else {
+				s, err := cli.service(t, cluster, 0)
+				return printServiceStatus(s, err, cli)
+			}
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
@@ -75,36 +71,27 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return printServiceStatus(cli, vespa.DeployService, waitSecs)
+			t, err := cli.target(targetOptions{})
+			if err != nil {
+				return err
+			}
+			s, err := t.DeployService(0)
+			if err != nil {
+				return err
+			}
+			return printServiceStatus(s, s.Wait(time.Duration(waitSecs)*time.Second), cli)
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
 	return cmd
 }
 
-func printServiceStatus(cli *CLI, name string, waitSecs int) error {
-	t, err := cli.target(targetOptions{})
-	if err != nil {
-		return err
+func printServiceStatus(s *vespa.Service, waitErr error, cli *CLI) error {
+	if waitErr != nil {
+		return waitErr
 	}
-	cluster := cli.config.cluster()
-	s, err := cli.service(t, name, 0, cluster, 0)
-	if err != nil {
-		return err
-	}
-	// Wait explicitly
-	status, err := s.Wait(time.Duration(waitSecs) * time.Second)
-	clusterPart := ""
-	if cluster != "" {
-		clusterPart = fmt.Sprintf(" named %s", color.CyanString(cluster))
-	}
-	if status/100 == 2 {
-		log.Print(s.Description(), clusterPart, " at ", color.CyanString(s.BaseURL), " is ", color.GreenString("ready"))
-	} else {
-		if err == nil {
-			err = fmt.Errorf("status %d", status)
-		}
-		return fmt.Errorf("%s%s at %s is %s: %w", s.Description(), clusterPart, color.CyanString(s.BaseURL), color.RedString("not ready"), err)
-	}
+	desc := s.Description()
+	desc = strings.ToUpper(string(desc[0])) + string(desc[1:])
+	log.Print(desc, " at ", color.CyanString(s.BaseURL), " is ", color.GreenString("ready"))
 	return nil
 }

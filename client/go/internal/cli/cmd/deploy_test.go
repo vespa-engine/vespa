@@ -194,7 +194,7 @@ func assertActivate(applicationPackage string, arguments []string, t *testing.T)
 	}
 	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
-		"Success: Activated "+applicationPackage+" with session 42\n",
+		"Success: Activated application with session 42\n",
 		stdout.String())
 	url := "http://127.0.0.1:19071/application/v2/tenant/default/session/42/active"
 	assert.Equal(t, url, client.LastRequest.URL.String())

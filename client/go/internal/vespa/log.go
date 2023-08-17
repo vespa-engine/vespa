@@ -72,6 +72,8 @@ func ReadLogEntries(r io.Reader) ([]LogEntry, error) {
 // LogLevel returns an int representing a named log level.
 func LogLevel(name string) int {
 	switch name {
+	case "none":
+		return -1
 	case "error":
 		return 0
 	case "warning":

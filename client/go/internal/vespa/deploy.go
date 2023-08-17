@@ -92,7 +92,7 @@ func (d DeploymentOptions) String() string {
 }
 
 func (d *DeploymentOptions) url(path string) (*url.URL, error) {
-	service, err := d.Target.Service(DeployService, 0, 0, "")
+	service, err := d.Target.DeployService(0)
 	if err != nil {
 		return nil, err
 	}
@@ -311,7 +311,7 @@ func Submit(opts DeploymentOptions, submission Submission) error {
 }
 
 func deployServiceDo(request *http.Request, timeout time.Duration, opts DeploymentOptions) (*http.Response, error) {
-	s, err := opts.Target.Service(DeployService, 0, 0, "")
+	s, err := opts.Target.DeployService(0)
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 	if err != nil {
 		return PrepareResult{}, err
 	}
-	service, err := opts.Target.Service(DeployService, opts.Timeout, 0, "")
+	service, err := opts.Target.DeployService(opts.Timeout)
 	if err != nil {
 		return PrepareResult{}, err
 	}
