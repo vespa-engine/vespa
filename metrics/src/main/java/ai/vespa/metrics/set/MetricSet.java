@@ -88,4 +88,38 @@ public class MetricSet {
         return metricMap;
     }
 
+
+    public static class Builder {
+        private final String id;
+        private final Set<Metric> metrics = new LinkedHashSet<>();
+        private final Set<MetricSet> children = new LinkedHashSet<>();
+
+        public Builder(String id) {
+            this.id = id;
+        }
+
+        public Builder metric(String metric) {
+            return metric(new Metric(metric));
+        }
+
+        public Builder metric(Metric metric) {
+            metrics.add(metric);
+            return this;
+        }
+
+        public Builder metrics(Collection<Metric> metrics) {
+            this.metrics.addAll(metrics);
+            return this;
+        }
+
+        public Builder metricSet(MetricSet child) {
+            children.add(child);
+            return this;
+        }
+
+        public MetricSet build() {
+            return new MetricSet(id, metrics, children);
+        }
+    }
+
 }

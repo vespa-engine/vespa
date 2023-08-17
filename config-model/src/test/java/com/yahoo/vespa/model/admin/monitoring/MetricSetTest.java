@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
+import ai.vespa.metrics.Unit;
+import ai.vespa.metrics.VespaMetrics;
 import ai.vespa.metrics.set.Metric;
 import ai.vespa.metrics.set.MetricSet;
 import com.google.common.collect.Sets;
@@ -59,5 +61,51 @@ public class MetricSetTest {
         assertEquals("parent-description", combinedMetric.description);
         assertEquals(3, combinedMetric.dimensions.size());
         assertEquals("parentCommonVal", combinedMetric.dimensions.get(COMMON_DIMENSION_KEY));
+    }
+
+    @Test
+    void it_can_be_generated_from_builder() {
+        MetricSet metricSet = new MetricSet.Builder("test")
+                .metric("metric1")
+                .metric(TestMetrics.ENUM_METRIC.last())
+                .metric(new Metric("metric2"))
+                .metrics(List.of(new Metric("metric3")))
+                .metricSet(new MetricSet.Builder("child")
+                                   .metric("child_metric1")
+                                   .metric("child_metric2")
+                                   .build())
+                .build();
+
+        Map<String, Metric> metrics = metricSet.getMetrics();
+        assertEquals(6, metrics.size());
+        assertNotNull(metrics.get("metric1"));
+        assertNotNull(metrics.get("emum-metric.last"));
+        assertNotNull(metrics.get("metric2"));
+        assertNotNull(metrics.get("metric3"));
+        assertNotNull(metrics.get("child_metric1"));
+        assertNotNull(metrics.get("child_metric1"));
+    }
+
+    enum TestMetrics implements VespaMetrics {
+        ENUM_METRIC("emum-metric");
+
+        private final String name;
+
+        TestMetrics(String name) {
+            this.name = name;
+        }
+
+        public String baseName() {
+            return name;
+        }
+
+        public Unit unit() {
+            return null;
+        }
+
+        public String description() {
+            return null;
+        }
+
     }
 }
