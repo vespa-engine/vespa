@@ -56,6 +56,7 @@ public class DefaultMetrics {
         addStorageMetrics(metrics);
         addDistributorMetrics(metrics);
         addClusterControllerMetrics(metrics);
+        addSentinelMetrics(metrics);
         addOtherMetrics(metrics);
         return Collections.unmodifiableSet(metrics);
     }
