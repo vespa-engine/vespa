@@ -15,7 +15,6 @@ import java.util.Optional;
  */
 public class Logserver extends AbstractService {
 
-    private static final long serialVersionUID = 1L;
     private static final String logArchiveDir = "$ROOT/logs/vespa/logarchive";
     private String compressionType = "gzip";
 
@@ -32,7 +31,10 @@ public class Logserver extends AbstractService {
     @Override
     public void initService(DeployState deployState) {
         super.initService(deployState);
-        this.compressionType = deployState.featureFlags().logFileCompressionAlgorithm("gzip");
+        // TODO Vespa 9: Change default to zstd everywhere
+        this.compressionType = deployState.isHosted()
+                ? deployState.featureFlags().logFileCompressionAlgorithm("zstd")
+                : deployState.featureFlags().logFileCompressionAlgorithm("gzip");
     }
 
     /**
