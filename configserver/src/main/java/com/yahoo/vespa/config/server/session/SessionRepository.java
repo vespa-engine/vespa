@@ -26,7 +26,6 @@ import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
-import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
@@ -857,19 +856,14 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference);
         if (fileReference.isEmpty()) return;
 
-        File sessionDir;
-        FileDirectory fileDirectory = fileDistributionFactory.fileDirectory();
-        try {
-            sessionDir = fileDirectory.getFile(fileReference.get());
-        } catch (IllegalArgumentException e) {
-            // We cannot be guaranteed that the file reference exists (it could be that it has not
-            // been downloaded yet), and e.g. when bootstrapping we cannot throw an exception in that case
-            log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found");
-            return;
-        }
+        Optional<File> sessionDir = fileDistributionFactory.fileDirectory().getFile(fileReference.get());
+        // We cannot be guaranteed that the file reference exists (it could be that it has not
+        // been downloaded yet), and e.g. when bootstrapping we cannot throw an exception in that case
+        if (sessionDir.isEmpty()) return;
+
         ApplicationId applicationId = sessionZKClient.readApplicationId();
         log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
-        createLocalSession(sessionDir, applicationId, sessionId);
+        createLocalSession(sessionDir.get(), applicationId, sessionId);
     }
 
     private Optional<Long> getActiveSessionId(ApplicationId applicationId) {

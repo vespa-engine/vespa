@@ -24,12 +24,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
+import static java.util.logging.Level.INFO;
 
 /**
  * Global file directory, holding files for file distribution for all deployed applications.
@@ -40,7 +42,6 @@ public class FileDirectory extends AbstractComponent {
     private static final Logger log = Logger.getLogger(FileDirectory.class.getName());
 
     private final Locks<FileReference> locks = new Locks<>(1, TimeUnit.MINUTES);
-
     private final File root;
 
     @Inject
@@ -67,7 +68,7 @@ public class FileDirectory extends AbstractComponent {
         }
     }
 
-    static private class Filter implements FilenameFilter {
+    private static class Filter implements FilenameFilter {
         @Override
         public boolean accept(File dir, String name) {
             return !".".equals(name) && !"..".equals(name) ;
@@ -78,17 +79,23 @@ public class FileDirectory extends AbstractComponent {
         return root.getAbsolutePath() + "/" + ref.value();
     }
 
-    public File getFile(FileReference reference) {
+    public Optional<File> getFile(FileReference reference) {
         ensureRootExist();
         File dir = new File(getPath(reference));
-        if (!dir.exists())
-            throw new IllegalArgumentException("File reference '" + reference.value() + "' with absolute path '" + dir.getAbsolutePath() + "' does not exist.");
-        if (!dir.isDirectory())
-            throw new IllegalArgumentException("File reference '" + reference.value() + "' with absolute path '" + dir.getAbsolutePath() + "' is not a directory.");
-        File [] files = dir.listFiles(new Filter());
-        if (files == null || files.length == 0)
-            throw new IllegalArgumentException("File reference '" + reference.value() + "' with absolute path '" + dir.getAbsolutePath() + " does not contain any files");
-        return files[0];
+        if (!dir.exists()) {
+            log.log(INFO, "File reference '" + reference.value() + "' ('" + dir.getAbsolutePath() + "') does not exist.");
+            return Optional.empty();
+        }
+        if (!dir.isDirectory()) {
+            log.log(INFO, "File reference '" + reference.value() + "' ('" + dir.getAbsolutePath() + ")' is not a directory.");
+            return Optional.empty();
+        }
+        File[] files = dir.listFiles(new Filter());
+        if (files == null || files.length == 0) {
+            log.log(INFO, "File reference '" + reference.value() + "' ('" + dir.getAbsolutePath() + "') does not contain any files");
+            return Optional.empty();
+        }
+        return Optional.of(files[0]);
     }
 
     public File getRoot() { return root; }
@@ -136,7 +143,7 @@ public class FileDirectory extends AbstractComponent {
     private void deleteDirRecursively(File dir) {
         log.log(Level.FINE, "Will delete dir " + dir);
         if ( ! IOUtils.recursiveDeleteDir(dir))
-            log.log(Level.INFO, "Failed to delete " + dir);
+            log.log(INFO, "Failed to delete " + dir);
     }
 
     // Check if we should add file, it might already exist
