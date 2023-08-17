@@ -83,6 +83,7 @@ vespa_define_module(
     src/tests/instruction/sparse_112_dot_product
     src/tests/instruction/sparse_dot_product_function
     src/tests/instruction/sparse_full_overlap_join_function
+    src/tests/instruction/sparse_join_reduce_plan
     src/tests/instruction/sparse_merge_function
     src/tests/instruction/sparse_no_overlap_join_function
     src/tests/instruction/sparse_singledim_lookup

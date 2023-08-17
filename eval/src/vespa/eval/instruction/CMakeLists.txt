@@ -43,6 +43,7 @@ vespa_add_library(eval_instruction OBJECT
     sparse_112_dot_product.cpp
     sparse_dot_product_function.cpp
     sparse_full_overlap_join_function.cpp
+    sparse_join_reduce_plan.cpp
     sparse_merge_function.cpp
     sparse_no_overlap_join_function.cpp
     sparse_singledim_lookup.cpp
