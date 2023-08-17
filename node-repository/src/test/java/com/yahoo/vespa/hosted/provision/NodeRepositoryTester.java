@@ -54,7 +54,7 @@ public class NodeRepositoryTester {
                                             new MemoryMetricsDb(clock),
                                             new OrchestratorMock(),
                                             true,
-                                            0, 1000);
+                                            0);
     }
     
     public NodeRepository nodeRepository() { return nodeRepository; }
