@@ -526,7 +526,6 @@ public class SessionRepository {
     private ApplicationSet loadApplication(Session session, Optional<ApplicationSet> previousApplicationSet) {
         log.log(Level.FINE, () -> "Loading application for " + session);
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
-        ApplicationPackage applicationPackage = sessionZooKeeperClient.loadApplicationPackage();
         ActivatedModelsBuilder builder = new ActivatedModelsBuilder(session.getTenantName(),
                                                                     session.getSessionId(),
                                                                     sessionZooKeeperClient,
@@ -542,9 +541,9 @@ public class SessionRepository {
                                                                     modelFactoryRegistry,
                                                                     configDefinitionRepo);
         return ApplicationSet.fromList(builder.buildModels(session.getApplicationId(),
-                                                           sessionZooKeeperClient.readDockerImageRepository(),
-                                                           sessionZooKeeperClient.readVespaVersion(),
-                                                           applicationPackage,
+                                                           session.getDockerImageRepository(),
+                                                           session.getVespaVersion(),
+                                                           sessionZooKeeperClient.loadApplicationPackage(),
                                                            new AllocatedHostsFromAllModels(),
                                                            clock.instant()));
     }

@@ -94,14 +94,10 @@ public abstract class Session implements Comparable<Session>  {
      * @return log preamble
      */
     public String logPre() {
-        Optional<ApplicationId> applicationId;
+        Optional<ApplicationId> applicationId = getOptionalApplicationId();
+
         // We might not be able to read application id from zookeeper
         // e.g. when the app has been deleted. Use tenant name in that case.
-        try {
-            applicationId = Optional.of(getApplicationId());
-        } catch (Exception e) {
-            applicationId = Optional.empty();
-        }
         return applicationId
                 .filter(appId -> ! appId.equals(ApplicationId.defaultId()))
                 .map(TenantRepository::logPre)
