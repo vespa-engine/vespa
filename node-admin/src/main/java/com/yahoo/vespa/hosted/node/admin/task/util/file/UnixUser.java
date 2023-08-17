@@ -11,6 +11,7 @@ import java.util.Objects;
 public class UnixUser {
 
     public static final UnixUser ROOT = new UnixUser("root", 0, "root", 0);
+    public static final UnixUser VESPA = new UnixUser("vespa", 1000, "vespa", 1000);
 
     private final String name;
     private final int uid;
