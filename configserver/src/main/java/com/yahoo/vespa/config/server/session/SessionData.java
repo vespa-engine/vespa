@@ -28,7 +28,7 @@ import java.util.Optional;
  * @author hmusum
  */
 public record SessionData(ApplicationId applicationId,
-                          FileReference applicationPackageReference,
+                          Optional<FileReference> applicationPackageReference,
                           Version version,
                           Optional<DockerImage> dockerImageRepository,
                           Optional<AthenzDomain> athenzDomain,
@@ -65,7 +65,7 @@ public record SessionData(ApplicationId applicationId,
 
     private void toSlime(Cursor object) {
         object.setString(APPLICATION_ID_PATH, applicationId.serializedForm());
-        object.setString(APPLICATION_PACKAGE_REFERENCE_PATH, applicationPackageReference.value());
+        applicationPackageReference.ifPresent(ref -> object.setString(APPLICATION_PACKAGE_REFERENCE_PATH, ref.value()));
         object.setString(VERSION_PATH, version.toString());
         object.setLong(CREATE_TIME_PATH, System.currentTimeMillis());
         dockerImageRepository.ifPresent(image -> object.setString(DOCKER_IMAGE_REPOSITORY_PATH, image.asString()));
