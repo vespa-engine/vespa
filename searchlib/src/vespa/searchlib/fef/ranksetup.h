@@ -76,6 +76,7 @@ private:
     double                   _softTimeoutTailCost;
     double                   _global_filter_lower_limit;
     double                   _global_filter_upper_limit;
+    double                   _target_hits_max_adjustment_factor;
     MutateOperation          _mutateOnMatch;
     MutateOperation          _mutateOnFirstPhase;
     MutateOperation          _mutateOnSecondPhase;
@@ -393,6 +394,8 @@ public:
     double get_global_filter_lower_limit() const { return _global_filter_lower_limit; }
     void set_global_filter_upper_limit(double v) { _global_filter_upper_limit = v; }
     double get_global_filter_upper_limit() const { return _global_filter_upper_limit; }
+    void set_target_hits_max_adjustment_factor(double v) { _target_hits_max_adjustment_factor = v; }
+    double get_target_hits_max_adjustment_factor() const { return _target_hits_max_adjustment_factor; }
 
     /**
      * This method may be used to indicate that certain features

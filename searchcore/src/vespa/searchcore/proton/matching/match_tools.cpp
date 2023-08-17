@@ -176,11 +176,11 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const search::IDocumentMetaStoreContext::IReadGuard::SP * metaStoreReadGuard,
                   bool                         is_search)
     : _queryLimiter(queryLimiter),
-      _global_filter_params(extract_global_filter_params(rankSetup, rankProperties, metaStore.getNumActiveLids(), searchContext.getDocIdLimit())),
+      _attribute_blueprint_params(extract_attribute_blueprint_params(rankSetup, rankProperties, metaStore.getNumActiveLids(), searchContext.getDocIdLimit())),
       _query(),
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties, searchContext.getIndexes()),
-      _requestContext(doom, attributeContext, _queryEnv, _queryEnv.getObjectStore(), _global_filter_params, metaStoreReadGuard),
+      _requestContext(doom, attributeContext, _queryEnv, _queryEnv.getObjectStore(), _attribute_blueprint_params, metaStoreReadGuard),
       _mdl(),
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
@@ -203,8 +203,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.fetchPostings();
         if (is_search) {
             _query.handle_global_filter(searchContext.getDocIdLimit(),
-                                        _global_filter_params.global_filter_lower_limit,
-                                        _global_filter_params.global_filter_upper_limit,
+                                        _attribute_blueprint_params.global_filter_lower_limit,
+                                        _attribute_blueprint_params.global_filter_upper_limit,
                                         thread_bundle, trace);
         }
         _query.freeze();
@@ -324,18 +324,20 @@ MatchToolsFactory::get_feature_rename_map() const
 }
 
 AttributeBlueprintParams
-MatchToolsFactory::extract_global_filter_params(const RankSetup& rank_setup, const Properties& rank_properties,
-                                                uint32_t active_docids, uint32_t docid_limit)
+MatchToolsFactory::extract_attribute_blueprint_params(const RankSetup& rank_setup, const Properties& rank_properties,
+                                                      uint32_t active_docids, uint32_t docid_limit)
 {
     double lower_limit = GlobalFilterLowerLimit::lookup(rank_properties, rank_setup.get_global_filter_lower_limit());
     double upper_limit = GlobalFilterUpperLimit::lookup(rank_properties, rank_setup.get_global_filter_upper_limit());
+    double target_hits_max_adjustment_factor = TargetHitsMaxAdjustmentFactor::lookup(rank_properties, rank_setup.get_target_hits_max_adjustment_factor());
 
     // Note that we count the reserved docid 0 as active.
     // This ensures that when searchable-copies=1, the ratio is 1.0.
     double active_hit_ratio = std::min(active_docids + 1, docid_limit) / static_cast<double>(docid_limit);
 
     return {lower_limit * active_hit_ratio,
-            upper_limit * active_hit_ratio};
+            upper_limit * active_hit_ratio,
+            target_hits_max_adjustment_factor};
 }
 
 AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,

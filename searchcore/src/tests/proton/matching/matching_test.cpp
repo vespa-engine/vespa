@@ -1135,12 +1135,12 @@ TEST("require that docsum matcher can extract matching elements from single attr
     EXPECT_EQUAL(list[1], 3u);
 }
 
-struct GlobalFilterParamsFixture {
+struct AttributeBlueprintParamsFixture {
    BlueprintFactory factory;
    search::fef::test::IndexEnvironment index_env;
    RankSetup rank_setup;
    Properties rank_properties;
-    GlobalFilterParamsFixture(double lower_limit, double upper_limit)
+   AttributeBlueprintParamsFixture(double lower_limit, double upper_limit, double target_hits_max_adjustment_factor)
        : factory(),
          index_env(),
          rank_setup(factory, index_env),
@@ -1148,32 +1148,37 @@ struct GlobalFilterParamsFixture {
    {
        rank_setup.set_global_filter_lower_limit(lower_limit);
        rank_setup.set_global_filter_upper_limit(upper_limit);
+       rank_setup.set_target_hits_max_adjustment_factor(target_hits_max_adjustment_factor);
    }
-   void set_query_properties(vespalib::stringref lower_limit, vespalib::stringref upper_limit) {
+   void set_query_properties(vespalib::stringref lower_limit, vespalib::stringref upper_limit,
+                             vespalib::stringref target_hits_max_adjustment_factor) {
        rank_properties.add(GlobalFilterLowerLimit::NAME, lower_limit);
        rank_properties.add(GlobalFilterUpperLimit::NAME, upper_limit);
+       rank_properties.add(TargetHitsMaxAdjustmentFactor::NAME, target_hits_max_adjustment_factor);
    }
    AttributeBlueprintParams extract(uint32_t active_docids = 9, uint32_t docid_limit = 10) const {
-       return MatchToolsFactory::extract_global_filter_params(rank_setup, rank_properties, active_docids, docid_limit);
+       return MatchToolsFactory::extract_attribute_blueprint_params(rank_setup, rank_properties, active_docids, docid_limit);
    }
 };
 
-TEST_F("global filter params are extracted from rank profile", GlobalFilterParamsFixture(0.2, 0.8))
+TEST_F("attribute blueprint params are extracted from rank profile", AttributeBlueprintParamsFixture(0.2, 0.8, 5.0))
 {
     auto params = f.extract();
     EXPECT_EQUAL(0.2, params.global_filter_lower_limit);
     EXPECT_EQUAL(0.8, params.global_filter_upper_limit);
+    EXPECT_EQUAL(5.0, params.target_hits_max_adjustment_factor);
 }
 
-TEST_F("global filter params are extracted from query", GlobalFilterParamsFixture(0.2, 0.8))
+TEST_F("attribute blueprint params are extracted from query", AttributeBlueprintParamsFixture(0.2, 0.8, 5.0))
 {
-    f.set_query_properties("0.15", "0.75");
+    f.set_query_properties("0.15", "0.75", "3.0");
     auto params = f.extract();
     EXPECT_EQUAL(0.15, params.global_filter_lower_limit);
     EXPECT_EQUAL(0.75, params.global_filter_upper_limit);
+    EXPECT_EQUAL(3.0, params.target_hits_max_adjustment_factor);
 }
 
-TEST_F("global filter params are scaled with active hit ratio", GlobalFilterParamsFixture(0.2, 0.8))
+TEST_F("global filter params are scaled with active hit ratio", AttributeBlueprintParamsFixture(0.2, 0.8, 5.0))
 {
     auto params = f.extract(5, 10);
     EXPECT_EQUAL(0.12, params.global_filter_lower_limit);

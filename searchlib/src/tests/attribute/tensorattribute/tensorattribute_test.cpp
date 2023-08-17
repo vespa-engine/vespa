@@ -1320,15 +1320,16 @@ public:
         return *_query_tensor;
     }
 
-    std::unique_ptr<NearestNeighborBlueprint> make_blueprint(bool approximate = true, double global_filter_lower_limit = 0.05) {
+    std::unique_ptr<NearestNeighborBlueprint> make_blueprint(bool approximate = true,
+                                                             double global_filter_lower_limit = 0.05,
+                                                             double target_hits_max_adjustment_factor = 20.0) {
         search::queryeval::FieldSpec field("foo", 0, 0);
         auto bp = std::make_unique<NearestNeighborBlueprint>(
             field,
             std::make_unique<DistanceCalculator>(this->as_dense_tensor(),
                                                  create_query_tensor(vec_2d(17, 42))),
-            3, approximate, 5,
-            100100.25,
-            global_filter_lower_limit, 1.0, _no_doom.get_doom());
+            3, approximate, 5, 100100.25,
+            global_filter_lower_limit, 1.0, target_hits_max_adjustment_factor, _no_doom.get_doom());
         EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
         EXPECT_EQUAL(100100.25 * 100100.25, bp->get_distance_threshold());
         return bp;
@@ -1359,6 +1360,19 @@ TEST_F("NN blueprint handles empty filter (post-filtering)", NearestNeighborBlue
     EXPECT_EQUAL(3u, bp->get_target_hits());
     EXPECT_EQUAL(5u, bp->get_adjusted_target_hits());
     EXPECT_EQUAL(5u, bp->getState().estimate().estHits);
+    EXPECT_EQUAL(NNBA::INDEX_TOP_K, bp->get_algorithm());
+}
+
+TEST_F("NN blueprint adjustment of targetHits is bound (post-filtering)", NearestNeighborBlueprintFixture)
+{
+    auto bp = f.make_blueprint(true, 0.05, 3.5);
+    auto empty_filter = GlobalFilter::create();
+    bp->set_global_filter(*empty_filter, 0.2);
+    // targetHits is adjusted based on the estimated hit ratio of the query,
+    // but bound by target-hits-max-adjustment-factor
+    EXPECT_EQUAL(3u, bp->get_target_hits());
+    EXPECT_EQUAL(10u, bp->get_adjusted_target_hits());
+    EXPECT_EQUAL(10u, bp->getState().estimate().estHits);
     EXPECT_EQUAL(NNBA::INDEX_TOP_K, bp->get_algorithm());
 }
 

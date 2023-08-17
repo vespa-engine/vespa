@@ -29,6 +29,7 @@ class ParsedRankProfile extends ParsedBlock {
     private Double termwiseLimit = null;
     private Double postFilterThreshold = null;
     private Double approximateThreshold = null;
+    private Double targetHitsMaxAdjustmentFactor = null;
     private final List<FeatureList> matchFeatures = new ArrayList<>();
     private final List<FeatureList> rankFeatures = new ArrayList<>();
     private final List<FeatureList> summaryFeatures = new ArrayList<>();
@@ -65,6 +66,7 @@ class ParsedRankProfile extends ParsedBlock {
     Optional<Double> getTermwiseLimit() { return Optional.ofNullable(this.termwiseLimit); }
     Optional<Double> getPostFilterThreshold() { return Optional.ofNullable(this.postFilterThreshold); }
     Optional<Double> getApproximateThreshold() { return Optional.ofNullable(this.approximateThreshold); }
+    Optional<Double> getTargetHitsMaxAdjustmentFactor() { return Optional.ofNullable(this.targetHitsMaxAdjustmentFactor); }
     List<FeatureList> getMatchFeatures() { return List.copyOf(this.matchFeatures); }
     List<FeatureList> getRankFeatures() { return List.copyOf(this.rankFeatures); }
     List<FeatureList> getSummaryFeatures() { return List.copyOf(this.summaryFeatures); }
@@ -229,6 +231,11 @@ class ParsedRankProfile extends ParsedBlock {
     void setApproximateThreshold(double threshold) {
         verifyThat(approximateThreshold == null, "already has approximate-threshold");
         this.approximateThreshold = threshold;
+    }
+
+    void setTargetHitsMaxAdjustmentFactor(double factor) {
+        verifyThat(targetHitsMaxAdjustmentFactor == null, "already has target-hits-max-adjustment-factor");
+        this.targetHitsMaxAdjustmentFactor = factor;
     }
 
 }

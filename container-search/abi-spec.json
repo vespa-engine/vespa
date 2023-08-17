@@ -6981,12 +6981,14 @@
       "public java.lang.Integer getMinHitsPerThread()",
       "public java.lang.Double getPostFilterThreshold()",
       "public java.lang.Double getApproximateThreshold()",
+      "public java.lang.Double getTargetHitsMaxAdjustmentFactor()",
       "public void setTermwiselimit(double)",
       "public void setNumThreadsPerSearch(int)",
       "public void setNumSearchPartitions(int)",
       "public void setMinHitsPerThread(int)",
       "public void setPostFilterThreshold(double)",
       "public void setApproximateThreshold(double)",
+      "public void setTargetHitsMaxAdjustmentFactor(double)",
       "public void prepare(com.yahoo.search.query.ranking.RankProperties)",
       "public com.yahoo.search.query.ranking.Matching clone()",
       "public boolean equals(java.lang.Object)",
@@ -7000,6 +7002,7 @@
       "public static final java.lang.String MINHITSPERTHREAD",
       "public static final java.lang.String POST_FILTER_THRESHOLD",
       "public static final java.lang.String APPROXIMATE_THRESHOLD",
+      "public static final java.lang.String TARGET_HITS_MAX_ADJUSTMENT_FACTOR",
       "public java.lang.Double termwiseLimit"
     ]
   },

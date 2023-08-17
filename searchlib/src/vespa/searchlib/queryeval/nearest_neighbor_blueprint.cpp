@@ -43,6 +43,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
                                                    double distance_threshold,
                                                    double global_filter_lower_limit,
                                                    double global_filter_upper_limit,
+                                                   double target_hits_max_adjustment_factor,
                                                    const vespalib::Doom& doom)
     : ComplexLeafBlueprint(field),
       _distance_calc(std::move(distance_calc)),
@@ -55,6 +56,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _distance_threshold(std::numeric_limits<double>::max()),
       _global_filter_lower_limit(global_filter_lower_limit),
       _global_filter_upper_limit(global_filter_upper_limit),
+      _target_hits_max_adjustment_factor(target_hits_max_adjustment_factor),
       _distance_heap(target_hits),
       _found_hits(),
       _algorithm(Algorithm::EXACT),
@@ -95,8 +97,10 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
         } else { // post-filtering case
             // The goal is to expose 'targetHits' hits to first-phase ranking.
             // We try to achieve this by adjusting targetHits based on the estimated hit ratio of the query before post-filtering.
+            // However, this is bound by 'target-hits-max-adjustment-factor' to limit the cost of searching the HNSW index.
             if (estimated_hit_ratio > 0.0) {
-                _adjusted_target_hits = static_cast<double>(_target_hits) / estimated_hit_ratio;
+                _adjusted_target_hits = std::min(static_cast<double>(_target_hits) / estimated_hit_ratio,
+                                                 static_cast<double>(_target_hits) * _target_hits_max_adjustment_factor);
             }
         }
         if (_algorithm != Algorithm::EXACT_FALLBACK) {

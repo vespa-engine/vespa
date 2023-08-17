@@ -326,6 +326,7 @@ TOKEN :
 | < TERMWISE_LIMIT: "termwise-limit" >
 | < POST_FILTER_THRESHOLD: "post-filter-threshold" >
 | < APPROXIMATE_THRESHOLD: "approximate-threshold" >
+| < TARGET_HITS_MAX_ADJUSTMENT_FACTOR: "target-hits-max-adjustment-factor" >
 | < KEEP_RANK_COUNT: "keep-rank-count" >
 | < RANK_SCORE_DROP_LIMIT: "rank-score-drop-limit" >
 | < CONSTANTS: "constants" >
@@ -1727,6 +1728,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
       | termwiseLimit(profile)
       | postFilterThreshold(profile)
       | approximateThreshold(profile)
+      | targetHitsMaxAdjustmentFactor(profile)
       | rankFeatures(profile)
       | rankProperties(profile)
       | secondPhase(profile)
@@ -2190,6 +2192,19 @@ void approximateThreshold(ParsedRankProfile profile) :
 }
 
 /**
+ * This rule consumes a target-hits-max-adjustment-factor statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void targetHitsMaxAdjustmentFactor(ParsedRankProfile profile) :
+{
+    double factor;
+}
+{
+    (<TARGET_HITS_MAX_ADJUSTMENT_FACTOR> <COLON> factor = floatValue()) { profile.setTargetHitsMaxAdjustmentFactor(factor); }
+}
+
+/**
  * Consumes a rank-properties block of a rank profile. There
  * is a little trick within this rule to allow the final rank property
  * to skip the terminating newline token.
@@ -2641,6 +2656,7 @@ String identifierWithDash() :
     | <SECOND_PHASE>
     | <STRUCT_FIELD>
     | <SUMMARY_TO>
+    | <TARGET_HITS_MAX_ADJUSTMENT_FACTOR>
     | <TERMWISE_LIMIT>
     | <UPPER_BOUND>
     ) { return token.image; }

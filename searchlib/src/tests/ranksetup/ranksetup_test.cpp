@@ -533,6 +533,9 @@ void RankSetupTest::testRankSetup()
     env.getProperties().add(mutate::on_second_phase::Operation::NAME, "=7");
     env.getProperties().add(mutate::on_summary::Attribute::NAME, "c");
     env.getProperties().add(mutate::on_summary::Operation::NAME, "-=2");
+    env.getProperties().add(matching::GlobalFilterLowerLimit::NAME, "0.3");
+    env.getProperties().add(matching::GlobalFilterUpperLimit::NAME, "0.7");
+    env.getProperties().add(matching::TargetHitsMaxAdjustmentFactor::NAME, "5.0");
 
     RankSetup rs(_factory, env);
     EXPECT_FALSE(rs.has_match_features());
@@ -571,7 +574,9 @@ void RankSetupTest::testRankSetup()
     EXPECT_EQUAL(rs.getMutateOnSecondPhase()._operation, "=7");
     EXPECT_EQUAL(rs.getMutateOnSummary()._attribute, "c");
     EXPECT_EQUAL(rs.getMutateOnSummary()._operation, "-=2");
-
+    EXPECT_EQUAL(rs.get_global_filter_lower_limit(), 0.3);
+    EXPECT_EQUAL(rs.get_global_filter_upper_limit(), 0.7);
+    EXPECT_EQUAL(rs.get_target_hits_max_adjustment_factor(), 5.0);
 }
 
 bool

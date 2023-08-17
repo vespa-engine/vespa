@@ -121,7 +121,7 @@ private:
     using IIndexEnvironment = search::fef::IIndexEnvironment;
     using IDiversifier = search::queryeval::IDiversifier;
     QueryLimiter                     & _queryLimiter;
-    AttributeBlueprintParams           _global_filter_params;
+    AttributeBlueprintParams           _attribute_blueprint_params;
     Query                              _query;
     MaybeMatchPhaseLimiter::UP         _match_limiter;
     std::unique_ptr<RangeQueryLocator> _rangeLocator;
@@ -177,15 +177,15 @@ public:
     const StringStringMap & get_feature_rename_map() const;
 
     /**
-     * Extracts global filter parameters from the rank-profile and query.
+     * Extracts attribute blueprint parameters from the rank-profile and query.
      *
-     * These parameters are expected to be in the range [0.0, 1.0], which matches the range of the estimated hit ratio of the query.
+     * The global filter parameters are expected to be in the range [0.0, 1.0], which matches the range of the estimated hit ratio of the query.
      * When searchable-copies > 1, we must scale the parameters to match the effective range of the estimated hit ratio.
      * This is done by multiplying with the active hit ratio (active docids / docid limit).
      */
     static AttributeBlueprintParams
-    extract_global_filter_params(const RankSetup& rank_setup, const Properties& rank_properties,
-                                 uint32_t active_docids, uint32_t docid_limit);
+    extract_attribute_blueprint_params(const RankSetup& rank_setup, const Properties& rank_properties,
+                                       uint32_t active_docids, uint32_t docid_limit);
 };
 
 }
