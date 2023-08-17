@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
+	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
 func TestStatusDeployCommand(t *testing.T) {
@@ -74,6 +75,70 @@ func TestStatusError(t *testing.T) {
 	assert.Equal(t,
 		"Error: unhealthy container at http://example.com/ApplicationStatus: EOF\n",
 		stderr.String())
+}
+
+func TestStatusLocalDeployment(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+	resp := mock.HTTPResponse{
+		URI:    "/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge",
+		Status: 200,
+	}
+	// Latest generation
+	resp.Body = []byte(`{"currentGeneration": 42, "converged": true}`)
+	client.NextResponse(resp)
+	assert.Nil(t, cli.Run("status", "deployment"))
+	assert.Equal(t, "", stderr.String())
+	assert.Equal(t, "Deployment is ready on config generation 42\n", stdout.String())
+
+	// Latest generation without convergence
+	resp.Body = []byte(`{"currentGeneration": 42, "converged": false}`)
+	client.NextResponse(resp)
+	assert.NotNil(t, cli.Run("status", "deployment"))
+	assert.Equal(t, "Error: deployment not converged on latest generation after waiting 0s: wait timed out\n", stderr.String())
+
+	// Explicit generation
+	stderr.Reset()
+	client.NextResponse(resp)
+	assert.NotNil(t, cli.Run("status", "deployment", "41"))
+	assert.Equal(t, "Error: deployment not converged on generation 41 after waiting 0s: wait timed out\n", stderr.String())
+}
+
+func TestStatusCloudDeployment(t *testing.T) {
+	cli, stdout, stderr := newTestCLI(t, "CI=true")
+	app := vespa.ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}
+	assert.Nil(t, cli.Run("config", "set", "application", app.String()))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("config", "set", "zone", "dev.us-north-1"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	stdout.Reset()
+	client := &mock.HTTPClient{}
+	cli.httpClient = client
+	// Latest run
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1?limit=1",
+		Status: 200,
+		Body:   []byte(`{"runs": [{"id": 1337}]}`),
+	})
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/1337?after=-1",
+		Status: 200,
+		Body:   []byte(`{"active": false, "status": "success"}`),
+	})
+	assert.Nil(t, cli.Run("status", "deployment"))
+	assert.Equal(t, "", stderr.String())
+	assert.Equal(t,
+		"Deployment run 1337 has completed\nSee https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details\n",
+		stdout.String())
+	// Explicit run
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42?after=-1",
+		Status: 200,
+		Body:   []byte(`{"active": false, "status": "failure"}`),
+	})
+	assert.NotNil(t, cli.Run("status", "deployment", "42"))
+	assert.Equal(t, "Error: deployment run 42 incomplete after waiting 0s: run 42 ended with unsuccessful status: failure\n", stderr.String())
 }
 
 func isLocalTarget(args []string) bool {

@@ -7,6 +7,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -38,7 +39,7 @@ $ vespa status --cluster mycluster`,
 			}
 			if cluster == "" {
 				timeout := time.Duration(waitSecs) * time.Second
-				services, err := t.ContainerServices(timeout)
+				services, err := cli.services(t, timeout)
 				if err != nil {
 					return err
 				}
@@ -80,6 +81,56 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 				return err
 			}
 			return printServiceStatus(s, s.Wait(time.Duration(waitSecs)*time.Second), cli)
+		},
+	}
+	cli.bindWaitFlag(cmd, 0, &waitSecs)
+	return cmd
+}
+
+func newStatusDeploymentCmd(cli *CLI) *cobra.Command {
+	var waitSecs int
+	cmd := &cobra.Command{
+		Use:   "deployment",
+		Short: "Verify that deployment has converged on latest, or given, ID",
+		Example: `$ vespa status deployment
+$ vespa status deployment -t cloud [run-id]
+$ vespa status deployment -t local [session-id]
+`,
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			wantedID := vespa.LatestDeployment
+			if len(args) > 0 {
+				n, err := strconv.ParseInt(args[0], 10, 64)
+				if err != nil {
+					return fmt.Errorf("invalid id: %s: %w", args[0], err)
+				}
+				wantedID = n
+			}
+			t, err := cli.target(targetOptions{logLevel: "none"})
+			if err != nil {
+				return err
+			}
+			timeout := time.Duration(waitSecs) * time.Second
+			if timeout > 0 {
+				cli.printInfo("Waiting up to ", color.CyanString(timeout.String()), " for deployment to converge ...")
+			}
+			id, err := t.AwaitDeployment(wantedID, timeout)
+			if err != nil {
+				return err
+			}
+			if t.IsCloud() {
+				log.Printf("Deployment run %s has completed", color.CyanString(strconv.FormatInt(id, 10)))
+				log.Printf("See %s for more details", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/%s/instance/%s/job/%s-%s/run/%d",
+					t.Deployment().System.ConsoleURL,
+					t.Deployment().Application.Tenant, t.Deployment().Application.Application, t.Deployment().Zone.Environment,
+					t.Deployment().Application.Instance, t.Deployment().Zone.Environment, t.Deployment().Zone.Region,
+					id)))
+			} else {
+				log.Printf("Deployment is %s on config generation %s", color.GreenString("ready"), color.CyanString(strconv.FormatInt(id, 10)))
+			}
+			return nil
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)

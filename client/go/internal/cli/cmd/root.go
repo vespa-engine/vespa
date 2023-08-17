@@ -268,6 +268,7 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(prodCmd)                     // prod
 	rootCmd.AddCommand(newQueryCmd(c))              // query
 	statusCmd.AddCommand(newStatusDeployCmd(c))     // status deploy
+	statusCmd.AddCommand(newStatusDeploymentCmd(c)) // status deployment
 	rootCmd.AddCommand(statusCmd)                   // status
 	rootCmd.AddCommand(newTestCmd(c))               // test
 	rootCmd.AddCommand(newVersionCmd(c))            // version
