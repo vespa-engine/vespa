@@ -39,7 +39,9 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.LongFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.UnboundStringFlag;
@@ -125,6 +127,7 @@ public class SessionRepository {
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final int maxNodeSize;
     private final LongFlag expiryTimeFlag;
+    private final BooleanFlag writeSessionData;
 
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
@@ -166,7 +169,8 @@ public class SessionRepository {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
         this.maxNodeSize = maxNodeSize;
-        expiryTimeFlag = PermanentFlags.CONFIG_SERVER_SESSION_EXPIRY_TIME.bindTo(flagSource);
+        this.expiryTimeFlag = PermanentFlags.CONFIG_SERVER_SESSION_EXPIRY_TIME.bindTo(flagSource);
+        this.writeSessionData = Flags.WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -264,24 +268,14 @@ public class SessionRepository {
                                                   boolean internalRedeploy,
                                                   TimeoutBudget timeoutBudget,
                                                   DeployLogger deployLogger) {
-        ApplicationId existingApplicationId = existingSession.getApplicationId();
+        ApplicationId applicationId = existingSession.getApplicationId();
         File existingApp = getSessionAppDir(existingSession.getSessionId());
         LocalSession session = createSessionFromApplication(existingApp,
-                                                            existingApplicationId,
+                                                            applicationId,
                                                             internalRedeploy,
                                                             timeoutBudget,
                                                             deployLogger);
-        // Note: Setters below need to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
-        session.setApplicationId(existingApplicationId);
-        session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
-        session.setVespaVersion(existingSession.getVespaVersion());
-        session.setDockerImageRepository(existingSession.getDockerImageRepository());
-        session.setAthenzDomain(existingSession.getAthenzDomain());
-        session.setQuota(existingSession.getQuota());
-        session.setTenantSecretStores(existingSession.getTenantSecretStores());
-        session.setOperatorCertificates(existingSession.getOperatorCertificates());
-        session.setCloudAccount(existingSession.getCloudAccount());
-        session.setDataplaneTokens(existingSession.getDataplaneTokens());
+        write(existingSession, session, applicationId);
         return session;
     }
 
@@ -574,6 +568,24 @@ public class SessionRepository {
                 case CHILD_ADDED, CHILD_REMOVED, CONNECTION_RECONNECTED -> sessionsChanged();
             }
         });
+    }
+
+    // ---------------- Serialization ----------------------------------------------------------------
+
+    private void write(Session existingSession, LocalSession session, ApplicationId applicationId) {
+        SessionSerializer sessionSerializer = new SessionSerializer();
+        sessionSerializer.write(session.getSessionZooKeeperClient(),
+                                applicationId,
+                                existingSession.getApplicationPackageReference(),
+                                existingSession.getDockerImageRepository(),
+                                existingSession.getVespaVersion(),
+                                existingSession.getAthenzDomain(),
+                                existingSession.getQuota(),
+                                existingSession.getTenantSecretStores(),
+                                existingSession.getOperatorCertificates(),
+                                existingSession.getCloudAccount(),
+                                existingSession.getDataplaneTokens(),
+                                writeSessionData);
     }
 
     // ---------------- Common stuff ----------------------------------------------------------------

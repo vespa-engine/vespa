@@ -166,7 +166,7 @@ public class SessionZooKeeperClientTest {
         int sessionId = 2;
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
         zkc.writeSessionData(new SessionData(ApplicationId.defaultId(),
-                                             new FileReference("foo"),
+                                             Optional.of(new FileReference("foo")),
                                              Version.fromString("8.195.1"),
                                              Optional.empty(),
                                              Optional.empty(),

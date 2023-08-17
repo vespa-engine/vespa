@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
@@ -23,8 +22,6 @@ import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
-import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
-import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.filedistribution.AddFileInterface;
 import com.yahoo.vespa.config.server.filedistribution.MockFileManager;
 import com.yahoo.vespa.config.server.tenant.CloudAccountSerializer;
@@ -262,11 +259,6 @@ public class SessionZooKeeperClient {
                                        .orElseThrow(() -> new IllegalStateException("Allocated hosts does not exists"));
     }
 
-    public ZooKeeperDeployer createDeployer(DeployLogger logger) {
-        ZooKeeperClient zkClient = new ZooKeeperClient(curator, logger, sessionPath);
-        return new ZooKeeperDeployer(zkClient);
-    }
-
     public Transaction createWriteStatusTransaction(Session.Status status) {
         CuratorTransaction transaction = new CuratorTransaction(curator);
         if (curator.exists(sessionStatusPath)) {
@@ -369,7 +361,7 @@ public class SessionZooKeeperClient {
         transaction.commit();
     }
 
-    private static Path getSessionPath(TenantName tenantName, long sessionId) {
+    static Path getSessionPath(TenantName tenantName, long sessionId) {
         return TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId));
     }
 }
