@@ -273,7 +273,8 @@ public class SpareCapacityMaintainerTest {
                                                 new MemoryMetricsDb(clock),
                                                 new OrchestratorMock(),
                                                 true,
-                                                1);
+                                                1,
+                                                1000);
             deployer = new MockDeployer(nodeRepository);
             maintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, Duration.ofDays(1), maxIterations);
         }

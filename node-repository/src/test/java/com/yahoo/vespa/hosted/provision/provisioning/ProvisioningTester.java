@@ -128,7 +128,8 @@ public class ProvisioningTester {
                                                  new MemoryMetricsDb(clock),
                                                  orchestrator,
                                                  true,
-                                                 spareCount);
+                                                 spareCount,
+                                                 1000);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, new MockMetric());
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.provisionLogger = new InMemoryProvisionLogger();
