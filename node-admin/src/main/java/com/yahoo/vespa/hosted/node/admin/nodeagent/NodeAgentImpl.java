@@ -486,7 +486,8 @@ public class NodeAgentImpl implements NodeAgent {
         // Run this here and now, even though we may immediately remove the container below.
         // This ensures these maintainers are run even if something fails or returns early.
         // These maintainers should also run immediately after starting the container (see below).
-        container.ifPresent(c -> runImportantContainerMaintainers(context, c));
+        container.filter(c -> c.state().isRunning())
+                 .ifPresent(c -> runImportantContainerMaintainers(context, c));
 
         switch (node.state()) {
             case ready, reserved, failed, inactive, parked -> {
@@ -561,9 +562,9 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void runImportantContainerMaintainers(NodeAgentContext context, Container container) {
+    private void runImportantContainerMaintainers(NodeAgentContext context, Container runningContainer) {
         aclMaintainer.ifPresent(maintainer -> maintainer.converge(context));
-        wireguardTasks.forEach(task -> task.converge(context, container.id()));
+        wireguardTasks.forEach(task -> task.converge(context, runningContainer.id()));
     }
 
     private static void logChangesToNodeSpec(NodeAgentContext context, NodeSpec lastNode, NodeSpec node) {
