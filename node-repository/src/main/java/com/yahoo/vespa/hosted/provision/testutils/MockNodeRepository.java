@@ -96,7 +96,7 @@ public class MockNodeRepository extends NodeRepository {
               new MemoryMetricsDb(Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z"))),
               new OrchestratorMock(),
               true,
-              0, 1000);
+              0);
         this.flavors = flavors;
         defaultCloudAccount = zone.cloud().account();
 

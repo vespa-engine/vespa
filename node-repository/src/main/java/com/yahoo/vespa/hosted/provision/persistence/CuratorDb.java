@@ -88,8 +88,8 @@ public class CuratorDb {
     /** Simple cache for deserialized node objects, based on their ZK node version. */
     private final Cache<Path, Pair<Integer, Node>> cachedNodes = CacheBuilder.newBuilder().recordStats().build();
 
-    public CuratorDb(NodeFlavors flavors, Curator curator, Clock clock, boolean useCache, long nodeCacheSize) {
-        this.nodeSerializer = new NodeSerializer(flavors, nodeCacheSize);
+    public CuratorDb(NodeFlavors flavors, Curator curator, Clock clock, boolean useCache) {
+        this.nodeSerializer = new NodeSerializer(flavors);
         this.db = new CachingCurator(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter"));
