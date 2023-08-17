@@ -6,11 +6,11 @@ include "searchchains.rnc"
 
 Redundancy = element redundancy {
     attribute reply-after { xsd:nonNegativeInteger }? &
-    xsd:nonNegativeInteger
+    xsd:integer { minInclusive = "1" maxInclusive = "65534" }
 }
 
 MinRedundancy = element min-redundancy {
-    xsd:nonNegativeInteger
+    xsd:integer { minInclusive = "1" maxInclusive = "65534" }
 }
 
 DistributionType = element distribution {
