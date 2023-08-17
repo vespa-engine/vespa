@@ -78,8 +78,7 @@ public class CapacityCheckerTester {
                                             new MemoryMetricsDb(clock),
                                             new OrchestratorMock(),
                                             true,
-                                            0,
-                                            1000);
+                                            0);
     }
 
     private void updateCapacityChecker() {

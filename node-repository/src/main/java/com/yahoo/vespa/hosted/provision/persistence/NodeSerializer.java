@@ -134,7 +134,7 @@ public class NodeSerializer {
 
     // ---------------- Serialization ----------------------------------------------------
 
-    public NodeSerializer(NodeFlavors flavors, long cacheSize) {
+    public NodeSerializer(NodeFlavors flavors) {
         this.flavors = flavors;
     }
 
