@@ -6,6 +6,7 @@ import ai.vespa.metrics.set.MetricSet;
 import com.google.common.collect.Sets;
 import org.junit.jupiter.api.Test;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -65,7 +66,8 @@ public class MetricSetTest {
     void it_can_be_generated_from_builder() {
         MetricSet metricSet = new MetricSet.Builder("test")
                 .metric("metric1")
-                .metric(TestMetrics.ENUM_METRIC.last())
+                .metric(TestMetrics.ENUM_METRIC1.last())
+                .metric(TestMetrics.ENUM_METRIC2, EnumSet.of(Suffix.sum, Suffix.count))
                 .metric(new Metric("metric2"))
                 .metrics(List.of(new Metric("metric3")))
                 .metricSet(new MetricSet.Builder("child")
@@ -75,9 +77,11 @@ public class MetricSetTest {
                 .build();
 
         Map<String, Metric> metrics = metricSet.getMetrics();
-        assertEquals(6, metrics.size());
+        assertEquals(8, metrics.size());
         assertNotNull(metrics.get("metric1"));
-        assertNotNull(metrics.get("emum-metric.last"));
+        assertNotNull(metrics.get("emum-metric1.last"));
+        assertNotNull(metrics.get("emum-metric2.sum"));
+        assertNotNull(metrics.get("emum-metric2.count"));
         assertNotNull(metrics.get("metric2"));
         assertNotNull(metrics.get("metric3"));
         assertNotNull(metrics.get("child_metric1"));
@@ -85,7 +89,8 @@ public class MetricSetTest {
     }
 
     enum TestMetrics implements VespaMetrics {
-        ENUM_METRIC("emum-metric");
+        ENUM_METRIC1("emum-metric1"),
+        ENUM_METRIC2("emum-metric2");
 
         private final String name;
 
