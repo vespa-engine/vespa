@@ -198,6 +198,7 @@ TOKEN :
     <TO_INT: "to_int"> |
     <TO_LONG: "to_long"> |
     <TO_POS: "to_pos"> |
+    <TO_EPOCH_SECOND: "to_epoch_second"> |
     <TO_STRING: "to_string"> |
     <TO_WSET: "to_wset"> |
     <TO_BOOL: "to_bool"> |
@@ -338,6 +339,7 @@ Expression value() :
       val = toIntExp()              |
       val = toLongExp()             |
       val = toPosExp()              |
+      val = toEpochSecondExp()      |
       val = toStringExp()           |
       val = toWsetExp()             |
       val = toBoolExp()             |
@@ -711,6 +713,12 @@ Expression toPosExp() : { }
 {
     ( <TO_POS> )
     { return new ToPositionExpression(); }
+}
+
+Expression toEpochSecondExp() : { }
+{
+    ( <TO_EPOCH_SECOND> )
+    { return new ToEpochSecondExpression(); }
 }
 
 Expression toStringExp() : { }
