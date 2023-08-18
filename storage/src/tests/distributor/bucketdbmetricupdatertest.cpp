@@ -202,7 +202,7 @@ TEST_F(BucketDBMetricUpdaterTest, buckets_with_varying_trustedness) {
     {
         BucketInfo info(makeInfo(100, 200));
         info.resetTrusted();
-        BucketDatabase::Entry e(document::BucketId(16, 3), info);
+        BucketDatabase::Entry e(document::BucketId(16, 3), std::move(info));
         metricUpdater.visit(e, 2);
     }
     metricUpdater.completeRound(false);
@@ -233,7 +233,7 @@ TEST_F(BucketDBMetricUpdaterTest, pick_largest_copy_if_no_trusted) {
     // No trusted copies, so must pick second copy.
     BucketInfo info(makeInfo(100, 200));
     info.resetTrusted();
-    BucketDatabase::Entry e(document::BucketId(16, 2), info);
+    BucketDatabase::Entry e(document::BucketId(16, 2), std::move(info));
     metricUpdater.visit(e, 2);
     metricUpdater.completeRound(false);
     metricUpdater.getLastCompleteStats().propagateMetrics(ims, dms);
@@ -270,7 +270,7 @@ BucketDBMetricUpdaterTest::visitBucketWith2Copies1Trusted(BucketDBMetricUpdater&
     BucketInfo info;
     addNode(info, 0, 100);
     addNode(info, 1, 101);  // Note different checksums => #trusted = 1
-    BucketDatabase::Entry e(document::BucketId(16, 1), info);
+    BucketDatabase::Entry e(document::BucketId(16, 1), std::move(info));
     metricUpdater.visit(e, 2);
 }
 
@@ -281,18 +281,17 @@ BucketDBMetricUpdaterTest::visitBucketWith2CopiesBothTrusted(BucketDBMetricUpdat
     BucketInfo info;
     addNode(info, 0, 200);
     addNode(info, 2, 200);
-    BucketDatabase::Entry e(document::BucketId(16, 2), info);
+    BucketDatabase::Entry e(document::BucketId(16, 2), std::move(info));
     metricUpdater.visit(e, 2);
 }
 
 // Single replica on node 2.
 void
-BucketDBMetricUpdaterTest::visitBucketWith1Copy(
-        BucketDBMetricUpdater& metricUpdater)
+BucketDBMetricUpdaterTest::visitBucketWith1Copy(BucketDBMetricUpdater& metricUpdater)
 {
     BucketInfo info;
     addNode(info, 2, 100);
-    BucketDatabase::Entry e(document::BucketId(16, 1), info);
+    BucketDatabase::Entry e(document::BucketId(16, 1), std::move(info));
     metricUpdater.visit(e, 2);
 }
 
