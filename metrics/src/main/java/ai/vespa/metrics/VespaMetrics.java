@@ -17,6 +17,8 @@ public interface VespaMetrics {
         return baseName() + "." + suffix.suffix();
     }
 
+    // TODO: make the below methods return Metric objects instead of Strings.
+
     default String ninety_five_percentile() {
         return withSuffix(Suffix.ninety_five_percentile);
     }
