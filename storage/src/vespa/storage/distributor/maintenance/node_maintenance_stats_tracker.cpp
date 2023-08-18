@@ -9,60 +9,20 @@ namespace storage::distributor {
 
 const NodeMaintenanceStats NodeMaintenanceStatsTracker::_emptyNodeMaintenanceStats;
 
-namespace {
-
-void
-merge_bucket_spaces_stats(NodeMaintenanceStatsTracker::BucketSpacesStats& dest,
-                          const NodeMaintenanceStatsTracker::BucketSpacesStats& src)
-{
-    for (const auto& entry : src) {
-        auto bucket_space = entry.first;
-        dest[bucket_space].merge(entry.second);
-    }
+NodeMaintenanceStats &
+NodeMaintenanceStatsTracker::stats(uint16_t node, document::BucketSpace bucketSpace) {
+    return _node_stats[BucketSpaceAndNode(node, bucketSpace)];
 }
 
-}
-
-void
-NodeMaintenanceStatsTracker::incMovingOut(uint16_t node, document::BucketSpace bucketSpace) {
-    ++_node_stats[node][bucketSpace].movingOut;
-    ++_total_stats.movingOut;
-}
-
-void
-NodeMaintenanceStatsTracker::incSyncing(uint16_t node, document::BucketSpace bucketSpace) {
-    ++_node_stats[node][bucketSpace].syncing;
-    ++_total_stats.syncing;
-}
-
-void
-NodeMaintenanceStatsTracker::incCopyingIn(uint16_t node, document::BucketSpace bucketSpace) {
-    ++_node_stats[node][bucketSpace].copyingIn;
-    ++_total_stats.copyingIn;
-}
-
-void
-NodeMaintenanceStatsTracker::incCopyingOut(uint16_t node, document::BucketSpace bucketSpace) {
-    ++_node_stats[node][bucketSpace].copyingOut;
-    ++_total_stats.copyingOut;
-}
-
-void
-NodeMaintenanceStatsTracker::NodeMaintenanceStatsTracker::incTotal(uint16_t node, document::BucketSpace bucketSpace) {
-    ++_node_stats[node][bucketSpace].total;
-    ++_total_stats.total;
+const NodeMaintenanceStats &
+NodeMaintenanceStatsTracker::stats(uint16_t node, document::BucketSpace bucketSpace) const noexcept {
+    auto nodeItr = _node_stats.find(BucketSpaceAndNode(node, bucketSpace));
+    return (nodeItr != _node_stats.end()) ? nodeItr->second : _emptyNodeMaintenanceStats;
 }
 
 const NodeMaintenanceStats&
-NodeMaintenanceStatsTracker::forNode(uint16_t node, document::BucketSpace bucketSpace) const {
-    auto nodeItr = _node_stats.find(node);
-    if (nodeItr != _node_stats.end()) {
-        auto bucketSpaceItr = nodeItr->second.find(bucketSpace);
-        if (bucketSpaceItr != nodeItr->second.end()) {
-            return bucketSpaceItr->second;
-        }
-    }
-    return _emptyNodeMaintenanceStats;
+NodeMaintenanceStatsTracker::forNode(uint16_t node, document::BucketSpace bucketSpace) const noexcept {
+    return stats(node, bucketSpace);
 }
 
 bool
@@ -75,8 +35,8 @@ void
 NodeMaintenanceStatsTracker::merge(const NodeMaintenanceStatsTracker& rhs)
 {
     for (const auto& entry : rhs._node_stats) {
-        auto node_index = entry.first;
-        merge_bucket_spaces_stats(_node_stats[node_index], entry.second);
+        auto key = entry.first;
+        _node_stats[key].merge(entry.second);
     }
     _max_observed_time_since_last_gc = std::max(_max_observed_time_since_last_gc,
                                                 rhs._max_observed_time_since_last_gc);
