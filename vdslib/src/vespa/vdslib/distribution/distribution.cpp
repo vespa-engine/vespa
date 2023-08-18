@@ -9,8 +9,8 @@
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/config/print/asciiconfigreader.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/config-stor-distribution.h>
-#include <algorithm>
 #include <cmath>
 #include <cassert>
 
@@ -469,8 +469,7 @@ Distribution::getIdealDistributorNode(const ClusterState& state, const document:
 std::vector<Distribution::IndexList>
 Distribution::splitNodesIntoLeafGroups(vespalib::ConstArrayRef<uint16_t> nodeList) const
 {
-    std::vector<IndexList> result;
-    std::map<uint16_t, IndexList> nodes;
+    vespalib::hash_map<uint16_t, IndexList> nodes(nodeList.size());
     for (auto node : nodeList) {
         const Group* group((node < _node2Group.size()) ? _node2Group[node] : nullptr);
         if (group == nullptr) {
@@ -480,9 +479,16 @@ Distribution::splitNodesIntoLeafGroups(vespalib::ConstArrayRef<uint16_t> nodeLis
             nodes[group->getIndex()].push_back(node);
         }
     }
+    std::vector<uint16_t> sorted;
+    sorted.reserve(nodes.size());
+    for (const auto & entry : nodes) {
+        sorted.push_back(entry.first);
+    }
+    std::sort(sorted.begin(), sorted.end());
+    std::vector<IndexList> result;
     result.reserve(nodes.size());
-    for (auto & node : nodes) {
-        result.emplace_back(std::move(node.second));
+    for (uint16_t groupId : sorted) {
+        result.emplace_back(std::move(nodes.find(groupId)->second));
     }
     return result;
 }
