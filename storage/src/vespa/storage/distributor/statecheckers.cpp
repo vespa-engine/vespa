@@ -42,38 +42,30 @@ SplitBucketStateChecker::validForSplit(Context& c)
 double
 SplitBucketStateChecker::getBucketSizeRelativeToMax(Context& c)
 {
-    const BucketInfo& info(c.entry.getBucketInfo());
-    const uint32_t highestDocumentCount(info.getHighestDocumentCount());
-    const uint32_t highestTotalDocumentSize(info.getHighestTotalDocumentSize());
-    const uint32_t highestMetaCount(info.getHighestMetaCount());
-    const uint32_t highestUsedFileSize(info.getHighestUsedFileSize());
+    auto highest = c.entry.getBucketInfo().getHighest();
 
-    if (highestDocumentCount < 2) {
+    if (highest._documentCount < 2) {
         return 0;
     }
 
     double byteSplitRatio = 0;
     if (c.distributorConfig.getSplitSize() > 0) {
-        byteSplitRatio = static_cast<double>(highestTotalDocumentSize)
-                         / c.distributorConfig.getSplitSize();
+        byteSplitRatio = static_cast<double>(highest._totalDocumentSize) / c.distributorConfig.getSplitSize();
     }
 
     double docSplitRatio = 0;
     if (c.distributorConfig.getSplitCount() > 0) {
-        docSplitRatio = static_cast<double>(highestDocumentCount)
-                        / c.distributorConfig.getSplitCount();
+        docSplitRatio = static_cast<double>(highest._documentCount) / c.distributorConfig.getSplitCount();
     }
 
     double fileSizeRatio = 0;
     if (c.distributorConfig.getSplitSize() > 0) {
-        fileSizeRatio = static_cast<double>(highestUsedFileSize)
-                         / (2 * c.distributorConfig.getSplitSize());
+        fileSizeRatio = static_cast<double>(highest._usedFileSize) / (2 * c.distributorConfig.getSplitSize());
     }
 
     double metaSplitRatio = 0;
     if (c.distributorConfig.getSplitCount() > 0) {
-        metaSplitRatio = static_cast<double>(highestMetaCount)
-                        / (2 * c.distributorConfig.getSplitCount());
+        metaSplitRatio = static_cast<double>(highest._metaCount) / (2 * c.distributorConfig.getSplitCount());
     }
 
     return std::max(std::max(byteSplitRatio, docSplitRatio),
@@ -99,17 +91,13 @@ SplitBucketStateChecker::generateMaxSizeExceededSplitOperation(Context& c)
 
     so->setPriority(c.distributorConfig.getMaintenancePriorities().splitLargeBucket);
 
-    const BucketInfo& info(c.entry.getBucketInfo());
+    auto highest = c.entry.getBucketInfo().getHighest();
     vespalib::asciistream ost;
     ost << "[Splitting bucket because its maximum size ("
-        << info.getHighestTotalDocumentSize()
-        << " b, "
-        << info.getHighestDocumentCount()
-        << " docs, "
-        << info.getHighestMetaCount()
-        << " meta, "
-        << info.getHighestUsedFileSize()
-        << " b total"
+        << highest._totalDocumentSize << " b, "
+        << highest._documentCount << " docs, "
+        << highest._metaCount << " meta, "
+        << highest._usedFileSize << " b total"
         << ") is higher than the configured limit of ("
         << c.distributorConfig.getSplitSize()
         << ", " << c.distributorConfig.getSplitCount() << ")]";
@@ -562,13 +550,20 @@ consistentApartFromEmptyBucketsInNonIdealLocationAndInvalidEntries(ConstNodesRef
 class MergeNodes
 {
 public:
-    MergeNodes()
-        : _reason(), _nodes(), _problemFlags(0), _priority(255)
+    MergeNodes() noexcept
+        : _reason(),
+          _nodes(),
+          _problemFlags(0),
+          _priority(255)
     {}
 
     explicit MergeNodes(const BucketDatabase::Entry& entry)
-        : _reason(), _nodes(), _problemFlags(0), _priority(255)
+        : _reason(),
+          _nodes(),
+          _problemFlags(0),
+          _priority(255)
     {
+        _nodes.reserve(entry->getNodeCount());
         for (uint16_t i = 0; i < entry->getNodeCount(); i++) {
             addNode(entry->getNodeRef(i).getNode());
         }
@@ -587,7 +582,7 @@ public:
         updatePriority(other._priority);
     }
 
-    bool shouldMerge() const {
+    bool shouldMerge() const noexcept {
         return _problemFlags != 0;
     }
 
@@ -599,9 +594,7 @@ public:
     }
 
     void markOutOfSync(const StateChecker::Context& c, uint8_t msgPriority) {
-        _reason << "[Synchronizing buckets with different checksums "
-                << c.entry->toString()
-                << "]";
+        _reason << "[Synchronizing buckets with different checksums " << c.entry->toString() << "]";
         addProblem(OUT_OF_SYNC);
         updatePriority(msgPriority);
     }
@@ -613,7 +606,7 @@ public:
         updatePriority(msgPriority);
     }
 
-    bool needsMoveOnly() const {
+    bool needsMoveOnly() const noexcept {
         return _problemFlags == NON_IDEAL_LOCATION;
     }
 
@@ -626,11 +619,11 @@ public:
     std::string reason() const { return _reason.str(); }
 
 private:
-    void updatePriority(uint8_t pri) {
+    void updatePriority(uint8_t pri) noexcept {
         _priority = std::min(pri, _priority);
     }
 
-    void addProblem(uint8_t newProblem) {
+    void addProblem(uint8_t newProblem) noexcept {
         _problemFlags |= newProblem;
     }
 
@@ -641,8 +634,8 @@ private:
     };
     vespalib::asciistream _reason;
     std::vector<uint16_t> _nodes;
-    uint8_t _problemFlags;
-    uint8_t _priority;
+    uint8_t               _problemFlags;
+    uint8_t               _priority;
 };
 
 MergeNodes::~MergeNodes() = default;

@@ -767,6 +767,7 @@ StripeBucketDBUpdater::MergingNodeRemover::merge(storage::BucketDatabase::Merger
     }
 
     std::vector<BucketCopy> remainingCopies;
+    remainingCopies.reserve(e->getNodeCount());
     for (uint16_t i = 0; i < e->getNodeCount(); i++) {
         const uint16_t node_idx = e->getNodeRef(i).getNode();
         if (storage_node_is_available(node_idx)) {

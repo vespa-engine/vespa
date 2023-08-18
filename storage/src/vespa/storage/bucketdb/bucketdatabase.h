@@ -22,26 +22,29 @@ public:
         BucketInfoType _info;
 
     public:
-        EntryBase() : _bucketId(0) {} // Invalid entry
-        EntryBase(const document::BucketId& bId, const BucketInfoType& bucketInfo)
-                : _bucketId(bId), _info(bucketInfo) {}
-        EntryBase(const document::BucketId& bId, BucketInfoType&& bucketInfo)
-            : _bucketId(bId), _info(std::move(bucketInfo)) {}
-        explicit EntryBase(const document::BucketId& bId) : _bucketId(bId) {}
-
-        bool operator==(const EntryBase& other) const {
+        EntryBase() noexcept : _bucketId(0), _info() {} // Invalid entry
+        EntryBase(const document::BucketId& bId, BucketInfoType&& bucketInfo) noexcept
+            : _bucketId(bId),
+              _info(std::move(bucketInfo))
+        {}
+        explicit EntryBase(const document::BucketId& bId) noexcept : _bucketId(bId), _info() {}
+        EntryBase(EntryBase &&) noexcept = default;
+        EntryBase & operator=(EntryBase &&) noexcept = default;
+        EntryBase(const EntryBase &) = default;
+        EntryBase & operator=(const EntryBase &) = default;
+        bool operator==(const EntryBase& other) const noexcept {
             return (_bucketId == other._bucketId && _info == other._info);
         }
-        bool valid() const { return (_bucketId.getRawId() != 0); }
+        bool valid() const noexcept { return (_bucketId.getRawId() != 0); }
         std::string toString() const;
 
-        const document::BucketId& getBucketId() const { return _bucketId; }
-        const BucketInfoType& getBucketInfo() const { return _info; }
-        BucketInfoType& getBucketInfo() { return _info; }
-        BucketInfoType* operator->() { return &_info; }
-        const BucketInfoType* operator->() const { return &_info; }
+        const document::BucketId& getBucketId() const noexcept { return _bucketId; }
+        const BucketInfoType& getBucketInfo() const noexcept { return _info; }
+        BucketInfoType& getBucketInfo() noexcept { return _info; }
+        BucketInfoType* operator->() noexcept { return &_info; }
+        const BucketInfoType* operator->() const noexcept { return &_info; }
 
-        static EntryBase createInvalid() {
+        static EntryBase createInvalid() noexcept {
             return EntryBase();
         }
     };

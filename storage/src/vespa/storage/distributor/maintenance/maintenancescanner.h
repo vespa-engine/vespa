@@ -23,12 +23,20 @@ public:
 
         static ScanResult createDone() { return ScanResult(true); }
         static ScanResult createNotDone(document::BucketSpace bucketSpace, BucketDatabase::Entry entry) {
-            return ScanResult(bucketSpace, entry);
+            return ScanResult(bucketSpace, std::move(entry));
         }
 
     private:
-        explicit ScanResult(bool done) : _done(done), _bucketSpace(document::BucketSpace::invalid()), _entry() {}
-        ScanResult(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e) : _done(false), _bucketSpace(bucketSpace), _entry(e) {}
+        explicit ScanResult(bool done) noexcept
+            : _done(done),
+              _bucketSpace(document::BucketSpace::invalid()),
+              _entry()
+        {}
+        ScanResult(document::BucketSpace bucketSpace, BucketDatabase::Entry e) noexcept
+            : _done(false),
+              _bucketSpace(bucketSpace),
+              _entry(std::move(e))
+        {}
     };
 
     virtual ScanResult scanNext() = 0;

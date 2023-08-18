@@ -159,21 +159,21 @@ BucketInfoBase<NodeSeq>::getNodes() const noexcept {
 }
 
 template <typename NodeSeq>
-uint32_t
-BucketInfoBase<NodeSeq>::getHighestDocumentCount() const noexcept {
-    uint32_t highest = 0;
+BucketInfoBase<NodeSeq>::Highest
+BucketInfoBase<NodeSeq>::getHighest() const noexcept {
+    Highest highest;
     for (const auto & n : _nodes) {
-        highest = std::max(highest, n.getDocumentCount());
+        highest.update(n);
     }
     return highest;
 }
 
 template <typename NodeSeq>
 uint32_t
-BucketInfoBase<NodeSeq>::getHighestTotalDocumentSize() const noexcept {
+BucketInfoBase<NodeSeq>::getHighestDocumentCount() const noexcept {
     uint32_t highest = 0;
     for (const auto & n : _nodes) {
-        highest = std::max(highest, n.getTotalDocumentSize());
+        highest = std::max(highest, n.getDocumentCount());
     }
     return highest;
 }

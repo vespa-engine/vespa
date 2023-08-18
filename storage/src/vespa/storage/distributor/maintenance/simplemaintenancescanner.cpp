@@ -73,7 +73,7 @@ SimpleMaintenanceScanner::scanNext()
         countBucket(_bucketSpaceItr->first, entry.getBucketInfo());
         prioritizeBucket(document::Bucket(_bucketSpaceItr->first, entry.getBucketId()));
         _bucketCursor = entry.getBucketId();
-        return ScanResult::createNotDone(_bucketSpaceItr->first, entry);
+        return ScanResult::createNotDone(_bucketSpaceItr->first, std::move(entry));
     }
 }
 

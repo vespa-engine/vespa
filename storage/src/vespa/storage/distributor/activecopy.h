@@ -48,10 +48,9 @@ private:
 
 class ActiveList : public vespalib::Printable {
 public:
-    ActiveList() {}
-    ActiveList(std::vector<ActiveCopy>&& v) : _v(std::move(v)) { }
+    ActiveList() noexcept {}
+    ActiveList(std::vector<ActiveCopy>&& v) noexcept : _v(std::move(v)) { }
 
-    ActiveCopy& operator[](size_t i) noexcept { return _v[i]; }
     const ActiveCopy& operator[](size_t i) const noexcept { return _v[i]; }
     [[nodiscard]] bool contains(uint16_t) const noexcept;
     [[nodiscard]] bool empty() const noexcept { return _v.empty(); }

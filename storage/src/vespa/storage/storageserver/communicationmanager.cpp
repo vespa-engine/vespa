@@ -272,7 +272,8 @@ CommunicationManager::~CommunicationManager()
     LOG(debug, "Deleting link %s.", toString().c_str());
 }
 
-void CommunicationManager::onClose()
+void
+CommunicationManager::onClose()
 {
     // Avoid getting config during shutdown
     _configFetcher.reset();
@@ -328,7 +329,8 @@ CommunicationManager::configureMessageBusLimits(const CommunicationManagerConfig
                                   : cfg.mbusContentNodeMaxPendingSize);
 }
 
-void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig> config)
+void
+CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig> config)
 {
     // Only allow dynamic (live) reconfiguration of message bus limits.
     if (_mbus) {
@@ -494,8 +496,7 @@ CommunicationManager::sendMessageBusMessage(const std::shared_ptr<api::StorageCo
 }
 
 bool
-CommunicationManager::sendCommand(
-        const std::shared_ptr<api::StorageCommand> & msg)
+CommunicationManager::sendCommand(const std::shared_ptr<api::StorageCommand> & msg)
 {
     if (!msg->getAddress()) {
         LOGBP(warning, "Got command without address of type %s in CommunicationManager::sendCommand",
@@ -570,9 +571,8 @@ CommunicationManager::serializeNodeState(const api::GetNodeStateReply& gns, std:
 }
 
 void
-CommunicationManager::sendDirectRPCReply(
-        RPCRequestWrapper& request,
-        const std::shared_ptr<api::StorageReply>& reply)
+CommunicationManager::sendDirectRPCReply(RPCRequestWrapper& request,
+                                         const std::shared_ptr<api::StorageReply>& reply)
 {
     std::string_view requestName(request.getMethodName()); // TODO non-name based dispatch
     // TODO rework this entire dispatch mechanism :D
@@ -616,9 +616,8 @@ CommunicationManager::sendDirectRPCReply(
 }
 
 void
-CommunicationManager::sendMessageBusReply(
-        StorageTransportContext& context,
-        const std::shared_ptr<api::StorageReply>& reply)
+CommunicationManager::sendMessageBusReply(StorageTransportContext& context,
+                                          const std::shared_ptr<api::StorageReply>& reply)
 {
     // Using messagebus for communication.
     mbus::Reply::UP replyUP;
@@ -653,8 +652,7 @@ CommunicationManager::sendMessageBusReply(
 }
 
 bool
-CommunicationManager::sendReply(
-        const std::shared_ptr<api::StorageReply>& reply)
+CommunicationManager::sendReply(const std::shared_ptr<api::StorageReply>& reply)
 {
     // Relaxed load since we're not doing any dependent reads that aren't
     // already covered by some other form of explicit synchronization.

@@ -118,12 +118,23 @@ public:
     std::string toString() const;
 
     uint32_t getHighestDocumentCount() const noexcept;
-    uint32_t getHighestTotalDocumentSize() const noexcept;
     uint32_t getHighestMetaCount() const noexcept;
     uint32_t getHighestUsedFileSize() const noexcept;
-
+    struct Highest {
+        Highest() noexcept : _documentCount(0),_totalDocumentSize(0),_metaCount(0),_usedFileSize(0) {}
+        void update(const BucketCopy & n) noexcept {
+            _documentCount = std::max(_documentCount, n.getDocumentCount());
+            _totalDocumentSize = std::max(_totalDocumentSize, n.getTotalDocumentSize());
+            _metaCount = std::max(_metaCount, n.getMetaCount());
+            _usedFileSize = std::max(_usedFileSize, n.getUsedFileSize());
+        }
+        uint32_t _documentCount;
+        uint32_t _totalDocumentSize;
+        uint32_t _metaCount;
+        uint32_t _usedFileSize;
+    };
+    Highest getHighest() const noexcept;
     bool hasRecentlyCreatedEmptyCopy() const noexcept;
-
     bool operator==(const BucketInfoBase& other) const noexcept;
 };
 
