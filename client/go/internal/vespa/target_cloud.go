@@ -72,7 +72,9 @@ type logMessage struct {
 }
 
 // CloudTarget creates a Target for the Vespa Cloud or hosted Vespa platform.
-func CloudTarget(httpClient util.HTTPClient, apiAuth Authenticator, deploymentAuth Authenticator, apiOptions APIOptions, deploymentOptions CloudDeploymentOptions, logOptions LogOptions) (Target, error) {
+func CloudTarget(httpClient util.HTTPClient, apiAuth Authenticator, deploymentAuth Authenticator,
+	apiOptions APIOptions, deploymentOptions CloudDeploymentOptions,
+	logOptions LogOptions, retryInterval time.Duration) (Target, error) {
 	return &cloudTarget{
 		httpClient:        httpClient,
 		apiOptions:        apiOptions,
@@ -80,7 +82,7 @@ func CloudTarget(httpClient util.HTTPClient, apiAuth Authenticator, deploymentAu
 		logOptions:        logOptions,
 		apiAuth:           apiAuth,
 		deploymentAuth:    deploymentAuth,
-		retryInterval:     defaultRetryInterval,
+		retryInterval:     retryInterval,
 	}, nil
 }
 

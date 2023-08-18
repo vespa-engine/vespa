@@ -34,8 +34,6 @@ const (
 
 	// AnyDeployment waits for a deployment to converge on any generation
 	AnyDeployment int64 = -2
-
-	defaultRetryInterval = 2 * time.Second
 )
 
 var errWaitTimeout = errors.New("wait timed out")

@@ -19,7 +19,7 @@ import (
 
 func TestDeploy(t *testing.T) {
 	httpClient := mock.HTTPClient{}
-	target := LocalTarget(&httpClient, TLSOptions{})
+	target := LocalTarget(&httpClient, TLSOptions{}, 0)
 	appDir, _ := mock.ApplicationPackageDir(t, false, false)
 	opts := DeploymentOptions{
 		Target:             target,
@@ -170,7 +170,7 @@ func TestFindApplicationPackage(t *testing.T) {
 
 func TestDeactivate(t *testing.T) {
 	httpClient := mock.HTTPClient{}
-	target := LocalTarget(&httpClient, TLSOptions{})
+	target := LocalTarget(&httpClient, TLSOptions{}, 0)
 	opts := DeploymentOptions{Target: target}
 	require.Nil(t, Deactivate(opts))
 	assert.Equal(t, 1, len(httpClient.Requests))

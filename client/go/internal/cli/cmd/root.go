@@ -43,6 +43,13 @@ type CLI struct {
 	Stdout      io.Writer
 	Stderr      io.Writer
 
+	exec       executor
+	isTerminal func() bool
+	spinner    func(w io.Writer, message string, fn func() error) error
+
+	now           func() time.Time
+	retryInterval time.Duration
+
 	cmd     *cobra.Command
 	config  *Config
 	version version.Version
@@ -51,10 +58,6 @@ type CLI struct {
 	httpClientFactory func(timeout time.Duration) util.HTTPClient
 	auth0Factory      auth0Factory
 	ztsFactory        ztsFactory
-	exec              executor
-	isTerminal        func() bool
-	spinner           func(w io.Writer, message string, fn func() error) error
-	now               func() time.Time
 }
 
 // ErrCLI is an error returned to the user. It wraps an exit status, a regular error and optional hints for resolving
@@ -134,12 +137,15 @@ For detailed description of flags and configuration, see 'vespa help config'.
 		Stdout:      stdout,
 		Stderr:      stderr,
 
-		version:           version,
-		cmd:               cmd,
+		exec:          &execSubprocess{},
+		now:           time.Now,
+		retryInterval: 2 * time.Second,
+
+		version: version,
+		cmd:     cmd,
+
 		httpClient:        httpClientFactory(time.Second * 10),
 		httpClientFactory: httpClientFactory,
-		exec:              &execSubprocess{},
-		now:               time.Now,
 		auth0Factory: func(httpClient util.HTTPClient, options auth0.Options) (vespa.Authenticator, error) {
 			return auth0.NewClient(httpClient, options)
 		},
@@ -296,7 +302,7 @@ func (c *CLI) printSuccess(msg ...interface{}) {
 }
 
 func (c *CLI) printInfo(msg ...interface{}) {
-	fmt.Fprintln(c.Stderr, "Info:", fmt.Sprint(msg...))
+	fmt.Fprintln(c.Stderr, fmt.Sprint(msg...))
 }
 
 func (c *CLI) printDebug(msg ...interface{}) {
@@ -405,9 +411,9 @@ func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, er
 	}
 	switch targetType {
 	case vespa.TargetLocal:
-		return vespa.LocalTarget(c.httpClient, tlsOptions), nil
+		return vespa.LocalTarget(c.httpClient, tlsOptions, c.retryInterval), nil
 	case vespa.TargetCustom:
-		return vespa.CustomTarget(c.httpClient, customURL, tlsOptions), nil
+		return vespa.CustomTarget(c.httpClient, customURL, tlsOptions, c.retryInterval), nil
 	default:
 		return nil, fmt.Errorf("invalid custom target: %s", targetType)
 	}
@@ -489,7 +495,7 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL
 		Writer: c.Stdout,
 		Level:  vespa.LogLevel(logLevel),
 	}
-	return vespa.CloudTarget(c.httpClient, apiAuth, deploymentAuth, apiOptions, deploymentOptions, logOptions)
+	return vespa.CloudTarget(c.httpClient, apiAuth, deploymentAuth, apiOptions, deploymentOptions, logOptions, c.retryInterval)
 }
 
 // system returns the appropiate system for the target configured in this CLI.

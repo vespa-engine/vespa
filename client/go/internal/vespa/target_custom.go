@@ -35,24 +35,24 @@ type serviceInfo struct {
 }
 
 // LocalTarget creates a target for a Vespa platform running locally.
-func LocalTarget(httpClient util.HTTPClient, tlsOptions TLSOptions) Target {
+func LocalTarget(httpClient util.HTTPClient, tlsOptions TLSOptions, retryInterval time.Duration) Target {
 	return &customTarget{
 		targetType:    TargetLocal,
 		baseURL:       "http://127.0.0.1",
 		httpClient:    httpClient,
 		tlsOptions:    tlsOptions,
-		retryInterval: defaultRetryInterval,
+		retryInterval: retryInterval,
 	}
 }
 
 // CustomTarget creates a Target for a Vespa platform running at baseURL.
-func CustomTarget(httpClient util.HTTPClient, baseURL string, tlsOptions TLSOptions) Target {
+func CustomTarget(httpClient util.HTTPClient, baseURL string, tlsOptions TLSOptions, retryInterval time.Duration) Target {
 	return &customTarget{
 		targetType:    TargetCustom,
 		baseURL:       baseURL,
 		httpClient:    httpClient,
 		tlsOptions:    tlsOptions,
-		retryInterval: defaultRetryInterval,
+		retryInterval: retryInterval,
 	}
 }
 

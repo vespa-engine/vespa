@@ -3,7 +3,6 @@ package vespa
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -19,7 +18,7 @@ import (
 func TestLocalTarget(t *testing.T) {
 	// Local target uses discovery
 	client := &mock.HTTPClient{}
-	lt := LocalTarget(client, TLSOptions{})
+	lt := LocalTarget(client, TLSOptions{}, 0)
 	assertServiceURL(t, "http://127.0.0.1:19071", lt, "deploy")
 	for i := 0; i < 2; i++ {
 		response := `
@@ -67,31 +66,19 @@ func TestLocalTarget(t *testing.T) {
 	assertServiceURL(t, "http://127.0.0.1:8081", lt, "feed")
 }
 
-func setRetryInterval(target Target, interval time.Duration) {
-	switch t := target.(type) {
-	case *cloudTarget:
-		t.retryInterval = interval
-	case *customTarget:
-		t.retryInterval = interval
-	default:
-		panic(fmt.Sprintf("unexpected type %T", t))
-	}
-}
-
 func TestCustomTarget(t *testing.T) {
 	// Custom target always uses URL directly, without discovery
-	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42", TLSOptions{})
+	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42", TLSOptions{}, 0)
 	assertServiceURL(t, "http://192.0.2.42", ct, "deploy")
 	assertServiceURL(t, "http://192.0.2.42", ct, "")
-	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000", TLSOptions{})
+	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000", TLSOptions{}, 0)
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "deploy")
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "")
 }
 
 func TestCustomTargetWait(t *testing.T) {
 	client := &mock.HTTPClient{}
-	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{})
-	setRetryInterval(target, 0)
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0)
 	// Fails once
 	client.NextStatus(500)
 	assertService(t, true, target, "", 0)
@@ -107,7 +94,7 @@ func TestCustomTargetWait(t *testing.T) {
 
 func TestCustomTargetAwaitDeployment(t *testing.T) {
 	client := &mock.HTTPClient{}
-	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{})
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0)
 
 	// Not converged initially
 	_, err := target.AwaitDeployment(42, 0)
@@ -269,9 +256,9 @@ func createCloudTarget(t *testing.T, logWriter io.Writer) (Target, *mock.HTTPCli
 			},
 		},
 		LogOptions{Writer: logWriter},
+		0,
 	)
 	require.Nil(t, err)
-	setRetryInterval(target, 0)
 	return target, client
 }
 

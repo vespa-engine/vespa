@@ -149,7 +149,7 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 		return PrepareResult{}, err
 	}
 	var jsonResponse struct {
-		SessionID string                   `json:"session-id"`
+		SessionID string                   `json:"session-id"` // API returns ID as string
 		Log       []LogLinePrepareResponse `json:"log"`
 	}
 	jsonDec := json.NewDecoder(response.Body)
@@ -384,7 +384,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 	defer response.Body.Close()
 
 	var jsonResponse struct {
-		SessionID string `json:"session-id"` // Config server
+		SessionID string `json:"session-id"` // Config server. API returns ID as string
 		RunID     int64  `json:"run"`        // Controller
 
 		Log []LogLinePrepareResponse `json:"log"`

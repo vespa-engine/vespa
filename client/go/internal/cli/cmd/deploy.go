@@ -73,6 +73,9 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 					return err
 				}
 			}
+			if err := waitForDeployService(cli, target, timeout); err != nil {
+				return err
+			}
 			var result vespa.PrepareResult
 			if err := cli.spinner(cli.Stderr, "Uploading application package ...", func() error {
 				result, err = vespa.Deploy(opts)
@@ -84,7 +87,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			if opts.Target.IsCloud() {
 				cli.printSuccess("Triggered deployment of ", color.CyanString(pkg.Path), " with run ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
 			} else {
-				cli.printSuccess("Deployed ", color.CyanString(pkg.Path))
+				cli.printSuccess("Deployed ", color.CyanString(pkg.Path), " with session ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
 				printPrepareLog(cli.Stderr, result)
 			}
 			if opts.Target.IsCloud() {
@@ -158,6 +161,9 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 				return err
 			}
 			timeout := time.Duration(waitSecs) * time.Second
+			if err := waitForDeployService(cli, target, timeout); err != nil {
+				return err
+			}
 			opts := vespa.DeploymentOptions{Target: target, Timeout: timeout}
 			err = vespa.Activate(sessionID, opts)
 			if err != nil {
@@ -171,10 +177,23 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 	return cmd
 }
 
+func waitForDeployService(cli *CLI, target vespa.Target, timeout time.Duration) error {
+	if timeout == 0 {
+		return nil
+	}
+	s, err := target.DeployService(0)
+	if err != nil {
+		return err
+	}
+	cli.printInfo("Waiting up to ", color.CyanString(timeout.String()), " for ", s.Description(), " to become ready ...")
+	return s.Wait(timeout)
+}
+
 func waitForContainerServices(cli *CLI, target vespa.Target, sessionOrRunID int64, timeout time.Duration) error {
 	if timeout == 0 {
 		return nil
 	}
+	cli.printInfo("Waiting up to ", color.CyanString(timeout.String()), " for deployment to converge  ...")
 	if _, err := target.AwaitDeployment(sessionOrRunID, timeout); err != nil {
 		return err
 	}
