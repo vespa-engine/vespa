@@ -271,7 +271,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     private Metric.Context getMetricContext(ApplicationId applicationId, ZoneId zoneId) {
         return metric.createContext(Map.of(
-                "tenant", applicationId.tenant().value(),
+                "tenantName", applicationId.tenant().value(),
                 "applicationId", applicationId.toFullString(),
                 "zoneId", zoneId.value()
         ));
@@ -279,7 +279,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     private Metric.Context getMetricContext(ResourceSnapshot snapshot) {
         return metric.createContext(Map.of(
-                "tenant", snapshot.getApplicationId().tenant().value(),
+                "tenantName", snapshot.getApplicationId().tenant().value(),
                 "applicationId", snapshot.getApplicationId().toFullString(),
                 "zoneId", snapshot.getZoneId().value(),
                 "architecture", snapshot.resources().architecture()

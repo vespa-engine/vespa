@@ -81,7 +81,7 @@ public class ResourceMeterMaintainerTest {
         assertEquals(1.72,
                 (Double) metrics.getMetric(context ->
                                 z1.value().equals(context.get("zoneId")) &&
-                                        app1.tenant().value().equals(context.get("tenant")),
+                                        app1.tenant().value().equals(context.get("tenantName")),
                         "metering.cost.hourly").get(),
                 Double.MIN_VALUE);
     }
@@ -109,8 +109,8 @@ public class ResourceMeterMaintainerTest {
 
         assertEquals(tester.clock().millis() / 1000, metrics.getMetric("metering_last_reported"));
         assertEquals(2224.0d, (Double) metrics.getMetric("metering_total_reported"), Double.MIN_VALUE);
-        assertEquals(24d, (Double) metrics.getMetric(context -> "tenant1".equals(context.get("tenant")), "metering.vcpu").get(), Double.MIN_VALUE);
-        assertEquals(40d, (Double) metrics.getMetric(context -> "tenant2".equals(context.get("tenant")), "metering.vcpu").get(), Double.MIN_VALUE);
+        assertEquals(24d, (Double) metrics.getMetric(context -> "tenant1".equals(context.get("tenantName")), "metering.vcpu").get(), Double.MIN_VALUE);
+        assertEquals(40d, (Double) metrics.getMetric(context -> "tenant2".equals(context.get("tenantName")), "metering.vcpu").get(), Double.MIN_VALUE);
 
         // Metering is not refreshed
         assertFalse(resourceClient.hasRefreshedMaterializedView());
