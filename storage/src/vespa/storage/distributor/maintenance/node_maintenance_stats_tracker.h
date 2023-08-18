@@ -51,8 +51,23 @@ std::ostream& operator<<(std::ostream&, const NodeMaintenanceStats&);
 class NodeMaintenanceStatsTracker
 {
 public:
-    using BucketSpacesStats = vespalib::hash_map<document::BucketSpace, NodeMaintenanceStats, document::BucketSpace::hash>;
-    using PerNodeStats = vespalib::hash_map<uint16_t, BucketSpacesStats>;
+    class BucketSpaceAndNode {
+    public:
+        BucketSpaceAndNode(uint16_t node_in, document::BucketSpace bucketSpace_in) noexcept
+            : _bucketSpace(bucketSpace_in),
+              _node(node_in)
+        {}
+        uint32_t hash() const noexcept { return (uint32_t(_node) << 2) | (_bucketSpace.getId() & 0x3); }
+        bool operator == (const BucketSpaceAndNode & b) const noexcept {
+            return (_bucketSpace == b._bucketSpace) && (_node == b._node);
+        }
+        document::BucketSpace bucketSpace() const noexcept { return _bucketSpace; }
+        uint16_t node() const noexcept { return _node; }
+    private:
+        document::BucketSpace _bucketSpace;
+        uint16_t              _node;
+    };
+    using PerNodeStats = vespalib::hash_map<BucketSpaceAndNode, NodeMaintenanceStats>;
 
 private:
     PerNodeStats         _node_stats;

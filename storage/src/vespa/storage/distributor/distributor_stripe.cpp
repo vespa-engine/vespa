@@ -604,11 +604,9 @@ PerNodeBucketSpacesStats
 toBucketSpacesStats(const NodeMaintenanceStatsTracker &maintenanceStats)
 {
     PerNodeBucketSpacesStats result;
-    for (const auto &nodeEntry : maintenanceStats.perNodeStats()) {
-        for (const auto &bucketSpaceEntry : nodeEntry.second) {
-            auto bucketSpace = document::FixedBucketSpaces::to_string(bucketSpaceEntry.first);
-            result[nodeEntry.first][bucketSpace] = toBucketSpaceStats(bucketSpaceEntry.second);
-        }
+    for (const auto &entry : maintenanceStats.perNodeStats()) {
+        auto bucketSpace = document::FixedBucketSpaces::to_string(entry.first.bucketSpace());
+        result[entry.first.node()][bucketSpace] = toBucketSpaceStats(entry.second);
     }
     return result;
 }

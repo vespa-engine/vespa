@@ -9,35 +9,15 @@ namespace storage::distributor {
 
 const NodeMaintenanceStats NodeMaintenanceStatsTracker::_emptyNodeMaintenanceStats;
 
-namespace {
-
-void
-merge_bucket_spaces_stats(NodeMaintenanceStatsTracker::BucketSpacesStats& dest,
-                          const NodeMaintenanceStatsTracker::BucketSpacesStats& src)
-{
-    for (const auto& entry : src) {
-        auto bucket_space = entry.first;
-        dest[bucket_space].merge(entry.second);
-    }
-}
-
-}
-
 NodeMaintenanceStats &
 NodeMaintenanceStatsTracker::stats(uint16_t node, document::BucketSpace bucketSpace) {
-    return _node_stats[node][bucketSpace];
+    return _node_stats[BucketSpaceAndNode(node, bucketSpace)];
 }
 
 const NodeMaintenanceStats &
 NodeMaintenanceStatsTracker::stats(uint16_t node, document::BucketSpace bucketSpace) const noexcept {
-    auto nodeItr = _node_stats.find(node);
-    if (nodeItr != _node_stats.end()) {
-        auto bucketSpaceItr = nodeItr->second.find(bucketSpace);
-        if (bucketSpaceItr != nodeItr->second.end()) {
-            return bucketSpaceItr->second;
-        }
-    }
-    return _emptyNodeMaintenanceStats;
+    auto nodeItr = _node_stats.find(BucketSpaceAndNode(node, bucketSpace));
+    return (nodeItr != _node_stats.end()) ? nodeItr->second : _emptyNodeMaintenanceStats;
 }
 
 const NodeMaintenanceStats&
@@ -55,8 +35,8 @@ void
 NodeMaintenanceStatsTracker::merge(const NodeMaintenanceStatsTracker& rhs)
 {
     for (const auto& entry : rhs._node_stats) {
-        auto node_index = entry.first;
-        merge_bucket_spaces_stats(_node_stats[node_index], entry.second);
+        auto key = entry.first;
+        _node_stats[key].merge(entry.second);
     }
     _max_observed_time_since_last_gc = std::max(_max_observed_time_since_last_gc,
                                                 rhs._max_observed_time_since_last_gc);
