@@ -361,7 +361,7 @@ public class SessionZooKeeperClient {
         transaction.commit();
     }
 
-    static Path getSessionPath(TenantName tenantName, long sessionId) {
+    public static Path getSessionPath(TenantName tenantName, long sessionId) {
         return TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId));
     }
 }
