@@ -52,7 +52,7 @@ most to least preferred:
 3. Global config value
 4. Default value
 
-The following flags/options can be configured:
+The following global flags/options can be configured:
 
 application
 
@@ -95,13 +95,6 @@ e.g. vespa deploy or vespa query. Possible values are:
 - cloud: Connect to Vespa Cloud
 - hosted: Connect to hosted Vespa (internal platform)
 - *url*: Connect to a platform running at given URL.
-
-wait
-
-Specifies the number of seconds to wait for a service to become ready or
-deployment to complete. Use this to have a potentially long-running command
-block until the operation is complete, e.g. with vespa deploy. Defaults to 0
-(no waiting)
 
 zone
 

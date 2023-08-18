@@ -283,7 +283,7 @@ func (c *CLI) configureCommands() {
 }
 
 func (c *CLI) bindWaitFlag(cmd *cobra.Command, defaultSecs int, value *int) {
-	desc := "Number of seconds to wait for a service to become ready. 0 to disable"
+	desc := "Number of seconds to wait for service(s) to become ready. 0 to disable"
 	if defaultSecs == 0 {
 		desc += " (default 0)"
 	}
