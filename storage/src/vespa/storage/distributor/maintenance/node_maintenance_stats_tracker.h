@@ -61,6 +61,8 @@ private:
 
     static const NodeMaintenanceStats _emptyNodeMaintenanceStats;
 
+    NodeMaintenanceStats & stats(uint16_t node, document::BucketSpace bucketSpace);
+    const NodeMaintenanceStats & stats(uint16_t node, document::BucketSpace bucketSpace) const noexcept;
 public:
     NodeMaintenanceStatsTracker() noexcept;
     NodeMaintenanceStatsTracker(NodeMaintenanceStatsTracker &&) noexcept;
@@ -70,15 +72,30 @@ public:
     void reset(size_t nodes);
     size_t numNodes() const { return _node_stats.size(); }
 
-    void incMovingOut(uint16_t node, document::BucketSpace bucketSpace);
+    void incMovingOut(uint16_t node, document::BucketSpace bucketSpace) {
+        ++stats(node, bucketSpace).movingOut;
+        ++_total_stats.movingOut;
+    }
 
-    void incSyncing(uint16_t node, document::BucketSpace bucketSpace);
+    void incSyncing(uint16_t node, document::BucketSpace bucketSpace) {
+        ++stats(node, bucketSpace).syncing;
+        ++_total_stats.syncing;
+    }
 
-    void incCopyingIn(uint16_t node, document::BucketSpace bucketSpace);
+    void incCopyingIn(uint16_t node, document::BucketSpace bucketSpace) {
+        ++stats(node, bucketSpace).copyingIn;
+        ++_total_stats.copyingIn;
+    }
 
-    void incCopyingOut(uint16_t node, document::BucketSpace bucketSpace);
+    void incCopyingOut(uint16_t node, document::BucketSpace bucketSpace) {
+        ++stats(node, bucketSpace).copyingOut;
+        ++_total_stats.copyingOut;
+    }
 
-    void incTotal(uint16_t node, document::BucketSpace bucketSpace);
+    void incTotal(uint16_t node, document::BucketSpace bucketSpace) {
+        ++stats(node, bucketSpace).total;
+        ++_total_stats.total;
+    }
 
     void update_observed_time_since_last_gc(vespalib::duration time_since_gc) noexcept {
         _max_observed_time_since_last_gc = std::max(time_since_gc, _max_observed_time_since_last_gc);
@@ -88,7 +105,7 @@ public:
      * Returned statistics for a given node index and bucket space, or all zero statistics
      * if none have been recorded yet
      */
-    const NodeMaintenanceStats& forNode(uint16_t node, document::BucketSpace bucketSpace) const;
+    const NodeMaintenanceStats& forNode(uint16_t node, document::BucketSpace bucketSpace) const noexcept;
 
     const PerNodeStats& perNodeStats() const noexcept {
         return _node_stats;

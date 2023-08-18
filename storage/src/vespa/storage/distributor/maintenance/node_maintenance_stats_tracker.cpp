@@ -23,38 +23,13 @@ merge_bucket_spaces_stats(NodeMaintenanceStatsTracker::BucketSpacesStats& dest,
 
 }
 
-void
-NodeMaintenanceStatsTracker::incMovingOut(uint16_t node, document::BucketSpace bucketSpace) {
-    ++_node_stats[node][bucketSpace].movingOut;
-    ++_total_stats.movingOut;
+NodeMaintenanceStats &
+NodeMaintenanceStatsTracker::stats(uint16_t node, document::BucketSpace bucketSpace) {
+    return _node_stats[node][bucketSpace];
 }
 
-void
-NodeMaintenanceStatsTracker::incSyncing(uint16_t node, document::BucketSpace bucketSpace) {
-    ++_node_stats[node][bucketSpace].syncing;
-    ++_total_stats.syncing;
-}
-
-void
-NodeMaintenanceStatsTracker::incCopyingIn(uint16_t node, document::BucketSpace bucketSpace) {
-    ++_node_stats[node][bucketSpace].copyingIn;
-    ++_total_stats.copyingIn;
-}
-
-void
-NodeMaintenanceStatsTracker::incCopyingOut(uint16_t node, document::BucketSpace bucketSpace) {
-    ++_node_stats[node][bucketSpace].copyingOut;
-    ++_total_stats.copyingOut;
-}
-
-void
-NodeMaintenanceStatsTracker::NodeMaintenanceStatsTracker::incTotal(uint16_t node, document::BucketSpace bucketSpace) {
-    ++_node_stats[node][bucketSpace].total;
-    ++_total_stats.total;
-}
-
-const NodeMaintenanceStats&
-NodeMaintenanceStatsTracker::forNode(uint16_t node, document::BucketSpace bucketSpace) const {
+const NodeMaintenanceStats &
+NodeMaintenanceStatsTracker::stats(uint16_t node, document::BucketSpace bucketSpace) const noexcept {
     auto nodeItr = _node_stats.find(node);
     if (nodeItr != _node_stats.end()) {
         auto bucketSpaceItr = nodeItr->second.find(bucketSpace);
@@ -63,6 +38,11 @@ NodeMaintenanceStatsTracker::forNode(uint16_t node, document::BucketSpace bucket
         }
     }
     return _emptyNodeMaintenanceStats;
+}
+
+const NodeMaintenanceStats&
+NodeMaintenanceStatsTracker::forNode(uint16_t node, document::BucketSpace bucketSpace) const noexcept {
+    return stats(node, bucketSpace);
 }
 
 bool
