@@ -550,24 +550,8 @@ consistentApartFromEmptyBucketsInNonIdealLocationAndInvalidEntries(ConstNodesRef
 class MergeNodes
 {
 public:
-    MergeNodes() noexcept
-        : _reason(),
-          _nodes(),
-          _problemFlags(0),
-          _priority(255)
-    {}
-
-    explicit MergeNodes(const BucketDatabase::Entry& entry)
-        : _reason(),
-          _nodes(),
-          _problemFlags(0),
-          _priority(255)
-    {
-        _nodes.reserve(entry->getNodeCount());
-        for (uint16_t i = 0; i < entry->getNodeCount(); i++) {
-            addNode(entry->getNodeRef(i).getNode());
-        }
-    }
+    MergeNodes() noexcept;
+    explicit MergeNodes(const BucketDatabase::Entry& entry);
     MergeNodes(MergeNodes && rhs) noexcept = default;
     MergeNodes & operator =(MergeNodes && rhs) noexcept = delete;
     MergeNodes(const MergeNodes & rhs) = delete;
@@ -575,36 +559,14 @@ public:
 
     ~MergeNodes();
 
-    void operator+=(const MergeNodes& other) {
-        _reason << other._reason.str();
-        _problemFlags |= other._problemFlags;
-        _nodes.insert(_nodes.end(), other._nodes.begin(), other._nodes.end());
-        updatePriority(other._priority);
-    }
-
     bool shouldMerge() const noexcept {
         return _problemFlags != 0;
     }
 
-    void markMoveToIdealLocation(uint16_t node, uint8_t msgPriority) {
-        _reason << "[Moving bucket to ideal node " << node << "]";
-        addProblem(NON_IDEAL_LOCATION);
-        addNode(node);
-        updatePriority(msgPriority);
-    }
-
-    void markOutOfSync(const StateChecker::Context& c, uint8_t msgPriority) {
-        _reason << "[Synchronizing buckets with different checksums " << c.entry->toString() << "]";
-        addProblem(OUT_OF_SYNC);
-        updatePriority(msgPriority);
-    }
-
-    void markMissingReplica(uint16_t node, uint8_t msgPriority) {
-        _reason << "[Adding missing node " << node << "]";
-        addProblem(MISSING_REPLICA);
-        addNode(node);
-        updatePriority(msgPriority);
-    }
+    void operator+=(const MergeNodes& other);
+    void markMoveToIdealLocation(uint16_t node, uint8_t msgPriority);
+    void markOutOfSync(const StateChecker::Context& c, uint8_t msgPriority);
+    void markMissingReplica(uint16_t node, uint8_t msgPriority);
 
     bool needsMoveOnly() const noexcept {
         return _problemFlags == NON_IDEAL_LOCATION;
@@ -638,7 +600,59 @@ private:
     uint8_t               _priority;
 };
 
+MergeNodes::MergeNodes() noexcept
+    : _reason(),
+      _nodes(),
+      _problemFlags(0),
+      _priority(255)
+{}
+
+MergeNodes::MergeNodes(const BucketDatabase::Entry& entry)
+    : _reason(),
+      _nodes(),
+      _problemFlags(0),
+      _priority(255)
+{
+    _nodes.reserve(entry->getNodeCount());
+    for (uint16_t i = 0; i < entry->getNodeCount(); i++) {
+        addNode(entry->getNodeRef(i).getNode());
+    }
+}
+
 MergeNodes::~MergeNodes() = default;
+
+
+void
+MergeNodes::operator+=(const MergeNodes& other) {
+    _reason << other._reason.str();
+    _problemFlags |= other._problemFlags;
+    _nodes.reserve(_nodes.size() + other._nodes.size());
+    _nodes.insert(_nodes.end(), other._nodes.begin(), other._nodes.end());
+    updatePriority(other._priority);
+}
+
+void
+MergeNodes::markMoveToIdealLocation(uint16_t node, uint8_t msgPriority) {
+    _reason << "[Moving bucket to ideal node " << node << "]";
+    addProblem(NON_IDEAL_LOCATION);
+    addNode(node);
+    updatePriority(msgPriority);
+}
+
+void
+MergeNodes::markOutOfSync(const StateChecker::Context& c, uint8_t msgPriority) {
+    _reason << "[Synchronizing buckets with different checksums " << c.entry->toString() << "]";
+    addProblem(OUT_OF_SYNC);
+    updatePriority(msgPriority);
+}
+
+void
+MergeNodes::markMissingReplica(uint16_t node, uint8_t msgPriority) {
+    _reason << "[Adding missing node " << node << "]";
+    addProblem(MISSING_REPLICA);
+    addNode(node);
+    updatePriority(msgPriority);
+}
 
 bool
 presentInIdealState(const StateChecker::Context& c, uint16_t node) noexcept
@@ -665,6 +679,9 @@ addStatisticsForNonIdealNodes(const StateChecker::Context& c, bool missingReplic
         }
     }
 }
+
+MergeNodes checkForNodesMissingFromIdealState(StateChecker::Context& c) __attribute__((noinline));
+MergeNodes checkIfBucketsAreOutOfSyncAndNeedMerging(StateChecker::Context& c) __attribute__((noinline));
 
 MergeNodes
 checkForNodesMissingFromIdealState(StateChecker::Context& c)
