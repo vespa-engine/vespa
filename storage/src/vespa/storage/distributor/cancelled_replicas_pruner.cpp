@@ -4,6 +4,9 @@
 namespace storage::distributor {
 
 std::vector<BucketCopy> prune_cancelled_nodes(std::span<const BucketCopy> replicas, const CancelScope& cancel_scope) {
+    if (cancel_scope.fully_cancelled()) {
+        return {};
+    }
     std::vector<BucketCopy> pruned_replicas;
     // Expect that there will be an input entry for each cancelled node in the common case.
     pruned_replicas.reserve((replicas.size() >= cancel_scope.cancelled_nodes().size())
