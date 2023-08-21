@@ -148,7 +148,7 @@ public class OsUpgradeSchedulerTest {
     }
 
     @Test
-    void schedule_stable_release() {
+    void schedule_latest_release() {
         ControllerTester tester = new ControllerTester();
         OsUpgradeScheduler scheduler = new OsUpgradeScheduler(tester.controller(), Duration.ofDays(1));
         Instant t0 = Instant.parse("2021-06-22T00:42:12.00Z"); // Outside trigger period
@@ -161,7 +161,7 @@ public class OsUpgradeSchedulerTest {
 
         // Stable release (tagged outside trigger period) is scheduled once trigger period opens
         Version version1 = Version.fromString("8.1");
-        tester.serviceRegistry().artifactRepository().addRelease(new OsRelease(version1, OsRelease.Tag.stable,
+        tester.serviceRegistry().artifactRepository().addRelease(new OsRelease(version1, OsRelease.Tag.latest,
                                                                                Instant.parse("2021-06-21T23:59:00.00Z")));
         scheduleUpgradeAfter(Duration.ZERO, version0, scheduler, tester);
 
