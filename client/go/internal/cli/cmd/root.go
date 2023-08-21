@@ -275,6 +275,7 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(newVersionCmd(c))            // version
 	rootCmd.AddCommand(newVisitCmd(c))              // visit
 	rootCmd.AddCommand(newFeedCmd(c))               // feed
+	rootCmd.AddCommand(newToolkitCmd(c))            // toolkit
 }
 
 func (c *CLI) bindWaitFlag(cmd *cobra.Command, defaultSecs int, value *int) {
