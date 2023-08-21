@@ -37,24 +37,26 @@ $ vespa status --cluster mycluster`,
 			if err != nil {
 				return err
 			}
+			waiter := cli.waiter(true, time.Duration(waitSecs)*time.Second)
 			if cluster == "" {
-				timeout := time.Duration(waitSecs) * time.Second
-				services, err := cli.services(t, timeout)
+				services, err := waiter.Services(t)
 				if err != nil {
 					return err
 				}
 				if len(services) == 0 {
 					return errHint(fmt.Errorf("no services exist"), "Deployment may not be ready yet", "Try 'vespa status deployment'")
 				}
-				for _, service := range services {
-					if err := printServiceStatus(service, service.Wait(timeout), cli); err != nil {
-						return err
-					}
+				for _, s := range services {
+					printReadyService(s, cli)
 				}
 				return nil
 			} else {
-				s, err := cli.service(t, cluster, 0)
-				return printServiceStatus(s, err, cli)
+				s, err := waiter.Service(t, cluster)
+				if err != nil {
+					return err
+				}
+				printReadyService(s, cli)
+				return nil
 			}
 		},
 	}
@@ -76,11 +78,13 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			s, err := t.DeployService(0)
+			waiter := cli.waiter(true, time.Duration(waitSecs)*time.Second)
+			s, err := waiter.DeployService(t)
 			if err != nil {
 				return err
 			}
-			return printServiceStatus(s, s.Wait(time.Duration(waitSecs)*time.Second), cli)
+			printReadyService(s, cli)
+			return nil
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
@@ -112,11 +116,8 @@ $ vespa status deployment -t local [session-id]
 			if err != nil {
 				return err
 			}
-			timeout := time.Duration(waitSecs) * time.Second
-			if timeout > 0 {
-				cli.printInfo("Waiting up to ", color.CyanString(timeout.String()), " for deployment to converge ...")
-			}
-			id, err := t.AwaitDeployment(wantedID, timeout)
+			waiter := cli.waiter(true, time.Duration(waitSecs)*time.Second)
+			id, err := waiter.Deployment(t, wantedID)
 			if err != nil {
 				return err
 			}
@@ -137,12 +138,8 @@ $ vespa status deployment -t local [session-id]
 	return cmd
 }
 
-func printServiceStatus(s *vespa.Service, waitErr error, cli *CLI) error {
-	if waitErr != nil {
-		return waitErr
-	}
+func printReadyService(s *vespa.Service, cli *CLI) {
 	desc := s.Description()
 	desc = strings.ToUpper(string(desc[0])) + string(desc[1:])
 	log.Print(desc, " at ", color.CyanString(s.BaseURL), " is ", color.GreenString("ready"))
-	return nil
 }

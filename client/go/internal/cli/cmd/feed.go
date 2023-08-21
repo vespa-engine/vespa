@@ -107,8 +107,9 @@ func createServices(n int, timeout time.Duration, waitSecs int, cli *CLI) ([]uti
 	}
 	services := make([]util.HTTPClient, 0, n)
 	baseURL := ""
+	waiter := cli.waiter(false, time.Duration(waitSecs)*time.Second)
 	for i := 0; i < n; i++ {
-		service, err := cli.service(target, cli.config.cluster(), time.Duration(waitSecs)*time.Second)
+		service, err := waiter.Service(target, cli.config.cluster())
 		if err != nil {
 			return nil, "", err
 		}

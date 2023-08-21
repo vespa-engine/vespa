@@ -79,7 +79,7 @@ func (t *customTarget) newService(url, name string, deployAPI bool) *Service {
 	}
 }
 
-func (t *customTarget) DeployService(timeout time.Duration) (*Service, error) {
+func (t *customTarget) DeployService() (*Service, error) {
 	if t.targetType == TargetCustom {
 		return t.newService(t.baseURL, "", true), nil
 	}
@@ -87,13 +87,7 @@ func (t *customTarget) DeployService(timeout time.Duration) (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	service := t.newService(u.String(), "", true)
-	if timeout > 0 {
-		if err := service.Wait(timeout); err != nil {
-			return nil, err
-		}
-	}
-	return service, nil
+	return t.newService(u.String(), "", true), nil
 }
 
 func (t *customTarget) ContainerServices(timeout time.Duration) ([]*Service, error) {
@@ -149,7 +143,7 @@ func (t *customTarget) urlWithPort(port int) (*url.URL, error) {
 }
 
 func (t *customTarget) serviceStatus(wantedGeneration int64, timeout time.Duration) (serviceStatus, error) {
-	deployService, err := t.DeployService(0)
+	deployService, err := t.DeployService()
 	if err != nil {
 		return serviceStatus{}, err
 	}

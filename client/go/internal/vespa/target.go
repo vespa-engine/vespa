@@ -67,9 +67,8 @@ type Target interface {
 	// Deployment returns the deployment managed by this target.
 	Deployment() Deployment
 
-	// DeployService returns the service to use for deployments. If timeout is positive, wait for the service to become
-	// ready.
-	DeployService(timeout time.Duration) (*Service, error)
+	// DeployService returns the service providing the deploy API on this target.
+	DeployService() (*Service, error)
 
 	// ContainerServices returns all container services of the current deployment. If timeout is positive, wait for
 	// services to be discovered.

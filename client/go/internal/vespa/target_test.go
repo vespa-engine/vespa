@@ -265,7 +265,7 @@ func createCloudTarget(t *testing.T, logWriter io.Writer) (Target, *mock.HTTPCli
 func getService(t *testing.T, target Target, name string) (*Service, error) {
 	t.Helper()
 	if name == "deploy" {
-		return target.DeployService(0)
+		return target.DeployService()
 	}
 	services, err := target.ContainerServices(0)
 	require.Nil(t, err)

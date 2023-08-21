@@ -74,7 +74,6 @@ func TestDeployWait(t *testing.T) {
 	client.NextStatus(500)
 	// ... then becomes healthy
 	client.NextStatus(200)
-	client.NextStatus(200)
 	// Deployment succeeds
 	client.NextResponse(mock.HTTPResponse{
 		URI:    "/application/v2/tenant/default/prepareandactivate",

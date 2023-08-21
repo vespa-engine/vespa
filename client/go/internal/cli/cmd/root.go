@@ -343,6 +343,10 @@ func (c *CLI) confirm(question string, confirmByDefault bool) (bool, error) {
 	}
 }
 
+func (c *CLI) waiter(once bool, timeout time.Duration) *Waiter {
+	return &Waiter{Once: once, Timeout: timeout, cli: c}
+}
+
 // target creates a target according the configuration of this CLI and given opts.
 func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
 	targetType, err := c.targetType()
@@ -511,40 +515,6 @@ func (c *CLI) system(targetType string) (vespa.System, error) {
 		return vespa.PublicSystem, nil
 	}
 	return vespa.System{}, fmt.Errorf("no default system found for %s target", targetType)
-}
-
-// service returns the service identified by cluster ID, located at target. If timeout is positive, this waits for the
-// service to become ready.
-func (c *CLI) service(target vespa.Target, cluster string, timeout time.Duration) (*vespa.Service, error) {
-	targetType, err := c.targetType()
-	if err != nil {
-		return nil, err
-	}
-	if targetType.url != "" && cluster != "" {
-		return nil, fmt.Errorf("cluster cannot be specified when target is an URL")
-	}
-	services, err := c.services(target, timeout)
-	if err != nil {
-		return nil, err
-	}
-	service, err := vespa.FindService(cluster, services)
-	if err != nil {
-		return nil, errHint(err, "The --cluster option specifies the service to use")
-	}
-	if timeout > 0 {
-		c.printInfo("Waiting up to ", color.CyanString(timeout.String()), " for ", color.CyanString(service.Description()), " to become available ...")
-		if err := service.Wait(timeout); err != nil {
-			return nil, err
-		}
-	}
-	return service, nil
-}
-
-func (c *CLI) services(target vespa.Target, timeout time.Duration) ([]*vespa.Service, error) {
-	if timeout > 0 {
-		c.printInfo("Waiting up to ", color.CyanString(timeout.String()), " for cluster discovery ...")
-	}
-	return target.ContainerServices(timeout)
 }
 
 // isCI returns true if running inside a continuous integration environment.

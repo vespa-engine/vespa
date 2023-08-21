@@ -98,21 +98,15 @@ func (t *cloudTarget) IsCloud() bool { return true }
 
 func (t *cloudTarget) Deployment() Deployment { return t.deploymentOptions.Deployment }
 
-func (t *cloudTarget) DeployService(timeout time.Duration) (*Service, error) {
-	service := &Service{
+func (t *cloudTarget) DeployService() (*Service, error) {
+	return &Service{
 		BaseURL:       t.apiOptions.System.URL,
 		TLSOptions:    t.apiOptions.TLSOptions,
 		deployAPI:     true,
 		httpClient:    t.httpClient,
 		auth:          t.apiAuth,
 		retryInterval: t.retryInterval,
-	}
-	if timeout > 0 {
-		if err := service.Wait(timeout); err != nil {
-			return nil, err
-		}
-	}
-	return service, nil
+	}, nil
 }
 
 func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, error) {
@@ -160,7 +154,7 @@ func (t *cloudTarget) CheckVersion(clientVersion version.Version) error {
 	if err != nil {
 		return err
 	}
-	deployService, err := t.DeployService(0)
+	deployService, err := t.DeployService()
 	if err != nil {
 		return err
 	}
@@ -244,7 +238,7 @@ func (t *cloudTarget) PrintLog(options LogOptions) error {
 }
 
 func (t *cloudTarget) deployServiceWait(fn responseFunc, reqFn requestFunc, timeout time.Duration) (int, error) {
-	deployService, err := t.DeployService(0)
+	deployService, err := t.DeployService()
 	if err != nil {
 		return 0, err
 	}
