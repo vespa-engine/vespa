@@ -153,6 +153,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         builder.consumer.addAll(generateConsumers(amendedVespaConsumer, getUserMetricsConsumers(), getZone().system()));
 
         builder.consumer.add(toConsumerBuilder(MetricsConsumer.defaultConsumer));
+        builder.consumer.add(toConsumerBuilder(MetricsConsumer.newDefaultConsumer));
     }
 
     @Override

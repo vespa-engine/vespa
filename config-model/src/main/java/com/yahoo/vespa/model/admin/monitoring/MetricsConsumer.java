@@ -30,11 +30,17 @@ public class MetricsConsumer {
     // See also ConsumersConfigGenerator and MetricsBuilder where these must be enumerated
     public static final MetricsConsumer vespa =
             consumer(VespaMetrics.vespaMetricsConsumerId.id, vespaMetricSet, systemMetricSet, networkMetricSet);
+
     public static final MetricsConsumer defaultConsumer =
             consumer(ValuesFetcher.defaultMetricsConsumerId.id, defaultMetricSet, systemMetricSet);
+
+    public static final MetricsConsumer newDefaultConsumer =
+            consumer("new-default", defaultMetricSet, systemMetricSet);
+
     // Referenced from com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsFetcher
     public static final MetricsConsumer autoscaling =
             consumer("autoscaling", autoscalingMetricSet);
+
     public static final MetricsConsumer vespaCloud =
             consumer("vespa-cloud", vespaMetricSet, systemMetricSet, networkMetricSet);
 
