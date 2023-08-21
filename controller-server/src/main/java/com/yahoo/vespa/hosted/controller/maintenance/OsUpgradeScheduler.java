@@ -160,15 +160,10 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
         @Override
         public Change change(Version currentVersion, Instant instant) {
-            OsRelease release = artifactRepository.osRelease(currentVersion.getMajor(), tag());
+            OsRelease release = artifactRepository.osRelease(currentVersion.getMajor(), OsRelease.Tag.latest);
             Duration cooldown = remainingCooldownOf(cooldown(), release.age(instant));
             Instant scheduleAt = schedulingInstant(instant.plus(cooldown), system);
             return new Change(new OsVersion(release.version(), cloud), scheduleAt);
-        }
-
-        /** Returns the release tag tracked by this system */
-        private OsRelease.Tag tag() {
-            return system.isCd() ? OsRelease.Tag.latest : OsRelease.Tag.stable;
         }
 
         /** The cool-down period that must pass before a release can be used */
