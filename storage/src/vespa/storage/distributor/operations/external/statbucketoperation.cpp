@@ -4,6 +4,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operations.external.stat_bucket");

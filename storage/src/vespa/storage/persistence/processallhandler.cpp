@@ -8,6 +8,7 @@
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.processall");

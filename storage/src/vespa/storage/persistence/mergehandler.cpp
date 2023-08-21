@@ -15,6 +15,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <algorithm>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.mergehandler");
