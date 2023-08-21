@@ -18,8 +18,11 @@ import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
+import static com.yahoo.slime.SlimeUtils.optionalString;
 
 /**
  * Data class for session information, typically parameters supplied in a deployment request that needs
@@ -30,6 +33,7 @@ import java.util.Optional;
 public record SessionData(ApplicationId applicationId,
                           Optional<FileReference> applicationPackageReference,
                           Version version,
+                          Instant created,
                           Optional<DockerImage> dockerImageRepository,
                           Optional<AthenzDomain> athenzDomain,
                           Optional<Quota> quota,
@@ -67,7 +71,7 @@ public record SessionData(ApplicationId applicationId,
         object.setString(APPLICATION_ID_PATH, applicationId.serializedForm());
         applicationPackageReference.ifPresent(ref -> object.setString(APPLICATION_PACKAGE_REFERENCE_PATH, ref.value()));
         object.setString(VERSION_PATH, version.toString());
-        object.setLong(CREATE_TIME_PATH, System.currentTimeMillis());
+        object.setLong(CREATE_TIME_PATH, created.toEpochMilli());
         dockerImageRepository.ifPresent(image -> object.setString(DOCKER_IMAGE_REPOSITORY_PATH, image.asString()));
         athenzDomain.ifPresent(domain -> object.setString(ATHENZ_DOMAIN, domain.value()));
         quota.ifPresent(q -> q.toSlime(object.setObject(QUOTA_PATH)));
@@ -82,6 +86,23 @@ public record SessionData(ApplicationId applicationId,
 
         Cursor dataplaneTokensArray = object.setArray(DATAPLANE_TOKENS_PATH);
         DataplaneTokenSerializer.toSlime(dataplaneTokens, dataplaneTokensArray);
+    }
+
+    static SessionData fromSlime(Slime slime) {
+        Cursor cursor = slime.get();
+        return new SessionData(ApplicationId.fromSerializedForm(cursor.field(APPLICATION_ID_PATH).asString()),
+                               optionalString(cursor.field(APPLICATION_PACKAGE_REFERENCE_PATH)).map(FileReference::new),
+                               Version.fromString(cursor.field(VERSION_PATH).asString()),
+                               Instant.ofEpochMilli(cursor.field(CREATE_TIME_PATH).asLong()),
+                               optionalString(cursor.field(DOCKER_IMAGE_REPOSITORY_PATH)).map(DockerImage::fromString),
+                               optionalString(cursor.field(ATHENZ_DOMAIN)).map(AthenzDomain::from),
+                               SlimeUtils.isPresent(cursor.field(QUOTA_PATH))
+                                       ? Optional.of(Quota.fromSlime(cursor.field(QUOTA_PATH)))
+                                       : Optional.empty(),
+                               TenantSecretStoreSerializer.listFromSlime(cursor.field(TENANT_SECRET_STORES_PATH)),
+                               OperatorCertificateSerializer.fromSlime(cursor.field(OPERATOR_CERTIFICATES_PATH)),
+                               optionalString(cursor.field(CLOUD_ACCOUNT_PATH)).map(CloudAccount::from),
+                               DataplaneTokenSerializer.fromSlime(cursor.field(DATAPLANE_TOKENS_PATH)));
     }
 
 }

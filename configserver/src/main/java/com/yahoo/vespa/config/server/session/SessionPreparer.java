@@ -339,6 +339,7 @@ public class SessionPreparer {
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
                                   applicationId,
+                                  sessionZooKeeperClient.readCreateTime(),
                                   Optional.of(filereference),
                                   dockerImageRepository,
                                   vespaVersion,
@@ -381,6 +382,7 @@ public class SessionPreparer {
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
                                        ApplicationPackage applicationPackage,
                                        ApplicationId applicationId,
+                                       Instant created,
                                        Optional<FileReference> fileReference,
                                        Optional<DockerImage> dockerImageRepository,
                                        Version vespaVersion,
@@ -398,6 +400,7 @@ public class SessionPreparer {
             zooKeeperDeplyer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             new SessionSerializer().write(zooKeeperClient,
                                           applicationId,
+                                          created,
                                           fileReference,
                                           dockerImageRepository,
                                           vespaVersion,

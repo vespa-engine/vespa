@@ -60,4 +60,5 @@ public class TenantSecretStoreSerializer {
         inspector.traverse(((ArrayTraverser)(idx, store) -> tenantSecretStores.add(fromSlime(store))));
         return tenantSecretStores;
     }
+
 }
