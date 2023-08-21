@@ -5,19 +5,19 @@ namespace storage::distributor {
 
 CancelScope::CancelScope()
     : _cancelled_nodes(),
-      _ownership_lost(false)
+      _fully_cancelled(false)
 {
 }
 
-CancelScope::CancelScope(ownership_change_ctor_tag) noexcept
+CancelScope::CancelScope(fully_cancelled_ctor_tag) noexcept
     : _cancelled_nodes(),
-      _ownership_lost(true)
+      _fully_cancelled(true)
 {
 }
 
 CancelScope::CancelScope(CancelledNodeSet nodes) noexcept
     : _cancelled_nodes(std::move(nodes)),
-      _ownership_lost(false)
+      _fully_cancelled(false)
 {
 }
 
@@ -34,7 +34,7 @@ void CancelScope::add_cancelled_node(uint16_t node) {
 }
 
 void CancelScope::merge(const CancelScope& other) {
-    _ownership_lost |= other._ownership_lost;
+    _fully_cancelled |= other._fully_cancelled;
     // Not using iterator insert(first, last) since that explicitly resizes,
     for (uint16_t node : other._cancelled_nodes) {
         _cancelled_nodes.insert(node);
@@ -42,7 +42,7 @@ void CancelScope::merge(const CancelScope& other) {
 }
 
 CancelScope CancelScope::of_fully_cancelled() noexcept {
-    return CancelScope(ownership_change_ctor_tag{});
+    return CancelScope(fully_cancelled_ctor_tag{});
 }
 
 CancelScope CancelScope::of_node_subset(CancelledNodeSet nodes) noexcept {
