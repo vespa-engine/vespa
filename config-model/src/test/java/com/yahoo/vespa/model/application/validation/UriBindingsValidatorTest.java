@@ -57,6 +57,12 @@ public class UriBindingsValidatorTest {
         runUriBindingValidator(true, createServicesXmlWithHandler("http://*/my-handler"));
     }
 
+    @Test
+    void allows_portbinding_when_restricting_data_plane() throws IOException, SAXException {
+        runUriBindingValidator(new TestProperties().setHostedVespa(true).setUseRestrictedDataPlaneBindings(true), createServicesXmlWithHandler("http://*:4443/my-handler"));
+    }
+
+    @Test
     void allows_user_binding_with_wildcard_port() throws IOException, SAXException {
         runUriBindingValidator(true, createServicesXmlWithHandler("http://*:*/my-handler"));
     }

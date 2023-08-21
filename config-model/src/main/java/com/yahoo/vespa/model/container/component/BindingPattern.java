@@ -63,21 +63,11 @@ public abstract class BindingPattern implements Comparable<BindingPattern> {
         return builder.append(path).toString();
     }
 
-    public String originalPatternString() {
-        StringBuilder builder = new StringBuilder(scheme).append("://").append(host);
-        originalPort().ifPresent(port -> builder.append(':').append(port));
-        return builder.append(path).toString();
-    }
-
     /** Compares the underlying pattern string for equality */
     public boolean hasSamePattern(BindingPattern other) { return this.patternString().equals(other.patternString()); }
 
     /** Returns true if pattern will match any port (if present) in uri **/
-    public boolean matchesAnyPort() { return originalPort().filter(p -> !p.equals(WILDCARD_PATTERN)).isEmpty(); }
-
-    public Optional<String> originalPort() {
-        return port();
-    }
+    public boolean matchesAnyPort() { return port().filter(p -> !p.equals(WILDCARD_PATTERN)).isEmpty(); }
 
     @Override
     public boolean equals(Object o) {
