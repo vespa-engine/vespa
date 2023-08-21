@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
-#include <vespa/vespalib/util/sanitizers.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <cstddef>
 #include <sys/mman.h>
@@ -216,12 +216,12 @@ TEST("auto alloced mmap alloc can not be extended if no room") {
 }
 
 /*
- * The two following tests are disabled when address sanitizer is
+ * The two following tests are disabled when any sanitizer is
  * enabled since extra instrumentation code might trigger extra mmap
  * or munmap calls, breaking some of the assumptions in the disabled
  * tests.
  */
-#ifndef VESPA_USE_ADDRESS_SANITIZER
+#ifndef VESPA_USE_SANITIZER
 TEST("mmap alloc can be extended if room") {
     Alloc dummy = Alloc::allocMMap(100);
     Alloc reserved = Alloc::allocMMap(100);
