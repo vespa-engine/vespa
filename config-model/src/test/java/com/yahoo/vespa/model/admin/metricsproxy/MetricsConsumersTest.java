@@ -56,7 +56,7 @@ public class MetricsConsumersTest {
         assertEquals(MetricsConsumer.vespa.id(), config.consumer(0).name());
         assertEquals(MetricsConsumer.autoscaling.id(), config.consumer(1).name());
         assertEquals(MetricsConsumer.defaultConsumer.id(), config.consumer(2).name());
-        assertEquals(MetricsConsumer.newDefaultConsumer.id(), config.consumer(3).name());
+        assertEquals(MetricsProxyContainerCluster.NEW_DEFAULT_CONSUMER_ID, config.consumer(3).name());
     }
 
     @Test

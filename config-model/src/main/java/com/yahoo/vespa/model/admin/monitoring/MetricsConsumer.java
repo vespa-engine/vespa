@@ -34,9 +34,6 @@ public class MetricsConsumer {
     public static final MetricsConsumer defaultConsumer =
             consumer(ValuesFetcher.defaultMetricsConsumerId.id, defaultMetricSet, systemMetricSet);
 
-    public static final MetricsConsumer newDefaultConsumer =
-            consumer("new-default", defaultMetricSet, systemMetricSet);
-
     // Referenced from com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsFetcher
     public static final MetricsConsumer autoscaling =
             consumer("autoscaling", autoscalingMetricSet);
@@ -69,7 +66,7 @@ public class MetricsConsumer {
         return metricSet.getMetrics();
     }
 
-    private static MetricsConsumer consumer(String id, MetricSet ... metricSets) {
+    public static MetricsConsumer consumer(String id, MetricSet ... metricSets) {
         return new MetricsConsumer(id, new MetricSet(id + "-consumer-metrics", List.of(), Arrays.asList(metricSets)));
     }
 
