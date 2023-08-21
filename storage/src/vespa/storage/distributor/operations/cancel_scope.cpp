@@ -41,7 +41,7 @@ void CancelScope::merge(const CancelScope& other) {
     }
 }
 
-CancelScope CancelScope::of_ownership_change() noexcept {
+CancelScope CancelScope::of_fully_cancelled() noexcept {
     return CancelScope(ownership_change_ctor_tag{});
 }
 

@@ -44,6 +44,8 @@ public:
     void merge(const CancelScope& other);
 
     [[nodiscard]] bool fully_cancelled() const noexcept { return _ownership_lost; }
+    // Note: partially_cancelled() does not subsume fully_cancelled(); it must be checked independently
+    [[nodiscard]] bool partially_cancelled() const noexcept { return !_cancelled_nodes.empty(); }
     [[nodiscard]] bool node_is_cancelled(uint16_t node) const noexcept {
         return (fully_cancelled() || _cancelled_nodes.contains(node));
     }
@@ -52,7 +54,7 @@ public:
         return _cancelled_nodes;
     }
 
-    static CancelScope of_ownership_change() noexcept;
+    static CancelScope of_fully_cancelled() noexcept;
     static CancelScope of_node_subset(CancelledNodeSet nodes) noexcept;
 };
 

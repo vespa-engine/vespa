@@ -64,7 +64,7 @@ PersistenceMessageTrackerImpl::updateDB()
     if (_cancel_scope) {
         if (_cancel_scope->fully_cancelled()) {
             return; // Fully cancelled ops cannot mutate the DB at all
-        } else {
+        } else if (_cancel_scope->partially_cancelled()) {
             prune_cancelled_nodes_if_present(_bucketInfo, *_cancel_scope);
             prune_cancelled_nodes_if_present(_remapBucketInfo, *_cancel_scope);
         }

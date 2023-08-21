@@ -231,7 +231,7 @@ TEST_F(CheckConditionTest, failed_gets_completes_check_with_error_outcome) {
 TEST_F(CheckConditionTest, check_fails_if_condition_explicitly_cancelled) {
     test_cond_with_2_gets_sent([&](auto& cond) {
         cond.handle_reply(_sender, make_matched_reply(0));
-        cond.cancel(_sender, CancelScope::of_ownership_change());
+        cond.cancel(_sender, CancelScope::of_fully_cancelled());
         cond.handle_reply(_sender, make_matched_reply(1));
     }, [&](auto& outcome) {
         EXPECT_FALSE(outcome.matched_condition());

@@ -268,7 +268,7 @@ void GarbageCollectionOperation::merge_received_bucket_info_into_db() {
     if (_cancel_scope) {
         if (_cancel_scope->fully_cancelled()) {
             return;
-        } else {
+        } else if (_cancel_scope->partially_cancelled()) {
             _replica_info = prune_cancelled_nodes(_replica_info, *_cancel_scope);
         }
     }

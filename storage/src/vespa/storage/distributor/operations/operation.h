@@ -63,7 +63,8 @@ public:
     /**
      * Explicitly cancel the operation. Cancelled operations may or may not (depending on
      * the operation implementation) be immediately aborted, but they should either way
-     * never insert any bucket information into the bucket DB after cancel() has been called.
+     * never insert any bucket information _for cancelled nodes_ into the bucket DB after
+     * cancel() has been called.
      */
     void cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope);
 

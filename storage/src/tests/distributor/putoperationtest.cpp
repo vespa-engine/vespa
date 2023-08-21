@@ -217,7 +217,7 @@ TEST_F(PutOperationTest, failed_CreateBucket_does_not_send_RequestBucketInfo_if_
 
     ASSERT_EQ("Create bucket => 1,Create bucket => 0,Put => 1,Put => 0", _sender.getCommands(true));
 
-    op->cancel(_sender, CancelScope::of_ownership_change());
+    op->cancel(_sender, CancelScope::of_fully_cancelled());
     sendReply(0, api::ReturnCode::TIMEOUT, api::BucketInfo()); // CreateBucket to node 1
 
     // DB is not touched (note: normally node 1 would be removed at the cancel-edge).
@@ -320,7 +320,7 @@ TEST_F(PutOperationTest, return_success_if_op_acked_on_all_replicas_even_if_oper
               "id:test:testdoctype1::, timestamp 100, size 45) => 1",
               _sender.getCommands(true, true));
 
-    op->cancel(_sender, CancelScope::of_ownership_change());
+    op->cancel(_sender, CancelScope::of_fully_cancelled());
 
     sendReply(0);
     sendReply(1);
@@ -659,7 +659,7 @@ TEST_F(PutOperationTest, db_not_updated_if_operation_cancelled_by_ownership_chan
     ASSERT_EQ("Put => 1,Put => 2,Put => 0", _sender.getCommands(true));
 
     operation_context().remove_nodes_from_bucket_database(makeDocumentBucket(bucket), {0, 1, 2});
-    op->cancel(_sender, CancelScope::of_ownership_change());
+    op->cancel(_sender, CancelScope::of_fully_cancelled());
 
     // Normally DB updates triggered by replies don't _create_ buckets in the DB, unless
     // they're remapped buckets. Use a remapping to ensure we hit a create-if-missing DB path.
@@ -886,7 +886,7 @@ TEST_F(PutOperationTest, ownership_cancellation_during_condition_probe_fails_ope
     ASSERT_NO_FATAL_FAILURE(set_up_tas_put_with_2_inconsistent_replica_nodes());
 
     op->receive(_sender, make_get_reply(*sent_get_command(0), 0, false, false));
-    op->cancel(_sender, CancelScope::of_ownership_change());
+    op->cancel(_sender, CancelScope::of_fully_cancelled());
     op->receive(_sender, make_get_reply(*sent_get_command(1), 0, false, false));
 
     ASSERT_EQ("Get => 1,Get => 0", _sender.getCommands(true));

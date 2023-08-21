@@ -177,7 +177,7 @@ TEST_F(GarbageCollectionOperationTest, no_replica_bucket_info_added_to_db_if_ope
     ASSERT_EQ(2, _sender.commands().size());
 
     reply_to_nth_request(*op, 0, 1234, 70);
-    op->cancel(_sender, CancelScope::of_ownership_change());
+    op->cancel(_sender, CancelScope::of_fully_cancelled());
     reply_to_nth_request(*op, 1, 4567, 60);
 
     // DB state is unchanged. Note that in a real scenario, the DB entry will have been removed
@@ -408,7 +408,7 @@ TEST_F(GarbageCollectionOperationPhase1FailureTest, no_second_phase_if_bucket_in
 }
 
 TEST_F(GarbageCollectionOperationPhase1FailureTest, no_second_phase_if_operation_fully_cancelled_between_phases) {
-    _op->cancel(_sender, CancelScope::of_ownership_change());
+    _op->cancel(_sender, CancelScope::of_fully_cancelled());
     receive_phase1_replies_and_assert_no_phase_2_started();
 }
 

@@ -315,7 +315,7 @@ TEST_F(ExtRemoveOperationTest, cancellation_during_condition_probe_fails_operati
     ASSERT_NO_FATAL_FAILURE(set_up_tas_remove_with_2_nodes(ReplicaState::INCONSISTENT));
 
     reply_with(make_get_reply(0, 50, false, true));
-    op->cancel(_sender, CancelScope::of_ownership_change());
+    op->cancel(_sender, CancelScope::of_fully_cancelled());
     reply_with(make_get_reply(1, 50, false, true));
 
     ASSERT_EQ("Get => 1,Get => 0", _sender.getCommands(true));
