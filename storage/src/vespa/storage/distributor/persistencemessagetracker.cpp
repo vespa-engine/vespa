@@ -41,11 +41,7 @@ PersistenceMessageTrackerImpl::~PersistenceMessageTrackerImpl() = default;
 void
 PersistenceMessageTrackerImpl::cancel(const CancelScope& cancel_scope)
 {
-    if (!_cancel_scope) {
-        _cancel_scope = cancel_scope;
-    } else {
-        _cancel_scope->merge(cancel_scope);
-    }
+    _cancel_scope.merge(cancel_scope);
 }
 
 void
@@ -61,13 +57,11 @@ PersistenceMessageTrackerImpl::prune_cancelled_nodes_if_present(
 void
 PersistenceMessageTrackerImpl::updateDB()
 {
-    if (_cancel_scope) {
-        if (_cancel_scope->fully_cancelled()) {
-            return; // Fully cancelled ops cannot mutate the DB at all
-        } else if (_cancel_scope->partially_cancelled()) {
-            prune_cancelled_nodes_if_present(_bucketInfo, *_cancel_scope);
-            prune_cancelled_nodes_if_present(_remapBucketInfo, *_cancel_scope);
-        }
+    if (_cancel_scope.fully_cancelled()) {
+        return; // Fully cancelled ops cannot mutate the DB at all
+    } else if (_cancel_scope.partially_cancelled()) {
+        prune_cancelled_nodes_if_present(_bucketInfo, _cancel_scope);
+        prune_cancelled_nodes_if_present(_remapBucketInfo, _cancel_scope);
     }
 
     for (const auto & entry : _bucketInfo) {
@@ -266,10 +260,7 @@ PersistenceMessageTrackerImpl::updateFailureResult(const api::BucketInfoReply& r
 bool
 PersistenceMessageTrackerImpl::node_is_effectively_cancelled(uint16_t node) const noexcept
 {
-    if (!_cancel_scope) {
-        return false;
-    }
-    return _cancel_scope->node_is_cancelled(node); // Implicitly covers the fully cancelled case
+    return _cancel_scope.node_is_cancelled(node); // Implicitly covers the fully cancelled case
 }
 
 void

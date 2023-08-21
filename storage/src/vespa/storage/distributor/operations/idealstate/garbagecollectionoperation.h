@@ -9,7 +9,6 @@
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storage/distributor/operations/cancel_scope.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <optional>
 #include <vector>
 
 namespace storage::distributor {
@@ -57,7 +56,7 @@ private:
     RemoveCandidates              _remove_candidates;
     std::vector<SequencingHandle> _gc_write_locks;
     std::vector<BucketCopy>       _replica_info;
-    std::optional<CancelScope>    _cancel_scope;
+    CancelScope                   _cancel_scope;
     uint32_t                      _max_documents_removed;
     bool                          _is_done;
 

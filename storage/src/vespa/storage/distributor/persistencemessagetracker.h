@@ -8,7 +8,6 @@
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/messageapi/bucketinfocommand.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
-#include <optional>
 
 namespace storage::distributor {
 
@@ -80,7 +79,7 @@ private:
     std::vector<BucketNodePair>           _revertNodes;
     mbus::Trace                           _trace;
     framework::MilliSecTimer              _requestTimer;
-    std::optional<CancelScope>            _cancel_scope;
+    CancelScope                           _cancel_scope;
     uint32_t                              _n_persistence_replies_total;
     uint32_t                              _n_successful_persistence_replies;
     uint8_t                               _priority;

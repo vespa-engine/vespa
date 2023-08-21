@@ -151,11 +151,7 @@ GarbageCollectionOperation::onReceive(DistributorStripeMessageSender& sender,
 }
 
 void GarbageCollectionOperation::on_cancel(DistributorStripeMessageSender&, const CancelScope& cancel_scope) {
-    if (!_cancel_scope) {
-        _cancel_scope = cancel_scope;
-    } else {
-        _cancel_scope->merge(cancel_scope);
-    }
+    _cancel_scope.merge(cancel_scope);
 }
 
 void GarbageCollectionOperation::update_replica_response_info_from_reply(uint16_t from_node, const api::RemoveLocationReply& reply) {
@@ -265,12 +261,10 @@ void GarbageCollectionOperation::update_last_gc_timestamp_in_db() {
 }
 
 void GarbageCollectionOperation::merge_received_bucket_info_into_db() {
-    if (_cancel_scope) {
-        if (_cancel_scope->fully_cancelled()) {
-            return;
-        } else if (_cancel_scope->partially_cancelled()) {
-            _replica_info = prune_cancelled_nodes(_replica_info, *_cancel_scope);
-        }
+    if (_cancel_scope.fully_cancelled()) {
+        return;
+    } else if (_cancel_scope.partially_cancelled()) {
+        _replica_info = prune_cancelled_nodes(_replica_info, _cancel_scope);
     }
     if (!_replica_info.empty()) {
         // TODO avoid two separate DB ops for this. Current API currently does not make this elegant.
