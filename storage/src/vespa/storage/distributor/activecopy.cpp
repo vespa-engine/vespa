@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <algorithm>
 #include <cassert>
+#include <ostream>
 
 namespace std {
 
