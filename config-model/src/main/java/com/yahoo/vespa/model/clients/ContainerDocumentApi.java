@@ -92,7 +92,7 @@ public class ContainerDocumentApi {
         UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
         if (ports.isEmpty()) return List.of(bindingPattern);
         return ports.stream()
-                .map(p -> (BindingPattern)bindingPattern.withPort(p))
+                .map(p -> (BindingPattern)bindingPattern.withOverriddenPort(p))
                 .toList();
     }
 

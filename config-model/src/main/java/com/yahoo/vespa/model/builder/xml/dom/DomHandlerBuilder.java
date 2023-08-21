@@ -48,7 +48,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilderB
     @Override
     protected Handler doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element handlerElement) {
         Handler handler = createHandler(handlerElement);
-        var ports = deployState.isHosted() && deployState.featureFlags().useRestrictedDataPlaneBindings()
+        var ports = deployState.isHosted()
                 ? portBindingOverride : Set.<Integer>of();
 
         for (Element xmlBinding : XML.getChildren(handlerElement, "binding"))
@@ -64,7 +64,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilderB
         UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
         if (portBindingOverride.isEmpty()) return Set.of(bindingPattern);
         return portBindingOverride.stream()
-                .map(bindingPattern::withPort)
+                .map(bindingPattern::withOverriddenPort)
                 .toList();
     }
 
