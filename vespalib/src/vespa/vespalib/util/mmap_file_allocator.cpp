@@ -57,7 +57,7 @@ MmapFileAllocator::alloc(size_t sz) const
     uint64_t offset = alloc_area(sz);
     void *buf = mmap(nullptr, sz, PROT_READ | PROT_WRITE, MAP_SHARED, _file.getFileDescriptor(), offset);
     if (buf == MAP_FAILED) {
-        throw IoException(fmt("Failed mmap(nullptr, %zu, PROT_READ | PROT_WRITE, MAP_SHARED, %s(fd=%d), %lu). Reason given by OS = '%s'",
+        throw IoException(fmt("Failed mmap(nullptr, %zu, PROT_READ | PROT_WRITE, MAP_SHARED, %s(fd=%d), %" PRIu64 "). Reason given by OS = '%s'",
                               sz, _file.getFilename().c_str(), _file.getFileDescriptor(), offset, getLastErrorString().c_str()),
                           IoException::getErrorType(errno), VESPA_STRLOC);
     }

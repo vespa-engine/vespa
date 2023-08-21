@@ -668,7 +668,7 @@ vespalib::string
 lsSingleFile(const vespalib::string & fileName)
 {
     fs::path path(fileName);
-    return make_string("%s  %20" PRIu64 "  %12" PRId64, fileName.c_str(), vespalib::count_ns(fs::last_write_time(path).time_since_epoch()), fs::file_size(path));
+    return make_string("%s  %20" PRIu64 "  %12" PRIdMAX, fileName.c_str(), vespalib::count_ns(fs::last_write_time(path).time_since_epoch()), fs::file_size(path));
 }
 
 }
