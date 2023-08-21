@@ -159,7 +159,7 @@ BucketInfoBase<NodeSeq>::getNodes() const noexcept {
 }
 
 template <typename NodeSeq>
-BucketInfoBase<NodeSeq>::Highest
+typename BucketInfoBase<NodeSeq>::Highest
 BucketInfoBase<NodeSeq>::getHighest() const noexcept {
     Highest highest;
     for (const auto & n : _nodes) {
