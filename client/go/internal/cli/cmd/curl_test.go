@@ -14,7 +14,6 @@ func TestCurl(t *testing.T) {
 	cli.Environment["VESPA_CLI_ENDPOINTS"] = "{\"endpoints\":[{\"cluster\":\"container\",\"url\":\"http://127.0.0.1:8080\"}]}"
 	assert.Nil(t, cli.Run("config", "set", "application", "t1.a1.i1"))
 	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
-	assert.Nil(t, cli.Run("config", "set", "cluster", "container"))
 	assert.Nil(t, cli.Run("auth", "api-key"))
 	assert.Nil(t, cli.Run("auth", "cert", "--no-add"))
 

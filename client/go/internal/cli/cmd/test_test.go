@@ -23,20 +23,26 @@ import (
 func TestSuite(t *testing.T) {
 	client := &mock.HTTPClient{}
 	searchResponse, _ := os.ReadFile("testdata/tests/response.json")
+	mockServiceStatus(client, "container")
 	client.NextStatus(200)
 	client.NextStatus(200)
-	for i := 0; i < 11; i++ {
+	for i := 0; i < 2; i++ {
 		client.NextResponseString(200, string(searchResponse))
 	}
-
+	mockServiceStatus(client, "container") // Some tests do not specify cluster, which is fine since we only have one, but this causes a cache miss
+	for i := 0; i < 9; i++ {
+		client.NextResponseString(200, string(searchResponse))
+	}
 	expectedBytes, _ := os.ReadFile("testdata/tests/expected-suite.out")
 	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("test", "testdata/tests/system-test"))
-
+	assert.Equal(t, "", stderr.String())
 	baseUrl := "http://127.0.0.1:8080"
 	urlWithQuery := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
-	requests := []*http.Request{createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(urlWithQuery), createSearchRequest(urlWithQuery)}
+	discoveryRequest := createSearchRequest("http://127.0.0.1:19071/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge")
+	requests := []*http.Request{discoveryRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(urlWithQuery), createSearchRequest(urlWithQuery)}
+	requests = append(requests, discoveryRequest)
 	requests = append(requests, createSearchRequest(baseUrl+"/search/"))
 	requests = append(requests, createSearchRequest(baseUrl+"/search/?foo=%2F"))
 	for i := 0; i < 7; i++ {
@@ -95,6 +101,7 @@ func TestSuiteWithoutTests(t *testing.T) {
 func TestSingleTest(t *testing.T) {
 	client := &mock.HTTPClient{}
 	searchResponse, _ := os.ReadFile("testdata/tests/response.json")
+	mockServiceStatus(client, "container")
 	client.NextStatus(200)
 	client.NextStatus(200)
 	client.NextResponseString(200, string(searchResponse))
@@ -109,7 +116,8 @@ func TestSingleTest(t *testing.T) {
 
 	baseUrl := "http://127.0.0.1:8080"
 	rawUrl := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
-	assertRequests([]*http.Request{createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(rawUrl), createSearchRequest(rawUrl)}, client, t)
+	discoveryRequest := createSearchRequest("http://127.0.0.1:19071/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge")
+	assertRequests([]*http.Request{discoveryRequest, createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(rawUrl), createSearchRequest(rawUrl)}, client, t)
 }
 
 func TestSingleTestWithCloudAndEndpoints(t *testing.T) {
@@ -172,12 +180,17 @@ func createRequest(method string, uri string, body string) *http.Request {
 }
 
 func assertRequests(requests []*http.Request, client *mock.HTTPClient, t *testing.T) {
+	t.Helper()
 	if assert.Equal(t, len(requests), len(client.Requests)) {
 		for i, e := range requests {
 			a := client.Requests[i]
 			assert.Equal(t, e.URL.String(), a.URL.String())
 			assert.Equal(t, e.Method, a.Method)
-			assert.Equal(t, util.ReaderToJSON(e.Body), util.ReaderToJSON(a.Body))
+			actualBody := a.Body
+			if actualBody == nil {
+				actualBody = io.NopCloser(strings.NewReader(""))
+			}
+			assert.Equal(t, util.ReaderToJSON(e.Body), util.ReaderToJSON(actualBody))
 		}
 	}
 }

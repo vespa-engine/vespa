@@ -25,7 +25,7 @@ func newDeployCmd(cli *CLI) *cobra.Command {
 		copyCert    bool
 	)
 	cmd := &cobra.Command{
-		Use:   "deploy [application-directory]",
+		Use:   "deploy [application-directory-or-file]",
 		Short: "Deploy (prepare and activate) an application package",
 		Long: `Deploy (prepare and activate) an application package.
 
@@ -73,8 +73,12 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 					return err
 				}
 			}
+			waiter := cli.waiter(false, timeout)
+			if _, err := waiter.DeployService(target); err != nil {
+				return err
+			}
 			var result vespa.PrepareResult
-			if err := cli.spinner(cli.Stderr, "Uploading application package ...", func() error {
+			if err := cli.spinner(cli.Stderr, "Uploading application package...", func() error {
 				result, err = vespa.Deploy(opts)
 				return err
 			}); err != nil {
@@ -84,18 +88,18 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			if opts.Target.IsCloud() {
 				cli.printSuccess("Triggered deployment of ", color.CyanString(pkg.Path), " with run ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
 			} else {
-				cli.printSuccess("Deployed ", color.CyanString(pkg.Path))
+				cli.printSuccess("Deployed ", color.CyanString(pkg.Path), " with session ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
 				printPrepareLog(cli.Stderr, result)
 			}
 			if opts.Target.IsCloud() {
-				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.CyanString("vespa status"))
+				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.CyanString("vespa status deployment"))
 				log.Print(color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/%s/instance/%s/job/%s-%s/run/%d",
 					opts.Target.Deployment().System.ConsoleURL,
 					opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application, opts.Target.Deployment().Zone.Environment,
 					opts.Target.Deployment().Application.Instance, opts.Target.Deployment().Zone.Environment, opts.Target.Deployment().Zone.Region,
 					result.ID)))
 			}
-			return waitForQueryService(cli, target, result.ID, timeout)
+			return waitForDeploymentReady(cli, target, result.ID, timeout)
 		},
 	}
 	cmd.Flags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
@@ -107,7 +111,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 
 func newPrepareCmd(cli *CLI) *cobra.Command {
 	return &cobra.Command{
-		Use:               "prepare application-directory",
+		Use:               "prepare [application-directory-or-file]",
 		Short:             "Prepare an application package for activation",
 		Args:              cobra.MaximumNArgs(1),
 		DisableAutoGenTag: true,
@@ -123,7 +127,7 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 			}
 			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 			var result vespa.PrepareResult
-			err = cli.spinner(cli.Stderr, "Uploading application package ...", func() error {
+			err = cli.spinner(cli.Stderr, "Uploading application package...", func() error {
 				result, err = vespa.Prepare(opts)
 				return err
 			})
@@ -149,10 +153,6 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			pkg, err := cli.applicationPackageFrom(args, true)
-			if err != nil {
-				return fmt.Errorf("could not find application package: %w", err)
-			}
 			sessionID, err := cli.config.readSessionID(vespa.DefaultApplication)
 			if err != nil {
 				return fmt.Errorf("could not read session id: %w", err)
@@ -162,24 +162,32 @@ func newActivateCmd(cli *CLI) *cobra.Command {
 				return err
 			}
 			timeout := time.Duration(waitSecs) * time.Second
-			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target, Timeout: timeout}
+			waiter := cli.waiter(false, timeout)
+			if _, err := waiter.DeployService(target); err != nil {
+				return err
+			}
+			opts := vespa.DeploymentOptions{Target: target, Timeout: timeout}
 			err = vespa.Activate(sessionID, opts)
 			if err != nil {
 				return err
 			}
-			cli.printSuccess("Activated ", color.CyanString(pkg.Path), " with session ", sessionID)
-			return waitForQueryService(cli, target, sessionID, timeout)
+			cli.printSuccess("Activated application with session ", sessionID)
+			return waitForDeploymentReady(cli, target, sessionID, timeout)
 		},
 	}
 	cli.bindWaitFlag(cmd, 60, &waitSecs)
 	return cmd
 }
 
-func waitForQueryService(cli *CLI, target vespa.Target, sessionOrRunID int64, timeout time.Duration) error {
+func waitForDeploymentReady(cli *CLI, target vespa.Target, sessionOrRunID int64, timeout time.Duration) error {
 	if timeout == 0 {
 		return nil
 	}
-	_, err := cli.service(target, vespa.QueryService, sessionOrRunID, cli.config.cluster(), timeout)
+	waiter := cli.waiter(false, timeout)
+	if _, err := waiter.Deployment(target, sessionOrRunID); err != nil {
+		return err
+	}
+	_, err := waiter.Services(target)
 	return err
 }
 

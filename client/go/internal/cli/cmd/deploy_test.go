@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"bytes"
+	"io"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -61,6 +62,32 @@ Hint: Pass --add-cert to use the certificate of the current application
 	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
 }
 
+func TestDeployWait(t *testing.T) {
+	cli, stdout, _ := newTestCLI(t)
+	client := &mock.HTTPClient{}
+	cli.httpClient = client
+	cli.retryInterval = 0
+	pkg := "testdata/applications/withSource/src/main/application"
+	// Deploy service is initially unavailable
+	client.NextResponseError(io.EOF)
+	client.NextStatus(500)
+	client.NextStatus(500)
+	// ... then becomes healthy
+	client.NextStatus(200)
+	// Deployment succeeds
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v2/tenant/default/prepareandactivate",
+		Status: 200,
+		Body:   []byte(`{"session-id": "1"}`),
+	})
+	mockServiceStatus(client, "foo") // Wait for deployment
+	mockServiceStatus(client, "foo") // Look up services
+	assert.Nil(t, cli.Run("deploy", "--wait=3", pkg))
+	assert.Equal(t,
+		"\nSuccess: Deployed "+pkg+" with session ID 1\n",
+		stdout.String())
+}
+
 func TestPrepareZip(t *testing.T) {
 	assertPrepare("testdata/applications/withTarget/target/application.zip",
 		[]string{"prepare", "testdata/applications/withTarget/target/application.zip"}, t)
@@ -85,7 +112,7 @@ func TestDeployZipWithURLTargetArgument(t *testing.T) {
 	cli.httpClient = client
 	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
-		"\nSuccess: Deployed "+applicationPackage+"\n",
+		"\nSuccess: Deployed "+applicationPackage+" with session ID 0\n",
 		stdout.String())
 	assertDeployRequestMade("http://target:19071", client, t)
 }
@@ -161,7 +188,7 @@ func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
 	cli.httpClient = client
 	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
-		"\nSuccess: Deployed "+applicationPackage+"\n",
+		"\nSuccess: Deployed "+applicationPackage+" with session ID 0\n",
 		stdout.String())
 	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
 }
@@ -194,7 +221,7 @@ func assertActivate(applicationPackage string, arguments []string, t *testing.T)
 	}
 	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
-		"Success: Activated "+applicationPackage+" with session 42\n",
+		"Success: Activated application with session 42\n",
 		stdout.String())
 	url := "http://127.0.0.1:19071/application/v2/tenant/default/session/42/active"
 	assert.Equal(t, url, client.LastRequest.URL.String())

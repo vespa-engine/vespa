@@ -64,7 +64,8 @@ func query(cli *CLI, arguments []string, timeoutSecs, waitSecs int, curl bool) e
 	if err != nil {
 		return err
 	}
-	service, err := cli.service(target, vespa.QueryService, 0, cli.config.cluster(), time.Duration(waitSecs)*time.Second)
+	waiter := cli.waiter(false, time.Duration(waitSecs)*time.Second)
+	service, err := waiter.Service(target, cli.config.cluster())
 	if err != nil {
 		return err
 	}

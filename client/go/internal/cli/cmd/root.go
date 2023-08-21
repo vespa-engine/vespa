@@ -43,6 +43,13 @@ type CLI struct {
 	Stdout      io.Writer
 	Stderr      io.Writer
 
+	exec       executor
+	isTerminal func() bool
+	spinner    func(w io.Writer, message string, fn func() error) error
+
+	now           func() time.Time
+	retryInterval time.Duration
+
 	cmd     *cobra.Command
 	config  *Config
 	version version.Version
@@ -51,10 +58,6 @@ type CLI struct {
 	httpClientFactory func(timeout time.Duration) util.HTTPClient
 	auth0Factory      auth0Factory
 	ztsFactory        ztsFactory
-	exec              executor
-	isTerminal        func() bool
-	spinner           func(w io.Writer, message string, fn func() error) error
-	now               func() time.Time
 }
 
 // ErrCLI is an error returned to the user. It wraps an exit status, a regular error and optional hints for resolving
@@ -100,7 +103,7 @@ type ztsFactory func(httpClient util.HTTPClient, domain, url string) (vespa.Auth
 // New creates the Vespa CLI, writing output to stdout and stderr, and reading environment variables from environment.
 func New(stdout, stderr io.Writer, environment []string) (*CLI, error) {
 	cmd := &cobra.Command{
-		Use:   "vespa command-name",
+		Use:   "vespa",
 		Short: "The command-line tool for Vespa.ai",
 		Long: `The command-line tool for Vespa.ai.
 
@@ -134,12 +137,15 @@ For detailed description of flags and configuration, see 'vespa help config'.
 		Stdout:      stdout,
 		Stderr:      stderr,
 
-		version:           version,
-		cmd:               cmd,
+		exec:          &execSubprocess{},
+		now:           time.Now,
+		retryInterval: 2 * time.Second,
+
+		version: version,
+		cmd:     cmd,
+
 		httpClient:        httpClientFactory(time.Second * 10),
 		httpClientFactory: httpClientFactory,
-		exec:              &execSubprocess{},
-		now:               time.Now,
 		auth0Factory: func(httpClient util.HTTPClient, options auth0.Options) (vespa.Authenticator, error) {
 			return auth0.NewClient(httpClient, options)
 		},
@@ -267,9 +273,8 @@ func (c *CLI) configureCommands() {
 	prodCmd.AddCommand(newProdDeployCmd(c))         // prod deploy
 	rootCmd.AddCommand(prodCmd)                     // prod
 	rootCmd.AddCommand(newQueryCmd(c))              // query
-	statusCmd.AddCommand(newStatusQueryCmd(c))      // status query
-	statusCmd.AddCommand(newStatusDocumentCmd(c))   // status document
 	statusCmd.AddCommand(newStatusDeployCmd(c))     // status deploy
+	statusCmd.AddCommand(newStatusDeploymentCmd(c)) // status deployment
 	rootCmd.AddCommand(statusCmd)                   // status
 	rootCmd.AddCommand(newTestCmd(c))               // test
 	rootCmd.AddCommand(newVersionCmd(c))            // version
@@ -278,7 +283,7 @@ func (c *CLI) configureCommands() {
 }
 
 func (c *CLI) bindWaitFlag(cmd *cobra.Command, defaultSecs int, value *int) {
-	desc := "Number of seconds to wait for a service to become ready. 0 to disable"
+	desc := "Number of seconds to wait for service(s) to become ready. 0 to disable"
 	if defaultSecs == 0 {
 		desc += " (default 0)"
 	}
@@ -294,6 +299,10 @@ func (c *CLI) printErr(err error, hints ...string) {
 
 func (c *CLI) printSuccess(msg ...interface{}) {
 	fmt.Fprintln(c.Stdout, color.GreenString("Success:"), fmt.Sprint(msg...))
+}
+
+func (c *CLI) printInfo(msg ...interface{}) {
+	fmt.Fprintln(c.Stderr, fmt.Sprint(msg...))
 }
 
 func (c *CLI) printDebug(msg ...interface{}) {
@@ -332,6 +341,10 @@ func (c *CLI) confirm(question string, confirmByDefault bool) (bool, error) {
 			c.printErr(fmt.Errorf("please answer 'y' or 'n'"))
 		}
 	}
+}
+
+func (c *CLI) waiter(once bool, timeout time.Duration) *Waiter {
+	return &Waiter{Once: once, Timeout: timeout, cli: c}
 }
 
 // target creates a target according the configuration of this CLI and given opts.
@@ -402,9 +415,9 @@ func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, er
 	}
 	switch targetType {
 	case vespa.TargetLocal:
-		return vespa.LocalTarget(c.httpClient, tlsOptions), nil
+		return vespa.LocalTarget(c.httpClient, tlsOptions, c.retryInterval), nil
 	case vespa.TargetCustom:
-		return vespa.CustomTarget(c.httpClient, customURL, tlsOptions), nil
+		return vespa.CustomTarget(c.httpClient, customURL, tlsOptions, c.retryInterval), nil
 	default:
 		return nil, fmt.Errorf("invalid custom target: %s", targetType)
 	}
@@ -486,7 +499,7 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL
 		Writer: c.Stdout,
 		Level:  vespa.LogLevel(logLevel),
 	}
-	return vespa.CloudTarget(c.httpClient, apiAuth, deploymentAuth, apiOptions, deploymentOptions, logOptions)
+	return vespa.CloudTarget(c.httpClient, apiAuth, deploymentAuth, apiOptions, deploymentOptions, logOptions, c.retryInterval)
 }
 
 // system returns the appropiate system for the target configured in this CLI.
@@ -502,24 +515,6 @@ func (c *CLI) system(targetType string) (vespa.System, error) {
 		return vespa.PublicSystem, nil
 	}
 	return vespa.System{}, fmt.Errorf("no default system found for %s target", targetType)
-}
-
-// service returns the service of given name located at target. If non-empty, cluster specifies a cluster to query. This
-// function blocks according to the wait period configured in this CLI. The parameter sessionOrRunID specifies either
-// the session ID (local target) or run ID (cloud target) to wait for.
-func (c *CLI) service(target vespa.Target, name string, sessionOrRunID int64, cluster string, timeout time.Duration) (*vespa.Service, error) {
-	if timeout > 0 {
-		log.Printf("Waiting up to %s for %s service to become available ...", color.CyanString(timeout.String()), color.CyanString(name))
-	}
-	s, err := target.Service(name, timeout, sessionOrRunID, cluster)
-	if err != nil {
-		err := fmt.Errorf("service '%s' is unavailable: %w", name, err)
-		if target.IsCloud() {
-			return nil, errHint(err, "Confirm that you're communicating with the correct zone and cluster", "The -z option controls the zone", "The -C option controls the cluster")
-		}
-		return nil, err
-	}
-	return s, nil
 }
 
 // isCI returns true if running inside a continuous integration environment.

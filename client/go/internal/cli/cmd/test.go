@@ -79,7 +79,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool, waitSecs int) (int, []stri
 		if err != nil {
 			return 0, nil, errHint(err, "See https://docs.vespa.ai/en/reference/testing")
 		}
-		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli}
+		context := testContext{testsPath: rootPath, dryRun: dryRun, cli: cli, clusters: map[string]*vespa.Service{}}
 		previousFailed := false
 		for _, test := range tests {
 			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
@@ -100,7 +100,7 @@ func runTests(cli *CLI, rootPath string, dryRun bool, waitSecs int) (int, []stri
 			}
 		}
 	} else if strings.HasSuffix(stat.Name(), ".json") {
-		failure, err := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun, cli: cli}, waitSecs)
+		failure, err := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun, cli: cli, clusters: map[string]*vespa.Service{}}, waitSecs)
 		if err != nil {
 			return 0, nil, err
 		}
@@ -216,9 +216,16 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		if err != nil {
 			return "", "", err
 		}
-		service, err = target.Service(vespa.QueryService, time.Duration(waitSecs)*time.Second, 0, cluster)
-		if err != nil {
-			return "", "", err
+		ok := false
+		service, ok = context.clusters[cluster]
+		if !ok {
+			// Cache service so we don't have to discover it for every step
+			waiter := context.cli.waiter(false, time.Duration(waitSecs)*time.Second)
+			service, err = waiter.Service(target, cluster)
+			if err != nil {
+				return "", "", err
+			}
+			context.clusters[cluster] = service
 		}
 		requestUrl, err = url.ParseRequestURI(service.BaseURL + requestUri)
 		if err != nil {
@@ -474,6 +481,8 @@ type testContext struct {
 	lazyTarget vespa.Target
 	testsPath  string
 	dryRun     bool
+	// Cache of services by their cluster name
+	clusters map[string]*vespa.Service
 }
 
 func (t *testContext) target() (vespa.Target, error) {

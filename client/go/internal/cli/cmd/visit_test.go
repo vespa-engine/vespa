@@ -93,10 +93,14 @@ func TestRunOneVisit(t *testing.T) {
 
 func withMockClient(t *testing.T, prepCli func(*mock.HTTPClient), runOp func(*vespa.Service)) *http.Request {
 	client := &mock.HTTPClient{}
+	mockServiceStatus(client, "container")
 	prepCli(client)
 	cli, _, _ := newTestCLI(t)
 	cli.httpClient = client
-	service, _ := documentService(cli, 0)
+	service, err := documentService(cli, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
 	runOp(service)
 	return client.LastRequest
 }
@@ -126,6 +130,7 @@ func TestVisitCommand(t *testing.T) {
 }
 
 func assertVisitResults(arguments []string, t *testing.T, responses []string, queryPart, output string) {
+	t.Helper()
 	client := &mock.HTTPClient{}
 	client.NextResponseString(200, handlersResponse)
 	client.NextResponseString(400, clusterStarResponse)
@@ -134,6 +139,7 @@ func assertVisitResults(arguments []string, t *testing.T, responses []string, qu
 	}
 	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = client
+	arguments = append(arguments, "-t", "http://127.0.0.1:8080")
 	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t, output, stdout.String())
 	assert.Equal(t, "", stderr.String())

@@ -92,7 +92,7 @@ func (d DeploymentOptions) String() string {
 }
 
 func (d *DeploymentOptions) url(path string) (*url.URL, error) {
-	service, err := d.Target.Service(DeployService, 0, 0, "")
+	service, err := d.Target.DeployService()
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 		return PrepareResult{}, err
 	}
 	var jsonResponse struct {
-		SessionID string                   `json:"session-id"`
+		SessionID string                   `json:"session-id"` // API returns ID as string
 		Log       []LogLinePrepareResponse `json:"log"`
 	}
 	jsonDec := json.NewDecoder(response.Body)
@@ -311,7 +311,7 @@ func Submit(opts DeploymentOptions, submission Submission) error {
 }
 
 func deployServiceDo(request *http.Request, timeout time.Duration, opts DeploymentOptions) (*http.Response, error) {
-	s, err := opts.Target.Service(DeployService, 0, 0, "")
+	s, err := opts.Target.DeployService()
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 	if err != nil {
 		return PrepareResult{}, err
 	}
-	service, err := opts.Target.Service(DeployService, opts.Timeout, 0, "")
+	service, err := opts.Target.DeployService()
 	if err != nil {
 		return PrepareResult{}, err
 	}
@@ -384,7 +384,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 	defer response.Body.Close()
 
 	var jsonResponse struct {
-		SessionID string `json:"session-id"` // Config server
+		SessionID string `json:"session-id"` // Config server. API returns ID as string
 		RunID     int64  `json:"run"`        // Controller
 
 		Log []LogLinePrepareResponse `json:"log"`

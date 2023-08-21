@@ -12,7 +12,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/util"
-	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
 
@@ -57,17 +56,17 @@ type feedOptions struct {
 func newFeedCmd(cli *CLI) *cobra.Command {
 	var options feedOptions
 	cmd := &cobra.Command{
-		Use:   "feed FILE [FILE]...",
+		Use:   "feed json-file [json-file]...",
 		Short: "Feed multiple document operations to a Vespa cluster",
 		Long: `Feed multiple document operations to a Vespa cluster.
 
 This command can be used to feed large amounts of documents to a Vespa cluster
 efficiently.
 
-The contents of FILE must be either a JSON array or JSON objects separated by
+The contents of JSON-FILE must be either a JSON array or JSON objects separated by
 newline (JSONL).
 
-If FILE is a single dash ('-'), documents will be read from standard input.
+If JSON-FILE is a single dash ('-'), documents will be read from standard input.
 `,
 		Example: `$ vespa feed docs.jsonl moredocs.json
 $ cat docs.jsonl | vespa feed -`,
@@ -108,8 +107,9 @@ func createServices(n int, timeout time.Duration, waitSecs int, cli *CLI) ([]uti
 	}
 	services := make([]util.HTTPClient, 0, n)
 	baseURL := ""
+	waiter := cli.waiter(false, time.Duration(waitSecs)*time.Second)
 	for i := 0; i < n; i++ {
-		service, err := cli.service(target, vespa.DocumentService, 0, cli.config.cluster(), time.Duration(waitSecs)*time.Second)
+		service, err := waiter.Service(target, cli.config.cluster())
 		if err != nil {
 			return nil, "", err
 		}

@@ -3,8 +3,10 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -39,6 +41,36 @@ func newTestCLI(t *testing.T, envVars ...string) (*CLI, *bytes.Buffer, *bytes.Bu
 		return &mockAuthenticator{}, nil
 	}
 	return cli, &stdout, &stderr
+}
+
+func mockServiceStatus(client *mock.HTTPClient, clusterNames ...string) {
+	var serviceObjects []string
+	for _, name := range clusterNames {
+		service := fmt.Sprintf(`{
+      "clusterName": "%s",
+      "host": "localhost",
+      "port": 8080,
+      "type": "container",
+      "url": "http://localhost:19071/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge/localhost:8080",
+      "currentGeneration": 1
+    }
+`, name)
+		serviceObjects = append(serviceObjects, service)
+	}
+	services := "[]"
+	if len(serviceObjects) > 0 {
+		services = "[" + strings.Join(serviceObjects, ",") + "]"
+	}
+	response := fmt.Sprintf(`
+{
+  "services": %s,
+  "currentGeneration": 1
+}`, services)
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge",
+		Status: 200,
+		Body:   []byte(response),
+	})
 }
 
 type mockAuthenticator struct{}

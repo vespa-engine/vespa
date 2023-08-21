@@ -79,7 +79,7 @@ func TestDocumentRemoveWithoutIdArgVerbose(t *testing.T) {
 
 func TestDocumentSendMissingId(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
-	assert.NotNil(t, cli.Run("document", "put", "testdata/A-Head-Full-of-Dreams-Without-Operation.json"))
+	assert.NotNil(t, cli.Run("-t", "http://127.0.0.1:8080", "document", "put", "testdata/A-Head-Full-of-Dreams-Without-Operation.json"))
 	assert.Equal(t,
 		"Error: no document id given neither as argument or as a 'put', 'update' or 'remove' key in the JSON file\n",
 		stderr.String())
@@ -87,7 +87,7 @@ func TestDocumentSendMissingId(t *testing.T) {
 
 func TestDocumentSendWithDisagreeingOperations(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
-	assert.NotNil(t, cli.Run("document", "update", "testdata/A-Head-Full-of-Dreams-Put.json"))
+	assert.NotNil(t, cli.Run("-t", "http://127.0.0.1:8080", "document", "update", "testdata/A-Head-Full-of-Dreams-Put.json"))
 	assert.Equal(t,
 		"Error: wanted document operation is update, but JSON file specifies put\n",
 		stderr.String())
@@ -110,20 +110,20 @@ func TestDocumentGet(t *testing.T) {
 		"id:mynamespace:music::a-head-full-of-dreams", t)
 }
 
-func assertDocumentSend(arguments []string, expectedOperation string, expectedMethod string, expectedDocumentId string, expectedPayloadFile string, t *testing.T) {
+func assertDocumentSend(args []string, expectedOperation string, expectedMethod string, expectedDocumentId string, expectedPayloadFile string, t *testing.T) {
+	t.Helper()
 	client := &mock.HTTPClient{}
 	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = client
-	documentURL, err := documentServiceURL(client)
-	if err != nil {
-		t.Fatal(err)
-	}
+	documentURL := "http://127.0.0.1:8080"
 	expectedPath, _ := vespa.IdToURLPath(expectedDocumentId)
 	expectedURL := documentURL + "/document/v1/" + expectedPath + "?timeout=60000ms"
 
-	assert.Nil(t, cli.Run(arguments...))
+	finalArgs := []string{"-t", documentURL}
+	finalArgs = append(finalArgs, args...)
+	assert.Nil(t, cli.Run(finalArgs...))
 	verbose := false
-	for _, a := range arguments {
+	for _, a := range args {
 		if a == "-v" {
 			verbose = true
 		}
@@ -154,16 +154,15 @@ func assertDocumentSend(arguments []string, expectedOperation string, expectedMe
 	}
 }
 
-func assertDocumentGet(arguments []string, documentId string, t *testing.T) {
+func assertDocumentGet(args []string, documentId string, t *testing.T) {
 	client := &mock.HTTPClient{}
-	documentURL, err := documentServiceURL(client)
-	if err != nil {
-		t.Fatal(err)
-	}
+	documentURL := "http://127.0.0.1:8080"
 	client.NextResponseString(200, "{\"fields\":{\"foo\":\"bar\"}}")
 	cli, stdout, _ := newTestCLI(t)
 	cli.httpClient = client
-	assert.Nil(t, cli.Run(arguments...))
+	finalArgs := []string{"-t", documentURL}
+	finalArgs = append(finalArgs, args...)
+	assert.Nil(t, cli.Run(finalArgs...))
 	assert.Equal(t,
 		`{
     "fields": {
@@ -182,7 +181,7 @@ func assertDocumentTransportError(t *testing.T, errorMessage string) {
 	client.NextResponseError(fmt.Errorf(errorMessage))
 	cli, _, stderr := newTestCLI(t)
 	cli.httpClient = client
-	assert.NotNil(t, cli.Run("document", "put",
+	assert.NotNil(t, cli.Run("-t", "http://127.0.0.1:8080", "document", "put",
 		"id:mynamespace:music::a-head-full-of-dreams",
 		"testdata/A-Head-Full-of-Dreams-Put.json"))
 	assert.Equal(t,
@@ -195,7 +194,7 @@ func assertDocumentError(t *testing.T, status int, errorMessage string) {
 	client.NextResponseString(status, errorMessage)
 	cli, _, stderr := newTestCLI(t)
 	cli.httpClient = client
-	assert.NotNil(t, cli.Run("document", "put",
+	assert.NotNil(t, cli.Run("-t", "http://127.0.0.1:8080", "document", "put",
 		"id:mynamespace:music::a-head-full-of-dreams",
 		"testdata/A-Head-Full-of-Dreams-Put.json"))
 	assert.Equal(t,
@@ -208,14 +207,10 @@ func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
 	client.NextResponseString(status, errorMessage)
 	cli, _, stderr := newTestCLI(t)
 	cli.httpClient = client
-	assert.NotNil(t, cli.Run("document", "put",
+	assert.NotNil(t, cli.Run("-t", "http://127.0.0.1:8080", "document", "put",
 		"id:mynamespace:music::a-head-full-of-dreams",
 		"testdata/A-Head-Full-of-Dreams-Put.json"))
 	assert.Equal(t,
-		"Error: Container (document API) at http://127.0.0.1:8080: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
+		"Error: container at http://127.0.0.1:8080: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
 		stderr.String())
-}
-
-func documentServiceURL(client *mock.HTTPClient) (string, error) {
-	return "http://127.0.0.1:8080", nil
 }

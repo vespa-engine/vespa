@@ -7,6 +7,8 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -17,48 +19,45 @@ import (
 func newStatusCmd(cli *CLI) *cobra.Command {
 	var waitSecs int
 	cmd := &cobra.Command{
-		Use:               "status",
-		Short:             "Verify that a service is ready to use (query by default)",
-		Example:           `$ vespa status query`,
+		Use: "status",
+		Aliases: []string{
+			"status container",
+			"status document", // TODO: Remove on Vespa 9
+			"status query",    // TODO: Remove on Vespa 9
+		},
+		Short: "Verify that container service(s) are ready to use",
+		Example: `$ vespa status
+$ vespa status --cluster mycluster`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return printServiceStatus(cli, vespa.QueryService, waitSecs)
-		},
-	}
-	cli.bindWaitFlag(cmd, 0, &waitSecs)
-	return cmd
-}
-
-func newStatusQueryCmd(cli *CLI) *cobra.Command {
-	var waitSecs int
-	cmd := &cobra.Command{
-		Use:               "query",
-		Short:             "Verify that the query service is ready to use (default)",
-		Example:           `$ vespa status query`,
-		DisableAutoGenTag: true,
-		SilenceUsage:      true,
-		Args:              cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return printServiceStatus(cli, vespa.QueryService, waitSecs)
-		},
-	}
-	cli.bindWaitFlag(cmd, 0, &waitSecs)
-	return cmd
-}
-
-func newStatusDocumentCmd(cli *CLI) *cobra.Command {
-	var waitSecs int
-	cmd := &cobra.Command{
-		Use:               "document",
-		Short:             "Verify that the document service is ready to use",
-		Example:           `$ vespa status document`,
-		DisableAutoGenTag: true,
-		SilenceUsage:      true,
-		Args:              cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return printServiceStatus(cli, vespa.DocumentService, waitSecs)
+			cluster := cli.config.cluster()
+			t, err := cli.target(targetOptions{})
+			if err != nil {
+				return err
+			}
+			waiter := cli.waiter(true, time.Duration(waitSecs)*time.Second)
+			if cluster == "" {
+				services, err := waiter.Services(t)
+				if err != nil {
+					return err
+				}
+				if len(services) == 0 {
+					return errHint(fmt.Errorf("no services exist"), "Deployment may not be ready yet", "Try 'vespa status deployment'")
+				}
+				for _, s := range services {
+					printReadyService(s, cli)
+				}
+				return nil
+			} else {
+				s, err := waiter.Service(t, cluster)
+				if err != nil {
+					return err
+				}
+				printReadyService(s, cli)
+				return nil
+			}
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
@@ -75,36 +74,72 @@ func newStatusDeployCmd(cli *CLI) *cobra.Command {
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return printServiceStatus(cli, vespa.DeployService, waitSecs)
+			t, err := cli.target(targetOptions{})
+			if err != nil {
+				return err
+			}
+			waiter := cli.waiter(true, time.Duration(waitSecs)*time.Second)
+			s, err := waiter.DeployService(t)
+			if err != nil {
+				return err
+			}
+			printReadyService(s, cli)
+			return nil
 		},
 	}
 	cli.bindWaitFlag(cmd, 0, &waitSecs)
 	return cmd
 }
 
-func printServiceStatus(cli *CLI, name string, waitSecs int) error {
-	t, err := cli.target(targetOptions{})
-	if err != nil {
-		return err
+func newStatusDeploymentCmd(cli *CLI) *cobra.Command {
+	var waitSecs int
+	cmd := &cobra.Command{
+		Use:   "deployment",
+		Short: "Verify that deployment has converged on latest, or given, ID",
+		Example: `$ vespa status deployment
+$ vespa status deployment -t cloud [run-id]
+$ vespa status deployment -t local [session-id]
+`,
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			wantedID := vespa.LatestDeployment
+			if len(args) > 0 {
+				n, err := strconv.ParseInt(args[0], 10, 64)
+				if err != nil {
+					return fmt.Errorf("invalid id: %s: %w", args[0], err)
+				}
+				wantedID = n
+			}
+			t, err := cli.target(targetOptions{logLevel: "none"})
+			if err != nil {
+				return err
+			}
+			waiter := cli.waiter(true, time.Duration(waitSecs)*time.Second)
+			id, err := waiter.Deployment(t, wantedID)
+			if err != nil {
+				return err
+			}
+			if t.IsCloud() {
+				log.Printf("Deployment run %s has completed", color.CyanString(strconv.FormatInt(id, 10)))
+				log.Printf("See %s for more details", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/%s/instance/%s/job/%s-%s/run/%d",
+					t.Deployment().System.ConsoleURL,
+					t.Deployment().Application.Tenant, t.Deployment().Application.Application, t.Deployment().Zone.Environment,
+					t.Deployment().Application.Instance, t.Deployment().Zone.Environment, t.Deployment().Zone.Region,
+					id)))
+			} else {
+				log.Printf("Deployment is %s on config generation %s", color.GreenString("ready"), color.CyanString(strconv.FormatInt(id, 10)))
+			}
+			return nil
+		},
 	}
-	cluster := cli.config.cluster()
-	s, err := cli.service(t, name, 0, cluster, 0)
-	if err != nil {
-		return err
-	}
-	// Wait explicitly
-	status, err := s.Wait(time.Duration(waitSecs) * time.Second)
-	clusterPart := ""
-	if cluster != "" {
-		clusterPart = fmt.Sprintf(" named %s", color.CyanString(cluster))
-	}
-	if status/100 == 2 {
-		log.Print(s.Description(), clusterPart, " at ", color.CyanString(s.BaseURL), " is ", color.GreenString("ready"))
-	} else {
-		if err == nil {
-			err = fmt.Errorf("status %d", status)
-		}
-		return fmt.Errorf("%s%s at %s is %s: %w", s.Description(), clusterPart, color.CyanString(s.BaseURL), color.RedString("not ready"), err)
-	}
-	return nil
+	cli.bindWaitFlag(cmd, 0, &waitSecs)
+	return cmd
+}
+
+func printReadyService(s *vespa.Service, cli *CLI) {
+	desc := s.Description()
+	desc = strings.ToUpper(string(desc[0])) + string(desc[1:])
+	log.Print(desc, " at ", color.CyanString(s.BaseURL), " is ", color.GreenString("ready"))
 }

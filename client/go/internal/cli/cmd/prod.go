@@ -114,7 +114,7 @@ type prodDeployOptions struct {
 func newProdDeployCmd(cli *CLI) *cobra.Command {
 	var options prodDeployOptions
 	cmd := &cobra.Command{
-		Use:     "deploy",
+		Use:     "deploy [application-directory-or-file]",
 		Aliases: []string{"submit"}, // TODO: Remove in Vespa 9
 		Short:   "Deploy an application to production",
 		Long: `Deploy an application to production.

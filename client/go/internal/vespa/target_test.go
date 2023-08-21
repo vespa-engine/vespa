@@ -3,145 +3,224 @@ package vespa
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
-	"github.com/vespa-engine/vespa/client/go/internal/util"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
 )
 
-type mockVespaApi struct {
-	deploymentConverged bool
-	authFailure         bool
-	serverURL           string
-}
-
-func (v *mockVespaApi) mockVespaHandler(w http.ResponseWriter, req *http.Request) {
-	if v.authFailure {
-		response := `{"message":"unauthorized"}`
-		w.WriteHeader(401)
-		w.Write([]byte(response))
+func TestLocalTarget(t *testing.T) {
+	// Local target uses discovery
+	client := &mock.HTTPClient{}
+	lt := LocalTarget(client, TLSOptions{}, 0)
+	assertServiceURL(t, "http://127.0.0.1:19071", lt, "deploy")
+	for i := 0; i < 2; i++ {
+		response := `
+{
+  "services": [
+    {
+      "host": "foo",
+      "port": 8080,
+      "type": "container",
+      "url": "http://localhost:19071/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge/localhost:8080",
+      "currentGeneration": 1
+    },
+    {
+      "host": "bar",
+      "port": 8080,
+      "type": "container",
+      "url": "http://localhost:19071/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge/localhost:8080",
+      "currentGeneration": 1
+    },
+    {
+      "clusterName": "feed",
+      "host": "localhost",
+      "port": 8081,
+      "type": "container",
+      "url": "http://localhost:19071/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge/localhost:8081",
+      "currentGeneration": 1
+    },
+    {
+      "host": "localhost",
+      "port": 19112,
+      "type": "searchnode",
+      "url": "http://localhost:19071/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge/localhost:19112",
+      "currentGeneration": 1
+    }
+  ],
+  "currentGeneration": 1
+}`
+		client.NextResponse(mock.HTTPResponse{
+			URI:    "/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge",
+			Status: 200,
+			Body:   []byte(response),
+		})
 	}
-	switch req.URL.Path {
-	case "/cli/v1/":
-		response := `{"minVersion":"8.0.0"}`
-		w.Write([]byte(response))
-	case "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1":
-		response := "{}"
-		if v.deploymentConverged {
-			response = fmt.Sprintf(`{"endpoints": [{"url": "%s","scope": "zone","cluster": "cluster1"}]}`, v.serverURL)
-		}
-		w.Write([]byte(response))
-	case "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42":
-		var response string
-		if v.deploymentConverged {
-			response = `{"active": false, "status": "success"}`
-		} else {
-			response = `{"active": true, "status": "running",
-                         "lastId": 42,
-                         "log": {"deployReal": [{"at": 1631707708431,
-                                                 "type": "info",
-                                                 "message": "Deploying platform version 7.465.17 and application version 1.0.2 ..."}]}}`
-		}
-		w.Write([]byte(response))
-	case "/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge":
-		response := fmt.Sprintf(`{"converged": %t}`, v.deploymentConverged)
-		w.Write([]byte(response))
-	case "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1/logs":
-		log := `1632738690.905535	host1a.dev.aws-us-east-1c	806/53	logserver-container	Container.com.yahoo.container.jdisc.ConfiguredApplication	info	Switching to the latest deployed set of configurations and components. Application config generation: 52532
-1632738698.600189	host1a.dev.aws-us-east-1c	1723/33590	config-sentinel	sentinel.sentinel.config-owner	config	Sentinel got 3 service elements [tenant(vespa-team), application(music), instance(mpolden)] for config generation 52532
-`
-		w.Write([]byte(log))
-	case "/status.html":
-		w.Write([]byte("OK"))
-	case "/ApplicationStatus":
-		w.WriteHeader(500)
-		w.Write([]byte("Unknown error"))
-	default:
-		w.WriteHeader(400)
-		w.Write([]byte("Invalid path: " + req.URL.Path))
-	}
+	assertServiceURL(t, "http://127.0.0.1:8080", lt, "container8080")
+	assertServiceURL(t, "http://127.0.0.1:8081", lt, "feed")
 }
 
 func TestCustomTarget(t *testing.T) {
-	lt := LocalTarget(&mock.HTTPClient{}, TLSOptions{})
-	assertServiceURL(t, "http://127.0.0.1:19071", lt, "deploy")
-	assertServiceURL(t, "http://127.0.0.1:8080", lt, "query")
-	assertServiceURL(t, "http://127.0.0.1:8080", lt, "document")
-
-	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42", TLSOptions{})
+	// Custom target always uses URL directly, without discovery
+	ct := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42", TLSOptions{}, 0)
 	assertServiceURL(t, "http://192.0.2.42", ct, "deploy")
-	assertServiceURL(t, "http://192.0.2.42", ct, "query")
-	assertServiceURL(t, "http://192.0.2.42", ct, "document")
-
-	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000", TLSOptions{})
+	assertServiceURL(t, "http://192.0.2.42", ct, "")
+	ct2 := CustomTarget(&mock.HTTPClient{}, "http://192.0.2.42:60000", TLSOptions{}, 0)
 	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "deploy")
-	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "query")
-	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "document")
+	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "")
 }
 
 func TestCustomTargetWait(t *testing.T) {
-	vc := mockVespaApi{}
-	srv := httptest.NewServer(http.HandlerFunc(vc.mockVespaHandler))
-	defer srv.Close()
-	target := CustomTarget(util.CreateClient(time.Second*10), srv.URL, TLSOptions{})
+	client := &mock.HTTPClient{}
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0)
+	// Fails once
+	client.NextStatus(500)
+	assertService(t, true, target, "", 0)
+	// Fails multiple times
+	for i := 0; i < 3; i++ {
+		client.NextStatus(500)
+		client.NextResponseError(io.EOF)
+	}
+	// Then succeeds
+	client.NextResponse(mock.HTTPResponse{URI: "/ApplicationStatus", Status: 200})
+	assertService(t, false, target, "", time.Second)
+}
 
-	_, err := target.Service("query", time.Millisecond, 42, "")
+func TestCustomTargetAwaitDeployment(t *testing.T) {
+	client := &mock.HTTPClient{}
+	target := CustomTarget(client, "http://192.0.2.42", TLSOptions{}, 0)
+
+	// Not converged initially
+	_, err := target.AwaitDeployment(42, 0)
 	assert.NotNil(t, err)
 
-	vc.deploymentConverged = true
-	_, err = target.Service("query", time.Millisecond, 42, "")
-	assert.Nil(t, err)
+	// Not converged on this generation
+	response := mock.HTTPResponse{
+		URI:    "/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge",
+		Status: 200,
+		Body:   []byte(`{"currentGeneration": 42}`),
+	}
+	client.NextResponse(response)
+	_, err = target.AwaitDeployment(41, 0)
+	assert.NotNil(t, err)
 
-	assertServiceWait(t, 200, target, "deploy")
-	assertServiceWait(t, 500, target, "query")
-	assertServiceWait(t, 500, target, "document")
+	// Converged
+	client.NextResponse(response)
+	convergedID, err := target.AwaitDeployment(42, 0)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(42), convergedID)
 }
 
 func TestCloudTargetWait(t *testing.T) {
-	vc := mockVespaApi{}
-	srv := httptest.NewServer(http.HandlerFunc(vc.mockVespaHandler))
-	defer srv.Close()
-	vc.serverURL = srv.URL
-
 	var logWriter bytes.Buffer
-	target := createCloudTarget(t, srv.URL, &logWriter)
-	vc.authFailure = true
-	assertServiceWaitErr(t, 401, true, target, "deploy")
-	vc.authFailure = false
-	assertServiceWait(t, 200, target, "deploy")
+	target, client := createCloudTarget(t, &logWriter)
+	client.NextStatus(401)
+	assertService(t, true, target, "deploy", time.Second) // No retrying on 4xx
+	client.NextStatus(500)
+	client.NextStatus(500)
+	client.NextResponse(mock.HTTPResponse{URI: "/status.html", Status: 200})
+	assertService(t, false, target, "deploy", time.Second)
 
-	_, err := target.Service("query", time.Millisecond, 42, "")
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1",
+		Status: 200,
+		Body:   []byte(`{"endpoints":[]}`),
+	})
+	_, err := target.ContainerServices(time.Millisecond)
 	assert.NotNil(t, err)
 
-	vc.deploymentConverged = true
-	_, err = target.Service("query", time.Millisecond, 42, "")
+	response := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1",
+		Status: 200,
+		Body: []byte(`{
+  "endpoints": [
+    {"url": "http://a.example.com","scope": "zone", "cluster": "default"},
+    {"url": "http://b.example.com","scope": "zone", "cluster": "feed"}
+  ]
+}`),
+	}
+	client.NextResponse(response)
+	services, err := target.ContainerServices(time.Millisecond)
 	assert.Nil(t, err)
+	assert.Equal(t, 2, len(services))
 
-	assertServiceWait(t, 500, target, "query")
-	assertServiceWait(t, 500, target, "document")
+	client.NextResponse(response)
+	client.NextResponse(mock.HTTPResponse{URI: "/ApplicationStatus", Status: 500})
+	assertService(t, true, target, "default", 0)
+	client.NextResponse(response)
+	client.NextResponse(mock.HTTPResponse{URI: "/ApplicationStatus", Status: 200})
+	assertService(t, false, target, "feed", 0)
+}
+
+func TestCloudTargetAwaitDeployment(t *testing.T) {
+	var logWriter bytes.Buffer
+	target, client := createCloudTarget(t, &logWriter)
+
+	runningResponse := mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42?after=-1",
+		Status: 200,
+		Body: []byte(`{"active": true, "status": "running",
+                       "lastId": 42,
+                       "log": {"deployReal": [{"at": 1631707708431,
+                                               "type": "info",
+                                                "message": "Deploying platform version 7.465.17 and application version 1.0.2 ..."}]}}`),
+	}
+	client.NextResponse(runningResponse)
+	runningResponse.URI = "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42?after=42"
+	client.NextResponse(runningResponse)
+	// Deployment has not succeeded yet
+	_, err := target.AwaitDeployment(int64(42), time.Second)
+	assert.NotNil(t, err)
 
 	// Log timestamp is converted to local time, do the same here in case the local time where tests are run varies
 	tm := time.Unix(1631707708, 431000)
 	expectedTime := tm.Format("[15:04:05]")
-	assert.Equal(t, expectedTime+" info    Deploying platform version 7.465.17 and application version 1.0.2 ...\n", logWriter.String())
+	assert.Equal(t, strings.Repeat(expectedTime+" info    Deploying platform version 7.465.17 and application version 1.0.2 ...\n", 2), logWriter.String())
+
+	// Wanted deployment run eventually succeeds
+	runningResponse.URI = "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42?after=-1"
+	client.NextResponse(runningResponse)
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42?after=42",
+		Status: 200,
+		Body:   []byte(`{"active": false, "status": "success"}`),
+	})
+	convergedID, err := target.AwaitDeployment(int64(42), time.Second)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(42), convergedID)
+
+	// Await latest deployment
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1?limit=1",
+		Status: 200,
+		Body:   []byte(`{"runs": [{"id": 1337}]}`),
+	})
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/1337?after=-1",
+		Status: 200,
+		Body:   []byte(`{"active": false, "status": "success"}`),
+	})
+	convergedID, err = target.AwaitDeployment(LatestDeployment, time.Second)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(1337), convergedID)
 }
 
 func TestLog(t *testing.T) {
-	vc := mockVespaApi{}
-	srv := httptest.NewServer(http.HandlerFunc(vc.mockVespaHandler))
-	defer srv.Close()
-	vc.serverURL = srv.URL
-	vc.deploymentConverged = true
-
+	target, client := createCloudTarget(t, io.Discard)
+	client.NextResponse(mock.HTTPResponse{
+		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1/logs?from=-62135596800000",
+		Status: 200,
+		Body: []byte(`1632738690.905535	host1a.dev.aws-us-east-1c	806/53	logserver-container	Container.com.yahoo.container.jdisc.ConfiguredApplication	info	Switching to the latest deployed set of configurations and components. Application config generation: 52532
+1632738698.600189	host1a.dev.aws-us-east-1c	1723/33590	config-sentinel	sentinel.sentinel.config-owner	config	Sentinel got 3 service elements [tenant(vespa-team), application(music), instance(mpolden)] for config generation 52532
+`),
+	})
 	var buf bytes.Buffer
-	target := createCloudTarget(t, srv.URL, io.Discard)
 	if err := target.PrintLog(LogOptions{Writer: &buf, Level: 3}); err != nil {
 		t.Fatal(err)
 	}
@@ -151,23 +230,22 @@ func TestLog(t *testing.T) {
 }
 
 func TestCheckVersion(t *testing.T) {
-	vc := mockVespaApi{}
-	srv := httptest.NewServer(http.HandlerFunc(vc.mockVespaHandler))
-	defer srv.Close()
-
-	target := createCloudTarget(t, srv.URL, io.Discard)
+	target, client := createCloudTarget(t, io.Discard)
+	for i := 0; i < 3; i++ {
+		client.NextResponse(mock.HTTPResponse{URI: "/cli/v1/", Status: 200, Body: []byte(`{"minVersion":"8.0.0"}`)})
+	}
 	assert.Nil(t, target.CheckVersion(version.MustParse("8.0.0")))
 	assert.Nil(t, target.CheckVersion(version.MustParse("8.1.0")))
 	assert.NotNil(t, target.CheckVersion(version.MustParse("7.0.0")))
 }
 
-func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
+func createCloudTarget(t *testing.T, logWriter io.Writer) (Target, *mock.HTTPClient) {
 	apiKey, err := CreateAPIKey()
-	assert.Nil(t, err)
-
+	require.Nil(t, err)
 	auth := &mockAuthenticator{}
+	client := &mock.HTTPClient{}
 	target, err := CloudTarget(
-		util.CreateClient(time.Second*10),
+		client,
 		auth,
 		auth,
 		APIOptions{APIKey: apiKey, System: PublicSystem},
@@ -178,39 +256,39 @@ func createCloudTarget(t *testing.T, url string, logWriter io.Writer) Target {
 			},
 		},
 		LogOptions{Writer: logWriter},
+		0,
 	)
-	if err != nil {
-		t.Fatal(err)
+	require.Nil(t, err)
+	return target, client
+}
+
+func getService(t *testing.T, target Target, name string) (*Service, error) {
+	t.Helper()
+	if name == "deploy" {
+		return target.DeployService()
 	}
-	if ct, ok := target.(*cloudTarget); ok {
-		ct.apiOptions.System.URL = url
-	} else {
-		t.Fatalf("Wrong target type %T", ct)
-	}
-	return target
+	services, err := target.ContainerServices(0)
+	require.Nil(t, err)
+	return FindService(name, services)
 }
 
-func assertServiceURL(t *testing.T, url string, target Target, service string) {
-	s, err := target.Service(service, 0, 42, "")
-	assert.Nil(t, err)
-	assert.Equal(t, url, s.BaseURL)
+func assertServiceURL(t *testing.T, url string, target Target, serviceName string) {
+	t.Helper()
+	service, err := getService(t, target, serviceName)
+	require.Nil(t, err)
+	assert.Equal(t, url, service.BaseURL)
 }
 
-func assertServiceWait(t *testing.T, expectedStatus int, target Target, service string) {
-	assertServiceWaitErr(t, expectedStatus, false, target, service)
-}
-
-func assertServiceWaitErr(t *testing.T, expectedStatus int, expectErr bool, target Target, service string) {
-	s, err := target.Service(service, 0, 42, "")
-	assert.Nil(t, err)
-
-	status, err := s.Wait(0)
-	if expectErr {
+func assertService(t *testing.T, fail bool, target Target, serviceName string, timeout time.Duration) {
+	t.Helper()
+	service, err := getService(t, target, serviceName)
+	require.Nil(t, err)
+	err = service.Wait(timeout)
+	if fail {
 		assert.NotNil(t, err)
 	} else {
 		assert.Nil(t, err)
 	}
-	assert.Equal(t, expectedStatus, status)
 }
 
 type mockAuthenticator struct{}

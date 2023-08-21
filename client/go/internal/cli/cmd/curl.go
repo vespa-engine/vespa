@@ -39,7 +39,17 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			if err != nil {
 				return err
 			}
-			service, err := target.Service(curlService, time.Duration(waitSecs)*time.Second, 0, cli.config.cluster())
+			var service *vespa.Service
+			useDeploy := curlService == "deploy"
+			waiter := cli.waiter(false, time.Duration(waitSecs)*time.Second)
+			if useDeploy {
+				if cli.config.cluster() != "" {
+					return fmt.Errorf("cannot specify cluster for service %s", curlService)
+				}
+				service, err = target.DeployService()
+			} else {
+				service, err = waiter.Service(target, cli.config.cluster())
+			}
 			if err != nil {
 				return err
 			}
@@ -49,19 +59,15 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			if err != nil {
 				return err
 			}
-			switch curlService {
-			case vespa.DeployService:
+			if useDeploy {
 				if err := addAccessToken(c, target); err != nil {
 					return err
 				}
-			case vespa.DocumentService, vespa.QueryService:
+			} else {
 				c.CaCertificate = service.TLSOptions.CACertificateFile
 				c.PrivateKey = service.TLSOptions.PrivateKeyFile
 				c.Certificate = service.TLSOptions.CertificateFile
-			default:
-				return fmt.Errorf("service not found: %s", curlService)
 			}
-
 			if dryRun {
 				log.Print(c.String())
 			} else {
@@ -73,7 +79,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 		},
 	}
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Print the curl command that would be executed")
-	cmd.Flags().StringVarP(&curlService, "service", "s", "query", "Which service to query. Must be \"deploy\", \"document\" or \"query\"")
+	cmd.Flags().StringVarP(&curlService, "service", "s", "container", "Which service to query. Must be \"deploy\" or \"container\"")
 	cli.bindWaitFlag(cmd, 60, &waitSecs)
 	return cmd
 }

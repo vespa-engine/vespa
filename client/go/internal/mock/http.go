@@ -2,6 +2,7 @@ package mock
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -32,6 +33,7 @@ type HTTPClient struct {
 }
 
 type HTTPResponse struct {
+	URI    string
 	Status int
 	Body   []byte
 	Header http.Header
@@ -65,6 +67,9 @@ func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Res
 	response := HTTPResponse{Status: 200}
 	if len(c.nextResponses) > 0 {
 		response = c.nextResponses[0]
+		if response.URI != "" && response.URI != request.URL.RequestURI() {
+			return nil, fmt.Errorf("uri of response is %s, which does not match request uri %s", response.URI, request.URL.RequestURI())
+		}
 		c.nextResponses = c.nextResponses[1:]
 	}
 	if c.ReadBody && request.Body != nil {
