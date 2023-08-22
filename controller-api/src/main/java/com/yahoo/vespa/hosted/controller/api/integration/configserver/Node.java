@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
@@ -75,6 +76,7 @@ public class Node {
     private final Optional<String> switchHostname;
     private final Optional<String> modelName;
     private final Environment environment;
+    private final CloudAccount cloudAccount;
 
     private Node(String id, HostName hostname, Optional<HostName> parentHostname, State state, NodeType type,
                  NodeResources resources, Optional<ApplicationId> owner, Version currentVersion, Version wantedVersion,
@@ -87,7 +89,7 @@ public class Node {
                  DockerImage wantedDockerImage, DockerImage currentDockerImage, Optional<ClusterType> exclusiveToClusterType, Map<String, String> reports,
                  List<Event> history, Set<String> ipAddresses, Set<String> additionalIpAddresses,
                  Set<String> additionalHostnames, Optional<String> switchHostname,
-                 Optional<String> modelName, Environment environment) {
+                 Optional<String> modelName, Environment environment, CloudAccount cloudAccount) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.parentHostname = Objects.requireNonNull(parentHostname, "parentHostname must be non-null");
@@ -133,6 +135,7 @@ public class Node {
         this.switchHostname = Objects.requireNonNull(switchHostname, "switchHostname must be non-null");
         this.modelName = Objects.requireNonNull(modelName, "modelName must be non-null");
         this.environment = Objects.requireNonNull(environment, "environment must be non-ull");
+        this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount must be non-null");
     }
 
     /** The cloud provider's unique ID for this */
@@ -344,6 +347,10 @@ public class Node {
         return environment;
     }
 
+    public CloudAccount cloudAccount() {
+        return cloudAccount;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -501,6 +508,7 @@ public class Node {
         private Optional<String> switchHostname = Optional.empty();
         private Optional<String> modelName = Optional.empty();
         private Environment environment = Environment.unknown;
+        private CloudAccount cloudAccount = CloudAccount.empty;
 
         private Builder() {}
 
@@ -785,6 +793,11 @@ public class Node {
             return this;
         }
 
+        public Builder cloudAccount(CloudAccount cloudAccount) {
+            this.cloudAccount = cloudAccount;
+            return this;
+        }
+
         public Node build() {
             return new Node(id, hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion,
                             currentOsVersion, wantedOsVersion, deferOsUpgrade, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
@@ -792,7 +805,7 @@ public class Node {
                             wantedRebootGeneration, cost, failCount, flavor, clusterId, clusterType, group, index, retired,
                             wantToRetire, wantToDeprovision, wantToRebuild, down, reservedTo, exclusiveTo, wantedDockerImage,
                             currentDockerImage, exclusiveToClusterType, reports, history, ipAddresses, additionalIpAddresses,
-                            additionalHostnames, switchHostname, modelName, environment);
+                            additionalHostnames, switchHostname, modelName, environment, cloudAccount);
         }
 
     }
