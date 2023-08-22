@@ -1,11 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_partial_update.h"
+#include <vespa/eval/eval/array_array_map.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/vespalib/util/overload.h>
+#include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
-#include <vespa/vespalib/util/shared_string_repo.h>
 #include <cassert>
 #include <set>
 
@@ -203,27 +204,27 @@ struct PerformModify {
     static Value::UP invoke(const Value &input,
                             join_fun_t function,
                             const Value &modifier,
-                            const ValueBuilderFactory &factory);
+                            const ValueBuilderFactory &factory,
+                            AddressHandler& handler,
+                            Value::UP output);
 };
 
 template <typename ICT, typename MCT>
 Value::UP
-PerformModify::invoke(const Value &input, join_fun_t function, const Value &modifier, const ValueBuilderFactory &factory)
+PerformModify::invoke(const Value &input, join_fun_t function, const Value &modifier, const ValueBuilderFactory &factory,
+                      AddressHandler& handler, Value::UP output)
 {
     const ValueType &input_type = input.type();
     const size_t dsss = input_type.dense_subspace_size();
-    const ValueType &modifier_type = modifier.type();
-    AddressHandler handler(input_type, modifier_type);
-    if (! handler.valid) {
-        return {};
+    if (!output) {
+        // copy input to output
+        output = copy_tensor<ICT>(input, input_type, handler.for_output, factory);
     }
-    // copy input to output
-    auto out = copy_tensor<ICT>(input, input_type, handler.for_output, factory);
     // need to overwrite some cells
-    auto output_cells = unconstify(out->cells().template typify<ICT>());
+    auto output_cells = unconstify(output->cells().template typify<ICT>());
     const auto modifier_cells = modifier.cells().typify<MCT>();
     auto modifier_view = modifier.index().create_view({});
-    auto lookup_view = out->index().create_view(handler.for_output.lookup_view_dims);
+    auto lookup_view = output->index().create_view(handler.for_output.lookup_view_dims);
     modifier_view->lookup({});
     size_t modifier_subspace_index;
     while (modifier_view->next_result(handler.from_modifier.next_result_refs, modifier_subspace_index)) {
@@ -242,7 +243,70 @@ PerformModify::invoke(const Value &input, join_fun_t function, const Value &modi
             dst[dense_idx] = function(lhs, rhs);
         }
     }
-    return out;
+    return output;
+}
+
+void
+find_sub_spaces_not_in_input(const Value& input, const Value& modifier, double default_cell_value,
+                             AddressHandler& handler, ArrayArrayMap<string_id, double>& sub_spaces_result)
+{
+    auto lookup_view = input.index().create_view(handler.for_output.lookup_view_dims);
+    auto modifier_view = modifier.index().create_view({});
+    modifier_view->lookup({});
+    size_t modifier_subspace_index;
+    while (modifier_view->next_result(handler.from_modifier.next_result_refs, modifier_subspace_index)) {
+        handler.handle_address();
+        size_t dense_idx = handler.dense_converter.get_dense_index();
+        if (dense_idx == npos()) {
+            continue;
+        }
+        lookup_view->lookup(handler.for_output.lookup_refs);
+        size_t output_subspace_index;
+        if (!lookup_view->next_result({}, output_subspace_index)) {
+            ConstArrayRef<string_id> addr(handler.for_output.addr);
+            auto [tag, inserted] = sub_spaces_result.lookup_or_add_entry(addr);
+            if (inserted) {
+                auto values = sub_spaces_result.get_values(tag);
+                for (size_t i = 0; i < values.size(); ++i) {
+                    values[i] = default_cell_value;
+                }
+            }
+        }
+    }
+}
+
+struct PerformInsertSubspaces {
+    template<typename ICT>
+    static Value::UP invoke(const Value& input,
+                            SparseCoords& output_addrs,
+                            const ArrayArrayMap<string_id, double>& sub_spaces,
+                            const ValueBuilderFactory& factory);
+};
+
+template <typename ICT>
+Value::UP
+PerformInsertSubspaces::invoke(const Value& input,
+                               SparseCoords& output_addrs,
+                               const ArrayArrayMap<string_id, double>& sub_spaces,
+                               const ValueBuilderFactory& factory)
+{
+    const auto& input_type = input.type();
+    const size_t num_mapped_in_input = input_type.count_mapped_dimensions();
+    const size_t dsss = input_type.dense_subspace_size();
+    const size_t expected_subspaces = input.index().size() + sub_spaces.size();
+    auto builder = factory.create_value_builder<ICT>(input_type, num_mapped_in_input, dsss, expected_subspaces);
+    auto no_filter = [] (const auto&, size_t) {
+        return true;
+    };
+    copy_tensor_with_filter<ICT>(input, dsss, output_addrs, *builder, no_filter);
+    sub_spaces.each_entry([&](vespalib::ConstArrayRef<string_id> keys, vespalib::ConstArrayRef<double> values) {
+        auto dst = builder->add_subspace(keys).begin();
+        assert(dsss == values.size());
+        for (size_t i = 0; i < dsss; ++i) {
+            dst[i] = values[i];
+        }
+    });
+    return builder->build(std::move(builder));
 }
 
 //-----------------------------------------------------------------------------
@@ -398,9 +462,34 @@ Value::UP
 TensorPartialUpdate::modify(const Value &input, join_fun_t function,
                             const Value &modifier, const ValueBuilderFactory &factory)
 {
+    AddressHandler handler(input.type(), modifier.type());
+    if (!handler.valid) {
+        return {};
+    }
     return typify_invoke<2, TypifyCellType, PerformModify>(
             input.cells().type, modifier.cells().type,
-            input, function, modifier, factory);
+            input, function, modifier, factory, handler, Value::UP());
+}
+
+Value::UP
+TensorPartialUpdate::modify_with_defaults(const Value& input, join_fun_t function,
+                                          const Value& modifier, double default_cell_value, const ValueBuilderFactory& factory)
+{
+    AddressHandler handler(input.type(), modifier.type());
+    if (!handler.valid) {
+        return {};
+    }
+    const size_t dsss = input.type().dense_subspace_size();
+    ArrayArrayMap<string_id, double> sub_spaces(handler.for_output.addr.size(), dsss, modifier.index().size());
+    find_sub_spaces_not_in_input(input, modifier, default_cell_value, handler, sub_spaces);
+    Value::UP output;
+    if (sub_spaces.size() > 0) {
+        output = typify_invoke<1, TypifyCellType, PerformInsertSubspaces>(
+            input.cells().type, input, handler.for_output, sub_spaces, factory);
+    }
+    return typify_invoke<2, TypifyCellType, PerformModify>(
+            input.cells().type, modifier.cells().type,
+            input, function, modifier, factory, handler, std::move(output));
 }
 
 Value::UP

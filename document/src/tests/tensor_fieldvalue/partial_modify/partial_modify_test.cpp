@@ -60,10 +60,33 @@ Value::UP try_partial_modify(const TensorSpec &a, const TensorSpec &b, join_fun_
     return TensorPartialUpdate::modify(*lhs, fun, *rhs, factory);
 }
 
+Value::UP try_partial_modify_with_defaults(const TensorSpec &a, const TensorSpec &b, join_fun_t fun, double default_cell_value) {
+    const auto &factory = SimpleValueBuilderFactory::get();
+    auto lhs = value_from_spec(a, factory);
+    auto rhs = value_from_spec(b, factory);
+    return TensorPartialUpdate::modify_with_defaults(*lhs, fun, *rhs, default_cell_value, factory);
+}
+
 TensorSpec perform_partial_modify(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {
     auto up = try_partial_modify(a, b, fun);
     EXPECT_TRUE(up);
     return spec_from_value(*up);
+}
+
+TensorSpec perform_partial_modify_with_defaults(const TensorSpec &a, const TensorSpec &b, join_fun_t fun, double default_cell_value) {
+    auto up = try_partial_modify_with_defaults(a, b, fun, default_cell_value);
+    EXPECT_TRUE(up);
+    return spec_from_value(*up);
+}
+
+void expect_modify_with_defaults(const vespalib::string& lhs_expr, const vespalib::string& rhs_expr,
+                                 join_fun_t fun, double default_cell_value, const vespalib::string& exp_expr) {
+    auto lhs = TensorSpec::from_expr(lhs_expr);
+    auto rhs = TensorSpec::from_expr(rhs_expr);
+    auto exp = TensorSpec::from_expr(exp_expr);
+    auto act = perform_partial_modify_with_defaults(lhs, rhs, fun, default_cell_value);
+    SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+    EXPECT_EQ(exp, act);
 }
 
 TEST(PartialModifyTest, partial_modify_works_for_simple_values) {
@@ -87,6 +110,27 @@ TEST(PartialModifyTest, partial_modify_works_for_simple_values) {
     }
 }
 
+TEST(PartialModifyTest, partial_modify_with_defauls) {
+    expect_modify_with_defaults("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2}",
+                                "tensor(x{}):{{x:\"b\"}:3}",
+                                operation::Add::f, 0.0,
+                                "tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:5}");
+
+    expect_modify_with_defaults("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2}",
+                                "tensor(x{}):{{x:\"b\"}:3,{x:\"c\"}:4}",
+                                operation::Add::f, 0.0,
+                                "tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:5,{x:\"c\"}:4}");
+
+    expect_modify_with_defaults("tensor(x{},y[3]):{{x:\"a\",y:0}:3,{x:\"a\",y:1}:4,{x:\"a\",y:2}:5}",
+                                "tensor(x{},y{}):{{x:\"a\",y:\"0\"}:6,"
+                                                 "{x:\"b\",y:\"1\"}:7,{x:\"b\",y:\"2\"}:8,"
+                                                 "{x:\"c\",y:\"0\"}:9}",
+                                operation::Add::f, 1.0,
+                                "tensor(x{},y[3]):{{x:\"a\",y:0}:9,{x:\"a\",y:1}:4,{x:\"a\",y:2}:5,"
+                                                  "{x:\"b\",y:0}:1,{x:\"b\",y:1}:8,{x:\"b\",y:2}:9,"
+                                                  "{x:\"c\",y:0}:10,{x:\"c\",y:1}:1,{x:\"c\",y:2}:1}");
+}
+
 std::vector<std::pair<vespalib::string,vespalib::string>> bad_layouts = {
     {       "x3",       "x3" },
     {   "x3y4_1",   "x3y4_1" },
@@ -102,6 +146,19 @@ TEST(PartialModifyTest, partial_modify_returns_nullptr_on_invalid_inputs) {
         SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
         for (auto fun: {operation::Add::f}) {
             auto actual = try_partial_modify(lhs, rhs, fun);
+            auto expect = Value::UP();
+            EXPECT_EQ(actual, expect);
+        }
+    }
+}
+
+TEST(PartialModifyTest, partial_modify_with_defaults_returns_nullptr_on_invalid_inputs) {
+    for (const auto &layouts: bad_layouts) {
+        TensorSpec lhs = GenSpec::from_desc(layouts.first).seq(N());
+        TensorSpec rhs = GenSpec::from_desc(layouts.second).seq(Div16(N()));
+        SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+        for (auto fun: {operation::Add::f}) {
+            auto actual = try_partial_modify_with_defaults(lhs, rhs, fun, 0.0);
             auto expect = Value::UP();
             EXPECT_EQ(actual, expect);
         }
