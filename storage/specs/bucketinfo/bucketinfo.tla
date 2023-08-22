@@ -1,6 +1,6 @@
 ------------------------------ MODULE bucketinfo ------------------------------
 
-EXTENDS Naturals, FiniteSets, Sequences, Integers, TLC
+EXTENDS FiniteSets, Sequences, Integers, TLC
 
 (***************************************************************************)
 (* This spec models the state synchronization mechanisms for a single data *)
@@ -42,13 +42,13 @@ CONSTANTS DistributorNodes, ContentNode, ClusterStates,
           NodeEpochs, MutatingOps, Null
 
 ASSUME /\ IsFiniteSet(DistributorNodes)
-       /\ Cardinality(DistributorNodes) > 0
+       /\ DistributorNodes # {}
        /\ IsFiniteSet(ClusterStates)
-       /\ Cardinality(ClusterStates) > 0
+       /\ ClusterStates # {}
        /\ IsFiniteSet(NodeEpochs)
-       /\ Cardinality(NodeEpochs) > 0
+       /\ NodeEpochs # {}
        /\ IsFiniteSet(MutatingOps)
-       /\ Cardinality(MutatingOps) > 0
+       /\ MutatingOps # {}
        /\ ClusterStates \subseteq (Nat \ {0})
        /\ NodeEpochs \subseteq (Nat \ {0})
        /\ DistributorNodes \intersect {ContentNode} = {}
