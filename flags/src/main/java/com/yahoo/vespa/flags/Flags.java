@@ -375,6 +375,13 @@ public class Flags {
             "Use the vespa user for running Vespa everywhere",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
+            "more-wireguard", false,
+            List.of("andreer"), "2023-08-21", "2023-09-21",
+            "Use wireguard in INternal enCLAVES",
+            "Takes effect on next host-admin run",
+            HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
