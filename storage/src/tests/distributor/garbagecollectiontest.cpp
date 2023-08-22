@@ -113,9 +113,8 @@ struct GarbageCollectionOperationTest : Test, DistributorStripeTestUtil {
         ASSERT_EQ(entry->getNodeCount(), info.size());
         EXPECT_EQ(entry->getLastGarbageCollectionTime(), last_gc_time);
         for (size_t i = 0; i < info.size(); ++i) {
-            EXPECT_EQ(info[i], entry->getNode(i)->getBucketInfo())
-                    << "Mismatching info for node " << i << ": " << info[i] << " vs "
-                    << entry->getNode(i)->getBucketInfo();
+            auto& node = entry->getNodeRef(i);
+            EXPECT_EQ(info[i], node.getBucketInfo()) << "Mismatching DB bucket info for node " << node.getNode();
         }
     }
 
@@ -170,6 +169,51 @@ TEST_F(GarbageCollectionOperationTest, replica_bucket_info_not_added_to_db_until
     ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(1234, 90, 500), api::BucketInfo(4567, 90, 500)}, 34));
 
     EXPECT_EQ(70u, gc_removed_documents_metric()); // Use max of received metrics
+}
+
+TEST_F(GarbageCollectionOperationTest, no_replica_bucket_info_added_to_db_if_operation_fully_canceled) {
+    auto op = create_op();
+    op->start(_sender);
+    ASSERT_EQ(2, _sender.commands().size());
+
+    reply_to_nth_request(*op, 0, 1234, 70);
+    op->cancel(_sender, CancelScope::of_fully_cancelled());
+    reply_to_nth_request(*op, 1, 4567, 60);
+
+    // DB state is unchanged. Note that in a real scenario, the DB entry will have been removed
+    // as part of the ownership change, but there are already non-cancellation behaviors that
+    // avoid creating buckets from scratch in the DB if they do not exist, so just checking to
+    // see if the bucket exists or not risks hiding missing cancellation edge handling.
+    ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(250, 50, 300), api::BucketInfo(250, 50, 300)}, 0));
+    // However, we still update our metrics if we _did_ remove documents on one or more nodes
+    EXPECT_EQ(70u, gc_removed_documents_metric());
+}
+
+TEST_F(GarbageCollectionOperationTest, no_replica_bucket_info_added_to_db_for_cancelled_node) {
+    auto op = create_op();
+    op->start(_sender);
+    ASSERT_EQ(2, _sender.commands().size());
+
+    reply_to_nth_request(*op, 0, 1234, 70);
+    op->cancel(_sender, CancelScope::of_node_subset({0}));
+    reply_to_nth_request(*op, 1, 4567, 60);
+
+    // DB state is unchanged for node 0, changed for node 1
+    ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(250, 50, 300), api::BucketInfo(4567, 90, 500)}, 34));
+}
+
+TEST_F(GarbageCollectionOperationTest, node_cancellation_is_cumulative) {
+    auto op = create_op();
+    op->start(_sender);
+    ASSERT_EQ(2, _sender.commands().size());
+
+    reply_to_nth_request(*op, 0, 1234, 70);
+    op->cancel(_sender, CancelScope::of_node_subset({0}));
+    op->cancel(_sender, CancelScope::of_node_subset({1}));
+    reply_to_nth_request(*op, 1, 4567, 60);
+
+    // DB state is unchanged for both nodes
+    ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(250, 50, 300), api::BucketInfo(250, 50, 300)}, 0));
 }
 
 TEST_F(GarbageCollectionOperationTest, gc_bucket_info_does_not_overwrite_later_sequenced_bucket_info_writes) {
@@ -360,6 +404,16 @@ TEST_F(GarbageCollectionOperationPhase1FailureTest, no_second_phase_if_bucket_in
     // Add a logical child of _bucket_id to the bucket tree. This implies an inconsistent split, as we never
     // want to have a tree with buckets in inner node positions, only in leaves.
     addNodesToBucketDB(BucketId(17, 1), "0=250/50/300,1=250/50/300");
+    receive_phase1_replies_and_assert_no_phase_2_started();
+}
+
+TEST_F(GarbageCollectionOperationPhase1FailureTest, no_second_phase_if_operation_fully_cancelled_between_phases) {
+    _op->cancel(_sender, CancelScope::of_fully_cancelled());
+    receive_phase1_replies_and_assert_no_phase_2_started();
+}
+
+TEST_F(GarbageCollectionOperationPhase1FailureTest, no_second_phase_if_operation_partially_cancelled_between_phases) {
+    _op->cancel(_sender, CancelScope::of_node_subset({0}));
     receive_phase1_replies_and_assert_no_phase_2_started();
 }
 

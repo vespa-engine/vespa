@@ -68,6 +68,7 @@ struct RemoveOperationTest : Test, DistributorStripeTestUtil {
         std::unique_ptr<api::StorageReply> reply(removec->makeReply());
         auto* removeR = dynamic_cast<api::RemoveReply*>(reply.get());
         removeR->setOldTimestamp(oldTimestamp);
+        removeR->setBucketInfo(api::BucketInfo(1,2,3,4,5));
         callback.onReceive(_sender, std::shared_ptr<api::StorageReply>(reply.release()));
     }
 
@@ -305,6 +306,45 @@ TEST_F(ExtRemoveOperationTest, failed_condition_probe_fails_op_with_returned_err
               "ReturnCode(ABORTED, Failed during write repair condition probe step. Reason: "
               "One or more replicas failed during test-and-set condition evaluation)",
               _sender.getLastReply());
+}
+
+// Note: we don't exhaustively test cancellation edges here, as we assume that Put/Update/Remove ops
+// share the same underlying PersistenceMessageTracker logic. See PutOperationTest for more tests.
+
+TEST_F(ExtRemoveOperationTest, cancellation_during_condition_probe_fails_operation_on_probe_completion) {
+    ASSERT_NO_FATAL_FAILURE(set_up_tas_remove_with_2_nodes(ReplicaState::INCONSISTENT));
+
+    reply_with(make_get_reply(0, 50, false, true));
+    op->cancel(_sender, CancelScope::of_fully_cancelled());
+    reply_with(make_get_reply(1, 50, false, true));
+
+    ASSERT_EQ("Get => 1,Get => 0", _sender.getCommands(true));
+    EXPECT_EQ("RemoveReply(BucketId(0x0000000000000000), "
+              "id:test:test::uri, "
+              "timestamp 100, not found) "
+              "ReturnCode(ABORTED, Failed during write repair condition probe step. Reason: "
+              "Operation has been cancelled (likely due to a cluster state change))",
+              _sender.getLastReply());
+}
+
+TEST_F(ExtRemoveOperationTest, cancelled_nodes_are_not_updated_in_db) {
+    ASSERT_NO_FATAL_FAILURE(set_up_tas_remove_with_2_nodes(ReplicaState::CONSISTENT));
+    ASSERT_EQ("Remove => 1,Remove => 0", _sender.getCommands(true));
+
+    operation_context().remove_nodes_from_bucket_database(makeDocumentBucket(bucketId), {1});
+    op->cancel(_sender, CancelScope::of_node_subset({1}));
+
+    replyToMessage(*op, 0, 50);
+    replyToMessage(*op, 1, 50);
+
+    EXPECT_EQ("BucketId(0x4000000000000593) : "
+              "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)",
+              dumpBucket(bucketId));
+    // Reply is still OK since the operation went through on the content nodes
+    ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), "
+              "id:test:test::uri, timestamp 100, removed doc from 50) ReturnCode(NONE)",
+              _sender.getLastReply());
+
 }
 
 TEST_F(ExtRemoveOperationTest, trace_is_propagated_from_condition_probe_gets_ok_probe_case) {

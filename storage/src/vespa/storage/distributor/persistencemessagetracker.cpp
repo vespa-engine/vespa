@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "persistencemessagetracker.h"
+#include "cancelled_replicas_pruner.h"
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistencemessagetracker");
@@ -18,12 +20,15 @@ PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
         DistributorStripeOperationContext& op_ctx,
         api::Timestamp revertTimestamp)
     : MessageTracker(node_ctx),
+      _remapBucketInfo(),
+      _bucketInfo(),
       _metric(metric),
       _reply(std::move(reply)),
       _op_ctx(op_ctx),
       _revertTimestamp(revertTimestamp),
       _trace(_reply->getTrace().getLevel()),
       _requestTimer(node_ctx.clock()),
+      _cancel_scope(),
       _n_persistence_replies_total(0),
       _n_successful_persistence_replies(0),
       _priority(_reply->getPriority()),
@@ -34,8 +39,32 @@ PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
 PersistenceMessageTrackerImpl::~PersistenceMessageTrackerImpl() = default;
 
 void
+PersistenceMessageTrackerImpl::cancel(const CancelScope& cancel_scope)
+{
+    _cancel_scope.merge(cancel_scope);
+}
+
+void
+PersistenceMessageTrackerImpl::prune_cancelled_nodes_if_present(
+        BucketInfoMap& bucket_and_replicas,
+        const CancelScope& cancel_scope)
+{
+    for (auto& info : bucket_and_replicas) {
+        info.second = prune_cancelled_nodes(info.second, cancel_scope);
+    }
+}
+
+void
 PersistenceMessageTrackerImpl::updateDB()
 {
+    if (_cancel_scope.is_cancelled()) {
+        if (_cancel_scope.fully_cancelled()) {
+            return; // Fully cancelled ops cannot mutate the DB at all
+        }
+        prune_cancelled_nodes_if_present(_bucketInfo, _cancel_scope);
+        prune_cancelled_nodes_if_present(_remapBucketInfo, _cancel_scope);
+    }
+
     for (const auto & entry : _bucketInfo) {
         _op_ctx.update_bucket_database(entry.first, entry.second);
     }
@@ -229,12 +258,19 @@ PersistenceMessageTrackerImpl::updateFailureResult(const api::BucketInfoReply& r
     _success = false;
 }
 
+bool
+PersistenceMessageTrackerImpl::node_is_effectively_cancelled(uint16_t node) const noexcept
+{
+    return _cancel_scope.node_is_cancelled(node); // Implicitly covers the fully cancelled case
+}
+
 void
 PersistenceMessageTrackerImpl::handleCreateBucketReply(api::BucketInfoReply& reply, uint16_t node)
 {
     LOG(spam, "Received CreateBucket reply for %s from node %u", reply.getBucketId().toString().c_str(), node);
     if (!reply.getResult().success()
-        && reply.getResult().getResult() != api::ReturnCode::EXISTS)
+        && (reply.getResult().getResult() != api::ReturnCode::EXISTS)
+        && !node_is_effectively_cancelled(node))
     {
         LOG(spam, "Create bucket reply failed, so deleting it from bucket db");
         // We don't know if the bucket exists at this point, so we remove it from the DB.

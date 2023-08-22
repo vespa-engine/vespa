@@ -16,6 +16,7 @@ class StorageComponent;
 
 namespace distributor {
 
+class CancelScope;
 class DistributorStripeOperationContext;
 class PendingMessageTracker;
 class OperationSequencer;
@@ -40,7 +41,7 @@ public:
        on the owner of the message that was replied to.
     */
     virtual void receive(DistributorStripeMessageSender& sender,
-                 const std::shared_ptr<api::StorageReply> & msg)
+                         const std::shared_ptr<api::StorageReply> & msg)
     {
         onReceive(sender, msg);
     }
@@ -58,6 +59,22 @@ public:
     */
     virtual void start(DistributorStripeMessageSender& sender, vespalib::system_time startTime);
     void start(DistributorStripeMessageSender& sender);
+
+    /**
+     * Explicitly cancel the operation. Cancelled operations may or may not (depending on
+     * the operation implementation) be immediately aborted, but they should either way
+     * never insert any bucket information _for cancelled nodes_ into the bucket DB after
+     * cancel() has been called.
+     */
+    void cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope);
+
+    /**
+     * Whether cancel() has been invoked at least once on this instance. This does not
+     * distinguish between cancellations caused by ownership transfers and those caused
+     * by nodes becoming unavailable; Operation implementations that care about this need
+     * to implement cancel() themselves and inspect the provided CancelScope.
+     */
+    [[nodiscard]] bool is_cancelled() const noexcept { return _cancelled; }
 
     /**
      * Returns true if we are blocked to start this operation given
@@ -93,8 +110,15 @@ private:
                            const std::shared_ptr<api::StorageReply> & msg) = 0;
 
 protected:
+    virtual void on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) {
+        (void)sender;
+        (void)cancel_scope;
+    }
+
     static constexpr vespalib::duration MAX_TIMEOUT = 3600s;
+
     vespalib::system_time _startTime;
+    bool                  _cancelled;
 };
 
 }

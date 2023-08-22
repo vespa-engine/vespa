@@ -109,6 +109,8 @@ PutOperation::sendPutToBucketOnNode(document::BucketSpace bucketSpace, const doc
 
 bool PutOperation::has_unavailable_targets_in_pending_state(const OperationTargetList& targets) const {
     // TODO handle this explicitly as part of operation abort/cancel edge
+    //   -> we have yet to send anything at this point
+    //   -> shouldn't ExternalOperationHandler deal with this before starting the op?
     auto* pending_state = _op_ctx.pending_cluster_state_or_null(_msg->getBucket().getBucketSpace());
     if (!pending_state) {
         return false;
@@ -245,6 +247,15 @@ void PutOperation::start_direct_put_dispatch(DistributorStripeMessageSender& sen
     _msg = std::shared_ptr<api::PutCommand>();
 }
 
+void
+PutOperation::on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope)
+{
+    if (_check_condition) {
+        _check_condition->cancel(sender, cancel_scope);
+    }
+    _tracker.cancel(cancel_scope);
+}
+
 bool
 PutOperation::shouldImplicitlyActivateReplica(const OperationTargetList& targets) const
 {
@@ -302,7 +313,7 @@ void
 PutOperation::onClose(DistributorStripeMessageSender& sender)
 {
     if (_check_condition) {
-        _check_condition->cancel(sender);
+        _check_condition->close(sender);
     }
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
 }

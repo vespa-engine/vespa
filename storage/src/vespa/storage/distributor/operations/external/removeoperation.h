@@ -29,6 +29,7 @@ public:
 
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
     void onClose(DistributorStripeMessageSender& sender) override;
+    void on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) override;
 
 private:
     PersistenceMessageTrackerImpl       _tracker_instance;

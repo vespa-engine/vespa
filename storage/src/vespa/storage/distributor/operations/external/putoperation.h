@@ -60,6 +60,8 @@ private:
     void sendPutToBucketOnNode(document::BucketSpace bucketSpace, const document::BucketId& bucketId,
                                uint16_t node, std::vector<PersistenceMessageTracker::ToSend>& putBatch);
 
+    void on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) override;
+
     [[nodiscard]] bool shouldImplicitlyActivateReplica(const OperationTargetList& targets) const;
 
     [[nodiscard]] bool has_unavailable_targets_in_pending_state(const OperationTargetList& targets) const;

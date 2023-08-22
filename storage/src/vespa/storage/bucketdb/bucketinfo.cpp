@@ -142,7 +142,7 @@ BucketInfo::addNode(const BucketCopy& newCopy, const std::vector<uint16_t>& reco
 bool
 BucketInfo::removeNode(unsigned short node, TrustedUpdate update)
 {
-    for (auto iter = _nodes.begin(); iter != _nodes.end(); iter++) {
+    for (auto iter = _nodes.begin(); iter != _nodes.end(); ++iter) {
         if (iter->getNode() == node) {
             _nodes.erase(iter);
             if (update == TrustedUpdate::UPDATE) {

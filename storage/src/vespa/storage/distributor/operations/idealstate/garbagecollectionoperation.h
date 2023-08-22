@@ -3,10 +3,11 @@
 
 #include "idealstateoperation.h"
 #include <vespa/document/base/documentid.h>
+#include <vespa/persistence/spi/id_and_timestamp.h>
 #include <vespa/storage/bucketdb/bucketcopy.h>
 #include <vespa/storage/distributor/messagetracker.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
-#include <vespa/persistence/spi/id_and_timestamp.h>
+#include <vespa/storage/distributor/operations/cancel_scope.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vector>
 
@@ -22,13 +23,14 @@ public:
 
     void onStart(DistributorStripeMessageSender& sender) override;
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) override;
     const char* getName() const noexcept override { return "garbagecollection"; };
     Type getType() const noexcept override { return GARBAGE_COLLECTION; }
     bool shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const override;
-    bool is_two_phase() const noexcept {
+    [[nodiscard]] bool is_two_phase() const noexcept {
         return ((_phase == Phase::ReadMetadataPhase) || (_phase == Phase::WriteRemovesPhase));
     }
-    bool is_done() const noexcept { return _is_done; }
+    [[nodiscard]] bool is_done() const noexcept { return _is_done; }
 
 protected:
     MessageTracker _tracker;
@@ -54,13 +56,14 @@ private:
     RemoveCandidates              _remove_candidates;
     std::vector<SequencingHandle> _gc_write_locks;
     std::vector<BucketCopy>       _replica_info;
+    CancelScope                   _cancel_scope;
     uint32_t                      _max_documents_removed;
     bool                          _is_done;
 
     static RemoveCandidates steal_selection_matches_as_candidates(api::RemoveLocationReply& reply);
 
     void send_current_phase_remove_locations(DistributorStripeMessageSender& sender);
-    std::vector<spi::IdAndTimestamp> compile_phase_two_send_set() const;
+    [[nodiscard]] std::vector<spi::IdAndTimestamp> compile_phase_two_send_set() const;
 
     void handle_ok_legacy_reply(uint16_t from_node, const api::RemoveLocationReply& reply);
     void handle_ok_phase1_reply(api::RemoveLocationReply& reply);

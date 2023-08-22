@@ -12,7 +12,8 @@ LOG_SETUP(".distributor.callback");
 namespace storage::distributor {
 
 Operation::Operation()
-    : _startTime()
+    : _startTime(),
+      _cancelled(false)
 {
 }
 
@@ -43,6 +44,11 @@ Operation::copyMessageSettings(const api::StorageCommand& source, api::StorageCo
     target.getTrace().setLevel(source.getTrace().getLevel());
     target.setTimeout(source.getTimeout());
     target.setPriority(source.getPriority());
+}
+
+void Operation::cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) {
+    _cancelled = true;
+    on_cancel(sender, cancel_scope);
 }
 
 void

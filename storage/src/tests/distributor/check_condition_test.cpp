@@ -5,6 +5,7 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 #include <vespa/storage/distributor/node_supported_features.h>
+#include <vespa/storage/distributor/operations/cancel_scope.h>
 #include <vespa/storage/distributor/operations/external/check_condition.h>
 #include <vespa/storage/distributor/persistence_operation_metric_set.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -227,6 +228,20 @@ TEST_F(CheckConditionTest, failed_gets_completes_check_with_error_outcome) {
     });
 }
 
+TEST_F(CheckConditionTest, check_fails_if_condition_explicitly_cancelled) {
+    test_cond_with_2_gets_sent([&](auto& cond) {
+        cond.handle_reply(_sender, make_matched_reply(0));
+        cond.cancel(_sender, CancelScope::of_fully_cancelled());
+        cond.handle_reply(_sender, make_matched_reply(1));
+    }, [&](auto& outcome) {
+        EXPECT_FALSE(outcome.matched_condition());
+        EXPECT_FALSE(outcome.not_found());
+        EXPECT_TRUE(outcome.failed());
+        EXPECT_EQ(outcome.error_code().getResult(), api::ReturnCode::ABORTED);
+    });
+}
+
+// TODO deprecate in favor of cancelling
 TEST_F(CheckConditionTest, check_fails_if_replica_set_changed_between_start_and_completion) {
     test_cond_with_2_gets_sent([&](auto& cond) {
         cond.handle_reply(_sender, make_matched_reply(0));
@@ -242,6 +257,7 @@ TEST_F(CheckConditionTest, check_fails_if_replica_set_changed_between_start_and_
     });
 }
 
+// TODO deprecate in favor of cancelling
 TEST_F(CheckConditionTest, check_fails_if_bucket_ownership_changed_between_start_and_completion_pending_transition_case) {
     test_cond_with_2_gets_sent([&](auto& cond) {
         cond.handle_reply(_sender, make_matched_reply(0));
@@ -255,6 +271,7 @@ TEST_F(CheckConditionTest, check_fails_if_bucket_ownership_changed_between_start
     });
 }
 
+// TODO deprecate in favor of cancelling
 TEST_F(CheckConditionTest, check_fails_if_bucket_ownership_changed_between_start_and_completion_completed_transition_case) {
     test_cond_with_2_gets_sent([&](auto& cond) {
         cond.handle_reply(_sender, make_matched_reply(0));

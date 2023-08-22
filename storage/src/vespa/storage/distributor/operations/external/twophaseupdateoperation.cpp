@@ -13,6 +13,7 @@
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -68,10 +69,8 @@ TwoPhaseUpdateOperation::stateToString(SendState state) noexcept
     case SendState::SINGLE_GET_SENT:    return "SINGLE_GET_SENT";
     case SendState::FULL_GETS_SENT:     return "FULL_GETS_SENT";
     case SendState::PUTS_SENT:          return "PUTS_SENT";
-    default:
-        assert(!"Unknown state");
-        return "";
     }
+    abort();
 }
 
 void
@@ -130,7 +129,7 @@ TwoPhaseUpdateOperation::get_bucket_database_entries() const
 }
 
 bool
-TwoPhaseUpdateOperation::isFastPathPossible(const std::vector<BucketDatabase::Entry>& entries) const
+TwoPhaseUpdateOperation::isFastPathPossible(const std::vector<BucketDatabase::Entry>& entries)
 {
     // Fast path iff bucket exists AND is consistent (split and copies).
     if (entries.size() != 1) {
@@ -245,6 +244,16 @@ TwoPhaseUpdateOperation::sendLostOwnershipTransientErrorReply(DistributorStripeM
 }
 
 void
+TwoPhaseUpdateOperation::send_operation_cancelled_reply(DistributorStripeMessageSender& sender)
+{
+    sendReplyWithResult(sender,
+                        api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND,
+                                        "The update operation was cancelled due to a cluster state change "
+                                        "between executing the read and write phases of a write-repair "
+                                        "update"));
+}
+
+void
 TwoPhaseUpdateOperation::send_feed_blocked_error_reply(DistributorStripeMessageSender& sender)
 {
     sendReplyWithResult(sender,
@@ -257,7 +266,8 @@ void
 TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<document::Document> doc,
                                                          api::Timestamp putTimestamp, DistributorStripeMessageSender& sender)
 {
-    if (lostBucketOwnershipBetweenPhases()) {
+    assert(!is_cancelled());
+    if (lostBucketOwnershipBetweenPhases()) { // TODO deprecate with cancellation
         sendLostOwnershipTransientErrorReply(sender);
         return;
     }
@@ -281,6 +291,8 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<documen
 void
 TwoPhaseUpdateOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg)
 {
+    // In the case of cancellations, we let existing operations complete, but must not
+    // start new ones that are unaware of the cancellations.
     if (_mode == Mode::FAST_PATH) {
         handleFastPathReceive(sender, msg);
     } else {
@@ -304,7 +316,10 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorStripeMessageSender& s
             sendReplyWithResult(sender, getReply.getResult());
             return;
         }
-
+        if (is_cancelled()) {
+            send_operation_cancelled_reply(sender);
+            return;
+        }
         if (!getReply.getDocument().get()) {
             // Weird, document is no longer there ... Just fail.
             sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, ""));
@@ -316,7 +331,7 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorStripeMessageSender& s
 
     std::shared_ptr<Operation> callback = _sentMessageMap.pop(msg->getMsgId());
     assert(callback.get());
-    Operation & callbackOp = *callback;
+    Operation& callbackOp = *callback;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(callback), sender);
     callbackOp.receive(intermediate, msg);
 
@@ -326,12 +341,12 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorStripeMessageSender& s
             addTraceFromReply(*intermediate._reply);
             auto& cb = dynamic_cast<UpdateOperation&>(callbackOp);
 
-            std::pair<document::BucketId, uint16_t> bestNode = cb.getNewestTimestampLocation();
+            auto [newest_bucket, newest_node] = cb.getNewestTimestampLocation();
             auto intermediate_update_reply = std::dynamic_pointer_cast<api::UpdateReply>(intermediate._reply);
             assert(intermediate_update_reply);
 
             if (!intermediate_update_reply->getResult().success() ||
-                bestNode.first == document::BucketId(0))
+                (newest_bucket == document::BucketId(0)))
             {
                 if (intermediate_update_reply->getResult().success() &&
                     (intermediate_update_reply->getOldTimestamp() == 0))
@@ -343,9 +358,14 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorStripeMessageSender& s
             } else {
                 LOG(debug, "Update(%s) fast path: was inconsistent!", update_doc_id().c_str());
 
+                if (is_cancelled()) {
+                    send_operation_cancelled_reply(sender);
+                    return;
+                }
+
                 _updateReply = std::move(intermediate_update_reply);
-                _fast_path_repair_source_node = bestNode.second;
-                document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), bestNode.first);
+                _fast_path_repair_source_node = newest_node;
+                document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), newest_bucket);
                 auto cmd = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(), document::AllFields::NAME);
                 copyMessageSettings(*_updateCmd, *cmd);
 
@@ -383,7 +403,7 @@ TwoPhaseUpdateOperation::handleSafePathReceive(DistributorStripeMessageSender& s
     callbackOp.receive(intermediate, msg);
 
     if (!intermediate._reply.get()) {
-        return; // Not enough replies received yet or we're draining callbacks.
+        return; // Not enough replies received yet, or we're draining callbacks.
     }
     addTraceFromReply(*intermediate._reply);
     if (_sendState == SendState::METADATA_GETS_SENT) {
@@ -445,6 +465,13 @@ void TwoPhaseUpdateOperation::handle_safe_path_received_metadata_get(
                             "One or more metadata Get operations failed; aborting Update"));
         return;
     }
+    if (is_cancelled()) {
+        send_operation_cancelled_reply(sender);
+        return;
+    }
+    // Replicas _removed_ is handled by cancellation, but a concurrent state change may happen
+    // that _adds_ one or more available content nodes, which we cannot then blindly write to.
+    // So we have to explicitly check this edge case.
     if (!replica_set_unchanged_after_get_operation()) {
         // Use BUCKET_NOT_FOUND to trigger a silent retry.
         LOG(debug, "Update(%s): replica set has changed after metadata get phase", update_doc_id().c_str());
@@ -488,6 +515,10 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorStripeMessageSende
 
     if (!reply.getResult().success()) {
         sendReplyWithResult(sender, reply.getResult());
+        return;
+    }
+    if (is_cancelled()) {
+        send_operation_cancelled_reply(sender);
         return;
     }
     // Single Get could technically be considered consistent with itself, so make
@@ -558,7 +589,8 @@ bool TwoPhaseUpdateOperation::replica_set_unchanged_after_get_operation() const 
 void TwoPhaseUpdateOperation::restart_with_fast_path_due_to_consistent_get_timestamps(DistributorStripeMessageSender& sender) {
     LOG(debug, "Update(%s): all Gets returned in initial safe path were consistent, restarting in fast path mode",
                update_doc_id().c_str());
-    if (lostBucketOwnershipBetweenPhases()) {
+    assert(!is_cancelled());
+    if (lostBucketOwnershipBetweenPhases()) { // TODO remove once cancellation is wired
         sendLostOwnershipTransientErrorReply(sender);
         return;
     }
@@ -579,7 +611,7 @@ TwoPhaseUpdateOperation::processAndMatchTasCondition(DistributorStripeMessageSen
 
     std::unique_ptr<document::select::Node> selection;
     try {
-         selection = _parser.parse_selection(_updateCmd->getCondition().getSelection());
+        selection = _parser.parse_selection(_updateCmd->getCondition().getSelection());
     } catch (const document::select::ParsingFailedException & e) {
         sendReplyWithResult(sender, api::ReturnCode(
                 api::ReturnCode::ILLEGAL_PARAMETERS,
@@ -676,6 +708,22 @@ TwoPhaseUpdateOperation::onClose(DistributorStripeMessageSender& sender) {
 
     if (!_replySent) {
         sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::ABORTED));
+    }
+}
+
+void
+TwoPhaseUpdateOperation::on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) {
+    // We have to explicitly cancel any and all pending Operation instances that have been
+    // launched by this operation. This is to ensure any DB updates they may transitively
+    // perform are aware of all cancellations that have occurred.
+    // There may be many messages pending for any given operation, so unique-ify them prior
+    // to avoid duplicate cancellation invocations.
+    vespalib::hash_set<Operation*> ops;
+    for (auto& msg_op : _sentMessageMap) {
+        ops.insert(msg_op.second.get());
+    }
+    for (auto* op : ops) {
+        op->cancel(sender, cancel_scope);
     }
 }
 
