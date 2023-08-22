@@ -253,6 +253,7 @@ func createCloudTarget(t *testing.T, logWriter io.Writer) (Target, *mock.HTTPCli
 			Deployment: Deployment{
 				Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
 				Zone:        ZoneID{Environment: "dev", Region: "us-north-1"},
+				System:      PublicSystem,
 			},
 		},
 		LogOptions{Writer: logWriter},

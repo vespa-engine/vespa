@@ -246,10 +246,7 @@ func (t *cloudTarget) deployServiceWait(fn responseFunc, reqFn requestFunc, time
 }
 
 func (t *cloudTarget) discoverLatestRun(timeout time.Duration) (int64, error) {
-	runsURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/job/%s-%s?limit=1",
-		t.apiOptions.System.URL,
-		t.deploymentOptions.Deployment.Application.Tenant, t.deploymentOptions.Deployment.Application.Application, t.deploymentOptions.Deployment.Application.Instance,
-		t.deploymentOptions.Deployment.Zone.Environment, t.deploymentOptions.Deployment.Zone.Region)
+	runsURL := t.apiOptions.System.RunsURL(t.deploymentOptions.Deployment) + "?limit=1"
 	req, err := http.NewRequest("GET", runsURL, nil)
 	if err != nil {
 		return 0, err
@@ -282,10 +279,7 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 		}
 		runID = lastRunID
 	}
-	runURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/job/%s-%s/run/%d",
-		t.apiOptions.System.URL,
-		t.deploymentOptions.Deployment.Application.Tenant, t.deploymentOptions.Deployment.Application.Application, t.deploymentOptions.Deployment.Application.Instance,
-		t.deploymentOptions.Deployment.Zone.Environment, t.deploymentOptions.Deployment.Zone.Region, runID)
+	runURL := t.apiOptions.System.RunURL(t.deploymentOptions.Deployment, runID)
 	req, err := http.NewRequest("GET", runURL, nil)
 	if err != nil {
 		return 0, err
