@@ -93,6 +93,8 @@ public class RpcTester implements AutoCloseable {
             iterations++;
         } while (!tempRpcServer.isRunning() && iterations < 10);
 
+        assertTrue("server is not running", tempRpcServer.isRunning());
+
         spec = tempSpec;
         ConfigserverConfig configserverConfig = tempConfig;
         rpcServer = tempRpcServer;
