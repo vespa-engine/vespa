@@ -41,8 +41,10 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
 
         int attempts = 0;
         int failures = 0;
+        outer:
         for (var application : activeNodesByApplication().entrySet()) {
             for (var cluster : nodesByCluster(application.getValue()).entrySet()) {
+                if (shuttingDown()) break outer;
                 attempts++;
                 if ( ! suggest(application.getKey(), cluster.getKey(), cluster.getValue()))
                     failures++;
