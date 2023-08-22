@@ -36,6 +36,7 @@ LoadedMmap::LoadedMmap(const vespalib::string &fileName)
             if (sz) {
                 void *tmpBuffer = mmap(nullptr, sz, PROT_READ, MAP_PRIVATE, fd.fd(), 0);
                 if (tmpBuffer != MAP_FAILED) {
+                    madvise(tmpBuffer, sz, MADV_DONTDUMP);
                     _mapSize = sz;
                     _mapBuffer = tmpBuffer;
                     uint32_t hl = GenericHeader::getMinSize();

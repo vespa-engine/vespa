@@ -213,6 +213,10 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
                     if (eCode != 0) {
                         fprintf(stderr, "Failed: posix_madvise(%p, %ld, %d) = %d\n", mbase, mlen, fadviseOptions, eCode);
                     }
+                    eCode = madvise(mbase, mlen, MADV_DONTDUMP);
+                    if (eCode != 0) {
+                        fprintf(stderr, "Failed: madvise(%p, %ld, MADV_DONTDUMP) = %d\n", mbase, mlen, eCode);
+                    }
 #endif
                     _mmapbase = mbase;
                     _mmaplen = mlen;
