@@ -17,13 +17,8 @@ type ProxyServer struct {
 }
 
 // NewProxyServer creates a new instance of ProxyServer.
-func NewProxyServer(service *vespa.Service) (*ProxyServer, error) {
-	port := 8080
-
-	cert, err := tls.LoadX509KeyPair(service.TLSOptions.CertificateFile, service.TLSOptions.PrivateKeyFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load Vespa certificate and key: %w", err)
-	}
+func NewProxyServer(service *vespa.Service, target vespa.Target) (*ProxyServer, error) {
+	port := 8081
 
 	endpointUrl, err := url.Parse(service.BaseURL)
 	if err != nil {
@@ -32,11 +27,19 @@ func NewProxyServer(service *vespa.Service) (*ProxyServer, error) {
 
 	// Create the reverse proxy
 	proxy := httputil.NewSingleHostReverseProxy(endpointUrl)
-	proxy.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			Certificates:       []tls.Certificate{cert},
-			InsecureSkipVerify: false, // True only if we want to skip verifying Vespa's server certificate
-		},
+
+	if target.IsCloud() {
+		// Load the certificate and key only for cloud targets
+		cert, err := tls.LoadX509KeyPair(service.TLSOptions.CertificateFile, service.TLSOptions.PrivateKeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load Vespa certificate and key: %w", err)
+		}
+		proxy.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates:       []tls.Certificate{cert},
+				InsecureSkipVerify: false,
+			},
+		}
 	}
 
 	// Set up routes

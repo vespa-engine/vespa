@@ -64,20 +64,18 @@ a convenient interface for interacting with the Vespa service.`,
 
 				// Only initialize and start the ProxyServer if target is cloud
 				var proxyServer *toolkit.ProxyServer
-				if target.IsCloud() {
-					proxyServer, err = toolkit.NewProxyServer(service)
-					if err != nil {
-						return fmt.Errorf("could not initialize proxy server: %w", err)
-					}
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
-						fmt.Printf("Proxy server is running on http://localhost:%d\n", proxyServer.Port)
-						if err := proxyServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-							log.Printf("Proxy server stopped with error: %v\n", err)
-						}
-					}()
+				proxyServer, err = toolkit.NewProxyServer(service, target)
+				if err != nil {
+					return fmt.Errorf("could not initialize proxy server: %w", err)
 				}
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					fmt.Printf("Proxy server is running on http://localhost:%d\n", proxyServer.Port)
+					if err := proxyServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+						log.Printf("Proxy server stopped with error: %v\n", err)
+					}
+				}()
 
 				// Signal listener for graceful shutdown
 				c := make(chan os.Signal, 1)
@@ -90,17 +88,13 @@ a convenient interface for interacting with the Vespa service.`,
 					if err := frontendServer.Shutdown(ctx); err != nil {
 						log.Printf("Error stopping frontend server: %v\n", err)
 					}
-					// Stop proxy server if it was started
-					if proxyServer != nil {
-						if err := proxyServer.Shutdown(ctx); err != nil {
-							log.Printf("Error stopping proxy server: %v\n", err)
-						}
+					// Stop proxy server
+					if err := proxyServer.Shutdown(ctx); err != nil {
+						log.Printf("Error stopping proxy server: %v\n", err)
 					}
 					// Decrement the wait group for each server to allow the main goroutine to exit
 					wg.Done()
-					if proxyServer != nil {
-						wg.Done()
-					}
+					wg.Done()
 				}()
 
 				wg.Wait()
