@@ -16,11 +16,11 @@ MappedFileInput::MappedFileInput(const vespalib::string &file_name)
 {
     struct stat info;
     if ((_fd != -1) && fstat(_fd, &info) == 0) {
-        _data = static_cast<char*>(mmap(0, info.st_size,
-                                        PROT_READ, MAP_SHARED, _fd, 0));
+        _data = static_cast<char*>(mmap(0, info.st_size, PROT_READ, MAP_SHARED, _fd, 0));
         if (_data != MAP_FAILED) {
             _size = info.st_size;
             madvise(_data, _size, MADV_SEQUENTIAL);
+            madvise(_data, _size, MADV_DONTDUMP);
         }
     }
 }
