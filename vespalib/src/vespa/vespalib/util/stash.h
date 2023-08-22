@@ -15,15 +15,17 @@ struct Cleanup {
     Cleanup * const next;
     explicit Cleanup(Cleanup *next_in) noexcept : next(next_in) {}
     virtual void cleanup() = 0;
+    virtual size_t allocated() const noexcept { return 0; }
 protected:
     virtual ~Cleanup() = default;
 };
 
 // used as header for memory allocated outside the stash
-struct DeleteMemory : public Cleanup {
-    explicit DeleteMemory(size_t sz, Cleanup *next_in) noexcept : Cleanup(next_in), allocated(sz) {}
+struct DeleteMemory final : public Cleanup {
+    explicit DeleteMemory(size_t sz, Cleanup *next_in) noexcept : Cleanup(next_in), _allocated(sz) {}
     void cleanup() override { free((void*)this); }
-    size_t allocated;
+    size_t allocated() const noexcept override { return _allocated; }
+    size_t _allocated;
 };
 
 // used as prefix for objects to be destructed

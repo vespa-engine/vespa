@@ -132,12 +132,11 @@ Stash::get_memory_usage() const
         used += chunk->used;
     }
     for (auto cleanup = _cleanup; cleanup; cleanup = cleanup->next) {
-        if (auto memory = dynamic_cast<stash::DeleteMemory *>(cleanup)) {
-            allocated += memory->allocated;
-            used += memory->allocated;
-        }
+        auto extra = cleanup->allocated();
+        allocated += extra;
+        used += extra;
     }
-    return MemoryUsage(allocated, used, 0, 0);
-};
+    return {allocated, used, 0, 0};
+}
 
 } // namespace vespalib
