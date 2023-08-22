@@ -1040,8 +1040,8 @@ FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx
         return {std::move(locker), std::move(msg), std::move(throttle_token)};
     } else {
         std::shared_ptr<api::StorageReply> msgReply(makeQueueTimeoutReply(*msg));
-        guard.unlock();
         _cond->notify_all();
+        guard.unlock();
         _messageSender.sendReply(msgReply);
         return {};
     }
@@ -1113,9 +1113,6 @@ FileStorHandlerImpl::Stripe::schedule_and_get_next_async_message(MessageEntry en
     update_cached_queue_size(guard);
     auto lockedMessage = get_next_async_message(guard);
     if ( ! lockedMessage.msg) {
-        if (guard.owns_lock()) {
-            guard.unlock();
-        }
         _cond->notify_one();
     }
     return lockedMessage;
@@ -1185,7 +1182,6 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
         _lockedBuckets.erase(iter); // No more locks held
     }
     bool emptySharedLocks = entry._sharedLocks.empty();
-    guard.unlock();
     if (wasExclusive) {
         _cond->notify_all();
     } else if (emptySharedLocks) {
@@ -1201,7 +1197,6 @@ FileStorHandlerImpl::Stripe::decrease_active_sync_merges_counter() noexcept
     const bool may_have_blocked_merge = (_active_merges == _owner._max_active_merges_per_stripe);
     --_active_merges;
     if (may_have_blocked_merge) {
-        guard.unlock();
         _cond->notify_all();
     }
 }
