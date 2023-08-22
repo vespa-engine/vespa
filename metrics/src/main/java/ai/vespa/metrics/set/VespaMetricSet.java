@@ -17,6 +17,7 @@ import ai.vespa.metrics.VespaMetrics;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import static ai.vespa.metrics.Suffix.average;
@@ -29,7 +30,6 @@ import static ai.vespa.metrics.Suffix.ninety_nine_percentile;
 import static ai.vespa.metrics.Suffix.rate;
 import static ai.vespa.metrics.Suffix.sum;
 import static ai.vespa.metrics.set.DefaultVespaMetrics.defaultVespaMetricSet;
-import static java.util.Collections.singleton;
 
 /**
  * Encapsulates vespa service metrics.
@@ -38,9 +38,14 @@ import static java.util.Collections.singleton;
  */
 public class VespaMetricSet {
 
-    public static final MetricSet vespaMetricSet = new MetricSet("vespa",
-                                                                 getVespaMetrics(),
-                                                                 singleton(defaultVespaMetricSet));
+    public static final MetricSet vespaMetricSet = createMetricSet();
+
+    private static MetricSet createMetricSet() {
+        return new MetricSet("vespa",
+                             getVespaMetrics(),
+                             List.of(defaultVespaMetricSet,
+                                     BasicMetricSets.containerHttpStatusMetrics()));
+    }
 
     private static Set<Metric> getVespaMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
@@ -186,12 +191,6 @@ public class VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ContainerMetrics.CONTAINER_IAM_ROLE_EXPIRY_SECONDS.baseName());
-
-        addMetric(metrics, ContainerMetrics.HTTP_STATUS_1XX.rate());
-        addMetric(metrics, ContainerMetrics.HTTP_STATUS_2XX.rate());
-        addMetric(metrics, ContainerMetrics.HTTP_STATUS_3XX.rate());
-        addMetric(metrics, ContainerMetrics.HTTP_STATUS_4XX.rate());
-        addMetric(metrics, ContainerMetrics.HTTP_STATUS_5XX.rate());
 
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_PREMATURELY_CLOSED.rate());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION, EnumSet.of(sum, count, min, max, average));

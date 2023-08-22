@@ -1,7 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metrics.set;
 
+import ai.vespa.metrics.Suffix;
+import ai.vespa.metrics.VespaMetrics;
+
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -86,6 +90,46 @@ public class MetricSet {
         Map<String, Metric> metricMap = new LinkedHashMap<>();
         metrics.forEach(metric -> metricMap.put(metric.name, metric));
         return metricMap;
+    }
+
+
+    public static class Builder {
+        private final String id;
+        private final Set<Metric> metrics = new LinkedHashSet<>();
+        private final Set<MetricSet> children = new LinkedHashSet<>();
+
+        public Builder(String id) {
+            this.id = id;
+        }
+
+        public Builder metric(String metric) {
+            return metric(new Metric(metric));
+        }
+
+        /** Adds all given suffixes of the given metric to this set. */
+        public Builder metric(VespaMetrics metric, EnumSet<Suffix> suffixes) {
+            suffixes.forEach(suffix -> metrics.add(new Metric(metric.baseName() + "." + suffix.suffix())));
+            return this;
+        }
+
+        public Builder metric(Metric metric) {
+            metrics.add(metric);
+            return this;
+        }
+
+        public Builder metrics(Collection<Metric> metrics) {
+            this.metrics.addAll(metrics);
+            return this;
+        }
+
+        public Builder metricSet(MetricSet child) {
+            children.add(child);
+            return this;
+        }
+
+        public MetricSet build() {
+            return new MetricSet(id, metrics, children);
+        }
     }
 
 }

@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.model.admin.monitoring;
+package ai.vespa.metrics;
 
 import ai.vespa.metrics.set.Metric;
 import com.google.common.collect.ImmutableMap;
