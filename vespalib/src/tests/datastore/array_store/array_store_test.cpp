@@ -269,11 +269,11 @@ TEST(BasicStoreTest, test_with_trivial_and_non_trivial_types)
 TYPED_TEST(NumberStoreTest, control_static_sizes) {
     static constexpr size_t sizeof_deque = vespalib::datastore::DataStoreBase::sizeof_entry_ref_hold_list_deque;
     if constexpr (TestFixture::simple_type_mapper) {
-        EXPECT_EQ(432u + sizeof_deque, sizeof(this->store));
+        EXPECT_EQ(416u + sizeof_deque, sizeof(this->store));
     } else {
-        EXPECT_EQ(480u + sizeof_deque, sizeof(this->store));
+        EXPECT_EQ(464u + sizeof_deque, sizeof(this->store));
     }
-    EXPECT_EQ(256u + sizeof_deque, sizeof(typename TestFixture::ArrayStoreType::DataStoreType));
+    EXPECT_EQ(240u + sizeof_deque, sizeof(typename TestFixture::ArrayStoreType::DataStoreType));
     EXPECT_EQ(112u, sizeof(typename TestFixture::ArrayStoreType::SmallBufferType));
     MemoryUsage usage = this->store.getMemoryUsage();
     if (this->simple_buffers()) {
