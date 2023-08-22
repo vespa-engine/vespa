@@ -22,12 +22,12 @@ import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
-import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.After;
 import org.junit.rules.TemporaryFolder;
+
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -53,13 +53,11 @@ public class RpcTester implements AutoCloseable {
     private Supervisor sup;
     private final ApplicationId applicationId;
     private final TenantName tenantName;
-    private final TenantRepository tenantRepository;
     final HostRegistry hostRegistry = new HostRegistry();
 
     private final ApplicationRepository applicationRepository;
     private final List<Integer> allocatedPorts = new ArrayList<>();
     private final TemporaryFolder temporaryFolder;
-    private final ConfigserverConfig configserverConfig;
 
     RpcTester(ApplicationId applicationId, TemporaryFolder temporaryFolder) throws InterruptedException, IOException {
         this(applicationId, temporaryFolder, new ConfigserverConfig.Builder());
@@ -69,20 +67,39 @@ public class RpcTester implements AutoCloseable {
         this.temporaryFolder = temporaryFolder;
         this.applicationId = applicationId;
         this.tenantName = applicationId.tenant();
-        int port = allocatePort();
-        spec = createSpec(port);
-        configBuilder.rpcport(port)
-                .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
-                .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
-                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath());
-        configserverConfig = new ConfigserverConfig(configBuilder);
-        rpcServer = createRpcServer(configserverConfig);
-        tenantRepository = new TestTenantRepository.Builder()
-                .withHostRegistry(hostRegistry)
-                .withConfigserverConfig(configserverConfig)
-                .build();
-        tenantRepository.addTenant(tenantName);
-        startRpcServer();
+
+        Spec tempSpec;
+        ConfigserverConfig tempConfig;
+        RpcServer tempRpcServer;
+        TenantRepository tempTenantRepository;
+
+        int iterations = 0;
+        // Need to loop because we might get a port that is in use
+        do {
+            int port = allocatePort();
+            tempSpec = createSpec(port);
+            configBuilder.rpcport(port)
+                    .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                    .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                    .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath());
+            tempConfig = new ConfigserverConfig(configBuilder);
+            tempRpcServer = createRpcServer(tempConfig);
+            tempTenantRepository = new TestTenantRepository.Builder()
+                    .withHostRegistry(hostRegistry)
+                    .withConfigserverConfig(tempConfig)
+                    .build();
+            tempTenantRepository.addTenant(tenantName);
+            startRpcServer(tempRpcServer, tempTenantRepository, tempSpec);
+            iterations++;
+        } while (!tempRpcServer.isRunning() && iterations < 10);
+
+        assertTrue("server is not running", tempRpcServer.isRunning());
+
+        spec = tempSpec;
+        ConfigserverConfig configserverConfig = tempConfig;
+        rpcServer = tempRpcServer;
+        TenantRepository tenantRepository = tempTenantRepository;
+
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withConfigserverConfig(configserverConfig)
@@ -90,11 +107,12 @@ public class RpcTester implements AutoCloseable {
                 .build();
     }
 
-    public void close() {
+    public void close() throws InterruptedException {
         rpcServer.stop();
         for (Integer port : allocatedPorts) {
             PortRangeAllocator.releasePort(port);
         }
+        t.join();
     }
 
     private int allocatePort() throws InterruptedException {
@@ -107,7 +125,7 @@ public class RpcTester implements AutoCloseable {
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
         RpcServer rpcServer = new RpcServer(config,
                                             new SuperModelRequestHandler(new TestConfigDefinitionRepo(),
-                                                          configserverConfig,
+                                                          config,
                                                           new SuperModelManager(
                                                                   config,
                                                                   Zone.defaultZone(),
@@ -115,37 +133,31 @@ public class RpcTester implements AutoCloseable {
                                                                   flagSource)),
                                             Metrics.createTestMetrics(),
                                             hostRegistry,
-                                            new FileServer(configserverConfig, new FileDirectory(temporaryFolder.newFolder())),
+                                            new FileServer(config, new FileDirectory(temporaryFolder.newFolder())),
                                             new NoopRpcAuthorizer(),
                                             new RpcRequestHandlerProvider());
         rpcServer.setUpGetConfigHandlers();
         return rpcServer;
     }
 
-    void startRpcServer()  {
+    void startRpcServer(RpcServer rpcServer, TenantRepository tenantRepository, Spec spec)  {
         hostRegistry.update(applicationId, List.of("localhost"));
         rpcServer.onTenantCreate(tenantRepository.getTenant(tenantName));
         t = new Thread(rpcServer);
         t.start();
         sup = new Supervisor(new Transport());
-        pingServer();
-    }
-
-    @After
-    public void stopRpc() throws InterruptedException {
-        rpcServer.stop();
-        t.join();
+        pingServer(spec);
     }
 
     private Spec createSpec(int port) {
         return new Spec("tcp/localhost:" + port);
     }
 
-    private void pingServer() {
+    private void pingServer(Spec spec) {
         long endTime = System.currentTimeMillis() + 60_000;
         Request req = new Request("ping");
         while (System.currentTimeMillis() < endTime) {
-            performRequest(req);
+            performRequest(req, spec);
             if (!req.isError() && req.returnValues().size() > 0 && req.returnValues().get(0).asInt32() == 0) {
                 break;
             }
@@ -157,6 +169,10 @@ public class RpcTester implements AutoCloseable {
     }
 
     void performRequest(Request req) {
+        performRequest(req, spec);
+    }
+
+    void performRequest(Request req, Spec spec) {
         clock.advance(Duration.ofMillis(10));
         sup.connect(spec).invokeSync(req, Duration.ofSeconds(10));
     }
@@ -164,8 +180,6 @@ public class RpcTester implements AutoCloseable {
     RpcServer rpcServer() {
         return rpcServer;
     }
-
-    Tenant tenant() { return tenantRepository.getTenant(tenantName); }
 
     public ApplicationRepository applicationRepository() { return applicationRepository; }
 
