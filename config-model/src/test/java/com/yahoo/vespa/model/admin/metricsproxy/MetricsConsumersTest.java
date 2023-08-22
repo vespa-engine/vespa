@@ -22,7 +22,9 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.g
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
 import static java.util.Collections.singleton;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests for {@link MetricsProxyContainerCluster} related to metrics consumers.
@@ -39,9 +41,9 @@ public class MetricsConsumersTest {
     private static final int numMetricsForVespaConsumer = numVespaMetrics + numSystemMetrics + numNetworkMetrics;
 
     @Test
-    void default_public_consumer_is_set_up_for_self_hosted() {
+    void default_public_consumers_is_set_up_for_self_hosted() {
         ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly(), self_hosted);
-        assertEquals(3, config.consumer().size());
+        assertEquals(4, config.consumer().size());
         assertEquals(MetricsConsumer.defaultConsumer.id(), config.consumer(2).name());
         int numMetricsForPublicDefaultConsumer = defaultMetricSet.getMetrics().size() + numSystemMetrics;
         assertEquals(numMetricsForPublicDefaultConsumer, config.consumer(2).metric().size());
@@ -50,10 +52,11 @@ public class MetricsConsumersTest {
     @Test
     void consumers_are_set_up_for_hosted() {
         ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly(), hosted);
-        assertEquals(3, config.consumer().size());
+        assertEquals(4, config.consumer().size());
         assertEquals(MetricsConsumer.vespa.id(), config.consumer(0).name());
         assertEquals(MetricsConsumer.autoscaling.id(), config.consumer(1).name());
         assertEquals(MetricsConsumer.defaultConsumer.id(), config.consumer(2).name());
+        assertEquals(MetricsProxyContainerCluster.NEW_DEFAULT_CONSUMER_ID, config.consumer(3).name());
     }
 
     @Test
@@ -121,7 +124,7 @@ public class MetricsConsumersTest {
         );
         VespaModel hostedModel = getModel(services, hosted);
         ConsumersConfig config = consumersConfigFromModel(hostedModel);
-        assertEquals(3, config.consumer().size());
+        assertEquals(4, config.consumer().size());
 
         // All default metrics are retained
         ConsumersConfig.Consumer vespaConsumer = config.consumer(0);

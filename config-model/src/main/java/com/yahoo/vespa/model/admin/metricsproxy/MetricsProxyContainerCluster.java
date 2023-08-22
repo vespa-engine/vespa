@@ -45,7 +45,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static ai.vespa.metrics.set.DefaultMetrics.defaultMetricSet;
 import static ai.vespa.metrics.set.MetricSet.empty;
+import static ai.vespa.metrics.set.SystemMetrics.systemMetricSet;
 import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.addMetrics;
 import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.generateConsumers;
 import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.toConsumerBuilder;
@@ -68,7 +70,10 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 {
     public static final Logger log = Logger.getLogger(MetricsProxyContainerCluster.class.getName());
 
+    public static final String NEW_DEFAULT_CONSUMER_ID = "new-default";
+
     private static final String METRICS_PROXY_NAME = "metrics-proxy";
+
     static final Path METRICS_PROXY_BUNDLE_FILE = PlatformBundles.absoluteBundlePath(METRICS_PROXY_NAME);
     static final String METRICS_PROXY_BUNDLE_NAME = "com.yahoo.vespa." + METRICS_PROXY_NAME;
 
@@ -153,6 +158,15 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         builder.consumer.addAll(generateConsumers(amendedVespaConsumer, getUserMetricsConsumers(), getZone().system()));
 
         builder.consumer.add(toConsumerBuilder(MetricsConsumer.defaultConsumer));
+        builder.consumer.add(toConsumerBuilder(newDefaultConsumer()));
+    }
+
+    public MetricsConsumer newDefaultConsumer() {
+        if (isHostedVespa()) {
+            // TODO: use different metric set for hosted vespa.
+            return MetricsConsumer.consumer(NEW_DEFAULT_CONSUMER_ID, defaultMetricSet, systemMetricSet);
+        }
+        return MetricsConsumer.consumer(NEW_DEFAULT_CONSUMER_ID, defaultMetricSet, systemMetricSet);
     }
 
     @Override
