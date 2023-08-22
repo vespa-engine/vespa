@@ -968,6 +968,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 .stream().sorted(Comparator.comparing(DataplaneTokenVersions::tokenId)).toList();
         Slime slime = new Slime();
         Cursor tokensArray = slime.setObject().setArray("tokens");
+        List<Application> applications = controller.applications().asList(TenantName.from(tenant));
         for (DataplaneTokenVersions token : tokens) {
             Cursor tokenObject = tokensArray.addObject();
             tokenObject.setString("id", token.tokenId().value());
@@ -980,11 +981,35 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 fingerprintObject.setString("created", tokenVersion.creationTime().toString());
                 fingerprintObject.setString("author", tokenVersion.author());
                 fingerprintObject.setString("expiration", tokenVersion.expiration().map(Instant::toString).orElse("none"));
+                fingerprintObject.setBool("active", tokenActive(tokenVersion, applications));
             }
         }
+
         return new SlimeJsonResponse(slime);
     }
 
+    /*
+     * Token is active if:
+     * Returns false if
+     * - Token is expired
+     * - Token is not updated in one or more of the application referring to it
+     * Returns true otherwise
+     */
+    private boolean tokenActive(DataplaneTokenVersions.Version tokenVersion, List<Application> applications) {
+        // Return false if token is expired
+        if (tokenVersion.expiration().map(exp -> exp.isBefore(controller.clock().instant())).orElse(false)) return false;
+        boolean active = true;
+        for (Application app : applications) {
+            // TODO: check if token is used by instance
+            boolean updated = app.productionDeployments().values().stream()
+                    .flatMap(Collection::stream)
+                    .map(Deployment::at)
+                    .allMatch(deploymentTime -> deploymentTime.isAfter(tokenVersion.creationTime()));
+
+            active &= updated;
+        }
+        return active;
+    }
 
     private HttpResponse generateToken(String tenant, String tokenid, HttpRequest request) {
         var expiration = resolveExpiration(request).orElse(null);
@@ -996,8 +1021,23 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         tokenObject.setString("token", token.tokenValue());
         tokenObject.setString("fingerprint", token.fingerPrint().value());
         tokenObject.setString("expiration", token.expiration().map(Instant::toString).orElse("none"));
+        retriggerApplications(TenantName.from(tenant));
         return new SlimeJsonResponse(slime);
     }
+    private void retriggerApplications(TenantName tenant) {
+        // TODO: verify that token is in use by instance
+        List<Application> list = controller.applications().asList(tenant);
+        for (Application app: list) {
+            List<DeploymentId> deploymentsToRetrigger = app.productionDeployments().entrySet().stream()
+                    .map(entry -> entry.getValue().stream()
+                            .map(d -> new DeploymentId(ApplicationId.from(app.id().tenant(), app.id().application(), entry.getKey()), d.zone()))
+                            .toList())
+                    .flatMap(Collection::stream)
+                    .toList();
+            deploymentsToRetrigger.forEach(d -> controller.applications().deploymentTrigger().reTriggerOrAddToQueue(d, "Update data plane tokens"));
+        }
+    }
+
 
     /**
      * Specify 'expiration=none' for no expiration, no parameter or 'expiration=default' for default TTL.

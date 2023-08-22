@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.restapi.RestApiException;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -20,7 +21,9 @@ import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntry;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
 import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
@@ -32,7 +35,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -474,12 +480,11 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                        (response) -> Assertions.assertThat(new String(response.getBody(), UTF_8)).matches(Pattern.compile(regexGenerateToken)),
                        200);
 
-        String regexListTokens = "\\{\"tokens\":\\[\\{\"id\":\"myTokenId\",\"versions\":\\[\\{\"fingerprint\":\".*\",\"created\":\".*\",\"author\":\"user@test\",\"expiration\":\".*\"}]}]}";
+        String regexListTokens = "\\{\"tokens\":\\[\\{\"id\":\"myTokenId\",\"versions\":\\[\\{\"fingerprint\":\".*\",\"created\":\".*\",\"author\":\"user@test\",\"expiration\":\".*\",\"active\":false}]}]}";
         tester.assertResponse(request("/application/v4/tenant/scoober/token", GET)
                                       .roles(Role.developer(tenantName)),
                               (response) -> Assertions.assertThat(new String(response.getBody(), UTF_8)).matches(Pattern.compile(regexListTokens)),
                               200);
-
         // Rejects invalid tokenIds on create
         tester.assertResponse(request("/application/v4/tenant/scoober/token/foo+bar", POST).roles(Role.developer(tenantName)),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"tokenId must match '[A-Za-z][A-Za-z0-9_-]{0,59}', but got: 'foo bar'\"}",
@@ -500,19 +505,35 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     void dataplane_token_endpoint_test() {
         ControllerTester wrapped = new ControllerTester(tester);
         wrapped.upgradeSystem(Version.fromString("7.1"));
+
+        // Deploy application
         new DeploymentTester(wrapped).newDeploymentContext(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()))
                 .submit()
                 .deploy();
 
-        tester.assertResponse(request("/application/v4/tenant/scoober/application/albums/environment/prod/region/aws-us-east-1c/instance/default", GET)
-                                      .roles(Role.reader(tenantName)),
-                              new File("deployment-cloud.json"));
+        // Generate a new token, will not be active since deployments are not updated
+        ManualClock clock = (ManualClock) tester.controller().clock();
+        clock.advance(Duration.ofMinutes(5));
+        String regexGenerateToken = "\\{\"id\":\"myTokenId\",\"token\":\"vespa_cloud_.*\",\"fingerprint\":\".*\"}";
+        tester.assertResponse(request("/application/v4/tenant/scoober/token/myTokenId", POST).roles(Role.developer(tenantName)),
+                (response) -> Assertions.assertThat(new String(response.getBody(), UTF_8)).matches(Pattern.compile(regexGenerateToken)),
+                200);
+        String regexListTokensOriginal = "\\{\"tokens\":\\[\\{\"id\":\"myTokenId\",\"versions\":\\[\\{\"fingerprint\":\".*\",\"created\":\".*\",\"author\":\"user@test\",\"expiration\":\".*\",\"active\":false}]}]}";
+        tester.assertResponse(request("/application/v4/tenant/scoober/token", GET)
+                        .roles(Role.developer(tenantName)),
+                (response) -> Assertions.assertThat(new String(response.getBody(), UTF_8)).matches(Pattern.compile(regexListTokensOriginal)),
+                200);
 
-        tester.assertResponse(request("/application/v4/tenant/scoober/archive-access/aws", DELETE).roles(Role.administrator(tenantName)),
-                              "{\"message\":\"AWS archive access role removed for tenant scoober.\"}", 200);
-        tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
-                              (response) -> assertFalse(response.getBodyAsString().contains("archiveAccessRole")),
-                              200);
+        // Redeploy app, verify that token is active
+        clock.advance(Duration.ofMinutes(5));
+        new DeploymentTester(wrapped).newDeploymentContext(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()))
+                .submit()
+                .deploy();
+        String regexListTokensUpdated = "\\{\"tokens\":\\[\\{\"id\":\"myTokenId\",\"versions\":\\[\\{\"fingerprint\":\".*\",\"created\":\".*\",\"author\":\"user@test\",\"expiration\":\".*\",\"active\":true}]}]}";
+        tester.assertResponse(request("/application/v4/tenant/scoober/token", GET)
+                        .roles(Role.developer(tenantName)),
+                (response) -> Assertions.assertThat(new String(response.getBody(), UTF_8)).matches(Pattern.compile(regexListTokensUpdated)),
+                200);
     }
 
     private ApplicationPackageBuilder prodBuilder() {
