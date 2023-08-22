@@ -261,6 +261,9 @@ private:
 
     virtual void reclaim_all_entry_refs() = 0;
 
+    void save_stash_memory_usage();
+    void merge_stash_memory_usage(vespalib::MemoryUsage& usage) const;
+
     std::vector<BufferAndMeta>    _buffers; // For fast mapping with known types
 
     // Provides a mapping from typeId -> primary buffer for that type.
@@ -272,6 +275,8 @@ private:
     std::vector<FreeList>         _free_lists;
     mutable std::atomic<uint64_t> _compaction_count;
     vespalib::GenerationHolder    _genHolder;
+    std::atomic<size_t>           _stash_allocated_bytes;
+    std::atomic<size_t>           _stash_used_bytes;
     const uint32_t                _max_entries;
     std::atomic<uint32_t>         _bufferIdLimit;
     uint32_t                      _hold_buffer_count;

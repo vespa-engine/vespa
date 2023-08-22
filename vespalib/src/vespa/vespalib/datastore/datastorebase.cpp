@@ -90,6 +90,8 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t m
       _free_lists(),
       _compaction_count(0u),
       _genHolder(),
+      _stash_allocated_bytes(),
+      _stash_used_bytes(),
       _max_entries(max_entries),
       _bufferIdLimit(0u),
       _hold_buffer_count(0u),
@@ -98,6 +100,7 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers, uint32_t offset_bits, size_t m
       _disable_entry_hold_list(false),
       _initializing(false)
 {
+    save_stash_memory_usage();
 }
 
 DataStoreBase::~DataStoreBase()
@@ -295,7 +298,7 @@ DataStoreBase::getMemoryUsage() const {
     extra_used += _free_lists.size() * sizeof(FreeList);
     usage.incAllocatedBytes(extra_allocated);
     usage.incUsedBytes(extra_used);
-    usage.merge(_stash.get_memory_usage());
+    merge_stash_memory_usage(usage);
     return usage;
 }
 
@@ -403,6 +406,7 @@ DataStoreBase::on_active(uint32_t bufferId, uint32_t typeId, size_t entries_need
     BufferState *state = bufferMeta.get_state_relaxed();
     if (state == nullptr) {
         BufferState & newState = _stash.create<BufferState>();
+        save_stash_memory_usage();
         if (_disable_entry_hold_list) {
             newState.disable_entry_hold_list();
         }
@@ -524,6 +528,21 @@ DataStoreBase::inc_hold_buffer_count()
 {
     assert(_hold_buffer_count < std::numeric_limits<uint32_t>::max());
     ++_hold_buffer_count;
+}
+
+void
+DataStoreBase::save_stash_memory_usage()
+{
+    auto usage = _stash.get_memory_usage();
+    _stash_allocated_bytes.store(usage.allocatedBytes(), std::memory_order_release);
+    _stash_used_bytes.store(usage.usedBytes(), std::memory_order_release);
+}
+
+void
+DataStoreBase::merge_stash_memory_usage(vespalib::MemoryUsage& usage) const
+{
+    usage.incUsedBytes(_stash_used_bytes.load(std::memory_order_acquire));
+    usage.incAllocatedBytes(_stash_allocated_bytes.load(std::memory_order_acquire));
 }
 
 }
