@@ -91,7 +91,6 @@ public class RpcTester implements AutoCloseable {
             tempTenantRepository.addTenant(tenantName);
             startRpcServer(tempRpcServer, tempTenantRepository, tempSpec);
             iterations++;
-            Thread.sleep(1);
         } while (!tempRpcServer.isRunning() && iterations < 10);
 
         spec = tempSpec;
@@ -106,11 +105,12 @@ public class RpcTester implements AutoCloseable {
                 .build();
     }
 
-    public void close() {
+    public void close() throws InterruptedException {
         rpcServer.stop();
         for (Integer port : allocatedPorts) {
             PortRangeAllocator.releasePort(port);
         }
+        t.join();
     }
 
     private int allocatePort() throws InterruptedException {
@@ -145,12 +145,6 @@ public class RpcTester implements AutoCloseable {
         t.start();
         sup = new Supervisor(new Transport());
         pingServer(spec);
-    }
-
-    @After
-    public void stopRpc() throws InterruptedException {
-        rpcServer.stop();
-        t.join();
     }
 
     private Spec createSpec(int port) {
