@@ -149,7 +149,7 @@ class HttpRequestStrategy implements RequestStrategy {
         return false;
     }
 
-    /** Retries throttled requests (429, 503), adjusting the target inflight count, and server errors (500, 502). */
+    /** Retries throttled requests (429), adjusting the target inflight count, and server errors (500, 502, 503, 504). */
     private boolean retry(HttpRequest request, HttpResponse response, int attempt) {
         if (response.code() / 100 == 2 || response.code() == 404 || response.code() == 412) {
             logResponse(FINEST, response, request, attempt);
@@ -159,14 +159,14 @@ class HttpRequestStrategy implements RequestStrategy {
         }
 
 
-        if (response.code() == 429 || response.code() == 503) { // Throttling; reduce target inflight.
+        if (response.code() == 429) { // Throttling; reduce target inflight.
             logResponse(FINER, response, request, attempt);
             throttler.throttled((inflight.get() - delayedCount.get()));
             return true;
         }
 
         logResponse(FINE, response, request, attempt);
-        if (response.code() == 500 || response.code() == 502 || response.code() == 504) { // Hopefully temporary errors.
+        if (response.code() == 500 || response.code() == 502 || response.code() == 503 || response.code() == 504) { // Hopefully temporary errors.
             breaker.failure(response);
             return retry(request, attempt);
         }

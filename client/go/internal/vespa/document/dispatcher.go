@@ -110,10 +110,10 @@ func (d *Dispatcher) shouldRetry(op documentOp, result Result) bool {
 		d.throttler.Success()
 		d.circuitBreaker.Success()
 		return false
-	} else if result.HTTPStatus == 429 || result.HTTPStatus == 503 {
+	} else if result.HTTPStatus == 429 {
 		d.throttler.Throttled(d.inflightCount.Load())
 		return true
-	} else if result.Err != nil || result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 504 {
+	} else if result.Err != nil || result.HTTPStatus == 500 || result.HTTPStatus == 502 || result.HTTPStatus == 503 || result.HTTPStatus == 504 {
 		d.circuitBreaker.Failure()
 		if retry {
 			return true
