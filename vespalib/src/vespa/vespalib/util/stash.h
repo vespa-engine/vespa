@@ -29,13 +29,15 @@ struct DeleteMemory final : public Cleanup {
 };
 
 // used as prefix for objects to be destructed
-template<typename T> struct DestructObject : public Cleanup {
+template<typename T>
+struct DestructObject final : public Cleanup {
     explicit DestructObject(Cleanup *next_in) noexcept : Cleanup(next_in) {}
     void cleanup() override { reinterpret_cast<T*>(this + 1)->~T(); }
 };
 
 // used as prefix for arrays to be destructed
-template<typename T> struct DestructArray : public Cleanup {
+template<typename T>
+struct DestructArray final : public Cleanup {
     size_t size;
     explicit DestructArray(Cleanup *next_in, size_t size_in) noexcept
         : Cleanup(next_in), size(size_in) {}
