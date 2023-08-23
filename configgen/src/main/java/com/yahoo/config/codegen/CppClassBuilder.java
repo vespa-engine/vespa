@@ -424,11 +424,9 @@ public class CppClassBuilder implements ClassBuilder {
 
     static String getTypeName(CNode node, boolean includeArray) {
         String type = null;
-        if (node instanceof InnerCNode) {
-            InnerCNode innerNode = (InnerCNode) node;
+        if (node instanceof InnerCNode innerNode) {
             type = getTypeName(innerNode.getName());
-        } else if (node instanceof LeafCNode) {
-            LeafCNode leaf = (LeafCNode) node;
+        } else if (node instanceof LeafCNode leaf) {
             if (leaf.getType().equals("bool")) {
                 type = "bool";
             } else if (leaf.getType().equals("int")) {

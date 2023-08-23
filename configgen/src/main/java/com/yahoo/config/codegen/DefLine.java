@@ -157,7 +157,7 @@ public class DefLine {
         }
         enumString = enumString.replaceFirst("\\{\\s*", "");
         enumString = enumString.replaceFirst("\\s*\\}", "");
-        String result[] = enumPattern2.split(enumString);
+        String[] result = enumPattern2.split(enumString);
         type.enumArray = new String[result.length];
         for (int i = 0; i < result.length; i++) {
             String s = result[i].trim();
