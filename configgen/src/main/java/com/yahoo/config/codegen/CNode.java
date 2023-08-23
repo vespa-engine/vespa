@@ -68,9 +68,6 @@ public abstract class CNode {
         defMd5 = md5;
     }
 
-    @Deprecated // TODO: Vespa 9: Remove
-    public String getVersion() { return ""; }
-
     public String getNamespace() {
         if (defNamespace != null) return defNamespace;
         if (defPackage != null) return defPackage;
