@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -38,8 +39,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
@@ -191,8 +190,8 @@ public class SystemFlagsDataArchive {
         flagData.rules().forEach(rule -> rule.conditions().forEach(condition -> {
             int force_switch_expression_dummy = switch (condition.type()) {
                 case RELATIONAL -> switch (condition.dimension()) {
-                    case APPLICATION_ID, CLOUD, CLUSTER_ID, CLUSTER_TYPE, CONSOLE_USER_EMAIL, ENVIRONMENT,
-                            HOSTNAME, NODE_TYPE, SYSTEM, TENANT_ID, ZONE_ID ->
+                    case APPLICATION_ID, CLOUD, CLOUD_ACCOUNT, CLUSTER_ID, CLUSTER_TYPE, CONSOLE_USER_EMAIL, 
+                            ENVIRONMENT, HOSTNAME, NODE_TYPE, SYSTEM, TENANT_ID, ZONE_ID ->
                             throw new FlagValidationException(condition.type().toWire() + " " +
                                                               DimensionHelper.toWire(condition.dimension()) +
                                                               " condition is not supported");
@@ -215,6 +214,7 @@ public class SystemFlagsDataArchive {
                         if (!Set.of(YAHOO, AWS, GCP).contains(CloudName.from(cloud)))
                             throw new FlagValidationException("Unknown cloud: " + cloud);
                     });
+                    case CLOUD_ACCOUNT -> validateConditionValues(condition, CloudAccount::from);
                     case CLUSTER_ID -> validateConditionValues(condition, ClusterSpec.Id::from);
                     case CLUSTER_TYPE -> validateConditionValues(condition, ClusterSpec.Type::from);
                     case ENVIRONMENT -> validateConditionValues(condition, Environment::from);
