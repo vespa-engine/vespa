@@ -18,14 +18,16 @@ import (
 )
 
 func TestClone(t *testing.T) {
-	assertCreated("text-search", "mytestapp", t)
-}
-
-func assertCreated(sampleAppName string, app string, t *testing.T) {
+	origWd, err := os.Getwd()
+	require.Nil(t, err)
+	sampleAppName := "text-search"
+	app := "mytestapp"
 	tempDir := t.TempDir()
 	app1 := filepath.Join(tempDir, "app1")
-	defer os.RemoveAll(app)
-
+	t.Cleanup(func() {
+		os.Chdir(origWd)
+		os.RemoveAll(app)
+	})
 	httpClient := &mock.HTTPClient{}
 	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = httpClient
@@ -35,7 +37,7 @@ func assertCreated(sampleAppName string, app string, t *testing.T) {
 	// Initial cloning. GitHub includes the ETag header, but we don't require it
 	httpClient.NextResponseBytes(200, testdata)
 	require.Nil(t, cli.Run("clone", sampleAppName, app1))
-	assert.Equal(t, "Created "+app1+"\n", stdout.String())
+	assert.Equal(t, "Cloned into "+app1+"\n", stdout.String())
 	assertFiles(t, app1)
 
 	// Clone with cache hit
@@ -43,8 +45,27 @@ func assertCreated(sampleAppName string, app string, t *testing.T) {
 	stdout.Reset()
 	app2 := filepath.Join(tempDir, "app2")
 	require.Nil(t, cli.Run("clone", sampleAppName, app2))
-	assert.Equal(t, "Using cached sample apps ...\nCreated "+app2+"\n", stdout.String())
+	assert.Equal(t, "Using cached sample apps ...\nCloned into "+app2+"\n", stdout.String())
 	assertFiles(t, app2)
+	stdout.Reset()
+
+	// Clone to current directory (dot)
+	emptyDir := filepath.Join(tempDir, "mypath1")
+	require.Nil(t, os.Mkdir(emptyDir, 0755))
+	require.Nil(t, os.Chdir(emptyDir))
+	httpClient.NextStatus(http.StatusNotModified)
+	require.Nil(t, cli.Run("clone", sampleAppName, "."))
+	assert.Equal(t, "Using cached sample apps ...\nCloned into .\n", stdout.String())
+	assertFiles(t, ".")
+	stdout.Reset()
+
+	// Clone to non-empty directory
+	httpClient.NextStatus(http.StatusNotModified)
+	nonEmptyDir := filepath.Join(tempDir, "mypath2")
+	require.Nil(t, os.MkdirAll(filepath.Join(nonEmptyDir, "more"), 0755))
+	require.NotNil(t, cli.Run("clone", sampleAppName, nonEmptyDir))
+	assert.Equal(t, "Error: could not create directory: "+nonEmptyDir+" already exists and is not empty\n", stderr.String())
+	stderr.Reset()
 
 	// Clone while ignoring cache
 	headers := make(http.Header)
@@ -53,7 +74,7 @@ func assertCreated(sampleAppName string, app string, t *testing.T) {
 	stdout.Reset()
 	app3 := filepath.Join(tempDir, "app3")
 	require.Nil(t, cli.Run("clone", "-f", sampleAppName, app3))
-	assert.Equal(t, "Created "+app3+"\n", stdout.String())
+	assert.Equal(t, "Cloned into "+app3+"\n", stdout.String())
 	assertFiles(t, app3)
 
 	// Cloning falls back to cached copy if GitHub is unavailable
@@ -62,7 +83,7 @@ func assertCreated(sampleAppName string, app string, t *testing.T) {
 	app4 := filepath.Join(tempDir, "app4")
 	require.Nil(t, cli.Run("clone", "-f=false", sampleAppName, app4))
 	assert.Equal(t, "Warning: could not download sample apps: github returned status 500\n", stderr.String())
-	assert.Equal(t, "Using cached sample apps ...\nCreated "+app4+"\n", stdout.String())
+	assert.Equal(t, "Using cached sample apps ...\nCloned into "+app4+"\n", stdout.String())
 	assertFiles(t, app4)
 
 	// The only cached file is the latest one
@@ -79,6 +100,7 @@ func assertCreated(sampleAppName string, app string, t *testing.T) {
 }
 
 func assertFiles(t *testing.T, app string) {
+	t.Helper()
 	assert.True(t, util.PathExists(filepath.Join(app, "README.md")))
 	assert.True(t, util.PathExists(filepath.Join(app, "src", "main", "application")))
 	assert.True(t, util.IsDirectory(filepath.Join(app, "src", "main", "application")))

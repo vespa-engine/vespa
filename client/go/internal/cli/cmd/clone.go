@@ -6,8 +6,10 @@ package cmd
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -76,6 +78,23 @@ type zipFile struct {
 	modTime time.Time
 }
 
+func (c *cloner) createDirectory(path string) error {
+	if err := os.Mkdir(path, 0755); err != nil {
+		if errors.Is(err, fs.ErrExist) {
+			entries, err := os.ReadDir(path)
+			if err != nil {
+				return err
+			}
+			if len(entries) > 0 {
+				return fmt.Errorf("%s already exists and is not empty", path)
+			}
+		} else {
+			return err
+		}
+	}
+	return nil
+}
+
 // Clone copies the application identified by applicationName into given path. If the cached copy of sample applications
 // has expired (as determined by its entity tag), a current copy will be downloaded from GitHub automatically.
 func (c *cloner) Clone(applicationName, path string) error {
@@ -95,9 +114,8 @@ func (c *cloner) Clone(applicationName, path string) error {
 		dirPrefix := "sample-apps-master/" + applicationName + "/"
 		if strings.HasPrefix(f.Name, dirPrefix) {
 			if !found { // Create destination directory lazily when source is found
-				createErr := os.Mkdir(path, 0755)
-				if createErr != nil {
-					return fmt.Errorf("could not create directory '%s': %w", color.CyanString(path), createErr)
+				if err := c.createDirectory(path); err != nil {
+					return fmt.Errorf("could not create directory: %w", err)
 				}
 			}
 			found = true
@@ -111,7 +129,7 @@ func (c *cloner) Clone(applicationName, path string) error {
 	if !found {
 		return errHint(fmt.Errorf("could not find source application '%s'", color.CyanString(applicationName)), "Use -f to ignore the cache")
 	} else {
-		log.Print("Created ", color.CyanString(path))
+		log.Print("Cloned into ", color.CyanString(path))
 	}
 	return nil
 }
