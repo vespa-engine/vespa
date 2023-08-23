@@ -393,8 +393,8 @@ public class PermanentFlags {
             // if any, or otherwise hosted-vespa:tenant-host:default.
             APPLICATION_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
 
-    public static final UnboundIntFlag DROP_DENTRIES_AND_INODES = defineIntFlag(
-            "drop-dentries-and-inodes", -1,
+    public static final UnboundIntFlag DROP_DENTRIES = defineIntFlag(
+            "drop-dentries", -1,
             "Drop dentries and inodes every N minutes.  0 means every tick. -1 means disabled. " +
             "This is combined with the drop-caches flag for a single write to /proc/sys/vm/drop_caches.",
             "Takes effect on next tick",
