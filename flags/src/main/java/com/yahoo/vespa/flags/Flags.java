@@ -278,13 +278,6 @@ public class Flags {
             APPLICATION_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
     );
 
-    public static final UnboundBooleanFlag RESTRICT_DATA_PLANE_BINDINGS = defineFeatureFlag(
-            "restrict-data-plane-bindings", false,
-            List.of("mortent"), "2022-09-08", "2023-09-01",
-            "Use restricted data plane bindings",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
             List.of("olaa"), "2022-09-23", "2023-09-01",
