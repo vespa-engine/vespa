@@ -296,7 +296,7 @@ public class ConfigGenerator {
         List<String> accessors = new LinkedList<>();
         for (CNode child : children) {
             String accessor = getAccessorCode(child);
-            if (accessor.isEmpty() == false) {
+            if (! accessor.isEmpty()) {
                 accessors.add(accessor);
             }
         }

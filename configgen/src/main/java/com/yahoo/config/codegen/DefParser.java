@@ -204,11 +204,8 @@ public class DefParser {
      */
     public static void dumpTree(CNode root, String indent) {
         StringBuilder sb = new StringBuilder(indent + root.getName());
-        if (root instanceof LeafCNode) {
-            LeafCNode leaf = ((LeafCNode)root);
-            if (leaf.getDefaultValue() != null) {
-                sb.append(" = ").append(((LeafCNode)root).getDefaultValue().getValue());
-            }
+        if (root instanceof LeafCNode leaf && leaf.getDefaultValue() != null) {
+            sb.append(" = ").append(((LeafCNode) root).getDefaultValue().getValue());
         }
         System.out.println(sb);
         if (!root.getComment().isEmpty()) {

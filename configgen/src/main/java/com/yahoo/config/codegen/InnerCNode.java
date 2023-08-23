@@ -68,9 +68,7 @@ public class InnerCNode extends CNode {
             if (newChild == null)
                 throw new IllegalArgumentException("Could not create " + type.name + " " + name);
         }
-        return children.containsKey(newChild.getName())
-                ? children.get(newChild.getName())
-                : newChild;
+        return children.getOrDefault(newChild.getName(), newChild);
     }
 
     /**

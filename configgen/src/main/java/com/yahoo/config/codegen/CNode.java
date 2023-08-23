@@ -19,7 +19,6 @@ public abstract class CNode {
     // TODO: remove! Only set for the root node, and root.getName() returns the same thing!
     String defName = null;
 
-    String defVersion = "";
     String defNamespace = null;
     String defPackage = null;
     String defMd5 = "MISSING MD5";
@@ -67,10 +66,6 @@ public abstract class CNode {
 
     void setMd5(String md5) {
         defMd5 = md5;
-    }
-
-    public String getVersion() {
-        return defVersion;
     }
 
     public String getNamespace() {
@@ -163,7 +158,6 @@ public abstract class CNode {
                 "namespace='" + defNamespace + '\'' +
                 ", package='" + defPackage + '\'' +
                 ", name='" + name + '\'' +
-                ", version='" + defVersion + '\'' +
                 '}';
     }
 
