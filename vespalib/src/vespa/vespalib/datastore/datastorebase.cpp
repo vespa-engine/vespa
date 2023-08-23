@@ -295,7 +295,7 @@ DataStoreBase::getMemoryUsage() const {
     extra_used += _free_lists.size() * sizeof(FreeList);
     usage.incAllocatedBytes(extra_allocated);
     usage.incUsedBytes(extra_used);
-    usage.merge(_stash.get_memory_usage());
+    merge_stash_memory_usage(usage);
     return usage;
 }
 
@@ -524,6 +524,22 @@ DataStoreBase::inc_hold_buffer_count()
 {
     assert(_hold_buffer_count < std::numeric_limits<uint32_t>::max());
     ++_hold_buffer_count;
+}
+
+void
+DataStoreBase::merge_stash_memory_usage(vespalib::MemoryUsage& usage) const
+{
+    /*
+     * Estimate stash memory usage instead of sampling it to avoid race
+     * with writer thread.
+     */
+    uint32_t buffer_states = get_bufferid_limit_acquire();
+    size_t stashed_buffer_state_size = sizeof(BufferState) + sizeof(stash::DestructObject<BufferState>);
+    size_t chunk_size = _stash.get_chunk_size();
+    uint32_t buffer_states_per_chunk = (chunk_size - sizeof(stash::Chunk)) / stashed_buffer_state_size;
+    uint32_t chunks = (buffer_states + buffer_states_per_chunk - 1) / buffer_states_per_chunk;
+    usage.incAllocatedBytes(chunks * chunk_size);
+    usage.incUsedBytes(buffer_states * stashed_buffer_state_size + chunks * sizeof(stash::Chunk));
 }
 
 }

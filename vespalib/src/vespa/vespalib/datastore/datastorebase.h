@@ -261,6 +261,8 @@ private:
 
     virtual void reclaim_all_entry_refs() = 0;
 
+    void merge_stash_memory_usage(vespalib::MemoryUsage& usage) const;
+
     std::vector<BufferAndMeta>    _buffers; // For fast mapping with known types
 
     // Provides a mapping from typeId -> primary buffer for that type.
