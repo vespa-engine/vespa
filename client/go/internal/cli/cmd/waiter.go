@@ -27,13 +27,8 @@ func (w *Waiter) DeployService(target vespa.Target) (*vespa.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	if w.Timeout > 0 {
-		w.cli.printInfo("Waiting up to ", color.CyanString(w.Timeout.String()), " for ", s.Description(), " to become ready...")
-	}
-	if w.wait() {
-		if err := s.Wait(w.Timeout); err != nil {
-			return nil, err
-		}
+	if err := w.maybeWaitFor(s); err != nil {
+		return nil, err
 	}
 	return s, nil
 }
