@@ -167,10 +167,10 @@ func (t *customTarget) serviceStatus(wantedGeneration int64, timeout time.Durati
 		return converged, nil
 	}
 	if _, err := wait(deployService, convergedFunc, func() *http.Request { return req }, timeout, t.retryInterval); err != nil {
-		return serviceStatus{}, fmt.Errorf("deployment not converged%s after waiting %s: %w", generationDescription(wantedGeneration), timeout, err)
+		return serviceStatus{}, fmt.Errorf("deployment not converged%s%s: %w", generationDescription(wantedGeneration), waitDescription(timeout), err)
 	}
 	if !converged {
-		return serviceStatus{}, fmt.Errorf("deployment not converged%s after waiting %s", generationDescription(wantedGeneration), timeout)
+		return serviceStatus{}, fmt.Errorf("deployment not converged%s%s", generationDescription(wantedGeneration), waitDescription(timeout))
 	}
 	return status, nil
 }
