@@ -33,6 +33,7 @@ func TestStatusCommandMultiCluster(t *testing.T) {
 	client := &mock.HTTPClient{}
 	cli, stdout, stderr := newTestCLI(t)
 	cli.httpClient = client
+	cli.retryInterval = 0
 
 	mockServiceStatus(client)
 	assert.NotNil(t, cli.Run("status"))
@@ -48,6 +49,18 @@ Container foo at http://127.0.0.1:8080 is ready
 	mockServiceStatus(client, "foo", "bar")
 	assert.Nil(t, cli.Run("status", "--cluster", "foo"))
 	assert.Equal(t, "Container foo at http://127.0.0.1:8080 is ready\n", stdout.String())
+}
+
+func TestStatusCommandMultiClusterWait(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+	cli.retryInterval = 0
+	mockServiceStatus(client, "foo", "bar")
+	client.NextStatus(400)
+	assert.NotNil(t, cli.Run("status", "--cluster", "foo", "--wait", "10"))
+	assert.Equal(t, "Waiting up to 10s for cluster discovery...\nWaiting up to 10s for container foo...\n"+
+		"Error: unhealthy container foo after waiting up to 10s: status 400 at http://127.0.0.1:8080/ApplicationStatus: aborting wait: got status 400\n", stderr.String())
 }
 
 func TestStatusCommandWithUrlTarget(t *testing.T) {

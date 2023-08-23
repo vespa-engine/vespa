@@ -47,7 +47,7 @@ func (w *Waiter) Service(target vespa.Target, cluster string) (*vespa.Service, e
 	if targetType.url != "" && cluster != "" {
 		return nil, fmt.Errorf("cluster cannot be specified when target is an URL")
 	}
-	services, err := w.Services(target)
+	services, err := w.services(target)
 	if err != nil {
 		return nil, err
 	}
@@ -55,37 +55,41 @@ func (w *Waiter) Service(target vespa.Target, cluster string) (*vespa.Service, e
 	if err != nil {
 		return nil, errHint(err, "The --cluster option specifies the service to use")
 	}
-	if w.Timeout > 0 {
-		w.cli.printInfo("Waiting up to ", color.CyanString(w.Timeout.String()), " for ", color.CyanString(service.Description()), " to become available...")
-	}
-	if w.wait() {
-		if err := service.Wait(w.Timeout); err != nil {
-			return nil, err
-		}
+	if err := w.maybeWaitFor(service); err != nil {
+		return nil, err
 	}
 	return service, nil
 }
 
 // Services returns all container services available on target.
 func (w *Waiter) Services(target vespa.Target) ([]*vespa.Service, error) {
-	if w.Timeout > 0 {
-		w.cli.printInfo("Waiting up to ", color.CyanString(w.Timeout.String()), " for cluster discovery...")
-	}
-	services, err := target.ContainerServices(w.Timeout)
+	services, err := w.services(target)
 	if err != nil {
 		return nil, err
 	}
 	for _, s := range services {
-		if w.Timeout > 0 {
-			w.cli.printInfo("Waiting up to ", color.CyanString(w.Timeout.String()), " for ", s.Description(), "...")
-		}
-		if w.wait() {
-			if err := s.Wait(w.Timeout); err != nil {
-				return nil, err
-			}
+		if err := w.maybeWaitFor(s); err != nil {
+			return nil, err
 		}
 	}
 	return services, nil
+}
+
+func (w *Waiter) maybeWaitFor(service *vespa.Service) error {
+	if w.Timeout > 0 {
+		w.cli.printInfo("Waiting up to ", color.CyanString(w.Timeout.String()), " for ", service.Description(), "...")
+	}
+	if w.wait() {
+		return service.Wait(w.Timeout)
+	}
+	return nil
+}
+
+func (w *Waiter) services(target vespa.Target) ([]*vespa.Service, error) {
+	if w.Timeout > 0 {
+		w.cli.printInfo("Waiting up to ", color.CyanString(w.Timeout.String()), " for cluster discovery...")
+	}
+	return target.ContainerServices(w.Timeout)
 }
 
 // Deployment waits for a deployment to become ready, returning the ID of the converged deployment.
