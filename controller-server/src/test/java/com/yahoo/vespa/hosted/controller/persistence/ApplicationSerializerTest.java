@@ -64,25 +64,30 @@ public class ApplicationSerializerTest {
     private static final Path testData = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/");
     private static final ZoneId zone1 = ZoneId.from("prod", "us-west-1");
     private static final ZoneId zone2 = ZoneId.from("prod", "us-east-3");
-    private static final PublicKey publicKey = KeyUtils.fromPemEncodedPublicKey("-----BEGIN PUBLIC KEY-----\n" +
-                                                                                "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\n" +
-                                                                                "z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n" +
-                                                                                "-----END PUBLIC KEY-----\n");
-    private static final PublicKey otherPublicKey = KeyUtils.fromPemEncodedPublicKey("-----BEGIN PUBLIC KEY-----\n" +
-                                                                                     "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFELzPyinTfQ/sZnTmRp5E4Ve/sbE\n" +
-                                                                                     "pDhJeqczkyFcT2PysJ5sZwm7rKPEeXDOhzTPCyRvbUqc2SGdWbKUGGa/Yw==\n" +
-                                                                                     "-----END PUBLIC KEY-----\n");
+    private static final PublicKey publicKey = KeyUtils.fromPemEncodedPublicKey("""
+                                                                                -----BEGIN PUBLIC KEY-----
+                                                                                MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9
+                                                                                z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==
+                                                                                -----END PUBLIC KEY-----
+                                                                                """);
+    private static final PublicKey otherPublicKey = KeyUtils.fromPemEncodedPublicKey("""
+                                                                                     -----BEGIN PUBLIC KEY-----
+                                                                                     MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFELzPyinTfQ/sZnTmRp5E4Ve/sbE
+                                                                                     pDhJeqczkyFcT2PysJ5sZwm7rKPEeXDOhzTPCyRvbUqc2SGdWbKUGGa/Yw==
+                                                                                     -----END PUBLIC KEY-----
+                                                                                     """);
 
     @Test
     void testSerialization() throws Exception {
-        DeploymentSpec deploymentSpec = DeploymentSpec.fromXml("<deployment version='1.0'>\n" +
-                "   <staging/>\n" +
-                "   <instance id=\"i1\">\n" +
-                "      <prod>\n" +
-                "         <region>us-west-1</region>\n" +
-                "      </prod>\n" +
-                "   </instance>\n" +
-                "</deployment>");
+        DeploymentSpec deploymentSpec = DeploymentSpec.fromXml("""
+                                                               <deployment version='1.0'>
+                                                                  <staging/>
+                                                                  <instance id="i1">
+                                                                     <prod>
+                                                                        <region>us-west-1</region>
+                                                                     </prod>
+                                                                  </instance>
+                                                               </deployment>""");
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml("<validation-overrides version='1.0'>" +
                 "  <allow until='2017-06-15'>deployment-removal</allow>" +
                 "</validation-overrides>");

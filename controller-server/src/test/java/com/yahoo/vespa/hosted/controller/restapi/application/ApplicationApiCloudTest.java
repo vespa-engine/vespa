@@ -458,7 +458,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 request("/application/v4/tenant/scoober/application/unique/submit", POST)
                         .data(data)
                         .roles(Set.of(Role.developer(tenantName))),
-                "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\",\"build\":1}");
 
         assertTrue(tester.controller().applications().getApplication(TenantAndApplicationId.from(tenantName, application)).isPresent());
     }
