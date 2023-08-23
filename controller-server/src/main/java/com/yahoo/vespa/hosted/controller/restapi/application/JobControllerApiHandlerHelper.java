@@ -218,7 +218,12 @@ class JobControllerApiHandlerHelper {
      * @return Response with the new application version
      */
     static HttpResponse submitResponse(JobController jobController, TenantAndApplicationId id, Submission submission, long projectId) {
-        return new MessageResponse("application " + jobController.submit(id, submission, projectId));
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        ApplicationVersion submitted = jobController.submit(id, submission, projectId);
+        root.setString("message", "application " + submitted);
+        root.setLong("build", submitted.buildNumber());
+        return new SlimeJsonResponse(slime);
     }
 
     /** Aborts any job of the given type. */
@@ -436,7 +441,7 @@ class JobControllerApiHandlerHelper {
     }
 
     static void toSlime(Cursor versionObject, ApplicationVersion version) {
-        version.buildNumber().ifPresent(id -> versionObject.setLong("build", id));
+        versionObject.setLong("build", version.buildNumber());
         version.compileVersion().ifPresent(platform -> versionObject.setString("compileVersion", platform.toFullString()));
         version.sourceUrl().ifPresent(url -> versionObject.setString("sourceUrl", url));
         version.commit().ifPresent(commit -> versionObject.setString("commit", commit));

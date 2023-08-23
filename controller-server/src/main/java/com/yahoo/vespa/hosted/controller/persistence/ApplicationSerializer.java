@@ -259,7 +259,7 @@ public class ApplicationSerializer {
     }
 
     private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
-        applicationVersion.buildNumber().ifPresent(number -> object.setLong(applicationBuildNumberField, number));
+        object.setLong(applicationBuildNumberField, applicationVersion.buildNumber());
         applicationVersion.source().ifPresent(source -> toSlime(source, object.setObject(sourceRevisionField)));
         applicationVersion.authorEmail().ifPresent(email -> object.setString(authorEmailField, email));
         applicationVersion.compileVersion().ifPresent(version -> object.setString(compileVersionField, version.toString()));
