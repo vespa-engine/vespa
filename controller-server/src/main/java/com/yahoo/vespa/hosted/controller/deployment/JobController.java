@@ -566,9 +566,9 @@ public class JobController {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         applications.lockApplicationOrThrow(id, application -> {
             Optional<ApplicationVersion> previousVersion = application.get().revisions().last();
-            Optional<ApplicationPackage> previousPackage = previousVersion.flatMap(previous -> applications.applicationStore().find(id.tenant(), id.application(), previous.buildNumber().getAsLong()))
+            Optional<ApplicationPackage> previousPackage = previousVersion.flatMap(previous -> applications.applicationStore().find(id.tenant(), id.application(), previous.buildNumber()))
                                                                           .map(ApplicationPackage::new);
-            long previousBuild = previousVersion.map(latestVersion -> latestVersion.buildNumber().getAsLong()).orElse(0L);
+            long previousBuild = previousVersion.map(latestVersion -> latestVersion.buildNumber()).orElse(0L);
             version.set(submission.toApplicationVersion(1 + previousBuild));
 
             byte[] diff = previousPackage.map(previous -> ApplicationPackageDiff.diff(previous, submission.applicationPackage()))

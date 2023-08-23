@@ -336,7 +336,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
                         .screwdriverIdentity(SCREWDRIVER_ID)
                         .data(createApplicationSubmissionData(applicationPackageInstance1, 123)),
-                "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\",\"build\":1}");
 
         app1.runJob(DeploymentContext.systemTest).runJob(DeploymentContext.stagingTest).runJob(DeploymentContext.productionUsCentral1);
 
@@ -365,7 +365,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/submit", POST)
                         .screwdriverIdentity(SCREWDRIVER_ID)
                         .data(createApplicationSubmissionData(applicationPackage, 1000)),
-                "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\",\"build\":1}");
 
         deploymentTester.triggerJobs();
 
@@ -873,7 +873,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", POST)
                         .screwdriverIdentity(SCREWDRIVER_ID)
                         .data(createApplicationSubmissionData(packageWithService, 123)),
-                "{\"message\":\"application build 2, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                "{\"message\":\"application build 2, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\",\"build\":2}");
 
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/diff/2", GET).userIdentity(HOSTED_VESPA_OPERATOR),
                 (response) -> assertTrue(response.getBodyAsString().contains("+ <deployment version='1.0' athenz-domain='domain1' athenz-service='service'>\n" +
@@ -918,7 +918,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .screwdriverIdentity(SCREWDRIVER_ID)
                         .header("X-Content-Hash", Base64.getEncoder().encodeToString(Signatures.sha256Digest(streamer::data)))
                         .data(streamer),
-                "{\"message\":\"application build 3, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                "{\"message\":\"application build 3, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\",\"build\":3}");
 
         // Sixth attempt has a multi-instance deployment spec, and is accepted.
         ApplicationPackage multiInstanceSpec = new ApplicationPackageBuilder()
@@ -931,7 +931,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", POST)
                         .screwdriverIdentity(SCREWDRIVER_ID)
                         .data(createApplicationSubmissionData(multiInstanceSpec, 123)),
-                "{\"message\":\"application build 4, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                "{\"message\":\"application build 4, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\",\"build\":4}");
 
 
         // DELETE submitted build, to mark it as non-deployable
@@ -1305,7 +1305,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
                         .screwdriverIdentity(SCREWDRIVER_ID)
                         .data(createApplicationSubmissionData(applicationPackageInstance1, 1000)),
-                "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\",\"build\":1}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
                         .properties(Map.of("build", "42"))
                         .userIdentity(HOSTED_VESPA_OPERATOR),
@@ -1521,7 +1521,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit/", POST)
                         .data(createApplicationSubmissionData(applicationPackage, 123))
                         .screwdriverIdentity(screwdriverId),
-                "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\",\"build\":1}");
     }
 
     @Test
@@ -1804,7 +1804,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit/", POST)
                                       .data(createApplicationSubmissionData(applicationPackageDefault, SCREWDRIVER_ID.value()))
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}",
+                              "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\",\"build\":1}",
                               200);
     }
 
@@ -1849,7 +1849,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     "\"ignoreValidationErrors\":false" +
                    applicationVersion.map(version ->
                            "," +
-                           "\"buildNumber\":" + version.buildNumber().getAsLong() + "," +
+                           "\"buildNumber\":" + version.buildNumber() + "," +
                            "\"sourceRevision\":{" +
                                "\"repository\":\"" + version.source().get().repository() + "\"," +
                                "\"branch\":\"" + version.source().get().branch() + "\"," +

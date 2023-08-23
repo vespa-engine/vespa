@@ -55,7 +55,7 @@ public class SubmitMojo extends AbstractVespaMojo {
                                                optionalOf(projectId, Long::parseLong), optionalOf(risk, Integer::parseInt),
                                                optionalOf(description));
 
-        getLog().info(controller.submit(submission, id.tenant(), id.application()));
+        getLog().info(controller.submit(submission, id.tenant(), id.application()).message());
     }
 
 }

@@ -68,6 +68,8 @@ public abstract class ControllerHttpClient {
     private final HttpClient client;
     private final URI endpoint;
 
+    public record SubmitResult(String message, long id) { }
+
     /** Creates an HTTP client against the given endpoint, using the given HTTP client builder to create a client. */
     protected ControllerHttpClient(URI endpoint, SSLContext sslContext) {
         if (sslContext == null) {
@@ -113,14 +115,14 @@ public abstract class ControllerHttpClient {
     }
 
     /** Sends the given submission to the remote controller and returns the version of the accepted package, or throws if this fails. */
-    public String submit(Submission submission, TenantName tenant, ApplicationName application) {
-        return toMessage(send(request(HttpRequest.newBuilder(applicationPath(tenant, application).resolve("submit"))
-                                                 .timeout(Duration.ofMinutes(30)),
-                                      POST,
-                                      new MultiPartStreamer().addJson("submitOptions", metaToJson(submission))
-                                                             .addFile("applicationZip", submission.applicationZip())
-                                                             .addFile("applicationTestZip", submission.applicationTestZip())),
-                              1));
+    public SubmitResult submit(Submission submission, TenantName tenant, ApplicationName application) {
+        return toSubmitResult(send(request(HttpRequest.newBuilder(applicationPath(tenant, application).resolve("submit"))
+                                                      .timeout(Duration.ofMinutes(30)),
+                                           POST,
+                                           new MultiPartStreamer().addJson("submitOptions", metaToJson(submission))
+                                                                  .addFile("applicationZip", submission.applicationZip())
+                                                                  .addFile("applicationTestZip", submission.applicationTestZip())),
+                                   1));
     }
 
     /** Sends the given deployment to the given application in the given zone, or throws if this fails. */
@@ -460,6 +462,12 @@ public abstract class ControllerHttpClient {
     /** Returns the "message" element contained in the JSON formatted response. */
     private static String toMessage(HttpResponse<byte[]> response) {
         return toInspector(response).field("message").asString();
+    }
+
+    private static SubmitResult toSubmitResult(HttpResponse<byte[]> response) {
+        Inspector rootObject = toInspector(response);
+        return new SubmitResult(rootObject.field("message").asString(),
+                                rootObject.field("build").asLong());
     }
 
     private static DeploymentResult toDeploymentResult(HttpResponse<byte[]> response) {

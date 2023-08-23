@@ -567,7 +567,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 "\"deployDirectly\":" + deployDirectly +
                 applicationVersion.map(version ->
                         "," +
-                                "\"buildNumber\":" + version.buildNumber().getAsLong() + "," +
+                                "\"buildNumber\":" + version.buildNumber() + "," +
                                 "\"sourceRevision\":{" +
                                 "\"repository\":\"" + version.source().get().repository() + "\"," +
                                 "\"branch\":\"" + version.source().get().branch() + "\"," +

@@ -95,8 +95,8 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     public String stringId() {
         return source.map(SourceRevision::commit).map(ApplicationVersion::abbreviateCommit)
                 .or(this::commit)
-                .map(commit -> String.format("%s.%d-%s", majorVersion, buildNumber().getAsLong(), commit))
-                .orElseGet(() -> majorVersion + "." + buildNumber().getAsLong());
+                .map(commit -> String.format("%s.%d-%s", majorVersion, buildNumber(), commit))
+                .orElseGet(() -> majorVersion + "." + buildNumber());
     }
 
     /**
@@ -105,8 +105,8 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
      */
     public Optional<SourceRevision> source() { return source; }
 
-    /** Returns the build number that built this version */
-    public OptionalLong buildNumber() { return OptionalLong.of(id.number()); }
+    /** Returns the build number of this version */
+    public long buildNumber() { return id.number(); }
 
     /** Returns the email of the author of commit of this version, if known */
     public Optional<String> authorEmail() { return authorEmail; }
