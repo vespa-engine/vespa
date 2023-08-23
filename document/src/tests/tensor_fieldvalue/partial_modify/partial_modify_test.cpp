@@ -129,6 +129,12 @@ TEST(PartialModifyTest, partial_modify_with_defauls) {
                                 "tensor(x{},y[3]):{{x:\"a\",y:0}:9,{x:\"a\",y:1}:4,{x:\"a\",y:2}:5,"
                                                   "{x:\"b\",y:0}:1,{x:\"b\",y:1}:8,{x:\"b\",y:2}:9,"
                                                   "{x:\"c\",y:0}:10,{x:\"c\",y:1}:1,{x:\"c\",y:2}:1}");
+
+    // NOTE: The specified default cell value doesn't have any effect for tensors with only indexed dimensions,
+    // as the dense subspace is always represented (with default cell value 0.0).
+    expect_modify_with_defaults("tensor(x[3]):{{x:0}:2}", "tensor(x{}):{{x:\"1\"}:3}",
+                                operation::Add::f, 2.0,
+                                "tensor(x[3]):{{x:0}:2,{x:1}:3,{x:2}:0}");
 }
 
 std::vector<std::pair<vespalib::string,vespalib::string>> bad_layouts = {

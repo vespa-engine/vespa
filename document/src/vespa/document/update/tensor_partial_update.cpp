@@ -475,17 +475,20 @@ Value::UP
 TensorPartialUpdate::modify_with_defaults(const Value& input, join_fun_t function,
                                           const Value& modifier, double default_cell_value, const ValueBuilderFactory& factory)
 {
-    AddressHandler handler(input.type(), modifier.type());
+    const auto& input_type = input.type();
+    AddressHandler handler(input_type, modifier.type());
     if (!handler.valid) {
         return {};
     }
-    const size_t dsss = input.type().dense_subspace_size();
-    ArrayArrayMap<string_id, double> sub_spaces(handler.for_output.addr.size(), dsss, modifier.index().size());
-    find_sub_spaces_not_in_input(input, modifier, default_cell_value, handler, sub_spaces);
     Value::UP output;
-    if (sub_spaces.size() > 0) {
-        output = typify_invoke<1, TypifyCellType, PerformInsertSubspaces>(
-            input.cells().type, input, handler.for_output, sub_spaces, factory);
+    if (!input_type.is_dense()) {
+        const size_t dsss = input_type.dense_subspace_size();
+        ArrayArrayMap<string_id, double> sub_spaces(handler.for_output.addr.size(), dsss, modifier.index().size());
+        find_sub_spaces_not_in_input(input, modifier, default_cell_value, handler, sub_spaces);
+        if (sub_spaces.size() > 0) {
+            output = typify_invoke<1, TypifyCellType, PerformInsertSubspaces>(
+                    input.cells().type, input, handler.for_output, sub_spaces, factory);
+        }
     }
     return typify_invoke<2, TypifyCellType, PerformModify>(
             input.cells().type, modifier.cells().type,

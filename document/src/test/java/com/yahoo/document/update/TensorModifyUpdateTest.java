@@ -7,6 +7,8 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
+import java.util.Optional;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -47,11 +49,38 @@ public class TensorModifyUpdateTest {
                 "{{x:0,y:0}:3, {x:0,y:1}:2}", "{{x:0,y:1}:3}", "{{x:0,y:0}:3,{x:0,y:1}:6}");
     }
 
-    private void assertApplyTo(String spec, Operation op, String init, String update, String expected) {
-        TensorFieldValue initialFieldValue = new TensorFieldValue(Tensor.from(spec, init));
-        TensorModifyUpdate modifyUpdate = new TensorModifyUpdate(op, new TensorFieldValue(Tensor.from("tensor(x{},y{})", update)));
-        TensorFieldValue updatedFieldValue = (TensorFieldValue) modifyUpdate.applyTo(initialFieldValue);
-        assertEquals(Tensor.from(spec, expected), updatedFieldValue.getTensor().get());
+    @Test
+    public void apply_modify_update_operations_with_default_cell_value() {
+        assertApplyTo("tensor(x{})", "tensor(x{})", Operation.ADD, Optional.of(0.0),
+            "{{x:a}:1,{x:b}:2}", "{{x:b}:3}", "{{x:a}:1,{x:b}:5}");
+
+        assertApplyTo("tensor(x{})", "tensor(x{})", Operation.ADD, Optional.of(0.0),
+                "{{x:a}:1,{x:b}:2}", "{{x:b}:3,{x:c}:4}", "{{x:a}:1,{x:b}:5,{x:c}:4}");
+
+        assertApplyTo("tensor(x{},y[3])", "tensor(x{},y{})", Operation.ADD, Optional.of(1.0),
+                "{{x:a,y:0}:3,{x:a,y:1}:4,{x:a,y:2}:5}",
+                "{{x:a,y:0}:6,{x:b,y:1}:7,{x:b,y:2}:8,{x:c,y:0}:9}",
+                "{{x:a,y:0}:9,{x:a,y:1}:4,{x:a,y:2}:5," +
+                        "{x:b,y:0}:1,{x:b,y:1}:8,{x:b,y:2}:9," +
+                        "{x:c,y:0}:10,{x:c,y:1}:1,{x:c,y:2}:1}");
+
+        // NOTE: The specified default cell value doesn't have any effect for tensors with only indexed dimensions,
+        // as the dense subspace is always represented (with default cell value 0.0).
+        assertApplyTo("tensor(x[3])", "tensor(x{})", Operation.ADD, Optional.of(2.0),
+                "{{x:0}:2}", "{{x:1}:3}", "{{x:0}:2,{x:1}:3,{x:2}:0}");
     }
 
+    private void assertApplyTo(String spec, Operation op, String input, String update, String expected) {
+        assertApplyTo(spec, "tensor(x{},y{})", op, Optional.empty(), input, update, expected);
+    }
+
+    private void assertApplyTo(String inputSpec, String updateSpec, Operation op, Optional<Double> defaultCellValue, String input, String update, String expected) {
+        TensorFieldValue inputFieldValue = new TensorFieldValue(Tensor.from(inputSpec, input));
+        TensorModifyUpdate modifyUpdate = new TensorModifyUpdate(op, new TensorFieldValue(Tensor.from(updateSpec, update)));
+        if (defaultCellValue.isPresent()) {
+            modifyUpdate.setDefaultCellValue(defaultCellValue.get());
+        }
+        TensorFieldValue updatedFieldValue = (TensorFieldValue) modifyUpdate.applyTo(inputFieldValue);
+        assertEquals(Tensor.from(inputSpec, expected), updatedFieldValue.getTensor().get());
+    }
 }
