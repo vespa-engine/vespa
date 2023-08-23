@@ -471,7 +471,6 @@ public class CppClassBuilder implements ClassBuilder {
     void writeStaticMemberDeclarations(Writer w, String indent) throws IOException {
         w.write(""
                 + indent + "static const vespalib::string CONFIG_DEF_MD5;\n"
-                + indent + "static const vespalib::string CONFIG_DEF_VERSION;\n"
                 + indent + "static const vespalib::string CONFIG_DEF_NAME;\n"
                 + indent + "static const vespalib::string CONFIG_DEF_NAMESPACE;\n"
                 + indent + "static const ::config::StringVector CONFIG_DEF_SCHEMA;\n"
@@ -620,7 +619,6 @@ public class CppClassBuilder implements ClassBuilder {
     void writeStaticMemberDefinitions(Writer w, CNode root, NormalizedDefinition nd) throws IOException {
         String typeName = getInternalClassName(root);
         w.write("const vespalib::string " + typeName + "::CONFIG_DEF_MD5(\"" + root.defMd5 + "\");\n"
-                + "const vespalib::string " + typeName + "::CONFIG_DEF_VERSION(\"" + root.defVersion + "\");\n"
                 + "const vespalib::string " + typeName + "::CONFIG_DEF_NAME(\"" + root.defName + "\");\n"
                 + "const vespalib::string " + typeName + "::CONFIG_DEF_NAMESPACE(\"" + root.getNamespace() + "\");\n"
                 + "const int64_t " + typeName + "::CONFIG_DEF_SERIALIZE_VERSION(1);\n");
