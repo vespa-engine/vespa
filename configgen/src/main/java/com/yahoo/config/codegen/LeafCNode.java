@@ -24,7 +24,11 @@ public abstract class LeafCNode extends CNode {
                 case "bool": return new BooleanLeaf(parent, name);
                 case "string": return new StringLeaf(parent, name);
                 case "reference": return new ReferenceLeaf(parent, name);
-                case "file": return new FileLeaf(parent, name);
+                case "file": {
+                    // Note: Used internally and also no support for path in C++, so cannot be removed in Vespa 9
+                    System.out.println("Warning: config type 'file' is deprecated, use 'path' instead");
+                    return new FileLeaf(parent, name);
+                }
                 case "path": return new PathLeaf(parent, name);
                 case "enum": return new EnumLeaf(parent, name, type.enumArray);
                 case "url" : return new UrlLeaf(parent, name);
