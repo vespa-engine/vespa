@@ -96,13 +96,13 @@ func TestStatusLocalDeployment(t *testing.T) {
 	resp.Body = []byte(`{"currentGeneration": 42, "converged": false}`)
 	client.NextResponse(resp)
 	assert.NotNil(t, cli.Run("status", "deployment"))
-	assert.Equal(t, "Error: deployment not converged on latest generation after waiting 0s: wait timed out\n", stderr.String())
+	assert.Equal(t, "Error: deployment not converged on latest generation: wait timed out\n", stderr.String())
 
 	// Explicit generation
 	stderr.Reset()
 	client.NextResponse(resp)
 	assert.NotNil(t, cli.Run("status", "deployment", "41"))
-	assert.Equal(t, "Error: deployment not converged on generation 41 after waiting 0s: wait timed out\n", stderr.String())
+	assert.Equal(t, "Error: deployment not converged on generation 41: wait timed out\n", stderr.String())
 }
 
 func TestStatusCloudDeployment(t *testing.T) {
@@ -131,14 +131,14 @@ func TestStatusCloudDeployment(t *testing.T) {
 	assert.Equal(t,
 		"Deployment run 1337 has completed\nSee https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details\n",
 		stdout.String())
-	// Explicit run
+	// Explicit run with waiting
 	client.NextResponse(mock.HTTPResponse{
 		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42?after=-1",
 		Status: 200,
 		Body:   []byte(`{"active": false, "status": "failure"}`),
 	})
-	assert.NotNil(t, cli.Run("status", "deployment", "42"))
-	assert.Equal(t, "Error: deployment run 42 incomplete after waiting 0s: run 42 ended with unsuccessful status: failure\n", stderr.String())
+	assert.NotNil(t, cli.Run("status", "deployment", "42", "-w", "10"))
+	assert.Equal(t, "Waiting up to 10s for deployment to converge...\nError: deployment run 42 incomplete after waiting up to 10s: aborting wait: run 42 ended with unsuccessful status: failure\n", stderr.String())
 }
 
 func isLocalTarget(args []string) bool {

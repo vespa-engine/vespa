@@ -314,10 +314,10 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 	}
 	_, err = t.deployServiceWait(jobSuccessFunc, requestFunc, timeout)
 	if err != nil {
-		return 0, fmt.Errorf("deployment run %d incomplete after waiting %s: %w", runID, timeout, err)
+		return 0, fmt.Errorf("deployment run %d incomplete%s: %w", runID, waitDescription(timeout), err)
 	}
 	if !success {
-		return 0, fmt.Errorf("deployment run %d incomplete after waiting %s", runID, timeout)
+		return 0, fmt.Errorf("deployment run %d incomplete%s", runID, waitDescription(timeout))
 	}
 	return runID, nil
 }
@@ -374,10 +374,10 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string]strin
 		return true, nil
 	}
 	if _, err := t.deployServiceWait(endpointFunc, func() *http.Request { return req }, timeout); err != nil {
-		return nil, fmt.Errorf("no endpoints found after waiting %s: %w", timeout, err)
+		return nil, fmt.Errorf("no endpoints found%s: %w", waitDescription(timeout), err)
 	}
 	if len(urlsByCluster) == 0 {
-		return nil, fmt.Errorf("no endpoints found after waiting %s", timeout)
+		return nil, fmt.Errorf("no endpoints found%s", waitDescription(timeout))
 	}
 	return urlsByCluster, nil
 }

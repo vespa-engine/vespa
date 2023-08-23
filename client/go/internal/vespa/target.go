@@ -137,15 +137,11 @@ func (s *Service) Wait(timeout time.Duration) error {
 	okFunc := func(status int, response []byte) (bool, error) { return isOK(status) }
 	status, err := wait(s, okFunc, func() *http.Request { return req }, timeout, s.retryInterval)
 	if err != nil {
-		waitDesc := ""
-		if timeout > 0 {
-			waitDesc = " (after waiting " + timeout.String() + ") "
-		}
 		statusDesc := ""
 		if status > 0 {
 			statusDesc = fmt.Sprintf(": status %d", status)
 		}
-		return fmt.Errorf("unhealthy %s%s%s at %s: %w", s.Description(), waitDesc, statusDesc, url, err)
+		return fmt.Errorf("unhealthy %s%s%s at %s: %w", s.Description(), waitDescription(timeout), statusDesc, url, err)
 	}
 	return nil
 }
@@ -180,6 +176,13 @@ func FindService(name string, services []*Service) (*Service, error) {
 		return nil, fmt.Errorf("no such service: %q: %s", name, found)
 	}
 	return nil, fmt.Errorf("no service specified: %s", found)
+}
+
+func waitDescription(d time.Duration) string {
+	if d > 0 {
+		return " after waiting up to " + d.String()
+	}
+	return ""
 }
 
 func isOK(status int) (bool, error) {
@@ -226,7 +229,7 @@ func wait(service *Service, okFn responseFunc, reqFn requestFunc, timeout, retry
 			response.Body.Close()
 			ok, err := okFn(status, body)
 			if err != nil {
-				return status, err
+				return status, fmt.Errorf("aborting wait: %w", err)
 			}
 			if ok {
 				return status, nil
