@@ -93,11 +93,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			}
 			if opts.Target.IsCloud() {
 				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.CyanString("vespa status deployment"))
-				log.Print(color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/%s/instance/%s/job/%s-%s/run/%d",
-					opts.Target.Deployment().System.ConsoleURL,
-					opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application, opts.Target.Deployment().Zone.Environment,
-					opts.Target.Deployment().Application.Instance, opts.Target.Deployment().Zone.Environment, opts.Target.Deployment().Zone.Region,
-					result.ID)))
+				log.Print(color.CyanString(opts.Target.Deployment().System.ConsoleRunURL(opts.Target.Deployment(), result.ID)))
 			}
 			return waitForDeploymentReady(cli, target, result.ID, timeout)
 		},

@@ -56,7 +56,64 @@ type System struct {
 }
 
 // IsPublic returns whether system s is a public (Vespa Cloud) system.
-func (s *System) IsPublic() bool { return s.Name == PublicSystem.Name || s.Name == PublicCDSystem.Name }
+func (s System) IsPublic() bool { return s.Name == PublicSystem.Name || s.Name == PublicCDSystem.Name }
+
+// DeployURL returns the API URL to use for deploying to this system.
+func (s System) DeployURL(deployment Deployment) string {
+	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/deploy/%s",
+		s.URL,
+		deployment.Application.Tenant,
+		deployment.Application.Application,
+		deployment.Application.Instance,
+		jobName(deployment.Zone))
+}
+
+// SubmitURL returns the API URL for submitting an application package for production deployment.
+func (s System) SubmitURL(deployment Deployment) string {
+	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/submit", s.URL, deployment.Application.Tenant, deployment.Application.Application)
+}
+
+// DeploymentURL returns the API URL of given deployment.
+func (s System) DeploymentURL(deployment Deployment) string {
+	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s",
+		s.URL,
+		deployment.Application.Tenant,
+		deployment.Application.Application,
+		deployment.Application.Instance,
+		deployment.Zone.Environment,
+		deployment.Zone.Region)
+}
+
+// RunURL returns the API URL for a given deployment job run.
+func (s System) RunURL(deployment Deployment, id int64) string {
+	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/job/%s/run/%d",
+		s.URL,
+		deployment.Application.Tenant, deployment.Application.Application, deployment.Application.Instance,
+		jobName(deployment.Zone), id)
+}
+
+// RunsURL returns the API URL listing all runs for given deployment.
+func (s System) RunsURL(deployment Deployment) string {
+	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/job/%s",
+		s.URL,
+		deployment.Application.Tenant, deployment.Application.Application, deployment.Application.Instance,
+		jobName(deployment.Zone))
+}
+
+// ConsoleRunURL returns the console URL for a deployment job run in this system.
+func (s System) ConsoleRunURL(deployment Deployment, run int64) string {
+	return fmt.Sprintf("%s/tenant/%s/application/%s/%s/instance/%s/job/%s/run/%d",
+		s.ConsoleURL, deployment.Application.Tenant, deployment.Application.Application, deployment.Zone.Environment,
+		deployment.Application.Instance, jobName(deployment.Zone), run)
+}
+
+func jobName(zone ZoneID) string {
+	env := zone.Environment
+	if env == "prod" {
+		env = "production"
+	}
+	return env + "-" + zone.Region
+}
 
 // GetSystem returns the system of given name.
 func GetSystem(name string) (System, error) {

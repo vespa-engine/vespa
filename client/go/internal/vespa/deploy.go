@@ -189,25 +189,25 @@ func Activate(sessionID int64, deployment DeploymentOptions) error {
 }
 
 // Deactivate given deployment
-func Deactivate(opts DeploymentOptions) error {
-	path := "/application/v2/tenant/default/application/default"
-	if opts.Target.IsCloud() {
-		if opts.Target.Deployment().Zone.Environment == "" || opts.Target.Deployment().Zone.Region == "" {
-			return fmt.Errorf("%s: missing zone", opts)
+func Deactivate(deployment DeploymentOptions) error {
+	var (
+		u   *url.URL
+		err error
+	)
+	if deployment.Target.IsCloud() {
+		if deployment.Target.Deployment().Zone.Environment == "" || deployment.Target.Deployment().Zone.Region == "" {
+			return fmt.Errorf("%s: missing zone", deployment)
 		}
-		path = fmt.Sprintf("/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s",
-			opts.Target.Deployment().Application.Tenant,
-			opts.Target.Deployment().Application.Application,
-			opts.Target.Deployment().Application.Instance,
-			opts.Target.Deployment().Zone.Environment,
-			opts.Target.Deployment().Zone.Region)
+		deploymentURL := deployment.Target.Deployment().System.DeploymentURL(deployment.Target.Deployment())
+		u, err = url.Parse(deploymentURL)
+	} else {
+		u, err = deployment.url("/application/v2/tenant/default/application/default")
 	}
-	u, err := opts.url(path)
 	if err != nil {
 		return err
 	}
 	req := &http.Request{URL: u, Method: "DELETE"}
-	resp, err := deployServiceDo(req, 30*time.Second, opts)
+	resp, err := deployServiceDo(req, 30*time.Second, deployment)
 	if err != nil {
 		return err
 	}
@@ -215,27 +215,27 @@ func Deactivate(opts DeploymentOptions) error {
 	return checkResponse(req, resp)
 }
 
-func Deploy(opts DeploymentOptions) (PrepareResult, error) {
-	path := "/application/v2/tenant/default/prepareandactivate"
-	if opts.Target.IsCloud() {
-		if err := checkDeploymentOpts(opts); err != nil {
+// Deploy deploys an application.
+func Deploy(deployment DeploymentOptions) (PrepareResult, error) {
+	var (
+		u   *url.URL
+		err error
+	)
+	if deployment.Target.IsCloud() {
+		if err := checkDeploymentOpts(deployment); err != nil {
 			return PrepareResult{}, err
 		}
-		if opts.Target.Deployment().Zone.Environment == "" || opts.Target.Deployment().Zone.Region == "" {
-			return PrepareResult{}, fmt.Errorf("%s: missing zone", opts)
+		if deployment.Target.Deployment().Zone.Environment == "" || deployment.Target.Deployment().Zone.Region == "" {
+			return PrepareResult{}, fmt.Errorf("%s: missing zone", deployment)
 		}
-		path = fmt.Sprintf("/application/v4/tenant/%s/application/%s/instance/%s/deploy/%s-%s",
-			opts.Target.Deployment().Application.Tenant,
-			opts.Target.Deployment().Application.Application,
-			opts.Target.Deployment().Application.Instance,
-			opts.Target.Deployment().Zone.Environment,
-			opts.Target.Deployment().Zone.Region)
+		u, err = url.Parse(deployment.Target.Deployment().System.DeployURL(deployment.Target.Deployment()))
+	} else {
+		u, err = deployment.url("/application/v2/tenant/default/prepareandactivate")
 	}
-	u, err := opts.url(path)
 	if err != nil {
 		return PrepareResult{}, err
 	}
-	return uploadApplicationPackage(u, opts)
+	return uploadApplicationPackage(u, deployment)
 }
 
 func copyToPart(dst *multipart.Writer, src io.Reader, fieldname, filename string) error {
@@ -262,8 +262,8 @@ func Submit(opts DeploymentOptions, submission Submission) error {
 	if err := checkDeploymentOpts(opts); err != nil {
 		return err
 	}
-	path := fmt.Sprintf("/application/v4/tenant/%s/application/%s/submit", opts.Target.Deployment().Application.Tenant, opts.Target.Deployment().Application.Application)
-	u, err := opts.url(path)
+	submitURL := opts.Target.Deployment().System.SubmitURL(opts.Target.Deployment())
+	u, err := opts.url(submitURL)
 	if err != nil {
 		return err
 	}

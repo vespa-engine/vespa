@@ -123,11 +123,7 @@ $ vespa status deployment -t local [session-id]
 			}
 			if t.IsCloud() {
 				log.Printf("Deployment run %s has completed", color.CyanString(strconv.FormatInt(id, 10)))
-				log.Printf("See %s for more details", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/%s/instance/%s/job/%s-%s/run/%d",
-					t.Deployment().System.ConsoleURL,
-					t.Deployment().Application.Tenant, t.Deployment().Application.Application, t.Deployment().Zone.Environment,
-					t.Deployment().Application.Instance, t.Deployment().Zone.Environment, t.Deployment().Zone.Region,
-					id)))
+				log.Printf("See %s for more details", color.CyanString(t.Deployment().System.ConsoleRunURL(t.Deployment(), id)))
 			} else {
 				log.Printf("Deployment is %s on config generation %s", color.GreenString("ready"), color.CyanString(strconv.FormatInt(id, 10)))
 			}
