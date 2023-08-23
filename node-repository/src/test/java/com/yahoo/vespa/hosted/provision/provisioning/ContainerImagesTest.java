@@ -24,7 +24,7 @@ public class ContainerImagesTest {
 
     @Test
     public void image_selection() {
-        DockerImage defaultImage = DockerImage.fromString("registry.example.com/vespa/default");
+        DockerImage defaultImage = DockerImage.fromString("different.example.com/vespa/default");
         DockerImage tenantImage = DockerImage.fromString("registry.example.com/vespa/tenant");
         DockerImage gpuImage = DockerImage.fromString("registry.example.com/vespa/tenant-gpu");
         ContainerImages images = new ContainerImages(defaultImage, Optional.of(tenantImage), Optional.of(gpuImage));
@@ -44,6 +44,13 @@ public class ContainerImagesTest {
         // Tenant node requesting a special image
         DockerImage requested = DockerImage.fromString("registry.example.com/vespa/special");
         assertEquals(requested, images.get(node(NodeType.tenant, requested)));
+
+        // Malicious registry is rewritten to the trusted one
+        DockerImage malicious = DockerImage.fromString("malicious.example.com/vespa/special");
+        assertEquals(requested, images.get(node(NodeType.tenant, malicious)));
+
+        // Requested image registry for config is rewritten to the defaultImage registry
+        assertEquals(DockerImage.fromString("different.example.com/vespa/special"), images.get(node(NodeType.config, requested)));
 
         // When there is no custom tenant image, the default one is used
         images = new ContainerImages(defaultImage, Optional.empty(), Optional.of(gpuImage));

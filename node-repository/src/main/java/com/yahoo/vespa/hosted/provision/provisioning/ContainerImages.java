@@ -37,24 +37,17 @@ public class ContainerImages {
         Optional<DockerImage> requestedImage = node.allocation()
                                                    .flatMap(allocation -> allocation.membership().cluster().dockerImageRepo());
         NodeType nodeType = node.type().isHost() ? node.type().childNodeType() : node.type();
-        final DockerImage image;
-        if (requestedImage.isPresent()) {
-            image = requestedImage.get();
-        } else if (nodeType == NodeType.tenant) {
-            if (!node.resources().gpuResources().isZero()) {
-                image = tenantGpuImage.orElseThrow(() -> new IllegalArgumentException(node + " has GPU resources, but there is no GPU container image available"));
-            } else {
-                image = tenantImage.orElse(defaultImage);
-            }
-        } else {
-            image = defaultImage;
-        }
-        return rewriteRegistry(image);
-    }
+        DockerImage wantedImage =
+                nodeType != NodeType.tenant ?
+                        defaultImage :
+                node.resources().gpuResources().isZero() ?
+                        tenantImage.orElse(defaultImage) :
+                        tenantGpuImage.orElseThrow(() -> new IllegalArgumentException(node + " has GPU resources, but there is no GPU container image available"));
 
-    /** Rewrite the registry part of given image, using this zone's default image */
-    private DockerImage rewriteRegistry(DockerImage image) {
-        return image.withRegistry(defaultImage.registry());
+        return requestedImage
+                // Rewrite requested images to make sure they come from a trusted registry
+                .map(image -> image.withRegistry(wantedImage.registry()))
+                .orElse(wantedImage);
     }
 
 }
