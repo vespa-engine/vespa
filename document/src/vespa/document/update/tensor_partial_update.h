@@ -24,6 +24,15 @@ struct TensorPartialUpdate {
                             const Value &modifier, const ValueBuilderFactory &factory);
 
     /**
+     *  Make a copy of the input and add all dense sub-spaces (with default cell value) exising only in the modifier.
+     *  Then apply function(oldvalue, modifier.cellvalue) to the cells that exist in the modifier.
+     *  The modifier type must be sparse with exactly the same dimension names as the input type.
+     *  Returns null pointer if this constraint is violated.
+     **/
+    static Value::UP modify_with_defaults(const Value& input, join_fun_t function,
+                                          const Value& modifier, double default_cell_value, const ValueBuilderFactory& factory);
+
+    /**
      *  Make a copy of the input, but add or overwrite cells from add_cells.
      *  Requires same type for input and add_cells.
      *  Returns null pointer if this constraint is violated.
