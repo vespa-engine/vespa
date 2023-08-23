@@ -14,6 +14,7 @@ import java.util.logging.Level;
 
 /**
  * Validates URI bindings for filters and handlers
+ * Enforced in public systems, log warning in non-public systems
  *
  * @author bjorncs
  */
@@ -58,13 +59,24 @@ class UriBindingsValidator extends Validator {
 
         // Allow binding to port if we are restricting data plane bindings
         if (!binding.matchesAnyPort()) {
-                throw new IllegalArgumentException(createErrorMessage(binding, "binding with port is not allowed"));
+            logOrThrow(createErrorMessage(binding, "binding with port is not allowed"), deployState);
         }
         if (!binding.host().equals(BindingPattern.WILDCARD_PATTERN)) {
-            throw new IllegalArgumentException(createErrorMessage(binding, "only binding with wildcard ('*') for hostname is allowed"));
+            logOrThrow(createErrorMessage(binding, "only binding with wildcard ('*') for hostname is allowed"), deployState);
         }
         if (!binding.scheme().equals("http") && !binding.scheme().equals("https")) {
-            throw new IllegalArgumentException(createErrorMessage(binding, "only 'http' is allowed as scheme"));
+            logOrThrow(createErrorMessage(binding, "only 'http' is allowed as scheme"), deployState);
+        }
+    }
+
+    /*
+     * Logs to deploy logger in non-public systems, throw otherwise
+     */
+    private static void logOrThrow(String message, DeployState deployState) {
+        if (deployState.zone().system().isPublic()) {
+            throw new IllegalArgumentException(message);
+        } else {
+            deployState.getDeployLogger().log(Level.WARNING, message);
         }
     }
 
