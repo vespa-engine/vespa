@@ -3446,6 +3446,7 @@
       "public com.yahoo.document.update.TensorModifyUpdate$Operation getOperation()",
       "public com.yahoo.document.datatypes.TensorFieldValue getValue()",
       "public void setValue(com.yahoo.document.datatypes.TensorFieldValue)",
+      "public void setDefaultCellValue(double)",
       "public com.yahoo.document.datatypes.FieldValue applyTo(com.yahoo.document.datatypes.FieldValue)",
       "protected void checkCompatibility(com.yahoo.document.DataType)",
       "public void serialize(com.yahoo.document.serialization.DocumentUpdateWriter, com.yahoo.document.DataType)",
@@ -3457,7 +3458,8 @@
     ],
     "fields" : [
       "protected com.yahoo.document.update.TensorModifyUpdate$Operation operation",
-      "protected com.yahoo.document.datatypes.TensorFieldValue tensor"
+      "protected com.yahoo.document.datatypes.TensorFieldValue tensor",
+      "protected java.util.Optional defaultCellValue"
     ]
   },
   "com.yahoo.document.update.TensorRemoveUpdate" : {
