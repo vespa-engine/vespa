@@ -31,9 +31,11 @@ public class MemoryController {
         return cgroup.readIfExists("memory.current").map(Size::from);
     }
 
-    /** @return Number of bytes used to cache filesystem data, including tmpfs and shared memory. */
-    public Size readFileSystemCache() {
-        return Size.from(readField(cgroup.readLines("memory.stat"), "file"));
+    public Stats readStat() {
+        var lines = cgroup.readLines("memory.stat");
+        return new Stats(
+                Size.from(readField(lines, "file")), Size.from(readField(lines, "sock")), Size.from(readField(lines, "slab")),
+                Size.from(readField(lines, "slab_reclaimable")), Size.from(readField(lines, "anon")));
     }
 
     private static String readField(List<String> lines, String fieldName) {
@@ -45,4 +47,13 @@ public class MemoryController {
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("No such field: " + fieldName));
     }
+
+    /**
+     * @param file Number of bytes used to cache filesystem data, including tmpfs and shared memory.
+     * @param sock Amount of memory used in network transmission buffers.
+     * @param slab Amount of memory used for storing in-kernel data structures.
+     * @param slabReclaimable Part of "slab" that might be reclaimed, such as dentries and inodes.
+     * @param anon Amount of memory used in anonymous mappings such as brk(), sbrk(), and mmap(MAP_ANONYMOUS).
+     */
+    public record Stats(Size file, Size sock, Size slab, Size slabReclaimable, Size anon) {}
 }

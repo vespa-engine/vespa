@@ -106,8 +106,14 @@ public class CgroupTest {
                 shmem 8380416
                 file_mapped 1081344
                 file_dirty 135168
+                slab_reclaimable 1424320
                 """);
-        assertEquals(69206016L, containerCgroup.memory().readFileSystemCache().value());
+        var stats = containerCgroup.memory().readStat();
+        assertEquals(69206016L, stats.file().value());
+        assertEquals(3481600L, stats.anon().value());
+        assertEquals(3552304L, stats.slab().value());
+        assertEquals(73728L, stats.sock().value());
+        assertEquals(1424320L, stats.slabReclaimable().value());
     }
 
     @Test

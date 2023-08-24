@@ -44,8 +44,14 @@ public record ContainerStats(Map<String, NetworkStats> networks,
      * @param cache memory used by cache in bytes
      * @param usage memory usage in bytes
      * @param limit memory limit in bytes
+     * @param sock network transmission buffers in bytes
+     * @param slab in-kernel data structures in bytes
+     * @param slabReclaimable part of "slab" that might be reclaimed in bytes
+     * @param anon anonymous mappings in bytes
      */
-    public record MemoryStats(long cache, long usage, long limit) {}
+    public record MemoryStats(long cache, long usage, long limit, long sock, long slab, long slabReclaimable, long anon) {
+        public MemoryStats(long cache, long usage, long limit) { this(cache, usage, limit, 0, 0, 0, 0); }
+    }
 
     /**
      * Statistics for CPU usage

@@ -105,8 +105,10 @@ class ContainerStatsCollector {
         MemoryController memoryController = rootCgroup.resolveContainer(containerId).memory();
         Size max = memoryController.readMax();
         long memoryUsageInBytes = memoryController.readCurrent().value();
-        long cachedInBytes = memoryController.readFileSystemCache().value();
-        return new ContainerStats.MemoryStats(cachedInBytes, memoryUsageInBytes, max.isMax() ? -1 : max.value());
+        var stats = memoryController.readStat();
+        return new ContainerStats.MemoryStats(
+                stats.file().value(), memoryUsageInBytes, max.isMax() ? -1 : max.value(),
+                stats.sock().value(), stats.slab().value(), stats.slabReclaimable().value(), stats.anon().value());
     }
 
     private ContainerStats.NetworkStats collectNetworkStats(String iface, int containerPid) throws IOException {
