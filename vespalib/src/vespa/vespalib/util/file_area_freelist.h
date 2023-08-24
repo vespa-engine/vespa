@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -16,6 +17,7 @@ namespace vespalib::alloc {
 class FileAreaFreeList {
     std::map<uint64_t, size_t> _free_areas; // map from offset to size
     std::map<size_t, std::set<uint64_t>> _free_sizes; // map from size to set of offsets
+    vespalib::hash_set<uint64_t> _fences;
     void remove_from_size_set(uint64_t offset, size_t size);
     std::pair<uint64_t, size_t> prepare_reuse_area(size_t size);
 public:
@@ -23,6 +25,8 @@ public:
     ~FileAreaFreeList();
     uint64_t alloc(size_t size);
     void free(uint64_t offset, size_t size);
+    void add_premmapped_area(uint64_t offset, size_t size);
+    void remove_premmapped_area(uint64_t offset, size_t size);
     static constexpr uint64_t bad_offset = std::numeric_limits<uint64_t>::max();
 };
 
