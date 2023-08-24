@@ -69,6 +69,9 @@ public:
     std::vector<Dimension> indexed_dimensions() const;
     std::vector<Dimension> mapped_dimensions() const;
     size_t dimension_index(const vespalib::string &name) const;
+    bool has_dimension(const vespalib::string &name) const {
+        return (dimension_index(name) != Dimension::npos);
+    }
     std::vector<vespalib::string> dimension_names() const;
     bool operator==(const ValueType &rhs) const noexcept {
         return ((_error == rhs._error) &&
