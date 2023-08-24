@@ -56,7 +56,7 @@ public class IntermediateCollection {
             parsedSchemas.put(schema.name(), schema);
             return schema;
         } catch (TokenMgrException e) {
-            throw new ParseException("Unknown symbol: " + e.getMessage());
+            throw new ParseException(stream.formatException("Unknown symbol: " + Exceptions.toMessageString(e)));
         } catch (ParseException pe) {
             throw new ParseException(stream.formatException(Exceptions.toMessageString(pe)));
         }
