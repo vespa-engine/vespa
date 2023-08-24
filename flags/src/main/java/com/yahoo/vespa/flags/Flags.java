@@ -14,6 +14,7 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
@@ -377,7 +378,7 @@ public class Flags {
             List.of("andreer"), "2023-08-21", "2023-09-21",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
-            HOSTNAME);
+            HOSTNAME, CLOUD_ACCOUNT);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
