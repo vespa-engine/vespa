@@ -37,7 +37,7 @@ import static java.util.logging.Level.INFO;
 class FileReferencesAndDownloadsMaintainer implements Runnable {
 
     private static final Logger log = Logger.getLogger(FileReferencesAndDownloadsMaintainer.class.getName());
-    private static final File defaultUrlDownloadDir = UrlDownloadRpcServer.downloadDir;
+    private static final File defaultUrlDownloadDir = UrlDownloadRpcServer.defaultDownloadDirectory;
     private static final File defaultFileReferencesDownloadDir = FileDownloader.defaultDownloadDirectory;
     private static final Duration defaultDurationToKeepFiles = Duration.ofDays(30);
     private static final int defaultOutdatedFilesToKeep = 20;
