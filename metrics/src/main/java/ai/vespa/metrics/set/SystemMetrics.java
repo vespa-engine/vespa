@@ -30,6 +30,10 @@ public class SystemMetrics {
                                 new Metric(HostedNodeAdminMetrics.MEM_UTIL.baseName()),
                                 new Metric(HostedNodeAdminMetrics.MEM_TOTAL_USED.baseName()),
                                 new Metric(HostedNodeAdminMetrics.MEM_TOTAL_UTIL.baseName()),
+                                new Metric(HostedNodeAdminMetrics.MEM_SOCK.baseName()),
+                                new Metric(HostedNodeAdminMetrics.MEM_SLAB_RECLAIMABLE.baseName()),
+                                new Metric(HostedNodeAdminMetrics.MEM_SLAB.baseName()),
+                                new Metric(HostedNodeAdminMetrics.MEM_ANON.baseName()),
                                 new Metric(HostedNodeAdminMetrics.GPU_UTIL.baseName()),
                                 new Metric(HostedNodeAdminMetrics.GPU_MEM_USED.baseName()),
                                 new Metric(HostedNodeAdminMetrics.GPU_MEM_TOTAL.baseName())

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.container;
 
 import com.yahoo.vespa.hosted.node.admin.cgroup.Cgroup;
+import com.yahoo.vespa.hosted.node.admin.cgroup.MemoryController;
 import com.yahoo.vespa.hosted.node.admin.cgroup.Size;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -97,7 +98,8 @@ public class ContainerStatsCollectorTest {
     private void mockMemoryStats(ContainerId containerId) {
         when(cgroup.resolveContainer(eq(containerId)).memory().readCurrent()).thenReturn(Size.from(1228017664L));
         when(cgroup.resolveContainer(eq(containerId)).memory().readMax()).thenReturn(Size.from(2147483648L));
-        when(cgroup.resolveContainer(eq(containerId)).memory().readFileSystemCache()).thenReturn(Size.from(470790144L));
+        when(cgroup.resolveContainer(eq(containerId)).memory().readStat()).thenReturn(
+                new MemoryController.Stats(Size.from(470790144L), Size.from(0), Size.from(0), Size.from(0), Size.from(0)));
     }
 
     private void mockCpuStats(ContainerId containerId) throws IOException {
