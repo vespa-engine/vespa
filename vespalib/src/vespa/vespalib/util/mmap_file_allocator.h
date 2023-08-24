@@ -16,6 +16,9 @@ namespace vespalib::alloc {
  * Class handling memory allocations backed by one or more files.
  * Not reentrant or thread safe. Should not be destructed before all allocations
  * have been freed.
+ *
+ * Memory allocations smaller than _small_limit use portions of
+ * premmapped areas to reduce the total number of memory mappings.
  */
 class MmapFileAllocator : public MemoryAllocator {
     struct SizeAndOffset {
