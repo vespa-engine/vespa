@@ -7,11 +7,15 @@ namespace vespalib::alloc {
 
 FileAreaFreeList::FileAreaFreeList()
     : _free_areas(),
-      _free_sizes()
+      _free_sizes(),
+      _fences()
 {
 }
 
-FileAreaFreeList::~FileAreaFreeList() = default;
+FileAreaFreeList::~FileAreaFreeList()
+{
+    assert(_fences.empty());
+}
 
 void
 FileAreaFreeList::remove_from_size_set(uint64_t offset, size_t size)
@@ -73,23 +77,29 @@ FileAreaFreeList::free(uint64_t offset, size_t size)
 {
     auto itr = _free_areas.lower_bound(offset);
     if (itr != _free_areas.end() && itr->first <= offset + size) {
-        // Merge with next free area
         assert(itr->first == offset + size);
-        remove_from_size_set(itr->first, itr->second);
-        size += itr->second;
-        itr = _free_areas.erase(itr);
+        if (!_fences.contains(offset + size)) {
+            // Merge with next free area
+            remove_from_size_set(itr->first, itr->second);
+            size += itr->second;
+            itr = _free_areas.erase(itr);
+        }
     }
     bool adjusted_prev_area = false;
     if (itr != _free_areas.begin()) {
         --itr;
         if (itr->first + itr->second >= offset) {
-            // Merge with previous free area
             assert(itr->first + itr->second == offset);
-            remove_from_size_set(itr->first, itr->second);
-            offset = itr->first;
-            size += itr->second;
-            itr->second = size;
-            adjusted_prev_area = true;
+            if (!_fences.contains(offset)) {
+                // Merge with previous free area
+                remove_from_size_set(itr->first, itr->second);
+                offset = itr->first;
+                size += itr->second;
+                itr->second = size;
+                adjusted_prev_area = true;
+            } else {
+                ++itr;
+            }
         } else {
             ++itr;
         }
@@ -99,6 +109,40 @@ FileAreaFreeList::free(uint64_t offset, size_t size)
     }
     auto ins_res = _free_sizes[size].insert(offset);
     assert(ins_res.second);
+}
+
+void
+FileAreaFreeList::add_premmapped_area(uint64_t offset, size_t size)
+{
+    auto itr = _free_areas.lower_bound(offset);
+    if (itr != _free_areas.end()) {
+        assert(itr->first >= offset + size);
+    }
+    auto ins_res = _free_sizes[size].insert(offset);
+    assert(ins_res.second);
+    _free_areas.emplace_hint(itr, offset, size);
+    auto fences_ins_res = _fences.insert(offset);
+    assert(fences_ins_res.second);
+}
+
+void
+FileAreaFreeList::remove_premmapped_area(uint64_t offset, size_t size)
+{
+    auto itr = _free_areas.lower_bound(offset);
+    assert(itr != _free_areas.end());
+    assert(itr->first == offset);
+    assert(itr->second == size);
+    auto sizes_itr = _free_sizes.lower_bound(size);
+    assert(sizes_itr != _free_sizes.end());
+    assert(sizes_itr->first == size);
+    assert(sizes_itr->second.contains(offset));
+    assert(_fences.contains(offset));
+    _free_areas.erase(itr);
+    sizes_itr->second.erase(offset);
+    if (sizes_itr->second.empty()) {
+        _free_sizes.erase(sizes_itr);
+    }
+    _fences.erase(offset);
 }
 
 }
