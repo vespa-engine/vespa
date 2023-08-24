@@ -1,5 +1,6 @@
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -110,36 +111,15 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     void restricts_default_bindings_in_hosted_vespa() {
         DeployState deployState = new DeployState.Builder()
-                .properties(new TestProperties().setHostedVespa(true).setUseRestrictedDataPlaneBindings(true))
+                .properties(new TestProperties().setHostedVespa(true))
                 .build();
         verifyDefaultBindings(deployState, "http://*:4443");
     }
 
     @Test
-    void does_not_restrict_default_bindings_in_hosted_vespa_when_disabled() {
-        DeployState deployState = new DeployState.Builder()
-                .properties(new TestProperties().setHostedVespa(true).setUseRestrictedDataPlaneBindings(false))
-                .build();
-        verifyDefaultBindings(deployState, "http://*");
-    }
-
-    @Test
-    void does_not_restrict_infrastructure() {
-        DeployState deployState = new DeployState.Builder()
-
-                .properties(
-                        new TestProperties()
-                                .setApplicationId(ApplicationId.defaultId())
-                                .setHostedVespa(true)
-                                .setUseRestrictedDataPlaneBindings(false))
-                .build();
-        verifyDefaultBindings(deployState, "http://*");
-    }
-
-    @Test
     void restricts_custom_bindings_in_hosted_vespa() {
         DeployState deployState = new DeployState.Builder()
-                .properties(new TestProperties().setHostedVespa(true).setUseRestrictedDataPlaneBindings(true))
+                .properties(new TestProperties().setHostedVespa(true))
                 .build();
         verifyCustomSearchBindings(deployState, "http://*:4443");
     }
@@ -147,7 +127,7 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     void does_not_restrict_default_bindings_in_self_hosted() {
         DeployState deployState = new DeployState.Builder()
-                .properties(new TestProperties().setHostedVespa(false).setUseRestrictedDataPlaneBindings(false))
+                .properties(new TestProperties().setHostedVespa(false))
                 .build();
         verifyDefaultBindings(deployState, "http://*");
     }
@@ -155,12 +135,15 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     void does_not_restrict_custom_bindings_in_self_hosted() {
         DeployState deployState = new DeployState.Builder()
-                .properties(new TestProperties().setHostedVespa(false).setUseRestrictedDataPlaneBindings(false))
+                .properties(new TestProperties().setHostedVespa(false))
                 .build();
         verifyCustomSearchBindings(deployState, "http://*");
     }
 
     private void verifyDefaultBindings(DeployState deployState, String bindingPrefix) {
+        verifyDefaultBindings(deployState, bindingPrefix, ConfigModelContext.ApplicationType.DEFAULT);
+    }
+    private void verifyDefaultBindings(DeployState deployState, String bindingPrefix, ConfigModelContext.ApplicationType applicationType) {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <search/>",

@@ -2,23 +2,29 @@
 package com.yahoo.vespa.model.application.validation;// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bjorncs
  */
 public class UriBindingsValidatorTest {
+    Zone cdZone = new Zone(SystemName.cd, Environment.prod, RegionName.defaultName());
+    Zone publicCdZone = new Zone(SystemName.PublicCd, Environment.prod, RegionName.defaultName());
 
     @Test
     void fails_on_user_handler_binding_with_port() throws IOException, SAXException {
@@ -26,6 +32,17 @@ public class UriBindingsValidatorTest {
             runUriBindingValidator(true, createServicesXmlWithHandler("http://*:4443/my-handler"));
         });
         assertTrue(exception.getMessage().contains("For binding 'http://*:4443/my-handler': binding with port is not allowed"));
+    }
+
+    @Test
+    void non_public_logs_on_user_handler_binding_with_port() throws IOException, SAXException {
+        StringBuffer log = new StringBuffer();
+        DeployLogger logger = (__, message) -> {
+            System.out.println("message = " + message);
+            log.append(message).append('\n');
+        };
+        runUriBindingValidator(true, createServicesXmlWithHandler("http://*:4443/my-handler"), cdZone, logger);
+        assertTrue(log.toString().contains("For binding 'http://*:4443/my-handler': binding with port is not allowed"));
     }
 
     @Test
@@ -57,12 +74,6 @@ public class UriBindingsValidatorTest {
         runUriBindingValidator(true, createServicesXmlWithHandler("http://*/my-handler"));
     }
 
-    @Test
-    void allows_portbinding_when_restricting_data_plane() throws IOException, SAXException {
-        runUriBindingValidator(new TestProperties().setHostedVespa(true).setUseRestrictedDataPlaneBindings(true), createServicesXmlWithHandler("http://*:4443/my-handler"));
-    }
-
-    @Test
     void allows_user_binding_with_wildcard_port() throws IOException, SAXException {
         runUriBindingValidator(true, createServicesXmlWithHandler("http://*:*/my-handler"));
     }
@@ -73,15 +84,20 @@ public class UriBindingsValidatorTest {
     }
 
     private void runUriBindingValidator(boolean isHosted, String servicesXml) throws IOException, SAXException {
-        runUriBindingValidator(new TestProperties().setHostedVespa(isHosted), servicesXml);
+        runUriBindingValidator(new TestProperties().setZone(publicCdZone).setHostedVespa(isHosted), servicesXml, (__, message) -> {});
+    }
+    private void runUriBindingValidator(boolean isHosted, String servicesXml, Zone zone, DeployLogger deployLogger) throws IOException, SAXException {
+        runUriBindingValidator(new TestProperties().setZone(zone).setHostedVespa(isHosted), servicesXml, deployLogger);
     }
 
-    private void runUriBindingValidator(TestProperties testProperties, String servicesXml) throws IOException, SAXException {
+    private void runUriBindingValidator(TestProperties testProperties, String servicesXml, DeployLogger deployLogger) throws IOException, SAXException {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .build();
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(app)
+                .deployLogger(deployLogger)
+                .zone(testProperties.zone())
                 .properties(testProperties)
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
