@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "cancel_scope.h"
 #include <vespa/vdslib/state/nodetype.h>
 #include <vespa/storage/distributor/distributormessagesender.h>
 #include <vespa/vespalib/util/time.h>
@@ -68,13 +69,15 @@ public:
      */
     void cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope);
 
+    [[nodiscard]] const CancelScope& cancel_scope() const noexcept { return _cancel_scope; }
+
     /**
      * Whether cancel() has been invoked at least once on this instance. This does not
      * distinguish between cancellations caused by ownership transfers and those caused
      * by nodes becoming unavailable; Operation implementations that care about this need
-     * to implement cancel() themselves and inspect the provided CancelScope.
+     * to inspect cancel_scope() themselves.
      */
-    [[nodiscard]] bool is_cancelled() const noexcept { return _cancelled; }
+    [[nodiscard]] bool is_cancelled() const noexcept { return _cancel_scope.is_cancelled(); }
 
     /**
      * Returns true if we are blocked to start this operation given
@@ -118,7 +121,7 @@ protected:
     static constexpr vespalib::duration MAX_TIMEOUT = 3600s;
 
     vespalib::system_time _startTime;
-    bool                  _cancelled;
+    CancelScope           _cancel_scope;
 };
 
 }

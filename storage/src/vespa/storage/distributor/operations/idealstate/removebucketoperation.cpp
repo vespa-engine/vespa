@@ -59,13 +59,14 @@ RemoveBucketOperation::onReceiveInternal(const std::shared_ptr<api::StorageReply
 {
     auto* rep = dynamic_cast<api::DeleteBucketReply*>(msg.get());
 
-    uint16_t node = _tracker.handleReply(*rep);
+    const uint16_t node = _tracker.handleReply(*rep);
 
-    LOG(debug, "Got DeleteBucket reply for %s from node %u",
-        getBucketId().toString().c_str(),
-        node);
+    LOG(debug, "Got DeleteBucket reply for %s from node %u", getBucketId().toString().c_str(), node);
 
-    if (rep->getResult().failed()) {
+    if (_cancel_scope.node_is_cancelled(node)) {
+        LOG(debug, "DeleteBucket operation for %s has been cancelled", getBucketId().toString().c_str());
+        _ok = false;
+    } else if (rep->getResult().failed()) {
         if (rep->getResult().getResult() == api::ReturnCode::REJECTED
             && rep->getBucketInfo().valid())
         {

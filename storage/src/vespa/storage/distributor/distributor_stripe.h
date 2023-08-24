@@ -26,6 +26,7 @@
 #include <atomic>
 #include <mutex>
 #include <queue>
+#include <span>
 #include <unordered_map>
 
 namespace storage {
@@ -134,6 +135,8 @@ public:
                              uint8_t priority) override;
 
     const lib::ClusterStateBundle& getClusterStateBundle() const override;
+
+    std::shared_ptr<Operation> maintenance_op_from_message_id(uint64_t msg_id) const noexcept override;
 
     /**
      * Called by bucket db updater after a merge has finished, and all the
@@ -250,6 +253,16 @@ private:
 
     void enterRecoveryMode();
     void leaveRecoveryMode();
+
+    void cancel_single_message_by_id_if_found(uint64_t msg_id, const CancelScope& cancel_scope);
+    void handle_node_down_edge_with_cancellations(uint16_t node_index, std::span<const uint64_t> msg_ids);
+    void cancel_ops_for_buckets_no_longer_owned(document::BucketSpace bucket_space, const lib::ClusterState& new_state);
+    // Note: old and new state bundles may be the same if this is called for distribution config changes
+    void cancel_ops_for_unavailable_nodes(const lib::ClusterStateBundle& old_state_bundle,
+                                          const lib::ClusterStateBundle& new_state_bundle);
+
+    void legacy_erase_ops_for_unavailable_nodes(const lib::ClusterStateBundle& old_state_bundle,
+                                                const lib::ClusterStateBundle& new_state_bundle);
 
     // Tries to generate an operation from the given message. Returns true
     // if we either returned an operation, or the message was otherwise handled

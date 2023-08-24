@@ -39,8 +39,7 @@ public:
     void onClose(DistributorStripeMessageSender& sender) override;
 
 private:
-    PersistenceMessageTrackerImpl      _tracker_instance;
-    PersistenceMessageTracker&         _tracker;
+    PersistenceMessageTracker          _tracker;
     std::shared_ptr<api::PutCommand>   _msg;
     document::BucketId                 _doc_id_bucket_id;
     const DistributorNodeContext&      _node_ctx;

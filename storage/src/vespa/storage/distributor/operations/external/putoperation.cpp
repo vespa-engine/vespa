@@ -28,8 +28,8 @@ PutOperation::PutOperation(const DistributorNodeContext& node_ctx,
                            PersistenceOperationMetricSet& condition_probe_metrics,
                            SequencingHandle sequencing_handle)
     : SequencedOperation(std::move(sequencing_handle)),
-      _tracker_instance(metric, std::make_shared<api::PutReply>(*msg), node_ctx, op_ctx, msg->getTimestamp()),
-      _tracker(_tracker_instance),
+      _tracker(metric, std::make_shared<api::PutReply>(*msg), node_ctx,
+               op_ctx, _cancel_scope, msg->getTimestamp()),
       _msg(std::move(msg)),
       _doc_id_bucket_id(document::BucketIdFactory{}.getBucketId(_msg->getDocumentId())),
       _node_ctx(node_ctx),
@@ -253,7 +253,6 @@ PutOperation::on_cancel(DistributorStripeMessageSender& sender, const CancelScop
     if (_check_condition) {
         _check_condition->cancel(sender, cancel_scope);
     }
-    _tracker.cancel(cancel_scope);
 }
 
 bool

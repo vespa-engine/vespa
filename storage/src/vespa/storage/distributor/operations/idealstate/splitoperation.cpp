@@ -50,7 +50,7 @@ SplitOperation::onStart(DistributorStripeMessageSender& sender)
 void
 SplitOperation::onReceive(DistributorStripeMessageSender&, const api::StorageReply::SP& msg)
 {
-    auto & rep = static_cast<api::SplitBucketReply&>(*msg);
+    auto& rep = dynamic_cast<api::SplitBucketReply&>(*msg);
 
     uint16_t node = _tracker.handleReply(rep);
 
@@ -61,7 +61,9 @@ SplitOperation::onReceive(DistributorStripeMessageSender&, const api::StorageRep
 
     std::ostringstream ost;
 
-    if (rep.getResult().success()) {
+    if (_cancel_scope.node_is_cancelled(node)) {
+        _ok = false;
+    } else if (rep.getResult().success()) {
         BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(rep.getBucketId());
 
         if (entry.valid()) {

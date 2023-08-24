@@ -13,11 +13,12 @@ LOG_SETUP(".persistencemessagetracker");
 
 namespace storage::distributor {
 
-PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
+PersistenceMessageTracker::PersistenceMessageTracker(
         PersistenceOperationMetricSet& metric,
         std::shared_ptr<api::BucketInfoReply> reply,
         const DistributorNodeContext& node_ctx,
         DistributorStripeOperationContext& op_ctx,
+        CancelScope& cancel_scope,
         api::Timestamp revertTimestamp)
     : MessageTracker(node_ctx),
       _remapBucketInfo(),
@@ -28,7 +29,7 @@ PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
       _revertTimestamp(revertTimestamp),
       _trace(_reply->getTrace().getLevel()),
       _requestTimer(node_ctx.clock()),
-      _cancel_scope(),
+      _cancel_scope(cancel_scope),
       _n_persistence_replies_total(0),
       _n_successful_persistence_replies(0),
       _priority(_reply->getPriority()),
@@ -36,33 +37,34 @@ PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
 {
 }
 
-PersistenceMessageTrackerImpl::~PersistenceMessageTrackerImpl() = default;
+PersistenceMessageTracker::~PersistenceMessageTracker() = default;
 
-void
-PersistenceMessageTrackerImpl::cancel(const CancelScope& cancel_scope)
-{
-    _cancel_scope.merge(cancel_scope);
-}
-
-void
-PersistenceMessageTrackerImpl::prune_cancelled_nodes_if_present(
+bool
+PersistenceMessageTracker::prune_cancelled_nodes_if_present(
         BucketInfoMap& bucket_and_replicas,
         const CancelScope& cancel_scope)
 {
+    bool any_replicas = false;
     for (auto& info : bucket_and_replicas) {
         info.second = prune_cancelled_nodes(info.second, cancel_scope);
+        any_replicas |= !info.second.empty();
     }
+    return any_replicas;
 }
 
 void
-PersistenceMessageTrackerImpl::updateDB()
+PersistenceMessageTracker::updateDB()
 {
     if (_cancel_scope.is_cancelled()) {
         if (_cancel_scope.fully_cancelled()) {
             return; // Fully cancelled ops cannot mutate the DB at all
         }
-        prune_cancelled_nodes_if_present(_bucketInfo, _cancel_scope);
-        prune_cancelled_nodes_if_present(_remapBucketInfo, _cancel_scope);
+        const bool any_infos    = prune_cancelled_nodes_if_present(_bucketInfo, _cancel_scope);
+        const bool any_remapped = prune_cancelled_nodes_if_present(_remapBucketInfo, _cancel_scope);
+        if (!(any_infos || any_remapped)) {
+            LOG(spam, "No usable bucket info left after pruning; returning without updating DB");
+            return;
+        }
     }
 
     for (const auto & entry : _bucketInfo) {
@@ -75,7 +77,7 @@ PersistenceMessageTrackerImpl::updateDB()
 }
 
 void
-PersistenceMessageTrackerImpl::updateMetrics()
+PersistenceMessageTracker::updateMetrics()
 {
     const api::ReturnCode& result(_reply->getResult());
     _metric.updateFromResult(result);
@@ -83,7 +85,7 @@ PersistenceMessageTrackerImpl::updateMetrics()
 }
 
 void
-PersistenceMessageTrackerImpl::fail(MessageSender& sender, const api::ReturnCode& result) {
+PersistenceMessageTracker::fail(MessageSender& sender, const api::ReturnCode& result) {
     if (_reply.get()) {
         _reply->setResult(result);
         updateMetrics();
@@ -94,7 +96,7 @@ PersistenceMessageTrackerImpl::fail(MessageSender& sender, const api::ReturnCode
 }
 
 uint16_t
-PersistenceMessageTrackerImpl::receiveReply(MessageSender& sender, api::BucketInfoReply& reply)
+PersistenceMessageTracker::receiveReply(MessageSender& sender, api::BucketInfoReply& reply)
 {
     uint16_t node = handleReply(reply);
 
@@ -106,7 +108,7 @@ PersistenceMessageTrackerImpl::receiveReply(MessageSender& sender, api::BucketIn
 }
 
 void
-PersistenceMessageTrackerImpl::revert(MessageSender& sender, const std::vector<BucketNodePair>& revertNodes)
+PersistenceMessageTracker::revert(MessageSender& sender, const std::vector<BucketNodePair>& revertNodes)
 {
     if (_revertTimestamp != 0) {
         // Since we're reverting, all received bucket info is voided.
@@ -126,7 +128,7 @@ PersistenceMessageTrackerImpl::revert(MessageSender& sender, const std::vector<B
 }
 
 void
-PersistenceMessageTrackerImpl::queueMessageBatch(std::vector<MessageTracker::ToSend> messages) {
+PersistenceMessageTracker::queueMessageBatch(std::vector<MessageTracker::ToSend> messages) {
     _messageBatches.emplace_back();
     auto & batch = _messageBatches.back();
     batch.reserve(messages.size());
@@ -142,7 +144,7 @@ PersistenceMessageTrackerImpl::queueMessageBatch(std::vector<MessageTracker::ToS
 }
 
 bool
-PersistenceMessageTrackerImpl::canSendReplyEarly() const
+PersistenceMessageTracker::canSendReplyEarly() const
 {
     if (!_reply.get() || !_reply->getResult().success()) {
         LOG(spam, "Can't return early because we have already replied or failed");
@@ -181,7 +183,7 @@ PersistenceMessageTrackerImpl::canSendReplyEarly() const
 }
 
 void
-PersistenceMessageTrackerImpl::addBucketInfoFromReply(uint16_t node, const api::BucketInfoReply& reply)
+PersistenceMessageTracker::addBucketInfoFromReply(uint16_t node, const api::BucketInfoReply& reply)
 {
     document::Bucket bucket(reply.getBucket());
     const api::BucketInfo& bucketInfo(reply.getBucketInfo());
@@ -198,7 +200,7 @@ PersistenceMessageTrackerImpl::addBucketInfoFromReply(uint16_t node, const api::
 }
 
 void
-PersistenceMessageTrackerImpl::logSuccessfulReply(uint16_t node, const api::BucketInfoReply& reply) const
+PersistenceMessageTracker::logSuccessfulReply(uint16_t node, const api::BucketInfoReply& reply) const
 {
     LOG(spam, "Bucket %s: Received successful reply %s",
         reply.getBucketId().toString().c_str(), reply.toString().c_str());
@@ -211,26 +213,26 @@ PersistenceMessageTrackerImpl::logSuccessfulReply(uint16_t node, const api::Buck
 }
 
 bool
-PersistenceMessageTrackerImpl::shouldRevert() const
+PersistenceMessageTracker::shouldRevert() const
 {
     return _op_ctx.distributor_config().enable_revert()
             &&  !_revertNodes.empty() && !_success && _reply;
 }
 
-bool PersistenceMessageTrackerImpl::has_majority_successful_replies() const noexcept {
+bool PersistenceMessageTracker::has_majority_successful_replies() const noexcept {
     // FIXME this has questionable interaction with early client ACK since we only count
     // the number of observed replies rather than the number of total requests sent.
     // ... but the early ACK-feature dearly needs a redesign anyway.
     return (_n_successful_persistence_replies >= (_n_persistence_replies_total / 2 + 1));
 }
 
-bool PersistenceMessageTrackerImpl::has_minority_test_and_set_failure() const noexcept {
+bool PersistenceMessageTracker::has_minority_test_and_set_failure() const noexcept {
     return ((_reply->getResult().getResult() == api::ReturnCode::TEST_AND_SET_CONDITION_FAILED)
             && has_majority_successful_replies());
 }
 
 void
-PersistenceMessageTrackerImpl::sendReply(MessageSender& sender)
+PersistenceMessageTracker::sendReply(MessageSender& sender)
 {
     // If we've observed _partial_ TaS failures but have had a majority of good ACKs,
     // treat the reply as successful. This is because the ACKed write(s) will eventually
@@ -247,7 +249,7 @@ PersistenceMessageTrackerImpl::sendReply(MessageSender& sender)
 }
 
 void
-PersistenceMessageTrackerImpl::updateFailureResult(const api::BucketInfoReply& reply)
+PersistenceMessageTracker::updateFailureResult(const api::BucketInfoReply& reply)
 {
     LOG(debug, "Bucket %s: Received failed reply %s with result %s",
         reply.getBucketId().toString().c_str(), reply.toString().c_str(), reply.getResult().toString().c_str());
@@ -259,13 +261,13 @@ PersistenceMessageTrackerImpl::updateFailureResult(const api::BucketInfoReply& r
 }
 
 bool
-PersistenceMessageTrackerImpl::node_is_effectively_cancelled(uint16_t node) const noexcept
+PersistenceMessageTracker::node_is_effectively_cancelled(uint16_t node) const noexcept
 {
     return _cancel_scope.node_is_cancelled(node); // Implicitly covers the fully cancelled case
 }
 
 void
-PersistenceMessageTrackerImpl::handleCreateBucketReply(api::BucketInfoReply& reply, uint16_t node)
+PersistenceMessageTracker::handleCreateBucketReply(api::BucketInfoReply& reply, uint16_t node)
 {
     LOG(spam, "Received CreateBucket reply for %s from node %u", reply.getBucketId().toString().c_str(), node);
     if (!reply.getResult().success()
@@ -285,7 +287,7 @@ PersistenceMessageTrackerImpl::handleCreateBucketReply(api::BucketInfoReply& rep
 }
 
 void
-PersistenceMessageTrackerImpl::handlePersistenceReply(api::BucketInfoReply& reply, uint16_t node)
+PersistenceMessageTracker::handlePersistenceReply(api::BucketInfoReply& reply, uint16_t node)
 {
     ++_n_persistence_replies_total;
     if (reply.getBucketInfo().valid()) {
@@ -301,7 +303,7 @@ PersistenceMessageTrackerImpl::handlePersistenceReply(api::BucketInfoReply& repl
 }
 
 void
-PersistenceMessageTrackerImpl::transfer_trace_state_to_reply()
+PersistenceMessageTracker::transfer_trace_state_to_reply()
 {
     if (!_trace.isEmpty()) {
         _trace.setStrict(false);
@@ -310,7 +312,7 @@ PersistenceMessageTrackerImpl::transfer_trace_state_to_reply()
 }
 
 void
-PersistenceMessageTrackerImpl::updateFromReply(MessageSender& sender, api::BucketInfoReply& reply, uint16_t node)
+PersistenceMessageTracker::updateFromReply(MessageSender& sender, api::BucketInfoReply& reply, uint16_t node)
 {
     _trace.addChild(reply.steal_trace());
 
@@ -338,7 +340,7 @@ PersistenceMessageTrackerImpl::updateFromReply(MessageSender& sender, api::Bucke
 }
 
 void
-PersistenceMessageTrackerImpl::add_trace_tree_to_reply(vespalib::Trace trace)
+PersistenceMessageTracker::add_trace_tree_to_reply(vespalib::Trace trace)
 {
     _trace.addChild(std::move(trace));
 }

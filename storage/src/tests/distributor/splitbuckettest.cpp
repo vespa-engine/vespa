@@ -48,14 +48,14 @@ SplitOperationTest::SplitOperationTest()
 }
 
 namespace {
-    api::StorageMessageAddress _Storage0Address(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 0);
+    api::StorageMessageAddress _storage0Address(dummy_cluster_context.cluster_name_ptr(), lib::NodeType::STORAGE, 0);
 }
 
 TEST_F(SplitOperationTest, simple) {
     enable_cluster_state("distributor:1 storage:1");
 
     insertBucketInfo(document::BucketId(16, 1), 0, 0xabc, 1000,
-                     tooLargeBucketSize, 250);
+                     tooLargeBucketSize, true);
 
     SplitOperation op(dummy_cluster_context,
                       BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
@@ -72,10 +72,10 @@ TEST_F(SplitOperationTest, simple) {
 
         std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
         ASSERT_EQ(msg->getType(), api::MessageType::SPLITBUCKET);
-        EXPECT_EQ(_Storage0Address.toString(),
+        EXPECT_EQ(_storage0Address.toString(),
                   msg->getAddress()->toString());
 
-        std::shared_ptr<api::StorageReply> reply(msg->makeReply().release());
+        std::shared_ptr<api::StorageReply> reply(msg->makeReply());
         auto* sreply = static_cast<api::SplitBucketReply*>(reply.get());
 
         sreply->getSplitInfo().emplace_back(document::BucketId(17, 1),
@@ -142,19 +142,15 @@ TEST_F(SplitOperationTest, multi_node_failure) {
         {
             std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
             ASSERT_EQ(msg->getType(), api::MessageType::SPLITBUCKET);
-            EXPECT_EQ(_Storage0Address.toString(),
-                      msg->getAddress()->toString());
+            EXPECT_EQ(_storage0Address.toString(), msg->getAddress()->toString());
+            std::shared_ptr<api::StorageReply> reply(msg->makeReply());
+            auto& sreply = dynamic_cast<api::SplitBucketReply&>(*reply);
 
-            auto* sreply = static_cast<api::SplitBucketReply*>(msg->makeReply().release());
-            sreply->setResult(api::ReturnCode::OK);
+            sreply.setResult(api::ReturnCode::OK);
+            sreply.getSplitInfo().emplace_back(document::BucketId(17, 1), api::BucketInfo(100, 600, 5000000));
+            sreply.getSplitInfo().emplace_back(document::BucketId(17, 0x10001), api::BucketInfo(110, 400, 6000000));
 
-            sreply->getSplitInfo().emplace_back(document::BucketId(17, 1),
-                                                api::BucketInfo(100, 600, 5000000));
-
-            sreply->getSplitInfo().emplace_back(document::BucketId(17, 0x10001),
-                                                api::BucketInfo(110, 400, 6000000));
-
-            op.receive(_sender, std::shared_ptr<api::StorageReply>(sreply));
+            op.receive(_sender, reply);
         }
 
         sendReply(op, 1, api::ReturnCode::NOT_CONNECTED);
@@ -230,7 +226,7 @@ TEST_F(SplitOperationTest, copy_trusted_status_not_carried_over_after_split) {
     for (int i = 0; i < 2; ++i) {
         std::shared_ptr<api::StorageCommand> msg  = _sender.command(i);
         ASSERT_EQ(msg->getType(), api::MessageType::SPLITBUCKET);
-        std::shared_ptr<api::StorageReply> reply(msg->makeReply().release());
+        std::shared_ptr<api::StorageReply> reply(msg->makeReply());
         auto* sreply = static_cast<api::SplitBucketReply*>(reply.get());
 
         // Make sure copies differ so they cannot become implicitly trusted.
@@ -271,7 +267,7 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
     };
     auto joinCmd = std::make_shared<api::JoinBucketsCommand>(makeDocumentBucket(joinTarget));
     joinCmd->getSourceBuckets() = joinSources;
-    joinCmd->setAddress(_Storage0Address);
+    joinCmd->setAddress(_storage0Address);
 
     pending_message_tracker().insert(joinCmd);
 
@@ -307,7 +303,7 @@ TEST_F(SplitOperationTest, split_is_blocked_by_locked_bucket) {
     enable_cluster_state("distributor:1 storage:2");
 
     document::BucketId source_bucket(16, 1);
-    insertBucketInfo(source_bucket, 0, 0xabc, 1000, tooLargeBucketSize, 250);
+    insertBucketInfo(source_bucket, 0, 0xabc, 1000, tooLargeBucketSize, true);
 
     SplitOperation op(dummy_cluster_context, BucketAndNodes(makeDocumentBucket(source_bucket), toVector<uint16_t>(0)),
                       maxSplitBits, splitCount, splitByteSize);
@@ -316,6 +312,38 @@ TEST_F(SplitOperationTest, split_is_blocked_by_locked_bucket) {
     auto token = op_seq.try_acquire(makeDocumentBucket(source_bucket), "foo");
     EXPECT_TRUE(token.valid());
     EXPECT_TRUE(op.isBlocked(operation_context(), op_seq));
+}
+
+TEST_F(SplitOperationTest, cancelled_node_does_not_update_bucket_db) {
+    enable_cluster_state("distributor:1 storage:1");
+    insertBucketInfo(document::BucketId(16, 1), 0, 0xabc, 1000, tooLargeBucketSize, true);
+
+    SplitOperation op(dummy_cluster_context,
+                      BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(0)),
+                      maxSplitBits, splitCount, splitByteSize);
+
+    op.setIdealStateManager(&getIdealStateManager());
+    op.start(_sender);
+
+    op.cancel(_sender, CancelScope::of_node_subset({0}));
+
+    {
+        ASSERT_EQ(_sender.commands().size(), 1);
+        std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
+        std::shared_ptr<api::StorageReply> reply(msg->makeReply());
+        auto& sreply = dynamic_cast<api::SplitBucketReply&>(*reply);
+
+        sreply.getSplitInfo().emplace_back(document::BucketId(17, 1),       api::BucketInfo(100, 600, 5000000));
+        sreply.getSplitInfo().emplace_back(document::BucketId(17, 0x10001), api::BucketInfo(110, 400, 6000000));
+        op.receive(_sender, reply);
+    }
+
+    // DB is not touched, so source bucket remains (will be removed during actual operation)
+    // while target buckets are not created
+    EXPECT_TRUE(getBucket(document::BucketId(16, 1)).valid());
+    EXPECT_FALSE(getBucket(document::BucketId(17, 0x00001)).valid());
+    EXPECT_FALSE(getBucket(document::BucketId(17, 0x10001)).valid());
+    EXPECT_FALSE(op.ok());
 }
 
 } // storage::distributor

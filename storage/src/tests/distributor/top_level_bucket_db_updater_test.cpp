@@ -1056,7 +1056,32 @@ TEST_F(TopLevelBucketDBUpdaterTest, recheck_node) {
 
     const BucketCopy* copy = entry->getNode(1);
     ASSERT_TRUE(copy != nullptr);
-    EXPECT_EQ(api::BucketInfo(20,10,12, 50, 60, true, true), copy->getBucketInfo());
+    EXPECT_EQ(api::BucketInfo(20, 10, 12, 50, 60, true, true), copy->getBucketInfo());
+}
+
+TEST_F(TopLevelBucketDBUpdaterTest, cancelled_pending_recheck_command_does_not_update_db) {
+    ASSERT_NO_FATAL_FAILURE(initialize_nodes_and_buckets(3, 5));
+    _sender.clear();
+
+    auto bucket = makeDocumentBucket(document::BucketId(16, 3));
+    auto& stripe_bucket_db_updater = stripe_of_bucket(bucket.getBucketId()).bucket_db_updater();
+    stripe_bucket_db_updater.recheckBucketInfo(0, bucket);
+
+    ASSERT_EQ(_sender.getCommands(true), "Request bucket info => 0");
+    auto& req = dynamic_cast<RequestBucketInfoCommand&>(*_sender.command(0));
+
+    ASSERT_TRUE(stripe_bucket_db_updater.cancel_message_by_id(req.getMsgId()));
+
+    auto reply = std::make_shared<api::RequestBucketInfoReply>(req);
+    reply->getBucketInfo().emplace_back(document::BucketId(16, 3), api::BucketInfo(20, 10, 12, 50, 60, true, true));
+    stripe_bucket_db_updater.onRequestBucketInfoReply(reply);
+
+    BucketDatabase::Entry entry = get_bucket(bucket);
+    ASSERT_TRUE(entry.valid());
+    const BucketCopy* copy = entry->getNode(0);
+    ASSERT_TRUE(copy != nullptr);
+    // Existing bucket info not modified by reply (0xa ... is the initialized test state).
+    EXPECT_EQ(api::BucketInfo(0xa, 1, 1, 1, 1, false, false), copy->getBucketInfo());
 }
 
 TEST_F(TopLevelBucketDBUpdaterTest, notify_bucket_change) {
@@ -1217,11 +1242,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, merge_reply) {
     document::BucketId bucket_id(16, 1234);
     add_nodes_to_stripe_bucket_db(bucket_id, "0=1234,1=1234,2=1234");
 
-    std::vector<api::MergeBucketCommand::Node> nodes;
-    nodes.emplace_back(0);
-    nodes.emplace_back(1);
-    nodes.emplace_back(2);
-
+    std::vector<api::MergeBucketCommand::Node> nodes{{0}, {1}, {2}};
     api::MergeBucketCommand cmd(makeDocumentBucket(bucket_id), nodes, 0);
     auto reply = std::make_shared<api::MergeBucketReply>(cmd);
 
@@ -1248,19 +1269,15 @@ TEST_F(TopLevelBucketDBUpdaterTest, merge_reply) {
               "node(idx=1,crc=0x14,docs=200/200,bytes=2000/2000,trusted=false,active=false,ready=false), "
               "node(idx=2,crc=0x1e,docs=300/300,bytes=3000/3000,trusted=false,active=false,ready=false)",
               dump_bucket(bucket_id));
-};
+}
 
 TEST_F(TopLevelBucketDBUpdaterTest, merge_reply_node_down) {
     enable_distributor_cluster_state("distributor:1 storage:3");
-    std::vector<api::MergeBucketCommand::Node> nodes;
 
     document::BucketId bucket_id(16, 1234);
     add_nodes_to_stripe_bucket_db(bucket_id, "0=1234,1=1234,2=1234");
 
-    for (uint32_t i = 0; i < 3; ++i) {
-        nodes.emplace_back(i);
-    }
-
+    std::vector<api::MergeBucketCommand::Node> nodes{{0}, {1}, {2}};
     api::MergeBucketCommand cmd(makeDocumentBucket(bucket_id), nodes, 0);
     auto reply = std::make_shared<api::MergeBucketReply>(cmd);
 
@@ -1287,19 +1304,15 @@ TEST_F(TopLevelBucketDBUpdaterTest, merge_reply_node_down) {
               "node(idx=0,crc=0xa,docs=100/100,bytes=1000/1000,trusted=false,active=false,ready=false), "
               "node(idx=1,crc=0x14,docs=200/200,bytes=2000/2000,trusted=false,active=false,ready=false)",
               dump_bucket(bucket_id));
-};
+}
 
 TEST_F(TopLevelBucketDBUpdaterTest, merge_reply_node_down_after_request_sent) {
     enable_distributor_cluster_state("distributor:1 storage:3");
-    std::vector<api::MergeBucketCommand::Node> nodes;
 
     document::BucketId bucket_id(16, 1234);
     add_nodes_to_stripe_bucket_db(bucket_id, "0=1234,1=1234,2=1234");
 
-    for (uint32_t i = 0; i < 3; ++i) {
-        nodes.emplace_back(i);
-    }
-
+    std::vector<api::MergeBucketCommand::Node> nodes{{0}, {1}, {2}};
     api::MergeBucketCommand cmd(makeDocumentBucket(bucket_id), nodes, 0);
     auto reply = std::make_shared<api::MergeBucketReply>(cmd);
 
@@ -1326,7 +1339,41 @@ TEST_F(TopLevelBucketDBUpdaterTest, merge_reply_node_down_after_request_sent) {
               "node(idx=0,crc=0xa,docs=100/100,bytes=1000/1000,trusted=false,active=false,ready=false), "
               "node(idx=1,crc=0x14,docs=200/200,bytes=2000/2000,trusted=false,active=false,ready=false)",
               dump_bucket(bucket_id));
-};
+}
+
+TEST_F(TopLevelBucketDBUpdaterTest, merge_reply_triggered_bucket_info_request_not_sent_to_cancelled_nodes) {
+    enable_distributor_cluster_state("distributor:1 storage:3");
+    document::BucketId bucket_id(16, 1234);
+    // DB has one bucket with 3 mutually out of sync replicas. Node 0 is explicitly tagged as Active;
+    // this is done to prevent the distributor from scheduling a bucket activation as its first task.
+    add_nodes_to_stripe_bucket_db(bucket_id, "0=10/1/1/t/a,1=20/1/1/t,2=30/1/1/t");
+
+    // Poke at the business end of the stripe until it has scheduled a merge for the inconsistent bucket
+    ASSERT_EQ(_sender.commands().size(), 0u);
+    const int max_tick_tries = 20;
+    for (int i = 0; i <= max_tick_tries; ++i) {
+        stripe_of_bucket(bucket_id).tick();
+        if (!_sender.commands().empty()) {
+            continue;
+        }
+        if (i == max_tick_tries) {
+            FAIL() << "no merge sent after ticking " << max_tick_tries << " times";
+        }
+    }
+    ASSERT_EQ(_sender.getCommands(true), "Merge bucket => 0");
+
+    auto cmd = std::dynamic_pointer_cast<api::MergeBucketCommand>(_sender.commands()[0]);
+    _sender.commands().clear();
+    auto reply = std::make_shared<api::MergeBucketReply>(*cmd);
+
+    auto op = stripe_of_bucket(bucket_id).maintenance_op_from_message_id(cmd->getMsgId());
+    ASSERT_TRUE(op);
+
+    op->cancel(_sender, CancelScope::of_node_subset({0, 2}));
+    stripe_of_bucket(bucket_id).bucket_db_updater().onMergeBucketReply(reply);
+    // RequestBucketInfo only sent to node 1
+    ASSERT_EQ(_sender.getCommands(true), "Request bucket info => 1");
+}
 
 TEST_F(TopLevelBucketDBUpdaterTest, flush) {
     enable_distributor_cluster_state("distributor:1 storage:3");
@@ -1335,11 +1382,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, flush) {
     document::BucketId bucket_id(16, 1234);
     add_nodes_to_stripe_bucket_db(bucket_id, "0=1234,1=1234,2=1234");
 
-    std::vector<api::MergeBucketCommand::Node> nodes;
-    for (uint32_t i = 0; i < 3; ++i) {
-        nodes.emplace_back(i);
-    }
-
+    std::vector<api::MergeBucketCommand::Node> nodes{{0}, {1}, {2}};
     api::MergeBucketCommand cmd(makeDocumentBucket(bucket_id), nodes, 0);
     auto reply = std::make_shared<api::MergeBucketReply>(cmd);
 

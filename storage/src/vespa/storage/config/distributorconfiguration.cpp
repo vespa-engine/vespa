@@ -54,6 +54,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _inhibit_default_merges_when_global_merges_pending(false),
       _enable_two_phase_garbage_collection(false),
       _enable_condition_probing(false),
+      _enable_operation_cancellation(false),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 {
 }
@@ -179,6 +180,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _inhibit_default_merges_when_global_merges_pending = config.inhibitDefaultMergesWhenGlobalMergesPending;
     _enable_two_phase_garbage_collection = config.enableTwoPhaseGarbageCollection;
     _enable_condition_probing = config.enableConditionProbing;
+    _enable_operation_cancellation = config.enableOperationCancellation;
 
     _minimumReplicaCountingMode = config.minimumReplicaCountingMode;
 

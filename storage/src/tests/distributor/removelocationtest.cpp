@@ -67,4 +67,6 @@ TEST_F(RemoveLocationOperationTest, simple) {
               _sender.getLastReply());
 }
 
+// TODO test cancellation (implicitly covered via operation PersistenceMessageTracker)
+
 } // storage::distributor

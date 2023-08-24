@@ -31,25 +31,22 @@ public:
     std::string getStatus() const override { return ""; };
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
     void onClose(DistributorStripeMessageSender& sender) override;
-    void on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) override;
 
     std::pair<document::BucketId, uint16_t> getNewestTimestampLocation() const {
         return _newestTimestampLocation;
     }
 
 private:
-    PersistenceMessageTrackerImpl _trackerInstance;
-    PersistenceMessageTracker& _tracker;
-    std::shared_ptr<api::UpdateCommand> _msg;
-    std::vector<BucketDatabase::Entry> _entries;
-    const api::Timestamp _new_timestamp;
-    const bool _is_auto_create_update;
-
-    const DistributorNodeContext& _node_ctx;
-    DistributorStripeOperationContext& _op_ctx;
-    DistributorBucketSpace &_bucketSpace;
+    PersistenceMessageTracker               _tracker;
+    std::shared_ptr<api::UpdateCommand>     _msg;
+    std::vector<BucketDatabase::Entry>      _entries;
+    const api::Timestamp                    _new_timestamp;
+    const bool                              _is_auto_create_update;
+    const DistributorNodeContext&           _node_ctx;
+    DistributorStripeOperationContext&      _op_ctx;
+    DistributorBucketSpace&                 _bucketSpace;
     std::pair<document::BucketId, uint16_t> _newestTimestampLocation;
-    api::BucketInfo _infoAtSendTime; // Should be same across all replicas
+    api::BucketInfo                         _infoAtSendTime; // Should be same across all replicas
 
     bool anyStorageNodesAvailable() const;
 

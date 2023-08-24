@@ -548,8 +548,7 @@ TEST_F(MergeOperationTest, merge_operation_is_not_blocked_by_request_bucket_info
     EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
 }
 
-TEST_F(MergeOperationTest, on_blocked_updates_metrics)
-{
+TEST_F(MergeOperationTest, on_blocked_updates_metrics) {
     auto op = setup_minimal_merge_op();
     auto metrics = getIdealStateManager().getMetrics().operations[IdealStateOperation::MERGE_BUCKET];
     EXPECT_EQ(0, metrics->blocked.getValue());
@@ -557,8 +556,7 @@ TEST_F(MergeOperationTest, on_blocked_updates_metrics)
     EXPECT_EQ(1, metrics->blocked.getValue());
 }
 
-TEST_F(MergeOperationTest, on_throttled_updates_metrics)
-{
+TEST_F(MergeOperationTest, on_throttled_updates_metrics) {
     auto op = setup_minimal_merge_op();
     auto metrics = getIdealStateManager().getMetrics().operations[IdealStateOperation::MERGE_BUCKET];
     EXPECT_EQ(0, metrics->throttled.getValue());
@@ -626,6 +624,24 @@ TEST_F(MergeOperationTest, delete_bucket_priority_is_capped_to_feed_pri_120) {
     auto del_cmd = std::dynamic_pointer_cast<api::DeleteBucketCommand>(_sender.commands().back());
     ASSERT_TRUE(del_cmd);
     EXPECT_EQ(int(del_cmd->getPriority()), 120);
+}
+
+TEST_F(MergeOperationTest, no_delete_bucket_ops_sent_if_fully_cancelled) {
+    auto op = setup_simple_merge_op();
+    ASSERT_NO_FATAL_FAILURE(assert_simple_merge_bucket_command());
+    op->cancel(_sender, CancelScope::of_fully_cancelled());
+    sendReply(*op);
+    EXPECT_EQ(_sender.getCommands(true, false, 1), ""); // nothing more
+    EXPECT_FALSE(op->ok());
+}
+
+TEST_F(MergeOperationTest, no_delete_bucket_ops_sent_if_node_subset_cancelled) {
+    auto op = setup_simple_merge_op(); // to nodes, 0, 2, 1 (source only)
+    ASSERT_NO_FATAL_FAILURE(assert_simple_merge_bucket_command());
+    op->cancel(_sender, CancelScope::of_node_subset({1}));
+    sendReply(*op);
+    EXPECT_EQ(_sender.getCommands(true, false, 1), ""); // nothing more
+    EXPECT_FALSE(op->ok());
 }
 
 } // storage::distributor

@@ -130,6 +130,7 @@ StripeBucketDBUpdater::sendRequestBucketInfo(
         const document::Bucket& bucket,
         const std::shared_ptr<MergeReplyGuard>& mergeReplyGuard)
 {
+    // TODO assert if cancellation enabled
     if (!_op_ctx.storage_node_is_up(bucket.getBucketSpace(), node)) {
         return;
     }
@@ -342,14 +343,19 @@ StripeBucketDBUpdater::onMergeBucketReply(
         const std::shared_ptr<api::MergeBucketReply>& reply)
 {
    auto replyGuard = std::make_shared<MergeReplyGuard>(_distributor_interface, reply);
+   auto merge_op = _distributor_interface.maintenance_op_from_message_id(reply->getMsgId());
 
    // In case the merge was unsuccessful somehow, or some nodes weren't
    // actually merged (source-only nodes?) we request the bucket info of the
    // bucket again to make sure it's ok.
    for (uint32_t i = 0; i < reply->getNodes().size(); i++) {
-       sendRequestBucketInfo(reply->getNodes()[i].index,
-                             reply->getBucket(),
-                             replyGuard);
+       const uint16_t node_index = reply->getNodes()[i].index;
+       // We conditionally omit the node instead of conditionally send to it, as many tests do not
+       // wire their merges through the main distributor maintenance operation tracking locking.
+       if (merge_op && merge_op->cancel_scope().node_is_cancelled(node_index)) {
+           continue;
+       }
+       sendRequestBucketInfo(node_index, reply->getBucket(), replyGuard);
    }
 
    return true;
@@ -502,8 +508,9 @@ StripeBucketDBUpdater::processSingleBucketInfoReply(const std::shared_ptr<api::R
     BucketRequest req = iter->second;
     _sentMessages.erase(iter);
 
-    if (!_op_ctx.storage_node_is_up(req.bucket.getBucketSpace(), req.targetNode)) {
-        // Ignore replies from nodes that are down.
+    // TODO remove explicit node check in favor of cancellation only
+    if (req.cancelled || !_op_ctx.storage_node_is_up(req.bucket.getBucketSpace(), req.targetNode)) {
+        // Ignore replies from nodes that are cancelled/down.
         return true;
     }
     if (repl->getResult().getResult() != api::ReturnCode::OK) {
@@ -513,6 +520,17 @@ StripeBucketDBUpdater::processSingleBucketInfoReply(const std::shared_ptr<api::R
     LOG(debug, "Received single bucket info reply from node %u: %s",
         req.targetNode, repl->toString(true).c_str()); // Verbose mode to include bucket info in output
     mergeBucketInfoWithDatabase(repl, req);
+    return true;
+}
+
+bool
+StripeBucketDBUpdater::cancel_message_by_id(uint64_t msg_id)
+{
+    auto iter = _sentMessages.find(msg_id);
+    if (iter == _sentMessages.end()) {
+        return false;
+    }
+    iter->second.cancelled = true;
     return true;
 }
 
@@ -652,12 +670,10 @@ StripeBucketDBUpdater::MergingNodeRemover::MergingNodeRemover(
       _nonOwnedBuckets(),
       _removed_buckets(0),
       _removed_documents(0),
-      _localIndex(localIndex),
       _distribution(distribution),
       _upStates(upStates),
-      _track_non_owned_entries(track_non_owned_entries),
-      _cachedDecisionSuperbucket(UINT64_MAX),
-      _cachedOwned(false)
+      _ownership_calc(_state, _distribution, localIndex),
+      _track_non_owned_entries(track_non_owned_entries)
 {
     const uint16_t storage_count = s.getNodeCount(lib::NodeType::STORAGE);
     _available_nodes.resize(storage_count);
@@ -678,45 +694,15 @@ StripeBucketDBUpdater::MergingNodeRemover::logRemove(const document::BucketId& b
     LOG(spam, "Removing bucket %s: %s", bucketId.toString().c_str(), msg);
 }
 
-namespace {
-
-uint64_t superbucket_from_id(const document::BucketId& id, uint16_t distribution_bits) noexcept {
-    // The n LSBs of the bucket ID contain the superbucket number. Mask off the rest.
-    return id.getRawId() & ~(UINT64_MAX << distribution_bits);
-}
-
-}
-
 bool
 StripeBucketDBUpdater::MergingNodeRemover::distributorOwnsBucket(
         const document::BucketId& bucketId) const
 {
-    // TODO "no distributors available" case is the same for _all_ buckets; cache once in constructor.
-    // TODO "too few bits used" case can be cheaply checked without needing exception
-    try {
-        const auto bits = _state.getDistributionBitCount();
-        const auto this_superbucket = superbucket_from_id(bucketId, bits);
-        if (_cachedDecisionSuperbucket == this_superbucket) {
-            if (!_cachedOwned) {
-                logRemove(bucketId, "bucket now owned by another distributor (cached)");
-            }
-            return _cachedOwned;
-        }
-
-        uint16_t distributor = _distribution.getIdealDistributorNode(_state, bucketId, "uim");
-        _cachedDecisionSuperbucket = this_superbucket;
-        _cachedOwned = (distributor == _localIndex);
-        if (!_cachedOwned) {
-            logRemove(bucketId, "bucket now owned by another distributor");
-            return false;
-        }
-        return true;
-    } catch (lib::TooFewBucketBitsInUseException& exc) {
-        logRemove(bucketId, "using too few distribution bits now");
-    } catch (lib::NoDistributorsAvailableException& exc) {
-        logRemove(bucketId, "no distributors are available");
+    const bool owns_bucket = _ownership_calc.this_distributor_owns_bucket(bucketId);
+    if (!owns_bucket) {
+        logRemove(bucketId, "bucket now owned by another distributor");
     }
-    return false;
+    return owns_bucket;
 }
 
 void

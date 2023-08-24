@@ -16,6 +16,8 @@
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
+#include <vespa/storage/distributor/operations/cancel_scope.h>
+#include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/memoryusage.h>
@@ -177,6 +179,12 @@ DistributorStripe::handle_or_enqueue_message(const std::shared_ptr<api::StorageM
     return true;
 }
 
+std::shared_ptr<Operation>
+DistributorStripe::maintenance_op_from_message_id(uint64_t msg_id) const noexcept
+{
+    return _maintenanceOperationOwner.find_by_id(msg_id);
+}
+
 void
 DistributorStripe::handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>& reply)
 {
@@ -210,6 +218,8 @@ DistributorStripe::handleReply(const std::shared_ptr<api::StorageReply>& reply)
         bucket.getBucketId() != document::BucketId(0) &&
         reply->getAddress())
     {
+        // Won't be triggered for replies of cancelled ops since they will be missing
+        // from `_pendingMessageTracker` and thus `bucket` will be zero.
         recheckBucketInfo(reply->getAddress()->getIndex(), bucket);
     }
 
@@ -271,18 +281,82 @@ DistributorStripe::getClusterStateBundle() const
 }
 
 void
-DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state)
+DistributorStripe::cancel_single_message_by_id_if_found(uint64_t msg_id, const CancelScope& cancel_scope)
 {
-    lib::ClusterStateBundle oldState = _clusterStateBundle;
-    _clusterStateBundle = state;
-    propagateClusterStates();
+    // In descending order of likelihood:
+    if (_operationOwner.try_cancel_by_id(msg_id, cancel_scope)) {
+        return;
+    }
+    if (_maintenanceOperationOwner.try_cancel_by_id(msg_id, cancel_scope)) {
+        return;
+    }
+    (void)_bucketDBUpdater.cancel_message_by_id(msg_id);
+}
 
-    const auto& baseline_state = *state.getBaselineClusterState();
-    enterRecoveryMode();
+void
+DistributorStripe::handle_node_down_edge_with_cancellations(uint16_t node_index, std::span<const uint64_t> msg_ids)
+{
+    auto cancel_scope = CancelScope::of_node_subset({node_index});
+    for (const auto msg_id : msg_ids) {
+        cancel_single_message_by_id_if_found(msg_id, cancel_scope);
+    }
+}
 
+void
+DistributorStripe::cancel_ops_for_buckets_no_longer_owned(document::BucketSpace bucket_space,
+                                                          const lib::ClusterState& new_state)
+{
+    // Note: we explicitly do not simply reuse the set of buckets removed from the bucket database
+    // when deciding which operations to cancel. This is because that would depend on every candidate
+    // bucket to cancel already being present in the DB, which is hard to guarantee always holds.
+    const auto& distribution = _bucketSpaceRepo->get(bucket_space).getDistribution();
+    BucketOwnershipCalculator ownership_calc(new_state, distribution, getDistributorIndex());
+
+    auto bucket_not_owned_in_new_state = [&](const document::Bucket& bucket) {
+        return !ownership_calc.this_distributor_owns_bucket(bucket.getBucketId());
+    };
+    auto cancel_op_by_msg_id = [&](uint64_t msg_id) {
+        cancel_single_message_by_id_if_found(msg_id, CancelScope::of_fully_cancelled());
+    };
+    _pendingMessageTracker.enumerate_matching_pending_bucket_ops(bucket_not_owned_in_new_state, cancel_op_by_msg_id);
+}
+
+void
+DistributorStripe::cancel_ops_for_unavailable_nodes(const lib::ClusterStateBundle& old_state_bundle,
+                                                    const lib::ClusterStateBundle& new_state_bundle)
+{
+    // TODO we should probably only consider a node as unavailable if it is unavailable in
+    //  _all_ bucket spaces. Consider: implicit maintenance mode for global merges (although
+    //  that _should_ only be triggered by the CC when the node was already down...).
+    const auto& baseline_state    = *new_state_bundle.getBaselineClusterState();
+    const uint16_t old_node_count = old_state_bundle.getBaselineClusterState()->getNodeCount(lib::NodeType::STORAGE);
+    const uint16_t new_node_count = baseline_state.getNodeCount(lib::NodeType::STORAGE);
+    const auto& distribution      = _bucketSpaceRepo->get(document::FixedBucketSpaces::default_space()).getDistribution();
+
+    for (uint16_t i = 0; i < std::max(old_node_count, new_node_count); ++i) {
+        // Handle both the case where a node may be gone from the cluster state and from the config.
+        // These are not atomic, so one may happen before the other.
+        const auto& node_state = baseline_state.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState();
+        const auto* node_group = distribution.getNodeGraph().getGroupForNode(i);
+        if (!node_state.oneOf(storage_node_up_states()) || !node_group) {
+            // Note: this also clears _non-maintenance_ operations from the pending message tracker, but
+            // the client operation mapping (_operationOwner) is _not_ cleared, so replies from the
+            // unavailable node(s) will still be processed as expected.
+            std::vector<uint64_t> msg_ids = _pendingMessageTracker.clearMessagesForNode(i);
+            LOG(debug, "Node %u is unavailable, cancelling %zu pending operations", i, msg_ids.size());
+            handle_node_down_edge_with_cancellations(i, msg_ids);
+        }
+    }
+}
+
+// TODO remove once cancellation support has proven itself worthy of prime time
+void
+DistributorStripe::legacy_erase_ops_for_unavailable_nodes(const lib::ClusterStateBundle& old_state_bundle,
+                                                          const lib::ClusterStateBundle& new_state_bundle)
+{
+    const auto& baseline_state = *new_state_bundle.getBaselineClusterState();
     // Clear all active messages on nodes that are down.
-    // TODO this should also be done on nodes that are no longer part of the config!
-    const uint16_t old_node_count = oldState.getBaselineClusterState()->getNodeCount(lib::NodeType::STORAGE);
+    const uint16_t old_node_count = old_state_bundle.getBaselineClusterState()->getNodeCount(lib::NodeType::STORAGE);
     const uint16_t new_node_count = baseline_state.getNodeCount(lib::NodeType::STORAGE);
     for (uint16_t i = 0; i < std::max(old_node_count, new_node_count); ++i) {
         const auto& node_state = baseline_state.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState();
@@ -291,9 +365,25 @@ DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state
             LOG(debug, "Node %u is down, clearing %zu pending maintenance operations", i, msgIds.size());
 
             for (const auto & msgId : msgIds) {
-                _maintenanceOperationOwner.erase(msgId);
+                (void)_maintenanceOperationOwner.erase(msgId);
             }
         }
+    }
+}
+
+void
+DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state)
+{
+    lib::ClusterStateBundle old_state = _clusterStateBundle;
+    _clusterStateBundle = state;
+
+    propagateClusterStates();
+    enterRecoveryMode();
+
+    if (_total_config->enable_operation_cancellation()) {
+        cancel_ops_for_unavailable_nodes(old_state, state);
+    } else {
+        legacy_erase_ops_for_unavailable_nodes(old_state, state);
     }
 }
 
@@ -308,6 +398,10 @@ DistributorStripe::notifyDistributionChangeEnabled()
     // Trigger a re-scan of bucket database, just like we do when a new cluster
     // state has been enabled.
     enterRecoveryMode();
+
+    if (_total_config->enable_operation_cancellation()) {
+        cancel_ops_for_unavailable_nodes(_clusterStateBundle, _clusterStateBundle);
+    }
 }
 
 void
@@ -850,6 +944,9 @@ DistributorStripe::remove_superfluous_buckets(document::BucketSpace bucket_space
                                               const lib::ClusterState& new_state,
                                               bool is_distribution_change)
 {
+    if (_total_config->enable_operation_cancellation()) {
+        cancel_ops_for_buckets_no_longer_owned(bucket_space, new_state);
+    }
     return bucket_db_updater().remove_superfluous_buckets(bucket_space, new_state, is_distribution_change);
 }
 

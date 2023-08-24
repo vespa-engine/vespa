@@ -24,6 +24,14 @@ struct RemoveBucketOperationTest : Test, DistributorStripeTestUtil {
     void TearDown() override {
         close();
     }
+
+    void reject_with_bucket_info(RemoveBucketOperation& op, size_t msg_index) {
+        std::shared_ptr<api::StorageCommand> msg2  = _sender.command(msg_index);
+        std::shared_ptr<api::StorageReply> reply(msg2->makeReply());
+        dynamic_cast<api::DeleteBucketReply&>(*reply).setBucketInfo(api::BucketInfo(10, 200, 1));
+        reply->setResult(api::ReturnCode::REJECTED);
+        op.receive(_sender, reply);
+    }
 };
 
 TEST_F(RemoveBucketOperationTest, simple) {
@@ -36,10 +44,9 @@ TEST_F(RemoveBucketOperationTest, simple) {
 
     RemoveBucketOperation op(dummy_cluster_context,
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
-                                            toVector<uint16_t>(1,2)));
+                                            toVector<uint16_t>(1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender);
-
 
     ASSERT_EQ("Delete bucket => 1,"
               "Delete bucket => 2",
@@ -75,16 +82,11 @@ TEST_F(RemoveBucketOperationTest, bucket_info_mismatch_failure) {
     ASSERT_EQ("Delete bucket => 1", _sender.getCommands(true));
     ASSERT_EQ(1, _sender.commands().size());
 
-    std::shared_ptr<api::StorageCommand> msg2  = _sender.command(0);
-    std::shared_ptr<api::StorageReply> reply(msg2->makeReply().release());
-    dynamic_cast<api::DeleteBucketReply&>(*reply).setBucketInfo(
-            api::BucketInfo(10, 100, 1));
-    reply->setResult(api::ReturnCode::REJECTED);
-    op.receive(_sender, reply);
+    reject_with_bucket_info(op, 0);
 
     // RemoveBucketOperation should reinsert bucketinfo into database
     ASSERT_EQ("BucketId(0x4000000000000001) : "
-              "node(idx=1,crc=0xa,docs=100/100,bytes=1/1,trusted=true,active=false,ready=false)",
+              "node(idx=1,crc=0xa,docs=200/200,bytes=1/1,trusted=true,active=false,ready=false)",
               dumpBucket(document::BucketId(16, 1)));
 }
 
@@ -128,6 +130,37 @@ TEST_F(RemoveBucketOperationTest, operation_blocked_when_pending_message_to_targ
     // Not in node target set
     EXPECT_FALSE(op.shouldBlockThisOperation(api::MessageType::PUT_ID, 0, 120));
     EXPECT_FALSE(op.shouldBlockThisOperation(api::MessageType::PUT_ID, 2, 120));
+}
+
+TEST_F(RemoveBucketOperationTest, cancelled_node_does_not_update_bucket_db_upon_rejection) {
+    addNodesToBucketDB(document::BucketId(16, 1),
+                       "0=10/100/1/t,"
+                       "1=10/100/1/t,"
+                       "2=10/100/1/t");
+    set_redundancy(1);
+    enable_cluster_state("distributor:1 storage:3");
+
+    RemoveBucketOperation op(dummy_cluster_context,
+                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
+                                            toVector<uint16_t>(1,2)));
+    op.setIdealStateManager(&getIdealStateManager());
+    op.start(_sender);
+
+    ASSERT_EQ("Delete bucket => 1,"
+              "Delete bucket => 2",
+              _sender.getCommands(true));
+
+    op.cancel(_sender, CancelScope::of_node_subset({1}));
+
+    // Rejections will by default reinsert the bucket into the DB with the bucket info contained
+    // in the reply, but here the node is cancelled and should therefore not be reinserted.
+    reject_with_bucket_info(op, 0);
+    sendReply(op, 1);
+    // Node 1 not reinserted
+    ASSERT_EQ("BucketId(0x4000000000000001) : "
+              "node(idx=0,crc=0xa,docs=100/100,bytes=1/1,trusted=true,active=false,ready=false)",
+              dumpBucket(document::BucketId(16, 1)));
+    EXPECT_FALSE(op.ok());
 }
 
 } // storage::distributor

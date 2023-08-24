@@ -25,9 +25,8 @@ UpdateOperation::UpdateOperation(const DistributorNodeContext& node_ctx,
                                  std::vector<BucketDatabase::Entry> entries,
                                  UpdateMetricSet& metric)
     : Operation(),
-      _trackerInstance(metric, std::make_shared<api::UpdateReply>(*msg),
-                       node_ctx, op_ctx, msg->getTimestamp()),
-      _tracker(_trackerInstance),
+      _tracker(metric, std::make_shared<api::UpdateReply>(*msg), node_ctx,
+               op_ctx, _cancel_scope, msg->getTimestamp()),
       _msg(msg),
       _entries(std::move(entries)),
       _new_timestamp(_msg->getTimestamp()),
@@ -206,13 +205,6 @@ UpdateOperation::onClose(DistributorStripeMessageSender& sender)
 {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
 }
-
-void
-UpdateOperation::on_cancel(DistributorStripeMessageSender&, const CancelScope& cancel_scope)
-{
-    _tracker.cancel(cancel_scope);
-}
-
 
 // The backend behavior of "create-if-missing" updates is to return the timestamp of the
 // _new_ update operation if the document was created from scratch. The two-phase update

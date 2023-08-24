@@ -293,6 +293,12 @@ public:
     [[nodiscard]] bool enable_condition_probing() const noexcept {
         return _enable_condition_probing;
     }
+    void set_enable_operation_cancellation(bool enable) noexcept {
+        _enable_operation_cancellation = enable;
+    }
+    [[nodiscard]] bool enable_operation_cancellation() const noexcept {
+        return _enable_operation_cancellation;
+    }
 
     uint32_t num_distributor_stripes() const noexcept { return _num_distributor_stripes; }
 
@@ -354,6 +360,7 @@ private:
     bool _inhibit_default_merges_when_global_merges_pending;
     bool _enable_two_phase_garbage_collection;
     bool _enable_condition_probing;
+    bool _enable_operation_cancellation;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
 

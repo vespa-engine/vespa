@@ -313,3 +313,8 @@ enable_two_phase_garbage_collection bool default=true
 ## replicas will trigger an implicit distributed condition probe to resolve the outcome of
 ## the condition across all divergent replicas.
 enable_condition_probing bool default=true
+
+## If true, changes in the cluster where a subset of the nodes become unavailable or buckets
+## change ownership between distributors will trigger an explicit cancellation of all pending
+## requests partially or fully "invalidated" by such a change.
+enable_operation_cancellation bool default=false

@@ -10,8 +10,7 @@ namespace storage::distributor {
 
 class DistributorBucketSpace;
 
-class RemoveLocationOperation  : public Operation
-{
+class RemoveLocationOperation : public Operation {
 public:
     RemoveLocationOperation(const DistributorNodeContext& node_ctx,
                             DistributorStripeOperationContext& op_ctx,
@@ -32,14 +31,11 @@ public:
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>&) override;
     void onClose(DistributorStripeMessageSender& sender) override;
 private:
-    PersistenceMessageTrackerImpl _trackerInstance;
-    PersistenceMessageTracker& _tracker;
-
+    PersistenceMessageTracker                   _tracker;
     std::shared_ptr<api::RemoveLocationCommand> _msg;
-
-    const DistributorNodeContext& _node_ctx;
-    const DocumentSelectionParser& _parser;
-    DistributorBucketSpace &_bucketSpace;
+    const DistributorNodeContext&               _node_ctx;
+    const DocumentSelectionParser&              _parser;
+    DistributorBucketSpace&                     _bucketSpace;
 };
 
 }
