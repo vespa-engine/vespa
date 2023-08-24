@@ -12,6 +12,7 @@ namespace {
 
 vespalib::string basedir("mmap-file-allocator-dir");
 vespalib::string hello("hello");
+vespalib::string world("world");
 
 struct MyAlloc
 {
@@ -107,13 +108,25 @@ TEST_P(MmapFileAllocatorTest, mmap_file_allocator_works)
 
 TEST_P(MmapFileAllocatorTest, reuse_file_offset_works)
 {
+    constexpr size_t size_400 = 400;
+    constexpr size_t size_600 = 600;
+    assert(hello.size() + 1 <= size_400);
+    assert(world.size() + 1 <= size_600);
     {
-        MyAlloc buf(_allocator, _allocator.alloc(hello.size() + 1));
+        MyAlloc buf(_allocator, _allocator.alloc(size_400));
         memcpy(buf.data, hello.c_str(), hello.size() + 1);
     }
     {
-        MyAlloc buf(_allocator, _allocator.alloc(hello.size() + 1));
+        MyAlloc buf(_allocator, _allocator.alloc(size_400));
         EXPECT_EQ(0, memcmp(buf.data, hello.c_str(), hello.size() + 1));
+    }
+    {
+        MyAlloc buf(_allocator, _allocator.alloc(size_600));
+        memcpy(buf.data, world.c_str(), world.size() + 1);
+    }
+    {
+        MyAlloc buf(_allocator, _allocator.alloc(size_600));
+        EXPECT_EQ(0, memcmp(buf.data, world.c_str(), world.size() + 1));
     }
 }
 
