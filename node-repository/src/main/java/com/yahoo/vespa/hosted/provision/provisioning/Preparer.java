@@ -26,8 +26,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.util.function.Predicate.not;
-
 /**
  * Performs preparation of node activation changes for a cluster of an application.
  *
