@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -374,7 +375,7 @@ public class RoutingController {
 
 
     private List<GeneratedEndpoint> generateEndpoints(String applicationPart) {
-        return Arrays.stream(Endpoint.AuthMethod.values())
+        return Arrays.stream(AuthMethod.values())
                      .map(method -> new GeneratedEndpoint(GeneratedEndpoint.createPart(controller.random(true)),
                                                           applicationPart,
                                                           method))

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -269,7 +270,7 @@ public class EndpointTest {
                 Endpoint.of(instance1)
                         .targetRegion(ClusterSpec.Id.from("c1"), prodZone)
                         .routingMethod(RoutingMethod.exclusive)
-                        .generatedFrom(new GeneratedEndpoint("deadbeef", "cafed00d", Endpoint.AuthMethod.mtls))
+                        .generatedFrom(new GeneratedEndpoint("deadbeef", "cafed00d", AuthMethod.mtls))
                         .on(Port.tls())
                         .in(SystemName.Public)
         );
@@ -353,7 +354,7 @@ public class EndpointTest {
 
     @Test
     public void generated_id() {
-        GeneratedEndpoint ge = new GeneratedEndpoint("cafed00d", "deadbeef", Endpoint.AuthMethod.mtls);
+        GeneratedEndpoint ge = new GeneratedEndpoint("cafed00d", "deadbeef", AuthMethod.mtls);
         var deployment = new DeploymentId(instance1, ZoneId.from("prod", "us-north-1"));
         var tests = Map.of(
                 // Zone endpoint in main, unlike named endpoints, this includes the scope symbol 'z'

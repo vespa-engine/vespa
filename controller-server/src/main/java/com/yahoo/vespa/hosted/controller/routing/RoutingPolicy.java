@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.routing;
 import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
@@ -124,7 +125,7 @@ public record RoutingPolicy(RoutingPolicyId id,
         List<Endpoint> endpoints = new ArrayList<>();
         endpoints.add(zoneEndpoint);
         if (includeTokenEndpoint) {
-            Endpoint tokenEndpoint = builder.authMethod(Endpoint.AuthMethod.token).in(system);
+            Endpoint tokenEndpoint = builder.authMethod(AuthMethod.token).in(system);
             endpoints.add(tokenEndpoint);
         }
         for (var generatedEndpoint : generatedEndpoints) {

@@ -4,13 +4,13 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import ai.vespa.http.DomainName;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
@@ -132,17 +132,17 @@ public class RoutingPolicySerializer {
         return new RoutingStatus(status, agent, changedAt);
     }
 
-    private String authMethod(Endpoint.AuthMethod authMethod) {
+    private String authMethod(AuthMethod authMethod) {
         return switch (authMethod) {
             case token -> "token";
             case mtls -> "mtls";
         };
     }
 
-    private Endpoint.AuthMethod authMethodFromSlime(Inspector field) {
+    private AuthMethod authMethodFromSlime(Inspector field) {
         return switch (field.asString()) {
-            case "token" -> Endpoint.AuthMethod.token;
-            case "mtls" -> Endpoint.AuthMethod.mtls;
+            case "token" -> AuthMethod.token;
+            case "mtls" -> AuthMethod.mtls;
             default -> throw new IllegalArgumentException("Unknown auth method '" + field.asString() + "'");
         };
     }

@@ -764,7 +764,7 @@ public class ApplicationController {
     }
 
     /**
-     * Deletes the the given application. All known instances of the applications will be deleted.
+     * Deletes the given application. All known instances of the applications will be deleted.
      *
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
      */
