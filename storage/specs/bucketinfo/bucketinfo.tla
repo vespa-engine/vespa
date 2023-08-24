@@ -61,7 +61,7 @@ variables
   messages = {}; \* model messages as unordered set to test reordering "for free"
 
 define
-  SeqToSet(s) == {s[i]: i \in 1..Len(s)}
+  SeqToSet(s) == {s[i]: i \in DOMAIN s}
 
   HasMessage(t, d) == \E m \in messages: (m.type = t /\ m.dest = d)
 
@@ -368,11 +368,11 @@ end process;
 end algorithm;*)
 
 
-\* BEGIN TRANSLATION (chksum(pcal) = "7a179595" /\ chksum(tla) = "2d89f470")
+\* BEGIN TRANSLATION (chksum(pcal) = "7a26a2a5" /\ chksum(tla) = "379d6205")
 VARIABLES proposedMuts, publishedStates, storEpoch, messages
 
 (* define statement *)
-SeqToSet(s) == {s[i]: i \in 1..Len(s)}
+SeqToSet(s) == {s[i]: i \in DOMAIN s}
 
 HasMessage(t, d) == \E m \in messages: (m.type = t /\ m.dest = d)
 
