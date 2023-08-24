@@ -162,6 +162,13 @@ struct FastValue final : Value, ValueBuilder<T> {
     ArrayRef<T> get_subspace(size_t subspace) {
         return {my_cells.get(subspace * my_subspace_size), my_subspace_size};
     }
+    std::pair<ArrayRef<T>,bool> insert_subspace(ConstArrayRef<string_id> addr) {
+        if (size_t subspace = my_index.map.lookup(addr); subspace != FastAddrMap::npos()) {
+            return {get_subspace(subspace), false};
+        } else {
+            return {add_subspace(addr), true};
+        }
+    }
     ConstArrayRef<T> get_raw_cells() const {
         return {my_cells.get(0), my_cells.size};
     }
