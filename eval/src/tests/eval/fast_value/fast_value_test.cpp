@@ -62,6 +62,81 @@ TEST(FastCellsTest, add_cells_works) {
     EXPECT_EQ(*cells.get(5), 6.0);
 }
 
+TEST(FastValueTest, insert_subspace) {
+    Handle foo("foo");
+    Handle bar("bar");
+    string_id foo_id = foo.id();
+    string_id bar_id = bar.id();
+    auto addr = [](string_id &ref){ return ConstArrayRef<string_id>(&ref, 1); };
+    auto type = ValueType::from_spec("tensor<float>(x{},y[2])");
+    auto value = std::make_unique<FastValue<float,true>>(type, 1, 2, 5);
+    EXPECT_EQ(value->index().size(), 0);
+    {
+        auto [cells, added] = value->insert_subspace(addr(foo_id));
+        EXPECT_TRUE(added);
+        EXPECT_EQ(value->index().size(), 1);
+        ASSERT_EQ(cells.size(), 2);
+        cells[0] = 10.0;
+        cells[1] = 20.0;
+    }{
+        auto [cells, added] = value->insert_subspace(addr(bar_id));
+        EXPECT_TRUE(added);
+        EXPECT_EQ(value->index().size(), 2);
+        ASSERT_EQ(cells.size(), 2);
+        cells[0] = 30.0;
+        cells[1] = 40.0;
+    }{
+        auto [cells, added] = value->insert_subspace(addr(foo_id));
+        EXPECT_FALSE(added);
+        EXPECT_EQ(value->index().size(), 2);
+        ASSERT_EQ(cells.size(), 2);
+        EXPECT_EQ(cells[0], 10.0);
+        EXPECT_EQ(cells[1], 20.0);
+        cells[0] = 11.0;
+        cells[1] = 22.0;
+    }{
+        auto [cells, added] = value->insert_subspace(addr(bar_id));
+        EXPECT_FALSE(added);
+        EXPECT_EQ(value->index().size(), 2);
+        ASSERT_EQ(cells.size(), 2);
+        EXPECT_EQ(cells[0], 30.0);
+        EXPECT_EQ(cells[1], 40.0);
+        cells[0] = 33.0;
+        cells[1] = 44.0;
+    }
+    auto actual = spec_from_value(*value);
+    auto expected = TensorSpec("tensor<float>(x{},y[2])")
+        .add({{"x", "foo"}, {"y", 0}}, 11.0)
+        .add({{"x", "foo"}, {"y", 1}}, 22.0)
+        .add({{"x", "bar"}, {"y", 0}}, 33.0)
+        .add({{"x", "bar"}, {"y", 1}}, 44.0);
+    EXPECT_EQ(actual, expected);
+}
+
+TEST(FastValueTest, insert_empty_subspace) {
+    auto addr = [](){ return ConstArrayRef<string_id>(); };
+    auto type = ValueType::from_spec("double");
+    auto value = std::make_unique<FastValue<double,true>>(type, 0, 1, 1);
+    EXPECT_EQ(value->index().size(), 0);
+    {
+        auto [cells, added] = value->insert_subspace(addr());
+        EXPECT_TRUE(added);
+        EXPECT_EQ(value->index().size(), 1);
+        ASSERT_EQ(cells.size(), 1);
+        cells[0] = 10.0;
+    }{
+        auto [cells, added] = value->insert_subspace(addr());
+        EXPECT_FALSE(added);
+        EXPECT_EQ(value->index().size(), 1);
+        ASSERT_EQ(cells.size(), 1);
+        EXPECT_EQ(cells[0], 10.0);
+        cells[0] = 11.0;
+    }
+    auto actual = spec_from_value(*value);
+    auto expected = TensorSpec("double").add({}, 11.0);
+    EXPECT_EQ(actual, expected);
+}
+
 using SA = std::vector<vespalib::stringref>;
 
 TEST(FastValueBuilderTest, scalar_add_subspace_robustness) {
