@@ -16,14 +16,17 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
 
-import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.function.Predicate.not;
 
 /**
  * Performs preparation of node activation changes for a cluster of an application.
@@ -91,10 +94,13 @@ public class Preparer {
                 HostSharing sharing = hostSharing(cluster, hostType);
                 Version osVersion = nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
                 NodeAllocation.HostDeficit deficit = allocation.hostDeficit().get();
-                List<Node> hosts = new ArrayList<>();
+                Set<Node> hosts = new LinkedHashSet<>();
                 Consumer<List<ProvisionedHost>> whenProvisioned = provisionedHosts -> {
-                    hosts.addAll(provisionedHosts.stream().map(host -> host.generateHost(requested.hostTTL())).toList());
-                    nodeRepository.nodes().addNodes(hosts, Agent.application);
+                    List<Node> newHosts = provisionedHosts.stream()
+                                                          .map(host -> host.generateHost(requested.hostTTL()))
+                                                          .filter(hosts::add)
+                                                          .toList();
+                    nodeRepository.nodes().addNodes(newHosts, Agent.application);
 
                     // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
                     List<NodeCandidate> candidates = provisionedHosts.stream()
