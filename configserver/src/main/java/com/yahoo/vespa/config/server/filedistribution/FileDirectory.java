@@ -31,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
+import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
 /**
@@ -83,7 +84,8 @@ public class FileDirectory extends AbstractComponent {
         ensureRootExist();
         File dir = new File(getPath(reference));
         if (!dir.exists()) {
-            log.log(INFO, "File reference '" + reference.value() + "' ('" + dir.getAbsolutePath() + "') does not exist.");
+            // This is common when config server has not yet received the file from one the server the app was deployed on
+            log.log(FINE, "File reference '" + reference.value() + "' ('" + dir.getAbsolutePath() + "') does not exist.");
             return Optional.empty();
         }
         if (!dir.isDirectory()) {
@@ -134,14 +136,14 @@ public class FileDirectory extends AbstractComponent {
     public void delete(FileReference fileReference, Function<FileReference, Boolean> isInUse) {
         try (Lock lock = locks.lock(fileReference)) {
             if (isInUse.apply(fileReference))
-                log.log(Level.FINE, "Unable to delete file reference '" + fileReference.value() + "' since it is still in use");
+                log.log(FINE, "Unable to delete file reference '" + fileReference.value() + "' since it is still in use");
             else
                 deleteDirRecursively(destinationDir(fileReference));
         }
     }
 
     private void deleteDirRecursively(File dir) {
-        log.log(Level.FINE, "Will delete dir " + dir);
+        log.log(FINE, "Will delete dir " + dir);
         if ( ! IOUtils.recursiveDeleteDir(dir))
             log.log(INFO, "Failed to delete " + dir);
     }
@@ -163,7 +165,7 @@ public class FileDirectory extends AbstractComponent {
 
         // update last modified time so that maintainer deleting unused file references considers this as recently used
         destinationDir.setLastModified(Clock.systemUTC().instant().toEpochMilli());
-        log.log(Level.FINE, "Directory for file reference '" + fileReference.value() + "' already exists and has all content");
+        log.log(FINE, "Directory for file reference '" + fileReference.value() + "' already exists and has all content");
         return false;
     }
 
@@ -186,7 +188,7 @@ public class FileDirectory extends AbstractComponent {
 
             // Copy files to temp dir
             File tempDestination = new File(tempDestinationDir.toFile(), source.getName());
-            log.log(Level.FINE, () -> "Copying " + source.getAbsolutePath() + " to " + tempDestination.getAbsolutePath());
+            log.log(FINE, () -> "Copying " + source.getAbsolutePath() + " to " + tempDestination.getAbsolutePath());
             if (source.isDirectory())
                 IOUtils.copyDirectory(source, tempDestination, -1);
             else
@@ -194,7 +196,7 @@ public class FileDirectory extends AbstractComponent {
 
             // Move to destination dir
             Path destinationDir = destinationDir(reference).toPath();
-            log.log(Level.FINE, () -> "Moving " + tempDestinationDir + " to " + destinationDir);
+            log.log(FINE, () -> "Moving " + tempDestinationDir + " to " + destinationDir);
             Files.move(tempDestinationDir, destinationDir);
             return reference;
         } catch (IOException e) {
@@ -206,7 +208,7 @@ public class FileDirectory extends AbstractComponent {
 
     private void logfileInfo(File file ) throws IOException {
         BasicFileAttributes basicFileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-        log.log(Level.FINE, () -> "Adding file " + file.getAbsolutePath() + " (created " + basicFileAttributes.creationTime() +
+        log.log(FINE, () -> "Adding file " + file.getAbsolutePath() + " (created " + basicFileAttributes.creationTime() +
                 ", modified " + basicFileAttributes.lastModifiedTime() +
                 ", size " + basicFileAttributes.size() + ")");
     }
