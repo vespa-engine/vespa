@@ -199,33 +199,36 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     /** Create list of endpoints, these will be consumed later by LbServicesProducer */
     private void createEndpointList(DeployState deployState) {
-        if(!deployState.isHosted()) return;
-        if(deployState.getProperties().applicationId().instance().isTester()) return;
+        if (!deployState.isHosted()) return;
+        if (deployState.getProperties().applicationId().instance().isTester()) return;
         List<ApplicationClusterEndpoint> endpoints = new ArrayList<>();
 
-        // Add zone local endpoints using zone dns suffixes, tenant, application and cluster id.
         List<String> hosts = getContainers().stream()
                 .map(AbstractService::getHostName)
                 .sorted()
                 .toList();
 
-        for (String suffix : deployState.getProperties().zoneDnsSuffixes()) {
-            ApplicationClusterEndpoint.DnsName l4Name = ApplicationClusterEndpoint.DnsName.sharedL4NameFrom(
-                    deployState.zone().system(),
-                    ClusterSpec.Id.from(getName()),
-                    deployState.getProperties().applicationId(),
-                    suffix);
-            endpoints.add(ApplicationClusterEndpoint.builder()
-                                  .zoneScope()
-                                  .sharedL4Routing()
-                                  .dnsName(l4Name)
-                                  .hosts(hosts)
-                                  .clusterId(getName())
-                                  .build());
+        Set<ContainerEndpoint> endpointsFromController = deployState.getEndpoints();
+        // Add zone-scoped endpoints if not provided by the controller
+        // TODO(mpolden): Remove this when controller always includes zone-scope endpoints, and config models < 8.230 are gone
+        if (endpointsFromController.stream().noneMatch(endpoint -> endpoint.scope() == ApplicationClusterEndpoint.Scope.zone)) {
+            for (String suffix : deployState.getProperties().zoneDnsSuffixes()) {
+                ApplicationClusterEndpoint.DnsName l4Name = ApplicationClusterEndpoint.DnsName.sharedL4NameFrom(
+                        deployState.zone().system(),
+                        ClusterSpec.Id.from(getName()),
+                        deployState.getProperties().applicationId(),
+                        suffix);
+                endpoints.add(ApplicationClusterEndpoint.builder()
+                                                        .zoneScope()
+                                                        .sharedL4Routing()
+                                                        .dnsName(l4Name)
+                                                        .hosts(hosts)
+                                                        .clusterId(getName())
+                                                        .build());
+            }
         }
 
         // Include all endpoints provided by controller
-        Set<ContainerEndpoint> endpointsFromController = deployState.getEndpoints();
         endpointsFromController.stream()
                 .filter(ce -> ce.clusterId().equals(getName()))
                 .filter(ce -> ce.routingMethod() == sharedLayer4)
