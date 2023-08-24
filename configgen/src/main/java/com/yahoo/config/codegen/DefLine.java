@@ -34,6 +34,10 @@ public class DefLine {
         StringBuilder sb = new StringBuilder(line);
         int parsed = parseNameType(sb);
         sb.delete(0, parsed);
+        if (type.name.equals("file")) {
+            // Note: 'file' is used internally and also there is no support for 'path' in C++, so cannot be removed yet
+            System.out.println("Warning: config type 'file' is deprecated, use 'path' instead");
+        }
         if (type.name.equals("enum")) {
             parsed = parseEnum(sb);
             sb.delete(0, parsed);

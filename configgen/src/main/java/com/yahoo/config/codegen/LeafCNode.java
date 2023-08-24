@@ -17,24 +17,20 @@ public abstract class LeafCNode extends CNode {
 
     public static LeafCNode newInstance(DefLine.Type type, InnerCNode parent, String name) {
         try {
-            switch (type.name) {
-                case "int": return new IntegerLeaf(parent, name);
-                case "long": return new LongLeaf(parent, name);
-                case "double": return new DoubleLeaf(parent, name);
-                case "bool": return new BooleanLeaf(parent, name);
-                case "string": return new StringLeaf(parent, name);
-                case "reference": return new ReferenceLeaf(parent, name);
-                case "file": {
-                    // Note: Used internally and also no support for path in C++, so cannot be removed in Vespa 9
-                    System.out.println("Warning: config type 'file' is deprecated, use 'path' instead");
-                    return new FileLeaf(parent, name);
-                }
-                case "path": return new PathLeaf(parent, name);
-                case "enum": return new EnumLeaf(parent, name, type.enumArray);
-                case "url" : return new UrlLeaf(parent, name);
-                case "model" : return new ModelLeaf(parent, name);
-                default: return null;
-            }
+            return switch (type.name) {
+                case "int" -> new IntegerLeaf(parent, name);
+                case "long" -> new LongLeaf(parent, name);
+                case "double" -> new DoubleLeaf(parent, name);
+                case "bool" -> new BooleanLeaf(parent, name);
+                case "string" -> new StringLeaf(parent, name);
+                case "reference" -> new ReferenceLeaf(parent, name);
+                case "file" -> new FileLeaf(parent, name);
+                case "path" -> new PathLeaf(parent, name);
+                case "enum" -> new EnumLeaf(parent, name, type.enumArray);
+                case "url" -> new UrlLeaf(parent, name);
+                case "model" -> new ModelLeaf(parent, name);
+                default -> null;
+            };
         } catch (NumberFormatException e) {
             return null;
         }
