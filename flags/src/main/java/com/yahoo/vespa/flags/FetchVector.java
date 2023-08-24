@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -33,6 +32,11 @@ public class FetchVector {
          * or controller, unless controller and the flag has declared this dimension.
          */
         CLOUD,
+
+        /**
+         * Cloud account ID from com.yahoo.config.provision.CloudAccount::value, e.g. aws:123456789012
+         */
+        CLOUD_ACCOUNT,
 
         /** Cluster ID from com.yahoo.config.provision.ClusterSpec.Id::value, e.g. cluster-controllers, logserver. */
         CLUSTER_ID,

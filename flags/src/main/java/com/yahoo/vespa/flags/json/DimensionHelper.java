@@ -17,6 +17,7 @@ public class DimensionHelper {
     static {
         serializedDimensions.put(FetchVector.Dimension.APPLICATION_ID, "application");
         serializedDimensions.put(FetchVector.Dimension.CLOUD, "cloud");
+        serializedDimensions.put(FetchVector.Dimension.CLOUD_ACCOUNT, "cloud-account");
         serializedDimensions.put(FetchVector.Dimension.CLUSTER_ID, "cluster-id");
         serializedDimensions.put(FetchVector.Dimension.CLUSTER_TYPE, "cluster-type");
         serializedDimensions.put(FetchVector.Dimension.CONSOLE_USER_EMAIL, "console-user-email");
