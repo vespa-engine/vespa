@@ -12,6 +12,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.flags.BooleanFlag;
 
 import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,7 +23,7 @@ import java.util.Optional;
 public class SessionSerializer {
 
     void write(SessionZooKeeperClient zooKeeperClient, ApplicationId applicationId,
-               Optional<FileReference> fileReference, Optional<DockerImage> dockerImageRepository,
+               Instant created, Optional<FileReference> fileReference, Optional<DockerImage> dockerImageRepository,
                Version vespaVersion, Optional<AthenzDomain> athenzDomain, Optional<Quota> quota,
                List<TenantSecretStore> tenantSecretStores, List<X509Certificate> operatorCertificates,
                Optional<CloudAccount> cloudAccount, List<DataplaneToken> dataplaneTokens,
@@ -41,6 +42,7 @@ public class SessionSerializer {
             zooKeeperClient.writeSessionData(new SessionData(applicationId,
                                                              fileReference,
                                                              vespaVersion,
+                                                             created,
                                                              dockerImageRepository,
                                                              athenzDomain,
                                                              quota,
@@ -48,6 +50,23 @@ public class SessionSerializer {
                                                              operatorCertificates,
                                                              cloudAccount,
                                                              dataplaneTokens));
+    }
+
+    SessionData read(SessionZooKeeperClient zooKeeperClient, BooleanFlag readSessionData) {
+        if (readSessionData.value())
+            return zooKeeperClient.readSessionData();
+        else
+            return new SessionData(zooKeeperClient.readApplicationId(),
+                                   zooKeeperClient.readApplicationPackageReference(),
+                                   zooKeeperClient.readVespaVersion(),
+                                   zooKeeperClient.readCreateTime(),
+                                   zooKeeperClient.readDockerImageRepository(),
+                                   zooKeeperClient.readAthenzDomain(),
+                                   zooKeeperClient.readQuota(),
+                                   zooKeeperClient.readTenantSecretStores(),
+                                   zooKeeperClient.readOperatorCertificates(),
+                                   zooKeeperClient.readCloudAccount(),
+                                   zooKeeperClient.readDataplaneTokens());
     }
 
 }

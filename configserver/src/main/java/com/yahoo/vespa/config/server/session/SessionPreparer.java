@@ -36,7 +36,6 @@ import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
-import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostValidator;
@@ -73,8 +72,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.zip.ZipException;
-
-import static com.yahoo.vespa.config.server.session.SessionZooKeeperClient.getSessionPath;
 
 /**
  * A SessionPreparer is responsible for preparing a session given an application package.
@@ -342,6 +339,7 @@ public class SessionPreparer {
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
                                   applicationId,
+                                  sessionZooKeeperClient.readCreateTime(),
                                   Optional.of(filereference),
                                   dockerImageRepository,
                                   vespaVersion,
@@ -384,6 +382,7 @@ public class SessionPreparer {
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
                                        ApplicationPackage applicationPackage,
                                        ApplicationId applicationId,
+                                       Instant created,
                                        Optional<FileReference> fileReference,
                                        Optional<DockerImage> dockerImageRepository,
                                        Version vespaVersion,
@@ -396,12 +395,12 @@ public class SessionPreparer {
                                        List<X509Certificate> operatorCertificates,
                                        Optional<CloudAccount> cloudAccount,
                                        List<DataplaneToken> dataplaneTokens) {
-        Path sessionPath = getSessionPath(applicationId.tenant(), zooKeeperClient.sessionId());
-        ZooKeeperDeployer zkDeployer = new ZooKeeperDeployer(new ZooKeeperClient(curator, deployLogger, sessionPath));
+        var zooKeeperDeplyer = new ZooKeeperDeployer(curator, deployLogger, applicationId, zooKeeperClient.sessionId());
         try {
-            zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
+            zooKeeperDeplyer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             new SessionSerializer().write(zooKeeperClient,
                                           applicationId,
+                                          created,
                                           fileReference,
                                           dockerImageRepository,
                                           vespaVersion,
@@ -413,7 +412,7 @@ public class SessionPreparer {
                                           dataplaneTokens,
                                           writeSessionData);
         } catch (RuntimeException | IOException e) {
-            zkDeployer.cleanup();
+            zooKeeperDeplyer.cleanup();
             throw new RuntimeException("Error preparing session", e);
         }
     }

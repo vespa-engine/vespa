@@ -270,12 +270,14 @@ public class SessionRepository {
                                                   DeployLogger deployLogger) {
         ApplicationId applicationId = existingSession.getApplicationId();
         File existingApp = getSessionAppDir(existingSession.getSessionId());
+        Instant created = clock.instant();
         LocalSession session = createSessionFromApplication(existingApp,
                                                             applicationId,
                                                             internalRedeploy,
                                                             timeoutBudget,
-                                                            deployLogger);
-        write(existingSession, session, applicationId);
+                                                            deployLogger,
+                                                            created);
+        write(existingSession, session, applicationId, created);
         return session;
     }
 
@@ -292,7 +294,8 @@ public class SessionRepository {
                                                             TimeoutBudget timeoutBudget,
                                                             DeployLogger deployLogger) {
         applicationRepo.createApplication(applicationId);
-        return createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget, deployLogger);
+        return createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget,
+                                            deployLogger, clock.instant());
     }
 
     /**
@@ -571,10 +574,11 @@ public class SessionRepository {
 
     // ---------------- Serialization ----------------------------------------------------------------
 
-    private void write(Session existingSession, LocalSession session, ApplicationId applicationId) {
+    private void write(Session existingSession, LocalSession session, ApplicationId applicationId, Instant created) {
         SessionSerializer sessionSerializer = new SessionSerializer();
         sessionSerializer.write(session.getSessionZooKeeperClient(),
                                 applicationId,
+                                created,
                                 existingSession.getApplicationPackageReference(),
                                 existingSession.getDockerImageRepository(),
                                 existingSession.getVespaVersion(),
@@ -729,14 +733,15 @@ public class SessionRepository {
                                                       ApplicationId applicationId,
                                                       boolean internalRedeploy,
                                                       TimeoutBudget timeoutBudget,
-                                                      DeployLogger deployLogger) {
+                                                      DeployLogger deployLogger,
+                                                      Instant created) {
         long sessionId = getNextSessionId();
         try {
             ensureSessionPathDoesNotExist(sessionId);
             ApplicationPackage app = createApplicationPackage(applicationDirectory, applicationId, sessionId, internalRedeploy, Optional.of(deployLogger));
             log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
             SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-            sessionZKClient.createNewSession(clock.instant());
+            sessionZKClient.createNewSession(created);
             CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
             LocalSession session = new LocalSession(tenantName, sessionId, app, sessionZKClient);
             waiter.awaitCompletion(Duration.ofSeconds(Math.min(120, timeoutBudget.timeLeft().getSeconds())));
