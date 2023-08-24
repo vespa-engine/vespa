@@ -77,7 +77,7 @@ class Json2SingleLevelMap {
             } else if (token == JsonToken.START_ARRAY) {
                 map.put(fieldName, skipChildren(parser, buf));
             } else if (token == JsonToken.START_OBJECT) {
-                if (fieldName.equals("select.where") || fieldName.equals("select.grouping")) {
+                if (fieldName.startsWith("input.") || fieldName.equals("select.where") || fieldName.equals("select.grouping")) {
                     map.put(fieldName, skipChildren(parser, buf));
                 } else {
                     parse(map, fieldName + ".");

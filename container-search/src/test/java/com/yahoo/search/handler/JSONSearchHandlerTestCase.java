@@ -307,6 +307,21 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
+    void testInputParameters() throws IOException {
+        String json = """
+                         {
+                           "input": {
+                               "query(q_category)": { "Tablet Keyboard Cases": 42.5 },
+                               "query(q_vector)": [ 1, 2.5, 3 ]
+                           }
+                         }
+                      """;
+        Map<String, String> map = new Json2SingleLevelMap(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8))).parse();
+        assertEquals("{ \"Tablet Keyboard Cases\": 42.5 }", map.get("input.query(q_category)"));
+        assertEquals("[ 1, 2.5, 3 ]", map.get("input.query(q_vector)"));
+    }
+
+    @Test
     void testSelectParameters() throws IOException {
         ObjectNode json = jsonMapper.createObjectNode();
 
