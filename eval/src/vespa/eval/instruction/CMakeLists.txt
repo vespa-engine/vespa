@@ -7,6 +7,7 @@ vespa_add_library(eval_instruction OBJECT
     dense_cell_range_function.cpp
     dense_dot_product_function.cpp
     dense_hamming_distance.cpp
+    dense_join_reduce_plan.cpp
     dense_lambda_peek_function.cpp
     dense_lambda_peek_optimizer.cpp
     dense_matmul_function.cpp
