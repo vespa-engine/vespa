@@ -150,7 +150,7 @@ public class DefParser {
         }
         // Only add lines that are not namespace or comment lines
         nd.addNormalizedLine(line);
-        DefLine defLine = new DefLine(line);
+        DefLine defLine = new DefLine(line, systemErrEnabled);
         root.setLeaf(root.getName() + "." + defLine.getName(), defLine, comment);
         comment = "";
     }
