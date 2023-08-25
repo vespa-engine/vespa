@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.jdisc.test.MockMetric;
-import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProviderMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequest.DnsNameStatus;
@@ -23,7 +23,7 @@ public class CertificatePoolMaintainerTest {
 
     @Test
     void new_certs_are_requested_until_limit() {
-        tester.flagSource().withIntFlag(Flags.CERT_POOL_SIZE.id(), 3);
+        tester.flagSource().withIntFlag(PermanentFlags.CERT_POOL_SIZE.id(), 3);
         assertNumCerts(1);
         assertNumCerts(2);
         assertNumCerts(3);
@@ -32,7 +32,7 @@ public class CertificatePoolMaintainerTest {
 
     @Test
     void cert_contains_expected_names() {
-        tester.flagSource().withIntFlag(Flags.CERT_POOL_SIZE.id(), 1);
+        tester.flagSource().withIntFlag(PermanentFlags.CERT_POOL_SIZE.id(), 1);
         assertNumCerts(1);
         EndpointCertificateProviderMock endpointCertificateProvider = (EndpointCertificateProviderMock) tester.controller().serviceRegistry().endpointCertificateProvider();
 
