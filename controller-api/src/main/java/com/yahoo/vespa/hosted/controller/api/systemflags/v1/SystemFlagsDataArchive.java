@@ -191,7 +191,7 @@ public class SystemFlagsDataArchive {
             int force_switch_expression_dummy = switch (condition.type()) {
                 case RELATIONAL -> switch (condition.dimension()) {
                     case APPLICATION_ID, CLOUD, CLOUD_ACCOUNT, CLUSTER_ID, CLUSTER_TYPE, CONSOLE_USER_EMAIL, 
-                            ENVIRONMENT, HOSTNAME, NODE_TYPE, SYSTEM, TENANT_ID, ZONE_ID ->
+                            ENVIRONMENT, HOST_EXCLUSIVE_TO, HOSTNAME, NODE_TYPE, SYSTEM, TENANT_ID, ZONE_ID ->
                             throw new FlagValidationException(condition.type().toWire() + " " +
                                                               DimensionHelper.toWire(condition.dimension()) +
                                                               " condition is not supported");
@@ -218,6 +218,7 @@ public class SystemFlagsDataArchive {
                     case CLUSTER_ID -> validateConditionValues(condition, ClusterSpec.Id::from);
                     case CLUSTER_TYPE -> validateConditionValues(condition, ClusterSpec.Type::from);
                     case ENVIRONMENT -> validateConditionValues(condition, Environment::from);
+                    case HOST_EXCLUSIVE_TO -> validateConditionValues(condition, ApplicationId::fromSerializedForm);
                     case HOSTNAME -> validateConditionValues(condition, HostName::of);
                     case NODE_TYPE -> validateConditionValues(condition, NodeType::valueOf);
                     case SYSTEM -> throw new IllegalStateException("Flag data contains system dimension");
