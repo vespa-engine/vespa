@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
+import com.yahoo.vespa.hosted.controller.api.integration.organization.AccountId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ApplicationSummary;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -15,7 +16,7 @@ import java.util.Optional;
 public class DummyOwnershipIssues implements OwnershipIssues {
 
     @Override
-    public Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationSummary summary, User assignee, Contact contact) {
+    public Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationSummary summary, AccountId assigneeId, User assignee, Contact contact) {
         return Optional.empty();
     }
 
@@ -24,7 +25,7 @@ public class DummyOwnershipIssues implements OwnershipIssues {
     }
 
     @Override
-    public Optional<User> getConfirmedOwner(IssueId issueId) {
+    public Optional<AccountId> getConfirmedOwner(IssueId issueId) {
         return Optional.empty();
     }
 

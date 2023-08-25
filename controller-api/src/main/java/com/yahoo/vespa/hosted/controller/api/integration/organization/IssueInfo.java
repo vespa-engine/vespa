@@ -16,13 +16,13 @@ public class IssueInfo {
     private final IssueId id;
     private final Instant updated;
     private final Status status;
-    private final User assignee;
+    private final AccountId assigneeId;
 
-    public IssueInfo(IssueId id, Instant updated, Status status, User assignee) {
+    public IssueInfo(IssueId id, Instant updated, Status status, AccountId assigneeId) {
         this.id = id;
         this.updated = updated;
         this.status = status;
-        this.assignee = assignee;
+        this.assigneeId = assigneeId;
     }
 
     public IssueId id() {
@@ -37,10 +37,9 @@ public class IssueInfo {
         return status;
     }
 
-    public Optional<User> assignee() {
-        return Optional.ofNullable(assignee);
+    public Optional<AccountId> assigneeId() {
+        return Optional.ofNullable(assigneeId);
     }
-
 
     public enum Status {
 

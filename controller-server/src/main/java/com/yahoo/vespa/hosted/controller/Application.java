@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.AccountId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
@@ -52,7 +53,8 @@ public class Application {
     private final OptionalLong projectId;
     private final Optional<IssueId> deploymentIssueId;
     private final Optional<IssueId> ownershipIssueId;
-    private final Optional<User> owner;
+    private final Optional<User> userOwner;
+    private final Optional<AccountId> issueOwner;
     private final OptionalInt majorVersion;
     private final ApplicationMetrics metrics;
     private final Set<PublicKey> deployKeys;
@@ -60,14 +62,14 @@ public class Application {
 
     /** Creates an empty application. */
     public Application(TenantAndApplicationId id, Instant now) {
-        this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Optional.empty(),
+        this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Optional.empty(), Optional.empty(),
              Optional.empty(), Optional.empty(), OptionalInt.empty(), new ApplicationMetrics(0, 0),
              Set.of(), OptionalLong.empty(), RevisionHistory.empty(), List.of());
     }
 
     // Do not use directly - edit through LockedApplication.
     public Application(TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
-                       Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
+                       Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> userOwner, Optional<AccountId> issueOwner,
                        OptionalInt majorVersion, ApplicationMetrics metrics, Set<PublicKey> deployKeys, OptionalLong projectId,
                        RevisionHistory revisions, Collection<Instance> instances) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
@@ -76,7 +78,8 @@ public class Application {
         this.validationOverrides = Objects.requireNonNull(validationOverrides, "validationOverrides cannot be null");
         this.deploymentIssueId = Objects.requireNonNull(deploymentIssueId, "deploymentIssueId cannot be null");
         this.ownershipIssueId = Objects.requireNonNull(ownershipIssueId, "ownershipIssueId cannot be null");
-        this.owner = Objects.requireNonNull(owner, "owner cannot be null");
+        this.userOwner = Objects.requireNonNull(userOwner, "owner cannot be null");
+        this.issueOwner = Objects.requireNonNull(issueOwner, "issueOwner cannot be null");
         this.majorVersion = Objects.requireNonNull(majorVersion, "majorVersion cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
         this.deployKeys = Objects.requireNonNull(deployKeys, "deployKeys cannot be null");
@@ -143,8 +146,12 @@ public class Application {
         return ownershipIssueId;
     }
 
-    public Optional<User> owner() {
-        return owner;
+    public Optional<User> userOwner() {
+        return userOwner;
+    }
+
+    public Optional<AccountId> issueOwner() {
+        return issueOwner;
     }
 
     /**

@@ -117,9 +117,10 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
         try {
             Tenant tenant = ownerOf(application.id());
             tenant.contact().ifPresent(contact -> {
-                User assignee = application.owner().orElse(null);
                 Optional<IssueId> ourIssueId = application.deploymentIssueId();
-                IssueId issueId = deploymentIssues.fileUnlessOpen(ourIssueId, application.id().defaultInstance(), assignee, contact);
+                IssueId issueId = deploymentIssues.fileUnlessOpen(ourIssueId, application.id().defaultInstance(),
+                                                                  application.issueOwner().orElse(null), application.userOwner().orElse(null),
+                                                                  contact);
                 store(application.id(), issueId);
             });
         }

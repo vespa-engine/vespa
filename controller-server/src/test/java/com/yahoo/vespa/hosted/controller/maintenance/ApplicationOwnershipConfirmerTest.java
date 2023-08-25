@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.AccountId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ApplicationSummary;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -80,10 +81,10 @@ public class ApplicationOwnershipConfirmerTest {
 
         assertEquals(issueId2, app.application().ownershipIssueId(), "A new confirmation issue id is stored when something is returned to the maintainer.");
 
-        assertFalse(app.application().owner().isPresent(), "No owner is stored for application");
-        issues.owner = Optional.of(User.from("username"));
+        assertFalse(app.application().issueOwner().isPresent(), "No owner is stored for application");
+        issues.owner = Optional.of(new AccountId("username"));
         confirmer.maintain();
-        assertEquals(app.application().owner().get().username(), "username", "Owner has been added to application");
+        assertEquals(app.application().issueOwner().get().value(), "username", "Owner has been added to application");
 
         // The app deletes all production deployments — see that the issue is forgotten.
         assertEquals(issueId2, app.application().ownershipIssueId(), "Confirmation issue for application is still open.");
@@ -103,10 +104,10 @@ public class ApplicationOwnershipConfirmerTest {
 
         private Optional<IssueId> response;
         private boolean escalated = false;
-        private Optional<User> owner = Optional.empty();
+        private Optional<AccountId> owner = Optional.empty();
 
         @Override
-        public Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationSummary summary, User assignee, Contact contact) {
+        public Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationSummary summary, AccountId assigneeId, User assignee, Contact contact) {
             return response;
         }
 
@@ -116,7 +117,7 @@ public class ApplicationOwnershipConfirmerTest {
         }
 
         @Override
-        public Optional<User> getConfirmedOwner(IssueId issueId) {
+        public Optional<AccountId> getConfirmedOwner(IssueId issueId) {
             return owner;
         }
     }

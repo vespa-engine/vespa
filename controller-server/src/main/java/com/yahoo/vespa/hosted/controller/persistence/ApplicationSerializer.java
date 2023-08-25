@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.AccountId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
@@ -86,7 +87,8 @@ public class ApplicationSerializer {
     private static final String revisionPinnedField = "revisionPinned";
     private static final String deploymentIssueField = "deploymentIssueId";
     private static final String ownershipIssueIdField = "ownershipIssueId";
-    private static final String ownerField = "confirmedOwner";
+    private static final String userOwnerField = "confirmedOwner";
+    private static final String issueOwnerField = "confirmedOwnerId";
     private static final String majorVersionField = "majorVersion";
     private static final String writeQualityField = "writeQuality";
     private static final String queryQualityField = "queryQuality";
@@ -174,7 +176,8 @@ public class ApplicationSerializer {
         application.projectId().ifPresent(projectId -> root.setLong(projectIdField, projectId));
         application.deploymentIssueId().ifPresent(jiraIssueId -> root.setString(deploymentIssueField, jiraIssueId.value()));
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
-        application.owner().ifPresent(owner -> root.setString(ownerField, owner.username()));
+        application.userOwner().ifPresent(owner -> root.setString(userOwnerField, owner.username()));
+        application.issueOwner().ifPresent(owner -> root.setString(issueOwnerField, owner.value()));
         application.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
@@ -349,7 +352,8 @@ public class ApplicationSerializer {
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
         Optional<IssueId> deploymentIssueId = SlimeUtils.optionalString(root.field(deploymentIssueField)).map(IssueId::from);
         Optional<IssueId> ownershipIssueId = SlimeUtils.optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
-        Optional<User> owner = SlimeUtils.optionalString(root.field(ownerField)).map(User::from);
+        Optional<User> userOwner = SlimeUtils.optionalString(root.field(userOwnerField)).map(User::from);
+        Optional<AccountId> issueOwner = SlimeUtils.optionalString(root.field(issueOwnerField)).map(AccountId::new);
         OptionalInt majorVersion = SlimeUtils.optionalInteger(root.field(majorVersionField));
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
@@ -359,7 +363,7 @@ public class ApplicationSerializer {
         RevisionHistory revisions = revisionsFromSlime(root.field(prodVersionsField), root.field(devVersionsField), id);
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides,
-                               deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
+                               deploymentIssueId, ownershipIssueId, userOwner, issueOwner, majorVersion, metrics,
                                deployKeys, projectId, revisions, instances);
     }
 

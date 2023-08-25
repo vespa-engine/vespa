@@ -15,7 +15,7 @@ import java.util.Optional;
  */
 public interface DeploymentIssues {
 
-    IssueId fileUnlessOpen(Optional<IssueId> issueId, ApplicationId applicationId, User asignee, Contact contact);
+    IssueId fileUnlessOpen(Optional<IssueId> issueId, ApplicationId applicationId, AccountId assigneeId, User assignee, Contact contact);
 
     IssueId fileUnlessOpen(Collection<ApplicationId> applicationIds, Version version);
 
