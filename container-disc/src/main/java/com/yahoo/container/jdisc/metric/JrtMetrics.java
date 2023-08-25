@@ -29,7 +29,7 @@ class JrtMetrics {
         Snapshot changesSincePrevious = snapshot.changesSince(previousSnapshot);
         increment(ContainerMetrics.JRT_TRANSPORT_TLS_CERTIFICATE_VERIFICATION_FAILURES.baseName(), changesSincePrevious.tlsCertificateVerificationFailures());
         increment(ContainerMetrics.JRT_TRANSPORT_PEER_AUTHORIZATION_FAILURES.baseName(), changesSincePrevious.peerAuthorizationFailures());
-        increment(ContainerMetrics.JRT_TRANSPORT_SERVER_TLS_CONNECIONTS_ESTABLISHED.baseName(), changesSincePrevious.serverTlsConnectionsEstablished());
+        increment(ContainerMetrics.JRT_TRANSPORT_SERVER_TLS_CONNECTIONS_ESTABLISHED.baseName(), changesSincePrevious.serverTlsConnectionsEstablished());
         increment(ContainerMetrics.JRT_TRANSPORT_CLIENT_TLS_CONNECTIONS_ESTABLISHED.baseName(), changesSincePrevious.clientTlsConnectionsEstablished());
         increment(ContainerMetrics.JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName(), changesSincePrevious.serverUnencryptedConnectionsEstablished());
         increment(ContainerMetrics.JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName(), changesSincePrevious.clientUnencryptedConnectionsEstablished());

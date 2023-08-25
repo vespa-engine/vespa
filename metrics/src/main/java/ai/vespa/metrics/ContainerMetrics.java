@@ -45,7 +45,7 @@ public enum ContainerMetrics implements VespaMetrics {
     JDISC_HTTP_SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT("jdisc.http.ssl.handshake.failure.missing_client_cert", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to missing client certificate"),
     JDISC_HTTP_SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT("jdisc.http.ssl.handshake.failure.expired_client_cert", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to expired client certificate"),
     JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT("jdisc.http.ssl.handshake.failure.invalid_client_cert", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to invalid client certificate"),
-    JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS("jdisc.http.ssl.handshake.failure.incompatible_protocols", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to inincompatible protocols"),
+    JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS("jdisc.http.ssl.handshake.failure.incompatible_protocols", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to incompatible protocols"),
     JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CHIFERS("jdisc.http.ssl.handshake.failure.incompatible_chifers", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to incompatible chifers"),
     JDISC_HTTP_SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED("jdisc.http.ssl.handshake.failure.connection_closed", Unit.OPERATION, "JDISC HTTP SSL Handshake failures due to connection closed"),
     JDISC_HTTP_SSL_HANDSHAKE_FAILURE_UNKNOWN("jdisc.http.ssl.handshake.failure.unknown", Unit.OPERATION, "JDISC HTTP SSL Handshake failures for unknown reason"),
@@ -117,7 +117,7 @@ public enum ContainerMetrics implements VespaMetrics {
     
     
     // SearchChain metrics
-    PEAK_QPS("peak_qps", Unit.QUERY_PER_SECOND, "The highest number of qps for a second for this metrics shapshot"),
+    PEAK_QPS("peak_qps", Unit.QUERY_PER_SECOND, "The highest number of qps for a second for this metrics snapshot"),
     SEARCH_CONNECTIONS("search_connections", Unit.CONNECTION, "Number of search connections"),
     FEED_OPERATIONS("feed.operations", Unit.OPERATION, "Number of document feed operations"),
     FEED_LATENCY("feed.latency", Unit.MILLISECOND, "Feed latency"),
@@ -125,9 +125,9 @@ public enum ContainerMetrics implements VespaMetrics {
     QUERIES("queries", Unit.OPERATION, "Query volume"),
     QUERY_CONTAINER_LATENCY("query_container_latency", Unit.MILLISECOND, "The query execution time consumed in the container"),
     QUERY_LATENCY("query_latency", Unit.MILLISECOND, "The overall query latency as seen by the container"),
-    QUERY_TIMEOUT("query_timeout", Unit.MILLISECOND, "The amount of time allowed for query execytion, from the client"),
+    QUERY_TIMEOUT("query_timeout", Unit.MILLISECOND, "The amount of time allowed for query execution, from the client"),
     FAILED_QUERIES("failed_queries", Unit.OPERATION, "The number of failed queries"),
-    DEGRADED_QUERIES("degraded_queries", Unit.OPERATION, "The number of degraded queries, e.g. due to some conent nodes not responding in time"),
+    DEGRADED_QUERIES("degraded_queries", Unit.OPERATION, "The number of degraded queries, e.g. due to some content nodes not responding in time"),
     HITS_PER_QUERY("hits_per_query", Unit.HIT_PER_QUERY, "The number of hits returned"),
     QUERY_HIT_OFFSET("query_hit_offset", Unit.HIT, "The offset for hits returned"),
     DOCUMENTS_COVERED("documents_covered", Unit.DOCUMENT, "The combined number of documents considered during query evaluation"),
@@ -169,7 +169,7 @@ public enum ContainerMetrics implements VespaMetrics {
     // Java (JRT) TLS metrics
     JRT_TRANSPORT_TLS_CERTIFICATE_VERIFICATION_FAILURES("jrt.transport.tls-certificate-verification-failures", Unit.FAILURE, "TLS certificate verification failures"),
     JRT_TRANSPORT_PEER_AUTHORIZATION_FAILURES("jrt.transport.peer-authorization-failures", Unit.FAILURE, "TLS peer authorization failures"),
-    JRT_TRANSPORT_SERVER_TLS_CONNECIONTS_ESTABLISHED("jrt.transport.server.tls-connections-established", Unit.CONNECTION, "TLS server connections established"),
+    JRT_TRANSPORT_SERVER_TLS_CONNECTIONS_ESTABLISHED("jrt.transport.server.tls-connections-established", Unit.CONNECTION, "TLS server connections established"),
     JRT_TRANSPORT_CLIENT_TLS_CONNECTIONS_ESTABLISHED("jrt.transport.client.tls-connections-established", Unit.CONNECTION, "TLS client connections established"),
     JRT_TRANSPORT_SERVER_UNENCRYPTED_CONNECTIONS_ESTABLISHED("jrt.transport.server.unencrypted-connections-established", Unit.CONNECTION, "Unencrypted server connections established"),
     JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED("jrt.transport.client.unencrypted-connections-established", Unit.CONNECTION, "Unencrypted client connections established"),
