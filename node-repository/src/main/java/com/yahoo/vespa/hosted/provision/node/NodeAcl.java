@@ -89,7 +89,7 @@ public record NodeAcl(Node node,
                 // - udp port 51820 from the world
                 trustedNodes.addAll(trustedNodesForChildrenMatching(node, allNodes, n -> EnumSet.of(NodeType.tenant, NodeType.proxy).contains(n.type()), RPC_PORTS, ipSpace));
                 trustedPorts.add(4443);
-                if (zone.system().isPublic() && zone.cloud().allowEnclave()) {
+                if (zone.cloud().allowEnclave()) {
                     trustedUdpPorts.add(WIREGUARD_PORT);
                 }
             }
