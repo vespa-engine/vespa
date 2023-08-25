@@ -36,7 +36,10 @@ get_env_var_with_optional_default() {
     fi
 }
 
+# TODO: use maven-wrapper after changing mvn command for vespa in factory/build-java.sh
+#readonly MAVEN_CMD=$(get_env_var_with_optional_default VESPA_MAVEN_COMMAND "$(pwd)/mvnw")
 readonly MAVEN_CMD=$(get_env_var_with_optional_default VESPA_MAVEN_COMMAND mvn)
+
 readonly MAVEN_EXTRA_OPTS=$(get_env_var_with_optional_default VESPA_MAVEN_EXTRA_OPTS)
 echo "Using maven command: ${MAVEN_CMD}"
 echo "Using maven extra opts: ${MAVEN_EXTRA_OPTS}"
@@ -59,6 +62,11 @@ $top/dist/getversionmap.sh $top > $top/dist/vtag.map
 # The 'java' mode only builds the plugins.
 # The 'default' mode also builds some modules needed by C++ code.
 # The 'full' mode also builds modules needed by C++ tests.
+
+# Set up maven wrapper and output maven version
+echo "Setting up maven wrapper in $(pwd)"
+mvn wrapper:wrapper -Dmaven=3.8.8
+${MAVEN_CMD} -v
 
 # must install parent poms first:
 echo "Downloading all dependencies. This may take a few minutes with an empty Maven cache."
