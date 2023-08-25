@@ -373,7 +373,7 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract void sampleEmbeddingLatency(java.time.Duration, com.yahoo.language.process.Embedder$Context)",
+      "public abstract void sampleEmbeddingLatency(double, com.yahoo.language.process.Embedder$Context)",
       "public abstract void sampleSequenceLength(long, com.yahoo.language.process.Embedder$Context)",
       "public static com.yahoo.language.process.Embedder$Runtime testInstance()"
     ],

@@ -6,7 +6,6 @@ import com.yahoo.language.Language;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -72,13 +71,13 @@ public interface Embedder {
     @Beta
     interface Runtime {
         /** Sample latency metric for embedding */
-        void sampleEmbeddingLatency(Duration latency, Context ctx);
+        void sampleEmbeddingLatency(double millis, Context ctx);
         /** Sample sequence length metric for embedding */
         void sampleSequenceLength(long length, Context ctx);
 
         static Runtime testInstance() {
             return new Runtime() {
-                @Override public void sampleEmbeddingLatency(Duration latency, Context ctx) { }
+                @Override public void sampleEmbeddingLatency(double millis, Context ctx) { }
                 @Override public void sampleSequenceLength(long length, Context ctx) { }
             };
         }

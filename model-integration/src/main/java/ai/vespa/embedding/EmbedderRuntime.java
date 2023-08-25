@@ -10,7 +10,6 @@ import com.yahoo.metrics.simple.Gauge;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Point;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,8 +29,8 @@ public class EmbedderRuntime implements Embedder.Runtime {
     }
 
     @Override
-    public void sampleEmbeddingLatency(Duration latency, Embedder.Context ctx) {
-        embedLatency.sample(latency.toMillis(), metricPoint(ctx));
+    public void sampleEmbeddingLatency(double millis, Embedder.Context ctx) {
+        embedLatency.sample(millis, metricPoint(ctx));
     }
 
     @Override

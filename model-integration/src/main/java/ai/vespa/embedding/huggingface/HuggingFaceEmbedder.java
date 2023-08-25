@@ -16,8 +16,6 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
 import java.nio.file.Paths;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -91,10 +89,10 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public List<Integer> embed(String s, Context context) {
-        var start = Instant.now();
+        var start = System.nanoTime();
         var tokens = tokenizer.embed(s, context);
         runtime.sampleSequenceLength(tokens.size(), context);
-        runtime.sampleEmbeddingLatency(Duration.between(start, Instant.now()), context);
+        runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return tokens;
     }
 
@@ -106,7 +104,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public Tensor embed(String s, Context context, TensorType tensorType) {
-        var start = Instant.now();
+        var start = System.nanoTime();
         var encoding = tokenizer.encode(s, context.getLanguage());
         runtime.sampleSequenceLength(encoding.ids().size(), context);
         Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1");
@@ -128,7 +126,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         Tensor tokenEmbeddings = outputs.get(outputName);
         var result = poolingStrategy.toSentenceEmbedding(tensorType, tokenEmbeddings, attentionMask);
         var normalized = normalize ? normalize(result, tensorType) : result;
-        runtime.sampleEmbeddingLatency(Duration.between(start, Instant.now()), context);
+        runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return normalized;
     }
 

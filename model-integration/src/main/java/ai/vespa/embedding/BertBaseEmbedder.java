@@ -12,8 +12,6 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -91,16 +89,16 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
 
     @Override
     public List<Integer> embed(String text, Context context) {
-        var start = Instant.now();
+        var start = System.nanoTime();
         var tokens = tokenize(text, context);
         runtime.sampleSequenceLength(tokens.size(), context);
-        runtime.sampleEmbeddingLatency(Duration.between(start, Instant.now()), context);
+        runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return tokens;
     }
 
     @Override
     public Tensor embed(String text, Context context, TensorType type) {
-        var start = Instant.now();
+        var start = System.nanoTime();
         if (type.dimensions().size() != 1) {
             throw new IllegalArgumentException("Error in embedding to type '" + type + "': should only have one dimension.");
         }
@@ -110,7 +108,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         List<Integer> tokens = embedWithSeparatorTokens(text, context, maxTokens);
         runtime.sampleSequenceLength(tokens.size(), context);
         var embedding = embedTokens(tokens, type);
-        runtime.sampleEmbeddingLatency(Duration.between(start, Instant.now()), context);
+        runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return embedding;
     }
 
