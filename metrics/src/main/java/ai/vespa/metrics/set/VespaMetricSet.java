@@ -85,7 +85,7 @@ public class VespaMetricSet {
         // Java (JRT) TLS metrics
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_TLS_CERTIFICATE_VERIFICATION_FAILURES.baseName());
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_PEER_AUTHORIZATION_FAILURES.baseName());
-        addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_SERVER_TLS_CONNECIONTS_ESTABLISHED.baseName());
+        addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_SERVER_TLS_CONNECTIONS_ESTABLISHED.baseName());
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_CLIENT_TLS_CONNECTIONS_ESTABLISHED.baseName());
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_SERVER_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName());
         addMetric(metrics, ContainerMetrics.JRT_TRANSPORT_CLIENT_UNENCRYPTED_CONNECTIONS_ESTABLISHED.baseName());
