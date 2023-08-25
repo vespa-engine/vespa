@@ -19,8 +19,20 @@ public class VespaDocumentSerializerHead extends VespaDocumentSerializer6 {
 
     @Override
     public void write(TensorModifyUpdate update) {
-        putByte(null, (byte) update.getOperation().id);
+        putByte(null, (byte) encodeOperationId(update));
+        if (update.getCreateNonExistingCells()) {
+            putDouble(null, update.getDefaultCellValue());
+        }
         update.getValue().serialize(this);
+    }
+
+    private int encodeOperationId(TensorModifyUpdate update) {
+        int operationId = update.getOperation().id;
+        byte CREATE_FLAG = -0b10000000;
+        if (update.getCreateNonExistingCells()) {
+            operationId |= CREATE_FLAG;
+        }
+        return operationId;
     }
 
     @Override

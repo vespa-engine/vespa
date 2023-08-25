@@ -2,6 +2,7 @@
 
 #include "tensor_update.h"
 #include "valueupdate.h"
+#include <optional>
 
 namespace vespalib::eval { struct Value; }
 
@@ -29,12 +30,15 @@ private:
     Operation _operation;
     std::unique_ptr<const TensorDataType> _tensorType;
     std::unique_ptr<TensorFieldValue> _tensor;
+    // When this is set, non-existing cells are created in the input tensor before applying the update.
+    std::optional<double> _default_cell_value;
 
     friend ValueUpdate;
     TensorModifyUpdate();
     ACCEPT_UPDATE_VISITOR;
 public:
     TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor);
+    TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor, double default_cell_value);
     TensorModifyUpdate(const TensorModifyUpdate &rhs) = delete;
     TensorModifyUpdate &operator=(const TensorModifyUpdate &rhs) = delete;
     ~TensorModifyUpdate() override;
@@ -42,6 +46,7 @@ public:
     bool operator==(const ValueUpdate &other) const override;
     Operation getOperation() const { return _operation; }
     const TensorFieldValue &getTensor() const { return *_tensor; }
+    const std::optional<double>& get_default_cell_value() const { return _default_cell_value; }
     void checkCompatibility(const Field &field) const override;
     std::unique_ptr<vespalib::eval::Value> applyTo(const vespalib::eval::Value &tensor) const;
     std::unique_ptr<Value> apply_to(const Value &tensor,

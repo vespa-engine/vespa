@@ -87,7 +87,8 @@ TensorModifyUpdate::TensorModifyUpdate()
       TensorUpdate(),
       _operation(Operation::MAX_NUM_OPERATIONS),
       _tensorType(),
-      _tensor()
+      _tensor(),
+      _default_cell_value()
 {
 }
 
@@ -96,7 +97,19 @@ TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<Tens
       TensorUpdate(),
       _operation(operation),
       _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType &>(*tensor->getDataType()))),
-      _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release()))
+      _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release())),
+      _default_cell_value()
+{
+    *_tensor = *tensor;
+}
+
+TensorModifyUpdate::TensorModifyUpdate(Operation operation, std::unique_ptr<TensorFieldValue> tensor, double default_cell_value)
+    : ValueUpdate(TensorModify),
+      TensorUpdate(),
+      _operation(operation),
+      _tensorType(std::make_unique<TensorDataType>(dynamic_cast<const TensorDataType &>(*tensor->getDataType()))),
+      _tensor(static_cast<TensorFieldValue *>(_tensorType->createFieldValue().release())),
+      _default_cell_value(default_cell_value)
 {
     *_tensor = *tensor;
 }
@@ -114,6 +127,9 @@ TensorModifyUpdate::operator==(const ValueUpdate &other) const
         return false;
     }
     if (*_tensor != *o._tensor) {
+        return false;
+    }
+    if (_default_cell_value != o._default_cell_value) {
         return false;
     }
     return true;
@@ -141,7 +157,11 @@ TensorModifyUpdate::apply_to(const Value &old_tensor,
 {
     if (auto cellsTensor = _tensor->getAsTensorPtr()) {
         auto op = getJoinFunction(_operation);
-        return TensorPartialUpdate::modify(old_tensor, op, *cellsTensor, factory);
+        if (_default_cell_value.has_value()) {
+            return TensorPartialUpdate::modify_with_defaults(old_tensor, op, *cellsTensor, _default_cell_value.value(), factory);
+        } else {
+            return TensorPartialUpdate::modify(old_tensor, op, *cellsTensor, factory);
+        }
     }
     return {};
 }
@@ -179,6 +199,9 @@ TensorModifyUpdate::print(std::ostream& out, bool verbose, const std::string& in
     if (_tensor) {
         _tensor->print(out, verbose, indent);
     }
+    if (_default_cell_value.has_value()) {
+        out << "," << _default_cell_value.value();
+    }
     out << ")";
 }
 
@@ -198,6 +221,26 @@ verifyCellsTensorIsSparse(const vespalib::eval::Value *cellsTensor)
     throw IllegalStateException(err, VESPA_STRLOC);
 }
 
+TensorModifyUpdate::Operation
+decode_operation(uint8_t encoded_op)
+{
+    uint8_t OP_MASK = 0b01111111;
+    uint8_t op = encoded_op & OP_MASK;
+    if (op >= static_cast<uint8_t>(TensorModifyUpdate::Operation::MAX_NUM_OPERATIONS)) {
+        vespalib::asciistream msg;
+        msg << "Unrecognized tensor modify update operation " << static_cast<uint32_t>(op);
+        throw DeserializeException(msg.str(), VESPA_STRLOC);
+    }
+    return static_cast<TensorModifyUpdate::Operation>(op);
+}
+
+bool
+decode_create_non_existing_cells(uint8_t encoded_op)
+{
+    uint8_t CREATE_FLAG = 0b10000000;
+    return (encoded_op & CREATE_FLAG) != 0;
+}
+
 }
 
 void
@@ -205,12 +248,12 @@ TensorModifyUpdate::deserialize(const DocumentTypeRepo &repo, const DataType &ty
 {
     uint8_t op;
     stream >> op;
-    if (op >= static_cast<uint8_t>(Operation::MAX_NUM_OPERATIONS)) {
-        vespalib::asciistream msg;
-        msg << "Unrecognized tensor modify update operation " << static_cast<uint32_t>(op);
-        throw DeserializeException(msg.str(), VESPA_STRLOC);
+    _operation = decode_operation(op);
+    if (decode_create_non_existing_cells(op)) {
+        double value;
+        stream >> value;
+        _default_cell_value = value;
     }
-    _operation = static_cast<Operation>(op);
     _tensorType = convertToCompatibleType(dynamic_cast<const TensorDataType &>(type));
     auto tensor = _tensorType->createFieldValue();
     if (tensor->isA(FieldValue::Type::TENSOR)) {

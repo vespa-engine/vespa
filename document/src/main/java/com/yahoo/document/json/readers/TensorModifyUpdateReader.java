@@ -2,6 +2,7 @@
 
 package com.yahoo.document.json.readers;
 
+import com.fasterxml.jackson.core.JsonToken;
 import com.yahoo.document.Field;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.TensorFieldValue;
@@ -29,6 +30,7 @@ public class TensorModifyUpdateReader {
     private static final String MODIFY_REPLACE = "replace";
     private static final String MODIFY_ADD = "add";
     private static final String MODIFY_MULTIPLY = "multiply";
+    private static final String MODIFY_CREATE = "create";
 
     public static TensorModifyUpdate createModifyUpdate(TokenBuffer buffer, Field field) {
         expectFieldIsOfTypeTensor(field);
@@ -39,7 +41,7 @@ public class TensorModifyUpdateReader {
         expectOperationSpecified(result.operation, field.getName());
         expectTensorSpecified(result.tensor, field.getName());
 
-        return new TensorModifyUpdate(result.operation, result.tensor);
+        return new TensorModifyUpdate(result.operation, result.tensor, result.createNonExistingCells);
     }
 
     private static void expectFieldIsOfTypeTensor(Field field) {
@@ -73,6 +75,7 @@ public class TensorModifyUpdateReader {
 
     private static class ModifyUpdateResult {
         TensorModifyUpdate.Operation operation = null;
+        boolean createNonExistingCells = false;
         TensorFieldValue tensor = null;
     }
 
@@ -84,6 +87,9 @@ public class TensorModifyUpdateReader {
             switch (buffer.currentName()) {
                 case MODIFY_OPERATION:
                     result.operation = createOperation(buffer, field.getName());
+                    break;
+                case MODIFY_CREATE:
+                    result.createNonExistingCells = createNonExistingCells(buffer, field.getName());
                     break;
                 case TENSOR_CELLS:
                     result.tensor = createTensorFromCells(buffer, field);
@@ -109,6 +115,16 @@ public class TensorModifyUpdateReader {
                 return TensorModifyUpdate.Operation.MULTIPLY;
             default:
                 throw new IllegalArgumentException("Unknown operation '" + buffer.currentText() + "' in modify update for field '" + fieldName + "'");
+        }
+    }
+
+    private static Boolean createNonExistingCells(TokenBuffer buffer, String fieldName) {
+        if (buffer.current() == JsonToken.VALUE_TRUE) {
+            return true;
+        } else if (buffer.current() == JsonToken.VALUE_FALSE) {
+            return false;
+        } else {
+            throw new IllegalArgumentException("Unknown value '" + buffer.currentText() + "' for '" + MODIFY_CREATE + "' in modify update for field '" + fieldName + "'");
         }
     }
 

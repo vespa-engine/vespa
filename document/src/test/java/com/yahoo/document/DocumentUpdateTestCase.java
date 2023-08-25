@@ -822,7 +822,10 @@ public class DocumentUpdateTestCase {
             result.addFieldUpdate(FieldUpdate.create(getField("dense_tensor"))
                     .addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.REPLACE, createTensor()))
                     .addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.ADD, createTensor()))
-                    .addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.MULTIPLY, createTensor())));
+                    .addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.MULTIPLY, createTensor()))
+                    .addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.REPLACE, createTensor(), true))
+                    .addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.ADD, createTensor(), true))
+                    .addValueUpdate(new TensorModifyUpdate(TensorModifyUpdate.Operation.MULTIPLY, createTensor(), true)));
             return result;
         }
 

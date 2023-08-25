@@ -26,12 +26,17 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
 
     protected Operation operation;
     protected TensorFieldValue tensor;
-    protected Optional<Double> defaultCellValue = Optional.empty();
+    protected boolean createNonExistingCells;
 
     public TensorModifyUpdate(Operation operation, TensorFieldValue tensor) {
+        this(operation, tensor, false);
+    }
+
+    public TensorModifyUpdate(Operation operation, TensorFieldValue tensor, boolean createNonExistingCells) {
         super(ValueUpdateClassID.TENSORMODIFY);
         this.operation = operation;
         this.tensor = tensor;
+        this.createNonExistingCells = createNonExistingCells;
         verifyCompatibleType(tensor.getDataType().getTensorType());
     }
 
@@ -51,10 +56,12 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
     }
 
     public Operation getOperation() { return operation; }
-
     public TensorFieldValue getValue() { return tensor; }
+    public boolean getCreateNonExistingCells() { return createNonExistingCells; }
+    public double getDefaultCellValue() {
+        return (operation == Operation.MULTIPLY) ? 1.0 : 0.0;
+    }
     public void setValue(TensorFieldValue value) { tensor = value; }
-    public void setDefaultCellValue(double value) { defaultCellValue = Optional.of(value); }
 
     @Override
     public FieldValue applyTo(FieldValue oldValue) {
@@ -70,10 +77,10 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
                     default:
                         throw new UnsupportedOperationException("Unknown operation: " + operation);
                 }
-                if (defaultCellValue.isPresent() && hasMappedSubtype(oldTensor.type())) {
+                if (createNonExistingCells && hasMappedSubtype(oldTensor.type())) {
                     var subspaces = findSubspacesNotInInput(oldTensor, tensor.getTensor().get());
                     if (!subspaces.isEmpty()) {
-                        oldTensor = insertSubspaces(oldTensor, subspaces, defaultCellValue.get());
+                        oldTensor = insertSubspaces(oldTensor, subspaces, getDefaultCellValue());
                     }
                 }
                 Tensor modified = oldTensor.modify(modifier, tensor.getTensor().get().cells());
@@ -142,7 +149,6 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
         return builder.build();
     }
 
-
     @Override
     protected void checkCompatibility(DataType fieldType) {
         if (!(fieldType instanceof TensorDataType)) {
@@ -162,17 +168,18 @@ public class TensorModifyUpdate extends ValueUpdate<TensorFieldValue> {
         if (!super.equals(o)) return false;
         TensorModifyUpdate that = (TensorModifyUpdate) o;
         return operation == that.operation &&
-                tensor.equals(that.tensor);
+                tensor.equals(that.tensor) &&
+                createNonExistingCells == that.createNonExistingCells;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), operation, tensor);
+        return Objects.hash(super.hashCode(), operation, tensor, createNonExistingCells);
     }
 
     @Override
     public String toString() {
-        return super.toString() + " " + operation.name + " " + tensor;
+        return super.toString() + " " + operation.name + " " + tensor + " " + createNonExistingCells;
     }
 
     /**
