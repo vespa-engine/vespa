@@ -6,7 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.test.MockMetric;
-import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProviderMock;
@@ -169,7 +169,7 @@ public class EndpointCertificateMaintainerTest {
     void cert_pool_is_not_deleted() {
         EndpointCertificateProviderMock endpointCertificateProvider = (EndpointCertificateProviderMock) tester.controller().serviceRegistry().endpointCertificateProvider();
 
-        tester.flagSource().withIntFlag(Flags.CERT_POOL_SIZE.id(), 3);
+        tester.flagSource().withIntFlag(PermanentFlags.CERT_POOL_SIZE.id(), 3);
         assertEquals(0.0, certificatePoolMaintainer.maintain(), 0.0000001);
         assertEquals(0.0, maintainer.maintain(), 0.0000001);
 

@@ -6,7 +6,6 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -52,7 +51,7 @@ public class CertificatePoolMaintainer extends ControllerMaintainer {
         super(controller, interval);
         this.controller = controller;
         this.secretStore = controller.secretStore();
-        this.certPoolSize = Flags.CERT_POOL_SIZE.bindTo(controller.flagSource());
+        this.certPoolSize = PermanentFlags.CERT_POOL_SIZE.bindTo(controller.flagSource());
         this.useAlternateCertProvider = PermanentFlags.USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER.bindTo(controller.flagSource());
         this.endpointCertificateAlgo = PermanentFlags.ENDPOINT_CERTIFICATE_ALGORITHM.bindTo(controller.flagSource());
         this.curator = controller.curator();

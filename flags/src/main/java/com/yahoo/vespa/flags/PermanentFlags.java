@@ -402,6 +402,12 @@ public class PermanentFlags {
             // if any, or otherwise hosted-vespa:tenant-host:default.
             APPLICATION_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
 
+    public static final UnboundIntFlag CERT_POOL_SIZE = defineIntFlag(
+            "cert-pool-size", 0,
+            "Target number of preprovisioned endpoints certificates to maintain",
+            "Takes effect on next run of CertPoolMaintainer"
+    );
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
