@@ -77,7 +77,7 @@ MmapFileAllocator::alloc(size_t sz) const
     if (sz == 0) {
         return PtrAndSize(); // empty allocation
     }
-    static constexpr size_t alignment = 64;
+    static constexpr size_t alignment = 128;
     sz = (sz + alignment - 1) & -alignment; // round sz to a multiple of alignment
     if (sz >= _small_limit) {
         return alloc_large(sz);
