@@ -1681,6 +1681,26 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void tensor_modify_update_with_create_non_existing_cells_true() {
+        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.ADD, true, "sparse_tensor",
+                inputJson("{",
+                        "  'operation': 'add',",
+                        "  'create': true,",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
+    }
+
+    @Test
+    public void tensor_modify_update_with_create_non_existing_cells_false() {
+        assertTensorModifyUpdate("{{x:a,y:b}:2.0}", TensorModifyUpdate.Operation.ADD, false, "sparse_tensor",
+                inputJson("{",
+                        "  'operation': 'add',",
+                        "  'create': false,",
+                        "  'cells': [",
+                        "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"));
+    }
+
+    @Test
     public void tensor_modify_update_treats_the_input_tensor_as_sparse() {
         // Note that the type of the tensor in the modify update is sparse (it only has mapped dimensions).
         assertTensorModifyUpdate("tensor(x{},y{}):{{x:0,y:0}:2.0, {x:1,y:2}:3.0}",
@@ -2155,16 +2175,25 @@ public class JsonReaderTestCase {
 
     private void assertTensorModifyUpdate(String expectedTensor, TensorModifyUpdate.Operation expectedOperation,
                                           String tensorFieldName, String modifyJson) {
-        assertTensorModifyUpdate(expectedTensor, expectedOperation, tensorFieldName,
+        assertTensorModifyUpdate(expectedTensor, expectedOperation, false, tensorFieldName,
+                createTensorModifyUpdate(modifyJson, tensorFieldName));
+    }
+
+    private void assertTensorModifyUpdate(String expectedTensor, TensorModifyUpdate.Operation expectedOperation,
+                                          boolean expectedCreateNonExistingCells,
+                                          String tensorFieldName, String modifyJson) {
+        assertTensorModifyUpdate(expectedTensor, expectedOperation, expectedCreateNonExistingCells, tensorFieldName,
                 createTensorModifyUpdate(modifyJson, tensorFieldName));
     }
 
     private static void assertTensorModifyUpdate(String expectedTensor, TensorModifyUpdate.Operation expectedOperation,
+                                                 boolean expectedCreateNonExistingCells,
                                                  String tensorFieldName, DocumentUpdate update) {
         assertTensorFieldUpdate(update, tensorFieldName);
         TensorModifyUpdate modifyUpdate = (TensorModifyUpdate) update.getFieldUpdate(tensorFieldName).getValueUpdate(0);
         assertEquals(expectedOperation, modifyUpdate.getOperation());
         assertEquals(Tensor.from(expectedTensor), modifyUpdate.getValue().getTensor().get());
+        assertEquals(expectedCreateNonExistingCells, modifyUpdate.getCreateNonExistingCells());
     }
 
     private DocumentUpdate createTensorModifyUpdate(String modifyJson, String tensorFieldName) {

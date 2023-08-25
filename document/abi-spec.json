@@ -3442,11 +3442,13 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.document.update.TensorModifyUpdate$Operation, com.yahoo.document.datatypes.TensorFieldValue)",
+      "public void <init>(com.yahoo.document.update.TensorModifyUpdate$Operation, com.yahoo.document.datatypes.TensorFieldValue, boolean)",
       "public static com.yahoo.tensor.TensorType convertDimensionsToMapped(com.yahoo.tensor.TensorType)",
       "public com.yahoo.document.update.TensorModifyUpdate$Operation getOperation()",
       "public com.yahoo.document.datatypes.TensorFieldValue getValue()",
+      "public boolean getCreateNonExistingCells()",
+      "public double getDefaultCellValue()",
       "public void setValue(com.yahoo.document.datatypes.TensorFieldValue)",
-      "public void setDefaultCellValue(double)",
       "public com.yahoo.document.datatypes.FieldValue applyTo(com.yahoo.document.datatypes.FieldValue)",
       "protected void checkCompatibility(com.yahoo.document.DataType)",
       "public void serialize(com.yahoo.document.serialization.DocumentUpdateWriter, com.yahoo.document.DataType)",
@@ -3459,7 +3461,7 @@
     "fields" : [
       "protected com.yahoo.document.update.TensorModifyUpdate$Operation operation",
       "protected com.yahoo.document.datatypes.TensorFieldValue tensor",
-      "protected java.util.Optional defaultCellValue"
+      "protected boolean createNonExistingCells"
     ]
   },
   "com.yahoo.document.update.TensorRemoveUpdate" : {

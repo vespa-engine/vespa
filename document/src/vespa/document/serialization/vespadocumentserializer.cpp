@@ -476,11 +476,29 @@ VespaDocumentSerializer::write(const RemoveFieldPathUpdate &value)
     writeFieldPath(_stream, value);
 }
 
+namespace {
+
+uint8_t
+encode_operation_id(const TensorModifyUpdate& update)
+{
+    uint8_t op = static_cast<uint8_t>(update.getOperation());
+    uint8_t CREATE_FLAG = 0b10000000;
+    if (update.get_default_cell_value().has_value()) {
+        op |= CREATE_FLAG;
+    }
+    return op;
+}
+
+}
+
 void
 VespaDocumentSerializer::write(const TensorModifyUpdate &value)
 {
     _stream << uint32_t(ValueUpdate::TensorModify);
-    _stream << static_cast<uint8_t>(value.getOperation());
+    _stream << encode_operation_id(value);
+    if (value.get_default_cell_value().has_value()) {
+        _stream << value.get_default_cell_value().value();
+    }
     write(value.getTensor());
 }
 
