@@ -30,13 +30,20 @@ public class DefLine {
 
     private final static Pattern defaultNullPattern = Pattern.compile("^\\s*default\\s*=\\s*null");
 
+    private final boolean systemErrEnabled;
+
     public DefLine(String line) {
+        this(line, false);
+    }
+
+    public DefLine(String line, boolean systemErrEnabled) {
+        this.systemErrEnabled = systemErrEnabled;
         StringBuilder sb = new StringBuilder(line);
         int parsed = parseNameType(sb);
         sb.delete(0, parsed);
         if (type.name.equals("file")) {
             // Note: 'file' is used internally and also there is no support for 'path' in C++, so cannot be removed yet
-            System.out.println("Warning: config type 'file' is deprecated, use 'path' instead");
+            printSystemErr("Warning: config type 'file' is deprecated, use 'path' instead");
         }
         if (type.name.equals("enum")) {
             parsed = parseEnum(sb);
@@ -274,6 +281,10 @@ public class DefLine {
         if (ReservedWords.internalPrefixPattern.matcher(cleanName).matches()) {
             throw new IllegalArgumentException("'" + cleanName + "' cannot start with '" + ReservedWords.INTERNAL_PREFIX + "'");
         }
+    }
+
+    private void printSystemErr(String s) {
+        if (systemErrEnabled) System.err.println(s);
     }
 
 }
