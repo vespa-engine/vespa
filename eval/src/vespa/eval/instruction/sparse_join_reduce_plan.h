@@ -21,11 +21,14 @@ private:
     BitList _in_lhs;
     BitList _in_rhs;
     BitList _in_res;
+    size_t _res_dims;
     est_fun_t _estimate;
 
 public:
     SparseJoinReducePlan(const ValueType &lhs, const ValueType &rhs, const ValueType &res);
     ~SparseJoinReducePlan();
+    size_t res_dims() const { return _res_dims; }
+    bool distinct_result() const { return (_res_dims == _in_res.size()); }
     size_t estimate_result_size(const Value::Index &lhs, const Value::Index &rhs) const {
         return _estimate(lhs.size(), rhs.size());
     }

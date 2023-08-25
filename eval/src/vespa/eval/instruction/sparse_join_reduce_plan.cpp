@@ -153,7 +153,7 @@ est_fun select_estimate(const std::vector<Est> &est_list) {
 } // <unnamed>
 
 SparseJoinReducePlan::SparseJoinReducePlan(const ValueType &lhs, const ValueType &rhs, const ValueType &res)
-  : _in_lhs(), _in_rhs(), _in_res(), _estimate()
+  : _in_lhs(), _in_rhs(), _in_res(), _res_dims(0), _estimate()
 {
     auto dims = merge(lhs.mapped_dimensions(), rhs.mapped_dimensions());
     assert(count_only_in_second(dims, res.mapped_dimensions()) == 0); 
@@ -162,6 +162,9 @@ SparseJoinReducePlan::SparseJoinReducePlan(const ValueType &lhs, const ValueType
         _in_lhs.push_back(lhs.has_dimension(dim.name));
         _in_rhs.push_back(rhs.has_dimension(dim.name));
         _in_res.push_back(res.has_dimension(dim.name));
+        if (_in_res.back()) {
+            ++_res_dims;
+        }
         update_est_list(est_list, _in_lhs.back(), _in_rhs.back(), _in_res.back());
     }
     _estimate = select_estimate(est_list);
