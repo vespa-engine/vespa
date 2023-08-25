@@ -18,6 +18,7 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/mmap_file_allocator.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -2324,17 +2325,11 @@ int
 AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib::string& swapfile, const search::attribute::Config& cfg)
 {
     int result = 1;
-    size_t rounded_size = vespalib::round_up_to_page_size(1);
-    size_t lid_mapping_size = 1200;
-    size_t sv_maxlid = 1200;
-    if (rounded_size == 16_Ki) {
-        lid_mapping_size = 4200;
-        sv_maxlid = 1300;
-    }
-    if (rounded_size == 64_Ki) {
-        lid_mapping_size = 17000;
-        sv_maxlid = 1500;
-    }
+    size_t rounded_size = std::max(vespalib::round_up_to_page_size(1), size_t(vespalib::alloc::MmapFileAllocator::default_small_limit));
+    constexpr uint32_t mv_copies = 64;
+    size_t lid_mapping_size = rounded_size / 4 + 100;
+    size_t sv_maxlid = rounded_size / 5 + 100;
+    size_t mv_maxlid = rounded_size / (mv_copies * 5) + 100;
     if (cfg.basicType() == search::attribute::BasicType::Type::BOOL) {
         lid_mapping_size = rounded_size * 8 + 100;
     }
@@ -2354,9 +2349,9 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
     EXPECT_LT(size1, size2);
     if (cfg.collectionType().isMultiValue()) {
         // Grow multi value mapping
-        for (uint32_t lid = 1; lid < 100; ++lid) {
+        for (uint32_t lid = 1; lid < mv_maxlid; ++lid) {
             av->clearDoc(lid);
-            for (uint32_t i = 0; i < 50; ++i) {
+            for (uint32_t i = 0; i < mv_copies; ++i) {
                 EXPECT_TRUE(v->append(lid, 0, 1));
             }
             av->commit();
@@ -2367,15 +2362,15 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
     }
     if (cfg.fastSearch()) {
         // Grow enum store
-        uint32_t maxlid = cfg.collectionType().isMultiValue() ? 100 : sv_maxlid;
+        uint32_t maxlid = cfg.collectionType().isMultiValue() ? mv_maxlid : sv_maxlid;
         for (uint32_t lid = 1; lid < maxlid; ++lid) {
             av->clearDoc(lid);
             if (cfg.collectionType().isMultiValue()) {
-                for (uint32_t i = 0; i < 50; ++i) {
-                    EXPECT_TRUE(v->append(lid, lid * 100 + i, 1));
+                for (uint32_t i = 0; i < mv_copies; ++i) {
+                    EXPECT_TRUE(v->append(lid, lid * mv_copies + i, 1));
                 }
             } else {
-                EXPECT_TRUE(v->update(lid, lid * 100));
+                EXPECT_TRUE(v->update(lid, lid));
             }
             av->commit();
         }
