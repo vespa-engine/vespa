@@ -16,6 +16,7 @@ import java.util.function.Predicate;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.HOST_EXCLUSIVE_TO;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
@@ -320,7 +321,8 @@ public class Flags {
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
             "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-09-15",
             "Whether to enable the one program that should not be named",
-            "Takes effect at next host-admin tick");
+            "Takes effect at next host-admin tick",
+            HOST_EXCLUSIVE_TO);
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
             "weighted-endpoint-record-ttl", List.of(), String.class, List.of("jonmv"), "2023-05-16", "2023-09-01",

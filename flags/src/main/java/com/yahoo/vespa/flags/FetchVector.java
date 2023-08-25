@@ -50,6 +50,9 @@ public class FetchVector {
         /** Hosted Vespa environment from com.yahoo.config.provision.Environment::value, e.g. prod, staging, test. */
         ENVIRONMENT,
 
+        /** Application ID of the form tenant:applicationName:instance that a host is exclusiveTo */
+        HOST_EXCLUSIVE_TO,
+
         /**
          * Fully qualified hostname.
          *
