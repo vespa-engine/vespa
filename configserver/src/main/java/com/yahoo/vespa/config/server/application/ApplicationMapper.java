@@ -31,7 +31,7 @@ public final class ApplicationMapper {
     }
 
     /**
-     * Register a Application to an application id and specific vespa version
+     * Register an Application to an application id and specific vespa version
      */
     public void register(ApplicationId applicationId, ApplicationSet applicationSet) {
         requestHandlers.put(applicationId, applicationSet);

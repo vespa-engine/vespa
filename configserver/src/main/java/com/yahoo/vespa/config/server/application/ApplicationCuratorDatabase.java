@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
@@ -134,12 +133,10 @@ public class ApplicationCuratorDatabase {
         curator.set(reindexingDataPath(id), ReindexingStatusSerializer.toBytes(status));
     }
 
-
     /** Sets up a listenable cache with the given listener, over the applications path of this tenant. */
     public Curator.DirectoryCache createApplicationsPathCache(ExecutorService zkCacheExecutor) {
         return curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, zkCacheExecutor);
     }
-
 
     private Path reindexingLockPath(ApplicationId id) {
         return locksPath.append(id.serializedForm()).append("reindexing");
@@ -153,15 +150,9 @@ public class ApplicationCuratorDatabase {
         return applicationsPath.append(id.serializedForm());
     }
 
-    // Used to determine whether future preparations of this application should use a dedicated CCC.
-    private Path dedicatedClusterControllerClusterPath(ApplicationId id) {
-        return applicationPath(id).append("dedicatedClusterControllerCluster");
-    }
-
     private Path reindexingDataPath(ApplicationId id) {
         return applicationPath(id).append("reindexing");
     }
-
 
     private static class ReindexingStatusSerializer {
 

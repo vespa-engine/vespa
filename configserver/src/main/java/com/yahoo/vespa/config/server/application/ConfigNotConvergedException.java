@@ -10,8 +10,4 @@ public class ConfigNotConvergedException extends RuntimeException {
         super(t);
     }
 
-    public ConfigNotConvergedException(String message) {
-        super(message);
-    }
-
 }
