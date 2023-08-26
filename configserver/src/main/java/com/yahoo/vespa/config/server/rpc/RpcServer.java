@@ -31,7 +31,7 @@ import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -260,16 +260,16 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
      * This method should be called when config is activated in the server.
      */
     @Override
-    public void configActivated(ApplicationSet applicationSet) {
-        ApplicationId applicationId = applicationSet.getId();
+    public void configActivated(ApplicationVersions applicationVersions) {
+        ApplicationId applicationId = applicationVersions.getId();
         ApplicationState state = getState(applicationId);
-        state.setActiveGeneration(applicationSet.getApplicationGeneration());
-        reloadSuperModel(applicationSet);
+        state.setActiveGeneration(applicationVersions.applicationGeneration());
+        reloadSuperModel(applicationVersions);
         configActivated(applicationId);
     }
 
-    private void reloadSuperModel(ApplicationSet applicationSet) {
-        superModelRequestHandler.activateConfig(applicationSet);
+    private void reloadSuperModel(ApplicationVersions applicationVersions) {
+        superModelRequestHandler.activateConfig(applicationVersions);
         configActivated(ApplicationId.global());
     }
 

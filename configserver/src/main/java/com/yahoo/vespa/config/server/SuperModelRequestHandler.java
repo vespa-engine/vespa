@@ -10,7 +10,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
 
 import java.util.Optional;
@@ -46,10 +46,10 @@ public class SuperModelRequestHandler implements RequestHandler {
      * Signals that config has been activated for an {@link com.yahoo.vespa.config.server.application.Application}
      * belonging to a tenant.
      *
-     * @param applicationSet The activated set of {@link com.yahoo.vespa.config.server.application.Application}.
+     * @param applicationVersions The activated set of {@link com.yahoo.vespa.config.server.application.Application}s.
      */
-    public synchronized void activateConfig(ApplicationSet applicationSet) {
-        superModelManager.configActivated(applicationSet);
+    public synchronized void activateConfig(ApplicationVersions applicationVersions) {
+        superModelManager.configActivated(applicationVersions);
         updateHandler();
     }
 

@@ -326,7 +326,7 @@ public class ApplicationRepositoryTest {
             // Delete app and verify that it has been deleted from repos and no application set exists
             assertTrue(applicationRepository.delete(applicationId()));
             assertTrue(applicationRepository.getActiveSession(applicationId()).isEmpty());
-            assertEquals(Optional.empty(), sessionRepository.getRemoteSession(sessionId).applicationSet());
+            assertEquals(Optional.empty(), sessionRepository.getRemoteSession(sessionId).applicationVersions());
             assertTrue(curator.exists(sessionNode));
             assertEquals(Session.Status.DELETE.name(), Utf8.toString(curator.getData(sessionNode.append("sessionState")).get()));
             assertTrue(sessionFile.exists());

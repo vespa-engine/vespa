@@ -145,17 +145,17 @@ public class TenantApplicationsTest {
         assertEquals(0, repo.activeApplications().size());
     }
 
-    private static ApplicationSet createSet(ApplicationId id, Version version) throws IOException, SAXException {
+    private static ApplicationVersions createApplicationVersions(ApplicationId id, Version version) throws IOException, SAXException {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(),
                                           new DeployState.Builder().wantedNodeVespaVersion(version)
                                                                    .applicationPackage(FilesApplicationPackage.fromFile(new File("src/test/apps/app")))
                                                                    .build());
-        return ApplicationSet.from(new Application(model,
-                                                   new ServerCache(),
-                                                   1,
-                                                   Version.emptyVersion,
-                                                   MetricUpdater.createTestUpdater(),
-                                                   id));
+        return ApplicationVersions.from(new Application(model,
+                                                        new ServerCache(),
+                                                        1,
+                                                        Version.emptyVersion,
+                                                        MetricUpdater.createTestUpdater(),
+                                                        id));
     }
 
     @Test
@@ -167,19 +167,19 @@ public class TenantApplicationsTest {
         applications.createPutTransaction(app1, 1).commit();
 
         Version deployedVersion0 = Version.fromString("6.1");
-        applications.activateApplication(createSet(app1, deployedVersion0), 1);
+        applications.activateApplication(createApplicationVersions(app1, deployedVersion0), 1);
         assertTrue("Empty version is compatible", applications.compatibleWith(Optional.empty(), app1));
 
         Version nodeVersion0 = Version.fromString("6.0");
         assertTrue("Lower version is compatible", applications.compatibleWith(Optional.of(nodeVersion0), app1));
 
         Version deployedVersion1 = Version.fromString("7.1");
-        applications.activateApplication(createSet(app1, deployedVersion1), 1);
+        applications.activateApplication(createApplicationVersions(app1, deployedVersion1), 1);
         assertTrue("New major is compatible", applications.compatibleWith(Optional.of(nodeVersion0), app1));
 
         flagSource.withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("8"), String.class);
         Version deployedVersion2 = Version.fromString("8.1");
-        applications.activateApplication(createSet(app1, deployedVersion2), 1);
+        applications.activateApplication(createApplicationVersions(app1, deployedVersion2), 1);
         assertFalse("New major is incompatible", applications.compatibleWith(Optional.of(nodeVersion0), app1));
 
         Version nodeVersion1 = Version.fromString("8.0");
@@ -191,7 +191,7 @@ public class TenantApplicationsTest {
         final AtomicInteger removed = new AtomicInteger(0);
 
         @Override
-        public void configActivated(ApplicationSet application) {
+        public void configActivated(ApplicationVersions application) {
             activated.incrementAndGet();
         }
 
@@ -210,12 +210,12 @@ public class TenantApplicationsTest {
         ApplicationId applicationId = ApplicationId.defaultId();
         applications.createApplication(applicationId);
         applications.createPutTransaction(applicationId, 1).commit();
-        applications.activateApplication(ApplicationSet.from(new Application(model,
-                                                                             new ServerCache(),
-                                                                             1,
-                                                                             vespaVersion,
-                                                                             MetricUpdater.createTestUpdater(),
-                                                                             applicationId)),
+        applications.activateApplication(ApplicationVersions.from(new Application(model,
+                                                                                  new ServerCache(),
+                                                                                  1,
+                                                                                  vespaVersion,
+                                                                                  MetricUpdater.createTestUpdater(),
+                                                                                  applicationId)),
                                          1);
         Set<ConfigKey<?>> configNames = applications.listConfigs(applicationId, Optional.of(vespaVersion), false);
         assertTrue(configNames.contains(new ConfigKey<>("sentinel", "hosts", "cloud.config")));

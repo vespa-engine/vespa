@@ -17,7 +17,7 @@ import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
@@ -107,12 +107,12 @@ public class TenantRepositoryTest {
         ApplicationId id = ApplicationId.from(tenant1, ApplicationName.defaultName(), InstanceName.defaultName());
         applicationRepo.createApplication(id);
         applicationRepo.createPutTransaction(id, 4).commit();
-        applicationRepo.activateApplication(ApplicationSet.from(new Application(new VespaModel(MockApplicationPackage.createEmpty()),
-                                                                                new ServerCache(),
-                                                                                4L,
-                                                                                new Version(1, 2, 3),
-                                                                                MetricUpdater.createTestUpdater(),
-                                                                                id)),
+        applicationRepo.activateApplication(ApplicationVersions.from(new Application(new VespaModel(MockApplicationPackage.createEmpty()),
+                                                                                     new ServerCache(),
+                                                                                     4L,
+                                                                                     new Version(1, 2, 3),
+                                                                                     MetricUpdater.createTestUpdater(),
+                                                                                     id)),
                                             4);
         assertEquals(1, listener.activated.get());
     }

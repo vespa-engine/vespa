@@ -16,14 +16,14 @@ import java.util.Optional;
  *
  * @author vegard
  */
-public final class ApplicationSet {
+public final class ApplicationVersions {
 
     private final Version latestVersion;
     private final ApplicationId applicationId;
     private final long generation;
     private final HashMap<Version, Application> applications = new HashMap<>();
 
-    private ApplicationSet(List<Application> applications) {
+    private ApplicationVersions(List<Application> applications) {
         if (applications.isEmpty()) throw new IllegalArgumentException("application list cannot be empty");
 
         Application firstApp = applications.get(0);
@@ -44,12 +44,12 @@ public final class ApplicationSet {
         latestVersion = this.applications.keySet().stream().max(Version::compareTo).get();
     }
 
-    public static ApplicationSet fromList(List<Application> applications) {
-        return new ApplicationSet(applications);
+    public static ApplicationVersions fromList(List<Application> applications) {
+        return new ApplicationVersions(applications);
     }
 
     // For testing
-    public static ApplicationSet from(Application application) {
+    public static ApplicationVersions from(Application application) {
         return fromList(List.of(application));
     }
 
@@ -86,7 +86,7 @@ public final class ApplicationSet {
 
     public ApplicationId getId() { return applicationId; }
 
-    public Collection<String> getAllHosts() {
+    public Collection<String> allHosts() {
         return applications.values().stream()
                 .flatMap(app -> app.getModel().getHosts().stream()
                         .map(HostInfo::getHostname))
@@ -97,15 +97,15 @@ public final class ApplicationSet {
         applications.values().forEach(app -> app.updateHostMetrics(app.getModel().getHosts().size()));
     }
 
-    public long getApplicationGeneration() {
+    public long applicationGeneration() {
         return generation;
     }
 
-    List<Application> getAllApplications() {
+    List<Application> applications() {
         return new ArrayList<>(applications.values());
     }
 
-    public List<Version> getAllVersions(ApplicationId applicationId) {
+    public List<Version> versions(ApplicationId applicationId) {
         return applications.values().stream()
                 .filter(application -> application.getId().equals(applicationId))
                 .map(Application::getVespaVersion)

@@ -215,29 +215,29 @@ public class TenantApplications implements RequestHandler, HostValidator {
         return application.resolveConfig(req, responseFactory);
     }
 
-    private void notifyConfigActivationListeners(ApplicationSet applicationSet) {
-        List<Application> applications = applicationSet.getAllApplications();
+    private void notifyConfigActivationListeners(ApplicationVersions applicationVersions) {
+        List<Application> applications = applicationVersions.applications();
         if (applications.isEmpty()) throw new IllegalArgumentException("application set cannot be empty");
 
-        hostRegistry.update(applications.get(0).getId(), applicationSet.getAllHosts());
-        configActivationListener.configActivated(applicationSet);
+        hostRegistry.update(applications.get(0).getId(), applicationVersions.allHosts());
+        configActivationListener.configActivated(applicationVersions);
     }
 
     /**
      * Activates the config of the given app. Notifies listeners
      *
-     * @param applicationSet the {@link ApplicationSet} to be activated
+     * @param applicationVersions the {@link ApplicationVersions} to be activated
      */
-    public void activateApplication(ApplicationSet applicationSet, long activeSessionId) {
-        ApplicationId id = applicationSet.getId();
+    public void activateApplication(ApplicationVersions applicationVersions, long activeSessionId) {
+        ApplicationId id = applicationVersions.getId();
         try (@SuppressWarnings("unused") Lock lock = lock(id)) {
             if ( ! exists(id))
                 return; // Application was deleted before activation.
-            if (applicationSet.getApplicationGeneration() != activeSessionId)
+            if (applicationVersions.applicationGeneration() != activeSessionId)
                 return; // Application activated a new session before we got here.
 
-            setActiveApp(applicationSet);
-            notifyConfigActivationListeners(applicationSet);
+            setActiveApp(applicationVersions);
+            notifyConfigActivationListeners(applicationVersions);
         }
     }
 
@@ -281,13 +281,13 @@ public class TenantApplications implements RequestHandler, HostValidator {
         configActivationListener.applicationRemoved(applicationId);
     }
 
-    private void setActiveApp(ApplicationSet applicationSet) {
-        ApplicationId applicationId = applicationSet.getId();
-        Collection<String> hostsForApp = applicationSet.getAllHosts();
+    private void setActiveApp(ApplicationVersions applicationVersions) {
+        ApplicationId applicationId = applicationVersions.getId();
+        Collection<String> hostsForApp = applicationVersions.allHosts();
         hostRegistry.update(applicationId, hostsForApp);
-        applicationSet.updateHostMetrics();
+        applicationVersions.updateHostMetrics();
         tenantMetricUpdater.setApplications(applicationMapper.numApplications());
-        applicationMapper.register(applicationId, applicationSet);
+        applicationMapper.register(applicationId, applicationVersions);
     }
 
     @Override
