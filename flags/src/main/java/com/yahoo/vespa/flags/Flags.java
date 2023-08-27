@@ -351,13 +351,13 @@ public class Flags {
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmuusm"), "2023-07-19", "2023-09-01",
+            List.of("hmusum"), "2023-07-19", "2023-09-01",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmuusm"), "2023-07-19", "2023-09-01",
+            List.of("hmusum"), "2023-07-19", "2023-09-01",
             "Whether to read config server session data from sesion data blob or from individual paths",
             "Takes effect immediately");
 
@@ -373,6 +373,18 @@ public class Flags {
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
+
+    public static final UnboundBooleanFlag WRITE_APPLICATION_DATA_AD_JSON = defineFeatureFlag(
+            "write-application-data-as-json", false,
+            List.of("hmusum"), "2023-08-27", "2023-09-27",
+            "Whether to write application data (active session id, last deployed session id etc. ) as json",
+            "Takes effect immediately");
+
+    public static final UnboundBooleanFlag READ_APPLICATION_DATA_AS_JSON = defineFeatureFlag(
+            "read-application-data-as-json", false,
+            List.of("hmusum"), "2023-08-27", "2023-09-27",
+            "Whether to read application data (active session id, last deployed session id etc. ) as json",
+            "Takes effect immediately");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
