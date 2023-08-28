@@ -212,7 +212,7 @@ public class DeploymentSpec {
                                  .or(this::hostTTL);
     }
 
-    public Optional<Duration> hostTTL() { return hostTTL; }
+    Optional<Duration> hostTTL() { return hostTTL; }
 
     /**
      * Returns the most specific zone endpoint, where specificity is given, in decreasing order:

@@ -80,11 +80,13 @@ public final class ConfigModelContext {
         DeploymentSpec spec = getApplicationPackage().getDeploymentSpec();
         ClusterInfo.Builder builder = new ClusterInfo.Builder();
         spec.hostTTL(properties().applicationId().instance(), deployState.zone().environment(), deployState.zone().region())
+            .filter(ttl -> ! ttl.isZero())
             .ifPresent(ttl -> {
                 ZoneId zoneId = ZoneId.from(deployState.zone().environment(), deployState.zone().region());
                 if (spec.cloudAccount(deployState.zone().cloud().name(), properties().applicationId().instance(), zoneId).isUnspecified())
                     throw new IllegalArgumentException("deployment spec specifies host TTL for " + zoneId +
                                                        " but no cloud account is specified for this zone");
+                builder.hostTTL(ttl);
             });
         spec.instance(properties().applicationId().instance())
             .flatMap(instance -> instance.bcp().groups().stream()
