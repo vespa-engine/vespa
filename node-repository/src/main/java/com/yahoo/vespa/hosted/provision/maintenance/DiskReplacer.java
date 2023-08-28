@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 public class DiskReplacer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(DiskReplacer.class.getName());
+    private static final int maxBatchSize = 100;
 
     private final HostProvisioner hostProvisioner;
     private final ExecutorService executor = Executors.newCachedThreadPool(new DaemonThreadFactory("disk-replacer"));
@@ -42,13 +43,12 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
     @Override
     protected double maintain() {
         NodeList nodes = nodeRepository().nodes().list().rebuilding(true);
-        int attempts = 0;
+        int rebuilding = 0;
         int failures = 0;
         try (var locked = nodeRepository().nodes().lockAndGetAll(nodes.asList(), Optional.of(Duration.ofSeconds(10)))) {
             Map<String, Future<Node>> rebuilt = new HashMap<>();
             for (NodeMutex node : locked.nodes()) {
-                if (node.node().status().wantToRebuild()) {
-                    ++attempts;
+                if (node.node().status().wantToRebuild() && ++rebuilding <= maxBatchSize) {
                     rebuilt.put(node.node().hostname(), executor.submit(() -> hostProvisioner.replaceRootDisk(node.node())));
                 }
             }
@@ -70,7 +70,7 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
                 }
             }
         }
-        return this.asSuccessFactorDeviation(attempts, failures);
+        return this.asSuccessFactorDeviation(rebuilding, failures);
     }
 
     @Override
