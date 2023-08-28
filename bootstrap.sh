@@ -66,6 +66,12 @@ $top/dist/getversionmap.sh $top > $top/dist/vtag.map
 # Set up maven wrapper. TODO: use here and in vespa build.
 echo "Setting up maven wrapper in $(pwd)"
 mvn wrapper:wrapper -Dmaven=3.8.8 -f maven-plugins/pom.xml
+rm -rf .mvn
+cp -r maven-plugins/.mvn maven-plugins/mvnw .
+rm -rf maven-plugins/.mvn
+rm -f maven-plugins/mvnw*
+echo "Using maven command: ${MAVEN_CMD}"
+${MAVEN_CMD} -v
 
 # must install parent poms first:
 echo "Downloading all dependencies. This may take a few minutes with an empty Maven cache."
