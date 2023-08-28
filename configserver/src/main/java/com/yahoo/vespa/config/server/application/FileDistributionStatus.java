@@ -100,16 +100,9 @@ public class FileDistributionStatus extends AbstractComponent {
         int countFinished = 0;
         for (HostStatus hostStatus : hostStatuses) {
             switch (hostStatus.status) {
-                case IN_PROGRESS:
-                    countInProgress++;
-                    break;
-                case FINISHED:
-                    countFinished++;
-                    break;
-                case UNKNOWN:
-                    countUnknown++;
-                    break;
-                default:
+                case IN_PROGRESS -> countInProgress++;
+                case FINISHED -> countFinished++;
+                case UNKNOWN -> countUnknown++;
             }
         }
 

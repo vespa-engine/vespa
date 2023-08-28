@@ -7,7 +7,7 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -112,8 +112,8 @@ public class SuperModelRequestHandlerTest {
         assertTrue(controller.hasApplication(ApplicationId.global(), Optional.empty()));
     }
 
-    private ApplicationSet createApp(ApplicationId applicationId, long generation) throws IOException, SAXException {
-        return ApplicationSet.from(
+    private ApplicationVersions createApp(ApplicationId applicationId, long generation) throws IOException, SAXException {
+        return ApplicationVersions.from(
                 new TestApplication(
                         new VespaModel(FilesApplicationPackage.fromFile(testApp)),
                         new ServerCache(),

@@ -11,10 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toUnmodifiableMap;
-
 /**
  * Pending reindexing: convergence to the stored config generation allows reindexing to start.
  * Ready reindexing: reindexing may start after this timestamp.

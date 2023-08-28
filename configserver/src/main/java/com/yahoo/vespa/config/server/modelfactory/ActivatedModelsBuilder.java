@@ -19,7 +19,7 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -51,7 +51,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final TenantName tenant;
     private final long applicationGeneration;
     private final SessionZooKeeperClient zkClient;
-    private final Optional<ApplicationSet> currentActiveApplicationSet;
+    private final Optional<ApplicationVersions> activeApplicationVersions;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Metrics metrics;
     private final Curator curator;
@@ -62,7 +62,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     public ActivatedModelsBuilder(TenantName tenant,
                                   long applicationGeneration,
                                   SessionZooKeeperClient zkClient,
-                                  Optional<ApplicationSet> currentActiveApplicationSet,
+                                  Optional<ApplicationVersions> activeApplicationVersions,
                                   ExecutorService executor,
                                   Curator curator,
                                   Metrics metrics,
@@ -77,7 +77,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.tenant = tenant;
         this.applicationGeneration = applicationGeneration;
         this.zkClient = zkClient;
-        this.currentActiveApplicationSet = currentActiveApplicationSet;
+        this.activeApplicationVersions = activeApplicationVersions;
         this.configDefinitionRepo = configDefinitionRepo;
         this.metrics = metrics;
         this.curator = curator;
@@ -122,8 +122,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     }
 
     private Optional<Model> modelOf(Version version) {
-        if (currentActiveApplicationSet.isEmpty()) return Optional.empty();
-        return currentActiveApplicationSet.get().get(version).map(Application::getModel);
+        if (activeApplicationVersions.isEmpty()) return Optional.empty();
+        return activeApplicationVersions.get().get(version).map(Application::getModel);
     }
 
     private static <T> Optional<T> getForVersionOrLatest(Map<Version, T> map, Version version) {

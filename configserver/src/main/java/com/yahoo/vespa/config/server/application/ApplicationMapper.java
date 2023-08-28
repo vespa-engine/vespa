@@ -21,20 +21,20 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ApplicationMapper {
 
-    private final Map<ApplicationId, ApplicationSet> requestHandlers = new ConcurrentHashMap<>();
+    private final Map<ApplicationId, ApplicationVersions> requestHandlers = new ConcurrentHashMap<>();
 
-    private ApplicationSet getApplicationSet(ApplicationId applicationId) {
-        ApplicationSet set = requestHandlers.get(applicationId);
-        if (set == null) throw new NotFoundException("No such application id: " + applicationId);
+    private ApplicationVersions applicationVersions(ApplicationId applicationId) {
+        ApplicationVersions versions = requestHandlers.get(applicationId);
+        if (versions == null) throw new NotFoundException("No such application id: " + applicationId);
 
-        return set;
+        return versions;
     }
 
     /**
-     * Register a Application to an application id and specific vespa version
+     * Register an Application to an application id and specific vespa version
      */
-    public void register(ApplicationId applicationId, ApplicationSet applicationSet) {
-        requestHandlers.put(applicationId, applicationSet);
+    public void register(ApplicationId applicationId, ApplicationVersions applicationVersions) {
+        requestHandlers.put(applicationId, applicationVersions);
     }
 
     /**
@@ -45,12 +45,12 @@ public final class ApplicationMapper {
     }
 
     /**
-     * Retrieve the Application corresponding to this application id and specific vespa version.
+     * Retrieve the Application corresponding to this application id and specified vespa version.
      *
      * @return the matching application, or null if none matches
      */
     public Application getForVersion(ApplicationId applicationId, Optional<Version> vespaVersion, Instant now) throws VersionDoesNotExistException {
-        return getApplicationSet(applicationId).getForVersionOrLatest(vespaVersion, now);
+        return applicationVersions(applicationId).getForVersionOrLatest(vespaVersion, now);
     }
 
     /** Returns whether this registry has an application for the given application id */
@@ -80,7 +80,7 @@ public final class ApplicationMapper {
     }
 
     public List<Application> listApplications(ApplicationId applicationId) {
-        return requestHandlers.get(applicationId).getAllApplications();
+        return requestHandlers.get(applicationId).applications();
     }
 
 }

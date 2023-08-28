@@ -19,7 +19,7 @@ import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
@@ -115,11 +115,11 @@ public class SessionRepositoryTest {
         assertNotNull(sessionRepository.getLocalSession(secondSessionId));
         assertNull(sessionRepository.getLocalSession(secondSessionId + 1));
 
-        ApplicationSet applicationSet = sessionRepository.ensureApplicationLoaded(sessionRepository.getRemoteSession(firstSessionId));
-        assertNotNull(applicationSet);
-        assertEquals(2, applicationSet.getApplicationGeneration());
-        assertEquals(applicationId.application(), applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId().application());
-        assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getModel());
+        ApplicationVersions applicationVersions = sessionRepository.ensureApplicationLoaded(sessionRepository.getRemoteSession(firstSessionId));
+        assertNotNull(applicationVersions);
+        assertEquals(2, applicationVersions.applicationGeneration());
+        assertEquals(applicationId.application(), applicationVersions.getForVersionOrLatest(Optional.empty(), Instant.now()).getId().application());
+        assertNotNull(applicationVersions.getForVersionOrLatest(Optional.empty(), Instant.now()).getModel());
 
         LocalSession session = sessionRepository.getLocalSession(secondSessionId);
         Collection<NamedReader> a = session.applicationPackage.get().getSchemas();

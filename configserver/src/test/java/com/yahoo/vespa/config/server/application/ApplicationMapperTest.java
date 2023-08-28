@@ -38,7 +38,7 @@ public class ApplicationMapperTest {
 
     @Test
     public void testGetForVersionReturnsCorrectVersion() {
-        applicationMapper.register(appId, ApplicationSet.fromList(applications));
+        applicationMapper.register(appId, ApplicationVersions.fromList(applications));
         assertEquals(applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(0)), Instant.now()), applications.get(0));
         assertEquals(applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(1)), Instant.now()), applications.get(1));
         assertEquals(applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(2)), Instant.now()), applications.get(2));
@@ -46,19 +46,19 @@ public class ApplicationMapperTest {
 
     @Test
     public void testGetForVersionReturnsLatestVersion() {
-        applicationMapper.register(appId, ApplicationSet.fromList(applications));
+        applicationMapper.register(appId, ApplicationVersions.fromList(applications));
         assertEquals(applicationMapper.getForVersion(appId, Optional.empty(), Instant.now()), applications.get(2));
     }
 
     @Test (expected = VersionDoesNotExistException.class)
     public void testGetForVersionThrows() {
-        applicationMapper.register(appId, ApplicationSet.fromList(Arrays.asList(applications.get(0), applications.get(2))));
+        applicationMapper.register(appId, ApplicationVersions.fromList(Arrays.asList(applications.get(0), applications.get(2))));
         applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(1)), Instant.now());
     }
 
     @Test (expected = NotFoundException.class)
     public void testGetForVersionThrows2() {
-        applicationMapper.register(appId, ApplicationSet.from(applications.get(0)));
+        applicationMapper.register(appId, ApplicationVersions.from(applications.get(0)));
 
         applicationMapper.getForVersion(new ApplicationId.Builder()
                                                 .tenant("different")

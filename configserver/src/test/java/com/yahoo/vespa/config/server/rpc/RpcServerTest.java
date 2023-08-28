@@ -25,7 +25,7 @@ import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
@@ -142,7 +142,7 @@ public class RpcServerTest {
                                           new Version(1, 2, 3),
                                           MetricUpdater.createTestUpdater(),
                                           applicationId);
-        ApplicationSet appSet = ApplicationSet.from(app);
+        ApplicationVersions appSet = ApplicationVersions.from(app);
         tester.rpcServer().configActivated(appSet);
         ConfigKey<?> key = new ConfigKey<>(LbServicesConfig.class, "*");
         JRTClientConfigRequest clientReq  = createRequest(new RawConfig(key, LbServicesConfig.getDefMd5()));
