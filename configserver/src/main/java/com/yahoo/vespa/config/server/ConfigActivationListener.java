@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.application.ApplicationVersions;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 
 /**
  * A ConfigActivationListener is used to signal to a component that config has been
@@ -20,7 +20,7 @@ public interface ConfigActivationListener {
      *
      * Must be thread-safe.
      */
-    void configActivated(ApplicationVersions application);
+    void configActivated(ApplicationSet application);
 
     /**
      * Application has been removed.

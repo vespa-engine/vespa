@@ -44,7 +44,7 @@ import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
-import com.yahoo.vespa.config.server.application.ApplicationVersions;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
@@ -658,10 +658,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Tenant tenant = getTenant(applicationId);
         if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
 
-        Optional<ApplicationVersions> activeApplicationVersions = tenant.getSessionRepository().activeApplicationVersions(applicationId);
-        if (activeApplicationVersions.isEmpty()) throw new NotFoundException("Unknown application id '" + applicationId + "'");
+        Optional<ApplicationSet> activeApplicationSet = tenant.getSessionRepository().getActiveApplicationSet(applicationId);
+        if (activeApplicationSet.isEmpty()) throw new NotFoundException("Unknown application id '" + applicationId + "'");
 
-        return activeApplicationVersions.get().getForVersionOrLatest(version, clock.instant());
+        return activeApplicationSet.get().getForVersionOrLatest(version, clock.instant());
     }
 
     // Will return Optional.empty() if getting application fails (instead of throwing an exception)
@@ -706,10 +706,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public List<Version> getAllVersions(ApplicationId applicationId) {
-        Optional<ApplicationVersions> applicationSet = getActiveApplicationSet(applicationId);
+        Optional<ApplicationSet> applicationSet = getActiveApplicationSet(applicationId);
         return applicationSet.isEmpty()
                 ? List.of()
-                : applicationSet.get().versions(applicationId);
+                : applicationSet.get().getAllVersions(applicationId);
     }
 
     public HttpResponse validateSecretStore(ApplicationId applicationId, SystemName systemName, Slime slime) {
@@ -1018,8 +1018,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session;
     }
 
-    public Optional<ApplicationVersions> getActiveApplicationSet(ApplicationId appId) {
-        return getTenant(appId).getSessionRepository().activeApplicationVersions(appId);
+    public Optional<ApplicationSet> getActiveApplicationSet(ApplicationId appId) {
+        return getTenant(appId).getSessionRepository().getActiveApplicationSet(appId);
     }
 
     public Application getActiveApplication(ApplicationId applicationId) {

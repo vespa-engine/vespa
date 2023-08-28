@@ -34,7 +34,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.ApplicationVersions;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
@@ -125,14 +125,14 @@ public class SessionPreparer {
      * @param hostValidator               host validator
      * @param logger                      for storing logs returned in response to client.
      * @param params                      parameters controlling behaviour of prepare.
-     * @param activeApplicationVersions   active application versions.
+     * @param activeApplicationSet        set of currently active applications.
      * @return the config change actions that must be done to handle the activation of the models prepared.
      */
     public PrepareResult prepare(HostValidator hostValidator, DeployLogger logger, PrepareParams params,
-                                 Optional<ApplicationVersions> activeApplicationVersions, Instant now, File serverDbSessionDir,
+                                 Optional<ApplicationSet> activeApplicationSet, Instant now, File serverDbSessionDir,
                                  ApplicationPackage applicationPackage, SessionZooKeeperClient sessionZooKeeperClient) {
         ApplicationId applicationId = params.getApplicationId();
-        Preparation preparation = new Preparation(hostValidator, logger, params, activeApplicationVersions,
+        Preparation preparation = new Preparation(hostValidator, logger, params, activeApplicationSet,
                                                   TenantRepository.getTenantPath(applicationId.tenant()),
                                                   serverDbSessionDir, applicationPackage, sessionZooKeeperClient);
         preparation.preprocess();
@@ -184,7 +184,7 @@ public class SessionPreparer {
         private final FileRegistry fileRegistry;
 
         Preparation(HostValidator hostValidator, DeployLogger logger, PrepareParams params,
-                    Optional<ApplicationVersions> activeApplicationVersions, Path tenantPath,
+                    Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
                     File serverDbSessionDir, ApplicationPackage applicationPackage,
                     SessionZooKeeperClient sessionZooKeeperClient) {
             this.logger = logger;
@@ -217,7 +217,7 @@ public class SessionPreparer {
                                                                    hostValidator,
                                                                    logger,
                                                                    params,
-                                                                   activeApplicationVersions,
+                                                                   currentActiveApplicationSet,
                                                                    configserverConfig,
                                                                    zone);
         }

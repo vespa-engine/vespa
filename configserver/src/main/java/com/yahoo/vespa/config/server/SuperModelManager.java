@@ -11,7 +11,7 @@ import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.GenerationCounter;
-import com.yahoo.vespa.config.server.application.ApplicationVersions;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.model.SuperModelConfigProvider;
 import com.yahoo.vespa.flags.FlagSource;
 
@@ -89,10 +89,10 @@ public class SuperModelManager implements SuperModelProvider {
         }
     }
 
-    public void configActivated(ApplicationVersions applicationVersions) {
+    public void configActivated(ApplicationSet applicationSet) {
         synchronized (monitor) {
             // TODO: Should supermodel care about multiple versions?
-            ApplicationInfo applicationInfo = applicationVersions
+            ApplicationInfo applicationInfo = applicationSet
                     .getForVersionOrLatest(Optional.empty(), Instant.now())
                     .toApplicationInfo();
 

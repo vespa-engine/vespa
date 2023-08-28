@@ -31,7 +31,7 @@ import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
-import com.yahoo.vespa.config.server.application.ApplicationVersions;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -44,7 +44,6 @@ import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReceiver;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
-
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
@@ -62,13 +61,12 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
-import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.WARNING;
 
 /**
  * An RPC server class that handles the config protocol RPC method "getConfigV3".
@@ -79,6 +77,8 @@ import static java.util.logging.Level.WARNING;
 // TODO: Split business logic out of this
 public class RpcServer implements Runnable, ConfigActivationListener, TenantListener {
 
+    static final String getConfigMethodName = "getConfigV3";
+    
     private static final int TRACELEVEL = 6;
     static final int TRACELEVEL_DEBUG = 9;
     private static final String THREADPOOL_NAME = "rpcserver worker pool";
@@ -158,6 +158,9 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
      * Uses the template pattern to call methods in classes that extend RpcServer.
      */
     private void getConfigV3(Request req) {
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, getConfigMethodName);
+        }
         req.detach();
         rpcAuthorizer.authorizeConfigRequest(req)
                 .thenRun(() -> addToRequestQueue(JRTServerConfigRequestV3.createFromRequest(req)));
@@ -181,7 +184,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
 
     @Override
     public void run() {
-        log.log(FINE, "Rpc server will listen on port " + spec.port());
+        log.log(Level.FINE, "Rpc server will listen on port " + spec.port());
         try {
             Acceptor acceptor = supervisor.listen(spec);
             isRunning = true;
@@ -257,23 +260,25 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
      * This method should be called when config is activated in the server.
      */
     @Override
-    public void configActivated(ApplicationVersions applicationVersions) {
-        ApplicationId applicationId = applicationVersions.getId();
+    public void configActivated(ApplicationSet applicationSet) {
+        ApplicationId applicationId = applicationSet.getId();
         ApplicationState state = getState(applicationId);
-        state.setActiveGeneration(applicationVersions.applicationGeneration());
-        reloadSuperModel(applicationVersions);
+        state.setActiveGeneration(applicationSet.getApplicationGeneration());
+        reloadSuperModel(applicationSet);
         configActivated(applicationId);
     }
 
-    private void reloadSuperModel(ApplicationVersions applicationVersions) {
-        superModelRequestHandler.activateConfig(applicationVersions);
+    private void reloadSuperModel(ApplicationSet applicationSet) {
+        superModelRequestHandler.activateConfig(applicationSet);
         configActivated(ApplicationId.global());
     }
 
     void configActivated(ApplicationId applicationId) {
         List<DelayedConfigResponses.DelayedConfigResponse> responses = delayedConfigResponses.drainQueue(applicationId);
         String logPre = TenantRepository.logPre(applicationId);
-        log.log(FINE, () -> logPre + "Start of configActivated: " + responses.size() + " requests on delayed requests queue");
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, logPre + "Start of configActivated: " + responses.size() + " requests on delayed requests queue");
+        }
         int responsesSent = 0;
         CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
         while (!responses.isEmpty()) {
@@ -282,13 +287,15 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
             // Doing cancel here deals with the case where the timer is already running or has not run, so
             // there is no need for any extra check.
             if (delayedConfigResponse.cancel()) {
-                log.log(FINE, () -> logPre + "Timer cancelled for " + delayedConfigResponse.request);
+                if (log.isLoggable(Level.FINE)) {
+                    logRequestDebug(Level.FINE, logPre + "Timer cancelled for ", delayedConfigResponse.request);
+                }
                 // Do not wait for this request if we were unable to execute
                 if (addToRequestQueue(delayedConfigResponse.request, false, completionService)) {
                     responsesSent++;
                 }
             } else {
-                log.log(FINE, () -> logPre + "Timer already cancelled or finished or never scheduled");
+                log.log(Level.FINE, () -> logPre + "Timer already cancelled or finished or never scheduled");
             }
         }
 
@@ -298,6 +305,15 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+        }
+
+        if (log.isLoggable(Level.FINE))
+            log.log(Level.FINE, logPre + "Finished activating " + responsesSent + " requests");
+    }
+
+    private void logRequestDebug(Level level, String message, JRTServerConfigRequest request) {
+        if (log.isLoggable(level)) {
+            log.log(level, message + request.getShortDescription());
         }
     }
 
@@ -309,7 +325,9 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
     }
 
     public void respond(JRTServerConfigRequest request) {
-        log.log(FINE, () -> "Trace when responding:\n" + request.getRequestTrace().toString());
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Trace at request return:\n" + request.getRequestTrace().toString());
+        }
         request.getRequest().returnRequest();
     }
 
@@ -326,7 +344,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
             if (GetConfigProcessor.logDebug(trace)) {
                 String message = "Did not find tenant for host '" + hostname + "', using " + TenantName.defaultName() +
                                  ". Hosts in host registry: " + hostRegistry.getAllHosts();
-                log.log(FINE, () -> message);
+                log.log(Level.FINE, () -> message);
                 trace.trace(6, message);
             }
             return Optional.empty();
@@ -350,6 +368,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
     public Boolean addToRequestQueue(JRTServerConfigRequest request, boolean forceResponse, CompletionService<Boolean> completionService) {
         // It's no longer delayed if we get here
         request.setDelayedResponse(false);
+        //ConfigDebug.logDebug(log, System.currentTimeMillis(), request.getConfigKey(), "RpcServer.addToRequestQueue()");
         try {
             final GetConfigProcessor task = new GetConfigProcessor(this, request, forceResponse);
             if (completionService == null) {
@@ -386,7 +405,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                          "'. Request from host '" + request.getClientHostName() + "'";
             metrics.incUnknownHostRequests();
             trace.trace(TRACELEVEL, msg);
-            log.log(WARNING, msg);
+            log.log(Level.WARNING, msg);
             return GetConfigContext.empty();
         }
         RequestHandler handler = requestHandler.get();
@@ -411,7 +430,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
 
     @Override
     public void onTenantDelete(TenantName tenant) {
-        log.log(FINE, () -> TenantRepository.logPre(tenant) +
+        log.log(Level.FINE, () -> TenantRepository.logPre(tenant) +
                             "Tenant deleted, removing request handler and cleaning host registry");
         tenants.remove(tenant);
     }
@@ -481,8 +500,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
             Request request = createMetaRequest(fileData);
             invokeRpcIfValidConnection(request);
             if (request.isError()) {
-                log.log(WARNING, () -> "Failed delivering meta for reference '" + fileData.fileReference().value() +
-                        "' with file '" + fileData.filename() + "' to " +
+                log.warning("Failed delivering meta for reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
                         target.toString() + " with error: '" + request.errorMessage() + "'.");
                 return 1;
             } else {
@@ -501,7 +519,6 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
             request.parameters().add(new StringValue(fileData.type().name()));
             request.parameters().add(new Int64Value(fileData.size()));
             // Only add parameter if not gzip, this is default and old clients will not handle the extra parameter
-            // TODO Always add parameter in Vespa 9
             if (fileData.compressionType() != CompressionType.gzip)
                 request.parameters().add(new StringValue(fileData.compressionType().name()));
             return request;
@@ -567,6 +584,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                         acceptedCompressionTypes = Arrays.stream(request.parameters().get(2).asStringArray())
                                                          .map(CompressionType::valueOf)
                                                          .collect(Collectors.toSet());
+                    log.log(Level.FINE, "acceptedCompressionTypes=" + acceptedCompressionTypes);
 
                     fileServer.serveFile(reference, downloadFromOtherSourceIfNotFound, acceptedCompressionTypes, request, receiver);
                 });

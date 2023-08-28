@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.application.ApplicationVersions;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -15,7 +15,7 @@ import java.util.Optional;
  */
 public class RemoteSession extends Session {
 
-    private final Optional<ApplicationVersions> applicationVersions;
+    private final Optional<ApplicationSet> applicationSet;
 
     /**
      * Creates a session. This involves loading the application, validating it and distributing it.
@@ -36,17 +36,17 @@ public class RemoteSession extends Session {
      * @param zooKeeperClient a SessionZooKeeperClient instance
      * @param applicationSet current application set for this session
      */
-    RemoteSession(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient, Optional<ApplicationVersions> applicationSet) {
+    RemoteSession(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient, Optional<ApplicationSet> applicationSet) {
         super(tenant, sessionId, zooKeeperClient);
-        this.applicationVersions = applicationSet;
+        this.applicationSet = applicationSet;
     }
 
     @Override
-    public Optional<ApplicationVersions> applicationVersions() { return applicationVersions; }
+    public Optional<ApplicationSet> applicationSet() { return applicationSet; }
 
-    public synchronized RemoteSession activated(ApplicationVersions applicationVersions) {
-        Objects.requireNonNull(applicationVersions, "applicationVersions cannot be null");
-        return new RemoteSession(tenant, sessionId, sessionZooKeeperClient, Optional.of(applicationVersions));
+    public synchronized RemoteSession activated(ApplicationSet applicationSet) {
+        Objects.requireNonNull(applicationSet, "applicationSet cannot be null");
+        return new RemoteSession(tenant, sessionId, sessionZooKeeperClient, Optional.of(applicationSet));
     }
 
     public synchronized RemoteSession deactivated() {
@@ -55,7 +55,7 @@ public class RemoteSession extends Session {
 
     @Override
     public String toString() {
-        return super.toString() + ",application set=" + applicationVersions;
+        return super.toString() + ",application set=" + applicationSet;
     }
 
 }

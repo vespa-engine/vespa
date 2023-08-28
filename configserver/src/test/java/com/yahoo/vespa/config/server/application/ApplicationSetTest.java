@@ -18,9 +18,9 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Vegard Sjonfjell
  */
-public class ApplicationVersionsTest {
+public class ApplicationSetTest {
 
-    private ApplicationVersions applicationVersions;
+    private ApplicationSet applicationSet;
     private final List<Version> vespaVersions = new ArrayList<>();
     private final List<Application> applications = new ArrayList<>();
 
@@ -32,29 +32,29 @@ public class ApplicationVersionsTest {
 
     @Test
     public void testGetForVersionOrLatestReturnsCorrectVersion() {
-        applicationVersions = ApplicationVersions.fromList(applications);
-        assertEquals(applicationVersions.getForVersionOrLatest(Optional.of(vespaVersions.get(0)), Instant.now()), applications.get(0));
-        assertEquals(applicationVersions.getForVersionOrLatest(Optional.of(vespaVersions.get(1)), Instant.now()), applications.get(1));
-        assertEquals(applicationVersions.getForVersionOrLatest(Optional.of(vespaVersions.get(2)), Instant.now()), applications.get(2));
+        applicationSet = ApplicationSet.fromList(applications);
+        assertEquals(applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(0)), Instant.now()), applications.get(0));
+        assertEquals(applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(1)), Instant.now()), applications.get(1));
+        assertEquals(applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(2)), Instant.now()), applications.get(2));
     }
 
     @Test
     public void testGetForVersionOrLatestReturnsLatestVersion() {
-        applicationVersions = ApplicationVersions.fromList(applications);
-        assertEquals(applicationVersions.getForVersionOrLatest(Optional.empty(), Instant.now()), applications.get(2));
+        applicationSet = ApplicationSet.fromList(applications);
+        assertEquals(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()), applications.get(2));
     }
 
     @Test (expected = VersionDoesNotExistException.class)
     public void testGetForVersionOrLatestThrows() {
-        applicationVersions = ApplicationVersions.fromList(Arrays.asList(applications.get(0), applications.get(2)));
-        applicationVersions.getForVersionOrLatest(Optional.of(vespaVersions.get(1)), Instant.now());
+        applicationSet = ApplicationSet.fromList(Arrays.asList(applications.get(0), applications.get(2)));
+        applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(1)), Instant.now());
     }
 
     @Test
     public void testGetAllVersions() {
-        applicationVersions = ApplicationVersions.fromList(applications);
+        applicationSet = ApplicationSet.fromList(applications);
         assertEquals(List.of(Version.fromString("1.2.3"), Version.fromString("1.2.4"), Version.fromString("1.2.5")),
-                     applicationVersions.versions(ApplicationId.defaultId()));
+                     applicationSet.getAllVersions(ApplicationId.defaultId()));
     }
 
     private Application createApplication(Version version) {

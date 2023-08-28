@@ -29,13 +29,14 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
-import com.yahoo.vespa.config.server.application.ApplicationVersions;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,7 +67,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private final HostValidator hostValidator;
     private final PrepareParams params;
     private final FileRegistry fileRegistry;
-    private final Optional<ApplicationVersions> activeApplicationVersions;
+    private final Optional<ApplicationSet> currentActiveApplicationSet;
     private final Curator curator;
     private final ExecutorService executor;
 
@@ -83,7 +84,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  HostValidator hostValidator,
                                  DeployLogger deployLogger,
                                  PrepareParams params,
-                                 Optional<ApplicationVersions> activeApplicationVersions,
+                                 Optional<ApplicationSet> currentActiveApplicationSet,
                                  ConfigserverConfig configserverConfig,
                                  Zone zone) {
         super(modelFactoryRegistry, configserverConfig, zone, hostProvisionerProvider, deployLogger);
@@ -96,7 +97,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         this.hostValidator = hostValidator;
         this.curator = curator;
         this.params = params;
-        this.activeApplicationVersions = activeApplicationVersions;
+        this.currentActiveApplicationSet = currentActiveApplicationSet;
         this.executor = executor;
     }
 
@@ -148,8 +149,8 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     }
 
     private Optional<Model> modelOf(Version version) {
-        if (activeApplicationVersions.isEmpty()) return Optional.empty();
-        return activeApplicationVersions.get().get(version).map(Application::getModel);
+        if (currentActiveApplicationSet.isEmpty()) return Optional.empty();
+        return currentActiveApplicationSet.get().get(version).map(Application::getModel);
     }
 
     private HostProvisioner createHostProvisioner(ApplicationPackage applicationPackage, Provisioned provisioned) {
@@ -212,7 +213,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                zone(),
                                                Set.copyOf(containerEndpoints),
                                                params.isBootstrap(),
-                                               activeApplicationVersions.isEmpty(),
+                                               currentActiveApplicationSet.isEmpty(),
                                                LegacyFlags.from(applicationPackage, flagSource),
                                                endpointCertificateSecrets,
                                                params.athenzDomain(),
