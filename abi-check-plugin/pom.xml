@@ -64,7 +64,7 @@
       <plugin>
         <groupId>org.openclover</groupId>
         <artifactId>clover-maven-plugin</artifactId>
-        <version>4.3.1</version>
+        <version>${clover-maven-plugin.vespa.version}</version>
       </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
