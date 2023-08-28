@@ -39,7 +39,7 @@ org.apache.maven.resolver:maven-resolver-impl:1.9.14
 org.apache.maven.resolver:maven-resolver-named-locks:1.9.14
 org.apache.maven.resolver:maven-resolver-spi:1.9.14
 org.apache.maven.resolver:maven-resolver-util:1.9.14
-org.apache.maven.shared:maven-dependency-tree:3.2.0
+org.apache.maven.shared:maven-dependency-tree:3.2.1
 org.apache.maven.shared:maven-shared-utils:3.3.4
 org.codehaus.plexus:plexus-archiver:4.4.0
 org.codehaus.plexus:plexus-cipher:2.0
