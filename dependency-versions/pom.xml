@@ -99,7 +99,7 @@
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
         <lucene.vespa.version>9.7.0</lucene.vespa.version>
         <maven-archiver.vespa.version>3.6.1</maven-archiver.vespa.version>
-        <maven-wagon.vespa.version>2.12</maven-wagon.vespa.version>
+        <maven-wagon.vespa.version>3.5.3</maven-wagon.vespa.version>
         <mimepull.vespa.version>1.9.6</mimepull.vespa.version>
         <mockito.vespa.version>4.0.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
