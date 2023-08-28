@@ -102,7 +102,7 @@ public:
     DistributorInfoGatherer(const lib::ClusterState& systemState,
                             std::unordered_map<uint16_t, ResultArray>& result,
                             const lib::Distribution & distribution,
-                            bool spam);
+                            bool spam) noexcept;
 
     StorBucketDatabase::Decision operator()(uint64_t bucketId, const StorBucketDatabase::Entry& data);
 
@@ -111,7 +111,7 @@ public:
 DistributorInfoGatherer::DistributorInfoGatherer(const lib::ClusterState& systemState,
                                                  std::unordered_map<uint16_t, ResultArray>& result,
                                                  const lib::Distribution & distribution,
-                                                 bool spam)
+                                                 bool spam) noexcept
         : _state(distribution, systemState),
           _result(result),
           _spam(spam)

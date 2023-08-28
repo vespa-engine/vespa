@@ -10,7 +10,7 @@ namespace storage {
 class DistributorStateCache
 {
 public:
-    DistributorStateCache(const lib::Distribution& distr, const lib::ClusterState& state)
+    DistributorStateCache(const lib::Distribution& distr, const lib::ClusterState& state) noexcept
         : _distribution(distr),
           _state(state),
           _distrBitMask(0xffffffffffffffffull),
@@ -36,11 +36,11 @@ public:
         return i;
     }
 
-    const lib::Distribution& getDistribution() const {
+    const lib::Distribution& getDistribution() const noexcept {
         return _distribution;
     }
 
-    const lib::ClusterState& getClusterState() const {
+    const lib::ClusterState& getClusterState() const noexcept {
         return _state;
     }
 
