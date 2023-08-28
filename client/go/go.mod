@@ -3,7 +3,7 @@ module github.com/vespa-engine/vespa/client/go
 go 1.19
 
 require (
-	github.com/alessio/shellescape v1.4.1
+	github.com/alessio/shellescape v1.4.2
 	github.com/briandowns/spinner v1.23.0
 	github.com/fatih/color v1.15.0
 	// This is the most recent version compatible with Go 1.19. Upgrade when we upgrade our Go version
