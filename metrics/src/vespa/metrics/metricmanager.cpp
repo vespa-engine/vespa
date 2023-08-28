@@ -486,7 +486,7 @@ MetricManager::configure(const MetricLockGuard & , std::unique_ptr<Config> confi
         _totalMetrics = std::make_shared<MetricSnapshot>("All time snapshot", 0s, _activeMetrics.getMetrics(), _snapshotUnsetMetrics);
         _totalMetrics->reset(currentTime);
     }
-    if (_config.get() == 0 || (_config->consumer.size() != config->consumer.size())) {
+    if ( !_config || (_config->consumer.size() != config->consumer.size())) {
         _consumerConfigChanged = true;
     } else {
         for (uint32_t i=0; i<_config->consumer.size(); ++i) {

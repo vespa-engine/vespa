@@ -207,32 +207,27 @@ BucketManager::getBucketInfo(const document::Bucket &bucket) const
 void
 BucketManager::updateMetrics()
 {
-    LOG(debug, "Iterating bucket database to update metrics%s",
-        _doneInitialized ? "" : ", server is not done initializing");
-
-    if (_doneInitialized) {
-        MetricsUpdater total;
-        for (const auto& space : _component.getBucketSpaceRepo()) {
-            MetricsUpdater m;
-            auto guard = space.second->bucketDatabase().acquire_read_guard();
-            guard->for_each(std::ref(m));
-            total.add(m);
-            auto bm = _metrics->bucket_spaces.find(space.first);
-            assert(bm != _metrics->bucket_spaces.end());
-            bm->second->buckets_total.set(m.count.buckets);
-            bm->second->docs.set(m.count.docs);
-            bm->second->bytes.set(m.count.bytes);
-            bm->second->active_buckets.set(m.count.active);
-            bm->second->ready_buckets.set(m.count.ready);
-        }
-        auto & dest = *_metrics->disk;
-        const auto & src = total.count;
-        dest.buckets.addValue(src.buckets);
-        dest.docs.addValue(src.docs);
-        dest.bytes.addValue(src.bytes);
-        dest.active.addValue(src.active);
-        dest.ready.addValue(src.ready);
+    MetricsUpdater total;
+    for (const auto& space : _component.getBucketSpaceRepo()) {
+        MetricsUpdater m;
+        auto guard = space.second->bucketDatabase().acquire_read_guard();
+        guard->for_each(std::ref(m));
+        total.add(m);
+        auto bm = _metrics->bucket_spaces.find(space.first);
+        assert(bm != _metrics->bucket_spaces.end());
+        bm->second->buckets_total.set(m.count.buckets);
+        bm->second->docs.set(m.count.docs);
+        bm->second->bytes.set(m.count.bytes);
+        bm->second->active_buckets.set(m.count.active);
+        bm->second->ready_buckets.set(m.count.ready);
     }
+    auto & dest = *_metrics->disk;
+    const auto & src = total.count;
+    dest.buckets.addValue(src.buckets);
+    dest.docs.addValue(src.docs);
+    dest.bytes.addValue(src.bytes);
+    dest.active.addValue(src.active);
+    dest.ready.addValue(src.ready);
     update_bucket_db_memory_usage_metrics();
 }
 

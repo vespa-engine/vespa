@@ -19,7 +19,7 @@ class TextWriter : public MetricVisitor {
 public:
     TextWriter(std::ostream& out, vespalib::duration period,
                const std::string& regex, bool verbose);
-    ~TextWriter();
+    ~TextWriter() override;
 
     bool visitSnapshot(const MetricSnapshot&) override;
     void doneVisitingSnapshot(const MetricSnapshot&) override;
