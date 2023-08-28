@@ -53,7 +53,7 @@
 
         <airline.vespa.version>0.9</airline.vespa.version>
         <antlr.vespa.version>3.5.3</antlr.vespa.version>
-        <antlr4.vespa.version>4.11.1</antlr4.vespa.version>
+        <antlr4.vespa.version>4.13.0</antlr4.vespa.version>
         <apache.httpclient.vespa.version>4.5.14</apache.httpclient.vespa.version>
         <apache.httpcore.vespa.version>4.4.16</apache.httpcore.vespa.version>
         <apache.httpclient5.vespa.version>5.2.1</apache.httpclient5.vespa.version>
