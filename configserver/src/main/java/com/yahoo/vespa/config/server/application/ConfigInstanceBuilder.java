@@ -53,9 +53,8 @@ class ConfigInstanceBuilder {
                     Field innerField = builder.getClass().getDeclaredField(node.getName());
                     innerField.setAccessible(true);
                     Object innerFieldVal = innerField.get(builder);
-                    if (innerFieldVal instanceof List) {
+                    if (innerFieldVal instanceof List<?> innerList) {
                         // inner array? Check that list elems are ConfigBuilder
-                        List<?> innerList = (List<?>) innerFieldVal;
                         for (Object b : innerList) {
                             if (b instanceof ConfigBuilder) {
                                 applyDef((ConfigBuilder) b, (InnerCNode) node);

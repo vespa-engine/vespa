@@ -363,6 +363,20 @@ TEST("require that dimension index can be obtained") {
     EXPECT_EQUAL(type("tensor(y[10],x{},z[5])").dimension_index("w"), ValueType::Dimension::npos);
 }
 
+TEST("require that dimension stride can be calculated") {
+    EXPECT_EQUAL(type("error").stride_of("x"), 0u);
+    EXPECT_EQUAL(type("double").stride_of("x"), 0u);
+    EXPECT_EQUAL(type("tensor()").stride_of("x"), 0u);
+    EXPECT_EQUAL(type("tensor(x{})").stride_of("x"), 0u);
+    EXPECT_EQUAL(type("tensor(x[10])").stride_of("x"), 1u);
+    EXPECT_EQUAL(type("tensor(x[10])").stride_of("y"), 0u);
+    EXPECT_EQUAL(type("tensor(x[10],y[5])").stride_of("x"), 5u);
+    EXPECT_EQUAL(type("tensor(x[10],y[5],z[3])").stride_of("x"), 15u);
+    EXPECT_EQUAL(type("tensor(x[10],y[5],z[3])").stride_of("y"), 3u);
+    EXPECT_EQUAL(type("tensor(x[10],y[5],z[3])").stride_of("z"), 1u);
+    EXPECT_EQUAL(type("tensor(x[10],y{},z[3])").stride_of("x"), 3u);
+}
+
 void verify_predicates(const ValueType &type,
                        bool expect_error, bool expect_double, bool expect_tensor,
                        bool expect_sparse, bool expect_dense, bool expect_mixed)

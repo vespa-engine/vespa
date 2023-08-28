@@ -23,10 +23,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.concurrent.ExecutorService;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.curator.transaction.CuratorOperations.setData;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
@@ -73,13 +74,18 @@ public class ApplicationCuratorDatabase {
     /**
      * Creates a node for the given application, marking its existence.
      */
-    public void createApplication(ApplicationId id) {
+    public void createApplication(ApplicationId id, boolean writeAsJson) {
         if ( ! id.tenant().equals(tenant))
             throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenant + "'");
-        try (Lock lock = lock(id)) {
-            if (curator.exists(applicationPath(id))) return;
 
-            curator.create(applicationPath(id));
+        try (Lock lock = lock(id)) {
+            if (writeAsJson) {
+                var applicationData = new ApplicationData(id, OptionalLong.empty(), OptionalLong.empty());
+                curator.set(applicationPath(id), applicationData.toJson());
+            } else {
+                if (curator.exists(applicationPath(id))) return;
+                curator.create(applicationPath(id));
+            }
             modifyReindexing(id, ApplicationReindexing.empty(), UnaryOperator.identity());
         }
     }
@@ -88,10 +94,34 @@ public class ApplicationCuratorDatabase {
      * Returns a transaction which writes the given session id as the currently active for the given application.
      *
      * @param applicationId An {@link ApplicationId} that represents an active application.
-     * @param sessionId Id of the session containing the application package for this id.
+     * @param sessionId session id belonging to the application package for this application id.
      */
-    public Transaction createPutTransaction(ApplicationId applicationId, long sessionId) {
-        return new CuratorTransaction(curator).add(CuratorOperations.setData(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
+    public Transaction createWriteActiveTransaction(Transaction transaction, ApplicationId applicationId, long sessionId, boolean writeAsJson) {
+        String path = applicationPath(applicationId).getAbsolute();
+        return transaction.add(writeAsJson
+                                       ? setData(path, new ApplicationData(applicationId, OptionalLong.of(sessionId), OptionalLong.of(sessionId)).toJson())
+                                       : setData(path, Utf8.toAsciiBytes(sessionId)));
+    }
+
+    /**
+     * Returns a transaction which writes the given session id as the currently active for the given application.
+     *
+     * @param applicationId An {@link ApplicationId} that represents an active application.
+     * @param sessionId session id belonging to the application package for this application id.
+     */
+    public Transaction createWritePrepareTransaction(Transaction transaction,
+                                                     ApplicationId applicationId,
+                                                     long sessionId,
+                                                     OptionalLong activeSessionId,
+                                                     boolean writeAsJson) {
+
+        // Needs to read or be supplied current active session id, to avoid overwriting a newer session id.
+
+        String path = applicationPath(applicationId).getAbsolute();
+        if (writeAsJson)
+            return transaction.add(setData(path, new ApplicationData(applicationId, activeSessionId, OptionalLong.of(sessionId)).toJson()));
+        else
+            return transaction;  // Do nothing, as there is nothing to write in this case
     }
 
     /**
@@ -110,6 +140,46 @@ public class ApplicationCuratorDatabase {
         return (data.isEmpty() || data.get().length == 0)
                ? Optional.empty()
                : data.map(bytes -> Long.parseLong(Utf8.toString(bytes)));
+    }
+
+    /**
+     * Returns application data for the given application.
+     * Returns Optional.empty() if application not found or no application data exists.
+     */
+    public Optional<ApplicationData> applicationData(ApplicationId id) {
+        return applicationData(id, false);
+    }
+
+    /**
+     * Returns application data for the given application.
+     * Returns Optional.empty() if application not found or no application data exists.
+     */
+    public Optional<ApplicationData> applicationData(ApplicationId id, boolean readAsJson) {
+        Optional<byte[]> data = curator.getData(applicationPath(id));
+        if (data.isEmpty() || data.get().length == 0) return Optional.empty();
+
+        if (readAsJson) {
+            try {
+                return Optional.of(ApplicationData.fromBytes(data.get()));
+            } catch (IllegalArgumentException e) {
+                return applicationDataOldFormat(id, readAsJson);
+            }
+        } else {
+            return applicationDataOldFormat(id, readAsJson);
+        }
+    }
+
+    /**
+     * Returns application data for the given application.
+     * Returns Optional.empty() if application not found or no application data exists.
+     */
+    public Optional<ApplicationData> applicationDataOldFormat(ApplicationId id, boolean readAsJson) {
+        Optional<byte[]> data = curator.getData(applicationPath(id));
+        if (data.isEmpty() || data.get().length == 0) return Optional.empty();
+
+        return Optional.of(new ApplicationData(id,
+                                               OptionalLong.of(data.map(bytes -> Long.parseLong(Utf8.toString(bytes))).get()),
+                                               OptionalLong.empty()));
     }
 
     /**
@@ -134,12 +204,10 @@ public class ApplicationCuratorDatabase {
         curator.set(reindexingDataPath(id), ReindexingStatusSerializer.toBytes(status));
     }
 
-
     /** Sets up a listenable cache with the given listener, over the applications path of this tenant. */
     public Curator.DirectoryCache createApplicationsPathCache(ExecutorService zkCacheExecutor) {
         return curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, zkCacheExecutor);
     }
-
 
     private Path reindexingLockPath(ApplicationId id) {
         return locksPath.append(id.serializedForm()).append("reindexing");
@@ -153,15 +221,9 @@ public class ApplicationCuratorDatabase {
         return applicationsPath.append(id.serializedForm());
     }
 
-    // Used to determine whether future preparations of this application should use a dedicated CCC.
-    private Path dedicatedClusterControllerClusterPath(ApplicationId id) {
-        return applicationPath(id).append("dedicatedClusterControllerCluster");
-    }
-
     private Path reindexingDataPath(ApplicationId id) {
         return applicationPath(id).append("reindexing");
     }
-
 
     private static class ReindexingStatusSerializer {
 

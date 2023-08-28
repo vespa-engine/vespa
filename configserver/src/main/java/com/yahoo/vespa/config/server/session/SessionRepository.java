@@ -22,7 +22,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -39,6 +39,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -239,16 +240,24 @@ public class SessionRepository {
                 throw new UnknownVespaVersionException("Vespa version '" + version + "' not known by this config server");
         });
 
-        applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
-        logger.log(Level.FINE, "Created application " + params.getApplicationId());
+        ApplicationId applicationId = params.getApplicationId();
+        applicationRepo.createApplication(applicationId); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
+        logger.log(Level.FINE, "Created application " + applicationId);
         long sessionId = session.getSessionId();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
         Optional<CompletionWaiter> waiter = params.isDryRun()
                 ? Optional.empty()
                 : Optional.of(sessionZooKeeperClient.createPrepareWaiter());
-        Optional<ApplicationSet> activeApplicationSet = getActiveApplicationSet(params.getApplicationId());
+        Optional<ApplicationVersions> activeApplicationVersions = activeApplicationVersions(applicationId);
+        try (var transaction = new CuratorTransaction(curator)) {
+            applicationRepo.createWritePrepareTransaction(transaction,
+                                                          applicationId,
+                                                          sessionId,
+                                                          getActiveSessionId(applicationId))
+                    .commit();
+        }
         ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo, logger, params,
-                                                              activeApplicationSet, now, getSessionAppDir(sessionId),
+                                                              activeApplicationVersions, now, getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
                 .getConfigChangeActions();
         setPrepared(session);
@@ -277,6 +286,7 @@ public class SessionRepository {
                                                             timeoutBudget,
                                                             deployLogger,
                                                             created);
+        applicationRepo.createApplication(applicationId);
         write(existingSession, session, applicationId, created);
         return session;
     }
@@ -293,9 +303,10 @@ public class SessionRepository {
                                                             ApplicationId applicationId,
                                                             TimeoutBudget timeoutBudget,
                                                             DeployLogger deployLogger) {
-        applicationRepo.createApplication(applicationId);
-        return createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget,
+        LocalSession session = createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget,
                                             deployLogger, clock.instant());
+        applicationRepo.createApplication(applicationId);
+        return session;
     }
 
     /**
@@ -479,20 +490,20 @@ public class SessionRepository {
         notifyCompletion(waiter);
     }
 
-    public ApplicationSet ensureApplicationLoaded(RemoteSession session) {
-        if (session.applicationSet().isPresent()) {
-            return session.applicationSet().get();
+    public ApplicationVersions ensureApplicationLoaded(RemoteSession session) {
+        if (session.applicationVersions().isPresent()) {
+            return session.applicationVersions().get();
         }
         Optional<Long> activeSessionId = getActiveSessionId(session.getApplicationId());
-        Optional<ApplicationSet> previousApplicationSet = activeSessionId.filter(session::isNewerThan)
-                                                                         .flatMap(this::getApplicationSet);
-        ApplicationSet applicationSet = loadApplication(session, previousApplicationSet);
-        RemoteSession activated = session.activated(applicationSet);
+        Optional<ApplicationVersions> previousActiveApplicationVersions = activeSessionId.filter(session::isNewerThan)
+                                                                         .flatMap(this::activeApplicationVersions);
+        ApplicationVersions applicationVersions = loadApplication(session, previousActiveApplicationVersions);
+        RemoteSession activated = session.activated(applicationVersions);
         long sessionId = activated.getSessionId();
         remoteSessionCache.put(sessionId, activated);
         updateSessionStateWatcher(sessionId);
 
-        return applicationSet;
+        return applicationVersions;
     }
 
     void confirmUpload(Session session) {
@@ -526,7 +537,7 @@ public class SessionRepository {
         }
     }
 
-    private ApplicationSet loadApplication(Session session, Optional<ApplicationSet> previousApplicationSet) {
+    private ApplicationVersions loadApplication(Session session, Optional<ApplicationVersions> previousApplicationSet) {
         log.log(Level.FINE, () -> "Loading application for " + session);
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
         ActivatedModelsBuilder builder = new ActivatedModelsBuilder(session.getTenantName(),
@@ -543,12 +554,12 @@ public class SessionRepository {
                                                                     zone,
                                                                     modelFactoryRegistry,
                                                                     configDefinitionRepo);
-        return ApplicationSet.fromList(builder.buildModels(session.getApplicationId(),
-                                                           session.getDockerImageRepository(),
-                                                           session.getVespaVersion(),
-                                                           sessionZooKeeperClient.loadApplicationPackage(),
-                                                           new AllocatedHostsFromAllModels(),
-                                                           clock.instant()));
+        return ApplicationVersions.fromList(builder.buildModels(session.getApplicationId(),
+                                                                session.getDockerImageRepository(),
+                                                                session.getVespaVersion(),
+                                                                sessionZooKeeperClient.loadApplicationPackage(),
+                                                                new AllocatedHostsFromAllModels(),
+                                                                clock.instant()));
     }
 
     private void nodeChanged() {
@@ -775,11 +786,11 @@ public class SessionRepository {
         }
     }
 
-    public Optional<ApplicationSet> getActiveApplicationSet(ApplicationId appId) {
-        return applicationRepo.activeSessionOf(appId).flatMap(this::getApplicationSet);
+    public Optional<ApplicationVersions> activeApplicationVersions(ApplicationId appId) {
+        return applicationRepo.activeSessionOf(appId).flatMap(this::activeApplicationVersions);
     }
 
-    private Optional<ApplicationSet> getApplicationSet(long sessionId) {
+    private Optional<ApplicationVersions> activeApplicationVersions(long sessionId) {
         try {
             return Optional.ofNullable(getRemoteSession(sessionId)).map(this::ensureApplicationLoaded);
         } catch (IllegalArgumentException e) {
@@ -974,7 +985,7 @@ public class SessionRepository {
 
     public Transaction createActivateTransaction(Session session) {
         Transaction transaction = createSetStatusTransaction(session, Session.Status.ACTIVATE);
-        transaction.add(applicationRepo.createPutTransaction(session.getApplicationId(), session.getSessionId()).operations());
+        transaction.add(applicationRepo.createWriteActiveTransaction(transaction, session.getApplicationId(), session.getSessionId()).operations());
         return transaction;
     }
 

@@ -27,7 +27,9 @@ import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import org.apache.curator.framework.CuratorFramework;
@@ -41,6 +43,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -76,6 +79,8 @@ public class TenantApplications implements RequestHandler, HostValidator {
     private final TenantFileSystemDirs tenantFileSystemDirs;
     private final String serverId;
     private final ListFlag<String> incompatibleVersions;
+    private final BooleanFlag writeApplicationDataAsJson;
+    private final BooleanFlag readApplicationDataAsJson;
 
     public TenantApplications(TenantName tenant, Curator curator, StripedExecutor<TenantName> zkWatcherExecutor,
                               ExecutorService zkCacheExecutor, Metrics metrics, ConfigActivationListener configActivationListener,
@@ -97,6 +102,8 @@ public class TenantApplications implements RequestHandler, HostValidator {
         this.clock = clock;
         this.serverId = configserverConfig.serverId();
         this.incompatibleVersions = PermanentFlags.INCOMPATIBLE_VERSIONS.bindTo(flagSource);
+        this.writeApplicationDataAsJson = Flags.WRITE_APPLICATION_DATA_AS_JSON.bindTo(flagSource);
+        this.readApplicationDataAsJson = Flags.READ_APPLICATION_DATA_AS_JSON.bindTo(flagSource);
     }
 
     /** The curator backed ZK storage of this. */
@@ -123,6 +130,14 @@ public class TenantApplications implements RequestHandler, HostValidator {
         return database().activeSessionOf(id);
     }
 
+    /**
+     * Returns application data for the given application.
+     * Returns Optional.empty if application not found or no application data exists.
+     */
+    public Optional<ApplicationData> applicationData(ApplicationId id) {
+        return database().applicationData(id, readApplicationDataAsJson.value());
+    }
+
     public boolean sessionExistsInFileSystem(long sessionId) {
         return Files.exists(Paths.get(tenantFileSystemDirs.sessionsPath().getAbsolutePath(), String.valueOf(sessionId)));
     }
@@ -131,17 +146,34 @@ public class TenantApplications implements RequestHandler, HostValidator {
      * Returns a transaction which writes the given session id as the currently active for the given application.
      *
      * @param applicationId An {@link ApplicationId} that represents an active application.
-     * @param sessionId Id of the session containing the application package for this id.
+     * @param sessionId session id belonging to the application package for this application id.
      */
-    public Transaction createPutTransaction(ApplicationId applicationId, long sessionId) {
-        return database().createPutTransaction(applicationId, sessionId);
+    public Transaction createWriteActiveTransaction(Transaction transaction, ApplicationId applicationId, long sessionId) {
+        return database().createWriteActiveTransaction(transaction, applicationId, sessionId, writeApplicationDataAsJson.value());
+    }
+
+    /**
+     * Returns a transaction which writes the given session id as the last deployed for the given application.
+     *
+     * @param applicationId An {@link ApplicationId} that represents an active application.
+     * @param sessionId session id belonging to the application package for this application id.
+     */
+    public Transaction createWritePrepareTransaction(Transaction transaction,
+                                                     ApplicationId applicationId,
+                                                     long sessionId,
+                                                     Optional<Long> activeSessionId) {
+        return database().createWritePrepareTransaction(transaction,
+                                                        applicationId,
+                                                        sessionId,
+                                                        activeSessionId.map(OptionalLong::of).orElseGet(OptionalLong::empty),
+                                                        writeApplicationDataAsJson.value());
     }
 
     /**
      * Creates a node for the given application, marking its existence.
      */
     public void createApplication(ApplicationId id) {
-        database().createApplication(id);
+        database().createApplication(id, writeApplicationDataAsJson.value());
     }
 
     /**
@@ -215,29 +247,29 @@ public class TenantApplications implements RequestHandler, HostValidator {
         return application.resolveConfig(req, responseFactory);
     }
 
-    private void notifyConfigActivationListeners(ApplicationSet applicationSet) {
-        List<Application> applications = applicationSet.getAllApplications();
+    private void notifyConfigActivationListeners(ApplicationVersions applicationVersions) {
+        List<Application> applications = applicationVersions.applications();
         if (applications.isEmpty()) throw new IllegalArgumentException("application set cannot be empty");
 
-        hostRegistry.update(applications.get(0).getId(), applicationSet.getAllHosts());
-        configActivationListener.configActivated(applicationSet);
+        hostRegistry.update(applications.get(0).getId(), applicationVersions.allHosts());
+        configActivationListener.configActivated(applicationVersions);
     }
 
     /**
      * Activates the config of the given app. Notifies listeners
      *
-     * @param applicationSet the {@link ApplicationSet} to be activated
+     * @param applicationVersions the {@link ApplicationVersions} to be activated
      */
-    public void activateApplication(ApplicationSet applicationSet, long activeSessionId) {
-        ApplicationId id = applicationSet.getId();
+    public void activateApplication(ApplicationVersions applicationVersions, long activeSessionId) {
+        ApplicationId id = applicationVersions.getId();
         try (@SuppressWarnings("unused") Lock lock = lock(id)) {
             if ( ! exists(id))
                 return; // Application was deleted before activation.
-            if (applicationSet.getApplicationGeneration() != activeSessionId)
+            if (applicationVersions.applicationGeneration() != activeSessionId)
                 return; // Application activated a new session before we got here.
 
-            setActiveApp(applicationSet);
-            notifyConfigActivationListeners(applicationSet);
+            setActiveApp(applicationVersions);
+            notifyConfigActivationListeners(applicationVersions);
         }
     }
 
@@ -281,13 +313,13 @@ public class TenantApplications implements RequestHandler, HostValidator {
         configActivationListener.applicationRemoved(applicationId);
     }
 
-    private void setActiveApp(ApplicationSet applicationSet) {
-        ApplicationId applicationId = applicationSet.getId();
-        Collection<String> hostsForApp = applicationSet.getAllHosts();
+    private void setActiveApp(ApplicationVersions applicationVersions) {
+        ApplicationId applicationId = applicationVersions.getId();
+        Collection<String> hostsForApp = applicationVersions.allHosts();
         hostRegistry.update(applicationId, hostsForApp);
-        applicationSet.updateHostMetrics();
+        applicationVersions.updateHostMetrics();
         tenantMetricUpdater.setApplications(applicationMapper.numApplications());
-        applicationMapper.register(applicationId, applicationSet);
+        applicationMapper.register(applicationId, applicationVersions);
     }
 
     @Override

@@ -155,7 +155,8 @@ ValueType::error_if(bool has_error, ValueType else_type)
 ValueType::~ValueType() = default;
 
 bool
-ValueType::is_double() const {
+ValueType::is_double() const
+{
     if (!_error && _dimensions.empty()) {
         assert(_cell_type == CellType::DOUBLE);
         return true;
@@ -240,7 +241,8 @@ ValueType::dense_subspace_size() const
 }
 
 std::vector<ValueType::Dimension>
-ValueType::nontrivial_indexed_dimensions() const {
+ValueType::nontrivial_indexed_dimensions() const
+{
     std::vector<ValueType::Dimension> result;
     for (const auto &dim: dimensions()) {
         if (dim.is_indexed() && !dim.is_trivial()) {
@@ -251,7 +253,8 @@ ValueType::nontrivial_indexed_dimensions() const {
 }
 
 std::vector<ValueType::Dimension>
-ValueType::indexed_dimensions() const {
+ValueType::indexed_dimensions() const
+{
     std::vector<ValueType::Dimension> result;
     for (const auto &dim: dimensions()) {
         if (dim.is_indexed()) {
@@ -262,7 +265,8 @@ ValueType::indexed_dimensions() const {
 }
 
 std::vector<ValueType::Dimension>
-ValueType::mapped_dimensions() const {
+ValueType::mapped_dimensions() const
+{
     std::vector<ValueType::Dimension> result;
     for (const auto &dim: dimensions()) {
         if (dim.is_mapped()) {
@@ -273,8 +277,25 @@ ValueType::mapped_dimensions() const {
 }
 
 size_t
-ValueType::dimension_index(const vespalib::string &name) const {
+ValueType::dimension_index(const vespalib::string &name) const
+{
     return my_dimension_index(_dimensions, name);
+}
+
+size_t
+ValueType::stride_of(const vespalib::string &name) const
+{
+    size_t stride = 0;
+    for (const auto &dim: dimensions()) {
+        if (dim.is_indexed()) {
+            if (stride == 0 && dim.name == name) {
+                stride = 1;
+            } else {
+                stride *= dim.size;
+            }
+        }
+    }
+    return stride;
 }
 
 std::vector<vespalib::string>
