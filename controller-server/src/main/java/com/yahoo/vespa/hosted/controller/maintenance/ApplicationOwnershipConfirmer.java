@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.AccountId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ApplicationSummary;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
@@ -70,7 +71,8 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                                tenantOf(application.id()).contact().flatMap(contact -> {
                                    return ownershipIssues.confirmOwnership(application.ownershipIssueId(),
                                                                            summaryOf(application.id()),
-                                                                           determineAssignee(application),
+                                                                           application.issueOwner().orElse(null),
+                                                                           application.userOwner().orElse(null),
                                                                            contact);
                                }).ifPresent(newIssueId -> store(newIssueId, application.id()));
                            }
@@ -156,8 +158,12 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
         return ApplicationList.from(controller().applications().readable());
     }
 
-    private User determineAssignee(Application application) {
-        return application.owner().orElse(null);
+    private AccountId determineAssignee(Application application) {
+        return application.issueOwner().orElse(null);
+    }
+
+    private User determineLegacyAssignee(Application application) {
+        return application.userOwner().orElse(null);
     }
 
     private Tenant tenantOf(TenantAndApplicationId applicationId) {

@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.AccountId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
@@ -159,6 +160,7 @@ public class ApplicationSerializerTest {
                 Optional.of(IssueId.from("4321")),
                 Optional.of(IssueId.from("1234")),
                 Optional.of(User.from("by-username")),
+                Optional.of(new AccountId("foo8ar")),
                 OptionalInt.of(7),
                 new ApplicationMetrics(0.5, 0.9),
                 Set.of(publicKey, otherPublicKey),
@@ -211,7 +213,8 @@ public class ApplicationSerializerTest {
                 serialized.require(id1.instance()).jobPause(DeploymentContext.stagingTest));
 
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
-        assertEquals(original.owner(), serialized.owner());
+        assertEquals(original.userOwner(), serialized.userOwner());
+        assertEquals(original.issueOwner(), serialized.issueOwner());
         assertEquals(original.majorVersion(), serialized.majorVersion());
         assertEquals(original.deployKeys(), serialized.deployKeys());
 

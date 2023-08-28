@@ -82,6 +82,14 @@ public interface IssueHandler {
     Optional<User> assigneeOf(IssueId issueId);
 
     /**
+     * Returns the account id assigned to the given issue, if any.
+     *
+     * @param issueId ID of the issue for which to find the assignee.
+     * @return The account id of the user responsible for fixing the given issue, if found.
+     */
+    Optional<AccountId> assigneeIdOf(IssueId issueId);
+
+    /**
      * Reassign the issue with the given ID to the given user, and returns the outcome of this.
      *
      * @param issueId ID of the issue to be reassigned.

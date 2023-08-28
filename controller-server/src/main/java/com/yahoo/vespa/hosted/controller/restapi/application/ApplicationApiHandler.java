@@ -1739,7 +1739,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         application.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
 
         application.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
-        application.owner().ifPresent(owner -> object.setString("owner", owner.username()));
+        application.issueOwner().ifPresent(owner -> object.setString("owner", owner.value()));
         application.deploymentIssueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
     }
 
@@ -1931,7 +1931,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         application.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
 
         application.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
-        application.owner().ifPresent(owner -> object.setString("owner", owner.username()));
+        application.issueOwner().ifPresent(owner -> object.setString("owner", owner.value()));
         application.deploymentIssueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
     }
 

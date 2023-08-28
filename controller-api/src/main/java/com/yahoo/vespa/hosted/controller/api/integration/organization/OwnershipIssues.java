@@ -20,11 +20,12 @@ public interface OwnershipIssues {
      *
      * @param issueId ID of the previous ownership issue filed for the given application.
      * @param summary Summary of an application for which to file an issue.
+     * @param assigneeId Issue assignee id
      * @param assignee Issue assignee
      * @param contact Contact info for the application tenant
      * @return ID of the created issue, if one was created.
      */
-    Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationSummary summary, User assignee, Contact contact);
+    Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationSummary summary, AccountId assigneeId, User assignee, Contact contact);
 
     /**
      * Make sure the given ownership confirmation request is acted upon, unless it is already acknowledged.
@@ -38,6 +39,6 @@ public interface OwnershipIssues {
      * @param issueId ID of the ownership issue.
      * @return The owner of the application, if it has been confirmed.
      */
-    Optional<User> getConfirmedOwner(IssueId issueId);
+    Optional<AccountId> getConfirmedOwner(IssueId issueId);
 
 }

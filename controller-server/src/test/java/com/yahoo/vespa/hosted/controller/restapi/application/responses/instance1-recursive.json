@@ -182,6 +182,6 @@
     "lastWritesPerSecond": 2.0
   },
   "ownershipIssueId": "321",
-  "owner": "owner-username",
+  "owner": "owner-account-id",
   "deploymentIssueId": "123"
 }

@@ -5,6 +5,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.AccountId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -52,7 +53,7 @@ public class LoggingDeploymentIssues implements DeploymentIssues {
     }
 
     @Override
-    public IssueId fileUnlessOpen(Optional<IssueId> issueId, ApplicationId applicationId, User assignee, Contact contact) {
+    public IssueId fileUnlessOpen(Optional<IssueId> issueId, ApplicationId applicationId, AccountId assigneeId, User assignee, Contact contact) {
         return fileUnlessPresent(issueId, applicationId);
     }
 

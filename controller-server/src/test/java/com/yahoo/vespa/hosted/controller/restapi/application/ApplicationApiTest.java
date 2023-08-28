@@ -44,6 +44,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.AccountId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -1032,7 +1033,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.applications().lockApplicationOrThrow(id, application ->
                 tester.controller().applications().store(application.withDeploymentIssueId(IssueId.from("123"))
                                                                     .withOwnershipIssueId(IssueId.from("321"))
-                                                                    .withOwner(User.from("owner-username"))));
+                                                                    .withOwner(new AccountId("owner-account-id"))));
     }
 
     @Test

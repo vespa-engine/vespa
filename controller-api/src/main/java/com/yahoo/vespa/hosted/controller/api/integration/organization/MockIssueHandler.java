@@ -42,7 +42,7 @@ public class MockIssueHandler implements IssueHandler {
 
     @Override
     public IssueId file(Issue issue) {
-        if (!issue.assignee().isPresent()) throw new RuntimeException();
+        if (issue.assignee().isEmpty() && issue.assigneeId().isEmpty()) throw new RuntimeException();
         IssueId issueId = IssueId.from("" + counter.incrementAndGet());
         issues.put(issueId, new MockIssue(issue));
         return issueId;
@@ -55,7 +55,7 @@ public class MockIssueHandler implements IssueHandler {
                      .map(entry -> new IssueInfo(entry.getKey(),
                                                  entry.getValue().updated,
                                                  entry.getValue().isOpen() ? Status.toDo : Status.done,
-                                                 entry.getValue().assignee))
+                                                 entry.getValue().assigneeId))
                      .toList();
     }
 
@@ -82,6 +82,11 @@ public class MockIssueHandler implements IssueHandler {
     @Override
     public Optional<User> assigneeOf(IssueId issueId) {
         return Optional.ofNullable(issues.get(issueId).assignee);
+    }
+
+    @Override
+    public Optional<AccountId> assigneeIdOf(IssueId issueId) {
+        return Optional.ofNullable(issues.get(issueId).assigneeId);
     }
 
     @Override
@@ -159,21 +164,13 @@ public class MockIssueHandler implements IssueHandler {
         projects.put(projectKey, projectInfo);
     }
 
-    private static class PropertyInfo {
-
-        private List<List<User>> contacts = Collections.emptyList();
-        private URI issueUrl = URI.create("issues.tld");
-        private URI contactsUrl = URI.create("contacts.tld");
-        private URI propertyUrl = URI.create("properties.tld");
-
-    }
-
     public class MockIssue {
 
         private Issue issue;
         private Instant updated;
         private boolean open;
         private User assignee;
+        private AccountId assigneeId;
         private List<String> watchers;
 
         private MockIssue(Issue issue) {
@@ -181,11 +178,13 @@ public class MockIssueHandler implements IssueHandler {
             this.updated = clock.instant();
             this.open = true;
             this.assignee = issue.assignee().orElse(null);
+            this.assigneeId = issue.assigneeId().orElse(null);
             this.watchers = new ArrayList<>();
         }
 
         public Issue issue() { return issue; }
         public User assignee() { return assignee; }
+        public AccountId assigneeId() { return assigneeId; }
         public boolean isOpen() { return open; }
         public List<String> watchers() { return List.copyOf(watchers); }
         public void addWatcher(String watcher) { watchers.add(watcher); }
