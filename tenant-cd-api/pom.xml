@@ -60,7 +60,7 @@
         <dependency>
             <groupId>org.opentest4j</groupId>
             <artifactId>opentest4j</artifactId>
-            <version>1.2.0</version>
+            <version>${opentest4j.vespa.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apiguardian</groupId>

@@ -13,6 +13,8 @@
     "com.yahoo.vespa.bundle-plugin:test-bundles",
     "com.yahoo.vespa.jdisc_core:test_bundles",
     "com.yahoo.vespa:cloud-tenant-base",
+    "com.yahoo.vespa:container-dependency-versions",
+    "com.yahoo.vespa:hosted-tenant-base",
     "com.yahoo.vespa:parent",
     "com.yahoo.vespa:zookeeper-server-parent",
     "github.com/go-json-experiment/json",
