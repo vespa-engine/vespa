@@ -24,21 +24,28 @@ public class MaintainerTest {
         List<String> cluster = List.of("cfg1", "cfg2", "cfg3");
         Duration interval = Duration.ofMillis(300);
         Instant now = Instant.ofEpochMilli(1000);
-        assertEquals(200, Maintainer.staggeredDelay(interval, now, "cfg1", cluster).toMillis());
-        assertEquals(0, Maintainer.staggeredDelay(interval, now, "cfg2", cluster).toMillis());
-        assertEquals(100, Maintainer.staggeredDelay(interval, now, "cfg3", cluster).toMillis());
+        // ∠( ᐛ 」∠)＿
+        class MaintainerWithBestHashE extends TestMaintainer { MaintainerWithBestHashE() { super(null, jobControl, new TestJobMetrics()); } }
+        class MaintainerWithBestHashF extends TestMaintainer { MaintainerWithBestHashF() { super(null, jobControl, new TestJobMetrics()); } }
+        class MaintainerWithBestHashG extends TestMaintainer { MaintainerWithBestHashG() { super(null, jobControl, new TestJobMetrics()); } }
+        Maintainer maintainer = new MaintainerWithBestHashF();
+        assertEquals(200, maintainer.staggeredDelay(interval, now, "cfg1", cluster).toMillis());
+        assertEquals(299, new MaintainerWithBestHashE().staggeredDelay(interval, now, "cfg2", cluster).toMillis());
+        assertEquals(0, maintainer.staggeredDelay(interval, now, "cfg2", cluster).toMillis());
+        assertEquals(1, new MaintainerWithBestHashG().staggeredDelay(interval, now, "cfg2", cluster).toMillis());
+        assertEquals(100, maintainer.staggeredDelay(interval, now, "cfg3", cluster).toMillis());
 
         now = Instant.ofEpochMilli(1001);
-        assertEquals(199, Maintainer.staggeredDelay(interval, now, "cfg1", cluster).toMillis());
-        assertEquals(299, Maintainer.staggeredDelay(interval, now, "cfg2", cluster).toMillis());
-        assertEquals(99, Maintainer.staggeredDelay(interval, now, "cfg3", cluster).toMillis());
+        assertEquals(199, maintainer.staggeredDelay(interval, now, "cfg1", cluster).toMillis());
+        assertEquals(299, maintainer.staggeredDelay(interval, now, "cfg2", cluster).toMillis());
+        assertEquals(99, maintainer.staggeredDelay(interval, now, "cfg3", cluster).toMillis());
 
         now = Instant.ofEpochMilli(1101);
-        assertEquals(99, Maintainer.staggeredDelay(interval, now, "cfg1", cluster).toMillis());
-        assertEquals(199, Maintainer.staggeredDelay(interval, now, "cfg2", cluster).toMillis());
-        assertEquals(299, Maintainer.staggeredDelay(interval, now, "cfg3", cluster).toMillis());
+        assertEquals(99, maintainer.staggeredDelay(interval, now, "cfg1", cluster).toMillis());
+        assertEquals(199, maintainer.staggeredDelay(interval, now, "cfg2", cluster).toMillis());
+        assertEquals(299, maintainer.staggeredDelay(interval, now, "cfg3", cluster).toMillis());
 
-        assertEquals(300, Maintainer.staggeredDelay(interval, now, "cfg0", cluster).toMillis());
+        assertEquals(300, maintainer.staggeredDelay(interval, now, "cfg0", cluster).toMillis());
     }
 
     @Test

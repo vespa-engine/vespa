@@ -148,14 +148,16 @@ public abstract class Maintainer implements Runnable {
         return name == null ? this.getClass().getSimpleName() : name;
     }
 
-    /** Returns the initial delay of this calculated from cluster index of given hostname */
-    static Duration staggeredDelay(Duration interval, Instant now, String hostname, List<String> clusterHostnames) {
+    /** Returns the initial delay of this calculated from cluster index of the hostname of this node, and the maintainer name. */
+    Duration staggeredDelay(Duration interval, Instant now, String hostname, List<String> clusterHostnames) {
         Objects.requireNonNull(clusterHostnames);
         if ( ! clusterHostnames.contains(hostname))
             return interval;
 
-        long offset = clusterHostnames.indexOf(hostname) * interval.toMillis() / clusterHostnames.size();
-        return Duration.ofMillis(Math.floorMod(offset - now.toEpochMilli(), interval.toMillis()));
+        long nodeOffset = clusterHostnames.indexOf(hostname) * interval.toMillis() / clusterHostnames.size();
+        long maintainerOffset = getClass().getName().hashCode() % interval.toMillis();
+        long totalOffset = nodeOffset + maintainerOffset;
+        return Duration.ofMillis(Math.floorMod(totalOffset - now.toEpochMilli(), interval.toMillis()));
     }
 
     private static Duration requireInterval(Duration interval) {
