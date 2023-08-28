@@ -9,9 +9,11 @@
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/util/serializableexceptions.h>
-#include <vespa/eval/eval/operation.h>
-#include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/operation.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/xmlstream.h>
@@ -19,10 +21,11 @@
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
-using vespalib::make_string;
-using vespalib::eval::ValueType;
 using vespalib::eval::CellType;
 using vespalib::eval::FastValueBuilderFactory;
+using vespalib::eval::Value;
+using vespalib::eval::ValueType;
+using vespalib::make_string;
 
 using join_fun_t = double (*)(double, double);
 
@@ -145,13 +148,13 @@ TensorModifyUpdate::checkCompatibility(const Field& field) const
     }
 }
 
-std::unique_ptr<vespalib::eval::Value>
-TensorModifyUpdate::applyTo(const vespalib::eval::Value &tensor) const
+std::unique_ptr<Value>
+TensorModifyUpdate::applyTo(const Value &tensor) const
 {
     return apply_to(tensor, FastValueBuilderFactory::get());
 }
 
-std::unique_ptr<vespalib::eval::Value>
+std::unique_ptr<Value>
 TensorModifyUpdate::apply_to(const Value &old_tensor,
                              const ValueBuilderFactory &factory) const
 {
@@ -166,17 +169,33 @@ TensorModifyUpdate::apply_to(const Value &old_tensor,
     return {};
 }
 
+namespace {
+
+std::unique_ptr<Value>
+create_empty_tensor(const ValueType& type)
+{
+    const auto& factory = FastValueBuilderFactory::get();
+    vespalib::eval::TensorSpec empty_spec(type.to_spec());
+    return vespalib::eval::value_from_spec(empty_spec, factory);
+}
+
+}
+
 bool
 TensorModifyUpdate::applyTo(FieldValue& value) const
 {
     if (value.isA(FieldValue::Type::TENSOR)) {
         TensorFieldValue &tensorFieldValue = static_cast<TensorFieldValue &>(value);
-        auto oldTensor = tensorFieldValue.getAsTensorPtr();
-        if (oldTensor) {
-            auto newTensor = applyTo(*oldTensor);
-            if (newTensor) {
-                tensorFieldValue = std::move(newTensor);
-            }
+        auto old_tensor = tensorFieldValue.getAsTensorPtr();
+        std::unique_ptr<Value> new_tensor;
+        if (old_tensor) {
+            new_tensor = applyTo(*old_tensor);
+        } else if (_default_cell_value.has_value()) {
+            auto empty_tensor = create_empty_tensor(tensorFieldValue.get_tensor_data_type().getTensorType());
+            new_tensor = applyTo(*empty_tensor);
+        }
+        if (new_tensor) {
+            tensorFieldValue = std::move(new_tensor);
         }
     } else {
         vespalib::string err = make_string("Unable to perform a tensor modify update on a '%s' field value",
