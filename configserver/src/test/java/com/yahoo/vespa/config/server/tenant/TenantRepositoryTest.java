@@ -29,6 +29,7 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
@@ -106,7 +107,9 @@ public class TenantRepositoryTest {
         TenantApplications applicationRepo = tenantRepository.getTenant(tenant1).getApplicationRepo();
         ApplicationId id = ApplicationId.from(tenant1, ApplicationName.defaultName(), InstanceName.defaultName());
         applicationRepo.createApplication(id);
-        applicationRepo.createPutTransaction(id, 4).commit();
+        try (var transaction = new CuratorTransaction(curator)) {
+            applicationRepo.createWriteActiveTransaction(transaction, id, 4).commit();
+        }
         applicationRepo.activateApplication(ApplicationVersions.from(new Application(new VespaModel(MockApplicationPackage.createEmpty()),
                                                                                      new ServerCache(),
                                                                                      4L,

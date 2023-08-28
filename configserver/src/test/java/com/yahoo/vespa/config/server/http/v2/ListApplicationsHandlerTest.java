@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -38,6 +39,7 @@ public class ListApplicationsHandlerTest {
 
     private TenantApplications applicationRepo, applicationRepo2;
     private ListApplicationsHandler handler;
+    private TenantRepository tenantRepository;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -48,7 +50,7 @@ public class ListApplicationsHandlerTest {
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        TenantRepository tenantRepository = new TestTenantRepository.Builder()
+        tenantRepository = new TestTenantRepository.Builder()
                 .withConfigserverConfig(configserverConfig)
                 .build();
         tenantRepository.addTenant(mytenant);
@@ -67,12 +69,12 @@ public class ListApplicationsHandlerTest {
                 "[]");
         ApplicationId id1 = ApplicationId.from("mytenant", "foo", "quux");
         applicationRepo.createApplication(id1);
-        applicationRepo.createPutTransaction(id1, 1).commit();
+        writeActiveTransaction(applicationRepo, id1, 1);
         assertResponse(url, Response.Status.OK,
                 "[\"" + url + "foo/environment/dev/region/us-east/instance/quux\"]");
         ApplicationId id2 = ApplicationId.from("mytenant", "bali", "quux");
         applicationRepo.createApplication(id2);
-        applicationRepo.createPutTransaction(id2, 1).commit();
+        writeActiveTransaction(applicationRepo, id2, 1);
         assertResponse(url, Response.Status.OK,
                 "[\"" + url + "bali/environment/dev/region/us-east/instance/quux\"," +
                         "\"" + url + "foo/environment/dev/region/us-east/instance/quux\"]"
@@ -98,10 +100,10 @@ public class ListApplicationsHandlerTest {
     public void require_that_listing_works_with_multiple_tenants() throws Exception {
         ApplicationId id1 = ApplicationId.from("mytenant", "foo", "quux");
         applicationRepo.createApplication(id1);
-        applicationRepo.createPutTransaction(id1, 1).commit();
+        writeActiveTransaction(applicationRepo, id1, 1);
         ApplicationId id2 = ApplicationId.from("foobar", "quux", "foo");
         applicationRepo2.createApplication(id2);
-        applicationRepo2.createPutTransaction(id2, 1).commit();
+        writeActiveTransaction(applicationRepo2, id2, 1);
         String url = "http://myhost:14000/application/v2/tenant/mytenant/application/";
         assertResponse(url, Response.Status.OK,
                 "[\"" + url + "foo/environment/dev/region/us-east/instance/quux\"]");
@@ -124,4 +126,11 @@ public class ListApplicationsHandlerTest {
         assertEquals(expectedStatus, response.getStatus());
         assertEquals(expectedResponse, SessionHandlerTest.getRenderedString(response));
     }
+
+    private void writeActiveTransaction(TenantApplications repo, ApplicationId id1, int x) {
+        try (var transaction = new CuratorTransaction(tenantRepository.getCurator())) {
+            repo.createWriteActiveTransaction(transaction, id1, x).commit();
+        }
+    }
+
 }

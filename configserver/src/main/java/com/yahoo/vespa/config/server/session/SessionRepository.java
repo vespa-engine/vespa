@@ -974,7 +974,7 @@ public class SessionRepository {
 
     public Transaction createActivateTransaction(Session session) {
         Transaction transaction = createSetStatusTransaction(session, Session.Status.ACTIVATE);
-        transaction.add(applicationRepo.createPutTransaction(session.getApplicationId(), session.getSessionId()).operations());
+        transaction.add(applicationRepo.createWriteActiveTransaction(transaction, session.getApplicationId(), session.getSessionId()).operations());
         return transaction;
     }
 

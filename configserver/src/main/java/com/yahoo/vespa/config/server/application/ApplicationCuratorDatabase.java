@@ -87,10 +87,10 @@ public class ApplicationCuratorDatabase {
      * Returns a transaction which writes the given session id as the currently active for the given application.
      *
      * @param applicationId An {@link ApplicationId} that represents an active application.
-     * @param sessionId Id of the session containing the application package for this id.
+     * @param sessionId session id belonging to the application package for this application id.
      */
-    public Transaction createPutTransaction(ApplicationId applicationId, long sessionId) {
-        return new CuratorTransaction(curator).add(CuratorOperations.setData(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
+    public Transaction createWriteActiveTransaction(Transaction transaction, ApplicationId applicationId, long sessionId) {
+        return transaction.add(CuratorOperations.setData(applicationPath(applicationId).getAbsolute(), Utf8.toAsciiBytes(sessionId)));
     }
 
     /**
