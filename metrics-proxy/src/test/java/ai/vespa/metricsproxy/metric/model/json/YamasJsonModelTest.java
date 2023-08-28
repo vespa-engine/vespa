@@ -35,7 +35,7 @@ public class YamasJsonModelTest {
         YamasJsonModel jsonModel = getYamasJsonModel("yamas-array.json");
 
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            YamasResponse response = new YamasResponse(200, List.of(YamasJsonUtil.toMetricsPacketBuilder(jsonModel).build()));
+            YamasResponse response = new YamasResponse(200, List.of(YamasJsonUtil.toMetricsPacketBuilder(jsonModel).build()), false);
             response.render(outputStream);
             assertEquals(EXPECTED_JSON, outputStream.toString());
         }
@@ -52,7 +52,7 @@ public class YamasJsonModelTest {
 
         // Serialize and verify
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            YamasResponse response = new YamasResponse(200, List.of(YamasJsonUtil.toMetricsPacketBuilder(jsonModel).build()));
+            YamasResponse response = new YamasResponse(200, List.of(YamasJsonUtil.toMetricsPacketBuilder(jsonModel).build()), false);
             response.render(outputStream);
             assertEquals(EXPECTED_JSON, outputStream.toString());
         }
@@ -83,6 +83,22 @@ public class YamasJsonModelTest {
 
         // Do some sanity checking
         assertNull(jsonModel.routing);
+    }
+
+    @Test
+    public void creates_correct_jsonl() throws IOException {
+        YamasJsonModel jsonModel = getYamasJsonModel("yamas-array.json");
+        MetricsPacket packet = YamasJsonUtil.toMetricsPacketBuilder(jsonModel).build();
+        // Add packet twice to verify object delimiter
+        List<MetricsPacket> metricPackets = List.of(packet, packet);
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            YamasResponse response = new YamasResponse(200, metricPackets, true);
+            response.render(outputStream);
+            assertEquals("""
+                    {"timestamp":1400047900,"application":"vespa.searchnode","metrics":{"cpu":55.5555555555555,"memory_virt":22222222222,"memory_rss":5555555555},"dimensions":{"applicationName":"app","tenantName":"tenant","metrictype":"system","instance":"searchnode","applicationInstance":"default","clustername":"cluster"},"routing":{"yamas":{"namespaces":["Vespa"]}}}
+                    {"timestamp":1400047900,"application":"vespa.searchnode","metrics":{"cpu":55.5555555555555,"memory_virt":22222222222,"memory_rss":5555555555},"dimensions":{"applicationName":"app","tenantName":"tenant","metrictype":"system","instance":"searchnode","applicationInstance":"default","clustername":"cluster"},"routing":{"yamas":{"namespaces":["Vespa"]}}}""",
+                    outputStream.toString());
+        }
     }
 
     private YamasJsonModel getYamasJsonModel(String testFile) throws IOException {

@@ -16,10 +16,12 @@ import java.util.List;
 public class YamasResponse extends HttpResponse {
 
     private final List<MetricsPacket> metrics;
+    private boolean useJsonl;
 
-    public YamasResponse(int code, List<MetricsPacket> metrics) {
+    public YamasResponse(int code, List<MetricsPacket> metrics, boolean useJsonl) {
         super(code);
         this.metrics = metrics;
+        this.useJsonl = useJsonl;
     }
 
     @Override
@@ -29,7 +31,10 @@ public class YamasResponse extends HttpResponse {
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
-        YamasJsonUtil.toJson(metrics, outputStream, false);
+        if (useJsonl)
+            YamasJsonUtil.toJsonl(metrics, outputStream, false);
+        else
+            YamasJsonUtil.toJson(metrics, outputStream, false);
     }
 
 }
