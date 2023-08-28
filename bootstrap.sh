@@ -63,10 +63,9 @@ $top/dist/getversionmap.sh $top > $top/dist/vtag.map
 # The 'default' mode also builds some modules needed by C++ code.
 # The 'full' mode also builds modules needed by C++ tests.
 
-# Set up maven wrapper and output maven version
+# Set up maven wrapper. TODO: use here and in vespa build.
 echo "Setting up maven wrapper in $(pwd)"
-mvn wrapper:wrapper -Dmaven=3.8.8
-${MAVEN_CMD} -v
+mvn wrapper:wrapper -Dmaven=3.8.8 -f maven-plugins/pom.xml
 
 # must install parent poms first:
 echo "Downloading all dependencies. This may take a few minutes with an empty Maven cache."
