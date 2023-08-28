@@ -374,6 +374,13 @@ public class Flags {
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
+    public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
+            "ipv6-aws-target-groups", false,
+            List.of("andreer"), "2023-08-28", "2023-09-29",
+            "Always use IPv6 target groups for load balancers in aws",
+            "Takes effect on next load-balancer provisioning",
+            HOSTNAME, CLOUD_ACCOUNT);
+
     public static final UnboundBooleanFlag WRITE_APPLICATION_DATA_AS_JSON = defineFeatureFlag(
             "write-application-data-as-json", false,
             List.of("hmusum"), "2023-08-27", "2023-09-27",

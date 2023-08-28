@@ -14,6 +14,7 @@ import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -62,12 +63,14 @@ public class LoadBalancerProvisioner {
     private final CuratorDb db;
     private final LoadBalancerService service;
     private final BooleanFlag deactivateRouting;
+    private final BooleanFlag ipv6AwsTargetGroups;
 
     public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service) {
         this.nodeRepository = nodeRepository;
         this.db = nodeRepository.database();
         this.service = service;
         this.deactivateRouting = PermanentFlags.DEACTIVATE_ROUTING.bindTo(nodeRepository.flagSource());
+        this.ipv6AwsTargetGroups = Flags.IPV6_AWS_TARGET_GROUPS.bindTo(nodeRepository.flagSource());
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
 
         for (var id : db.readLoadBalancerIds()) {
@@ -267,7 +270,7 @@ public class LoadBalancerProvisioner {
         boolean shouldDeactivateRouting = deactivateRouting.with(FetchVector.Dimension.APPLICATION_ID,
                                                                  id.application().serializedForm())
                                                            .value();
-        Set<Real> reals = shouldDeactivateRouting ? Set.of() : realsOf(nodes);
+        Set<Real> reals = shouldDeactivateRouting ? Set.of() : realsOf(nodes, cloudAccount);
         log.log(Level.FINE, () -> "Configuring instance for " + id + ", targeting: " + reals);
         try {
             return Optional.of(service.configure(currentLoadBalancer.instance().orElseThrow(() -> new IllegalArgumentException("expected existing instance for " + id)),
@@ -293,10 +296,10 @@ public class LoadBalancerProvisioner {
     }
 
     /** Returns real servers for given nodes */
-    private Set<Real> realsOf(NodeList nodes) {
+    private Set<Real> realsOf(NodeList nodes, CloudAccount cloudAccount) {
         Set<Real> reals = new LinkedHashSet<>();
         for (var node : nodes) {
-            for (var ip : reachableIpAddresses(node)) {
+            for (var ip : reachableIpAddresses(node, cloudAccount)) {
                 reals.add(new Real(HostName.of(node.hostname()), ip));
             }
         }
@@ -321,10 +324,13 @@ public class LoadBalancerProvisioner {
     }
 
     /** Find IP addresses reachable by the load balancer service */
-    private Set<String> reachableIpAddresses(Node node) {
+    private Set<String> reachableIpAddresses(Node node, CloudAccount cloudAccount) {
         Set<String> reachable = new LinkedHashSet<>(node.ipConfig().primary());
+        boolean forceIpv6 = ipv6AwsTargetGroups.with(FetchVector.Dimension.CLOUD_ACCOUNT, cloudAccount.account()).value();
+        var protocol = forceIpv6 ? LoadBalancerService.Protocol.ipv6 :
+                service.protocol(node.cloudAccount().isExclave(nodeRepository.zone()));
         // Remove addresses unreachable by the load balancer service
-        switch (service.protocol(node.cloudAccount().isExclave(nodeRepository.zone()))) {
+        switch (protocol) {
             case ipv4 -> reachable.removeIf(IP::isV6);
             case ipv6 -> reachable.removeIf(IP::isV4);
         }
