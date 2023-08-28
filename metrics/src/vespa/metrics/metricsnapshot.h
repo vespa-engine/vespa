@@ -94,9 +94,7 @@ public:
     MetricSnapshot& getSnapshot(bool temporary) {
         return *((temporary && _count > 1) ? _building : _current);
     }
-    const MetricSnapshot& getSnapshot() const {
-        return getSnapshot(false);
-    }
+
     const MetricSnapshot& getSnapshot(bool temporary) const {
         return *((temporary && _count > 1) ? _building : _current);
     }

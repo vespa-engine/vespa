@@ -90,56 +90,60 @@ BucketManager::print(std::ostream& out, bool ,const std::string& ) const
 
 namespace {
 
-template<bool log>
 class DistributorInfoGatherer
 {
     using ResultArray = api::RequestBucketInfoReply::EntryVector;
 
     DistributorStateCache                      _state;
     std::unordered_map<uint16_t, ResultArray>& _result;
-    const document::BucketIdFactory&           _factory;
-    std::shared_ptr<const lib::Distribution>  _storageDistribution;
+    bool                                       _spam;
 
 public:
-    DistributorInfoGatherer(
-            const lib::ClusterState& systemState,
-            std::unordered_map<uint16_t, ResultArray>& result,
-            const document::BucketIdFactory& factory,
-            std::shared_ptr<const lib::Distribution> distribution)
-        : _state(*distribution, systemState),
-          _result(result),
-          _factory(factory),
-          _storageDistribution(std::move(distribution))
-    {
-    }
+    DistributorInfoGatherer(const lib::ClusterState& systemState,
+                            std::unordered_map<uint16_t, ResultArray>& result,
+                            const lib::Distribution & distribution,
+                            bool spam);
 
-    StorBucketDatabase::Decision operator()(uint64_t bucketId,const StorBucketDatabase::Entry& data)
-    {
-        document::BucketId b(document::BucketId::keyToBucketId(bucketId));
-        try{
-            uint16_t i = _state.getOwner(b);
-            auto it = _result.find(i);
-            if constexpr (log) {
-                LOG(spam, "Bucket %s (reverse %" PRIu64 "), should be handled by distributor %u which we are %sgenerating state for.",
-                    b.toString().c_str(), bucketId, i, it == _result.end() ? "not " : "");
-            }
-            if (it != _result.end()) {
-                api::RequestBucketInfoReply::Entry entry;
-                entry._bucketId = b;
-                entry._info = data.getBucketInfo();
-                it->second.push_back(entry);
-            }
-        } catch (lib::TooFewBucketBitsInUseException& e) {
-            LOGBP(warning, "Cannot assign bucket %s to a distributor as bucket only specifies %u bits.",
-                  b.toString().c_str(), b.getUsedBits());
-        } catch (lib::NoDistributorsAvailableException& e) {
-            LOGBP(warning, "No distributors available while processing request bucket info. Distribution hash: %s, cluster state: %s",
-                  _state.getDistribution().getNodeGraph().getDistributionConfigHash().c_str(), _state.getClusterState().toString().c_str());
-        }
-        return StorBucketDatabase::Decision::CONTINUE;
-    }
+    StorBucketDatabase::Decision operator()(uint64_t bucketId, const StorBucketDatabase::Entry& data);
 
 };
+
+DistributorInfoGatherer::DistributorInfoGatherer(const lib::ClusterState& systemState,
+                                                 std::unordered_map<uint16_t, ResultArray>& result,
+                                                 const lib::Distribution & distribution,
+                                                 bool spam)
+        : _state(distribution, systemState),
+          _result(result),
+          _spam(spam)
+{
+}
+
+StorBucketDatabase::Decision
+DistributorInfoGatherer::operator()(uint64_t bucketId, const StorBucketDatabase::Entry& data)
+{
+    document::BucketId b(document::BucketId::keyToBucketId(bucketId));
+    try {
+        uint16_t i = _state.getOwner(b);
+        auto it = _result.find(i);
+        if (_spam) {
+            LOG(spam, "Bucket %s (reverse %" PRIu64 "), should be handled by distributor %u which we are %sgenerating state for.",
+                b.toString().c_str(), bucketId, i, it == _result.end() ? "not " : "");
+        }
+        if (it != _result.end()) {
+            api::RequestBucketInfoReply::Entry entry;
+            entry._bucketId = b;
+            entry._info = data.getBucketInfo();
+            it->second.push_back(entry);
+        }
+    } catch (lib::TooFewBucketBitsInUseException& e) {
+        LOGBP(warning, "Cannot assign bucket %s to a distributor as bucket only specifies %u bits.",
+              b.toString().c_str(), b.getUsedBits());
+    } catch (lib::NoDistributorsAvailableException& e) {
+        LOGBP(warning, "No distributors available while processing request bucket info. Distribution hash: %s, cluster state: %s",
+              _state.getDistribution().getNodeGraph().getDistributionConfigHash().c_str(), _state.getClusterState().toString().c_str());
+    }
+    return StorBucketDatabase::Decision::CONTINUE;
+}
 
 struct MetricsUpdater {
     struct Count {
@@ -201,38 +205,33 @@ BucketManager::getBucketInfo(const document::Bucket &bucket) const
 }
 
 void
-BucketManager::updateMetrics(bool updateDocCount)
+BucketManager::updateMetrics()
 {
-    LOG(debug, "Iterating bucket database to update metrics%s%s",
-        updateDocCount ? "" : ", minusedbits only",
+    LOG(debug, "Iterating bucket database to update metrics%s",
         _doneInitialized ? "" : ", server is not done initializing");
 
-    if (!updateDocCount || _doneInitialized) {
+    if (_doneInitialized) {
         MetricsUpdater total;
         for (const auto& space : _component.getBucketSpaceRepo()) {
             MetricsUpdater m;
             auto guard = space.second->bucketDatabase().acquire_read_guard();
             guard->for_each(std::ref(m));
             total.add(m);
-            if (updateDocCount) {
-                auto bm = _metrics->bucket_spaces.find(space.first);
-                assert(bm != _metrics->bucket_spaces.end());
-                bm->second->buckets_total.set(m.count.buckets);
-                bm->second->docs.set(m.count.docs);
-                bm->second->bytes.set(m.count.bytes);
-                bm->second->active_buckets.set(m.count.active);
-                bm->second->ready_buckets.set(m.count.ready);
-            }
+            auto bm = _metrics->bucket_spaces.find(space.first);
+            assert(bm != _metrics->bucket_spaces.end());
+            bm->second->buckets_total.set(m.count.buckets);
+            bm->second->docs.set(m.count.docs);
+            bm->second->bytes.set(m.count.bytes);
+            bm->second->active_buckets.set(m.count.active);
+            bm->second->ready_buckets.set(m.count.ready);
         }
-        if (updateDocCount) {
-            auto & dest = *_metrics->disk;
-            const auto & src = total.count;
-            dest.buckets.addValue(src.buckets);
-            dest.docs.addValue(src.docs);
-            dest.bytes.addValue(src.bytes);
-            dest.active.addValue(src.active);
-            dest.ready.addValue(src.ready);
-        }
+        auto & dest = *_metrics->disk;
+        const auto & src = total.count;
+        dest.buckets.addValue(src.buckets);
+        dest.docs.addValue(src.docs);
+        dest.bytes.addValue(src.bytes);
+        dest.active.addValue(src.active);
+        dest.ready.addValue(src.ready);
     }
     update_bucket_db_memory_usage_metrics();
 }
@@ -494,8 +493,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         reqs.size(), bucketSpace.toString().c_str(), clusterState->toString().c_str(), our_hash.c_str());
 
     std::lock_guard clusterStateGuard(_clusterStateLock);
-    for (auto it = reqs.rbegin(); it != reqs.rend(); it++) {
-        const auto & req = *it;
+    for (const auto & req : std::ranges::reverse_view(reqs)) {
         // Currently small requests should not be forwarded to worker thread
         assert(req->hasSystemState());
         const auto their_hash = req->getDistributionHash();
@@ -566,13 +564,12 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
    framework::MilliSecTimer runStartTime(_component.getClock());
     // Don't allow logging to lower performance of inner loop.
     // Call other type of instance if logging
-    const document::BucketIdFactory& idFac(_component.getBucketIdFactory());
     if (LOG_WOULD_LOG(spam)) {
-        DistributorInfoGatherer<true> builder(*clusterState, result, idFac, distribution);
+        DistributorInfoGatherer builder(*clusterState, result, *distribution, true);
         _component.getBucketDatabase(bucketSpace).for_each_chunked(std::ref(builder),
                         "BucketManager::processRequestBucketInfoCommands-1");
     } else {
-        DistributorInfoGatherer<false> builder(*clusterState, result, idFac, distribution);
+        DistributorInfoGatherer builder(*clusterState, result, *distribution, false);
         _component.getBucketDatabase(bucketSpace).for_each_chunked(std::ref(builder),
                         "BucketManager::processRequestBucketInfoCommands-2");
     }

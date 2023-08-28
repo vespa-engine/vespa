@@ -72,7 +72,7 @@ private:
     class ScopedQueueDispatchGuard {
         BucketManager& _mgr;
     public:
-        ScopedQueueDispatchGuard(BucketManager&);
+        explicit ScopedQueueDispatchGuard(BucketManager&);
         ~ScopedQueueDispatchGuard();
 
         ScopedQueueDispatchGuard(const ScopedQueueDispatchGuard&) = delete;
@@ -83,7 +83,7 @@ public:
     BucketManager(const config::ConfigUri&, ServiceLayerComponentRegister&);
     BucketManager(const BucketManager&) = delete;
     BucketManager& operator=(const BucketManager&) = delete;
-    ~BucketManager();
+    ~BucketManager() override;
 
     void startWorkerThread();
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -94,7 +94,7 @@ public:
     /** Get info for given bucket (Used for whitebox testing) */
     StorBucketDatabase::Entry getBucketInfo(const document::Bucket &id) const;
 
-    void force_db_sweep_and_metric_update() { updateMetrics(true); }
+    void force_db_sweep_and_metric_update() { updateMetrics(); }
 
     bool onUp(const std::shared_ptr<api::StorageMessage>&) override;
 
@@ -112,8 +112,8 @@ private:
     void onDoneInit() override { _doneInitialized = true; }
     void onClose() override;
 
-    void updateMetrics(bool updateDocCount);
-    void updateMetrics(const MetricLockGuard &) override { updateMetrics(true); }
+    void updateMetrics();
+    void updateMetrics(const MetricLockGuard &) override { updateMetrics(); }
     void update_bucket_db_memory_usage_metrics();
     void updateMinUsedBits();
 
@@ -127,8 +127,7 @@ private:
      * Returns whether request was enqueued (and should thus not be forwarded
      * by the caller).
      */
-    bool enqueueAsConflictIfProcessingRequest(
-            const api::StorageReply::SP& reply);
+    bool enqueueAsConflictIfProcessingRequest(const api::StorageReply::SP& reply);
 
     /**
      * Signals that code is entering a section where certain bucket tree
