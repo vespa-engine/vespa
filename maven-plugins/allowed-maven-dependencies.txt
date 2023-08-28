@@ -32,7 +32,7 @@ org.apache.maven:maven-resolver-provider:3.8.7
 org.apache.maven:maven-settings:3.8.7
 org.apache.maven:maven-settings-builder:3.8.7
 org.apache.maven.enforcer:enforcer-api:3.3.0
-org.apache.maven.plugin-tools:maven-plugin-annotations:3.6.4
+org.apache.maven.plugin-tools:maven-plugin-annotations:3.9.0
 org.apache.maven.plugins:maven-shade-plugin:3.4.1
 org.apache.maven.resolver:maven-resolver-api:1.6.3
 org.apache.maven.resolver:maven-resolver-impl:1.6.3

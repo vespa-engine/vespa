@@ -120,7 +120,7 @@ org.apache.maven:maven-profile:2.2.1
 org.apache.maven:maven-project:2.2.1
 org.apache.maven:maven-repository-metadata:3.8.7
 org.apache.maven:maven-settings:3.8.7
-org.apache.maven.plugin-tools:maven-plugin-annotations:3.6.4
+org.apache.maven.plugin-tools:maven-plugin-annotations:3.9.0
 org.apache.maven.plugins:maven-jar-plugin:3.3.0
 org.apache.maven.shared:file-management:3.1.0
 org.apache.maven.wagon:wagon-provider-api:2.10
