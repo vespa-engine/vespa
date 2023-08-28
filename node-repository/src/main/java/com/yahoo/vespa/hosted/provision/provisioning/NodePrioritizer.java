@@ -128,6 +128,7 @@ public class NodePrioritizer {
             if (spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
             if ( ! capacity.hasCapacity(host, requested.resources().get())) continue;
             if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
+            if ( ! requested.cloudAccount().isUnspecified() && ! requested.cloudAccount().equals(host.cloudAccount())) continue;
 
             candidates.add(NodeCandidate.createNewChild(requested.resources().get(),
                                                         capacity.availableCapacityOf(host),
