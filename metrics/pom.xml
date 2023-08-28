@@ -103,11 +103,9 @@
         <artifactId>maven-install-plugin</artifactId>
       </plugin>
       <plugin>
-        <!-- Remove when v2.1 is the default
-             - it is required by maven-project-info-reports-plugin v2.2 -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
-        <version>3.12.1</version>
+        <version>${maven-site-plugin.vespa.version}</version>
       </plugin>
     </plugins>
   </build>
