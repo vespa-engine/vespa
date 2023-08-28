@@ -7,6 +7,14 @@
 
 using namespace vespalib;
 
+struct Alive {
+    uint32_t &cnt;
+    uint32_t id;
+    Alive(uint32_t &cnt_in, uint32_t id_in) noexcept
+      : cnt(cnt_in), id(id_in) { ++cnt; }
+    ~Alive() { --cnt; }
+};
+
 template <typename T, size_t N>
 void verify(const SmallVector<T,N> &vec, std::vector<uint32_t> expect, size_t expect_capacity = 0) {
     if (expect_capacity == 0) {
@@ -261,6 +269,24 @@ TEST(SmallVectorTest, check_back_method) {
         EXPECT_EQ(last_value_of(vec), i);
     }
     EXPECT_EQ(&vec.back(), vec.end() - 1);
+}
+
+TEST(SmallVectorTest, pop_back) {
+    uint32_t my_cnt = 0;
+    {
+        SmallVector<Alive> vec;
+        vec.emplace_back(my_cnt, 1);
+        vec.emplace_back(my_cnt, 2);
+        vec.emplace_back(my_cnt, 3);
+        EXPECT_EQ(vec.size(), 3);
+        EXPECT_EQ(my_cnt, 3);
+        vec.pop_back();
+        EXPECT_EQ(my_cnt, 2);
+        ASSERT_EQ(vec.size(), 2);
+        EXPECT_EQ(vec[0].id, 1);
+        EXPECT_EQ(vec[1].id, 2);
+    }
+    EXPECT_EQ(my_cnt, 0);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
