@@ -212,6 +212,7 @@ public:
     }
     void push_back(const T &obj) { emplace_back(obj); }
     void push_back(T &&obj) { emplace_back(std::move(obj)); }
+    void pop_back() { small_vector::destroy_objects(_data + --_size, 1); }
 };
 
 template <typename T, size_t N, size_t M>
