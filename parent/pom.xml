@@ -237,7 +237,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>properties-maven-plugin</artifactId>
-                    <version>1.2.0</version>
+                    <version>${properties-maven-plugin.vespa.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>com.yahoo.vespa</groupId>
