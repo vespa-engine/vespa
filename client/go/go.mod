@@ -10,7 +10,7 @@ require (
 	github.com/go-json-experiment/json v0.0.0-20230216065249-540f01442424
 	github.com/klauspost/compress v1.16.5
 	github.com/mattn/go-colorable v0.1.13
-	github.com/mattn/go-isatty v0.0.18
+	github.com/mattn/go-isatty v0.0.19
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
