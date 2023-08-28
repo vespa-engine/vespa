@@ -362,7 +362,7 @@ public class Flags {
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag USE_VESPA_USER_EVERYWHERE = defineFeatureFlag(
-            "use-vespa-user-everywhere", false,
+            "use-vespa-user-everywhere", true,
             List.of("aressem"), "2023-07-28", "2023-09-01",
             "Use the vespa user for running Vespa everywhere",
             "Takes effect immediately");
