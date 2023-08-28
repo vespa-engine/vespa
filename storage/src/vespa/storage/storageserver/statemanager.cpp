@@ -19,6 +19,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
 #include <fstream>
+#include <ranges>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".state.manager");
@@ -141,9 +142,9 @@ StateManager::reportHtmlStatus(std::ostream& out,
             << "<h1>System state history</h1>\n"
             << "<table border=\"1\"><tr>"
             << "<th>Received at time</th><th>State</th></tr>\n";
-        for (auto it = _systemStateHistory.rbegin(); it != _systemStateHistory.rend(); it++) {
-            out << "<tr><td>" << vespalib::to_string(vespalib::to_utc(it->first)) << "</td><td>"
-                << xml_content_escaped(it->second->getBaselineClusterState()->toString()) << "</td></tr>\n";
+        for (const auto & it : std::ranges::reverse_view(_systemStateHistory)) {
+            out << "<tr><td>" << vespalib::to_string(vespalib::to_utc(it.first)) << "</td><td>"
+                << xml_content_escaped(it.second->getBaselineClusterState()->toString()) << "</td></tr>\n";
         }
         out << "</table>\n";
     }
