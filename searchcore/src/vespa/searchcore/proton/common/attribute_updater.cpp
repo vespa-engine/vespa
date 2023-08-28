@@ -223,7 +223,8 @@ AttributeUpdater::handleUpdate(TensorAttribute &vec, uint32_t lid, const ValueUp
             updateValue(vec, lid, assign.getValue());
         }
     } else if (op == ValueUpdate::TensorModify) {
-        vec.update_tensor(lid, static_cast<const TensorModifyUpdate &>(upd), false);
+        const auto& modify = static_cast<const TensorModifyUpdate&>(upd);
+        vec.update_tensor(lid, modify, modify.get_default_cell_value().has_value());
     } else if (op == ValueUpdate::TensorAdd) {
         vec.update_tensor(lid, static_cast<const TensorAddUpdate &>(upd), true);
     } else if (op == ValueUpdate::TensorRemove) {

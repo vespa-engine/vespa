@@ -32,6 +32,7 @@ public:
     void accept(FieldValueVisitor &visitor) override;
     void accept(ConstFieldValueVisitor &visitor) const override;
     const DataType *getDataType() const override;
+    const TensorDataType& get_tensor_data_type() const { return _dataType; }
     TensorFieldValue* clone() const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void printXml(XmlOutputStream& out) const override;

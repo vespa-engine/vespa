@@ -436,6 +436,15 @@ TEST_F("require that tensor modify update is applied",
     f.assertTensor(TensorSpec(f.type).add({{"x", 0}}, 7).add({{"x", 1}}, 5));
 }
 
+TEST_F("require that tensor modify update with 'create: true' is applied to non-existing tensor",
+       TensorFixture<DenseTensorAttribute>("tensor(x[2])", "dense_tensor"))
+{
+    f.applyValueUpdate(*f.attribute, 1,
+                       std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::ADD,
+                                                            makeTensorFieldValue(TensorSpec("tensor(x{})").add({{"x", "1"}}, 3)), 0.0));
+    f.assertTensor(TensorSpec(f.type).add({{"x", 0}}, 0).add({{"x", 1}}, 3));
+}
+
 TEST_F("require that tensor add update is applied",
         TensorFixture<SerializedFastValueAttribute>("tensor(x{})", "sparse_tensor"))
 {

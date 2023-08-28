@@ -1038,11 +1038,21 @@ TEST(DocumentUpdateTest, tensor_modify_update_with_create_non_existing_cells_can
                                 .add({{"x", "c"}}, 6));
 }
 
-TEST(DocumentUpdateTest, tensor_modify_update_can_be_applied_to_nonexisting_tensor)
+TEST(DocumentUpdateTest, tensor_modify_update_is_ignored_when_applied_to_nonexisting_tensor)
 {
     TensorUpdateFixture f;
     f.assertApplyUpdateNonExisting(std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::ADD,
                                                       f.makeTensor(f.spec().add({{"x", "b"}}, 5))));
+}
+
+TEST(DocumentUpdateTest, tensor_modify_update_with_create_non_existing_cells_is_applied_to_nonexisting_tensor)
+{
+    TensorUpdateFixture f;
+    f.assertApplyUpdateNonExisting(std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::ADD,
+                                                                        f.makeTensor(f.spec().add({{"x", "b"}}, 5)
+                                                                                             .add({{"x", "c"}}, 6)), 0.0),
+                                   f.spec().add({{"x", "b"}}, 5)
+                                           .add({{"x", "c"}}, 6));
 }
 
 TEST(DocumentUpdateTest, tensor_assign_update_can_be_roundtrip_serialized)
