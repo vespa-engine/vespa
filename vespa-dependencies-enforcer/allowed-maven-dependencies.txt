@@ -23,6 +23,7 @@ com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2
 com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.15.2
 com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.15.2
 com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.15.2
+com.github.luben:zstd-jni:1.5.5-4
 com.github.spotbugs:spotbugs-annotations:3.1.9
 com.google.auth:google-auth-library-credentials:1.19.0
 com.google.auth:google-auth-library-oauth2-http:1.19.0
@@ -110,7 +111,7 @@ org.apache.httpcomponents.core5:httpcore5:5.2.2
 org.apache.httpcomponents.core5:httpcore5-h2:5.2.2
 org.apache.lucene:lucene-analysis-common:9.7.0
 org.apache.lucene:lucene-core:9.7.0
-org.apache.maven:maven-archiver:3.6.0
+org.apache.maven:maven-archiver:3.6.1
 org.apache.maven:maven-artifact:3.9.4
 org.apache.maven:maven-artifact-manager:2.2.1
 org.apache.maven:maven-model:3.9.4
@@ -135,12 +136,12 @@ org.apiguardian:apiguardian-api:1.1.2
 org.bouncycastle:bcpkix-jdk18on:1.74
 org.bouncycastle:bcprov-jdk18on:1.74
 org.bouncycastle:bcutil-jdk18on:1.74
-org.codehaus.plexus:plexus-archiver:4.4.0
+org.codehaus.plexus:plexus-archiver:4.8.0
 org.codehaus.plexus:plexus-classworlds:2.7.0
 org.codehaus.plexus:plexus-component-annotations:1.5.5
 org.codehaus.plexus:plexus-container-default:1.0-alpha-9-stable-1
 org.codehaus.plexus:plexus-interpolation:1.26
-org.codehaus.plexus:plexus-io:3.4.0
+org.codehaus.plexus:plexus-io:3.4.1
 org.codehaus.plexus:plexus-utils:3.5.1
 org.eclipse.collections:eclipse-collections:11.0.0
 org.eclipse.collections:eclipse-collections-api:11.0.0
@@ -216,7 +217,6 @@ xml-apis:xml-apis:1.4.01
 
 #[test-only]
 # Contains dependencies that are used exclusively in 'test' scope
-com.github.luben:zstd-jni:1.5.5-4
 com.github.tomakehurst:wiremock-jre8-standalone:2.35.0
 com.google.guava:guava-testlib:32.1.1-jre
 com.google.inject:guice:4.2.3
