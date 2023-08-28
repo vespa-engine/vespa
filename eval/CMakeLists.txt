@@ -50,6 +50,7 @@ vespa_define_module(
     src/tests/instruction/dense_dot_product_function
     src/tests/instruction/dense_hamming_distance
     src/tests/instruction/dense_inplace_join_function
+    src/tests/instruction/dense_join_reduce_plan
     src/tests/instruction/dense_matmul_function
     src/tests/instruction/dense_multi_matmul_function
     src/tests/instruction/dense_replace_type_function
