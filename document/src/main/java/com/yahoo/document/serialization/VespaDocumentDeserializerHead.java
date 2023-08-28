@@ -26,12 +26,17 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
     @Override
     protected ValueUpdate readTensorModifyUpdate(DataType type) {
         byte operationId = getByte(null);
-        TensorModifyUpdate.Operation operation = TensorModifyUpdate.Operation.getOperation(operationId);
+        var operation = decodeOperation(operationId);
         if (operation == null) {
             throw new DeserializationException("Unknown operation id " + operationId + " for tensor modify update");
         }
         if (!(type instanceof TensorDataType)) {
             throw new DeserializationException("Expected tensor data type, got " + type);
+        }
+        var createNonExistingCells = decodeCreateNonExistingCells(operationId);
+        if (createNonExistingCells) {
+            // Read the default cell value (but it is not used by TensorModifyUpdate).
+            getDouble(null);
         }
         TensorDataType tensorDataType = (TensorDataType)type;
         TensorType tensorType = tensorDataType.getTensorType();
@@ -39,7 +44,17 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
 
         TensorFieldValue tensor = new TensorFieldValue(convertedType);
         tensor.deserialize(this);
-        return new TensorModifyUpdate(operation, tensor);
+        return new TensorModifyUpdate(operation, tensor, createNonExistingCells);
+    }
+
+    private TensorModifyUpdate.Operation decodeOperation(byte operationId) {
+        byte OP_MASK = 0b01111111;
+        return TensorModifyUpdate.Operation.getOperation(operationId & OP_MASK);
+    }
+
+    private boolean decodeCreateNonExistingCells(byte operationId) {
+        byte CREATE_FLAG = -0b10000000;
+        return (operationId & CREATE_FLAG) != 0;
     }
 
     @Override

@@ -1024,6 +1024,20 @@ TEST(DocumentUpdateTest, tensor_modify_update_can_be_applied)
                                 .add({{"x", "b"}}, 15));
 }
 
+TEST(DocumentUpdateTest, tensor_modify_update_with_create_non_existing_cells_can_be_applied)
+{
+    TensorUpdateFixture f;
+    auto baseLine = f.spec().add({{"x", "a"}}, 2)
+                            .add({{"x", "b"}}, 3);
+
+    f.assertApplyUpdate(baseLine,
+                        std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::ADD,
+                                                             f.makeTensor(f.spec().add({{"x", "b"}}, 5).add({{"x", "c"}}, 6)), 0.0),
+                        f.spec().add({{"x", "a"}}, 2)
+                                .add({{"x", "b"}}, 8)
+                                .add({{"x", "c"}}, 6));
+}
+
 TEST(DocumentUpdateTest, tensor_modify_update_can_be_applied_to_nonexisting_tensor)
 {
     TensorUpdateFixture f;
@@ -1069,6 +1083,9 @@ TEST(DocumentUpdateTest, tensor_modify_update_can_be_roundtrip_serialized)
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, f.makeBaselineTensor()));
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, f.makeBaselineTensor()));
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor(), 0.0));
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, f.makeBaselineTensor(), 0.0));
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, f.makeBaselineTensor(), 1.0));
 }
 
 TEST(DocumentUpdateTest, tensor_modify_update_on_float_tensor_can_be_roundtrip_serialized)
@@ -1077,6 +1094,9 @@ TEST(DocumentUpdateTest, tensor_modify_update_on_float_tensor_can_be_roundtrip_s
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor()));
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, f.makeBaselineTensor()));
     f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, f.makeBaselineTensor()));
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::REPLACE, f.makeBaselineTensor(), 0.0));
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::ADD, f.makeBaselineTensor(), 0.0));
+    f.assertRoundtripSerialize(TensorModifyUpdate(TensorModifyUpdate::Operation::MULTIPLY, f.makeBaselineTensor(), 1.0));
 }
 
 TEST(DocumentUpdateTest, tensor_modify_update_on_dense_tensor_can_be_roundtrip_serialized)
@@ -1170,7 +1190,10 @@ struct TensorUpdateSerializeFixture {
         result->addUpdate(FieldUpdate(getField("dense_tensor"))
                                   .addUpdate(std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::REPLACE, makeTensor()))
                                   .addUpdate(std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::ADD, makeTensor()))
-                                  .addUpdate(std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::MULTIPLY, makeTensor())));
+                                  .addUpdate(std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::MULTIPLY, makeTensor()))
+                                  .addUpdate(std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::REPLACE, makeTensor(), 0.0))
+                                  .addUpdate(std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::ADD, makeTensor(), 0.0))
+                                  .addUpdate(std::make_unique<TensorModifyUpdate>(TensorModifyUpdate::Operation::MULTIPLY, makeTensor(), 1.0)));
         return result;
     }
 
