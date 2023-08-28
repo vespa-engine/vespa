@@ -200,7 +200,7 @@ namespace {
 struct Path {
     vespalib::StringTokenizer _path;
 
-    Path(vespalib::stringref fullpath) : _path(fullpath, ".") { }
+    explicit Path(vespalib::stringref fullpath) : _path(fullpath, ".") { }
 
     vespalib::string toString() const {
         vespalib::asciistream ost;
@@ -246,7 +246,7 @@ struct ConsumerMetricBuilder : public MetricVisitor {
     };
     std::list<Result> result;
 
-    ConsumerMetricBuilder(const Config::Consumer& c) __attribute__((noinline));
+    explicit ConsumerMetricBuilder(const Config::Consumer& c) __attribute__((noinline));
     ~ConsumerMetricBuilder() __attribute__((noinline));
 
     bool tagAdded(const Metric& metric) {
@@ -486,7 +486,7 @@ MetricManager::configure(const MetricLockGuard & , std::unique_ptr<Config> confi
         _totalMetrics = std::make_shared<MetricSnapshot>("All time snapshot", 0s, _activeMetrics.getMetrics(), _snapshotUnsetMetrics);
         _totalMetrics->reset(currentTime);
     }
-    if (_config.get() == 0 || (_config->consumer.size() != config->consumer.size())) {
+    if ( !_config || (_config->consumer.size() != config->consumer.size())) {
         _consumerConfigChanged = true;
     } else {
         for (uint32_t i=0; i<_config->consumer.size(); ++i) {
@@ -553,7 +553,7 @@ MetricManager::visit(const MetricLockGuard & guard, const MetricSnapshot& snapsh
                      MetricVisitor& visitor, const std::string& consumer) const
 {
     if (visitor.visitSnapshot(snapshot)) {
-        if (consumer == "") {
+        if (consumer.empty()) {
             snapshot.getMetrics().visit(visitor);
         } else {
             const ConsumerSpec * consumerSpec = getConsumerSpec(guard, consumer);

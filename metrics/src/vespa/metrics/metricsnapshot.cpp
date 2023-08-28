@@ -32,7 +32,7 @@ MetricSnapshot::MetricSnapshot(const Metric::String& name, system_time::duration
       _snapshot(),
       _metrics()
 {
-    _snapshot.reset(source.clone(_metrics, Metric::INACTIVE, 0, copyUnset));
+    _snapshot.reset(source.clone(_metrics, Metric::INACTIVE, nullptr, copyUnset));
     _metrics.shrink_to_fit();
 }
 
@@ -54,7 +54,7 @@ void
 MetricSnapshot::recreateSnapshot(const MetricSet& metrics, bool copyUnset)
 {
     std::vector<Metric::UP> newMetrics;
-    Metric* m = metrics.clone(newMetrics, Metric::INACTIVE, 0, copyUnset);
+    Metric* m = metrics.clone(newMetrics, Metric::INACTIVE, nullptr, copyUnset);
     assert(m->isMetricSet());
     std::unique_ptr<MetricSet> newSnapshot(static_cast<MetricSet*>(m));
     newSnapshot->reset();
@@ -81,7 +81,7 @@ MetricSnapshotSet::MetricSnapshotSet(const Metric::String& name, system_time::du
       _building(count == 1 ? nullptr : new MetricSnapshot(name, period, source, snapshotUnsetMetrics))
 {
     _current->reset();
-    if (_building.get()) _building->reset();
+    if (_building) _building->reset();
 }
 
 MetricSnapshot&

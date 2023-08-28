@@ -16,7 +16,8 @@ namespace storage {
 
 namespace {
 
-ContentBucketDbOptions bucket_db_options_from_config(const config::ConfigUri& config_uri) {
+ContentBucketDbOptions
+bucket_db_options_from_config(const config::ConfigUri& config_uri) {
     using vespa::config::content::core::StorServerConfig;
     auto server_config = config::ConfigGetter<StorServerConfig>::getConfig(
             config_uri.getConfigId(), config_uri.getContext());

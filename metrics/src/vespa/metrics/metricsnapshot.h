@@ -71,8 +71,8 @@ public:
 };
 
 class MetricSnapshotSet {
-    uint32_t _count; // Number of times we need to add to building period
-                     // before we have a full time window.
+    const uint32_t _count; // Number of times we need to add to building period
+                           // before we have a full time window.
     uint32_t _builderCount; // Number of times we've currently added to the
                             // building instance.
     std::unique_ptr<MetricSnapshot> _current; // The last full period
@@ -94,9 +94,7 @@ public:
     MetricSnapshot& getSnapshot(bool temporary) {
         return *((temporary && _count > 1) ? _building : _current);
     }
-    const MetricSnapshot& getSnapshot() const {
-        return getSnapshot(false);
-    }
+
     const MetricSnapshot& getSnapshot(bool temporary) const {
         return *((temporary && _count > 1) ? _building : _current);
     }

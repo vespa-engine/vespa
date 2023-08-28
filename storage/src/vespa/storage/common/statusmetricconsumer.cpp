@@ -8,7 +8,6 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/xmlstream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".status.metricreporter");
