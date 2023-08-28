@@ -39,6 +39,7 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -239,14 +240,22 @@ public class SessionRepository {
                 throw new UnknownVespaVersionException("Vespa version '" + version + "' not known by this config server");
         });
 
-        applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
-        logger.log(Level.FINE, "Created application " + params.getApplicationId());
+        ApplicationId applicationId = params.getApplicationId();
+        applicationRepo.createApplication(applicationId); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(
+        logger.log(Level.FINE, "Created application " + applicationId);
         long sessionId = session.getSessionId();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
         Optional<CompletionWaiter> waiter = params.isDryRun()
                 ? Optional.empty()
                 : Optional.of(sessionZooKeeperClient.createPrepareWaiter());
-        Optional<ApplicationVersions> activeApplicationVersions = activeApplicationVersions(params.getApplicationId());
+        Optional<ApplicationVersions> activeApplicationVersions = activeApplicationVersions(applicationId);
+        try (var transaction = new CuratorTransaction(curator)) {
+            applicationRepo.createWritePrepareTransaction(transaction,
+                                                          applicationId,
+                                                          sessionId,
+                                                          getActiveSessionId(applicationId))
+                    .commit();
+        }
         ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo, logger, params,
                                                               activeApplicationVersions, now, getSessionAppDir(sessionId),
                                                               session.getApplicationPackage(), sessionZooKeeperClient)
@@ -277,6 +286,7 @@ public class SessionRepository {
                                                             timeoutBudget,
                                                             deployLogger,
                                                             created);
+        applicationRepo.createApplication(applicationId);
         write(existingSession, session, applicationId, created);
         return session;
     }
@@ -293,9 +303,10 @@ public class SessionRepository {
                                                             ApplicationId applicationId,
                                                             TimeoutBudget timeoutBudget,
                                                             DeployLogger deployLogger) {
-        applicationRepo.createApplication(applicationId);
-        return createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget,
+        LocalSession session = createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget,
                                             deployLogger, clock.instant());
+        applicationRepo.createApplication(applicationId);
+        return session;
     }
 
     /**
