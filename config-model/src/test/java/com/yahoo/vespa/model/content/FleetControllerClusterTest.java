@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
@@ -16,7 +15,6 @@ public class FleetControllerClusterTest {
 
     private FleetcontrollerConfig parse(String xml, TestProperties props) {
         var deployStateBuilder = new DeployState.Builder().properties(props);
-        props.allowMoreThanOneContentGroupDown(new ClusterSpec.Id("default"));
         var mockPkg = new VespaModelCreatorWithMockPkg(null, xml, ApplicationPackageUtils.generateSchemas("type1"));
         var model = mockPkg.create(deployStateBuilder);
         var builder = new FleetcontrollerConfig.Builder();
@@ -48,7 +46,7 @@ public class FleetControllerClusterTest {
                           </cluster-controller>
                         </tuning>
                       </content>""",
-              new TestProperties().setAllowMoreThanOneContentGroupDown(true));
+              new TestProperties());
 
         assertEquals(13 * 1000, config.init_progress_time());
         assertEquals(27 * 1000, config.storage_transition_time());

@@ -24,16 +24,11 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
         private final String clusterName;
         private final ModelElement clusterElement;
         private final ResourceLimits resourceLimits;
-        private final boolean allowMoreThanOneContentGroupDown;
 
-        public Builder(String clusterName,
-                       ModelElement clusterElement,
-                       ResourceLimits resourceLimits,
-                       boolean allowMoreThanOneContentGroupDown) {
+        public Builder(String clusterName, ModelElement clusterElement, ResourceLimits resourceLimits) {
             this.clusterName = clusterName;
             this.clusterElement = clusterElement;
             this.resourceLimits = resourceLimits;
-            this.allowMoreThanOneContentGroupDown = allowMoreThanOneContentGroupDown;
         }
 
         @Override
@@ -53,15 +48,13 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
             var tuningConfig = new ClusterControllerTuningBuilder(clusterControllerTuning,
                                                                   minNodeRatioPerGroup,
                                                                   bucketSplittingMinimumBits,
-                                                                  allowMoreThanOneContentGroupDown,
                                                                   numberOfLeafGroups)
                     .build();
 
             return new ClusterControllerConfig(ancestor,
                                                clusterName,
                                                tuningConfig,
-                                               resourceLimits,
-                                               allowMoreThanOneContentGroupDown);
+                                               resourceLimits);
         }
 
     }
@@ -69,18 +62,15 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
     private final String clusterName;
     private final ClusterControllerTuning tuning;
     private final ResourceLimits resourceLimits;
-    private final boolean allowMoreThanOneContentGroupDown;
 
     private ClusterControllerConfig(TreeConfigProducer<?> parent,
                                     String clusterName,
                                     ClusterControllerTuning tuning,
-                                    ResourceLimits resourceLimits,
-                                    boolean allowMoreThanOneContentGroupDown) {
+                                    ResourceLimits resourceLimits) {
         super(parent, "fleetcontroller");
         this.clusterName = clusterName;
         this.tuning = tuning;
         this.resourceLimits = resourceLimits;
-        this.allowMoreThanOneContentGroupDown = allowMoreThanOneContentGroupDown;
     }
 
     @Override
@@ -105,7 +95,7 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
         tuning.minStorageUpRatio.ifPresent(builder::min_storage_up_ratio);
         tuning.minSplitBits.ifPresent(builder::ideal_distribution_bits);
         tuning.minNodeRatioPerGroup.ifPresent(builder::min_node_ratio_per_group);
-        tuning.maxGroupsAllowedDown.ifPresent(max -> builder.max_number_of_groups_allowed_to_be_down(allowMoreThanOneContentGroupDown ? max : -1));
+        tuning.maxGroupsAllowedDown.ifPresent(builder::max_number_of_groups_allowed_to_be_down);
 
         resourceLimits.getConfig(builder);
     }
@@ -127,7 +117,6 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
         ClusterControllerTuningBuilder(ModelElement tuning,
                                        Optional<Double> minNodeRatioPerGroup,
                                        Optional<Integer> bucketSplittingMinimumBits,
-                                       boolean maxGroupsAllowedDown,
                                        int numberOfLeafGroups) {
             this.minSplitBits = bucketSplittingMinimumBits;
             this.minNodeRatioPerGroup = minNodeRatioPerGroup;
@@ -147,12 +136,12 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                 this.stableStateTimePeriod = Optional.ofNullable(tuning.childAsDuration("stable-state-period"));
                 this.minDistributorUpRatio = Optional.ofNullable(tuning.childAsDouble("min-distributor-up-ratio"));
                 this.minStorageUpRatio = Optional.ofNullable(tuning.childAsDouble("min-storage-up-ratio"));
-                this.maxGroupsAllowedDown = maxGroupsAllowedDown(tuning, maxGroupsAllowedDown, numberOfLeafGroups);
+                this.maxGroupsAllowedDown = maxGroupsAllowedDown(tuning, numberOfLeafGroups);
             }
         }
 
 
-        private static Optional<Integer> maxGroupsAllowedDown(ModelElement tuning, boolean allowMoreThanOneContentGroupDown, int numberOfLeafGroups) {
+        private static Optional<Integer> maxGroupsAllowedDown(ModelElement tuning, int numberOfLeafGroups) {
             var groupsAllowedDownRatio = tuning.childAsDouble("groups-allowed-down-ratio");
 
             if (groupsAllowedDownRatio != null) {
@@ -160,7 +149,7 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
                     throw new IllegalArgumentException("groups-allowed-down-ratio must be between 0 and 1, got " + groupsAllowedDownRatio);
 
                 var maxGroupsAllowedDown = Math.max(1, (int) Math.floor(groupsAllowedDownRatio * numberOfLeafGroups));
-                return allowMoreThanOneContentGroupDown ? Optional.of(maxGroupsAllowedDown) : Optional.empty();
+                return Optional.of(maxGroupsAllowedDown);
             }
 
             return Optional.empty();

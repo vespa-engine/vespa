@@ -167,9 +167,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                                                                       ClusterResourceLimits resourceLimits) {
             return new ClusterControllerConfig.Builder(c.clusterId,
                                                        contentElement,
-                                                       resourceLimits.getClusterControllerLimits(),
-                                                       deployState.featureFlags()
-                                                                  .allowMoreThanOneContentGroupDown(new ClusterSpec.Id(c.clusterId)))
+                                                       resourceLimits.getClusterControllerLimits())
                     .build(deployState, c, contentElement.getXml());
         }
 

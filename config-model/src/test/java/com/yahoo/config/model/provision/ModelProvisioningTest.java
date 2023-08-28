@@ -2379,10 +2379,8 @@ public class ModelProvisioningTest {
                         "  </content>" +
                         "</services>";
         VespaModelTester tester = new VespaModelTester();
-        tester.setModelProperties(new TestProperties().setAllowMoreThanOneContentGroupDown(true));
         tester.addHosts(9);
-        VespaModel model = tester.createModel(servicesXml, true, new DeployState.Builder()
-                .properties(new TestProperties().setAllowMoreThanOneContentGroupDown(true)));
+        VespaModel model = tester.createModel(servicesXml, true, new DeployState.Builder().properties(new TestProperties()));
 
         var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
         model.getConfig(fleetControllerConfigBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-content-configurer");
