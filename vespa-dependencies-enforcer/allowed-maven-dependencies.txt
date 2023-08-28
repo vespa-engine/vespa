@@ -123,7 +123,7 @@ org.apache.maven:maven-settings:3.8.7
 org.apache.maven.plugin-tools:maven-plugin-annotations:3.6.4
 org.apache.maven.plugins:maven-jar-plugin:3.3.0
 org.apache.maven.shared:file-management:3.1.0
-org.apache.maven.wagon:wagon-provider-api:2.10
+org.apache.maven.wagon:wagon-provider-api:2.12
 org.apache.opennlp:opennlp-tools:1.9.3
 org.apache.velocity:velocity-engine-core:2.3
 org.apache.yetus:audience-annotations:0.12.0
