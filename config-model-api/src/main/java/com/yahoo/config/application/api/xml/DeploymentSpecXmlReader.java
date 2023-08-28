@@ -166,7 +166,7 @@ public class DeploymentSpecXmlReader {
                                   stringAttribute(athenzDomainAttribute, root).map(AthenzDomain::from),
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
                                   readCloudAccounts(root),
-                                  stringAttribute(hostTTLAttribute, root).map(s -> toDuration(s, "empty host TTL")),
+                                  readHostTTL(root),
                                   applicationEndpoints,
                                   xmlForm,
                                   deprecatedElements);
@@ -206,7 +206,7 @@ public class DeploymentSpecXmlReader {
         List<DeploymentSpec.ChangeBlocker> changeBlockers = readChangeBlockers(instanceElement, parentTag);
         Optional<AthenzService> athenzService = mostSpecificAttribute(instanceElement, athenzServiceAttribute).map(AthenzService::from);
         Map<CloudName, CloudAccount> cloudAccounts = readCloudAccounts(instanceElement);
-        Optional<Duration> hostTTL = mostSpecificAttribute(instanceElement, hostTTLAttribute).map(s -> toDuration(s, "empty host TTL"));
+        Optional<Duration> hostTTL = readHostTTL(instanceElement);
         Notifications notifications = readNotifications(instanceElement, parentTag);
 
         // Values where there is no default

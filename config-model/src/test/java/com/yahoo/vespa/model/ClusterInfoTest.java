@@ -8,18 +8,24 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author bratseth
@@ -196,7 +202,43 @@ public class ClusterInfoTest {
         assertEquals(Duration.ofHours(48), requestedInI2UsWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
     }
 
+    @Test
+    void host_ttl_requires_cloud_account() throws Exception {
+        var servicesXml = """
+                          <services version='1.0'>
+                            <container id='testcontainer' version='1.0'>
+                              <nodes count='1'/>
+                            </container>
+                          </services>
+                          """;
+
+        var deploymentXml = """
+                            <deployment version='1.0' empty-host-ttl='1d'>
+                              <instance id='default'>
+                                <prod>
+                                  <region cloud-account='gcp:foobar'>us-east-1</region>
+                                  <region empty-host-ttl='0m'>us-north-1</region>
+                                  <region>us-west-1</region>
+                                </prod>
+                              </instance>
+                            </deployment>
+                            """;
+
+        Cloud gcp = Cloud.builder().name(CloudName.GCP).account(CloudAccount.from("vespaz")).allowEnclave(true).build();
+        CloudAccount account = CloudAccount.from("gcp:foobar");
+        assertEquals(Duration.ofHours(24), requestedCapacityIn(account, gcp, "default", "us-east-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).clusterInfo().hostTTL());
+        assertEquals(Duration.ZERO, requestedCapacityIn(account, gcp, "default", "us-north-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).clusterInfo().hostTTL());
+        assertEquals("In container cluster 'testcontainer': deployment spec specifies host TTL for prod.us-west-1 but no cloud account is specified for this zone",
+                     Exceptions.toMessageString(assertThrows(IllegalArgumentException.class,
+                                                             () -> requestedCapacityIn(account, gcp, "default", "us-west-1", servicesXml, deploymentXml))));
+
+    }
+
     private Map<ClusterSpec.Id, Capacity> requestedCapacityIn(String instance, String region, String servicesXml, String deploymentXml) throws Exception {
+        return requestedCapacityIn(null, Cloud.defaultCloud(), instance, region, servicesXml, deploymentXml);
+    }
+
+    private Map<ClusterSpec.Id, Capacity> requestedCapacityIn(CloudAccount account, Cloud cloud, String instance, String region, String servicesXml, String deploymentXml) throws Exception {
         var applicationPackage = new MockApplicationPackage.Builder()
                                          .withServices(servicesXml)
                                          .withDeploymentSpec(deploymentXml)
@@ -205,8 +247,9 @@ public class ClusterInfoTest {
         var provisioner = new InMemoryProvisioner(10, true);
         var deployState = new DeployState.Builder()
                                   .applicationPackage(applicationPackage)
-                                  .zone(new Zone(Environment.prod, RegionName.from(region)))
+                                  .zone(new Zone(cloud, SystemName.Public, Environment.prod, RegionName.from(region)))
                                   .properties(new TestProperties().setHostedVespa(true)
+                                                                  .setCloudAccount(account)
                                                                   .setApplicationId(ApplicationId.from(TenantName.defaultName(), ApplicationName.defaultName(), InstanceName.from(instance)))
                                                                   .setZone(new Zone(Environment.prod, RegionName.from(region))))
                                   .modelHostProvisioner(provisioner)
