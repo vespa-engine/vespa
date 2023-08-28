@@ -59,18 +59,18 @@ public class YamasHandler extends HttpHandlerBase {
     @Override
     public Optional<HttpResponse> doHandle(URI requestUri, Path apiPath, String consumer) {
         if (apiPath.matches(V1_PATH)) return Optional.of(resourceListResponse(requestUri, List.of(VALUES_PATH, CONSUMERS_PATH)));
-        if (apiPath.matches(VALUES_PATH)) return Optional.of(valuesResponse(consumer));
+        if (apiPath.matches(VALUES_PATH)) return Optional.of(valuesResponse(consumer, requestUri.getQuery()));
         if (apiPath.matches(CONSUMERS_PATH)) return Optional.of(consumersResponse());
         return Optional.empty();
     }
 
-    private HttpResponse valuesResponse(String consumer) {
+    private HttpResponse valuesResponse(String consumer, String query) {
         try {
             List<MetricsPacket> metrics = new ArrayList<>(consumer == null ? valuesFetcher.fetchAllMetrics() : valuesFetcher.fetch(consumer));
             if (consumer == null || "Vespa".equalsIgnoreCase(consumer)) {
                 metrics.addAll(nodeMetricGatherer.gatherMetrics()); // TODO: Currently only add these metrics in this handler. Eventually should be included in all handlers
             }
-            return new YamasResponse(OK, metrics);
+            return new YamasResponse(OK, metrics, useJsonl(query));
         } catch (JsonRenderingException e) {
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -91,6 +91,10 @@ public class YamasHandler extends HttpHandlerBase {
                 new JsonFormat(true).encode(outputStream, slime);
             }
         };
+    }
+
+    private boolean useJsonl(String query) {
+        return query != null && query.contains("jsonl=true");
     }
 
 }

@@ -54,4 +54,11 @@ public class YamasHandlerTest extends HttpHandlerTestBase {
         assertFalse(valuesResponse.contains("status_msg"));
     }
 
+    @Test
+    public void allows_fetching_jsonl_metrics() {
+        assertTrue(valuesResponse.startsWith("{\"metrics\":[{\"timestamp\":"));
+        valuesResponse = testDriver.sendRequest(VALUES_URI + "?jsonl=true").readAll();
+        assertTrue(valuesResponse.startsWith("{\"timestamp\":"));
+    }
+
 }

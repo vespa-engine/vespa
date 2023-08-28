@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.StreamWriteFeature;
+import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.ByteArrayOutputStream;
@@ -110,6 +111,15 @@ public class YamasJsonUtil {
         toJson(metrics.get(metrics.size() - 1), generator, addStatus);
         generator.writeEndArray();
         generator.writeEndObject();
+        generator.close();
+    }
+
+    public static void toJsonl(List<MetricsPacket> metrics, OutputStream outputStream, boolean addStatus) throws IOException {
+        JsonGenerator generator = factory.createGenerator(outputStream)
+                .setPrettyPrinter(new MinimalPrettyPrinter("\n"));
+        for (MetricsPacket metricsPacket : metrics) {
+            toJson(metricsPacket, generator, addStatus);
+        }
         generator.close();
     }
 
