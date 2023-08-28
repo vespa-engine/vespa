@@ -97,6 +97,7 @@
         <junit.vespa.version>5.8.1</junit.vespa.version>
         <junit.platform.vespa.version>1.8.1</junit.platform.vespa.version>
         <junit4.vespa.version>4.13.2</junit4.vespa.version>
+        <luben.zstd.vespa.version>1.5.5-5</luben.zstd.vespa.version>
         <lucene.vespa.version>9.7.0</lucene.vespa.version>
         <maven-archiver.vespa.version>3.6.1</maven-archiver.vespa.version>
         <maven-wagon.vespa.version>2.12</maven-wagon.vespa.version>

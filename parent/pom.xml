@@ -493,7 +493,7 @@
             <dependency>
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.5.5-4</version>
+                <version>${luben.zstd.vespa.version}</version>
             </dependency>
             <dependency>
                 <!-- Needed by zookeeper, which has an optional dependency.

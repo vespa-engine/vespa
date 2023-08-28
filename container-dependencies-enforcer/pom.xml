@@ -69,7 +69,7 @@
 
                                         <!-- Guava with its internal dependencies -->
                                         <include>com.google.guava:guava:${guava.vespa.version}:provided</include>
-                                        <include>com.google.errorprone:error_prone_annotations:[2.18.0, 3):provided</include>
+                                        <include>com.google.errorprone:error_prone_annotations:[2.21.1, 3):provided</include>
                                         <include>com.google.guava:failureaccess:[1.0.1, 2):provided</include>
                                         <include>com.google.j2objc:j2objc-annotations:[2.8, 3):provided</include>
 
