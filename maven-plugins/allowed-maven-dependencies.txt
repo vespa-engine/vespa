@@ -60,9 +60,8 @@ org.ow2.asm:asm-analysis:9.3
 org.ow2.asm:asm-commons:9.3
 org.ow2.asm:asm-tree:9.3
 org.slf4j:slf4j-api:1.7.32
-org.slf4j:slf4j-simple:1.7.22
 org.tukaani:xz:1.9
-org.twdata.maven:mojo-executor:2.3.0
+org.twdata.maven:mojo-executor:2.4.0
 org.vafer:jdependency:2.8.0
 
 #[test-only]
