@@ -922,7 +922,7 @@ public class RequestBuilderTestCase {
         RequestBuilder builder = new RequestBuilder(0);
         builder.setRootOperation(GroupingOperation.fromString(test.request));
         builder.setTimeZone(TimeZone.getTimeZone(test.timeZone));
-        builder.addContinuations(List.of(test.continuation));
+        builder.addContinuations(test.continuation != null ? List.of(test.continuation) : List.of());
         try {
             builder.build();
             if (test.expectedException != null) {
