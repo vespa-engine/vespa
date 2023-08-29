@@ -39,7 +39,7 @@ DistributorNode::DistributorNode(
         set_storage_chain_builder(std::move(storage_chain_builder));
     }
     try {
-        initialize();
+        initialize(*this);
     } catch (const vespalib::Exception & e) {
         shutdownDistributor();
         throw;

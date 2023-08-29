@@ -127,7 +127,7 @@ StorageNode::subscribeToConfigs()
 }
 
 void
-StorageNode::initialize()
+StorageNode::initialize(const NodeStateReporter & nodeStateReporter)
 {
     // Avoid racing with concurrent reconfigurations before we've set up the entire
     // node component stack.
@@ -164,8 +164,8 @@ StorageNode::initialize()
     // dead lock detector too, but not before open()
     _stateManager = std::make_unique<StateManager>(
             _context.getComponentRegister(),
-            _context.getComponentRegister().getMetricManager(),
             std::move(_hostInfo),
+            nodeStateReporter,
             _singleThreadedDebugMode);
     _context.getComponentRegister().setNodeStateUpdater(*_stateManager);
 
@@ -176,11 +176,11 @@ StorageNode::initialize()
 
     initializeNodeSpecific();
 
-    _statusMetrics = std::make_unique<StatusMetricConsumer>(
-            _context.getComponentRegister(), _context.getComponentRegister().getMetricManager());
-    _stateReporter = std::make_unique<StateReporter>(
-            _context.getComponentRegister(), _context.getComponentRegister().getMetricManager(),
-            _generationFetcher);
+    _statusMetrics = std::make_unique<StatusMetricConsumer>(_context.getComponentRegister(),
+                                                            _context.getComponentRegister().getMetricManager());
+    _stateReporter = std::make_unique<StateReporter>(_context.getComponentRegister(),
+                                                     _context.getComponentRegister().getMetricManager(),
+                                                     _generationFetcher);
 
     // Start deadlock detector
     _deadLockDetector = std::make_unique<DeadLockDetector>(_context.getComponentRegister());

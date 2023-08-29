@@ -39,6 +39,14 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri, ServiceL
 {
 }
 
+void
+ServiceLayerNode::report(vespalib::JsonStream &writer) const
+{
+    if (_bucket_manager) {
+        _bucket_manager->report(writer);
+    }
+}
+
 void ServiceLayerNode::init()
 {
     assert( ! _init_has_been_called);
@@ -50,7 +58,7 @@ void ServiceLayerNode::init()
     }
 
     try{
-        initialize();
+        initialize(*this);
     } catch (spi::HandledException& e) {
         requestShutdown("Failed to initialize: " + e.getMessage());
         throw;
@@ -164,9 +172,9 @@ ServiceLayerNode::createChain(IStorageChainBuilder &builder)
     auto bucket_manager = std::make_unique<BucketManager>(_configUri, _context.getComponentRegister());
     _bucket_manager = bucket_manager.get();
     builder.add(std::move(bucket_manager));
-    builder.add(std::make_unique<VisitorManager>(_configUri, _context.getComponentRegister(), static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors));
-    builder.add(std::make_unique<ModifiedBucketChecker>(
-            _context.getComponentRegister(), _persistenceProvider, _configUri));
+    builder.add(std::make_unique<VisitorManager>(_configUri, _context.getComponentRegister(),
+                                                 static_cast<VisitorMessageSessionFactory &>(*this), _externalVisitors));
+    builder.add(std::make_unique<ModifiedBucketChecker>(_context.getComponentRegister(), _persistenceProvider, _configUri));
     auto state_manager = releaseStateManager();
     auto filstor_manager = std::make_unique<FileStorManager>(_configUri, _persistenceProvider, _context.getComponentRegister(),
                                                              getDoneInitializeHandler(), state_manager->getHostInfo());

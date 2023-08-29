@@ -49,7 +49,7 @@ class StateManager : public NodeStateUpdater,
     struct StateManagerMetrics;
 
     StorageComponent                          _component;
-    metrics::MetricManager&                   _metricManager;
+    const NodeStateReporter &                 _nodeStateReporter;
     std::unique_ptr<StateManagerMetrics>      _metrics;
     mutable std::mutex                        _stateLock;
     std::condition_variable                   _stateCond;
@@ -80,8 +80,8 @@ class StateManager : public NodeStateUpdater,
     std::atomic<bool>                         _requested_almost_immediate_node_state_replies;
 
 public:
-    explicit StateManager(StorageComponentRegister&, metrics::MetricManager&,
-                          std::unique_ptr<HostInfo>, bool testMode = false);
+    explicit StateManager(StorageComponentRegister&, std::unique_ptr<HostInfo>,
+                          const NodeStateReporter & reporter, bool testMode);
     ~StateManager() override;
 
     void onOpen() override;
@@ -110,7 +110,6 @@ public:
 
 private:
     struct ExternalStateLock;
-    friend struct ExternalStateLock;
     friend struct StateManagerTest;
 
     void notifyStateListeners();

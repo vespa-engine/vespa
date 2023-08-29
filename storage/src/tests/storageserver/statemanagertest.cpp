@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/metrics/metricmanager.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
@@ -20,10 +19,9 @@ using namespace ::testing;
 
 namespace storage {
 
-struct StateManagerTest : Test {
+struct StateManagerTest : Test, NodeStateReporter {
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<DummyStorageLink> _upper;
-    std::unique_ptr<metrics::MetricManager> _metricManager;
     StateManager* _manager;
     DummyStorageLink* _lower;
 
@@ -42,6 +40,7 @@ struct StateManagerTest : Test {
     std::string get_node_info() const {
         return _manager->getNodeInfo();
     }
+    void report(vespalib::JsonStream &) const override {}
 
     void extract_cluster_state_version_from_host_info(uint32_t& version_out);
 };
@@ -60,11 +59,8 @@ StateManagerTest::SetUp()
     _node = std::make_unique<TestServiceLayerApp>(NodeIndex(2));
     // Clock will increase 1 sec per call.
     _node->getClock().setAbsoluteTimeInSeconds(1);
-    _metricManager = std::make_unique<metrics::MetricManager>();
     _upper = std::make_unique<DummyStorageLink>();
-    _manager = new StateManager(_node->getComponentRegister(),
-                                *_metricManager,
-                                std::make_unique<HostInfo>());
+    _manager = new StateManager(_node->getComponentRegister(), std::make_unique<HostInfo>(), *this, false);
     _lower = new DummyStorageLink();
     _upper->push_back(StorageLink::UP(_manager));
     _upper->push_back(StorageLink::UP(_lower));
@@ -83,7 +79,6 @@ StateManagerTest::TearDown() {
     _upper->flush();
     _upper.reset();
     _node.reset();
-    _metricManager.reset();
 }
 
 void
