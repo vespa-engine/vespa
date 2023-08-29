@@ -24,7 +24,7 @@ public class ConnectionThrottlerTest {
 
     @Test
     void throttles_when_any_resource_check_exceeds_configured_threshold() {
-        Runtime runtime = mock(Runtime.class);
+        var runtime = mock(ConnectionThrottler.Jvm.class);
         when(runtime.maxMemory()).thenReturn(100l);
         RateStatistic rateStatistic = new RateStatistic(1, TimeUnit.HOURS);
         MockScheduler scheduler = new MockScheduler();

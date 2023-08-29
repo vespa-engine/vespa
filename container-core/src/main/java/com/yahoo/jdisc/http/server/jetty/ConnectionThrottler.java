@@ -46,11 +46,11 @@ class ConnectionThrottler extends ContainerLifeCycle implements SelectorManager.
     private boolean isThrottling = false;
 
     ConnectionThrottler(AbstractConnector connector, ConnectorConfig.Throttling config) {
-        this(Runtime.getRuntime(), new RateStatistic(1, TimeUnit.SECONDS), connector.getScheduler(), connector, config);
+        this(Jvm.fromRuntime(), new RateStatistic(1, TimeUnit.SECONDS), connector.getScheduler(), connector, config);
     }
 
     // Intended for unit testing
-    ConnectionThrottler(Runtime runtime,
+    ConnectionThrottler(Jvm runtime,
                         RateStatistic rateStatistic,
                         Scheduler scheduler,
                         AbstractConnector connector,
@@ -150,10 +150,10 @@ class ConnectionThrottler extends ContainerLifeCycle implements SelectorManager.
      * Note: implementation inspired by Jetty's {@link LowResourceMonitor}
      */
     private static class HeapResourceLimit extends AbstractLifeCycle implements ResourceLimit {
-        private final Runtime runtime;
+        private final Jvm runtime;
         private final double maxHeapUtilization;
 
-        HeapResourceLimit(Runtime runtime, double maxHeapUtilization) {
+        HeapResourceLimit(Jvm runtime, double maxHeapUtilization) {
             this.runtime = runtime;
             this.maxHeapUtilization = maxHeapUtilization;
         }
@@ -267,6 +267,20 @@ class ConnectionThrottler extends ContainerLifeCycle implements SelectorManager.
                 connectionsAccepting.clear();
                 connectionOpened = 0;
             }
+        }
+    }
+
+    interface Jvm {
+        long maxMemory();
+        long freeMemory();
+
+        static Jvm fromRuntime() {
+            return new Jvm() {
+                final Runtime rt = Runtime.getRuntime();
+
+                @Override public long maxMemory() { return rt.maxMemory(); }
+                @Override public long freeMemory() { return rt.freeMemory(); }
+            };
         }
     }
 }
