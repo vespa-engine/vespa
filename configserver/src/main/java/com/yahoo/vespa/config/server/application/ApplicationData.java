@@ -6,6 +6,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.OptionalLong;
 
 import static com.yahoo.slime.SlimeUtils.optionalLong;
@@ -54,9 +55,17 @@ public class ApplicationData {
 
     public ApplicationId applicationId() { return applicationId; }
 
-    public OptionalLong activeSession() { return activeSession; }
+    public Optional<Long> activeSession() {
+        return Optional.of(activeSession)
+            .filter(OptionalLong::isPresent)
+            .map(OptionalLong::getAsLong);
+    }
 
-    public OptionalLong lastDeployedSession() { return lastDeployedSession; }
+    public Optional<Long> lastDeployedSession() {
+        return Optional.of(lastDeployedSession)
+                .filter(OptionalLong::isPresent)
+                .map(OptionalLong::getAsLong);
+    }
 
     @Override
     public String toString() {

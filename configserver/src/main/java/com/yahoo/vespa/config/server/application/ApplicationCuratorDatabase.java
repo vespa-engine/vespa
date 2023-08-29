@@ -136,10 +136,7 @@ public class ApplicationCuratorDatabase {
      * Returns Optional.empty() if application not found or no active session exists.
      */
     public Optional<Long> activeSessionOf(ApplicationId id) {
-        Optional<byte[]> data = curator.getData(applicationPath(id));
-        return (data.isEmpty() || data.get().length == 0)
-               ? Optional.empty()
-               : data.map(bytes -> Long.parseLong(Utf8.toString(bytes)));
+        return applicationData(id).flatMap(ApplicationData::activeSession);
     }
 
     /**
@@ -147,25 +144,13 @@ public class ApplicationCuratorDatabase {
      * Returns Optional.empty() if application not found or no application data exists.
      */
     public Optional<ApplicationData> applicationData(ApplicationId id) {
-        return applicationData(id, false);
-    }
-
-    /**
-     * Returns application data for the given application.
-     * Returns Optional.empty() if application not found or no application data exists.
-     */
-    public Optional<ApplicationData> applicationData(ApplicationId id, boolean readAsJson) {
         Optional<byte[]> data = curator.getData(applicationPath(id));
         if (data.isEmpty() || data.get().length == 0) return Optional.empty();
 
-        if (readAsJson) {
-            try {
-                return Optional.of(ApplicationData.fromBytes(data.get()));
-            } catch (IllegalArgumentException e) {
-                return applicationDataOldFormat(id, readAsJson);
-            }
-        } else {
-            return applicationDataOldFormat(id, readAsJson);
+        try {
+            return Optional.of(ApplicationData.fromBytes(data.get()));
+        } catch (IllegalArgumentException e) {
+            return applicationDataOldFormat(id);
         }
     }
 
@@ -173,7 +158,7 @@ public class ApplicationCuratorDatabase {
      * Returns application data for the given application.
      * Returns Optional.empty() if application not found or no application data exists.
      */
-    public Optional<ApplicationData> applicationDataOldFormat(ApplicationId id, boolean readAsJson) {
+    public Optional<ApplicationData> applicationDataOldFormat(ApplicationId id) {
         Optional<byte[]> data = curator.getData(applicationPath(id));
         if (data.isEmpty() || data.get().length == 0) return Optional.empty();
 

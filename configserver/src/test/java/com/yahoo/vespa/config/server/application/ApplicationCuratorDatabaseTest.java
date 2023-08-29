@@ -51,15 +51,8 @@ public class ApplicationCuratorDatabaseTest {
         assertEquals(Optional.empty(), db.applicationData(id)); // still empty, as no data has been written to node
 
         db.createApplication(id, true);
-        try {
-            Optional<ApplicationData> applicationData = db.applicationData(id);
-            fail("Expected exception, got " + applicationData);
-        } catch (NumberFormatException e) {
-            // expected
-        }
-
         // Can be read as json, but no active session or last deployed session
-        Optional<ApplicationData> applicationData = db.applicationData(id, true);
+        Optional<ApplicationData> applicationData = db.applicationData(id);
         assertTrue(applicationData.isPresent());
         assertEquals(id, applicationData.get().applicationId());
         assertFalse(applicationData.get().activeSession().isPresent());
@@ -74,11 +67,18 @@ public class ApplicationCuratorDatabaseTest {
             t.commit();
         }
         // Can be read as session id only
-        applicationData = db.applicationData(id, false);
+        applicationData = db.applicationData(id);
         assertTrue(applicationData.isPresent());
         assertEquals(id, applicationData.get().applicationId());
         assertTrue(applicationData.get().activeSession().isPresent());
-        assertEquals(2, applicationData.get().activeSession().getAsLong());
+        assertEquals(2, applicationData.get().activeSession().get().longValue());
+        assertFalse(applicationData.get().lastDeployedSession().isPresent());
+        // Can be read as session data as well
+        applicationData = db.applicationData(id);
+        assertTrue(applicationData.isPresent());
+        assertEquals(id, applicationData.get().applicationId());
+        assertTrue(applicationData.get().activeSession().isPresent());
+        assertEquals(2, applicationData.get().activeSession().get().longValue());
         assertFalse(applicationData.get().lastDeployedSession().isPresent());
 
         // Prepare session 3, last deployed session is still 2
@@ -86,25 +86,25 @@ public class ApplicationCuratorDatabaseTest {
             t.commit();
         }
         // Can be read as json, active session is still 2 and last deployed session is 3
-        applicationData = db.applicationData(id, true);
+        applicationData = db.applicationData(id);
         assertTrue(applicationData.isPresent());
         assertEquals(id, applicationData.get().applicationId());
         assertTrue(applicationData.get().activeSession().isPresent());
-        assertEquals(2, applicationData.get().activeSession().getAsLong());
+        assertEquals(2L, applicationData.get().activeSession().get().longValue());
         assertTrue(applicationData.get().lastDeployedSession().isPresent());
-        assertEquals(3, applicationData.get().lastDeployedSession().getAsLong());
+        assertEquals(3, applicationData.get().lastDeployedSession().get().longValue());
 
         try (var t = db.createWriteActiveTransaction(new CuratorTransaction(curator), id, 3, true)) {
             t.commit();
         }
         // Can be read as json, active session and last deployed session present
-        applicationData = db.applicationData(id, true);
+        applicationData = db.applicationData(id);
         assertTrue(applicationData.isPresent());
         assertEquals(id, applicationData.get().applicationId());
         assertTrue(applicationData.get().activeSession().isPresent());
-        assertEquals(3, applicationData.get().activeSession().getAsLong());
+        assertEquals(3, applicationData.get().activeSession().get().longValue());
         assertTrue(applicationData.get().lastDeployedSession().isPresent());
-        assertEquals(3, applicationData.get().lastDeployedSession().getAsLong());
+        assertEquals(3, applicationData.get().lastDeployedSession().get().longValue());
     }
 
 }
