@@ -289,7 +289,7 @@ MyDB::addDoc(uint32_t lid,
 const Document &
 MyDB::getDoc(uint32_t lid) const
 {
-    LidToDocSP::const_iterator it(_lidToDocSP.find(lid));
+    auto it = _lidToDocSP.find(lid);
     ASSERT_TRUE(it != _lidToDocSP.end());
     return *it->second;
 }

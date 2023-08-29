@@ -57,7 +57,7 @@ Matchers::getStats(const vespalib::string &name) const
 std::shared_ptr<Matcher>
 Matchers::lookup(const vespalib::string &name) const
 {
-    Map::const_iterator found(_rpmap.find(name));
+    auto found = _rpmap.find(name);
     if (found == _rpmap.end()) {
         if (_default) {
             vespalib::Issue::report(fmt("Failed to find rank-profile '%s'. Falling back to 'default'", name.c_str()));

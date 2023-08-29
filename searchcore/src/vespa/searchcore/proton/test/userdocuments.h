@@ -29,7 +29,7 @@ public:
         _docs[userId].addDoc(userDoc);
     }
     const BucketDocuments &getUserDocs(uint32_t userId) const {
-        DocMap::const_iterator itr = _docs.find(userId);
+        auto itr = _docs.find(userId);
         assert(itr != _docs.end());
         return itr->second;
     }
