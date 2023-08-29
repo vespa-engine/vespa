@@ -40,10 +40,13 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri, ServiceL
 }
 
 void
-ServiceLayerNode::report(vespalib::JsonStream &writer) const
+ServiceLayerNode::report(vespalib::JsonStream &stream) const
 {
+    using namespace vespalib::jsonstream;
     if (_bucket_manager) {
-        _bucket_manager->report(writer);
+        stream << "metrics" << Object() << "values" << Array();
+        _bucket_manager->report(stream);
+        stream << End() << End();
     }
 }
 
