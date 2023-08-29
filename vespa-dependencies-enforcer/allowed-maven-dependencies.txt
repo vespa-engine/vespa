@@ -42,7 +42,6 @@ com.google.protobuf:protobuf-java:3.24.2
 com.ibm.icu:icu4j:73.2
 com.intellij:annotations:9.0.4
 com.microsoft.onnxruntime:onnxruntime:1.15.1
-com.sun.activation:jakarta.activation:1.2.2
 com.sun.activation:javax.activation:1.2.0
 com.sun.istack:istack-commons-runtime:3.0.12
 com.sun.xml.bind:jaxb-core:2.3.0
