@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.regex.Pattern;
 
 /**
  * All models imported from the models/ directory in the application package.
@@ -86,6 +87,7 @@ public class ImportedMlModels {
         Arrays.stream(dir.listFiles()).sorted().forEach(child -> {
             Optional<MlModelImporter> importer = findImporterOf(child, importers);
             if (importer.isPresent()) {
+                validateModelPath(child);
                 String name = toName(child);
                 Future<ImportedMlModel> existing = models.get(name);
                 if (existing != null) {
@@ -137,6 +139,29 @@ public class ImportedMlModels {
             if (element.equals("models")) afterModels = true;
         }
         return result.substring(0, result.length()-1);
+    }
+
+    private static void validateModelPath(File modelFile) {
+        Pattern nameRegexp = Pattern.compile("[A-Za-z0-9_.]*");
+
+        Path path = Path.fromString(modelFile.toString());
+        if (modelFile.isFile())
+            path = stripFileEnding(path);
+
+        boolean afterModels = false;
+        for (String element : path.elements()) {
+            if (afterModels) {
+                if ( ! nameRegexp.matcher(element).matches()) {
+                    throw new IllegalArgumentException("When Vespa imports a model from the 'models' directory, it " +
+                                                       "uses the directory structure under 'models' to determine the " +
+                                                       "name of the model. The directory or file name '" + element + "' " +
+                                                       "is not valid. Please rename this to only contain letters, " +
+                                                       "numbers or underscores.");
+                }
+            } else if (element.equals("models")) {
+                afterModels = true;
+            }
+        }
     }
 
 }
