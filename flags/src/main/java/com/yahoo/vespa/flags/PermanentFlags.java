@@ -150,7 +150,8 @@ public class PermanentFlags {
     public static final UnboundBooleanFlag SEND_LIMITED_METRIC_SET = defineFeatureFlag(
             "send-limited-metric-set", true,
             "Whether a limited metric set should be fetched from metrics-proxy (CD systems only)",
-            "Takes effect on next host admin tick");
+            "Takes effect on next host admin tick",
+            APPLICATION_ID);
 
     private static final String VERSION_QUALIFIER_REGEX = "[a-zA-Z0-9_-]+";
     private static final Pattern QUALIFIER_PATTERN = Pattern.compile("^" + VERSION_QUALIFIER_REGEX + "$");
