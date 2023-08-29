@@ -35,6 +35,16 @@ public class FileDistributedOnnxModels extends Derived implements OnnxModelsConf
         this.models = Collections.unmodifiableMap(distributableModels);
     }
 
+    private FileDistributedOnnxModels(Collection<OnnxModel> models) {
+        Map<String, OnnxModel> distributableModels = models.stream()
+                .collect(LinkedHashMap::new, (m, v) -> m.put(v.getName(), v.clone()), LinkedHashMap::putAll);
+        this.models = Collections.unmodifiableMap(distributableModels);
+    }
+
+    public FileDistributedOnnxModels clone() {
+        return new FileDistributedOnnxModels(models.values());
+    }
+
     public Map<String, OnnxModel> asMap() { return models; }
 
     public void getConfig(OnnxModelsConfig.Builder builder) {

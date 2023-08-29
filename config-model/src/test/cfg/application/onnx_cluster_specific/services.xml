@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+
+  <container id="c1" version="1.0">
+    <model-evaluation>
+      <onnx>
+        <models>
+          <model name="mul">
+            <intraop-threads>2</intraop-threads>
+            <gpu-device>0</gpu-device>
+          </model>
+        </models>
+      </onnx>
+    </model-evaluation>
+  </container>
+
+  <container id="c2" version="1.0">
+    <http>
+      <server id="c1Server" port="8081" />
+    </http>
+    <model-evaluation>
+      <onnx>
+        <models>
+          <model name="mul">
+            <intraop-threads>4</intraop-threads>
+            <gpu-device>1</gpu-device>
+          </model>
+        </models>
+      </onnx>
+    </model-evaluation>
+  </container>
+
+</services>

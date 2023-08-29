@@ -18,7 +18,7 @@ import java.util.Set;
  *
  * @author lesters
  */
-public class OnnxModel extends DistributableResource {
+public class OnnxModel extends DistributableResource implements Cloneable {
 
     private OnnxModelInfo modelInfo = null;
     private final Map<String, String> inputMap = new HashMap<>();
@@ -37,6 +37,19 @@ public class OnnxModel extends DistributableResource {
     public OnnxModel(String name, String fileName) {
         super(name, fileName);
         validate();
+    }
+
+    @Override
+    public OnnxModel clone() {
+        try {
+            OnnxModel clone = (OnnxModel) super.clone();
+            clone.inputMap.putAll(inputMap);
+            clone.outputMap.putAll(outputMap);
+            clone.initializers.addAll(initializers);
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException("Clone not supported", e);
+        }
     }
 
     @Override
