@@ -116,6 +116,13 @@
                 <artifactId>junit-vintage-engine</artifactId>
                 <version>${junit.vespa.tenant.version}</version>
             </dependency>
+
+            <!-- Transitive dependency of junit4 -->
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-core</artifactId>
+                <version>${hamcrest.vespa.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

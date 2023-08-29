@@ -4,7 +4,6 @@ package com.yahoo.vespa.clustercontroller.core.matchers;
 import com.yahoo.vespa.clustercontroller.core.NodeEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 
 public class EventTypeIs extends BaseMatcher<NodeEvent> {
     private final NodeEvent.Type expected;
@@ -32,7 +31,6 @@ public class EventTypeIs extends BaseMatcher<NodeEvent> {
         description.appendText(String.format("got description '%s'", other.getDescription()));
     }
 
-    @Factory
     public static EventTypeIs eventTypeIs(NodeEvent.Type type) {
         return new EventTypeIs(type);
     }

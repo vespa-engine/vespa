@@ -43,13 +43,12 @@ import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
-import static org.cthul.matchers.CthulMatchers.containsPattern;
-import static org.cthul.matchers.CthulMatchers.matchesPattern;
 import static org.hamcrest.CoreMatchers.any;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
 
 /**
  * @author Simon Thoresen Hult
@@ -119,8 +118,8 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     public void testBindingNotFoundException() throws Throwable {
-        final Pattern contentPattern = Pattern.compile("No binding for URI 'http://.+/status.html'\\.");
-        new TestRunner().expect(errorWithReason(is(NOT_FOUND), containsPattern(contentPattern)))
+        final Pattern contentPattern = Pattern.compile(".*No binding for URI 'http://.+/status.html'\\.");
+        new TestRunner().expect(errorWithReason(is(NOT_FOUND), matchesPattern(contentPattern)))
                         .execute();
     }
 

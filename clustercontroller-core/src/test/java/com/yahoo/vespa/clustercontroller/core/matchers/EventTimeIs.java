@@ -4,7 +4,6 @@ package com.yahoo.vespa.clustercontroller.core.matchers;
 import com.yahoo.vespa.clustercontroller.core.Event;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 
 public class EventTimeIs extends BaseMatcher<Event> {
     private final long expected;
@@ -32,7 +31,6 @@ public class EventTimeIs extends BaseMatcher<Event> {
         description.appendText(String.format("event time is %d", other.getTimeMs()));
     }
 
-    @Factory
     public static EventTimeIs eventTimeIs(long time) {
         return new EventTimeIs(time);
     }

@@ -4,7 +4,6 @@ package com.yahoo.vespa.clustercontroller.core.matchers;
 import com.yahoo.vespa.clustercontroller.core.ClusterEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 
 public class ClusterEventWithDescription extends BaseMatcher<ClusterEvent> {
     private final String expected;
@@ -35,7 +34,6 @@ public class ClusterEventWithDescription extends BaseMatcher<ClusterEvent> {
         description.appendText(String.format("got description '%s'", other.getDescription()));
     }
 
-    @Factory
     public static ClusterEventWithDescription clusterEventWithDescription(String description) {
         return new ClusterEventWithDescription(description);
     }

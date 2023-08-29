@@ -5,7 +5,6 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.NodeEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 
 public class EventForNode extends BaseMatcher<NodeEvent> {
     private final Node expected;
@@ -30,7 +29,6 @@ public class EventForNode extends BaseMatcher<NodeEvent> {
         description.appendText(String.format("got node %s", other.getNode().getNode()));
     }
 
-    @Factory
     public static EventForNode eventForNode(Node expected) {
         return new EventForNode(expected);
     }

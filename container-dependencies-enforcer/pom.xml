@@ -195,6 +195,7 @@
                                         <include>org.eclipse.jetty:jetty-server:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-servlet:${jetty.vespa.version}:test</include>
                                         <include>org.eclipse.jetty:jetty-util:${jetty.vespa.version}:test</include>
+                                        <include>org.hamcrest:hamcrest:${hamcrest.vespa.version}:test</include>
                                         <include>org.hamcrest:hamcrest-core:${hamcrest.vespa.version}:test</include>
                                         <include>org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}:test</include>
                                         <include>org.json:json:${org.json.vespa.version}:test</include> <!-- TODO: Remove on Vespa 9 -->
