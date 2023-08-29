@@ -8,17 +8,14 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.RebuildResult;
 import com.yahoo.yolean.Exceptions;
-import com.yahoo.yolean.UncheckedInterruptedException;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,34 +40,23 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
     @Override
     protected double maintain() {
         NodeList nodes = nodeRepository().nodes().list().rebuilding(true);
-        int rebuilding = 0;
         int failures = 0;
+        List<Node> rebuilding;
         try (var locked = nodeRepository().nodes().lockAndGetAll(nodes.asList(), Optional.of(Duration.ofSeconds(10)))) {
-            Map<String, Future<Node>> rebuilt = new HashMap<>();
-            for (NodeMutex node : locked.nodes()) {
-                if (node.node().status().wantToRebuild() && ++rebuilding <= maxBatchSize) {
-                    rebuilt.put(node.node().hostname(), executor.submit(() -> hostProvisioner.replaceRootDisk(node.node())));
-                }
-            }
+            rebuilding = locked.nodes().stream().map(NodeMutex::node).toList();
+            RebuildResult result = hostProvisioner.replaceRootDisk(rebuilding);
 
-            for (var node : rebuilt.entrySet()) {
-                try {
-                    Node updated = node.getValue().get();
-                    if ( ! updated.status().wantToRebuild()) {
-                        nodeRepository().nodes().write(updated, () -> { });
-                    }
-                }
-                catch (ExecutionException e) {
-                    ++failures;
-                    log.log(Level.WARNING, "Failed to rebuild " + node.getKey() + ", will retry in " +
-                                           interval() + ": " + Exceptions.toMessageString(e.getCause()));
-                }
-                catch (InterruptedException e) {
-                    throw new UncheckedInterruptedException(e, true);
-                }
+            for (Node updated : result.rebuilt())
+                if (!updated.status().wantToRebuild())
+                    nodeRepository().nodes().write(updated, () -> { });
+
+            for (var entry : result.failed().entrySet()) {
+                ++failures;
+                log.log(Level.WARNING, "Failed to rebuild " + entry.getKey() + ", will retry in " +
+                                       interval() + ": " + Exceptions.toMessageString(entry.getValue()));
             }
         }
-        return this.asSuccessFactorDeviation(rebuilding, failures);
+        return this.asSuccessFactorDeviation(rebuilding.size(), failures);
     }
 
     @Override
