@@ -755,8 +755,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element modelsElement = XML.getChild(onnxElement, "models");
         for (Element modelElement : XML.getChildren(modelsElement, "model") ) {
             OnnxModel onnxModel = profiles.getOnnxModels().asMap().get(modelElement.getAttribute("name"));
-            if (onnxModel == null)
-                continue; // Skip if model is not found
+            if (onnxModel == null) {
+                String availableModels = String.join(", ", profiles.getOnnxModels().asMap().keySet());
+                context.getDeployState().getDeployLogger().logApplicationPackage(WARNING,
+                        "Model '" + modelElement.getAttribute("name") + "' not found. Available ONNX " +
+                        "models are: " + availableModels + ". Skipping this configuration.");
+                continue;
+            }
             onnxModel.setStatelessExecutionMode(getStringValue(modelElement, "execution-mode", null));
             onnxModel.setStatelessInterOpThreads(getIntValue(modelElement, "interop-threads", -1));
             onnxModel.setStatelessIntraOpThreads(getIntValue(modelElement, "intraop-threads", -1));
