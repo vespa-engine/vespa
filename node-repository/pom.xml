@@ -81,7 +81,7 @@
         <dependency>
             <groupId>org.questdb</groupId>
             <artifactId>questdb</artifactId>
-            <version>6.2</version>
+            <version>6.7-jdk8</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
