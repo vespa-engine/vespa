@@ -11,8 +11,8 @@ StateApiAdapter::getMetrics(const vespalib::string &consumer)
 {
     MetricLockGuard guard(_manager.getMetricLock());
     auto periods = _manager.getSnapshotPeriods(guard);
-    if (periods.empty()) {
-        return ""; // no configuration yet
+    if (periods.empty() || !_manager.any_snapshots_taken(guard)) {
+        return ""; // no configuration or snapshots yet
     }
     const MetricSnapshot &snapshot(_manager.getMetricSnapshot(guard, periods[0]));
     vespalib::asciistream json;

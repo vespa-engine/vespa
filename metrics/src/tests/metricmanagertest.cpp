@@ -462,6 +462,7 @@ TEST_F(MetricManagerTest, test_snapshots)
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.registerMetric(lockGuard, mySet.set);
+        EXPECT_FALSE(mm.any_snapshots_taken(lockGuard)); // well-defined prior to init()
     }
     mm.init(ConfigUri("raw:"
                       "consumer[2]\n"
@@ -474,6 +475,7 @@ TEST_F(MetricManagerTest, test_snapshots)
     MetricNameVisitor visitor;
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
+        EXPECT_FALSE(mm.any_snapshots_taken(lockGuard)); // No snapshots yet
         mm.visit(lockGuard, mm.getActiveMetrics(lockGuard), visitor, "snapper");
         const MetricManager::ConsumerSpec * consumerSpec = mm.getConsumerSpec(lockGuard, "snapper");
         EXPECT_EQ(std::string("\n"
@@ -506,6 +508,10 @@ TEST_F(MetricManagerTest, test_snapshots)
     ASSERT_VALUES(mm,  5 * 60s, "2,4,4,1,7,9,1,1,8,2,10");
     ASSERT_VALUES(mm, 60 * 60s, "");
     ASSERT_VALUES(mm,  0 * 60s, "2,4,4,1,7,9,1,1,8,2,10");
+    {
+        auto guard = mm.getMetricLock();
+        EXPECT_TRUE(mm.any_snapshots_taken(guard)); // At least one snapshot has been taken
+    }
 
     // Adding metrics done in second five minute period. Total should
     // be updated to account for both
@@ -566,6 +572,14 @@ TEST_F(MetricManagerTest, test_json_output)
                       "consumer[0].name snapper\n"
                       "consumer[0].tags[1]\n"
                       "consumer[0].tags[0] snaptest\n"));
+
+    {
+        // No snapshots have been taken yet, so the non-total getMetrics call should return
+        // the empty string (i.e. no metrics produced).
+        metrics::StateApiAdapter adapter(mm);
+        auto json_str = adapter.getMetrics("snapper");
+        EXPECT_EQ(json_str, "");
+    }
 
     takeSnapshots(mm, 1000);
 

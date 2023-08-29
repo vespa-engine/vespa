@@ -267,6 +267,8 @@ public:
 
     bool isInitialized() const;
 
+    [[nodiscard]] bool any_snapshots_taken(const MetricLockGuard&) const noexcept;
+
 private:
     void takeSnapshots(const MetricLockGuard &, system_time timeToProcess);
 
