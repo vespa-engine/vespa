@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.content.storagecluster;
 
 import ai.vespa.metrics.StorageMetrics;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.vespa.config.content.core.StorIntegritycheckerConfig;
 import com.yahoo.vespa.config.content.core.StorVisitorConfig;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
@@ -22,7 +21,6 @@ import org.w3c.dom.Element;
  */
 public class StorageCluster extends TreeConfigProducer<StorageNode>
     implements StorServerConfig.Producer,
-        StorIntegritycheckerConfig.Producer,
         StorFilestorConfig.Producer,
         StorVisitorConfig.Producer,
         PersistenceConfig.Producer,
@@ -37,7 +35,6 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
             return new StorageCluster(ancestor,
                                       ContentCluster.getClusterId(clusterElem),
                                       new FileStorProducer.Builder().build(deployState.getProperties(), cluster, clusterElem),
-                                      new IntegrityCheckerProducer.Builder().build(cluster, clusterElem),
                                       new StorServerProducer.Builder().build(clusterElem),
                                       new StorVisitorProducer.Builder().build(clusterElem),
                                       new PersistenceProducer.Builder().build(clusterElem));
@@ -46,7 +43,6 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
 
     private final String clusterName;
     private final FileStorProducer fileStorProducer;
-    private final IntegrityCheckerProducer integrityCheckerProducer;
     private final StorServerProducer storServerProducer;
     private final StorVisitorProducer storVisitorProducer;
     private final PersistenceProducer persistenceProducer;
@@ -54,14 +50,12 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
     StorageCluster(TreeConfigProducer<?> parent,
                    String clusterName,
                    FileStorProducer fileStorProducer,
-                   IntegrityCheckerProducer integrityCheckerProducer,
                    StorServerProducer storServerProducer,
                    StorVisitorProducer storVisitorProducer,
                    PersistenceProducer persistenceProducer) {
         super(parent, "storage");
         this.clusterName = clusterName;
         this.fileStorProducer = fileStorProducer;
-        this.integrityCheckerProducer = integrityCheckerProducer;
         this.storServerProducer = storServerProducer;
         this.storVisitorProducer = storVisitorProducer;
         this.persistenceProducer = persistenceProducer;
@@ -92,11 +86,6 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
 
     public String getClusterName() {
         return clusterName;
-    }
-
-    @Override
-    public void getConfig(StorIntegritycheckerConfig.Builder builder) {
-        integrityCheckerProducer.getConfig(builder);
     }
 
     @Override
