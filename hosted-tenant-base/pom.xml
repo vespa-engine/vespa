@@ -334,7 +334,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
                         <!-- TODO: fix configuration to allow 3.x of maven-antrun-plugin -->
-                        <version>1.8</version>
+                        <version>3.1.0</version>
                         <executions>
                             <execution>
                                 <id>attach-artifact</id>
