@@ -333,8 +333,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
-                        <!-- TODO: fix configuration to allow 3.x of maven-antrun-plugin -->
-                        <version>1.8</version>
+                        <version>${maven-antrun-plugin.vespa.version}</version>
                         <executions>
                             <execution>
                                 <id>attach-artifact</id>
@@ -343,7 +342,7 @@
                                     <goal>run</goal>
                                 </goals>
                                 <configuration>
-                                    <tasks>
+                                    <target>
                                         <!-- Workaround to copy src/test/application/tests only when its parents exists:
                                              Copy in two steps, eliminating the parents in the helper step-->
 
@@ -365,7 +364,7 @@
                                         </copy>
 
                                         <zip destfile="target/application-test.zip" basedir="target/application-test/" />
-                                    </tasks>
+                                    </target>
                                 </configuration>
                             </execution>
                         </executions>
