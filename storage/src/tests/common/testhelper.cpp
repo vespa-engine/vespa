@@ -81,7 +81,6 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     // Don't want test to call exit()
     config->set("fail_disk_after_error_count", "0");
     config = &dc.addConfig("stor-bouncer");
-    config = &dc.addConfig("stor-messageforwarder");
     config = &dc.addConfig("stor-server");
     config->set("cluster_name", clusterName);
     config->set("enable_dead_lock_detector", "false");
