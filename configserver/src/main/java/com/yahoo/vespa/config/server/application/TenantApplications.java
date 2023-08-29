@@ -80,7 +80,6 @@ public class TenantApplications implements RequestHandler, HostValidator {
     private final String serverId;
     private final ListFlag<String> incompatibleVersions;
     private final BooleanFlag writeApplicationDataAsJson;
-    private final BooleanFlag readApplicationDataAsJson;
 
     public TenantApplications(TenantName tenant, Curator curator, StripedExecutor<TenantName> zkWatcherExecutor,
                               ExecutorService zkCacheExecutor, Metrics metrics, ConfigActivationListener configActivationListener,
@@ -103,7 +102,6 @@ public class TenantApplications implements RequestHandler, HostValidator {
         this.serverId = configserverConfig.serverId();
         this.incompatibleVersions = PermanentFlags.INCOMPATIBLE_VERSIONS.bindTo(flagSource);
         this.writeApplicationDataAsJson = Flags.WRITE_APPLICATION_DATA_AS_JSON.bindTo(flagSource);
-        this.readApplicationDataAsJson = Flags.READ_APPLICATION_DATA_AS_JSON.bindTo(flagSource);
     }
 
     /** The curator backed ZK storage of this. */
@@ -135,7 +133,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
      * Returns Optional.empty if application not found or no application data exists.
      */
     public Optional<ApplicationData> applicationData(ApplicationId id) {
-        return database().applicationData(id, readApplicationDataAsJson.value());
+        return database().applicationData(id);
     }
 
     public boolean sessionExistsInFileSystem(long sessionId) {
