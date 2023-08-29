@@ -67,11 +67,7 @@ public class Metrics {
     }
 
     public static class Value {
-
         private final Long last;
-        private final Double average;
-        private final Long count;
-
         public Value(
                 @JsonProperty("average") Double average,
                 @JsonProperty("count") Long count,
@@ -80,13 +76,9 @@ public class Metrics {
                 @JsonProperty("max") Long max,
                 @JsonProperty("last") Long last) {
             this.last = last;
-            this.average = average;
-            this.count = count;
         }
 
         public Long getLast() { return last; }
-        public Double getAverage() { return average; }
-        public Long getCount() { return count; }
     }
 
     // We initialize it in case the metrics is missing in the JSON.
