@@ -7,7 +7,9 @@ import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -65,11 +67,13 @@ public interface HostProvisioner {
      */
     void deprovision(Node host);
 
-    /** Replace the root (OS) disk of host. Implementations of this are expected to be idempotent.
+    /** Replace the root (OS) disk of hosts. Implementations of this are expected to be idempotent.
      *
-     * @return the updated node object
+     * @return the node objects for which updates were made
      */
-    Node replaceRootDisk(Node host);
+    default RebuildResult replaceRootDisk(Collection<Node> hosts) { throw new UnsupportedOperationException(); }
+
+    record RebuildResult(List<Node> rebuilt, Map<Node, Exception> failed) { }
 
     /**
      * Returns the maintenance events scheduled for hosts in this zone, in given cloud accounts. Host events in the

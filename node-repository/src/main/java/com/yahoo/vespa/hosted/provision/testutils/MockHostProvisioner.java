@@ -21,9 +21,11 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +33,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
+
+import static com.yahoo.config.provision.NodeType.host;
 
 /**
  * @author mpolden
@@ -82,7 +86,7 @@ public class MockHostProvisioner implements HostProvisioner {
 
         List<ProvisionedHost> hosts = new ArrayList<>();
         for (int index : request.indices()) {
-            String hostHostname = request.type() == NodeType.host ? "host" + index : request.type().name() + index;
+            String hostHostname = request.type() == host ? "host" + index : request.type().name() + index;
             hosts.add(new ProvisionedHost("id-of-" + request.type().name() + index,
                                           hostHostname,
                                           hostFlavor,
@@ -117,13 +121,17 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public Node replaceRootDisk(Node host) {
-        if (!host.type().isHost()) throw new IllegalArgumentException(host + " is not a host");
-        if (rebuildsCompleted.remove(host.hostname())) {
-            return host.withWantToRetire(host.status().wantToRetire(), host.status().wantToDeprovision(),
-                                         false, false, Agent.system, Instant.ofEpochMilli(123));
+    public RebuildResult replaceRootDisk(Collection<Node> hosts) {
+        List<Node> updated = new ArrayList<>();
+        Map<Node, Exception> failed = new LinkedHashMap<>();
+        for (Node host : hosts) {
+            if ( ! host.type().isHost()) failed.put(host, new IllegalArgumentException(host + " is not a host"));
+            if (rebuildsCompleted.remove(host.hostname())) {
+                updated.add(host.withWantToRetire(host.status().wantToRetire(), host.status().wantToDeprovision(),
+                                                  false, false, Agent.system, Instant.ofEpochMilli(123)));
+            }
         }
-        return host;
+        return new RebuildResult(updated, failed);
     }
 
     @Override
@@ -219,7 +227,7 @@ public class MockHostProvisioner implements HostProvisioner {
         long numAddresses = Math.max(2, Math.round(flavor.resources().bandwidthGbps()));
         return IntStream.range(1, (int) numAddresses)
                         .mapToObj(i -> {
-                            String hostname = hostType == NodeType.host
+                            String hostname = hostType == host
                                     ? "host" + hostIndex + "-" + i
                                     : hostType.childNodeType().name() + i;
                             return HostName.of(hostname);
