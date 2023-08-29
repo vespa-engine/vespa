@@ -353,11 +353,9 @@ public class Vespa9VespaMetricSet {
         // Executors shared between all document dbs
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_PROTON_QUEUESIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_PROTON_ACCEPTED.rate());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_PROTON_WAKEUPS.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_PROTON_UTILIZATION, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FLUSH_QUEUESIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FLUSH_ACCEPTED.rate());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FLUSH_WAKEUPS.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FLUSH_UTILIZATION, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_MATCH_QUEUESIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_MATCH_ACCEPTED.rate());
@@ -365,19 +363,15 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_MATCH_UTILIZATION, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_DOCSUM_QUEUESIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_DOCSUM_ACCEPTED.rate());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_DOCSUM_WAKEUPS.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_DOCSUM_UTILIZATION, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_SHARED_QUEUESIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_SHARED_ACCEPTED.rate());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_SHARED_WAKEUPS.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_SHARED_UTILIZATION, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_WARMUP_QUEUESIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_WARMUP_ACCEPTED.rate());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_WARMUP_WAKEUPS.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_WARMUP_UTILIZATION, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FIELD_WRITER_QUEUESIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FIELD_WRITER_ACCEPTED.rate());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FIELD_WRITER_WAKEUPS.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_EXECUTOR_FIELD_WRITER_UTILIZATION, EnumSet.of(max, sum, count));
 
         // jobs
@@ -394,32 +388,20 @@ public class Vespa9VespaMetricSet {
         // Threading service (per document db)
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_MASTER_QUEUESIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_MASTER_ACCEPTED.rate());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_MASTER_WAKEUPS.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_MASTER_UTILIZATION, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_QUEUESIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_ACCEPTED.rate());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_WAKEUPS.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_INDEX_UTILIZATION, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_SUMMARY_QUEUESIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_SUMMARY_ACCEPTED.rate());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_SUMMARY_WAKEUPS.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_THREADING_SERVICE_SUMMARY_UTILIZATION, EnumSet.of(max, sum, count));
 
         // lid space
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_LID_SPACE_LID_BLOAT_FACTOR.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_LID_SPACE_LID_FRAGMENTATION_FACTOR.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_LID_SPACE_LID_LIMIT, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_LID_SPACE_HIGHEST_USED_LID, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_LID_SPACE_USED_LIDS, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_LID_SPACE_LID_BLOAT_FACTOR.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_LID_SPACE_LID_FRAGMENTATION_FACTOR.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_LID_SPACE_LID_LIMIT, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_LID_SPACE_HIGHEST_USED_LID, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_LID_SPACE_USED_LIDS, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_LID_SPACE_LID_BLOAT_FACTOR.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_LID_SPACE_LID_FRAGMENTATION_FACTOR.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_LID_SPACE_LID_LIMIT, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_LID_SPACE_HIGHEST_USED_LID, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_LID_SPACE_USED_LIDS, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
 
         // bucket move
@@ -451,29 +433,21 @@ public class Vespa9VespaMetricSet {
         // transaction log
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_TRANSACTIONLOG_ENTRIES.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_TRANSACTIONLOG_DISK_USAGE.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_TRANSACTIONLOG_REPLAY_TIME, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_TRANSACTIONLOG_REPLAY_TIME.max());
 
         // document store
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_DISK_USAGE.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_DISK_BLOAT.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_MAX_BUCKET_SPREAD.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_MEMORY_USAGE_ALLOCATED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_MEMORY_USAGE_USED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_MEMORY_USAGE_ONHOLD_BYTES.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_DISK_USAGE.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_DISK_BLOAT.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_MAX_BUCKET_SPREAD.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_MEMORY_USAGE_ALLOCATED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_MEMORY_USAGE_USED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_MEMORY_USAGE_DEAD_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_DOCUMENT_STORE_MEMORY_USAGE_ONHOLD_BYTES.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_DISK_USAGE.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_DISK_BLOAT.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_MAX_BUCKET_SPREAD.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_MEMORY_USAGE_ALLOCATED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_MEMORY_USAGE_USED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_MEMORY_USAGE_DEAD_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_DOCUMENT_STORE_MEMORY_USAGE_ONHOLD_BYTES.average());
 
         // document store cache
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_DOCUMENT_STORE_CACHE_MEMORY_USAGE.average());
@@ -487,19 +461,10 @@ public class Vespa9VespaMetricSet {
 
         // attribute
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_ATTRIBUTE_MEMORY_USAGE_ALLOCATED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_ATTRIBUTE_MEMORY_USAGE_USED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_ATTRIBUTE_MEMORY_USAGE_DEAD_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_ATTRIBUTE_MEMORY_USAGE_ONHOLD_BYTES.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_ATTRIBUTE_MEMORY_USAGE_ALLOCATED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_ATTRIBUTE_MEMORY_USAGE_USED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_ATTRIBUTE_MEMORY_USAGE_DEAD_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_ATTRIBUTE_MEMORY_USAGE_ONHOLD_BYTES.average());
 
         // index
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_ALLOCATED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_USED_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_DEAD_BYTES.average());
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_ONHOLD_BYTES.average());
 
         // matching
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERIES.rate());
@@ -610,10 +575,6 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKETS_TOOMANYCOPIES.average());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKETS.average());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKETS_NOTRUSTED.average());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKET_REPLICAS_MOVING_OUT.average());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKET_REPLICAS_COPYING_OUT.average());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKET_REPLICAS_COPYING_IN.average());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_BUCKET_REPLICAS_SYNCING.average());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_MAX_OBSERVED_TIME_SINCE_LAST_GC_SEC.average());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_DELETE_BUCKET_DONE_OK.rate());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_DELETE_BUCKET_DONE_FAILED.rate());
@@ -621,11 +582,6 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_MERGE_BUCKET_DONE_OK.rate());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_MERGE_BUCKET_DONE_FAILED.rate());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_MERGE_BUCKET_PENDING.average());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_MERGE_BUCKET_BLOCKED.rate());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_MERGE_BUCKET_THROTTLED.rate());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_MERGE_BUCKET_SOURCE_ONLY_COPY_CHANGED.rate());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_MERGE_BUCKET_SOURCE_ONLY_COPY_DELETE_BLOCKED.rate());
-        addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_MERGE_BUCKET_SOURCE_ONLY_COPY_DELETE_FAILED.rate());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_SPLIT_BUCKET_DONE_OK.rate());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_SPLIT_BUCKET_DONE_FAILED.rate());
         addMetric(metrics, DistributorMetrics.VDS_IDEALSTATE_SPLIT_BUCKET_PENDING.average());
