@@ -1,5 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+// TODO: Keep the set of metrics in this set stable until Vespa 9.
+// TODO: Vespa 9: Let this class be replaced by Vespa9DefaultMetricSet.
 package ai.vespa.metrics.set;
 
 import ai.vespa.metrics.ClusterControllerMetrics;
@@ -39,7 +41,6 @@ public class DefaultMetrics {
         return new MetricSet(defaultMetricSetId,
                              List.of(),
                              List.of(defaultVespaMetricSet,
-                                     BasicMetricSets.containerHttpStatusMetrics(),
                                      getContainerMetrics(),
                                      getSearchChainMetrics(),
                                      getDocprocMetrics(),
@@ -54,6 +55,11 @@ public class DefaultMetrics {
 
     private static MetricSet getContainerMetrics() {
         return new MetricSet.Builder("default-container")
+                .metric(ContainerMetrics.HTTP_STATUS_1XX.rate())
+                .metric(ContainerMetrics.HTTP_STATUS_2XX.rate())
+                .metric(ContainerMetrics.HTTP_STATUS_3XX.rate())
+                .metric(ContainerMetrics.HTTP_STATUS_4XX.rate())
+                .metric(ContainerMetrics.HTTP_STATUS_5XX.rate())
                 .metric(ContainerMetrics.JDISC_GC_MS, EnumSet.of(max, average))
                 .metric(ContainerMetrics.MEM_HEAP_FREE.average())
                 .metric(ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count))

@@ -1,4 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+// TODO: Keep the set of metrics in this set stable until Vespa 9.
+// TODO: Vespa 9: Let this class be replaced by Vespa9VespaMetricSet.
 package ai.vespa.metrics.set;
 
 import ai.vespa.metrics.ClusterControllerMetrics;
@@ -119,6 +122,12 @@ public class VespaMetricSet {
 
     private static Set<Metric> getContainerMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
+
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_1XX.rate());
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_2XX.rate());
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_3XX.rate());
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_4XX.rate());
+        addMetric(metrics, ContainerMetrics.HTTP_STATUS_5XX.rate());
 
         addMetric(metrics, ContainerMetrics.APPLICATION_GENERATION.baseName());
 
