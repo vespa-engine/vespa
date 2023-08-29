@@ -15,6 +15,10 @@ class TestMaintainer extends Maintainer {
     private double success = 1.0;
     private RuntimeException exceptionToThrow = null;
 
+    TestMaintainer(JobControl jobControl, JobMetrics jobMetrics, Clock clock) {
+        super(null, Duration.ofDays(1), clock, jobControl, jobMetrics, List.of(), false);
+    }
+
     TestMaintainer(String name, JobControl jobControl, JobMetrics jobMetrics) {
         super(name, Duration.ofDays(1), Clock.systemUTC(), jobControl, jobMetrics, List.of(), false);
     }
