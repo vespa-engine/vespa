@@ -562,11 +562,6 @@
                 <version>${icu4j.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.infradna.tool</groupId>
-                <artifactId>bridge-method-annotation</artifactId>
-                <version>1.4</version>
-            </dependency>
-            <dependency>
                 <groupId>com.microsoft.onnxruntime</groupId>
                 <artifactId>onnxruntime</artifactId>
                 <version>${onnxruntime.vespa.version}</version>
@@ -698,11 +693,6 @@
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
                 <version>${jna.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>net.spy</groupId>
-                <artifactId>spymemcached</artifactId>
-                <version>2.10.1</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -1134,12 +1124,6 @@
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
                 <version>3.2.5</version>
-            </dependency>
-            <dependency>
-                <groupId>uk.co.datumedge</groupId>
-                <artifactId>hamcrest-json</artifactId>
-                <version>0.2</version>
-                <scope>test</scope> <!-- TODO: remove scope from parent pom -->
             </dependency>
             <dependency>
                 <groupId>xerces</groupId>
