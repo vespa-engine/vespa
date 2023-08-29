@@ -239,12 +239,12 @@ struct MyDocumentStore : public test::DummyDocumentStore
     {}
     ~MyDocumentStore() override;
     Document::UP read(DocumentIdT lid, const document::DocumentTypeRepo &) const override {
-        DocMap::const_iterator itr = _docs.find(lid);
+        auto itr = _docs.find(lid);
         if (itr != _docs.end()) {
             Document::UP retval(itr->second->clone());
             return retval;
         }
-        return Document::UP();
+        return {};
     }
     void write(uint64_t syncToken, DocumentIdT lid, const document::Document& doc) override {
         _lastSyncToken = syncToken;
@@ -345,7 +345,7 @@ struct MyAttributeWriter : public IAttributeWriter
         if (_attrs.count(attrName) == 0) {
             return nullptr;
         }
-        AttrMap::const_iterator itr = _attrMap.find(attrName);
+        auto itr = _attrMap.find(attrName);
         return ((itr == _attrMap.end()) ? nullptr : itr->second.get());
     }
     void put(SerialNum serialNum, const document::Document &doc, DocumentIdT lid, OnWriteDoneType) override {

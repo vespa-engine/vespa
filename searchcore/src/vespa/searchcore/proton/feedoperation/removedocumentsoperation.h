@@ -30,7 +30,7 @@ public:
 
     const LidVectorContext::SP
     getLidsToRemove(uint32_t subDbId) const {
-        LidsToRemoveMap::const_iterator found(_lidsToRemoveMap.find(subDbId));
+        auto found = _lidsToRemoveMap.find(subDbId);
         return (found != _lidsToRemoveMap.end()) ? found->second : LidVectorContext::SP();
     }
 

@@ -52,9 +52,9 @@ LidVectorContext::serialize(vespalib::nbostream &os) const
     // Use of bitvector when > 1/32 of docs
     if (_result.size() > (_docIdLimit / 32)) {
         os << static_cast<int32_t>(BITVECTOR);
-        BitVector::UP bitVector = BitVector::create(_docIdLimit);
-        for (LidVector::const_iterator it(_result.begin()), mt(_result.end()); it != mt; it++) {
-            bitVector->setBit(*it);
+        auto bitVector = BitVector::create(_docIdLimit);
+        for (auto docid : _result) {
+            bitVector->setBit(docid);
         }
         os << *bitVector;
     } else {

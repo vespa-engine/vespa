@@ -17,7 +17,7 @@ bool
 ViewResolver::resolve(vespalib::stringref view,
                       std::vector<vespalib::string> &fields) const
 {
-    Map::const_iterator pos = _map.find(view);
+    auto pos = _map.find(view);
     if (pos == _map.end()) {
         fields.push_back(view);
         return false;

@@ -691,7 +691,7 @@ bool
 asserCorrectHandlers(const FlushEngine::FlushMetaSet & current1, const std::vector<const char *> & targets)
 {
     bool retval(targets.size() == current1.size());
-    FlushEngine::FlushMetaSet::const_iterator curr(current1.begin());
+    auto curr = current1.begin();
     if (retval) {
         for (const char * target : targets) {
             if (target != (curr++)->getName()) {

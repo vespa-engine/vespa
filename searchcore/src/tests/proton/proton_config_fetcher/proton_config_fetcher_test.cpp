@@ -123,8 +123,7 @@ struct ConfigTestFixture {
 
     void removeDocType(const std::string & name)
     {
-        for (DocumenttypesConfigBuilder::DocumenttypeVector::iterator it(documenttypesBuilder.documenttype.begin()),
-                                                                      mt(documenttypesBuilder.documenttype.end());
+        for (auto it(documenttypesBuilder.documenttype.begin()), mt(documenttypesBuilder.documenttype.end());
              it != mt;
              it++) {
             if ((*it).name.compare(name) == 0) {
@@ -133,8 +132,7 @@ struct ConfigTestFixture {
             }
         }
 
-        for (ProtonConfigBuilder::DocumentdbVector::iterator it(protonBuilder.documentdb.begin()),
-                                                             mt(protonBuilder.documentdb.end());
+        for (auto it(protonBuilder.documentdb.begin()), mt(protonBuilder.documentdb.end());
              it != mt;
              it++) {
             if ((*it).inputdoctypename.compare(name) == 0) {
