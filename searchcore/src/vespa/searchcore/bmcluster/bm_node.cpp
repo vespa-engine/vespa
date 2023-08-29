@@ -30,7 +30,6 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/storage/bucketdb/config-stor-bucket-init.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/config/config-stor-bouncer.h>
 #include <vespa/storage/config/config-stor-communicationmanager.h>
@@ -103,7 +102,6 @@ using vespa::config::content::UpgradingConfigBuilder;
 using vespa::config::content::core::BucketspacesConfig;
 using vespa::config::content::core::BucketspacesConfigBuilder;
 using vespa::config::content::core::StorBouncerConfigBuilder;
-using vespa::config::content::core::StorBucketInitConfigBuilder;
 using vespa::config::content::core::StorCommunicationmanagerConfigBuilder;
 using vespa::config::content::core::StorDistributormanagerConfigBuilder;
 using vespa::config::content::core::StorOpsloggerConfigBuilder;
@@ -355,7 +353,6 @@ struct ServiceLayerConfigSet : public StorageConfigSet
 {
     PersistenceConfigBuilder      persistence;
     StorFilestorConfigBuilder     stor_filestor;
-    StorBucketInitConfigBuilder   stor_bucket_init;
     StorVisitorConfigBuilder      stor_visitor;
 
     ServiceLayerConfigSet(const vespalib::string& base_dir, uint32_t node_idx, const vespalib::string& config_id_in, const IBmDistribution& distribution, const DocumenttypesConfig& documenttypes_in,
@@ -363,7 +360,6 @@ struct ServiceLayerConfigSet : public StorageConfigSet
         : StorageConfigSet(base_dir, node_idx, false, config_id_in, distribution, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, params),
           persistence(),
           stor_filestor(),
-          stor_bucket_init(),
           stor_visitor()
     {
         stor_filestor.numResponseThreads = params.get_response_threads();
@@ -377,7 +373,6 @@ struct ServiceLayerConfigSet : public StorageConfigSet
         StorageConfigSet::add_builders(set);
         set.addBuilder(config_id, &persistence);
         set.addBuilder(config_id, &stor_filestor);
-        set.addBuilder(config_id, &stor_bucket_init);
         set.addBuilder(config_id, &stor_visitor);
     }
 };

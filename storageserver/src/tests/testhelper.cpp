@@ -33,7 +33,6 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     config = &dc.addConfig("messagebus");
     config = &dc.addConfig("stor-prioritymapping");
     config = &dc.addConfig("stor-bucketdbupdater");
-    config = &dc.addConfig("stor-bucket-init");
     config = &dc.addConfig("metricsmanager");
     config->set("consumer[1]");
     config->set("consumer[0].name", "\"status\"");
