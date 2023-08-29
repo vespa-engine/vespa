@@ -103,7 +103,7 @@
         <lucene.vespa.version>9.7.0</lucene.vespa.version>
         <maven-archiver.vespa.version>3.6.1</maven-archiver.vespa.version>
         <maven-wagon.vespa.version>3.5.3</maven-wagon.vespa.version>
-        <mimepull.vespa.version>1.9.6</mimepull.vespa.version>
+        <mimepull.vespa.version>1.10.0</mimepull.vespa.version>
         <mockito.vespa.version>4.0.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
         <netty.vespa.version>4.1.94.Final</netty.vespa.version>
