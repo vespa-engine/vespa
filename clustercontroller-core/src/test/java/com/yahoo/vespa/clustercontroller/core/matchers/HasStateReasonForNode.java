@@ -5,7 +5,6 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.NodeStateReason;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 
 import java.util.Map;
 
@@ -42,7 +41,6 @@ public class HasStateReasonForNode extends BaseMatcher<Map<Node, NodeStateReason
         }
     }
 
-    @Factory
     public static HasStateReasonForNode hasStateReasonForNode(Node node, NodeStateReason reason) {
         return new HasStateReasonForNode(node, reason);
     }

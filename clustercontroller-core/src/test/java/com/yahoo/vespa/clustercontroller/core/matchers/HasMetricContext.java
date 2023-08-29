@@ -4,7 +4,6 @@ package com.yahoo.vespa.clustercontroller.core.matchers;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -64,7 +63,6 @@ public class HasMetricContext extends BaseMatcher<MetricReporter.Context> {
         return new Dimension(name, value);
     }
 
-    @Factory
     public static HasMetricContext hasMetricContext(Dimension... dimensions) {
         return new HasMetricContext(Stream.of(dimensions).collect(Collectors.toMap(dim -> dim.name, dim -> dim.value)));
     }

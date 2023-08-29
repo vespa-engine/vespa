@@ -71,8 +71,8 @@ junit:junit:4.13.2
 net.bytebuddy:byte-buddy:1.11.19
 net.bytebuddy:byte-buddy-agent:1.11.19
 org.apiguardian:apiguardian-api:1.1.2
-org.hamcrest:hamcrest-all:1.3
-org.hamcrest:hamcrest-core:1.3
+org.hamcrest:hamcrest:2.2
+org.hamcrest:hamcrest-core:2.2
 org.junit.jupiter:junit-jupiter:5.8.1
 org.junit.jupiter:junit-jupiter-api:5.8.1
 org.junit.jupiter:junit-jupiter-engine:5.8.1

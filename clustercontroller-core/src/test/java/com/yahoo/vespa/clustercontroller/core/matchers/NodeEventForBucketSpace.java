@@ -4,7 +4,6 @@ package com.yahoo.vespa.clustercontroller.core.matchers;
 import com.yahoo.vespa.clustercontroller.core.NodeEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 
 import java.util.Optional;
 
@@ -34,12 +33,10 @@ public class NodeEventForBucketSpace extends BaseMatcher<NodeEvent> {
         description.appendText(String.format("got bucket space '%s'", other.getBucketSpace().orElse("null")));
     }
 
-    @Factory
     public static NodeEventForBucketSpace nodeEventForBucketSpace(String bucketSpace) {
         return new NodeEventForBucketSpace(Optional.of(bucketSpace));
     }
 
-    @Factory
     public static NodeEventForBucketSpace nodeEventForBaseline() {
         return new NodeEventForBucketSpace(Optional.empty());
     }

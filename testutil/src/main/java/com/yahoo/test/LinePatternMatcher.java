@@ -3,7 +3,6 @@ package com.yahoo.test;
 
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 
 /**
@@ -35,8 +34,7 @@ public class LinePatternMatcher extends BaseMatcher<String> {
         return false;
     }
 
-    @Factory
-    public static <T> Matcher<String> containsLineWithPattern(String pattern) {
+    public static Matcher<String> containsLineWithPattern(String pattern) {
         return new LinePatternMatcher(pattern);
     }
 

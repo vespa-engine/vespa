@@ -922,12 +922,6 @@
                 <version>${bouncycastle.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.cthul</groupId>
-                <artifactId>cthul-matchers</artifactId>
-                <version>1.0</version>
-                <scope>test</scope> <!-- TODO: remove scope from parent pom -->
-            </dependency>
-            <dependency>
                 <groupId>org.eclipse.collections</groupId>
                 <artifactId>eclipse-collections</artifactId>
                 <version>${eclipse-collections.vespa.version}</version>
@@ -1009,21 +1003,18 @@
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-all</artifactId>
+                <artifactId>hamcrest</artifactId>
                 <version>${hamcrest.vespa.version}</version>
-                <scope>test</scope> <!-- TODO: remove scope from parent pom -->
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
                 <version>${hamcrest.vespa.version}</version>
-                <scope>test</scope> <!-- TODO: remove scope from parent pom -->
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-library</artifactId>
                 <version>${hamcrest.vespa.version}</version>
-                <scope>test</scope> <!-- TODO: remove scope from parent pom -->
             </dependency>
             <dependency>
                 <groupId>org.hdrhistogram</groupId>

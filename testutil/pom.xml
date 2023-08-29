@@ -13,7 +13,7 @@
     <packaging>jar</packaging>
     <version>8-SNAPSHOT</version>
     <name>${project.artifactId}</name>
-    <description>Library of useful Hamcrest matchers.</description>
+    <description>Library of useful test utilities.</description>
     <dependencies>
         <dependency>
           <groupId>com.google.guava</groupId>
@@ -34,12 +34,7 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-core</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-library</artifactId>
+            <artifactId>hamcrest</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>

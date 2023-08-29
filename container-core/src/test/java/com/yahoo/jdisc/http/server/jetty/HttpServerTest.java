@@ -84,13 +84,12 @@ import static com.yahoo.jdisc.http.server.jetty.SimpleHttpClient.ResponseValidat
 import static com.yahoo.jdisc.http.server.jetty.Utils.createHttp2Client;
 import static com.yahoo.jdisc.http.server.jetty.Utils.createSslTestDriver;
 import static com.yahoo.jdisc.http.server.jetty.Utils.generatePrivateKeyAndCertificate;
-import static org.cthul.matchers.CthulMatchers.containsPattern;
-import static org.cthul.matchers.CthulMatchers.matchesPattern;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -143,7 +142,7 @@ public class HttpServerTest {
                 newBindingSetSelector("unknown"));
         driver.client().get("/status.html")
                 .expectStatusCode(is(NOT_FOUND))
-                .expectContent(containsPattern(Pattern.compile(
+                .expectContent(matchesPattern(Pattern.compile(".*" +
                         Pattern.quote(BindingSetNotFoundException.class.getName()) +
                                 ": No binding set named &apos;unknown&apos;\\.\n\tat .+",
                         Pattern.DOTALL | Pattern.MULTILINE)));
