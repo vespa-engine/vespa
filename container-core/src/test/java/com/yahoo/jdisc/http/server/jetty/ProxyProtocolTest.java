@@ -29,7 +29,6 @@ import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.server.jetty.Utils.generatePrivateKeyAndCertificate;
 import static com.yahoo.yolean.Exceptions.uncheckInterrupted;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V1;
 import static org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -206,14 +205,14 @@ class ProxyProtocolTest {
 
     private static void assertLogEntryHasRemote(ConnectionLogEntry entry, String expectedAddress, int expectedPort) {
         if (expectedAddress != null) {
-            assertThat(entry.remoteAddress()).hasValue(expectedAddress);
+            assertEquals(expectedAddress, entry.remoteAddress().get());
         } else {
-            assertThat(entry.remoteAddress()).isEmpty();
+            assertTrue(entry.remoteAddress().isEmpty());
         }
         if (expectedPort > 0) {
-            assertThat(entry.remotePort()).hasValue(expectedPort);
+            assertEquals(expectedPort, entry.remotePort().get());
         } else {
-            assertThat(entry.remotePort()).isEmpty();
+            assertTrue(entry.remotePort().isEmpty());
         }
     }
 
@@ -227,8 +226,8 @@ class ProxyProtocolTest {
         await(waitCondition);
         assertTrue(driver.close());
         if (waitCondition.test(null)) await(waitCondition);
-        assertThat(reqLog.entries()).hasSize(expectedReqLogSize);
-        assertThat(connLog.logEntries()).hasSize(expectedConnLogSize);
+        assertEquals(expectedReqLogSize, reqLog.entries().size());
+        assertEquals(expectedConnLogSize, connLog.logEntries().size());
     }
 
     private static void await(Predicate<Void> waitCondition) {

@@ -81,7 +81,7 @@
         <dependency>
             <groupId>org.questdb</groupId>
             <artifactId>questdb</artifactId>
-            <version>6.2</version>
+            <version>${questdb.vespa.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

@@ -25,8 +25,10 @@ import java.util.logging.LogRecord;
 import java.util.zip.GZIPInputStream;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Bob Travis
@@ -50,8 +52,8 @@ public class LogFileHandlerTestCase {
         long tomorrowDays = (now / millisPerDay) + 1;
         long tomorrowMillis = tomorrowDays * millisPerDay;
 
-        assertThat(tomorrowMillis + 1000).isEqualTo(h.logThread.getNextRotationTime(tomorrowMillis));
-        assertThat(tomorrowMillis + 10000).isEqualTo(h.logThread.getNextRotationTime(tomorrowMillis + 3000));
+        assertEquals(tomorrowMillis + 1000, h.logThread.getNextRotationTime(tomorrowMillis));
+        assertEquals(tomorrowMillis + 10000, h.logThread.getNextRotationTime(tomorrowMillis + 3000));
         String message = "test";
         h.publish(message);
         h.publish("another test");
@@ -118,11 +120,11 @@ public class LogFileHandlerTestCase {
         String longMessage = formatter.format(new LogRecord(Level.INFO, "string which is way longer than the word test"));
         handler.publish(longMessage);
         handler.flush();
-        assertThat(Files.size(Paths.get(firstFile))).isEqualTo(31);
+        assertEquals(31, Files.size(Paths.get(firstFile)));
         final long expectedSecondFileLength = 72;
 
         long symlinkFileLength = Files.size(root.toPath().resolve("symlink"));
-        assertThat(symlinkFileLength).isEqualTo(expectedSecondFileLength);
+        assertEquals(expectedSecondFileLength, symlinkFileLength);
         handler.shutdown();
     }
 
@@ -135,8 +137,8 @@ public class LogFileHandlerTestCase {
         firstHandler.publishAndWait("test");
         firstHandler.shutdown();
 
-        assertThat(Files.size(Paths.get(firstHandler.getFileName()))).isEqualTo(5);
-        assertThat(root.toPath().resolve("symlink").toRealPath().toString()).isEqualTo(
+        assertEquals(5, Files.size(Paths.get(firstHandler.getFileName())));
+        assertEquals(root.toPath().resolve("symlink").toRealPath().toString(),
                 Paths.get(firstHandler.getFileName()).toRealPath().toString());
 
         LogFileHandler<String> secondHandler = new LogFileHandler<>(
@@ -144,11 +146,11 @@ public class LogFileHandlerTestCase {
         secondHandler.publishAndWait("test");
         secondHandler.rotateNow();
 
-        assertThat(root.toPath().resolve("symlink").toRealPath().toString()).isEqualTo(
+        assertEquals(root.toPath().resolve("symlink").toRealPath().toString(),
                 Paths.get(secondHandler.getFileName()).toRealPath().toString());
         while (Files.exists(root.toPath().resolve(firstHandler.getFileName()))) Thread.sleep(1);
 
-        assertThat(Files.exists(Paths.get(firstHandler.getFileName() + ".zst"))).isTrue();
+        assertTrue(Files.exists(Paths.get(firstHandler.getFileName() + ".zst")));
         secondHandler.shutdown();
     }
 
@@ -187,20 +189,20 @@ public class LogFileHandlerTestCase {
         }
         h.flush();
         String f1 = h.getFileName();
-        assertThat(f1).startsWith(root.getAbsolutePath() + "/logfilehandlertest.");
+        assertTrue(f1.startsWith(root.getAbsolutePath() + "/logfilehandlertest."));
         File uncompressed = new File(f1);
         File compressed = new File(f1 + "." + fileExtension);
-        assertThat(uncompressed).exists();
-        assertThat(compressed).doesNotExist();
+        assertTrue(uncompressed.exists());
+        assertFalse(compressed.exists());
         String content = IOUtils.readFile(uncompressed);
-        assertThat(content).hasLineCount(logEntries);
+        assertEquals(logEntries, content.lines().count());
         h.rotateNow();
         while (uncompressed.exists()) {
             Thread.sleep(1);
         }
-        assertThat(compressed).exists();
+        assertTrue(compressed.exists());
         String uncompressedContent = decompressor.apply(compressed.toPath(), content.getBytes().length);
-        assertThat(uncompressedContent).isEqualTo(content);
+        assertEquals(uncompressedContent, content);
         h.shutdown();
     }
 
@@ -211,14 +213,6 @@ public class LogFileHandlerTestCase {
             outputStream.write(record.getBytes(StandardCharsets.UTF_8));
         }
 
-        private static File newFolder(File root, String... subDirs) throws IOException {
-            String subFolder = String.join("/", subDirs);
-            File result = new File(root, subFolder);
-            if (!result.mkdirs()) {
-                throw new IOException("Couldn't create folders " + root);
-            }
-            return result;
-        }
     }
 
     private static File newFolder(File root, String... subDirs) throws IOException {
