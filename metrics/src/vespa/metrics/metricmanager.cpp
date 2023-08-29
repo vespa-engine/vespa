@@ -170,8 +170,7 @@ MetricManager::isInitialized() const {
 
 bool
 MetricManager::any_snapshots_taken(const MetricLockGuard&) const noexcept {
-    assert(!_snapshots.empty());
-    return _snapshots[0]->current_is_assigned();
+    return (!_snapshots.empty() && _snapshots[0]->current_is_assigned());
 }
 
 void

@@ -462,6 +462,7 @@ TEST_F(MetricManagerTest, test_snapshots)
     {
         MetricLockGuard lockGuard(mm.getMetricLock());
         mm.registerMetric(lockGuard, mySet.set);
+        EXPECT_FALSE(mm.any_snapshots_taken(lockGuard)); // well-defined prior to init()
     }
     mm.init(ConfigUri("raw:"
                       "consumer[2]\n"
