@@ -2,6 +2,7 @@
 package com.yahoo.concurrent.maintenance;
 
 import com.yahoo.concurrent.UncheckedTimeoutException;
+import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -23,22 +24,30 @@ public class MaintainerTest {
     public void staggering() {
         List<String> cluster = List.of("cfg1", "cfg2", "cfg3");
         Duration interval = Duration.ofMillis(300);
-        Instant now = Instant.ofEpochMilli(1000);
-        assertEquals(200, Maintainer.staggeredDelay(interval, now, "cfg1", cluster).toMillis());
-        assertEquals(0, Maintainer.staggeredDelay(interval, now, "cfg2", cluster).toMillis());
-        assertEquals(100, Maintainer.staggeredDelay(interval, now, "cfg3", cluster).toMillis());
+        ManualClock clock = new ManualClock(Instant.ofEpochMilli(1000));
 
-        now = Instant.ofEpochMilli(1001);
-        assertEquals(199, Maintainer.staggeredDelay(interval, now, "cfg1", cluster).toMillis());
-        assertEquals(299, Maintainer.staggeredDelay(interval, now, "cfg2", cluster).toMillis());
-        assertEquals(99, Maintainer.staggeredDelay(interval, now, "cfg3", cluster).toMillis());
+        // ∠( ᐛ 」∠)＿
+        class MaintainerWithBestHashE extends TestMaintainer { MaintainerWithBestHashE() { super(jobControl, new TestJobMetrics(), clock); } }
+        class MaintainerWithBestHashF extends TestMaintainer { MaintainerWithBestHashF() { super(jobControl, new TestJobMetrics(), clock); } }
+        class MaintainerWithBestHashG extends TestMaintainer { MaintainerWithBestHashG() { super(jobControl, new TestJobMetrics(), clock); } }
 
-        now = Instant.ofEpochMilli(1101);
-        assertEquals(99, Maintainer.staggeredDelay(interval, now, "cfg1", cluster).toMillis());
-        assertEquals(199, Maintainer.staggeredDelay(interval, now, "cfg2", cluster).toMillis());
-        assertEquals(299, Maintainer.staggeredDelay(interval, now, "cfg3", cluster).toMillis());
+        assertEquals(200, new MaintainerWithBestHashF().staggeredDelay(interval, "cfg1", cluster).toMillis());
+        assertEquals(299, new MaintainerWithBestHashE().staggeredDelay(interval, "cfg2", cluster).toMillis());
+        assertEquals(  0, new MaintainerWithBestHashF().staggeredDelay(interval, "cfg2", cluster).toMillis());
+        assertEquals(  1, new MaintainerWithBestHashG().staggeredDelay(interval, "cfg2", cluster).toMillis());
+        assertEquals(100, new MaintainerWithBestHashF().staggeredDelay(interval, "cfg3", cluster).toMillis());
 
-        assertEquals(300, Maintainer.staggeredDelay(interval, now, "cfg0", cluster).toMillis());
+        clock.advance(Duration.ofMillis(1));
+        assertEquals(199, new MaintainerWithBestHashF().staggeredDelay(interval, "cfg1", cluster).toMillis());
+        assertEquals(299, new MaintainerWithBestHashF().staggeredDelay(interval, "cfg2", cluster).toMillis());
+        assertEquals( 99, new MaintainerWithBestHashF().staggeredDelay(interval, "cfg3", cluster).toMillis());
+
+        clock.advance(Duration.ofMillis(100));
+        assertEquals( 99, new MaintainerWithBestHashF().staggeredDelay(interval, "cfg1", cluster).toMillis());
+        assertEquals(199, new MaintainerWithBestHashF().staggeredDelay(interval, "cfg2", cluster).toMillis());
+        assertEquals(299, new MaintainerWithBestHashF().staggeredDelay(interval, "cfg3", cluster).toMillis());
+
+        assertEquals(300, new MaintainerWithBestHashF().staggeredDelay(interval, "cfg0", cluster).toMillis());
     }
 
     @Test

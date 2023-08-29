@@ -15,20 +15,24 @@ class TestMaintainer extends Maintainer {
     private double success = 1.0;
     private RuntimeException exceptionToThrow = null;
 
-    public TestMaintainer(String name, JobControl jobControl, JobMetrics jobMetrics) {
+    TestMaintainer(JobControl jobControl, JobMetrics jobMetrics, Clock clock) {
+        super(null, Duration.ofDays(1), clock, jobControl, jobMetrics, List.of(), false);
+    }
+
+    TestMaintainer(String name, JobControl jobControl, JobMetrics jobMetrics) {
         super(name, Duration.ofDays(1), Clock.systemUTC(), jobControl, jobMetrics, List.of(), false);
     }
 
-    public int totalRuns() {
+    int totalRuns() {
         return totalRuns;
     }
 
-    public TestMaintainer successOnNextRun(double success) {
+    TestMaintainer successOnNextRun(double success) {
         this.success = success;
         return this;
     }
 
-    public TestMaintainer throwOnNextRun(RuntimeException e) {
+    TestMaintainer throwOnNextRun(RuntimeException e) {
         this.exceptionToThrow = e;
         return this;
     }

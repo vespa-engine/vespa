@@ -48,9 +48,7 @@ public abstract class Maintainer implements Runnable {
         this.ignoreCollision = ignoreCollision;
         this.clock = clock;
         this.successFactorBaseline = successFactorBaseline;
-        var startedAt = clock.instant();
-        Objects.requireNonNull(clusterHostnames);
-        Duration initialDelay = staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames)
+        Duration initialDelay = staggeredDelay(interval, HostName.getLocalhost(), clusterHostnames)
                                 .plus(Duration.ofSeconds(30)); // Let the system stabilize before maintenance
         service = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, name() + "-worker"));
         service.scheduleAtFixedRate(this, initialDelay.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
@@ -148,14 +146,17 @@ public abstract class Maintainer implements Runnable {
         return name == null ? this.getClass().getSimpleName() : name;
     }
 
-    /** Returns the initial delay of this calculated from cluster index of given hostname */
-    static Duration staggeredDelay(Duration interval, Instant now, String hostname, List<String> clusterHostnames) {
+    /** Returns the initial delay of this calculated from cluster index of the hostname of this node, and the maintainer name. */
+    Duration staggeredDelay(Duration interval, String hostname, List<String> clusterHostnames) {
         Objects.requireNonNull(clusterHostnames);
         if ( ! clusterHostnames.contains(hostname))
             return interval;
 
-        long offset = clusterHostnames.indexOf(hostname) * interval.toMillis() / clusterHostnames.size();
-        return Duration.ofMillis(Math.floorMod(offset - now.toEpochMilli(), interval.toMillis()));
+        Instant now = clock.instant();
+        long nodeOffset = clusterHostnames.indexOf(hostname) * interval.toMillis() / clusterHostnames.size();
+        long maintainerOffset = getClass().getName().hashCode() % interval.toMillis();
+        long totalOffset = nodeOffset + maintainerOffset;
+        return Duration.ofMillis(Math.floorMod(totalOffset - now.toEpochMilli(), interval.toMillis()));
     }
 
     private static Duration requireInterval(Duration interval) {
