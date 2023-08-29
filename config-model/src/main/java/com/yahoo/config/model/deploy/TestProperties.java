@@ -84,7 +84,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
     private Optional<CloudAccount> cloudAccount = Optional.empty();
     private boolean allowUserFilters = true;
-    private boolean allowMoreThanOneContentGroupDown = false;
     private List<DataplaneToken> dataplaneTokens;
     private boolean enableDataplaneProxy;
 
@@ -143,7 +142,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public boolean enableGlobalPhase() { return true; } // Enable global-phase by default for unit tests only
-    @Override public boolean allowMoreThanOneContentGroupDown(ClusterSpec.Id id) { return allowMoreThanOneContentGroupDown; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
     @Override public boolean enableDataplaneProxy() { return enableDataplaneProxy; }
 
@@ -366,11 +364,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setCloudAccount(CloudAccount cloudAccount) {
         this.cloudAccount = Optional.ofNullable(cloudAccount);
-        return this;
-    }
-
-    public TestProperties setAllowMoreThanOneContentGroupDown(boolean allowMoreThanOneContentGroupDown) {
-        this.allowMoreThanOneContentGroupDown = allowMoreThanOneContentGroupDown;
         return this;
     }
 

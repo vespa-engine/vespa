@@ -1413,32 +1413,32 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     void testGroupsAllowedToBeDown() {
-        assertGroupsAllowedsDown(1, 0.5, 1);
-        assertGroupsAllowedsDown(2, 0.5, 1);
-        assertGroupsAllowedsDown(3, 0.5, 1);
-        assertGroupsAllowedsDown(4, 0.5, 2);
-        assertGroupsAllowedsDown(5, 0.5, 2);
-        assertGroupsAllowedsDown(6, 0.5, 3);
+        assertGroupsAllowedDown(1, 0.5, 1);
+        assertGroupsAllowedDown(2, 0.5, 1);
+        assertGroupsAllowedDown(3, 0.5, 1);
+        assertGroupsAllowedDown(4, 0.5, 2);
+        assertGroupsAllowedDown(5, 0.5, 2);
+        assertGroupsAllowedDown(6, 0.5, 3);
 
-        assertGroupsAllowedsDown(1, 0.33, 1);
-        assertGroupsAllowedsDown(2, 0.33, 1);
-        assertGroupsAllowedsDown(3, 0.33, 1);
-        assertGroupsAllowedsDown(4, 0.33, 1);
-        assertGroupsAllowedsDown(5, 0.33, 1);
-        assertGroupsAllowedsDown(6, 0.33, 1);
+        assertGroupsAllowedDown(1, 0.33, 1);
+        assertGroupsAllowedDown(2, 0.33, 1);
+        assertGroupsAllowedDown(3, 0.33, 1);
+        assertGroupsAllowedDown(4, 0.33, 1);
+        assertGroupsAllowedDown(5, 0.33, 1);
+        assertGroupsAllowedDown(6, 0.33, 1);
 
-        assertGroupsAllowedsDown(1, 0.67, 1);
-        assertGroupsAllowedsDown(2, 0.67, 1);
-        assertGroupsAllowedsDown(3, 0.67, 2);
-        assertGroupsAllowedsDown(4, 0.67, 2);
-        assertGroupsAllowedsDown(5, 0.67, 3);
-        assertGroupsAllowedsDown(6, 0.67, 4);
+        assertGroupsAllowedDown(1, 0.67, 1);
+        assertGroupsAllowedDown(2, 0.67, 1);
+        assertGroupsAllowedDown(3, 0.67, 2);
+        assertGroupsAllowedDown(4, 0.67, 2);
+        assertGroupsAllowedDown(5, 0.67, 3);
+        assertGroupsAllowedDown(6, 0.67, 4);
 
-        assertGroupsAllowedsDown(1, 0, 1);
-        assertGroupsAllowedsDown(2, 0, 1);
+        assertGroupsAllowedDown(1, 0, 1);
+        assertGroupsAllowedDown(2, 0, 1);
 
-        assertGroupsAllowedsDown(1, 1, 1);
-        assertGroupsAllowedsDown(2, 1, 2);
+        assertGroupsAllowedDown(1, 1, 1);
+        assertGroupsAllowedDown(2, 1, 2);
     }
 
     private void assertIndexingDocprocEnabled(boolean indexed, boolean force, boolean expEnabled) {
@@ -1478,9 +1478,9 @@ public class ContentClusterTest extends ContentBaseTest {
         assertIndexingDocprocEnabled(false, true, true);
     }
 
-    private void assertGroupsAllowedsDown(int groupCount, double groupsAllowedDown, int expectedGroupsAllowedDown) {
+    private void assertGroupsAllowedDown(int groupCount, double groupsAllowedDown, int expectedGroupsAllowedDown) {
         var services = servicesWithGroups(groupCount, groupsAllowedDown);
-        var model = createEnd2EndOneNode(new TestProperties().setAllowMoreThanOneContentGroupDown(true), services);
+        var model = createEnd2EndOneNode(new TestProperties(), services);
 
         var fleetControllerConfigBuilder = new FleetcontrollerConfig.Builder();
         model.getConfig(fleetControllerConfigBuilder, "admin/cluster-controllers/0/components/clustercontroller-storage-configurer");
