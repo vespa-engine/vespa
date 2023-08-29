@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.jdisc.test.TestTimer;
+import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
@@ -12,6 +13,7 @@ import com.yahoo.vespa.hosted.node.admin.integration.NodeRepoMock;
 import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncClient;
 import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import com.yahoo.yolean.concurrent.Sleeper;
@@ -31,6 +33,7 @@ import static com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.ServiceD
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -65,7 +68,7 @@ class VespaServiceDumperImplTest {
     void invokes_perf_commands_when_generating_perf_report() {
         // Setup mocks
         ContainerOperations operations = mock(ContainerOperations.class);
-        when(operations.executeCommandInContainer(any(), any(), any()))
+        when(operations.executeCommandInContainer(any(NodeAgentContextImpl.class), any(UnixUser.class), any(String[].class)))
                 .thenReturn(new CommandResult(null, 0, "12345"))
                 .thenReturn(new CommandResult(null, 0, ""))
                 .thenReturn(new CommandResult(null, 0, ""));
@@ -106,7 +109,7 @@ class VespaServiceDumperImplTest {
     void invokes_jcmd_commands_when_creating_jfr_recording() {
         // Setup mocks
         ContainerOperations operations = mock(ContainerOperations.class);
-        when(operations.executeCommandInContainer(any(), any(), any()))
+        when(operations.executeCommandInContainer(any(NodeAgentContextImpl.class), any(UnixUser.class), any(String[].class)))
                 .thenReturn(new CommandResult(null, 0, "12345"))
                 .thenReturn(new CommandResult(null, 0, "ok"))
                 .thenReturn(new CommandResult(null, 0, "name=host-admin success"));
@@ -144,7 +147,7 @@ class VespaServiceDumperImplTest {
     void invokes_zookeeper_backup_command_when_generating_snapshot() {
         // Setup mocks
         ContainerOperations operations = mock(ContainerOperations.class);
-        when(operations.executeCommandInContainer(any(), any(), any()))
+        when(operations.executeCommandInContainer(any(NodeAgentContextImpl.class), any(UnixUser.class), any(String[].class)))
                 .thenReturn(new CommandResult(null, 0, "12345"));
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
@@ -179,7 +182,7 @@ class VespaServiceDumperImplTest {
     void invokes_config_proxy_command_whn_invoking_config_dump() {
         // Setup mocks
         ContainerOperations operations = mock(ContainerOperations.class);
-        when(operations.executeCommandInContainer(any(), any(), any()))
+        when(operations.executeCommandInContainer(any(NodeAgentContextImpl.class), any(UnixUser.class), any(String[].class)))
                 .thenReturn(new CommandResult(null, 0, "12345"));
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
@@ -217,7 +220,8 @@ class VespaServiceDumperImplTest {
     void handles_multiple_artifact_types() {
         // Setup mocks
         ContainerOperations operations = mock(ContainerOperations.class);
-        when(operations.executeCommandInContainer(any(), any(), any()))
+        when(operations.executeCommandInContainer(
+                any(NodeAgentContextImpl.class), any(UnixUser.class), any(String[].class)))
                 // For perf report:
                 .thenReturn(new CommandResult(null, 0, "12345"))
                 .thenReturn(new CommandResult(null, 0, ""))
@@ -308,7 +312,7 @@ class VespaServiceDumperImplTest {
 
     private SyncClient createSyncClientMock() {
         SyncClient client = mock(SyncClient.class);
-        when(client.sync(any(), any(), anyInt()))
+        when(client.sync(any(TaskContext.class), anyList(), anyInt()))
                 .thenReturn(true);
         return client;
     }
