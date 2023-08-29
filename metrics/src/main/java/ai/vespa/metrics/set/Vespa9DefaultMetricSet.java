@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-// TODO: Keep the set of metrics in this set stable until Vespa 9.
-// TODO: Vespa 9: Let this class be replaced by Vespa9DefaultMetricSet.
+// TODO: This class to be used for managed Vespa.
+// TODO: Vespa 9: Let this class replace DefaultMetrics.
 package ai.vespa.metrics.set;
 
 import ai.vespa.metrics.ClusterControllerMetrics;
@@ -31,35 +31,31 @@ import static ai.vespa.metrics.set.DefaultVespaMetrics.defaultVespaMetricSet;
  *
  * @author gjoranv
  */
-public class DefaultMetrics {
+public class Vespa9DefaultMetricSet {
 
-    public static final String defaultMetricSetId = "default";
+    public static final String defaultMetricSetId = "vespa9default";
 
-    public static final MetricSet defaultMetricSet = createMetricSet();
+    public static final MetricSet vespa9defaultMetricSet = createMetricSet();
 
     private static MetricSet createMetricSet() {
         return new MetricSet(defaultMetricSetId,
-                             List.of(),
-                             List.of(defaultVespaMetricSet,
-                                     getContainerMetrics(),
-                                     getSearchChainMetrics(),
-                                     getDocprocMetrics(),
-                                     getSearchNodeMetrics(),
-                                     getContentMetrics(),
-                                     getStorageMetrics(),
-                                     getDistributorMetrics(),
-                                     getClusterControllerMetrics(),
-                                     getSentinelMetrics(),
-                                     getOtherMetrics()));
+                List.of(),
+                List.of(defaultVespaMetricSet,
+                        BasicMetricSets.containerHttpStatusMetrics(),
+                        getContainerMetrics(),
+                        getSearchChainMetrics(),
+                        getDocprocMetrics(),
+                        getSearchNodeMetrics(),
+                        getContentMetrics(),
+                        getStorageMetrics(),
+                        getDistributorMetrics(),
+                        getClusterControllerMetrics(),
+                        getSentinelMetrics(),
+                        getOtherMetrics()));
     }
 
     private static MetricSet getContainerMetrics() {
         return new MetricSet.Builder("default-container")
-                .metric(ContainerMetrics.HTTP_STATUS_1XX.rate())
-                .metric(ContainerMetrics.HTTP_STATUS_2XX.rate())
-                .metric(ContainerMetrics.HTTP_STATUS_3XX.rate())
-                .metric(ContainerMetrics.HTTP_STATUS_4XX.rate())
-                .metric(ContainerMetrics.HTTP_STATUS_5XX.rate())
                 .metric(ContainerMetrics.JDISC_GC_MS, EnumSet.of(max, average))
                 .metric(ContainerMetrics.MEM_HEAP_FREE.average())
                 .metric(ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count))
@@ -176,6 +172,6 @@ public class DefaultMetrics {
                 .build();
     }
 
-    private DefaultMetrics() { }
+    private Vespa9DefaultMetricSet() { }
 
 }

@@ -9,11 +9,13 @@ import java.util.Map;
 
 import static ai.vespa.metrics.set.AutoscalingMetrics.autoscalingMetricSet;
 import static ai.vespa.metrics.set.DefaultMetrics.defaultMetricSet;
+import static ai.vespa.metrics.set.Vespa9DefaultMetricSet.vespa9defaultMetricSet;
 import static ai.vespa.metrics.set.DefaultVespaMetrics.defaultVespaMetricSet;
 import static ai.vespa.metrics.set.InfrastructureMetricSet.infrastructureMetricSet;
 import static ai.vespa.metrics.set.NetworkMetrics.networkMetricSet;
 import static ai.vespa.metrics.set.SystemMetrics.systemMetricSet;
 import static ai.vespa.metrics.set.VespaMetricSet.vespaMetricSet;
+import static ai.vespa.metrics.set.Vespa9VespaMetricSet.vespa9vespaMetricSet;
 
 /**
  * A data object for predefined metric sets.
@@ -24,8 +26,10 @@ public class PredefinedMetricSets {
 
     private static final Map<String, MetricSet> sets = toMapById(
             defaultMetricSet,
+            vespa9defaultMetricSet,
             defaultVespaMetricSet,
             vespaMetricSet,
+            vespa9vespaMetricSet,
             systemMetricSet,
             networkMetricSet,
             autoscalingMetricSet,
