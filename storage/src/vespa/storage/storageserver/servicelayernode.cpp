@@ -42,7 +42,6 @@ ServiceLayerNode::ServiceLayerNode(const config::ConfigUri & configUri, ServiceL
 void
 ServiceLayerNode::report(vespalib::JsonStream &writer) const
 {
-    (void) writer;
     if (_bucket_manager) {
         _bucket_manager->report(writer);
     }
