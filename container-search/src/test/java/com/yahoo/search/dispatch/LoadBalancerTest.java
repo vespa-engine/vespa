@@ -7,7 +7,6 @@ import com.yahoo.search.dispatch.LoadBalancer.GroupStatus;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import org.junit.jupiter.api.Test;
-import org.opentest4j.AssertionFailedError;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -34,7 +33,7 @@ public class LoadBalancerTest {
 
         Optional<Group> grp = lb.takeGroup(null);
         Group group = grp.orElseThrow(() -> {
-            throw new AssertionFailedError("Expected a SearchCluster.Group");
+            throw new IllegalStateException("Expected a SearchCluster.Group");
         });
         assertEquals(1, group.nodes().size());
     }
@@ -47,7 +46,7 @@ public class LoadBalancerTest {
 
         Optional<Group> grp = lb.takeGroup(null);
         Group group = grp.orElseThrow(() -> {
-            throw new AssertionFailedError("Expected a SearchCluster.Group");
+            throw new IllegalStateException("Expected a SearchCluster.Group");
         });
         assertEquals(1, group.nodes().size());
     }

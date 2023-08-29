@@ -105,7 +105,7 @@ public class SharedKeyGenerator {
     private static AeadCipher makeAesGcmCipher(SecretSharedKey secretSharedKey, boolean forEncryption) {
         var aeadParams = new AEADParameters(new KeyParameter(secretSharedKey.secretKey().getEncoded()),
                                             AES_GCM_AUTH_TAG_BITS, FIXED_96BIT_IV_FOR_SINGLE_USE_KEY);
-        var cipher = new GCMBlockCipher(new AESEngine());
+        var cipher = GCMBlockCipher.newInstance(AESEngine.newInstance());
         cipher.init(forEncryption, aeadParams);
         return AeadCipher.of(cipher);
     }

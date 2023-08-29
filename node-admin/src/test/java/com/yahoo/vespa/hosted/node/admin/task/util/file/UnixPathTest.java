@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.Test;
-import org.opentest4j.AssertionFailedError;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
@@ -173,7 +172,7 @@ public class UnixPathTest {
         assertEquals("bar", absolutePath.getFilename());
 
         var pathWithoutSlash = new UnixPath("foo");
-        assertRuntimeException(IllegalStateException.class, "Path has no parent directory: 'foo'", () -> pathWithoutSlash.getParent());
+        assertRuntimeException(IllegalStateException.class, "Path has no parent directory: 'foo'", pathWithoutSlash::getParent);
         assertEquals("foo", pathWithoutSlash.getFilename());
 
         var pathWithSlash = new UnixPath("/foo");
@@ -190,7 +189,7 @@ public class UnixPathTest {
             fail("No exception was thrown");
         } catch (RuntimeException e) {
             if (!baseClass.isInstance(e)) {
-                throw new AssertionFailedError("Exception class mismatch", baseClass.getName(), e.getClass().getName());
+                fail("Exception class mismatch " + baseClass.getName() + " != " + e.getClass().getName());
             }
 
             assertEquals(message, e.getMessage());
