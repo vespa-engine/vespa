@@ -48,6 +48,15 @@ mvn_install() {
     ${MAVEN_CMD} --batch-mode --no-snapshot-updates -Dmaven.wagon.http.retryHandler.count=5 clean install ${MAVEN_EXTRA_OPTS} "$@"
 }
 
+force_move() {
+    local src_dir=$1
+    local file=$2
+
+    rm -rf "./${file:?}"
+    cp -r "$src_dir/${file:?}" .
+    rm -rf "$src_dir/${file:?}"
+}
+
 # Generate vtag map
 top=$(dirname $0)
 $top/dist/getversionmap.sh $top > $top/dist/vtag.map
@@ -66,9 +75,8 @@ $top/dist/getversionmap.sh $top > $top/dist/vtag.map
 # Set up maven wrapper. TODO: use here and in vespa build.
 echo "Setting up maven wrapper in $(pwd)"
 mvn wrapper:wrapper -Dmaven=3.8.8 -f maven-plugins/pom.xml
-rm -rf .mvn
-cp -r maven-plugins/.mvn maven-plugins/mvnw .
-rm -rf maven-plugins/.mvn
+force_move maven-plugins .mvn
+force_move maven-plugins mvnw
 rm -f maven-plugins/mvnw*
 echo "Using maven command: ${MAVEN_CMD}"
 ${MAVEN_CMD} -v
