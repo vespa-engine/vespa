@@ -82,7 +82,6 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     config->set("fail_disk_after_error_count", "0");
     config = &dc.addConfig("stor-bouncer");
     config = &dc.addConfig("stor-integritychecker");
-    config = &dc.addConfig("stor-bucketmover");
     config = &dc.addConfig("stor-messageforwarder");
     config = &dc.addConfig("stor-server");
     config->set("cluster_name", clusterName);

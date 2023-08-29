@@ -62,7 +62,6 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     config->set("revert_time_period", "2000000000");
     config = &dc.addConfig("stor-bouncer");
     config = &dc.addConfig("stor-integritychecker");
-    config = &dc.addConfig("stor-bucketmover");
     config = &dc.addConfig("stor-messageforwarder");
     config = &dc.addConfig("stor-server");
     config->set("enable_dead_lock_detector", "false");

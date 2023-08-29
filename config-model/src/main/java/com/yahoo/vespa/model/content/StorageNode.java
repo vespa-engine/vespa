@@ -3,10 +3,8 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
-import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
@@ -21,7 +19,7 @@ import java.util.Optional;
 /**
  * Class to provide config related to a specific storage node.
  */
-@RestartConfigs({StorFilestorConfig.class, StorBucketmoverConfig.class})
+@RestartConfigs({StorFilestorConfig.class})
 public class StorageNode extends ContentNode implements StorServerConfig.Producer, StorFilestorConfig.Producer {
 
     static final String rootFolder = Defaults.getDefaults().underVespaHome("var/db/vespa/search/");

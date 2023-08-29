@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.content.storagecluster;
 import ai.vespa.metrics.StorageMetrics;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.core.StorIntegritycheckerConfig;
-import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
 import com.yahoo.vespa.config.content.core.StorVisitorConfig;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
@@ -23,7 +22,6 @@ import org.w3c.dom.Element;
  */
 public class StorageCluster extends TreeConfigProducer<StorageNode>
     implements StorServerConfig.Producer,
-        StorBucketmoverConfig.Producer,
         StorIntegritycheckerConfig.Producer,
         StorFilestorConfig.Producer,
         StorVisitorConfig.Producer,
@@ -67,10 +65,6 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
         this.storServerProducer = storServerProducer;
         this.storVisitorProducer = storVisitorProducer;
         this.persistenceProducer = persistenceProducer;
-    }
-
-    @Override
-    public void getConfig(StorBucketmoverConfig.Builder builder) {
     }
 
     @Override
