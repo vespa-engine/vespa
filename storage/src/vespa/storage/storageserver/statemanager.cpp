@@ -49,13 +49,13 @@ StateManager::StateManagerMetrics::~StateManagerMetrics() = default;
 using lib::ClusterStateBundle;
 
 StateManager::StateManager(StorageComponentRegister& compReg,
-                           metrics::MetricManager& metricManager,
                            std::unique_ptr<HostInfo> hostInfo,
+                           const NodeStateReporter & reporter,
                            bool testMode)
     : StorageLink("State manager"),
       framework::HtmlStatusReporter("systemstate", "Node and system state"),
       _component(compReg, "statemanager"),
-      _metricManager(metricManager),
+      _nodeStateReporter(reporter),
       _metrics(std::make_unique<StateManagerMetrics>()),
       _stateLock(),
       _stateCond(),
@@ -572,17 +572,10 @@ StateManager::getNodeInfo() const
     vespalib::JsonStream stream(json, true);
     stream << Object();
     { // Print metrics
-        stream << "metrics";
         try {
-            metrics::MetricLockGuard lock(_metricManager.getMetricLock());
-            auto periods(_metricManager.getSnapshotPeriods(lock));
-            if (!periods.empty()) {
-                const metrics::MetricSnapshot& snapshot(_metricManager.getMetricSnapshot(lock, periods[0]));
-                metrics::JsonWriter metricJsonWriter(stream);
-                _metricManager.visit(lock,  snapshot, metricJsonWriter, "fleetcontroller");
-            } else {
-                stream << Object() << "error" << "no snapshot periods" << End();
-            }
+            stream << "metrics" << Object() << "values" << Array();
+            _nodeStateReporter.report(stream);
+            stream << End() << End();
         } catch (vespalib::Exception& e) {
             stream << Object() << "error" << e.getMessage() << End();
         }

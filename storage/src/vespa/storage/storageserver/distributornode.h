@@ -10,6 +10,7 @@
 
 #include "distributornodecontext.h"
 #include "storagenode.h"
+#include "vespa/vespalib/util/jsonstream.h"
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
 #include <mutex>
@@ -22,7 +23,8 @@ class IStorageChainBuilder;
 
 class DistributorNode
       : public StorageNode,
-        private UniqueTimeCalculator
+        private UniqueTimeCalculator,
+        private NodeStateReporter
 {
     framework::TickingThreadPool::UP _threadPool;
     std::unique_ptr<distributor::DistributorStripePool> _stripe_pool;
@@ -58,8 +60,9 @@ public:
     void handleConfigChange(vespa::config::content::core::StorVisitordispatcherConfig&);
 
 private:
-    void initializeNodeSpecific() override;
+    void report(vespalib::JsonStream &) const override { /* no-op */ }
     void perform_post_chain_creation_init_steps() override { /* no-op */ }
+    void initializeNodeSpecific() override;
     void createChain(IStorageChainBuilder &builder) override;
     api::Timestamp generate_unique_timestamp() override;
 

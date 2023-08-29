@@ -25,7 +25,9 @@
 
 #include <string>
 #include <vespa/vdslib/state/nodestate.h>
+#include "vespa/vespalib/util/jsonstream.h"
 
+namespace metrics { class JsonWriter; }
 namespace storage {
 
 namespace lib { class ClusterStateBundle; }
@@ -75,6 +77,12 @@ struct NodeStateUpdater {
      * Request almost immediate node state replies.
      */
     virtual void request_almost_immediate_node_state_replies() = 0;
+};
+
+class NodeStateReporter {
+public:
+    virtual ~NodeStateReporter() = default;
+    virtual void report(vespalib::JsonStream &writer) const = 0;
 };
 
 } // storage

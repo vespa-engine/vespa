@@ -22,7 +22,7 @@
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <future>
 
@@ -518,6 +518,20 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     EXPECT_EQ(0,   global_m->second->ready_buckets.getLast());
 
     verify_db_memory_metrics_present(global_m->second->bucket_db_metrics);
+    using namespace vespalib::jsonstream;
+    vespalib::asciistream ascii;
+    vespalib::JsonStream jsonStream(ascii, false);
+    jsonStream << Object() << "values" << Array();
+    _manager->report(jsonStream);
+    jsonStream << End();
+    EXPECT_EQ(std::string("{\"values\":["
+              "{\"name\":\"vds.datastored.bucket_space.buckets_total\",\"values\":{\"last\":1},\"dimensions\":{\"bucketSpace\":\"global\"}},"
+              "{\"name\":\"vds.datastored.bucket_space.buckets_total\",\"values\":{\"last\":1},\"dimensions\":{\"bucketSpace\":\"default\"}},"
+              "{\"name\":\"vds.datastored.alldisks.docs\",\"values\":{\"last\":250}},"
+              "{\"name\":\"vds.datastored.alldisks.bytes\",\"values\":{\"last\":500}},"
+              "{\"name\":\"vds.datastored.alldisks.buckets\",\"values\":{\"last\":2}}"
+              "]"),
+              std::string(ascii.c_str()));
 }
 
 void

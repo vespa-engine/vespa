@@ -13,6 +13,7 @@
 #include <vespa/storage/bucketdb/config-stor-bucketdb.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/storagelinkqueued.h>
+#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
@@ -28,6 +29,7 @@ namespace storage {
 
 class BucketManager : public StorageLink,
                       public framework::StatusReporter,
+                      public NodeStateReporter,
                       private framework::Runnable,
                       private framework::MetricUpdateHook
 {
@@ -37,7 +39,9 @@ public:
     using BucketInfoRequestMap = std::unordered_map<document::BucketSpace, BucketInfoRequestList, document::BucketSpace::hash>;
 
 private:
-    config::ConfigUri _configUri;
+    using ReplyQueue = std::vector<api::StorageReply::SP>;
+    using ConflictingBuckets = std::unordered_set<document::BucketId, document::BucketId::hash>;
+    config::ConfigUri    _configUri;
     BucketInfoRequestMap _bucketInfoRequests;
 
     /**
@@ -49,25 +53,23 @@ private:
     /**
      * Lock kept for access to 3 values below concerning cluster state.
      */
-    std::mutex         _clusterStateLock;
+    std::mutex              _clusterStateLock;
+    mutable std::mutex      _queueProcessingLock;
 
-    mutable std::mutex _queueProcessingLock;
-    using ReplyQueue = std::vector<api::StorageReply::SP>;
-    using ConflictingBuckets = std::unordered_set<document::BucketId, document::BucketId::hash>;
-    ReplyQueue _queuedReplies;
-    ConflictingBuckets _conflictingBuckets;
+    ReplyQueue                            _queuedReplies;
+    ConflictingBuckets                    _conflictingBuckets;
     // The most current cluster state versions that we've observed on the way _down_
     // through the chain, i.e. prior to being enabled on the node.
-    uint32_t _last_cluster_state_version_initiated;
+    uint32_t                              _last_cluster_state_version_initiated;
     // The most current cluster state we've observed on the way _up_ through the
     // chain, i.e. after being enabled on the node.
-    uint32_t _last_cluster_state_version_completed;
-    bool _doneInitialized;
-    size_t _requestsCurrentlyProcessing;
-    ServiceLayerComponent _component;
+    uint32_t                              _last_cluster_state_version_completed;
+    bool                                  _doneInitialized;
+    size_t                                _requestsCurrentlyProcessing;
+    ServiceLayerComponent                 _component;
     std::shared_ptr<BucketManagerMetrics> _metrics;
-    std::unique_ptr<framework::Thread> _thread;
-    std::chrono::milliseconds _simulated_processing_delay;
+    std::unique_ptr<framework::Thread>    _thread;
+    std::chrono::milliseconds             _simulated_processing_delay;
 
     class ScopedQueueDispatchGuard {
         BucketManager& _mgr;
@@ -97,7 +99,7 @@ public:
     void force_db_sweep_and_metric_update() { updateMetrics(); }
 
     bool onUp(const std::shared_ptr<api::StorageMessage>&) override;
-
+    void report(vespalib::JsonStream &writer) const override;
 private:
     friend struct BucketManagerTest;
 
@@ -112,9 +114,9 @@ private:
     void onDoneInit() override { _doneInitialized = true; }
     void onClose() override;
 
-    void updateMetrics();
+    void updateMetrics() const;
     void updateMetrics(const MetricLockGuard &) override { updateMetrics(); }
-    void update_bucket_db_memory_usage_metrics();
+    void update_bucket_db_memory_usage_metrics() const;
     void updateMinUsedBits();
 
     bool onRequestBucketInfo(const std::shared_ptr<api::RequestBucketInfoCommand>&) override;

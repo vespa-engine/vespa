@@ -39,7 +39,7 @@ JsonStream::JsonStream(asciistream& as, bool createIndents)
     push({State::ROOT});
 }
 
-JsonStream::~JsonStream() {}
+JsonStream::~JsonStream() = default;
 
 JsonStream&
 JsonStream::operator<<(stringref value)

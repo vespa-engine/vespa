@@ -17,6 +17,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/stat.h>
+#include <vespa/metrics/jsonwriter.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <ranges>
@@ -73,7 +74,8 @@ BucketManager::~BucketManager()
     closeNextLink();
 }
 
-void BucketManager::onClose()
+void
+BucketManager::onClose()
 {
     // Stop internal thread such that we don't send any more messages down.
     if (_thread) {
@@ -155,7 +157,6 @@ struct MetricsUpdater {
 
         constexpr Count() noexcept : docs(0), bytes(0), buckets(0), active(0), ready(0) {}
     };
-
     Count    count;
     uint32_t lowestUsedBit;
 
@@ -197,21 +198,64 @@ struct MetricsUpdater {
 
 }   // End of anonymous namespace
 
-StorBucketDatabase::Entry
-BucketManager::getBucketInfo(const document::Bucket &bucket) const
-{
-    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "BucketManager::getBucketInfo"));
-    return *entry;
+namespace {
+
+void
+output(vespalib::JsonStream & json, vespalib::stringref name, uint64_t value, vespalib::stringref bucketSpace) {
+    using namespace vespalib::jsonstream;
+    json << Object();
+    json << "name" << name;
+    json << "values" << Object() << "last" << value << End();
+    if ( ! bucketSpace.empty()) {
+        json << "dimensions" << Object();
+        json << "bucketSpace" << bucketSpace;
+        json << End();
+    }
+    json << End();
 }
 
 void
-BucketManager::updateMetrics()
+output(vespalib::JsonStream & json, vespalib::stringref name, uint64_t value) {
+    output(json, name, value, "");
+}
+
+MetricsUpdater
+getMetrics(const StorBucketDatabase & db) {
+    MetricsUpdater m;
+    auto guard = db.acquire_read_guard();
+    guard->for_each(std::ref(m));
+    return m;
+}
+
+}
+
+void
+BucketManager::report(vespalib::JsonStream & json) const {
+    MetricsUpdater total;
+    for (const auto& space : _component.getBucketSpaceRepo()) {
+        MetricsUpdater m = getMetrics(space.second->bucketDatabase());
+        output(json, "vds.datastored.bucket_space.buckets_total", m.count.buckets,
+               document::FixedBucketSpaces::to_string(space.first));
+        total.add(m);
+    }
+    const auto & src = total.count;
+    output(json, "vds.datastored.alldisks.docs", src.docs);
+    output(json, "vds.datastored.alldisks.bytes", src.bytes);
+    output(json, "vds.datastored.alldisks.buckets", src.buckets);
+}
+
+StorBucketDatabase::Entry
+BucketManager::getBucketInfo(const document::Bucket &bucket) const
+{
+    return *_component.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "BucketManager::getBucketInfo");
+}
+
+void
+BucketManager::updateMetrics() const
 {
     MetricsUpdater total;
     for (const auto& space : _component.getBucketSpaceRepo()) {
-        MetricsUpdater m;
-        auto guard = space.second->bucketDatabase().acquire_read_guard();
-        guard->for_each(std::ref(m));
+        MetricsUpdater m = getMetrics(space.second->bucketDatabase());
         total.add(m);
         auto bm = _metrics->bucket_spaces.find(space.first);
         assert(bm != _metrics->bucket_spaces.end());
@@ -231,14 +275,17 @@ BucketManager::updateMetrics()
     update_bucket_db_memory_usage_metrics();
 }
 
-void BucketManager::update_bucket_db_memory_usage_metrics() {
+
+void
+BucketManager::update_bucket_db_memory_usage_metrics() const {
     for (const auto& space : _component.getBucketSpaceRepo()) {
         auto bm = _metrics->bucket_spaces.find(space.first);
         bm->second->bucket_db_metrics.memory_usage.update(space.second->bucketDatabase().detailed_memory_usage());
     }
 }
 
-void BucketManager::updateMinUsedBits()
+void
+BucketManager::updateMinUsedBits()
 {
     MetricsUpdater m;
     _component.getBucketSpaceRepo().for_each_bucket(std::ref(m));

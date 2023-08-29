@@ -11,8 +11,10 @@
 #include "applicationgenerationfetcher.h"
 #include "servicelayernodecontext.h"
 #include "storagenode.h"
+#include "vespa/vespalib/util/jsonstream.h"
 #include <vespa/storage/visiting/visitormessagesessionfactory.h>
 #include <vespa/storage/common/visitorfactory.h>
+#include <vespa/storage/common/nodestateupdater.h>
 
 namespace storage {
 
@@ -23,18 +25,19 @@ class FileStorManager;
 
 class ServiceLayerNode
         : public StorageNode,
-          private VisitorMessageSessionFactory
+          private VisitorMessageSessionFactory,
+          private NodeStateReporter
 
 {
-    ServiceLayerNodeContext& _context;
-    spi::PersistenceProvider& _persistenceProvider;
-    VisitorFactory::Map _externalVisitors;
+    ServiceLayerNodeContext  & _context;
+    spi::PersistenceProvider & _persistenceProvider;
+    VisitorFactory::Map        _externalVisitors;
 
     // FIXME: Should probably use the fetcher in StorageNode
-    std::unique_ptr<config::ConfigFetcher> _configFetcher;
-    BucketManager* _bucket_manager;
-    FileStorManager* _fileStorManager;
-    bool _init_has_been_called;
+    std::unique_ptr<config::ConfigFetcher>   _configFetcher;
+    BucketManager                          * _bucket_manager;
+    FileStorManager                        * _fileStorManager;
+    bool                                     _init_has_been_called;
 
 public:
     using UP = std::unique_ptr<ServiceLayerNode>;
@@ -55,6 +58,7 @@ public:
     ResumeGuard pause() override;
 
 private:
+    void report(vespalib::JsonStream &writer) const override;
     void subscribeToConfigs() override;
     void initializeNodeSpecific() override;
     void perform_post_chain_creation_init_steps() override;

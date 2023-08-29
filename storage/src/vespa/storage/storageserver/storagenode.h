@@ -43,6 +43,7 @@ class StatusMetricConsumer;
 class StatusWebServer;
 class StorageComponent;
 class StorageLink;
+class NodeStateReporter;
 struct DeadLockDetector;
 struct StorageMetricSet;
 struct StorageNodeContext;
@@ -172,7 +173,7 @@ protected:
      */
     std::unique_ptr<StateManager> releaseStateManager();
 
-    void initialize();
+    void initialize(const NodeStateReporter & reporter);
     virtual void subscribeToConfigs();
     virtual void initializeNodeSpecific() = 0;
     virtual void perform_post_chain_creation_init_steps() = 0;
