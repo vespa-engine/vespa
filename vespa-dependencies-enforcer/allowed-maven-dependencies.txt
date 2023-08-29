@@ -23,14 +23,14 @@ com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2
 com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.15.2
 com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.15.2
 com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.15.2
-com.github.luben:zstd-jni:1.5.5-4
+com.github.luben:zstd-jni:1.5.5-5
 com.github.spotbugs:spotbugs-annotations:3.1.9
 com.google.auth:google-auth-library-credentials:1.19.0
 com.google.auth:google-auth-library-oauth2-http:1.19.0
 com.google.auto.value:auto-value-annotations:1.10.1
 com.google.code.findbugs:jsr305:3.0.2
 com.google.code.gson:gson:2.10
-com.google.errorprone:error_prone_annotations:2.18.0
+com.google.errorprone:error_prone_annotations:2.21.1
 com.google.guava:failureaccess:1.0.1
 com.google.guava:guava:32.1.1-jre
 com.google.http-client:google-http-client:1.43.3
