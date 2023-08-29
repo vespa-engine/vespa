@@ -77,7 +77,7 @@ echo "Setting up maven wrapper in $(pwd)"
 mvn wrapper:wrapper -Dmaven=3.8.8 -f maven-plugins/pom.xml
 force_move maven-plugins .mvn
 force_move maven-plugins mvnw
-rm -f maven-plugins/mvnw*
+rm -f maven-plugins/mvnw.cmd
 ${MAVEN_CMD} -v
 
 # must install parent poms first:
