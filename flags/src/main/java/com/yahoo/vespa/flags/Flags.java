@@ -387,12 +387,6 @@ public class Flags {
             "Whether to write application data (active session id, last deployed session id etc. ) as json",
             "Takes effect immediately");
 
-    public static final UnboundBooleanFlag READ_APPLICATION_DATA_AS_JSON = defineFeatureFlag(
-            "read-application-data-as-json", false,
-            List.of("hmusum"), "2023-08-27", "2023-09-27",
-            "Whether to read application data (active session id, last deployed session id etc. ) as json",
-            "Takes effect immediately");
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
