@@ -78,11 +78,14 @@ MetricSnapshotSet::MetricSnapshotSet(const Metric::String& name, system_time::du
     : _count(count),
       _builderCount(0),
       _current(std::make_unique<MetricSnapshot>(name, period, source, snapshotUnsetMetrics)),
-      _building(count == 1 ? nullptr : new MetricSnapshot(name, period, source, snapshotUnsetMetrics))
+      _building(count == 1 ? nullptr : new MetricSnapshot(name, period, source, snapshotUnsetMetrics)),
+      _current_is_assigned(false)
 {
     _current->reset();
     if (_building) _building->reset();
 }
+
+MetricSnapshotSet::~MetricSnapshotSet() = default;
 
 MetricSnapshot&
 MetricSnapshotSet::getNextTarget()

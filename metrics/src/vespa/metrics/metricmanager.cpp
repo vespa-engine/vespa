@@ -168,6 +168,12 @@ MetricManager::isInitialized() const {
     return static_cast<bool>(_configHandle);
 }
 
+bool
+MetricManager::any_snapshots_taken(const MetricLockGuard&) const noexcept {
+    assert(!_snapshots.empty());
+    return _snapshots[0]->current_is_assigned();
+}
+
 void
 MetricManager::init(const config::ConfigUri & uri, bool startThread)
 {
@@ -795,6 +801,7 @@ MetricManager::takeSnapshots(const MetricLockGuard & guard, system_time timeToPr
     _activeMetrics.addToSnapshot(firstTarget, false, timeToProcess);
     _activeMetrics.addToSnapshot(*_totalMetrics, false, timeToProcess);
     _activeMetrics.reset(timeToProcess);
+    _snapshots[0]->tag_current_as_assigned();
     LOG(debug, "After snapshotting, active metrics goes from %s to %s, and 5 minute metrics goes from %s to %s.",
         to_string(_activeMetrics.getFromTime()).c_str(), to_string(_activeMetrics.getToTime()).c_str(),
         to_string(firstTarget.getFromTime()).c_str(), to_string(firstTarget.getToTime()).c_str());
