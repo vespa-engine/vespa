@@ -4,7 +4,7 @@ set -e
 
 # Run test
 echo "Testing the FastS_URL class..."
-$VALGRIND ./searchlib_testurl_app
+$VALGRIND ./searchlib_url_test_app
 if [ $? -eq 0 ]; then
     echo "SUCCESS: Test on FastS_URL passed!"
 else
