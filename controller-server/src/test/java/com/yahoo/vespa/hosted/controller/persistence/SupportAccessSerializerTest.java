@@ -10,7 +10,6 @@ import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccessGrant;
-import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
@@ -36,7 +35,6 @@ public class SupportAccessSerializerTest {
             .withDisallowed("andreer", hour(22))
             .withAllowedUntil(hour(36), "andreer", hour(30));
 
-    @Language("JSON")
     private final String expectedWithCertificates = "{\n"
                                                     + "  \"history\": [\n"
                                                     + "    {\n"
