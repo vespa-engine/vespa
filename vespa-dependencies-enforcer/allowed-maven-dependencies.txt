@@ -206,11 +206,11 @@ org.ow2.asm:asm-commons:9.5
 org.ow2.asm:asm-tree:9.5
 org.ow2.asm:asm-util:9.5
 org.questdb:questdb:6.2
-org.slf4j:jcl-over-slf4j:1.7.32
-org.slf4j:log4j-over-slf4j:1.7.32
-org.slf4j:slf4j-api:1.7.32
-org.slf4j:slf4j-jdk14:1.7.32
-org.slf4j:slf4j-simple:1.7.32
+org.slf4j:jcl-over-slf4j:1.7.36
+org.slf4j:log4j-over-slf4j:1.7.36
+org.slf4j:slf4j-api:1.7.36
+org.slf4j:slf4j-jdk14:1.7.36
+org.slf4j:slf4j-simple:1.7.36
 org.tukaani:xz:1.9
 org.xerial.snappy:snappy-java:1.1.10.3
 software.amazon.ion:ion-java:1.0.2

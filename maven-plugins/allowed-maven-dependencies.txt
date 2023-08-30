@@ -59,7 +59,7 @@ org.jdom:jdom2:2.0.6.1
 org.ow2.asm:asm:9.5
 org.ow2.asm:asm-commons:9.5
 org.ow2.asm:asm-tree:9.5
-org.slf4j:slf4j-api:1.7.32
+org.slf4j:slf4j-api:1.7.36
 org.tukaani:xz:1.9
 org.twdata.maven:mojo-executor:2.4.0
 org.vafer:jdependency:2.8.0
