@@ -124,40 +124,61 @@ public class PeriodicApplicationMaintainerTest {
     public void application_deploy_inhibits_redeploy_for_a_while() {
         fixture.activate();
 
-        assertEquals("No deployment expected", 2, fixture.deployer.redeployments);
+        assertEquals("No deployment expected", 2, fixture.deployer.activations);
 
         // Holds off on deployments a while after starting
         fixture.runApplicationMaintainer();
-        assertEquals("No deployment expected", 2, fixture.deployer.redeployments);
+        assertEquals("No deployment expected", 2, fixture.deployer.activations);
 
         // Exhaust initial wait period
         clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
 
         // Will not do any deployments, as bootstrapping is still in progress
         fixture.runApplicationMaintainer();
-        assertEquals("No deployment expected", 2, fixture.deployer.redeployments);
+        assertEquals("No deployment expected", 2, fixture.deployer.activations);
 
         // First deployment of applications will happen now, as bootstrapping is done
         fixture.setBootstrapping(false);
         fixture.runApplicationMaintainer();
-        assertEquals("No deployment expected", 4, fixture.deployer.redeployments);
+        assertEquals("No deployment expected", 4, fixture.deployer.activations);
 
         Instant firstDeployTime = clock.instant();
+        assertEquals(firstDeployTime, fixture.deployer.deployTime(fixture.app1).get());
+        assertEquals(firstDeployTime, fixture.deployer.deployTime(fixture.app2).get());
         assertEquals(firstDeployTime, fixture.deployer.activationTime(fixture.app1).get());
         assertEquals(firstDeployTime, fixture.deployer.activationTime(fixture.app2).get());
         clock.advance(Duration.ofMinutes(5));
         fixture.runApplicationMaintainer();
         // Too soon: Not redeployed:
-        assertEquals("No deployment expected", 4, fixture.deployer.redeployments);
+        assertEquals("No deployment expected", 4, fixture.deployer.activations);
+        assertEquals(firstDeployTime, fixture.deployer.deployTime(fixture.app1).get());
+        assertEquals(firstDeployTime, fixture.deployer.deployTime(fixture.app2).get());
         assertEquals(firstDeployTime, fixture.deployer.activationTime(fixture.app1).get());
         assertEquals(firstDeployTime, fixture.deployer.activationTime(fixture.app2).get());
 
         clock.advance(Duration.ofMinutes(30));
+        Instant instant1 = clock.instant();
         fixture.runApplicationMaintainer();
         // Redeployed:
-        assertEquals("No deployment expected", 6, fixture.deployer.redeployments);
-        assertEquals(clock.instant(), fixture.deployer.activationTime(fixture.app1).get());
-        assertEquals(clock.instant(), fixture.deployer.activationTime(fixture.app2).get());
+        assertEquals("No deployment expected", 6, fixture.deployer.activations);
+        assertEquals(instant1, fixture.deployer.deployTime(fixture.app1).get());
+        assertEquals(instant1, fixture.deployer.deployTime(fixture.app2).get());
+        assertEquals(instant1, fixture.deployer.activationTime(fixture.app1).get());
+        assertEquals(instant1, fixture.deployer.activationTime(fixture.app2).get());
+
+        clock.advance(Duration.ofMinutes(30));
+        // Prepare (simulate that activation failed)
+        fixture.prepare();
+        Instant secondDeployTime = clock.instant();
+        fixture.runApplicationMaintainer();
+        // Too soon: Not redeployed, since a deployment (prepare) was done less than 30 minutes ago:
+        assertEquals("No deployment expected", 6, fixture.deployer.activations);
+        assertEquals(secondDeployTime, fixture.deployer.deployTime(fixture.app1).get());
+        assertEquals(secondDeployTime, fixture.deployer.deployTime(fixture.app2).get());
+        assertEquals(instant1, fixture.deployer.activationTime(fixture.app1).get());
+        assertEquals(instant1, fixture.deployer.activationTime(fixture.app2).get());
+
+        clock.advance(Duration.ofMinutes(30));
     }
 
     @Test(timeout = 60_000)
@@ -188,8 +209,8 @@ public class PeriodicApplicationMaintainerTest {
             fixture.deployer.lock().unlock();
             fixture.runApplicationMaintainer();
             Instant deployTime = clock.instant();
-            assertEquals(deployTime, fixture.deployer.activationTime(fixture.app1).get());
-            assertEquals(deployTime, fixture.deployer.activationTime(fixture.app2).get());
+            assertEquals(deployTime, fixture.deployer.deployTime(fixture.app1).get());
+            assertEquals(deployTime, fixture.deployer.deployTime(fixture.app2).get());
 
             // Too soon: Already deployed recently
             clock.advance(Duration.ofMinutes(5));
@@ -226,6 +247,11 @@ public class PeriodicApplicationMaintainerTest {
             this.deployer = new MockDeployer(tester.provisioner(), nodeRepository.clock(), apps);
             this.maintainer = new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofDays(1), // Long duration to prevent scheduled runs during test
                                                                         Duration.ofMinutes(30));
+        }
+
+        void prepare() {
+            deployer.deployFromLocalActive(app1, false).get().prepare();
+            deployer.deployFromLocalActive(app2, false).get().prepare();
         }
 
         void activate() {

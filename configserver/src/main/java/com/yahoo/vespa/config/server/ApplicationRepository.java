@@ -43,6 +43,7 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
+import com.yahoo.vespa.config.server.application.ApplicationData;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
@@ -445,9 +446,26 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public Optional<Instant> activationTime(ApplicationId application) {
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
+
         Optional<Instant> activatedTime = getActiveSession(tenant, application).map(Session::getActivatedTime);
         log.log(Level.FINEST, application + " last activated " + activatedTime.orElse(Instant.EPOCH));
         return activatedTime;
+    }
+
+    @Override
+    public Optional<Instant> deployTime(ApplicationId application) {
+        Tenant tenant = tenantRepository.getTenant(application.tenant());
+        if (tenant == null) return Optional.empty();
+
+        // TODO: Fallback to empty instead if no deploy time (in Vespa 9)
+        Optional<Long> lastDeployedSession = tenant.getApplicationRepo().applicationData(application)
+                .flatMap(ApplicationData::lastDeployedSession);
+        if (lastDeployedSession.isEmpty()) return activationTime(application);
+
+        Instant createTime = getRemoteSession(tenant, lastDeployedSession.get()).getCreateTime();
+        log.log(Level.FINEST, application + " last deployed " + createTime);
+
+        return Optional.of(createTime);
     }
 
     public ApplicationId activate(Tenant tenant,

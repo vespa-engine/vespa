@@ -40,10 +40,11 @@ public class MockDeployer implements Deployer {
     // For mock deploy anything, changing wantToRetire to retired only
     private final NodeRepository nodeRepository;
 
-    /** The number of redeployments done to this, which is also the config generation */
-    public int redeployments = 0;
+    /** The number of activations done to this, which is also the config generation */
+    public int activations = 0;
 
-    private final Map<ApplicationId, Instant> lastDeployTimes = new HashMap<>();
+    private final Map<ApplicationId, Instant> lastPrepareTimes = new HashMap<>();
+    private final Map<ApplicationId, Instant> lastActivationTimes = new HashMap<>();
     private final Clock clock;
     private final ReentrantLock lock = new ReentrantLock();
 
@@ -121,7 +122,12 @@ public class MockDeployer implements Deployer {
 
     @Override
     public Optional<Instant> activationTime(ApplicationId application) {
-        return Optional.ofNullable(lastDeployTimes.get(application));
+        return Optional.ofNullable(lastActivationTimes.get(application));
+    }
+
+    @Override
+    public Optional<Instant> deployTime(ApplicationId application) {
+        return Optional.ofNullable(lastPrepareTimes.get(application));
     }
 
     @Override
@@ -136,7 +142,8 @@ public class MockDeployer implements Deployer {
         new MockDeployment(provisioner, new ApplicationContext(applicationId, List.of())).activate();
 
         applications.remove(applicationId);
-        lastDeployTimes.remove(applicationId);
+        lastPrepareTimes.remove(applicationId);
+        lastActivationTimes.remove(applicationId);
     }
 
     public class MockDeployment implements Deployment {
@@ -155,6 +162,7 @@ public class MockDeployer implements Deployer {
         @Override
         public void prepare() {
             preparedHosts = application.prepare(provisioner);
+            lastPrepareTimes.put(application.id, clock.instant());
         }
 
         @Override
@@ -164,15 +172,15 @@ public class MockDeployer implements Deployer {
             if (failActivate)
                 throw new IllegalStateException("failActivate is true");
 
-            redeployments++;
+            activations++;
             try (var lock = provisioner.lock(application.id)) {
                 try (NestedTransaction t = new NestedTransaction()) {
-                    provisioner.activate(preparedHosts, new ActivationContext(redeployments), new ApplicationTransaction(lock, t));
+                    provisioner.activate(preparedHosts, new ActivationContext(activations), new ApplicationTransaction(lock, t));
                     t.commit();
-                    lastDeployTimes.put(application.id, clock.instant());
+                    lastActivationTimes.put(application.id, clock.instant());
                 }
             }
-            return redeployments;
+            return activations;
         }
 
         @Override
@@ -191,18 +199,20 @@ public class MockDeployer implements Deployer {
         }
 
         @Override
-        public void prepare() { }
+        public void prepare() {
+            lastPrepareTimes.put(applicationId, clock.instant());
+        }
 
         @Override
         public long activate() {
-            lastDeployTimes.put(applicationId, clock.instant());
+            lastActivationTimes.put(applicationId, clock.instant());
 
             for (Node node : nodeRepository.nodes().list().owner(applicationId).state(Node.State.active).retiring()) {
                 try (NodeMutex lock = nodeRepository.nodes().lockAndGetRequired(node)) {
                     nodeRepository.nodes().write(lock.node().retire(nodeRepository.clock().instant()), lock);
                 }
             }
-            return redeployments++;
+            return activations++;
         }
 
         @Override

@@ -57,6 +57,9 @@ public interface Deployer {
     /** Returns the time the active session was activated, or empty if there is no active session */
     Optional<Instant> activationTime(ApplicationId application);
 
+    /** Returns the time of last deployed session for this application or empty if there are no deployments */
+    Optional<Instant> deployTime(ApplicationId application);
+
     /** Whether the deployer is bootstrapping, some users of the deployer will want to hold off with deployments in that case. */
     default boolean bootstrapping() { return false; }
 

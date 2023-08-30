@@ -16,7 +16,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * The application maintainer regularly redeploys all applications to make sure the node repo and application
@@ -39,7 +40,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
     @Override
     protected boolean canDeployNow(ApplicationId application) {
-        return deployer().activationTime(application)
+        return deployer().deployTime(application)
                 // Don't deploy if a regular deploy just happened
                 .map(lastDeployTime -> lastDeployTime.isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments)))
                 // We only know last deploy time for applications that were deployed on this config server,
@@ -57,13 +58,17 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
                                                                                .map(node -> node.allocation().get().owner())
                                                                                .distinct()
                                                                                .filter(this::canDeployNow)
-                                                                               .collect(Collectors.toMap(Function.identity(), this::activationTime));
+                                                                               .collect(toMap(Function.identity(), this::deployTime));
 
         return deploymentTimes.entrySet().stream()
                               .sorted(Map.Entry.comparingByValue())
                               .map(Map.Entry::getKey)
                               .filter(this::shouldMaintain)
-                              .collect(Collectors.toMap(applicationId -> applicationId, applicationId -> "current deployment being too old"));
+                              .collect(toMap(applicationId -> applicationId, applicationId -> "current deployment being too old"));
+    }
+
+    private Instant deployTime(ApplicationId applicationId) {
+        return deployer().deployTime(applicationId).orElse(Instant.EPOCH);
     }
 
     private boolean shouldMaintain(ApplicationId id) {
