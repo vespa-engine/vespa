@@ -3,16 +3,10 @@ package com.yahoo.vespa.hosted.controller.routing;
 
 import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSortedSet;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.zone.AuthMethod;
-import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.application.Endpoint;
-import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -117,36 +111,6 @@ public record RoutingPolicy(RoutingPolicyId id,
         return new RoutingPolicy(id, canonicalName, ipAddress, dnsZone, instanceEndpoints, applicationEndpoints, routingStatus, isPublic, generatedEndpoints);
     }
 
-    /** Returns the zone endpoints of this */
-    public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod, boolean includeTokenEndpoint) {
-        DeploymentId deployment = new DeploymentId(id.owner(), id.zone());
-        Endpoint.EndpointBuilder builder = endpoint(routingMethod).target(id.cluster(), deployment);
-        Endpoint zoneEndpoint = builder.in(system);
-        List<Endpoint> endpoints = new ArrayList<>();
-        endpoints.add(zoneEndpoint);
-        if (includeTokenEndpoint) {
-            Endpoint tokenEndpoint = builder.authMethod(AuthMethod.token).in(system);
-            endpoints.add(tokenEndpoint);
-        }
-        for (var generatedEndpoint : generatedEndpoints) {
-            boolean include = switch (generatedEndpoint.authMethod()) {
-                case token -> includeTokenEndpoint;
-                case mtls -> true;
-            };
-            if (include) {
-                endpoints.add(builder.generatedFrom(generatedEndpoint).in(system));
-            }
-        }
-        return endpoints;
-    }
-
-    /** Returns the region endpoint of this */
-    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod, Optional<GeneratedEndpoint> generated) {
-        Endpoint.EndpointBuilder builder = endpoint(routingMethod).targetRegion(id.cluster(), id.zone());
-        generated.ifPresent(builder::generatedFrom);
-        return builder.in(system);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -158,12 +122,6 @@ public record RoutingPolicy(RoutingPolicyId id,
     @Override
     public int hashCode() {
         return Objects.hash(id);
-    }
-
-    private Endpoint.EndpointBuilder endpoint(RoutingMethod routingMethod) {
-        return Endpoint.of(id.owner())
-                       .on(Port.fromRoutingMethod(routingMethod))
-                       .routingMethod(routingMethod);
     }
 
 }

@@ -22,8 +22,11 @@ import com.yahoo.vespa.archive.ArchiveStreamReader;
 import com.yahoo.vespa.archive.ArchiveStreamReader.ArchiveFile;
 import com.yahoo.vespa.archive.ArchiveStreamReader.Options;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.deployment.ZipBuilder;
 import com.yahoo.yolean.Exceptions;
+import org.w3c.dom.Document;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -135,6 +138,25 @@ public class ApplicationPackage {
      * This is the ValidationOverrides.empty instance if this package does not contain a validation-overrides.xml file.
      */
     public ValidationOverrides validationOverrides() { return validationOverrides; }
+
+    /** Returns a basic variant of services.xml contained in this package, pre-processed according to given deployment and tags */
+    public BasicServicesXml services(DeploymentId deployment, Tags tags) {
+        FileWrapper servicesXml = files.wrapper().wrap(Paths.get(servicesFile));
+        if (!servicesXml.exists()) return BasicServicesXml.empty;
+        try {
+            Document document = new XmlPreProcessor(files.wrapper().wrap(Paths.get("./")),
+                                                    new InputStreamReader(new ByteArrayInputStream(servicesXml.content()), UTF_8),
+                                                    deployment.applicationId().instance(),
+                                                    deployment.zoneId().environment(),
+                                                    deployment.zoneId().region(),
+                                                    tags).run();
+            return BasicServicesXml.parse(document);
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
 
     /** Returns the platform version which package was compiled against, if known. */
     public Optional<Version> compileVersion() { return compileVersion; }

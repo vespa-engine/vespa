@@ -253,7 +253,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
             var instances = instanceId == null
                     ? application.instances().values()
                     : List.of(application.require(instanceId.instance()));
-            EndpointList declaredEndpoints = controller.routing().declaredEndpointsOf(application);
+            EndpointList declaredEndpoints = controller.routing().readDeclaredEndpointsOf(application);
             for (var instance : instances) {
                 var zones = zoneId == null
                         ? instance.deployments().keySet().stream().sorted(Comparator.comparing(ZoneId::value)).toList()

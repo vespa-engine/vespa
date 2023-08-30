@@ -8,6 +8,7 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
@@ -56,6 +57,7 @@ public class ApplicationPackageBuilder {
                                                                 "/>\n</notifications>\n").setEmptyValue("");
     private final StringBuilder endpointsBody = new StringBuilder();
     private final StringBuilder applicationEndpointsBody = new StringBuilder();
+    private final StringBuilder servicesBody = new StringBuilder();
     private final List<X509Certificate> trustedCertificates = new ArrayList<>();
     private final Map<Environment, Map<String, String>> nonProductionEnvironments = new LinkedHashMap<>();
 
@@ -109,6 +111,28 @@ public class ApplicationPackageBuilder {
             endpointsBody.append("        <region>").append(region).append("</region>\n");
         }
         endpointsBody.append("      </endpoint>\n");
+        return this;
+    }
+
+    public ApplicationPackageBuilder container(String id, AuthMethod... authMethod) {
+        servicesBody.append("  <container id='")
+                    .append(id)
+                    .append("'>\n")
+                    .append("    <clients>\n");
+        for (int i = 0; i < authMethod.length; i++) {
+            AuthMethod m = authMethod[i];
+            servicesBody.append("      <client id='")
+                        .append("client-").append(m.name()).append("-").append(i)
+                        .append("'>\n");
+            if (m == AuthMethod.token) {
+                servicesBody.append("        <token id='")
+                            .append(m.name()).append("-").append(i)
+                            .append("'/>\n");
+            }
+            servicesBody.append("     </client>\n");
+        }
+        servicesBody.append("    </clients>\n")
+                    .append("  </container>\n");
         return this;
     }
 
@@ -350,6 +374,10 @@ public class ApplicationPackageBuilder {
         return searchDefinition.getBytes(UTF_8);
     }
 
+    private byte[] services() {
+        return ("<services version='1.0'>\n" + servicesBody + "</services>\n").getBytes(UTF_8);
+    }
+
     private static byte[] buildMeta(Version compileVersion) {
         return compileVersion == null ? new byte[0]
                                       : ("{\"compileVersion\":\"" + compileVersion.toFullString() +
@@ -362,6 +390,7 @@ public class ApplicationPackageBuilder {
         try (ZipOutputStream out = new ZipOutputStream(zip)) {
             out.setLevel(Deflater.NO_COMPRESSION); // This is for testing purposes so we skip compression for performance
             writeZipEntry(out, "deployment.xml", deploymentSpec());
+            writeZipEntry(out, "services.xml", services());
             writeZipEntry(out, "validation-overrides.xml", validationOverrides());
             writeZipEntry(out, "schemas/test.sd", searchDefinition());
             writeZipEntry(out, "build-meta.json", buildMeta(compileVersion));

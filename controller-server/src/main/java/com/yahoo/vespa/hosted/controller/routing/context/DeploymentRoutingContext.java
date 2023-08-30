@@ -8,10 +8,12 @@ import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.RoutingController;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
-import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
+import com.yahoo.vespa.hosted.controller.application.pkg.BasicServicesXml;
+import com.yahoo.vespa.hosted.controller.routing.GeneratedEndpoints;
+import com.yahoo.vespa.hosted.controller.routing.PreparedEndpoints;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
@@ -20,22 +22,21 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 /**
- * A deployment routing context, which extends {@link RoutingContext} to support routing configuration of a deployment.
+ * A deployment routing context. This extends {@link RoutingContext} to support configuration of routing for a deployment.
  *
  * @author mpolden
  */
 public abstract class DeploymentRoutingContext implements RoutingContext {
 
     final DeploymentId deployment;
-    final RoutingController controller;
+    final RoutingController routing;
     final RoutingMethod method;
 
-    public DeploymentRoutingContext(DeploymentId deployment, RoutingMethod method, RoutingController controller) {
+    public DeploymentRoutingContext(DeploymentId deployment, RoutingMethod method, RoutingController routing) {
         this.deployment = Objects.requireNonNull(deployment);
-        this.controller = Objects.requireNonNull(controller);
+        this.routing = Objects.requireNonNull(routing);
         this.method = Objects.requireNonNull(method);
     }
 
@@ -44,13 +45,13 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
      *
      * @return the container endpoints relevant for this deployment, as declared in deployment spec
      */
-    public final Set<ContainerEndpoint> prepare(LockedApplication application) {
-        return controller.containerEndpointsOf(application, deployment.applicationId().instance(), deployment.zoneId());
+    public final PreparedEndpoints prepare(BasicServicesXml services, Optional<EndpointCertificate> certificate, LockedApplication application) {
+        return routing.prepare(deployment, services, certificate, application);
     }
 
-    /** Configure routing for the deployment in this context, using given deployment spec */
-    public final void configure(DeploymentSpec deploymentSpec, List<GeneratedEndpoint> generatedEndpoints) {
-        controller.policies().refresh(deployment, deploymentSpec, generatedEndpoints);
+    /** Finalize routing configuration for the deployment in this context, using given deployment spec */
+    public final void activate(DeploymentSpec deploymentSpec, GeneratedEndpoints generatedEndpoints) {
+        routing.policies().refresh(deployment, deploymentSpec, generatedEndpoints);
     }
 
     /** Routing method of this context */
@@ -61,7 +62,7 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
     /** Read the routing policy for given cluster in this deployment */
     public final Optional<RoutingPolicy> routingPolicy(ClusterSpec.Id cluster) {
         RoutingPolicyId id = new RoutingPolicyId(deployment.applicationId(), cluster, deployment.zoneId());
-        return controller.policies().read(deployment).of(id);
+        return routing.policies().read(deployment).of(id);
     }
 
     /** Extension of a {@link DeploymentRoutingContext} for deployments using {@link RoutingMethod#sharedLayer4} routing */
@@ -110,13 +111,13 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
         }
 
         private List<String> upstreamNames() {
-            List<String> upstreamNames = controller.readEndpointsOf(deployment)
-                                                   .scope(Endpoint.Scope.zone)
-                                                   .shared()
-                                                   .asList().stream()
-                                                   .map(endpoint -> endpoint.upstreamName(deployment))
-                                                   .distinct()
-                                                   .toList();
+            List<String> upstreamNames = routing.readEndpointsOf(deployment)
+                                                .scope(Endpoint.Scope.zone)
+                                                .shared()
+                                                .asList().stream()
+                                                .map(endpoint -> endpoint.upstreamName(deployment))
+                                                .distinct()
+                                                .toList();
             if (upstreamNames.isEmpty()) {
                 throw new IllegalArgumentException("No upstream names found for " + deployment);
             }
@@ -137,17 +138,17 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
 
         @Override
         public void setRoutingStatus(RoutingStatus.Value value, RoutingStatus.Agent agent) {
-            controller.policies().setRoutingStatus(deployment, value, agent);
+            routing.policies().setRoutingStatus(deployment, value, agent);
         }
 
         @Override
         public RoutingStatus routingStatus() {
             // Status for a deployment applies to all clusters within the deployment, so we use the status from the
             // first matching policy here
-            return controller.policies().read(deployment)
-                             .first()
-                             .map(RoutingPolicy::routingStatus)
-                             .orElse(RoutingStatus.DEFAULT);
+            return routing.policies().read(deployment)
+                          .first()
+                          .map(RoutingPolicy::routingStatus)
+                          .orElse(RoutingStatus.DEFAULT);
         }
 
     }

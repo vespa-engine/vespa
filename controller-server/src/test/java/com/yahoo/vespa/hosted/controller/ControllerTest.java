@@ -16,11 +16,13 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentEndpoints;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
@@ -332,7 +334,8 @@ public class ControllerTest {
                     List.of("beta.app1.tenant1.global.vespa.oath.cloud",
                             "rotation-id-01"),
                     OptionalInt.empty(),
-                    RoutingMethod.sharedLayer4));
+                    RoutingMethod.sharedLayer4,
+                    Map.of("beta.app1.tenant1.global.vespa.oath.cloud", AuthMethod.mtls)));
 
             for (Deployment deployment : betaDeployments) {
                 assertEquals(containerEndpoints,
@@ -350,7 +353,8 @@ public class ControllerTest {
                     List.of("app1.tenant1.global.vespa.oath.cloud",
                             "rotation-id-02"),
                     OptionalInt.empty(),
-                    RoutingMethod.sharedLayer4));
+                    RoutingMethod.sharedLayer4,
+                    Map.of("app1.tenant1.global.vespa.oath.cloud", AuthMethod.mtls)));
             for (Deployment deployment : defaultDeployments) {
                 assertEquals(containerEndpoints,
                         tester.configServer().containerEndpoints().get(defaultContext.deploymentIdIn(deployment.zone())));
@@ -740,10 +744,14 @@ public class ControllerTest {
         );
         deploymentEndpoints.forEach((deployment, endpoints) -> {
             Set<ContainerEndpoint> expected = endpoints.entrySet().stream()
-                                                       .map(kv -> new ContainerEndpoint("default", "application",
+                                                       .map(kv -> {
+                                                           Map<String, AuthMethod> authMethods = kv.getKey().stream().collect(Collectors.toMap(Function.identity(), (v) -> AuthMethod.mtls));
+                                                           return new ContainerEndpoint("default", "application",
                                                                                         kv.getKey(),
                                                                                         OptionalInt.of(kv.getValue()),
-                                                                                        tester.controller().zoneRegistry().routingMethod(deployment.zoneId())))
+                                                                                        tester.controller().zoneRegistry().routingMethod(deployment.zoneId()),
+                                                                                        authMethods);
+                                                       })
                                                        .collect(Collectors.toSet());
             assertEquals(expected,
                          tester.configServer().containerEndpoints().get(deployment),
@@ -790,7 +798,7 @@ public class ControllerTest {
                                                      RecordName.from("e.app1.tenant1.a.vespa.oath.cloud"),
                                                      RecordData.from("vip.prod.us-east-3.")))),
                      new TreeSet<>(records));
-        List<String> endpointDnsNames = tester.controller().routing().declaredEndpointsOf(context.application())
+        List<String> endpointDnsNames = tester.controller().routing().readDeclaredEndpointsOf(context.application())
                                               .scope(Endpoint.Scope.application)
                                               .sortedBy(comparing(Endpoint::dnsName))
                                               .mapToList(Endpoint::dnsName);
@@ -1536,8 +1544,8 @@ public class ControllerTest {
         DeploymentContext context = tester.newDeploymentContext();
         DeploymentId deployment = context.deploymentIdIn(ZoneId.from("prod", "us-west-1"));
         DeploymentData deploymentData = new DeploymentData(deployment.applicationId(), deployment.zoneId(), InputStream::nullInputStream, Version.fromString("6.1"),
-                                                           Set.of(), Optional::empty, Optional.empty(), Optional.empty(),
-                                                           Quota::unlimited, List.of(), List.of(), Optional::empty, List.of(),false);
+                                                           () -> DeploymentEndpoints.none, Optional.empty(), Optional.empty(),
+                                                           Quota::unlimited, List.of(), List.of(), Optional::empty, List.of(), false);
         tester.configServer().deploy(deploymentData);
         assertTrue(tester.configServer().application(deployment.applicationId(), deployment.zoneId()).isPresent());
         tester.controller().applications().deactivate(deployment.applicationId(), deployment.zoneId());
