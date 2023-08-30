@@ -4,9 +4,8 @@ package com.yahoo.container.jdisc.state;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Path;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -16,22 +15,10 @@ public class HostLifeGathererTest {
 
     @Test
     void host_is_alive() {
-        JsonNode packet = HostLifeGatherer.getHostLifePacket(new MockFileWrapper());
+        JsonNode packet = HostLifeGatherer.getHostLifePacket();
         JsonNode metrics = packet.get("metrics");
         assertEquals("host_life", packet.get("application").textValue());
-        assertEquals(0, packet.get("status_code").intValue());
-        assertEquals("OK", packet.get("status_msg").textValue());
-
-        assertEquals(123L, metrics.get("uptime").longValue());
         assertEquals(1, metrics.get("alive").intValue());
-
-    }
-
-    static class MockFileWrapper extends FileWrapper {
-
-        @Override
-        long getFileAgeInSeconds(Path path) {
-            return 123;
-        }
+        assertTrue(packet.get("dimensions").hasNonNull("vespaVersion"));
     }
 }

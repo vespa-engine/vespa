@@ -17,29 +17,11 @@ public class HostLifeGatherer {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    private static final Path UPTIME_PATH = Path.of("/proc");
-
-    public static JsonNode getHostLifePacket(FileWrapper fileWrapper) {
-        long upTime;
-        int statusCode = 0;
-        String statusMessage = "OK";
-
-        try {
-            upTime = fileWrapper.getFileAgeInSeconds(UPTIME_PATH);
-        } catch (IOException e) {
-            upTime = 0;
-            statusCode = 1;
-            statusMessage = "Unable to read proc folder";
-        }
-
-
+    public static JsonNode getHostLifePacket() {
         ObjectNode jsonObject = jsonMapper.createObjectNode();
-        jsonObject.put("status_code", statusCode);
-        jsonObject.put("status_msg", statusMessage);
         jsonObject.put("timestamp", Instant.now().getEpochSecond());
         jsonObject.put("application", "host_life");
         ObjectNode metrics = jsonMapper.createObjectNode();
-        metrics.put("uptime", upTime);
         metrics.put("alive", 1);
         jsonObject.set("metrics", metrics);
         ObjectNode dimensions = jsonMapper.createObjectNode();

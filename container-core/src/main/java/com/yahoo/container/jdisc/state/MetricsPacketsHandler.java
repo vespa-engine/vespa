@@ -104,8 +104,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
             var metricSetId = queryMap.get("metric-set");
             var format = queryMap.get("format");
 
-            // TODO: Remove "array-formatted"
-            if ("array".equals(format) || queryMap.containsKey("array-formatted")) {
+            if ("array".equals(format)) {
                 return getMetricsArray(metricSetId);
             }
             if ("prometheus".equals(format)) {
@@ -126,7 +125,6 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
         ArrayNode jsonArray = jsonMapper.createArrayNode();
         getPacketsForSnapshot(getSnapshot(), metricSetId, applicationName, timer.currentTimeMillis())
                 .forEach(jsonArray::add);
-        MetricGatherer.getAdditionalMetrics().forEach(jsonArray::add);
         root.set("metrics", jsonArray);
         return jsonToString(root)
                 .getBytes(StandardCharsets.UTF_8);
@@ -198,6 +196,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
                 packets.add(packet);
             }
         }
+        packets.add(HostLifeGatherer.getHostLifePacket());
         return packets;
     }
 
