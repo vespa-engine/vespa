@@ -2,9 +2,7 @@
 
 #[non-test]
 # Contains dependencies that are not used exclusively in 'test' scope
-ai.djl:api:0.22.1
 ai.djl:api:0.23.0
-ai.djl.huggingface:tokenizers:0.22.1
 ai.djl.huggingface:tokenizers:0.23.0
 aopalliance:aopalliance:1.0
 backport-util-concurrent:backport-util-concurrent:3.1
