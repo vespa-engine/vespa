@@ -27,16 +27,9 @@ MetricsEngine::start(const config::ConfigUri &)
         metrics::MetricLockGuard guard(_manager->getMetricLock());
         _manager->registerMetric(guard, *_root);
     }
-
-    // Storage doesnt snapshot unset metrics to save memory. Currently
-    // feature seems a bit bugged. Disabling this optimalization for search.
-    // Can enable it later when it is confirmed to be working well.
     _manager->snapshotUnsetMetrics(true);
-
-    // Currently, when injecting a metric manager into the content layer,
-    // the content layer require to be the one initializing and starting it.
-    // Thus not calling init here, but further out in the application when
-    // one knows whether we are running in row/column mode or not
+    // Starting the metric manager worker thread (MetricManager::init()) is not done here, as the service
+    // layer code has not had the opportunity to create its metrics yet. Deferred to service layer init code.
 }
 
 void
