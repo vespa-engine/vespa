@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.NodeSlice;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.text.Text;
@@ -51,7 +52,11 @@ public class SystemUpgrader extends InfrastructureUpgrader<VespaVersionTarget> {
 
     @Override
     protected boolean expectUpgradeOf(Node node, SystemApplication application, ZoneApi zone) {
-        return eligibleForUpgrade(node, zone);
+        // Temporary hack until GCP enclave works again
+        if (zone.getCloudName().equals(CloudName.GCP) && node.hostname().value().startsWith("e"))
+            return false;
+
+        return eligibleForUpgrade(node);
     }
 
     @Override
@@ -91,11 +96,7 @@ public class SystemUpgrader extends InfrastructureUpgrader<VespaVersionTarget> {
     }
 
     /** Returns whether node in application should be upgraded by this */
-    public static boolean eligibleForUpgrade(Node node, ZoneApi zone) {
-        // Temporary hack until GCP enclave works again
-        if (zone.getCloudName().equals(CloudName.GCP) && node.hostname().value().startsWith("e"))
-            return false;
-
+    public static boolean eligibleForUpgrade(Node node) {
         return upgradableNodeStates.contains(node.state());
     }
 
