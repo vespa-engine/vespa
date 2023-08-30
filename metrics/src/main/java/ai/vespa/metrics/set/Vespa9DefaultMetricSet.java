@@ -73,7 +73,7 @@ public class Vespa9DefaultMetricSet {
                 .metric(ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CHIFERS.rate())
                 .metric(ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_UNKNOWN.rate())
                 .metric(ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS.rate())
-                .metric(ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS, EnumSet.of(max, last)) // TODO: Vespa 9: Remove last
+                .metric(ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS, EnumSet.of(min, max, last)) // TODO: Vespa 9: Remove max, last
                 .build();
     }
 
