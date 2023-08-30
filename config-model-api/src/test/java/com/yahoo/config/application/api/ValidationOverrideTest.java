@@ -69,6 +69,26 @@ public class ValidationOverrideTest {
                                 e.getMessage());
         }
     }
+
+    @Test
+    public void testInvalidDate() {
+        String validationOverrides =
+                "<validation-overrides>" +
+                        "  <allow until='2000-02-31'>indexing-change</allow>" +
+                        "</validation-overrides>";
+
+        try {
+            ValidationOverrides overrides = ValidationOverrides.fromXml(new StringReader(validationOverrides));
+            Instant now = ManualClock.at("2000-01-01T23:59:00");
+            overrides.allows("indexing-change", now);
+            overrides.validate(now);
+            Assert.fail("Expected validation interval override validation validation failure");
+        }
+        catch (IllegalArgumentException e) {
+            Assert.assertEquals("java.time.format.DateTimeParseException: Text '2000-02-31' could not be parsed: Invalid date 'FEBRUARY 31'",
+                                e.getMessage());
+        }
+    }
     
     @Test
     public void testEmpty() {
