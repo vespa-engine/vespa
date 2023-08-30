@@ -131,15 +131,15 @@ public class InternalStepRunner implements StepRunner {
         try {
             return switch (step.get()) {
                 case deployTester -> deployTester(id, logger);
+                case installTester -> installTester(id, logger);
                 case deployInitialReal -> deployInitialReal(id, logger);
                 case installInitialReal -> installInitialReal(id, logger);
                 case deployReal -> deployReal(id, logger);
-                case installTester -> installTester(id, logger);
                 case installReal -> installReal(id, logger);
                 case startStagingSetup -> startTests(id, true, logger);
                 case endStagingSetup -> endTests(id, true, logger);
-                case endTests -> endTests(id, false, logger);
                 case startTests -> startTests(id, false, logger);
+                case endTests -> endTests(id, false, logger);
                 case copyVespaLogs -> copyVespaLogs(id, logger);
                 case deactivateReal -> deactivateReal(id, logger);
                 case deactivateTester -> deactivateTester(id, logger);
