@@ -182,6 +182,30 @@ public class PeriodicApplicationMaintainerTest {
     }
 
     @Test(timeout = 60_000)
+    public void application_deploy_triggered_by_reindexing_ready() {
+        fixture.activate();
+
+        assertEquals("No deployment expected", 2, fixture.deployer.activations);
+
+        // Holds off on deployments a while after starting
+        fixture.setBootstrapping(false);
+        fixture.runApplicationMaintainer();
+        assertEquals("No deployment expected", 2, fixture.deployer.activations);
+
+        Instant firstDeployTime = clock.instant();
+
+        // Reindexing readied before last deploy time triggers nothing.
+        fixture.deployer.setReadiedReindexingAt(firstDeployTime.minusSeconds(1));
+        fixture.runApplicationMaintainer();
+        assertEquals("No deployment expected", 2, fixture.deployer.activations);
+
+        // Reindexing readied after last deploy time triggers nothing.
+        fixture.deployer.setReadiedReindexingAt(firstDeployTime.plusSeconds(1));
+        fixture.runApplicationMaintainer();
+        assertEquals("No deployment expected", 4, fixture.deployer.activations);
+    }
+
+    @Test(timeout = 60_000)
     public void queues_all_eligible_applications_for_deployment() throws Exception {
         fixture.activate();
 

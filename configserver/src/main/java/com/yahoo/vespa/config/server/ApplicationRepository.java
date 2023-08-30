@@ -45,6 +45,7 @@ import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationData;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
+import com.yahoo.vespa.config.server.application.ApplicationReindexing.Status;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexingStatusClient;
@@ -128,6 +129,7 @@ import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
+import static java.util.Comparator.naturalOrder;
 
 /**
  * The API for managing applications.
@@ -466,6 +468,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         log.log(Level.FINEST, application + " last deployed " + createTime);
 
         return Optional.of(createTime);
+    }
+
+    @Override
+    public boolean readiedReindexingAfter(ApplicationId id, Instant instant) {
+        Tenant tenant = tenantRepository.getTenant(id.tenant());
+        if (tenant == null) return false;
+
+        return tenant.getApplicationRepo().database().readReindexingStatus(id)
+                     .flatMap(ApplicationReindexing::lastReadiedAt)
+                     .map(readiedAt -> readiedAt.isAfter(instant))
+                     .orElse(false);
     }
 
     public ApplicationId activate(Tenant tenant,
