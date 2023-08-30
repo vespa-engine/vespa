@@ -13,7 +13,7 @@ com.amazonaws:aws-java-sdk-core:1.12.540
 com.amazonaws:aws-java-sdk-ssm:1.12.540
 com.amazonaws:aws-java-sdk-sts:1.12.540
 com.amazonaws:jmespath-java:1.12.540
-com.auth0:java-jwt:3.19.4
+com.auth0:java-jwt:4.4.0
 com.fasterxml.jackson.core:jackson-annotations:2.15.2
 com.fasterxml.jackson.core:jackson-core:2.15.2
 com.fasterxml.jackson.core:jackson-databind:2.15.2
