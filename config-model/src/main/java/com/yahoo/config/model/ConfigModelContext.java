@@ -9,7 +9,6 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterInfo.Builder;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -82,8 +81,13 @@ public final class ConfigModelContext {
         ClusterInfo.Builder builder = new ClusterInfo.Builder();
         spec.hostTTL(properties().applicationId().instance(), deployState.zone().environment(), deployState.zone().region())
             .filter(ttl -> ! ttl.isZero())
-            .filter(__ -> deployState.getProperties().cloudAccount().map(account -> ! account.isUnspecified()).orElse(false))
-            .ifPresent(builder::hostTTL);
+            .ifPresent(ttl -> {
+                ZoneId zoneId = ZoneId.from(deployState.zone().environment(), deployState.zone().region());
+                if (spec.cloudAccount(deployState.zone().cloud().name(), properties().applicationId().instance(), zoneId).isUnspecified())
+                    throw new IllegalArgumentException("deployment spec specifies host TTL for " + zoneId +
+                                                       " but no cloud account is specified for this zone");
+                builder.hostTTL(ttl);
+            });
         spec.instance(properties().applicationId().instance())
             .flatMap(instance -> instance.bcp().groups().stream()
                                          .filter(group -> group.memberRegions().contains(properties().zone().region()))
