@@ -35,7 +35,7 @@
         <aopalliance.vespa.version>1.0</aopalliance.vespa.version>
         <commons-logging.vespa.version>1.2</commons-logging.vespa.version>  <!-- This version is exported by jdisc via jcl-over-slf4j. -->
         <error-prone-annotations.vespa.version>2.21.1</error-prone-annotations.vespa.version>
-        <guava.vespa.version>32.1.1-jre</guava.vespa.version>
+        <guava.vespa.version>32.1.2-jre</guava.vespa.version>
         <guice.vespa.version>4.2.3</guice.vespa.version>
         <jackson2.vespa.version>2.15.2</jackson2.vespa.version>
         <jackson-databind.vespa.version>2.15.2</jackson-databind.vespa.version>
