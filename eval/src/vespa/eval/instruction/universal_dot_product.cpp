@@ -84,6 +84,14 @@ struct SelectUniversalDotProduct {
     }
 };
 
+bool check_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs) {
+    UniversalDotProductParam param(res, lhs, rhs);
+    if (param.vector_size < 8) {
+        return false;
+    }
+    return true;
+}
+
 } // namespace <unnamed>
 
 UniversalDotProduct::UniversalDotProduct(const ValueType &res_type_in,
@@ -106,11 +114,13 @@ UniversalDotProduct::compile_self(const ValueBuilderFactory &, Stash &stash) con
 }
 
 const TensorFunction &
-UniversalDotProduct::optimize(const TensorFunction &expr, Stash &stash)
+UniversalDotProduct::optimize(const TensorFunction &expr, Stash &stash, bool force)
 {
     if (auto reduce = as<Reduce>(expr); reduce && (reduce->aggr() == Aggr::SUM)) {
         if (auto join = as<Join>(reduce->child()); join && (join->function() == Mul::f)) {
-            return stash.create<UniversalDotProduct>(expr.result_type(), join->lhs(), join->rhs());
+            if (force || check_types(expr.result_type(), join->lhs().result_type(), join->rhs().result_type())) {
+                return stash.create<UniversalDotProduct>(expr.result_type(), join->lhs(), join->rhs());
+            }
         }
     }
     return expr;
