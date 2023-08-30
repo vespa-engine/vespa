@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -463,7 +462,7 @@ public class SystemUpgraderTest {
 
     private List<Node> listNodes(ZoneApi zone, SystemApplication application) {
         return nodeRepository().list(zone.getId(), NodeFilter.all().applications(application.id())).stream()
-                               .filter(SystemUpgrader::eligibleForUpgrade)
+                               .filter(node -> SystemUpgrader.eligibleForUpgrade(node, zone))
                                .toList();
     }
 

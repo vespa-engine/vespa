@@ -185,7 +185,7 @@ public record VersionStatus(List<VespaVersion> versions, int currentMajor) {
             for (var application : SystemApplication.notController()) {
                 var nodes = controller.serviceRegistry().configServer().nodeRepository()
                                       .list(zone.getId(), NodeFilter.all().applications(application.id())).stream()
-                                      .filter(SystemUpgrader::eligibleForUpgrade)
+                                      .filter(node -> SystemUpgrader.eligibleForUpgrade(node, zone))
                                       .toList();
                 if (nodes.isEmpty()) continue;
                 boolean configConverged = application.configConvergedIn(zone.getId(), controller, Optional.empty());
