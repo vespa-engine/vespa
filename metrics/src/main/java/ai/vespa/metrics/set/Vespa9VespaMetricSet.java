@@ -38,6 +38,7 @@ import static ai.vespa.metrics.set.DefaultVespaMetrics.defaultVespaMetricSet;
  * Encapsulates vespa service metrics.
  *
  * @author gjoranv
+ * @author yngve
  */
 public class Vespa9VespaMetricSet {
 

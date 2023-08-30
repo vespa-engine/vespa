@@ -30,6 +30,7 @@ import static ai.vespa.metrics.set.DefaultVespaMetrics.defaultVespaMetricSet;
  * other user facing apis, e.g. 'prometheus/'.
  *
  * @author gjoranv
+ * @author yngve
  */
 public class Vespa9DefaultMetricSet {
 
