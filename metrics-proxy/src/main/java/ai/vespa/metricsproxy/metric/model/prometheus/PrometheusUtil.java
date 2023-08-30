@@ -13,9 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-
 /**
  * @author yj-jtakagi
  * @author gjoranv
@@ -52,7 +49,7 @@ public class PrometheusUtil {
                     } else {
                         sampleList = new ArrayList<>();
                         samples.put(metricName, sampleList);
-                        metricFamilySamples.add(new MetricFamilySamples(metricName, Collector.Type.UNTYPED, "", sampleList));
+                        metricFamilySamples.add(new MetricFamilySamples(metricName, Collector.Type.UNKNOWN, "", sampleList));
                     }
                     sampleList.add(new Sample(metricName, labels, labelValues, metric.getValue().doubleValue(), packet.timestamp * 1000));
                 }

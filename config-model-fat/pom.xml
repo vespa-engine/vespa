@@ -204,6 +204,9 @@
                     <i>com.thaiopensource:jing:*:*</i>
                     <i>io.prometheus:simpleclient:*:*</i>
                     <i>io.prometheus:simpleclient_common:*:*</i>
+                    <i>io.prometheus:simpleclient_tracer_common:*:*</i>
+                    <i>io.prometheus:simpleclient_tracer_otel:*:*</i>
+                    <i>io.prometheus:simpleclient_tracer_otel_agent:*:*</i>
                     <i>javax.inject:javax.inject:*:*</i>
                     <i>net.openhft:zero-allocation-hashing:*:*</i>
                     <i>org.antlr:antlr-runtime:*:*</i>

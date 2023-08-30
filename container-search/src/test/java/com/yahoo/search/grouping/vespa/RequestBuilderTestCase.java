@@ -25,10 +25,8 @@ import com.yahoo.searchlib.expression.StrCatFunctionNode;
 import com.yahoo.searchlib.expression.StringResultNode;
 import com.yahoo.searchlib.expression.TimeStampFunctionNode;
 import com.yahoo.searchlib.expression.ToStringFunctionNode;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -468,29 +466,29 @@ public class RequestBuilderTestCase {
 
         String expectedA = "[{ Attribute, result = [Count] }]";
         assertLayout("all(group(a) each(output(count())))",
-                Arrays.asList(expectedA).toString());
+                List.of(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all()))",
-                Arrays.asList(expectedA).toString());
+                List.of(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all(group(b))))",
-                Arrays.asList(expectedA).toString());
+                List.of(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all(group(b) each())))",
-                Arrays.asList(expectedA).toString());
+                List.of(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all(group(b) each())))",
-                Arrays.asList(expectedA).toString());
+                List.of(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all(group(b) each())) as(foo)" +
                 "             each())",
-                Arrays.asList(expectedA).toString());
+                List.of(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all(group(b) each())) as(foo)" +
                 "             each(group(b)))",
-                Arrays.asList(expectedA).toString());
+                List.of(expectedA).toString());
         assertLayout("all(group(a) each(output(count()) all(group(b) each())) as(foo)" +
                 "             each(group(b) each()))",
-                Arrays.asList(expectedA).toString());
+                List.of(expectedA).toString());
 
         String expectedB = "[{ Attribute }, { Attribute, result = [Count] }]";
         assertLayout("all(group(a) each(output(count()) all(group(b) each())) as(foo)" +
                 "             each(group(b) each(output(count()))))",
-                Arrays.asList(expectedB, expectedA).toString());
+                List.of(expectedB, expectedA).toString());
     }
 
     @Test
@@ -650,8 +648,8 @@ public class RequestBuilderTestCase {
 
     @Test
     void requireThatTimeZoneIsAppliedToTimeFunctions() {
-        for (String timePart : Arrays.asList("dayofmonth", "dayofweek", "dayofyear", "hourofday",
-                                             "minuteofhour", "monthofyear", "secondofminute", "year"))
+        for (String timePart : List.of("dayofmonth", "dayofweek", "dayofyear", "hourofday",
+                                       "minuteofhour", "monthofyear", "secondofminute", "year"))
         {
             String request = "all(output(avg(time." + timePart + "(foo))))";
             assertTimeZone(request, "GMT-2", -7200L);
@@ -686,7 +684,7 @@ public class RequestBuilderTestCase {
         test.expectedOutput = Boolean.toString(true);
         test.request = "all(output(avg(now() - foo)))";
         test.outputWriter = new OutputWriter() {
-            long before = System.currentTimeMillis();
+            final long before = System.currentTimeMillis();
 
             @Override
             public String write(List<Grouping> groupingList, GroupingTransform transform) {
@@ -836,7 +834,7 @@ public class RequestBuilderTestCase {
             builder.build();
             fail();
         } catch (IllegalInputException e) {
-            Assertions.assertThat(e.getMessage()).contains(errorSubstring);
+            assertTrue(e.getMessage().contains(errorSubstring));
         }
     }
 
@@ -924,7 +922,7 @@ public class RequestBuilderTestCase {
         RequestBuilder builder = new RequestBuilder(0);
         builder.setRootOperation(GroupingOperation.fromString(test.request));
         builder.setTimeZone(TimeZone.getTimeZone(test.timeZone));
-        builder.addContinuations(Arrays.asList(test.continuation));
+        builder.addContinuations(test.continuation != null ? List.of(test.continuation) : List.of());
         try {
             builder.build();
             if (test.expectedException != null) {

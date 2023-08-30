@@ -11,10 +11,12 @@ import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
+import java.util.Map;
 import java.util.Set;
 
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bjorncs
@@ -53,17 +55,12 @@ public class DefaultFilterTest extends DomBuilderTest {
 
         ChainsConfig chainsConfig = root.getConfig(ChainsConfig.class, "container/filters/chain");
         Set<String> chainsIds = chainsConfig.chains().stream().map(ChainsConfig.Chains::id).collect(toSet());
-        assertThat(chainsIds)
-                .containsExactlyInAnyOrder(
-                        "request-chain-with-binding", "response-chain-with-binding", "my-default-request-chain", "my-default-response-chain");
+        assertEquals(chainsIds, Set.of("request-chain-with-binding", "response-chain-with-binding", "my-default-request-chain", "my-default-response-chain"));
     }
 
     private static void assertDefaultFiltersInConfig(ServerConfig config) {
-        assertThat(config.defaultFilters())
-                .containsExactlyInAnyOrder(
-                        new ServerConfig.DefaultFilters(new ServerConfig.DefaultFilters.Builder()
-                                .filterId("my-default-request-chain").localPort(8000)),
-                        new ServerConfig.DefaultFilters(new ServerConfig.DefaultFilters.Builder()
-                                .filterId("my-default-response-chain").localPort(8000)));
+        var asMap = config.defaultFilters().stream().collect(toMap(ServerConfig.DefaultFilters::filterId, ServerConfig.DefaultFilters::localPort));
+        assertEquals(asMap, Map.of("my-default-request-chain", 8000, "my-default-response-chain", 8000));
+
     }
 }

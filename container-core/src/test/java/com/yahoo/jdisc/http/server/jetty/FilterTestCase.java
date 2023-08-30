@@ -28,7 +28,6 @@ import com.yahoo.jdisc.http.filter.ResponseHeaderFilter;
 import com.yahoo.jdisc.http.filter.chain.RequestFilterChain;
 import com.yahoo.jdisc.http.filter.chain.ResponseFilterChain;
 import com.yahoo.jdisc.http.server.jetty.testutils.ConnectorFactoryRegistryModule;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -44,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -557,7 +557,7 @@ public class FilterTestCase {
                 .expectStatusCode(is(Response.Status.OK));
         ArgumentCaptor<HttpRequest> requestArgumentCaptor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(filter).filter(requestArgumentCaptor.capture(), any(ResponseHandler.class));
-        Assertions.assertThat(requestArgumentCaptor.getValue().context()).containsKey(RequestHandlerSpec.ATTRIBUTE_NAME);
+        assertTrue(requestArgumentCaptor.getValue().context().containsKey(RequestHandlerSpec.ATTRIBUTE_NAME));
     }
 
     private static JettyTestDriver newDriver(MyRequestHandler requestHandler, FilterBindings filterBindings) {

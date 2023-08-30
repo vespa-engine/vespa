@@ -16,7 +16,6 @@ import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.json.JsonTestHelper;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -149,7 +148,7 @@ public class JSONSearchHandlerTestCase {
         configurer.reloadConfig();
 
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
-        assertTrue(searchHandler != newSearchHandler, "Do I have a new instance of the search handler?");
+        assertNotSame(searchHandler, newSearchHandler, "Do I have a new instance of the search handler?");
         try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
             ObjectNode json = jsonMapper.createObjectNode();
             json.put("yql", "selectz * from foo where bar > 1453501295");
@@ -193,13 +192,15 @@ public class JSONSearchHandlerTestCase {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("format", "xml");
 
-        assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                "<result total-hit-count=\"0\">\n" +
-                "  <hit relevancy=\"1.0\">\n" +
-                "    <field name=\"relevancy\">1.0</field>\n" +
-                "    <field name=\"uri\">testHit</field>\n" +
-                "  </hit>\n" +
-                "</result>\n", driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE).readAll());
+        assertEquals("""
+                <?xml version="1.0" encoding="utf-8" ?>
+                <result total-hit-count="0">
+                  <hit relevancy="1.0">
+                    <field name="relevancy">1.0</field>
+                    <field name="uri">testHit</field>
+                  </hit>
+                </result>
+                """, driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE).readAll());
     }
 
     @Test
@@ -253,13 +254,15 @@ public class JSONSearchHandlerTestCase {
     }
 
     private static final String xmlResult =
-            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                    "<result total-hit-count=\"0\">\n" +
-                    "  <hit relevancy=\"1.0\">\n" +
-                    "    <field name=\"relevancy\">1.0</field>\n" +
-                    "    <field name=\"uri\">testHit</field>\n" +
-                    "  </hit>\n" +
-                    "</result>\n";
+            """
+                    <?xml version="1.0" encoding="utf-8" ?>
+                    <result total-hit-count="0">
+                      <hit relevancy="1.0">
+                        <field name="relevancy">1.0</field>
+                        <field name="uri">testHit</field>
+                      </hit>
+                    </result>
+                    """;
 
     private void assertXmlResult(JsonNode json, RequestHandlerTestDriver driver) {
         assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), xmlResult);
@@ -276,19 +279,6 @@ public class JSONSearchHandlerTestCase {
 
     }
 
-    private static final String pageResult =
-            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                    "<page version=\"1.0\">\n" +
-                    "\n" +
-                    "  <content>\n" +
-                    "    <hit relevance=\"1.0\">\n" +
-                    "      <id>testHit</id>\n" +
-                    "      <uri>testHit</uri>\n" +
-                    "    </hit>\n" +
-                    "  </content>\n" +
-                    "\n" +
-                    "</page>\n";
-
     private void assertOkResult(RequestHandlerTestDriver.MockResponseHandler response, String expected) {
         assertEquals(expected, response.readAll());
         assertEquals(200, response.getStatus());
@@ -302,7 +292,7 @@ public class JSONSearchHandlerTestCase {
         configurer.reloadConfig();
 
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
-        assertTrue(searchHandler != newSearchHandler, "Do I have a new instance of the search handler?");
+        assertNotSame(searchHandler, newSearchHandler, "Do I have a new instance of the search handler?");
         return new RequestHandlerTestDriver(newSearchHandler);
     }
 
@@ -368,23 +358,25 @@ public class JSONSearchHandlerTestCase {
 
     @Test
     void testJsonWithWhereAndGroupingUnderSelect() {
-        String query = "{\n" +
-                "  \"select\": {\n" +
-                "    \"where\": {\n" +
-                "      \"contains\": [\n" +
-                "        \"field\",\n" +
-                "        \"term\"\n" +
-                "      ]\n" +
-                "    },\n" +
-                "    \"grouping\":[\n" +
-                "      {\n" +
-                "        \"all\": {\n" +
-                "          \"output\": \"count()\"\n" +
-                "        }\n" +
-                "      }\n" +
-                "    ]\n" +
-                "  }\n" +
-                "}\n";
+        String query = """
+                {
+                  "select": {
+                    "where": {
+                      "contains": [
+                        "field",
+                        "term"
+                      ]
+                    },
+                    "grouping":[
+                      {
+                        "all": {
+                          "output": "count()"
+                        }
+                      }
+                    ]
+                  }
+                }
+                """;
         String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, query, JSON_CONTENT_TYPE).readAll();
 
         String expected = "{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where field contains \\\"term\\\" | all(output(count()))\"}}]}}";
@@ -393,21 +385,23 @@ public class JSONSearchHandlerTestCase {
 
     @Test
     void testJsonWithWhereAndGroupingSeparate() {
-        String query = "{\n" +
-                "  \"select.where\": {\n" +
-                "    \"contains\": [\n" +
-                "      \"field\",\n" +
-                "      \"term\"\n" +
-                "    ]\n" +
-                "  },\n" +
-                "  \"select.grouping\":[\n" +
-                "    {\n" +
-                "      \"all\": {\n" +
-                "        \"output\": \"count()\"\n" +
-                "      }\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}\n";
+        String query = """
+                {
+                  "select.where": {
+                    "contains": [
+                      "field",
+                      "term"
+                    ]
+                  },
+                  "select.grouping":[
+                    {
+                      "all": {
+                        "output": "count()"
+                      }
+                    }
+                  ]
+                }
+                """;
         String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, query, JSON_CONTENT_TYPE).readAll();
 
         String expected = "{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where field contains \\\"term\\\" | all(output(count()))\"}}]}}";
@@ -539,7 +533,7 @@ public class JSONSearchHandlerTestCase {
 
         // Get mapping
         Map<String, String> propertyMap = request.propertyMap();
-        Assertions.assertThat(propertyMap).isEqualTo(map);
+        assertEquals(propertyMap, map);
     }
 
     @Test

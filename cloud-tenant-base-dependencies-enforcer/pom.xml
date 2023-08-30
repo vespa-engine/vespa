@@ -146,6 +146,9 @@
                                         <include>io.airlift:airline:${airline.vespa.version}:test</include>
                                         <include>io.prometheus:simpleclient:${prometheus.client.vespa.version}:test</include>
                                         <include>io.prometheus:simpleclient_common:${prometheus.client.vespa.version}:test</include>
+                                        <include>io.prometheus:simpleclient_tracer_common:${prometheus.client.vespa.version}:test</include>
+                                        <include>io.prometheus:simpleclient_tracer_otel:${prometheus.client.vespa.version}:test</include>
+                                        <include>io.prometheus:simpleclient_tracer_otel_agent:${prometheus.client.vespa.version}:test</include>
                                         <include>junit:junit:${junit4.vespa.version}:test</include>
                                         <include>net.java.dev.jna:jna:${jna.vespa.version}:test</include>
                                         <include>net.openhft:zero-allocation-hashing:jar:${zero-allocation-hashing.vespa.version}:test</include>

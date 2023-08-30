@@ -38,7 +38,6 @@ import org.apache.hc.client5.http.entity.mime.StringBody;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.core5.http.ConnectionClosedException;
 import org.apache.hc.core5.http.ContentType;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -85,12 +84,11 @@ import static com.yahoo.jdisc.http.server.jetty.Utils.createHttp2Client;
 import static com.yahoo.jdisc.http.server.jetty.Utils.createSslTestDriver;
 import static com.yahoo.jdisc.http.server.jetty.Utils.generatePrivateKeyAndCertificate;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -127,7 +125,7 @@ public class HttpServerTest {
                             .listenPort(driver.server().getListenPort())
             );
         } catch (final Throwable t) {
-            assertThat(t.getCause(), instanceOf(BindException.class));
+            assertTrue(t.getCause() instanceof BindException);
         }
         assertTrue(driver.close());
     }
@@ -191,7 +189,7 @@ public class HttpServerTest {
                 .expectStatusCode(is(REQUEST_URI_TOO_LONG));
         RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(5));
         assertEquals(414, entry.statusCode().getAsInt());
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -473,7 +471,7 @@ public class HttpServerTest {
         final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoWithHeaderRequestHandler(CONNECTION, CLOSE));
         driver.client().get("/status.html")
                 .expectHeader(CONNECTION, is(CLOSE));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -583,7 +581,7 @@ public class HttpServerTest {
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK))
                 .expectContent(matchesPattern("\\d{13,}"));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
     }
 
     @Test
@@ -689,25 +687,25 @@ public class HttpServerTest {
         }
         assertTrue(driver.close());
         List<ConnectionLogEntry> logEntries = connectionLog.logEntries();
-        Assertions.assertThat(logEntries).hasSize(1);
+        assertEquals(1, logEntries.size());
         ConnectionLogEntry logEntry = logEntries.get(0);
         assertEquals(4, UUID.fromString(logEntry.id()).version());
-        Assertions.assertThat(logEntry.timestamp()).isAfter(Instant.EPOCH);
-        Assertions.assertThat(logEntry.requests()).hasValue(100L);
-        Assertions.assertThat(logEntry.responses()).hasValue(100L);
-        Assertions.assertThat(logEntry.peerAddress()).hasValue("127.0.0.1");
-        Assertions.assertThat(logEntry.localAddress()).hasValue("127.0.0.1");
-        Assertions.assertThat(logEntry.localPort()).hasValue(listenPort);
-        Assertions.assertThat(logEntry.httpBytesReceived()).hasValueSatisfying(value -> Assertions.assertThat(value).isGreaterThan(100000L));
-        Assertions.assertThat(logEntry.httpBytesSent()).hasValueSatisfying(value -> Assertions.assertThat(value).isGreaterThan(10000L));
-        Assertions.assertThat(logEntry.sslProtocol()).hasValueSatisfying(TlsContext.ALLOWED_PROTOCOLS::contains);
-        Assertions.assertThat(logEntry.sslPeerSubject()).hasValue("CN=localhost");
-        Assertions.assertThat(logEntry.sslCipherSuite()).hasValueSatisfying(cipher -> Assertions.assertThat(cipher).isNotBlank());
-        Assertions.assertThat(logEntry.sslSessionId()).hasValueSatisfying(sessionId -> Assertions.assertThat(sessionId).hasSize(64));
-        Assertions.assertThat(logEntry.sslPeerNotBefore()).hasValue(Instant.EPOCH);
-        Assertions.assertThat(logEntry.sslPeerNotAfter()).hasValue(Instant.EPOCH.plus(100_000, ChronoUnit.DAYS));
-        Assertions.assertThat(logEntry.sslBytesReceived()).hasValueSatisfying(value -> Assertions.assertThat(value).isGreaterThan(100000L));
-        Assertions.assertThat(logEntry.sslBytesSent()).hasValueSatisfying(value -> Assertions.assertThat(value).isGreaterThan(10000L));
+        assertTrue(logEntry.timestamp().isAfter(Instant.EPOCH));
+        assertEquals(100L, logEntry.requests().get());
+        assertEquals(100L, logEntry.responses().get());
+        assertEquals("127.0.0.1", logEntry.peerAddress().get());
+        assertEquals("127.0.0.1", logEntry.localAddress().get());
+        assertEquals(listenPort, logEntry.localPort().get());
+        assertTrue(logEntry.httpBytesReceived().get() > 100000L);
+        assertTrue(logEntry.httpBytesSent().get() > 10000L);
+        assertTrue(TlsContext.ALLOWED_PROTOCOLS.contains(logEntry.sslProtocol().get()));
+        assertEquals("CN=localhost", logEntry.sslPeerSubject().get());
+        assertFalse(logEntry.sslCipherSuite().get().isBlank());
+        assertEquals(64, logEntry.sslSessionId().get().length());
+        assertEquals(Instant.EPOCH, logEntry.sslPeerNotBefore().get());
+        assertEquals(Instant.EPOCH.plus(100_000, ChronoUnit.DAYS), logEntry.sslPeerNotAfter().get());
+        assertTrue(logEntry.sslBytesReceived().get() > 100000L);
+        assertTrue(logEntry.sslBytesSent().get() > 10000L);
     }
 
     @Test
@@ -720,9 +718,9 @@ public class HttpServerTest {
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().newPost("/status.html").setContent("abcdef").execute().expectStatusCode(is(OK));
         RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(5));
-        Assertions.assertThat(entry.statusCode()).hasValue(200);
-        Assertions.assertThat(entry.requestSize()).hasValue(6);
-        assertThat(driver.close(), is(true));
+        assertEquals(200, entry.statusCode().getAsInt());
+        assertEquals(6, entry.requestSize().getAsLong());
+        assertTrue(driver.close());
     }
 
     @Test
@@ -734,7 +732,7 @@ public class HttpServerTest {
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
         JettyTestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
         driver.client().get("/").expectStatusCode(is(OK));
-        assertThat(driver.close(), is(true));
+        assertTrue(driver.close());
         verify(metricConsumer.mockitoMock(), atLeast(1))
                 .set(MetricDefinitions.REQUESTS_PER_CONNECTION, 1L, MetricConsumerMock.STATIC_CONTEXT);
     }

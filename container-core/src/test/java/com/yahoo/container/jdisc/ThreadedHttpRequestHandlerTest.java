@@ -7,7 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.Executors;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
@@ -22,10 +23,10 @@ public class ThreadedHttpRequestHandlerTest {
 
         driver.sendRequest("http://localhost/myhandler").readAll();
         String expectedMetricName = "jdisc.http.handler.unhandled_exceptions";
-        assertThat(metricMock.innvocations())
-                .containsKey(expectedMetricName);
-        assertThat(((MetricMock.SimpleMetricContext) metricMock.innvocations().get(expectedMetricName).ctx).dimensions)
-                .containsEntry("exception", "DummyException");
+        assertTrue(metricMock.innvocations()
+                .containsKey(expectedMetricName));
+        assertEquals("DummyException",
+                ((MetricMock.SimpleMetricContext) metricMock.innvocations().get(expectedMetricName).ctx).dimensions.get("exception"));
     }
 
 

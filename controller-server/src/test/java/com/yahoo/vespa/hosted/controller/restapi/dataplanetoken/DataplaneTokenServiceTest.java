@@ -15,8 +15,9 @@ import java.security.Principal;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -43,13 +44,13 @@ public class DataplaneTokenServiceTest {
         assertNotEquals(dataplaneToken1.fingerPrint(), dataplaneToken2.fingerPrint());
 
         List<DataplaneTokenVersions> dataplaneTokenVersions = dataplaneTokenService.listTokens(tenantName);
-        List<FingerPrint> tokenFingerprints = dataplaneTokenVersions.stream()
+        Set<FingerPrint> tokenFingerprints = dataplaneTokenVersions.stream()
                 .filter(token -> token.tokenId().equals(tokenId))
                 .map(DataplaneTokenVersions::tokenVersions)
                 .flatMap(Collection::stream)
                 .map(DataplaneTokenVersions.Version::fingerPrint)
-                .toList();
-        assertThat(tokenFingerprints).containsExactlyInAnyOrder(dataplaneToken1.fingerPrint(), dataplaneToken2.fingerPrint());
+                .collect(toSet());
+        assertEquals(tokenFingerprints, Set.of(dataplaneToken1.fingerPrint(), dataplaneToken2.fingerPrint()));
     }
 
     @Test

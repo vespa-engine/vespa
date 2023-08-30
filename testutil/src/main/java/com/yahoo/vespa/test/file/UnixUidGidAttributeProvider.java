@@ -22,7 +22,6 @@ import com.google.common.jimfs.File;
 import com.google.common.jimfs.FileLookup;
 
 import java.nio.file.attribute.FileAttributeView;
-import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.UserPrincipal;
@@ -79,41 +78,39 @@ public class UnixUidGidAttributeProvider extends AttributeProvider {
     @SuppressWarnings("unchecked")
     @Override
     public Object get(File file, String attribute) {
-        switch (attribute) {
-            case "uid":
-                UserPrincipal user = (UserPrincipal) file.getAttribute("owner", "owner");
-                return getUniqueId(user);
-            case "gid":
-                GroupPrincipal group = (GroupPrincipal) file.getAttribute("posix", "group");
-                return getUniqueId(group);
-            case "mode":
-                Set<PosixFilePermission> permissions =
-                        (Set<PosixFilePermission>) file.getAttribute("posix", "permissions");
-                return toMode(permissions);
-            case "ctime":
-                return FileTime.fromMillis(file.getCreationTime());
-            case "rdev":
-                return 0L;
-            case "dev":
-                return 1L;
-            case "ino":
-                return file.id();
-            case "nlink":
-                return file.links();
-            default:
-                return null;
-        }
+        return switch (attribute) {
+            case "uid" -> {
+                var user = (UserPrincipal) file.getAttribute("owner", "owner");
+                yield getUniqueId(user);
+            }
+            case "gid" -> {
+                var group = (GroupPrincipal) file.getAttribute("posix", "group");
+                yield getUniqueId(group);
+            }
+            case "mode" -> {
+                var permissions = (Set<PosixFilePermission>) file.getAttribute("posix", "permissions");
+                yield toMode(permissions);
+            }
+            case "ctime" -> file.getCreationTime();
+            case "rdev" -> 0L;
+            case "dev" -> 1L;
+            case "ino" -> file.id();
+            case "nlink" -> file.links();
+            default -> null;
+        };
     }
 
     @Override
     public void set(File file, String view, String attribute, Object value, boolean create) {
         switch (attribute) {
-            case "uid":
+            case "uid" -> {
                 file.setAttribute("owner", "owner", new BasicUserPrincipal(String.valueOf(value)));
                 return;
-            case "gid":
+            }
+            case "gid" -> {
                 file.setAttribute("posix", "group", new BasicGroupPrincipal(String.valueOf(value)));
                 return;
+            }
         }
         throw unsettable(view, attribute, create);
     }
@@ -124,35 +121,16 @@ public class UnixUidGidAttributeProvider extends AttributeProvider {
         for (PosixFilePermission permission : permissions) {
             checkNotNull(permission);
             switch (permission) {
-                case OWNER_READ:
-                    result |= 0400;
-                    break;
-                case OWNER_WRITE:
-                    result |= 0200;
-                    break;
-                case OWNER_EXECUTE:
-                    result |= 0100;
-                    break;
-                case GROUP_READ:
-                    result |= 0040;
-                    break;
-                case GROUP_WRITE:
-                    result |= 0020;
-                    break;
-                case GROUP_EXECUTE:
-                    result |= 0010;
-                    break;
-                case OTHERS_READ:
-                    result |= 0004;
-                    break;
-                case OTHERS_WRITE:
-                    result |= 0002;
-                    break;
-                case OTHERS_EXECUTE:
-                    result |= 0001;
-                    break;
-                default:
-                    throw new AssertionError(); // no other possible values
+                case OWNER_READ -> result |= 0400;
+                case OWNER_WRITE -> result |= 0200;
+                case OWNER_EXECUTE -> result |= 0100;
+                case GROUP_READ -> result |= 0040;
+                case GROUP_WRITE -> result |= 0020;
+                case GROUP_EXECUTE -> result |= 0010;
+                case OTHERS_READ -> result |= 0004;
+                case OTHERS_WRITE -> result |= 0002;
+                case OTHERS_EXECUTE -> result |= 0001;
+                default -> throw new AssertionError(); // no other possible values
             }
         }
         return result;

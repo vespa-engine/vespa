@@ -10,11 +10,12 @@ import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.FlagDataChange;
 import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.OperationError;
 import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.merge;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bjorncs
@@ -29,17 +30,15 @@ public class SystemFlagsDeployResultTest {
         FlagId flagOne = new FlagId("flagone");
         FlagId flagTwo = new FlagId("flagtwo");
         SystemFlagsDeployResult result = new SystemFlagsDeployResult(
-                List.of(
-                        FlagDataChange.deleted(flagOne, controllerTarget)),
-                List.of(
-                        OperationError.deleteFailed("delete failed", controllerTarget, flagTwo)),
+                List.of(FlagDataChange.deleted(flagOne, controllerTarget)),
+                List.of(OperationError.deleteFailed("delete failed", controllerTarget, flagTwo)),
                 List.of());
         WireSystemFlagsDeployResult wire = result.toWire();
 
-        assertThat(wire.changes).hasSize(1);
-        assertThat(wire.changes.get(0).flagId).isEqualTo(flagOne.toString());
-        assertThat(wire.errors).hasSize(1);
-        assertThat(wire.errors.get(0).flagId).isEqualTo(flagTwo.toString());
+        assertEquals(1, wire.changes.size());
+        assertEquals(wire.changes.get(0).flagId, flagOne.toString());
+        assertEquals(1, wire.errors.size());
+        assertEquals(wire.errors.get(0).flagId, flagTwo.toString());
     }
 
     @Test
@@ -65,13 +64,13 @@ public class SystemFlagsDeployResultTest {
         SystemFlagsDeployResult mergedResult = merge(results);
 
         List<FlagDataChange> changes = mergedResult.flagChanges();
-        assertThat(changes).hasSize(1);
+        assertEquals(1, changes.size());
         FlagDataChange change = changes.get(0);
-        assertThat(change.targets()).containsOnly(controllerTarget, prodUsWest1Target);
+        assertEquals(change.targets(), Set.of(controllerTarget, prodUsWest1Target));
 
         List<OperationError> errors = mergedResult.errors();
-        assertThat(errors).hasSize(1);
+        assertEquals(1, errors.size());
         OperationError error = errors.get(0);
-        assertThat(error.targets()).containsOnly(controllerTarget, prodUsWest1Target);
+        assertEquals(error.targets(), Set.of(controllerTarget, prodUsWest1Target));
     }
 }

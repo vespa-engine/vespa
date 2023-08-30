@@ -7,7 +7,6 @@ import org.w3c.dom.Element;
 
 import java.util.List;
 
-import static org.assertj.core.api.Fail.fail;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

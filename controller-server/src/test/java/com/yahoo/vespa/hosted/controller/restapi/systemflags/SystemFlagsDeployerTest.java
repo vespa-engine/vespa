@@ -25,6 +25,7 @@ import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsD
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -174,7 +175,7 @@ public class SystemFlagsDeployerTest {
 
         assertThat(result.flagChanges()).containsOnly(
                 FlagDataChange.created(FLAG_ID, controllerTarget, defaultData));
-        assertThat(result.errors()).isEmpty();
+        assertTrue(result.errors().isEmpty());
     }
 
     @Test
@@ -209,8 +210,7 @@ public class SystemFlagsDeployerTest {
                 .build();
         SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(controllerTarget));
         SystemFlagsDeployResult result = deployer.deployFlags(archive, false);
-        assertThat(result.flagChanges())
-                .isEmpty();
+        assertTrue(result.flagChanges().isEmpty());
         assertThat(result.errors())
                 .containsOnly(OperationError.archiveValidationFailed("Unknown flag file: flags/my-flag/main.prod.unknown-region.json"));
     }
