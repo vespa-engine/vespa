@@ -682,7 +682,9 @@ public class ApplicationController {
             if (testerCertificate.isPresent()) {
                 operatorCertificates = Stream.concat(operatorCertificates.stream(), testerCertificate.stream()).toList();
             }
-            Supplier<Optional<CloudAccount>> cloudAccount = () -> decideCloudAccountOf(deployment, applicationPackage.truncatedPackage().deploymentSpec());
+            Supplier<Optional<CloudAccount>> cloudAccount = () -> decideCloudAccountOf(deployment,
+                                                                                       zone.environment().isTest() ? requireApplication(TenantAndApplicationId.from(application)).deploymentSpec()
+                                                                                                                   : applicationPackage.truncatedPackage().deploymentSpec());
             List<DataplaneTokenVersions> dataplaneTokenVersions = controller.dataplaneTokenService().listTokens(application.tenant());
             Supplier<Optional<EndpointCertificate>> endpointCertificateWrapper = () -> {
                 Optional<EndpointCertificate> data = endpointCertificate.get();
