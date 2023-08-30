@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class ContainerUserPrincipalLookupServiceTest {
 
-    private final UserScope userScope = UserScope.create(new UnixUser("vespa", 1000, "users", 100), new UserNamespace(10_000, 11_000, 10000));
+    private final UserScope userScope = UserScope.create(new UserNamespace(10_000, 11_000, 10000));
     private final ContainerUserPrincipalLookupService userPrincipalLookupService =
             new ContainerUserPrincipalLookupService(TestFileSystem.create().getUserPrincipalLookupService(), userScope);
 

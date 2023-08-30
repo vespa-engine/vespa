@@ -361,12 +361,6 @@ public class Flags {
             "Whether to read config server session data from sesion data blob or from individual paths",
             "Takes effect immediately");
 
-    public static final UnboundBooleanFlag USE_VESPA_USER_EVERYWHERE = defineFeatureFlag(
-            "use-vespa-user-everywhere", true,
-            List.of("aressem"), "2023-07-28", "2023-09-01",
-            "Use the vespa user for running Vespa everywhere",
-            "Takes effect immediately");
-
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
             List.of("andreer"), "2023-08-21", "2023-09-21",
