@@ -65,10 +65,9 @@ vector<string> readIndexes() {
     vector<string> indexes;
     std::filesystem::directory_iterator dir_scan(index_dir);
     for (auto entry : dir_scan) {
-        if (!entry.is_directory() || entry.path().filename().string().find("index.") != 0) {
-            continue;
+        if (entry.is_directory() && entry.path().filename().string().find("index.") == 0) {
+            indexes.push_back(entry.path().filename().string());
         }
-        indexes.push_back(entry.path().filename().string());
     }
     return indexes;
 }
