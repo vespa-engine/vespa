@@ -188,7 +188,6 @@ org.json:json:20230618
 org.junit.jupiter:junit-jupiter-api:5.10.0
 org.junit.jupiter:junit-jupiter-engine:5.10.0
 org.junit.platform:junit-platform-commons:1.10.0
-org.junit.platform:junit-platform-commons:1.8.1
 org.junit.platform:junit-platform-engine:1.10.0
 org.junit.platform:junit-platform-launcher:1.10.0
 org.jvnet.mimepull:mimepull:1.10.0
