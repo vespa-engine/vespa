@@ -104,7 +104,7 @@ public class ValidationOverrides {
         try {
             return fromXml(IOUtils.readAll(reader));
         } catch (IOException e) {
-            throw new IllegalArgumentException("Could not read deployment spec", e);
+            throw new IllegalArgumentException("Could not read validation-overrides", e);
         }
     }
 
@@ -123,12 +123,16 @@ public class ValidationOverrides {
         Element root = XML.getDocument(xmlForm).getDocumentElement();
         List<ValidationOverrides.Allow> overrides = new ArrayList<>();
         for (Element allow : XML.getChildren(root, "allow")) {
-            Instant until = LocalDate.parse(allow.getAttribute("until"), DateTimeFormatter.ISO_DATE)
-                                     .atStartOfDay().atZone(ZoneOffset.UTC).toInstant()
-                                     .plus(Duration.ofDays(1)); // Make the override valid *on* the "until" date
-            Optional<ValidationId> validationId = ValidationId.from(XML.getValue(allow));
-            // skip unknown ids as they may be valid for other model versions
-            validationId.ifPresent(id -> overrides.add(new Allow(id, until)));
+            try {
+                Instant until = LocalDate.parse(allow.getAttribute("until"), DateTimeFormatter.ISO_DATE)
+                        .atStartOfDay().atZone(ZoneOffset.UTC).toInstant()
+                        .plus(Duration.ofDays(1)); // Make the override valid *on* the "until" date
+                Optional<ValidationId> validationId = ValidationId.from(XML.getValue(allow));
+                // skip unknown ids as they may be valid for other model versions
+                validationId.ifPresent(id -> overrides.add(new Allow(id, until)));
+            } catch (RuntimeException e) {
+                throw new IllegalArgumentException(e);
+            }
         }
         return new ValidationOverrides(overrides, xmlForm);
     }
