@@ -20,11 +20,13 @@ import java.util.Set;
  */
 public class OnnxModel extends DistributableResource implements Cloneable {
 
+    // Model information
     private OnnxModelInfo modelInfo = null;
     private final Map<String, String> inputMap = new HashMap<>();
     private final Map<String, String> outputMap = new HashMap<>();
     private final Set<String> initializers = new HashSet<>();
 
+    // Runtime options
     private String  statelessExecutionMode = null;
     private Integer statelessInterOpThreads = null;
     private Integer statelessIntraOpThreads = null;
@@ -42,11 +44,7 @@ public class OnnxModel extends DistributableResource implements Cloneable {
     @Override
     public OnnxModel clone() {
         try {
-            OnnxModel clone = (OnnxModel) super.clone();
-            clone.inputMap.putAll(inputMap);
-            clone.outputMap.putAll(outputMap);
-            clone.initializers.addAll(initializers);
-            return clone;
+            return (OnnxModel) super.clone(); // Shallow clone is sufficient here
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException("Clone not supported", e);
         }
@@ -161,14 +159,14 @@ public class OnnxModel extends DistributableResource implements Cloneable {
         }
     }
 
+    public Optional<Integer> getStatelessIntraOpThreads() {
+        return Optional.ofNullable(statelessIntraOpThreads);
+    }
+
     public void setGpuDevice(int deviceNumber, boolean required) {
         if (deviceNumber >= 0) {
             this.gpuDevice = new GpuDevice(deviceNumber, required);
         }
-    }
-
-    public Optional<Integer> getStatelessIntraOpThreads() {
-        return Optional.ofNullable(statelessIntraOpThreads);
     }
 
     public Optional<GpuDevice> getGpuDevice() {
@@ -176,11 +174,9 @@ public class OnnxModel extends DistributableResource implements Cloneable {
     }
 
     public record GpuDevice(int deviceNumber, boolean required) {
-
         public GpuDevice {
             if (deviceNumber < 0) throw new IllegalArgumentException("deviceNumber cannot be negative, got " + deviceNumber);
         }
-
     }
 
 }
