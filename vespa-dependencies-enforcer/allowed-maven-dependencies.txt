@@ -9,10 +9,10 @@ backport-util-concurrent:backport-util-concurrent:3.1
 ch.qos.logback:logback-classic:1.2.10
 ch.qos.logback:logback-core:1.2.10
 classworlds:classworlds:1.1-alpha-2
-com.amazonaws:aws-java-sdk-core:1.12.460
-com.amazonaws:aws-java-sdk-ssm:1.12.460
-com.amazonaws:aws-java-sdk-sts:1.12.460
-com.amazonaws:jmespath-java:1.12.460
+com.amazonaws:aws-java-sdk-core:1.12.540
+com.amazonaws:aws-java-sdk-ssm:1.12.540
+com.amazonaws:aws-java-sdk-sts:1.12.540
+com.amazonaws:jmespath-java:1.12.540
 com.auth0:java-jwt:3.19.4
 com.fasterxml.jackson.core:jackson-annotations:2.15.2
 com.fasterxml.jackson.core:jackson-core:2.15.2
