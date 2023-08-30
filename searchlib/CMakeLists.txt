@@ -173,7 +173,7 @@ vespa_define_module(
     src/tests/hitcollector
     src/tests/index/field_length_calculator
     src/tests/indexmetainfo
-    src/tests/ld-library-path
+    src/tests/ld_library_path
     src/tests/memoryindex/compact_words_store
     src/tests/memoryindex/datastore
     src/tests/memoryindex/document_inverter

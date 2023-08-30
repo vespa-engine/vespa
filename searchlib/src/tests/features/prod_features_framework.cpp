@@ -2,7 +2,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".prod_features_framework");
 
-#include "prod_features.h"
+#include "prod_features_test.h"
 #include <vespa/searchlib/features/valuefeature.h>
 
 using namespace search::features;
