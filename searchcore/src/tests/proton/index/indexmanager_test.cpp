@@ -267,22 +267,16 @@ set<uint32_t>
 readDiskIds(const string &dir, const string &type)
 {
     set<uint32_t> ids;
-    FastOS_DirectoryScan dir_scan(dir.c_str());
-    while (dir_scan.ReadNext()) {
-        if (!dir_scan.IsDirectory()) {
-            continue;
+    const string flush_prefix("index." + type + ".");
+    std::filesystem::directory_iterator dir_scan(dir);
+    for (auto& entry : dir_scan) {
+        if (entry.is_directory() && entry.path().filename().string().find(flush_prefix) == 0) {
+            auto idString = entry.path().filename().string().substr(flush_prefix.size());
+            vespalib::asciistream ist(idString);
+            uint32_t id;
+            ist >> id;
+            ids.insert(id);
         }
-        string name = dir_scan.GetName();
-        const string flush_prefix("index." + type + ".");
-        string::size_type pos = name.find(flush_prefix);
-        if (pos != 0) {
-            continue;
-        }
-        vespalib::string idString(name.substr(flush_prefix.size()));
-        vespalib::asciistream ist(idString);
-        uint32_t id;
-        ist >> id;
-        ids.insert(id);
     }
     return ids;
 }
