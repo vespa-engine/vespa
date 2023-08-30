@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerNetworkMode;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerFileSystem;
 
 import java.nio.file.FileSystem;
@@ -170,7 +169,6 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private ContainerNetworkMode containerNetworkMode;
         private ZoneApi zone;
         private UserNamespace userNamespace;
-        private UnixUser vespaUser;
         private Path containerStorage;
         private FlagSource flagSource;
         private double cpuSpeedUp = 1;
@@ -211,12 +209,6 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
-        public Builder vespaUser(UnixUser vespaUser) {
-            this.vespaUser = vespaUser;
-            return this;
-        }
-
-
         /** Sets the file system to use for paths. */
         public Builder fileSystem(FileSystem fileSystem) {
             return containerStorage(fileSystem.getPath(DEFAULT_CONTAINER_STORAGE.toString()));
@@ -251,7 +243,6 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             Objects.requireNonNull(containerStorage, "Must set one of containerStorage or fileSystem");
 
             UserScope userScope = UserScope.create(
-                    Optional.ofNullable(vespaUser).orElseGet(() -> new UnixUser("vespa", 1000, "vespa", 100)),
                     Optional.ofNullable(userNamespace).orElseGet(() -> new UserNamespace(100000, 100000, 100000)));
             ContainerFileSystem containerFs = ContainerFileSystem.create(containerStorage
                     .resolve(nodeSpecBuilder.hostname().split("\\.")[0]), userScope);

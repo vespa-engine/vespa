@@ -31,7 +31,7 @@ class ContainerFileSystemTest {
 
     private final FileSystem fileSystem = TestFileSystem.create();
     private final UnixPath containerRootOnHost = new UnixPath(fileSystem.getPath("/data/storage/ctr1"));
-    private final UserScope userScope = UserScope.create(new UnixUser("vespa", 1000, "users", 100), new UserNamespace(10_000, 11_000, 10000));
+    private final UserScope userScope = UserScope.create(new UserNamespace(10_000, 11_000, 10000));
     private final ContainerFileSystem containerFs = ContainerFileSystem.create(containerRootOnHost.createDirectories().toPath(), userScope);
 
     @Test
@@ -67,7 +67,7 @@ class ContainerFileSystemTest {
 
         unixPath.deleteIfExists();
         new UnixPath(containerPath.withUser(userScope.vespa())).writeUtf8File("test123");
-        assertOwnership(containerPath, 1000, 100, 11000, 11100);
+        assertOwnership(containerPath, 1000, 1000, 11000, 12000);
     }
 
     @Test

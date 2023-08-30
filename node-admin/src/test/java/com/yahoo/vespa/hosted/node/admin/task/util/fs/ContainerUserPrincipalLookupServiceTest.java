@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class ContainerUserPrincipalLookupServiceTest {
 
-    private final UserScope userScope = UserScope.create(new UnixUser("vespa", 1000, "users", 100), new UserNamespace(10_000, 11_000, 10000));
+    private final UserScope userScope = UserScope.create(new UserNamespace(10_000, 11_000, 10000));
     private final ContainerUserPrincipalLookupService userPrincipalLookupService =
             new ContainerUserPrincipalLookupService(TestFileSystem.create().getUserPrincipalLookupService(), userScope);
 
@@ -31,10 +31,10 @@ class ContainerUserPrincipalLookupServiceTest {
         assertEquals("11000", user.baseFsPrincipal().getName());
         assertEquals(user, userPrincipalLookupService.lookupPrincipalByName("vespa"));
 
-        ContainerGroupPrincipal group = userPrincipalLookupService.lookupPrincipalByGroupName("100");
-        assertEquals("users", group.getName());
-        assertEquals("11100", group.baseFsPrincipal().getName());
-        assertEquals(group, userPrincipalLookupService.lookupPrincipalByGroupName("users"));
+        ContainerGroupPrincipal group = userPrincipalLookupService.lookupPrincipalByGroupName("1000");
+        assertEquals("vespa", group.getName());
+        assertEquals("12000", group.baseFsPrincipal().getName());
+        assertEquals(group, userPrincipalLookupService.lookupPrincipalByGroupName("vespa"));
 
         assertThrows(UserPrincipalNotFoundException.class, () -> userPrincipalLookupService.lookupPrincipalByName("test"));
     }

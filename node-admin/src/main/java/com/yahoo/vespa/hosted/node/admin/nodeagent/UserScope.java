@@ -45,8 +45,8 @@ public class UserScope {
         return Objects.hash(root, vespa, namespace);
     }
 
-    /** Creates user scope with default root user */
-    public static UserScope create(UnixUser vespaUser, UserNamespace namespace) {
-        return new UserScope(UnixUser.ROOT, vespaUser, namespace);
+    /** Creates user scope with default root and vespa user */
+    public static UserScope create(UserNamespace namespace) {
+        return new UserScope(UnixUser.ROOT, UnixUser.VESPA, namespace);
     }
 }
