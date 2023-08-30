@@ -34,6 +34,7 @@ all: test checkfmt install
 #
 # $ make dist-homebrew
 --dist-homebrew: dist-version
+	brew update
 	brew bump-formula-pr --version $(VERSION) --no-audit --no-browse vespa-cli
 
 dist-homebrew:
