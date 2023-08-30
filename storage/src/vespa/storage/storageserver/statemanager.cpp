@@ -573,9 +573,7 @@ StateManager::getNodeInfo() const
     stream << Object();
     { // Print metrics
         try {
-            stream << "metrics" << Object() << "values" << Array();
             _nodeStateReporter.report(stream);
-            stream << End() << End();
         } catch (vespalib::Exception& e) {
             stream << Object() << "error" << e.getMessage() << End();
         }

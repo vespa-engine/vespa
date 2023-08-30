@@ -33,7 +33,6 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     config = &dc.addConfig("messagebus");
     config = &dc.addConfig("stor-prioritymapping");
     config = &dc.addConfig("stor-bucketdbupdater");
-    config = &dc.addConfig("stor-bucket-init");
     config = &dc.addConfig("metricsmanager");
     config->set("consumer[1]");
     config->set("consumer[0].name", "\"status\"");
@@ -62,8 +61,6 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     config->set("revert_time_period", "2000000000");
     config = &dc.addConfig("stor-bouncer");
     config = &dc.addConfig("stor-integritychecker");
-    config = &dc.addConfig("stor-bucketmover");
-    config = &dc.addConfig("stor-messageforwarder");
     config = &dc.addConfig("stor-server");
     config->set("enable_dead_lock_detector", "false");
     config->set("enable_dead_lock_detector_warnings", "false");

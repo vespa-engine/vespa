@@ -9,7 +9,6 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
-import com.yahoo.vespa.config.content.core.StorIntegritycheckerConfig;
 import com.yahoo.vespa.config.content.core.StorVisitorConfig;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
@@ -324,15 +323,6 @@ public class StorageClusterTest {
         assertEquals(-1, config.async_operation_throttler().max_window_size()); // <=0 implies +inf
         assertEquals(3.0, config.async_operation_throttler().resize_rate(), 0.0001);
         assertTrue(config.async_operation_throttler().throttle_individual_merge_feed_ops());
-    }
-
-    @Test
-    void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() {
-        StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
-        parse(cluster("bees", "")).getConfig(builder);
-        StorIntegritycheckerConfig config = new StorIntegritycheckerConfig(builder);
-        // '-' --> don't run on the given week day
-        assertEquals("-------", config.weeklycycle());
     }
 
     @Test

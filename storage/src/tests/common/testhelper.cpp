@@ -48,7 +48,6 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     config = &dc.addConfig("messagebus");
     config = &dc.addConfig("stor-prioritymapping");
     config = &dc.addConfig("stor-bucketdbupdater");
-    config = &dc.addConfig("stor-bucket-init");
     config = &dc.addConfig("metricsmanager");
     config->set("consumer[2]");
     config->set("consumer[0].name", "\"status\"");
@@ -81,9 +80,6 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     // Don't want test to call exit()
     config->set("fail_disk_after_error_count", "0");
     config = &dc.addConfig("stor-bouncer");
-    config = &dc.addConfig("stor-integritychecker");
-    config = &dc.addConfig("stor-bucketmover");
-    config = &dc.addConfig("stor-messageforwarder");
     config = &dc.addConfig("stor-server");
     config->set("cluster_name", clusterName);
     config->set("enable_dead_lock_detector", "false");

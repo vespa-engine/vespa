@@ -45,8 +45,7 @@ struct TestBucketInfo {
     uint32_t count;
     uint32_t partition;
 
-    api::BucketInfo getInfo() const
-        { return api::BucketInfo(crc, count, size); }
+    api::BucketInfo getInfo() const { return {crc, count, size}; }
 };
 
 std::ostream& operator<<(std::ostream& out, const TestBucketInfo& info) {
@@ -68,19 +67,15 @@ public:
     uint32_t _emptyBuckets;
     document::Document::SP _document;
 
-    ~BucketManagerTest();
+    ~BucketManagerTest() override;
 
     void setupTestEnvironment(bool fakePersistenceLayer = true,
                               bool noDelete = false);
     void addBucketsToDB(uint32_t count);
-    bool wasBlockedDueToLastModified(api::StorageMessage* msg,
-                                     uint64_t lastModified);
-    void insertSingleBucket(const document::BucketId& bucket,
-                            const api::BucketInfo& info);
+    bool wasBlockedDueToLastModified(api::StorageMessage* msg, uint64_t lastModified);
+    void insertSingleBucket(const document::BucketId& bucket, const api::BucketInfo& info);
     void waitUntilRequestsAreProcessing(size_t nRequests = 1);
-    void doTestMutationOrdering(
-            ConcurrentOperationFixture& fixture,
-            const TestParams& params);
+    void doTestMutationOrdering( ConcurrentOperationFixture& fixture, const TestParams& params);
     void doTestConflictingReplyIsEnqueued(
             const document::BucketId& bucket,
             const api::StorageCommand::SP& treeMutationCmd,
@@ -92,14 +87,13 @@ public:
             const document::BucketId& bucketForSplit,
             api::Timestamp mutationTimestamp);
     void sendSingleBucketInfoRequest(const document::BucketId& id);
-    void assertRequestWithBadHashIsRejected(
-            ConcurrentOperationFixture& fixture);
+    void assertRequestWithBadHashIsRejected(ConcurrentOperationFixture& fixture);
 
 protected:
-    void update_min_used_bits() {
+    void update_min_used_bits() const {
         _manager->updateMinUsedBits();
     }
-    void trigger_metric_manager_update() {
+    void trigger_metric_manager_update() const {
         std::mutex l;
         _manager->updateMetrics(BucketManager::MetricLockGuard(l));
     }
@@ -137,8 +131,7 @@ std::string getMkDirDisk(const std::string & rootFolder, int disk) {
     return os.str();
 }
 
-void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
-                                             bool noDelete)
+void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer, bool noDelete)
 {
     vdstestlib::DirConfig config(getStandardConfig(true, "bucketmanagertest"));
     std::string rootFolder = getRootFolder(config);
@@ -149,8 +142,7 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
     assert(system(getMkDirDisk(rootFolder, 1).c_str()) == 0);
 
     auto repo = std::make_shared<const DocumentTypeRepo>(
-                *ConfigGetter<DocumenttypesConfig>::getConfig(
-                    "config-doctypes", FileSpec("../config-doctypes.cfg")));
+                *ConfigGetter<DocumenttypesConfig>::getConfig("config-doctypes", FileSpec("../config-doctypes.cfg")));
     _top = std::make_unique<DummyStorageLink>();
     _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), config.getConfigId());
     _node->setTypeRepo(repo);
@@ -164,9 +156,9 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
         _bottom = bottom.get();
         _top->push_back(std::move(bottom));
     } else {
-        auto bottom = std::make_unique<FileStorManager>(
-                config::ConfigUri(config.getConfigId()),
-                _node->getPersistenceProvider(), _node->getComponentRegister(), *_node, _node->get_host_info());
+        auto bottom = std::make_unique<FileStorManager>(config::ConfigUri(config.getConfigId()),
+                                                        _node->getPersistenceProvider(), _node->getComponentRegister(),
+                                                        *_node, _node->get_host_info());
         _top->push_back(std::move(bottom));
     }
     // Generate a doc to use for testing..
@@ -183,8 +175,7 @@ void BucketManagerTest::addBucketsToDB(uint32_t count)
         document::BucketId id(16, randomizer.nextUint32());
         id = id.stripUnused();
         if (_bucketInfo.empty()) {
-            id = _node->getBucketIdFactory().getBucketId(
-                    _document->getId()).stripUnused();
+            id = _node->getBucketIdFactory().getBucketId(_document->getId()).stripUnused();
         }
         TestBucketInfo info;
         info.crc = randomizer.nextUint32();
@@ -204,16 +195,13 @@ void BucketManagerTest::addBucketsToDB(uint32_t count)
     ++_emptyBuckets;
     for (const auto& bi : _bucketInfo) {
         bucketdb::StorageBucketInfo entry;
-        entry.setBucketInfo(api::BucketInfo(bi.second.crc,
-                                            bi.second.count,
-                                            bi.second.size));
+        entry.setBucketInfo(api::BucketInfo(bi.second.crc, bi.second.count, bi.second.size));
         _node->getStorageBucketDatabase().insert(bi.first, entry, "foo");
     }
 }
 
 bool
-BucketManagerTest::wasBlockedDueToLastModified(api::StorageMessage* msg,
-                                               uint64_t lastModified)
+BucketManagerTest::wasBlockedDueToLastModified(api::StorageMessage* msg, uint64_t lastModified)
 {
     setupTestEnvironment();
     document::BucketId id(16, 1);
@@ -238,8 +226,7 @@ BucketManagerTest::wasBlockedDueToLastModified(api::StorageMessage* msg,
 
         // Check that bucket database now has the operation's timestamp as last modified.
         {
-            StorBucketDatabase::WrappedEntry entry(
-                    _node->getStorageBucketDatabase().get(id, "foo"));
+            StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(id, "foo"));
             assert(entry->info.getLastModified() == lastModified);
         }
 
@@ -280,8 +267,7 @@ TEST_F(BucketManagerTest, distribution_bit_change_on_create_bucket){
     update_min_used_bits();
     EXPECT_EQ(16u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
 
-    std::shared_ptr<api::CreateBucketCommand> cmd(
-            new api::CreateBucketCommand(makeDocumentBucket(document::BucketId(4, 5678))));
+    auto cmd = std::make_shared<api::CreateBucketCommand>(makeDocumentBucket(document::BucketId(4, 5678)));
     _top->sendDown(cmd);
     EXPECT_EQ(4u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
 }
@@ -290,8 +276,7 @@ TEST_F(BucketManagerTest, min_used_bits_from_component_is_honored) {
     setupTestEnvironment();
     // Let these differ in order to test state update behavior.
     _node->getComponentRegister().getMinUsedBitsTracker().setMinUsedBits(10);
-    lib::NodeState ns(
-            *_node->getStateUpdater().getReportedNodeState());
+    lib::NodeState ns(*_node->getStateUpdater().getReportedNodeState());
     ns.setMinUsedBits(13);
     _node->getStateUpdater().setReportedNodeState(ns);
     addBucketsToDB(30);
@@ -301,8 +286,7 @@ TEST_F(BucketManagerTest, min_used_bits_from_component_is_honored) {
 
     // 12 >= 10, so no update of reported state (left at 13; this should of
     // course not happen in practice, but used for faking in the test)
-    std::shared_ptr<api::CreateBucketCommand> cmd(
-            new api::CreateBucketCommand(makeDocumentBucket(document::BucketId(12, 5678))));
+    auto cmd = std::make_shared<api::CreateBucketCommand>(makeDocumentBucket(document::BucketId(12, 5678)));
     _top->sendDown(cmd);
     EXPECT_EQ(13u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
 }
@@ -322,20 +306,15 @@ TEST_F(BucketManagerTest, DISABLED_request_bucket_info_with_state) {
 
     _node->setClusterState(states.back());
     for (uint32_t i=0; i<states.size(); ++i) {
-        api::SetSystemStateCommand::SP cmd(
-                new api::SetSystemStateCommand(states[i]));
-        _manager->onDown(cmd);
+        _manager->onDown(std::make_shared<api::SetSystemStateCommand>(states[i]));
     }
 
     // Send a request bucket info command that will be outdated and failed.
-    std::shared_ptr<api::RequestBucketInfoCommand> cmd1(
-            new api::RequestBucketInfoCommand(makeBucketSpace(), 0, states[1]));
+    auto cmd1 = std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, states[1]);
     // Send two request bucket info commands that will be processed together
     // when the bucket manager is idle, as states are equivalent
-    std::shared_ptr<api::RequestBucketInfoCommand> cmd2(
-            new api::RequestBucketInfoCommand(makeBucketSpace(), 0, states[2]));
-    std::shared_ptr<api::RequestBucketInfoCommand> cmd3(
-            new api::RequestBucketInfoCommand(makeBucketSpace(), 0, states[3]));
+    auto cmd2 = std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, states[2]);
+    auto cmd3 = std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, states[3]);
 
     // Tag server initialized before starting
     _top->open();
@@ -355,34 +334,28 @@ TEST_F(BucketManagerTest, DISABLED_request_bucket_info_with_state) {
         std::map<uint64_t, api::RequestBucketInfoReply::SP> replies;
         for (uint32_t i=0; i<3; ++i) {
             replies[_top->getReply(i)->getMsgId()]
-                    = std::dynamic_pointer_cast<api::RequestBucketInfoReply>(
-                            _top->getReply(i));
+                    = std::dynamic_pointer_cast<api::RequestBucketInfoReply>(_top->getReply(i));
         }
-        std::shared_ptr<api::RequestBucketInfoReply> reply1(
-                replies[cmd1->getMsgId()]);
-        std::shared_ptr<api::RequestBucketInfoReply> reply2(
-                replies[cmd2->getMsgId()]);
-        std::shared_ptr<api::RequestBucketInfoReply> reply3(
-                replies[cmd3->getMsgId()]);
+        auto reply1 = replies[cmd1->getMsgId()];
+        auto reply2 = replies[cmd2->getMsgId()];
+        auto reply3 = replies[cmd3->getMsgId()];
         _top->reset();
         ASSERT_TRUE(reply1.get());
         ASSERT_TRUE(reply2.get());
         ASSERT_TRUE(reply3.get());
         EXPECT_EQ(api::ReturnCode(api::ReturnCode::REJECTED,
-                "Ignoring bucket info request for cluster state version 1 as "
-                "versions from version 2 differs from this state."),
-                             reply1->getResult());
+                                  "Ignoring bucket info request for cluster state version 1 as "
+                                  "versions from version 2 differs from this state."),
+                  reply1->getResult());
         EXPECT_EQ(api::ReturnCode(api::ReturnCode::REJECTED,
-                "There is already a newer bucket info request for "
-                "this node from distributor 0"),
-                             reply2->getResult());
+                                  "There is already a newer bucket info request for this node from distributor 0"),
+                  reply2->getResult());
         EXPECT_EQ(api::ReturnCode(api::ReturnCode::OK),
-                             reply3->getResult());
+                  reply3->getResult());
         api::RequestBucketInfoReply::Entry entry;
 
         ASSERT_EQ(18u, reply3->getBucketInfo().size());
-        entry = api::RequestBucketInfoReply::Entry(
-                document::BucketId(16, 0xe8c8), api::BucketInfo(0x79d04f78, 11153, 1851385240u));
+        entry = api::RequestBucketInfoReply::Entry( document::BucketId(16, 0xe8c8), api::BucketInfo(0x79d04f78, 11153, 1851385240u));
         EXPECT_EQ(entry, reply3->getBucketInfo()[0]);
     }
 }
@@ -407,9 +380,8 @@ TEST_F(BucketManagerTest, request_bucket_info_with_list) {
         ASSERT_TRUE(reply.get());
         EXPECT_EQ(api::ReturnCode(api::ReturnCode::OK), reply->getResult());
         ASSERT_EQ(1u, reply->getBucketInfo().size());
-        api::RequestBucketInfoReply::Entry entry(
-                document::BucketId(16, 0xe8c8),
-                api::BucketInfo(0x79d04f78, 11153, 1851385240u));
+        api::RequestBucketInfoReply::Entry entry(document::BucketId(16, 0xe8c8),
+                                                 api::BucketInfo(0x79d04f78, 11153, 1851385240u));
         EXPECT_EQ(entry, reply->getBucketInfo()[0]);
     }
 }
@@ -421,8 +393,7 @@ TEST_F(BucketManagerTest, swallow_notify_bucket_change_reply) {
     _node->getDoneInitializeHandler().notifyDoneInitializing();
     _top->doneInit();
 
-    api::NotifyBucketChangeCommand cmd(makeDocumentBucket(document::BucketId(1, 16)),
-                                       api::BucketInfo());
+    api::NotifyBucketChangeCommand cmd(makeDocumentBucket(document::BucketId(1, 16)), api::BucketInfo());
     auto reply = std::make_shared<api::NotifyBucketChangeReply>(cmd);
 
     _top->sendDown(reply);
@@ -444,8 +415,7 @@ TEST_F(BucketManagerTest, metrics_generation) {
             }
         }
         entry.setBucketInfo(info);
-        _node->getStorageBucketDatabase().insert(document::BucketId(16, i),
-                                                 entry, "foo");
+        _node->getStorageBucketDatabase().insert(document::BucketId(16, i), entry, "foo");
      }
     _node->getDoneInitializeHandler().notifyDoneInitializing();
     _top->doneInit();
@@ -535,8 +505,7 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
 }
 
 void
-BucketManagerTest::insertSingleBucket(const document::BucketId& bucket,
-                                      const api::BucketInfo& info)
+BucketManagerTest::insertSingleBucket(const document::BucketId& bucket, const api::BucketInfo& info)
 {
     bucketdb::StorageBucketInfo entry;
     entry.setBucketInfo(info);
@@ -556,9 +525,7 @@ namespace {
 struct WithBuckets {
     std::map<document::BucketId, api::BucketInfo> _bucketsAndInfo;
 
-    WithBuckets& add(const document::BucketId& id,
-                     const api::BucketInfo& info)
-    {
+    WithBuckets& add(const document::BucketId& id, const api::BucketInfo& info) {
         _bucketsAndInfo[id] = info;
         return *this;
     }
@@ -613,22 +580,18 @@ public:
         return _self._node->getStorageBucketDatabase().get(bucket, "foo");
     }
 
-    auto createRemoveCommand(const document::BucketId& bucket,
-                             api::Timestamp timestamp = 123456) const
+    auto createRemoveCommand(const document::BucketId& bucket, api::Timestamp timestamp = 123456) const
     {
         // Note: this is a dummy message; its contained document ID will not
         // map to the provided bucket ID (at least it's extremely unlikely..)
-        return std::make_shared<api::RemoveCommand>(
-                makeDocumentBucket(bucket),
-                document::DocumentId("id:foo:testdoctype1::bar"),
-                timestamp);
+        return std::make_shared<api::RemoveCommand>(makeDocumentBucket(bucket),
+                                                    document::DocumentId("id:foo:testdoctype1::bar"), timestamp);
     }
 
     auto createPutCommand(const document::BucketId& bucket) const {
         auto doc = _self._node->getTestDocMan().createDocument(
                 "a foo walks into a bar", "id:foo:testdoctype1::bar1");
-        return std::make_shared<api::PutCommand>(
-                makeDocumentBucket(bucket), std::move(doc), api::Timestamp(123456));
+        return std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), std::move(doc), api::Timestamp(123456));
     }
 
     auto createUpdateCommand(const document::BucketId& bucket) const {
@@ -637,8 +600,7 @@ public:
                 *_self._node->getTestDocMan().getTypeRepo()
                     .getDocumentType("testdoctype1"),
                 document::DocumentId("id:foo:testdoctype1::bar2"));
-        return std::make_shared<api::UpdateCommand>(
-                makeDocumentBucket(bucket), update, api::Timestamp(123456));
+        return std::make_shared<api::UpdateCommand>(makeDocumentBucket(bucket), update, api::Timestamp(123456));
     }
 
     auto createFullFetchCommand() const {
@@ -651,10 +613,6 @@ public:
 
     auto createFullFetchCommandWithHash(vespalib::stringref hash) const {
         return std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, *_state, hash);
-    }
-
-    auto createFullFetchCommandWithHash(document::BucketSpace space, vespalib::stringref hash) const {
-        return std::make_shared<api::RequestBucketInfoCommand>(space, 0, *_state, hash);
     }
 
     auto acquireBucketLockAndSendInfoRequest(const document::BucketId& bucket) {
@@ -690,13 +648,11 @@ public:
     }
 
     auto awaitAndGetReplies(size_t nReplies) {
-        _self._top->waitForMessages(
-                nReplies, BucketManagerTest::MESSAGE_WAIT_TIME);
+        _self._top->waitForMessages(nReplies, BucketManagerTest::MESSAGE_WAIT_TIME);
         return _self._top->getReplies();
     }
 
-    void assertOrderedAfterBucketReply(size_t nBucketReplies,
-                                       const api::MessageType& msgType)
+    void assertOrderedAfterBucketReply(size_t nBucketReplies, const api::MessageType& msgType)
     {
         const size_t nTotal = nBucketReplies + 1;
         auto replies = awaitAndGetReplies(nTotal);
@@ -750,15 +706,6 @@ group[2].nodes[2].index 5
         return  GlobalBucketSpaceDistributionConverter::convert_to_global(*default_distr);
     }
 
-    void set_grouped_distribution_configs() {
-        auto default_distr = default_grouped_distribution();
-        _self._node->getComponentRegister().getBucketSpaceRepo()
-                .get(document::FixedBucketSpaces::default_space()).setDistribution(std::move(default_distr));
-        auto global_distr = derived_global_grouped_distribution();
-        _self._node->getComponentRegister().getBucketSpaceRepo()
-                .get(document::FixedBucketSpaces::global_space()).setDistribution(std::move(global_distr));
-    }
-
 private:
     BucketManagerTest& _self;
     std::shared_ptr<lib::ClusterState> _state;
@@ -781,8 +728,7 @@ TEST_F(BucketManagerTest, split_reply_ordered_after_bucket_reply) {
     // Let bucket manager breathe again.
     guard.unlock();
 
-    fixture.assertOrderedAfterBucketReply(
-            1, api::MessageType::SPLITBUCKET_REPLY);
+    fixture.assertOrderedAfterBucketReply(1, api::MessageType::SPLITBUCKET_REPLY);
 }
 
 TEST_F(BucketManagerTest, join_reply_ordered_after_bucket_reply) {
@@ -801,8 +747,7 @@ TEST_F(BucketManagerTest, join_reply_ordered_after_bucket_reply) {
     fixture.bounceWithReply(*joinCmd);
 
     guard.unlock();
-    fixture.assertOrderedAfterBucketReply(
-            1, api::MessageType::JOINBUCKETS_REPLY);
+    fixture.assertOrderedAfterBucketReply(1, api::MessageType::JOINBUCKETS_REPLY);
 }
 
 // Technically, deletes being ordered after bucket info replies won't help
@@ -823,8 +768,7 @@ TEST_F(BucketManagerTest, delete_reply_ordered_after_bucket_reply) {
 
     guard.unlock();
 
-    fixture.assertOrderedAfterBucketReply(
-            1, api::MessageType::DELETEBUCKET_REPLY);
+    fixture.assertOrderedAfterBucketReply(1, api::MessageType::DELETEBUCKET_REPLY);
 }
 
 TEST_F(BucketManagerTest, only_enqueue_when_processing_request) {
@@ -874,8 +818,7 @@ TEST_F(BucketManagerTest, order_replies_after_bucket_specific_request) {
     infoRoundtrip.get();
     // At this point, we know 2 messages are in the top queue since the
     // async future guarantees this for completion.
-    fixture.assertOrderedAfterBucketReply(
-            1, api::MessageType::SPLITBUCKET_REPLY);
+    fixture.assertOrderedAfterBucketReply(1, api::MessageType::SPLITBUCKET_REPLY);
 }
 
 // Test is similar to order_replies_after_bucket_specific_request, but has
@@ -911,8 +854,7 @@ TEST_F(BucketManagerTest, queued_replies_only_dispatched_when_all_processing_don
     singleBucketInfo.get();
     fullFetch.get();
 
-    fixture.assertOrderedAfterBucketReply(
-            2, api::MessageType::SPLITBUCKET_REPLY);
+    fixture.assertOrderedAfterBucketReply(2, api::MessageType::SPLITBUCKET_REPLY);
 }
 
 // Hide boring, repetetive code to allow for chaining of setters (and auto-
@@ -941,9 +883,7 @@ TestParams::TestParams(const TestParams &) = default;
 TestParams::~TestParams() = default;
 
 void
-BucketManagerTest::doTestMutationOrdering(
-        ConcurrentOperationFixture& fixture,
-        const TestParams& params)
+BucketManagerTest::doTestMutationOrdering(ConcurrentOperationFixture& fixture, const TestParams& params)
 {
     fixture.setUp(WithBuckets()
             .add(params.bucket(), api::BucketInfo(50, 100, 200)));
@@ -962,9 +902,7 @@ BucketManagerTest::doTestMutationOrdering(
     // to avoid test deadlocks, and priorities may alter the execution order
     // anyway. The important thing is that reply orders are not altered.
     fixture.bounceWithReply(*params.treeMutation());
-    fixture.bounceWithReply(*params.documentMutation(),
-                            api::ReturnCode::OK,
-                            params.remappedTo());
+    fixture.bounceWithReply(*params.documentMutation(), api::ReturnCode::OK, params.remappedTo());
     guard.unlock();
 
     fixture.assertReplyOrdering(params.expectedOrdering());
@@ -993,18 +931,16 @@ BucketManagerTest::doTestConflictingReplyIsEnqueued(
 
 TEST_F(BucketManagerTest, mutation_replies_for_split_bucket_are_enqueued) {
     document::BucketId bucket(17, 0);
-    doTestConflictingReplyIsEnqueued(
-            bucket,
-            std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucket)),
-            api::MessageType::SPLITBUCKET_REPLY);
+    doTestConflictingReplyIsEnqueued(bucket,
+                                     std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucket)),
+                                     api::MessageType::SPLITBUCKET_REPLY);
 }
 
 TEST_F(BucketManagerTest, mutation_replies_for_deleted_bucket_are_enqueued) {
     document::BucketId bucket(17, 0);
-    doTestConflictingReplyIsEnqueued(
-            bucket,
-            std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bucket)),
-            api::MessageType::DELETEBUCKET_REPLY);
+    doTestConflictingReplyIsEnqueued(bucket,
+                                     std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bucket)),
+                                     api::MessageType::DELETEBUCKET_REPLY);
 }
 
 TEST_F(BucketManagerTest, mutation_replies_for_joined_bucket_are_enqueued) {
@@ -1088,14 +1024,11 @@ BucketManagerTest::scheduleBucketInfoRequestWithConcurrentOps(
         const document::BucketId& bucketForSplit,
         api::Timestamp mutationTimestamp)
 {
-    auto mutation(
-            fixture.createRemoveCommand(bucketForRemove, mutationTimestamp));
+    auto mutation(fixture.createRemoveCommand(bucketForRemove, mutationTimestamp));
     _top->sendDown(mutation);
-    auto guard = fixture.acquireBucketLockAndSendInfoRequest(
-            bucketForRemove);
+    auto guard = fixture.acquireBucketLockAndSendInfoRequest(bucketForRemove);
 
-    auto conflictingOp(
-            std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucketForSplit)));
+    auto conflictingOp = std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(bucketForSplit));
     _top->sendDown(conflictingOp);
     fixture.bounceWithReply(*conflictingOp);
     fixture.bounceWithReply(*mutation);
@@ -1114,9 +1047,7 @@ TEST_F(BucketManagerTest, bucket_conflict_set_is_cleared_between_blocking_reques
     // Do a single round of starting and completing a request bucket info
     // command with queueing and adding of `firstConflictBucket` to the set
     // of conflicting buckets.
-    scheduleBucketInfoRequestWithConcurrentOps(
-            fixture, firstConflictBucket,
-            firstConflictBucket, api::Timestamp(1000));
+    scheduleBucketInfoRequestWithConcurrentOps( fixture, firstConflictBucket, firstConflictBucket, api::Timestamp(1000));
 
     // Barrier for completion of first round of replies. Subsequently remove
     // all replies to get a clean slate.
@@ -1126,9 +1057,7 @@ TEST_F(BucketManagerTest, bucket_conflict_set_is_cleared_between_blocking_reques
     // Do a second round with a different bucket as the conflict. The
     // mutation towards the first conflict bucket should now _not_ be queued
     // as it was for an entirely different request bucket round.
-    scheduleBucketInfoRequestWithConcurrentOps(
-            fixture, firstConflictBucket,
-            secondConflictBucket, api::Timestamp(1001));
+    scheduleBucketInfoRequestWithConcurrentOps(fixture, firstConflictBucket, secondConflictBucket, api::Timestamp(1001));
 
     // Remove is not ordered after the split here since it should not be
     // queued.
@@ -1198,8 +1127,7 @@ TEST_F(BucketManagerTest, conflict_set_only_cleared_after_all_bucket_requests_do
 }
 
 void
-BucketManagerTest::assertRequestWithBadHashIsRejected(
-        ConcurrentOperationFixture& fixture)
+BucketManagerTest::assertRequestWithBadHashIsRejected(ConcurrentOperationFixture& fixture)
 {
     // Test by default sets up 10 nodes in config. Pretend we only know of 3.
     auto infoCmd = fixture.createFullFetchCommandWithHash("(0;0;1;2)");

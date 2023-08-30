@@ -7,5 +7,3 @@
 .libs
 Makefile
 config-stor-bucketdb.*
-/config-stor-bucket-init.h
-/config-stor-bucket-init.cpp
