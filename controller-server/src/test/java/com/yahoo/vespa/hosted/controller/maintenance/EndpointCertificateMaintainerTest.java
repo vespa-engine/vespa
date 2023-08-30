@@ -145,7 +145,6 @@ public class EndpointCertificateMaintainerTest {
                 Stream.of(makeDeploymentAtAge(2), oldestDeployment, makeDeploymentAtAge(4)).min(maintainer.oldestFirst).get());
     }
 
-    @NotNull
     private EndpointCertificateMaintainer.EligibleJob makeDeploymentAtAge(int ageInDays) {
         var deployment = new Deployment(ZoneId.defaultId(), CloudAccount.empty, RevisionId.forProduction(1), Version.emptyVersion,
                 Instant.now().minus(ageInDays, ChronoUnit.DAYS), DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty());
