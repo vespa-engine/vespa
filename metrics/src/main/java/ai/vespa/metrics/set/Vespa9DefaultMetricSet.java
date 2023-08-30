@@ -59,7 +59,7 @@ public class Vespa9DefaultMetricSet {
                 .metric(ContainerMetrics.JDISC_GC_MS, EnumSet.of(max, average))
                 .metric(ContainerMetrics.MEM_HEAP_FREE.average())
                 .metric(ContainerMetrics.FEED_LATENCY, EnumSet.of(sum, count))
-                // .metric(ContainerMetrics.CPU.baseName()) // TODO: Add to container metrics
+                .metric(ContainerMetrics.CPU.baseName())
                 .metric(ContainerMetrics.JDISC_THREAD_POOL_SIZE.max())
                 .metric(ContainerMetrics.JDISC_THREAD_POOL_ACTIVE_THREADS, EnumSet.of(sum, count, min, max))
                 .metric(ContainerMetrics.JDISC_THREAD_POOL_WORK_QUEUE_CAPACITY.max())
@@ -67,7 +67,7 @@ public class Vespa9DefaultMetricSet {
                 .metric(ContainerMetrics.SERVER_ACTIVE_THREADS.average())
 
                 // Metrics needed for alerting
-                .metric(ContainerMetrics.JDISC_SINGLETON_IS_ACTIVE, EnumSet.of(max, last)) // TODO: Vespa 9: Remove last
+                .metric(ContainerMetrics.JDISC_SINGLETON_IS_ACTIVE.max())
                 .metric(ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT.rate())
                 .metric(ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS.rate())
                 .metric(ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CHIFERS.rate())
@@ -80,9 +80,9 @@ public class Vespa9DefaultMetricSet {
     private static MetricSet getSearchChainMetrics() {
         return new MetricSet.Builder("default-search-chain")
                 .metric(ContainerMetrics.QUERIES.rate())
-                .metric(ContainerMetrics.QUERY_LATENCY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile, average)) // TODO: Remove average with Vespa 9
-                .metric(ContainerMetrics.HITS_PER_QUERY, EnumSet.of(sum, count, max, average)) // TODO: Remove average with Vespa 9
-                .metric(ContainerMetrics.TOTAL_HITS_PER_QUERY, EnumSet.of(sum, count, max, average)) // TODO: Remove average with Vespa 9
+                .metric(ContainerMetrics.QUERY_LATENCY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile))
+                .metric(ContainerMetrics.HITS_PER_QUERY, EnumSet.of(sum, count, max))
+                .metric(ContainerMetrics.TOTAL_HITS_PER_QUERY, EnumSet.of(sum, count, max))
                 .metric(ContainerMetrics.DEGRADED_QUERIES.rate())
                 .metric(ContainerMetrics.FAILED_QUERIES.rate())
                 .build();
@@ -99,31 +99,28 @@ public class Vespa9DefaultMetricSet {
         return new MetricSet.Builder("default-search-node")
                 .metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average())
                 .metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average())
-                .metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_FEEDING_BLOCKED, EnumSet.of(max, last)) // TODO: Vespa 9: Remove last
+                .metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_FEEDING_BLOCKED.max())
                 .build();
     }
 
     private static MetricSet getContentMetrics() {
         return new MetricSet.Builder("default-content")
                 .metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_REQUESTED_DOCUMENTS.rate())
-                .metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_LATENCY, EnumSet.of(sum, count, max, average)) // TODO: Remove average with Vespa 9
-                .metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_LATENCY, EnumSet.of(sum, count, max, average)) // TODO: Remove average with Vespa 9
+                .metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_LATENCY, EnumSet.of(sum, count, max))
+                .metric(SearchNodeMetrics.CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_LATENCY, EnumSet.of(sum, count, max))
 
-                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_TOTAL, EnumSet.of(max,last)) // TODO: Vespa 9: Remove last
-                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_READY, EnumSet.of(max,last)) // TODO: Vespa 9: Remove last
-                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_ACTIVE, EnumSet.of(max,last)) // TODO: Vespa 9: Remove last
-                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DISK_USAGE.last())
-                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MEMORY_USAGE_ALLOCATED_BYTES.last())
+                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_TOTAL.max())
+                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_READY.max())
+                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_DOCUMENTS_ACTIVE.max())
 
                 .metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average())
                 .metric(SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_MEMORY.average())
 
                 .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_DOCS_MATCHED.rate())
                 .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_DOCS_RERANKED.rate())
-                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_SETUP_TIME, EnumSet.of(sum, count, max, average)) // TODO: Remove average with Vespa 9
-                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_LATENCY, EnumSet.of(sum, count, max, average)) // TODO: Remove average with Vespa 9
-                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_RERANK_TIME, EnumSet.of(sum, count, max, average)) // TODO: Remove average with Vespa 9
-                .metric(SearchNodeMetrics.CONTENT_PROTON_TRANSACTIONLOG_DISK_USAGE.last())
+                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_SETUP_TIME, EnumSet.of(sum, count, max))
+                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_QUERY_LATENCY, EnumSet.of(sum, count, max))
+                .metric(SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_RANK_PROFILE_RERANK_TIME, EnumSet.of(sum, count, max))
                 .build();
     }
 
@@ -147,20 +144,20 @@ public class Vespa9DefaultMetricSet {
     private static MetricSet getClusterControllerMetrics() {
         // Metrics needed for alerting
         return new MetricSet.Builder("default-cluster-controller")
-                .metric(ClusterControllerMetrics.DOWN_COUNT, EnumSet.of(max, last)) // TODO: Vespa 9: Remove last
-                .metric(ClusterControllerMetrics.MAINTENANCE_COUNT, EnumSet.of(max, last)) // TODO: Vespa 9: Remove last
-                .metric(ClusterControllerMetrics.UP_COUNT.last())
-                .metric(ClusterControllerMetrics.IS_MASTER, EnumSet.of(max, last)) // TODO: Vespa 9: Remove last
-                .metric(ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT, EnumSet.of(max, last)) // TODO: Vespa 9: Remove last
-                .metric(ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION, EnumSet.of(last, max)) // TODO: Vespa 9: Remove last
-                .metric(ClusterControllerMetrics.RESOURCE_USAGE_MAX_DISK_UTILIZATION, EnumSet.of(last, max)) // TODO: Vespa 9: Remove last
+                .metric(ClusterControllerMetrics.DOWN_COUNT.max())
+                .metric(ClusterControllerMetrics.MAINTENANCE_COUNT.max())
+                .metric(ClusterControllerMetrics.UP_COUNT, EnumSet.of(max, last)) // TODO: Remove last
+                .metric(ClusterControllerMetrics.IS_MASTER.max())
+                .metric(ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT.max())
+                .metric(ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION.max())
+                .metric(ClusterControllerMetrics.RESOURCE_USAGE_MAX_DISK_UTILIZATION.max())
                 .build();
     }
 
     private static MetricSet getSentinelMetrics() {
         // Metrics needed for alerting
         return new MetricSet.Builder("default-sentinel")
-                .metric(SentinelMetrics.SENTINEL_TOTAL_RESTARTS, EnumSet.of(max, sum, last)) // TODO: Vespa 9: Remove last, sum?
+                .metric(SentinelMetrics.SENTINEL_TOTAL_RESTARTS.max())
                 .build();
     }
 
