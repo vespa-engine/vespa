@@ -31,10 +31,10 @@ class ContainerUserPrincipalLookupServiceTest {
         assertEquals("11000", user.baseFsPrincipal().getName());
         assertEquals(user, userPrincipalLookupService.lookupPrincipalByName("vespa"));
 
-        ContainerGroupPrincipal group = userPrincipalLookupService.lookupPrincipalByGroupName("100");
-        assertEquals("users", group.getName());
-        assertEquals("11100", group.baseFsPrincipal().getName());
-        assertEquals(group, userPrincipalLookupService.lookupPrincipalByGroupName("users"));
+        ContainerGroupPrincipal group = userPrincipalLookupService.lookupPrincipalByGroupName("1000");
+        assertEquals("vespa", group.getName());
+        assertEquals("12000", group.baseFsPrincipal().getName());
+        assertEquals(group, userPrincipalLookupService.lookupPrincipalByGroupName("vespa"));
 
         assertThrows(UserPrincipalNotFoundException.class, () -> userPrincipalLookupService.lookupPrincipalByName("test"));
     }
