@@ -22,9 +22,9 @@ func TestDestroy(t *testing.T) {
 	// No removal without confirmation
 	buf.WriteString("\n")
 	require.NotNil(t, cli.Run("destroy"))
-	warning := "Warning: This operation will irrecoverably remove current deployment and all of its data"
+	warning := "Warning: This operation will irrecoverably remove the deployment of default.application.default in prod.default and all of its data"
 	confirmation := "Proceed with removal? [y/N] "
-	assert.Equal(t, warning+"\nError: refusing to remove current deployment without confirmation\n", stderr.String())
+	assert.Equal(t, warning+"\nError: refusing to remove deployment of default.application.default in prod.default without confirmation\n", stderr.String())
 	assert.Equal(t, confirmation, stdout.String())
 
 	// Removes deployment with confirmation
@@ -32,7 +32,7 @@ func TestDestroy(t *testing.T) {
 	stderr.Reset()
 	buf.WriteString("y\n")
 	require.Nil(t, cli.Run("destroy"))
-	success := "Success: Removed current deployment\n"
+	success := "Success: Removed deployment of default.application.default in prod.default\n"
 	assert.Equal(t, confirmation+success, stdout.String())
 
 	// Force flag always removes deployment

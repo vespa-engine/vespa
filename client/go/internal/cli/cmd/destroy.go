@@ -36,9 +36,8 @@ $ vespa destroy --force`,
 			if err != nil {
 				return err
 			}
-			description := "current deployment"
+			description := target.Deployment().String()
 			if target.IsCloud() {
-				description = target.Deployment().String()
 				env := target.Deployment().Zone.Environment
 				if env != "dev" && env != "perf" {
 					return errHint(fmt.Errorf("cannot remove production %s", description), "See https://cloud.vespa.ai/en/deleting-applications")
@@ -46,7 +45,7 @@ $ vespa destroy --force`,
 			}
 			ok := force
 			if !ok {
-				cli.printWarning(fmt.Sprintf("This operation will irrecoverably remove %s and all of its data", color.RedString(description)))
+				cli.printWarning(fmt.Sprintf("This operation will irrecoverably remove the %s and all of its data", color.RedString(description)))
 				ok, _ = cli.confirm("Proceed with removal?", false)
 			}
 			if ok {
