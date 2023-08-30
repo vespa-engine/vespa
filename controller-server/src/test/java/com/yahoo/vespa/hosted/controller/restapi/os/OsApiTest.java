@@ -21,7 +21,6 @@ import com.yahoo.vespa.hosted.controller.maintenance.OsUpgrader;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
-import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -202,7 +201,7 @@ public class OsApiTest extends ControllerContainerTest {
         return tester.serviceRegistry().configServerMock().nodeRepository();
     }
 
-    private void assertResponse(Request request, @Language("JSON") String body, int statusCode) {
+    private void assertResponse(Request request, String body, int statusCode) {
         addIdentityToRequest(request, operator);
         tester.assertResponse(request, body, statusCode);
     }
