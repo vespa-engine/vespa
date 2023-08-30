@@ -42,13 +42,9 @@ public class NodeMetricGatherer {
     }
 
     public List<MetricsPacket> gatherMetrics()  {
-        FileWrapper fileWrapper = new FileWrapper();
         List<MetricsPacket.Builder> metricPacketBuilders = new ArrayList<>();
 
-        if (SystemPollerProvider.runningOnLinux()) {
-            JsonNode packet = HostLifeGatherer.getHostLifePacket(fileWrapper);
-            addObjectToBuilders(metricPacketBuilders, packet);
-        }
+        addObjectToBuilders(metricPacketBuilders, HostLifeGatherer.getHostLifePacket());
 
         return metricPacketBuilders.stream()
                 .map(metricPacketBuilder ->
