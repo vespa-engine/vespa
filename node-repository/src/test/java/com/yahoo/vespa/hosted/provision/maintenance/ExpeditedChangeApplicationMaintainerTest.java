@@ -43,7 +43,7 @@ public class ExpeditedChangeApplicationMaintainerTest {
 
         // Create applications
         fixture.activate();
-        assertEquals("Initial applications are deployed", 3, fixture.deployer.redeployments);
+        assertEquals("Initial applications are deployed", 3, fixture.deployer.activations);
         ExpeditedChangeApplicationMaintainer maintainer = new ExpeditedChangeApplicationMaintainer(fixture.deployer,
                                                                                                    new TestMetric(),
                                                                                                    nodeRepository,
@@ -51,34 +51,34 @@ public class ExpeditedChangeApplicationMaintainerTest {
         
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
-        assertEquals("No changes -> no redeployments", 3, fixture.deployer.redeployments);
+        assertEquals("No changes -> no redeployments", 3, fixture.deployer.activations);
 
         nodeRepository.nodes().fail(nodeRepository.nodes().list().owner(fixture.app1).asList().get(3).hostname(), Agent.system, "Failing to unit test");
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
-        assertEquals("System change -> no redeployments", 3, fixture.deployer.redeployments);
+        assertEquals("System change -> no redeployments", 3, fixture.deployer.activations);
 
         clock.advance(Duration.ofSeconds(1));
         nodeRepository.nodes().fail(nodeRepository.nodes().list().owner(fixture.app2).asList().get(4).hostname(), Agent.operator, "Manual node failing");
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
-        assertEquals("Operator change -> redeployment", 4, fixture.deployer.redeployments);
+        assertEquals("Operator change -> redeployment", 4, fixture.deployer.activations);
 
         clock.advance(Duration.ofSeconds(1));
         nodeRepository.nodes().fail(nodeRepository.nodes().list().owner(fixture.app3).asList().get(1).hostname(), Agent.operator, "Manual node failing");
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
-        assertEquals("Operator change -> redeployment", 5, fixture.deployer.redeployments);
+        assertEquals("Operator change -> redeployment", 5, fixture.deployer.activations);
 
         clock.advance(Duration.ofSeconds(1));
         fixture.tester.makeReadyNodes(1, fixture.nodeResources, NodeType.proxy);
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
-        assertEquals("Ready proxy node -> redeployment", 6, fixture.deployer.redeployments);
+        assertEquals("Ready proxy node -> redeployment", 6, fixture.deployer.activations);
 
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
-        assertEquals("No further operator changes -> no (new) redeployments", 6, fixture.deployer.redeployments);
+        assertEquals("No further operator changes -> no (new) redeployments", 6, fixture.deployer.activations);
     }
 
     private static class Fixture {

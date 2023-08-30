@@ -104,7 +104,7 @@ public class RetiredExpirerTest {
         createRetiredExpirer(deployer).run();
         assertEquals(3, nodeRepository.nodes().list(Node.State.active).owner(applicationId).size());
         assertEquals(4, nodeRepository.nodes().list(Node.State.inactive).owner(applicationId).size());
-        assertEquals(1, deployer.redeployments);
+        assertEquals(1, deployer.activations);
 
         // inactivated nodes are not retired
         for (Node node : nodeRepository.nodes().list(Node.State.inactive).owner(applicationId))
@@ -147,14 +147,14 @@ public class RetiredExpirerTest {
         retiredExpirer.run();
         assertEquals(5, nodeRepository.nodes().list(Node.State.active).owner(applicationId).size());
         assertEquals(2, nodeRepository.nodes().list(Node.State.dirty).owner(applicationId).size());
-        assertEquals(1, deployer.redeployments);
+        assertEquals(1, deployer.activations);
         verify(orchestrator, times(4)).acquirePermissionToRemove(any());
 
         // Running it again has no effect
         retiredExpirer.run();
         assertEquals(5, nodeRepository.nodes().list(Node.State.active).owner(applicationId).size());
         assertEquals(2, nodeRepository.nodes().list(Node.State.dirty).owner(applicationId).size());
-        assertEquals(1, deployer.redeployments);
+        assertEquals(1, deployer.activations);
         verify(orchestrator, times(6)).acquirePermissionToRemove(any());
 
         // Running it again deactivates nodes that have exceeded max retirement period
@@ -163,7 +163,7 @@ public class RetiredExpirerTest {
         assertEquals(3, nodeRepository.nodes().list(Node.State.active).owner(applicationId).size());
         assertEquals(2, nodeRepository.nodes().list(Node.State.dirty).owner(applicationId).size());
         assertEquals(2, nodeRepository.nodes().list(Node.State.inactive).owner(applicationId).size());
-        assertEquals(2, deployer.redeployments);
+        assertEquals(2, deployer.activations);
         verify(orchestrator, times(6)).acquirePermissionToRemove(any());
 
         // Removed nodes are not retired

@@ -97,7 +97,6 @@ public class ApplicationRepositoryTest {
 
     private ApplicationRepository applicationRepository;
     private TenantRepository tenantRepository;
-    private MockProvisioner provisioner;
     private OrchestratorMock orchestrator;
     private TimeoutBudget timeoutBudget;
     private Curator curator;
@@ -123,7 +122,7 @@ public class ApplicationRepositoryTest {
                 .build();
         flagSource = new InMemoryFlagSource();
         fileDirectory = new FileDirectory(configserverConfig);
-        provisioner = new MockProvisioner();
+        MockProvisioner provisioner = new MockProvisioner();
         tenantRepository = new TestTenantRepository.Builder()
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
