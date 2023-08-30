@@ -85,7 +85,7 @@ javax.annotation:javax.annotation-api:1.2
 javax.inject:javax.inject:1
 javax.servlet:javax.servlet-api:3.1.0
 javax.validation:validation-api:1.1.0.Final
-javax.ws.rs:javax.ws.rs-api:2.0.1
+javax.ws.rs:javax.ws.rs-api:2.1.1
 javax.xml.bind:jaxb-api:2.3.0
 joda-time:joda-time:2.12.5
 junit:junit:4.13.2
