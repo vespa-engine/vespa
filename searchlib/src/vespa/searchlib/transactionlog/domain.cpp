@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <thread>
 #include <cassert>
+#include <filesystem>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -485,27 +486,20 @@ Domain::SerialNumList
 Domain::scanDir()
 {
     SerialNumList res;
-
-    FastOS_DirectoryScan dirScan(dir().c_str());
-
-    const char *wantPrefix = _name.c_str();
-    size_t wantPrefixLen = strlen(wantPrefix);
-
-    while (dirScan.ReadNext()) {
-        const char *ename = dirScan.GetName();
-        if (strcmp(ename, ".") == 0 ||
-            strcmp(ename, "..") == 0)
-            continue;
-        if (strncmp(ename, wantPrefix, wantPrefixLen) != 0)
-            continue;
-        if (ename[wantPrefixLen] != '-')
-            continue;
-        const char *p = ename + wantPrefixLen + 1;
-        uint64_t num = strtoull(p, nullptr, 10);
-        string checkName = fmt("%s-%016" PRIu64, _name.c_str(), num);
-        if (strcmp(checkName.c_str(), ename) != 0)
-            continue;
-        res.push_back(static_cast<SerialNum>(num));
+    std::filesystem::directory_iterator dir_scan{std::filesystem::path(dir())};
+    vespalib::string prefix = _name + "-";
+    for (auto& entry : dir_scan) {
+        if (entry.is_regular_file()) {
+            vespalib::string ename = entry.path().filename().string();
+            if (ename.substr(0, prefix.size()) == prefix) {
+                const char *p = &ename[prefix.size()];
+                uint64_t num = strtoull(p, nullptr, 10);
+                string check_name = fmt("%s-%016" PRIu64, _name.c_str(), num);
+                if (check_name == ename) {
+                    res.push_back(static_cast<SerialNum>(num));
+                }
+            }
+        }
     }
     std::sort(res.begin(), res.end());
     return res;
