@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -9,6 +10,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * This pulls application deployment information from the node repo on all config servers,
@@ -21,7 +23,7 @@ public class DeploymentInfoMaintainer extends ControllerMaintainer {
     private final NodeRepository nodeRepository;
 
     public DeploymentInfoMaintainer(Controller controller, Duration duration) {
-        super(controller, duration);
+        super(controller, duration, 0.95);
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
     }
 
@@ -29,9 +31,11 @@ public class DeploymentInfoMaintainer extends ControllerMaintainer {
     protected double maintain() {
         int attempts = 0;
         int failures = 0;
-        for (var application : controller().applications().asList()) {
-            for (var instance : application.instances().values()) {
+        outer:
+        for (var application : controller().applications().idList()) {
+            for (var instance : controller().applications().getApplication(application).map(Application::instances).orElse(Map.of()).values()) {
                 for (var deployment : instanceDeployments(instance)) {
+                    if (shuttingDown()) break outer;
                     attempts++;
                     if ( ! updateDeploymentInfo(deployment))
                         failures++;
@@ -43,7 +47,7 @@ public class DeploymentInfoMaintainer extends ControllerMaintainer {
 
     private Collection<DeploymentId> instanceDeployments(Instance instance) {
         return instance.deployments().keySet().stream()
-                       .filter(zoneId -> !zoneId.environment().isTest())
+                       .filter(zoneId -> ! zoneId.environment().isTest())
                        .map(zoneId -> new DeploymentId(instance.id(), zoneId))
                        .toList();
     }
