@@ -333,7 +333,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         List<EndpointTarget> targets = new ArrayList<>();
         out:
         for (var app : applications) {
-            Optional<Endpoint> declaredEndpoint = controller.routing().declaredEndpointsOf(app).dnsName(endpoint);
+            Optional<Endpoint> declaredEndpoint = controller.routing().readDeclaredEndpointsOf(app).dnsName(endpoint);
             if (declaredEndpoint.isPresent()) {
                 for (var target : declaredEndpoint.get().targets()) {
                     targets.add(new EndpointTarget(target.deployment(), declaredEndpoint.get().cluster()));
@@ -2061,7 +2061,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (!legacyEndpoints) {
             zoneEndpoints = zoneEndpoints.not().legacy().direct();
         }
-        EndpointList declaredEndpoints = controller.routing().declaredEndpointsOf(application).targets(deploymentId);
+        EndpointList declaredEndpoints = controller.routing().readDeclaredEndpointsOf(application).targets(deploymentId);
         if (!legacyEndpoints) {
             declaredEndpoints = declaredEndpoints.not().legacy().direct();
         }

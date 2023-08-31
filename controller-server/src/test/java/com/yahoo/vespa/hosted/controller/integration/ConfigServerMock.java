@@ -409,12 +409,12 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
         applications.put(id, new Application(id.applicationId(), lastPrepareVersion, appPackage));
         ClusterSpec.Id cluster = ClusterSpec.Id.from("default");
-        deployment.endpointCertificate(); // Supplier with side effects >_<
+        deployment.endpoints(); // Supplier with side effects >_<
 
         if (nodeRepository().list(id.zoneId(), NodeFilter.all().applications(id.applicationId())).isEmpty())
             provision(id.zoneId(), id.applicationId(), cluster);
 
-        this.containerEndpoints.put(id, deployment.containerEndpoints());
+        this.containerEndpoints.put(id, deployment.endpoints().get().endpoints());
         deployment.cloudAccount().ifPresent(account -> this.cloudAccounts.put(id, account));
 
         if (!deferLoadBalancerProvisioning.contains(id.zoneId().environment())) {

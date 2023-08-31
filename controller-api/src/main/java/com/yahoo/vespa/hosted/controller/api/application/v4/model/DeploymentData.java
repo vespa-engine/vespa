@@ -8,8 +8,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.dataplanetoken.DataplaneTokenVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.yolean.concurrent.Memoized;
@@ -18,7 +16,6 @@ import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -35,8 +32,7 @@ public class DeploymentData {
     private final ZoneId zone;
     private final Supplier<InputStream> applicationPackage;
     private final Version platform;
-    private final Set<ContainerEndpoint> containerEndpoints;
-    private final Supplier<Optional<EndpointCertificate>> endpointCertificate;
+    private final Supplier<DeploymentEndpoints> endpoints;
     private final Optional<DockerImage> dockerImageRepo;
     private final Optional<AthenzDomain> athenzDomain;
     private final Supplier<Quota> quota;
@@ -47,8 +43,7 @@ public class DeploymentData {
     private final boolean dryRun;
 
     public DeploymentData(ApplicationId instance, ZoneId zone, Supplier<InputStream> applicationPackage, Version platform,
-                          Set<ContainerEndpoint> containerEndpoints,
-                          Supplier<Optional<EndpointCertificate>> endpointCertificate,
+                          Supplier<DeploymentEndpoints> endpoints,
                           Optional<DockerImage> dockerImageRepo,
                           Optional<AthenzDomain> athenzDomain,
                           Supplier<Quota> quota,
@@ -61,8 +56,7 @@ public class DeploymentData {
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
         this.platform = requireNonNull(platform);
-        this.containerEndpoints = Set.copyOf(requireNonNull(containerEndpoints));
-        this.endpointCertificate = new Memoized<>(requireNonNull(endpointCertificate));
+        this.endpoints = new Memoized<>(requireNonNull(endpoints));
         this.dockerImageRepo = requireNonNull(dockerImageRepo);
         this.athenzDomain = athenzDomain;
         this.quota = new Memoized<>(requireNonNull(quota));
@@ -89,12 +83,8 @@ public class DeploymentData {
         return platform;
     }
 
-    public Set<ContainerEndpoint> containerEndpoints() {
-        return containerEndpoints;
-    }
-
-    public Optional<EndpointCertificate> endpointCertificate() {
-        return endpointCertificate.get();
+    public Supplier<DeploymentEndpoints> endpoints() {
+        return endpoints;
     }
 
     public Optional<DockerImage> dockerImageRepo() {

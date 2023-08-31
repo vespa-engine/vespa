@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.util.Collection;
@@ -94,8 +95,17 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
         return matching(endpoint -> endpoint.routingMethod().isShared());
     }
 
+    /** Returns the subset of endpoints supporting given authentication method */
+    public EndpointList authMethod(AuthMethod authMethod) {
+        return matching(endpoint -> endpoint.authMethod() == authMethod);
+    }
+
     public static EndpointList copyOf(Collection<Endpoint> endpoints) {
         return new EndpointList(endpoints, false);
+    }
+
+    public static EndpointList of(Endpoint ...endpoint) {
+        return copyOf(List.of(endpoint));
     }
 
     @Override

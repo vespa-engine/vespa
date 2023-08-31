@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.routing;
 import ai.vespa.http.DomainName;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -107,7 +109,7 @@ public class RoutingPolicies {
      * Refresh routing policies for instance in given zone. This is idempotent and changes will only be performed if
      * routing configuration affecting given deployment has changed.
      */
-    public void refresh(DeploymentId deployment, DeploymentSpec deploymentSpec, List<GeneratedEndpoint> generatedEndpoints) {
+    public void refresh(DeploymentId deployment, DeploymentSpec deploymentSpec, GeneratedEndpoints generatedEndpoints) {
         ApplicationId instance = deployment.applicationId();
         List<LoadBalancer> loadBalancers = controller.serviceRegistry().configServer()
                                                      .getLoadBalancers(instance, deployment.zoneId());
@@ -243,14 +245,25 @@ public class RoutingPolicies {
         for (var policy : policies) {
             if (policy.dnsZone().isEmpty() && policy.canonicalName().isPresent()) continue;
             if (controller.zoneRegistry().routingMethod(policy.id().zone()) != RoutingMethod.exclusive) continue;
-            Endpoint endpoint = policy.regionEndpointIn(controller.system(), RoutingMethod.exclusive, parent.generated());
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
-            long weight = 1;
-            if (isConfiguredOut(zonePolicy, policy)) {
-                weight = 0; // A record with 0 weight will not receive traffic. If all records within a group have 0
-                            // weight, traffic is routed to all records with equal probability.
+            // A record with 0 weight will not receive traffic. If all records within a group have 0
+            // weight, traffic is routed to all records with equal probability
+            long weight = isConfiguredOut(zonePolicy, policy) ? 0 : 1;
+            boolean generated = parent.generated().isPresent();
+            EndpointList weightedEndpoints = controller.routing()
+                                                       .endpointsOf(policy.id().deployment(),
+                                                                    policy.id().cluster(),
+                                                                    parent.generated().stream().toList())
+                                                       .scope(Endpoint.Scope.weighted);
+            if (generated) {
+                weightedEndpoints = weightedEndpoints.generated();
+            } else {
+                weightedEndpoints = weightedEndpoints.not().generated();
             }
-
+            if (weightedEndpoints.size() != 1) {
+                throw new IllegalStateException("Expected to compute exactly one region endpoint for " + policy.id() + " with parent " + parent);
+            }
+            Endpoint endpoint = weightedEndpoints.first().get();
             RegionEndpoint regionEndpoint = endpoints.computeIfAbsent(endpoint, (k) -> new RegionEndpoint(
                     new LatencyAliasTarget(DomainName.of(endpoint.dnsName()), policy.dnsZone().get(), policy.id().zone())));
 
@@ -282,7 +295,7 @@ public class RoutingPolicies {
         Map<Endpoint, Set<Target>> inactiveTargetsByEndpoint = new LinkedHashMap<>();
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
-            EndpointList endpoints = controller.routing().declaredEndpointsOf(application)
+            EndpointList endpoints = controller.routing().readDeclaredEndpointsOf(application)
                                                .named(routingId.endpointId(), Endpoint.Scope.application);
             for (Endpoint endpoint : endpoints) {
                 for (var policy : routeEntry.getValue()) {
@@ -355,22 +368,23 @@ public class RoutingPolicies {
      *
      * @return the updated policies
      */
-    private RoutingPolicyList storePoliciesOf(LoadBalancerAllocation allocation, RoutingPolicyList applicationPolicies, List<GeneratedEndpoint> generatedEndpoints, @SuppressWarnings("unused") Mutex lock) {
+    private RoutingPolicyList storePoliciesOf(LoadBalancerAllocation allocation, RoutingPolicyList applicationPolicies, GeneratedEndpoints generatedEndpoints, @SuppressWarnings("unused") Mutex lock) {
         Map<RoutingPolicyId, RoutingPolicy> policies = new LinkedHashMap<>(applicationPolicies.instance(allocation.deployment.applicationId()).asMap());
         for (LoadBalancer loadBalancer : allocation.loadBalancers) {
             if (loadBalancer.hostname().isEmpty() && loadBalancer.ipAddress().isEmpty()) continue;
             var policyId = new RoutingPolicyId(loadBalancer.application(), loadBalancer.cluster(), allocation.deployment.zoneId());
             var existingPolicy = policies.get(policyId);
             var dnsZone = loadBalancer.ipAddress().isPresent() ? Optional.of("ignored") : loadBalancer.dnsZone();
+            var clusterGeneratedEndpoints = generatedEndpoints.cluster(loadBalancer.cluster());
             var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.ipAddress(), dnsZone,
                                               allocation.instanceEndpointsOf(loadBalancer),
                                               allocation.applicationEndpointsOf(loadBalancer),
                                               RoutingStatus.DEFAULT,
                                               loadBalancer.isPublic(),
-                                              generatedEndpoints);
-            boolean addingGeneratedEndpoints = !generatedEndpoints.isEmpty() && (existingPolicy == null || existingPolicy.generatedEndpoints().isEmpty());
+                                              clusterGeneratedEndpoints);
+            boolean addingGeneratedEndpoints = !clusterGeneratedEndpoints.isEmpty() && (existingPolicy == null || existingPolicy.generatedEndpoints().isEmpty());
             if (addingGeneratedEndpoints) {
-                generatedEndpoints.forEach(ge -> requireNonClashing(ge, applicationPolicies));
+                clusterGeneratedEndpoints.forEach(ge -> requireNonClashing(ge, applicationPolicies));
             }
             if (existingPolicy != null) {
                 newPolicy = newPolicy.with(existingPolicy.routingStatus());          // Always preserve routing status
@@ -386,11 +400,17 @@ public class RoutingPolicies {
         return updated;
     }
 
+    private static Map<AuthMethod, GeneratedEndpoint> asMap(List<GeneratedEndpoint> generatedEndpoints) {
+        return generatedEndpoints.stream().collect(Collectors.toMap(GeneratedEndpoint::authMethod, Function.identity()));
+    }
+
     /** Update zone DNS record for given policy */
     private void updateZoneDnsOf(RoutingPolicy policy, LoadBalancer loadBalancer, DeploymentId deploymentId) {
-        RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(deploymentId.zoneId());
-        boolean addTokenEndpoint = controller.routing().tokenEndpointEnabled(deploymentId.applicationId());
-        for (var endpoint : policy.zoneEndpointsIn(controller.system(), routingMethod, addTokenEndpoint)) {
+        EndpointList zoneEndpoints = controller.routing().endpointsOf(deploymentId,
+                                                                      policy.id().cluster(),
+                                                                      policy.generatedEndpoints())
+                                               .scope(Endpoint.Scope.zone);
+        for (var endpoint : zoneEndpoints) {
             RecordName name = RecordName.from(endpoint.dnsName());
             Record record = policy.canonicalName().isPresent() ?
                     new Record(Record.Type.CNAME, name, RecordData.fqdn(policy.canonicalName().get().value())) :
@@ -464,14 +484,16 @@ public class RoutingPolicies {
      * @return the updated policies
      */
     private RoutingPolicyList removePoliciesUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList instancePolicies, @SuppressWarnings("unused") Mutex lock) {
-        RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(allocation.deployment.zoneId());
-        boolean addTokenEndpoint = controller.routing().tokenEndpointEnabled(allocation.deployment.applicationId());
         Map<RoutingPolicyId, RoutingPolicy> newPolicies = new LinkedHashMap<>(instancePolicies.asMap());
         Set<RoutingPolicyId> activeIds = allocation.asPolicyIds();
         RoutingPolicyList removable = instancePolicies.deployment(allocation.deployment)
                                                       .not().matching(policy -> activeIds.contains(policy.id()));
         for (var policy : removable) {
-            for (var endpoint : policy.zoneEndpointsIn(controller.system(), routingMethod, addTokenEndpoint)) {
+            EndpointList zoneEndpoints = controller.routing().endpointsOf(allocation.deployment,
+                                                                          policy.id().cluster(),
+                                                                          policy.generatedEndpoints())
+                                                   .scope(Endpoint.Scope.zone);
+            for (var endpoint : zoneEndpoints) {
                 Record.Type type = policy.canonicalName().isPresent() ? Record.Type.CNAME : Record.Type.A;
                 nameServiceForwarder(endpoint).removeRecords(type,
                                                              RecordName.from(endpoint.dnsName()),

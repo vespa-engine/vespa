@@ -14,6 +14,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.Flags;
@@ -41,6 +42,7 @@ import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
 import com.yahoo.vespa.hosted.controller.dns.RemoveRecords;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -334,6 +336,10 @@ public class RoutingPoliciesTest {
         var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
 
         // Deploy application
+        ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
+                                                                           .region(zone2.region())
+                                                                           .container("c0", AuthMethod.mtls, AuthMethod.token)
+                                                                           .build();
         tester.provisionLoadBalancers(1, context1.instanceId(), false, zone1, zone2);
         context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
 
@@ -358,12 +364,23 @@ public class RoutingPoliciesTest {
         // Ordinary endpoints are not created in DNS
         assertEquals(List.of(), tester.recordNames());
         assertEquals(2, tester.policiesOf(context.instanceId()).size());
-        // Generated endpoints are created in DNS
+    }
+
+    @Test
+    @Disabled // TODO(mpolden): Enable this test when we start creating generated endpoints for shared routing
+    void zone_routing_policies_with_shared_routing_and_generated_endpoint() {
+        var tester = new RoutingPoliciesTester(new DeploymentTester(), false);
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        tester.provisionLoadBalancers(1, context.instanceId(), true, zone1, zone2);
         tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
         addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
+        ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
+                                                                           .region(zone2.region())
+                                                                           .container("c0", AuthMethod.mtls, AuthMethod.token)
+                                                                           .build();
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
-        assertEquals(List.of("b22ab332.cafed00d.z.vespa.oath.cloud",
-                             "d71005bf.cafed00d.z.vespa.oath.cloud"),
+        assertEquals(List.of("c0a25b7c.cafed00d.z.vespa.oath.cloud",
+                             "dc5e383c.cafed00d.z.vespa.oath.cloud"),
                      tester.recordNames());
     }
 
@@ -757,7 +774,7 @@ public class RoutingPoliciesTest {
             tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone2), RoutingStatus.Value.out,
                                                       RoutingStatus.Agent.tenant);
         } catch (IllegalArgumentException e) {
-            assertEquals("Cannot deactivate routing for tenant1.app1 in prod.us-central-1 as it's the last remaining active deployment in endpoint https://r0.app1.tenant1.global.vespa.oath.cloud/ [scope=global, legacy=false, routingMethod=exclusive, authMethod=mtls]", e.getMessage());
+            assertEquals("Cannot deactivate routing for tenant1.app1 in prod.us-central-1 as it's the last remaining active deployment in endpoint https://r0.app1.tenant1.global.vespa.oath.cloud/ [scope=global, legacy=false, routingMethod=exclusive, authMethod=mtls, name=r0]", e.getMessage());
         }
         context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone2);
@@ -942,7 +959,7 @@ public class RoutingPoliciesTest {
             tester.routingPolicies().setRoutingStatus(mainZone2, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Cannot deactivate routing for tenant1.app1.main in prod.south as it's the last remaining active deployment in endpoint https://a0.app1.tenant1.a.vespa.oath.cloud/ [scope=application, legacy=false, routingMethod=exclusive, authMethod=mtls]",
+            assertEquals("Cannot deactivate routing for tenant1.app1.main in prod.south as it's the last remaining active deployment in endpoint https://a0.app1.tenant1.a.vespa.oath.cloud/ [scope=application, legacy=false, routingMethod=exclusive, authMethod=mtls, name=a0]",
                          e.getMessage());
         }
 
@@ -993,14 +1010,17 @@ public class RoutingPoliciesTest {
         var tester = new RoutingPoliciesTester(SystemName.Public);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         tester.controllerTester().flagSource().withBooleanFlag(Flags.RANDOMIZED_ENDPOINT_NAMES.id(), true);
+        tester.enableTokenEndpoint(true);
         addCertificateToPool("cafed00d", UnassignedCertificate.State.ready, tester);
 
         // Deploy application
-        int clustersPerZone = 1;
+        int clustersPerZone = 2;
         var zone1 = ZoneId.from("prod", "aws-us-east-1c");
         var zone2 = ZoneId.from("prod", "aws-eu-west-1a");
         ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
                                                                            .region(zone2.region())
+                                                                           .container("c0", AuthMethod.mtls)
+                                                                           .container("c1", AuthMethod.mtls, AuthMethod.token)
                                                                            .endpoint("foo", "c0")
                                                                            .applicationEndpoint("bar", "c0", Map.of(zone1.region().value(), Map.of(InstanceName.defaultName(), 1)))
                                                                            .build();
@@ -1011,6 +1031,8 @@ public class RoutingPoliciesTest {
         List<String> expectedRecords = List.of(
                 // save me, jebus!
                 "b22ab332.cafed00d.z.vespa-app.cloud",
+                "b7e79800.cafed00d.z.vespa-app.cloud",
+                "b8ee0967.cafed00d.z.vespa-app.cloud",
                 "bar.app1.tenant1.a.vespa-app.cloud",
                 "bar.cafed00d.a.vespa-app.cloud",
                 "c0.app1.tenant1.aws-eu-west-1.w.vespa-app.cloud",
@@ -1019,26 +1041,42 @@ public class RoutingPoliciesTest {
                 "c0.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
                 "c0.cafed00d.aws-eu-west-1.w.vespa-app.cloud",
                 "c0.cafed00d.aws-us-east-1.w.vespa-app.cloud",
-                "dd0971b4.cafed00d.z.vespa-app.cloud",
+                "c1.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
+                "c1.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                "c60d3149.cafed00d.z.vespa-app.cloud",
+                "cbff1506.cafed00d.z.vespa-app.cloud",
+                "d151139b.cafed00d.z.vespa-app.cloud",
                 "foo.app1.tenant1.g.vespa-app.cloud",
-                "foo.cafed00d.g.vespa-app.cloud"
+                "foo.cafed00d.g.vespa-app.cloud",
+                "token-c1.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
+                "token-c1.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud"
         );
         assertEquals(expectedRecords, tester.recordNames());
-        assertEquals(2, tester.policiesOf(context.instanceId()).size());
+        assertEquals(4, tester.policiesOf(context.instanceId()).size());
+        ClusterSpec.Id cluster0 = ClusterSpec.Id.from("c0");
+        ClusterSpec.Id cluster1 = ClusterSpec.Id.from("c1");
         for (var zone : List.of(zone1, zone2)) {
-            EndpointList endpoints = tester.controllerTester().controller().routing().readEndpointsOf(context.deploymentIdIn(zone)).scope(Endpoint.Scope.zone);
-            assertEquals(1, endpoints.generated().size());
+            EndpointList generated = tester.controllerTester().controller().routing()
+                                           .readEndpointsOf(context.deploymentIdIn(zone))
+                                           .scope(Endpoint.Scope.zone)
+                                           .generated();
+            assertEquals(1, generated.cluster(cluster0).size());
+            assertEquals(0, generated.cluster(cluster0).authMethod(AuthMethod.token).size());
+            assertEquals(2, generated.cluster(cluster1).size());
+            assertEquals(1, generated.cluster(cluster1).authMethod(AuthMethod.token).size());
         }
+
         // Ordinary endpoints point to expected targets
-        tester.assertTargets(context.instanceId(), EndpointId.of("foo"), ClusterSpec.Id.from("c0"), 0,
+        tester.assertTargets(context.instanceId(), EndpointId.of("foo"), cluster0, 0,
                              Map.of(zone1, 1L, zone2, 1L));
-        tester.assertTargets(context.application().id(), EndpointId.of("bar"), ClusterSpec.Id.from("c0"), 0,
+        tester.assertTargets(context.application().id(), EndpointId.of("bar"), cluster0, 0,
                              Map.of(context.deploymentIdIn(zone1), 1));
+
         // Generated endpoints point to expected targets
-        tester.assertTargets(context.instanceId(), EndpointId.of("foo"), ClusterSpec.Id.from("c0"), 0,
+        tester.assertTargets(context.instanceId(), EndpointId.of("foo"), cluster0, 0,
                              Map.of(zone1, 1L, zone2, 1L),
                              true);
-        tester.assertTargets(context.application().id(), EndpointId.of("bar"), ClusterSpec.Id.from("c0"), 0,
+        tester.assertTargets(context.application().id(), EndpointId.of("bar"), cluster0, 0,
                              Map.of(context.deploymentIdIn(zone1), 1),
                              true);
 

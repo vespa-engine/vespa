@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import ai.vespa.validation.Validation;
+import com.yahoo.config.provision.zone.AuthMethod;
 
 import java.util.random.RandomGenerator;
 import java.util.regex.Pattern;
@@ -11,7 +12,7 @@ import java.util.regex.Pattern;
  *
  * @author mpolden
  */
-public record GeneratedEndpoint(String clusterPart, String applicationPart, Endpoint.AuthMethod authMethod) {
+public record GeneratedEndpoint(String clusterPart, String applicationPart, AuthMethod authMethod) {
 
     private static final Pattern PART_PATTERN = Pattern.compile("^[a-f][a-f0-9]{7}$");
 

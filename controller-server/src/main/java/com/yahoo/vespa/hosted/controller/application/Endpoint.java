@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.Text;
@@ -165,7 +166,7 @@ public class Endpoint {
 
     @Override
     public String toString() {
-        return Text.format("endpoint %s [scope=%s, legacy=%s, routingMethod=%s, authMethod=%s]", url, scope, legacy, routingMethod, authMethod);
+        return Text.format("endpoint %s [scope=%s, legacy=%s, routingMethod=%s, authMethod=%s, name=%s]", url, scope, legacy, routingMethod, authMethod, name());
     }
 
     private static String endpointOrClusterAsString(EndpointId id, ClusterSpec.Id cluster) {
@@ -403,12 +404,6 @@ public class Endpoint {
             return this == application || this == global;
         }
 
-    }
-
-    /** An endpoint's authentication method */
-    public enum AuthMethod {
-        mtls,
-        token,
     }
 
     /** Represents an endpoint's HTTP port */

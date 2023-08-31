@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.DeploymentUpgrader;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -2912,6 +2913,7 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    @Disabled // For benchmarking, not a test
     void miniBenchmark() {
         String spec = """
                       <deployment version="1.0">
