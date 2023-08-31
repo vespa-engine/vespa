@@ -79,15 +79,15 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.NODE_FAILER_BAD_NODE.max());
         addMetric(metrics, ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LOAD, EnumSet.of(max,average));
 
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_CPU, EnumSet.of(max, sum));
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_MEM, EnumSet.of(max, sum));
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_DISK, EnumSet.of(max, sum));
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_CPU.max());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_MEM.max());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_ALLOCATED_CAPACITY_DISK.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_CPU.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_MEM.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_FREE_CAPACITY_DISK.max());
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_CPU, EnumSet.of(max,sum));
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_DISK, EnumSet.of(max,sum));
-        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_MEM, EnumSet.of(max,sum));
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_CPU.max());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_DISK.max());
+        addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_MEM.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_DOCKER_SKEW.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_PENDING_REDEPLOYMENTS.max());
         addMetric(metrics, ConfigServerMetrics.HOSTED_VESPA_ACTIVE_HOSTS.max());
