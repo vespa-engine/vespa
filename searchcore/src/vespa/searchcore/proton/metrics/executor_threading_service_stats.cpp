@@ -6,16 +6,10 @@ namespace proton {
 
 ExecutorThreadingServiceStats::ExecutorThreadingServiceStats(Stats masterExecutorStats,
                                                              Stats indexExecutorStats,
-                                                             Stats summaryExecutorStats,
-                                                             Stats indexFieldInverterExecutorStats,
-                                                             Stats indexFieldWriterExecutorStats,
-                                                             Stats attributeFieldWriterExecutorStats)
+                                                             Stats summaryExecutorStats)
     : _masterExecutorStats(masterExecutorStats),
       _indexExecutorStats(indexExecutorStats),
-      _summaryExecutorStats(summaryExecutorStats),
-      _indexFieldInverterExecutorStats(indexFieldInverterExecutorStats),
-      _indexFieldWriterExecutorStats(indexFieldWriterExecutorStats),
-      _attributeFieldWriterExecutorStats(attributeFieldWriterExecutorStats)
+      _summaryExecutorStats(summaryExecutorStats)
 {
 }
 

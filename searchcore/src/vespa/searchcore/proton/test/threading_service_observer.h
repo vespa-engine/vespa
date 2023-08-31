@@ -16,9 +16,7 @@ private:
     ThreadServiceObserver          _index;
     ThreadExecutorObserver         _summary;
     vespalib::Executor           & _shared;
-    vespalib::SequencedTaskExecutorObserver _indexFieldInverter;
-    vespalib::SequencedTaskExecutorObserver _indexFieldWriter;
-    vespalib::SequencedTaskExecutorObserver _attributeFieldWriter;
+    vespalib::SequencedTaskExecutorObserver _field_writer;
 
 public:
     ThreadingServiceObserver(searchcorespi::index::IThreadingService &service);
@@ -51,17 +49,9 @@ public:
     }
     FNET_Transport & transport() override { return _service.transport(); }
     const vespalib::Clock & clock() const override { return _service.clock(); }
-    vespalib::ISequencedTaskExecutor &indexFieldInverter() override {
-        return _indexFieldInverter;
+    vespalib::ISequencedTaskExecutor &field_writer() override {
+        return _field_writer;
     }
-    vespalib::ISequencedTaskExecutor &indexFieldWriter() override {
-        return _indexFieldWriter;
-    }
-
-    vespalib::ISequencedTaskExecutor &attributeFieldWriter() override {
-        return _attributeFieldWriter;
-    }
-
 };
 
 }

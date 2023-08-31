@@ -23,8 +23,8 @@ MemoryIndexWrapper::MemoryIndexWrapper(const search::index::Schema& schema,
                                        const TuneFileIndexing& tuneFileIndexing,
                                        searchcorespi::index::IThreadingService& threadingService,
                                        search::SerialNum serialNum)
-    : _index(schema, inspector, threadingService.indexFieldInverter(),
-             threadingService.indexFieldWriter()),
+    : _index(schema, inspector, threadingService.field_writer(),
+             threadingService.field_writer()),
       _serialNum(serialNum),
       _fileHeaderContext(fileHeaderContext),
       _tuneFileIndexing(tuneFileIndexing)
