@@ -22,13 +22,11 @@ namespace searchcorespi::index {
 namespace {
 vector<string> readIndexes(const string &base_dir) {
     vector<string> indexes;
-    FastOS_DirectoryScan dir_scan(base_dir.c_str());
-    while (dir_scan.ReadNext()) {
-        string name = dir_scan.GetName();
-        if (!dir_scan.IsDirectory() || name.find("index.") != 0) {
-            continue;
+    std::filesystem::directory_iterator dir_scan{std::filesystem::path(base_dir)};
+    for (auto& entry : dir_scan) {
+        if (entry.is_directory() && entry.path().filename().string().find("index.") == 0) {
+            indexes.emplace_back(entry.path().filename().string());
         }
-        indexes.push_back(name);
     }
     return indexes;
 }
