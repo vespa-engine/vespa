@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -98,6 +99,7 @@ class RunSerializer {
     private static final String convergenceSummaryField = "convergenceSummaryV2";
     private static final String testerCertificateField = "testerCertificate";
     private static final String isDryRunField = "isDryRun";
+    private static final String cloudAccountField = "account";
     private static final String reasonField = "reason";
 
     Run runFromSlime(Slime slime) {
@@ -142,10 +144,9 @@ class RunSerializer {
                        Instant.EPOCH.plus(runObject.field(lastVespaLogTimestampField).asLong(), ChronoUnit.MICROS),
                        SlimeUtils.optionalInstant(runObject.field(noNodesDownSinceField)),
                        convergenceSummaryFrom(runObject.field(convergenceSummaryField)),
-                       Optional.of(runObject.field(testerCertificateField))
-                               .filter(Inspector::valid)
-                               .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())),
+                       SlimeUtils.optionalString(runObject.field(testerCertificateField)).map(X509CertificateUtils::fromPem),
                        runObject.field(isDryRunField).valid() && runObject.field(isDryRunField).asBool(),
+                       SlimeUtils.optionalString(runObject.field(cloudAccountField)).map(CloudAccount::from),
                        SlimeUtils.optionalString(runObject.field(reasonField)));
     }
 
@@ -239,6 +240,7 @@ class RunSerializer {
                     versionsObject.setObject(sourceField));
         });
         runObject.setBool(isDryRunField, run.isDryRun());
+        run.cloudAccount().ifPresent(account -> runObject.setString(cloudAccountField, account.value()));
         run.reason().ifPresent(reason -> runObject.setString(reasonField, reason));
     }
 

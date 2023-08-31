@@ -12,6 +12,7 @@ import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -216,7 +217,7 @@ public class ClusterInfoTest {
                             <deployment version='1.0' empty-host-ttl='1d'>
                               <instance id='default'>
                                 <prod>
-                                  <region cloud-account='gcp:foobar'>us-east-1</region>
+                                  <region>us-east-1</region>
                                   <region empty-host-ttl='0m'>us-north-1</region>
                                   <region>us-west-1</region>
                                 </prod>
@@ -228,10 +229,7 @@ public class ClusterInfoTest {
         CloudAccount account = CloudAccount.from("gcp:foobar");
         assertEquals(Duration.ofHours(24), requestedCapacityIn(account, gcp, "default", "us-east-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).clusterInfo().hostTTL());
         assertEquals(Duration.ZERO, requestedCapacityIn(account, gcp, "default", "us-north-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).clusterInfo().hostTTL());
-        assertEquals("In container cluster 'testcontainer': deployment spec specifies host TTL for prod.us-west-1 but no cloud account is specified for this zone",
-                     Exceptions.toMessageString(assertThrows(IllegalArgumentException.class,
-                                                             () -> requestedCapacityIn(account, gcp, "default", "us-west-1", servicesXml, deploymentXml))));
-
+        assertEquals(Duration.ZERO, requestedCapacityIn(CloudAccount.empty, gcp, "default", "us-west-1", servicesXml, deploymentXml).get(new Id("testcontainer")).clusterInfo().hostTTL());
     }
 
     private Map<ClusterSpec.Id, Capacity> requestedCapacityIn(String instance, String region, String servicesXml, String deploymentXml) throws Exception {

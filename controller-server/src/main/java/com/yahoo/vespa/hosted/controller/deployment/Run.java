@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 
 import java.security.cert.X509Certificate;
@@ -15,7 +16,6 @@ import java.util.stream.Collectors;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.cancelled;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -43,13 +43,14 @@ public class Run {
     private final Optional<ConvergenceSummary> convergenceSummary;
     private final Optional<X509Certificate> testerCertificate;
     private final boolean dryRun;
+    private final Optional<CloudAccount> cloudAccount;
     private final Optional<String> reason;
 
     // For deserialisation only -- do not use!
     public Run(RunId id, Map<Step, StepInfo> steps, Versions versions, boolean isRedeployment, Instant start, Optional<Instant> end,
                Optional<Instant> sleepUntil, RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp,
                Optional<Instant> noNodesDownSince, Optional<ConvergenceSummary> convergenceSummary,
-               Optional<X509Certificate> testerCertificate, boolean dryRun, Optional<String> reason) {
+               Optional<X509Certificate> testerCertificate, boolean dryRun, Optional<CloudAccount> cloudAccount, Optional<String> reason) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
@@ -64,6 +65,7 @@ public class Run {
         this.convergenceSummary = convergenceSummary;
         this.testerCertificate = testerCertificate;
         this.dryRun = dryRun;
+        this.cloudAccount = cloudAccount;
         this.reason = reason;
     }
 
@@ -72,7 +74,7 @@ public class Run {
         profile.steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
         return new Run(id, steps, requireNonNull(versions), isRedeployment, requireNonNull(now), Optional.empty(),
                        Optional.empty(), running, -1, Instant.EPOCH, Optional.empty(), Optional.empty(),
-                       Optional.empty(), profile == JobProfile.developmentDryRun, triggeredBy);
+                       Optional.empty(), profile == JobProfile.developmentDryRun, Optional.empty(), triggeredBy);
     }
 
     /** Returns a new Run with the status of the given completed step set accordingly. */
@@ -87,7 +89,7 @@ public class Run {
         steps.put(step.get(), stepInfo.with(Step.Status.of(status)));
         RunStatus newStatus = hasFailed() || status == running ? this.status : status;
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, newStatus, lastTestRecord,
-                       lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+                       lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate, dryRun, cloudAccount, reason);
     }
 
     /** Returns a new Run with a new start time*/
@@ -102,13 +104,13 @@ public class Run {
         steps.put(step.get(), stepInfo.with(startTime));
 
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, cloudAccount, reason);
     }
 
     public Run finished(Instant now) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, Optional.of(now), sleepUntil, status == running ? success : status,
-                       lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, Optional.empty(), dryRun, reason);
+                       lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, Optional.empty(), dryRun, cloudAccount, reason);
     }
 
     public Run aborted(boolean cancelledByHumans) {
@@ -116,7 +118,7 @@ public class Run {
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil,
                        cancelledByHumans ? cancelled : aborted,
                        lastTestRecord, lastVespaLogTimestamp, noNodesDownSince,
-                       convergenceSummary, testerCertificate, dryRun, reason);
+                       convergenceSummary, testerCertificate, dryRun, cloudAccount, reason);
     }
 
     public Run reset() {
@@ -124,43 +126,49 @@ public class Run {
         Map<Step, StepInfo> reset = new EnumMap<>(steps);
         reset.replaceAll((step, __) -> StepInfo.initial(step));
         return new Run(id, reset, versions, isRedeployment, start, end, sleepUntil, running, -1, lastVespaLogTimestamp,
-                       Optional.empty(), Optional.empty(), testerCertificate, dryRun, reason);
+                       Optional.empty(), Optional.empty(), testerCertificate, dryRun, cloudAccount, reason);
     }
 
     public Run with(long lastTestRecord) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, cloudAccount, reason);
     }
 
     public Run with(Instant lastVespaLogTimestamp) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, cloudAccount, reason);
     }
 
     public Run noNodesDownSince(Instant noNodesDownSince) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
-                       Optional.ofNullable(noNodesDownSince), convergenceSummary, testerCertificate, dryRun, reason);
+                       Optional.ofNullable(noNodesDownSince), convergenceSummary, testerCertificate, dryRun, cloudAccount, reason);
     }
 
     public Run withSummary(ConvergenceSummary convergenceSummary) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, Optional.ofNullable(convergenceSummary), testerCertificate, dryRun, reason);
+                       noNodesDownSince, Optional.ofNullable(convergenceSummary), testerCertificate, dryRun, cloudAccount, reason);
     }
 
     public Run with(X509Certificate testerCertificate) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, convergenceSummary, Optional.of(testerCertificate), dryRun, reason);
+                       noNodesDownSince, convergenceSummary, Optional.of(testerCertificate), dryRun, cloudAccount, reason);
     }
 
     public Run sleepingUntil(Instant instant) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, Optional.of(instant), status, lastTestRecord, lastVespaLogTimestamp,
-                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, cloudAccount, reason);
+    }
+
+    public Run with(CloudAccount account) {
+        requireActive();
+        return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, Optional.of(account), reason);
     }
 
     /** Returns the id of this run. */
@@ -265,6 +273,9 @@ public class Run {
 
     /** Whether this is a dry run deployment. */
     public boolean isDryRun() { return dryRun; }
+
+    /** Cloud account override to use for this run, if set. This should only be used by staging tests. */
+    public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
 
     /** The specific reason for triggering this run, if any. This should be empty for jobs triggered bvy deployment orchestration. */
     public Optional<String> reason() {
