@@ -13,17 +13,18 @@ import java.util.OptionalLong;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author jonmv
  */
 public class ApplicationCuratorDatabaseTest {
 
+    private final MockCurator curator = new MockCurator();
+
     @Test
     public void testReindexingStatusSerialization() {
         ApplicationId id = ApplicationId.defaultId();
-        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), new MockCurator());
+        ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator);
 
         assertEquals(Optional.empty(), db.readReindexingStatus(id));
 
@@ -42,13 +43,13 @@ public class ApplicationCuratorDatabaseTest {
     @Test
     public void testReadingAndWritingApplicationData() {
         ApplicationId id = ApplicationId.defaultId();
-        MockCurator curator = new MockCurator();
         ApplicationCuratorDatabase db = new ApplicationCuratorDatabase(id.tenant(), curator);
 
         assertEquals(Optional.empty(), db.applicationData(id));
 
         db.createApplication(id, false);
         assertEquals(Optional.empty(), db.applicationData(id)); // still empty, as no data has been written to node
+        deleteApplication(db, id);
 
         db.createApplication(id, true);
         // Can be read as json, but no active session or last deployed session
@@ -59,13 +60,9 @@ public class ApplicationCuratorDatabaseTest {
         assertFalse(applicationData.get().lastDeployedSession().isPresent());
 
         // Prepare session 2, no active session
-        try (var t = db.createWritePrepareTransaction(new CuratorTransaction(curator), id, 2, OptionalLong.empty(), false)) {
-            t.commit();
-        }
+        prepareSession(db, id, 2, OptionalLong.empty(), false);
         // Activate session 2, last deployed session not present (not writing json)
-        try (var t = db.createWriteActiveTransaction(new CuratorTransaction(curator), id, 2, false)) {
-            t.commit();
-        }
+        activateSession(db, id, 2, false);
         // Can be read as session id only
         applicationData = db.applicationData(id);
         assertTrue(applicationData.isPresent());
@@ -82,21 +79,17 @@ public class ApplicationCuratorDatabaseTest {
         assertFalse(applicationData.get().lastDeployedSession().isPresent());
 
         // Prepare session 3, last deployed session is still 2
-        try (var t = db.createWritePrepareTransaction(new CuratorTransaction(curator), id, 3, OptionalLong.of(2), true)) {
-            t.commit();
-        }
+        prepareSession(db, id, 3, OptionalLong.of(2), true);
         // Can be read as json, active session is still 2 and last deployed session is 3
         applicationData = db.applicationData(id);
         assertTrue(applicationData.isPresent());
         assertEquals(id, applicationData.get().applicationId());
-        assertTrue(applicationData.get().activeSession().isPresent());
+        assertTrue(applicationData.get().activeSession().isPresent(), applicationData.get().toString());
         assertEquals(2L, applicationData.get().activeSession().get().longValue());
         assertTrue(applicationData.get().lastDeployedSession().isPresent());
         assertEquals(3, applicationData.get().lastDeployedSession().get().longValue());
 
-        try (var t = db.createWriteActiveTransaction(new CuratorTransaction(curator), id, 3, true)) {
-            t.commit();
-        }
+        activateSession(db, id, 3, true);
         // Can be read as json, active session and last deployed session present
         applicationData = db.applicationData(id);
         assertTrue(applicationData.isPresent());
@@ -105,6 +98,40 @@ public class ApplicationCuratorDatabaseTest {
         assertEquals(3, applicationData.get().activeSession().get().longValue());
         assertTrue(applicationData.get().lastDeployedSession().isPresent());
         assertEquals(3, applicationData.get().lastDeployedSession().get().longValue());
+
+        // createApplication should not overwrite the node if it already exists
+        db.createApplication(id, true);
+        // Can be read as json, active session and last deployed session present
+        applicationData = db.applicationData(id);
+        assertTrue(applicationData.isPresent());
+        assertEquals(id, applicationData.get().applicationId());
+        assertTrue(applicationData.get().activeSession().isPresent());
+        assertEquals(3, applicationData.get().activeSession().get().longValue());
+        assertTrue(applicationData.get().lastDeployedSession().isPresent());
+        assertEquals(3, applicationData.get().lastDeployedSession().get().longValue());
+    }
+
+
+    private void deleteApplication(ApplicationCuratorDatabase db, ApplicationId applicationId) {
+        try (var t = db.createDeleteTransaction(applicationId)) {
+            t.commit();
+        }
+    }
+
+    private void prepareSession(ApplicationCuratorDatabase db, ApplicationId applicationId, long sessionId, OptionalLong activesSessionId, boolean writeAsJson) {
+        try (var t = db.createWritePrepareTransaction(new CuratorTransaction(curator),
+                                                      applicationId,
+                                                      sessionId,
+                                                      activesSessionId,
+                                                      writeAsJson)) {
+            t.commit();
+        }
+    }
+
+    private void activateSession(ApplicationCuratorDatabase db, ApplicationId applicationId, long sessionId, boolean writeAsJson) {
+        try (var t = db.createWriteActiveTransaction(new CuratorTransaction(curator), applicationId, sessionId, writeAsJson)) {
+            t.commit();
+        }
     }
 
 }
