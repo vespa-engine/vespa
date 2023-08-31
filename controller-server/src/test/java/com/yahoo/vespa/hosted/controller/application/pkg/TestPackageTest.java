@@ -32,7 +32,9 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.Teste
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging_setup;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.system;
+import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage.deploymentFile;
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageTest.unzip;
+import static com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.deploymentXml;
 import static com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.validateTests;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -125,19 +127,51 @@ public class TestPackageTest {
     }
 
     @Test
-    void testTestPackageAssembly() throws IOException {
+    void testTestPackageAssemblyWithFallbackSpec() throws IOException {
+        String deploymentSpec = """
+                                <deployment>
+                                  <test />
+                                </deployment>
+                                """;
         byte[] bundleZip = ApplicationPackage.filesZip(Map.of("components/foo-tests.jar", testsJar("SystemTest", "ProductionTest"),
                                                               "artifacts/key", new byte[0]));
+
         TestPackage bundleTests = new TestPackage(() -> new ByteArrayInputStream(bundleZip),
                                                   false,
                                                   CloudName.DEFAULT,
                                                   new RunId(ApplicationId.defaultId(), JobType.dev("abc"), 123),
                                                   new Testerapp.Builder().tenantCdBundle("foo").runtimeProviderClass("bar").build(),
-                                                  DeploymentSpec.fromXml("""
-                                                                         <deployment>
-                                                                           <test />
-                                                                         </deployment>
-                                                                         """),
+                                                  DeploymentSpec.fromXml(deploymentSpec),
+                                                  null,
+                                                  null);
+
+        Map<String, String> bundlePackage = unzip(bundleTests.asApplicationPackage().zipStream().readAllBytes());
+        bundlePackage.keySet().removeIf(name -> name.startsWith("tests/.ignore") || name.startsWith("artifacts/.ignore"));
+        assertEquals(Set.of("deployment.xml",
+                            "services.xml",
+                            "components/foo-tests.jar",
+                            "artifacts/key"),
+                     bundlePackage.keySet());
+        assertEquals(Set.of("deployment.xml", "services.xml"),
+                     unzip(bundleTests.asApplicationPackage().truncatedPackage().zippedContent()).keySet());
+    }
+    @Test
+    void testTestPackageAssembly() throws IOException {
+        String deploymentSpec = """
+                                <deployment>
+                                  <test />
+                                </deployment>
+                                """;
+        byte[] bundleZip = ApplicationPackage.filesZip(Map.of("components/foo-tests.jar", testsJar("SystemTest", "ProductionTest"),
+                                                              "artifacts/key", new byte[0],
+                                                              deploymentFile, deploymentSpec.getBytes(UTF_8)));
+
+        TestPackage bundleTests = new TestPackage(() -> new ByteArrayInputStream(bundleZip),
+                                                  false,
+                                                  CloudName.DEFAULT,
+                                                  new RunId(ApplicationId.defaultId(), JobType.dev("abc"), 123),
+                                                  new Testerapp.Builder().tenantCdBundle("foo").runtimeProviderClass("bar").build(),
+                                                  DeploymentSpec.empty, // Will fail, unless contained spec is used.
                                                   null,
                                                   null);
 
@@ -168,6 +202,7 @@ public class TestPackageTest {
                                                          </prod>
                                                      </deployment>
                                                      """);
+
         verifyAttributes("", 0, DEFAULT, ZoneId.from("test", "us-east-1"), spec);
         verifyAttributes("", 0, DEFAULT, ZoneId.from("staging", "us-east-2"), spec);
         verifyAttributes("", 0, DEFAULT, ZoneId.from("prod", "us-east-3"), spec);

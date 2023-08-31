@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -25,9 +26,10 @@ public class ZipBuilder implements AutoCloseable {
         zipOutputStream = new ZipOutputStream(byteArrayOutputStream);
     }
 
-    public void add(byte[] zippedContent) {
+    public void add(byte[] zippedContent, Predicate<String> filter) {
         try (ZipInputStream zin = new ZipInputStream(new ByteArrayInputStream(zippedContent))) {
             for (ZipEntry entry = zin.getNextEntry(); entry != null; entry = zin.getNextEntry()) {
+                if ( ! filter.test(entry.getName())) continue;
                 zipOutputStream.putNextEntry(new ZipEntry(entry.getName()));
                 zin.transferTo(zipOutputStream);
                 zipOutputStream.closeEntry();

@@ -63,10 +63,10 @@ import static java.util.stream.Collectors.toMap;
  */
 public class ApplicationPackage {
 
+    public static  final String deploymentFile = "deployment.xml";
     static final String trustedCertificatesDir = "security/";
     static final String trustedCertificatesFile = trustedCertificatesDir + "clients.pem";
     static final String buildMetaFile = "build-meta.json";
-    static final String deploymentFile = "deployment.xml";
     static final String validationOverridesFile = "validation-overrides.xml";
     static final String servicesFile = "services.xml";
     static final Set<String> prePopulated = Set.of(deploymentFile, validationOverridesFile, servicesFile, buildMetaFile, trustedCertificatesFile);

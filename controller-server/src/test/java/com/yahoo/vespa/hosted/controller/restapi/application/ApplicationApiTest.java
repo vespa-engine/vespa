@@ -47,11 +47,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.AccountId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageTest;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
@@ -102,6 +102,7 @@ import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.PATCH;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
+import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageTest.unzip;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
@@ -157,6 +158,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private static final UserId HOSTED_VESPA_OPERATOR = new UserId("johnoperator");
     private static final OAuthCredentials OKTA_CREDENTIALS = OAuthCredentials.createForTesting("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.he0ErCNloe4J7Id0Ry2SEDg09lKkZkfsRiGsdX_vgEg", "okta-it");
 
+    private static final byte[] testZip = ApplicationPackageTest.zip(Map.of("tests", "content"));
 
     private ContainerTester tester;
     private DeploymentTester deploymentTester;
@@ -892,7 +894,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET).userIdentity(HOSTED_VESPA_OPERATOR).properties(Map.of("tests", "true")),
                 (response) -> {
                     assertEquals("attachment; filename=\"tenant1.application1-tests2.zip\"", response.getHeaders().getFirst("Content-Disposition"));
-                    assertArrayEquals("content".getBytes(UTF_8), response.getBody());
+                    assertEquals(Map.of("tests", "content", "deployment.xml", packageWithService.deploymentSpec().xmlForm()),
+                                 unzip(response.getBody()));
                 },
                 200);
 
@@ -1842,7 +1845,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                                                    + "\"projectId\":" + projectId + ",\"authorEmail\":\"a@b\","
                                                                                    + "\"description\":\"my best commit yet\",\"risk\":9001}")
                                       .addBytes(EnvironmentResource.APPLICATION_ZIP, applicationPackage.zippedContent())
-                                      .addBytes(EnvironmentResource.APPLICATION_TEST_ZIP, "content".getBytes());
+                                      .addBytes(EnvironmentResource.APPLICATION_TEST_ZIP, testZip);
     }
 
     private String deployOptions(Optional<ApplicationVersion> applicationVersion) {

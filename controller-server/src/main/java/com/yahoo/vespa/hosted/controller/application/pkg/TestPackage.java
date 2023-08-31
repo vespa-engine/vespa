@@ -29,6 +29,7 @@ import com.yahoo.yolean.Exceptions;
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -36,8 +37,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,8 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.production;
@@ -59,6 +62,7 @@ import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPacka
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage.servicesFile;
 import static java.io.InputStream.nullInputStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -71,6 +75,8 @@ import static java.util.stream.Collectors.toList;
  */
 public class TestPackage {
 
+    private static final Logger log = Logger.getLogger(TestPackage.class.getName());
+
     // Must match exactly the advertised resources of an AWS instance type. Also consider that the container
     // will have ~1.8 GB less memory than equivalent resources in AWS (VESPA-16259).
     static final NodeResources DEFAULT_TESTER_RESOURCES_CLOUD = new NodeResources(2, 8, 50, 0.3, NodeResources.DiskSpeed.any);
@@ -80,7 +86,7 @@ public class TestPackage {
     private final X509Certificate certificate;
 
     public TestPackage(Supplier<InputStream> inZip, boolean isPublicSystem, CloudName cloud, RunId id, Testerapp testerApp,
-                       DeploymentSpec spec, Instant certificateValidFrom, Duration certificateValidDuration) {
+                       DeploymentSpec fallbackSpec, Instant certificateValidFrom, Duration certificateValidDuration) {
         KeyPair keyPair;
         if (certificateValidFrom != null) {
             keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
@@ -97,14 +103,13 @@ public class TestPackage {
             keyPair = null;
             this.certificate = null;
         }
-        boolean isEnclave = isPublicSystem &&
-                !spec.cloudAccount(cloud, id.application().instance(), id.type().zone()).isUnspecified();
         this.applicationPackageStream = new ApplicationPackageStream(inZip, () -> name -> name.endsWith(".xml"), () -> new Replacer() {
 
             // Initially skips all declared entries, ensuring they're generated and appended after all input entries.
-            final Map<String, UnaryOperator<InputStream>> entries = new HashMap<>();
-            final Map<String, UnaryOperator<InputStream>> replacements = new HashMap<>();
+            final Map<String, UnaryOperator<InputStream>> entries = new LinkedHashMap<>();
+            final Map<String, UnaryOperator<InputStream>> replacements = new LinkedHashMap<>();
             boolean hasLegacyTests = false;
+            DeploymentSpec containedSpec;
 
             @Override
             public String next() {
@@ -117,7 +122,13 @@ public class TestPackage {
             @Override
             public InputStream modify(String name, InputStream in) {
                 hasLegacyTests |= name.startsWith("artifacts/") && name.endsWith("-tests.jar");
-                return entries.containsKey(name) ? null : replacements.getOrDefault(name, identity()).apply(in);
+
+                // Pick out the deployment.xml stored in the package, if any.
+                if (entries.containsKey(deploymentFile) && name.equals(deploymentFile))
+                    containedSpec = DeploymentSpec.fromXml(new InputStreamReader(in));
+
+                return entries.containsKey(name) ? null // Skip entry for now, as it will be appended later when we get here again after {@link #next()}.
+                                                 : replacements.getOrDefault(name, identity()).apply(in); // Modify entry, if needed.
             }
 
             {
@@ -126,14 +137,22 @@ public class TestPackage {
                 entries.put("tests/.ignore-" + UUID.randomUUID(), __ -> nullInputStream());
 
                 entries.put(servicesFile,
-                            __ -> new ByteArrayInputStream(servicesXml( ! isPublicSystem,
-                                                                       certificateValidFrom != null,
-                                                                       hasLegacyTests,
-                                                                       testerResourcesFor(id.type().zone(), spec.requireInstance(id.application().instance()), isEnclave),
-                                                                       testerApp)));
+                            __ -> {
+                                DeploymentSpec spec = requireNonNullElse(containedSpec, fallbackSpec);
+                                boolean isEnclave = isPublicSystem && ! spec.cloudAccount(cloud, id.application().instance(), id.type().zone()).isUnspecified();
+                                return new ByteArrayInputStream(servicesXml( ! isPublicSystem,
+                                                                             certificateValidFrom != null,
+                                                                             hasLegacyTests,
+                                                                             testerResourcesFor(id.type().zone(), spec.requireInstance(id.application().instance()), isEnclave),
+                                                                             testerApp));
+                            });
 
                 entries.put(deploymentFile,
-                            __ -> new ByteArrayInputStream(deploymentXml(id.tester(), id.application().instance(), cloud, id.type().zone(), spec)));
+                            __ -> new ByteArrayInputStream(deploymentXml(id.tester(),
+                                                                         id.application().instance(),
+                                                                         cloud,
+                                                                         id.type().zone(),
+                                                                         requireNonNullElse(containedSpec, fallbackSpec))));
 
                 if (certificate != null) {
                     entries.put("artifacts/key", __ -> new ByteArrayInputStream(KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8)));
