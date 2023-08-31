@@ -891,10 +891,10 @@ LogDataStore::NameIdSet
 LogDataStore::scanDir(const vespalib::string &dir, const vespalib::string &suffix)
 {
     NameIdSet baseFiles;
-    FastOS_DirectoryScan dirScan(dir.c_str());
-    while (dirScan.ReadNext()) {
-        if (dirScan.IsRegular()) {
-            vespalib::stringref file(dirScan.GetName());
+    std::filesystem::directory_iterator dir_scan{std::filesystem::path(dir)};
+    for (auto& entry : dir_scan) {
+        if (entry.is_regular_file()) {
+            vespalib::string file(entry.path().filename().string());
             if (file.size() > suffix.size() &&
                 file.find(suffix.c_str()) == file.size() - suffix.size()) {
                 vespalib::string base(file.substr(0, file.find(suffix.c_str())));
@@ -911,7 +911,7 @@ LogDataStore::scanDir(const vespalib::string &dir, const vespalib::string &suffi
                                                     base.c_str(), err, getLastErrorString().c_str()));
                 }
             } else {
-                LOG(debug, "Skipping '%s' since it does not end with '%s'", file.data(), suffix.c_str());
+                LOG(debug, "Skipping '%s' since it does not end with '%s'", file.c_str(), suffix.c_str());
             }
         }
     }
