@@ -8,7 +8,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.io.IOUtils;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
 import io.questdb.cairo.CairoEngine;
 import io.questdb.cairo.CairoException;
@@ -18,7 +17,6 @@ import io.questdb.cairo.sql.Record;
 import io.questdb.cairo.sql.RecordCursor;
 import io.questdb.cairo.sql.RecordCursorFactory;
 import io.questdb.griffin.CompiledQuery;
-import io.questdb.griffin.QueryFuture;
 import io.questdb.griffin.SqlCompiler;
 import io.questdb.griffin.SqlException;
 import io.questdb.griffin.SqlExecutionContext;
@@ -40,7 +38,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -349,7 +346,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
      * Needs to be done for some queries, e.g. 'alter table' queries, see https://github.com/questdb/questdb/issues/1846
      */
     private void issueAsync(String sql, SqlExecutionContext context) throws SqlException {
-        try (QueryFuture future = issue(sql, context).execute(null)) {
+        try (var future = issue(sql, context).execute(null)) {
             future.await();
         }
     }
