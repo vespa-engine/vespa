@@ -37,6 +37,7 @@
 #include <vespa/eval/instruction/mixed_l2_distance.h>
 #include <vespa/eval/instruction/simple_join_count.h>
 #include <vespa/eval/instruction/mapped_lookup.h>
+#include <vespa/eval/instruction/universal_dot_product.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.eval.optimize_tensor_function");
@@ -88,6 +89,7 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &, const Te
                           child.set(DenseHammingDistance::optimize(child.get(), stash));
                           child.set(SimpleJoinCount::optimize(child.get(), stash));
                           child.set(MappedLookup::optimize(child.get(), stash));
+                          // child.set(UniversalDotProduct::optimize(child.get(), stash));
                       });
     run_optimize_pass(root, [&stash](const Child &child)
                       {
