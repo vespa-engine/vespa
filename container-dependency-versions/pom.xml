@@ -116,19 +116,19 @@
                 <!-- TODO Vespa 9: stop exporting/providing and move to parent? -->
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
-                <version>${jaxb.vespa.version}</version>
+                <version>${jaxb-api.vespa.version}</version>
             </dependency>
             <dependency>
                 <!-- TODO Vespa 9: stop exporting/providing and move to parent? -->
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-core</artifactId>
-                <version>${jaxb.vespa.version}</version>
+                <version>${jaxb-core.vespa.version}</version>
             </dependency>
             <dependency>
                 <!-- TODO Vespa 9: stop exporting/providing and move to parent? -->
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-impl</artifactId>
-                <version>${jaxb.vespa.version}</version>
+                <version>${jaxb-impl.vespa.version}</version>
             </dependency>
             <dependency>
                 <!-- Needed by jaxb-api, and possibly guice -->
