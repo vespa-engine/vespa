@@ -15,7 +15,6 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/fastos/file.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/bucket_tasks.h>
@@ -206,32 +205,6 @@ struct FileStorTestBase : Test {
 };
 
 FileStorTestBase::~FileStorTestBase() = default;
-
-std::string findFile(const std::string& path, const std::string& file) {
-    FastOS_DirectoryScan dirScan(path.c_str());
-    while (dirScan.ReadNext()) {
-        if (dirScan.GetName()[0] == '.') {
-            // Ignore current and parent dir.. Ignores hidden files too, but
-            // that doesn't matter as we're not trying to find them.
-            continue;
-        }
-        std::string filename(dirScan.GetName());
-        if (dirScan.IsDirectory()) {
-            std::string result = findFile(path + "/" + filename, file);
-            if (result != "") {
-                return result;
-            }
-        }
-        if (filename == file) {
-            return path + "/" + filename;
-        }
-    }
-    return "";
-}
-
-bool fileExistsWithin(const std::string& path, const std::string& file) {
-    return !(findFile(path, file) == "");
-}
 
 std::unique_ptr<DiskThread>
 createThread(PersistenceHandler & persistenceHandler,
