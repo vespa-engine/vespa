@@ -374,10 +374,10 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string]strin
 		return true, nil
 	}
 	if _, err := t.deployServiceWait(endpointFunc, func() *http.Request { return req }, timeout); err != nil {
-		return nil, fmt.Errorf("no endpoints found%s: %w", waitDescription(timeout), err)
+		return nil, fmt.Errorf("no endpoints found in zone %s%s: %w", t.deploymentOptions.Deployment.Zone, waitDescription(timeout), err)
 	}
 	if len(urlsByCluster) == 0 {
-		return nil, fmt.Errorf("no endpoints found%s", waitDescription(timeout))
+		return nil, fmt.Errorf("no endpoints found in zone %s%s", t.deploymentOptions.Deployment.Zone, waitDescription(timeout))
 	}
 	return urlsByCluster, nil
 }
