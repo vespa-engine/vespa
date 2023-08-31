@@ -214,6 +214,27 @@ TEST("require that stats can be accumulated") {
     EXPECT_EQUAL(0.41, stats.getUtil());
 }
 
+ExecutorStats make_stats(uint32_t thread_count, double idle) {
+    ExecutorStats stats;
+    stats.setUtil(thread_count, idle);
+    return stats;
+}
+
+TEST("executor stats saturation is the max of the utilization of aggregated executor stats") {
+    ExecutorStats aggr;
+    auto s1 = make_stats(1, 0.9);
+    EXPECT_EQUAL(0.1, s1.getUtil());
+    EXPECT_EQUAL(0.1, s1.get_saturation());
+
+    EXPECT_EQUAL(0.0, aggr.get_saturation());
+    aggr.aggregate(s1);
+    EXPECT_EQUAL(0.1, aggr.get_saturation());
+    aggr.aggregate(make_stats(1, 0.7));
+    EXPECT_EQUAL(0.3, aggr.get_saturation());
+    aggr.aggregate(make_stats(1, 0.8));
+    EXPECT_EQUAL(0.3, aggr.get_saturation());
+}
+
 TEST("Test that utilization is computed") {
     ThreadStackExecutor executor(1);
     std::this_thread::sleep_for(1s);

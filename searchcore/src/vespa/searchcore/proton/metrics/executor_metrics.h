@@ -15,6 +15,7 @@ struct ExecutorMetrics : metrics::MetricSet
     metrics::LongCountMetric   rejected;
     metrics::LongCountMetric   wakeupCount;
     metrics::DoubleValueMetric util;
+    metrics::DoubleValueMetric saturation;
     metrics::LongAverageMetric queueSize;
 
     void update(const vespalib::ExecutorStats &stats);

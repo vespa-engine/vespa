@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <limits>
+#include <algorithm>
 #include <cstdint>
+#include <limits>
 
 namespace vespalib {
 
@@ -57,6 +58,7 @@ class ExecutorStats {
 private:
     size_t   _threadCount;
     double   _absUtil;
+    double   _saturation;
 public:
     using QueueSizeT = AggregatedAverage<size_t>;
     QueueSizeT queueSize;
@@ -67,7 +69,8 @@ public:
     ExecutorStats() : ExecutorStats(QueueSizeT(), 0, 0, 0) {}
     ExecutorStats(QueueSizeT queueSize_in, size_t accepted, size_t rejected, size_t wakeupCount_in)
         : _threadCount(1),
-          _absUtil(1.0),
+          _absUtil(0.0),
+          _saturation(0.0),
           queueSize(queueSize_in),
           acceptedTasks(accepted),
           rejectedTasks(rejected),
@@ -83,14 +86,17 @@ public:
         rejectedTasks += rhs.rejectedTasks;
         wakeupCount += rhs.wakeupCount;
         _absUtil += rhs._absUtil;
+        _saturation = std::max(_saturation, rhs.get_saturation());
     }
     ExecutorStats & setUtil(uint32_t threadCount, double idle) {
         _threadCount = threadCount;
         _absUtil = (1.0 - idle) * threadCount;
+        _saturation = getUtil();
         return *this;
     }
     double getUtil() const { return _absUtil / _threadCount; }
     size_t getThreadCount() const { return _threadCount; }
+    double get_saturation() const { return _saturation; }
 };
 
 }
