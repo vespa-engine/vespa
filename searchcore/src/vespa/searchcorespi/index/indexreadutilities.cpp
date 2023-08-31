@@ -4,6 +4,7 @@
 #include "indexdisklayout.h"
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <filesystem>
 #include <set>
 #include <vector>
 
@@ -25,22 +26,21 @@ scanForIndexes(const vespalib::string &baseDir,
                std::vector<vespalib::string> &flushDirs,
                vespalib::string &fusionDir)
 {
-    FastOS_DirectoryScan dirScan(baseDir.c_str());
-    while (dirScan.ReadNext()) {
-        if (!dirScan.IsDirectory()) {
-            continue;
-        }
-        vespalib::string name = dirScan.GetName();
-        if (name.find(IndexDiskLayout::FlushDirPrefix) == 0) {
-            flushDirs.push_back(name);
-        }
-        if (name.find(IndexDiskLayout::FusionDirPrefix) == 0) {
-            if (!fusionDir.empty()) {
-                // Should never happen, since we run cleanup before load.
-                LOG(warning, "Base directory '%s' contains multiple fusion indexes",
-                    baseDir.c_str());
+    std::filesystem::directory_iterator dir_scan{std::filesystem::path(baseDir)};
+    for (auto& entry : dir_scan) {
+        if (entry.is_directory()) {
+            vespalib::string name = entry.path().filename().string();
+            if (name.find(IndexDiskLayout::FlushDirPrefix) == 0) {
+                flushDirs.push_back(name);
             }
-            fusionDir = name;
+            if (name.find(IndexDiskLayout::FusionDirPrefix) == 0) {
+                if (!fusionDir.empty()) {
+                    // Should never happen, since we run cleanup before load.
+                    LOG(warning, "Base directory '%s' contains multiple fusion indexes",
+                        baseDir.c_str());
+                }
+                fusionDir = name;
+            }
         }
     }
 }
