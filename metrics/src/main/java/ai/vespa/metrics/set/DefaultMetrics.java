@@ -153,7 +153,7 @@ public class DefaultMetrics {
         return new MetricSet.Builder("default-cluster-controller")
                 .metric(ClusterControllerMetrics.DOWN_COUNT, EnumSet.of(max, last)) // TODO: Vespa 9: Remove last
                 .metric(ClusterControllerMetrics.MAINTENANCE_COUNT, EnumSet.of(max, last)) // TODO: Vespa 9: Remove last
-                .metric(ClusterControllerMetrics.UP_COUNT.last())
+                .metric(ClusterControllerMetrics.UP_COUNT, EnumSet.of(max, last)) // TODO: Vespa 9: Remove last
                 .metric(ClusterControllerMetrics.IS_MASTER, EnumSet.of(max, last)) // TODO: Vespa 9: Remove last
                 .metric(ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT, EnumSet.of(max, last)) // TODO: Vespa 9: Remove last
                 .metric(ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION, EnumSet.of(last, max)) // TODO: Vespa 9: Remove last
