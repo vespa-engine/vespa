@@ -3,7 +3,6 @@ package com.yahoo.search.logging;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,6 +52,12 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
         }
         return true;
     }
+
+    @Deprecated
+    /*
+      @deprecated use {@link #deconstruct()} instead
+     */
+    public void shutdown() { deconstruct(); }
 
     @Override
     public void deconstruct() {
