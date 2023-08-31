@@ -64,6 +64,7 @@ public class SystemCtl {
     public SystemCtlStart start(String unit) { return new SystemCtlStart(unit); }
     public SystemCtlStop stop(String unit) { return new SystemCtlStop(unit); }
     public SystemCtlRestart restart(String unit) { return new SystemCtlRestart(unit); }
+    public SystemCtlReload reload(String unit) { return new SystemCtlReload(unit); }
 
     public boolean serviceExists(TaskContext context, String unit) {
         return newCommandLine(context)
@@ -148,6 +149,16 @@ public class SystemCtl {
     public class SystemCtlRestart extends SystemCtlCommand {
         private SystemCtlRestart(String unit) {
             super("restart", unit);
+        }
+
+        protected boolean isAlreadyConverged(TaskContext context) {
+            return false;
+        }
+    }
+
+    public class SystemCtlReload extends SystemCtlCommand {
+        private SystemCtlReload(String unit) {
+            super("reload", unit);
         }
 
         protected boolean isAlreadyConverged(TaskContext context) {

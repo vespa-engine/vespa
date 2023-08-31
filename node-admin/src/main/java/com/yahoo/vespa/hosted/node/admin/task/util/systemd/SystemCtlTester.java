@@ -40,6 +40,11 @@ public class SystemCtlTester extends SystemCtl {
         return this;
     }
 
+    public SystemCtlTester expectReload(String unit) {
+        expectCommand("systemctl reload " + unit + " 2>&1", 0, "");
+        return this;
+    }
+
     public SystemCtlTester expectDaemonReload() {
         expectCommand("systemctl daemon-reload 2>&1", 0, "");
         return this;
