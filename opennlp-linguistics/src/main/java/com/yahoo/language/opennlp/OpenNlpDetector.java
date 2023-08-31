@@ -83,6 +83,7 @@ class OpenNlpDetector implements Detector {
         return new Detection(detectLanguage(input), UTF_8.name(), false);
     }
 
+    @SuppressWarnings("removal")
     private Language detectLanguage(String input) {
         var prediction = detector.probingPredictLanguages(input, config).getLanguages()[0];
         var result = prediction.getConfidence() > 0.02 ? languagesByISO3.get(prediction.getLang()) : null;
