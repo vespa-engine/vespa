@@ -77,9 +77,10 @@ public class ApplicationCuratorDatabase {
     public void createApplication(ApplicationId id, boolean writeAsJson) {
         if ( ! id.tenant().equals(tenant))
             throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenant + "'");
-        if (curator.exists(applicationPath(id))) return;
 
         try (Lock lock = lock(id)) {
+            if (curator.exists(applicationPath(id))) return;
+
             if (writeAsJson) {
                 var applicationData = new ApplicationData(id, OptionalLong.empty(), OptionalLong.empty());
                 curator.set(applicationPath(id), applicationData.toJson());
