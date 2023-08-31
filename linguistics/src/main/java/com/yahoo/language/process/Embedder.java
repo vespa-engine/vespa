@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.process;
 
+import com.yahoo.api.annotations.Beta;
 import com.yahoo.language.Language;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -64,14 +65,41 @@ public interface Embedder {
      */
     Tensor embed(String text, Context context, TensorType tensorType);
 
+    /**
+     * Runtime that is injectable through {@link Embedder} constructor.
+     */
+    @Beta
+    interface Runtime {
+        /** Sample latency metric for embedding */
+        void sampleEmbeddingLatency(double millis, Context ctx);
+        /** Sample sequence length metric for embedding */
+        void sampleSequenceLength(long length, Context ctx);
+
+        static Runtime testInstance() {
+            return new Runtime() {
+                @Override public void sampleEmbeddingLatency(double millis, Context ctx) { }
+                @Override public void sampleSequenceLength(long length, Context ctx) { }
+            };
+        }
+    }
+
     class Context {
 
         private Language language = Language.UNKNOWN;
         private String destination;
+        private String embedderId = "unknown";
 
         public Context(String destination) {
             this.destination = destination;
         }
+
+        private Context(Context other) {
+            language = other.language;
+            destination = other.destination;
+            embedderId = other.embedderId;
+        }
+
+        public Context copy() { return new Context(this); }
 
         /** Returns the language of the text, or UNKNOWN (default) to use a language independent embedding */
         public Language getLanguage() { return language; }
@@ -102,6 +130,14 @@ public interface Embedder {
             return this;
         }
 
+        /** Return the embedder id or 'unknown' if not set */
+        public String getEmbedderId() { return embedderId; }
+
+        /** Sets the embedder id */
+        public Context setEmbedderId(String embedderId) {
+            this.embedderId = embedderId;
+            return this;
+        }
     }
 
     class FailingEmbedder implements Embedder {

@@ -338,10 +338,13 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String)",
+      "public com.yahoo.language.process.Embedder$Context copy()",
       "public com.yahoo.language.Language getLanguage()",
       "public com.yahoo.language.process.Embedder$Context setLanguage(com.yahoo.language.Language)",
       "public java.lang.String getDestination()",
-      "public com.yahoo.language.process.Embedder$Context setDestination(java.lang.String)"
+      "public com.yahoo.language.process.Embedder$Context setDestination(java.lang.String)",
+      "public java.lang.String getEmbedderId()",
+      "public com.yahoo.language.process.Embedder$Context setEmbedderId(java.lang.String)"
     ],
     "fields" : [ ]
   },
@@ -358,6 +361,21 @@
       "public void <init>(java.lang.String)",
       "public java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
       "public com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.process.Embedder$Runtime" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract void sampleEmbeddingLatency(double, com.yahoo.language.process.Embedder$Context)",
+      "public abstract void sampleSequenceLength(long, com.yahoo.language.process.Embedder$Context)",
+      "public static com.yahoo.language.process.Embedder$Runtime testInstance()"
     ],
     "fields" : [ ]
   },

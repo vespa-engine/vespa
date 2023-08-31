@@ -106,7 +106,7 @@ public class EmbedExpression extends Expression  {
 
     private Tensor embed(String input, TensorType targetType, ExecutionContext context) {
         return embedder.embed(input,
-                              new Embedder.Context(destination).setLanguage(context.getLanguage()),
+                              new Embedder.Context(destination).setLanguage(context.getLanguage()).setEmbedderId(embedderId),
                               targetType);
 
     }
