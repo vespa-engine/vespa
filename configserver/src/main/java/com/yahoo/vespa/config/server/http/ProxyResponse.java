@@ -34,7 +34,8 @@ class ProxyResponse extends HttpResponse {
     @Override
     public void render(OutputStream outputStream) throws IOException {
         try (clientResponse) {
-            clientResponse.getEntity().writeTo(outputStream);
+            if (clientResponse.getEntity() != null)
+                clientResponse.getEntity().writeTo(outputStream);
         }
     }
 
