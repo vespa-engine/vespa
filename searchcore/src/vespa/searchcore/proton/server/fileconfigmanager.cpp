@@ -17,7 +17,6 @@
 #include <vespa/config-summary.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/fastos/file.h>
 #include <filesystem>
 #include <sstream>
 #include <cassert>
@@ -193,12 +192,9 @@ std::vector<vespalib::string>
 getFileList(const vespalib::string &snapDir)
 {
     std::vector<vespalib::string> res;
-    FastOS_DirectoryScan dirScan(snapDir.c_str());
-    while (dirScan.ReadNext()) {
-        if (strcmp(dirScan.GetName(), ".") == 0 ||
-            strcmp(dirScan.GetName(), "..") == 0)
-            continue;
-        res.push_back(dirScan.GetName());
+    std::filesystem::directory_iterator dir_scan{std::filesystem::path(snapDir)};
+    for (auto& entry : dir_scan) {
+        res.emplace_back(entry.path().filename().string());
     }
     std::sort(res.begin(), res.end());
     return res;
