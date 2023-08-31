@@ -198,7 +198,7 @@ public class VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_DEACTIVATION_FAILURE_COUNT.last());
         addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_DEACTIVATION_MILLIS.last());
 
-        addMetric(metrics, ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS, EnumSet.of(min, max, last)); // TODO: Vespa 9: Remove last, max
         addMetric(metrics, ContainerMetrics.CONTAINER_IAM_ROLE_EXPIRY_SECONDS.baseName());
 
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_PREMATURELY_CLOSED.rate());
@@ -252,7 +252,7 @@ public class VespaMetricSet {
         addMetric(metrics, ClusterControllerMetrics.MAINTENANCE_COUNT, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ClusterControllerMetrics.RETIRED_COUNT, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ClusterControllerMetrics.STOPPING_COUNT.last());
-        addMetric(metrics, ClusterControllerMetrics.UP_COUNT.last());
+        addMetric(metrics, ClusterControllerMetrics.UP_COUNT, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ClusterControllerMetrics.CLUSTER_STATE_CHANGE_COUNT.baseName());
         addMetric(metrics, ClusterControllerMetrics.BUSY_TICK_TIME_MS, EnumSet.of(last, max, sum, count)); // TODO: Vespa 9: Remove last
         addMetric(metrics, ClusterControllerMetrics.IDLE_TICK_TIME_MS, EnumSet.of(last, max, sum, count)); // TODO: Vespa 9: Remove last
@@ -429,7 +429,7 @@ public class VespaMetricSet {
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_REMOVED_LID_SPACE_USED_LIDS, EnumSet.of(max, last)); // TODO: Vespa 9: Remove last
 
         // bucket move
-        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_BUCKET_MOVE_BUCKETS_PENDING, EnumSet.of(sum, last)); // TODO: Vespa 9: Remove last
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_BUCKET_MOVE_BUCKETS_PENDING, EnumSet.of(max, sum, last)); // TODO: Vespa 9: Remove last
 
         // resource usage
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_RESOURCE_USAGE_DISK.average());
