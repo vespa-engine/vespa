@@ -107,6 +107,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -498,7 +499,7 @@ public class ApplicationController {
     }
 
     /** Deploys an application package for an existing application instance. */
-    public DeploymentResult deploy(JobId job, boolean deploySourceVersions, Consumer<String> deployLogger) {
+    public DeploymentResult deploy(JobId job, boolean deploySourceVersions, Consumer<String> deployLogger, UnaryOperator<Optional<CloudAccount>> cloudAccountOverride) {
         if (job.application().instance().isTester())
             throw new IllegalArgumentException("'" + job.application() + "' is a tester application!");
 
@@ -528,8 +529,7 @@ public class ApplicationController {
 
             // Carry out deployment without holding the application lock.
             DeploymentDataAndResult dataAndResult = deploy(job.application(), applicationPackage, zone, platform, preparedEndpoints,
-                                                           run.isDryRun(), run.testerCertificate());
-
+                                                           run.isDryRun(), run.testerCertificate(), cloudAccountOverride);
 
             // Record the quota usage for this application
             var quotaUsage = deploymentQuotaUsage(zone, job.application());
@@ -650,22 +650,23 @@ public class ApplicationController {
             ApplicationPackageStream applicationPackage = new ApplicationPackageStream(
                     () -> new ByteArrayInputStream(artifactRepository.getSystemApplicationPackage(application.id(), zone, version))
             );
-            return deploy(application.id(), applicationPackage, zone, version, null, false, Optional.empty()).result();
+            return deploy(application.id(), applicationPackage, zone, version, null, false, Optional.empty(), UnaryOperator.identity()).result();
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
     }
 
     /** Deploys the given tester application to the given zone. */
-    public DeploymentResult deployTester(TesterId tester, ApplicationPackageStream applicationPackage, ZoneId zone, Version platform) {
-        return deploy(tester.id(), applicationPackage, zone, platform, null, false, Optional.empty()).result();
+    public DeploymentResult deployTester(TesterId tester, ApplicationPackageStream applicationPackage, ZoneId zone, Version platform, UnaryOperator<Optional<CloudAccount>> cloudAccountOverride) {
+        return deploy(tester.id(), applicationPackage, zone, platform, null, false, Optional.empty(), cloudAccountOverride).result();
     }
 
     private record DeploymentDataAndResult(DeploymentData data, DeploymentResult result) {}
 
     private DeploymentDataAndResult deploy(ApplicationId application, ApplicationPackageStream applicationPackage,
                                            ZoneId zone, Version platform, Supplier<PreparedEndpoints> preparedEndpoints,
-                                           boolean dryRun, Optional<X509Certificate> testerCertificate) {
+                                           boolean dryRun, Optional<X509Certificate> testerCertificate,
+                                           UnaryOperator<Optional<CloudAccount>> cloudAccountOverride) {
         DeploymentId deployment = new DeploymentId(application, zone);
         // Routing and metadata may have changed, so we need to refresh state after deployment, even if deployment fails.
         interface CleanCloseable extends AutoCloseable { void close(); }
@@ -697,9 +698,7 @@ public class ApplicationController {
             if (testerCertificate.isPresent()) {
                 operatorCertificates = Stream.concat(operatorCertificates.stream(), testerCertificate.stream()).toList();
             }
-            Supplier<Optional<CloudAccount>> cloudAccount = () -> decideCloudAccountOf(deployment,
-                                                                                       zone.environment().isTest() ? requireApplication(TenantAndApplicationId.from(application)).deploymentSpec()
-                                                                                                                   : applicationPackage.truncatedPackage().deploymentSpec());
+            Supplier<Optional<CloudAccount>> cloudAccount = () -> cloudAccountOverride.apply(decideCloudAccountOf(deployment, applicationPackage.truncatedPackage().deploymentSpec()));
             List<DataplaneTokenVersions> dataplaneTokenVersions = controller.dataplaneTokenService().listTokens(application.tenant());
             Supplier<DeploymentEndpoints> endpoints = () -> {
                 if (preparedEndpoints == null) return DeploymentEndpoints.none;

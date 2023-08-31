@@ -7,10 +7,12 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.EndpointsChecker;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Status;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -60,6 +62,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -83,6 +86,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
@@ -92,7 +96,10 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.yolean.Exceptions.uncheck;
+import static com.yahoo.yolean.Exceptions.uncheckInterruptedAndRestoreFlag;
+import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Predicate.not;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
@@ -148,9 +155,9 @@ public class InternalStepRunner implements StepRunner {
         } catch (UncheckedIOException e) {
             logger.logWithInternalException(INFO, "IO exception running " + id + ": " + Exceptions.toMessageString(e), e);
             return Optional.empty();
-        } catch (RuntimeException|LinkageError e) {
+        } catch (RuntimeException | LinkageError e) {
             logger.log(WARNING, "Unexpected exception running " + id, e);
-            if (step.get().alwaysRun() && !(e instanceof LinkageError)) {
+            if (step.get().alwaysRun() && ! (e instanceof LinkageError)) {
                 logger.log("Will keep trying, as this is a cleanup step.");
                 return Optional.empty();
             }
@@ -176,7 +183,10 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, DualLogger logger) {
         Optional<X509Certificate> testerCertificate = controller.jobController().run(id).testerCertificate();
-        return deploy(() -> controller.applications().deploy(id.job(), setTheStage, logger::log),
+        return deploy(() -> controller.applications().deploy(id.job(),
+                                                             setTheStage,
+                                                             logger::log,
+                                                             account -> getCloudAccountWithOverrideForStaging(id, account)),
                       controller.jobController().run(id)
                                 .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
                                 .startTime().get(),
@@ -198,12 +208,43 @@ public class InternalStepRunner implements StepRunner {
         return deploy(() -> controller.applications().deployTester(id.tester(),
                                                                    testerPackage(id),
                                                                    id.type().zone(),
-                                                                   platform),
+                                                                   platform,
+                                                                   cloudAccount -> setCloudAccountForStaging(id, cloudAccount)),
                       controller.jobController().run(id)
                                 .stepInfo(deployTester).get()
                                 .startTime().get(),
                       id,
                       logger);
+    }
+
+    private Optional<CloudAccount> setCloudAccountForStaging(RunId id, Optional<CloudAccount> account) {
+        if (id.type().environment() == Environment.staging) {
+            controller.jobController().locked(id, run -> run.with(account.orElse(CloudAccount.empty)));
+        }
+        return account;
+    }
+
+    private Optional<CloudAccount> getCloudAccountWithOverrideForStaging(RunId id, Optional<CloudAccount> account) {
+        if (id.type().environment() == Environment.staging) {
+            Instant doom = controller.clock().instant().plusSeconds(60); // Sleeping is bad, but we're already in a sleepy code path: deployment.
+            while (true) {
+                Run run = controller.jobController().run(id);
+                Optional<CloudAccount> stored = run.cloudAccount();
+                if (stored.isPresent())
+                    return stored.filter(not(CloudAccount.empty::equals));
+
+                // TODO jonmv: remove with next release
+                if (run.stepStatus(deployTester).get() != unfinished)
+                    return account; // Use original value for runs which started prior to this code change, and resumed after. Extremely unlikely :>
+
+                long millisToDoom = Duration.between(controller.clock().instant(), doom).toMillis();
+                if (millisToDoom > 0)
+                    uncheckInterruptedAndRestoreFlag(() -> Thread.sleep(min(millisToDoom, 5000)));
+                else
+                    throw new CloudAccountNotSetException("Cloud account not yet set; must deploy tests first");
+            }
+        }
+        return account;
     }
 
     private Optional<RunStatus> deploy(Supplier<DeploymentResult> deployment, Instant startTime, RunId id, DualLogger logger) {
@@ -275,6 +316,10 @@ public class InternalStepRunner implements StepRunner {
             }
 
             throw e;
+        }
+        catch (CloudAccountNotSetException e) {
+            logger.log(INFO, "Timed out waiting for cloud account to be set for " + id + ": " + e.getMessage());
+            return Optional.empty();
         }
         catch (IllegalArgumentException e) {
             logger.log(WARNING, e.getMessage());
@@ -1004,6 +1049,10 @@ public class InternalStepRunner implements StepRunner {
         Duration noNodesDown() { return Duration.ofMinutes(system.isCd() ? 30 : 240); }
         Duration testerCertificate() { return Duration.ofMinutes(300); }
 
+    }
+
+    private static class CloudAccountNotSetException extends RuntimeException {
+        CloudAccountNotSetException(String message) { super(message); }
     }
 
 }

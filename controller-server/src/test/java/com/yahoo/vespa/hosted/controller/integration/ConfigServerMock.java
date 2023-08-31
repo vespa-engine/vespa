@@ -400,6 +400,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+        deployment.cloudAccount(); // Supplier with side effects >_<
         lastPrepareVersion = deployment.platform();
         if (prepareException != null)
             prepareException.accept(ApplicationId.from(deployment.instance().tenant(),

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
@@ -99,6 +100,7 @@ public class RunSerializerTest {
                         "5MyyPSoCIBltOcmaPfdN03L3zqbqZ6PgUBWsvAHgiBzL3hrtJ+iy\n" +
                         "-----END CERTIFICATE-----"),
                 run.testerCertificate().get());
+        assertEquals(Optional.empty(), run.cloudAccount());
         assertEquals(ImmutableMap.<Step, StepInfo>builder()
                         .put(deployInitialReal, new StepInfo(deployInitialReal, unfinished, Optional.empty()))
                         .put(installInitialReal, new StepInfo(installInitialReal, failed, Optional.of(Instant.ofEpochMilli(1196676940000L))))
@@ -118,10 +120,11 @@ public class RunSerializerTest {
                 run.steps());
 
         run = run.with(1L << 50)
-                .with(Instant.now().truncatedTo(MILLIS))
-                .noNodesDownSince(Instant.now().truncatedTo(MILLIS))
-                .aborted(false)
-                .finished(Instant.now().truncatedTo(MILLIS));
+                 .with(Instant.now().truncatedTo(MILLIS))
+                 .noNodesDownSince(Instant.now().truncatedTo(MILLIS))
+                 .aborted(false)
+                 .with(CloudAccount.from("gcp:foobar"))
+                 .finished(Instant.now().truncatedTo(MILLIS));
         assertEquals(aborted, run.status());
         assertTrue(run.hasEnded());
 
