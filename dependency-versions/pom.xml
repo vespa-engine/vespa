@@ -85,7 +85,7 @@
         <commons.math3.vespa.version>3.6.1</commons.math3.vespa.version>
         <commons-compress.vespa.version>1.23.0</commons-compress.vespa.version>
         <curator.vespa.version>5.5.0</curator.vespa.version>
-        <dropwizard.metrics.vespa.version>3.2.6</dropwizard.metrics.vespa.version>
+        <dropwizard.metrics.vespa.version>4.2.19</dropwizard.metrics.vespa.version>
         <eclipse-collections.vespa.version>11.1.0</eclipse-collections.vespa.version>
         <felix.vespa.version>7.0.5</felix.vespa.version>
         <felix.log.vespa.version>1.0.1</felix.log.vespa.version>
