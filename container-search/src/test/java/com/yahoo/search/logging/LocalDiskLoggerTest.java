@@ -35,8 +35,8 @@ public class LocalDiskLoggerTest {
         waitForFile(logFile);
 
         String test = IOUtils.readAll(new FileReader(logFile));
-        assertTrue(test.contains(Base64.getEncoder().encodeToString("my entry blob content".getBytes())));
-        assertTrue(test.contains("my-track"));
+        assertTrue(test.contains(Base64.getEncoder().encodeToString("my entry blob content".getBytes())), "file content: " + test);
+        assertTrue(test.contains("my-track"), "file content: " + test);
     }
 
     private void waitForFile(File file) throws InterruptedException {
