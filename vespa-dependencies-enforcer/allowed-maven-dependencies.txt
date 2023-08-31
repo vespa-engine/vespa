@@ -42,7 +42,7 @@ com.google.protobuf:protobuf-java:3.24.2
 com.ibm.icu:icu4j:73.2
 com.microsoft.onnxruntime:onnxruntime:1.15.1
 com.sun.activation:javax.activation:1.2.0
-com.sun.istack:istack-commons-runtime:3.0.12
+com.sun.istack:istack-commons-runtime:4.1.2
 com.sun.xml.bind:jaxb-core:2.3.0.1
 com.sun.xml.bind:jaxb-impl:2.3.0
 com.thaiopensource:jing:20091111
@@ -146,6 +146,7 @@ org.codehaus.plexus:plexus-container-default:1.0-alpha-9-stable-1
 org.codehaus.plexus:plexus-interpolation:1.26
 org.codehaus.plexus:plexus-io:3.4.1
 org.codehaus.plexus:plexus-utils:3.5.1
+org.eclipse.angus:angus-activation:2.0.1
 org.eclipse.collections:eclipse-collections:11.1.0
 org.eclipse.collections:eclipse-collections-api:11.1.0
 org.eclipse.jetty:jetty-alpn-client:11.0.16
@@ -171,8 +172,9 @@ org.eclipse.sisu:org.eclipse.sisu.plexus:0.3.5
 org.fusesource.jansi:jansi:1.18
 org.glassfish.hk2:osgi-resource-locator:1.0.3
 org.glassfish.hk2.external:jakarta.inject:2.6.1
-org.glassfish.jaxb:jaxb-runtime:2.3.8
-org.glassfish.jaxb:txw2:2.3.8
+org.glassfish.jaxb:jaxb-core:4.0.3
+org.glassfish.jaxb:jaxb-runtime:4.0.3
+org.glassfish.jaxb:txw2:4.0.3
 org.glassfish.jersey.core:jersey-client:2.40
 org.glassfish.jersey.core:jersey-common:2.40
 org.glassfish.jersey.core:jersey-server:2.40
