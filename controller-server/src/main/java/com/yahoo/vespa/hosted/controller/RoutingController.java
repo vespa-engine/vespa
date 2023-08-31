@@ -130,7 +130,7 @@ public class RoutingController {
 
         // Add zone-scoped endpoints
         final GeneratedEndpoints generatedEndpoints;
-        if (!usesSharedRouting(deployment.zoneId())) { // TODO(mpolden): Remove this check when config models < 8.230 are gone
+        if (randomizedEndpointsEnabled(deployment.applicationId())) { // TODO(mpolden): Remove this guard once config-models < 8.220 are gone
             boolean includeTokenEndpoint = tokenEndpointEnabled(deployment.applicationId());
             Map<ClusterSpec.Id, List<GeneratedEndpoint>> generatedEndpointsByCluster = new HashMap<>();
             for (var container : services.containers()) {
@@ -145,7 +145,6 @@ public class RoutingController {
                 endpoints = endpoints.and(endpointsOf(deployment, clusterId, generatedForCluster).scope(Scope.zone));
             }
             generatedEndpoints = new GeneratedEndpoints(generatedEndpointsByCluster);
-
         } else {
             generatedEndpoints = GeneratedEndpoints.empty;
         }

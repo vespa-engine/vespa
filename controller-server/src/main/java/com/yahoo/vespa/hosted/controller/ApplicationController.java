@@ -566,7 +566,8 @@ public class ApplicationController {
     }
 
     private PreparedEndpoints prepareEndpoints(DeploymentId deployment, JobId job, LockedApplication application,
-                                               ApplicationPackageStream applicationPackage, Consumer<String> deployLogger) {
+                                               ApplicationPackageStream applicationPackage,
+                                               Consumer<String> deployLogger) {
         Instance instance = application.get().require(job.application().instance());
         Tags tags = applicationPackage.truncatedPackage().deploymentSpec().instance(instance.name())
                                       .map(DeploymentInstanceSpec::tags)
