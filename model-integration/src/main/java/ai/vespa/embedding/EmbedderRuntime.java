@@ -10,8 +10,8 @@ import com.yahoo.metrics.simple.Gauge;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Point;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author bjorncs
@@ -20,7 +20,7 @@ public class EmbedderRuntime implements Embedder.Runtime {
 
     private final Gauge embedLatency;
     private final Gauge sequenceLength;
-    private final Map<MetricDimensions, Point> metricPointCache = new HashMap<>();
+    private final Map<MetricDimensions, Point> metricPointCache = new ConcurrentHashMap<>();
 
     @Inject
     public EmbedderRuntime(MetricReceiver metrics) {
