@@ -234,7 +234,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private void ensureClusterTableIsUpdated() {
         try {
-            if (0 == engine().getStatus(newContext().getCairoSecurityContext(), new Path(), clusterTable.token)) {
+            if (0 == engine().getStatus(newContext().getCairoSecurityContext(), new Path(), clusterTable.token())) {
                 // Example: clusterTable.ensureColumnExists("write_rate", "float");
             }
         } catch (Exception e) {
@@ -361,25 +361,26 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
         private final Object writeLock = new Object();
         private final String name;
-        private final TableToken token;
         private final File dir;
         private long highestTimestampAdded = 0;
 
         Table(String dataDir, String name) {
             this.name = name;
-            this.token = engine().getTableToken(name);
             this.dir = new File(dataDir, name);
             IOUtils.createDirectory(dir.getPath());
             // https://stackoverflow.com/questions/67785629/what-does-max-txn-txn-inflight-limit-reached-in-questdb-and-how-to-i-avoid-it
             new File(dir + "/_txn_scoreboard").delete();
         }
+        private TableToken token() { return engine().getTableToken(name); }
 
         boolean exists() {
+            TableToken token = engine().getTableTokenIfExists(name);
+            if (token == null) return false;
             return 0 == engine().getStatus(newContext().getCairoSecurityContext(), new Path(), token);
         }
 
         TableWriter getWriter() {
-            return engine().getWriter(newContext().getCairoSecurityContext(), token, "getWriter");
+            return engine().getWriter(newContext().getCairoSecurityContext(), token(), "getWriter");
         }
 
         void gc() {
