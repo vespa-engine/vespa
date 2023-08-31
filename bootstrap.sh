@@ -36,13 +36,25 @@ get_env_var_with_optional_default() {
     fi
 }
 
+# TODO: use maven-wrapper after changing mvn command for vespa in factory/build-java.sh
+#readonly MAVEN_CMD=$(get_env_var_with_optional_default VESPA_MAVEN_COMMAND "$(pwd)/mvnw")
 readonly MAVEN_CMD=$(get_env_var_with_optional_default VESPA_MAVEN_COMMAND mvn)
+
 readonly MAVEN_EXTRA_OPTS=$(get_env_var_with_optional_default VESPA_MAVEN_EXTRA_OPTS)
 echo "Using maven command: ${MAVEN_CMD}"
 echo "Using maven extra opts: ${MAVEN_EXTRA_OPTS}"
 
 mvn_install() {
     ${MAVEN_CMD} --batch-mode --no-snapshot-updates -Dmaven.wagon.http.retryHandler.count=5 clean install ${MAVEN_EXTRA_OPTS} "$@"
+}
+
+force_move() {
+    local src_dir=$1
+    local file=$2
+
+    rm -rf "./${file:?}"
+    cp -r "$src_dir/${file:?}" .
+    rm -rf "$src_dir/${file:?}"
 }
 
 # Generate vtag map
@@ -59,6 +71,14 @@ $top/dist/getversionmap.sh $top > $top/dist/vtag.map
 # The 'java' mode only builds the plugins.
 # The 'default' mode also builds some modules needed by C++ code.
 # The 'full' mode also builds modules needed by C++ tests.
+
+# Set up maven wrapper.
+echo "Setting up maven wrapper in $(pwd)"
+mvn wrapper:wrapper -Dmaven=3.8.8 -f maven-plugins/pom.xml
+force_move maven-plugins .mvn
+force_move maven-plugins mvnw
+rm -f maven-plugins/mvnw.cmd
+${MAVEN_CMD} -v
 
 # must install parent poms first:
 echo "Downloading all dependencies. This may take a few minutes with an empty Maven cache."
