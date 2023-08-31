@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 public class WrongBeforeAllTest {
 
     @BeforeAll
-    void wrong() { }
+    static void wrong() { }
 
     @Test
     void test() { }
