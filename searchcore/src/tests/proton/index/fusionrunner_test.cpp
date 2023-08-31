@@ -192,8 +192,8 @@ void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
     DocBuilder doc_builder(add_fields);
     auto schema = SchemaBuilder(doc_builder).add_all_indexes().build();
     MemoryIndex memory_index(schema, MockFieldLengthInspector(),
-                             _service.write().indexFieldInverter(),
-                             _service.write().indexFieldWriter());
+                             _service.write().field_writer(),
+                             _service.write().field_writer());
     addDocument(doc_builder, memory_index, *_selector, id, id + 0, term);
     addDocument(doc_builder, memory_index, *_selector, id, id + 1, "bar");
     addDocument(doc_builder, memory_index, *_selector, id, id + 2, "baz");

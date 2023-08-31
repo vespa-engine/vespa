@@ -24,9 +24,10 @@ ExecutorThreadingServiceMetrics::update(const ExecutorThreadingServiceStats &sta
     master.update(stats.getMasterExecutorStats());
     index.update(stats.getIndexExecutorStats());
     summary.update(stats.getSummaryExecutorStats());
-    indexFieldInverter.update(stats.getIndexFieldInverterExecutorStats());
-    indexFieldWriter.update(stats.getIndexFieldWriterExecutorStats());
-    attributeFieldWriter.update(stats.getAttributeFieldWriterExecutorStats());
+    vespalib::ExecutorStats empty_stats;
+    indexFieldInverter.update(empty_stats);
+    indexFieldWriter.update(empty_stats);
+    attributeFieldWriter.update(empty_stats);
 }
 
 }

@@ -10,9 +10,7 @@ ThreadingServiceObserver::ThreadingServiceObserver(searchcorespi::index::IThread
       _index(service.index()),
       _summary(service.summary()),
       _shared(service.shared()),
-      _indexFieldInverter(_service.indexFieldInverter()),
-      _indexFieldWriter(_service.indexFieldWriter()),
-      _attributeFieldWriter(_service.attributeFieldWriter())
+      _field_writer(_service.field_writer())
 {
 }
 

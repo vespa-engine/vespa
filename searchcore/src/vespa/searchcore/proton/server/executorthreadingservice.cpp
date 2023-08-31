@@ -65,9 +65,7 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor & sharedEx
       _summaryExecutor(createExecutorWithOneThread(cfg, CpuUsage::wrap(summary_executor, CpuUsage::Category::WRITE))),
       _masterService(_masterExecutor),
       _indexService(*_indexExecutor),
-      _index_field_inverter(field_writer),
-      _index_field_writer(field_writer),
-      _attribute_field_writer(field_writer),
+      _field_writer(field_writer),
       _invokeRegistrations()
 {
     if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
@@ -92,11 +90,11 @@ void
 ExecutorThreadingService::shutdown()
 {
     _masterExecutor.shutdown().sync();
-    _attribute_field_writer.sync_all();
+    _field_writer.sync_all();
     _summaryExecutor->shutdown().sync();
     _indexExecutor->shutdown().sync();
-    _index_field_inverter.sync_all();
-    _index_field_writer.sync_all();
+    _field_writer.sync_all();
+    _field_writer.sync_all();
 }
 
 void
@@ -107,10 +105,7 @@ ExecutorThreadingService::set_task_limits(uint32_t master_task_limit,
     _master_task_limit.store(master_task_limit, std::memory_order_release);
     _indexExecutor->setTaskLimit(field_task_limit);
     _summaryExecutor->setTaskLimit(summary_task_limit);
-    // TODO: Move this to a common place when the field writer is always shared.
-    _index_field_inverter.setTaskLimit(field_task_limit);
-    _index_field_writer.setTaskLimit(field_task_limit);
-    _attribute_field_writer.setTaskLimit(field_task_limit);
+    _field_writer.setTaskLimit(field_task_limit);
 }
 
 ExecutorThreadingServiceStats
@@ -119,26 +114,13 @@ ExecutorThreadingService::getStats()
     auto master_stats = _masterExecutor.getStats();
     auto index_stats = _indexExecutor->getStats();
     auto summary_stats = _summaryExecutor->getStats();
-    vespalib::ExecutorStats empty_stats;
-    // In this case the field writer stats are reported at a higher level.
-    return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats,
-                                         empty_stats, empty_stats, empty_stats);
+    return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats);
 }
 
 vespalib::ISequencedTaskExecutor &
-ExecutorThreadingService::indexFieldInverter() {
-    return _index_field_inverter;
+ExecutorThreadingService::field_writer() {
+    return _field_writer;
 }
 
-vespalib::ISequencedTaskExecutor &
-ExecutorThreadingService::indexFieldWriter() {
-    return _index_field_writer;
 }
-
-vespalib::ISequencedTaskExecutor &
-ExecutorThreadingService::attributeFieldWriter() {
-    return _attribute_field_writer;
-}
-
-} // namespace proton
 

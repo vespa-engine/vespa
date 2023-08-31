@@ -70,7 +70,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                configSnapshot.getTuneFileDocumentDBSP()->_attr,
                                                _fileHeaderContext,
                                                _attribute_interlock,
-                                               _writeService.attributeFieldWriter(),
+                                               _writeService.field_writer(),
                                                _writeService.shared(),
                                                attrFactory,
                                                _hwInfo);
