@@ -87,10 +87,10 @@ class JunitRunnerTest {
     static Suite getSuite(Class<?> testClass) {
         for (Annotation annotation : testClass.getAnnotations()) {
             switch (annotation.annotationType().getSimpleName()) {
-                case "SystemTest": return Suite.SYSTEM_TEST;
-                case "StagingSetup": return Suite.STAGING_SETUP_TEST;
-                case "StagingTest": return Suite.STAGING_TEST;
-                case "ProductionTest": return Suite.PRODUCTION_TEST;
+                case "SystemTest" -> { return Suite.SYSTEM_TEST; }
+                case "StagingSetup" -> { return Suite.STAGING_SETUP_TEST; }
+                case "StagingTest" -> { return Suite.STAGING_TEST; }
+                case "ProductionTest" -> { return Suite.PRODUCTION_TEST; }
             }
         }
         return null;
@@ -133,6 +133,7 @@ class JunitRunnerTest {
             this.listeners = List.of(listeners);
         }
 
+        @SuppressWarnings("deprecation")
         private TestIdentifier getTestIdentifier(TestDescriptor testDescriptor) {
             return plan.getTestIdentifier(testDescriptor.getUniqueId().toString());
         }
