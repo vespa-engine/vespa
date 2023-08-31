@@ -71,7 +71,7 @@ public interface HostProvisioner {
      *
      * @return the node objects for which updates were made
      */
-    default RebuildResult replaceRootDisk(Collection<Node> hosts) { throw new UnsupportedOperationException(); }
+    default RebuildResult replaceRootDisk(Collection<Node> hosts) { return new RebuildResult(List.of(), Map.of()); }
 
     record RebuildResult(List<Node> rebuilt, Map<Node, Exception> failed) { }
 
