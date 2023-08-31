@@ -783,38 +783,35 @@ public class ContentClusterTest extends ContentBaseTest {
         cluster.getConfig(builder);
 
         MetricsmanagerConfig config = new MetricsmanagerConfig(builder);
+        assertEquals(5, config.consumer().size());
 
-        assertEquals(6, config.consumer().size());
-        assertEquals("status", config.consumer(0).name());
-        assertEquals("*", config.consumer(0).addedmetrics(0));
-        assertEquals("partofsum", config.consumer(0).removedtags(0));
+        var status = config.consumer(0);
+        assertEquals("status", status.name());
+        assertEquals("*", status.addedmetrics(0));
+        assertEquals("partofsum", status.removedtags(0));
 
-        assertEquals("log", config.consumer(1).name());
-        assertEquals("logdefault", config.consumer(1).tags().get(0));
-        assertEquals("loadtype", config.consumer(1).removedtags(0));
+        var log = config.consumer(1);
+        assertEquals("log", log.name());
+        assertEquals("logdefault", log.tags().get(0));
+        assertEquals("loadtype", log.removedtags(0));
 
-        assertEquals("yamas", config.consumer(2).name());
-        assertEquals("yamasdefault", config.consumer(2).tags().get(0));
-        assertEquals("loadtype", config.consumer(2).removedtags(0));
+        var yamas = config.consumer(2);
+        assertEquals("yamas", yamas.name());
+        assertEquals("yamasdefault", yamas.tags().get(0));
+        assertEquals("loadtype", yamas.removedtags(0));
 
         assertEquals("health", config.consumer(3).name());
 
-        assertEquals("statereporter", config.consumer(5).name());
-        assertEquals("*", config.consumer(5).addedmetrics(0));
-        assertEquals("thread", config.consumer(5).removedtags(0));
-        assertEquals("partofsum", config.consumer(5).removedtags(1));
-        assertEquals(0, config.consumer(5).tags().size());
+        var stateReporter = config.consumer(4);
+        assertEquals("statereporter", stateReporter.name());
+        assertEquals("*", stateReporter.addedmetrics(0));
+        assertEquals("thread", stateReporter.removedtags(0));
+        assertEquals("partofsum", stateReporter.removedtags(1));
+        assertEquals(0, stateReporter.tags().size());
 
         cluster.getStorageCluster().getConfig(builder);
         config = new MetricsmanagerConfig(builder);
-        assertEquals(6, config.consumer().size());
-
-        assertEquals("fleetcontroller", config.consumer(4).name());
-        assertEquals(4, config.consumer(4).addedmetrics().size());
-        assertEquals("vds.datastored.alldisks.docs", config.consumer(4).addedmetrics(0));
-        assertEquals("vds.datastored.alldisks.bytes", config.consumer(4).addedmetrics(1));
-        assertEquals("vds.datastored.alldisks.buckets", config.consumer(4).addedmetrics(2));
-        assertEquals("vds.datastored.bucket_space.buckets_total", config.consumer(4).addedmetrics(3));
+        assertEquals(5, config.consumer().size());
     }
 
     public MetricsmanagerConfig.Consumer getConsumer(String consumer, MetricsmanagerConfig config) {
@@ -872,13 +869,6 @@ public class ContentClusterTest extends ContentBaseTest {
             String actual = getConsumer("log", config).addedmetrics().toString().replaceAll(", ", "\n");
             assertEquals(expected, actual);
             assertEquals("[logdefault]", getConsumer("log", config).tags().toString());
-            expected =
-                    "[vds.datastored.alldisks.docs\n" +
-                            "vds.datastored.alldisks.bytes\n" +
-                            "vds.datastored.alldisks.buckets\n" +
-                            "vds.datastored.bucket_space.buckets_total]";
-            actual = getConsumer("fleetcontroller", config).addedmetrics().toString().replaceAll(", ", "\n");
-            assertEquals(expected, actual);
         }
 
         {
