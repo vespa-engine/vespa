@@ -32,21 +32,11 @@ public class LocalDiskLoggerTest {
                 .blob("my entry blob content".getBytes())
                 .track("my-track")
                 .send();
-        waitForFile(logFile);
+        logger.deconstruct();
 
         String test = IOUtils.readAll(new FileReader(logFile));
         assertTrue(test.contains(Base64.getEncoder().encodeToString("my entry blob content".getBytes())));
         assertTrue(test.contains("my-track"));
-    }
-
-    private void waitForFile(File file) throws InterruptedException {
-        int waitFor = 10;
-        while ( ! file.exists() && --waitFor > 0) {
-            Thread.sleep(10);
-        }
-        if ( ! file.exists()) {
-            fail("Local disk logger file was not created");
-        }
     }
 
 }

@@ -2,6 +2,8 @@
 
 package com.yahoo.search.logging;
 
+import com.yahoo.component.AbstractComponent;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -10,7 +12,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-abstract class AbstractThreadedLogger implements Logger {
+abstract class AbstractThreadedLogger extends AbstractComponent implements Logger {
 
     private final static java.util.logging.Logger log = java.util.logging.Logger.getLogger(AbstractThreadedLogger.class.getName());
 
@@ -51,10 +53,15 @@ abstract class AbstractThreadedLogger implements Logger {
     }
 
     /**
-     * Actually transports the entry to it's destination
+     * Actually transports the entry to its destination
      */
     public abstract boolean transport(LoggerEntry entry);
 
+    /** Synchronously shuts down and waits for enqueued entries to be sent. */
+    @Override
+    public void deconstruct() {
+        executor.close();
+    }
 
     private static class WorkerThread extends Thread {
 

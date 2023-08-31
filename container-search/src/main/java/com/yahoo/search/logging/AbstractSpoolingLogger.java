@@ -54,8 +54,9 @@ public abstract class AbstractSpoolingLogger extends AbstractThreadedLogger impl
         return true;
     }
 
-    // TODO Call from a component or make this class a component
-    public void shutdown() {
+    @Override
+    public void deconstruct() {
+        super.deconstruct();
         executorService.shutdown();
         try {
             if ( ! executorService.awaitTermination(10, TimeUnit.SECONDS))
