@@ -7,6 +7,7 @@ import ai.djl.huggingface.tokenizers.jni.TokenizersLibrary;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.io.IOUtils;
 import com.yahoo.language.Language;
 import com.yahoo.language.huggingface.ModelInfo.PaddingStrategy;
 import com.yahoo.language.huggingface.ModelInfo.TruncationStrategy;
@@ -36,6 +37,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 @Beta
 public class HuggingFaceTokenizer extends AbstractComponent implements Embedder, Segmenter, AutoCloseable {
 
+    private final Path tmpDirectory = uncheck(() -> Files.createTempDirectory("hf-tokenizer-"));
     private final Map<Language, ai.djl.huggingface.tokenizers.HuggingFaceTokenizer> models;
 
     @Inject public HuggingFaceTokenizer(HuggingFaceTokenizerConfig cfg) { this(new Builder(cfg)); }
@@ -52,8 +54,17 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
             b.models.forEach((language, path) -> {
                 models.put(language,
                            uncheck(() -> {
+                               // Support BPE tokenizer models which consist of multiple files
+                               Path tokenizerDir;
+                               if (Files.isDirectory(path)) {
+                                   tokenizerDir = path;
+                               } else {
+                                   tokenizerDir = Files.createDirectory(tmpDirectory.resolve(language.languageCode()));
+                                   Files.copy(path, tokenizerDir.resolve("tokenizer.json"));
+                               }
+
                                var hfb = ai.djl.huggingface.tokenizers.HuggingFaceTokenizer.builder()
-                                       .optTokenizerPath(path)
+                                       .optTokenizerPath(tokenizerDir)
                                        .optAddSpecialTokens(b.addSpecialTokens != null ? b.addSpecialTokens : true);
                                if (b.maxLength != null) {
                                    hfb.optMaxLength(b.maxLength);
@@ -97,7 +108,12 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
     public String decode(List<Long> tokens) { return decode(tokens, Language.UNKNOWN); }
     public String decode(List<Long> tokens, Language language) { return resolve(language).decode(toArray(tokens)); }
 
-    @Override public void close() { models.forEach((__, model) -> model.close()); }
+    @Override
+    public void close() {
+        models.forEach((__, model) -> model.close());
+        IOUtils.recursiveDeleteDir(tmpDirectory.toFile());
+    }
+
     @Override public void deconstruct() { close(); }
 
     public static ModelInfo getModelInfo(Path path) {
