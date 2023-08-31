@@ -3,7 +3,6 @@
 #include "attributedisklayout.h"
 #include "attribute_directory.h"
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/fastos/file.h>
 #include <cassert>
 #include <filesystem>
 
@@ -34,12 +33,10 @@ AttributeDiskLayout::listAttributes()
 void
 AttributeDiskLayout::scanDir()
 {
-    FastOS_DirectoryScan dir(_baseDir.c_str());
-    while (dir.ReadNext()) {
-        if (strcmp(dir.GetName(), "..") != 0 && strcmp(dir.GetName(), ".") != 0) {
-            if (dir.IsDirectory()) {
-                createAttributeDir(dir.GetName());
-            }
+    std::filesystem::directory_iterator dir_scan{std::filesystem::path(_baseDir)};
+    for (auto& entry : dir_scan) {
+        if (entry.is_directory()) {
+            createAttributeDir(entry.path().filename().string());
         }
     }
 }
