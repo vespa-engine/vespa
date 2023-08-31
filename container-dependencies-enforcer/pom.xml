@@ -75,13 +75,13 @@
 
                                         <include>com.google.inject:guice:jar:no_aop:${guice.vespa.version}:provided</include>
                                         <include>com.sun.activation:javax.activation:[1.2.0, 2):provided</include>
-                                        <include>com.sun.xml.bind:jaxb-core:${jaxb.vespa.version}:provided</include>
-                                        <include>com.sun.xml.bind:jaxb-impl:${jaxb.vespa.version}:provided</include>
+                                        <include>com.sun.xml.bind:jaxb-core:${jaxb-core.vespa.version}:provided</include>
+                                        <include>com.sun.xml.bind:jaxb-impl:${jaxb-impl.vespa.version}:provided</include>
                                         <include>commons-logging:commons-logging:${commons-logging.vespa.version}:provided</include>
                                         <include>javax.inject:javax.inject:${javax.inject.vespa.version}:provided</include>
                                         <include>javax.servlet:javax.servlet-api:${javax.servlet-api.vespa.version}:provided</include>
                                         <include>javax.ws.rs:javax.ws.rs-api:${javax.ws.rs-api.vespa.version}:provided</include>
-                                        <include>javax.xml.bind:jaxb-api:${jaxb.vespa.version}:provided</include>
+                                        <include>javax.xml.bind:jaxb-api:${jaxb-api.vespa.version}:provided</include>
                                         <include>org.slf4j:jcl-over-slf4j:${slf4j.vespa.version}:provided</include>
                                         <include>org.slf4j:log4j-over-slf4j:${slf4j.vespa.version}:provided</include>
                                         <include>org.slf4j:slf4j-api:${slf4j.vespa.version}:provided</include>
