@@ -32,7 +32,7 @@ public class ZipEntries {
 
         Options options = Options.standard()
                                  .pathPredicate(entryNameMatcher)
-                                 .maxSize(2 * (long) Math.pow(1024, 3)) // 2 GB
+                                 .maxSize(2L << 30) // 2 GB
                                  .maxEntrySize(maxEntrySizeInBytes)
                                  .maxEntries(1024)
                                  .truncateEntry(!throwIfEntryExceedsMaxSize);

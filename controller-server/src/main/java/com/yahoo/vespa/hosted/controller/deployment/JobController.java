@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
 import com.yahoo.concurrent.UncheckedTimeoutException;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
@@ -75,6 +76,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import static com.yahoo.collections.Iterables.reversed;
+import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage.deploymentFile;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.cancelled;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
@@ -89,6 +91,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialRe
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
@@ -577,7 +580,8 @@ public class JobController {
                                                 id.application(),
                                                 version.get().id(),
                                                 submission.applicationPackage().zippedContent(),
-                                                submission.testPackage(),
+                                                withDeploymentSpec(submission.testPackage(),
+                                                                   submission.applicationPackage().deploymentSpec()),
                                                 diff);
             applications.applicationStore().putMeta(id.tenant(),
                                                     id.application(),
@@ -597,6 +601,15 @@ public class JobController {
                 controller.applications().deploymentTrigger().forceChange(id.instance(instance), Change.of(version.get().id()));
         });
         return version.get();
+    }
+
+    static byte[] withDeploymentSpec(byte[] testZip, DeploymentSpec spec) {
+        ZipBuilder zip = new ZipBuilder(testZip.length + (1 << 12));
+        try (zip) {
+            zip.add(testZip, name -> !name.equals(deploymentFile));
+            zip.add(deploymentFile, spec.xmlForm().getBytes(UTF_8));
+        }
+        return zip.toByteArray();
     }
 
     private void validate(TenantAndApplicationId id, Submission submission) {

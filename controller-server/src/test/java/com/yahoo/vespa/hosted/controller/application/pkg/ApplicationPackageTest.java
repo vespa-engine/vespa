@@ -166,7 +166,7 @@ public class ApplicationPackageTest {
         }
     }
 
-    static Map<String, String> unzip(byte[] zip) {
+    public static Map<String, String> unzip(byte[] zip) {
         return ZipEntries.from(zip, __ -> true, 1 << 24, true)
                          .asList().stream()
                          .collect(Collectors.toMap(ZipEntries.ZipEntryWithContent::name,
@@ -181,7 +181,7 @@ public class ApplicationPackageTest {
         return new ApplicationPackage(Files.readAllBytes(Path.of("src/test/resources/application-packages/" + path)), true, checkCertificateFile);
     }
 
-    static byte[] zip(Map<String, String> content) {
+    public static byte[] zip(Map<String, String> content) {
         return filesZip(content.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey(),
                                                                              entry -> entry.getValue().getBytes(UTF_8))));
     }
