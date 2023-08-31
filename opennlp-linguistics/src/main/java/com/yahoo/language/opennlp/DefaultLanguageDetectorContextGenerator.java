@@ -19,14 +19,15 @@ public class DefaultLanguageDetectorContextGenerator extends opennlp.tools.langd
     }
 
     @Override
-    public String[] getContext(CharSequence document) {
+    @SuppressWarnings("unchecked")
+    public <T extends CharSequence> T[] getContext(CharSequence document) {
         int[] normalized = normalizer.normalize(document).codePoints().map(Character::toLowerCase).toArray();
         Set<String> grams = new HashSet<>();
         for (int i = 0; i < normalized.length; i++)
             for (int j = minLength; j <= maxLength && i + j < normalized.length; j++)
                 grams.add(new String(normalized, i, j));
 
-        return grams.toArray(new String[grams.size()]);
+        return (T[])grams.toArray(new String[grams.size()]);
     }
 
 }
