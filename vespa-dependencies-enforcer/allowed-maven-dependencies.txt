@@ -43,7 +43,7 @@ com.ibm.icu:icu4j:73.2
 com.microsoft.onnxruntime:onnxruntime:1.15.1
 com.sun.activation:javax.activation:1.2.0
 com.sun.istack:istack-commons-runtime:3.0.12
-com.sun.xml.bind:jaxb-core:2.3.0
+com.sun.xml.bind:jaxb-core:2.3.0.1
 com.sun.xml.bind:jaxb-impl:2.3.0
 com.thaiopensource:jing:20091111
 com.yahoo.athenz:athenz-auth-core:1.11.40
