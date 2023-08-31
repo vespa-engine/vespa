@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.node.admin.cgroup;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Represents a cgroup v2 memory controller, i.e. all memory.* files.
@@ -38,6 +41,16 @@ public class MemoryController {
                 Size.from(readField(lines, "slab_reclaimable")), Size.from(readField(lines, "anon")));
     }
 
+    public Optional<Pressure> readPressureIfExists() {
+        return cgroup.readIfExists("memory.pressure")
+                .map(fileContent ->
+                        new Pressure(
+                                readPressureField(fileContent, "some"),
+                                readPressureField(fileContent, "full")
+                        )
+                );
+    }
+
     private static String readField(List<String> lines, String fieldName) {
         return lines.stream()
                     .map(line -> line.split("\\s+"))
@@ -49,6 +62,20 @@ public class MemoryController {
     }
 
     /**
+     * Fetches the avg60 value from the specified type, i.e. "some" or "full".
+     */
+    private static Double readPressureField(String fileContent, String type) {
+        var pattern = Pattern.compile(type + ".*avg60=(?<avg60>\\d+\\.\\d+).*");
+        return Stream.of(fileContent.split("\n"))
+                    .map(pattern::matcher)
+                    .filter(Matcher::matches)
+                    .map(matcher -> matcher.group("avg60"))
+                    .findFirst()
+                    .map(Double::parseDouble)
+                    .orElseThrow(() -> new IllegalArgumentException("No such field: " + type));
+    }
+
+    /**
      * @param file Number of bytes used to cache filesystem data, including tmpfs and shared memory.
      * @param sock Amount of memory used in network transmission buffers.
      * @param slab Amount of memory used for storing in-kernel data structures.
@@ -56,4 +83,10 @@ public class MemoryController {
      * @param anon Amount of memory used in anonymous mappings such as brk(), sbrk(), and mmap(MAP_ANONYMOUS).
      */
     public record Stats(Size file, Size sock, Size slab, Size slabReclaimable, Size anon) {}
+
+    /**
+     * @param some The avg60 value of the "some" pressure level.
+     * @param full The avg60 value of the "full" pressure level.
+     */
+    public record Pressure(double some, double full) {}
 }
