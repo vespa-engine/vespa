@@ -74,7 +74,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.WANT_TO_CHANGE_VESPA_VERSION.max());
         addMetric(metrics, ConfigServerMetrics.HAS_WIRE_GUARD_KEY.max());
         addMetric(metrics, ConfigServerMetrics.WANT_TO_DEPROVISION.max());
-        addMetric(metrics, ConfigServerMetrics.SUSPENDED.max();
+        addMetric(metrics, ConfigServerMetrics.SUSPENDED.max());
         addMetric(metrics, ConfigServerMetrics.SOME_SERVICES_DOWN.max());
         addMetric(metrics, ConfigServerMetrics.NODE_FAILER_BAD_NODE.max());
         addMetric(metrics, ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LOAD, EnumSet.of(max,average));
@@ -107,7 +107,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.DEPLOYMENT_PREPARE_MILLIS.max());
 
         addMetric(metrics, ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LOAD, EnumSet.of(max, average));
-        addMetric(metrics, ConfigServerMetrics.MAINTENANCE_SUCCESS_FACTOR_DEVIATION.max();
+        addMetric(metrics, ConfigServerMetrics.MAINTENANCE_SUCCESS_FACTOR_DEVIATION.max());
         addMetric(metrics, ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_FAILURE.count());
         addMetric(metrics, ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_TRANSIENT_FAILURE.count());
         addMetric(metrics, ConfigServerMetrics.OVERCOMMITTED_HOSTS.max());
