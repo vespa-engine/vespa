@@ -13,9 +13,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Map;
-import java.util.function.Function;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -41,34 +39,21 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     @Override
     protected boolean canDeployNow(ApplicationId application) {
         return deployer().deployTime(application)
-                // Don't deploy if a regular deploy just happened
-                .map(lastDeployTime -> lastDeployTime.isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments)))
-                // We only know last deploy time for applications that were deployed on this config server,
-                // the rest will be deployed on another config server
-                .orElse(false);
+                         .map(lastDeployTime ->    lastDeployTime.isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments))
+                                                || deployer().readiedReindexingAfter(application, lastDeployTime))
+                         .orElse(false);
     }
 
     @Override
     protected Map<ApplicationId, String> applicationsNeedingMaintenance() {
         if (deployer().bootstrapping()) return Map.of();
 
-        // Collect all deployment times before sorting as deployments may happen while we build the set, breaking
-        // the comparable contract. Stale times are fine as the time is rechecked in ApplicationMaintainer#deployNow
-        Map<ApplicationId, Instant> deploymentTimes = nodesNeedingMaintenance().stream()
-                                                                               .map(node -> node.allocation().get().owner())
-                                                                               .distinct()
-                                                                               .filter(this::canDeployNow)
-                                                                               .collect(toMap(Function.identity(), this::deployTime));
-
-        return deploymentTimes.entrySet().stream()
-                              .sorted(Map.Entry.comparingByValue())
-                              .map(Map.Entry::getKey)
-                              .filter(this::shouldMaintain)
-                              .collect(toMap(applicationId -> applicationId, applicationId -> "current deployment being too old"));
-    }
-
-    private Instant deployTime(ApplicationId applicationId) {
-        return deployer().deployTime(applicationId).orElse(Instant.EPOCH);
+        return nodesNeedingMaintenance().stream()
+                                        .map(node -> node.allocation().get().owner())
+                                        .distinct()
+                                        .filter(this::shouldMaintain)
+                                        .filter(this::canDeployNow)
+                                        .collect(toMap(applicationId -> applicationId, applicationId -> "current deployment being too old"));
     }
 
     private boolean shouldMaintain(ApplicationId id) {

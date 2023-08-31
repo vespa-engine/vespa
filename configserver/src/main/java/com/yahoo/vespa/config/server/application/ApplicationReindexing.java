@@ -6,10 +6,13 @@ import com.yahoo.vespa.config.server.maintenance.ReindexingMaintainer;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import static java.util.Comparator.naturalOrder;
 
 /**
  * Pending reindexing: convergence to the stored config generation allows reindexing to start.
@@ -92,6 +95,16 @@ public class ApplicationReindexing implements Reindexing {
     @Override
     public Optional<Reindexing.Status> status(String clusterName, String documentType) {
         return Optional.ofNullable(clusters.get(clusterName)).map(cluster -> cluster.ready().get(documentType));
+    }
+
+    /** Instant at which reindexing in this was last readied, unless no reindexing is still pending, in which case this is empty. */
+    public Optional<Instant> lastReadiedAt() {
+        if ( ! enabled) return Optional.empty();
+        if (clusters.values().stream().anyMatch(cluster -> ! cluster.pending().isEmpty())) return Optional.empty();
+        return clusters.values().stream()
+                       .flatMap(cluster -> cluster.ready().values().stream())
+                       .map(Reindexing.Status::ready)
+                       .max(naturalOrder());
     }
 
     @Override
