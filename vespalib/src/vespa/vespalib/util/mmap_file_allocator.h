@@ -53,7 +53,7 @@ class MmapFileAllocator : public MemoryAllocator {
     void* map_premapped_offset_to_ptr(uint64_t offset, size_t size) const;
     uint64_t remove_allocation(PtrAndSize alloc, Allocations& allocations) const noexcept;
 public:
-    static constexpr uint32_t default_small_limit =  0;
+    static constexpr uint32_t default_small_limit =  128_Ki;
     static constexpr uint32_t default_premmap_size = 1_Mi;
     MmapFileAllocator(const vespalib::string& dir_name);
     MmapFileAllocator(const vespalib::string& dir_name, uint32_t small_limit, uint32_t premmap_size);
