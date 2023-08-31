@@ -141,7 +141,7 @@ BuildRequires: vespa-xxhash-devel >= 0.8.1
 BuildRequires: xxhash-devel >= 0.8.1
 %endif
 %if 0%{?el8}
-BuildRequires: vespa-openblas-devel = 0.3.21
+BuildRequires: vespa-openblas-devel >= 0.3.21
 %define _use_vespa_openblas 1
 %else
 BuildRequires: openblas-devel
@@ -257,7 +257,7 @@ Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.4-1
 Requires: vespa-libzstd >= 1.5.4-1
 %if 0%{?el8}
-Requires: vespa-openblas = 0.3.21
+Requires: vespa-openblas >= 0.3.21
 %else
 Requires: openblas-serial
 %endif
