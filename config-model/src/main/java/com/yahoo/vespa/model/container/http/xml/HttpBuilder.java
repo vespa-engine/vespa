@@ -22,6 +22,7 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -33,6 +34,12 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Ht
     static final String REQUEST_CHAIN_TAG_NAME = "request-chain";
     static final String RESPONSE_CHAIN_TAG_NAME = "response-chain";
     static final List<String> VALID_FILTER_CHAIN_TAG_NAMES = List.of(REQUEST_CHAIN_TAG_NAME, RESPONSE_CHAIN_TAG_NAME);
+    private final Set<Integer> portBindingOverrides;
+
+    public HttpBuilder(Set<Integer> portBindingOverrides) {
+        super();
+        this.portBindingOverrides = portBindingOverrides;
+    }
 
     @Override
     protected Http doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element spec) {
@@ -44,7 +51,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Ht
         Element filteringElem = XML.getChild(spec, "filtering");
         if (filteringElem != null) {
             filterChains = new FilterChainsBuilder().build(deployState, ancestor, filteringElem);
-            bindings = readFilterBindings(filteringElem);
+            bindings = readFilterBindings(filteringElem, this.portBindingOverrides);
             strictFiltering = XmlHelper.getOptionalAttribute(filteringElem, "strict-mode")
                     .map(Boolean::valueOf);
 
@@ -140,7 +147,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Ht
         return Optional.of((ApplicationContainerCluster) currentProducer);
     }
 
-    private List<FilterBinding> readFilterBindings(Element filteringSpec) {
+    private List<FilterBinding> readFilterBindings(Element filteringSpec, Set<Integer> portBindingOverride) {
         List<FilterBinding> result = new ArrayList<>();
 
         for (Element child: XML.getChildren(filteringSpec)) {
@@ -150,7 +157,14 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Ht
 
                 for (Element bindingSpec: XML.getChildren(child, "binding")) {
                     String binding = XML.getValue(bindingSpec);
-                    result.add(FilterBinding.create(toFilterBindingType(tagName), chainId, UserBindingPattern.fromPattern(binding)));
+                    if (portBindingOverride.isEmpty()) {
+                        result.add(FilterBinding.create(toFilterBindingType(tagName), chainId, UserBindingPattern.fromPattern(binding)));
+                    } else {
+                        UserBindingPattern userBindingPattern = UserBindingPattern.fromPattern(binding);
+                        portBindingOverride.stream()
+                                .map(userBindingPattern::withOverriddenPort)
+                                .forEach(pattern -> result.add(FilterBinding.create(toFilterBindingType(tagName), chainId, pattern)));
+                    }
                 }
             }
         }
