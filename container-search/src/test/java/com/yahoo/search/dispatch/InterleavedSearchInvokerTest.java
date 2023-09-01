@@ -238,8 +238,8 @@ public class InterleavedSearchInvokerTest {
 
     @Test
     void requireThatTopKProbabilityOverrideIsDisabledOnContentSkew() throws IOException {
-        Node node0 = new Node(0, "host0", 0);
-        Node node1 = new Node(1, "host1", 0);
+        Node node0 = new Node("test", 0, "host0", 0);
+        Node node1 = new Node("test", 1, "host1", 0);
         Group group = new Group(0, List.of(node0, node1));
 
         node0.setActiveDocuments(1000000);
@@ -250,8 +250,8 @@ public class InterleavedSearchInvokerTest {
 
     @Test
     void requireThatTopKProbabilityOverrideIsDisabledOnLittleContent() throws IOException {
-        Node node0 = new Node(0, "host0", 0);
-        Node node1 = new Node(1, "host1", 0);
+        Node node0 = new Node("test", 0, "host0", 0);
+        Node node1 = new Node("test", 1, "host1", 0);
         Group group = new Group(0, List.of(node0, node1));
 
         node0.setActiveDocuments(10);

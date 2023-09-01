@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Node {
 
+    private final String clusterName;
     private final int key;
     private final String hostname;
     private final int group;
@@ -25,7 +26,8 @@ public class Node {
     private volatile boolean working = true;
     private volatile boolean isBlockingWrites = false;
 
-    public Node(int key, String hostname, int group) {
+    public Node(String clusterName, int key, String hostname, int group) {
+        this.clusterName = clusterName;
         this.key = key;
         this.hostname = hostname;
         this.group = group;
@@ -103,8 +105,8 @@ public class Node {
 
     @Override
     public String toString() {
-        return "search node key = " + key + " hostname = "+ hostname + " path = " + pathIndex + " in group " + group +
-               " statusIsKnown = " + statusIsKnown + " working = " + working +
+        return "search node in cluster = " + clusterName + " key = " + key + " hostname = "+ hostname +
+               " path = " + pathIndex + " in group " + group + " statusIsKnown = " + statusIsKnown + " working = " + working +
                " activeDocs = " + getActiveDocuments() + " targetActiveDocs = " + getTargetActiveDocuments();
     }
 

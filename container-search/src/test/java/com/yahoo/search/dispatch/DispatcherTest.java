@@ -77,7 +77,7 @@ public class DispatcherTest {
         SearchCluster cl = new MockSearchCluster("1", 0, 0) {
             @Override
             public Optional<Node> localCorpusDispatchTarget() {
-                return Optional.of(new Node(1, "test", 1));
+                return Optional.of(new Node("test", 1, "test", 1));
             }
         };
         MockInvokerFactory invokerFactory = new MockInvokerFactory(cl.groupList(), dispatchConfig, (n, a) -> true);
