@@ -14,6 +14,7 @@ import io.questdb.cairo.CairoException;
 import io.questdb.cairo.DefaultCairoConfiguration;
 import io.questdb.cairo.TableToken;
 import io.questdb.cairo.TableWriter;
+import io.questdb.cairo.security.AllowAllSecurityContext;
 import io.questdb.cairo.sql.Record;
 import io.questdb.cairo.sql.RecordCursor;
 import io.questdb.cairo.sql.RecordCursorFactory;
@@ -354,7 +355,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     private SqlExecutionContext newContext() {
-        return new SqlExecutionContextImpl(engine(), 1);
+        CairoEngine engine = engine();
+        return new SqlExecutionContextImpl(engine, 1)
+                .with(AllowAllSecurityContext.INSTANCE, null);
     }
 
     /** A questDb table */
