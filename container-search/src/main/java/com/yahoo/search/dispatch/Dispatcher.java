@@ -121,7 +121,7 @@ public class Dispatcher extends AbstractComponent {
                DispatchNodesConfig nodesConfig, VipStatus vipStatus, InvokerFactoryFactory invokerFactories) {
         this(dispatchConfig, rpcConnectionPool,
              new SearchCluster(clusterId.stringValue(), dispatchConfig.minActivedocsPercentage(),
-                               toNodes(nodesConfig), vipStatus, new RpcPingFactory(rpcConnectionPool)),
+                               toNodes(clusterId.stringValue(), nodesConfig), vipStatus, new RpcPingFactory(rpcConnectionPool)),
              invokerFactories);
     }
 
@@ -180,7 +180,7 @@ public class Dispatcher extends AbstractComponent {
      *    under the assumption that this is the common case, i.e., new nodes have no documents yet.
      */
     void updateWithNewConfig(DispatchNodesConfig nodesConfig) {
-        try (var items = volatileItems()) { // Marking a reference to the old snapshot, which we want to have cleaned up.
+        try (var items = volatileItems()) { // Mark a reference to the old snapshot, which we want to have cleaned up.
             items.get().countDown();        // Decrement for its initial creation reference, so it may reach 0.
 
             // Let the RPC pool know about the new nodes, and set up the delayed cleanup that we need to do.
@@ -192,7 +192,7 @@ public class Dispatcher extends AbstractComponent {
             };
 
             // Update the nodes the search cluster keeps track of, and what nodes are monitored.
-            ClusterMonitor<Node> newMonitor = searchCluster.updateNodes(toNodes(nodesConfig), dispatchConfig.minActivedocsPercentage());
+            ClusterMonitor<Node> newMonitor = searchCluster.updateNodes(toNodes(searchCluster.name(), nodesConfig), dispatchConfig.minActivedocsPercentage());
 
             // Update the snapshot to use the new nodes set in the search cluster; the RPC pool is ready for this.
             this.volatileItems = update(newMonitor);
@@ -234,9 +234,9 @@ public class Dispatcher extends AbstractComponent {
             case LATENCY_AMORTIZED_OVER_TIME -> LoadBalancer.Policy.LATENCY_AMORTIZED_OVER_TIME;
         };
     }
-    private static List<Node> toNodes(DispatchNodesConfig nodesConfig) {
+    private static List<Node> toNodes(String clusterName, DispatchNodesConfig nodesConfig) {
         return nodesConfig.node().stream()
-                .map(n -> new Node(n.key(), n.host(), n.group()))
+                .map(n -> new Node(clusterName, n.key(), n.host(), n.group()))
                 .toList();
     }
 

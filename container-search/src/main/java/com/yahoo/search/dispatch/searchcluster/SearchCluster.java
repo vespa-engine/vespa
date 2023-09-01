@@ -8,16 +8,18 @@ import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
 import com.yahoo.yolean.UncheckedInterruptedException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * A model of a search cluster we might want to dispatch queries to.
@@ -42,7 +44,7 @@ public class SearchCluster implements NodeManager<Node> {
      * if it only queries this cluster when the local node cannot be used, to avoid unnecessary
      * cross-node network traffic.
      */
-    private final Node localCorpusDispatchTarget;
+    private volatile Node localCorpusDispatchTarget;
 
     public SearchCluster(String clusterId, double minActivedocsPercentage, Collection<Node> nodes,
                          VipStatus vipStatus, PingFactory pingFactory) {
@@ -62,12 +64,14 @@ public class SearchCluster implements NodeManager<Node> {
 
     /** Sets the new nodes to monitor to be the new nodes, but keep any existing node instances which equal the new ones. */
     public ClusterMonitor<Node> updateNodes(Collection<Node> newNodes, double minActivedocsPercentage) {
-        Collection<Node> retainedNodes = groups.nodes();
-        Collection<Node> currentNodes = new HashSet<>(newNodes);
-        retainedNodes.retainAll(currentNodes);          // Throw away all old nodes which are not in the new set.
-        currentNodes.removeIf(retainedNodes::contains); // Throw away all new nodes for which we have more information in an old object.
-        Collection<Node> addedNodes = List.copyOf(currentNodes);
-        currentNodes.addAll(retainedNodes);             // Keep the old nodes that were replaced in the new set.
+        List<Node> currentNodes = new ArrayList<>(newNodes);
+        List<Node> addedNodes = new ArrayList<>();
+        Map<Node, Node> retainedNodes = groups.nodes().stream().collect(toMap(node -> node, node -> node));
+        for (int i = 0; i < currentNodes.size(); i++) {
+            Node retained = retainedNodes.get(currentNodes.get(i));
+            if (retained != null) currentNodes.set(i, retained);
+            else addedNodes.add(currentNodes.get(i));
+        }
         SearchGroupsImpl groups = toGroups(currentNodes, minActivedocsPercentage);
         ClusterMonitor<Node> monitor = new ClusterMonitor<>(this, false);
         for (Node node : groups.nodes()) monitor.add(node, true);
@@ -75,6 +79,7 @@ public class SearchCluster implements NodeManager<Node> {
         try { while (addedNodes.stream().anyMatch(node -> node.isWorking() == null)) { Thread.sleep(1); } }
         catch (InterruptedException e) { throw new UncheckedInterruptedException(e, true); }
         pingIterationCompleted(groups);
+        this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), groups);
         this.groups = groups;
         return monitor;
     }
