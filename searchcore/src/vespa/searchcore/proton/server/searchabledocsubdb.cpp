@@ -348,6 +348,12 @@ SearchableDocSubDB::clearViews() {
     Parent::clearViews();
 }
 
+std::shared_ptr<IAttributeWriter>
+SearchableDocSubDB::get_attribute_writer() const
+{
+    return _rFeedView.get()->getAttributeWriter();
+}
+
 TransientResourceUsage
 SearchableDocSubDB::get_transient_resource_usage() const
 {

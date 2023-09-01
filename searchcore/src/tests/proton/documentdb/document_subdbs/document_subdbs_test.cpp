@@ -1033,20 +1033,23 @@ TEST_F("require that underlying components are explorable", StoreOnlyExplorerFix
 {
     assertExplorer({}, f._explorer);
     EXPECT_TRUE(f._explorer.get_child("attribute").get() == nullptr);
+    EXPECT_TRUE(f._explorer.get_child("attributewriter").get() == nullptr);
     EXPECT_TRUE(f._explorer.get_child("index").get() == nullptr);
 }
 
 TEST_F("require that underlying components are explorable", FastAccessExplorerFixture)
 {
-    assertExplorer({"attribute"}, f._explorer);
+    assertExplorer({"attribute", "attributewriter"}, f._explorer);
     EXPECT_TRUE(f._explorer.get_child("attribute").get() != nullptr);
+    EXPECT_TRUE(f._explorer.get_child("attributewriter").get() != nullptr);
     EXPECT_TRUE(f._explorer.get_child("index").get() == nullptr);
 }
 
 TEST_F("require that underlying components are explorable", SearchableExplorerFixture)
 {
-    assertExplorer({"attribute", "index"}, f._explorer);
+    assertExplorer({"attribute", "attributewriter", "index"}, f._explorer);
     EXPECT_TRUE(f._explorer.get_child("attribute").get() != nullptr);
+    EXPECT_TRUE(f._explorer.get_child("attributewriter").get() != nullptr);
     EXPECT_TRUE(f._explorer.get_child("index").get() != nullptr);
 }
 

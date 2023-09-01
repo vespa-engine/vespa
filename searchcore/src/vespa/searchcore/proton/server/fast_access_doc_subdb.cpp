@@ -282,6 +282,12 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
     return tasks;
 }
 
+std::shared_ptr<IAttributeWriter>
+FastAccessDocSubDB::get_attribute_writer() const
+{
+    return _fastAccessFeedView.get()->getAttributeWriter();
+}
+
 proton::IAttributeManager::SP
 FastAccessDocSubDB::getAttributeManager() const
 {

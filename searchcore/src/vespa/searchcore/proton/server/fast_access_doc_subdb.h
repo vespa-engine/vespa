@@ -119,6 +119,7 @@ public:
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig& prepared_reconfig) override;
 
+    std::shared_ptr<IAttributeWriter> get_attribute_writer() const override;
     std::shared_ptr<IAttributeManager> getAttributeManager() const override;
     IDocumentRetriever::UP getDocumentRetriever() override;
     void onReplayDone() override;
