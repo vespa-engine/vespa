@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -144,6 +143,7 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private void updateWorkingState(Node node, boolean isWorking) {
+        log.fine(() -> "Updating working state of " + node + " to " + isWorking);
         node.setWorking(isWorking);
         updateVipStatusOnNodeChange(node, isWorking);
     }
@@ -219,6 +219,7 @@ public class SearchCluster implements NodeManager<Node> {
     /** Used by the cluster monitor to manage node status */
     @Override
     public void ping(ClusterMonitor<Node> clusterMonitor, Node node, Executor executor) {
+        log.fine(() -> "Pinging " + node);
         Pinger pinger = pingFactory.createPinger(node, clusterMonitor, new PongCallback(node, clusterMonitor));
         pinger.ping();
     }
@@ -305,6 +306,7 @@ public class SearchCluster implements NodeManager<Node> {
 
         @Override
         public void handle(Pong pong) {
+            log.fine(() -> "Got pong from " + node + ": " + pong);
             if (pong.badResponse()) {
                 clusterMonitor.failed(node, pong.error().get());
             } else {
