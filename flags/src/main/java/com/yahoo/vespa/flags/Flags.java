@@ -381,6 +381,13 @@ public class Flags {
             "Whether to write application data (active session id, last deployed session id etc. ) as json",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag ASSIGN_RANDOMIZED_ID = defineFeatureFlag(
+            "assign-randomized-id", false,
+            List.of("mortent"), "2023-08-31", "2024-02-01",
+            "Whether to assign randomized id to the application",
+            "Takes effect immediately",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

@@ -3,18 +3,26 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.common.collect.Sets;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateDetails;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateRequest;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.GeneratedEndpoint;
 import com.yahoo.vespa.hosted.controller.certificate.UnassignedCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.EndpointSecretManager;
@@ -34,9 +42,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Updates refreshed endpoint certificates and triggers redeployment, and deletes unused certificates.
@@ -56,6 +66,9 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private final EndpointSecretManager endpointSecretManager;
     private final EndpointCertificateProvider endpointCertificateProvider;
     final Comparator<EligibleJob> oldestFirst = Comparator.comparing(e -> e.deployment.at());
+    final BooleanFlag assignRandomizedId;
+    private final StringFlag endpointCertificateAlgo;
+    private final BooleanFlag useAlternateCertProvider;
 
     @Inject
     public EndpointCertificateMaintainer(Controller controller, Duration interval) {
@@ -66,6 +79,9 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         this.endpointSecretManager = controller.serviceRegistry().secretManager();
         this.curator = controller().curator();
         this.endpointCertificateProvider = controller.serviceRegistry().endpointCertificateProvider();
+        this.assignRandomizedId = Flags.ASSIGN_RANDOMIZED_ID.bindTo(controller.flagSource());
+        this.useAlternateCertProvider = PermanentFlags.USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER.bindTo(controller.flagSource());
+        this.endpointCertificateAlgo = PermanentFlags.ENDPOINT_CERTIFICATE_ALGORITHM.bindTo(controller.flagSource());
     }
 
     @Override
@@ -76,6 +92,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
             updateRefreshedCertificates();
             deleteUnusedCertificates();
             deleteOrReportUnmanagedCertificates();
+            assignRandomizedIds();
         } catch (Exception e) {
             log.log(Level.SEVERE, "Exception caught while maintaining endpoint certificates", e);
             return 1.0;
@@ -250,6 +267,110 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                 }
             }
         }
+    }
+
+    private void assignRandomizedIds() {
+        List<AssignedCertificate> assignedCertificates = curator.readAssignedCertificates();
+            /*
+                only assign randomized id if:
+                * instance is present
+                * randomized id is not already assigned
+                * feature flag is enabled
+            */
+        assignedCertificates.stream()
+                .filter(c -> c.instance().isPresent())
+                .filter(c -> c.certificate().randomizedId().isEmpty())
+                .filter(c -> assignRandomizedId.with(FetchVector.Dimension.APPLICATION_ID, c.application().instance(c.instance().get()).serializedForm()).value())
+                .forEach(c -> assignRandomizedId(c.application(), c.instance().get()));
+    }
+
+    /*
+        Assign randomized id according to these rules:
+        * Instance is not mentioned in the deployment spec for this application
+            -> assume this is a manual deployment. Assign a randomized id to the certificate, save using instance only
+        * Instance is mentioned in deployment spec:
+            -> If there is a random endpoint assigned to tenant:application -> use this also for the "instance" certificate
+            -> Otherwise assign a random endpoint and write to the application and the instance.
+     */
+    private void assignRandomizedId(TenantAndApplicationId tenantAndApplicationId, InstanceName instanceName) {
+        Optional<AssignedCertificate> assignedCertificate = curator.readAssignedCertificate(tenantAndApplicationId, Optional.of(instanceName));
+        if (assignedCertificate.isEmpty()) {
+            log.log(Level.INFO, "Assigned certificate missing for " + tenantAndApplicationId.instance(instanceName).toFullString() + " when assigning randomized id");
+        }
+        // Verify that the assigned certificate still does not have randomized id assigned
+        if (assignedCertificate.get().certificate().randomizedId().isPresent()) return;
+
+        controller().applications().lockApplicationOrThrow(tenantAndApplicationId, application -> {
+            DeploymentSpec deploymentSpec = application.get().deploymentSpec();
+            if (deploymentSpec.instance(instanceName).isPresent()) {
+                Optional<AssignedCertificate> applicationLevelAssignedCertificate  = curator.readAssignedCertificate(tenantAndApplicationId, Optional.empty());
+                assignApplicationRandomId(assignedCertificate.get(), applicationLevelAssignedCertificate);
+            } else {
+                assignInstanceRandomId(assignedCertificate.get());
+            }
+        });
+    }
+
+    private void assignApplicationRandomId(AssignedCertificate instanceLevelAssignedCertificate, Optional<AssignedCertificate> applicationLevelAssignedCertificate) {
+        TenantAndApplicationId tenantAndApplicationId = instanceLevelAssignedCertificate.application();
+        if (applicationLevelAssignedCertificate.isPresent()) {
+            applicationLevelAssignedCertificate.get().certificate().randomizedId().orElseThrow(() -> new IllegalArgumentException("Application certificate already assigned to " + tenantAndApplicationId.toString() + ", but random id is missing"));
+            // Application level assigned certificate with randomized id already exists. Copy randomized id to instance level certificate and request with random names.
+            EndpointCertificate withRandomNames = requestRandomNames(tenantAndApplicationId, instanceLevelAssignedCertificate.instance(), applicationLevelAssignedCertificate.get().certificate().randomizedId().get(), Optional.of(instanceLevelAssignedCertificate.certificate()));
+            AssignedCertificate assignedCertWithRandomNames = instanceLevelAssignedCertificate.with(withRandomNames);
+            curator.writeAssignedCertificate(assignedCertWithRandomNames);
+        } else {
+            // No application level certificate exists, generate new assigned certificate with the randomized id based names only, then request same names also for instance level cert
+            String randomId = generateRandomId();
+            EndpointCertificate applicationLevelEndpointCert = requestRandomNames(tenantAndApplicationId, Optional.empty(), randomId, Optional.empty());
+            AssignedCertificate applicationLevelCert = new AssignedCertificate(tenantAndApplicationId, Optional.empty(), applicationLevelEndpointCert);
+
+            EndpointCertificate instanceLevelEndpointCert = requestRandomNames(tenantAndApplicationId, instanceLevelAssignedCertificate.instance(), randomId, Optional.of(instanceLevelAssignedCertificate.certificate()));
+            instanceLevelAssignedCertificate = instanceLevelAssignedCertificate.with(instanceLevelEndpointCert);
+
+            // Save both in transaction
+            try (NestedTransaction transaction = new NestedTransaction()) {
+                curator.writeAssignedCertificate(instanceLevelAssignedCertificate, transaction);
+                curator.writeAssignedCertificate(applicationLevelCert, transaction);
+                transaction.commit();
+            }
+        }
+    }
+
+    private void assignInstanceRandomId(AssignedCertificate assignedCertificate) {
+        String randomId = generateRandomId();
+        EndpointCertificate withRandomNames = requestRandomNames(assignedCertificate.application(), assignedCertificate.instance(), randomId, Optional.of(assignedCertificate.certificate()));
+        AssignedCertificate assignedCertWithRandomNames = assignedCertificate.with(withRandomNames);
+        curator.writeAssignedCertificate(assignedCertWithRandomNames);
+    }
+
+    private EndpointCertificate requestRandomNames(TenantAndApplicationId tenantAndApplicationId, Optional<InstanceName> instanceName, String randomId, Optional<EndpointCertificate> previousRequest) {
+        String dnsSuffix = Endpoint.dnsSuffix(controller().system());
+        List<String> newSanDnsEntries = List.of(
+                "*.%s.z%s".formatted(randomId, dnsSuffix),
+                "*.%s.g%s".formatted(randomId, dnsSuffix),
+                "*.%s.a%s".formatted(randomId, dnsSuffix));
+        List<String> existingSanDnsEntries = previousRequest.map(EndpointCertificate::requestedDnsSans).orElse(List.of());
+        List<String> requestNames = Stream.concat(existingSanDnsEntries.stream(), newSanDnsEntries.stream()).toList();
+        String key = instanceName.map(tenantAndApplicationId::instance).map(ApplicationId::toFullString).orElseGet(tenantAndApplicationId::toString);
+        return endpointCertificateProvider.requestCaSignedCertificate(
+                        key,
+                        requestNames,
+                        previousRequest,
+                        endpointCertificateAlgo.value(),
+                        useAlternateCertProvider.value())
+                .withRandomizedId(randomId);
+    }
+
+    private String generateRandomId() {
+        List<String> unassignedIds = curator.readUnassignedCertificates().stream().map(UnassignedCertificate::id).toList();
+        List<String> assignedIds = curator.readAssignedCertificates().stream().map(AssignedCertificate::certificate).map(EndpointCertificate::randomizedId).filter(Optional::isPresent).map(Optional::get).toList();
+        Set<String> allIds = Stream.concat(unassignedIds.stream(), assignedIds.stream()).collect(Collectors.toSet());
+        String randomId;
+        do {
+            randomId = GeneratedEndpoint.createPart(controller().random(true));
+        } while (allIds.contains(randomId));
+        return randomId;
     }
 
     private static String asString(TenantAndApplicationId application, Optional<InstanceName> instanceName) {
