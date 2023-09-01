@@ -314,9 +314,13 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private void assignApplicationRandomId(AssignedCertificate instanceLevelAssignedCertificate, Optional<AssignedCertificate> applicationLevelAssignedCertificate) {
         TenantAndApplicationId tenantAndApplicationId = instanceLevelAssignedCertificate.application();
         if (applicationLevelAssignedCertificate.isPresent()) {
-            applicationLevelAssignedCertificate.get().certificate().randomizedId().orElseThrow(() -> new IllegalArgumentException("Application certificate already assigned to " + tenantAndApplicationId.toString() + ", but random id is missing"));
             // Application level assigned certificate with randomized id already exists. Copy randomized id to instance level certificate and request with random names.
-            EndpointCertificate withRandomNames = requestRandomNames(tenantAndApplicationId, instanceLevelAssignedCertificate.instance(), applicationLevelAssignedCertificate.get().certificate().randomizedId().get(), Optional.of(instanceLevelAssignedCertificate.certificate()));
+            EndpointCertificate withRandomNames = requestRandomNames(
+                    tenantAndApplicationId,
+                    instanceLevelAssignedCertificate.instance(),
+                    applicationLevelAssignedCertificate.get().certificate().randomizedId()
+                            .orElseThrow(() -> new IllegalArgumentException("Application certificate already assigned to " + tenantAndApplicationId.toString() + ", but random id is missing")),
+                    Optional.of(instanceLevelAssignedCertificate.certificate()));
             AssignedCertificate assignedCertWithRandomNames = instanceLevelAssignedCertificate.with(withRandomNames);
             curator.writeAssignedCertificate(assignedCertWithRandomNames);
         } else {

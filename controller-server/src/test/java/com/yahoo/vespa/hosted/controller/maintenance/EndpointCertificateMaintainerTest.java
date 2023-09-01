@@ -209,10 +209,10 @@ public class EndpointCertificateMaintainerTest {
 
         // Verify the 3 wildcard random names are same in all certs
         List<String> appWildcardSans = applicationCertificate.get().certificate().requestedDnsSans();
-        List<String> instanceSans = instanceCertificate.get().certificate().requestedDnsSans();
         assertEquals(3, appWildcardSans.size());
+        List<String> instanceSans = instanceCertificate.get().certificate().requestedDnsSans();
         List<String> wildcards = instanceSans.stream().filter(appWildcardSans::contains).toList();
-        assertEquals(3, wildcards.size());
+        assertEquals(appWildcardSans, wildcards);
     }
 
     @Test
