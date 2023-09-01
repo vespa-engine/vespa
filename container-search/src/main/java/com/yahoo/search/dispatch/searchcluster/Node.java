@@ -35,7 +35,7 @@ public class Node {
 
     /** Give a monotonically increasing sequence number.*/
     public long createPingSequenceId() { return pingSequence.incrementAndGet(); }
-    /** Checks if this pong is received in line and accepted, or out of band and should be ignored..*/
+    /** Checks if this pong is received in line and accepted, or out of band and should be ignored. */
     public boolean isLastReceivedPong(long pingId ) {
         long last = lastPong.get();
         while ((pingId > last) && ! lastPong.compareAndSet(last, pingId)) {

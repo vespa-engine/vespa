@@ -403,14 +403,20 @@ public class SearchClusterTest {
             SearchGroups newGroups = state.searchCluster.groupList();
             assertEquals(Set.copyOf(updatedNodes), newGroups.nodes());
 
-            Map<Node, Node> oldNodesByIdentity = newGroups.nodes().stream().collect(toMap(identity(), identity()));
+            Map<Node, Node> oldNodesByIdentity = oldGroups.nodes().stream().collect(toMap(identity(), identity()));
             Map<Node, Node> newNodesByIdentity = newGroups.nodes().stream().collect(toMap(identity(), identity()));
             assertSame(updatedNodes.get(0), newNodesByIdentity.get(updatedNodes.get(0)));
             assertSame(updatedNodes.get(1), newNodesByIdentity.get(updatedNodes.get(1)));
             assertSame(updatedNodes.get(2), newNodesByIdentity.get(updatedNodes.get(2)));
-            assertSame(oldNodesByIdentity.get(referenceNodes.get(3)), newNodesByIdentity.get(updatedNodes.get(3)));
+            assertSame(oldNodesByIdentity.get(updatedNodes.get(3)), newNodesByIdentity.get(updatedNodes.get(3)));
             assertSame(updatedNodes.get(4), newNodesByIdentity.get(updatedNodes.get(4)));
             assertSame(updatedNodes.get(5), newNodesByIdentity.get(updatedNodes.get(5)));
+
+            // Also verify search-path index within group follows node order, as given by config.
+            int[] pathIndexWithinGroup = new int[3];
+            for (Node node : updatedNodes)
+                assertEquals(pathIndexWithinGroup[node.group()]++, newNodesByIdentity.get(node).pathIndex(),
+                             "search path index within group should follow updated node order for: " + node);
         }
     }
 
