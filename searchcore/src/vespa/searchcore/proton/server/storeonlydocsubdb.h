@@ -214,6 +214,7 @@ public:
     void clearViews() override;
 
     const ISummaryManager::SP &getSummaryManager() const override { return _iSummaryMgr; }
+    std::shared_ptr<IAttributeWriter> get_attribute_writer() const override { return {}; }
     IAttributeManager::SP getAttributeManager() const override;
     const std::shared_ptr<searchcorespi::IIndexManager> & getIndexManager() const override;
     const ISummaryAdapter::SP & getSummaryAdapter() const override { return _summaryAdapter; }

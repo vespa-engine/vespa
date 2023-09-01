@@ -109,6 +109,8 @@ public:
 
     void clearViews() override;
 
+    std::shared_ptr<IAttributeWriter> get_attribute_writer() const override;
+
     std::shared_ptr<IAttributeManager> getAttributeManager() const override {
         return _rSearchView.get()->getAttributeManager();
     }

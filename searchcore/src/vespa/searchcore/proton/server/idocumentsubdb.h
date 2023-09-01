@@ -30,6 +30,7 @@ class DocumentSubDBReconfig;
 class DocumentSubDbInitializer;
 class DocumentSubDbInitializerResult;
 class FeedHandler;
+class IAttributeWriter;
 class IDocumentDBReference;
 class IDocumentRetriever;
 class IFeedView;
@@ -92,6 +93,7 @@ public:
     virtual std::shared_ptr<IFeedView> getFeedView() const = 0;
     virtual void clearViews() = 0;
     virtual const std::shared_ptr<ISummaryManager> &getSummaryManager() const = 0;
+    virtual std::shared_ptr<IAttributeWriter> get_attribute_writer() const = 0;
     virtual std::shared_ptr<IAttributeManager> getAttributeManager() const = 0;
     virtual const std::shared_ptr<searchcorespi::IIndexManager> &getIndexManager() const = 0;
     virtual const std::shared_ptr<ISummaryAdapter> &getSummaryAdapter() const = 0;
