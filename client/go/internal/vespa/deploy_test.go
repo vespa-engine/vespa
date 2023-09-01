@@ -99,6 +99,7 @@ func TestSubmit(t *testing.T) {
 		SourceURL:   "https://github.com/foo/repo",
 	}))
 	require.Nil(t, httpClient.LastRequest.ParseMultipartForm(1<<20))
+	assert.Equal(t, "https://api-ctl.vespa-cloud.com:4443/application/v4/tenant/t1/application/a1/submit", httpClient.LastRequest.URL.String())
 	assert.Equal(t,
 		"{\"risk\":1,\"commit\":\"sha\",\"description\":\"broken garbage\",\"authorEmail\":\"foo@example.com\",\"sourceUrl\":\"https://github.com/foo/repo\"}",
 		httpClient.LastRequest.FormValue("submitOptions"))

@@ -263,7 +263,7 @@ func Submit(opts DeploymentOptions, submission Submission) error {
 		return err
 	}
 	submitURL := opts.Target.Deployment().System.SubmitURL(opts.Target.Deployment())
-	u, err := opts.url(submitURL)
+	u, err := url.Parse(submitURL)
 	if err != nil {
 		return err
 	}
