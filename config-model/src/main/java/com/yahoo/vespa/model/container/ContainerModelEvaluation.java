@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container;
 
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.schema.derived.FileDistributedOnnxModels;
 import com.yahoo.schema.derived.RankProfileList;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
@@ -42,9 +43,16 @@ public class ContainerModelEvaluation implements
 
     /** Global rank profiles, aka models */
     private final RankProfileList rankProfileList;
+    private final FileDistributedOnnxModels onnxModels;  // For cluster specific ONNX model settings
 
     public ContainerModelEvaluation(ApplicationContainerCluster cluster, RankProfileList rankProfileList) {
+        this(cluster, rankProfileList, null);
+    }
+
+    public ContainerModelEvaluation(ApplicationContainerCluster cluster,
+                                    RankProfileList rankProfileList, FileDistributedOnnxModels onnxModels) {
         this.rankProfileList = Objects.requireNonNull(rankProfileList, "rankProfileList cannot be null");
+        this.onnxModels = onnxModels;
         cluster.addSimpleComponent(EVALUATOR_NAME, null, EVALUATION_BUNDLE_NAME);
         cluster.addComponent(ContainerModelEvaluation.getHandler());
     }
@@ -61,7 +69,11 @@ public class ContainerModelEvaluation implements
 
     @Override
     public void getConfig(OnnxModelsConfig.Builder builder) {
-        rankProfileList.getConfig(builder);
+        if (onnxModels != null) {
+            onnxModels.getConfig(builder);
+        } else {
+            rankProfileList.getConfig(builder);
+        }
     }
 
     public void getConfig(RankingExpressionsConfig.Builder builder) {

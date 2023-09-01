@@ -44,6 +44,7 @@ import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.path.Path;
 import com.yahoo.schema.OnnxModel;
+import com.yahoo.schema.derived.FileDistributedOnnxModels;
 import com.yahoo.schema.derived.RankProfileList;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.security.X509CertificateUtils;
@@ -751,10 +752,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         RankProfileList profiles =
                 context.vespaModel() != null ? context.vespaModel().rankProfileList() : RankProfileList.empty;
 
+        // Create a copy of models so each cluster can have its own specific settings
+        FileDistributedOnnxModels models = profiles.getOnnxModels().clone();
+
         Element onnxElement = XML.getChild(modelEvaluationElement, "onnx");
         Element modelsElement = XML.getChild(onnxElement, "models");
         for (Element modelElement : XML.getChildren(modelsElement, "model") ) {
-            OnnxModel onnxModel = profiles.getOnnxModels().asMap().get(modelElement.getAttribute("name"));
+            OnnxModel onnxModel = models.asMap().get(modelElement.getAttribute("name"));
             if (onnxModel == null) {
                 String availableModels = String.join(", ", profiles.getOnnxModels().asMap().keySet());
                 context.getDeployState().getDeployLogger().logApplicationPackage(WARNING,
@@ -774,7 +778,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             }
         }
 
-        cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles));
+        cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles, models));
     }
 
     private String getStringValue(Element element, String name, String defaultValue) {
