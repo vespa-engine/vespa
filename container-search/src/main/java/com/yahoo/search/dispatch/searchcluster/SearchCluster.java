@@ -42,7 +42,7 @@ public class SearchCluster implements NodeManager<Node> {
      * if it only queries this cluster when the local node cannot be used, to avoid unnecessary
      * cross-node network traffic.
      */
-    private final Node localCorpusDispatchTarget;
+    private volatile Node localCorpusDispatchTarget;
 
     public SearchCluster(String clusterId, double minActivedocsPercentage, Collection<Node> nodes,
                          VipStatus vipStatus, PingFactory pingFactory) {
@@ -75,6 +75,7 @@ public class SearchCluster implements NodeManager<Node> {
         try { while (addedNodes.stream().anyMatch(node -> node.isWorking() == null)) { Thread.sleep(1); } }
         catch (InterruptedException e) { throw new UncheckedInterruptedException(e, true); }
         pingIterationCompleted(groups);
+        this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), groups);
         this.groups = groups;
         return monitor;
     }
