@@ -14,11 +14,13 @@ import io.questdb.cairo.CairoException;
 import io.questdb.cairo.DefaultCairoConfiguration;
 import io.questdb.cairo.TableToken;
 import io.questdb.cairo.TableWriter;
+import io.questdb.cairo.security.AllowAllSecurityContext;
 import io.questdb.cairo.sql.Record;
 import io.questdb.cairo.sql.RecordCursor;
 import io.questdb.cairo.sql.RecordCursorFactory;
 import io.questdb.griffin.CompiledQuery;
 import io.questdb.griffin.SqlCompiler;
+import io.questdb.griffin.SqlCompilerFactoryImpl;
 import io.questdb.griffin.SqlException;
 import io.questdb.griffin.SqlExecutionContext;
 import io.questdb.griffin.SqlExecutionContextImpl;
@@ -83,7 +85,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
         this.dataDir = dataDir;
         engine = new CairoEngine(new DefaultCairoConfiguration(dataDir));
-        sqlCompilerPool = new ConcurrentResourcePool<>(() -> new SqlCompiler(engine()));
+        sqlCompilerPool = new ConcurrentResourcePool<>(() -> SqlCompilerFactoryImpl.INSTANCE.getInstance(engine()));
         nodeTable = new Table(dataDir, "metrics");
         clusterTable = new Table(dataDir, "clusterMetrics");
         ensureTablesExist();
@@ -234,7 +236,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private void ensureClusterTableIsUpdated() {
         try {
-            if (0 == engine().getStatus(newContext().getCairoSecurityContext(), new Path(), clusterTable.token())) {
+            if (0 == engine().getTableStatus(new Path(), clusterTable.token())) {
                 // Example: clusterTable.ensureColumnExists("write_rate", "float");
             }
         } catch (Exception e) {
@@ -353,7 +355,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     private SqlExecutionContext newContext() {
-        return new SqlExecutionContextImpl(engine(), 1);
+        CairoEngine engine = engine();
+        return new SqlExecutionContextImpl(engine, 1)
+                .with(AllowAllSecurityContext.INSTANCE, null);
     }
 
     /** A questDb table */
@@ -371,16 +375,16 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             // https://stackoverflow.com/questions/67785629/what-does-max-txn-txn-inflight-limit-reached-in-questdb-and-how-to-i-avoid-it
             new File(dir + "/_txn_scoreboard").delete();
         }
-        private TableToken token() { return engine().getTableToken(name); }
+        private TableToken token() { return engine().getTableTokenIfExists(name); }
 
         boolean exists() {
             TableToken token = engine().getTableTokenIfExists(name);
             if (token == null) return false;
-            return 0 == engine().getStatus(newContext().getCairoSecurityContext(), new Path(), token);
+            return 0 == engine().getTableStatus(new Path(), token);
         }
 
         TableWriter getWriter() {
-            return engine().getWriter(newContext().getCairoSecurityContext(), token(), "getWriter");
+            return engine().getWriter(token(), "getWriter");
         }
 
         void gc() {
