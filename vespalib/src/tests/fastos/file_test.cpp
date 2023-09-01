@@ -181,16 +181,6 @@ TEST(FileTest, ReadWriteTest) {
     EXPECT_TRUE(std::filesystem::remove(std::filesystem::path(rwFilename)));
 }
 
-TEST(FileTest, ScanDirectoryTest) {
-    auto scanDir = std::make_unique<FastOS_DirectoryScan>(".");
-    while (scanDir->ReadNext()) {
-        const char *name = scanDir->GetName();
-        bool isDirectory = scanDir->IsDirectory();
-        bool isRegular   = scanDir->IsRegular();
-        fprintf(stderr, "%-30s %s\n", name, isDirectory ? "DIR" : (isRegular ? "FILE" : "UNKN"));
-    }
-}
-
 TEST(FileTest, ReadBufTest) {
     FastOS_File file(roFilename.c_str());
     char buffer[20];

@@ -4,7 +4,7 @@
 * @author  Oivind H. Danielsen
 * @date    Creation date: 2000-01-18
 * @file
-* Class definitions for FastOS_UNIX_File and FastOS_UNIX_DirectoryScan.
+* Class definitions for FastOS_UNIX_File
 *****************************************************************************/
 
 #pragma once
@@ -82,33 +82,4 @@ public:
     static std::string getErrorString(const int osError);
     static int64_t GetFreeDiskSpace (const char *path);
     static int count_open_files();
-};
-
-#include <dirent.h>
-/**
- * This is the generic UNIX implementation of @ref FastOS_DirectoryScan.
- */
-class FastOS_UNIX_DirectoryScan : public FastOS_DirectoryScanInterface
-{
-private:
-    bool _statRun;
-    bool _isDirectory;
-    bool _isRegular;
-    char *_statName;
-    char *_statFilenameP;
-
-    void DoStat();
-
-protected:
-    DIR *_dir;
-    struct dirent *_dp;
-
-public:
-    FastOS_UNIX_DirectoryScan(const char *searchPath);
-    ~FastOS_UNIX_DirectoryScan();
-
-    bool ReadNext() override;
-    bool IsDirectory() override;
-    bool IsRegular() override;
-    const char *GetName() override;
 };
