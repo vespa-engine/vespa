@@ -64,7 +64,7 @@ public record PreparedEndpoints(DeploymentId deployment,
                                                          clusterEndpoints.mapToList(Endpoint::dnsName),
                                                          OptionalInt.empty(),
                                                          clusterEndpoints.first().get().routingMethod(),
-                                                         authMethodsByDnsName(clusterEndpoints)));
+                                                         dnsNames(clusterEndpoints)));
         });
         endpoints.scope(Endpoint.Scope.global).groupingBy(Endpoint::cluster).forEach((clusterId, clusterEndpoints) -> {
             for (var endpoint : clusterEndpoints) {
@@ -85,7 +85,7 @@ public record PreparedEndpoints(DeploymentId deployment,
                                                              names,
                                                              OptionalInt.empty(),
                                                              endpoint.routingMethod(),
-                                                             authMethodsByDnsName(EndpointList.of(endpoint))));
+                                                             dnsNames(names, endpoint.authMethod())));
             }
         });
         endpoints.scope(Endpoint.Scope.application).groupingBy(Endpoint::cluster).forEach((clusterId, clusterEndpoints) -> {
@@ -99,14 +99,18 @@ public record PreparedEndpoints(DeploymentId deployment,
                                                              List.of(endpoint.dnsName()),
                                                              OptionalInt.of(matchingTarget.get().weight()),
                                                              endpoint.routingMethod(),
-                                                             authMethodsByDnsName(EndpointList.of(endpoint))));
+                                                             dnsNames(EndpointList.of(endpoint))));
             }
         });
         return containerEndpoints;
     }
 
-    private static Map<String, AuthMethod> authMethodsByDnsName(EndpointList endpoints) {
-        return endpoints.asList().stream().collect(Collectors.toMap(Endpoint::dnsName, Endpoint::authMethod));
+    private static List<ContainerEndpoint.DnsName> dnsNames(List<String> names, AuthMethod method) {
+        return names.stream().map(name -> new ContainerEndpoint.DnsName(name, method)).toList();
+    }
+
+    private static List<ContainerEndpoint.DnsName> dnsNames(EndpointList endpoints) {
+        return endpoints.asList().stream().map(e -> new ContainerEndpoint.DnsName(e.dnsName(), e.authMethod())).toList();
     }
 
     private static String asString(Endpoint.Scope scope) {

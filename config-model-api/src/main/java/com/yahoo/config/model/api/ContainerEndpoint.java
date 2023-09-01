@@ -3,9 +3,7 @@ package com.yahoo.config.model.api;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.OptionalLong;
 
 /**
  * ContainerEndpoint tracks the service names that a Container Cluster should be

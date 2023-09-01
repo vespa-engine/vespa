@@ -335,7 +335,8 @@ public class ControllerTest {
                             "rotation-id-01"),
                     OptionalInt.empty(),
                     RoutingMethod.sharedLayer4,
-                    Map.of("beta.app1.tenant1.global.vespa.oath.cloud", AuthMethod.mtls)));
+                    List.of(new ContainerEndpoint.DnsName("beta.app1.tenant1.global.vespa.oath.cloud", AuthMethod.mtls),
+                            new ContainerEndpoint.DnsName("rotation-id-01", AuthMethod.mtls))));
 
             for (Deployment deployment : betaDeployments) {
                 assertEquals(containerEndpoints,
@@ -354,7 +355,8 @@ public class ControllerTest {
                             "rotation-id-02"),
                     OptionalInt.empty(),
                     RoutingMethod.sharedLayer4,
-                    Map.of("app1.tenant1.global.vespa.oath.cloud", AuthMethod.mtls)));
+                    List.of(new ContainerEndpoint.DnsName("app1.tenant1.global.vespa.oath.cloud", AuthMethod.mtls),
+                            new ContainerEndpoint.DnsName("rotation-id-02", AuthMethod.mtls))));
             for (Deployment deployment : defaultDeployments) {
                 assertEquals(containerEndpoints,
                         tester.configServer().containerEndpoints().get(defaultContext.deploymentIdIn(deployment.zone())));
@@ -745,12 +747,12 @@ public class ControllerTest {
         deploymentEndpoints.forEach((deployment, endpoints) -> {
             Set<ContainerEndpoint> expected = endpoints.entrySet().stream()
                                                        .map(kv -> {
-                                                           Map<String, AuthMethod> authMethods = kv.getKey().stream().collect(Collectors.toMap(Function.identity(), (v) -> AuthMethod.mtls));
+                                                           List<ContainerEndpoint.DnsName> dnsNames = kv.getKey().stream().map(name -> new ContainerEndpoint.DnsName(name, AuthMethod.mtls)).toList();
                                                            return new ContainerEndpoint("default", "application",
                                                                                         kv.getKey(),
                                                                                         OptionalInt.of(kv.getValue()),
                                                                                         tester.controller().zoneRegistry().routingMethod(deployment.zoneId()),
-                                                                                        authMethods);
+                                                                                        dnsNames);
                                                        })
                                                        .collect(Collectors.toSet());
             assertEquals(expected,
