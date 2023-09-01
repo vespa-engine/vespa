@@ -11,6 +11,7 @@
 #include "file.h"
 #include "file_rw_ops.h"
 #include <sstream>
+#include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <cstdio>

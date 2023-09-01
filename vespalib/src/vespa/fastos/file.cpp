@@ -306,10 +306,3 @@ FastOS_FileInterface::getLastErrorString()
 void FastOS_FileInterface::dropFromCache() const
 {
 }
-
-FastOS_DirectoryScanInterface::FastOS_DirectoryScanInterface(const char *path)
-    : _searchPath(path)
-{
-}
-
-FastOS_DirectoryScanInterface::~FastOS_DirectoryScanInterface() = default;
