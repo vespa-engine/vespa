@@ -33,6 +33,10 @@
           <groupId>org.jvnet.hudson</groupId>
           <artifactId>annotation-indexer</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>javax.activation</groupId>
+          <artifactId>javax.activation-api</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
