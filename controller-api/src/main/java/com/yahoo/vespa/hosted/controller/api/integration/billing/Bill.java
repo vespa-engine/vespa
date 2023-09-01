@@ -122,7 +122,7 @@ public class Bill {
 
     public BigDecimal sumAdditionalCost() {
         // anything that is not covered by the cost for resources is "additional" costs
-        var resourceCosts = sumCpuCost().add(sumMemoryCost()).add(sumDiskCost());
+        var resourceCosts = sumCpuCost().add(sumMemoryCost()).add(sumDiskCost()).add(sumGpuCost());
         return sum().subtract(resourceCosts);
     }
 
