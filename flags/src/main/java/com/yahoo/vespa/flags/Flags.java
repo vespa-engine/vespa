@@ -317,7 +317,7 @@ public class Flags {
             "Takes effect at next host-admin tick");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
-            "weighted-endpoint-record-ttl", List.of(), String.class, List.of("jonmv"), "2023-05-16", "2023-09-01",
+            "weighted-endpoint-record-ttl", List.of(), String.class, List.of("jonmv"), "2023-05-16", "2024-01-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
