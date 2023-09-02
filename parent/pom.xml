@@ -635,6 +635,11 @@
                 <version>${joda-time.vespa.version}</version>
             </dependency>
             <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${byte-buddy.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>net.openhft</groupId>
                 <artifactId>zero-allocation-hashing</artifactId>
                 <version>${zero-allocation-hashing.vespa.version}</version>
