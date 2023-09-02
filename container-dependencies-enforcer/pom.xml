@@ -82,6 +82,9 @@
                                         <include>javax.servlet:javax.servlet-api:${javax.servlet-api.vespa.version}:provided</include>
                                         <include>javax.ws.rs:javax.ws.rs-api:${javax.ws.rs-api.vespa.version}:provided</include>
                                         <include>javax.xml.bind:jaxb-api:${jaxb-api.vespa.version}:provided</include>
+                                        <i>jakarta.activation:jakarta.activation-api:2.1.0:provided</i>
+                                        <i>jakarta.xml.bind:jakarta.xml.bind-api:4.0.0:provided</i>
+                                        <i>org.eclipse.angus:angus-activation:2.0.1:provided</i>
                                         <include>org.slf4j:jcl-over-slf4j:${slf4j.vespa.version}:provided</include>
                                         <include>org.slf4j:log4j-over-slf4j:${slf4j.vespa.version}:provided</include>
                                         <include>org.slf4j:slf4j-api:${slf4j.vespa.version}:provided</include>

@@ -207,6 +207,9 @@
                     <i>io.prometheus:simpleclient_tracer_common:*:*</i>
                     <i>io.prometheus:simpleclient_tracer_otel:*:*</i>
                     <i>io.prometheus:simpleclient_tracer_otel_agent:*:*</i>
+                    <i>jakarta.activation:jakarta.activation-api:*:*</i>
+                    <i>jakarta.xml.bind:jakarta.xml.bind-api:*:*</i>
+                    <i>org.eclipse.angus:angus-activation:*:*</i>
                     <i>javax.inject:javax.inject:*:*</i>
                     <i>net.openhft:zero-allocation-hashing:*:*</i>
                     <i>org.antlr:antlr-runtime:*:*</i>
