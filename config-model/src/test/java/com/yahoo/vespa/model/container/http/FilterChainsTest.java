@@ -9,8 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
-import java.util.Set;
-
 import static com.yahoo.collections.CollectionUtil.first;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -25,7 +23,7 @@ public class FilterChainsTest extends DomBuilderTest {
 
     @BeforeEach
     public void setupFilterChains() {
-        http = new HttpBuilder(Set.of()).build(root.getDeployState(), root, servicesXml());
+        http = new HttpBuilder().build(root.getDeployState(), root, servicesXml());
         root.freezeModelTopology();
     }
 

@@ -444,7 +444,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     protected void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
         Element httpElement = XML.getChild(spec, "http");
         if (httpElement != null) {
-            cluster.setHttp(buildHttp(deployState, cluster, httpElement, context));
+            cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
         if (isHostedTenantApplication(context)) {
             addHostedImplicitHttpIfNotPresent(deployState, cluster);
@@ -707,8 +707,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .configureHttpFilterChains(http);
     }
 
-    private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement, ConfigModelContext context) {
-        Http http = new HttpBuilder(portBindingOverride(deployState, context)).build(deployState, cluster, httpElement);
+    private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement) {
+        Http http = new HttpBuilder().build(deployState, cluster, httpElement);
 
         if (networking == Networking.disable)
             http.removeAllServers();
@@ -836,9 +836,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addUserHandlers(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
+        var portBindingOverride = isHostedTenantApplication(context) ? getDataplanePorts(deployState) : Set.<Integer>of();
         for (Element component: XML.getChildren(spec, "handler")) {
             cluster.addComponent(
-                    new DomHandlerBuilder(cluster, portBindingOverride(deployState, context)).build(deployState, cluster, component));
+                    new DomHandlerBuilder(cluster, portBindingOverride).build(deployState, cluster, component));
         }
     }
 
@@ -1171,14 +1172,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         ContainerDocumentApi.HandlerOptions documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
         Element ignoreUndefinedFields = XML.getChild(documentApiElement, "ignore-undefined-fields");
-        return new ContainerDocumentApi(cluster, documentApiOptions,
-                                        "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride(deployState, context));
-    }
-
-    private Set<Integer> portBindingOverride(DeployState deployState, ConfigModelContext context) {
-        return isHostedTenantApplication(context)
+        var portBindingOverride = isHostedTenantApplication(context)
                 ? getDataplanePorts(deployState)
                 : Set.<Integer>of();
+        return new ContainerDocumentApi(cluster, documentApiOptions,
+                                        "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride);
     }
 
     private ContainerDocproc buildDocproc(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
