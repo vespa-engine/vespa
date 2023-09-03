@@ -46,11 +46,11 @@ com.sun.istack:istack-commons-runtime:4.1.2
 com.sun.xml.bind:jaxb-core:2.3.0.1
 com.sun.xml.bind:jaxb-impl:2.3.0
 com.thaiopensource:jing:20091111
-com.yahoo.athenz:athenz-auth-core:1.11.40
-com.yahoo.athenz:athenz-client-common:1.11.40
-com.yahoo.athenz:athenz-zms-core:1.11.40
-com.yahoo.athenz:athenz-zpe-java-client:1.11.40
-com.yahoo.athenz:athenz-zts-core:1.11.40
+com.yahoo.athenz:athenz-auth-core:1.11.41
+com.yahoo.athenz:athenz-client-common:1.11.41
+com.yahoo.athenz:athenz-zms-core:1.11.41
+com.yahoo.athenz:athenz-zpe-java-client:1.11.41
+com.yahoo.athenz:athenz-zts-core:1.11.41
 com.yahoo.rdl:rdl-java:1.5.4
 commons-cli:commons-cli:1.5.0
 commons-codec:commons-codec:1.16.0
@@ -230,4 +230,4 @@ org.junit.vintage:junit-vintage-engine:5.8.1
 org.mockito:mockito-core:5.5.0
 org.mockito:mockito-junit-jupiter:5.5.0
 org.objenesis:objenesis:3.3
-org.wiremock:wiremock-standalone:3.0.0
+org.wiremock:wiremock-standalone:3.0.1
