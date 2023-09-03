@@ -36,9 +36,7 @@ get_env_var_with_optional_default() {
     fi
 }
 
-# TODO: use maven-wrapper after changing mvn command for vespa in factory/build-java.sh
-#readonly MAVEN_CMD=$(get_env_var_with_optional_default VESPA_MAVEN_COMMAND "$(pwd)/mvnw")
-readonly MAVEN_CMD=$(get_env_var_with_optional_default VESPA_MAVEN_COMMAND mvn)
+readonly MAVEN_CMD=$(get_env_var_with_optional_default VESPA_MAVEN_COMMAND "$(pwd)/mvnw")
 
 readonly MAVEN_EXTRA_OPTS=$(get_env_var_with_optional_default VESPA_MAVEN_EXTRA_OPTS)
 echo "Using maven command: ${MAVEN_CMD}"
