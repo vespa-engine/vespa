@@ -14,8 +14,6 @@ import com.yahoo.vespa.model.container.xml.ContainerModelBuilder.Networking;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
-import java.util.Set;
-
 import static com.yahoo.collections.CollectionUtil.first;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,7 +26,7 @@ public class FilterBindingsTest extends DomBuilderTest {
     private static final BindingPattern MY_CHAIN_BINDING = UserBindingPattern.fromHttpPath("/my-chain-binding");
 
     private Http buildHttp(Element xml) {
-        Http http = new HttpBuilder(Set.of()).build(root.getDeployState(), root, xml);
+        Http http = new HttpBuilder().build(root.getDeployState(), root, xml);
         root.freezeModelTopology();
         http.validate();
         return http;
@@ -110,21 +108,4 @@ public class FilterBindingsTest extends DomBuilderTest {
         }
     }
 
-    @Test
-    void filter_binding_ports_are_overriden() {
-        Element xml = parse(
-                "<http>",
-                "  <filtering>",
-                "    <request-chain id='my-request-chain'>",
-                "      <binding>http://*/my-binding</binding>",
-                "    </request-chain>",
-                "  </filtering>",
-                "</http>");
-        Http http = new HttpBuilder(Set.of(4443)).build(root.getDeployState(), root, xml);
-        root.freezeModelTopology();
-        http.validate();
-        FilterBinding binding = first(http.getBindings());
-        assertEquals("my-request-chain", binding.chainId().getName());
-        assertEquals("http://*:4443/my-binding", binding.binding().patternString());
-    }
 }

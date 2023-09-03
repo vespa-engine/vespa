@@ -225,7 +225,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "http://*:4443/metrics/v2/*")));
 
         Set<String> actualCustomChainBindings = getFilterBindings(http, ComponentId.fromString("my-custom-request-chain"));
-        assertTrue(actualCustomChainBindings.containsAll(List.of("http://*:4443/custom-handler/*", "http://*:4443/")));
+        assertTrue(actualCustomChainBindings.containsAll(List.of("http://*/custom-handler/*", "http://*/")));
     }
 
     @Test
@@ -262,7 +262,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "http://*:4443/custom-handler/*")));
 
         Set<String> actualCustomChainBindings = getFilterBindings(http, ComponentId.fromString("my-custom-response-chain"));
-        assertTrue(actualCustomChainBindings.contains("http://*:4443/custom-handler/*"));
+        assertTrue(actualCustomChainBindings.contains("http://*/custom-handler/*"));
     }
 
     @Test
