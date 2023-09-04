@@ -35,8 +35,7 @@ namespace search::features {
 
 namespace {
 
-vespalib::string
-normalize_name(const vespalib::string &name, const char *context) {
+vespalib::string normalize_name(const vespalib::string &name, const char *context) {
     vespalib::string result;
     for (char c: name) {
         if (isalnum(c)) {
@@ -51,8 +50,7 @@ normalize_name(const vespalib::string &name, const char *context) {
     return result;
 }
 
-vespalib::string
-my_dry_run(const Onnx &model, const Onnx::WireInfo &wire) {
+vespalib::string my_dry_run(const Onnx &model, const Onnx::WireInfo &wire) {
     vespalib::string error_msg;
     try {
         Onnx::EvalContext context(model, wire);

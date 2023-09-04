@@ -180,8 +180,7 @@ public:
 };
 Ort::AllocatorWithDefaultOptions OnnxString::_alloc;
 
-std::vector<Onnx::DimSize>
-make_dimensions(const Ort::ConstTensorTypeAndShapeInfo &tensor_info) {
+std::vector<Onnx::DimSize> make_dimensions(const Ort::ConstTensorTypeAndShapeInfo &tensor_info) {
     std::vector<const char *> symbolic_sizes(tensor_info.GetDimensionsCount(), nullptr);
     tensor_info.GetSymbolicDimensions(symbolic_sizes.data(), symbolic_sizes.size());
     auto shape = tensor_info.GetShape();
@@ -198,15 +197,13 @@ make_dimensions(const Ort::ConstTensorTypeAndShapeInfo &tensor_info) {
     return result;
 }
 
-Onnx::TensorInfo
-make_tensor_info(const OnnxString &name, const Ort::TypeInfo &type_info) {
+Onnx::TensorInfo make_tensor_info(const OnnxString &name, const Ort::TypeInfo &type_info) {
     auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
     auto element_type = tensor_info.GetElementType();
     return Onnx::TensorInfo{vespalib::string(name.get()), make_dimensions(tensor_info), make_element_type(element_type)};
 }
 
-Onnx::TensorType
-get_type_of(const Ort::Value &value) {
+Onnx::TensorType get_type_of(const Ort::Value &value) {
     auto tensor_info = value.GetTensorTypeAndShapeInfo();
     auto element_type = tensor_info.GetElementType();
     auto shape = tensor_info.GetShape();
@@ -218,8 +215,7 @@ get_type_of(const Ort::Value &value) {
     return {make_element_type(element_type), shape};
 }
 
-std::vector<int64_t>
-extract_sizes(const ValueType &type) {
+std::vector<int64_t> extract_sizes(const ValueType &type) {
     std::vector<int64_t> sizes;
     for (const auto &dim: type.dimensions()) {
         sizes.push_back(dim.size);
