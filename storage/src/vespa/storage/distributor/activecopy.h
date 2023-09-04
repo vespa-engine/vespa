@@ -19,7 +19,7 @@ public:
         : _nodeIndex(Index::invalid()),
           _ideal(Index::invalid()),
           _doc_count(0),
-          _entryIndex(0),
+          _entryIndex(Index::invalid()),
           _ready(false),
           _active(false)
     { }
@@ -38,7 +38,7 @@ public:
     static ActiveList calculate(const Node2Index & idealState, const lib::Distribution&,
                                 const BucketDatabase::Entry&, uint32_t max_activation_inhibited_out_of_sync_groups);
     uint16_t nodeIndex() const noexcept { return _nodeIndex; }
-    uint16_t entryIndex() const noexcept { return _entryIndex; }
+    Index entryIndex() const noexcept { return Index(_entryIndex); }
 private:
     friend ActiveStateOrder;
     bool valid_ideal() const noexcept { return _ideal < Index::invalid(); }

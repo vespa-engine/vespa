@@ -155,7 +155,7 @@ BucketInfoBase<NodeSeq>::getRef(uint16_t node) const noexcept {
             return &n - &_nodes[0];
         }
     }
-    return 0;
+    return 0xffff; // Not found signal
 }
 
 template <typename NodeSeq>

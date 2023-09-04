@@ -945,12 +945,13 @@ shouldSkipActivationDueToMaintenanceOrGatherOperationNodes(const ActiveList &act
                                                            const StateChecker::Context &c,
                                                            std::vector<uint16_t> & operationNodes) {
     for (uint32_t i = 0; i < activeNodes.size(); ++i) {
-        const auto node_index = activeNodes[i].nodeIndex();
-        const BucketCopy *cp(c.entry->getNode(node_index));
-        if (!cp || cp->active()) {
-            continue;
-        }
-        if (!cp->ready()) {
+        const ActiveCopy & active = activeNodes[i];
+        if ( ! active.entryIndex().valid()) continue;
+        const BucketCopy & cp(c.entry->getNodeRef(active.entryIndex()));
+        if (cp.active()) continue;
+
+        const auto node_index = active.nodeIndex();
+        if (!cp.ready()) {
             if (!c.op_ctx.node_supported_features_repo().node_supported_features(node_index).no_implicit_indexing_of_active_buckets) {
                 // If copy is not ready, we don't want to activate it if a node
                 // is set in maintenance. Doing so would imply that we want proton

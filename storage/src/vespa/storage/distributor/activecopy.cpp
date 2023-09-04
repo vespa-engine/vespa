@@ -4,7 +4,6 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <algorithm>
-#include <cassert>
 #include <ostream>
 
 namespace std {
@@ -153,8 +152,8 @@ ActiveCopy::calculate(const Node2Index & idealState, const lib::Distribution& di
             (inhibited_groups < max_activation_inhibited_out_of_sync_groups) &&
             maybe_majority_info.valid())
         {
-            const auto* candidate = e->getNode(best->_nodeIndex);
-            if (!candidate->getBucketInfo().equalDocumentInfo(maybe_majority_info) && !candidate->active()) {
+            const auto & candidate = e->getNodeRef(best->entryIndex());
+            if (!candidate.getBucketInfo().equalDocumentInfo(maybe_majority_info) && !candidate.active()) {
                 ++inhibited_groups;
                 continue; // Do _not_ add candidate as activation target since it's out of sync with the majority
             }
