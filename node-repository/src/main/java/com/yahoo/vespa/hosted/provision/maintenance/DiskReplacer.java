@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -14,8 +13,6 @@ import com.yahoo.yolean.Exceptions;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,10 +24,8 @@ import java.util.logging.Logger;
 public class DiskReplacer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(DiskReplacer.class.getName());
-    private static final int maxBatchSize = 100;
 
     private final HostProvisioner hostProvisioner;
-    private final ExecutorService executor = Executors.newCachedThreadPool(new DaemonThreadFactory("disk-replacer"));
 
     DiskReplacer(NodeRepository nodeRepository, Duration interval, Metric metric, HostProvisioner hostProvisioner) {
         super(nodeRepository, interval, metric);
@@ -57,12 +52,6 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
             }
         }
         return this.asSuccessFactorDeviation(rebuilding.size(), failures);
-    }
-
-    @Override
-    public void shutdown() {
-        super.shutdown();
-        executor.shutdown();
     }
 
 }
