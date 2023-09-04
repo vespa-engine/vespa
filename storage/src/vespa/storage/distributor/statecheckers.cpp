@@ -941,7 +941,9 @@ DeleteExtraCopiesStateChecker::check(Context& c) const
 namespace {
 
 bool
-shouldSkipActivationDueToMaintenance(const ActiveList &activeNodes, const StateChecker::Context &c) {
+shouldSkipActivationDueToMaintenanceOrGatherOperationNodes(const ActiveList &activeNodes,
+                                                           const StateChecker::Context &c,
+                                                           std::vector<uint16_t> & operationNodes) {
     for (uint32_t i = 0; i < activeNodes.size(); ++i) {
         const auto node_index = activeNodes[i].nodeIndex();
         const BucketCopy *cp(c.entry->getNode(node_index));
@@ -949,13 +951,14 @@ shouldSkipActivationDueToMaintenance(const ActiveList &activeNodes, const StateC
             continue;
         }
         if (!cp->ready()) {
-            if (!c.op_ctx.node_supported_features_repo().node_supported_features(node_index).no_implicit_indexing_of_active_buckets)b{
+            if (!c.op_ctx.node_supported_features_repo().node_supported_features(node_index).no_implicit_indexing_of_active_buckets) {
                 // If copy is not ready, we don't want to activate it if a node
                 // is set in maintenance. Doing so would imply that we want proton
                 // to start background indexing.
-                return containsMaintenanceNode(c.idealState(), c);
+                if (containsMaintenanceNode(c.idealState(), c)) return true;
             } // else: activation does not imply indexing, so we can safely do it at any time.
         }
+        operationNodes.push_back(node_index);
     }
     return false;
 }
@@ -989,20 +992,18 @@ BucketStateStateChecker::check(Context& c) const
     if (activeNodes.empty()) {
         return Result::noMaintenanceNeeded();
     }
-    if (shouldSkipActivationDueToMaintenance(activeNodes, c)) {
+    std::vector<uint16_t> operationNodes;
+    if (shouldSkipActivationDueToMaintenanceOrGatherOperationNodes(activeNodes, c, operationNodes)) {
         return Result::noMaintenanceNeeded();
     }
-
     vespalib::asciistream reason;
-    std::vector<uint16_t> operationNodes;
-    for (uint32_t i=0; i<activeNodes.size(); ++i) {
-        const ActiveCopy & active = activeNodes[i];
-        const BucketCopy* cp = c.entry->getNode(active.nodeIndex());
-        if (cp == nullptr || cp->active()) {
-            continue;
+    for (uint16_t nodeIndex : operationNodes) { // Most of the time empty
+        for (uint32_t i = 0; i < activeNodes.size(); ++i) {
+            const ActiveCopy &active = activeNodes[i];
+            if (nodeIndex == active.nodeIndex()) {
+                reason << "[Setting node " << active.nodeIndex() << " as active: " << active.getReason() << "]";
+            }
         }
-        operationNodes.push_back(active.nodeIndex());
-        reason << "[Setting node " << active.nodeIndex() << " as active: " << active.getReason() << "]";
     }
 
     // Deactivate all copies that are currently marked as active.
