@@ -1,7 +1,6 @@
 package com.yahoo.vespa.hosted.controller.routing;
 
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -59,12 +58,14 @@ public record PreparedEndpoints(DeploymentId deployment,
                                                                                                      Function.identity()));
         Set<ContainerEndpoint> containerEndpoints = new HashSet<>();
         endpoints.scope(Endpoint.Scope.zone).groupingBy(Endpoint::cluster).forEach((clusterId, clusterEndpoints) -> {
-            containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
-                                                         asString(Endpoint.Scope.zone),
-                                                         clusterEndpoints.mapToList(Endpoint::dnsName),
-                                                         OptionalInt.empty(),
-                                                         clusterEndpoints.first().get().routingMethod(),
-                                                         authMethodsByDnsName(clusterEndpoints)));
+            clusterEndpoints.groupingBy(Endpoint::authMethod).forEach((authMethod, endpointsByAuthMethod) -> {
+                containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
+                                                             asString(Endpoint.Scope.zone),
+                                                             endpointsByAuthMethod.mapToList(Endpoint::dnsName),
+                                                             OptionalInt.empty(),
+                                                             endpointsByAuthMethod.first().get().routingMethod(),
+                                                             authMethod));
+            });
         });
         endpoints.scope(Endpoint.Scope.global).groupingBy(Endpoint::cluster).forEach((clusterId, clusterEndpoints) -> {
             for (var endpoint : clusterEndpoints) {
@@ -85,7 +86,7 @@ public record PreparedEndpoints(DeploymentId deployment,
                                                              names,
                                                              OptionalInt.empty(),
                                                              endpoint.routingMethod(),
-                                                             authMethodsByDnsName(EndpointList.of(endpoint))));
+                                                             endpoint.authMethod()));
             }
         });
         endpoints.scope(Endpoint.Scope.application).groupingBy(Endpoint::cluster).forEach((clusterId, clusterEndpoints) -> {
@@ -99,14 +100,10 @@ public record PreparedEndpoints(DeploymentId deployment,
                                                              List.of(endpoint.dnsName()),
                                                              OptionalInt.of(matchingTarget.get().weight()),
                                                              endpoint.routingMethod(),
-                                                             authMethodsByDnsName(EndpointList.of(endpoint))));
+                                                             endpoint.authMethod()));
             }
         });
         return containerEndpoints;
-    }
-
-    private static Map<String, AuthMethod> authMethodsByDnsName(EndpointList endpoints) {
-        return endpoints.asList().stream().collect(Collectors.toMap(Endpoint::dnsName, Endpoint::authMethod));
     }
 
     private static String asString(Endpoint.Scope scope) {
