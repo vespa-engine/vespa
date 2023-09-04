@@ -1120,6 +1120,12 @@
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
                 <version>${xerces.vespa.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>xml-apis</groupId>
+                        <artifactId>xml-apis</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency> <!-- TODO: Remove on Vespa 9 -->
                 <groupId>org.json</groupId>
@@ -1146,7 +1152,11 @@
                 <artifactId>google-auth-library-oauth2-http</artifactId>
                 <version>1.19.0</version>
             </dependency>
-
+            <dependency>
+                <groupId>jakarta.inject</groupId>
+                <artifactId>jakarta.inject-api</artifactId>
+                <version>${jakarta.inject.vespa.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

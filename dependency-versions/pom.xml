@@ -36,9 +36,10 @@
         <commons-logging.vespa.version>1.2</commons-logging.vespa.version>  <!-- This version is exported by jdisc via jcl-over-slf4j. -->
         <error-prone-annotations.vespa.version>2.21.1</error-prone-annotations.vespa.version>
         <guava.vespa.version>32.1.2-jre</guava.vespa.version>
-        <guice.vespa.version>4.2.3</guice.vespa.version>
+        <guice.vespa.version>6.0.0</guice.vespa.version>
         <jackson2.vespa.version>2.15.2</jackson2.vespa.version>
         <jackson-databind.vespa.version>2.15.2</jackson-databind.vespa.version>
+        <jakarta.inject.vespa.version>2.0.1</jakarta.inject.vespa.version>
         <javax.inject.vespa.version>1</javax.inject.vespa.version>
         <javax.servlet-api.vespa.version>3.1.0</javax.servlet-api.vespa.version>
         <javax.ws.rs-api.vespa.version>2.1.1</javax.ws.rs-api.vespa.version>
@@ -46,7 +47,6 @@
         <jaxb-core.vespa.version>2.3.0.1</jaxb-core.vespa.version>
         <jaxb-impl.vespa.version>2.3.0</jaxb-impl.vespa.version>
         <slf4j.vespa.version>1.7.36</slf4j.vespa.version>
-        <xml-apis.vespa.version>1.4.01</xml-apis.vespa.version>
 
         <!-- END Dependencies available from the Jdisc container -->
 
@@ -89,7 +89,7 @@
         <dropwizard.metrics.vespa.version>4.2.19</dropwizard.metrics.vespa.version>
         <eclipse-collections.vespa.version>11.1.0</eclipse-collections.vespa.version>
         <felix.vespa.version>7.0.5</felix.vespa.version>
-        <felix.log.vespa.version>1.0.1</felix.log.vespa.version>
+        <felix.log.vespa.version>1.3.0</felix.log.vespa.version>
         <findbugs.vespa.version>3.0.2</findbugs.vespa.version> <!-- Should be kept in sync with guava -->
         <hamcrest.vespa.version>2.2</hamcrest.vespa.version>
         <hdrhistogram.vespa.version>2.1.12</hdrhistogram.vespa.version>

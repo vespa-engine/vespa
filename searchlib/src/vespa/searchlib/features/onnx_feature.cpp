@@ -132,8 +132,7 @@ OnnxBlueprint::setup(const IIndexEnvironment &env,
         return fail("model setup failed: %s", ex.what());
     }
     Onnx::WirePlanner planner;
-    for (size_t i = 0; i < _model->inputs().size(); ++i) {
-        const auto &model_input = _model->inputs()[i];
+    for (const auto & model_input : _model->inputs()) {
         auto input_feature = model_cfg->input_feature(model_input.name);
         if (!input_feature.has_value()) {
             input_feature = fmt("rankingExpression(\"%s\")", normalize_name(model_input.name, "input").c_str());
@@ -151,8 +150,7 @@ OnnxBlueprint::setup(const IIndexEnvironment &env,
         }
     }
     planner.prepare_output_types(*_model);
-    for (size_t i = 0; i < _model->outputs().size(); ++i) {
-        const auto &model_output = _model->outputs()[i];
+    for (const auto & model_output : _model->outputs()) {
         auto output_name = model_cfg->output_name(model_output.name);
         if (!output_name.has_value()) {
             output_name = normalize_name(model_output.name, "output");

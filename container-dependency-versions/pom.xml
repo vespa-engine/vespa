@@ -83,12 +83,6 @@
                 <version>${guice.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.inject</groupId>
-                <artifactId>guice</artifactId>
-                <version>${guice.vespa.version}</version>
-                <classifier>no_aop</classifier>
-            </dependency>
-            <dependency>
               <groupId>commons-logging</groupId>
               <artifactId>commons-logging</artifactId>
               <version>${commons-logging.vespa.version}</version>
@@ -158,11 +152,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-jdk14</artifactId>
                 <version>${slf4j.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>xml-apis</groupId>
-                <artifactId>xml-apis</artifactId>
-                <version>${xml-apis.vespa.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

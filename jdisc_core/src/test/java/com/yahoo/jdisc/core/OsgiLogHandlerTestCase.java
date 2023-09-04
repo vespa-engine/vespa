@@ -2,7 +2,9 @@
 package com.yahoo.jdisc.core;
 
 import org.junit.jupiter.api.Test;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
+import org.osgi.service.log.LogLevel;
 import org.osgi.service.log.LogService;
 
 import java.time.Instant;
@@ -30,40 +32,40 @@ public class OsgiLogHandlerTestCase {
         Logger log = newLogger(logService);
 
         log.log(Level.INFO, "foo");
-        assertEquals(OsgiLogHandler.toServiceLevel(Level.INFO), logService.lastLevel);
+        assertEquals(OsgiLogHandler.toServiceLevel(Level.INFO), logService.lastLevel());
         assertEquals("foo", logService.lastMessage);
         assertNull(logService.lastThrowable);
 
         Throwable t = new Throwable();
         log.log(Level.SEVERE, "bar", t);
-        assertEquals(OsgiLogHandler.toServiceLevel(Level.SEVERE), logService.lastLevel);
+        assertEquals(OsgiLogHandler.toServiceLevel(Level.SEVERE), logService.lastLevel());
         assertEquals("bar", logService.lastMessage);
         assertEquals(t, logService.lastThrowable);
     }
 
     @Test
     void requireThatStadardLogLevelsAreConverted() {
-        assertLogLevel(LogService.LOG_ERROR, Level.SEVERE);
-        assertLogLevel(LogService.LOG_WARNING, Level.WARNING);
-        assertLogLevel(LogService.LOG_INFO, Level.INFO);
-        assertLogLevel(LogService.LOG_DEBUG, Level.CONFIG);
-        assertLogLevel(LogService.LOG_DEBUG, Level.FINE);
-        assertLogLevel(LogService.LOG_DEBUG, Level.FINER);
-        assertLogLevel(LogService.LOG_DEBUG, Level.FINEST);
+        assertLogLevel(LogLevel.ERROR, Level.SEVERE);
+        assertLogLevel(LogLevel.WARN, Level.WARNING);
+        assertLogLevel(LogLevel.INFO, Level.INFO);
+        assertLogLevel(LogLevel.DEBUG, Level.CONFIG);
+        assertLogLevel(LogLevel.DEBUG, Level.FINE);
+        assertLogLevel(LogLevel.DEBUG, Level.FINER);
+        assertLogLevel(LogLevel.DEBUG, Level.FINEST);
     }
 
     @Test
     void requireThatCustomLogLevelsAreConverted() {
         for (int i = Level.ALL.intValue() - 69; i < Level.OFF.intValue() + 69; ++i) {
-            int expectedLevel;
+            LogLevel expectedLevel;
             if (i >= Level.SEVERE.intValue()) {
-                expectedLevel = LogService.LOG_ERROR;
+                expectedLevel = LogLevel.ERROR;
             } else if (i >= Level.WARNING.intValue()) {
-                expectedLevel = LogService.LOG_WARNING;
+                expectedLevel = LogLevel.WARN;
             } else if (i >= Level.INFO.intValue()) {
-                expectedLevel = LogService.LOG_INFO;
+                expectedLevel = LogLevel.INFO;
             } else {
-                expectedLevel = LogService.LOG_DEBUG;
+                expectedLevel = LogLevel.DEBUG;
             }
             assertLogLevel(expectedLevel, new MyLogLevel(i));
         }
@@ -120,11 +122,11 @@ public class OsgiLogHandlerTestCase {
         assertNull(ref.getProperty("unknown"));
     }
 
-    private static void assertLogLevel(int expectedLevel, Level level) {
+    private static void assertLogLevel(LogLevel expectedLevel, Level level) {
         MyLogService logService = new MyLogService();
         Logger log = newLogger(logService);
         log.log(level, "message");
-        assertEquals(expectedLevel, logService.lastLevel);
+        assertEquals(expectedLevel, logService.lastLevel());
     }
 
     @SuppressWarnings("unchecked")
@@ -154,28 +156,36 @@ public class OsgiLogHandlerTestCase {
         String lastMessage;
         Throwable lastThrowable;
 
-        @Override
+        LogLevel lastLevel() { return LogLevel.values()[lastLevel]; }
+
+        @Override @SuppressWarnings("deprecation")
         public void log(int level, String message) {
             log(null, level, message, null);
         }
 
-        @Override
+        @Override @SuppressWarnings("deprecation")
         public void log(int level, String message, Throwable throwable) {
             log(null, level, message, throwable);
         }
 
-        @Override
+        @Override @SuppressWarnings("deprecation")
         public void log(ServiceReference serviceReference, int level, String message) {
             log(serviceReference, level, message, null);
         }
 
-        @Override
+        @Override @SuppressWarnings("deprecation")
         public void log(ServiceReference serviceReference, int level, String message, Throwable throwable) {
             lastServiceReference = serviceReference;
             lastLevel = level;
             lastMessage = message;
             lastThrowable = throwable;
         }
+
+        @Override public org.osgi.service.log.Logger getLogger(String s) { return null; }
+        @Override public org.osgi.service.log.Logger getLogger(Class<?> aClass) { return null; }
+        @Override public <L extends org.osgi.service.log.Logger> L getLogger(String s, Class<L> aClass) { return null; }
+        @Override public <L extends org.osgi.service.log.Logger> L getLogger(Class<?> aClass, Class<L> aClass1) { return null; }
+        @Override public <L extends org.osgi.service.log.Logger> L getLogger(Bundle bundle, String s, Class<L> aClass) { return null; }
     }
 
     private static class MyResourceBundle extends ResourceBundle {
