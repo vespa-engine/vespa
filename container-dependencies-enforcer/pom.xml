@@ -86,7 +86,6 @@
                                         <include>org.slf4j:log4j-over-slf4j:${slf4j.vespa.version}:provided</include>
                                         <include>org.slf4j:slf4j-api:${slf4j.vespa.version}:provided</include>
                                         <include>org.slf4j:slf4j-jdk14:${slf4j.vespa.version}:provided</include>
-                                        <include>xml-apis:xml-apis:${xml-apis.vespa.version}:provided</include>
 
                                         <!-- Vespa provided dependencies -->
                                         <include>com.yahoo.vespa:annotations:*:provided</include>
