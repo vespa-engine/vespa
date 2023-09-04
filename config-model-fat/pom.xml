@@ -195,7 +195,7 @@
                     <i>com.google.errorprone:error_prone_annotations:*:*</i>
                     <i>com.google.guava:failureaccess:*:*</i>
                     <i>com.google.guava:guava:*:*</i>
-                    <i>com.google.inject:guice:jar:no_aop:*:*</i>
+                    <i>com.google.inject:guice:jar:*:*</i>
                     <i>com.google.j2objc:j2objc-annotations:*:*</i>
                     <i>com.google.protobuf:protobuf-java:*:*</i>
                     <i>com.sun.activation:javax.activation:*:*</i>
@@ -207,6 +207,7 @@
                     <i>io.prometheus:simpleclient_tracer_common:*:*</i>
                     <i>io.prometheus:simpleclient_tracer_otel:*:*</i>
                     <i>io.prometheus:simpleclient_tracer_otel_agent:*:*</i>
+                    <i>jakarta.inject:jakarta.inject-api:*:*</i>
                     <i>javax.inject:javax.inject:*:*</i>
                     <i>net.openhft:zero-allocation-hashing:*:*</i>
                     <i>org.antlr:antlr-runtime:*:*</i>

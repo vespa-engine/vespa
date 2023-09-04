@@ -53,7 +53,7 @@
                                         <include>com.google.guava:failureaccess:[1.0.1, 2):provided</include>
                                         <include>com.google.j2objc:j2objc-annotations:[2.8, 3):provided</include>
 
-                                        <include>com.google.inject:guice:jar:no_aop:${guice.vespa.version}:provided</include>
+                                        <include>com.google.inject:guice:jar:${guice.vespa.version}:provided</include>
                                         <include>com.sun.activation:javax.activation:[1.2.0, 2):provided</include>
                                         <include>com.sun.xml.bind:jaxb-core:${jaxb-core.vespa.version}:provided</include>
                                         <include>com.sun.xml.bind:jaxb-impl:${jaxb-impl.vespa.version}:provided</include>
@@ -149,6 +149,7 @@
                                         <include>io.prometheus:simpleclient_tracer_common:${prometheus.client.vespa.version}:test</include>
                                         <include>io.prometheus:simpleclient_tracer_otel:${prometheus.client.vespa.version}:test</include>
                                         <include>io.prometheus:simpleclient_tracer_otel_agent:${prometheus.client.vespa.version}:test</include>
+                                        <include>jakarta.inject:jakarta.inject-api:${jakarta.inject.vespa.version}:test</include>
                                         <include>junit:junit:${junit4.vespa.version}:test</include>
                                         <include>net.java.dev.jna:jna:${jna.vespa.version}:test</include>
                                         <include>net.openhft:zero-allocation-hashing:jar:${zero-allocation-hashing.vespa.version}:test</include>

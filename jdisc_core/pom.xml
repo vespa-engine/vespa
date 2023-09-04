@@ -87,7 +87,6 @@
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
-            <classifier>no_aop</classifier> <!-- Non-AOP version required for Java 8 compatibility -->
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
@@ -217,7 +216,7 @@
                                 <!-- WARNING: Removing jars from the list below usually requires a new major Vespa version. -->
                                 <!-- NOTE: This list must be kept in sync with ExportPackagesIT.java -->
                                 <argument>__REPLACE_VERSION__${project.build.directory}/dependency/guava.jar</argument>
-                                <argument>${project.build.directory}/dependency/guice-no_aop.jar</argument>
+                                <argument>${project.build.directory}/dependency/guice.jar</argument>
                                 <argument>${project.build.directory}/dependency/slf4j-api.jar</argument>
                                 <argument>${project.build.directory}/dependency/slf4j-jdk14.jar</argument>
                                 <argument>${project.build.directory}/dependency/jcl-over-slf4j.jar</argument>
