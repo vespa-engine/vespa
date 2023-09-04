@@ -93,7 +93,7 @@ public class ApplicationClusterEndpoint {
         private DnsName dnsName;
         private Scope scope;
         private RoutingMethod routingMethod;
-        private int weigth = 1;
+        private int weight = 1;
         private List<String> hosts;
         private String clusterId;
         private AuthMethod authMethod;
@@ -129,7 +129,7 @@ public class ApplicationClusterEndpoint {
         }
 
         public Builder weight(int weigth) {
-            this.weigth = weigth;
+            this.weight = weigth;
             return this;
         }
 
@@ -149,7 +149,7 @@ public class ApplicationClusterEndpoint {
         }
 
         public ApplicationClusterEndpoint build() {
-            return new ApplicationClusterEndpoint(dnsName, scope, routingMethod, weigth, hosts, clusterId, authMethod);
+            return new ApplicationClusterEndpoint(dnsName, scope, routingMethod, weight, hosts, clusterId, authMethod);
         }
 
     }
