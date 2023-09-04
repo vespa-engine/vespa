@@ -132,7 +132,7 @@ ActiveCopy::calculate(const Node2Index & idealState, const lib::Distribution& di
 {
     IndexList validNodesWithCopy = buildValidNodeIndexList(e);
     if (validNodesWithCopy.empty()) {
-        return ActiveList();
+        return {};
     }
     std::vector<IndexList> groups;
     if (distribution.activePerGroup()) {
@@ -162,7 +162,7 @@ ActiveCopy::calculate(const Node2Index & idealState, const lib::Distribution& di
         }
         result.emplace_back(*best);
     }
-    return ActiveList(std::move(result));
+    return {std::move(result)};
 }
 
 void
@@ -170,8 +170,8 @@ ActiveList::print(std::ostream& out, bool verbose, const std::string& indent) co
 {
     out << "[";
     if (verbose) {
-        for (size_t i=0; i<_v.size(); ++i) {
-            out << "\n" << indent << "  " << _v[i].nodeIndex() << " " << _v[i].getReason();
+        for (auto i : _v) {
+            out << "\n" << indent << "  " << i.nodeIndex() << " " << i.getReason();
         }
         if (!_v.empty()) {
             out << "\n" << indent;
