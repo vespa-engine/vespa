@@ -68,10 +68,10 @@ size_t convert(const vespalib::string & s) {
     if (ec != std::errc()) {
         throw std::runtime_error(fmt("Bad format : '%s' at '%s'", s.c_str(), ptr));
     }
-    if (end != vespalib::string::npos) {
-        return v * 1024;
+    if (end == vespalib::string::npos) {
+        throw std::runtime_error(fmt("Bad format : %s", s.c_str()));
     }
-    throw std::runtime_error(fmt("Bad format : %s", s.c_str()));
+    return v * 1024;
 }
 
 MemoryUsage extract_memory_usage() {
@@ -266,17 +266,17 @@ int probe_types() {
     auto &types = root.setObject("outputs");
     Onnx model(params["model"].asString().make_string(), Onnx::Optimize::ENABLE);
     Onnx::WirePlanner planner;
-    for (const auto & i : model.inputs()) {
-        auto spec = params["inputs"][i.name].asString().make_string();
+    for (const auto & input : model.inputs()) {
+        auto spec = params["inputs"][input.name].asString().make_string();
         auto input_type = ValueType::from_spec(spec);
         if (input_type.is_error()) {
-            if (!params["inputs"][i.name].valid()) {
-                throw MyError(fmt("missing type for model input '%s'", i.name.c_str()));
+            if (!params["inputs"][input.name].valid()) {
+                throw MyError(fmt("missing type for model input '%s'", input.name.c_str()));
             } else {
-                throw MyError(fmt("invalid type for model input '%s': '%s'",i.name.c_str(), spec.c_str()));
+                throw MyError(fmt("invalid type for model input '%s': '%s'",input.name.c_str(), spec.c_str()));
             }
         }
-        bind_input(planner, i, input_type);
+        bind_input(planner, input, input_type);
     }
     planner.prepare_output_types(model);
     for (const auto &output: model.outputs()) {

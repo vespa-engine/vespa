@@ -170,8 +170,8 @@ ActiveList::print(std::ostream& out, bool verbose, const std::string& indent) co
 {
     out << "[";
     if (verbose) {
-        for (auto i : _v) {
-            out << "\n" << indent << "  " << i.nodeIndex() << " " << i.getReason();
+        for (const auto & copy : _v) {
+            out << "\n" << indent << "  " << copy.nodeIndex() << " " << copy.getReason();
         }
         if (!_v.empty()) {
             out << "\n" << indent;
