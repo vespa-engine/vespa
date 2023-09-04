@@ -23,8 +23,7 @@ public:
           _info(info),
           _flags(0),
           _node(nodeIdx)
-    {
-    }
+    { }
 
     bool trusted() const noexcept { return _flags & TRUSTED; }
 

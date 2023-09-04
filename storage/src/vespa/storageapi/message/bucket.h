@@ -106,7 +106,8 @@ public:
         uint16_t index;
         bool sourceOnly;
 
-        Node(uint16_t index_, bool sourceOnly_ = false) noexcept
+        Node(uint16_t index_) noexcept : Node(index_, false) { }
+        Node(uint16_t index_, bool sourceOnly_) noexcept
             : index(index_), sourceOnly(sourceOnly_) {}
 
         bool operator==(const Node& n) const noexcept
@@ -471,21 +472,15 @@ public:
 class SetBucketStateCommand : public MaintenanceCommand
 {
 public:
-    enum BUCKET_STATE
-    {
-        INACTIVE,
-        ACTIVE
-    };
-private:
-    BUCKET_STATE _state;
-public:
+    enum BUCKET_STATE { INACTIVE, ACTIVE };
     SetBucketStateCommand(const document::Bucket &bucket, BUCKET_STATE state);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     BUCKET_STATE getState() const { return _state; }
-    DECLARE_STORAGECOMMAND(SetBucketStateCommand, onSetBucketState)
+    static BUCKET_STATE toState(bool active) noexcept { return active ? ACTIVE : INACTIVE; }
+    DECLARE_STORAGECOMMAND(SetBucketStateCommand, onSetBucketState);
 private:
-
     vespalib::string getSummary() const override;
+    BUCKET_STATE _state;
 };
 
 /**

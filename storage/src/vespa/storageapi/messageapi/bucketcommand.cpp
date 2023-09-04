@@ -7,10 +7,9 @@ using document::Bucket;
 using document::BucketId;
 using document::BucketSpace;
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
-BucketCommand::BucketCommand(const MessageType& type, const Bucket &bucket)
+BucketCommand::BucketCommand(const MessageType& type, const Bucket &bucket) noexcept
     : StorageCommand(type),
       _bucket(bucket),
       _originalBucket()
@@ -42,5 +41,4 @@ BucketCommand::print(std::ostream& out,
     }
 }
 
-} // api
-} // storage
+}
