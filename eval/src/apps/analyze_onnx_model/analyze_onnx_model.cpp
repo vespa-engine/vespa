@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/guard.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <charconv>
 
 using vespalib::make_string_short::fmt;
 
@@ -20,7 +21,12 @@ using vespalib::FilePointer;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
-struct MyError {
+struct MyError : public std::exception {
+    explicit MyError(vespalib::stringref m) :
+        std::exception(),
+        msg(m)
+    {}
+    const char * what() const noexcept override { return msg.c_str(); }
     vespalib::string msg;
 };
 
@@ -47,17 +53,42 @@ void extract(const vespalib::string &str, const vespalib::string &prefix, vespal
         dst = str.substr(pos);
     }
 }
+struct MemoryUsage {
+    size_t size;
+    size_t rss;
+};
 
-void report_memory_usage(const vespalib::string &desc) {
-    vespalib::string vm_size = "unknown";
-    vespalib::string vm_rss = "unknown";
-    vespalib::string line;
+static const vespalib::string UNKNOWN = "unknown";
+
+size_t convert(const vespalib::string & s) {
+    if (s == UNKNOWN) return 0;
+    size_t v(0);
+    size_t end = s.find("kB");
+    auto [ptr,ec] = std::from_chars(s.data(), s.data()+std::min(s.size(), end), v, 10);
+    if (ec != std::errc()) {
+        throw std::runtime_error(fmt("Bad format : '%s' at '%s'", s.c_str(), ptr));
+    }
+    if (end != vespalib::string::npos) {
+        return v * 1024;
+    }
+    throw std::runtime_error(fmt("Bad format : %s", s.c_str()));
+}
+
+MemoryUsage extract_memory_usage() {
+    vespalib::string vm_size = UNKNOWN;
+    vespalib::string vm_rss = UNKNOWN;
     FilePointer file(fopen("/proc/self/status", "r"));
+    vespalib::string line;
     while (read_line(file, line)) {
         extract(line, "VmSize:", vm_size);
         extract(line, "VmRSS:", vm_rss);
     }
-    fprintf(stderr, "vm_size: %s, vm_rss: %s (%s)\n", vm_size.c_str(), vm_rss.c_str(), desc.c_str());
+    return {convert(vm_size), convert(vm_rss)};
+}
+
+void report_memory_usage(const vespalib::string &desc) {
+    MemoryUsage vm = extract_memory_usage();
+    fprintf(stderr, "vm_size: %zu kB, vm_rss: %zu kB (%s)\n", vm.size/1024, vm.rss/1024, desc.c_str());
 }
 
 struct Options {
@@ -118,7 +149,7 @@ void dump_wire_info(const Onnx::WireInfo &wire) {
 struct MakeInputType {
     Options &opts;
     std::map<vespalib::string,int> symbolic_sizes;
-    MakeInputType(Options &opts_in) : opts(opts_in), symbolic_sizes() {}
+    explicit MakeInputType(Options &opts_in) : opts(opts_in), symbolic_sizes() {}
     ValueType operator()(const Onnx::TensorInfo &info) {
         int d = 0;
         std::vector<ValueType::Dimension> dim_list;
@@ -229,30 +260,34 @@ int probe_types() {
     if (!JsonFormat::decode(std_in, params)) {
         throw MyError{"invalid json"};
     }
+    MemoryUsage vm_before = extract_memory_usage();
     Slime result;
     auto &root = result.setObject();
     auto &types = root.setObject("outputs");
     Onnx model(params["model"].asString().make_string(), Onnx::Optimize::DISABLE);
     Onnx::WirePlanner planner;
-    for (size_t i = 0; i < model.inputs().size(); ++i) {
-        auto spec = params["inputs"][model.inputs()[i].name].asString().make_string();
+    for (const auto & i : model.inputs()) {
+        auto spec = params["inputs"][i.name].asString().make_string();
         auto input_type = ValueType::from_spec(spec);
         if (input_type.is_error()) {
-            if (!params["inputs"][model.inputs()[i].name].valid()) {
+            if (!params["inputs"][i.name].valid()) {
                 throw MyError{fmt("missing type for model input '%s'",
-                                  model.inputs()[i].name.c_str())};
+                                  i.name.c_str())};
             } else {
                 throw MyError{fmt("invalid type for model input '%s': '%s'",
-                                  model.inputs()[i].name.c_str(), spec.c_str())};
+                                  i.name.c_str(), spec.c_str())};
             }
         }
-        bind_input(planner, model.inputs()[i], input_type);
+        bind_input(planner, i, input_type);
     }
     planner.prepare_output_types(model);
     for (const auto &output: model.outputs()) {
         auto output_type = make_output(planner, output);
         types.setString(output.name, output_type.to_spec());
     }
+    MemoryUsage vm_after = extract_memory_usage();
+    root.setLong("vm_size", vm_after.size - vm_before.size);
+    root.setLong("vm_rss", vm_after.rss - vm_before.rss);
     write_compact(result, std_out);
     return 0;
 }
