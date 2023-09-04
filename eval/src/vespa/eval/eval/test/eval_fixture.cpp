@@ -63,25 +63,18 @@ struct MyMutableInject : public tensor_function::Inject {
 };
 
 const TensorFunction &maybe_patch(bool allow_mutable, const TensorFunction &plain_fun, const std::set<size_t> &mutable_set, Stash &stash) {
-    using Child = TensorFunction::Child;
     if (!allow_mutable) {
         return plain_fun;
     }
-    Child root(plain_fun);
-    std::vector<Child::CREF> nodes({root});
-    for (size_t i = 0; i < nodes.size(); ++i) {
-        nodes[i].get().get().push_children(nodes);
-    }
-    while (!nodes.empty()) {
-        const Child &child = nodes.back();
-        if (auto inject = as<tensor_function::Inject>(child.get())) {
-            if (mutable_set.count(inject->param_idx()) > 0) {
-                child.set(stash.create<MyMutableInject>(inject->result_type(), inject->param_idx()));
-            }
-        }
-        nodes.pop_back();
-    }
-    return root.get();
+    auto optimizer = [&mutable_set](const TensorFunction &node, Stash &my_stash)->const TensorFunction &{
+                         if (auto inject = as<tensor_function::Inject>(node);
+                             inject && mutable_set.count(inject->param_idx()) > 0)
+                         {
+                             return my_stash.create<MyMutableInject>(inject->result_type(), inject->param_idx());
+                         }
+                         return node;
+                     };
+    return apply_tensor_function_optimizer(plain_fun, optimizer, stash);
 }
 
 std::vector<Value::UP> make_params(const ValueBuilderFactory &factory, const Function &function,
