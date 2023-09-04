@@ -20,8 +20,7 @@ RemoveBucketOperation::onStartInternal(DistributorStripeMessageSender& sender)
 
     BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(getBucketId());
 
-    for (uint32_t i = 0; i < getNodes().size(); ++i) {
-        uint16_t node = getNodes()[i];
+    for (unsigned short node : getNodes()) {
         const BucketCopy* copy(entry->getNode(node));
         if (!copy) {
             LOG(debug, "Node %u was removed between scheduling remove operation and starting it; not sending DeleteBucket to it", node);

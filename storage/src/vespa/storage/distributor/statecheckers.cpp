@@ -134,6 +134,22 @@ JoinBucketsStateChecker::isFirstSibling(const document::BucketId& bucketId)
 namespace {
 
 using ConstNodesRef = IdealServiceLayerNodesBundle::ConstNodesRef;
+using Node2Index = IdealServiceLayerNodesBundle::Node2Index;
+
+bool
+equalNodeSet(const Node2Index & node2Index, ConstNodesRef idealState, const BucketDatabase::Entry& dbEntry)
+{
+    if (idealState.size() != dbEntry->getNodeCount()) {
+        return false;
+    }
+    for (uint16_t i = 0; i < dbEntry->getNodeCount(); i++) {
+        const BucketCopy & info = dbEntry->getNodeRef(i);
+        if ( ! node2Index.lookup(info.getNode()).valid() ) {
+            return false;
+        }
+    }
+    return true;
+}
 
 bool
 equalNodeSet(ConstNodesRef idealState, const BucketDatabase::Entry& dbEntry)
@@ -154,7 +170,7 @@ equalNodeSet(ConstNodesRef idealState, const BucketDatabase::Entry& dbEntry)
 bool
 bucketAndSiblingReplicaLocationsEqualIdealState(const StateChecker::Context& context)
 {
-    if (!equalNodeSet(context.idealState(), context.entry)) {
+    if (!equalNodeSet(context.idealStateBundle.nonretired_or_maintenance_to_index(), context.idealState(), context.entry)) {
         return false;
     }
     std::vector<uint16_t> siblingIdealState = context.distribution.getIdealStorageNodes(context.systemState, context.siblingBucket);
