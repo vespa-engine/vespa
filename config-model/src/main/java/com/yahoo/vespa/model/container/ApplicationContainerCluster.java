@@ -39,6 +39,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
 import com.yahoo.vespa.model.utils.FileSender;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,7 +49,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.sharedLayer4;
 import static com.yahoo.vespa.model.container.docproc.DocprocChains.DOCUMENT_TYPE_MANAGER_CLASS;
 
 /**
@@ -98,7 +98,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private Integer memoryPercentage = null;
 
-    private List<ApplicationClusterEndpoint> endpointList = List.of();
+    private List<ApplicationClusterEndpoint> endpoints = List.of();
 
     public ApplicationContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true, 10);
@@ -132,7 +132,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         super.doPrepare(deployState);
         addAndSendApplicationBundles(deployState);
         sendUserConfiguredFiles(deployState);
-        createEndpointList(deployState);
+        createEndpoints(deployState);
     }
 
     private void addAndSendApplicationBundles(DeployState deployState) {
@@ -198,7 +198,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     }
 
     /** Create list of endpoints, these will be consumed later by LbServicesProducer */
-    private void createEndpointList(DeployState deployState) {
+    private void createEndpoints(DeployState deployState) {
         if (!deployState.isHosted()) return;
         if (deployState.getProperties().applicationId().instance().isTester()) return;
         List<ApplicationClusterEndpoint> endpoints = new ArrayList<>();
@@ -224,25 +224,26 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                                         .dnsName(l4Name)
                                                         .hosts(hosts)
                                                         .clusterId(getName())
+                                                        .authMethod(ApplicationClusterEndpoint.AuthMethod.mtls)
                                                         .build());
             }
         }
 
         // Include all endpoints provided by controller
         endpointsFromController.stream()
-                .filter(ce -> ce.clusterId().equals(getName()))
-                .filter(ce -> ce.routingMethod() == sharedLayer4)
-                .forEach(ce -> ce.names().forEach(
-                        name -> endpoints.add(ApplicationClusterEndpoint.builder()
-                                                      .scope(ce.scope())
-                                                      .weight(Long.valueOf(ce.weight().orElse(1)).intValue()) // Default to weight=1 if not set
-                                                      .routingMethod(ce.routingMethod())
-                                                      .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
-                                                      .hosts(hosts)
-                                                      .clusterId(getName())
-                                                      .build())
-                ));
-        endpointList = List.copyOf(endpoints);
+                               .filter(ce -> ce.clusterId().equals(getName()))
+                               .forEach(ce -> ce.names().forEach(
+                                       name -> endpoints.add(ApplicationClusterEndpoint.builder()
+                                                                                       .scope(ce.scope())
+                                                                                       .weight(ce.weight().orElse(1)) // Default to weight=1 if not set
+                                                                                       .routingMethod(ce.routingMethod())
+                                                                                       .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
+                                                                                       .hosts(hosts)
+                                                                                       .clusterId(getName())
+                                                                                       .authMethod(ce.authMethod())
+                                                                                       .build())
+                               ));
+        this.endpoints = List.copyOf(endpoints);
     }
 
     @Override
@@ -364,7 +365,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     @Override
     public List<ApplicationClusterEndpoint> endpoints() {
-        return endpointList;
+        return endpoints;
     }
 
     @Override
