@@ -34,10 +34,13 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
 
     @Override
     protected double maintain() {
-        NodeList nodes = nodeRepository().nodes().list().rebuilding(true);
+        NodeList candidates = nodeRepository().nodes().list().rebuilding(true);
+        if (candidates.isEmpty()) {
+            return 0;
+        }
         int failures = 0;
         List<Node> rebuilding;
-        try (var locked = nodeRepository().nodes().lockAndGetAll(nodes.asList(), Optional.of(Duration.ofSeconds(10)))) {
+        try (var locked = nodeRepository().nodes().lockAndGetAll(candidates.asList(), Optional.of(Duration.ofSeconds(10)))) {
             rebuilding = locked.nodes().stream().map(NodeMutex::node).toList();
             RebuildResult result = hostProvisioner.replaceRootDisk(rebuilding);
 
@@ -51,7 +54,7 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
                                        interval() + ": " + Exceptions.toMessageString(entry.getValue()));
             }
         }
-        return this.asSuccessFactorDeviation(rebuilding.size(), failures);
+        return asSuccessFactorDeviation(rebuilding.size(), failures);
     }
 
 }
