@@ -83,12 +83,6 @@
                 <version>${guice.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.inject</groupId>
-                <artifactId>guice</artifactId>
-                <version>${guice.vespa.version}</version>
-                <classifier>no_aop</classifier>
-            </dependency>
-            <dependency>
               <groupId>commons-logging</groupId>
               <artifactId>commons-logging</artifactId>
               <version>${commons-logging.vespa.version}</version>
