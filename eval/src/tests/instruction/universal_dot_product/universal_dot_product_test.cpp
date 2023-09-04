@@ -206,7 +206,7 @@ void benchmark(const vespalib::string &desc, const vespalib::string &expr, std::
         for (size_t i = 0; i < ctf_meta.steps.size(); ++i) {
             auto name = strip_ns(ctf_meta.steps[i].class_name);
             if (name.find("Inject") > name.size() && name.find("ConstValue") > name.size()) {
-                fprintf(stderr, "    %s: %zu ns\n", name.c_str(), count_ns(min_time[i]));
+                fprintf(stderr, "    %s: %zu ns\n", name.c_str(), (size_t)count_ns(min_time[i]));
                 fprintf(stderr, "    +-- %s\n", strip_ns(ctf_meta.steps[i].symbol_name).c_str());
             }
         }

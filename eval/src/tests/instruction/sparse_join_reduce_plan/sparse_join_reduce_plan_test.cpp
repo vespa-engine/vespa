@@ -40,7 +40,9 @@ struct Event {
             res_addr.push_back(make_handle(label));
         }
     }
-    auto operator<=>(const Event &rhs) const = default;
+    bool operator==(const Event& rhs) const noexcept {
+        return lhs_idx == rhs.lhs_idx && rhs_idx == rhs.rhs_idx && res_addr == rhs.res_addr;
+    }
 };
 
 struct Trace {
@@ -55,7 +57,9 @@ struct Trace {
         events.emplace_back(lhs_idx, rhs_idx, res_addr);
         return *this;
     }
-    auto operator<=>(const Trace &rhs) const = default;
+    bool operator==(const Trace& rhs) const noexcept {
+        return estimate == rhs.estimate && events == rhs.events;
+    }
 };
 
 std::ostream &
