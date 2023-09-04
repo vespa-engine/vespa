@@ -439,6 +439,7 @@ public class ContainerClusterTest {
         cluster.doPrepare(state);
         List<ApplicationClusterEndpoint> endpoints = cluster.endpoints();
 
+        assertNames(List.of(), endpoints.stream().filter(e -> e.routingMethod() == shared).toList());
         assertNames(expectedSharedL4Names, endpoints.stream().filter(e -> e.routingMethod() == sharedLayer4).toList());
 
         List<ContainerEndpoint> endpointsWithWeight =

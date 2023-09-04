@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 import static org.junit.Assert.assertEquals;
 
@@ -45,9 +46,11 @@ public class ContainerEndpointSerializerTest {
 
     @Test
     public void writeReadEndpoints() {
-        List<ContainerEndpoint> endpoints = List.of(new ContainerEndpoint("foo", ApplicationClusterEndpoint.Scope.global, List.of("a", "b"), OptionalInt.of(3),
-                                                                          ApplicationClusterEndpoint.RoutingMethod.shared, ApplicationClusterEndpoint.AuthMethod.token));
-        assertEquals(endpoints, ContainerEndpointSerializer.endpointListFromSlime(ContainerEndpointSerializer.endpointListToSlime(endpoints)));
+        final var endpoints = List.of(new ContainerEndpoint("foo", ApplicationClusterEndpoint.Scope.global, List.of("a", "b"), OptionalInt.of(3), ApplicationClusterEndpoint.RoutingMethod.shared));
+        final var serialized = ContainerEndpointSerializer.endpointListToSlime(endpoints);
+        final var deserialized = ContainerEndpointSerializer.endpointListFromSlime(serialized);
+
+        assertEquals(endpoints, deserialized);
     }
 
 }

@@ -3,7 +3,9 @@ package com.yahoo.config.model.api;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 /**
  * ContainerEndpoint tracks the service names that a Container Cluster should be
@@ -19,7 +21,6 @@ public class ContainerEndpoint {
     private final List<String> names;
     private final OptionalInt weight;
     private final ApplicationClusterEndpoint.RoutingMethod routingMethod;
-    private final ApplicationClusterEndpoint.AuthMethod authMethod;
 
     public ContainerEndpoint(String clusterId, ApplicationClusterEndpoint.Scope scope, List<String> names) {
         this(clusterId, scope, names, OptionalInt.empty());
@@ -30,16 +31,11 @@ public class ContainerEndpoint {
     }
 
     public ContainerEndpoint(String clusterId, ApplicationClusterEndpoint.Scope scope, List<String> names, OptionalInt weight, ApplicationClusterEndpoint.RoutingMethod routingMethod) {
-        this(clusterId, scope, names, weight, routingMethod, ApplicationClusterEndpoint.AuthMethod.mtls);
-    }
-
-    public ContainerEndpoint(String clusterId, ApplicationClusterEndpoint.Scope scope, List<String> names, OptionalInt weight, ApplicationClusterEndpoint.RoutingMethod routingMethod, ApplicationClusterEndpoint.AuthMethod authMethod) {
         this.clusterId = Objects.requireNonNull(clusterId);
         this.scope = Objects.requireNonNull(scope);
         this.names = List.copyOf(Objects.requireNonNull(names));
-        this.weight = Objects.requireNonNull(weight);
-        this.routingMethod = Objects.requireNonNull(routingMethod);
-        this.authMethod = Objects.requireNonNull(authMethod);
+        this.weight = weight;
+        this.routingMethod = routingMethod;
     }
 
     public String clusterId() {
@@ -62,10 +58,6 @@ public class ContainerEndpoint {
         return routingMethod;
     }
 
-    public ApplicationClusterEndpoint.AuthMethod authMethod() {
-        return authMethod;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -75,17 +67,16 @@ public class ContainerEndpoint {
                Objects.equals(scope, that.scope) &&
                Objects.equals(names, that.names) &&
                Objects.equals(weight, that.weight) &&
-               Objects.equals(routingMethod, that.routingMethod) &&
-               Objects.equals(authMethod, that.authMethod);
+               Objects.equals(routingMethod, that.routingMethod);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(clusterId, names, scope, weight, routingMethod, authMethod);
+        return Objects.hash(clusterId, names, scope, weight, routingMethod);
     }
 
     @Override
     public String toString() {
-        return String.format("container endpoint %s -> %s [scope=%s, weight=%s, routingMethod=%s, authMethod=%s]", clusterId, names, scope, weight, routingMethod, authMethod);
+        return String.format("container endpoint %s -> %s [scope=%s, weight=%s, routingMetod=%s]", clusterId, names, scope, weight, routingMethod);
     }
 }
