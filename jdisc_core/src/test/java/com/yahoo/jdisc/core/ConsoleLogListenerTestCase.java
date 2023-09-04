@@ -5,11 +5,12 @@ import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogEntry;
+import org.osgi.service.log.LogLevel;
 import org.osgi.service.log.LogListener;
-import org.osgi.service.log.LogService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -23,42 +24,35 @@ public class ConsoleLogListenerTestCase {
 
     @Test
     void requireThatLogLevelParserKnowsOsgiLogLevels() {
-        assertEquals(LogService.LOG_ERROR, ConsoleLogListener.parseLogLevel("ERROR"));
-        assertEquals(LogService.LOG_WARNING, ConsoleLogListener.parseLogLevel("WARNING"));
-        assertEquals(LogService.LOG_INFO, ConsoleLogListener.parseLogLevel("INFO"));
-        assertEquals(LogService.LOG_DEBUG, ConsoleLogListener.parseLogLevel("DEBUG"));
+        assertEquals(LogLevel.ERROR, ConsoleLogListener.parseLogLevel("ERROR").orElseThrow());
+        assertEquals(LogLevel.WARN, ConsoleLogListener.parseLogLevel("WARNING").orElseThrow());
+        assertEquals(LogLevel.INFO, ConsoleLogListener.parseLogLevel("INFO").orElseThrow());
+        assertEquals(LogLevel.DEBUG, ConsoleLogListener.parseLogLevel("DEBUG").orElseThrow());
     }
 
     @Test
     void requireThatLogLevelParserKnowsOff() {
-        assertEquals(Integer.MIN_VALUE, ConsoleLogListener.parseLogLevel("OFF"));
+        assertEquals(Optional.empty(), ConsoleLogListener.parseLogLevel("OFF"));
     }
 
     @Test
     void requireThatLogLevelParserKnowsAll() {
-        assertEquals(Integer.MAX_VALUE, ConsoleLogListener.parseLogLevel("ALL"));
-    }
-
-    @Test
-    void requireThatLogLevelParserKnowsIntegers() {
-        for (int i = -69; i < 69; ++i) {
-            assertEquals(i, ConsoleLogListener.parseLogLevel(String.valueOf(i)));
-        }
+        assertEquals(LogLevel.TRACE, ConsoleLogListener.parseLogLevel("ALL").orElseThrow());
     }
 
     @Test
     void requireThatLogLevelParserErrorsReturnDefault() {
-        assertEquals(ConsoleLogListener.DEFAULT_LOG_LEVEL, ConsoleLogListener.parseLogLevel(null));
-        assertEquals(ConsoleLogListener.DEFAULT_LOG_LEVEL, ConsoleLogListener.parseLogLevel(""));
-        assertEquals(ConsoleLogListener.DEFAULT_LOG_LEVEL, ConsoleLogListener.parseLogLevel("foo"));
+        assertEquals(ConsoleLogListener.DEFAULT_LOG_LEVEL, ConsoleLogListener.parseLogLevel(null).orElseThrow());
+        assertEquals(ConsoleLogListener.DEFAULT_LOG_LEVEL, ConsoleLogListener.parseLogLevel("").orElseThrow());
+        assertEquals(ConsoleLogListener.DEFAULT_LOG_LEVEL, ConsoleLogListener.parseLogLevel("foo").orElseThrow());
     }
 
     @Test
     void requireThatLogEntryWithLevelAboveThresholdIsNotOutput() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         LogListener listener = new ConsoleLogListener(new PrintStream(out), null, "5");
-        for (int i = 0; i < 10; ++i) {
-            listener.logged(new MyEntry(0, i, "message"));
+        for (LogLevel l : LogLevel.values()) {
+            listener.logged(new MyEntry(0, l, "message"));
         }
         // TODO: Should use ConsoleLogFormatter.ABSENCE_REPLACEMENT instead of literal '-'. See ticket 7128315.
         assertEquals("0.000000\t" + HOSTNAME + "\t" + PROCESS_ID + "\t-\t-\tunknown\tmessage\n" +
@@ -73,10 +67,10 @@ public class ConsoleLogListenerTestCase {
     private static class MyEntry implements LogEntry {
 
         final String message;
-        final int level;
+        final LogLevel level;
         final long time;
 
-        MyEntry(long time, int level, String message) {
+        MyEntry(long time, LogLevel level, String message) {
             this.message = message;
             this.level = level;
             this.time = time;
@@ -87,9 +81,15 @@ public class ConsoleLogListenerTestCase {
             return time;
         }
 
-        @Override
+        @Override public LogLevel getLogLevel() { return level; }
+        @Override public String getLoggerName() { return null; }
+        @Override public long getSequence() { return 0; }
+        @Override public String getThreadInfo() { return null; }
+        @Override public StackTraceElement getLocation() { return null; }
+
+        @Override @SuppressWarnings("deprecation")
         public int getLevel() {
-            return level;
+            return level.ordinal();
         }
 
         @Override

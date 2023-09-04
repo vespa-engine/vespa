@@ -6,7 +6,7 @@ import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogEntry;
-import org.osgi.service.log.LogService;
+import org.osgi.service.log.LogLevel;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -22,14 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ConsoleLogFormatterTestCase {
 
     private static final ConsoleLogFormatter SIMPLE_FORMATTER = new ConsoleLogFormatter(null, null, null);
-    private static final LogEntry SIMPLE_ENTRY = new MyEntry(0, 0, null);
+    private static final LogEntry SIMPLE_ENTRY = new MyEntry(0, LogLevel.AUDIT, null);
 
     // TODO: Should (at least) use ConsoleLogFormatter.ABSENCE_REPLACEMENT instead of literal '-'. See ticket 7128315.
 
     @Test
     void requireThatMillisecondsArePadded() {
         for (int i = 0; i < 10000; ++i) {
-            LogEntry entry = new MyEntry(i, 0, null);
+            LogEntry entry = new MyEntry(i, LogLevel.AUDIT, null);
             Instant instant = Instant.ofEpochMilli(i);
             assertEquals(String.format("%d.%06d\t-\t-\t-\t-\tunknown\t", instant.getEpochSecond(), instant.getNano() / 1000),
                     SIMPLE_FORMATTER.formatEntry(entry));
@@ -70,7 +70,7 @@ public class ConsoleLogFormatterTestCase {
 
     @Test
     void requireThatProcessIdIncludesThreadIdWhenAvailable() {
-        LogEntry entry = new MyEntry(0, 0, null).putProperty("THREAD_ID", "threadId");
+        LogEntry entry = new MyEntry(0, LogLevel.AUDIT, null).putProperty("THREAD_ID", "threadId");
         assertEquals("0.000000\t-\tprocessId/threadId\t-\t-\tunknown\t",
                 new ConsoleLogFormatter(null, "processId", null).formatEntry(entry));
     }
@@ -93,7 +93,7 @@ public class ConsoleLogFormatterTestCase {
 
     @Test
     void requireThatBundleNameIsIncluded() {
-        LogEntry entry = new MyEntry(0, 0, null).setBundleSymbolicName("bundleName");
+        LogEntry entry = new MyEntry(0, LogLevel.AUDIT, null).setBundleSymbolicName("bundleName");
         assertEquals("0.000000\t-\t-\t-\tbundleName\tunknown\t",
                 SIMPLE_FORMATTER.formatEntry(entry));
     }
@@ -106,7 +106,7 @@ public class ConsoleLogFormatterTestCase {
 
     @Test
     void requireThatLoggerNameIsIncluded() {
-        LogEntry entry = new MyEntry(0, 0, null).putProperty("LOGGER_NAME", "loggerName");
+        LogEntry entry = new MyEntry(0, LogLevel.AUDIT, null).putProperty("LOGGER_NAME", "loggerName");
         assertEquals("0.000000\t-\t-\t-\t/loggerName\tunknown\t",
                 SIMPLE_FORMATTER.formatEntry(entry));
     }
@@ -119,7 +119,7 @@ public class ConsoleLogFormatterTestCase {
 
     @Test
     void requireThatBundleAndLoggerNameIsCombined() {
-        LogEntry entry = new MyEntry(0, 0, null).setBundleSymbolicName("bundleName")
+        LogEntry entry = new MyEntry(0, LogLevel.AUDIT, null).setBundleSymbolicName("bundleName")
                 .putProperty("LOGGER_NAME", "loggerName");
         assertEquals("0.000000\t-\t-\t-\tbundleName/loggerName\tunknown\t",
                 SIMPLE_FORMATTER.formatEntry(entry));
@@ -129,34 +129,32 @@ public class ConsoleLogFormatterTestCase {
     void requireThatLevelNameIsIncluded() {
         ConsoleLogFormatter formatter = SIMPLE_FORMATTER;
         assertEquals("0.000000\t-\t-\t-\t-\terror\t",
-                formatter.formatEntry(new MyEntry(0, LogService.LOG_ERROR, null)));
+                formatter.formatEntry(new MyEntry(0, LogLevel.ERROR, null)));
         assertEquals("0.000000\t-\t-\t-\t-\twarning\t",
-                formatter.formatEntry(new MyEntry(0, LogService.LOG_WARNING, null)));
+                formatter.formatEntry(new MyEntry(0, LogLevel.WARN, null)));
         assertEquals("0.000000\t-\t-\t-\t-\tinfo\t",
-                formatter.formatEntry(new MyEntry(0, LogService.LOG_INFO, null)));
+                formatter.formatEntry(new MyEntry(0, LogLevel.INFO, null)));
         assertEquals("0.000000\t-\t-\t-\t-\tdebug\t",
-                formatter.formatEntry(new MyEntry(0, LogService.LOG_DEBUG, null)));
-        assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
-                formatter.formatEntry(new MyEntry(0, 69, null)));
+                formatter.formatEntry(new MyEntry(0, LogLevel.DEBUG, null)));
     }
 
     @Test
     void requireThatMessageIsIncluded() {
-        LogEntry entry = new MyEntry(0, 0, "message");
+        LogEntry entry = new MyEntry(0, LogLevel.AUDIT, "message");
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\tmessage",
                 SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     @Test
     void requireThatMessageIsOptional() {
-        LogEntry entry = new MyEntry(0, 0, null);
+        LogEntry entry = new MyEntry(0, LogLevel.AUDIT, null);
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t",
                 SIMPLE_FORMATTER.formatEntry(entry));
     }
 
     @Test
     void requireThatMessageIsEscaped() {
-        LogEntry entry = new MyEntry(0, 0, "\\\n\r\t");
+        LogEntry entry = new MyEntry(0, LogLevel.AUDIT, "\\\n\r\t");
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t\\\\\\n\\r\\t",
                 SIMPLE_FORMATTER.formatEntry(entry));
     }
@@ -164,7 +162,7 @@ public class ConsoleLogFormatterTestCase {
     @Test
     void requireThatExceptionIsIncluded() {
         Throwable t = new Throwable();
-        LogEntry entry = new MyEntry(0, 0, null).setException(t);
+        LogEntry entry = new MyEntry(0, LogLevel.AUDIT, null).setException(t);
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t\\n" + formatThrowable(t),
                 SIMPLE_FORMATTER.formatEntry(entry));
     }
@@ -172,7 +170,7 @@ public class ConsoleLogFormatterTestCase {
     @Test
     void requireThatExceptionIsEscaped() {
         Throwable t = new Throwable("\\\n\r\t");
-        LogEntry entry = new MyEntry(0, 0, null).setException(t);
+        LogEntry entry = new MyEntry(0, LogLevel.AUDIT, null).setException(t);
         assertEquals("0.000000\t-\t-\t-\t-\tunknown\t\\n" + formatThrowable(t),
                 SIMPLE_FORMATTER.formatEntry(entry));
     }
@@ -180,7 +178,7 @@ public class ConsoleLogFormatterTestCase {
     @Test
     void requireThatExceptionIsSimplifiedForInfoEntries() {
         Throwable t = new Throwable("exception");
-        LogEntry entry = new MyEntry(0, LogService.LOG_INFO, "entry").setException(t);
+        LogEntry entry = new MyEntry(0, LogLevel.INFO, "entry").setException(t);
         assertEquals("0.000000\t-\t-\t-\t-\tinfo\tentry: exception",
                 SIMPLE_FORMATTER.formatEntry(entry));
     }
@@ -188,7 +186,7 @@ public class ConsoleLogFormatterTestCase {
     @Test
     void requireThatSimplifiedExceptionIsEscaped() {
         Throwable t = new Throwable("\\\n\r\t");
-        LogEntry entry = new MyEntry(0, LogService.LOG_INFO, "entry").setException(t);
+        LogEntry entry = new MyEntry(0, LogLevel.INFO, "entry").setException(t);
         assertEquals("0.000000\t-\t-\t-\t-\tinfo\tentry: \\\\\\n\\r\\t",
                 SIMPLE_FORMATTER.formatEntry(entry));
     }
@@ -196,7 +194,7 @@ public class ConsoleLogFormatterTestCase {
     @Test
     void requireThatSimplifiedExceptionMessageIsOptional() {
         Throwable t = new Throwable();
-        LogEntry entry = new MyEntry(0, LogService.LOG_INFO, "entry").setException(t);
+        LogEntry entry = new MyEntry(0, LogLevel.INFO, "entry").setException(t);
         assertEquals("0.000000\t-\t-\t-\t-\tinfo\tentry: java.lang.Throwable",
                 SIMPLE_FORMATTER.formatEntry(entry));
     }
@@ -210,13 +208,13 @@ public class ConsoleLogFormatterTestCase {
     private static class MyEntry implements LogEntry {
 
         final String message;
-        final int level;
+        final LogLevel level;
         final long time;
         Bundle bundle = null;
         ServiceReference<?> serviceReference = null;
         Throwable exception;
 
-        MyEntry(long time, int level, String message) {
+        MyEntry(long time, LogLevel level, String message) {
             this.message = message;
             this.level = level;
             this.time = time;
@@ -244,9 +242,15 @@ public class ConsoleLogFormatterTestCase {
             return time;
         }
 
-        @Override
+        @Override public LogLevel getLogLevel() { return level; }
+        @Override public String getLoggerName() { return null; }
+        @Override public long getSequence() { return 0; }
+        @Override public String getThreadInfo() { return null; }
+        @Override public StackTraceElement getLocation() { return null; }
+
+        @Override @SuppressWarnings("deprecation")
         public int getLevel() {
-            return level;
+            return level.ordinal();
         }
 
         @Override

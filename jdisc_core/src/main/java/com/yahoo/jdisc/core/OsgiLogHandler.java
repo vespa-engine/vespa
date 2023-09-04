@@ -4,6 +4,7 @@ package com.yahoo.jdisc.core;
 import com.google.common.collect.ImmutableMap;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
+import org.osgi.service.log.LogLevel;
 import org.osgi.service.log.LogService;
 
 import java.util.Dictionary;
@@ -45,8 +46,9 @@ class OsgiLogHandler extends Handler {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void publish(LogRecord record) {
-        logService.log(new LogRecordReference(record), toServiceLevel(record.getLevel()), record.getMessage(),
+        logService.log(new LogRecordReference(record), toServiceLevel(record.getLevel()).ordinal(), record.getMessage(),
                        record.getThrown());
     }
 
@@ -60,22 +62,22 @@ class OsgiLogHandler extends Handler {
         // empty
     }
 
-    public static int toServiceLevel(Level level) {
+    public static LogLevel toServiceLevel(Level level) {
         int val = level.intValue();
         if (val >= Level.SEVERE.intValue()) {
-            return LogService.LOG_ERROR;
+            return LogLevel.ERROR;
         }
         if (val >= Level.WARNING.intValue()) {
-            return LogService.LOG_WARNING;
+            return LogLevel.WARN;
         }
         if (val >= Level.INFO.intValue()) {
-            return LogService.LOG_INFO;
+            return LogLevel.INFO;
         }
         // Level.CONFIG
         // Level.FINE
         // Level.FINER
         // Level.FINEST
-        return LogService.LOG_DEBUG;
+        return LogLevel.DEBUG;
     }
 
     private static <T> Map<String, T> createDictionary(T[] in) {
