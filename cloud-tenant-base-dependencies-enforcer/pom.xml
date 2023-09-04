@@ -21,6 +21,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven-enforcer-plugin.vespa.version}</version>
                 <dependencies>
                     <dependency>
                         <groupId>com.yahoo.vespa</groupId>
