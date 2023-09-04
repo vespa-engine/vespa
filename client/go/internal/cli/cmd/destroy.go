@@ -36,18 +36,14 @@ $ vespa destroy --force`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target(targetOptions{})
+			target, err := cli.target(targetOptions{cloudExclusive: true})
 			if err != nil {
 				return err
 			}
 			description := target.Deployment().String()
-			if !target.IsCloud() {
-				return errHint(fmt.Errorf("cannot remove deployment, only supported for Vespa Cloud"))
-			} else {
-				env := target.Deployment().Zone.Environment
-				if env != "dev" && env != "perf" {
-					return errHint(fmt.Errorf("cannot remove production %s", description), "See https://cloud.vespa.ai/en/deleting-applications")
-				}
+			env := target.Deployment().Zone.Environment
+			if env != "dev" && env != "perf" {
+				return errHint(fmt.Errorf("cannot remove production %s", description), "See https://cloud.vespa.ai/en/deleting-applications")
 			}
 			ok := force
 			if !ok {

@@ -95,11 +95,11 @@ $ vespa auth cert add -a my-tenant.my-app.my-instance path/to/application/packag
 }
 
 func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []string) error {
-	app, err := cli.config.application()
+	targetType, err := cli.targetType(true)
 	if err != nil {
 		return err
 	}
-	targetType, err := cli.targetType()
+	app, err := cli.config.application()
 	if err != nil {
 		return err
 	}
@@ -141,11 +141,11 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []
 }
 
 func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
-	pkg, err := cli.applicationPackageFrom(args, false)
+	target, err := cli.target(targetOptions{cloudExclusive: true})
 	if err != nil {
 		return err
 	}
-	target, err := cli.target(targetOptions{})
+	pkg, err := cli.applicationPackageFrom(args, false)
 	if err != nil {
 		return err
 	}

@@ -9,12 +9,12 @@ func newLogoutCmd(cli *CLI) *cobra.Command {
 	return &cobra.Command{
 		Use:               "logout",
 		Args:              cobra.NoArgs,
-		Short:             "Log out of Vespa Cli",
+		Short:             "Sign out of Vespa Cloud",
 		Example:           "$ vespa auth logout",
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			targetType, err := cli.targetType()
+			targetType, err := cli.targetType(true)
 			if err != nil {
 				return err
 			}
