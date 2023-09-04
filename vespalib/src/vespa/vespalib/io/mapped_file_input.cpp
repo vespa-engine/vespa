@@ -20,7 +20,9 @@ MappedFileInput::MappedFileInput(const vespalib::string &file_name)
         if (_data != MAP_FAILED) {
             _size = info.st_size;
             madvise(_data, _size, MADV_SEQUENTIAL);
+#ifdef __linux__
             madvise(_data, _size, MADV_DONTDUMP);
+#endif
         }
     }
 }
