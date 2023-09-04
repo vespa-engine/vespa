@@ -53,6 +53,10 @@ https://cloud.vespa.ai/en/reference/deployment`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			target, err := cli.target(targetOptions{noCertificate: true, cloudExclusive: true})
+			if err != nil {
+				return err
+			}
 			pkg, err := cli.applicationPackageFrom(args, false)
 			if err != nil {
 				return err
@@ -69,10 +73,6 @@ https://cloud.vespa.ai/en/reference/deployment`,
 			servicesXML, err := readServicesXML(pkg)
 			if err != nil {
 				return fmt.Errorf("a services.xml declaring your cluster(s) must exist: %w", err)
-			}
-			target, err := cli.target(targetOptions{noCertificate: true})
-			if err != nil {
-				return err
 			}
 
 			fmt.Fprint(cli.Stdout, "This will modify any existing ", color.YellowString("deployment.xml"), " and ", color.YellowString("services.xml"),
@@ -135,7 +135,7 @@ https://cloud.vespa.ai/en/reference/vespa-cloud-api#submission-properties
 		Example: `$ mvn package # when adding custom Java components
 $ vespa prod deploy`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target, err := cli.target(targetOptions{noCertificate: true})
+			target, err := cli.target(targetOptions{noCertificate: true, cloudExclusive: true})
 			if err != nil {
 				return err
 			}

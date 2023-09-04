@@ -20,13 +20,13 @@ func newLoginCmd(cli *CLI) *cobra.Command {
 	return &cobra.Command{
 		Use:               "login",
 		Args:              cobra.NoArgs,
-		Short:             "Authenticate the Vespa CLI",
+		Short:             "Authenticate Vespa CLI with Vespa Cloud",
 		Example:           "$ vespa auth login",
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			targetType, err := cli.targetType()
+			targetType, err := cli.targetType(true)
 			if err != nil {
 				return err
 			}

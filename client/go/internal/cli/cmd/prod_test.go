@@ -44,6 +44,9 @@ func TestProdInit(t *testing.T) {
 
 	cli, _, _ := newTestCLI(t)
 	cli.Stdin = &buf
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("config", "set", "application", "foo.bar"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
 	assert.Nil(t, cli.Run("prod", "init", pkgDir))
 
 	// Verify contents
