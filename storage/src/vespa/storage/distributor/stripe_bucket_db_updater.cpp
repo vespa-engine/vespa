@@ -659,11 +659,14 @@ StripeBucketDBUpdater::MergingNodeRemover::MergingNodeRemover(
       _cachedDecisionSuperbucket(UINT64_MAX),
       _cachedOwned(false)
 {
-    // TODO intersection of cluster state and distribution config
     const uint16_t storage_count = s.getNodeCount(lib::NodeType::STORAGE);
     _available_nodes.resize(storage_count);
     for (uint16_t i = 0; i < storage_count; ++i) {
-        if (s.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState().oneOf(_upStates)) {
+        // To be considered available, a given node index must both be marked as available in the
+        // cluster state AND be present (have a valid node -> group mapping) in the distribution config.
+        if (s.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState().oneOf(_upStates)
+            && node_is_present_in_config(i))
+        {
             _available_nodes[i] = true;
         }
     }
@@ -789,6 +792,12 @@ bool
 StripeBucketDBUpdater::MergingNodeRemover::storage_node_is_available(uint16_t index) const noexcept
 {
     return ((index < _available_nodes.size()) && _available_nodes[index]);
+}
+
+bool
+StripeBucketDBUpdater::MergingNodeRemover::node_is_present_in_config(uint16_t node_index) const noexcept
+{
+    return (_distribution.getNodeGraph().getGroupForNode(node_index) != nullptr);
 }
 
 StripeBucketDBUpdater::MergingNodeRemover::~MergingNodeRemover() = default;
