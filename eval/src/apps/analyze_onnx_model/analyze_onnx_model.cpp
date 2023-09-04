@@ -264,18 +264,16 @@ int probe_types() {
     Slime result;
     auto &root = result.setObject();
     auto &types = root.setObject("outputs");
-    Onnx model(params["model"].asString().make_string(), Onnx::Optimize::DISABLE);
+    Onnx model(params["model"].asString().make_string(), Onnx::Optimize::ENABLE);
     Onnx::WirePlanner planner;
     for (const auto & i : model.inputs()) {
         auto spec = params["inputs"][i.name].asString().make_string();
         auto input_type = ValueType::from_spec(spec);
         if (input_type.is_error()) {
             if (!params["inputs"][i.name].valid()) {
-                throw MyError{fmt("missing type for model input '%s'",
-                                  i.name.c_str())};
+                throw MyError(fmt("missing type for model input '%s'", i.name.c_str()));
             } else {
-                throw MyError{fmt("invalid type for model input '%s': '%s'",
-                                  i.name.c_str(), spec.c_str())};
+                throw MyError(fmt("invalid type for model input '%s': '%s'",i.name.c_str(), spec.c_str()));
             }
         }
         bind_input(planner, i, input_type);
