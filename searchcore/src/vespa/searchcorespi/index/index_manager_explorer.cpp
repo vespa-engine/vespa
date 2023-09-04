@@ -2,7 +2,8 @@
 
 #include "index_manager_explorer.h"
 #include "index_manager_stats.h"
-
+#include <vespa/searchcorespi/index/imemoryindex.h>
+#include <vespa/searchcorespi/index/indexsearchablevisitor.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 
 using vespalib::slime::Cursor;
@@ -45,8 +46,23 @@ insertMemoryIndex(Cursor &arrayCursor, const MemoryIndexStats &memoryIndex)
     insertMemoryUsage(memoryIndexCursor, sstats.memoryUsage());
 }
 
-}
+class WriteContextInserter : public IndexSearchableVisitor {
+private:
+    Cursor& _object;
+    bool _has_inserted;
 
+public:
+    WriteContextInserter(Cursor& object) : _object(object), _has_inserted(false) {}
+    void visit(const index::IDiskIndex&) override {}
+    void visit(const index::IMemoryIndex& index) override {
+        if (!_has_inserted) {
+            index.insert_write_context_state(_object);
+            _has_inserted = true;
+        }
+    }
+};
+
+}
 
 IndexManagerExplorer::IndexManagerExplorer(IIndexManager::SP mgr)
     : _mgr(std::move(mgr))
@@ -68,6 +84,9 @@ IndexManagerExplorer::get_state(const Inserter &inserter, bool full) const
         for (const auto &memoryIndex : stats.getMemoryIndexes()) {
             insertMemoryIndex(memoryIndexArrayCursor, memoryIndex);
         }
+        auto& write_contexts = object.setObject("write_contexts");
+        WriteContextInserter visitor(write_contexts);
+        _mgr->getSearchable()->accept(visitor);
     }
 }
 

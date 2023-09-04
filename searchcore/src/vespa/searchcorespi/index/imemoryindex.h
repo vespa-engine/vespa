@@ -7,8 +7,9 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memoryusage.h>
 
-namespace vespalib { class IDestructorCallback; }
 namespace document { class Document; }
+namespace vespalib { class IDestructorCallback; }
+namespace vespalib::slime { struct Cursor; }
 namespace searchcorespi::index {
 
 /**
@@ -78,6 +79,8 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
 
     virtual void pruneRemovedFields(const search::index::Schema &schema) = 0;
     virtual search::index::Schema::SP getPrunedSchema() const = 0;
+
+    virtual void insert_write_context_state(vespalib::slime::Cursor& object) const = 0;
 };
 
 }

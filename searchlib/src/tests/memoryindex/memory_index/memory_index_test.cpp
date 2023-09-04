@@ -8,24 +8,25 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
-#include <vespa/searchlib/test/doc_builder.h>
-#include <vespa/searchlib/test/schema_builder.h>
-#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/simple_phrase_blueprint.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/simpleresult.h>
+#include <vespa/searchlib/test/doc_builder.h>
+#include <vespa/searchlib/test/schema_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("memory_index_test");
@@ -36,7 +37,6 @@ using document::FieldValue;
 using search::ScheduleTaskCallback;
 using search::index::FieldLengthInfo;
 using search::index::IFieldLengthInspector;
-using vespalib::makeLambdaTask;
 using search::query::Node;
 using search::query::SimplePhrase;
 using search::query::SimpleStringTerm;
@@ -45,6 +45,11 @@ using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
 using vespalib::ISequencedTaskExecutor;
 using vespalib::SequencedTaskExecutor;
+using vespalib::Slime;
+using vespalib::makeLambdaTask;
+using vespalib::slime::JsonFormat;
+using vespalib::slime::SlimeInserter;
+
 using namespace search::fef;
 using namespace search::index;
 using namespace search::memoryindex;
@@ -540,6 +545,20 @@ TEST(MemoryIndexTest, field_length_info_can_be_retrieved_per_field)
 
     EXPECT_EQ(0, index.index.get_field_length_info("na").get_average_field_length());
     EXPECT_EQ(0, index.index.get_field_length_info("na").get_num_samples());
+}
+
+TEST(MemoryIndexTest, write_context_state_as_slime)
+{
+    Index index(MySetup().field(title).field(body));
+    Slime act;
+    SlimeInserter inserter(act);
+    index.index.insert_write_context_state(inserter.insertObject());
+    Slime exp;
+    JsonFormat::decode("{\"invert\": [{\"executor_id\": 0, \"fields\": [\"body\"]},"
+                                     "{\"executor_id\": 1, \"fields\": [\"title\"]}],"
+                        "\"push\": [{\"executor_id\": 0, \"fields\": [\"body\"]},"
+                                   "{\"executor_id\": 1, \"fields\": [\"title\"]}]}", exp);
+    EXPECT_EQ(exp, act);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
