@@ -96,7 +96,7 @@ public class ApplicationClusterEndpoint {
         private int weight = 1;
         private List<String> hosts;
         private String clusterId;
-        private AuthMethod authMethod;
+        private AuthMethod authMethod = AuthMethod.mtls; // TODO(mpolden): For compatibility with older config-models. Remove when < 8.221 is gone
 
         public Builder dnsName(DnsName name) {
             this.dnsName = name;
