@@ -938,17 +938,18 @@ DeleteExtraCopiesStateChecker::check(Context& c) const
     return Result::noMaintenanceNeeded();
 }
 
+namespace {
+
 bool
-BucketStateStateChecker::shouldSkipActivationDueToMaintenance(const ActiveList& activeNodes, const Context& c)
-{
+shouldSkipActivationDueToMaintenance(const ActiveList &activeNodes, const StateChecker::Context &c) {
     for (uint32_t i = 0; i < activeNodes.size(); ++i) {
         const auto node_index = activeNodes[i].nodeIndex();
-        const BucketCopy* cp(c.entry->getNode(node_index));
+        const BucketCopy *cp(c.entry->getNode(node_index));
         if (!cp || cp->active()) {
             continue;
         }
         if (!cp->ready()) {
-            if (!c.op_ctx.node_supported_features_repo().node_supported_features(node_index).no_implicit_indexing_of_active_buckets) {
+            if (!c.op_ctx.node_supported_features_repo().node_supported_features(node_index).no_implicit_indexing_of_active_buckets)b{
                 // If copy is not ready, we don't want to activate it if a node
                 // is set in maintenance. Doing so would imply that we want proton
                 // to start background indexing.
@@ -957,6 +958,8 @@ BucketStateStateChecker::shouldSkipActivationDueToMaintenance(const ActiveList& 
         }
     }
     return false;
+}
+
 }
 
 /**
@@ -993,12 +996,13 @@ BucketStateStateChecker::check(Context& c) const
     vespalib::asciistream reason;
     std::vector<uint16_t> operationNodes;
     for (uint32_t i=0; i<activeNodes.size(); ++i) {
-        const BucketCopy* cp = c.entry->getNode(activeNodes[i].nodeIndex());
+        const ActiveCopy & active = activeNodes[i];
+        const BucketCopy* cp = c.entry->getNode(active.nodeIndex());
         if (cp == nullptr || cp->active()) {
             continue;
         }
-        operationNodes.push_back(activeNodes[i].nodeIndex());
-        reason << "[Setting node " << activeNodes[i].nodeIndex() << " as active: " << activeNodes[i].getReason() << "]";
+        operationNodes.push_back(active.nodeIndex());
+        reason << "[Setting node " << active.nodeIndex() << " as active: " << active.getReason() << "]";
     }
 
     // Deactivate all copies that are currently marked as active.
