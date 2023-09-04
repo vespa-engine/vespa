@@ -36,11 +36,6 @@
         <!-- jaxb end -->
 
         <dependency>
-            <!-- Newer version than the one in rt.jar, including the ElementTraversal class needed by Xerces (Aug 2015, still valid Sep 2017) -->
-            <groupId>xml-apis</groupId>
-            <artifactId>xml-apis</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>

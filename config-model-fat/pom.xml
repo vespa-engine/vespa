@@ -98,16 +98,10 @@
               javax.security.auth.callback,
               javax.security.auth.x500,
               javax.security.auth,
-              javax.xml.datatype,
-              javax.xml.namespace,
-              javax.xml.parsers,
-              javax.xml.transform,
-              javax.xml.xpath,
+              javax.xml.*, <!-- expands to all packages in Java module java.xml -->
               org.bouncycastle.*, <!-- expands to all BC packages by Felix plugin -->
-              org.w3c.dom.bootstrap,
-              org.w3c.dom.ls,
-              org.w3c.dom,
-              org.xml.sax,
+              org.w3c.dom.*,  <!-- expands to all packages in Java module java.xml -->
+              org.xml.sax.*,  <!-- expands to all packages in Java module java.xml -->
               <!-- TODO: The fat bundle becomes more brittle for each package added below. Use interfaces in model-api instead. -->
               com.yahoo.vespa.config,
               com.yahoo.vespa.config.buildergen,
@@ -219,7 +213,6 @@
                     <i>org.slf4j:slf4j-api:*:*</i>
                     <i>org.slf4j:slf4j-jdk14:*:*</i>
                     <i>xerces:xercesImpl:*:*</i>
-                    <i>xml-apis:xml-apis:*:*</i>
                   </allowed>
                 </enforceDependencies>
               </rules>
