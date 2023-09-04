@@ -541,11 +541,6 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava-testlib</artifactId>
-                <version>${guava.vespa.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.google.jimfs</groupId>
                 <artifactId>jimfs</artifactId>
                 <version>${jimfs.vespa.version}</version>
@@ -1130,11 +1125,6 @@
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
                 <version>${error-prone-annotations.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.checkerframework</groupId>
-                <artifactId>checker-qual</artifactId>
-                <version>${checker-qual.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.http-client</groupId>

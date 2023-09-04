@@ -1,12 +1,12 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.network;
 
-import com.google.common.testing.EqualsTester;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * @author gjoranv
@@ -51,12 +51,18 @@ public class VersionedIpAddressTest {
 
     @Test
     void equals_and_hashCode_are_implemented() {
-        new EqualsTester()
-                .addEqualityGroup(VersionedIpAddress.from("::1"), VersionedIpAddress.from("::1"))
-                .addEqualityGroup(VersionedIpAddress.from("::2"))
-                .addEqualityGroup(VersionedIpAddress.from("127.0.0.1"), VersionedIpAddress.from("127.0.0.1"))
-                .addEqualityGroup(VersionedIpAddress.from("10.0.0.1"))
-                .testEquals();
+        var one = VersionedIpAddress.from("::1");
+        var two = VersionedIpAddress.from("::2");
+        var local = VersionedIpAddress.from("127.0.0.1");
+        var ten = VersionedIpAddress.from("10.0.0.1");
+        assertEquals(one, VersionedIpAddress.from("::1"));
+        assertNotEquals(one, two);
+        assertNotEquals(one, local);
+        assertNotEquals(one, ten);
+
+        assertEquals(local, VersionedIpAddress.from("127.0.0.1"));
+        assertNotEquals(local, two);
+        assertNotEquals(local, 10);
     }
 
 }

@@ -1,11 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
-import com.google.common.testing.EqualsTester;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 
 public class ServiceInfoTest {
@@ -24,13 +26,32 @@ public class ServiceInfoTest {
         ServiceInfo g = new ServiceInfo("1", "0", Arrays.asList(new PortInfo(33, null)), Collections.singletonMap("foo", "bar"), "different-config-id", commonHostName);
         ServiceInfo h = new ServiceInfo("1", "0", Arrays.asList(new PortInfo(33, null)), Collections.singletonMap("foo", "bar"), commonConfigId, "different-host");
 
-        new EqualsTester()
-                .addEqualityGroup(a, b)
-                .addEqualityGroup(c)
-                .addEqualityGroup(d)
-                .addEqualityGroup(e)
-                .addEqualityGroup(f)
-                .addEqualityGroup(g)
-                .addEqualityGroup(h).testEquals();
+        assertEquals(a, b);
+        assertNotEquals(a, c);
+        assertNotEquals(a, d);
+        assertNotEquals(a, e);
+        assertNotEquals(a, f);
+        assertNotEquals(a, g);
+        assertNotEquals(a, h);
+
+        assertNotEquals(c, d);
+        assertNotEquals(c, e);
+        assertNotEquals(c, f);
+        assertNotEquals(c, g);
+        assertNotEquals(c, h);
+
+        assertNotEquals(d, e);
+        assertNotEquals(d, f);
+        assertNotEquals(d, g);
+        assertNotEquals(d, h);
+
+        assertNotEquals(e, f);
+        assertNotEquals(e, g);
+        assertNotEquals(e, h);
+
+        assertNotEquals(f, g);
+        assertNotEquals(f, h);
+
+        assertNotEquals(g, h);
     }
 }
