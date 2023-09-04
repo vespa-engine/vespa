@@ -74,22 +74,58 @@ void my_universal_dot_product_op(InterpretedFunction::State &state, uint64_t par
     state.pop_pop_push(result);
 }
 
+template <typename LCT, typename RCT, typename OCT>
+void my_universal_dense_dot_product_op(InterpretedFunction::State &state, uint64_t param_in) {
+    using dot_product = DotProduct<LCT,RCT>;
+    const auto &param = unwrap_param<UniversalDotProductParam>(param_in);
+    const auto &lhs = state.peek(1);
+    const auto &rhs = state.peek(0);
+    size_t lhs_index_size = lhs.index().size();
+    size_t rhs_index_size = rhs.index().size();
+    if (rhs_index_size == 0 || lhs_index_size == 0) {
+        const Value &empty = state.stash.create<ValueView>(param.res_type, EmptyIndex::get(), TypedCells(nullptr, get_cell_type<OCT>(), 0));
+        state.pop_pop_push(empty);
+        return;
+    }
+    const auto lhs_cells = lhs.cells().typify<LCT>();
+    const auto rhs_cells = rhs.cells().typify<RCT>();
+    auto dst_cells = state.stash.create_array<OCT>(lhs_index_size * param.dense_plan.res_size);
+    auto dense_fun = [&](size_t lhs_idx, size_t rhs_idx, size_t dst_idx) {
+                         dst_cells[dst_idx] += dot_product::apply(&lhs_cells[lhs_idx], &rhs_cells[rhs_idx], param.vector_size);
+                     };
+    for (size_t lhs_subspace = 0; lhs_subspace < lhs_index_size; ++lhs_subspace) {
+        for (size_t rhs_subspace = 0; rhs_subspace < rhs_index_size; ++rhs_subspace) {
+            param.dense_plan.execute(lhs_subspace * param.dense_plan.lhs_size,
+                                     rhs_subspace * param.dense_plan.rhs_size,
+                                     lhs_subspace * param.dense_plan.res_size, dense_fun);
+        }
+    }
+    const Value &result = state.stash.create<ValueView>(param.res_type, lhs.index(), TypedCells(dst_cells));
+    state.pop_pop_push(result);
+}
+
 struct SelectUniversalDotProduct {
-    template <typename LCM, typename RCM, typename SCALAR> static auto invoke(const UniversalDotProductParam &) {
+    template <typename LCM, typename RCM, typename SCALAR> static auto invoke(const UniversalDotProductParam &param) {
         constexpr CellMeta ocm = CellMeta::join(LCM::value, RCM::value).reduce(SCALAR::value);
         using LCT = CellValueType<LCM::value.cell_type>;
         using RCT = CellValueType<RCM::value.cell_type>;
         using OCT = CellValueType<ocm.cell_type>;
+        if (param.sparse_plan.maybe_forward_lhs_index()) {
+            return my_universal_dense_dot_product_op<LCT,RCT,OCT>;
+        }
         return my_universal_dot_product_op<LCT,RCT,OCT>;
     }
 };
 
 bool check_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs) {
-    UniversalDotProductParam param(res, lhs, rhs);
-    if (param.vector_size < 8) {
+    (void) res;
+    if (lhs.is_double() || rhs.is_double()) {
         return false;
     }
-    return true;
+    if (lhs.count_mapped_dimensions() > 0 || rhs.count_mapped_dimensions() > 0) {
+        return true;
+    }
+    return false;
 }
 
 } // namespace <unnamed>
@@ -118,8 +154,15 @@ UniversalDotProduct::optimize(const TensorFunction &expr, Stash &stash, bool for
 {
     if (auto reduce = as<Reduce>(expr); reduce && (reduce->aggr() == Aggr::SUM)) {
         if (auto join = as<Join>(reduce->child()); join && (join->function() == Mul::f)) {
-            if (force || check_types(expr.result_type(), join->lhs().result_type(), join->rhs().result_type())) {
-                return stash.create<UniversalDotProduct>(expr.result_type(), join->lhs(), join->rhs());
+            const ValueType &res_type = expr.result_type();
+            const ValueType &lhs_type = join->lhs().result_type();
+            const ValueType &rhs_type = join->rhs().result_type();
+            if (force || check_types(res_type, lhs_type, rhs_type)) {
+                SparseJoinReducePlan sparse_plan(lhs_type, rhs_type, res_type);
+                if (sparse_plan.maybe_forward_rhs_index() && !sparse_plan.maybe_forward_lhs_index()) {
+                    return stash.create<UniversalDotProduct>(res_type, join->rhs(), join->lhs());
+                }
+                return stash.create<UniversalDotProduct>(res_type, join->lhs(), join->rhs());
             }
         }
     }
