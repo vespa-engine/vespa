@@ -393,6 +393,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
                     issueAsync("alter table " + name + " drop partition where at < dateadd('d', -4, now());", newContext());
                 }
                 catch (SqlException e) {
+                    if (e.getMessage().contains("no partitions matched WHERE clause")) return;
                     log.log(Level.WARNING, "Failed to gc old metrics data in " + dir + " table " + name, e);
                 }
             }
