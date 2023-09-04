@@ -99,9 +99,8 @@ buildNodeList(const BucketDatabase::Entry& e,vespalib::ConstArrayRef<uint16_t> n
     SmallActiveCopyList result;
     result.reserve(nodeIndexes.size());
     for (uint16_t nodeIndex : nodeIndexes) {
-        const BucketCopy *copy = e->getNode(nodeIndex);
-        assert(copy);
-        result.emplace_back(nodeIndex, *copy, idealState.lookup(nodeIndex));
+        uint16_t entryIndex = e->getRef(nodeIndex);
+        result.emplace_back(nodeIndex, e->getNodeRef(entryIndex), idealState.lookup(nodeIndex), entryIndex);
     }
     return result;
 }

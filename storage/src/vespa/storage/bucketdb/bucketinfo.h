@@ -86,6 +86,7 @@ public:
      * Returns the bucket copy struct for the given node, null if nonexisting
      */
     const BucketCopy* getNode(uint16_t node) const noexcept;
+    uint16_t getRef(uint16_t node) const noexcept;
 
     /**
      * Returns the number of nodes this entry has.
