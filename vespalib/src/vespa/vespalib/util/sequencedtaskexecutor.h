@@ -30,6 +30,14 @@ public:
     ExecutorStats getStats() override;
     void wakeup() override;
 
+    /**
+     * Returns the ExecutorStats of each underlying executor.
+     *
+     * Calling this function resets the statistics of each underlying executor,
+     * similar to calling getStats().
+     */
+    std::vector<ExecutorStats> get_raw_stats();
+
     static std::unique_ptr<ISequencedTaskExecutor>
     create(Runnable::init_fun_t func, uint32_t threads);
     static std::unique_ptr<ISequencedTaskExecutor>

@@ -151,6 +151,16 @@ SequencedTaskExecutor::getStats()
     return accumulatedStats;
 }
 
+std::vector<ExecutorStats>
+SequencedTaskExecutor::get_raw_stats()
+{
+    std::vector<ExecutorStats> result;
+    for (auto& executor : _executors) {
+        result.push_back(executor->getStats());
+    }
+    return result;
+}
+
 ISequencedTaskExecutor::ExecutorId
 SequencedTaskExecutor::getExecutorId(uint64_t componentId) const {
     auto id = getExecutorIdPerfect(componentId);

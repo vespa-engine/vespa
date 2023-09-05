@@ -22,7 +22,7 @@ private:
     const vespalib::ThreadExecutor* _flush;
     const vespalib::ThreadExecutor* _proton;
     const vespalib::ThreadExecutor* _warmup;
-    const vespalib::ISequencedTaskExecutor* _field_writer;
+    vespalib::ISequencedTaskExecutor* _field_writer;
 
 public:
     ProtonThreadPoolsExplorer(const vespalib::ThreadExecutor* shared,
@@ -31,9 +31,11 @@ public:
                               const vespalib::ThreadExecutor* flush,
                               const vespalib::ThreadExecutor* proton,
                               const vespalib::ThreadExecutor* warmup,
-                              const vespalib::ISequencedTaskExecutor* field_writer);
+                              vespalib::ISequencedTaskExecutor* field_writer);
 
     void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
+    std::vector<vespalib::string> get_children_names() const override;
+    std::unique_ptr<vespalib::StateExplorer> get_child(vespalib::stringref name) const override;
 };
 
 }

@@ -42,14 +42,14 @@ vespa_add_library(searchcore_server STATIC
     executor_thread_service.cpp
     executor_threading_service_explorer.cpp
     executorthreadingservice.cpp
-    fast_access_document_retriever.cpp
     fast_access_doc_subdb.cpp
     fast_access_doc_subdb_configurer.cpp
+    fast_access_document_retriever.cpp
     fast_access_feed_view.cpp
+    feed_handler_stats.cpp
     feedhandler.cpp
     feedstate.cpp
     feedstates.cpp
-    feed_handler_stats.cpp
     fileconfigmanager.cpp
     flushhandlerproxy.cpp
     forcecommitcontext.cpp
@@ -100,9 +100,10 @@ vespa_add_library(searchcore_server STATIC
     searchcontext.cpp
     searchhandlerproxy.cpp
     searchview.cpp
-    simpleflush.cpp
+    sequenced_task_executor_explorer.cpp
     shared_threading_service.cpp
     shared_threading_service_config.cpp
+    simpleflush.cpp
     storeonlydocsubdb.cpp
     storeonlyfeedview.cpp
     summaryadapter.cpp
