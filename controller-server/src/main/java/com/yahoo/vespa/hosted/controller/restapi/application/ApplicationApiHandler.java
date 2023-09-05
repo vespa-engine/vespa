@@ -1979,9 +1979,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setString("region", deploymentId.zoneId().region().value());
         addAvailabilityZone(response, deployment.zone());
         var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
-        boolean legacyEndpoints = request.getBooleanProperty("includeLegacyEndpoints");
+        boolean includeAllEndpoints = request.getBooleanProperty("includeAllEndpoints") ||
+                                      request.getBooleanProperty("includeLegacyEndpoints");
         var endpointArray = response.setArray("endpoints");
-        for (var endpoint : endpointsOf(deploymentId, application, legacyEndpoints)) {
+        for (var endpoint : endpointsOf(deploymentId, application, includeAllEndpoints)) {
             toSlime(endpoint, endpointArray.addObject());
         }
         response.setString("clusters", withPath(toPath(deploymentId) + "/clusters", request.getUri()).toString());
@@ -2056,20 +2057,19 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         metrics.instant().ifPresent(instant -> metricsObject.setLong("lastUpdated", instant.toEpochMilli()));
     }
 
-    private EndpointList endpointsOf(DeploymentId deploymentId, Application application, boolean legacyEndpoints) {
-        EndpointList zoneEndpoints = controller.routing().readEndpointsOf(deploymentId).scope(Endpoint.Scope.zone);
-        if (!legacyEndpoints) {
-            zoneEndpoints = zoneEndpoints.not().legacy().direct();
-        }
+    private EndpointList endpointsOf(DeploymentId deploymentId, Application application, boolean includeHidden) {
+        EndpointList zoneEndpoints = controller.routing().readEndpointsOf(deploymentId).direct();
         EndpointList declaredEndpoints = controller.routing().readDeclaredEndpointsOf(application).targets(deploymentId);
-        if (!legacyEndpoints) {
-            declaredEndpoints = declaredEndpoints.not().legacy().direct();
-        }
         EndpointList endpoints = zoneEndpoints.and(declaredEndpoints);
-        // If the application has any generated endpoints, we show only those
         EndpointList generatedEndpoints = endpoints.generated();
-        if (!generatedEndpoints.isEmpty()) {
-            endpoints = generatedEndpoints;
+        if (!includeHidden) {
+            // Hide legacy and weighted endpoints by default
+            endpoints = endpoints.not().legacy()
+                                 .not().scope(Endpoint.Scope.weighted);
+            // Hide non-generated if we have any
+            if (!generatedEndpoints.isEmpty()) {
+                endpoints = generatedEndpoints;
+            }
         }
         return endpoints;
     }
