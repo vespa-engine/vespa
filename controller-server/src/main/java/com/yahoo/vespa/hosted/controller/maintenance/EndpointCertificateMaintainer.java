@@ -281,6 +281,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                 .filter(c -> c.instance().isPresent())
                 .filter(c -> c.certificate().randomizedId().isEmpty())
                 .filter(c -> assignRandomizedId.with(FetchVector.Dimension.APPLICATION_ID, c.application().instance(c.instance().get()).serializedForm()).value())
+                .limit(5)
                 .forEach(c -> assignRandomizedId(c.application(), c.instance().get()));
     }
 
