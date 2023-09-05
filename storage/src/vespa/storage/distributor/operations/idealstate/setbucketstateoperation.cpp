@@ -10,10 +10,6 @@ LOG_SETUP(".distributor.operation.idealstate.setactive");
 
 namespace storage::distributor {
 
-namespace {
-
-}
-
 SetBucketStateOperation::SetBucketStateOperation(const ClusterContext& cluster_ctx,
                                                  const BucketAndNodes& nodes,
                                                  const std::vector<uint16_t>& wantedActiveNodes)
@@ -35,8 +31,8 @@ SetBucketStateOperation::enqueueSetBucketStateCommand(uint16_t node, bool active
 bool
 SetBucketStateOperation::shouldBeActive(uint16_t node) const
 {
-    for (unsigned short _wantedActiveNode : _wantedActiveNodes) {
-        if (_wantedActiveNode == node) {
+    for (uint16_t wantedActiveNode : _wantedActiveNodes) {
+        if (wantedActiveNode == node) {
             return true;
         }
     }
@@ -45,8 +41,8 @@ SetBucketStateOperation::shouldBeActive(uint16_t node) const
 
 void
 SetBucketStateOperation::activateNode(DistributorStripeMessageSender& sender) {
-    for (unsigned short _wantedActiveNode : _wantedActiveNodes) {
-        enqueueSetBucketStateCommand(_wantedActiveNode, true);
+    for (uint16_t wantedActiveNode : _wantedActiveNodes) {
+        enqueueSetBucketStateCommand(wantedActiveNode, true);
     }
     _tracker.flushQueue(sender);
     _ok = true;
@@ -55,8 +51,7 @@ SetBucketStateOperation::activateNode(DistributorStripeMessageSender& sender) {
 
 void
 SetBucketStateOperation::deactivateNodes(DistributorStripeMessageSender& sender) {
-    const std::vector<uint16_t>& nodes(getNodes());
-    for (unsigned short node : nodes) {
+    for (uint16_t node : getNodes()) {
         if (!shouldBeActive(node)) {
             enqueueSetBucketStateCommand(node, false);
         }
