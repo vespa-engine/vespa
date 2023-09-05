@@ -18,21 +18,6 @@ import java.util.stream.Stream;
  * @author mortent
  */
 public class ApplicationClusterEndpoint {
-    @Override
-    public String toString() {
-        return "ApplicationClusterEndpoint{" +
-               "dnsName=" + dnsName +
-               ", scope=" + scope +
-               ", routingMethod=" + routingMethod +
-               ", weight=" + weight +
-               ", hostNames=" + hostNames +
-               ", clusterId='" + clusterId + "'" +
-               '}';
-    }
-
-    public enum Scope {application, global, zone}
-
-    public enum RoutingMethod {shared, sharedLayer4, exclusive}
 
     private final DnsName dnsName;
     private final Scope scope;
@@ -40,14 +25,16 @@ public class ApplicationClusterEndpoint {
     private final int weight;
     private final List<String> hostNames;
     private final String clusterId;
+    private final AuthMethod authMethod;
 
-    private ApplicationClusterEndpoint(DnsName dnsName, Scope scope, RoutingMethod routingMethod, int weight, List<String> hostNames, String clusterId) {
-        this.dnsName = dnsName;
-        this.scope = scope;
-        this.routingMethod = routingMethod;
+    private ApplicationClusterEndpoint(DnsName dnsName, Scope scope, RoutingMethod routingMethod, int weight, List<String> hostNames, String clusterId, AuthMethod authMethod) {
+        this.dnsName = Objects.requireNonNull(dnsName);
+        this.scope = Objects.requireNonNull(scope);
+        this.routingMethod = Objects.requireNonNull(routingMethod);
         this.weight = weight;
-        this.hostNames = List.copyOf(hostNames);
-        this.clusterId = clusterId;
+        this.hostNames = List.copyOf(Objects.requireNonNull(hostNames));
+        this.clusterId = Objects.requireNonNull(clusterId);
+        this.authMethod = Objects.requireNonNull(authMethod);
     }
 
     public DnsName dnsName() {
@@ -74,18 +61,42 @@ public class ApplicationClusterEndpoint {
         return clusterId;
     }
 
+    public AuthMethod authMethod() {
+        return authMethod;
+    }
+
+    @Override
+    public String toString() {
+        return "ApplicationClusterEndpoint{" +
+               "dnsName=" + dnsName +
+               ", scope=" + scope +
+               ", routingMethod=" + routingMethod +
+               ", weight=" + weight +
+               ", hostNames=" + hostNames +
+               ", clusterId='" + clusterId + '\'' +
+               ", authMethod=" + authMethod +
+               '}';
+    }
+
     public static Builder builder() {
         return new Builder();
     }
+
+    public enum Scope { application, global, zone }
+
+    public enum RoutingMethod { shared, sharedLayer4, exclusive }
+
+    public enum AuthMethod { mtls, token }
 
     public static class Builder {
 
         private DnsName dnsName;
         private Scope scope;
         private RoutingMethod routingMethod;
-        private int weigth = 1;
+        private int weight = 1;
         private List<String> hosts;
         private String clusterId;
+        private AuthMethod authMethod = AuthMethod.mtls; // TODO(mpolden): For compatibility with older config-models. Remove when < 8.221 is gone
 
         public Builder dnsName(DnsName name) {
             this.dnsName = name;
@@ -118,7 +129,7 @@ public class ApplicationClusterEndpoint {
         }
 
         public Builder weight(int weigth) {
-            this.weigth = weigth;
+            this.weight = weigth;
             return this;
         }
 
@@ -132,9 +143,15 @@ public class ApplicationClusterEndpoint {
             return this;
         }
 
-        public ApplicationClusterEndpoint build() {
-            return new ApplicationClusterEndpoint(dnsName, scope, routingMethod, weigth, hosts, clusterId);
+        public Builder authMethod(AuthMethod authMethod) {
+            this.authMethod = authMethod;
+            return this;
         }
+
+        public ApplicationClusterEndpoint build() {
+            return new ApplicationClusterEndpoint(dnsName, scope, routingMethod, weight, hosts, clusterId, authMethod);
+        }
+
     }
 
     public static class DnsName implements Comparable<DnsName> {
