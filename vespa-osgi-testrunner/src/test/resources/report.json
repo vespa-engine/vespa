@@ -110,7 +110,7 @@
                         "type": "output",
                         "children": [
                           {
-                            "message": "org.opentest4j.AssertionFailedError: baz ==> expected: <foo> but was: <bar>\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:55)\n\tat org.junit.jupiter.api.AssertionUtils.failNotEqual(AssertionUtils.java:62)\n\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)\n\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)\n\tat com.yahoo.vespa.test.samples.SampleTest.failing(SampleTest.java:81)\n",
+                            "message": "org.opentest4j.AssertionFailedError: baz ==> expected: <foo> but was: <bar>\n\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)\n\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)\n\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)\n\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)\n\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)\n\tat com.yahoo.vespa.test.samples.SampleTest.failing(SampleTest.java:81)\n",
                             "at": 0,
                             "level": "error"
                           }
@@ -265,7 +265,7 @@
                                 "type": "output",
                                 "children": [
                                   {
-                                    "message": "org.opentest4j.AssertionFailedError: no charm\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:39)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:134)\n\tat com.yahoo.vespa.test.samples.SampleTest$Inner.lambda$others$1(SampleTest.java:105)\n",
+                                    "message": "org.opentest4j.AssertionFailedError: no charm\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:38)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:134)\n\tat com.yahoo.vespa.test.samples.SampleTest$Inner.lambda$others$1(SampleTest.java:105)\n",
                                     "at": 0,
                                     "level": "error"
                                   }
@@ -350,7 +350,7 @@
                         "type": "output",
                         "children": [
                           {
-                            "message": "org.opentest4j.AssertionFailedError\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:35)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:115)\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.test(FailingTestAndBothAftersTest.java:19)\n\tSuppressed: java.lang.RuntimeException\n\t\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.moreFail(FailingTestAndBothAftersTest.java:16)\n",
+                            "message": "org.opentest4j.AssertionFailedError\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:34)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:115)\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.test(FailingTestAndBothAftersTest.java:19)\n\tSuppressed: java.lang.RuntimeException\n\t\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.moreFail(FailingTestAndBothAftersTest.java:16)\n",
                             "at": 0,
                             "level": "error"
                           }
@@ -399,7 +399,7 @@
                     "type": "output",
                     "children": [
                       {
-                        "message": "org.junit.platform.commons.JUnitException: @BeforeAll method 'void com.yahoo.vespa.test.samples.WrongBeforeAllTest.wrong()' must be static unless the test class is annotated with @TestInstance(Lifecycle.PER_CLASS).\n",
+                        "message": "org.junit.platform.commons.JUnitException: @BeforeAll method 'void com.yahoo.vespa.test.samples.WrongBeforeAllTest.wrong()' must be static unless the test class is annotated with @TestInstance(Lifecycle.PER_CLASS).\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1511)\n\tat java.base/java.util.Collections$UnmodifiableCollection.forEach(Collections.java:1092)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1511)\n",
                         "at": 0,
                         "level": "error"
                       }
@@ -473,7 +473,7 @@
             "type": "output",
             "children": [
               {
-                "message": "java.lang.ClassNotFoundException: School's out all summer!\n",
+                "message": "java.lang.ClassNotFoundException: School's out all summer!\n\tat com.yahoo.vespa.testrunner.TestRunnerHandlerTest.setup(TestRunnerHandlerTest.java:62)\n",
                 "at": 12000,
                 "level": "error"
               }
