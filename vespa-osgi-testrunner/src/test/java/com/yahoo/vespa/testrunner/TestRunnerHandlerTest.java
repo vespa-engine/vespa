@@ -19,10 +19,15 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -47,16 +52,18 @@ class TestRunnerHandlerTest {
     private TestRunner aggregateRunner;
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         TestReport moreTestsReport = JunitRunnerTest.test(Suite.PRODUCTION_TEST,
                                                           new byte[0],
                                                           FailingTestAndBothAftersTest.class,
                                                           WrongBeforeAllTest.class,
                                                           FailingExtensionTest.class)
                                                     .getReport();
+        Exception cnfe = new ClassNotFoundException("School's out all summer!");
+        cnfe.setStackTrace(Arrays.copyOf(cnfe.getStackTrace(), 1));
         TestReport failedReport = TestReport.createFailed(Clock.fixed(testInstant, ZoneId.of("UTC")),
                                                           Suite.PRODUCTION_TEST,
-                                                          new ClassNotFoundException("School's out all summer!"));
+                                                          cnfe);
         aggregateRunner = AggregateTestRunner.of(List.of(new MockRunner(TestRunner.Status.SUCCESS,
                                                                         AggregateTestRunnerTest.report.mergedWith(moreTestsReport)
                                                                                                       .mergedWith(failedReport))));

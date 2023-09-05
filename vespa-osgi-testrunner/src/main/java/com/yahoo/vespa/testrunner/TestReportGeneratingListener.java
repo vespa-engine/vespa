@@ -18,6 +18,7 @@ import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -41,8 +42,8 @@ class TestReportGeneratingListener implements TestExecutionListener {
     private final Handler handler;              // Captures logging from test code.
     private final Clock clock;
 
-    TestReportGeneratingListener(Suite suite, Consumer<LogRecord> logger, TeeStream stdoutTee, TeeStream stderrTee, Clock clock) {
-        this.report = new TestReport(clock, suite);
+    TestReportGeneratingListener(Suite suite, Set<String> testClassNames, Consumer<LogRecord> logger, TeeStream stdoutTee, TeeStream stderrTee, Clock clock) {
+        this.report = new TestReport(clock, suite, testClassNames);
         this.logger = logger;
         this.stdoutTee = stdoutTee;
         this.stderrTee = stderrTee;

@@ -12,6 +12,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -148,11 +149,6 @@ class AggregateTestRunnerTest {
     }
 
     @Test
-    void testReportStatus() {
-        assertEquals(FAILURE, JunitRunner.testRunnerStatus(TestReport.createFailed(Clock.systemUTC(), Suite.SYSTEM_TEST, new RuntimeException("hello"))));
-    }
-
-    @Test
     void testStackTrimming() {
         try {
             try {
@@ -163,15 +159,20 @@ class AggregateTestRunnerTest {
             }
         }
         catch (Exception e) {
-            TestReport.trimStackTraces(e, "org.junit.platform.commons.util.ReflectionUtils");
+            TestReport.trimStackTraces(e, Set.of(AggregateTestRunnerTest.class.getName()));
             assertEquals("""
-                            java.lang.RuntimeException: java.lang.RuntimeException: inner
-                            \tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:162)
-                            Caused by: java.lang.RuntimeException: inner
-                            \tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:159)
-                            """,
+                         java.lang.RuntimeException: java.lang.RuntimeException: inner
+                         	at com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:158)
+                         Caused by: java.lang.RuntimeException: inner
+                         	at com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:155)
+                         """,
                          ExceptionUtils.getStackTraceAsString(e));
         }
+    }
+
+    @Test
+    void testReportStatus() {
+        assertEquals(FAILURE, JunitRunner.testRunnerStatus(TestReport.createFailed(Clock.systemUTC(), Suite.SYSTEM_TEST, new RuntimeException("hello"))));
     }
 
     static class MockTestRunner implements TestRunner {

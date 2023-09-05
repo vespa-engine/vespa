@@ -32,28 +32,30 @@ public class TestReport {
 
     private final Object monitor = new Object();
     private final Set<TestIdentifier> complete = new HashSet<>();
+    private final Set<String> testClassNames;
     private final Clock clock;
     private final ContainerNode root;
     private final Suite suite;
     private NamedNode current;
     private TestPlan plan;
 
-    private TestReport(Clock clock, Suite suite, ContainerNode root) {
+    private TestReport(Clock clock, Suite suite, Set<String> testClassNames, ContainerNode root) {
         this.clock = clock;
         this.root = root;
+        this.testClassNames = Set.copyOf(testClassNames);
         this.current = root;
         this.suite = suite;
     }
 
-    TestReport(Clock clock, Suite suite) {
-        this(clock, suite, new ContainerNode(null, null, toString(suite), clock.instant()));
+    TestReport(Clock clock, Suite suite, Set<String> testClassNames) {
+        this(clock, suite, testClassNames, new ContainerNode(null, null, toString(suite), clock.instant()));
     }
 
     static TestReport createFailed(Clock clock, Suite suite, Throwable thrown) {
         if (thrown instanceof OutOfMemoryError) throw (Error) thrown;
-        TestReport failed = new TestReport(clock, suite);
+        TestReport failed = new TestReport(clock, suite, Set.of());
         failed.complete();
-        failed.root().children.add(new FailureNode(failed.root(), clock.instant(), thrown, suite));
+        failed.root().children.add(new FailureNode(failed.root(), clock.instant(), thrown, suite, Set.of()));
         return failed;
     }
 
@@ -127,7 +129,7 @@ public class TestReport {
         synchronized (monitor) {
             Status status = Status.successful;
             if (thrown != null) {
-                FailureNode failure = new FailureNode(current, clock.instant(), thrown, suite);
+                FailureNode failure = new FailureNode(current, clock.instant(), thrown, suite, testClassNames);
                 current.children.add(failure);
                 status = failure.status();
             }
@@ -138,7 +140,7 @@ public class TestReport {
 
     void log(LogRecord record) {
         synchronized (monitor) {
-            if (record.getThrown() != null) trimStackTraces(record.getThrown(), JunitRunner.class.getName());
+            if (record.getThrown() != null) trimStackTraces(record.getThrown(), testClassNames);
             if ( ! (current.children.peekLast() instanceof OutputNode))
                 current.children.add(new OutputNode(current));
 
@@ -158,7 +160,9 @@ public class TestReport {
                 ContainerNode newRoot = new ContainerNode(null, null, root.name(), root.start());
                 newRoot.children.addAll(root.children);
                 newRoot.children.addAll(other.root.children);
-                TestReport merged = new TestReport(clock, suite, newRoot);
+                Set<String> testClassNames = new HashSet<>(this.testClassNames);
+                testClassNames.addAll(other.testClassNames);
+                TestReport merged = new TestReport(clock, suite, testClassNames, newRoot);
                 merged.complete();
                 return merged;
             }
@@ -277,9 +281,9 @@ public class TestReport {
         private final Throwable thrown;
         private final Suite suite;
 
-        public FailureNode(NamedNode parent, Instant now, Throwable thrown, Suite suite) {
+        public FailureNode(NamedNode parent, Instant now, Throwable thrown, Suite suite, Set<String> testClassNames) {
             super(parent, null, thrown.toString(), now);
-            trimStackTraces(thrown, JunitRunner.class.getName());
+            trimStackTraces(thrown, testClassNames);
             this.thrown = thrown;
             this.suite = suite;
 
@@ -327,26 +331,20 @@ public class TestReport {
 
     /**
      * Recursively trims stack traces for the given throwable and its causes/suppressed.
-     * This is based on the assumption that the relevant stack is anything above the first native
-     * reflection invocation, above any frame in the given root class.
+     * This is based on the assumption that the relevant stack is anything from the first
+     * test bundle class frame, and upwards; the exception is for dynamic tests, where a
+     * specific dynamic test factory method is right below the first user frame.
      */
-    static void trimStackTraces(Throwable thrown, String testFrameworkRootClass) {
+    static void trimStackTraces(Throwable thrown, Set<String> testClassNames) {
         if (thrown == null)
             return;
 
         StackTraceElement[] stack = thrown.getStackTrace();
-        int i = 0;
-        int firstReflectFrame = -1;
-        int cutoff = 0;
-        boolean rootedInTestFramework = false;
+        int i = -1;
+        int cutoff = stack.length;
         while (++i < stack.length) {
-            rootedInTestFramework |= testFrameworkRootClass.equals(stack[i].getClassName());
-            if (firstReflectFrame == -1 && stack[i].getClassName().startsWith("jdk.internal.reflect."))
-                firstReflectFrame = i; // jdk.internal.reflect class invokes the first user test frame, on both jdk 17 and 21.
-            if (rootedInTestFramework && firstReflectFrame > 0) {
-                cutoff = firstReflectFrame;
-                break;
-            }
+            for (String name : testClassNames) if (stack[i].getClassName().startsWith(name))
+                cutoff = i + 1;
             boolean isDynamicTestInvocation = "org.junit.jupiter.engine.descriptor.DynamicTestTestDescriptor".equals(stack[i].getClassName());
             if (isDynamicTestInvocation) {
                 cutoff = i;
@@ -356,9 +354,9 @@ public class TestReport {
         thrown.setStackTrace(copyOf(stack, cutoff));
 
         for (Throwable suppressed : thrown.getSuppressed())
-            trimStackTraces(suppressed, testFrameworkRootClass);
+            trimStackTraces(suppressed, testClassNames);
 
-        trimStackTraces(thrown.getCause(), testFrameworkRootClass);
+        trimStackTraces(thrown.getCause(), testClassNames);
     }
 
     private static String toString(Suite suite) {
