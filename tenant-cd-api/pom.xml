@@ -24,7 +24,7 @@
             This version must match the string in all ExportPackage annotations in this module.
             It must also be in sync junit version specified in 'hosted-tenant-base'.
         -->
-        <hosted-tenant-base-junit-version>5.8.1</hosted-tenant-base-junit-version>
+        <hosted-tenant-base-junit-version>${junit.vespa.version}</hosted-tenant-base-junit-version>
 
     </properties>
 
@@ -69,7 +69,7 @@
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-commons</artifactId>
-            <version>1.8.1</version>
+            <version>${junit.platform.vespa.version}</version>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>

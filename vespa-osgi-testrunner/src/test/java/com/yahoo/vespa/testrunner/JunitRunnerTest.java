@@ -28,13 +28,18 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static ai.vespa.hosted.cd.internal.TestRuntimeProvider.testRuntime;
@@ -87,27 +92,30 @@ class JunitRunnerTest {
     static Suite getSuite(Class<?> testClass) {
         for (Annotation annotation : testClass.getAnnotations()) {
             switch (annotation.annotationType().getSimpleName()) {
-                case "SystemTest": return Suite.SYSTEM_TEST;
-                case "StagingSetup": return Suite.STAGING_SETUP_TEST;
-                case "StagingTest": return Suite.STAGING_TEST;
-                case "ProductionTest": return Suite.PRODUCTION_TEST;
+                case "SystemTest" -> { return Suite.SYSTEM_TEST; }
+                case "StagingSetup" -> { return Suite.STAGING_SETUP_TEST; }
+                case "StagingTest" -> { return Suite.STAGING_TEST; }
+                case "ProductionTest" -> { return Suite.PRODUCTION_TEST; }
             }
         }
         return null;
     }
 
     static TestRunner test(Suite suite, byte[] testConfig, Class<?>... testClasses) {
-        JunitRunner runner = new JunitRunner(clock,
-                                             config -> { assertSame(testConfig, config); testRuntime.set(new MockTestRuntime()); },
-                                             __ -> List.of(testClasses),
-                                             JunitRunnerTest::execute);
         try {
+            JunitRunner runner = new JunitRunner(clock,
+                                                 config -> {
+                                                     assertSame(testConfig, config);
+                                                     testRuntime.set(new MockTestRuntime());
+                                                 },
+                                                 __ -> List.of(testClasses),
+                                                 JunitRunnerTest::execute);
             runner.test(suite, testConfig).get();
+            return runner;
         }
         catch (Exception e) {
-            fail(e);
+            throw new AssertionError(e);
         }
-        return runner;
     }
 
 
@@ -133,6 +141,7 @@ class JunitRunnerTest {
             this.listeners = List.of(listeners);
         }
 
+        @SuppressWarnings("deprecation")
         private TestIdentifier getTestIdentifier(TestDescriptor testDescriptor) {
             return plan.getTestIdentifier(testDescriptor.getUniqueId().toString());
         }
