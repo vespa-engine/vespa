@@ -116,7 +116,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
                                                                   new LoadBalancerSpec(lb.id().application(), lb.id().cluster(), reals,
                                                                                        lb.instance().get().settings(), lb.instance().get().cloudAccount()),
                                                                   true);
-                db.writeLoadBalancer(lb.with(Optional.of(instance)), lb.state());
+                db.writeLoadBalancer(lb.with(instance), lb.state());
             } catch (Exception e) {
                 failed.add(lb.id());
                 lastException.set(e);

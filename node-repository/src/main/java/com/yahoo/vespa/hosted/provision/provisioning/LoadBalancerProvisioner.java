@@ -207,14 +207,11 @@ public class LoadBalancerProvisioner {
                 throw new LoadBalancerServiceException("Could not (re)configure " + id + " due to change in load balancer visibility. The operation will be retried on next deployment");
             }
             LoadBalancerInstance instance = provisionInstance(id, loadBalancer, zoneEndpoint, cloudAccount);
-            newLoadBalancer = newLoadBalancer.with(Optional.of(instance));
-        }
-        catch (LoadBalancerServiceException e) {
+            newLoadBalancer = newLoadBalancer.with(instance);
+        } catch (LoadBalancerServiceException e) {
             log.log(Level.WARNING, "Failed to provision load balancer", e);
-            newLoadBalancer = newLoadBalancer.with(Optional.empty());
             throw e;
-        }
-        finally {
+        } finally {
             db.writeLoadBalancer(newLoadBalancer, fromState);
         }
     }
@@ -233,21 +230,19 @@ public class LoadBalancerProvisioner {
 
         try {
             LoadBalancerInstance instance = configureInstance(id, nodes, loadBalancer.get(), settings, loadBalancer.get().instance().get().cloudAccount());
-            db.writeLoadBalancers(List.of(loadBalancer.get().with(Optional.of(instance)).with(State.active, now)),
+            db.writeLoadBalancers(List.of(loadBalancer.get().with(instance).with(State.active, now)),
                                   loadBalancer.get().state(), transaction.nested());
-        }
-        catch (LoadBalancerServiceException e) {
-            db.writeLoadBalancers(List.of(loadBalancer.get().with(Optional.empty())),
-                                  loadBalancer.get().state(), transaction.nested());
+        } catch (LoadBalancerServiceException e) {
+            db.writeLoadBalancers(List.of(loadBalancer.get()), loadBalancer.get().state(), transaction.nested());
             throw e;
         }
     }
 
     /** Provision a load balancer instance, if necessary */
     private LoadBalancerInstance provisionInstance(LoadBalancerId id,
-                                                             Optional<LoadBalancer> currentLoadBalancer,
-                                                             ZoneEndpoint zoneEndpoint,
-                                                             CloudAccount cloudAccount) {
+                                                   Optional<LoadBalancer> currentLoadBalancer,
+                                                   ZoneEndpoint zoneEndpoint,
+                                                   CloudAccount cloudAccount) {
         Set<Real> reals = currentLoadBalancer.flatMap(LoadBalancer::instance)
                                              .map(LoadBalancerInstance::reals)
                                              .orElse(Set.of()); // Targeted reals are changed on activation.
