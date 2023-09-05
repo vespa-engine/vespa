@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 public class WrongBeforeAllTest {
 
     @BeforeAll
-    static void wrong() { }
+    void wrong() { } // Intentionally wrong, to verify this isn't run, but instead causes an error.
 
     @Test
     void test() { }
