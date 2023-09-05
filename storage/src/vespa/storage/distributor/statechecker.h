@@ -44,8 +44,9 @@ public:
      * Context object used when generating operations and metrics for a
      * bucket.
      */
-    struct Context
+    class Context
     {
+    public:
         Context(const DistributorNodeContext& node_ctx_in,
                 const DistributorStripeOperationContext& op_ctx_in,
                 const DistributorBucketSpace &distributorBucketSpace,
@@ -59,7 +60,6 @@ public:
         // Per bucket
         document::Bucket                   bucket;
         document::BucketId                 siblingBucket;
-        BucketDatabase::Entry              entry;
         BucketDatabase::Entry              siblingEntry;
         std::vector<BucketDatabase::Entry> entries;
 
@@ -86,6 +86,14 @@ public:
         document::BucketSpace getBucketSpace() const noexcept { return bucket.getBucketSpace(); }
 
         std::string toString() const;
+        void fillParentAndChildBuckets();
+        void fillSiblingBucket();
+        const BucketDatabase::Entry* getEntryForPrimaryBucket() const;
+        const BucketDatabase::Entry & entry() const noexcept { return _entry; }
+
+        void set_entry(const BucketDatabase::Entry & e) { _entry = e; }
+    private:
+        BucketDatabase::Entry  _entry;
     };
 
     class ResultImpl
@@ -130,7 +138,7 @@ public:
      *
      * @return Returns an operation to perform for the given bucket.
      */
-    virtual Result check(Context& c) const = 0;
+    virtual Result check(const Context &c) const = 0;
 
     /**
      * Returns the name of this state checker.

@@ -93,7 +93,7 @@ struct StateCheckersTest : Test, DistributorStripeTestUtil {
             // Run checking only on this bucketid, but include all buckets
             // owned by it or owners of it, so we can detect inconsistent split.
             if (entry.getBucketId() == c.getBucketId()) {
-                c.entry = entry;
+                c.set_entry(entry);
 
                 StateChecker::Result result(checker.check(c));
                 IdealStateOperation::UP op(result.createOperation());

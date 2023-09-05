@@ -49,31 +49,6 @@ IdealStateManager::print(std::ostream& out, bool verbose, const std::string& ind
     out << "IdealStateManager";
 }
 
-void
-IdealStateManager::fillParentAndChildBuckets(StateChecker::Context& c)
-{
-    c.db.getAll(c.getBucketId(), c.entries);
-    if (c.entries.empty()) {
-        LOG(spam, "Did not find bucket %s in bucket database", c.bucket.toString().c_str());
-    }
-}
-void
-IdealStateManager::fillSiblingBucket(StateChecker::Context& c)
-{
-    c.siblingEntry = c.db.get(c.siblingBucket);
-}
-
-BucketDatabase::Entry*
-IdealStateManager::getEntryForPrimaryBucket(StateChecker::Context& c)
-{
-    for (auto & e : c.entries) {
-        if (e.getBucketId() == c.getBucketId() && ! e->getNodes().empty()) {
-            return &e;
-        }
-    }
-    return nullptr;
-}
-
 namespace {
 
 /*
@@ -90,7 +65,7 @@ canOverwriteResult(const StateChecker::Result& existing, const StateChecker::Res
 }
 
 StateChecker::Result
-IdealStateManager::runStateCheckers(StateChecker::Context& c) const
+IdealStateManager::runStateCheckers(const StateChecker::Context& c) const
 {
     auto highestPri = StateChecker::Result::noMaintenanceNeeded();
     // We go through _all_ active state checkers so that statistics can be
@@ -114,13 +89,13 @@ IdealStateManager::verify_only_live_nodes_in_context(const StateChecker::Context
     if (_has_logged_phantom_replica_warning) {
         return;
     }
-    for (const auto& n : c.entry->getRawNodes()) {
+    for (const auto& n : c.entry()->getRawNodes()) {
         const uint16_t index = n.getNode();
         const auto& state = c.systemState.getNodeState(lib::Node(lib::NodeType::STORAGE, index));
         // Only nodes in Up, Initializing or Retired should ever be present in the DB.
         if (!state.getState().oneOf("uir")) {
             LOG(error, "%s in bucket DB is on node %u, which is in unavailable state %s. Current cluster state is '%s'",
-                       c.entry.getBucketId().toString().c_str(), index, state.getState().toString().c_str(),
+                       c.entry().getBucketId().toString().c_str(), index, state.getState().toString().c_str(),
                        c.systemState.toString().c_str());
             ASSERT_ONCE_OR_LOG(false, "Bucket DB contains replicas on unavailable node", 10000);
             _has_logged_phantom_replica_warning = true;
@@ -133,16 +108,16 @@ IdealStateManager::generateHighestPriority(const document::Bucket& bucket, NodeM
 {
     auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
     StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
-    fillParentAndChildBuckets(c);
-    fillSiblingBucket(c);
+    c.fillParentAndChildBuckets();
+    c.fillSiblingBucket();
 
-    BucketDatabase::Entry* e(getEntryForPrimaryBucket(c));
+    const BucketDatabase::Entry* e(c.getEntryForPrimaryBucket());
     if (!e) {
         return StateChecker::Result::noMaintenanceNeeded();
     }
     LOG(spam, "Checking bucket %s", e->toString().c_str());
 
-    c.entry = *e;
+    c.set_entry(*e);
     verify_only_live_nodes_in_context(c);
     return runStateCheckers(c);
 }
@@ -162,23 +137,21 @@ IdealStateOperation::SP
 IdealStateManager::generateInterceptingSplit(BucketSpace bucketSpace, const BucketDatabase::Entry& e,
                                              api::StorageMessage::Priority pri)
 {
+    if ( ! e.valid()) return {};
+
     NodeMaintenanceStatsTracker statsTracker;
     document::Bucket bucket(bucketSpace, e.getBucketId());
     auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
     StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
-    if (e.valid()) {
-        c.entry = e;
+    c.set_entry(e);
 
-        IdealStateOperation::UP operation(_splitBucketStateChecker->check(c).createOperation());
-        if (operation.get()) {
-            operation->setPriority(pri);
-            operation->setIdealStateManager(this);
-        }
-
-        return operation;
+    IdealStateOperation::UP operation(_splitBucketStateChecker->check(c).createOperation());
+    if (operation.get()) {
+        operation->setPriority(pri);
+        operation->setIdealStateManager(this);
     }
 
-    return {};
+    return operation;
 }
 
 MaintenanceOperation::SP
@@ -197,12 +170,12 @@ IdealStateManager::generateAll(const document::Bucket &bucket, NodeMaintenanceSt
 {
     auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
     StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
-    fillParentAndChildBuckets(c);
-    fillSiblingBucket(c);
-    BucketDatabase::Entry* e(getEntryForPrimaryBucket(c));
+    c.fillParentAndChildBuckets();
+    c.fillSiblingBucket();
+    const BucketDatabase::Entry* e(c.getEntryForPrimaryBucket());
     std::vector<MaintenanceOperation::SP> operations;
     if (e) {
-        c.entry = *e;
+        c.set_entry(*e);
     } else {
         return operations;
     }
