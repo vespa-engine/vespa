@@ -17,7 +17,7 @@ namespace search::index {
 }
 
 namespace vespalib { class ISequencedTaskExecutor; }
-
+namespace vespalib::slime { struct Cursor; }
 namespace document { class Document; }
 
 namespace search::memoryindex {
@@ -175,6 +175,8 @@ public:
     uint64_t getStaticMemoryFootprint() const { return _staticMemoryFootprint; }
 
     index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const;
+
+    void insert_write_context_state(vespalib::slime::Cursor& object) const;
 };
 
 }

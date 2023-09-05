@@ -16,16 +16,18 @@ class BundledFieldsContext
     vespalib::ISequencedTaskExecutor::ExecutorId _id;
     std::vector<uint32_t>                        _fields;
     std::vector<uint32_t>                        _uri_fields;
+    std::vector<uint32_t>                        _uri_all_field_ids;
 protected:
     BundledFieldsContext(vespalib::ISequencedTaskExecutor::ExecutorId id);
     ~BundledFieldsContext();
 public:
     void add_field(uint32_t field_id);
-    void add_uri_field(uint32_t uri_field_id);
+    void add_uri_field(uint32_t uri_field_id, uint32_t uri_all_field_id);
     void set_id(vespalib::ISequencedTaskExecutor::ExecutorId id) { _id = id; }
     vespalib::ISequencedTaskExecutor::ExecutorId get_id() const noexcept { return _id; }
     const std::vector<uint32_t>& get_fields() const noexcept { return _fields; }
     const std::vector<uint32_t>& get_uri_fields() const noexcept { return _uri_fields; }
+    const std::vector<uint32_t>& get_uri_all_field_ids() const noexcept { return _uri_all_field_ids; }
 };
 
 }

@@ -15,20 +15,20 @@ template <typename Context>
 void make_contexts(const index::Schema& schema, const SchemaIndexFields& schema_index_fields, ISequencedTaskExecutor& executor, std::vector<Context>& contexts)
 {
     using ExecutorId = ISequencedTaskExecutor::ExecutorId;
-    using IdMapping = std::vector<std::tuple<ExecutorId, bool, uint32_t>>;
+    using IdMapping = std::vector<std::tuple<ExecutorId, bool, uint32_t, uint32_t>>;
     IdMapping map;
     for (uint32_t field_id : schema_index_fields._textFields) {
         // TODO: Add bias when sharing sequenced task executor between document types
         auto& name = schema.getIndexField(field_id).getName();
         auto id = executor.getExecutorIdFromName(name);
-        map.emplace_back(id, false, field_id);
+        map.emplace_back(id, false, field_id, 0);
     }
     uint32_t uri_field_id = 0;
     for (auto& uri_field : schema_index_fields._uriFields) {
         // TODO: Add bias when sharing sequenced task executor between document types
         auto& name = schema.getIndexField(uri_field._all).getName();
         auto id = executor.getExecutorIdFromName(name);
-        map.emplace_back(id, true, uri_field_id);
+        map.emplace_back(id, true, uri_field_id, uri_field._all);
         ++uri_field_id;
     }
     std::sort(map.begin(), map.end());
@@ -39,7 +39,7 @@ void make_contexts(const index::Schema& schema, const SchemaIndexFields& schema_
             prev_id = std::get<0>(entry);
         }
         if (std::get<1>(entry)) {
-            contexts.back().add_uri_field(std::get<2>(entry));
+            contexts.back().add_uri_field(std::get<2>(entry), std::get<3>(entry));
         } else {
             contexts.back().add_field(std::get<2>(entry));
         }
