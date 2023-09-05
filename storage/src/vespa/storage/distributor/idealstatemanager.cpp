@@ -117,7 +117,7 @@ IdealStateManager::generateHighestPriority(const document::Bucket& bucket, NodeM
     }
     LOG(spam, "Checking bucket %s", e->toString().c_str());
 
-    c.entry(*e);
+    c.set_entry(*e);
     verify_only_live_nodes_in_context(c);
     return runStateCheckers(c);
 }
@@ -143,7 +143,7 @@ IdealStateManager::generateInterceptingSplit(BucketSpace bucketSpace, const Buck
     document::Bucket bucket(bucketSpace, e.getBucketId());
     auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
     StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
-    c.entry(e);
+    c.set_entry(e);
 
     IdealStateOperation::UP operation(_splitBucketStateChecker->check(c).createOperation());
     if (operation.get()) {
@@ -175,7 +175,7 @@ IdealStateManager::generateAll(const document::Bucket &bucket, NodeMaintenanceSt
     const BucketDatabase::Entry* e(c.getEntryForPrimaryBucket());
     std::vector<MaintenanceOperation::SP> operations;
     if (e) {
-        c.entry(*e);
+        c.set_entry(*e);
     } else {
         return operations;
     }

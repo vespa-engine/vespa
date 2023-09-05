@@ -91,7 +91,7 @@ public:
         const BucketDatabase::Entry* getEntryForPrimaryBucket() const;
         const BucketDatabase::Entry & entry() const noexcept { return _entry; }
 
-        void entry(const BucketDatabase::Entry & e) { _entry = e; }
+        void set_entry(const BucketDatabase::Entry & e) { _entry = e; }
     private:
         BucketDatabase::Entry  _entry;
     };
