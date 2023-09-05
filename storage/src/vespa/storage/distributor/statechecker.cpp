@@ -78,10 +78,38 @@ StateChecker::Context::Context(const DistributorNodeContext& node_ctx_in,
       op_ctx(op_ctx_in),
       db(distributorBucketSpace.getBucketDatabase()),
       stats(statsTracker),
-      merges_inhibited_in_bucket_space(distributorBucketSpace.merges_inhibited())
+      merges_inhibited_in_bucket_space(distributorBucketSpace.merges_inhibited()),
+      _entry()
 { }
 
 StateChecker::Context::~Context() = default;
+
+void
+StateChecker::Context::fillParentAndChildBuckets()
+{
+    db.getAll(getBucketId(), entries);
+    if (entries.empty()) {
+        LOG(spam, "Did not find bucket %s in bucket database", bucket.toString().c_str());
+    }
+}
+
+void
+StateChecker::Context::fillSiblingBucket()
+{
+    siblingEntry = db.get(siblingBucket);
+}
+
+const BucketDatabase::Entry*
+StateChecker::Context::getEntryForPrimaryBucket() const
+{
+    for (auto & e : entries) {
+        if (e.getBucketId() == getBucketId() && ! e->getNodes().empty()) {
+            return &e;
+        }
+    }
+    return nullptr;
+}
+
 
 std::string
 StateChecker::Context::toString() const
