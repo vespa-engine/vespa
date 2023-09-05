@@ -300,6 +300,17 @@ public class LoadBalancerProvisionerTest {
         loadBalancers = lbs.get();
         assertSame(LoadBalancer.State.active, loadBalancers.get(0).state());
         assertTrue("Load balancer has instance", loadBalancers.get(0).instance().isPresent());
+
+        // Reconfiguration of load balancer fails on next prepare, but instance is preserved
+        tester.loadBalancerService().throwOnCreate(true);
+        ZoneEndpoint settings = new ZoneEndpoint(true, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "alice"), new AllowedUrn(AccessType.gcpServiceConnect, "bob")));
+        try {
+            prepare(app1, clusterRequest(ClusterSpec.Type.container, cluster, Optional.empty(), settings));
+            fail("Expected exception");
+        } catch (LoadBalancerServiceException ignored) {
+        }
+        assertSame(LoadBalancer.State.active, loadBalancers.get(0).state());
+        assertTrue("Load balancer has instance", loadBalancers.get(0).instance().isPresent());
     }
 
     @Test

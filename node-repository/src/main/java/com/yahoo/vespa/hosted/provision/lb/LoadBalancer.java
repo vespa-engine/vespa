@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
-import com.yahoo.vespa.service.duper.ConfigServerApplication;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -69,8 +68,8 @@ public class LoadBalancer {
     }
 
     /** Returns a copy of this with instance set to given instance */
-    public LoadBalancer with(Optional<LoadBalancerInstance> instance) {
-        return new LoadBalancer(id, instance, state, changedAt);
+    public LoadBalancer with(LoadBalancerInstance instance) {
+        return new LoadBalancer(id, Optional.of(instance), state, changedAt);
     }
 
     public enum State {
