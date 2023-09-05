@@ -108,12 +108,6 @@ public class EndpointCertificates {
     }
 
     private EndpointCertificate assignFromPool(Instance instance, ZoneId zone) {
-        // Assign certificate per instance only in manually deployed environments. In other environments, we share the
-        // certificate because application endpoints can span instances
-
-        // In a migration phase, do this instead:
-        // Note: this equires that assign-randomized-id flag has rolled out for all application instances
-        //
         // For deployments to manually deployed environments: use per instance certificate
         // For all other environments (apply in order):
         // * Use per instance certificate if it exists and is assigned a randomized id
