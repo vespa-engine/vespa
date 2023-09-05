@@ -424,6 +424,7 @@ public class SearchClusterTest {
 
             // Precisely the one retained node keeps its monitor through reconfiguration.
             Set<BaseNodeMonitor<Node>> retainedMonitors = new HashSet<>(state.clusterMonitor.nodeMonitors());
+            assertEquals(6, retainedMonitors.size());
             retainedMonitors.retainAll(oldMonitors);
             assertEquals(1, retainedMonitors.size());
             assertSame(oldNodesByIdentity.get(updatedNodes.get(3)), retainedMonitors.iterator().next().getNode());
