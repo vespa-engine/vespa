@@ -14,10 +14,10 @@ public:
     class Iterator {
     public:
         using UP = std::unique_ptr<Iterator>;
-        virtual ~Iterator() { }
+        virtual ~Iterator() = default;
         virtual int32_t getNext() = 0;
     };
-    virtual ~PopulateInterface() { }
+    virtual ~PopulateInterface() = default;
     virtual Iterator::UP lookup(uint64_t key) const = 0;
 };
 
@@ -30,7 +30,7 @@ public:
     using CountVector = CondensedBitVector::CountVector;
     using GenerationHolder = vespalib::GenerationHolder;
 
-    BitVectorCache(GenerationHolder &genHolder);
+    explicit BitVectorCache(GenerationHolder &genHolder);
     ~BitVectorCache();
     void computeCountVector(KeySet & keys, CountVector & v) const;
     KeySet lookupCachedSet(const KeyAndCountSet & keys);
@@ -44,27 +44,38 @@ public:
 private:
     class KeyMeta {
     public:
-        KeyMeta() :
-            _lookupCount(0),
-            _bitCount(0),
-            _chunkId(-1),
-            _chunkIndex(0)
+        KeyMeta() noexcept
+            : _lookupCount(0),
+              _bitCount(0),
+              _chunkId(-1),
+              _chunkIndex(0)
         { }
-        double       cost()  const { return _bitCount * _lookupCount; }
+        KeyMeta(const KeyMeta & rhs) noexcept
+            : _lookupCount(rhs.lookupCount()),
+              _bitCount(rhs._bitCount),
+              _chunkId(rhs._chunkId),
+              _chunkIndex(rhs._chunkIndex)
+        {}
+        KeyMeta & operator = (const KeyMeta & rhs) {
+            _lookupCount.store(rhs.lookupCount(), std::memory_order_release);
+            _bitCount = rhs._bitCount;
+            _chunkId = rhs._chunkId;
+            _chunkIndex = rhs._chunkIndex;
+            return *this;
+        }
+        double       cost()  const { return _bitCount * lookupCount(); }
         bool     isCached()  const { return _chunkId >= 0; }
         size_t   bitCount()  const { return _bitCount; }
         size_t chunkIndex()  const { return _chunkIndex; }
         size_t    chunkId()  const { return _chunkId; }
-        size_t lookupCount() const { return _lookupCount; }
-        KeyMeta & incBits() {    _bitCount++; return *this; }
-        KeyMeta & decBits() {    _bitCount--; return *this; }
+        size_t lookupCount() const { return _lookupCount.load(std::memory_order_relaxed); }
         KeyMeta &  lookup() { _lookupCount++; return *this; }
         KeyMeta &   bitCount(uint32_t v) {   _bitCount = v; return *this; }
         KeyMeta &    chunkId(uint32_t v) {    _chunkId = v; return *this; }
         KeyMeta & chunkIndex(uint32_t v) { _chunkIndex = v; return *this; }
         KeyMeta & unCache()              { _chunkId = -1; return *this; }
     private:
-        size_t   _lookupCount;
+        std::atomic<size_t>   _lookupCount;
         uint32_t _bitCount;
         int32_t  _chunkId;
         uint32_t _chunkIndex;

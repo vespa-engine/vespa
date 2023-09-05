@@ -33,6 +33,10 @@
           <groupId>org.jvnet.hudson</groupId>
           <artifactId>annotation-indexer</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>javax.activation</groupId>
+          <artifactId>javax.activation-api</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -51,7 +55,12 @@
     <dependency>
       <groupId>com.google.inject</groupId>
       <artifactId>guice</artifactId>
-      <classifier>no_aop</classifier>
+      <exclusions>
+        <exclusion>
+          <groupId>jakarta.inject</groupId>
+          <artifactId>jakarta.inject-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>net.java.dev.jna</groupId>

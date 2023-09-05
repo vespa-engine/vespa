@@ -191,13 +191,13 @@ public class Flags {
     // TODO: Move to a permanent flag
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2023-09-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2023-10-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2023-09-01",
+            List.of("vekterli"), "2021-02-19", "2023-12-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -205,7 +205,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
-            List.of("geirst", "vekterli"), "2021-07-16", "2023-09-01",
+            List.of("geirst", "vekterli"), "2021-07-16", "2023-12-01",
             "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
             "Takes effect at redeployment",
             APPLICATION_ID);
@@ -230,7 +230,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
             "enabled-horizon-dashboard", false,
-            List.of("olaa"), "2021-09-13", "2023-09-01",
+            List.of("olaa"), "2021-09-13", "2023-12-01",
             "Enable Horizon dashboard",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL
@@ -252,7 +252,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
-            List.of("tokle"), "2022-05-09", "2023-09-01",
+            List.of("tokle"), "2022-05-09", "2023-10-01",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
             APPLICATION_ID);
@@ -266,7 +266,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SEPARATE_METRIC_CHECK_CONFIG = defineFeatureFlag(
             "separate-metric-check-config", false,
-            List.of("olaa"), "2022-07-04", "2023-09-01",
+            List.of("olaa"), "2022-07-04", "2023-12-01",
             "Determines whether one metrics config check should be written per Vespa node",
             "Takes effect on next tick",
             HOSTNAME);
@@ -281,7 +281,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2023-09-01",
+            List.of("olaa"), "2022-09-23", "2023-12-01",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
             APPLICATION_ID);
@@ -317,14 +317,14 @@ public class Flags {
             "Takes effect at next host-admin tick");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
-            "weighted-endpoint-record-ttl", List.of(), String.class, List.of("jonmv"), "2023-05-16", "2023-09-01",
+            "weighted-endpoint-record-ttl", List.of(), String.class, List.of("jonmv"), "2023-05-16", "2024-01-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundBooleanFlag ENABLE_DATAPLANE_PROXY = defineFeatureFlag(
             "enable-dataplane-proxy", false,
-            List.of("mortent", "olaa"), "2023-05-15", "2023-09-01",
+            List.of("mortent", "olaa"), "2023-05-15", "2023-10-01",
             "Whether to enable dataplane proxy",
             "Takes effect at redeployment",
             APPLICATION_ID
@@ -374,6 +374,13 @@ public class Flags {
             List.of("hmusum"), "2023-08-27", "2023-10-01",
             "Whether to write application data (active session id, last deployed session id etc. ) as json",
             "Takes effect immediately");
+
+    public static final UnboundBooleanFlag ASSIGN_RANDOMIZED_ID = defineFeatureFlag(
+            "assign-randomized-id", false,
+            List.of("mortent"), "2023-08-31", "2024-02-01",
+            "Whether to assign randomized id to the application",
+            "Takes effect immediately",
+            APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

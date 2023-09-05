@@ -30,7 +30,6 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -83,7 +82,7 @@ public class FastSearcherTestCase {
     @Test
     void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
         FastSearcher fastSearcher = new FastSearcher("container.0",
-                MockDispatcher.create(List.of(new Node(0, "host0", 0))),
+                MockDispatcher.create(List.of(new Node("test", 0, "host0", 0))),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
                 documentdbInfoConfig("test"),
@@ -106,7 +105,7 @@ public class FastSearcherTestCase {
     @Test
     void testRankProfileValidation() {
         FastSearcher fastSearcher = new FastSearcher("container.0",
-                MockDispatcher.create(List.of(new Node(0, "host0", 0))),
+                MockDispatcher.create(List.of(new Node("test", 0, "host0", 0))),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
                 documentdbInfoConfig("test"),
@@ -125,7 +124,7 @@ public class FastSearcherTestCase {
                         .setHasSummaryFeatures(false)
                         .build());
         FastSearcher backend = new FastSearcher("container.0",
-                MockDispatcher.create(Collections.singletonList(new Node(0, "host0", 0))),
+                MockDispatcher.create(Collections.singletonList(new Node("test", 0, "host0", 0))),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
                 documentDb,
@@ -142,7 +141,7 @@ public class FastSearcherTestCase {
 
     @Test
     void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
-        MockDispatcher dispatcher = MockDispatcher.create(List.of(new Node(0, "host0", 0), new Node(2, "host1", 0)));
+        MockDispatcher dispatcher = MockDispatcher.create(List.of(new Node("test", 0, "host0", 0), new Node("test", 2, "host1", 0)));
 
         FastSearcher fastSearcher = new FastSearcher("container.0",
                 dispatcher,
@@ -184,7 +183,7 @@ public class FastSearcherTestCase {
         searchClusterB.name(clusterName);
         b.searchcluster(searchClusterB);
         VipStatus vipStatus = new VipStatus(b.build());
-        List<Node> nodes_1 = List.of(new Node(0, "host0", 0));
+        List<Node> nodes_1 = List.of(new Node("test", 0, "host0", 0));
         RpcResourcePool rpcPool_1 = new RpcResourcePool(MockDispatcher.toDispatchConfig(), MockDispatcher.toNodesConfig(nodes_1));
         MockDispatcher dispatch_1 = MockDispatcher.create(nodes_1, rpcPool_1, vipStatus);
         dispatch_1.clusterMonitor.shutdown();

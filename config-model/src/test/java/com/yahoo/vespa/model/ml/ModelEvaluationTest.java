@@ -84,6 +84,30 @@ public class ModelEvaluationTest {
         }
     }
 
+    @Test
+    void testContainerSpecificModelSettings() {
+        Path appDir = Path.fromString("src/test/cfg/application/onnx_cluster_specific");
+        try {
+            ImportedModelTester tester = new ImportedModelTester("mul", appDir);
+            VespaModel model = tester.createVespaModel();
+            OnnxModelsConfig.Model c1Model = getOnnxModelsConfig(model.getContainerClusters().get("c1"));
+            OnnxModelsConfig.Model c2Model = getOnnxModelsConfig(model.getContainerClusters().get("c2"));
+            assertEquals(2, c1Model.stateless_intraop_threads());
+            assertEquals(4, c2Model.stateless_intraop_threads());
+            assertEquals(0, c1Model.gpu_device());
+            assertEquals(1, c2Model.gpu_device());
+        } finally {
+            IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+        }
+
+    }
+
+    private OnnxModelsConfig.Model getOnnxModelsConfig(ApplicationContainerCluster cluster) {
+        OnnxModelsConfig.Builder ob = new OnnxModelsConfig.Builder();
+        cluster.getConfig(ob);
+        return new OnnxModelsConfig(ob).model(0);
+    }
+
     private void assertHasMlModels(VespaModel model, Path appDir) {
         ApplicationContainerCluster cluster = model.getContainerClusters().get("container");
         assertNotNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));

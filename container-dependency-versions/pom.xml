@@ -83,12 +83,6 @@
                 <version>${guice.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.inject</groupId>
-                <artifactId>guice</artifactId>
-                <version>${guice.vespa.version}</version>
-                <classifier>no_aop</classifier>
-            </dependency>
-            <dependency>
               <groupId>commons-logging</groupId>
               <artifactId>commons-logging</artifactId>
               <version>${commons-logging.vespa.version}</version>
@@ -116,19 +110,19 @@
                 <!-- TODO Vespa 9: stop exporting/providing and move to parent? -->
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
-                <version>${jaxb.vespa.version}</version>
+                <version>${jaxb-api.vespa.version}</version>
             </dependency>
             <dependency>
                 <!-- TODO Vespa 9: stop exporting/providing and move to parent? -->
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-core</artifactId>
-                <version>${jaxb.vespa.version}</version>
+                <version>${jaxb-core.vespa.version}</version>
             </dependency>
             <dependency>
                 <!-- TODO Vespa 9: stop exporting/providing and move to parent? -->
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-impl</artifactId>
-                <version>${jaxb.vespa.version}</version>
+                <version>${jaxb-impl.vespa.version}</version>
             </dependency>
             <dependency>
                 <!-- Needed by jaxb-api, and possibly guice -->
@@ -158,11 +152,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-jdk14</artifactId>
                 <version>${slf4j.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>xml-apis</groupId>
-                <artifactId>xml-apis</artifactId>
-                <version>${xml-apis.vespa.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

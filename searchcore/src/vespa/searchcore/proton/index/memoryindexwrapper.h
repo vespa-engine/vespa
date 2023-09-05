@@ -94,6 +94,10 @@ public:
         _index.pruneRemovedFields(schema);
     }
     void flushToDisk(const vespalib::string &flushDir, uint32_t docIdLimit, SerialNum serialNum) override;
+
+    void insert_write_context_state(vespalib::slime::Cursor& object) const override {
+        _index.insert_write_context_state(object);
+    }
 };
 
 } // namespace proton

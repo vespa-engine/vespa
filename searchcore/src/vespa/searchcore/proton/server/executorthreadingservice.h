@@ -29,9 +29,7 @@ private:
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _summaryExecutor;
     SyncableExecutorThreadService                        _masterService;
     ExecutorThreadService                                _indexService;
-    vespalib::ISequencedTaskExecutor&                    _index_field_inverter;
-    vespalib::ISequencedTaskExecutor&                    _index_field_writer;
-    vespalib::ISequencedTaskExecutor&                    _attribute_field_writer;
+    vespalib::ISequencedTaskExecutor&                    _field_writer;
     std::vector<Registration>                            _invokeRegistrations;
 
 public:
@@ -77,9 +75,7 @@ public:
         return _sharedExecutor;
     }
 
-    vespalib::ISequencedTaskExecutor &indexFieldInverter() override;
-    vespalib::ISequencedTaskExecutor &indexFieldWriter() override;
-    vespalib::ISequencedTaskExecutor &attributeFieldWriter() override;
+    vespalib::ISequencedTaskExecutor &field_writer() override;
     FNET_Transport &transport() override { return _transport; }
     const vespalib::Clock &clock() const override { return _clock; }
     ExecutorThreadingServiceStats getStats();

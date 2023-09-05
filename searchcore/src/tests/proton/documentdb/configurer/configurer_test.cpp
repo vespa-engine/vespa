@@ -218,7 +218,7 @@ Fixture::initViewSet(ViewSet &views)
                                               TuneFileIndexManager(), TuneFileAttributes(), views._fileHeaderContext);
     auto attrMgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(),
                                                  views._fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
-                                                 views._service.write().attributeFieldWriter(), views._service.write().shared(), views._hwInfo);
+                                                 views._service.write().field_writer(), views._service.write().shared(), views._hwInfo);
     auto summaryMgr = make_shared<SummaryManager>
             (_summaryExecutor, search::LogDocumentStore::Config(), search::GrowStrategy(), BASE_DIR,
              TuneFileSummary(), views._fileHeaderContext,views._noTlSyncer, search::IBucketizer::SP());
@@ -318,7 +318,7 @@ struct MyFastAccessFeedView
         StoreOnlyFeedView::PersistentParams params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
         auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(),
                                                  _fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
-                                                 _writeService.attributeFieldWriter(), _writeService.shared(), _hwInfo);
+                                                 _writeService.field_writer(), _writeService.shared(), _hwInfo);
         auto writer = std::make_shared<AttributeWriter>(mgr);
         FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);
         _feedView.set(std::make_shared<FastAccessFeedView>(std::move(storeOnlyCtx), params, fastUpdateCtx));

@@ -63,12 +63,6 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
 
     @Override
     public void getConfig(MetricsmanagerConfig.Builder builder) {
-        ContentCluster.getMetricBuilder("fleetcontroller", builder).
-                addedmetrics(StorageMetrics.VDS_DATASTORED_ALLDISKS_DOCS.baseName()).
-                addedmetrics(StorageMetrics.VDS_DATASTORED_ALLDISKS_BYTES.baseName()).
-                addedmetrics(StorageMetrics.VDS_DATASTORED_ALLDISKS_BUCKETS.baseName()).
-                addedmetrics(StorageMetrics.VDS_DATASTORED_BUCKET_SPACE_BUCKETS_TOTAL.baseName());
-
         ContentCluster.getMetricBuilder("log", builder).
                 addedmetrics("vds.filestor.allthreads.put").
                 addedmetrics("vds.filestor.allthreads.get").

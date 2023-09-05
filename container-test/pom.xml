@@ -115,6 +115,11 @@
       <groupId>org.lz4</groupId>
       <artifactId>lz4-java</artifactId>
     </dependency>
+    <dependency>
+      <groupId>jakarta.inject</groupId>
+      <artifactId>jakarta.inject-api</artifactId>
+      <version>${jakarta.inject.vespa.version}</version>
+    </dependency>
 
     <!-- START JETTY embedded jars -->
     <dependency>

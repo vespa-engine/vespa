@@ -2,8 +2,7 @@
 //************************************************************************
 /**
  * @file
- * Class definitions for FastOS_File, FastOS_DirectoryScan and
- * FastOS_StatInfo.
+ * Class definitions for FastOS_File and FastOS_StatInfo.
  *
  * @author  Div, Oivind H. Danielsen
  */
@@ -544,104 +543,6 @@ public:
     vespalib::system_time _modifiedTime;
 };
 
-
-/**
- * This class enumerates the contents of a given directory.
- *
- * Example:
- * @code
- *   void Foo::Bar()
- *   {
- *      // Scan and print the contents of the directory '/usr/src/include'
- *
- *      FastOS_DirectoryScan dirScan("/usr/src/include");
- *      int numEntries = 0;
- *
- *      while(dirScan.ReadNext())
- *      {
- *         const char *name = dirScan.GetName();
- *         bool isDirectory = dirScan.IsDirectory();
- *         bool isRegular   = dirScan.IsRegular();
- *
- *         printf("%-30s %s\n", name,
- *                isDirectory ? "DIR" : (isRegular ? "FILE" : "UNKN"));
- *
- *         numEntries++;
- *      }
- *
- *      printf("The directory contained %d entries.\n", numEntries);
- *   }
- * @endcode
- */
-class FastOS_DirectoryScanInterface
-{
-protected:
-    std::string _searchPath;
-
-public:
-    FastOS_DirectoryScanInterface(const FastOS_DirectoryScanInterface&) = delete;
-    FastOS_DirectoryScanInterface& operator= (const FastOS_DirectoryScanInterface&) = delete;
-
-    /**
-     * Constructor.
-     *
-     * @param path     Path of the directory to be scanned. The path string
-     *                 is copied internally.
-     */
-    FastOS_DirectoryScanInterface(const char *path);
-
-    /**
-     * Destructor.
-     *
-     * Frees operating system resources related to the directory scan.
-     */
-    virtual ~FastOS_DirectoryScanInterface();
-
-    /**
-     * Read the next entry in the directory scan. Failure indicates
-     * that there are no more entries. If the call is successful,
-     * attributes for the entry can be read with @ref IsDirectory(),
-     * @ref IsRegular() and @ref GetName().
-     *
-     * @return Boolean success/failure
-     */
-    virtual bool ReadNext() = 0;
-
-    /**
-     * After a successful @ref ReadNext() this method is used to
-     * determine if the entry is a directory entry or not. Calling this
-     * method after an unsuccessful @ref ReadNext() or before
-     * @ref ReadNext() is called for the first time, yields undefined
-     * results.
-     *
-     * @return    True if the entry is a directory, else false.
-     */
-    virtual bool IsDirectory() = 0;
-
-
-    /**
-     * After a successful @ref ReadNext() this method is used to
-     * determine if the entry is a regular file entry or not. Calling
-     * this method after an unsuccessful @ref ReadNext() or before
-     * @ref ReadNext() is called for the first time, yields undefined
-     * results.
-     *
-     * @return    True if the entry is a regular file, else false.
-     */
-    virtual bool IsRegular() = 0;
-
-    /**
-     * After a successful @ref ReadNext() this method is used to
-     * determine the name of the recently read directory entry. Calling
-     * this method after an unsuccessful @ref ReadNext() or before
-     * @ref ReadNext() is called for the first time, yields undefined
-     * results.
-     *
-     * @return    A pointer to the recently read directory entry.
-     */
-    virtual const char *GetName() = 0;
-};
-
 #ifdef __linux__
 #include <vespa/fastos/linux_file.h>
 typedef FastOS_Linux_File FASTOS_PREFIX(File);
@@ -649,4 +550,3 @@ typedef FastOS_Linux_File FASTOS_PREFIX(File);
 #include <vespa/fastos/unix_file.h>
 typedef FastOS_UNIX_File FASTOS_PREFIX(File);
 #endif
-typedef FastOS_UNIX_DirectoryScan FASTOS_PREFIX(DirectoryScan);

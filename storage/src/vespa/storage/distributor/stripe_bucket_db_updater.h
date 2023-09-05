@@ -199,18 +199,19 @@ private:
 
         Result merge(BucketDatabase::Merger&) override;
         static void logRemove(const document::BucketId& bucketId, const char* msg) ;
-        bool distributorOwnsBucket(const document::BucketId&) const;
+        [[nodiscard]] bool distributorOwnsBucket(const document::BucketId&) const;
 
         const std::vector<BucketDatabase::Entry>& getNonOwnedEntries() const noexcept {
             return _nonOwnedBuckets;
         }
-        size_t removed_buckets() const noexcept { return _removed_buckets; }
-        size_t removed_documents() const noexcept { return _removed_documents; }
+        [[nodiscard]] size_t removed_buckets() const noexcept { return _removed_buckets; }
+        [[nodiscard]] size_t removed_documents() const noexcept { return _removed_documents; }
     private:
         void setCopiesInEntry(BucketDatabase::Entry& e, const std::vector<BucketCopy>& copies) const;
 
-        bool has_unavailable_nodes(const BucketDatabase::Entry&) const;
-        bool storage_node_is_available(uint16_t index) const noexcept;
+        [[nodiscard]] bool has_unavailable_nodes(const BucketDatabase::Entry&) const;
+        [[nodiscard]] bool storage_node_is_available(uint16_t index) const noexcept;
+        [[nodiscard]] bool node_is_present_in_config(uint16_t node_index) const noexcept;
 
         const lib::ClusterState            _state;
         std::vector<bool>                  _available_nodes;

@@ -600,9 +600,6 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                         name("health"));
         builder.consumer(
                 new MetricsmanagerConfig.Consumer.Builder().
-                        name("fleetcontroller"));
-        builder.consumer(
-                new MetricsmanagerConfig.Consumer.Builder().
                         name("statereporter").
                         addedmetrics("*").
                         removedtags("thread").

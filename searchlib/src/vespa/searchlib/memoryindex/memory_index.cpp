@@ -7,13 +7,14 @@
 #include "field_index_collection.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.memoryindex.memory_index");
@@ -47,6 +48,7 @@ using queryeval::FieldSpec;
 using queryeval::IRequestContext;
 using queryeval::Searchable;
 using vespalib::ISequencedTaskExecutor;
+using vespalib::slime::Cursor;
 
 }
 
@@ -249,6 +251,44 @@ MemoryIndex::get_field_length_info(const vespalib::string& field_name) const
         return _fieldIndexes->get_calculator(field_id).get_info();
     }
     return FieldLengthInfo();
+}
+
+namespace {
+
+void
+fields_to_slime(const std::vector<uint32_t>& field_ids, const Schema& schema, Cursor& array)
+{
+    for (uint32_t field_id : field_ids) {
+        assert(field_id < schema.getIndexFields().size());
+        const auto& field = schema.getIndexField(field_id);
+        array.addString(field.getName());
+    }
+}
+
+void
+write_context_to_slime(const BundledFieldsContext& ctx, const Schema& schema, Cursor& object)
+{
+    object.setLong("executor_id", ctx.get_id().getId());
+    auto& fields = object.setArray("fields");
+    fields_to_slime(ctx.get_fields(), schema, fields);
+    fields_to_slime(ctx.get_uri_all_field_ids(), schema, fields);
+}
+
+}
+
+void
+MemoryIndex::insert_write_context_state(Cursor& object) const
+{
+    auto& invert = object.setArray("invert");
+    for (const auto& ctx : _inverter_context->get_invert_contexts()) {
+        auto& ctx_obj = invert.addObject();
+        write_context_to_slime(ctx, _schema, ctx_obj);
+    }
+    auto& push = object.setArray("push");
+    for (const auto& ctx : _inverter_context->get_push_contexts()) {
+        auto& ctx_obj = push.addObject();
+        write_context_to_slime(ctx, _schema, ctx_obj);
+    }
 }
 
 }

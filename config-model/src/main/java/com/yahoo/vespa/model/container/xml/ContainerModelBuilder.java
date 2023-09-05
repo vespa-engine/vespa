@@ -44,6 +44,7 @@ import com.yahoo.jdisc.http.server.jetty.VoidRequestLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.path.Path;
 import com.yahoo.schema.OnnxModel;
+import com.yahoo.schema.derived.FileDistributedOnnxModels;
 import com.yahoo.schema.derived.RankProfileList;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.security.X509CertificateUtils;
@@ -443,7 +444,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     protected void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
         Element httpElement = XML.getChild(spec, "http");
         if (httpElement != null) {
-            cluster.setHttp(buildHttp(deployState, cluster, httpElement));
+            cluster.setHttp(buildHttp(deployState, cluster, httpElement, context));
         }
         if (isHostedTenantApplication(context)) {
             addHostedImplicitHttpIfNotPresent(deployState, cluster);
@@ -706,8 +707,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .configureHttpFilterChains(http);
     }
 
-    private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement) {
-        Http http = new HttpBuilder().build(deployState, cluster, httpElement);
+    private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement, ConfigModelContext context) {
+        Http http = new HttpBuilder(portBindingOverride(deployState, context)).build(deployState, cluster, httpElement);
 
         if (networking == Networking.disable)
             http.removeAllServers();
@@ -751,10 +752,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         RankProfileList profiles =
                 context.vespaModel() != null ? context.vespaModel().rankProfileList() : RankProfileList.empty;
 
+        // Create a copy of models so each cluster can have its own specific settings
+        FileDistributedOnnxModels models = profiles.getOnnxModels().clone();
+
         Element onnxElement = XML.getChild(modelEvaluationElement, "onnx");
         Element modelsElement = XML.getChild(onnxElement, "models");
         for (Element modelElement : XML.getChildren(modelsElement, "model") ) {
-            OnnxModel onnxModel = profiles.getOnnxModels().asMap().get(modelElement.getAttribute("name"));
+            OnnxModel onnxModel = models.asMap().get(modelElement.getAttribute("name"));
             if (onnxModel == null) {
                 String availableModels = String.join(", ", profiles.getOnnxModels().asMap().keySet());
                 context.getDeployState().getDeployLogger().logApplicationPackage(WARNING,
@@ -774,7 +778,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             }
         }
 
-        cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles));
+        cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles, models));
     }
 
     private String getStringValue(Element element, String name, String defaultValue) {
@@ -832,10 +836,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addUserHandlers(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
-        var portBindingOverride = isHostedTenantApplication(context) ? getDataplanePorts(deployState) : Set.<Integer>of();
         for (Element component: XML.getChildren(spec, "handler")) {
             cluster.addComponent(
-                    new DomHandlerBuilder(cluster, portBindingOverride).build(deployState, cluster, component));
+                    new DomHandlerBuilder(cluster, portBindingOverride(deployState, context)).build(deployState, cluster, component));
         }
     }
 
@@ -1168,11 +1171,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         ContainerDocumentApi.HandlerOptions documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
         Element ignoreUndefinedFields = XML.getChild(documentApiElement, "ignore-undefined-fields");
-        var portBindingOverride = isHostedTenantApplication(context)
+        return new ContainerDocumentApi(cluster, documentApiOptions,
+                                        "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride(deployState, context));
+    }
+
+    private Set<Integer> portBindingOverride(DeployState deployState, ConfigModelContext context) {
+        return isHostedTenantApplication(context)
                 ? getDataplanePorts(deployState)
                 : Set.<Integer>of();
-        return new ContainerDocumentApi(cluster, documentApiOptions,
-                                        "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride);
     }
 
     private ContainerDocproc buildDocproc(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {

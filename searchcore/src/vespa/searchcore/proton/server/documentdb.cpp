@@ -413,7 +413,7 @@ DocumentDB::applySubDBConfig(const DocumentDBConfig &newConfigSnapshot,
     auto newDocType = newRepo->getDocumentType(_docTypeName.getName());
     assert(newDocType != nullptr);
     DocumentDBReferenceResolver resolver(*registry, *newDocType, newConfigSnapshot.getImportedFieldsConfig(), *oldDocType,
-                                         _refCount, _writeService.attributeFieldWriter(), _state.getAllowReconfig());
+                                         _refCount, _writeService.field_writer(), _state.getAllowReconfig());
     _subDBs.applyConfig(newConfigSnapshot, *_activeConfigSnapshot, serialNum, params, resolver, prepared_reconfig);
 }
 
@@ -535,7 +535,7 @@ DocumentDB::tearDownReferences()
     auto docType = repo->getDocumentType(_docTypeName.getName());
     assert(docType != nullptr);
     DocumentDBReferenceResolver resolver(*registry, *docType, activeConfig->getImportedFieldsConfig(), *docType,
-                                         _refCount, _writeService.attributeFieldWriter(), false);
+                                         _refCount, _writeService.field_writer(), false);
     _subDBs.tearDownReferences(resolver);
     registry->remove(_docTypeName.getName());
 }

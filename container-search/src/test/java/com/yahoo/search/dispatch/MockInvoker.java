@@ -3,17 +3,13 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
-import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 class MockInvoker extends SearchInvoker {
 
@@ -23,7 +19,7 @@ class MockInvoker extends SearchInvoker {
     int hitsRequested;
 
     protected MockInvoker(int key, Coverage coverage) {
-        super(Optional.of(new Node(key, "?", 0)));
+        super(Optional.of(new Node("test", key, "?", 0)));
         this.coverage = coverage;
     }
 

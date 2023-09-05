@@ -829,6 +829,36 @@ TEST_F(TopLevelBucketDBUpdaterTest, storage_node_in_maintenance_clears_buckets_f
     EXPECT_FALSE(bucket_exists_that_has_node(100, 1));
 }
 
+TEST_F(TopLevelBucketDBUpdaterTest, node_removed_from_distribution_config_clears_buckets_for_node) {
+    ASSERT_NO_FATAL_FAILURE(set_storage_nodes(3));
+    enable_distributor_cluster_state("distributor:1 storage:3");
+
+    for (int i = 1; i < 100; ++i) {
+        add_ideal_nodes(document::BucketId(16, i));
+    }
+
+    EXPECT_TRUE(bucket_exists_that_has_node(100, 1));
+
+    // Node 1 is removed, 0 and 2 remain
+    auto distribution_config = "redundancy 2\n"
+                               "group[2]\n"
+                               "group[0].name \"invalid\"\n"
+                               "group[0].index \"invalid\"\n"
+                               "group[0].partitions 1|*\n"
+                               "group[0].nodes[0]\n"
+                               "group[1].name coolnodes\n"
+                               "group[1].index 0\n"
+                               "group[1].nodes[2]\n"
+                               "group[1].nodes[0].index 0\n"
+                               "group[1].nodes[2].index 2\n";
+
+    set_distribution(distribution_config);
+
+    EXPECT_TRUE( bucket_exists_that_has_node(100, 0));
+    EXPECT_FALSE(bucket_exists_that_has_node(100, 1));
+    EXPECT_TRUE( bucket_exists_that_has_node(100, 2));
+}
+
 TEST_F(TopLevelBucketDBUpdaterTest, node_down_copies_get_in_sync) {
     ASSERT_NO_FATAL_FAILURE(set_storage_nodes(3));
     document::BucketId bid(16, 1);

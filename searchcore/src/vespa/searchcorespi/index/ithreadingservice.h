@@ -20,19 +20,19 @@ namespace searchcorespi::index {
  *
  *  2. The "index" write thread used for doing changes to the memory
  *     index, either directly (for data not bound to a field) or via
- *     index field inverter executor or index field writer executor.
+ *     field writer executor (index field inverter / index field writer).
  *
  *  3. The "summary" thread is used for doing changes to the document store.
  *
- *  4. The "index field inverter" executor is used to populate field
+ *  4. The field writer executor ("index field inverter") is used to populate field
  *     inverters with data from document fields.  Scheduled tasks for
  *     the same field are executed in sequence.
  *
- *  5. The "index field writer" executor is used to sort data in field
+ *  5. The field writer executor ("index field writer") is used to sort data in field
  *     inverters before pushing the data to the memory field indexes.
  *     Scheduled tasks for the same field are executed in sequence.
  *
- *  6. The "attribute field writer" executor is used to write data to attribute vectors.
+ *  6. The field writer executor ("attribute field writer") is used to write data to attribute vectors.
  *     Each attribute is always handled by the same thread,
  *     and scheduled tasks for the same attribute are executed in sequence.
  *
@@ -47,19 +47,6 @@ namespace searchcorespi::index {
  * task to the index field inverter executor and the index field
  * writer executor.
  *
- * The index field inverter executor and index field writer executor
- * are separate to allow for double buffering, i.e. populate one set
- * of field inverters using the index field inverter executor while
- * another set of field inverters are handled by the index field
- * writer executor.
- *
- * We might decide to allow index field inverter tasks to schedule
- * tasks to the index field writer executor, so draining logic needs
- * to sync index field inverter executor before syncing index field
- * writer executor.
- *
- * TODO: * indexFieldInverter and indexFieldWriter can be collapsed to one. Both need sequencing,
- *         but they sequence on different things so efficiency will be the same and just depends on #threads
  */
 struct IThreadingService
 {
@@ -80,9 +67,7 @@ struct IThreadingService
     virtual vespalib::Executor &shared() = 0;
     virtual FNET_Transport &transport() = 0;
     virtual const vespalib::Clock &clock() const = 0;
-    virtual vespalib::ISequencedTaskExecutor &indexFieldInverter() = 0;
-    virtual vespalib::ISequencedTaskExecutor &indexFieldWriter() = 0;
-    virtual vespalib::ISequencedTaskExecutor &attributeFieldWriter() = 0;
+    virtual vespalib::ISequencedTaskExecutor &field_writer() = 0;
 };
 
 }

@@ -68,6 +68,8 @@ InterpretedFunction::ProfiledContext::ProfiledContext(const InterpretedFunction 
 {
 }
 
+InterpretedFunction::ProfiledContext::~ProfiledContext() = default;
+
 vespalib::string
 InterpretedFunction::Instruction::resolve_symbol() const
 {

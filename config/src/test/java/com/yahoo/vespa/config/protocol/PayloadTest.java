@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.google.common.testing.EqualsTester;
 import com.yahoo.slime.Slime;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -11,6 +10,7 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -38,36 +38,36 @@ public class PayloadTest {
 
         Payload a = Payload.from(foo1);
         Payload b = Payload.from(foo1);
+        assertEquals(a, b);
 
         Payload c = Payload.from(foo2);
+        assertNotEquals(a, c);
 
         Slime slime = new Slime();
         slime.setString(foo1);
         Payload d = Payload.from(new ConfigPayload(slime));
+        assertNotEquals(a, d);
 
         slime.setString(foo1);
         Payload e = Payload.from(new ConfigPayload(slime));
+        assertEquals(d, e);
 
         slime.setString("foo 2");
         Payload f = Payload.from(new ConfigPayload(slime));
+        assertNotEquals(c, f);
 
-        Payload g, h, i, j;
-        g = Payload.from(new Utf8Array(foo1.getBytes(StandardCharsets.UTF_8)), CompressionInfo.uncompressed());
-        h = Payload.from(new Utf8Array(foo1.getBytes(StandardCharsets.UTF_8)), CompressionInfo.uncompressed());
+        Payload g = Payload.from(new Utf8Array(foo1.getBytes(StandardCharsets.UTF_8)), CompressionInfo.uncompressed());
+        Payload h = Payload.from(new Utf8Array(foo1.getBytes(StandardCharsets.UTF_8)), CompressionInfo.uncompressed());
+        assertEquals(a, g);
+        assertEquals(g, h);
 
         LZ4PayloadCompressor compressor = new LZ4PayloadCompressor();
         CompressionInfo info = CompressionInfo.create(CompressionType.LZ4, foo2.length());
         Utf8Array compressed = new Utf8Array(compressor.compress(foo2.getBytes()));
 
-        i = Payload.from(compressed, info);
-        j = Payload.from(compressed, info);
-
-        new EqualsTester()
-                .addEqualityGroup(a, b, g, h)
-                .addEqualityGroup(c)
-                .addEqualityGroup(d, e)
-                .addEqualityGroup(f)
-                .addEqualityGroup(i, j).
-                testEquals();
+        Payload i = Payload.from(compressed, info);
+        Payload j = Payload.from(compressed, info);
+        assertEquals(i, j);
+        assertNotEquals(c, j);
     }
 }

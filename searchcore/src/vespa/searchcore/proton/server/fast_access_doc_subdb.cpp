@@ -70,7 +70,7 @@ FastAccessDocSubDB::createAttributeManagerInitializer(const DocumentDBConfig &co
                                                configSnapshot.getTuneFileDocumentDBSP()->_attr,
                                                _fileHeaderContext,
                                                _attribute_interlock,
-                                               _writeService.attributeFieldWriter(),
+                                               _writeService.field_writer(),
                                                _writeService.shared(),
                                                attrFactory,
                                                _hwInfo);
@@ -280,6 +280,12 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
         }
     }
     return tasks;
+}
+
+std::shared_ptr<IAttributeWriter>
+FastAccessDocSubDB::get_attribute_writer() const
+{
+    return _fastAccessFeedView.get()->getAttributeWriter();
 }
 
 proton::IAttributeManager::SP

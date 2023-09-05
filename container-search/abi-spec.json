@@ -2169,13 +2169,14 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.search.cluster.NodeManager, boolean)",
+      "public synchronized void reconfigure(java.util.Collection)",
       "public void start()",
       "public com.yahoo.search.cluster.MonitorConfiguration getConfiguration()",
       "public boolean isClosed()",
       "public void add(java.lang.Object, boolean)",
       "public synchronized void failed(java.lang.Object, com.yahoo.search.result.ErrorMessage)",
       "public synchronized void responded(java.lang.Object)",
-      "public void ping(java.util.concurrent.Executor)",
+      "public synchronized void ping(java.util.concurrent.Executor)",
       "public java.util.Iterator nodeMonitorIterator()",
       "public java.util.List nodeMonitors()",
       "public void shutdown()"

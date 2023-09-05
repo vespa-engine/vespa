@@ -54,11 +54,11 @@ Read more in https://cloud.vespa.ai/en/security/guide`,
 }
 
 func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
-	app, err := cli.config.application()
+	targetType, err := cli.targetType(true)
 	if err != nil {
 		return err
 	}
-	targetType, err := cli.targetType()
+	app, err := cli.config.application()
 	if err != nil {
 		return err
 	}

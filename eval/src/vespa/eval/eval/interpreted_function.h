@@ -74,6 +74,7 @@ public:
         Context context;
         std::vector<std::pair<size_t,duration>> cost;
         ProfiledContext(const InterpretedFunction &ifun);
+        ~ProfiledContext();
     };
     using op_function = void (*)(State &, uint64_t);
     class Instruction {

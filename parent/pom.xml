@@ -307,7 +307,7 @@
                     -->
                     <groupId>org.openrewrite.maven</groupId>
                     <artifactId>rewrite-maven-plugin</artifactId>
-                    <version>5.4.2</version>
+                    <version>5.5.0</version>
                     <configuration>
                         <activeRecipes>
                             <recipe>org.openrewrite.java.testing.junit5.JUnit5BestPractices</recipe>
@@ -504,8 +504,8 @@
                 <version>3.1.9</version>
             </dependency>
             <dependency>
-                <groupId>com.github.tomakehurst</groupId>
-                <artifactId>wiremock-jre8-standalone</artifactId>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock-standalone</artifactId>
                 <version>${wiremock.vespa.version}</version>
             </dependency>
             <dependency>
@@ -539,11 +539,6 @@
                         <artifactId>animal-sniffer-annotations</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava-testlib</artifactId>
-                <version>${guava.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.jimfs</groupId>
@@ -633,6 +628,16 @@
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
                 <version>${joda-time.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${byte-buddy.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>${byte-buddy.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.openhft</groupId>
@@ -1120,6 +1125,12 @@
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
                 <version>${xerces.vespa.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>xml-apis</groupId>
+                        <artifactId>xml-apis</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency> <!-- TODO: Remove on Vespa 9 -->
                 <groupId>org.json</groupId>
@@ -1130,11 +1141,6 @@
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
                 <version>${error-prone-annotations.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.checkerframework</groupId>
-                <artifactId>checker-qual</artifactId>
-                <version>${checker-qual.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.http-client</groupId>
@@ -1151,7 +1157,11 @@
                 <artifactId>google-auth-library-oauth2-http</artifactId>
                 <version>1.19.0</version>
             </dependency>
-
+            <dependency>
+                <groupId>jakarta.inject</groupId>
+                <artifactId>jakarta.inject-api</artifactId>
+                <version>${jakarta.inject.vespa.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

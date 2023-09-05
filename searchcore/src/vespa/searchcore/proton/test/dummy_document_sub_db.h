@@ -66,14 +66,9 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     IFeedView::SP getFeedView() const override { return IFeedView::SP(); }
     void clearViews() override {}
     const ISummaryManager::SP &getSummaryManager() const override { return _summaryManager; }
-    proton::IAttributeManager::SP getAttributeManager() const override {
-        return proton::IAttributeManager::SP();
-    }
-
-    void validateDocStore(FeedHandler &, SerialNum ) const override {
-
-    }
-
+    std::shared_ptr<IAttributeWriter> get_attribute_writer() const override { return {}; }
+    proton::IAttributeManager::SP getAttributeManager() const override { return {}; }
+    void validateDocStore(FeedHandler &, SerialNum ) const override {}
     const IIndexManager::SP &getIndexManager() const override { return _indexManager; }
     const ISummaryAdapter::SP &getSummaryAdapter() const override { return _summaryAdapter; }
     const IIndexWriter::SP &getIndexWriter() const override { return _indexWriter; }

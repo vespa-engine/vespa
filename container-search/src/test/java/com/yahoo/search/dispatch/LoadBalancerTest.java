@@ -28,7 +28,7 @@ public class LoadBalancerTest {
     private static final double delta = 0.0000001;
     @Test
     void requireThatLoadBalancerServesSingleNodeSetups() {
-        Node n1 = new Node(0, "test-node1", 0);
+        Node n1 = new Node("test", 0, "test-node1", 0);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1))), LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
@@ -40,8 +40,8 @@ public class LoadBalancerTest {
 
     @Test
     void requireThatLoadBalancerServesMultiGroupSetups() {
-        Node n1 = new Node(0, "test-node1", 0);
-        Node n2 = new Node(1, "test-node2", 1);
+        Node n1 = new Node("test", 0, "test-node1", 0);
+        Node n2 = new Node("test", 1, "test-node2", 1);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1)), new Group(1,List.of(n2))), LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
@@ -53,10 +53,10 @@ public class LoadBalancerTest {
 
     @Test
     void requireThatLoadBalancerServesClusteredGroups() {
-        Node n1 = new Node(0, "test-node1", 0);
-        Node n2 = new Node(1, "test-node2", 0);
-        Node n3 = new Node(0, "test-node3", 1);
-        Node n4 = new Node(1, "test-node4", 1);
+        Node n1 = new Node("test", 0, "test-node1", 0);
+        Node n2 = new Node("test", 1, "test-node2", 0);
+        Node n3 = new Node("test", 0, "test-node3", 1);
+        Node n4 = new Node("test", 1, "test-node4", 1);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1,n2)), new Group(1,List.of(n3,n4))), LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeGroup(null);
@@ -65,8 +65,8 @@ public class LoadBalancerTest {
 
     @Test
     void requireThatLoadBalancerReturnsDifferentGroups() {
-        Node n1 = new Node(0, "test-node1", 0);
-        Node n2 = new Node(1, "test-node2", 1);
+        Node n1 = new Node("test", 0, "test-node1", 0);
+        Node n2 = new Node("test", 1, "test-node2", 1);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1)), new Group(1,List.of(n2))), LoadBalancer.Policy.ROUNDROBIN);
 
         // get first group

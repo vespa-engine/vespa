@@ -8,18 +8,19 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.io.IOUtils;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
 import io.questdb.cairo.CairoEngine;
 import io.questdb.cairo.CairoException;
 import io.questdb.cairo.DefaultCairoConfiguration;
+import io.questdb.cairo.TableToken;
 import io.questdb.cairo.TableWriter;
+import io.questdb.cairo.security.AllowAllSecurityContext;
 import io.questdb.cairo.sql.Record;
 import io.questdb.cairo.sql.RecordCursor;
 import io.questdb.cairo.sql.RecordCursorFactory;
 import io.questdb.griffin.CompiledQuery;
-import io.questdb.griffin.QueryFuture;
 import io.questdb.griffin.SqlCompiler;
+import io.questdb.griffin.SqlCompilerFactoryImpl;
 import io.questdb.griffin.SqlException;
 import io.questdb.griffin.SqlExecutionContext;
 import io.questdb.griffin.SqlExecutionContextImpl;
@@ -40,7 +41,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -85,9 +85,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
         this.dataDir = dataDir;
         engine = new CairoEngine(new DefaultCairoConfiguration(dataDir));
-        sqlCompilerPool = new ConcurrentResourcePool<>(() -> new SqlCompiler(engine()));
-        nodeTable = new Table(dataDir, "metrics", clock);
-        clusterTable = new Table(dataDir, "clusterMetrics", clock);
+        sqlCompilerPool = new ConcurrentResourcePool<>(() -> SqlCompilerFactoryImpl.INSTANCE.getInstance(engine()));
+        nodeTable = new Table(dataDir, "metrics");
+        clusterTable = new Table(dataDir, "clusterMetrics");
         ensureTablesExist();
     }
 
@@ -236,7 +236,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private void ensureClusterTableIsUpdated() {
         try {
-            if (0 == engine().getStatus(newContext().getCairoSecurityContext(), new Path(), clusterTable.name)) {
+            if (0 == engine().getTableStatus(new Path(), clusterTable.token())) {
                 // Example: clusterTable.ensureColumnExists("write_rate", "float");
             }
         } catch (Exception e) {
@@ -349,13 +349,15 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
      * Needs to be done for some queries, e.g. 'alter table' queries, see https://github.com/questdb/questdb/issues/1846
      */
     private void issueAsync(String sql, SqlExecutionContext context) throws SqlException {
-        try (QueryFuture future = issue(sql, context).execute(null)) {
+        try (var future = issue(sql, context).execute(null)) {
             future.await();
         }
     }
 
     private SqlExecutionContext newContext() {
-        return new SqlExecutionContextImpl(engine(), 1);
+        CairoEngine engine = engine();
+        return new SqlExecutionContextImpl(engine, 1)
+                .with(AllowAllSecurityContext.INSTANCE, null);
     }
 
     /** A questDb table */
@@ -363,25 +365,26 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
         private final Object writeLock = new Object();
         private final String name;
-        private final Clock clock;
         private final File dir;
         private long highestTimestampAdded = 0;
 
-        Table(String dataDir, String name, Clock clock) {
+        Table(String dataDir, String name) {
             this.name = name;
-            this.clock = clock;
             this.dir = new File(dataDir, name);
             IOUtils.createDirectory(dir.getPath());
             // https://stackoverflow.com/questions/67785629/what-does-max-txn-txn-inflight-limit-reached-in-questdb-and-how-to-i-avoid-it
             new File(dir + "/_txn_scoreboard").delete();
         }
+        private TableToken token() { return engine().getTableTokenIfExists(name); }
 
         boolean exists() {
-            return 0 == engine().getStatus(newContext().getCairoSecurityContext(), new Path(), name);
+            TableToken token = engine().getTableTokenIfExists(name);
+            if (token == null) return false;
+            return 0 == engine().getTableStatus(new Path(), token);
         }
 
         TableWriter getWriter() {
-            return engine().getWriter(newContext().getCairoSecurityContext(), name, "getWriter");
+            return engine().getWriter(token(), "getWriter");
         }
 
         void gc() {
@@ -390,6 +393,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
                     issueAsync("alter table " + name + " drop partition where at < dateadd('d', -4, now());", newContext());
                 }
                 catch (SqlException e) {
+                    if (e.getMessage().contains("no partitions matched WHERE clause")) return;
                     log.log(Level.WARNING, "Failed to gc old metrics data in " + dir + " table " + name, e);
                 }
             }

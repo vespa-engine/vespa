@@ -4,7 +4,7 @@ package com.yahoo.jdisc.core;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogEntry;
-import org.osgi.service.log.LogService;
+import org.osgi.service.log.LogLevel;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -86,17 +86,17 @@ class ConsoleLogFormatter {
     }
 
     private StringBuilder formatLevel(LogEntry entry, StringBuilder out) {
-        switch (entry.getLevel()) {
-        case LogService.LOG_ERROR:
+        switch (entry.getLogLevel()) {
+        case ERROR:
             out.append("error");
             break;
-        case LogService.LOG_WARNING:
+        case WARN:
             out.append("warning");
             break;
-        case LogService.LOG_INFO:
+        case INFO:
             out.append("info");
             break;
-        case LogService.LOG_DEBUG:
+        case DEBUG:
             out.append("debug");
             break;
         default:
@@ -117,7 +117,7 @@ class ConsoleLogFormatter {
     private StringBuilder formatException(LogEntry entry, StringBuilder out) {
         Throwable t = entry.getException();
         if (t != null) {
-            if (entry.getLevel() == LogService.LOG_INFO) {
+            if (entry.getLogLevel() == LogLevel.INFO) {
                 out.append(": ");
                 String msg = t.getMessage();
                 if (msg != null) {

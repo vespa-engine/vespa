@@ -74,6 +74,8 @@ type targetOptions struct {
 	logLevel string
 	// noCertificate declares that no client certificate should be required when using this target.
 	noCertificate bool
+	// cloudExclusive specifies whether to only allow Vespa Cloud and Hosted Vespa targets
+	cloudExclusive bool
 }
 
 type targetType struct {
@@ -349,7 +351,7 @@ func (c *CLI) waiter(once bool, timeout time.Duration) *Waiter {
 
 // target creates a target according the configuration of this CLI and given opts.
 func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
-	targetType, err := c.targetType()
+	targetType, err := c.targetType(opts.cloudExclusive)
 	if err != nil {
 		return nil, err
 	}
@@ -374,7 +376,7 @@ func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
 }
 
 // targetType resolves the real target type and its custom URL (if any)
-func (c *CLI) targetType() (targetType, error) {
+func (c *CLI) targetType(cloud bool) (targetType, error) {
 	v, err := c.config.targetOrURL()
 	if err != nil {
 		return targetType{}, err
@@ -386,6 +388,9 @@ func (c *CLI) targetType() (targetType, error) {
 		if err != nil {
 			return targetType{}, err
 		}
+	}
+	if cloud && tt.name != vespa.TargetCloud && tt.name != vespa.TargetHosted {
+		return targetType{}, fmt.Errorf("unsupported target %s: this command only supports targets %s and %s", tt.name, vespa.TargetCloud, vespa.TargetHosted)
 	}
 	return tt, nil
 }
