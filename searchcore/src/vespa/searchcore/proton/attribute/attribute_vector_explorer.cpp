@@ -2,25 +2,31 @@
 
 #include "attribute_vector_explorer.h"
 #include "attribute_executor.h"
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/distance_metric_utils.h>
 #include <vespa/searchlib/attribute/i_enum_store.h>
 #include <vespa/searchlib/attribute/i_enum_store_dictionary.h>
-#include <vespa/searchlib/attribute/multi_value_mapping.h>
-#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/ipostinglistattributebase.h>
-#include <vespa/searchlib/util/state_explorer_utils.h>
+#include <vespa/searchlib/attribute/multi_value_mapping.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
+#include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 
-using search::attribute::Status;
 using search::AddressSpaceUsage;
 using search::AttributeVector;
 using search::IEnumStore;
 using search::StateExplorerUtils;
-using vespalib::AddressSpace;
-using vespalib::MemoryUsage;
-using search::attribute::MultiValueMappingBase;
+using search::attribute::BasicType;
+using search::attribute::CollectionType;
+using search::attribute::Config;
+using search::attribute::DistanceMetricUtils;
 using search::attribute::IAttributeVector;
 using search::attribute::IPostingListAttributeBase;
+using search::attribute::MultiValueMappingBase;
+using search::attribute::Status;
+using vespalib::AddressSpace;
+using vespalib::MemoryUsage;
 using namespace vespalib::slime;
 
 namespace proton {
@@ -97,6 +103,39 @@ convertPostingBaseToSlime(const IPostingListAttributeBase &postingBase, Cursor &
     convertMemoryUsageToSlime(postingBase.getMemoryUsage(), object.setObject("memoryUsage"));
 }
 
+vespalib::string
+type_to_string(const Config& cfg)
+{
+    if (cfg.basicType().type() == BasicType::TENSOR) {
+        return cfg.tensorType().to_spec();
+    }
+    if (cfg.collectionType().type() == CollectionType::SINGLE) {
+        return cfg.basicType().asString();
+    }
+    return vespalib::string(cfg.collectionType().asString()) +
+           "<" + vespalib::string(cfg.basicType().asString()) + ">";
+}
+
+void
+convert_config_to_slime(const Config& cfg, bool full, Cursor& object)
+{
+    object.setString("type", type_to_string(cfg));
+    object.setBool("fast_search", cfg.fastSearch());
+    object.setBool("filter", cfg.getIsFilter());
+    object.setBool("paged", cfg.paged());
+    if (full) {
+        if (cfg.basicType().type() == BasicType::TENSOR) {
+            object.setString("distance_metric", DistanceMetricUtils::to_string(cfg.distance_metric()));
+        }
+        if (cfg.hnsw_index_params().has_value()) {
+            const auto& hnsw_cfg = cfg.hnsw_index_params().value();
+            auto& hnsw = object.setObject("hnsw");
+            hnsw.setLong("max_links_per_node", hnsw_cfg.max_links_per_node());
+            hnsw.setLong("neighbors_to_explore_at_insert", hnsw_cfg.neighbors_to_explore_at_insert());
+        }
+    }
+}
+
 }
 
 AttributeVectorExplorer::AttributeVectorExplorer(std::unique_ptr<AttributeExecutor> executor)
@@ -117,6 +156,7 @@ AttributeVectorExplorer::get_state_helper(const AttributeVector& attr, const ves
     const Status &status = attr.getStatus();
     Cursor &object = inserter.insertObject();
     if (full) {
+        convert_config_to_slime(attr.getConfig(), full, object.setObject("config"));
         StateExplorerUtils::status_to_slime(status, object.setObject("status"));
         convertGenerationToSlime(attr, object.setObject("generation"));
         convertAddressSpaceUsageToSlime(attr.getAddressSpaceUsage(), object.setObject("addressSpaceUsage"));
@@ -144,13 +184,9 @@ AttributeVectorExplorer::get_state_helper(const AttributeVector& attr, const ves
         object.setLong("committedDocIdLimit", attr.getCommittedDocIdLimit());
         object.setLong("createSerialNum", attr.getCreateSerialNum());
     } else {
-        object.setLong("numDocs", status.getNumDocs());
-        object.setLong("lastSerialNum", status.getLastSyncToken());
-        object.setLong("allocatedMemory", status.getAllocated());
-        object.setLong("usedMemory", status.getUsed());
-        object.setLong("onHoldMemory", status.getOnHold());
-        object.setLong("committedDocIdLimit", attr.getCommittedDocIdLimit());
+        convert_config_to_slime(attr.getConfig(), full, object);
+        object.setLong("allocated_bytes", status.getAllocated());
     }
 }
 
-} // namespace proton
+}

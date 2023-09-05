@@ -2,13 +2,9 @@
 
 #include "attribute_writer.h"
 #include "attribute_writer_explorer.h"
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 
-using search::attribute::BasicType;
-using search::attribute::CollectionType;
-using search::attribute::Config;
 using vespalib::slime::Cursor;
 using vespalib::slime::Inserter;
 
@@ -23,28 +19,13 @@ AttributeWriterExplorer::~AttributeWriterExplorer() = default;
 
 namespace {
 
-vespalib::string
-type_to_string(const Config& cfg)
-{
-    if (cfg.basicType().type() == BasicType::TENSOR) {
-        return cfg.tensorType().to_spec();
-    }
-    if (cfg.collectionType().type() == CollectionType::SINGLE) {
-        return cfg.basicType().asString();
-    }
-    return vespalib::string(cfg.collectionType().asString()) +
-        "<" + vespalib::string(cfg.basicType().asString()) + ">";
-}
-
 void
 convert_to_slime(const AttributeWriter::WriteContext& context, Cursor& object)
 {
     object.setLong("executor_id", context.getExecutorId().getId());
-    Cursor& fields = object.setArray("attribute_fields");
+    Cursor& fields = object.setArray("fields");
     for (const auto& field : context.getFields()) {
-        Cursor& f = fields.addObject();
-        f.setString("name", field.getAttribute().getName());
-        f.setString("type", type_to_string(field.getAttribute().getConfig()));
+        fields.addString(field.getAttribute().getName());
     }
 }
 
