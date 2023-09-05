@@ -144,6 +144,14 @@ public interface FeedClientBuilder {
     /** Specify HTTP(S) proxy for all endpoints */
     FeedClientBuilder setProxy(URI uri);
 
+    /**
+     * Turns on DNS load balancing for the cluster.
+     *
+     * Use this option if the given endpoint resolves to a list of feed container endpoints.
+     * This list will be periodically refreshed (resolved) to get the latest container endpoints.
+     */
+    FeedClientBuilder setDnsLoadBalancing(boolean enabled);
+
     /** What compression to use for request bodies; default {@code auto}. */
     FeedClientBuilder setCompression(Compression compression);
 
