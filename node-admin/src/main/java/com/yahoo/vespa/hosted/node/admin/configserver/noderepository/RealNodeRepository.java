@@ -242,6 +242,7 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm),
                 trustStore,
                 Optional.ofNullable(node.wireguardPubkey).map(WireguardKey::from),
+                Optional.ofNullable(node.wireguardKeyTimestamp).map(Instant::ofEpochMilli),
                 node.wantToRebuild);
     }
 
@@ -359,6 +360,7 @@ public class RealNodeRepository implements NodeRepository {
                 .map(item -> new NodeRepositoryNode.TrustStoreItem(item.fingerprint(), item.expiry().toEpochMilli()))
                 .toList();
         node.wireguardPubkey = nodeAttributes.getWireguardPubkey().map(WireguardKey::value).orElse(null);
+        node.wireguardKeyTimestamp = nodeAttributes.getWireguardKeyTimestamp().map(Instant::toEpochMilli).orElse(null);
         Map<String, JsonNode> reports = nodeAttributes.getReports();
         node.reports = reports == null || reports.isEmpty() ? null : new TreeMap<>(reports);
 

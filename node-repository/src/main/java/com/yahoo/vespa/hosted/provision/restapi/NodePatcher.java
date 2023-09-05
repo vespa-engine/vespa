@@ -109,7 +109,8 @@ public class NodePatcher {
                                               "reports",
                                               "trustStore",
                                               "vespaVersion",
-                                              "wireguardPubkey"));
+                                              "wireguardPubkey",
+                                              "wireguardKeyTimestamp"));
             if (!disallowedFields.isEmpty()) {
                 throw new IllegalArgumentException("Patching fields not supported: " + disallowedFields);
             }
@@ -274,6 +275,8 @@ public class NodePatcher {
                 return nodeWithTrustStore(node, value);
             case "wireguardPubkey":
                 return node.withWireguardPubkey(SlimeUtils.optionalString(value).map(WireguardKey::new).orElse(null));
+            case "wireguardKeyTimestamp":
+                return node.withWireguardKeyTimestamp(SlimeUtils.optionalInstant(value).orElse(null));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }

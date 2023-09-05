@@ -75,6 +75,8 @@ public class NodeSpec {
 
     private final Optional<WireguardKey> wireguardPubkey;
 
+    private final Optional<Instant> wireguardKeyTimestamp;
+
     private final boolean wantToRebuild;
 
     public NodeSpec(
@@ -111,6 +113,7 @@ public class NodeSpec {
             Optional<ApplicationId> exclusiveTo,
             List<TrustStoreItem> trustStore,
             Optional<WireguardKey> wireguardPubkey,
+            Optional<Instant> wireguardKeyTimestamp,
             boolean wantToRebuild) {
 
         if (state == NodeState.active) {
@@ -155,6 +158,7 @@ public class NodeSpec {
         this.exclusiveTo = Objects.requireNonNull(exclusiveTo);
         this.trustStore = Objects.requireNonNull(trustStore);
         this.wireguardPubkey = Objects.requireNonNull(wireguardPubkey);
+        this.wireguardKeyTimestamp = Objects.requireNonNull(wireguardKeyTimestamp);
         this.wantToRebuild = wantToRebuild;
     }
 
@@ -311,6 +315,8 @@ public class NodeSpec {
 
     public Optional<WireguardKey> wireguardPubkey() { return wireguardPubkey; }
 
+    public Optional<Instant> wireguardKeyTimestamp() { return wireguardKeyTimestamp; }
+
     public boolean wantToRebuild() {
         return wantToRebuild;
     }
@@ -353,6 +359,7 @@ public class NodeSpec {
                 Objects.equals(exclusiveTo, that.exclusiveTo) &&
                 Objects.equals(trustStore, that.trustStore) &&
                 Objects.equals(wireguardPubkey, that.wireguardPubkey) &&
+                Objects.equals(wireguardKeyTimestamp, that.wireguardKeyTimestamp) &&
                 Objects.equals(wantToRebuild, that.wantToRebuild);
     }
 
@@ -392,6 +399,7 @@ public class NodeSpec {
                 exclusiveTo,
                 trustStore,
                 wireguardPubkey,
+                wireguardKeyTimestamp,
                 wantToRebuild);
     }
 
@@ -431,6 +439,7 @@ public class NodeSpec {
                 + " exclusiveTo=" + exclusiveTo
                 + " trustStore=" + trustStore
                 + " wireguardPubkey=" + wireguardPubkey
+                + " wireguardKeyTimestamp=" + wireguardKeyTimestamp
                 + " wantToRebuild=" + wantToRebuild
                 + " }";
     }
@@ -469,6 +478,7 @@ public class NodeSpec {
         private Optional<ApplicationId> exclusiveTo = Optional.empty();
         private List<TrustStoreItem> trustStore = List.of();
         private Optional<WireguardKey> wireguardPubkey = Optional.empty();
+        private Optional<Instant> wireguardKeyTimestamp = Optional.empty();
         private boolean wantToRebuild = false;
 
         public Builder() {}
@@ -505,6 +515,7 @@ public class NodeSpec {
             node.exclusiveTo.ifPresent(this::exclusiveTo);
             trustStore(node.trustStore);
             node.wireguardPubkey.ifPresent(this::wireguardPubkey);
+            node.wireguardKeyTimestamp.ifPresent(this::wireguardKeyTimestamp);
             wantToRebuild(node.wantToRebuild);
         }
 
@@ -693,8 +704,13 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder wireguardPubkey(WireguardKey wireguardKey) {
-            wireguardPubkey = Optional.of(wireguardKey);
+        public Builder wireguardPubkey(WireguardKey wireguardPubKey) {
+            this.wireguardPubkey = Optional.of(wireguardPubKey);
+            return this;
+        }
+
+        public Builder wireguardKeyTimestamp(Instant wireguardKeyTimestamp) {
+            this.wireguardKeyTimestamp = Optional.of(wireguardKeyTimestamp);
             return this;
         }
 
@@ -712,6 +728,7 @@ public class NodeSpec {
             // Always replace entire trust store
             trustStore(attributes.getTrustStore());
             attributes.getWireguardPubkey().ifPresent(this::wireguardPubkey);
+            attributes.getWireguardKeyTimestamp().ifPresent(this::wireguardKeyTimestamp);
             this.reports.updateFromRawMap(attributes.getReports());
 
             return this;
@@ -830,7 +847,7 @@ public class NodeSpec {
                                 wantedFirmwareCheck, currentFirmwareCheck, modelName,
                                 resources, realResources, ipAddresses, additionalIpAddresses,
                                 reports, events, parentHostname, archiveUri, exclusiveTo, trustStore,
-                                wireguardPubkey, wantToRebuild);
+                                wireguardPubkey, wireguardKeyTimestamp, wantToRebuild);
         }
 
 

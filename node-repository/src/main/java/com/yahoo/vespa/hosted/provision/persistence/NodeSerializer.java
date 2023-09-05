@@ -100,6 +100,7 @@ public class NodeSerializer {
     private static final String trustedCertificatesKey = "trustedCertificates";
     private static final String cloudAccountKey = "cloudAccount";
     private static final String wireguardPubKeyKey = "wireguardPubkey";
+    private static final String wireguardKeyTimestampKey = "wireguardKeyTimestamp";
 
     // Node resource fields
     private static final String flavorKey = "flavor";
@@ -190,6 +191,7 @@ public class NodeSerializer {
             object.setString(cloudAccountKey, node.cloudAccount().value());
         }
         node.wireguardPubKey().ifPresent(pubKey -> object.setString(wireguardPubKeyKey, pubKey.value()));
+        node.wireguardKeyTimestamp().ifPresent(timestamp -> object.setLong(wireguardKeyTimestampKey, timestamp.toEpochMilli()));
     }
 
     private void toSlime(Flavor flavor, Cursor object) {
@@ -284,7 +286,8 @@ public class NodeSerializer {
                         SlimeUtils.optionalString(object.field(switchHostnameKey)),
                         trustedCertificatesFromSlime(object),
                         SlimeUtils.optionalString(object.field(cloudAccountKey)).map(CloudAccount::from).orElse(CloudAccount.empty),
-                        SlimeUtils.optionalString(object.field(wireguardPubKeyKey)).map(WireguardKey::from));
+                        SlimeUtils.optionalString(object.field(wireguardPubKeyKey)).map(WireguardKey::from),
+                        SlimeUtils.optionalInstant(object.field(wireguardKeyTimestampKey)));
     }
 
     private Status statusFromSlime(Inspector object) {

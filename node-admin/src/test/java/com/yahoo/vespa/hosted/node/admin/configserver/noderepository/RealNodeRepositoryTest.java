@@ -139,18 +139,21 @@ public class RealNodeRepositoryTest {
         var hostname = "host4.yahoo.com";
         var dockerImage = "registry.example.com/repo/image-1:6.2.3";
         var wireguardKey = WireguardKey.from("111122223333444455556666777788889999000042c=");
+        var wireguardKeyTimestamp = Instant.ofEpochMilli(321L);
 
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1)
                         .withDockerImage(DockerImage.fromString(dockerImage))
-                        .withWireguardPubkey(wireguardKey));
+                        .withWireguardPubkey(wireguardKey)
+                        .withWireguardKeyTimestamp(wireguardKeyTimestamp));
 
         NodeSpec hostSpec = nodeRepositoryApi.getOptionalNode(hostname).orElseThrow();
         assertEquals(1, hostSpec.currentRestartGeneration().orElseThrow());
         assertEquals(dockerImage, hostSpec.currentDockerImage().orElseThrow().asString());
         assertEquals(wireguardKey.value(), hostSpec.wireguardPubkey().orElseThrow().value());
+        assertEquals(wireguardKeyTimestamp, hostSpec.wireguardKeyTimestamp().orElseThrow());
     }
 
     @Test
