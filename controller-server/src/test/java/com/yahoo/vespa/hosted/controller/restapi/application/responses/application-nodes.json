@@ -13,6 +13,8 @@
       "diskSpeed": "slow",
       "storageType": "remote",
       "architecture": "any",
+      "gpuCount": 0,
+      "gpuMemoryGb": 0.0,
       "clusterId": "default",
       "clusterType": "container",
       "down": false,

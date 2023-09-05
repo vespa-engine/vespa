@@ -12,7 +12,9 @@
           "bandwidthGbps": 1.0,
           "diskSpeed": "slow",
           "storageType": "remote",
-          "architecture": "any"
+          "architecture": "any",
+          "gpuCount": 0,
+          "gpuMemoryGb": 0.0
         },
         "cost": 0.11
       },
@@ -26,7 +28,9 @@
           "bandwidthGbps": 1.0,
           "diskSpeed": "slow",
           "storageType": "remote",
-          "architecture": "any"
+          "architecture": "any",
+          "gpuCount": 0,
+          "gpuMemoryGb": 0.0
         },
         "cost": 0.43
       },
@@ -43,7 +47,9 @@
           "bandwidthGbps": 1.0,
           "diskSpeed": "slow",
           "storageType": "remote",
-          "architecture": "any"
+          "architecture": "any",
+          "gpuCount": 0,
+          "gpuMemoryGb": 0.0
         },
         "cost": 0.22
       },
@@ -60,7 +66,9 @@
             "bandwidthGbps": 1.0,
             "diskSpeed": "slow",
             "storageType": "remote",
-            "architecture": "any"
+            "architecture": "any",
+            "gpuCount": 0,
+            "gpuMemoryGb": 0.0
           },
           "cost": 0.29
         },
@@ -103,7 +111,9 @@
               "bandwidthGbps": 0.0,
               "diskSpeed": "fast",
               "storageType": "any",
-              "architecture": "any"
+              "architecture": "any",
+              "gpuCount": 0,
+              "gpuMemoryGb": 0.0
             },
             "cost": 0.0
           },
@@ -117,7 +127,9 @@
               "bandwidthGbps": 1.0,
               "diskSpeed": "slow",
               "storageType": "remote",
-              "architecture": "any"
+              "architecture": "any",
+              "gpuCount": 0,
+              "gpuMemoryGb": 0.0
             },
             "cost": 0.22
           },

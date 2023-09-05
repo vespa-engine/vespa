@@ -2969,6 +2969,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setString("diskSpeed", valueOf(resources.diskSpeed()));
         object.setString("storageType", valueOf(resources.storageType()));
         object.setString("architecture", valueOf(resources.architecture()));
+        object.setLong("gpuCount", resources.gpuResources().count());
+        object.setDouble("gpuMemoryGb", resources.gpuResources().memoryGb());
     }
 
     // A tenant has different content when in a list ... antipattern, but not solvable before application/v5
