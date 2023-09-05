@@ -113,7 +113,7 @@ Computer::reset(uint32_t docId)
 void
 Computer::handleError(uint32_t fieldPos, uint32_t docId) const
 {
-    static int errcnt;
+    static std::atomic<int> errcnt(0);
     if (errcnt < 1000) {
         errcnt++;
         const FieldInfo * finfo = _splitter.get_query_env().getIndexEnvironment().getField(getFieldId());
