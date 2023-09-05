@@ -1421,8 +1421,8 @@ TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_send_messages) {
     EXPECT_EQ(get_node_list({0, 1, 2, 3}),
               get_sent_nodes("distributor:4 storage:3", "distributor:4 .2.s:d storage:4"));
 
-    EXPECT_EQ("", get_sent_nodes("distributor:4 storage:3", "distributor:4 .0.s:d storage:4"));
-    EXPECT_EQ("", get_sent_nodes("distributor:3 storage:3", "distributor:4 storage:3"));
+    EXPECT_TRUE(get_sent_nodes("distributor:4 storage:3", "distributor:4 .0.s:d storage:4").empty());
+    EXPECT_TRUE(get_sent_nodes("distributor:3 storage:3", "distributor:4 storage:3").empty());
 
     EXPECT_EQ(get_node_list({2}),
               get_sent_nodes("distributor:3 storage:3 .2.s:i", "distributor:3 storage:3"));
@@ -1433,15 +1433,15 @@ TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_send_messages) {
     EXPECT_EQ(get_node_list({1, 2, 4}),
               get_sent_nodes("distributor:3 storage:4 .1.s:d .2.s:i", "distributor:3 storage:5"));
 
-    EXPECT_EQ("", get_sent_nodes("distributor:1 storage:3", "cluster:d"));
-    EXPECT_EQ("", get_sent_nodes("distributor:1 storage:3", "distributor:1 storage:3"));
-    EXPECT_EQ("",get_sent_nodes("distributor:1 storage:3", "cluster:d distributor:1 storage:6"));
-    EXPECT_EQ("",get_sent_nodes("distributor:3 storage:3", "distributor:3 .2.s:m storage:3"));
+    EXPECT_TRUE(get_sent_nodes("distributor:1 storage:3", "cluster:d").empty());
+    EXPECT_TRUE(get_sent_nodes("distributor:1 storage:3", "distributor:1 storage:3").empty());
+    EXPECT_TRUE(get_sent_nodes("distributor:1 storage:3", "cluster:d distributor:1 storage:6").empty());
+    EXPECT_TRUE(get_sent_nodes("distributor:3 storage:3", "distributor:3 .2.s:m storage:3").empty());
 
     EXPECT_EQ(get_node_list({0, 1, 2}),
               get_sent_nodes("distributor:3 .2.s:m storage:3", "distributor:3 .2.s:d storage:3"));
 
-    EXPECT_EQ("", get_sent_nodes("distributor:3 .2.s:m storage:3", "distributor:3 storage:3"));
+    EXPECT_TRUE(get_sent_nodes("distributor:3 .2.s:m storage:3", "distributor:3 storage:3").empty());
 
     EXPECT_EQ(get_node_list({0, 1, 2}),
               get_sent_nodes_distribution_changed("distributor:3 storage:3"));
@@ -1449,17 +1449,17 @@ TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_send_messages) {
     EXPECT_EQ(get_node_list({0, 1}),
               get_sent_nodes("distributor:10 storage:2", "distributor:10 .1.s:d storage:2"));
 
-    EXPECT_EQ("", get_sent_nodes("distributor:2 storage:2", "distributor:3 .2.s:i storage:2"));
+    EXPECT_TRUE(get_sent_nodes("distributor:2 storage:2", "distributor:3 .2.s:i storage:2").empty());
 
     EXPECT_EQ(get_node_list({0, 1, 2}),
               get_sent_nodes("distributor:3 storage:3", "distributor:3 .2.s:s storage:3"));
 
-    EXPECT_EQ("", get_sent_nodes("distributor:3 .2.s:s storage:3", "distributor:3 .2.s:d storage:3"));
+    EXPECT_TRUE(get_sent_nodes("distributor:3 .2.s:s storage:3", "distributor:3 .2.s:d storage:3").empty());
 
     EXPECT_EQ(get_node_list({1}),
               get_sent_nodes("distributor:3 storage:3 .1.s:m", "distributor:3 storage:3"));
 
-    EXPECT_EQ("", get_sent_nodes("distributor:3 storage:3", "distributor:3 storage:3 .1.s:m"));
+    EXPECT_TRUE(get_sent_nodes("distributor:3 storage:3", "distributor:3 storage:3 .1.s:m").empty());
 };
 
 TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_receive) {
