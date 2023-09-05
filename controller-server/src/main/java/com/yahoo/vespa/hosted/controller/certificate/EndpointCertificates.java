@@ -110,15 +110,33 @@ public class EndpointCertificates {
     private EndpointCertificate assignFromPool(Instance instance, ZoneId zone) {
         // Assign certificate per instance only in manually deployed environments. In other environments, we share the
         // certificate because application endpoints can span instances
+
+        // In a migration phase, do this instead:
+        // Note: this equires that assign-randomized-id flag has rolled out for all application instances
+        //
+        // For deployments to manually deployed environments: use per instance certificate
+        // For all other environments (apply in order):
+        // * Use per instance certificate if it exists and is assigned a randomized id
+        // * Use per application certificate if it exits and is assigned a randomized id
+        // * Assign from pool
+
+        Optional<AssignedCertificate> perInstanceAssignedCertificate = curator.readAssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.of(instance.name()));
+        if (perInstanceAssignedCertificate.isPresent() && perInstanceAssignedCertificate.get().certificate().randomizedId().isPresent()) {
+            return updateLastRequested(perInstanceAssignedCertificate.get()).certificate();
+        } else if (! zone.environment().isManuallyDeployed()){
+            TenantAndApplicationId application = TenantAndApplicationId.from(instance.id());
+            Optional<AssignedCertificate> perApplicationAssignedCertificate = curator.readAssignedCertificate(TenantAndApplicationId.from(instance.id()), Optional.empty());
+            if (perApplicationAssignedCertificate.isPresent() && perApplicationAssignedCertificate.get().certificate().randomizedId().isPresent()) {
+                return updateLastRequested(perApplicationAssignedCertificate.get()).certificate();
+            }
+        }
+
+        // For new applications which is assigned from pool we follow these rules:
+        // Assign certificate per instance only in manually deployed environments. In other environments, we share the
+        // certificate because application endpoints can span instances
         Optional<InstanceName> instanceName = zone.environment().isManuallyDeployed() ? Optional.of(instance.name()) : Optional.empty();
         TenantAndApplicationId application = TenantAndApplicationId.from(instance.id());
-        // Re-use existing certificate if it contains a randomized ID
-        Optional<AssignedCertificate> assignedCertificate = curator.readAssignedCertificate(application, instanceName);
-        if (assignedCertificate.isPresent() && assignedCertificate.get().certificate().randomizedId().isPresent()) {
-            AssignedCertificate updated = assignedCertificate.get().with(assignedCertificate.get().certificate().withLastRequested(clock.instant().getEpochSecond()));
-            curator.writeAssignedCertificate(updated);
-            return updated.certificate();
-        }
+
         try (Mutex lock = controller.curator().lockCertificatePool()) {
             Optional<UnassignedCertificate> candidate = curator.readUnassignedCertificates().stream()
                                                                .filter(pc -> pc.state() == State.ready)
@@ -134,6 +152,12 @@ public class EndpointCertificates {
                 return candidate.get().certificate();
             }
         }
+    }
+
+    AssignedCertificate updateLastRequested(AssignedCertificate assignedCertificate) {
+        AssignedCertificate updated = assignedCertificate.with(assignedCertificate.certificate().withLastRequested(clock.instant().getEpochSecond()));
+        curator.writeAssignedCertificate(updated);
+        return updated;
     }
 
     private Optional<EndpointCertificate> getOrProvision(Instance instance, ZoneId zone, DeploymentSpec deploymentSpec) {
