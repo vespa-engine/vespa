@@ -1,7 +1,7 @@
 package ai.vespa.metrics;
 
 /**
- * @author yngve
+ * @author yngveaasheim
  */
 public enum SentinelMetrics implements VespaMetrics {
 
