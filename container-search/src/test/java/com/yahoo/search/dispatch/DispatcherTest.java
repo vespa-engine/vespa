@@ -21,6 +21,7 @@ import com.yahoo.search.dispatch.searchcluster.SearchGroups;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
+import com.yahoo.yolean.UncheckedInterruptedException;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -36,6 +37,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Phaser;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -181,7 +183,11 @@ public class DispatcherTest {
         pingPhasers.put(1, new Phaser(2));
         pingPhasers.put(2, new Phaser(2));
 
+        AtomicBoolean doPing = new AtomicBoolean();
+
         PingFactory pingFactory = (node, monitor, pongHandler) -> () -> {
+            try { while ( ! doPing.getAndSet(false)) { monitor.wait(1); } } // Need to avoid hogging monitor lock while waiting for phaser.
+            catch (InterruptedException e) { throw new UncheckedInterruptedException(e, true); }
             pingPhasers.get(node.key()).arriveAndAwaitAdvance();
             pongHandler.handle(new Pong(2, 2));
             pingPhasers.get(node.key()).arriveAndAwaitAdvance();
@@ -255,8 +261,8 @@ public class DispatcherTest {
         Dispatcher dispatcher = new Dispatcher(dispatchConfig, rpcPool, cluster, invokerFactories);
         ExecutorService executor = Executors.newFixedThreadPool(1);
 
-        // Set two groups with a single node each. The first cluster-monitor has nothing to do, and is shut down immediately.
-        // There are also no invokers, so the whole reconfiguration completes once the new cluster monitor has seen all nodes.
+        // Set two groups with a single node each.
+        // There are no invokers, so the whole reconfiguration completes once the cluster monitor has seen all the new nodes.
         Future<?> reconfiguration = executor.submit(() -> {
             dispatcher.updateWithNewConfig(new DispatchNodesConfig.Builder()
                                                    .node(new DispatchNodesConfig.Node.Builder().key(0).group(0).port(123).host("host0"))
@@ -265,8 +271,10 @@ public class DispatcherTest {
         });
 
         // Let pings return, to allow the search cluster to reconfigure.
+        doPing.set(true);
         pingPhasers.get(0).arriveAndAwaitAdvance();
         pingPhasers.get(0).arriveAndAwaitAdvance();
+        doPing.set(true);
         pingPhasers.get(1).arriveAndAwaitAdvance();
         pingPhasers.get(1).arriveAndAwaitAdvance();
         // We need to wait for the cluster to have at least one group, lest dispatch will fail below.
@@ -287,9 +295,10 @@ public class DispatcherTest {
         search1.search(new Query(), null);
 
         // Wait for the current cluster monitor to be mid-ping-round.
+        doPing.set(true);
         pingPhasers.get(0).arriveAndAwaitAdvance();
 
-        // Then reconfigure the dispatcher with new nodes, replacing node0 with node2.
+        // Reconfigure the dispatcher with new nodes, removing node0 and adding node2.
         reconfiguration = executor.submit(() -> {
             dispatcher.updateWithNewConfig(new DispatchNodesConfig.Builder()
                                                    .node(new DispatchNodesConfig.Node.Builder().key(2).group(0).port(123).host("host2"))
@@ -297,16 +306,23 @@ public class DispatcherTest {
                                                    .build());
         });
         // Reconfiguration starts, but groups are only updated once the search cluster has knowledge about all of them.
+        pingPhasers.get(0).arriveAndAwaitAdvance(); // Ping for node to remove completes.
+        doPing.set(true);
+        pingPhasers.get(1).arriveAndAwaitAdvance(); // Ping for node to keep completes.
+        pingPhasers.get(1).arriveAndAwaitAdvance();
+        // New round of pings starts, with nodes 1 and 2.
+        doPing.set(true);
         pingPhasers.get(1).arriveAndAwaitAdvance();
         pingPhasers.get(1).arriveAndAwaitAdvance();
-        pingPhasers.get(2).arriveAndAwaitAdvance();
+
         // Cluster has not yet updated its group reference.
         assertEquals(1, cluster.group(0).workingNodes()); // Node0 is still working.
         assertSame(node0, cluster.group(0).nodes().get(0));
+
+        doPing.set(true);
+        pingPhasers.get(2).arriveAndAwaitAdvance();
         pingPhasers.get(2).arriveAndAwaitAdvance();
 
-        // Old cluster monitor is waiting for that ping to complete before it can shut down, and let reconfiguration complete.
-        pingPhasers.get(0).arriveAndAwaitAdvance();
         reconfiguration.get();
         Node node2 = cluster.group(0).nodes().get(0);
         assertNotSame(node0, node2);
