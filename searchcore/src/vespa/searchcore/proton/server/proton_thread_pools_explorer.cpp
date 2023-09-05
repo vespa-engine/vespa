@@ -2,6 +2,7 @@
 
 #include "proton_thread_pools_explorer.h"
 #include "executor_explorer_utils.h"
+#include "sequenced_task_executor_explorer.h"
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/threadexecutor.h>
 
@@ -17,7 +18,7 @@ ProtonThreadPoolsExplorer::ProtonThreadPoolsExplorer(const ThreadExecutor* share
                                                      const ThreadExecutor* flush,
                                                      const ThreadExecutor* proton,
                                                      const ThreadExecutor* warmup,
-                                                     const vespalib::ISequencedTaskExecutor* field_writer)
+                                                     vespalib::ISequencedTaskExecutor* field_writer)
     : _shared(shared),
       _match(match),
       _docsum(docsum),
@@ -39,8 +40,24 @@ ProtonThreadPoolsExplorer::get_state(const vespalib::slime::Inserter& inserter, 
         convert_executor_to_slime(_flush, object.setObject("flush"));
         convert_executor_to_slime(_proton, object.setObject("proton"));
         convert_executor_to_slime(_warmup, object.setObject("warmup"));
-        convert_executor_to_slime(_field_writer, object.setObject("field_writer"));
     }
+}
+
+const vespalib::string FIELD_WRITER = "field_writer";
+
+std::vector<vespalib::string>
+ProtonThreadPoolsExplorer::get_children_names() const
+{
+    return {FIELD_WRITER};
+}
+
+std::unique_ptr<vespalib::StateExplorer>
+ProtonThreadPoolsExplorer::get_child(vespalib::stringref name) const
+{
+    if (name == FIELD_WRITER) {
+        return std::make_unique<SequencedTaskExecutorExplorer>(_field_writer);
+    }
+    return {};
 }
 
 }
