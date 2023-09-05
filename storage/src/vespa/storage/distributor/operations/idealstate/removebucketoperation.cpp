@@ -20,7 +20,7 @@ RemoveBucketOperation::onStartInternal(DistributorStripeMessageSender& sender)
 
     BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(getBucketId());
 
-    for (unsigned short node : getNodes()) {
+    for (uint16_t node : getNodes()) {
         const BucketCopy* copy(entry->getNode(node));
         if (!copy) {
             LOG(debug, "Node %u was removed between scheduling remove operation and starting it; not sending DeleteBucket to it", node);
@@ -30,7 +30,7 @@ RemoveBucketOperation::onStartInternal(DistributorStripeMessageSender& sender)
         auto msg = std::make_shared<api::DeleteBucketCommand>(getBucket());
         setCommandMeta(*msg);
         msg->setBucketInfo(copy->getBucketInfo());
-        msgs.push_back(std::make_pair(node, msg));
+        msgs.emplace_back(node, msg);
     }
 
     _ok = true;
