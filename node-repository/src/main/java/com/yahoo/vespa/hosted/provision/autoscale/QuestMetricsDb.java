@@ -84,11 +84,25 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         System.setProperty("out", logConfig);
 
         this.dataDir = dataDir;
-        engine = new CairoEngine(new DefaultCairoConfiguration(dataDir));
+        engine = createEngine(dataDir);
         sqlCompilerPool = new ConcurrentResourcePool<>(() -> SqlCompilerFactoryImpl.INSTANCE.getInstance(engine()));
         nodeTable = new Table(dataDir, "metrics");
         clusterTable = new Table(dataDir, "clusterMetrics");
         ensureTablesExist();
+    }
+
+    private static CairoEngine createEngine(String dataDir) {
+        try {
+            return new CairoEngine(new DefaultCairoConfiguration(dataDir));
+        }
+        catch (CairoException e) {
+            if (e.getMessage().contains("partitions are not ordered")) { // Happens when migrating 6.7 -> 7.3.1
+                repairTables(dataDir, e, "metrics", "clusterMetrics");
+                return new CairoEngine(new DefaultCairoConfiguration(dataDir));
+            }
+            throw new IllegalStateException("Could not create Quest db in " + dataDir, e);
+        }
+
     }
 
     private CairoEngine engine() {
@@ -336,9 +350,6 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         SqlCompiler sqlCompiler = sqlCompilerPool.alloc();
         try {
             return sqlCompiler.compile(sql, context);
-        } catch (SqlException e) {
-            log.log(Level.WARNING, "Could not execute SQL statement '" + sql + "'");
-            throw e;
         } finally {
             sqlCompilerPool.free(sqlCompiler);
         }
@@ -360,6 +371,19 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
                 .with(AllowAllSecurityContext.INSTANCE, null);
     }
 
+    private static void repairTables(String dataDir, Exception e, String ... tableNames) {
+        log.log(Level.WARNING, "QuestDb seems corrupted, wiping data and starting over", e);
+        for (String name : tableNames)
+            repairTable(dataDir, name);
+    }
+
+    private static void repairTable(String dataDir, String name) {
+        var dir = new File(dataDir, name);
+        IOUtils.createDirectory(dir.getPath());
+        IOUtils.recursiveDeleteDir(dir);
+        IOUtils.createDirectory(dir.getPath());
+    }
+
     /** A questDb table */
     private class Table {
 
@@ -375,6 +399,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             // https://stackoverflow.com/questions/67785629/what-does-max-txn-txn-inflight-limit-reached-in-questdb-and-how-to-i-avoid-it
             new File(dir + "/_txn_scoreboard").delete();
         }
+
         private TableToken token() { return engine().getTableTokenIfExists(name); }
 
         boolean exists() {
@@ -406,8 +431,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
          */
         private void repair(Exception e) {
             log.log(Level.WARNING, "QuestDb seems corrupted, wiping data and starting over", e);
-            IOUtils.recursiveDeleteDir(dir);
-            IOUtils.createDirectory(dir.getPath());
+            repairTable(dataDir, name);
             ensureTablesExist();
         }
 
