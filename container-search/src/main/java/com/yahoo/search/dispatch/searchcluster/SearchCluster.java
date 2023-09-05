@@ -31,7 +31,8 @@ public class SearchCluster implements NodeManager<Node> {
     private final String clusterId;
     private final VipStatus vipStatus;
     private final PingFactory pingFactory;
-    private volatile SearchGroupsImpl groups;
+    private volatile SearchGroupsImpl groups;           // Groups in this cluster
+    private volatile SearchGroupsImpl monitoredGroups;  // Same as groups, except during reconfiguration.
     private volatile long nextLogTime = 0;
 
     /**
@@ -53,6 +54,7 @@ public class SearchCluster implements NodeManager<Node> {
         this.clusterId = clusterId;
         this.vipStatus = vipStatus;
         this.pingFactory = pingFactory;
+        this.monitoredGroups = groups;
         this.groups = groups;
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), groups);
     }
@@ -72,12 +74,13 @@ public class SearchCluster implements NodeManager<Node> {
         }
         SearchGroupsImpl groups = toGroups(currentNodes, minActivedocsPercentage);
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), groups);
+        this.monitoredGroups = groups;
         monitor.reconfigure(groups.nodes());
         this.groups = groups;
     }
 
     public void addMonitoring(ClusterMonitor<Node> clusterMonitor) {
-        for (Node node : groups.nodes()) clusterMonitor.add(node, true);
+        for (Node node : monitoredGroups.nodes()) clusterMonitor.add(node, true);
     }
 
     private static Node findLocalCorpusDispatchTarget(String selfHostname, SearchGroups groups) {
@@ -190,15 +193,15 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     public boolean hasInformationAboutAllNodes() {
-        return groups().stream().allMatch(group -> group.nodes().stream().allMatch(node -> node.isWorking() != null));
+        return monitoredGroups.nodes().stream().allMatch(node -> node.isWorking() != null);
     }
 
     long nonWorkingNodeCount() {
-        return groups().stream().flatMap(group -> group.nodes().stream()).filter(node -> node.isWorking() == Boolean.FALSE).count();
+        return monitoredGroups.nodes().stream().filter(node -> node.isWorking() == Boolean.FALSE).count();
     }
 
     private boolean hasWorkingNodes() {
-        return groups().stream().anyMatch(group -> group.nodes().stream().anyMatch(node -> node.isWorking() != Boolean.FALSE));
+        return monitoredGroups.nodes().stream().anyMatch(node -> node.isWorking() != Boolean.FALSE);
     }
 
     private boolean usesLocalCorpusIn(Node node) {
@@ -244,7 +247,7 @@ public class SearchCluster implements NodeManager<Node> {
      */
     @Override
     public void pingIterationCompleted() {
-        pingIterationCompleted(groups);
+        pingIterationCompleted(monitoredGroups);
     }
 
     private void pingIterationCompleted(SearchGroupsImpl groups) {

@@ -25,7 +25,10 @@ import java.util.stream.IntStream;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author baldersheim
@@ -152,6 +155,18 @@ public class SearchClusterTest {
             }
         }
 
+    }
+
+    @Test
+    void requireThatVipStatusWorksWhenReconfiguredFromZeroNodes() {
+        try (State test = new State("test", 2, "a", "b")) {
+            test.clusterMonitor.start();
+            test.searchCluster.updateNodes(List.of(), test.clusterMonitor, 100.0);
+            assertEquals(Set.of(), test.searchCluster.groupList().nodes());
+
+            test.searchCluster.updateNodes(List.of(new Node("test", 0, "a", 0), new Node("test", 1, "b", 0)), test.clusterMonitor, 100.0);
+            assertTrue(test.vipStatus.isInRotation());
+        }
     }
 
     @Test
