@@ -149,10 +149,10 @@ BucketInfoBase<NodeSeq>::getNode(uint16_t node) const noexcept {
 
 template <typename NodeSeq>
 uint16_t
-BucketInfoBase<NodeSeq>::getRef(uint16_t node) const noexcept {
-    for (const auto& n : _nodes) {
-        if (n.getNode() == node) {
-            return &n - &_nodes[0];
+BucketInfoBase<NodeSeq>::internal_entry_index(uint16_t node) const noexcept {
+    for (uint16_t i = 0; i < _nodes.size(); i++) {
+        if (_nodes[i].getNode() == node) {
+            return i;
         }
     }
     return 0xffff; // Not found signal

@@ -23,7 +23,7 @@ public:
           _ready(false),
           _active(false)
     { }
-    ActiveCopy(uint16_t node, const BucketCopy & copy, uint16_t ideal, uint32_t entryIndex_in) noexcept
+    ActiveCopy(uint16_t node, const BucketCopy & copy, uint16_t ideal, uint16_t entryIndex_in) noexcept
         : _nodeIndex(node),
           _ideal(ideal),
           _doc_count(copy.getDocumentCount()),
