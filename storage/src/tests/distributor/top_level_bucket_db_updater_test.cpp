@@ -20,7 +20,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <sstream>
-#include <iomanip>
 
 using namespace storage::api;
 using namespace storage::lib;
@@ -911,16 +910,11 @@ TEST_F(TopLevelBucketDBUpdaterTest, bit_change) {
                 for (int i=0; cnt < 2; i++) {
                     auto distribution = _component->getDistribution();
                     std::vector<uint16_t> distributors;
-                    if (distribution->getIdealDistributorNode(
-                            lib::ClusterState("bits:14 storage:1 distributor:2"),
-                            document::BucketId(16, i))
-                        == 0)
+                    if (distribution->getIdealDistributorNode(lib::ClusterState("bits:14 storage:1 distributor:2"),
+                                                              document::BucketId(16, i)) == 0)
                     {
-                        vec.push_back(api::RequestBucketInfoReply::Entry(
-                                document::BucketId(16, i),
-                                api::BucketInfo(10,1,1)));
-
-                        bucketlist.push_back(document::BucketId(16, i));
+                        vec.emplace_back(document::BucketId(16, i), api::BucketInfo(10,1,1));
+                        bucketlist.emplace_back(16, i);
                         cnt++;
                     }
                 }
@@ -953,14 +947,10 @@ TEST_F(TopLevelBucketDBUpdaterTest, bit_change) {
                 api::RequestBucketInfoReply::EntryVector &vec = sreply->getBucketInfo();
 
                 for (uint32_t i = 0; i < 3; ++i) {
-                    vec.push_back(api::RequestBucketInfoReply::Entry(
-                            document::BucketId(16, i),
-                            api::BucketInfo(10,1,1)));
+                    vec.emplace_back(document::BucketId(16, i), api::BucketInfo(10,1,1));
                 }
 
-                vec.push_back(api::RequestBucketInfoReply::Entry(
-                        document::BucketId(16, 4),
-                        api::BucketInfo(10,1,1)));
+                vec.emplace_back(document::BucketId(16, 4), api::BucketInfo(10,1,1));
             }
 
             bucket_db_updater().onRequestBucketInfoReply(sreply);
@@ -1047,9 +1037,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, recheck_node) {
     EXPECT_EQ(bucket.getBucketId(), rbi.getBuckets()[0]);
 
     auto reply = std::make_shared<api::RequestBucketInfoReply>(rbi);
-    reply->getBucketInfo().push_back(
-            api::RequestBucketInfoReply::Entry(document::BucketId(16, 3),
-                                               api::BucketInfo(20, 10, 12, 50, 60, true, true)));
+    reply->getBucketInfo().emplace_back(document::BucketId(16, 3), api::BucketInfo(20, 10, 12, 50, 60, true, true));
     stripe_bucket_db_updater.onRequestBucketInfoReply(reply);
 
     lib::ClusterState state("distributor:1 storage:3");
@@ -1110,8 +1098,8 @@ TEST_F(TopLevelBucketDBUpdaterTest, notify_bucket_change) {
     ASSERT_EQ(size_t(2), _sender.commands().size());
 
     std::vector<api::BucketInfo> infos;
-    infos.push_back(api::BucketInfo(4567, 200, 2000, 400, 4000, true, true));
-    infos.push_back(api::BucketInfo(8999, 300, 3000, 500, 5000, false, false));
+    infos.emplace_back(4567, 200, 2000, 400, 4000, true, true);
+    infos.emplace_back(8999, 300, 3000, 500, 5000, false, false);
 
     for (int i = 0; i < 2; ++i) {
         auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.command(i));
@@ -1120,7 +1108,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, notify_bucket_change) {
         EXPECT_EQ(bucket_id, rbi.getBuckets()[0]);
 
         auto reply = std::make_shared<api::RequestBucketInfoReply>(rbi);
-        reply->getBucketInfo().push_back(api::RequestBucketInfoReply::Entry(bucket_id, infos[i]));
+        reply->getBucketInfo().emplace_back(bucket_id, infos[i]);
         stripe_of_bucket(bucket_id).bucket_db_updater().onRequestBucketInfoReply(reply);
     }
 
@@ -1166,10 +1154,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, notify_bucket_change_from_node_down) {
     EXPECT_EQ(bucket_id, rbi.getBuckets()[0]);
 
     auto reply = std::make_shared<api::RequestBucketInfoReply>(rbi);
-    reply->getBucketInfo().push_back(
-            api::RequestBucketInfoReply::Entry(
-                    bucket_id,
-                    api::BucketInfo(8999, 300, 3000, 500, 5000, false, false)));
+    reply->getBucketInfo().emplace_back(bucket_id, api::BucketInfo(8999, 300, 3000, 500, 5000, false, false));
     stripe_of_bucket(bucket_id).bucket_db_updater().onRequestBucketInfoReply(reply);
 
     // No change
@@ -1233,9 +1218,9 @@ TEST_F(TopLevelBucketDBUpdaterTest, merge_reply) {
     add_nodes_to_stripe_bucket_db(bucket_id, "0=1234,1=1234,2=1234");
 
     std::vector<api::MergeBucketCommand::Node> nodes;
-    nodes.push_back(api::MergeBucketCommand::Node(0));
-    nodes.push_back(api::MergeBucketCommand::Node(1));
-    nodes.push_back(api::MergeBucketCommand::Node(2));
+    nodes.emplace_back(0);
+    nodes.emplace_back(1);
+    nodes.emplace_back(2);
 
     api::MergeBucketCommand cmd(makeDocumentBucket(bucket_id), nodes, 0);
     auto reply = std::make_shared<api::MergeBucketReply>(cmd);
@@ -1253,9 +1238,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, merge_reply) {
         EXPECT_EQ(bucket_id, req->getBuckets()[0]);
 
         auto reqreply = std::make_shared<api::RequestBucketInfoReply>(*req);
-        reqreply->getBucketInfo().push_back(
-                api::RequestBucketInfoReply::Entry(bucket_id,
-                                                   api::BucketInfo(10 * (i + 1), 100 * (i +1), 1000 * (i+1))));
+        reqreply->getBucketInfo().emplace_back(bucket_id, api::BucketInfo(10 * (i + 1), 100 * (i +1), 1000 * (i+1)));
 
         stripe_of_bucket(bucket_id).bucket_db_updater().onRequestBucketInfoReply(reqreply);
     }
@@ -1275,7 +1258,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, merge_reply_node_down) {
     add_nodes_to_stripe_bucket_db(bucket_id, "0=1234,1=1234,2=1234");
 
     for (uint32_t i = 0; i < 3; ++i) {
-        nodes.push_back(api::MergeBucketCommand::Node(i));
+        nodes.emplace_back(i);
     }
 
     api::MergeBucketCommand cmd(makeDocumentBucket(bucket_id), nodes, 0);
@@ -1296,10 +1279,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, merge_reply_node_down) {
         EXPECT_EQ(bucket_id, req->getBuckets()[0]);
 
         auto reqreply = std::make_shared<api::RequestBucketInfoReply>(*req);
-        reqreply->getBucketInfo().push_back(
-                api::RequestBucketInfoReply::Entry(
-                        bucket_id,
-                        api::BucketInfo(10 * (i + 1), 100 * (i +1), 1000 * (i+1))));
+        reqreply->getBucketInfo().emplace_back(bucket_id, api::BucketInfo(10 * (i + 1), 100 * (i +1), 1000 * (i+1)));
         stripe_of_bucket(bucket_id).bucket_db_updater().onRequestBucketInfoReply(reqreply);
     }
 
@@ -1338,10 +1318,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, merge_reply_node_down_after_request_sent) {
         EXPECT_EQ(bucket_id, req->getBuckets()[0]);
 
         auto reqreply = std::make_shared<api::RequestBucketInfoReply>(*req);
-        reqreply->getBucketInfo().push_back(
-                api::RequestBucketInfoReply::Entry(
-                        bucket_id,
-                        api::BucketInfo(10 * (i + 1), 100 * (i +1), 1000 * (i+1))));
+        reqreply->getBucketInfo().emplace_back(bucket_id, api::BucketInfo(10 * (i + 1), 100 * (i +1), 1000 * (i+1)));
         stripe_of_bucket(bucket_id).bucket_db_updater().onRequestBucketInfoReply(reqreply);
     }
 
@@ -1360,7 +1337,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, flush) {
 
     std::vector<api::MergeBucketCommand::Node> nodes;
     for (uint32_t i = 0; i < 3; ++i) {
-        nodes.push_back(api::MergeBucketCommand::Node(i));
+        nodes.emplace_back(i);
     }
 
     api::MergeBucketCommand cmd(makeDocumentBucket(bucket_id), nodes, 0);
@@ -1450,13 +1427,10 @@ TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_send_messages) {
               get_sent_nodes("distributor:4 storage:3",
                              "distributor:4 .2.s:d storage:4"));
 
-    EXPECT_EQ("",
-              get_sent_nodes("distributor:4 storage:3",
-                             "distributor:4 .0.s:d storage:4"));
-
-    EXPECT_EQ("",
-              get_sent_nodes("distributor:3 storage:3",
-                             "distributor:4 storage:3"));
+    EXPECT_TRUE(get_sent_nodes("distributor:4 storage:3",
+                               "distributor:4 .0.s:d storage:4").empty());
+    EXPECT_TRUE(get_sent_nodes("distributor:3 storage:3",
+                               "distributor:4 storage:3").empty());
 
     EXPECT_EQ(get_node_list({2}),
               get_sent_nodes("distributor:3 storage:3 .2.s:i",
@@ -1470,29 +1444,21 @@ TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_send_messages) {
               get_sent_nodes("distributor:3 storage:4 .1.s:d .2.s:i",
                              "distributor:3 storage:5"));
 
-    EXPECT_EQ("",
-              get_sent_nodes("distributor:1 storage:3",
-                             "cluster:d"));
-
-    EXPECT_EQ("",
-              get_sent_nodes("distributor:1 storage:3",
-                             "distributor:1 storage:3"));
-
-    EXPECT_EQ("",
-              get_sent_nodes("distributor:1 storage:3",
-                             "cluster:d distributor:1 storage:6"));
-
-    EXPECT_EQ("",
-              get_sent_nodes("distributor:3 storage:3",
-                             "distributor:3 .2.s:m storage:3"));
+    EXPECT_TRUE(get_sent_nodes("distributor:1 storage:3",
+                               "cluster:d").empty());
+    EXPECT_TRUE(get_sent_nodes("distributor:1 storage:3",
+                               "distributor:1 storage:3").empty());
+    EXPECT_TRUE(get_sent_nodes("distributor:1 storage:3",
+                               "cluster:d distributor:1 storage:6").empty());
+    EXPECT_TRUE(get_sent_nodes("distributor:3 storage:3",
+                               "distributor:3 .2.s:m storage:3").empty());
 
     EXPECT_EQ(get_node_list({0, 1, 2}),
               get_sent_nodes("distributor:3 .2.s:m storage:3",
                              "distributor:3 .2.s:d storage:3"));
 
-    EXPECT_EQ("",
-              get_sent_nodes("distributor:3 .2.s:m storage:3",
-                           "distributor:3 storage:3"));
+    EXPECT_TRUE(get_sent_nodes("distributor:3 .2.s:m storage:3",
+                               "distributor:3 storage:3").empty());
 
     EXPECT_EQ(get_node_list({0, 1, 2}),
               get_sent_nodes_distribution_changed("distributor:3 storage:3"));
@@ -1501,25 +1467,22 @@ TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_send_messages) {
               get_sent_nodes("distributor:10 storage:2",
                              "distributor:10 .1.s:d storage:2"));
 
-    EXPECT_EQ("",
-              get_sent_nodes("distributor:2 storage:2",
-                           "distributor:3 .2.s:i storage:2"));
+    EXPECT_TRUE(get_sent_nodes("distributor:2 storage:2",
+                               "distributor:3 .2.s:i storage:2").empty());
 
     EXPECT_EQ(get_node_list({0, 1, 2}),
               get_sent_nodes("distributor:3 storage:3",
-                           "distributor:3 .2.s:s storage:3"));
+                             "distributor:3 .2.s:s storage:3"));
 
-    EXPECT_EQ("",
-              get_sent_nodes("distributor:3 .2.s:s storage:3",
-                           "distributor:3 .2.s:d storage:3"));
+    EXPECT_TRUE(get_sent_nodes("distributor:3 .2.s:s storage:3",
+                               "distributor:3 .2.s:d storage:3").empty());
 
     EXPECT_EQ(get_node_list({1}),
               get_sent_nodes("distributor:3 storage:3 .1.s:m",
-                           "distributor:3 storage:3"));
+                             "distributor:3 storage:3"));
 
-    EXPECT_EQ("",
-              get_sent_nodes("distributor:3 storage:3",
-                           "distributor:3 storage:3 .1.s:m"));
+    EXPECT_TRUE(get_sent_nodes("distributor:3 storage:3",
+                               "distributor:3 storage:3 .1.s:m").empty());
 };
 
 TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_receive) {
@@ -1546,10 +1509,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_receive) {
 
         auto rep = std::make_shared<RequestBucketInfoReply>(*req);
 
-        rep->getBucketInfo().push_back(
-                RequestBucketInfoReply::Entry(
-                        document::BucketId(16, i),
-                        api::BucketInfo(i, i, i, i, i)));
+        rep->getBucketInfo().emplace_back(document::BucketId(16, i),api::BucketInfo(i, i, i, i, i));
 
         ASSERT_TRUE(state->onRequestBucketInfoReply(rep));
         ASSERT_EQ((i == (sender.commands().size() - 1)), state->done());
@@ -1573,9 +1533,8 @@ TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_with_group_down) {
                              "distributor:6 .2.s:d .3.s:d storage:6"));
 
     // But don't fetch if not the entire group is down.
-    EXPECT_EQ("",
-              get_sent_nodes("distributor:6 storage:6",
-                             "distributor:6 .2.s:d storage:6"));
+    EXPECT_EQ("", get_sent_nodes("distributor:6 storage:6",
+                                 "distributor:6 .2.s:d storage:6"));
 }
 
 TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_with_group_down_and_no_handover) {
@@ -1612,23 +1571,16 @@ parse_input_data(const std::string& data,
             if (include_bucket_info) {
                 vespalib::StringTokenizer tok4(tok3[j], "/");
 
-                pending_transition.addNodeInfo(
-                        document::BucketId(16, atoi(tok4[0].data())),
-                        BucketCopy(
-                                timestamp,
-                                node,
-                                api::BucketInfo(
-                                        atoi(tok4[1].data()),
-                                        atoi(tok4[2].data()),
-                                        atoi(tok4[3].data()),
-                                        atoi(tok4[2].data()),
-                                        atoi(tok4[3].data()))));
+                pending_transition.addNodeInfo(document::BucketId(16, atoi(tok4[0].data())),
+                        BucketCopy(timestamp, node,
+                                   api::BucketInfo(atoi(tok4[1].data()),
+                                                   atoi(tok4[2].data()),
+                                                   atoi(tok4[3].data()),
+                                                   atoi(tok4[2].data()),
+                                                   atoi(tok4[3].data()))));
             } else {
-                pending_transition.addNodeInfo(
-                        document::BucketId(16, atoi(tok3[j].data())),
-                        BucketCopy(timestamp,
-                                   node,
-                                   api::BucketInfo(3, 3, 3, 3, 3)));
+                pending_transition.addNodeInfo(document::BucketId(16, atoi(tok3[j].data())),
+                                               BucketCopy(timestamp, node, api::BucketInfo(3, 3, 3, 3, 3)));
             }
         }
     }

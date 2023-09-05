@@ -17,7 +17,7 @@ StorageCommand::StorageCommand(const StorageCommand& other)
 {
 }
 
-StorageCommand::StorageCommand(const MessageType& type, Priority p)
+StorageCommand::StorageCommand(const MessageType& type, Priority p) noexcept
     : StorageMessage(type, generateMsgId(), 0),
       _timeout(MAX_TIMEOUT),
       _sourceIndex(0xFFFF)

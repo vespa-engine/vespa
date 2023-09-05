@@ -70,7 +70,7 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTargetLi
                                        _op_ctx.distributor_config().max_activation_inhibited_out_of_sync_groups());
         LOG(debug, "Active copies for bucket %s: %s", entry.getBucketId().toString().c_str(), active.toString().c_str());
         for (uint32_t i=0; i<active.size(); ++i) {
-            BucketCopy copy(*entry->getNode(active[i].nodeIndex()));
+            BucketCopy copy(entry->getNodeRef(active[i].entryIndex()));
             copy.setActive(true);
             entry->updateNode(copy);
         }

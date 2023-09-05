@@ -18,7 +18,7 @@ namespace storage::api {
 
 class BucketInfoCommand : public BucketCommand {
 protected:
-    BucketInfoCommand(const MessageType& type, const document::Bucket &bucket)
+    BucketInfoCommand(const MessageType& type, const document::Bucket &bucket) noexcept
         : BucketCommand(type, bucket) {}
 
 public:

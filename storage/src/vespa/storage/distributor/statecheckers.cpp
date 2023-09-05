@@ -134,6 +134,22 @@ JoinBucketsStateChecker::isFirstSibling(const document::BucketId& bucketId)
 namespace {
 
 using ConstNodesRef = IdealServiceLayerNodesBundle::ConstNodesRef;
+using Node2Index = IdealServiceLayerNodesBundle::Node2Index;
+
+bool
+equalNodeSet(const Node2Index & node2Index, ConstNodesRef idealState, const BucketDatabase::Entry& dbEntry)
+{
+    if (idealState.size() != dbEntry->getNodeCount()) {
+        return false;
+    }
+    for (uint16_t i = 0; i < dbEntry->getNodeCount(); i++) {
+        const BucketCopy & info = dbEntry->getNodeRef(i);
+        if ( ! node2Index.lookup(info.getNode()).valid() ) {
+            return false;
+        }
+    }
+    return true;
+}
 
 bool
 equalNodeSet(ConstNodesRef idealState, const BucketDatabase::Entry& dbEntry)
@@ -154,7 +170,7 @@ equalNodeSet(ConstNodesRef idealState, const BucketDatabase::Entry& dbEntry)
 bool
 bucketAndSiblingReplicaLocationsEqualIdealState(const StateChecker::Context& context)
 {
-    if (!equalNodeSet(context.idealState(), context.entry)) {
+    if (!equalNodeSet(context.idealStateBundle.nonretired_or_maintenance_to_index(), context.idealState(), context.entry)) {
         return false;
     }
     std::vector<uint16_t> siblingIdealState = context.distribution.getIdealStorageNodes(context.systemState, context.siblingBucket);
@@ -938,25 +954,32 @@ DeleteExtraCopiesStateChecker::check(Context& c) const
     return Result::noMaintenanceNeeded();
 }
 
+namespace {
+
 bool
-BucketStateStateChecker::shouldSkipActivationDueToMaintenance(const ActiveList& activeNodes, const Context& c)
-{
+shouldSkipActivationDueToMaintenanceOrGatherOperationNodes(const ActiveList &activeNodes,
+                                                           const StateChecker::Context &c,
+                                                           std::vector<uint16_t> & operationNodes) {
     for (uint32_t i = 0; i < activeNodes.size(); ++i) {
-        const auto node_index = activeNodes[i].nodeIndex();
-        const BucketCopy* cp(c.entry->getNode(node_index));
-        if (!cp || cp->active()) {
-            continue;
-        }
-        if (!cp->ready()) {
+        const ActiveCopy & active = activeNodes[i];
+        if ( ! active.entryIndex().valid()) continue;
+        const BucketCopy & cp(c.entry->getNodeRef(active.entryIndex()));
+        if (cp.active()) continue;
+
+        const auto node_index = active.nodeIndex();
+        if (!cp.ready()) {
             if (!c.op_ctx.node_supported_features_repo().node_supported_features(node_index).no_implicit_indexing_of_active_buckets) {
                 // If copy is not ready, we don't want to activate it if a node
                 // is set in maintenance. Doing so would imply that we want proton
                 // to start background indexing.
-                return containsMaintenanceNode(c.idealState(), c);
+                if (containsMaintenanceNode(c.idealState(), c)) return true;
             } // else: activation does not imply indexing, so we can safely do it at any time.
         }
+        operationNodes.push_back(node_index);
     }
     return false;
+}
+
 }
 
 /**
@@ -986,19 +1009,18 @@ BucketStateStateChecker::check(Context& c) const
     if (activeNodes.empty()) {
         return Result::noMaintenanceNeeded();
     }
-    if (shouldSkipActivationDueToMaintenance(activeNodes, c)) {
+    std::vector<uint16_t> operationNodes;
+    if (shouldSkipActivationDueToMaintenanceOrGatherOperationNodes(activeNodes, c, operationNodes)) {
         return Result::noMaintenanceNeeded();
     }
-
     vespalib::asciistream reason;
-    std::vector<uint16_t> operationNodes;
-    for (uint32_t i=0; i<activeNodes.size(); ++i) {
-        const BucketCopy* cp = c.entry->getNode(activeNodes[i].nodeIndex());
-        if (cp == nullptr || cp->active()) {
-            continue;
+    for (uint16_t nodeIndex : operationNodes) { // Most of the time empty
+        for (uint32_t i = 0; i < activeNodes.size(); ++i) {
+            const ActiveCopy &active = activeNodes[i];
+            if (nodeIndex == active.nodeIndex()) {
+                reason << "[Setting node " << active.nodeIndex() << " as active: " << active.getReason() << "]";
+            }
         }
-        operationNodes.push_back(activeNodes[i].nodeIndex());
-        reason << "[Setting node " << activeNodes[i].nodeIndex() << " as active: " << activeNodes[i].getReason() << "]";
     }
 
     // Deactivate all copies that are currently marked as active.

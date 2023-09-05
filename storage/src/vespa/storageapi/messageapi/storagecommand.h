@@ -20,7 +20,8 @@ class StorageCommand : public StorageMessage {
 
 protected:
     StorageCommand(const StorageCommand& other);
-    explicit StorageCommand(const MessageType& type, Priority p = NORMAL);
+    explicit StorageCommand(const MessageType& type) noexcept : StorageCommand(type, NORMAL) { }
+    explicit StorageCommand(const MessageType& type, Priority p) noexcept;
 
 public:
     DECLARE_POINTER_TYPEDEFS(StorageCommand);

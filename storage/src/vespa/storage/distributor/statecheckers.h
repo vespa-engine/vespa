@@ -75,7 +75,6 @@ class ActiveList;
 
 class BucketStateStateChecker : public StateChecker
 {
-    static bool shouldSkipActivationDueToMaintenance(const ActiveList& activeList, const Context& c);
 public:
     Result check(Context& c) const override;
     const char* getName() const noexcept override { return "SetBucketState"; }

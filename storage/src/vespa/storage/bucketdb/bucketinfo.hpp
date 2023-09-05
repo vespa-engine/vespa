@@ -144,7 +144,18 @@ BucketInfoBase<NodeSeq>::getNode(uint16_t node) const noexcept {
             return &n;
         }
     }
-    return 0;
+    return nullptr;
+}
+
+template <typename NodeSeq>
+uint16_t
+BucketInfoBase<NodeSeq>::internal_entry_index(uint16_t node) const noexcept {
+    for (uint16_t i = 0; i < _nodes.size(); i++) {
+        if (_nodes[i].getNode() == node) {
+            return i;
+        }
+    }
+    return 0xffff; // Not found signal
 }
 
 template <typename NodeSeq>
@@ -221,7 +232,7 @@ BucketInfoBase<NodeSeq>::operator==(const BucketInfoBase<NodeSeq>& other) const 
             return false;
         }
 
-        if (!(_nodes[i] == other._nodes[i])) {
+        if (_nodes[i] != other._nodes[i]) {
             return false;
         }
     }

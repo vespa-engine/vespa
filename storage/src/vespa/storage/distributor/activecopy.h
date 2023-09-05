@@ -19,13 +19,15 @@ public:
         : _nodeIndex(Index::invalid()),
           _ideal(Index::invalid()),
           _doc_count(0),
+          _entryIndex(Index::invalid()),
           _ready(false),
           _active(false)
     { }
-    ActiveCopy(uint16_t node, const BucketCopy & copy, uint16_t ideal) noexcept
+    ActiveCopy(uint16_t node, const BucketCopy & copy, uint16_t ideal, uint16_t entryIndex_in) noexcept
         : _nodeIndex(node),
           _ideal(ideal),
           _doc_count(copy.getDocumentCount()),
+          _entryIndex(entryIndex_in),
           _ready(copy.ready()),
           _active(copy.active())
     { }
@@ -36,12 +38,14 @@ public:
     static ActiveList calculate(const Node2Index & idealState, const lib::Distribution&,
                                 const BucketDatabase::Entry&, uint32_t max_activation_inhibited_out_of_sync_groups);
     uint16_t nodeIndex() const noexcept { return _nodeIndex; }
+    Index entryIndex() const noexcept { return Index(_entryIndex); }
 private:
     friend ActiveStateOrder;
     bool valid_ideal() const noexcept { return _ideal < Index::invalid(); }
     uint16_t _nodeIndex;
     uint16_t _ideal;
     uint32_t _doc_count;
+    uint16_t _entryIndex;  // Index in BucketCopyList
     bool     _ready;
     bool     _active;
 };
