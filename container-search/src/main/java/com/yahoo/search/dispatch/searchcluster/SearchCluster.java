@@ -6,7 +6,6 @@ import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
-import com.yahoo.yolean.UncheckedInterruptedException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,7 +61,7 @@ public class SearchCluster implements NodeManager<Node> {
     public String name() { return clusterId; }
 
     /** Sets the new nodes to monitor to be the new nodes, but keep any existing node instances which equal the new ones. */
-    public ClusterMonitor<Node> updateNodes(Collection<Node> newNodes, double minActivedocsPercentage) {
+    public void updateNodes(Collection<Node> newNodes, ClusterMonitor<Node> monitor, double minActivedocsPercentage) {
         List<Node> currentNodes = new ArrayList<>(newNodes);
         List<Node> addedNodes = new ArrayList<>();
         Map<Node, Node> retainedNodes = groups.nodes().stream().collect(toMap(node -> node, node -> node));
@@ -72,15 +71,9 @@ public class SearchCluster implements NodeManager<Node> {
             else addedNodes.add(currentNodes.get(i));
         }
         SearchGroupsImpl groups = toGroups(currentNodes, minActivedocsPercentage);
-        ClusterMonitor<Node> monitor = new ClusterMonitor<>(this, false);
-        for (Node node : groups.nodes()) monitor.add(node, true);
-        monitor.start();
-        try { while (addedNodes.stream().anyMatch(node -> node.isWorking() == null)) { Thread.sleep(1); } }
-        catch (InterruptedException e) { throw new UncheckedInterruptedException(e, true); }
-        pingIterationCompleted(groups);
         this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(), groups);
+        monitor.reconfigure(groups.nodes());
         this.groups = groups;
-        return monitor;
     }
 
     public void addMonitoring(ClusterMonitor<Node> clusterMonitor) {
