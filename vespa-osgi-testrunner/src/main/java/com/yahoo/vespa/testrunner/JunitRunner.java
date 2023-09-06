@@ -22,7 +22,6 @@ import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -32,8 +31,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-
-import static java.util.stream.Collectors.toSet;
 
 
 /**
@@ -118,11 +115,9 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         List<Class<?>> testClasses = classLoader.apply(suite);
         if (testClasses == null)
             return  null;
-        Set<String> testClassNames = testClasses.stream().map(Class::getName).collect(toSet());
 
         testRuntimeProvider.initialize(testConfig);
         TestReportGeneratingListener testReportListener = new TestReportGeneratingListener(suite,
-                                                                                           testClassNames,
                                                                                            record -> logRecords.put(record.getSequenceNumber(), record),
                                                                                            stdoutTee,
                                                                                            stderrTee,
@@ -156,12 +151,16 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
 
     static TestRunner.Status testRunnerStatus(TestReport report) {
         if (report == null) return Status.NO_TESTS;
-        return switch (report.root().status()) {
-            case error, failed                -> Status.FAILURE;
-            case inconclusive                 -> Status.INCONCLUSIVE;
-            case successful, skipped, aborted -> report.root().tally().containsKey(TestReport.Status.successful) ? Status.SUCCESS
-                                                                                                                 : Status.NO_TESTS;
-        };
+        switch (report.root().status()) {
+            case error:
+            case failed:       return Status.FAILURE;
+            case inconclusive: return Status.INCONCLUSIVE;
+            case successful:
+            case skipped:
+            case aborted:     return report.root().tally().containsKey(TestReport.Status.successful) ? Status.SUCCESS
+                                                                                                     : Status.NO_TESTS;
+            default: throw new IllegalStateException("unknown status '" + report.root().status() + "'");
+        }
     }
 
     @Override
