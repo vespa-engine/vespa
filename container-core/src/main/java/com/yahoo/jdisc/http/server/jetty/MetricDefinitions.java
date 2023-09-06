@@ -14,7 +14,6 @@ class MetricDefinitions {
     static final String METHOD_DIMENSION = "httpMethod";
     static final String SCHEME_DIMENSION = "scheme";
     static final String REQUEST_TYPE_DIMENSION = "requestType";
-    static final String CLIENT_IP_DIMENSION = "clientIp";
     static final String CLIENT_AUTHENTICATED_DIMENSION = "clientAuthenticated";
     static final String REQUEST_SERVER_NAME_DIMENSION = "requestServerName";
     static final String FILTER_CHAIN_ID_DIMENSION = "chainId";
