@@ -169,12 +169,12 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         return new ApplicationVersion(id, source, authorEmail, compileVersion, allowedMajor, buildTime, sourceUrl, commit, bundleHash, obsoleteAt, hasPackage, true, description, submittedAt, risk);
     }
 
-    /** Whether we still have the package for this revision. */
+    /** Whether we have chosen to skip this version. */
     public boolean shouldSkip() {
         return shouldSkip;
     }
 
-    /** Whether this revision should be deployed. */
+    /** Whether this revision can be deployed. */
     public boolean isDeployable() {
         return hasPackage && ! shouldSkip;
     }

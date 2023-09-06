@@ -591,6 +591,7 @@ public class JobController {
             application = application.withProjectId(projectId == -1 ? OptionalLong.empty() : OptionalLong.of(projectId));
             application = application.withRevisions(revisions -> revisions.with(version.get()));
             application = withPrunedPackages(application, version.get().id());
+            version.set(application.get().revisions().get(version.get().id()));
 
             validate(id, submission);
 

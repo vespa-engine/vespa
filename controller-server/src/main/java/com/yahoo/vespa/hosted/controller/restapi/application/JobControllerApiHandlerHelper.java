@@ -221,7 +221,10 @@ class JobControllerApiHandlerHelper {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         ApplicationVersion submitted = jobController.submit(id, submission, projectId);
-        root.setString("message", "application " + submitted);
+        String skipped = submitted.shouldSkip()
+                         ? "; only applying deployment spec changes, as this build is otherwise equal to the previous"
+                         : "";
+        root.setString("message", "application " + submitted + skipped);
         root.setLong("build", submitted.buildNumber());
         return new SlimeJsonResponse(slime);
     }
