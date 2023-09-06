@@ -67,10 +67,6 @@ public class TestConfig {
         if (config.field("localEndpoints").valid())
             return TestConfig.fromEndpointsOnly(toClusterMap(config.field("localEndpoints")));
 
-        if (config.field("deployments").valid()) {
-
-        }
-
         ApplicationId application = ApplicationId.fromSerializedForm(config.field("application").asString());
         ZoneId zone = ZoneId.from(config.field("zone").asString());
         SystemName system = SystemName.from(config.field("system").asString());
@@ -104,7 +100,7 @@ public class TestConfig {
     public static TestConfig fromEndpointsOnly(Map<String, URI> endpoints) {
         return new TestConfig(ApplicationId.defaultId(),
                               ZoneId.defaultId(),
-                              SystemName.defaultSystem(),
+                              SystemName.dev,
                               false,
                               "",
                               0,

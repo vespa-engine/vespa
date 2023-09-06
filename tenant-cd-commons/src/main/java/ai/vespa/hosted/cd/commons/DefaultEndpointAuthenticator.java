@@ -31,8 +31,12 @@ public class DefaultEndpointAuthenticator implements EndpointAuthenticator {
 
     private static final Logger logger = Logger.getLogger(DefaultEndpointAuthenticator.class.getName());
 
+    private final boolean hasLocalTestConfig;
+
     /** Don't touch. */
-    public DefaultEndpointAuthenticator(@SuppressWarnings("unused") SystemName __) { }
+    public DefaultEndpointAuthenticator(SystemName system) {
+        hasLocalTestConfig = system == SystemName.dev;
+    }
 
     /**
      * If {@code System.getProperty("vespa.test.credentials.root")} is set, key and certificate files
@@ -65,12 +69,14 @@ public class DefaultEndpointAuthenticator implements EndpointAuthenticator {
                 PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyFile)));
                 return new SslContextBuilder().withKeyStore(privateKey, certificate).build();
             }
-            logger.warning(  "##################################################################################\n"
-                           + "# Data plane key and/or certificate missing; please specify                      #\n"
-                           + "# '-DdataPlaneCertificateFile=/path/to/certificate' and                          #\n"
-                           + "# '-DdataPlaneKeyFile=/path/to/private_key'.                                     #\n"
-                           + "# Trying the default SSLContext, but this will most likely cause HTTP error 401. #\n"
-                           + "##################################################################################");
+            if ( ! hasLocalTestConfig)
+                logger.warning("""
+                               ##################################################################################
+                               # Data plane key and/or certificate missing; please specify                      #
+                               # '-DdataPlaneCertificateFile=/path/to/certificate' and                          #
+                               # '-DdataPlaneKeyFile=/path/to/private_key'.                                     #
+                               # Trying the default SSLContext, but this will most likely cause HTTP error 401. #
+                               ##################################################################################""");
             return SSLContext.getDefault();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
