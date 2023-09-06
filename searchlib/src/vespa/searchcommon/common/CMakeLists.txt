@@ -8,3 +8,6 @@ vespa_add_library(searchcommon_searchcommon_common OBJECT
     schemaconfigurer.cpp
     DEPENDS
 )
+
+file(GLOB HEADERS *.h)
+install(FILES ${HEADERS} DESTINATION include/vespa/searchcommon/common)
