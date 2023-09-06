@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.Architecture;
@@ -502,10 +501,16 @@ public class DynamicProvisioningTest {
     public void gpu_host() {
         List<Flavor> flavors = List.of(new Flavor("gpu", new NodeResources(4, 16, 125, 10, fast, local,
                                                                            Architecture.x86_64, new NodeResources.GpuResources(1, 16))));
-        ProvisioningTester tester = new ProvisioningTester.Builder().dynamicProvisioning(true, false)
-                                                                    .flavors(flavors)
+        ProvisioningTester tester = new ProvisioningTester.Builder().flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors))
                                                                     .nameResolver(nameResolver)
+                                                                    .zone(new Zone(Cloud.builder()
+                                                                                        .dynamicProvisioning(true)
+                                                                                        .allowHostSharing(false)
+                                                                                        .build(),
+                                                                                   SystemName.Public,
+                                                                                   Environment.defaultEnvironment(),
+                                                                                   RegionName.defaultName()))
                                                                     .build();
         NodeResources resources = new NodeResources(4, 16, 125, 0.3,
                                                   NodeResources.DiskSpeed.any, NodeResources.StorageType.any,
