@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -52,7 +53,8 @@ public class TestReport {
     }
 
     static TestReport createFailed(Clock clock, Suite suite, Throwable thrown) {
-        if (thrown instanceof OutOfMemoryError) throw (Error) thrown;
+        if (thrown instanceof OutOfMemoryError oome) throw oome;
+        if (thrown instanceof ExecutionException ee) thrown = ee.getCause();
         TestReport failed = new TestReport(clock, suite, Set.of());
         failed.complete();
         failed.root().children.add(new FailureNode(failed.root(), clock.instant(), thrown, suite, Set.of()));
@@ -293,10 +295,6 @@ public class TestReport {
             OutputNode child = new OutputNode(this);
             child.log.add(record);
             children.add(child);
-        }
-
-        public Throwable thrown() {
-            return thrown;
         }
 
         @Override
