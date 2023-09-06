@@ -134,15 +134,15 @@ Optimize universal_only() {
     return Optimize::specific("universal_only", my_optimizer);
 }
 
-using cost_map_t = std::map<vespalib::string,double>;
-std::vector<std::pair<vespalib::string,cost_map_t>> benchmark_results;
+using cost_list_t = std::vector<std::pair<vespalib::string,double>>;
+std::vector<std::pair<vespalib::string,cost_list_t>> benchmark_results;
 
-void benchmark(const vespalib::string &desc, const vespalib::string &expr, std::vector<Optimize> list) {
+void benchmark(const vespalib::string &expr, std::vector<Optimize> list) {
     auto fun = Function::parse(expr);
     ASSERT_FALSE(fun->has_error());
     auto expected = eval_ref(*fun);
-    cost_map_t cost_map;
-    fprintf(stderr, "BENCH: %s (%s)\n", desc.c_str(), expr.c_str());
+    cost_list_t cost_list;
+    fprintf(stderr, "BENCH: %s\n", expr.c_str());
     for (Optimize &optimize: list) {
         std::vector<Value::UP> values;
         for (size_t i = 0; i < fun->num_params(); ++i) {
@@ -179,29 +179,27 @@ void benchmark(const vespalib::string &desc, const vespalib::string &expr, std::
         ASSERT_NE(optimized, nullptr);
         CTFMetaData ctf_meta;
         InterpretedFunction ifun(prod_factory, *optimized, &ctf_meta);
+        InterpretedFunction::ProfiledContext pctx(ifun);
         ASSERT_EQ(ctf_meta.steps.size(), ifun.program_size());
-        BenchmarkTimer timer(budget);
+        EXPECT_EQ(spec_from_value(ifun.eval(pctx.context, params)), expected);
+        EXPECT_EQ(spec_from_value(ifun.eval(pctx, params)), expected);
         std::vector<duration> prev_time(ctf_meta.steps.size(), duration::zero());
         std::vector<duration> min_time(ctf_meta.steps.size(), duration::max());
-        InterpretedFunction::ProfiledContext pctx(ifun);
-        for (bool first = true; timer.has_budget(); first = false) {
-            const Value &profiled_result =  ifun.eval(pctx, params);
-            if (first) {
-                EXPECT_EQ(spec_from_value(profiled_result), expected);
-            }
+        BenchmarkTimer timer(budget);
+        while (timer.has_budget()) {
             timer.before();
             const Value &result = ifun.eval(pctx.context, params);
+            (void) result;
             timer.after();
-            if (first) {
-                EXPECT_EQ(spec_from_value(result), expected);
-            }
+            const Value &profiled_result = ifun.eval(pctx, params);
+            (void) profiled_result;
             for (size_t i = 0; i < ctf_meta.steps.size(); ++i) {
                 min_time[i] = std::min(min_time[i], pctx.cost[i].second - prev_time[i]);
                 prev_time[i] = pctx.cost[i].second;
             }
         }
         double cost_us = timer.min_time() * 1000.0 * 1000.0;
-        cost_map.emplace(optimize.name, cost_us);
+        cost_list.emplace_back(optimize.name, cost_us);
         fprintf(stderr, "  optimized with: %s: %g us {\n", optimize.name.c_str(), cost_us);
         for (size_t i = 0; i < ctf_meta.steps.size(); ++i) {
             auto name = strip_ns(ctf_meta.steps[i].class_name);
@@ -213,7 +211,7 @@ void benchmark(const vespalib::string &desc, const vespalib::string &expr, std::
         fprintf(stderr, "  }\n");
     }
     fprintf(stderr, "\n");
-    benchmark_results.emplace_back(desc, std::move(cost_map));
+    benchmark_results.emplace_back(expr, std::move(cost_list));
 }
 
 TensorSpec perform_dot_product(const TensorSpec &a, const TensorSpec &b, const std::vector<vespalib::string> &dims)
@@ -266,35 +264,43 @@ TEST(UniversalDotProductTest, bench_vector_dot_product) {
     }
     auto optimize_list = std::vector<Optimize>({baseline(), with_universal(), universal_only()});
 
-    benchmark("number number",                  "reduce(1.0*2.0,sum)",                    optimize_list);    
-    benchmark("number vector",                  "reduce(5.0*x128,sum,x)",                 optimize_list);
-    benchmark("vector vector small",            "reduce(x16*x16,sum,x)",                  optimize_list);
-    benchmark("vector vector large",            "reduce(x768*x768,sum,x)",                optimize_list);
-    benchmark("vector matrix full",             "reduce(y64*x8y64,sum,x,y)",              optimize_list);
-    benchmark("vector matrix inner",            "reduce(y64*x8y64,sum,y)",                optimize_list);
-    benchmark("vector matrix outer",            "reduce(y64*x8y64,sum,x)",                optimize_list);
-    benchmark("matrix matrix same",             "reduce(a8y64*a8y64,sum,y)",              optimize_list);
-    benchmark("matrix matrix different",        "reduce(a8y64*b8y64,sum,y)",              optimize_list);
-    benchmark("matmul",                         "reduce(a8b64*b64c8,sum,b)",              optimize_list);
-    benchmark("sparse overlap",                 "reduce(x64_1*x64_1,sum,x)",              optimize_list);
-    benchmark("sparse no overlap",              "reduce(a64_1*b64_1,sum,b)",              optimize_list);
-    benchmark("mixed dense",                    "reduce(a1_16x768*x768,sum,x)",           optimize_list);
-    benchmark("mixed mixed complex",            "reduce(a1_1x128*a2_1b64_1x128,sum,a,x)", optimize_list);
+    benchmark("reduce(1.0*2.0,sum)",                    optimize_list);
+    benchmark("reduce(5.0*x128,sum,x)",                 optimize_list);
+    benchmark("reduce(x16*x16,sum,x)",                  optimize_list);
+    benchmark("reduce(x768*x768,sum,x)",                optimize_list);
+    benchmark("reduce(y64*x8y64,sum,x,y)",              optimize_list);
+    benchmark("reduce(y64*x8y64,sum,y)",                optimize_list);
+    benchmark("reduce(y64*x8y64,sum,x)",                optimize_list);
+    benchmark("reduce(a8y64*a8y64,sum,y)",              optimize_list);
+    benchmark("reduce(a8y64*a8y64,sum,a)",              optimize_list);
+    benchmark("reduce(a8y64*b8y64,sum,y)",              optimize_list);
+    benchmark("reduce(a8b64*b64c8,sum,b)",              optimize_list);
+    benchmark("reduce(x64_1*x64_1,sum,x)",              optimize_list);
+    benchmark("reduce(a64_1*b64_1,sum,b)",              optimize_list);
+    benchmark("reduce(a8_1b8_1*b8_1c8_1,sum,b)",        optimize_list);
+    benchmark("reduce(a8_1b8_1*b8_1c8_1,sum,a,c)",      optimize_list);
+    benchmark("reduce(a8_1b8_1*b8_1c8_1,sum,a,b,c)",    optimize_list);
+    benchmark("reduce(b64_1x128*x128,sum,x)",           optimize_list);
+    benchmark("reduce(b64_1x8y128*x8y128,sum,y)",       optimize_list);
+    benchmark("reduce(b64_1x128*x128,sum,b,x)",         optimize_list);
+    benchmark("reduce(a1_1x128*a2_1b64_1x128,sum,a,x)", optimize_list);
+    benchmark("reduce(x0_0*y8_1,sum,y)",                optimize_list);
+    benchmark("reduce(x8_1*y0_0,sum,y)",                optimize_list);
 
-    size_t max_desc_size = 0;
-    for (const auto &[desc, cost_map]: benchmark_results) {
-        max_desc_size = std::max(max_desc_size, desc.size());
+    size_t max_expr_size = 0;
+    for (const auto &[expr, cost_list]: benchmark_results) {
+        max_expr_size = std::max(max_expr_size, expr.size());
     }
-    for (const auto &[desc, cost_map]: benchmark_results) {
-        for (size_t i = 0; i < max_desc_size - desc.size(); ++i) {
+    for (const auto &[expr, cost_list]: benchmark_results) {
+        for (size_t i = 0; i < max_expr_size - expr.size(); ++i) {
             fprintf(stderr, " ");
         }
-        fprintf(stderr, "%s: ", desc.c_str());
+        fprintf(stderr, "%s: ", expr.c_str());
         size_t cnt = 0;
         double baseline_cost = 0.0;
         double with_universal_cost = 0.0;
         double universal_only_cost = 0.0;
-        for (const auto &[name, cost]: cost_map) {
+        for (const auto &[name, cost]: cost_list) {
             if (++cnt > 1) {
                 fprintf(stderr, ", ");
             }
@@ -336,7 +342,7 @@ int main(int argc, char **argv) {
         --argc;
     }
     if ((argc > 1) && (slow_option == argv[1])) {
-        budget = 5.0;
+        budget = 10.0;
         ++argv;
         --argc;
     }
