@@ -5,7 +5,6 @@ import java.util.List;
 
 /**
  * @author gjoranv
- * @since 5.1.4
  */
 public class InnerNodeVector<NODE extends InnerNode> extends NodeVector<NODE> {
 

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Superclass for all inner nodes in a {@link ConfigInstance}.
@@ -44,7 +45,7 @@ public abstract class InnerNode extends Node {
 
     /**
      * Overrides {@link Node#postInitialize(String)}.
-     * Perform post initialization on this nodes children.
+     * Perform post initialization on this node's children.
      *
      * @param configId The config id of this instance.
      */
@@ -65,7 +66,7 @@ public abstract class InnerNode extends Node {
             return false;
 
         /* This implementation requires getChildren() to return elements in order.
-         Hence we should make it final. Or make equals independent of order. */
+         Hence, we should make it final. Or make equals independent of order. */
         Collection<Object> children = getChildren().values();
         Collection<Object> otherChildren = ((InnerNode)other).getChildren().values();
 
@@ -74,7 +75,7 @@ public abstract class InnerNode extends Node {
         while(e1.hasNext() && e2.hasNext()) {
             Object o1 = e1.next();
             Object o2 = e2.next();
-            if (!(o1 == null ? o2 == null : o1.equals(o2)))
+            if (!(Objects.equals(o1, o2)))
                 return false;
         }
         return !(e1.hasNext() || e2.hasNext());
@@ -134,7 +135,6 @@ public abstract class InnerNode extends Node {
         for (Map.Entry<String, Node> entry : map.entrySet())
             ret.put(name + "{" + entry.getKey() + "}", entry.getValue());
     }
-
 
     private static void addNodeVectorEntries(Map<String, Node> ret, String name, NodeVector<?> vector) {
         for (int j = 0; j < vector.length(); j++)

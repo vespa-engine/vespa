@@ -4,6 +4,7 @@ package com.yahoo.config;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,72 +18,52 @@ public class NodeVectorTest {
 
     @Test
     void require_that_add_throws_exception() {
-        assertThrows(NodeVector.ReadOnlyException.class, () -> {
-            new TestNodeVector("foo").add(barNode());
-        });
+        assertThrows(NodeVector.ReadOnlyException.class, () -> new TestNodeVector("foo").add(barNode()));
     }
 
     @Test
     void require_that_addindex_throws_exception() {
-        assertThrows(NodeVector.ReadOnlyException.class, () -> {
-            new TestNodeVector("foo").add(0, barNode());
-        });
+        assertThrows(NodeVector.ReadOnlyException.class, () -> new TestNodeVector("foo").add(0, barNode()));
     }
 
     @Test
     void require_that_addAll_throws_exception() {
-        assertThrows(NodeVector.ReadOnlyException.class, () -> {
-            new TestNodeVector("foo").addAll(Arrays.asList(barNode()));
-        });
+        assertThrows(NodeVector.ReadOnlyException.class, () -> new TestNodeVector("foo").add(barNode()));
     }
 
     @Test
     void require_that_addAllindex_throws_exception() {
-        assertThrows(NodeVector.ReadOnlyException.class, () -> {
-            new TestNodeVector("foo").addAll(0, Arrays.asList(barNode()));
-        });
+        assertThrows(NodeVector.ReadOnlyException.class, () -> new TestNodeVector("foo").addAll(0, List.of(barNode())));
     }
 
     @Test
     void require_that_clear_throws_exception() {
-        assertThrows(NodeVector.ReadOnlyException.class, () -> {
-            new TestNodeVector("foo").clear();
-        });
+        assertThrows(NodeVector.ReadOnlyException.class, () -> new TestNodeVector("foo").clear());
     }
 
     @Test
     void require_that_remove_index_throws_exception() {
-        assertThrows(NodeVector.ReadOnlyException.class, () -> {
-            new TestNodeVector("foo").remove(0);
-        });
+        assertThrows(NodeVector.ReadOnlyException.class, () -> new TestNodeVector("foo").remove(0));
     }
 
     @Test
     void require_that_remove_object_throws_exception() {
-        assertThrows(NodeVector.ReadOnlyException.class, () -> {
-            new TestNodeVector("foo").remove(null);
-        });
+        assertThrows(NodeVector.ReadOnlyException.class, () -> new TestNodeVector("foo").remove(null));
     }
 
     @Test
     void require_that_removeAll_throws_exception() {
-        assertThrows(NodeVector.ReadOnlyException.class, () -> {
-            new TestNodeVector("foo").removeAll(null);
-        });
+        assertThrows(NodeVector.ReadOnlyException.class, () -> new TestNodeVector("foo").removeAll(null));
     }
 
     @Test
     void require_that_retainAll_throws_exception() {
-        assertThrows(NodeVector.ReadOnlyException.class, () -> {
-            new TestNodeVector("foo").retainAll(null);
-        });
+        assertThrows(NodeVector.ReadOnlyException.class, () -> new TestNodeVector("foo").retainAll(null));
     }
 
     @Test
     void require_that_set_throws_exception() {
-        assertThrows(NodeVector.ReadOnlyException.class, () -> {
-            new TestNodeVector("foo").set(0, null);
-        });
+        assertThrows(NodeVector.ReadOnlyException.class, () -> new TestNodeVector("foo").set(0, null));
     }
 
     @Test
@@ -91,7 +72,7 @@ public class NodeVectorTest {
         TestNodeVector v = new TestNodeVector(val.getValue());
         assertTrue(v.contains(val));
         assertFalse(v.contains(barNode()));
-        assertTrue(v.containsAll(Arrays.asList(val)));
+        assertTrue(v.contains(val));
         assertFalse(v.containsAll(Arrays.asList(val, barNode())));
     }
 

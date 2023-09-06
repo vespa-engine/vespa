@@ -12,7 +12,7 @@ import java.util.*;
  */
 public abstract class NodeVector<NODE> implements java.util.List<NODE> {
 
-    protected final ArrayList<NODE> vector = new ArrayList<NODE>();
+    protected final ArrayList<NODE> vector = new ArrayList<>();
 
     /**
      * Returns the number of elements in this NodeVector.
@@ -24,7 +24,6 @@ public abstract class NodeVector<NODE> implements java.util.List<NODE> {
         return size();
     }
 
-    @SuppressWarnings("serial")
     public static class ReadOnlyException extends RuntimeException {
     }
 
@@ -88,7 +87,6 @@ public abstract class NodeVector<NODE> implements java.util.List<NODE> {
         return vector.hashCode();
     }
 
-    @SuppressWarnings("unchecked")
     public NODE get(int index) {
         return vector.get(index);
     }

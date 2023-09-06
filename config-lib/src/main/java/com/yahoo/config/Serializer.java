@@ -3,7 +3,6 @@ package com.yahoo.config;
 
 /**
 * @author Ulf Lilleengen
-* @since 5.1
 */
 public interface Serializer {
     Serializer createInner(String name);
@@ -28,4 +27,5 @@ public interface Serializer {
     void serialize(long value);
     void serialize(int value);
     void serialize(String value);
+
 }

@@ -5,6 +5,7 @@ package com.yahoo.config;
  * The BooleanNode class represents a boolean in a configuration tree.
  */
 public class BooleanNode extends LeafNode<Boolean> {
+
     public BooleanNode() {
     }
 

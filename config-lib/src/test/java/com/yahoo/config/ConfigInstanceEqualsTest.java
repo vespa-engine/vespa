@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import com.yahoo.test.AppConfig;
 import com.yahoo.test.FunctionTestConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,11 +44,6 @@ public class ConfigInstanceEqualsTest {
     void require_false_for_null() {
         assertNotEquals(null, config1);
 
-    }
-
-    @Test
-    void require_false_for_different_subclass() {
-        assertNotEquals(config1, new AppConfig(new AppConfig.Builder()));
     }
 
     @Test

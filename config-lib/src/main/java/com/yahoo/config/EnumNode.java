@@ -5,6 +5,7 @@ package com.yahoo.config;
  * The EnumNode class is a superclass for Enumerations in a configuration tree.
  */
 public abstract class EnumNode<ENUM extends Enum<?>> extends LeafNode<ENUM> {
+
     public EnumNode() {
     }
 

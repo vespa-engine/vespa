@@ -12,8 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @author gjoranv
  */
 public class NamespaceAndPackageTest {
-    private static String NAMESPACE = "my.namespace";
-    private static String PACKAGE = "com.github.myproject";
+    private static final String NAMESPACE = "my.namespace";
+    private static final String PACKAGE = "com.github.myproject";
 
     @Test
     void namespace_is_set_from_def_file() {

@@ -5,6 +5,7 @@ package com.yahoo.config;
  * The DoubleNode class represents a double in a configuration tree.
  */
 public class DoubleNode extends LeafNode<Double> {
+
     public DoubleNode() {
     }
 

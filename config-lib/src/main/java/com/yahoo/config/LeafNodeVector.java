@@ -57,7 +57,7 @@ public class LeafNodeVector<REAL, NODE extends LeafNode<REAL>> extends NodeVecto
     // TODO: Try to eliminate the need for this method when we have moved FileAcquirer to the config library
     // It is needed now because the builder has a list of String, while REAL=FileReference.
     public static LeafNodeVector<FileReference, FileNode> createFileNodeVector(Collection<String> values) {
-        List<FileReference> fileReferences = new ArrayList<FileReference>();
+        List<FileReference> fileReferences = new ArrayList<>();
          for (String s : values)
              fileReferences.add(new FileReference(ReferenceNode.stripQuotes(s)));
 

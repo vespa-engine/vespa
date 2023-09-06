@@ -29,10 +29,10 @@ public class StringNode extends LeafNode<String> {
     /**
      * Returns the value of this string. Same as {@link #getValue()}
      * since the value of this node is a String (but implementations
-     * in other {@link LeafNode} sub-classes differ).
+     * in other {@link LeafNode} subclasses differ).
      *
      * @return the string representation of this StringNode, or null if
-     *         the vlaue is explicitly set to null
+     *         the value is explicitly set to null
      */
     public String value() {
         return value;
@@ -63,30 +63,18 @@ public class StringNode extends LeafNode<String> {
                     throw new IllegalArgumentException("Parse error" + string);
                 }
                 switch (sb.charAt(i)) {
-                    case'n':
-                        sb.setCharAt(i, '\n');
-                        break;
-                    case'r':
-                        sb.setCharAt(i, '\r');
-                        break;
-                    case't':
-                        sb.setCharAt(i, '\t');
-                        break;
-                    case'f':
-                        sb.setCharAt(i, '\f');
-                        break;
-                    case'x':
+                    case 'n' -> sb.setCharAt(i, '\n');
+                    case 'r' -> sb.setCharAt(i, '\r');
+                    case 't' -> sb.setCharAt(i, '\t');
+                    case 'f' -> sb.setCharAt(i, '\f');
+                    case 'x' -> {
                         if (i + 2 >= sb.length()) {
-                            throw new IllegalArgumentException
-                                    ("Could not parse hex value " + string);
+                            throw new IllegalArgumentException("Could not parse hex value " + string);
                         }
-                        sb.setCharAt(i, (char) Integer.parseInt
-                                (sb.substring(i + 1, i + 3), 16));
+                        sb.setCharAt(i, (char) Integer.parseInt(sb.substring(i + 1, i + 3), 16));
                         sb.delete(i + 1, i + 3);
-                        break;
-                    case'\\':
-                        sb.setCharAt(i, '\\');
-                        break;
+                    }
+                    case '\\' -> sb.setCharAt(i, '\\');
                 }
             }
         }
@@ -101,7 +89,7 @@ public class StringNode extends LeafNode<String> {
     }
 
     /**
-     * Sets the value of this string from a the string representation
+     * Sets the value of this string from the string representation
      * of this value in the (escaped) input configuration. The value
      * supplied to this method needs un-escaping and will be
      * un-escaped.

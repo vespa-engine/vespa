@@ -23,7 +23,7 @@ public class EnumNodeTest {
           try {
             value = Enum.valueOf(name);
             return true;
-          } catch (IllegalArgumentException e) {
+          } catch (IllegalArgumentException ignored) {
           }
           return false;
         }

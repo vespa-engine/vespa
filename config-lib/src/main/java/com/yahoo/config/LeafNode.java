@@ -11,7 +11,7 @@ package com.yahoo.config;
  */
 public abstract class LeafNode<T> extends Node implements Cloneable {
 
-    protected boolean initialized;
+    protected final boolean initialized;
     protected T value;
 
     /**
