@@ -15,7 +15,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.yahoo.foo.StructtypesConfig.Simple.Gender.Enum.FEMALE;
 import static com.yahoo.test.FunctionTestConfig.BasicStruct;
@@ -257,9 +256,8 @@ public class ConfigInstanceBuilderTest {
         assertEquals(configId, config.refwithdef());
         assertEquals("etc", config.fileVal().value());
         assertEquals(1, config.boolarr().size());
-        assertEquals(1, config.boolarr().size());  // new api with accessor for a List of the original Java type
-        assertFalse(config.boolarr().get(0));  // new List api
-        assertFalse(config.boolarr(0));        // short-hand
+        assertFalse(config.boolarr().get(0));
+        assertFalse(config.boolarr(0));        // shorthand
         assertEquals(0, config.intarr().size());
         assertEquals(2, config.longarr().size());
         assertEquals(Long.MAX_VALUE, config.longarr(0));
@@ -267,7 +265,7 @@ public class ConfigInstanceBuilderTest {
         assertEquals(2, config.doublearr().size());
         assertEquals(1, config.stringarr().size());
         assertEquals(1, config.enumarr().size());
-        assertEquals(FunctionTestConfig.Enumarr.VALUES, config.enumarr().get(0));  // new List api, don't have to call value()
+        assertEquals(FunctionTestConfig.Enumarr.VALUES, config.enumarr().get(0));
         assertEquals(3, config.refarr().size());
         assertEquals(1, config.fileArr().size());
         assertEquals(configId, config.refarr(0));
@@ -283,10 +281,10 @@ public class ConfigInstanceBuilderTest {
         assertEquals("basicFoo", config.basicStruct().foo());
         assertEquals(3, config.basicStruct().bar());  // new List api
         assertEquals(2, config.basicStruct().intArr().size());
-        assertEquals(310, config.basicStruct().intArr().get(0).intValue());  // new List api
-        assertEquals(311, config.basicStruct().intArr().get(1).intValue());  // new List api
-        assertEquals(310, config.basicStruct().intArr(0));          // short-hand
-        assertEquals("inner0", config.rootStruct().inner0().name());  // new List api
+        assertEquals(310, config.basicStruct().intArr().get(0).intValue());
+        assertEquals(311, config.basicStruct().intArr().get(1).intValue());
+        assertEquals(310, config.basicStruct().intArr(0));          // shorthand
+        assertEquals("inner0", config.rootStruct().inner0().name());
         assertEquals(11, config.rootStruct().inner0().index());
         assertEquals("inner1", config.rootStruct().inner1().name());
         assertEquals(12, config.rootStruct().inner1().index());
@@ -297,8 +295,8 @@ public class ConfigInstanceBuilderTest {
         assertEquals("blue a=\"escaped\"", config.rootStruct().innerArr(1).stringVal());
 
         assertEquals(2, config.myarray().size());  // new List api
-        assertEquals(configId, config.myarray().get(0).refval());    // new List api
-        assertEquals(configId, config.myarray(0).refval());          // short-hand
+        assertEquals(configId, config.myarray().get(0).refval());
+        assertEquals(configId, config.myarray(0).refval());          // shorthand
         assertEquals("file0", config.myarray(0).fileVal().value());
         assertEquals(1, config.myarray(0).myStruct().a());
         assertEquals(2, config.myarray(0).myStruct().b());

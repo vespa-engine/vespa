@@ -23,9 +23,7 @@ public class StringNodeTest {
 
     @Test
     void testUnescapedQuotedStringExceptions() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            StringNode.unescapeQuotedString("foo\\");
-        });
+        assertThrows(IllegalArgumentException.class, () -> StringNode.unescapeQuotedString("foo\\"));
     }
 
     @Test

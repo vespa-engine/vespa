@@ -20,9 +20,9 @@ public class StringUtilities {
 
     private static class ReplacementCharacters {
 
-        public byte[] needEscape = new byte[256];
-        public byte[] replacement1 = new byte[256];
-        public byte[] replacement2 = new byte[256];
+        public final byte[] needEscape = new byte[256];
+        public final byte[] replacement1 = new byte[256];
+        public final byte[] replacement2 = new byte[256];
 
         public ReplacementCharacters() {
             for (int i=0; i<256; ++i) {

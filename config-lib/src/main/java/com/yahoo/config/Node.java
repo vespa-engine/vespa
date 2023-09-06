@@ -9,16 +9,16 @@ package com.yahoo.config;
 public abstract class Node {
 
     /**
-     * Postinitialize this node. Any node needing to process its values depending on the config
+     * Post-initialize this node. Any node needing to process its values depending on the config
      * id should override this method.
      *
      * @param configId the configId of the ConfigInstance that owns (or is) this node
      */
-    public void postInitialize(String configId) { return; }
+    public void postInitialize(String configId) {}
 
     /**
      * This method is meant for internal use in the configuration system.
-     * Overrides Object.clone(), and is overriden by LeafNode.clone().
+     * Overrides Object.clone(), and is overridden by LeafNode.clone().
      *
      * @return a new instance similar to this object.
      */

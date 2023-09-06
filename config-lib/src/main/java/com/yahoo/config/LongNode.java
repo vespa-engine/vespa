@@ -48,4 +48,5 @@ public class LongNode extends LeafNode<Long> {
     void serialize(Serializer serializer) {
         serializer.serialize(value);
     }
+
 }

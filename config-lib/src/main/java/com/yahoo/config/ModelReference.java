@@ -67,8 +67,8 @@ public class ModelReference {
     public String toString() {
         if (resolved != null) return resolved.toString();
         return modelId.orElse("\"\"") + " " +
-               url.map(v -> v.value()).orElse("\"\"") + " " +
-               path.map(v -> v.value()).orElse("\"\"");
+               url.map(UrlReference::value).orElse("\"\"") + " " +
+               path.map(FileReference::value).orElse("\"\"");
     }
 
     /**
