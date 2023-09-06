@@ -134,6 +134,43 @@ Optimize universal_only() {
     return Optimize::specific("universal_only", my_optimizer);
 }
 
+void verify(const vespalib::string &expr) {
+    auto fun = Function::parse(expr);
+    ASSERT_FALSE(fun->has_error());
+    std::vector<Value::UP> values;
+    for (size_t i = 0; i < fun->num_params(); ++i) {
+        auto value = value_from_spec(make_spec(fun->param_name(i), i), prod_factory);
+        values.push_back(std::move(value));
+    }
+    SimpleObjectParams params({});
+    std::vector<ValueType> param_types;
+    for (auto &&up: values) {
+        params.params.emplace_back(*up);
+        param_types.push_back(up->type());
+    }
+    NodeTypes node_types(*fun, param_types);
+    const ValueType &expected_type = node_types.get_type(fun->root());
+    ASSERT_FALSE(expected_type.is_error());
+    Stash stash;
+    size_t count = 0;
+    const TensorFunction &plain_fun = make_tensor_function(prod_factory, fun->root(), node_types, stash);
+    const TensorFunction &optimized = apply_tensor_function_optimizer(plain_fun, universal_only().optimizer, stash, &count);
+    ASSERT_GT(count, 0);
+    InterpretedFunction ifun(prod_factory, optimized);
+    InterpretedFunction::Context ctx(ifun);
+    const Value &actual = ifun.eval(ctx, params);
+    EXPECT_EQ(actual.type(), expected_type);
+    EXPECT_EQ(actual.cells().type, expected_type.cell_type());
+    if (expected_type.count_mapped_dimensions() == 0) {
+        EXPECT_EQ(actual.index().size(), TrivialIndex::get().size());
+        EXPECT_EQ(actual.cells().size, expected_type.dense_subspace_size());
+    } else {
+        EXPECT_EQ(actual.cells().size, actual.index().size() * expected_type.dense_subspace_size());
+    }
+    auto expected = eval_ref(*fun);
+    EXPECT_EQ(spec_from_value(actual), expected);
+}
+
 using cost_list_t = std::vector<std::pair<vespalib::string,double>>;
 std::vector<std::pair<vespalib::string,cost_list_t>> benchmark_results;
 
@@ -257,6 +294,39 @@ TEST(UniversalDotProductTest, generic_dot_product_works_for_various_cases) {
     fprintf(stderr, "total test cases run: %zu\n", test_cases);
 }
 
+TEST(UniversalDotProductTest, forwarding_empty_result) {
+    verify("reduce(x0_0*y8_1,sum,y)");
+    verify("reduce(x8_1*y0_0,sum,y)");
+    verify("reduce(x0_0z16*y8_1z16,sum,y)");
+    verify("reduce(x8_1z16*y0_0z16,sum,y)");
+}
+
+TEST(UniversalDotProductTest, nonforwarding_empty_result) {
+    verify("reduce(x0_0y8*x1_1y8,sum,y)");
+    verify("reduce(x1_1y8*x0_0y8,sum,y)");
+    verify("reduce(x1_7y8z2*x1_1y8z2,sum,y)");
+}
+
+TEST(UniversalDotProductTest, forwarding_expanding_reduce) {
+    verify("reduce(5.0*y0_0,sum,y)");
+    verify("reduce(z16*y0_0,sum,y)");
+    verify("reduce(x1_1*y0_0,sum,y)");
+    verify("reduce(x0_0*y1_1,sum,y)");
+    verify("reduce(x1_1z16*y0_0,sum,y)");
+    verify("reduce(x0_0z16*y1_1,sum,y)");
+}
+
+TEST(UniversalDotProductTest, nonforwarding_expanding_reduce) {
+    verify("reduce(x0_0*y1_1,sum,x,y)");
+    verify("reduce(x1_1*y0_0,sum,x,y)");
+    verify("reduce(x0_0y16*x1_1y16,sum,x)");
+    verify("reduce(x1_1y16*x0_0y16,sum,x)");
+    verify("reduce(x1_7*y1_1,sum,x,y)");
+    verify("reduce(x1_1*y1_7,sum,x,y)");
+    verify("reduce(x1_7y16*x1_1y16,sum,x)");
+    verify("reduce(x1_1y16*x1_7y16,sum,x)");
+}
+
 TEST(UniversalDotProductTest, bench_vector_dot_product) {
     if (!bench) {
         fprintf(stderr, "benchmarking disabled, run with 'bench' parameter to enable\n");
@@ -284,8 +354,6 @@ TEST(UniversalDotProductTest, bench_vector_dot_product) {
     benchmark("reduce(b64_1x8y128*x8y128,sum,y)",       optimize_list);
     benchmark("reduce(b64_1x128*x128,sum,b,x)",         optimize_list);
     benchmark("reduce(a1_1x128*a2_1b64_1x128,sum,a,x)", optimize_list);
-    benchmark("reduce(x0_0*y8_1,sum,y)",                optimize_list);
-    benchmark("reduce(x8_1*y0_0,sum,y)",                optimize_list);
 
     size_t max_expr_size = 0;
     for (const auto &[expr, cost_list]: benchmark_results) {
