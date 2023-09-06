@@ -156,16 +156,12 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
 
     static TestRunner.Status testRunnerStatus(TestReport report) {
         if (report == null) return Status.NO_TESTS;
-        switch (report.root().status()) {
-            case error:
-            case failed:       return Status.FAILURE;
-            case inconclusive: return Status.INCONCLUSIVE;
-            case successful:
-            case skipped:
-            case aborted:     return report.root().tally().containsKey(TestReport.Status.successful) ? Status.SUCCESS
-                                                                                                     : Status.NO_TESTS;
-            default: throw new IllegalStateException("unknown status '" + report.root().status() + "'");
-        }
+        return switch (report.root().status()) {
+            case error, failed                -> Status.FAILURE;
+            case inconclusive                 -> Status.INCONCLUSIVE;
+            case successful, skipped, aborted -> report.root().tally().containsKey(TestReport.Status.successful) ? Status.SUCCESS
+                                                                                                                 : Status.NO_TESTS;
+        };
     }
 
     @Override
