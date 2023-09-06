@@ -2063,13 +2063,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         EndpointList endpoints = zoneEndpoints.and(declaredEndpoints);
         EndpointList generatedEndpoints = endpoints.generated();
         if (!includeHidden) {
-            // Hide legacy and weighted endpoints by default
+            // If we have generated endpoints, hide non-generated
+            if (!generatedEndpoints.isEmpty()) {
+                endpoints = endpoints.generated();
+            }
+            // Hide legacy and weighted endpoints
             endpoints = endpoints.not().legacy()
                                  .not().scope(Endpoint.Scope.weighted);
-            // Hide non-generated if we have any
-            if (!generatedEndpoints.isEmpty()) {
-                endpoints = generatedEndpoints;
-            }
         }
         return endpoints;
     }
