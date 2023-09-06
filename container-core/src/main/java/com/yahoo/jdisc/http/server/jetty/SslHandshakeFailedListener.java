@@ -7,11 +7,8 @@ import org.eclipse.jetty.io.ssl.SslHandshakeListener;
 import javax.net.ssl.SSLHandshakeException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * A {@link SslHandshakeListener} that reports metrics for SSL handshake failures.
@@ -45,8 +42,6 @@ class SslHandshakeFailedListener implements SslHandshakeListener {
         Map<String, Object> dimensions = new HashMap<>();
         dimensions.put(MetricDefinitions.NAME_DIMENSION, connectorName);
         dimensions.put(MetricDefinitions.PORT_DIMENSION, listenPort);
-        Optional.ofNullable(event.getSSLEngine().getPeerHost())
-                .ifPresent(clientIp -> dimensions.put(MetricDefinitions.CLIENT_IP_DIMENSION, clientIp));
         return Map.copyOf(dimensions);
     }
 }
