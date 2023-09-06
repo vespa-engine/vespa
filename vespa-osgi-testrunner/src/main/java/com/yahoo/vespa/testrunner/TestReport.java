@@ -297,10 +297,6 @@ public class TestReport {
             children.add(child);
         }
 
-        public Throwable thrown() {
-            return thrown;
-        }
-
         @Override
         public Duration duration() {
             return Duration.ZERO;
