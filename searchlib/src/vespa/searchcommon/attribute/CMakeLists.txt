@@ -9,3 +9,6 @@ vespa_add_library(searchcommon_searchcommon_attribute OBJECT
     status.cpp
     DEPENDS
 )
+
+file(GLOB HEADERS *.h)
+install(FILES ${HEADERS} DESTINATION include/vespa/searchcommon/attribute)
