@@ -2,22 +2,23 @@
 #pragma once
 
 #include "nodeinfo.h"
-#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
-#include <vespa/storageframework/generic/component/componentregister.h>
-#include <vespa/storageframework/generic/component/component.h>
 #include <vespa/storageapi/message/bucket.h>
+#include <vespa/storageframework/generic/component/component.h>
+#include <vespa/storageframework/generic/component/componentregister.h>
+#include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/vespalib/stllike/hash_set.h>
-#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/composite_key.hpp>
 #include <boost/multi_index/identity.hpp>
-#include <boost/multi_index/member.hpp>
 #include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/composite_key.hpp>
+#include <boost/multi_index_container.hpp>
+#include <chrono>
+#include <functional>
+#include <mutex>
 #include <set>
 #include <unordered_map>
-#include <chrono>
-#include <mutex>
 
 namespace storage::distributor {
 
@@ -84,20 +85,20 @@ public:
      * passing it to the given type checker.
      * Breaks when the checker returns false.
      */
-    void checkPendingMessages(uint16_t node, const document::Bucket &bucket, Checker& checker) const;
+    void checkPendingMessages(uint16_t node, const document::Bucket& bucket, Checker& checker) const;
 
     /**
      * Goes through each pending message (across all nodes) for the given bucket
      * and invokes the given checker with the node, message type and priority.
      * Breaks when the checker returns false.
      */
-    void checkPendingMessages(const document::Bucket &bucket, Checker& checker) const;
+    void checkPendingMessages(const document::Bucket& bucket, Checker& checker) const;
 
     /**
      * Utility function for checking if there's a message of type
      * messageType pending to bucket bid on the given node.
      */
-    bool hasPendingMessage(uint16_t node, const document::Bucket &bucket, uint32_t messageType) const;
+    bool hasPendingMessage(uint16_t node, const document::Bucket& bucket, uint32_t messageType) const;
 
     /**
      * Returns a vector containing the number of pending messages to each storage node.
@@ -119,6 +120,17 @@ public:
 
     void run_once_no_pending_for_bucket(const document::Bucket& bucket, std::unique_ptr<DeferredTask> task);
     void abort_deferred_tasks();
+
+    /**
+     * For each distinct bucket with at least one pending message towards it:
+     *
+     * Iff `bucket_predicate(bucket) == true`, `msg_id_callback` is invoked once for _each_
+     * message towards `bucket`, with the message ID as the argument.
+     *
+     * Note: `bucket_predicate` is only invoked once per distinct bucket.
+     */
+    void enumerate_matching_pending_bucket_ops(const std::function<bool(const document::Bucket&)>& bucket_predicate,
+                                               const std::function<void(uint64_t)>& msg_id_callback) const;
 private:
     struct MessageEntry {
         TimePoint        timeStamp;
@@ -169,9 +181,11 @@ private:
         >
     >;
 
-    using MessagesByMsgId         = Messages::nth_index<0>::type;
-    using MessagesByNodeAndBucket = Messages::nth_index<1>::type;
-    using MessagesByBucketAndType = Messages::nth_index<2>::type;
+    // Must match Messages::nth_index<N>
+    static constexpr uint32_t IndexByMessageId     = 0;
+    static constexpr uint32_t IndexByNodeAndBucket = 1;
+    static constexpr uint32_t IndexByBucketAndType = 2;
+
     using DeferredBucketTaskMap   = std::unordered_multimap<
             document::Bucket,
             std::unique_ptr<DeferredTask>,
