@@ -193,11 +193,11 @@
                                         <include>org.hamcrest:hamcrest-core:${hamcrest.vespa.version}:test</include>
                                         <include>org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}:test</include>
                                         <include>org.json:json:${org.json.vespa.version}:test</include>
-                                        <include>org.junit.jupiter:junit-jupiter-api:${junit.vespa.version}:test</include>
-                                        <include>org.junit.jupiter:junit-jupiter-engine:${junit.vespa.version}:test</include>
-                                        <include>org.junit.platform:junit-platform-commons:${junit.platform.vespa.version}:test</include>
-                                        <include>org.junit.platform:junit-platform-engine:${junit.platform.vespa.version}:test</include>
-                                        <include>org.junit.vintage:junit-vintage-engine:${junit.vespa.version}:test</include>
+                                        <include>org.junit.jupiter:junit-jupiter-api:${junit.vespa.tenant.version}:test</include>
+                                        <include>org.junit.jupiter:junit-jupiter-engine:${junit.vespa.tenant.version}:test</include>
+                                        <include>org.junit.platform:junit-platform-commons:${junit.platform.vespa.tenant.version}:test</include>
+                                        <include>org.junit.platform:junit-platform-engine:${junit.platform.vespa.tenant.version}:test</include>
+                                        <include>org.junit.vintage:junit-vintage-engine:${junit.vespa.tenant.version}:test</include>
                                         <include>org.lz4:lz4-java:${org.lz4.vespa.version}:test</include>
                                         <include>org.opentest4j:opentest4j:${opentest4j.vespa.version}:test</include>
                                         <include>xerces:xercesImpl:${xerces.vespa.version}:test</include>

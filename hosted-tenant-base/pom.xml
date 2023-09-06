@@ -43,8 +43,8 @@
         <bundle-plugin.failOnWarnings>false</bundle-plugin.failOnWarnings>
         <target_jdk_version>17</target_jdk_version>
 
-        <!-- NOTE: this must not be overriden by users, and must be in sync with junit version specified in 'tenant-cd-api' -->
-        <junit.vespa.tenant.version>${junit.vespa.version}</junit.vespa.tenant.version>
+        <!-- NOTE: junit version must not be overridden by users -->
+
         <test.categories>!integration</test.categories>
 
         <!-- To allow specialized base pom to include additional "test provided" dependencies -->

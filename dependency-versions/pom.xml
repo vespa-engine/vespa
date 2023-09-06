@@ -130,6 +130,10 @@
         <zero-allocation-hashing.vespa.version>0.16</zero-allocation-hashing.vespa.version>
         <zookeeper.client.vespa.version>3.8.0</zookeeper.client.vespa.version>
 
+        <!-- Versions used by tenant parent pom and testing framework -->
+        <!-- CAUTION: upgrading junit for tenants poms may break testing frameworks -->
+        <junit.vespa.tenant.version>5.8.1</junit.vespa.tenant.version>
+        <junit.platform.vespa.tenant.version>1.8.1</junit.platform.vespa.tenant.version>
 
         <!-- Maven plugins -->
         <clover-maven-plugin.vespa.version>4.4.1</clover-maven-plugin.vespa.version>
