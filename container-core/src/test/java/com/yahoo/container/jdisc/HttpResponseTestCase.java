@@ -17,7 +17,7 @@ import com.yahoo.text.Utf8;
 /**
  * API test for HttpResponse.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class HttpResponseTestCase {
 

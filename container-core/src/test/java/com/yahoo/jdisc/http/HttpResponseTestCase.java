@@ -1,13 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http;
 
-import com.yahoo.jdisc.Container;
-import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
-import com.yahoo.jdisc.service.CurrentContainer;
 import org.junit.jupiter.api.Test;
 
-import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +11,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Simon Thoresen Hult
@@ -24,7 +19,7 @@ public class HttpResponseTestCase {
 
     @Test
     void requireThatAccessorsWork() throws Exception {
-        final HttpResponse response = newResponse(6, "foo");
+        final HttpResponse response = newResponse(6);
         assertEquals(6, response.getStatus());
         assertEquals("foo", response.getMessage());
         assertNull(response.getError());
@@ -83,7 +78,7 @@ public class HttpResponseTestCase {
 
     @Test
     void requireThatCookieHeaderCanBeEncoded() throws Exception {
-        final HttpResponse response = newResponse(69, "foo");
+        final HttpResponse response = newResponse(69);
         final List<Cookie> cookies = Collections.singletonList(new Cookie("foo", "bar"));
         response.encodeSetCookieHeader(cookies);
         final List<String> headers = response.headers().get(HttpHeaders.Names.SET_COOKIE);
@@ -93,7 +88,7 @@ public class HttpResponseTestCase {
 
     @Test
     void requireThatMultipleCookieHeadersCanBeEncoded() throws Exception {
-        final HttpResponse response = newResponse(69, "foo");
+        final HttpResponse response = newResponse(69);
         final List<Cookie> cookies = Arrays.asList(new Cookie("foo", "bar"), new Cookie("baz", "cox"));
         response.encodeSetCookieHeader(cookies);
         final List<String> headers = response.headers().get(HttpHeaders.Names.SET_COOKIE);
@@ -104,7 +99,7 @@ public class HttpResponseTestCase {
 
     @Test
     void requireThatCookieHeaderCanBeDecoded() throws Exception {
-        final HttpResponse response = newResponse(69, "foo");
+        final HttpResponse response = newResponse(69);
         final List<Cookie> cookies = Collections.singletonList(new Cookie("foo", "bar"));
         response.encodeSetCookieHeader(cookies);
         assertEquals(cookies, response.decodeSetCookieHeader());
@@ -112,25 +107,14 @@ public class HttpResponseTestCase {
 
     @Test
     void requireThatMultipleCookieHeadersCanBeDecoded() throws Exception {
-        final HttpResponse response = newResponse(69, "foo");
+        final HttpResponse response = newResponse(69);
         final List<Cookie> cookies = Arrays.asList(new Cookie("foo", "bar"), new Cookie("baz", "cox"));
         response.encodeSetCookieHeader(cookies);
         assertEquals(cookies, response.decodeSetCookieHeader());
     }
 
-    private static HttpResponse newResponse(final int status, final String message) throws Exception {
-        final Request request = HttpRequest.newServerRequest(
-                mockContainer(),
-                new URI("http://localhost:1234/status.html"),
-                HttpRequest.Method.GET,
-                HttpRequest.Version.HTTP_1_1);
-        return HttpResponse.newInstance(status, message);
+    private static HttpResponse newResponse(final int status) {
+        return HttpResponse.newInstance(status, "foo");
     }
 
-    private static CurrentContainer mockContainer() {
-        final CurrentContainer currentContainer = mock(CurrentContainer.class);
-        when(currentContainer.newReference(any(URI.class))).thenReturn(mock(Container.class));
-        when(currentContainer.newReference(any(URI.class), any(Object.class))).thenReturn(mock(Container.class));
-        return currentContainer;
-    }
 }
