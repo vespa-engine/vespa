@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.change.CertificateRemovalChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.CloudAccountChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ConfigValueChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ContainerRestartValidator;
 import com.yahoo.vespa.model.application.validation.change.ContentClusterRemovalValidator;
@@ -120,7 +119,6 @@ public class Validation {
                 new ContainerRestartValidator(),
                 new NodeResourceChangeValidator(),
                 new RedundancyIncreaseValidator(),
-                new CloudAccountChangeValidator(),
                 new CertificateRemovalChangeValidator(),
                 new RedundancyValidator()
         };

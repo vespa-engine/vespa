@@ -12,6 +12,7 @@ import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
@@ -66,7 +67,8 @@ public class LoadBalancerProvisionerTest {
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final ProvisioningTester tester = new ProvisioningTester.Builder().flagSource(flagSource)
-            .zone(new Zone(Cloud.builder().allowEnclave(true).account(CloudAccount.from("001122334455")).build(), SystemName.main, Environment.prod, RegionName.defaultName())).build();
+            .zone(new Zone(Cloud.builder().allowEnclave(true).account(CloudAccount.from("001122334455")).build(),
+                           SystemName.main, Environment.prod, RegionName.defaultName())).build();
 
     @Test
     public void provision_load_balancer() {
@@ -413,7 +415,7 @@ public class LoadBalancerProvisionerTest {
             assertTrue(e.getMessage().contains("due to change in cloud account"));
         }
 
-        // Existing LB is removed
+        // Existing LB and nodes are removed
         loadBalancers = tester.nodeRepository().loadBalancers().list();
         assertEquals(1, loadBalancers.size());
         assertSame(LoadBalancer.State.removable, loadBalancers.first().get().state());
@@ -423,6 +425,8 @@ public class LoadBalancerProvisionerTest {
                                                               new TestMetric());
         expirer.run();
         assertEquals(0, tester.nodeRepository().loadBalancers().list().in(LoadBalancer.State.removable).size());
+        tester.deactivate(app1);
+        tester.nodeRepository().nodes().list().forEach(node -> tester.nodeRepository().nodes().removeRecursively(node, true));
 
         // Next deployment provisions a new LB
         tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
@@ -473,7 +477,11 @@ public class LoadBalancerProvisionerTest {
         if (capacity.type().isConfigServerLike()) {
             nodeCount = 3;
         }
-        tester.makeReadyNodes(specs.length * nodeCount, nodeResources, capacity.type());
+        List<Node> provisioned = tester.makeProvisionedNodes(specs.length * nodeCount, (index) -> "host-" + index + ".yahoo.com", new Flavor(nodeResources),
+                                                             Optional.empty(), capacity.type(), 0, false,
+                                                             capacity.cloudAccount().filter(acc -> !acc.isUnspecified())
+                                                                     .orElse(tester.nodeRepository().zone().cloud().account()));
+        tester.move(Node.State.ready, provisioned);
         Set<HostSpec> allNodes = new LinkedHashSet<>();
         for (ClusterSpec spec : specs) {
             allNodes.addAll(tester.prepare(application, spec, capacity));

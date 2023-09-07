@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
@@ -421,6 +422,10 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeProvisionedNodes(int n, Function<Integer, String> nodeNamer, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+        return makeProvisionedNodes(n, nodeNamer, flavor, reservedTo, type, ipAddressPoolSize, dualStack, nodeRepository.zone().cloud().account());
+    }
+
+    public List<Node> makeProvisionedNodes(int n, Function<Integer, String> nodeNamer, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize, boolean dualStack, CloudAccount cloudAccount) {
         if (ipAddressPoolSize == 0 && type == NodeType.host) {
             ipAddressPoolSize = 1; // Tenant hosts must have at least one IP in their pool
         }
@@ -463,7 +468,7 @@ public class ProvisioningTester {
                 }
             }
             Node.Builder builder = Node.create(hostname, IP.Config.of(hostIps, ipAddressPool), hostname, flavor, type)
-                    .cloudAccount(nodeRepository.zone().cloud().account());
+                    .cloudAccount(cloudAccount);
             reservedTo.ifPresent(builder::reservedTo);
             nodes.add(builder.build());
         }
@@ -763,8 +768,8 @@ public class ProvisioningTester {
             flavor.minMainMemoryAvailableGb(resources.memoryGb());
             flavor.minDiskAvailableGb(resources.diskGb());
             flavor.bandwidth(resources.bandwidthGbps() * 1000);
-            flavor.fastDisk(resources.diskSpeed().compatibleWith(NodeResources.DiskSpeed.fast));
-            flavor.remoteStorage(resources.storageType().compatibleWith(NodeResources.StorageType.remote));
+            flavor.fastDisk(resources.diskSpeed().compatibleWith(com.yahoo.config.provision.NodeResources.DiskSpeed.fast));
+            flavor.remoteStorage(resources.storageType().compatibleWith(com.yahoo.config.provision.NodeResources.StorageType.remote));
             flavor.architecture(resources.architecture().toString());
             flavor.gpuCount(resources.gpuResources().count());
             flavor.gpuMemoryGb(resources.gpuResources().memoryGb());
