@@ -24,11 +24,12 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
+import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
 /**
  * Periodically expire unused artifacts, e.g. container images and RPMs. Artifacts with a version that is
- * present in config-models-*.xml are never expired (in cd we .
+ * present in config-models-*.xml are never expired (in cd/publiccd we also consider the model versions in main/public).
  *
  * @author mpolden
  */
@@ -97,28 +98,31 @@ public class ArtifactExpirer extends ControllerMaintainer {
         var system = controller().system();
         var versions = versionsForSystem(system);
 
-        if (controller().system().isCd()) {
-            if (system == SystemName.PublicCd)
-                versions.addAll(versionsForSystem(SystemName.Public));
-            else if (system == SystemName.cd)
-                versions.addAll(versionsForSystem(SystemName.main));
-        }
+        if (system == SystemName.PublicCd)
+            versions.addAll(versionsForSystem(SystemName.Public));
+        else if (system == SystemName.cd)
+            versions.addAll(versionsForSystem(SystemName.main));
 
-        log.log(INFO, "model versions in use : " + versions);
+        log.log(FINE, "model versions in use : " + versions);
         return versions;
     }
 
     private Set<Version> versionsForSystem(SystemName systemName) {
         var versions = readConfigModelVersionsForSystem(systemName.name());
-        log.log(INFO, "versions for system " + systemName.name() + ": " + versions);
+        log.log(FINE, "versions for system " + systemName.name() + ": " + versions);
         return versions;
     }
 
     private Set<Version> readConfigModelVersionsForSystem(String systemName) {
         List<String> lines = uncheck(() -> Files.readAllLines(configModelPath.resolve("config-models-" + systemName + ".xml")));
+        var stringToMatch = "id='VespaModelFactory.";
         return lines.stream()
-                .filter(line -> line.contains("VespaModelFactory."))
-                .map(line -> line.substring(line.indexOf("id='VespaModelFactory") + 22, line.indexOf("' class")))
+                .filter(line -> line.contains(stringToMatch))
+                .map(line -> {
+                    var start = line.indexOf(stringToMatch) + stringToMatch.length();
+                    int end = line.indexOf("'", start);
+                    return line.substring(start, end);
+                })
                 .map(Version::fromString)
                 .collect(Collectors.toSet());
     }
