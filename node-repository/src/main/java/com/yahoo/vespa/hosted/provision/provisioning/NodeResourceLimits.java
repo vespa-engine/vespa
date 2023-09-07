@@ -27,12 +27,13 @@ public class NodeResourceLimits {
 
     /** Validates the resources applications ask for (which are in "advertised" resource space) */
     public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ApplicationId applicationId, ClusterSpec cluster) {
-        if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(applicationId, cluster))
-            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(applicationId, cluster));
+        boolean exclusive = nodeRepository.exclusiveAllocation(cluster);
+        if (! requested.vcpuIsUnspecified() && requested.vcpu() < minAdvertisedVcpu(applicationId, cluster, exclusive))
+            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(applicationId, cluster, exclusive));
         if (! requested.memoryGbIsUnspecified() && requested.memoryGb() < minAdvertisedMemoryGb(cluster))
             illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster));
-        if (! requested.diskGbIsUnspecified() && requested.diskGb() < minAdvertisedDiskGb(requested, cluster.isExclusive()))
-            illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, cluster.isExclusive()));
+        if (! requested.diskGbIsUnspecified() && requested.diskGb() < minAdvertisedDiskGb(requested, exclusive))
+            illegal(type, "diskGb", "Gb", cluster, requested.diskGb(), minAdvertisedDiskGb(requested, exclusive));
     }
 
     // TODO: Remove this when we are ready to fail, not just warn on this. */
@@ -64,17 +65,17 @@ public class NodeResourceLimits {
         if (followRecommendations) // TODO: Do unconditionally when we enforce this limit
             requested = requested.withDiskGb(Math.max(minAdvertisedDiskGb(requested, cluster), requested.diskGb()));
 
-        return requested.withVcpu(Math.max(minAdvertisedVcpu(applicationId, cluster), requested.vcpu()))
+        return requested.withVcpu(Math.max(minAdvertisedVcpu(applicationId, cluster, exclusive), requested.vcpu()))
                         .withMemoryGb(Math.max(minAdvertisedMemoryGb(cluster), requested.memoryGb()))
                         .withDiskGb(Math.max(minAdvertisedDiskGb(requested, exclusive), requested.diskGb()));
     }
 
-    private double minAdvertisedVcpu(ApplicationId applicationId, ClusterSpec cluster) {
+    private double minAdvertisedVcpu(ApplicationId applicationId, ClusterSpec cluster, boolean exclusive) {
         if (cluster.type() == ClusterSpec.Type.admin) return 0.1;
         if (zone().environment().isProduction() && ! zone().system().isCd() &&
-                nodeRepository.exclusiveAllocation(cluster) && ! applicationId.instance().isTester()) return 2;
+                exclusive && ! applicationId.instance().isTester()) return 2;
         if (zone().environment().isProduction() && cluster.type().isContent()) return 1.0;
-        if (zone().environment() == Environment.dev && ! nodeRepository.exclusiveAllocation(cluster)) return 0.1;
+        if (zone().environment() == Environment.dev && ! exclusive) return 0.1;
         return 0.5;
     }
 
@@ -105,7 +106,7 @@ public class NodeResourceLimits {
     }
 
     private double minRealVcpu(ApplicationId applicationId, ClusterSpec cluster) {
-        return minAdvertisedVcpu(applicationId, cluster);
+        return minAdvertisedVcpu(applicationId, cluster, nodeRepository.exclusiveAllocation(cluster));
     }
 
     private static double minRealMemoryGb(ClusterSpec cluster) {
