@@ -146,8 +146,6 @@ public class JsonWriter implements DocumentWriter {
             fieldNameIfNotNull(generator, field);
             generator.writeStartObject();
 
-            // this makes it impossible to refeed directly, not sure what's correct
-            // perhaps just change to "put"?
             generator.writeStringField("id", value.getId().toString());
 
             writeFields(value);

@@ -19,7 +19,7 @@ import com.yahoo.text.Utf8;
 /**
  * API control of HttpRequest.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class HttpRequestTestCase {
     private static final String X_RAY_YANKEE_ZULU = "x-ray yankee zulu";

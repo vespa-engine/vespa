@@ -43,6 +43,7 @@ import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorResponse;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.Trace;
@@ -190,7 +191,7 @@ public class DocumentV1ApiTest {
     @Test
     public void testResponses() {
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
-        List<AckToken> tokens = List.of(new AckToken(null), new AckToken(null), new AckToken(null));
+        List<AckToken> tokens = List.of(new AckToken(null), new AckToken(null), new AckToken(null), new AckToken(null));
         // GET at non-existent path returns 404 with available paths
         var response = driver.sendRequest("http://localhost/document/v1/not-found");
         assertSameJson("""
@@ -227,18 +228,21 @@ public class DocumentV1ApiTest {
             assertEquals(9, parameters.getTraceLevel());
             assertEquals(1_000_000, parameters.getFromTimestamp());
             assertEquals(2_000_000, parameters.getToTimestamp());
+            assertTrue(parameters.visitRemoves());
             // Put some documents in the response
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc1)), tokens.get(0));
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(1));
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc3)), tokens.get(2));
+            parameters.getLocalDataHandler().onMessage(new RemoveDocumentMessage(new DocumentId("id:space:music::t-square-truth")), tokens.get(3));
             VisitorStatistics statistics = new VisitorStatistics();
             statistics.setBucketsVisited(1);
             statistics.setDocumentsVisited(3);
             parameters.getControlHandler().onVisitorStatistics(statistics);
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
         });
-        response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025&concurrency=123" +
-                                      "&selection=all%20the%20things&fieldSet=[id]&timeout=6&tracelevel=9&fromTimestamp=1000000&toTimestamp=2000000");
+        response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025" +
+                                      "&concurrency=123&selection=all%20the%20things&fieldSet=[id]&timeout=6&tracelevel=9" +
+                                      "&fromTimestamp=1000000&toTimestamp=2000000&includeRemoves=TrUe");
         assertSameJson("""
                        {
                          "pathId": "/document/v1",
@@ -246,20 +250,23 @@ public class DocumentV1ApiTest {
                            {
                              "id": "id:space:music::one",
                              "fields": {
-                               "artist": "Tom Waits",\s
-                               "embedding": { "type": "tensor(x[3])", "values": [1.0,2.0,3.0] }\s
+                               "artist": "Tom Waits",
+                               "embedding": { "type": "tensor(x[3])", "values": [1.0,2.0,3.0] }
                              }
                            },
                            {
                              "id": "id:space:music:n=1:two",
                              "fields": {
-                               "artist": "Asa-Chan & Jun-Ray",\s
-                               "embedding": { "type": "tensor(x[3])", "values": [4.0,5.0,6.0] }\s
+                               "artist": "Asa-Chan & Jun-Ray",
+                               "embedding": { "type": "tensor(x[3])", "values": [4.0,5.0,6.0] }
                              }
                            },
                            {
                             "id": "id:space:music:g=a:three",
                             "fields": {}
+                           },
+                           {
+                            "remove": "id:space:music::t-square-truth"
                            }
                          ],
                          "documentCount": 3,
@@ -290,6 +297,7 @@ public class DocumentV1ApiTest {
             assertEquals(1, parameters.getSliceId());
             assertEquals(0, parameters.getFromTimestamp()); // not set; 0 is default
             assertEquals(0, parameters.getToTimestamp()); // not set; 0 is default
+            assertFalse(parameters.visitRemoves()); // false by default
             // Put some documents in the response
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc1)), tokens.get(0));
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(1));
