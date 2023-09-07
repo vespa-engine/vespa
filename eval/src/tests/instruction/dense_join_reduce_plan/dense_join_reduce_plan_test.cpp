@@ -13,7 +13,7 @@ ValueType type(const vespalib::string &type_spec) {
 
 TEST(DenseJoinReducePlanTest, make_trivial_plan) {
     auto plan = DenseJoinReducePlan(type("double"), type("double"), type("double"));
-    EXPECT_TRUE(plan.distinct_result());
+    EXPECT_TRUE(plan.is_distinct());
     EXPECT_EQ(plan.lhs_size, 1);
     EXPECT_EQ(plan.rhs_size, 1);
     EXPECT_EQ(plan.res_size, 1);
@@ -39,7 +39,7 @@ TEST(DenseJoinReducePlanTest, make_simple_plan) {
     SmallVector<size_t> expect_lhs_stride = {1,0};
     SmallVector<size_t> expect_rhs_stride = {0,1};
     SmallVector<size_t> expect_res_stride = {1,0};
-    EXPECT_FALSE(plan.distinct_result());
+    EXPECT_FALSE(plan.is_distinct());
     EXPECT_EQ(plan.lhs_size, 2);
     EXPECT_EQ(plan.rhs_size, 3);
     EXPECT_EQ(plan.res_size, 2);
@@ -69,7 +69,7 @@ TEST(DenseJoinReducePlanTest, make_distinct_plan) {
     SmallVector<size_t> expect_lhs_stride = {1,0};
     SmallVector<size_t> expect_rhs_stride = {0,1};
     SmallVector<size_t> expect_res_stride = {3,1};
-    EXPECT_TRUE(plan.distinct_result());
+    EXPECT_TRUE(plan.is_distinct());
     EXPECT_EQ(plan.lhs_size, 2);
     EXPECT_EQ(plan.rhs_size, 3);
     EXPECT_EQ(plan.res_size, 6);
@@ -88,7 +88,7 @@ TEST(DenseJoinReducePlanTest, make_complex_plan) {
     SmallVector<size_t> expect_lhs_stride = {6,0,2,1};
     SmallVector<size_t> expect_rhs_stride = {4,1,0,0};
     SmallVector<size_t> expect_res_stride = {12,3,1,0};
-    EXPECT_FALSE(plan.distinct_result());
+    EXPECT_FALSE(plan.is_distinct());
     EXPECT_EQ(plan.lhs_size, 180);
     EXPECT_EQ(plan.rhs_size, 120);
     EXPECT_EQ(plan.res_size, 360);

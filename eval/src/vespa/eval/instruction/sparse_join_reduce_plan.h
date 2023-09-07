@@ -67,7 +67,7 @@ public:
     SparseJoinReducePlan(const ValueType &lhs, const ValueType &rhs, const ValueType &res);
     ~SparseJoinReducePlan();
     size_t res_dims() const { return _res_dims; }
-    bool distinct_result() const { return _res_dims == _in_res.size(); }
+    bool is_distinct() const { return _res_dims == _in_res.size(); }
     bool maybe_forward_lhs_index() const;
     bool maybe_forward_rhs_index() const;
     size_t estimate_result_size(const Value::Index &lhs, const Value::Index &rhs) const {
