@@ -309,6 +309,7 @@ TEST(UniversalDotProductTest, nonforwarding_empty_result) {
 
 TEST(UniversalDotProductTest, forwarding_expanding_reduce) {
     verify("reduce(5.0*y0_0,sum,y)");
+    verify("reduce(5.0*y0_0z1,sum,y)");
     verify("reduce(z16*y0_0,sum,y)");
     verify("reduce(x1_1*y0_0,sum,y)");
     verify("reduce(x0_0*y1_1,sum,y)");
@@ -319,6 +320,7 @@ TEST(UniversalDotProductTest, forwarding_expanding_reduce) {
 TEST(UniversalDotProductTest, nonforwarding_expanding_reduce) {
     verify("reduce(x0_0*y1_1,sum,x,y)");
     verify("reduce(x1_1*y0_0,sum,x,y)");
+    verify("reduce(x1_1*y0_0z1,sum,x,y)");
     verify("reduce(x0_0y16*x1_1y16,sum,x)");
     verify("reduce(x1_1y16*x0_0y16,sum,x)");
     verify("reduce(x1_7*y1_1,sum,x,y)");

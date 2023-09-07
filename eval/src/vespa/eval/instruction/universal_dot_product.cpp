@@ -81,12 +81,8 @@ void my_universal_dot_product_op(InterpretedFunction::State &state, uint64_t par
 template <typename OCT>
 const Value &create_empty_result(const UniversalDotProductParam &param, Stash &stash) {
     if (param.sparse_plan.res_dims() == 0) {
-        if (param.dense_plan.res_stride.empty()) {
-            return stash.create<DoubleValue>(0.0);
-        } else {
-            auto zero_cells = stash.create_array<OCT>(param.dense_plan.res_size);
-            return stash.create<ValueView>(param.res_type, TrivialIndex::get(), TypedCells(zero_cells));
-        }
+        auto zero_cells = stash.create_array<OCT>(param.dense_plan.res_size);
+        return stash.create<ValueView>(param.res_type, TrivialIndex::get(), TypedCells(zero_cells));
     } else {
         return stash.create<ValueView>(param.res_type, EmptyIndex::get(), TypedCells(nullptr, get_cell_type<OCT>(), 0));
     }
