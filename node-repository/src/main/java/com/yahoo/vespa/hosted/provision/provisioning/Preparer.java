@@ -3,11 +3,13 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.text.internal.SnippetGenerator;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -25,6 +27,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Performs preparation of node activation changes for a cluster of an application.
@@ -162,7 +165,7 @@ public class Preparer {
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requested,
                                              Supplier<Integer> nextIndex, LockedNodeList allNodes) {
-
+        validateAccount(requested.cloudAccount(), application, allNodes);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requested, nextIndex, nodeRepository);
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
                                                           application,
@@ -176,6 +179,23 @@ public class Preparer {
                                                           requested.cloudAccount().isExclave(nodeRepository.zone()));
         allocation.offer(prioritizer.collect());
         return allocation;
+    }
+
+    private void validateAccount(CloudAccount requestedAccount, ApplicationId application, LockedNodeList allNodes) {
+        CloudAccount effectiveAccount = requestedAccount.isUnspecified() ? nodeRepository.zone().cloud().account() : requestedAccount;
+        List<Node> nodesInOtherAccount = allNodes.owner(application).nodeType(NodeType.tenant).stream()
+                                                 .filter(node -> !node.cloudAccount().equals(effectiveAccount))
+                                                 .toList();
+        if (nodesInOtherAccount.isEmpty()) return;
+
+        SnippetGenerator snippet = new SnippetGenerator();
+        String hostnames = nodesInOtherAccount.stream()
+                                              .map(Node::hostname)
+                                              .collect(Collectors.joining(", "));
+        String hostsSnippet = snippet.makeSnippet(hostnames, 100);
+        throw new IllegalArgumentException("Cannot allocate nodes in " + requestedAccount + " because " +
+                                           application + " has existing nodes in " + nodesInOtherAccount.get(0).cloudAccount() +
+                                           ": " + hostsSnippet + ". Deployment must be removed in order to change account");
     }
 
     private boolean canProvisionDynamically(NodeType hostType) {

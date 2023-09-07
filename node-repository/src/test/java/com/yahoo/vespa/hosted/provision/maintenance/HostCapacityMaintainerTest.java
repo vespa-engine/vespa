@@ -533,9 +533,21 @@ public class HostCapacityMaintainerTest {
         assertEquals(2, provisioningTester.activate(applicationId, prepared).size());
         NodeList allNodes0 = tester.nodeRepository.nodes().list();
 
-        // Redeployment in different account provisions a new set of hosts
+        // Redeployment in different account fails
         CloudAccount cloudAccount1 = CloudAccount.from("100000000000");
         Capacity capacity1 = Capacity.from(resources, resources, IntRange.empty(), false, true, Optional.of(cloudAccount1), ClusterInfo.empty());
+        try {
+            provisioningTester.prepare(applicationId, spec, capacity1);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Deployment must be removed in order to change account"));
+        }
+
+        // Redeployment in different account succeeds after removing old hosts
+        provisioningTester.remove(applicationId);
+        for (var node : provisioningTester.nodeRepository().nodes().list().state(State.dirty)) {
+            provisioningTester.nodeRepository().nodes().removeRecursively(node, true);
+        }
         prepared = provisioningTester.prepare(applicationId, spec, capacity1);
         provisionHostsIn(cloudAccount1, 2, tester);
         assertEquals(2, provisioningTester.activate(applicationId, prepared).size());
