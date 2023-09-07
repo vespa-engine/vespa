@@ -1,7 +1,9 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 # @author Vegard Sjonfjell
 
-include(${CMAKE_CURRENT_LIST_DIR}/vtag.cmake)
+if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/vtag.cmake)
+  include(${CMAKE_CURRENT_LIST_DIR}/vtag.cmake)
+endif()
 
 if (VESPA_USE_SANITIZER)
     if (VESPA_USE_SANITIZER STREQUAL "address" OR VESPA_USE_SANITIZER STREQUAL "thread" OR VESPA_USE_SANITIZER STREQUAL "undefined")
