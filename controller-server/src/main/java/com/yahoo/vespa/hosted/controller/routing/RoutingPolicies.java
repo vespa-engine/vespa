@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.routing;
 import ai.vespa.http.DomainName;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.zone.AuthMethod;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
@@ -400,10 +400,6 @@ public class RoutingPolicies {
         return updated;
     }
 
-    private static Map<AuthMethod, GeneratedEndpoint> asMap(List<GeneratedEndpoint> generatedEndpoints) {
-        return generatedEndpoints.stream().collect(Collectors.toMap(GeneratedEndpoint::authMethod, Function.identity()));
-    }
-
     /** Update zone DNS record for given policy */
     private void updateZoneDnsOf(RoutingPolicy policy, LoadBalancer loadBalancer, DeploymentId deploymentId) {
         EndpointList zoneEndpoints = controller.routing().endpointsOf(deploymentId,
@@ -509,13 +505,21 @@ public class RoutingPolicies {
 
     /** Remove unreferenced instance endpoints from DNS */
     private void removeGlobalDnsUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList deploymentPolicies, @SuppressWarnings("unused") Mutex lock) {
-        Set<RoutingId> removalCandidates = new HashSet<>(deploymentPolicies.asInstanceRoutingTable().keySet());
+        Map<RoutingId, List<RoutingPolicy>> routingTable = deploymentPolicies.asInstanceRoutingTable();
+        Set<RoutingId> removalCandidates = new HashSet<>(routingTable.keySet());
         Set<RoutingId> activeRoutingIds = instanceRoutingIds(allocation);
         removalCandidates.removeAll(activeRoutingIds);
         for (var id : removalCandidates) {
-            EndpointList endpoints = controller.routing().readDeclaredEndpointsOf(id.instance())
-                                               .not().requiresRotation()
-                                               .named(id.endpointId(), Endpoint.Scope.global);
+            List<RoutingPolicy> policies = routingTable.get(id);
+            Map<ClusterSpec.Id, List<RoutingPolicy>> policyByCluster = policies.stream().collect(Collectors.groupingBy(p -> p.id().cluster()));
+            Set<Endpoint> endpoints = new LinkedHashSet<>();
+            policyByCluster.forEach((cluster, clusterPolicies) -> {
+                List<DeploymentId> deployments = clusterPolicies.stream().map(p -> p.id().deployment()).toList();
+                List<GeneratedEndpoint> generated = clusterPolicies.stream().flatMap(p -> p.generatedEndpoints().stream()).distinct().toList();
+                endpoints.addAll(controller.routing().declaredEndpointsOf(id, cluster, deployments, new GeneratedEndpoints(Map.of(cluster, generated)))
+                                           .not().requiresRotation()
+                                           .named(id.endpointId(), Endpoint.Scope.global).asList());
+            });
             // This removes all ALIAS records having this DNS name. There is no attempt to delete only the entry for the
             // affected zone. Instead, the correct set of records is (re)created by updateGlobalDnsOf
             for (var endpoint : endpoints) {
@@ -541,10 +545,18 @@ public class RoutingPolicies {
         removalCandidates.removeAll(activeRoutingIds);
         for (var id : removalCandidates) {
             TenantAndApplicationId application = TenantAndApplicationId.from(id.instance());
-            EndpointList endpoints = controller.routing()
-                                               .readDeclaredEndpointsOf(application)
-                                               .named(id.endpointId(), Endpoint.Scope.application);
             List<RoutingPolicy> policies = routingTable.get(id);
+            Map<ClusterSpec.Id, List<RoutingPolicy>> policyByCluster = policies.stream().collect(Collectors.groupingBy(p -> p.id().cluster()));
+            Set<Endpoint> endpoints = new LinkedHashSet<>();
+            policyByCluster.forEach((cluster, clusterPolicies) -> {
+                // Weights are not available in this context, but they're not used for anything when removing records
+                Map<DeploymentId, Integer> deployments = clusterPolicies.stream()
+                                                                 .map(p -> p.id().deployment())
+                                                                 .collect(Collectors.toMap(Function.identity(), (ignored) -> 1));
+                List<GeneratedEndpoint> generated = clusterPolicies.stream().flatMap(p -> p.generatedEndpoints().stream()).distinct().toList();
+                endpoints.addAll(controller.routing().declaredEndpointsOf(application, id.endpointId(), cluster,
+                                                                          deployments, new GeneratedEndpoints(Map.of(cluster, generated))).asList());
+            });
             for (var policy : policies) {
                 if (!policy.appliesTo(allocation.deployment)) continue;
                 for (Endpoint endpoint : endpoints) {

@@ -158,7 +158,7 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context2.instanceId(), EndpointId.of("r0"), 0, zone1);
         assertEquals(1, tester.policiesOf(context2.instanceId()).size());
 
-        // All endpoints for app1 are removed
+        // All global endpoints for app1 are removed
         ApplicationPackage applicationPackage5 = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
@@ -174,6 +174,17 @@ public class RoutingPoliciesTest {
         assertTrue(policies.asList().stream().allMatch(policy -> policy.instanceEndpoints().isEmpty()),
                 "Rotation membership is removed from all policies");
         assertEquals(1, tester.aliasDataOf(endpoint4).size(), "Rotations for " + context2.application() + " are not removed");
+        assertEquals(List.of("c0.app1.tenant1.aws-us-east-1a.vespa.oath.cloud",
+                             "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
+                             "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
+                             "c0.app2.tenant1.us-west-1-w.vespa.oath.cloud",
+                             "c0.app2.tenant1.us-west-1.vespa.oath.cloud",
+                             "c1.app1.tenant1.aws-us-east-1a.vespa.oath.cloud",
+                             "c1.app1.tenant1.us-central-1.vespa.oath.cloud",
+                             "c1.app1.tenant1.us-west-1.vespa.oath.cloud",
+                             "r0.app2.tenant1.global.vespa.oath.cloud"),
+                     tester.recordNames(),
+                     "Endpoints in DNS matches current config");
     }
 
     @Test
@@ -898,9 +909,24 @@ public class RoutingPoliciesTest {
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
                              Map.of(betaZone5, 1));
         assertTrue(tester.controllerTester().controller().routing()
-                         .readDeclaredEndpointsOf(application)
+                         .readDeclaredEndpointsOf(mainContext.application())
                          .named(EndpointId.of("a1"), Endpoint.Scope.application).isEmpty(),
                 "Endpoint removed");
+        assertEquals(List.of("a0.app1.tenant1.a.vespa.oath.cloud",
+                             "beta.app1.tenant1.north.vespa.oath.cloud",
+                             "beta.app1.tenant1.south.vespa.oath.cloud",
+                             "c0.beta.app1.tenant1.north.vespa.oath.cloud",
+                             "c0.beta.app1.tenant1.south.vespa.oath.cloud",
+                             "c0.main.app1.tenant1.north.vespa.oath.cloud",
+                             "c0.main.app1.tenant1.south.vespa.oath.cloud",
+                             "c1.beta.app1.tenant1.north.vespa.oath.cloud",
+                             "c1.beta.app1.tenant1.south.vespa.oath.cloud",
+                             "c1.main.app1.tenant1.north.vespa.oath.cloud",
+                             "c1.main.app1.tenant1.south.vespa.oath.cloud",
+                             "main.app1.tenant1.north.vespa.oath.cloud",
+                             "main.app1.tenant1.south.vespa.oath.cloud"),
+                     tester.recordNames(),
+                     "Endpoints in DNS matches current config");
 
         // Ensure test deployment only updates endpoint of which it is a member
         betaContext.submit(applicationPackage)
@@ -1242,7 +1268,7 @@ public class RoutingPoliciesTest {
                                    int loadBalancerId, Map<DeploymentId, Integer> deploymentWeights, boolean generated) {
             Map<String, List<DeploymentId>> deploymentsByDnsName = new HashMap<>();
             for (var deployment : deploymentWeights.keySet()) {
-                EndpointList applicationEndpoints = tester.controller().routing().readDeclaredEndpointsOf(application)
+                EndpointList applicationEndpoints = tester.controller().routing().readDeclaredEndpointsOf(tester.controller().applications().requireApplication(application))
                                                           .named(endpointId, Endpoint.Scope.application)
                                                           .targets(deployment)
                                                           .cluster(cluster);

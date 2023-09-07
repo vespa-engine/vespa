@@ -162,14 +162,7 @@ public class RoutingController {
         return prepared;
     }
 
-    /** Read and return zone- and region-scoped endpoints for given deployment */
-    public EndpointList readEndpointsOf(DeploymentId deployment) {
-        Set<Endpoint> endpoints = new LinkedHashSet<>();
-        for (var policy : routingPolicies.read(deployment)) {
-            endpoints.addAll(endpointsOf(deployment, policy.id().cluster(), policy.generatedEndpoints()).asList());
-        }
-        return EndpointList.copyOf(endpoints);
-    }
+    // -------------- Implicit endpoints (scopes 'zone' and 'weighted') --------------
 
     /** Returns the zone- and region-scoped endpoints of given deployment */
     public EndpointList endpointsOf(DeploymentId deployment, ClusterSpec.Id cluster, List<GeneratedEndpoint> generatedEndpoints) {
@@ -211,53 +204,31 @@ public class RoutingController {
         return EndpointList.copyOf(endpoints);
     }
 
-    /** Read application and return declared endpoints for given instance */
-    public EndpointList readDeclaredEndpointsOf(ApplicationId instance) {
-        if (SystemApplication.matching(instance).isPresent()) return EndpointList.EMPTY;
-        return readDeclaredEndpointsOf(TenantAndApplicationId.from(instance)).instance(instance.instance());
-    }
-
-    /** Read application and return declared endpoints for given application */
-    public EndpointList readDeclaredEndpointsOf(TenantAndApplicationId application) {
-        return readDeclaredEndpointsOf(controller.applications().requireApplication(application));
-    }
-
-    public EndpointList readDeclaredEndpointsOf(Application application) {
-        return declaredEndpointsOf(application.id(), application.deploymentSpec(), readMultiDeploymentGeneratedEndpoints(application.id()));
-    }
-
-    /** Returns endpoints declared in {@link DeploymentSpec} for given application */
-    private EndpointList declaredEndpointsOf(TenantAndApplicationId application, DeploymentSpec deploymentSpec, GeneratedEndpoints generatedEndpoints) {
+    /** Read routing policies and return zone- and region-scoped endpoints for given deployment */
+    public EndpointList readEndpointsOf(DeploymentId deployment) {
         Set<Endpoint> endpoints = new LinkedHashSet<>();
-        // Global endpoints
-        for (var spec : deploymentSpec.instances()) {
-            ApplicationId instance = application.instance(spec.name());
-            spec.endpoints().forEach(declaredEndpoint -> {
-                RoutingId routingId = RoutingId.of(instance, EndpointId.of(declaredEndpoint.endpointId()));
-                List<DeploymentId> deployments = declaredEndpoint.regions().stream()
-                                                                 .map(region -> new DeploymentId(instance,
-                                                                                                 ZoneId.from(Environment.prod, region)))
-                                                                 .toList();
-                ClusterSpec.Id cluster = ClusterSpec.Id.from(declaredEndpoint.containerId());
-                endpoints.addAll(computeGlobalEndpoints(routingId, cluster, deployments, generatedEndpoints));
-            });
+        for (var policy : routingPolicies.read(deployment)) {
+            endpoints.addAll(endpointsOf(deployment, policy.id().cluster(), policy.generatedEndpoints()).asList());
         }
-        // Application endpoints
-        for (var declaredEndpoint : deploymentSpec.endpoints()) {
-            Map<DeploymentId, Integer> deployments = declaredEndpoint.targets().stream()
-                                                                     .collect(toMap(t -> new DeploymentId(application.instance(t.instance()),
-                                                                                                          ZoneId.from(Environment.prod, t.region())),
-                                                                                    t -> t.weight()));
+        return EndpointList.copyOf(endpoints);
+    }
 
-            ZoneId zone = deployments.keySet().iterator().next().zoneId(); // Where multiple zones are possible, they all have the same routing method.
-            RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
-            ClusterSpec.Id cluster = ClusterSpec.Id.from(declaredEndpoint.containerId());
-            Endpoint.EndpointBuilder builder = Endpoint.of(application)
-                                                       .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
-                                                                          cluster,
-                                                                          deployments)
-                                                       .routingMethod(routingMethod)
-                                                       .on(Port.fromRoutingMethod(routingMethod));
+    // -------------- Declared endpoints (scopes 'global' and 'application') --------------
+
+    /** Returns global endpoints pointing to given deployments */
+    public EndpointList declaredEndpointsOf(RoutingId routingId, ClusterSpec.Id cluster, List<DeploymentId> deployments, GeneratedEndpoints generatedEndpoints) {
+        var endpoints = new ArrayList<Endpoint>();
+        var directMethods = 0;
+        var availableRoutingMethods = routingMethodsOfAll(deployments);
+        for (var method : availableRoutingMethods) {
+            if (method.isDirect() && ++directMethods > 1) {
+                throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
+                                                   "direct methods");
+            }
+            Endpoint.EndpointBuilder builder = Endpoint.of(routingId.instance())
+                                                       .target(routingId.endpointId(), cluster, deployments)
+                                                       .on(Port.fromRoutingMethod(method))
+                                                       .routingMethod(method);
             endpoints.add(builder.in(controller.system()));
             for (var ge : generatedEndpoints.cluster(cluster)) {
                 endpoints.add(builder.generatedFrom(ge).in(controller.system()));
@@ -265,6 +236,67 @@ public class RoutingController {
         }
         return EndpointList.copyOf(endpoints);
     }
+
+    /** Returns application endpoints pointing to given deployments */
+    public EndpointList declaredEndpointsOf(TenantAndApplicationId application, EndpointId endpoint, ClusterSpec.Id cluster,
+                                            Map<DeploymentId, Integer> deployments, GeneratedEndpoints generatedEndpoints) {
+        ZoneId zone = deployments.keySet().iterator().next().zoneId(); // Where multiple zones are possible, they all have the same routing method.
+        RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
+        Endpoint.EndpointBuilder builder = Endpoint.of(application)
+                                                   .targetApplication(endpoint,
+                                                                      cluster,
+                                                                      deployments)
+                                                   .routingMethod(routingMethod)
+                                                   .on(Port.fromRoutingMethod(routingMethod));
+        List<Endpoint> endpoints = new ArrayList<>();
+        endpoints.add(builder.in(controller.system()));
+        for (var ge : generatedEndpoints.cluster(cluster)) {
+            endpoints.add(builder.generatedFrom(ge).in(controller.system()));
+        }
+        return EndpointList.copyOf(endpoints);
+    }
+
+    /** Read application and return endpoints for all instances in application */
+    public EndpointList readDeclaredEndpointsOf(Application application) {
+        return declaredEndpointsOf(application.id(), application.deploymentSpec(), readMultiDeploymentGeneratedEndpoints(application.id()));
+    }
+
+    /** Read application and return declared endpoints for given instance */
+    public EndpointList readDeclaredEndpointsOf(ApplicationId instance) {
+        if (SystemApplication.matching(instance).isPresent()) return EndpointList.EMPTY;
+        Application application = controller.applications().requireApplication(TenantAndApplicationId.from(instance));
+        return readDeclaredEndpointsOf(application).instance(instance.instance());
+    }
+
+    private EndpointList declaredEndpointsOf(TenantAndApplicationId application, DeploymentSpec deploymentSpec, GeneratedEndpoints generatedEndpoints) {
+        Set<Endpoint> endpoints = new LinkedHashSet<>();
+        // Global endpoints
+        for (var spec : deploymentSpec.instances()) {
+            ApplicationId instance = application.instance(spec.name());
+            for (var declaredEndpoint : spec.endpoints()) {
+                RoutingId routingId = RoutingId.of(instance, EndpointId.of(declaredEndpoint.endpointId()));
+                List<DeploymentId> deployments = declaredEndpoint.regions().stream()
+                                                                 .map(region -> new DeploymentId(instance,
+                                                                                                 ZoneId.from(Environment.prod, region)))
+                                                                 .toList();
+                ClusterSpec.Id cluster = ClusterSpec.Id.from(declaredEndpoint.containerId());
+                endpoints.addAll(declaredEndpointsOf(routingId, cluster, deployments, generatedEndpoints).asList());
+            }
+        }
+        // Application endpoints
+        for (var declaredEndpoint : deploymentSpec.endpoints()) {
+            Map<DeploymentId, Integer> deployments = declaredEndpoint.targets().stream()
+                                                                     .collect(toMap(t -> new DeploymentId(application.instance(t.instance()),
+                                                                                                          ZoneId.from(Environment.prod, t.region())),
+                                                                                    t -> t.weight()));
+            ClusterSpec.Id cluster = ClusterSpec.Id.from(declaredEndpoint.containerId());
+            endpoints.addAll(declaredEndpointsOf(application, EndpointId.of(declaredEndpoint.endpointId()), cluster,
+                                                 deployments, generatedEndpoints).asList());
+        }
+        return EndpointList.copyOf(endpoints);
+    }
+
+    // -------------- Other gunk related to endpoints and routing --------------
 
     /** Read endpoints for use in deployment steps, for given deployments, grouped by their zone */
     public Map<ZoneId, List<Endpoint>> readStepRunnerEndpointsOf(Collection<DeploymentId> deployments) {
@@ -342,8 +374,8 @@ public class RoutingController {
             var deployments = rotation.regions().stream()
                                       .map(region -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, region)))
                                       .toList();
-            endpointsToRemove.addAll(computeGlobalEndpoints(RoutingId.of(instance.id(), rotation.endpointId()),
-                                                            rotation.clusterId(), deployments, readMultiDeploymentGeneratedEndpoints(application.id())));
+            endpointsToRemove.addAll(declaredEndpointsOf(RoutingId.of(instance.id(), rotation.endpointId()),
+                                                         rotation.clusterId(), deployments, readMultiDeploymentGeneratedEndpoints(application.id())).asList());
         }
         endpointsToRemove.forEach(endpoint -> controller.nameServiceForwarder()
                                                         .removeRecords(Record.Type.CNAME,
@@ -448,29 +480,6 @@ public class RoutingController {
         return Collections.unmodifiableList(routingMethods);
     }
 
-    /** Compute global endpoints for given routing ID, application and deployments */
-    private List<Endpoint> computeGlobalEndpoints(RoutingId routingId, ClusterSpec.Id cluster, List<DeploymentId> deployments, GeneratedEndpoints generatedEndpoints) {
-        var endpoints = new ArrayList<Endpoint>();
-        var directMethods = 0;
-        var availableRoutingMethods = routingMethodsOfAll(deployments);
-        for (var method : availableRoutingMethods) {
-            if (method.isDirect() && ++directMethods > 1) {
-                throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
-                                                   "direct methods");
-            }
-            Endpoint.EndpointBuilder builder = Endpoint.of(routingId.instance())
-                                                       .target(routingId.endpointId(), cluster, deployments)
-                                                       .on(Port.fromRoutingMethod(method))
-                                                       .routingMethod(method);
-            endpoints.add(builder.in(controller.system()));
-            for (var ge : generatedEndpoints.cluster(cluster)) {
-                endpoints.add(builder.generatedFrom(ge).in(controller.system()));
-            }
-        }
-        return endpoints;
-    }
-
-
     private boolean tokenEndpointEnabled(ApplicationId instance) {
         return createTokenEndpoint.with(FetchVector.Dimension.APPLICATION_ID, instance.serializedForm()).value();
     }
@@ -486,6 +495,5 @@ public class RoutingController {
         String base32 = BaseEncoding.base32().omitPadding().lowerCase().encode(sha1.asBytes());
         return 'v' + base32 + Endpoint.internalDnsSuffix(system);
     }
-
 
 }
