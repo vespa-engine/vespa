@@ -159,6 +159,7 @@ public class CliClient {
         cliArgs.headers().forEach(builder::addRequestHeader);
         builder.setDryrun(cliArgs.dryrunEnabled());
         builder.setSpeedTest(cliArgs.speedTest());
+        builder.setDnsLoadBalancing(cliArgs.dnsLoadBalancing());
         builder.setCompression(cliArgs.compression());
         cliArgs.doomSeconds().ifPresent(doom -> builder.setCircuitBreaker(new GracePeriodCircuitBreaker(Duration.ofSeconds(10),
                                                                                                         Duration.ofSeconds(doom))));

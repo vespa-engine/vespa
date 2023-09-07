@@ -62,6 +62,7 @@ class CliArguments {
     private static final String STDIN_OPTION = "stdin";
     private static final String DOOM_OPTION = "max-failure-seconds";
     private static final String PROXY_OPTION = "proxy";
+    private static final String DNS_LOAD_BALANCING = "dns-load-balancing";
     private static final String COMPRESSION = "compression";
 
     private final CommandLine arguments;
@@ -185,6 +186,8 @@ class CliArguments {
     boolean dryrunEnabled() { return has(DRYRUN_OPTION); }
 
     boolean speedTest() { return has(SPEED_TEST_OPTION); }
+
+    boolean dnsLoadBalancing() { return has(DNS_LOAD_BALANCING); }
 
     Compression compression() throws CliArgumentsException {
         try {
@@ -368,6 +371,10 @@ class CliArguments {
                         .desc("URI to proxy endpoint")
                         .hasArg()
                         .type(URL.class)
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(DNS_LOAD_BALANCING)
+                        .desc("Turns on DNS load balancing to the feed cluster")
                         .build())
                 .addOption(Option.builder()
                         .longOpt(COMPRESSION)

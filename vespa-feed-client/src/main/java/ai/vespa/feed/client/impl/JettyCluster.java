@@ -4,6 +4,14 @@ package ai.vespa.feed.client.impl;
 
 import ai.vespa.feed.client.FeedClientBuilder.Compression;
 import ai.vespa.feed.client.HttpResponse;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.MultiplexConnectionPool;
@@ -62,23 +70,30 @@ import static org.eclipse.jetty.http.MimeTypes.Type.APPLICATION_JSON;
  */
 class JettyCluster implements Cluster {
 
+    private final static Logger log = Logger.getLogger(JettyCluster.class.getName());
+
     // Socket timeout must be longer than the longest feasible response timeout
     private static final Duration IDLE_TIMEOUT = Duration.ofMinutes(15);
 
     private final HttpClient client;
-    private final List<Endpoint> endpoints;
+    private final AtomicReference<List<Endpoint>> endpoints;
     private final Compression compression;
 
     JettyCluster(FeedClientBuilderImpl b) throws IOException {
         this.client = createHttpClient(b);
-        this.endpoints = b.endpoints.stream().map(Endpoint::new).collect(Collectors.toList());
+        this.endpoints = new AtomicReference<>(b.endpoints.stream().map(Endpoint::new).collect(Collectors.toList()));
         this.compression = b.compression;
+
+        if (b.dnsLoadBalancing) {
+            log.info("DNS load balancing is enabled");
+            startEndpointResolver(this.client, b.endpoints);
+        }
     }
 
     @Override
     public void dispatch(HttpRequest req, CompletableFuture<HttpResponse> vessel) {
         client.getExecutor().execute(() -> {
-            Endpoint endpoint = findLeastBusyEndpoint(endpoints);
+            Endpoint endpoint = findLeastBusyEndpoint(endpoints.get());
             try {
                 endpoint.inflight.incrementAndGet();
                 long reqTimeoutMillis = req.timeout() != null
@@ -124,6 +139,36 @@ class JettyCluster implements Cluster {
         try {
             client.stop();
         } catch (Exception e) { throw new RuntimeException(e); }
+    }
+
+    private void startEndpointResolver(HttpClient client, List<URI> endpointUris) {
+        EndpointResolver endpointResolver = new EndpointResolver(client.getScheduler(), client.getSocketAddressResolver());
+        // make a blocking resolve to initialize the endpoints on first run
+        endpointResolver.resolveSync(endpointUris, this::updateEndpoints);
+        endpointResolver.resolveRepeatedly(endpointUris, this::updateEndpoints, 30, TimeUnit.SECONDS);
+    }
+
+    private void updateEndpoints(Set<URI> endpointUris) {
+        if (endpointUris.isEmpty()) {
+            log.warning("No endpoints were resolved, reusing old ones");
+            return;
+        }
+
+        Map<String, Endpoint> currentEndpointMap = endpoints.get().stream()
+                .collect(Collectors.toMap(e -> e.uri, Function.identity()));
+
+        List<Endpoint> newEndpoints = endpointUris.stream()
+                .map(Endpoint::new)
+                // keep old endpoints so the inflight data is retained
+                .map(endpoint -> currentEndpointMap.getOrDefault(endpoint.uri, endpoint))
+                .collect(Collectors.toList());
+
+        String endpointString = newEndpoints.stream()
+                .map(endpoint -> endpoint.uri)
+                .collect(Collectors.joining(", "));
+
+        log.fine("Resolved feed endpoints: " + endpointString);
+        endpoints.set(newEndpoints);
     }
 
     private static HttpClient createHttpClient(FeedClientBuilderImpl b) throws IOException {

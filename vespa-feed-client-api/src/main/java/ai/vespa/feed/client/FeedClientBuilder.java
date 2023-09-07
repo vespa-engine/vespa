@@ -145,10 +145,10 @@ public interface FeedClientBuilder {
     FeedClientBuilder setProxy(URI uri);
 
     /**
-     * Turns on DNS load balancing for the cluster.
+     * Turns on DNS load balancing to the feed cluster.
      *
      * Use this option if the given endpoint resolves to a list of feed container endpoints.
-     * This list will be periodically refreshed (resolved) to get the latest container endpoints.
+     * This list will be periodically refreshed (resolved) to get the latest endpoints.
      */
     FeedClientBuilder setDnsLoadBalancing(boolean enabled);
 

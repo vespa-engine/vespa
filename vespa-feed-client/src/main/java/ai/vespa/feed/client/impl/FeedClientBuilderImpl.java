@@ -58,6 +58,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     boolean benchmark = true;
     boolean dryrun = false;
     boolean speedTest = false;
+    boolean dnsLoadBalancing = false;
     Compression compression = auto;
     URI proxy;
 
@@ -239,6 +240,12 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     @Override
     public FeedClientBuilderImpl setProxy(URI uri) {
         this.proxy = uri;
+        return this;
+    }
+
+    @Override
+    public FeedClientBuilderImpl setDnsLoadBalancing(boolean enabled) {
+        this.dnsLoadBalancing = enabled;
         return this;
     }
 
