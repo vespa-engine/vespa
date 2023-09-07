@@ -248,23 +248,23 @@ public class DefLineParsingTest {
     }
 
     @Test
-    void testParseOptionalPathWithDefault() {
-        DefLine l = new DefLine("pathWithDef path optional");
+    void testParsePath() {
+        DefLine l = new DefLine("somePath path");
 
-        assertEquals("pathWithDef", l.getName());
-        assertNull(l.getDefault());
-        assertTrue(l.isOptional());
-        assertEquals("optionalPath", l.getType().getName());
-    }
-
-    @Test
-    void testParsPathWithDefault() {
-        DefLine l = new DefLine("pathWithDef path");
-
-        assertEquals("pathWithDef", l.getName());
+        assertEquals("somePath", l.getName());
         assertNull(l.getDefault());
         assertFalse(l.isOptional());
         assertEquals("path", l.getType().getName());
+    }
+
+    @Test
+    void testParseOptionalPath() {
+        DefLine l = new DefLine("anOptionalPath path optional");
+
+        assertEquals("anOptionalPath", l.getName());
+        assertNull(l.getDefault());
+        assertTrue(l.isOptional());
+        assertEquals("optionalPath", l.getType().getName());
     }
 
 }
