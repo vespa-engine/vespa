@@ -2,6 +2,9 @@
 package com.yahoo.vespa.curator.stats;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static java.lang.Math.round;
 
@@ -22,18 +25,20 @@ public class LatencyMetrics {
     private final Duration maxActiveLatency;
     private final double startHz;
     private final double endHz;
+    private final Map<String, Double> loadByThread;
     private final double load;
     private final int maxLoad;
     private final int currentLoad;
 
     public LatencyMetrics(Duration latency, Duration maxLatency, Duration maxActiveLatency,
-                          double startHz, double endHz,
+                          double startHz, double endHz, Map<String, Double> loadByThread,
                           double load, int maxLoad, int currentLoad) {
         this.latency = latency;
         this.maxLatency = maxLatency;
         this.maxActiveLatency = maxActiveLatency;
         this.startHz = startHz;
         this.endHz = endHz;
+        this.loadByThread = new TreeMap<>(loadByThread);
         this.load = load;
         this.maxLoad = maxLoad;
         this.currentLoad = currentLoad;
@@ -53,6 +58,13 @@ public class LatencyMetrics {
 
     /** Returns the average number of intervals that ended in the period per second. */
     public double endHz() { return roundTo3DecimalPlaces(endHz); }
+
+    /** Returns the average load of the implied time periond, per thread, with 3 decimal places precision. */
+    public Map<String, Double> loadByThread() {
+        Map<String, Double> result = new TreeMap<>();
+        loadByThread.forEach((name, load) -> result.put(name, roundTo3DecimalPlaces(load)));
+        return Collections.unmodifiableMap(result);
+    }
 
     /** The average load of the implied time period, with 3 decimal places precision. */
     public double load() { return roundTo3DecimalPlaces(load); }

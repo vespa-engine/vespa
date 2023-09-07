@@ -115,6 +115,13 @@ public class LocksResponse extends HttpResponse {
         setNonZeroDouble(cursor, name + "MaxActiveLatency", latencyMetrics.maxActiveLatencySeconds());
         setNonZeroDouble(cursor, name + "Hz", latencyMetrics.endHz());
         setNonZeroDouble(cursor, name + "Load", latencyMetrics.load());
+        if (latencyMetrics.loadByThread().isEmpty()) return;
+        Cursor loadByThreadCursor = cursor.setArray(name + "LoadByThread");
+        latencyMetrics.loadByThread().forEach((threadName, load) -> {
+            Cursor loadForThreadCursor = loadByThreadCursor.addObject();
+            loadForThreadCursor.setString("name", threadName);
+            loadForThreadCursor.setDouble("load", load);
+        });
     }
 
     private static void setNonZeroDouble(Cursor cursor, String fieldName, double value) {
