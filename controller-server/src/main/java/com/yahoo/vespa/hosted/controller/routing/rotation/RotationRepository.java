@@ -3,9 +3,7 @@ package com.yahoo.vespa.hosted.controller.routing.rotation;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Endpoint;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
@@ -22,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.collectingAndThen;
@@ -36,8 +33,6 @@ import static java.util.stream.Collectors.collectingAndThen;
  * @author mpolden
  */
 public class RotationRepository {
-
-    private static final Logger log = Logger.getLogger(RotationRepository.class.getName());
 
     private final Map<RotationId, Rotation> allRotations;
     private final ApplicationController applications;
@@ -92,7 +87,7 @@ public class RotationRepository {
             var endpointId = EndpointId.of(endpoint.endpointId());
             var assignedRotation = assignedRotationsByEndpointId.get(endpointId);
             RotationId rotationId;
-            if (assignedRotation == null) { // No rotation is assigned to this endpoint
+            if (assignedRotation == null) { // No rotation is assigned to this endpoint, assign from available
                 rotationId = requireNonEmpty(availableRotations).remove(0).id();
             } else { // Rotation already assigned to this endpoint, reuse it
                 rotationId = assignedRotation.rotationId();
@@ -115,14 +110,6 @@ public class RotationRepository {
         Map<RotationId, Rotation> unassignedRotations = new LinkedHashMap<>(this.allRotations);
         assignedRotations.forEach(unassignedRotations::remove);
         return Collections.unmodifiableMap(unassignedRotations);
-    }
-
-    private Rotation findAvailableRotation(ApplicationId id, RotationLock lock) {
-        Map<RotationId, Rotation> availableRotations = availableRotations(lock);
-        // Return first available rotation
-        RotationId rotation = requireNonEmpty(availableRotations.keySet()).iterator().next();
-        log.info(Text.format("Offering %s to application %s", rotation, id));
-        return allRotations.get(rotation);
     }
 
     /** Returns a immutable map of rotation ID to rotation sorted by rotation ID */
