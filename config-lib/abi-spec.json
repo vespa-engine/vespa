@@ -273,6 +273,7 @@
       "public static java.util.Map asNodeMap(java.util.Map, com.yahoo.config.LeafNode)",
       "public static java.util.Map asFileNodeMap(java.util.Map)",
       "public static java.util.Map asPathNodeMap(java.util.Map)",
+      "public static java.util.Map asOptionalPathNodeMap(java.util.Map)",
       "public static java.util.Map asUrlNodeMap(java.util.Map)",
       "public static java.util.Map asModelNodeMap(java.util.Map)"
     ],
@@ -289,6 +290,7 @@
       "public java.util.List asList()",
       "public static com.yahoo.config.LeafNodeVector createFileNodeVector(java.util.Collection)",
       "public static com.yahoo.config.LeafNodeVector createPathNodeVector(java.util.Collection)",
+      "public static com.yahoo.config.LeafNodeVector createOptionalPathNodeVector(java.util.Collection)",
       "public static com.yahoo.config.LeafNodeVector createUrlNodeVector(java.util.Collection)",
       "public static com.yahoo.config.LeafNodeVector createModelNodeVector(java.util.Collection)"
     ],
@@ -419,6 +421,27 @@
     "fields" : [
       "protected final java.util.ArrayList vector"
     ]
+  },
+  "com.yahoo.config.OptionalPathNode" : {
+    "superClass" : "com.yahoo.config.LeafNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(com.yahoo.config.FileReference)",
+      "public void <init>(java.util.Optional)",
+      "public java.util.Optional value()",
+      "public java.lang.String getValue()",
+      "public java.lang.String toString()",
+      "protected boolean doSetValue(java.lang.String)",
+      "public java.util.Optional getFileReference()",
+      "public static java.util.List toFileReferences(java.util.List)",
+      "public static java.util.Map toFileReferenceMap(java.util.Map)",
+      "public bridge synthetic java.lang.Object value()"
+    ],
+    "fields" : [ ]
   },
   "com.yahoo.config.PathNode" : {
     "superClass" : "com.yahoo.config.LeafNode",

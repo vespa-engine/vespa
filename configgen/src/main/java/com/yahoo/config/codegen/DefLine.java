@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 public class DefLine {
 
     private final static Pattern defaultPattern =     Pattern.compile("^\\s*default\\s*=\\s*(\\S+)");
+    private final static Pattern optionalPattern =    Pattern.compile("^\\s*optional\\s*");
     private final static Pattern rangePattern =       Pattern.compile("^\\s*range\\s*=\\s*([\\(\\[].*?[\\)\\]])");
     private final static Pattern restartPattern =     Pattern.compile("^\\s*restart\\s*");
     private final static Pattern wordPattern =        Pattern.compile("\\S+");
@@ -21,6 +22,7 @@ public class DefLine {
     private final Type type = new Type();
 
     private DefaultValue defaultValue = null;
+    private boolean optional = false;
 
     private String range = null;
     private boolean restart = false;
@@ -74,6 +76,9 @@ public class DefLine {
     }
 
     public Type getType() {
+        if (optional && type.name.equals("path"))
+            type.name = "optionalPath";
+
         return type;
     }
 
@@ -88,6 +93,8 @@ public class DefLine {
     public String[] getEnumArray() {
         return enumArray;
     }
+
+    public boolean isOptional() { return optional; }
 
     /**
      * Special function that searches through s and returns the index
@@ -114,6 +121,7 @@ public class DefLine {
     private int parseOptions(CharSequence string) {
         Matcher defaultNullMatcher = defaultNullPattern.matcher(string);
         Matcher defaultMatcher = defaultPattern.matcher(string);
+        Matcher optionalMatcher = optionalPattern.matcher(string);
         Matcher rangeMatcher = rangePattern.matcher(string);
         Matcher restartMatcher = restartPattern.matcher(string);
 
@@ -133,6 +141,12 @@ public class DefLine {
                 defaultValue = new DefaultValue(deflt, type);
             }
             return defaultMatcher.end();
+        } else if (optionalMatcher.find()) {
+            if ( ! type.name.equals("path"))
+                throw new IllegalArgumentException("optional can only be used for 'path'");
+            optional = true;
+            type.name = "optionalPath";
+            return optionalMatcher.end();
         } else if (rangeMatcher.find()) {
             range = rangeMatcher.group(1);
             return rangeMatcher.end();

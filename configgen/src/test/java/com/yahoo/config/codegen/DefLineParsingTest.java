@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -244,6 +245,26 @@ public class DefLineParsingTest {
         DefLine r1 = new DefLine("i int restart");
         assertFalse(r0.getRestart());
         assertTrue(r1.getRestart());
+    }
+
+    @Test
+    void testParseOptionalPathWithDefault() {
+        DefLine l = new DefLine("pathWithDef path optional");
+
+        assertEquals("pathWithDef", l.getName());
+        assertNull(l.getDefault());
+        assertTrue(l.isOptional());
+        assertEquals("optionalPath", l.getType().getName());
+    }
+
+    @Test
+    void testParsPathWithDefault() {
+        DefLine l = new DefLine("pathWithDef path");
+
+        assertEquals("pathWithDef", l.getName());
+        assertNull(l.getDefault());
+        assertFalse(l.isOptional());
+        assertEquals("path", l.getType().getName());
     }
 
 }

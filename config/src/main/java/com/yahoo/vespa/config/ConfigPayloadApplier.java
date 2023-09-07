@@ -21,6 +21,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -213,7 +214,10 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         Inspector value = (Inspector)rawValue;
         if (isPathField(builder, methodName))
             return resolvePath(value.asString());
-        else if (isUrlField(builder, methodName))
+        if (isOptionalPathField(builder, methodName)) {
+            String v = value.asString();
+            return resolvePath(v.isEmpty() ? Optional.empty() : Optional.of(v));
+        } else if (isUrlField(builder, methodName))
             return value.asString().isEmpty() ? "" : resolveUrl(value.asString());
         else if (isModelField(builder, methodName))
             return value.asString().isEmpty() ? "" : resolveModel(value.asString());
@@ -232,6 +236,10 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     private FileReference resolvePath(String value) {
         Path path = pathAcquirer.getPath(new FileReference(value));
         return new FileReference(path.toString());
+    }
+
+    private Optional<FileReference> resolvePath(Optional<String> value) {
+        return value.isEmpty() ? Optional.empty() : Optional.of(resolvePath(value.get()));
     }
 
     private UrlReference resolveUrl(String url) {
@@ -317,6 +325,16 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
     private boolean isPathField(Object builder, String methodName) {
         // Paths are stored as FileReference in Builder.
         return isFieldType(pathFieldSet, builder, methodName, FileReference.class);
+    }
+
+    /**
+     * Checks if this field is of type 'path', in which
+     * case some special handling might be needed. Caches the result.
+     */
+    private final Set<String> optionalPathFieldSet = new HashSet<>();
+    private boolean isOptionalPathField(Object builder, String methodName) {
+        // Paths are stored as Optional<FileReference> in Builder.
+        return isFieldType(optionalPathFieldSet, builder, methodName, Optional.class);
     }
 
     private final Set<String> urlFieldSet = new HashSet<>();

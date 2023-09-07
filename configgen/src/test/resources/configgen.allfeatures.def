@@ -39,6 +39,7 @@ refVal reference
 refwithdef reference default=":parent:"
 fileVal file
 pathVal path
+optionalPathVal path optional
 urlVal url
 modelVal model
 

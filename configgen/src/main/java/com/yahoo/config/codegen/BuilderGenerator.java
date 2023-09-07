@@ -4,10 +4,12 @@ package com.yahoo.config.codegen;
 import com.yahoo.config.codegen.LeafCNode.FileLeaf;
 import com.yahoo.config.codegen.LeafCNode.ModelLeaf;
 import com.yahoo.config.codegen.LeafCNode.PathLeaf;
+import com.yahoo.config.codegen.LeafCNode.OptionalPathLeaf;
 import com.yahoo.config.codegen.LeafCNode.UrlLeaf;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.codegen.ConfigGenerator.boxedDataType;
@@ -89,7 +91,9 @@ public class BuilderGenerator {
     private static String getUninitializedScalars(InnerCNode node) {
         List<String> scalarsWithoutDefault = new ArrayList<>();
         for (CNode child : node.getChildren()) {
-            if (child instanceof LeafCNode && (!child.isArray && !child.isMap && ((LeafCNode) child).getDefaultValue() == null)) {
+            if (child instanceof LeafCNode
+                    && (!child.isArray && !child.isMap && ((LeafCNode) child).getDefaultValue() == null)
+                    && (! (child instanceof OptionalPathLeaf))) {
                 scalarsWithoutDefault.add("\"" + child.getName() + "\"");
             }
         }
@@ -109,7 +113,11 @@ public class BuilderGenerator {
         } else if (node instanceof InnerCNode) {
             return String.format("public %s %s = new %s();", builderType(node), node.getName(), builderType(node));
         } else if (node instanceof LeafCNode) {
-            return String.format("private %s %s = null;", boxedBuilderType((LeafCNode) node), node.getName());
+            String boxedBuilderType = boxedBuilderType((LeafCNode) node);
+            if (boxedBuilderType.startsWith("Optional<"))
+                return String.format("private %s %s = Optional.empty();", boxedBuilderType, node.getName());
+            else
+                return String.format("private %s %s = null;", boxedBuilderType, node.getName());
         } else {
             throw new IllegalStateException("Cannot produce builder field definition for node"); // Should not happen
         }
@@ -207,6 +215,11 @@ public class BuilderGenerator {
         private static String privateLeafNodeSetter(LeafCNode n) {
             if ("String".equals(builderType(n)) || "FileReference".equals(builderType(n))) {
                 return "";
+            } else if ("Optional<FileReference>".equals(builderType(n))) {
+                return "\n\n" + //
+                        "private Builder " + n.getName() + "(String " + INTERNAL_PREFIX + "value) {\n" + //
+                        "  return " + n.getName() + "(" + builderType(n) + ".of(" + INTERNAL_PREFIX + "value));\n" + //
+                        "}";
             } else {
                 return "\n\n" + //
                         "private Builder " + n.getName() + "(String " + INTERNAL_PREFIX + "value) {\n" + //
@@ -270,14 +283,24 @@ public class BuilderGenerator {
                     : "";
 
             String bType = builderType(n);
-            String stringSetter = "";
-            if ( ! "String".equals(bType) &&  ! "FileReference".equals(bType) && ! "ModelReference".equals(bType)) {
+            String privateSetter = "";
+            if ( ! Set.of("String", "FileReference", "ModelReference", "Optional<FileReference>").contains(bType)) {
                 String type = boxedDataType(n);
                 if ("UrlReference".equals(bType))
                     type = bType;
-                stringSetter = String.format("\nprivate Builder %s(String %svalue) {\n" +
-                        "  return %s(%s.valueOf(%svalue));\n" + //
-                        "}", name, INTERNAL_PREFIX, name, type, INTERNAL_PREFIX);
+                //
+                privateSetter = String.format("""
+
+                                                      private Builder %s(String %svalue) {
+                                                        return %s(%s.valueOf(%svalue));
+                                                      }""", name, INTERNAL_PREFIX, name, type, INTERNAL_PREFIX);
+            } else if ("Optional<FileReference>".equals(bType)) {
+                //
+                privateSetter = String.format("""
+
+                                                      private Builder %s(FileReference %svalue) {
+                                                        return %s(Optional.of(%svalue));
+                                                      }""", name, INTERNAL_PREFIX, name, INTERNAL_PREFIX);
             }
 
             String getNullGuard = bType.equals(boxedBuilderType(n)) ? String.format(
@@ -286,7 +309,7 @@ public class BuilderGenerator {
             return String.format("public Builder %s(%s %svalue) {%s\n" +
                     "  %s = %svalue;\n" + //
                     "%s", name, bType, INTERNAL_PREFIX, getNullGuard, name, INTERNAL_PREFIX, signalInitialized) +
-                    "  return this;" + "\n}\n" + stringSetter;
+                    "  return this;" + "\n}\n" + privateSetter;
         }
     }
 
@@ -306,6 +329,8 @@ public class BuilderGenerator {
         } else if (child instanceof PathLeaf && isMap) {
             return name + "(" + nodeClass(child) + ".toFileReferenceMap(config." + name + "));";
         } else if (child instanceof PathLeaf) {
+            return name + "(config." + name + ".getFileReference());";
+        } else if (child instanceof OptionalPathLeaf) {
             return name + "(config." + name + ".getFileReference());";
         } else if (child instanceof UrlLeaf && isArray) {
             return name + "(" + nodeClass(child) + ".toUrlReferences(config." + name + "));";
@@ -408,6 +433,8 @@ public class BuilderGenerator {
             return "String";
         } else if (node instanceof PathLeaf) {
             return "FileReference";
+        } else if (node instanceof OptionalPathLeaf) {
+            return "Optional<FileReference>";
         } else if (node instanceof UrlLeaf) {
             return "UrlReference";
         } else if (node instanceof ModelLeaf) {
@@ -424,6 +451,8 @@ public class BuilderGenerator {
             return "String";
         } else if (node instanceof PathLeaf) {
             return "FileReference";
+        } else if (node instanceof OptionalPathLeaf) {
+            return "Optional<FileReference>";
         } else if (node instanceof UrlLeaf) {
             return "UrlReference";
         } else if (node instanceof ModelLeaf) {
