@@ -50,7 +50,7 @@ public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCl
         ThreadPoolMetric threadPoolMetric = new ThreadPoolMetric(metric, name);
         WorkerCompletionTimingThreadPoolExecutor executor =
                 new WorkerCompletionTimingThreadPoolExecutor(minThreads, maxThreads,
-                        (int)config.keepAliveTime() * 1000, TimeUnit.MILLISECONDS,
+                        (long) config.keepAliveTime() * 1000, TimeUnit.MILLISECONDS,
                         createQueue(queueSize),
                         ThreadFactoryFactory.getThreadFactory(name),
                         threadPoolMetric);

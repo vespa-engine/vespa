@@ -3,7 +3,9 @@ package com.yahoo.vespa.curator.stats;
 
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.LongSupplier;
 import java.util.logging.Level;
@@ -36,6 +38,7 @@ public class LatencyStats {
     private long startOfPeriodNanos;
     private long endOfPeriodNanos;
     private double cumulativeLoadNanos;
+    private final Map<String, Long> cumulativeLoadNanosByThread = new HashMap<>();
     private Duration cumulativeLatency;
     private Duration maxLatency;
     private int numIntervalsStarted;
@@ -92,6 +95,8 @@ public class LatencyStats {
 
     private static class ActiveIntervalInfo {
         private final long startNanos;
+        // Poor man's attempt at collapsing thread names into their pool names, as that is the relevant (task) level here.
+        private final String threadNameTemplate = Thread.currentThread().getName().replaceAll("\\d+", "*");
         public ActiveIntervalInfo(long startOfIntervalNanos) { this.startNanos = startOfIntervalNanos; }
         public long startOfIntervalNanos() { return startNanos; }
     }
@@ -109,6 +114,11 @@ public class LatencyStats {
     private void pushEndOfPeriodToNow() {
         long currentNanos = nanoTimeSupplier.getAsLong();
         cumulativeLoadNanos += activeIntervals.size() * (currentNanos - endOfPeriodNanos);
+        for (ActiveIntervalInfo activeInterval : activeIntervals) {
+            cumulativeLoadNanosByThread.merge(activeInterval.threadNameTemplate,
+                                              currentNanos - endOfPeriodNanos,
+                                              Long::sum);
+        }
         endOfPeriodNanos = currentNanos;
     }
 
@@ -146,15 +156,22 @@ public class LatencyStats {
                 .orElse(maxLatency);
 
         final double startHz, endHz, load;
+        final Map<String, Double> loadByThread = new HashMap<>();
         long periodNanos = endOfPeriodNanos - startOfPeriodNanos;
         if (periodNanos > 0) {
             double periodSeconds = periodNanos / 1_000_000_000.0;
             startHz = numIntervalsStarted / periodSeconds;
             endHz = numIntervalsEnded / periodSeconds;
             load = cumulativeLoadNanos / periodNanos;
+            cumulativeLoadNanosByThread.forEach((name, threadLoad) -> {
+                if (threadLoad > 0) loadByThread.put(name, threadLoad / (double) periodNanos);
+            });
         } else {
             startHz = endHz = 0.0;
             load = activeIntervals.size();
+            for (ActiveIntervalInfo activeInterval : activeIntervals) {
+                loadByThread.put(activeInterval.threadNameTemplate, 1.0);
+            }
         }
 
         return new LatencyMetrics(latency,
@@ -162,6 +179,7 @@ public class LatencyStats {
                                   maxActiveLatency,
                                   startHz,
                                   endHz,
+                                  loadByThread,
                                   load,
                                   maxLoad,
                                   activeIntervals.size());

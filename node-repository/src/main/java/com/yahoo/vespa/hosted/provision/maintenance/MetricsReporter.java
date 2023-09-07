@@ -310,42 +310,47 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     }
 
     private void updateLockMetrics() {
+        Set<Pair<Metric.Context, String>> currentNonZeroMetrics = new HashSet<>();
         LockStats.getGlobal().getLockMetricsByPath()
                 .forEach((lockPath, lockMetrics) -> {
                     Metric.Context context = getContext(Map.of("lockPath", lockPath));
 
                     LatencyMetrics acquireLatencyMetrics = lockMetrics.getAndResetAcquireLatencyMetrics();
-                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ACQUIRE_MAX_ACTIVE_LATENCY.baseName(), acquireLatencyMetrics.maxActiveLatencySeconds(), context);
-                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ACQUIRE_HZ.baseName(), acquireLatencyMetrics.startHz(), context);
-                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ACQUIRE_LOAD.baseName(), acquireLatencyMetrics.load(), context);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ACQUIRE_MAX_ACTIVE_LATENCY.baseName(), acquireLatencyMetrics.maxActiveLatencySeconds(), context, currentNonZeroMetrics);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ACQUIRE_HZ.baseName(), acquireLatencyMetrics.startHz(), context, currentNonZeroMetrics);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ACQUIRE_LOAD.baseName(), acquireLatencyMetrics.load(), context, currentNonZeroMetrics);
 
                     LatencyMetrics lockedLatencyMetrics = lockMetrics.getAndResetLockedLatencyMetrics();
-                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LATENCY.baseName(), lockedLatencyMetrics.maxLatencySeconds(), context);
-                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LOAD.baseName(), lockedLatencyMetrics.load(), context);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LATENCY.baseName(), lockedLatencyMetrics.maxLatencySeconds(), context, currentNonZeroMetrics);
+                    lockedLatencyMetrics.loadByThread().forEach((name, load) -> {
+                        setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_LOCKED_LOAD.baseName(), load, getContext(Map.of("lockPath", lockPath, "thread", name)), currentNonZeroMetrics);
+                    });
 
-                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ACQUIRE_TIMED_OUT.baseName(), lockMetrics.getAndResetAcquireTimedOutCount(), context);
-                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_DEADLOCK.baseName(), lockMetrics.getAndResetDeadlockCount(), context);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ACQUIRE_TIMED_OUT.baseName(), lockMetrics.getAndResetAcquireTimedOutCount(), context, currentNonZeroMetrics);
+                    setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_DEADLOCK.baseName(), lockMetrics.getAndResetDeadlockCount(), context, currentNonZeroMetrics);
 
                     // bucket for various rare errors - to reduce #metrics
                     setNonZero(ConfigServerMetrics.LOCK_ATTEMPT_ERRORS.baseName(),
-                            lockMetrics.getAndResetAcquireFailedCount() +
-                                    lockMetrics.getAndResetReleaseFailedCount() +
-                                    lockMetrics.getAndResetNakedReleaseCount() +
-                                    lockMetrics.getAndResetAcquireWithoutReleaseCount() +
-                                    lockMetrics.getAndResetForeignReleaseCount(),
-                            context);
+                               lockMetrics.getAndResetAcquireFailedCount() +
+                               lockMetrics.getAndResetReleaseFailedCount() +
+                               lockMetrics.getAndResetNakedReleaseCount() +
+                               lockMetrics.getAndResetAcquireWithoutReleaseCount() +
+                               lockMetrics.getAndResetForeignReleaseCount(),
+                               context,
+                               currentNonZeroMetrics);
                 });
+        // Need to set the metric to 0 after it has been set to non-zero, to avoid carrying a non-zero 'last' from earlier periods.
+        nonZeroMetrics.removeIf(currentNonZeroMetrics::contains); // Retain those that turned zero for this period.
+        nonZeroMetrics.forEach(metricKey -> metric.set(metricKey.getSecond(), 0, metricKey.getFirst()));
+        nonZeroMetrics.clear();
+        nonZeroMetrics.addAll(currentNonZeroMetrics);
     }
 
-    private void setNonZero(String key, Number value, Metric.Context context) {
+    private void setNonZero(String key, Number value, Metric.Context context, Set<Pair<Metric.Context, String>> nonZeroMetrics) {
         var metricKey = new Pair<>(context, key);
         if (Double.compare(value.doubleValue(), 0.0) != 0) {
             metric.set(key, value, context);
             nonZeroMetrics.add(metricKey);
-        } else if (nonZeroMetrics.remove(metricKey)) {
-            // Need to set the metric to 0 after it has been set to non-zero, to avoid carrying
-            // a non-zero 'last' from earlier periods.
-            metric.set(key, value, context);
         }
     }
 
