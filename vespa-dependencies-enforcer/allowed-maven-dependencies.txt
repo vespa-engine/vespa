@@ -216,4 +216,4 @@ org.junit.vintage:junit-vintage-engine:5.8.1
 org.mockito:mockito-core:5.5.0
 org.mockito:mockito-junit-jupiter:5.5.0
 org.objenesis:objenesis:3.3
-org.wiremock:wiremock-standalone:3.0.2
+org.wiremock:wiremock-standalone:3.0.3
