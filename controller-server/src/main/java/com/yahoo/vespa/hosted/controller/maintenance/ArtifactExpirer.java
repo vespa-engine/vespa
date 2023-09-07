@@ -103,13 +103,13 @@ public class ArtifactExpirer extends ControllerMaintainer {
         else if (system == SystemName.cd)
             versions.addAll(versionsForSystem(SystemName.main));
 
-        log.log(FINE, "model versions in use : " + versions);
+        log.log(FINE, "model versions in use: " + versions);
         return versions;
     }
 
     private Set<Version> versionsForSystem(SystemName systemName) {
-        var versions = readConfigModelVersionsForSystem(systemName.name());
-        log.log(FINE, "versions for system " + systemName.name() + ": " + versions);
+        var versions = readConfigModelVersionsForSystem(systemName.name().toLowerCase());
+        log.log(FINE, "model versions in use in " + systemName.name() + ": " + versions);
         return versions;
     }
 
