@@ -78,7 +78,11 @@ public class ContainerOperations {
 
     /** Execute command in inside containers network namespace, identified by given context. Throws on non-zero exit code */
     public CommandResult executeCommandInNetworkNamespace(NodeAgentContext context, String... command) {
-        return containerEngine.executeInNetworkNamespace(context, command);
+        return executeCommandInNetworkNamespace(context, new CommandLine.Options(), command);
+    }
+
+    public CommandResult executeCommandInNetworkNamespace(NodeAgentContext context, CommandLine.Options options, String... command) {
+        return containerEngine.executeInNetworkNamespace(context, options, command);
     }
 
     /** Resume node. Resuming a node means that it is ready to receive traffic */

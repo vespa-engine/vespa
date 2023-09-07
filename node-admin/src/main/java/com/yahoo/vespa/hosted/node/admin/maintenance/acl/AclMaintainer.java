@@ -9,10 +9,10 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.Editor;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.LineEditor;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -89,7 +89,7 @@ public class AclMaintainer {
 
     private Supplier<List<String>> listTable(NodeAgentContext context, String table, IPVersion ipVersion) {
         return () -> containerOperations
-                .executeCommandInNetworkNamespace(context, ipVersion.iptablesCmd(), "-S", "-t", table)
+                .executeCommandInNetworkNamespace(context, new CommandLine.Options().setSilent(true), ipVersion.iptablesCmd(), "-S", "-t", table)
                 .mapEachLine(String::trim);
     }
 
