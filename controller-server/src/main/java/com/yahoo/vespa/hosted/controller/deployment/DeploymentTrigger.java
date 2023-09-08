@@ -405,7 +405,7 @@ public class DeploymentTrigger {
 
     private void abortIfOutdated(JobStatus job, List<DeploymentStatus.Job> jobs) {
         job.lastTriggered()
-           .filter(last -> ! last.hasEnded() && last.reason().isEmpty())
+           .filter(last -> ! last.hasEnded() && last.reason().reason().isEmpty())
            .ifPresent(last -> {
                if (jobs.stream().noneMatch(versions ->    versions.versions().targetsMatch(last.versions())
                                                        && versions.versions().sourcesMatchIfPresent(last.versions()))) {

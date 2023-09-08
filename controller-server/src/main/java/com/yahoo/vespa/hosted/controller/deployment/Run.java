@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.application.Change;
 
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -44,13 +46,13 @@ public class Run {
     private final Optional<X509Certificate> testerCertificate;
     private final boolean dryRun;
     private final Optional<CloudAccount> cloudAccount;
-    private final Optional<String> reason;
+    private final Reason reason;
 
     // For deserialisation only -- do not use!
     public Run(RunId id, Map<Step, StepInfo> steps, Versions versions, boolean isRedeployment, Instant start, Optional<Instant> end,
                Optional<Instant> sleepUntil, RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp,
                Optional<Instant> noNodesDownSince, Optional<ConvergenceSummary> convergenceSummary,
-               Optional<X509Certificate> testerCertificate, boolean dryRun, Optional<CloudAccount> cloudAccount, Optional<String> reason) {
+               Optional<X509Certificate> testerCertificate, boolean dryRun, Optional<CloudAccount> cloudAccount, Reason reason) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
@@ -69,12 +71,12 @@ public class Run {
         this.reason = reason;
     }
 
-    public static Run initial(RunId id, Versions versions, boolean isRedeployment, Instant now, JobProfile profile, Optional<String> triggeredBy) {
+    public static Run initial(RunId id, Versions versions, boolean isRedeployment, Instant now, JobProfile profile, Reason reason) {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(Step.class);
         profile.steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
         return new Run(id, steps, requireNonNull(versions), isRedeployment, requireNonNull(now), Optional.empty(),
                        Optional.empty(), running, -1, Instant.EPOCH, Optional.empty(), Optional.empty(),
-                       Optional.empty(), profile == JobProfile.developmentDryRun, Optional.empty(), triggeredBy);
+                       Optional.empty(), profile == JobProfile.developmentDryRun, Optional.empty(), reason);
     }
 
     /** Returns a new Run with the status of the given completed step set accordingly. */
@@ -278,7 +280,7 @@ public class Run {
     public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
 
     /** The specific reason for triggering this run, if any. This should be empty for jobs triggered bvy deployment orchestration. */
-    public Optional<String> reason() {
+    public Reason reason() {
         return reason;
     }
 
@@ -341,5 +343,7 @@ public class Run {
         if (hasEnded())
             throw new IllegalStateException("This run ended at " + end.get() + " -- it can't be further modified!");
     }
+
+    public record Reason(Optional<String> reason, Optional<JobId> dependent, Optional<Change> change) { }
 
 }

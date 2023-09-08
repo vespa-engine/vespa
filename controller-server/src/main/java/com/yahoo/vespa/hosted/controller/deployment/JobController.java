@@ -36,6 +36,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
 import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage;
+import com.yahoo.vespa.hosted.controller.deployment.Run.Reason;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
@@ -717,7 +718,8 @@ public class JobController {
                 throw new IllegalArgumentException("Cannot start " + type + " for " + id + "; it is already running!");
 
             RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile, reason));
+            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile,
+                                             new Reason(reason, Optional.empty(), Optional.empty())));
             metric.jobStarted(newId.job());
         });
     }

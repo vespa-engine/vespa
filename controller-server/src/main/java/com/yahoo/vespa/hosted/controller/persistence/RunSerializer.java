@@ -11,11 +11,14 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.Run.Reason;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
@@ -101,6 +104,8 @@ class RunSerializer {
     private static final String isDryRunField = "isDryRun";
     private static final String cloudAccountField = "account";
     private static final String reasonField = "reason";
+    private static final String dependentField = "dependent";
+    private static final String changeField = "change";
 
     Run runFromSlime(Slime slime) {
         return runFromSlime(slime.get());
@@ -147,7 +152,7 @@ class RunSerializer {
                        SlimeUtils.optionalString(runObject.field(testerCertificateField)).map(X509CertificateUtils::fromPem),
                        runObject.field(isDryRunField).valid() && runObject.field(isDryRunField).asBool(),
                        SlimeUtils.optionalString(runObject.field(cloudAccountField)).map(CloudAccount::from),
-                       SlimeUtils.optionalString(runObject.field(reasonField)));
+                       reasonFrom(runObject));
     }
 
     private Versions versionsFromSlime(Inspector versionsObject, RunId id) {
@@ -241,7 +246,7 @@ class RunSerializer {
         });
         runObject.setBool(isDryRunField, run.isDryRun());
         run.cloudAccount().ifPresent(account -> runObject.setString(cloudAccountField, account.value()));
-        run.reason().ifPresent(reason -> runObject.setString(reasonField, reason));
+        toSlime(run.reason(), runObject);
     }
 
     private void toSlime(Version platformVersion, RevisionId revsion, Cursor versionsObject) {
@@ -370,6 +375,44 @@ class RunSerializer {
             case "quotaExceeded"              -> quotaExceeded;
             default -> throw new IllegalArgumentException("No run status defined by '" + status + "'!");
         };
+    }
+
+    Reason reasonFrom(Inspector object) {
+        return new Reason(SlimeUtils.optionalString(object.field(reasonField)),
+                          Optional.ofNullable(jobIdFrom(object.field(dependentField))),
+                          Optional.ofNullable(toChange(object.field(changeField))));
+    }
+
+    void toSlime(Reason reason, Cursor object) {
+        reason.reason().ifPresent(value -> object.setString(reasonField, value));
+        reason.dependent().ifPresent(dependent -> toSlime(dependent, object.setObject(dependentField)));
+        reason.change().ifPresent(change -> toSlime(change, object.setObject(changeField)));
+    }
+
+    JobId jobIdFrom(Inspector object) {
+        if ( ! object.valid()) return null;
+        return new JobId(ApplicationId.fromSerializedForm(object.field(applicationField).asString()),
+                         JobType.ofSerialized(object.field(jobTypeField).asString()));
+    }
+
+    void toSlime(JobId jobId, Cursor object) {
+        object.setString(applicationField, jobId.application().serializedForm());
+        object.setString(jobTypeField, jobId.type().serialized());
+    }
+
+    Change toChange(Inspector object) {
+        if ( ! object.valid()) return null;
+        Change change = Change.empty();
+        if (object.field(platformVersionField).valid())
+            change = change.with(Version.fromString(object.field(platformVersionField).asString()));
+        if (object.field(buildField).valid())
+            change = change.with(RevisionId.forProduction(object.field(buildField).asLong()));
+        return change;
+    }
+
+    void toSlime(Change change, Cursor object) {
+        change.platform().ifPresent(version -> object.setString(platformVersionField, version.toString()));
+        change.revision().ifPresent(revision -> object.setLong(buildField, revision.number()));
     }
 
 }

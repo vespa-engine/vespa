@@ -7,12 +7,15 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.JobProfile;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.Run.Reason;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.StepInfo;
@@ -82,11 +85,15 @@ public class RunSerializerTest {
         assertFalse(run.hasEnded());
         assertEquals(running, run.status());
         assertEquals(3, run.lastTestLogEntry());
-        assertEquals(new Version(1, 2, 3), run.versions().targetPlatform());
+        Version version1 = new Version(1, 2, 3);
+        assertEquals(version1, run.versions().targetPlatform());
         RevisionId revision1 = RevisionId.forDevelopment(123, id.job());
         RevisionId revision2 = RevisionId.forProduction(122);
         assertEquals(revision1, run.versions().targetRevision());
-        assertEquals("because", run.reason().get());
+        assertEquals(new Reason(Optional.of("because"),
+                                Optional.of(new JobId(id.application(), id.type())),
+                                Optional.of(Change.of(version1).with(revision2))),
+                     run.reason());
         assertEquals(new Version(1, 2, 2), run.versions().sourcePlatform().get());
         assertEquals(revision2, run.versions().sourceRevision().get());
         assertEquals(Optional.of(new ConvergenceSummary(1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233)),
@@ -145,7 +152,8 @@ public class RunSerializerTest {
         assertEquals(new String(SlimeUtils.toJsonBytes(serializer.toSlime(run).get(), false), UTF_8),
                 new String(SlimeUtils.toJsonBytes(serializer.toSlime(phoenix).get(), false), UTF_8));
 
-        Run initial = Run.initial(id, run.versions(), run.isRedeployment(), run.start(), JobProfile.production, Optional.empty());
+        Run initial = Run.initial(id, run.versions(), run.isRedeployment(), run.start(), JobProfile.production,
+                                  new Reason(Optional.empty(), Optional.empty(), Optional.empty()));
         assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));
     }
 
