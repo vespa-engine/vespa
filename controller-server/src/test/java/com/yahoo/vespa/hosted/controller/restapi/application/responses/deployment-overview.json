@@ -82,7 +82,7 @@
           "dependent": {
             "instance": "instance1",
             "region": "us-central-1",
-            "revision": 4
+            "build": 4
           },
           "versions": {
             "targetPlatform": "6.1.0",
@@ -145,7 +145,7 @@
           "dependent": {
             "instance": "instance1",
             "region": "us-central-1",
-            "revision": 1
+            "build": 1
           },
           "versions": {
             "targetPlatform": "6.1.0",
@@ -222,7 +222,7 @@
           "dependent": {
             "instance": "instance1",
             "region": "us-central-1",
-            "revision": 4
+            "build": 4
           },
           "versions": {
             "targetPlatform": "6.1.0",
@@ -301,7 +301,7 @@
           "dependent": {
             "instance": "instance1",
             "region": "us-central-1",
-            "revision": 1
+            "build": 1
           },
           "versions": {
             "targetPlatform": "6.1.0",

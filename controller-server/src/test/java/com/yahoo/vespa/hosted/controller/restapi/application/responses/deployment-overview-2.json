@@ -170,7 +170,7 @@
           "dependent": {
             "instance": "default",
             "region": "us-central-1",
-            "revision": 3
+            "build": 3
           },
           "versions": {
             "targetPlatform": "6.1.0",
@@ -233,7 +233,7 @@
           "dependent": {
             "instance": "default",
             "region": "us-central-1",
-            "revision": 2
+            "build": 2
           },
           "versions": {
             "targetPlatform": "6.1.0",
@@ -296,7 +296,7 @@
           "dependent": {
             "instance": "default",
             "region": "us-central-1",
-            "revision": 1
+            "build": 1
           },
           "versions": {
             "targetPlatform": "6.1.0",
@@ -369,7 +369,7 @@
           "dependent": {
             "instance": "default",
             "region": "us-east-3",
-            "revision": 3
+            "build": 3
           },
           "versions": {
             "targetPlatform": "6.1.0",
@@ -399,7 +399,7 @@
           "dependent": {
             "instance": "default",
             "region": "us-east-3",
-            "revision": 3
+            "build": 3
           },
           "versions": {
             "targetPlatform": "6.1.0",
@@ -485,7 +485,7 @@
           "dependent": {
             "instance": "default",
             "region": "us-east-3",
-            "revision": 3
+            "build": 3
           },
           "versions": {
             "targetPlatform": "6.1.0",
@@ -571,7 +571,7 @@
           "dependent": {
             "instance": "default",
             "region": "us-central-1",
-            "revision": 3
+            "build": 3
           },
           "versions": {
             "targetPlatform": "6.1.0",
@@ -657,7 +657,7 @@
           "dependent": {
             "instance": "default",
             "region": "us-central-1",
-            "revision": 2
+            "build": 2
           },
           "versions": {
             "targetPlatform": "6.1.0",
@@ -743,7 +743,7 @@
           "dependent": {
             "instance": "default",
             "region": "us-central-1",
-            "revision": 1
+            "build": 1
           },
           "versions": {
             "targetPlatform": "6.1.0",

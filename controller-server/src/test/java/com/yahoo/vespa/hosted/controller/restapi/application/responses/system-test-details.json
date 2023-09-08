@@ -4,7 +4,7 @@
   "dependent": {
     "instance": "instance1",
     "region": "us-central-1",
-    "revision": 1
+    "build": 1
   },
   "log": {
     "deployTester": [

@@ -131,7 +131,7 @@ class JobControllerApiHandlerHelper {
             dependentObject.setString("instance", dependent.application().instance().value());
             dependentObject.setString("region", dependent.type().zone().region().value());
             run.reason().change().flatMap(Change::platform).ifPresent(platform -> dependentObject.setString("platform", platform.toFullString()));
-            run.reason().change().flatMap(Change::revision).ifPresent(revision -> dependentObject.setLong("revision", revision.number()));
+            run.reason().change().flatMap(Change::revision).ifPresent(revision -> dependentObject.setLong("build", revision.number()));
         });
         try {
             jobController.updateTestLog(runId);
@@ -505,7 +505,7 @@ class JobControllerApiHandlerHelper {
             dependentObject.setString("instance", dependent.application().instance().value());
             dependentObject.setString("region", dependent.type().zone().region().value());
             reason.change().flatMap(Change::platform).ifPresent(platform -> dependentObject.setString("platform", platform.toFullString()));
-            reason.change().flatMap(Change::revision).ifPresent(revision -> dependentObject.setLong("revision", revision.number()));
+            reason.change().flatMap(Change::revision).ifPresent(revision -> dependentObject.setLong("build", revision.number()));
         });
         toSlime(runObject.setObject("versions"), versions, application);
     }

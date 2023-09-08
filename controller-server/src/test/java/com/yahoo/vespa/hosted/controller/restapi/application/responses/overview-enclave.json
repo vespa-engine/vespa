@@ -70,7 +70,7 @@
           "dependent": {
             "instance": "default",
             "region": "aws-us-east-1c",
-            "revision": 1
+            "build": 1
           },
           "versions": {
             "targetPlatform": "6.1.0",
@@ -166,7 +166,7 @@
           "dependent": {
             "instance": "default",
             "region": "aws-us-east-1c",
-            "revision": 1
+            "build": 1
           },
           "versions": {
             "targetPlatform": "6.1.0",
