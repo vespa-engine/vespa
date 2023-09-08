@@ -104,6 +104,7 @@ public class LatencyStats {
     private void resetForNewPeriod() {
         startOfPeriodNanos = endOfPeriodNanos;
         cumulativeLoadNanos = 0.0;
+        cumulativeLoadNanosByThread.clear();
         cumulativeLatency = Duration.ZERO;
         maxLatency = Duration.ZERO;
         numIntervalsStarted = 0;
