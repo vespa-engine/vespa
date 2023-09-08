@@ -120,7 +120,7 @@ public class JavaClassBuilderTest {
         }
         for (int i = 0; i < referenceClassLines.size(); i++) {
             if (configClassLines.length <= i)
-                fail("Missing lines i generated config class. First missing line:\n" + referenceClassLines.get(i));
+                fail("Missing lines in generated config class. First missing line:\n" + referenceClassLines.get(i));
             assertEquals(referenceClassLines.get(i), configClassLines[i], "Line " + i);
         }
     }

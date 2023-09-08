@@ -35,7 +35,7 @@ import com.yahoo.config.*;
  */
 public final class AllfeaturesConfig extends ConfigInstance {
 
-  public final static String CONFIG_DEF_MD5 = "0501f9e2c4ecc8c283e100e0b1178ca4";
+  public final static String CONFIG_DEF_MD5 = "ee37973499305fde315da46256e64b2e";
   public final static String CONFIG_DEF_NAME = "allfeatures";
   public final static String CONFIG_DEF_NAMESPACE = "configgen";
   public final static String[] CONFIG_DEF_SCHEMA = {
@@ -56,6 +56,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
     "refwithdef reference default=\":parent:\"",
     "fileVal file",
     "pathVal path",
+    "optionalPathVal path optional",
     "urlVal url",
     "modelVal model",
     "boolarr[] bool",
@@ -130,6 +131,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
     private String refwithdef = null;
     private String fileVal = null;
     private FileReference pathVal = null;
+    private Optional<FileReference> optionalPathVal = Optional.empty();
     private UrlReference urlVal = null;
     private ModelReference modelVal = null;
     public List<Boolean> boolarr = new ArrayList<>();
@@ -171,6 +173,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
       refwithdef(config.refwithdef());
       fileVal(config.fileVal().value());
       pathVal(config.pathVal.getFileReference());
+      optionalPathVal(config.optionalPathVal.getFileReference());
       urlVal(config.urlVal.getUrlReference());
       modelVal(config.modelVal.getModelReference());
       boolarr(config.boolarr());
@@ -231,6 +234,8 @@ public final class AllfeaturesConfig extends ConfigInstance {
         fileVal(__superior.fileVal);
       if (__superior.pathVal != null)
         pathVal(__superior.pathVal);
+      if (__superior.optionalPathVal != null)
+        optionalPathVal(__superior.optionalPathVal);
       if (__superior.urlVal != null)
         urlVal(__superior.urlVal);
       if (__superior.modelVal != null)
@@ -411,6 +416,17 @@ public final class AllfeaturesConfig extends ConfigInstance {
       return this;
     }
 
+
+    public Builder optionalPathVal(Optional<FileReference> __value) {
+    if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
+      optionalPathVal = __value;
+      __uninitialized.remove("optionalPathVal");
+      return this;
+    }
+
+    private Builder optionalPathVal(FileReference __value) {
+      return optionalPathVal(Optional.of(__value));
+    }
 
     public Builder urlVal(UrlReference __value) {
     if (__value == null) throw new IllegalArgumentException("Null value is not allowed.");
@@ -759,6 +775,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
   private final ReferenceNode refwithdef;
   private final FileNode fileVal;
   private final PathNode pathVal;
+  private final OptionalPathNode optionalPathVal;
   private final UrlNode urlVal;
   private final ModelNode modelVal;
   private final LeafNodeVector<Boolean, BooleanNode> boolarr;
@@ -822,6 +839,8 @@ public final class AllfeaturesConfig extends ConfigInstance {
         new FileNode() : new FileNode(builder.fileVal);
     pathVal = (builder.pathVal == null) ?
         new PathNode() : new PathNode(builder.pathVal);
+    optionalPathVal = (builder.optionalPathVal == null) ?
+        new OptionalPathNode() : new OptionalPathNode(builder.optionalPathVal);
     urlVal = (builder.urlVal == null) ?
         new UrlNode() : new UrlNode(builder.urlVal);
     modelVal = (builder.modelVal == null) ?
@@ -957,6 +976,13 @@ public final class AllfeaturesConfig extends ConfigInstance {
    */
   public Path pathVal() {
     return pathVal.value();
+  }
+
+  /**
+   * @return allfeatures.optionalPathVal
+   */
+  public Optional<Path> optionalPathVal() {
+    return optionalPathVal.value();
   }
 
   /**

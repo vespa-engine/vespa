@@ -14,7 +14,8 @@ enumwithdef BAR2
 refval :parent:
 refwithdef ":parent:"
 fileVal "etc"
-pathVal "pom.xml"
+pathVal "function-test.def"
+optionalPathVal "function-test.def"
 boolarr[1]
 boolarr[0] false
 intarr[0]
