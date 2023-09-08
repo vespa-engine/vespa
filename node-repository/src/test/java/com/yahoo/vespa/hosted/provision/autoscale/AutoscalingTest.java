@@ -13,7 +13,6 @@ import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.DynamicProvisioningTester;
 import org.junit.Test;
@@ -25,7 +24,6 @@ import java.util.Optional;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -899,7 +897,7 @@ public class AutoscalingTest {
 
     @Test
     public void test_changing_exclusivity() {
-        var min = new ClusterResources( 2, 1, new NodeResources(  3,    4,  100, 1));
+        var min = new ClusterResources( 2, 1, new NodeResources(  3,    8,  100, 1));
         var max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
         var fixture = DynamicProvisioningTester.fixture()
                                                .awsProdSetup(true)

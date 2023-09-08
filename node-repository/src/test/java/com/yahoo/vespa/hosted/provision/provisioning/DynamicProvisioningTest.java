@@ -321,8 +321,8 @@ public class DynamicProvisioningTest {
     @Test
     public void migrates_nodes_on_host_flavor_flag_change() {
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
-        List<Flavor> flavors = List.of(new Flavor("x86", new NodeResources(2, 4, 50, 0.1, fast, local, Architecture.x86_64)),
-                                       new Flavor("arm", new NodeResources(2, 4, 50, 0.1, fast, local, Architecture.arm64)));
+        List<Flavor> flavors = List.of(new Flavor("x86", new NodeResources(2, 8, 50, 0.1, fast, local, Architecture.x86_64)),
+                                       new Flavor("arm", new NodeResources(2, 8, 50, 0.1, fast, local, Architecture.arm64)));
         MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors);
         ProvisioningTester tester = new ProvisioningTester.Builder()
                 .dynamicProvisioning(true, false)
@@ -335,7 +335,7 @@ public class DynamicProvisioningTest {
 
         ApplicationId app = ProvisioningTester.applicationId("a1");
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("8").build();
-        Capacity capacity = Capacity.from(new ClusterResources(4, 2, new NodeResources(2, 4, 50, 0.1, DiskSpeed.any, StorageType.any, Architecture.any)));
+        Capacity capacity = Capacity.from(new ClusterResources(4, 2, new NodeResources(2, 8, 50, 0.1, DiskSpeed.any, StorageType.any, Architecture.any)));
 
         hostProvisioner.setHostFlavor("x86", ClusterSpec.Type.content);
         tester.activate(app, cluster, capacity);
@@ -391,10 +391,10 @@ public class DynamicProvisioningTest {
         }
 
         // Initial deployment
-        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 5, 20),
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 8, 20),
                                                       resources(6, 3, 4, 20, 40)));
         tester.assertNodes("Initial allocation at first actual flavor above min (except for disk)",
-                           4, 2, 2, 20, 20,
+                           4, 2, 2, 20, 24,
                            app1, cluster1);
 
 
@@ -413,7 +413,7 @@ public class DynamicProvisioningTest {
                            app1, cluster1);
 
         // Widening window does not change allocation
-        tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 5, 15),
+        tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 8, 15),
                                                       resources(8, 4, 4, 20, 30)));
         tester.assertNodes("No change",
                            6, 2, 2, 20, 25,
@@ -421,7 +421,7 @@ public class DynamicProvisioningTest {
 
         // Force 1 more groups: Reducing to 2 nodes per group to preserve node count is rejected
         //                      since it will reduce total group memory from 60 to 40.
-        tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 2,  5,  10),
+        tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 2,  8,  10),
                                                       resources(9, 3, 5, 20, 15)));
         tester.assertNodes("Group size is preserved",
                            9, 3, 2, 20, 15,
