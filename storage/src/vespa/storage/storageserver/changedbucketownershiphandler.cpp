@@ -367,7 +367,6 @@ ChangedBucketOwnershipHandler::isMutatingExternalOperation(
     case api::MessageType::PUT_ID:
     case api::MessageType::REMOVE_ID:
     case api::MessageType::UPDATE_ID:
-    case api::MessageType::REVERT_ID:
         return true;
     default:
         return false;

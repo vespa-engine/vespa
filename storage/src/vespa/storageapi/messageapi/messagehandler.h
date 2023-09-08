@@ -23,7 +23,6 @@ class GetCommand; // Retrieve document
 class PutCommand; // Add document
 class UpdateCommand; // Update document
 class RemoveCommand; // Remove document
-class RevertCommand; // Revert put/remove operation
 
 class CreateVisitorCommand; // Create a new visitor
 class DestroyVisitorCommand; // Destroy a running visitor
@@ -59,7 +58,6 @@ class GetReply;
 class PutReply;
 class UpdateReply;
 class RemoveReply;
-class RevertReply;
 
 class CreateVisitorReply;
 class DestroyVisitorReply;
@@ -122,8 +120,6 @@ public:
     virtual bool onUpdateReply(const std::shared_ptr<api::UpdateReply>&) { return false; }
     virtual bool onRemove(const std::shared_ptr<api::RemoveCommand>&) { return false; }
     virtual bool onRemoveReply(const std::shared_ptr<api::RemoveReply>&) { return false; }
-    virtual bool onRevert(const std::shared_ptr<api::RevertCommand>&) { return false; }
-    virtual bool onRevertReply(const std::shared_ptr<api::RevertReply>&) { return false; }
 
     virtual bool onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&) { return false; }
     virtual bool onCreateVisitorReply(const std::shared_ptr<api::CreateVisitorReply>&) { return false; }

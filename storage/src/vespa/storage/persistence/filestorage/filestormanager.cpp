@@ -447,16 +447,6 @@ FileStorManager::onRemove(const shared_ptr<api::RemoveCommand>& cmd)
 }
 
 bool
-FileStorManager::onRevert(const shared_ptr<api::RevertCommand>& cmd)
-{
-    StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(*cmd, 0));
-    if (entry.exists()) {
-        handlePersistenceMessage(cmd);
-    }
-    return true;
-}
-
-bool
 FileStorManager::onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>& cmd)
 {
     StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));

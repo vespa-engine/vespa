@@ -308,37 +308,4 @@ public:
     DECLARE_STORAGEREPLY(RemoveReply, onRemoveReply)
 };
 
-/**
- * @class RevertCommand
- * @ingroup message
- *
- * @brief Command for reverting a write or remove operation.
- */
-class RevertCommand : public BucketInfoCommand {
-    std::vector<Timestamp> _tokens;
-public:
-    RevertCommand(const document::Bucket &bucket,
-                  const std::vector<Timestamp>& revertTokens);
-    ~RevertCommand() override;
-    const std::vector<Timestamp>& getRevertTokens() const { return _tokens; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    DECLARE_STORAGECOMMAND(RevertCommand, onRevert)
-};
-
-/**
- * @class RevertReply
- * @ingroup message
- *
- * @brief Reply for a revert command.
- */
-class RevertReply : public BucketInfoReply {
-    std::vector<Timestamp> _tokens;
-public:
-    explicit RevertReply(const RevertCommand& cmd);
-    ~RevertReply() override;
-    const std::vector<Timestamp>& getRevertTokens() const { return _tokens; }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    DECLARE_STORAGEREPLY(RevertReply, onRevertReply)
-};
-
 }

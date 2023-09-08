@@ -369,20 +369,6 @@ TEST_P(StorageProtocolTest, remove) {
     EXPECT_NO_FATAL_FAILURE(assert_bucket_info_reply_fields_propagated(*reply2));
 }
 
-TEST_P(StorageProtocolTest, revert) {
-    std::vector<Timestamp> tokens;
-    tokens.push_back(59);
-    auto cmd = std::make_shared<RevertCommand>(_bucket, tokens);
-    auto cmd2 = copyCommand(cmd);
-    EXPECT_EQ(_bucket, cmd2->getBucket());
-    EXPECT_EQ(tokens, cmd2->getRevertTokens());
-
-    auto reply = std::make_shared<RevertReply>(*cmd2);
-    set_dummy_bucket_info_reply_fields(*reply);
-    auto reply2 = copyReply(reply);
-    EXPECT_NO_FATAL_FAILURE(assert_bucket_info_reply_fields_propagated(*reply2));
-}
-
 TEST_P(StorageProtocolTest, request_bucket_info) {
     {
         std::vector<document::BucketId> ids;

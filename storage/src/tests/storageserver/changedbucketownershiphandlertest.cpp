@@ -491,12 +491,6 @@ TEST_F(ChangedBucketOwnershipHandlerTest, abort_outdated_remove_command) {
     expectChangeAbortsMessage<api::RemoveCommand>(false, getBucketToAllow(), docId, api::Timestamp(1234));
 }
 
-TEST_F(ChangedBucketOwnershipHandlerTest, abort_outdated_revert_command) {
-    std::vector<api::Timestamp> timestamps;
-    expectChangeAbortsMessage<api::RevertCommand>(true, getBucketToAbort(), timestamps);
-    expectChangeAbortsMessage<api::RevertCommand>(false, getBucketToAllow(), timestamps);
-}
-
 TEST_F(ChangedBucketOwnershipHandlerTest, ideal_state_abort_updates_metric) {
     expectChangeAbortsMessage<api::SplitBucketCommand>(true, getBucketToAbort());
     EXPECT_EQ(1, _handler->getMetrics().idealStateOpsAborted.getValue());

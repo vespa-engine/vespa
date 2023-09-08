@@ -80,8 +80,8 @@ public:
         PUT_REPLY_ID = 11,
         REMOVE_ID = 12,
         REMOVE_REPLY_ID = 13,
-        REVERT_ID = 14,
-        REVERT_REPLY_ID = 15,
+        // REVERT_ID = 14,       unused but reserved
+        // REVERT_REPLY_ID = 15, unused but reserved
         STAT_ID = 16,
         STAT_REPLY_ID = 17,
         VISITOR_CREATE_ID = 18,
@@ -164,8 +164,6 @@ public:
     static const MessageType PUT_REPLY;
     static const MessageType REMOVE;
     static const MessageType REMOVE_REPLY;
-    static const MessageType REVERT;
-    static const MessageType REVERT_REPLY;
     static const MessageType VISITOR_CREATE;
     static const MessageType VISITOR_CREATE_REPLY;
     static const MessageType VISITOR_DESTROY;
