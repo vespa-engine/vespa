@@ -35,7 +35,7 @@ com.google.http-client:google-http-client-apache-v2:1.43.3
 com.google.http-client:google-http-client-gson:1.42.3
 com.google.inject:guice:6.0.0
 com.google.j2objc:j2objc-annotations:2.8
-com.google.protobuf:protobuf-java:3.24.2
+com.google.protobuf:protobuf-java:3.24.3
 com.ibm.icu:icu4j:73.2
 com.microsoft.onnxruntime:onnxruntime:1.15.1
 com.sun.activation:javax.activation:1.2.0
