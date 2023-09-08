@@ -15,6 +15,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
@@ -119,7 +120,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if (!requested.minResources().nodeResources().gpuResources().equals(requested.maxResources().nodeResources().gpuResources()))
             throw new IllegalArgumentException(requested + " is invalid: GPU capacity cannot have ranges");
 
-        if (!requested.minResources().nodeResources().gpuResources().isZero() && !zone.system().isPublic())
+        if (!requested.minResources().nodeResources().gpuResources().isZero() && zone.system() == SystemName.main)
             throw new IllegalArgumentException(requested + " is invalid: GPUs are not supported in " + zone);
 
         logInsufficientDiskResources(cluster, requested, logger);
