@@ -67,6 +67,8 @@ public class ConfigDefinitionBuilder {
                     addNode(def, (LeafCNode.FileLeaf) node);
                 } else if (node instanceof LeafCNode.PathLeaf) {
                     addNode(def, (LeafCNode.PathLeaf) node);
+                } else if (node instanceof LeafCNode.OptionalPathLeaf) {
+                    addNode(def, (LeafCNode.OptionalPathLeaf) node);
                 } else if (node instanceof LeafCNode.UrlLeaf) {
                     addNode(def, (LeafCNode.UrlLeaf) node);
                 } else if (node instanceof LeafCNode.ModelLeaf) {
@@ -169,6 +171,14 @@ public class ConfigDefinitionBuilder {
             def.addPathDef(leaf.getName(), leaf.getDefaultValue().getValue());
         } else {
             def.addPathDef(leaf.getName(), null);
+        }
+    }
+
+    private static void addNode(ConfigDefinition def, LeafCNode.OptionalPathLeaf leaf) {
+        if (leaf.getDefaultValue() != null) {
+            def.addOptionalPathDef(leaf.getName(), leaf.getDefaultValue().getValue());
+        } else {
+            def.addOptionalPathDef(leaf.getName(), null);
         }
     }
 

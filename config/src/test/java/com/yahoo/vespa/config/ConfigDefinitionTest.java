@@ -124,6 +124,8 @@ public class ConfigDefinitionTest {
         def.addEnumDef("enumval", new EnumDef(List.of("FOO"), "FOO"));
         def.addReferenceDef("refval");
         def.addFileDef("fileval");
+        def.addPathDef("pathVal");
+        def.addOptionalPathDef("optionalPathVal");
         def.addInnerArrayDef("innerarr");
         def.addLeafMapDef("leafmap");
         ConfigDefinition.ArrayDef intArray = def.arrayDef("intArray");
@@ -162,6 +164,8 @@ public class ConfigDefinitionTest {
         assertVerify(def, "enumval", "FOO");
         assertVerify(def, "refval", "foobar");
         assertVerify(def, "fileval", "foobar");
+        assertVerify(def, "pathVal", "foobar");
+        assertVerify(def, "optionalPathVal", "foobar");
 
         assertVerifyComplex(def, "innerarr");
         assertVerifyComplex(def, "leafmap");

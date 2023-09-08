@@ -38,6 +38,7 @@ public class ConfigDefinition {
     private final Map<String, RefDef> referenceDefs = new LinkedHashMap<>();
     private final Map<String, FileDef> fileDefs = new LinkedHashMap<>();
     private final Map<String, PathDef> pathDefs = new LinkedHashMap<>();
+    private final Map<String, PathDef> optionalPathDefs = new LinkedHashMap<>();
     private final Map<String, UrlDef> urlDefs = new LinkedHashMap<>();
     private final Map<String, ModelDef> modelDefs = new LinkedHashMap<>();
     private final Map<String, StructDef> structDefs = new LinkedHashMap<>();
@@ -98,6 +99,8 @@ public class ConfigDefinition {
             verifyFile(id);
         } else if (pathDefs.containsKey(id)) {
             verifyPath(id);
+        } else if (optionalPathDefs.containsKey(id)) {
+            verifyOptionalPath(id);
         } else if (urlDefs.containsKey(id)) {
             verifyUrl(id);
         } else if (modelDefs.containsKey(id)) {
@@ -540,6 +543,19 @@ public class ConfigDefinition {
         }
     }
 
+    public static class OptionalPathDef implements DefaultValued<String> {
+        private final String defVal;
+
+        OptionalPathDef(String defVal) {
+            this.defVal = defVal;
+        }
+
+        @Override
+        public String getDefVal() {
+            return defVal;
+        }
+    }
+
     public static class UrlDef implements DefaultValued<String> {
         private final String defVal;
 
@@ -656,6 +672,14 @@ public class ConfigDefinition {
     }
 
     public void addPathDef(String refId) {
+        pathDefs.put(refId, new PathDef(null));
+    }
+
+    public void addOptionalPathDef(String refId, String defVal) {
+        pathDefs.put(refId, new PathDef(defVal));
+    }
+
+    public void addOptionalPathDef(String refId) {
         pathDefs.put(refId, new PathDef(null));
     }
 
@@ -866,6 +890,11 @@ public class ConfigDefinition {
     private void verifyPath(String id) {
         if ( ! pathDefs.containsKey(id))
             throw new IllegalArgumentException("No such path in " + verifyWarning(id));
+    }
+
+    private void verifyOptionalPath(String id) {
+        if ( ! optionalPathDefs.containsKey(id))
+            throw new IllegalArgumentException("No such optional path in " + verifyWarning(id));
     }
 
     private void verifyUrl(String id) {
