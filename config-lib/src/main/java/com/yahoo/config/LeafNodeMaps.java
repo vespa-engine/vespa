@@ -4,7 +4,6 @@ package com.yahoo.config;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -57,14 +56,6 @@ public class LeafNodeMaps {
         Map<String, PathNode> pathNodeMap = new LinkedHashMap<>();
         for (Map.Entry<String, FileReference> e : fileReferenceMap.entrySet()) {
             pathNodeMap.put(e.getKey(), new PathNode(e.getValue()));
-        }
-        return Collections.unmodifiableMap(pathNodeMap);
-    }
-
-    public static Map<String, OptionalPathNode> asOptionalPathNodeMap(Map<String, Optional<FileReference>> fileReferenceMap) {
-        Map<String, OptionalPathNode> pathNodeMap = new LinkedHashMap<>();
-        for (Map.Entry<String, Optional<FileReference>> e : fileReferenceMap.entrySet()) {
-            pathNodeMap.put(e.getKey(), new OptionalPathNode(e.getValue()));
         }
         return Collections.unmodifiableMap(pathNodeMap);
     }

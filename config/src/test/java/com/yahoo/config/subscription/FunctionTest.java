@@ -30,7 +30,7 @@ public class FunctionTest {
     public static final String PATH = "src/test/resources/configs/function-test/";
 
     private FunctionTestConfig config;
-    private final ConfigSourceSet sourceSet = new ConfigSourceSet("function-test");
+    private ConfigSourceSet sourceSet = new ConfigSourceSet("function-test");
 
     public void configure(FunctionTestConfig config, ConfigSourceSet sourceSet) {
         this.config = config;
@@ -222,8 +222,6 @@ public class FunctionTest {
         assertEquals(":parent", config.refarr(1));
         assertEquals("parent:", config.refarr(2));
         assertEquals("bin", config.fileArr(0).value());
-        assertEquals("function-test.def", config.pathVal().toFile().getName());
-        assertEquals("function-test.def", config.optionalPathVal().get().toFile().getName());  // TODO
         assertEquals("pom.xml", config.pathArr(0).toString());
         assertEquals("pom.xml", config.pathMap("one").toString());
 

@@ -26,7 +26,6 @@ public abstract class LeafCNode extends CNode {
                 case "reference" -> new ReferenceLeaf(parent, name);
                 case "file" -> new FileLeaf(parent, name);
                 case "path" -> new PathLeaf(parent, name);
-                case "optionalPath" -> new OptionalPathLeaf(parent, name);
                 case "enum" -> new EnumLeaf(parent, name, type.enumArray);
                 case "url" -> new UrlLeaf(parent, name);
                 case "model" -> new ModelLeaf(parent, name);
@@ -215,17 +214,6 @@ public abstract class LeafCNode extends CNode {
         @Override
         public String getType() {
             return "path";
-        }
-    }
-
-    public static class OptionalPathLeaf extends NoClassLeafCNode {
-        OptionalPathLeaf(InnerCNode parent, String name) {
-            super(parent, name);
-        }
-
-        @Override
-        public String getType() {
-            return "optionalPath";
         }
     }
 

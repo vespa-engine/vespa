@@ -34,7 +34,6 @@ public class CfgConfigPayloadBuilderTest {
                 "        'parent:'",
                 "    ],",
                 "    'pathVal': 'src/test/resources/configs/def-files/function-test.def',",
-                "    'optionalPathVal': 'src/test/resources/configs/def-files/function-test.def',",
                 "    'string_val': 'foo',",
                 "    'myStructMap': {",
                 "        'one': {",

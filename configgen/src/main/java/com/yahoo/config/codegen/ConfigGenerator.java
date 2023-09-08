@@ -7,7 +7,6 @@ import com.yahoo.config.codegen.LeafCNode.EnumLeaf;
 import com.yahoo.config.codegen.LeafCNode.FileLeaf;
 import com.yahoo.config.codegen.LeafCNode.IntegerLeaf;
 import com.yahoo.config.codegen.LeafCNode.LongLeaf;
-import com.yahoo.config.codegen.LeafCNode.OptionalPathLeaf;
 import com.yahoo.config.codegen.LeafCNode.PathLeaf;
 import com.yahoo.config.codegen.LeafCNode.ReferenceLeaf;
 import com.yahoo.config.codegen.LeafCNode.StringLeaf;
@@ -166,8 +165,6 @@ public class ConfigGenerator {
             return name + " = LeafNodeVector.createFileNodeVector(builder." + name + ");";
         } else if (child instanceof PathLeaf && isArray) {
             return name + " = LeafNodeVector.createPathNodeVector(builder." + name + ");";
-        } else if (child instanceof OptionalPathLeaf && isArray) {
-            return name + " = LeafNodeVector.createOptionalPathNodeVector(builder." + name + ");";
         } else if (child instanceof UrlLeaf && isArray) {
             return name + " = LeafNodeVector.createUrlNodeVector(builder." + name + ");";
         } else if (child instanceof ModelLeaf && isArray) {
@@ -178,8 +175,6 @@ public class ConfigGenerator {
             return name + " = LeafNodeMaps.asFileNodeMap(builder." + name + ");";
         } else if (child instanceof PathLeaf && isMap) {
             return name + " = LeafNodeMaps.asPathNodeMap(builder." + name + ");";
-        } else if (child instanceof OptionalPathLeaf && isMap) {
-            return name + " = LeafNodeMaps.asOptionalPathNodeMap(builder." + name + ");";
         } else if (child instanceof UrlLeaf && isMap) {
             return name + " = LeafNodeMaps.asUrlNodeMap(builder." + name + ");";
         } else if (child instanceof ModelLeaf && isMap) {
@@ -406,8 +401,6 @@ public class ConfigGenerator {
             return "FileNode";
         } else if (node instanceof PathLeaf) {
             return "PathNode";
-        } else if (node instanceof OptionalPathLeaf) {
-            return "OptionalPathNode";
         } else if (node instanceof UrlLeaf) {
             return "UrlNode";
         } else if (node instanceof ModelLeaf) {
@@ -438,8 +431,6 @@ public class ConfigGenerator {
             return "FileReference";
         } else if (node instanceof PathLeaf) {
             return "Path";
-        } else if (node instanceof OptionalPathLeaf) {
-            return "Optional<Path>";
         } else if (node instanceof UrlLeaf) {
             return "File";
         } else if (node instanceof ModelLeaf) {
@@ -465,8 +456,6 @@ public class ConfigGenerator {
             return "Integer";
         } else if (rawType.toLowerCase().equals(rawType)) {
             return ConfiggenUtil.capitalize(rawType);
-        } else if (rawType.startsWith("Optional<")) {
-            return "Optional";
         } else {
             return rawType;
         }

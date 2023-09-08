@@ -42,10 +42,8 @@ refval reference
 refwithdef reference default=":parent:"
 fileVal file
 pathVal path
-optionalPathVal path optional
 
 boolarr[] bool
-boolarrEmpty[] bool
 intarr[] int
 longarr[] long
 doublearr[] double

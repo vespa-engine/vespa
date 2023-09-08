@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * A vector of leaf nodes.
@@ -70,13 +69,6 @@ public class LeafNodeVector<REAL, NODE extends LeafNode<REAL>> extends NodeVecto
         for (FileReference fileReference : values)
             paths.add(Paths.get(fileReference.value()));
         return new LeafNodeVector<>(paths, new PathNode());
-    }
-
-    public static LeafNodeVector<Optional<Path>, OptionalPathNode> createOptionalPathNodeVector(Collection<Optional<FileReference>> values) {
-        List<Optional<Path>> paths = new ArrayList<>();
-        for (Optional<FileReference> fileReference : values)
-            paths.add(fileReference.map(reference -> Paths.get(reference.value())));
-        return new LeafNodeVector<>(paths, new OptionalPathNode());
     }
 
     public static LeafNodeVector<File, UrlNode> createUrlNodeVector(Collection<UrlReference> values) {
