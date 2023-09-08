@@ -54,6 +54,14 @@
         "deployedDirectly": false
       }
     },
-    "reason": "because"
+    "reason": "because",
+    "dependent": {
+      "id": "tenant:application:default",
+        "type": "prod.us-east-3"
+    },
+    "change": {
+      "platform": "1.2.3",
+      "build": 122
+    }
   }
 ]

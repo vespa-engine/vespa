@@ -73,7 +73,7 @@ public class DeploymentExpirerTest {
         // Dev application expires when enough time has passed since most recent attempt
         // Redeployments done by DeploymentUpgrader do not affect this
         tester.clock().advance(Duration.ofDays(12).plus(Duration.ofSeconds(1)));
-        tester.jobs().start(devApp.instanceId(), DeploymentContext.devUsEast1, lastRun.versions(), true, Optional.of("upgrade"));
+        tester.jobs().start(devApp.instanceId(), DeploymentContext.devUsEast1, lastRun.versions(), true, Run.Reason.because("upgrade"));
         expirer.maintain();
         assertEquals(0, permanentDeployments(devApp.instance()));
         assertEquals(1, permanentDeployments(prodApp.instance()));

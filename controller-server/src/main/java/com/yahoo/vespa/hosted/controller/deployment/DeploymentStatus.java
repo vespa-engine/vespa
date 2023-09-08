@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.deployment.Run.Reason;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
@@ -308,7 +309,8 @@ public class DeploymentStatus {
                     jobs.merge(job, List.of(new Job(typeWithZone,
                                                     versions,
                                                     readiness.okAt(now) && jobs().get(job).get().isRunning() ? readiness.running() : readiness,
-                                                    change)), DeploymentStatus::union);
+                                                    change,
+                                                    null)), DeploymentStatus::union);
                 }
             });
         });
@@ -574,7 +576,7 @@ public class DeploymentStatus {
                 // which is the case when the next versions to run that test with is not the same as we want to deploy here.
                 List<Job> tests = job.type().isTest() ? null : jobs.get(new JobId(job.application(), JobType.productionTestOf(job.type().zone())));
                 readiness = tests != null && ! versions.targetsMatch(tests.get(0).versions) && readiness.okAt(now) ? readiness.blocked() : readiness;
-                toRun.add(new Job(job.type(), versions, readiness, partial));
+                toRun.add(new Job(job.type(), versions, readiness, partial, null));
                 // Assume first partial change is applied before the second.
                 existingPlatform = Optional.of(versions.targetPlatform());
                 existingRevision = Optional.of(versions.targetRevision());
@@ -700,7 +702,8 @@ public class DeploymentStatus {
                                 testJobs.merge(testJob, List.of(new Job(testJob.type(),
                                                                         productionJob.versions(),
                                                                         readiness.okAt(now) && jobs().get(testJob).get().isRunning() ? readiness.running() : readiness,
-                                                                        productionJob.change)),
+                                                                        productionJob.change,
+                                                                        job)),
                                                DeploymentStatus::union);
 
                             }
@@ -1192,12 +1195,14 @@ public class DeploymentStatus {
         private final Versions versions;
         private final Readiness readiness;
         private final Change change;
+        private final JobId dependent;
 
-        public Job(JobType type, Versions versions, Readiness readiness, Change change) {
+        public Job(JobType type, Versions versions, Readiness readiness, Change change, JobId dependent) {
             this.type = type;
             this.versions = type.isSystemTest() ? versions.withoutSources() : versions;
             this.readiness = readiness;
             this.change = change;
+            this.dependent = dependent;
         }
 
         public JobType type() {
@@ -1210,6 +1215,10 @@ public class DeploymentStatus {
 
         public Readiness readiness() {
             return readiness;
+        }
+
+        public Reason reason() {
+            return new Reason(Optional.empty(), Optional.ofNullable(dependent), Optional.ofNullable(change));
         }
 
         @Override

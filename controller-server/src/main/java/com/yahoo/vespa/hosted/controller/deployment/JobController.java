@@ -36,6 +36,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
 import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage;
+import com.yahoo.vespa.hosted.controller.deployment.Run.Reason;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
@@ -698,12 +699,12 @@ public class JobController {
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, Optional<String> reason) {
+    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, Reason reason) {
         start(id, type, versions, isRedeployment, JobProfile.of(type), reason);
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile, Optional<String> reason) {
+    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile, Reason reason) {
         ApplicationVersion revision = controller.applications().requireApplication(TenantAndApplicationId.from(id)).revisions().get(versions.targetRevision());
         if (revision.compileVersion()
                     .map(version -> controller.applications().versionCompatibility(id).refuse(versions.targetPlatform(), version))
@@ -775,7 +776,7 @@ public class JobController {
                   new Versions(targetPlatform, version.id(), lastRun.map(run -> run.versions().targetPlatform()), lastRun.map(run -> run.versions().targetRevision())),
                   false,
                   dryRun ? JobProfile.developmentDryRun : JobProfile.development,
-                  Optional.empty());
+                  Reason.empty());
         });
 
         locked(id, type, __ -> {
