@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
@@ -27,6 +29,8 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Set;
 
 import static com.yahoo.vespa.model.container.xml.CloudDataPlaneFilterTest.createCertificate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -99,6 +103,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
                                         new DataplaneToken.Version("myfingerprint2", "myaccesshash2", Optional.of(Instant.EPOCH.plus(Duration.ofDays(100000))))))))
                                 .setHostedVespa(true))
                 .zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()))
+                .endpoints(Set.of(new ContainerEndpoint("cluster", ApplicationClusterEndpoint.Scope.zone, List.of("name"), OptionalInt.empty(), ApplicationClusterEndpoint.RoutingMethod.exclusive, ApplicationClusterEndpoint.AuthMethod.token)))
                 .build();
         return createModel(root, state, null, clusterElem);
     }

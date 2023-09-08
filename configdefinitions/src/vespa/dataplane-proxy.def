@@ -8,3 +8,6 @@ mtlsPort            int
 # Server certificate and key to be used when creating server socket
 serverCertificate   string
 serverKey           string
+
+# Host names that should be considered token endpoints
+tokenEndpoints[]      string

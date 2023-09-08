@@ -11,10 +11,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Configures a data plane proxy. Currently using Nginx.
@@ -105,8 +107,8 @@ public class DataplaneProxyService extends AbstractComponent {
                                                    serverKeyFile,
                                                    config.mtlsPort(),
                                                    config.tokenPort(),
-                                                   root
-                                           ));
+                                                   config.tokenEndpoints(),
+                                                   root));
                 if (configChanged && state == NginxState.RUNNING) {
                     changeState(NginxState.RELOAD_REQUIRED);
                 }
@@ -194,6 +196,7 @@ public class DataplaneProxyService extends AbstractComponent {
             Path serverKey,
             int vespaMtlsPort,
             int vespaTokenPort,
+            List<String> tokenEndpoints,
             Path root) {
 
         try {
@@ -205,6 +208,10 @@ public class DataplaneProxyService extends AbstractComponent {
             nginxTemplate = replace(nginxTemplate, "vespa_mtls_port", Integer.toString(vespaMtlsPort));
             nginxTemplate = replace(nginxTemplate, "vespa_token_port", Integer.toString(vespaTokenPort));
             nginxTemplate = replace(nginxTemplate, "prefix", root.toString());
+            String tokenmapping = tokenEndpoints.stream()
+                    .map("        %s vespatoken;"::formatted)
+                    .collect(Collectors.joining("\n"));
+            nginxTemplate = replace(nginxTemplate, "vespa_token_endpoints", tokenmapping);
 
             // TODO: verify that all template vars have been expanded
             return nginxTemplate;
