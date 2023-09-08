@@ -318,7 +318,8 @@ public class ApplicationHandlerTest {
                                        "        \"bar\": {" +
                                        "          \"readyMillis\": " + (now - 1000) + ", " +
                                        "          \"speed\": 1.0," +
-                                       "          \"cause\": \"reindexing\"" +
+                                       "          \"cause\": \"reindexing\"," +
+                                       "          \"state\": \"pending\"" +
                                        "        }" +
                                        "      }" +
                                        "    }," +
@@ -328,17 +329,20 @@ public class ApplicationHandlerTest {
                                        "        \"bar\": {" +
                                        "          \"readyMillis\": " + now + ", " +
                                        "          \"speed\": 0.1," +
-                                       "          \"cause\": \"reindexing\"" +
+                                       "          \"cause\": \"reindexing\"," +
+                                       "          \"state\": \"pending\"" +
                                        "        }," +
                                        "        \"bax\": {" +
                                        "          \"readyMillis\": " + (now - 1000) + ", " +
                                        "          \"speed\": 1.0," +
-                                       "          \"cause\": \"reindexing\"" +
+                                       "          \"cause\": \"reindexing\"," +
+                                       "          \"state\": \"pending\"" +
                                        "        }," +
                                        "        \"baz\": {" +
                                        "          \"readyMillis\": " + now + ", " +
                                        "          \"speed\": 0.1," +
-                                       "          \"cause\": \"reindexing\"" +
+                                       "          \"cause\": \"reindexing\"," +
+                                       "          \"state\": \"pending\"" +
                                        "        }" +
                                        "      }" +
                                        "    }" +
@@ -579,9 +583,9 @@ public class ApplicationHandlerTest {
                                  "baz": {
                                    "startedMillis": 124456,
                                    "endedMillis": 125456,
-                                   "state": "failed",
                                    "message": "message",
-                                   "progress": 0.1
+                                   "progress": 0.1,
+                                   "state": "failed"
                                  }
                                }
                              },
@@ -590,7 +594,9 @@ public class ApplicationHandlerTest {
                                  "bar": 123
                                },
                                "ready": {
-                                 "bar": {},
+                                 "bar": {
+                                   "state": "pending"
+                                 },
                                  "hax": {}
                                }
                              },
@@ -606,9 +612,9 @@ public class ApplicationHandlerTest {
                                    "cause": "reindexing",
                                    "startedMillis": 124456,
                                    "endedMillis": 125456,
-                                   "state": "failed",
                                    "message": "message",
-                                   "progress": 0.1
+                                   "progress": 0.1,
+                                   "state": "failed"
                                  }
                                }
                              }

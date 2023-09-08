@@ -5,9 +5,12 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
+import com.yahoo.vespa.config.server.application.ClusterReindexing.State;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 
+import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public class ReindexingResponse extends JSONResponse {
@@ -23,32 +26,35 @@ public class ReindexingResponse extends JSONResponse {
 
             for (String type : types) {
                 Cursor statusObject = readyObject.setObject(type);
+                Instant readyAt = Instant.EPOCH;
+                State state = null;
                 if (reindexing.clusters().containsKey(cluster)) {
-                    if (reindexing.clusters().get(cluster).pending().containsKey(type))
+                    if (reindexing.clusters().get(cluster).pending().containsKey(type)) {
                         pendingObject.setLong(type, reindexing.clusters().get(cluster).pending().get(type));
+                        state = State.PENDING;
+                    }
 
-                    if (reindexing.clusters().get(cluster).ready().containsKey(type))
-                        setStatus(statusObject, reindexing.clusters().get(cluster).ready().get(type));
+                    if (reindexing.clusters().get(cluster).ready().containsKey(type)) {
+                        ApplicationReindexing.Status readyStatus = reindexing.clusters().get(cluster).ready().get(type);
+                        readyAt = readyStatus.ready();
+                        statusObject.setLong("readyMillis", readyStatus.ready().toEpochMilli());
+                        statusObject.setDouble("speed", readyStatus.speed());
+                        statusObject.setString("cause", readyStatus.cause());
+                    }
                 }
                 if (clusters.containsKey(cluster))
-                    if (clusters.get(cluster).documentTypeStatus().containsKey(type))
-                        setStatus(statusObject, clusters.get(cluster).documentTypeStatus().get(type));
+                    if (clusters.get(cluster).documentTypeStatus().containsKey(type)) {
+                        ClusterReindexing.Status status = clusters.get(cluster).documentTypeStatus().get(type);
+                        statusObject.setLong("startedMillis", status.startedAt().toEpochMilli());
+                        status.endedAt().ifPresent(endedAt -> statusObject.setLong("endedMillis", endedAt.toEpochMilli()));
+                        if (status.startedAt().isAfter(readyAt) && status.state().isPresent()) state = status.state().get();
+                        status.message().ifPresent(message -> statusObject.setString("message", message));
+                        status.progress().ifPresent(progress -> statusObject.setDouble("progress", progress));
+                    }
+                if (readyAt != Instant.EPOCH && state == null) state = State.PENDING;
+                if (state != null) statusObject.setString("state", state.asString());
             }
         });
-    }
-
-    private static void setStatus(Cursor object, ApplicationReindexing.Status readyStatus) {
-        object.setLong("readyMillis", readyStatus.ready().toEpochMilli());
-        object.setDouble("speed", readyStatus.speed());
-        object.setString("cause", readyStatus.cause());
-    }
-
-    private static void setStatus(Cursor object, ClusterReindexing.Status status) {
-        object.setLong("startedMillis", status.startedAt().toEpochMilli());
-        status.endedAt().ifPresent(endedAt -> object.setLong("endedMillis", endedAt.toEpochMilli()));
-        status.state().map(ClusterReindexing.State::asString).ifPresent(state -> object.setString("state", state));
-        status.message().ifPresent(message -> object.setString("message", message));
-        status.progress().ifPresent(progress -> object.setDouble("progress", progress));
     }
 
 }
