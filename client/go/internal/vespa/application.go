@@ -220,36 +220,31 @@ func copyFile(src *zip.File, dst string) error {
 // Package to use is preferred in this order:
 // 1. Given path, if it's a zip
 // 2. target/application
-// 3. target/application.zip
-// 4. src/main/application
-// 5. Given path, if it contains services.xml
+// 3. src/main/application
+// 4. Given path, if it contains services.xml
 func FindApplicationPackage(zipOrDir string, requirePackaging bool) (ApplicationPackage, error) {
 	if isZip(zipOrDir) {
 		return ApplicationPackage{Path: zipOrDir}, nil
 	}
-	// Prefer uncompressed application because this allows us to add security/clients.pem to the package on-demand
-	if path := filepath.Join(zipOrDir, "target", "application"); util.PathExists(path) {
-		return ApplicationPackage{Path: path}, nil
-	}
-	appZip := filepath.Join(zipOrDir, "target", "application.zip")
-	if util.PathExists(filepath.Join(zipOrDir, "pom.xml")) || util.PathExists(appZip) {
-		if util.PathExists(appZip) {
-			if testZip := filepath.Join(zipOrDir, "target", "application-test.zip"); util.PathExists(testZip) {
-				return ApplicationPackage{Path: appZip, TestPath: testZip}, nil
-			}
-			return ApplicationPackage{Path: appZip}, nil
+	// Pre-packaged application. We prefer the uncompressed application because this allows us to add
+	// security/clients.pem to the package on-demand
+	hasPOM := util.PathExists(filepath.Join(zipOrDir, "pom.xml"))
+	if hasPOM {
+		path := filepath.Join(zipOrDir, "target", "application")
+		if util.PathExists(path) {
+			testPath := existingPath(filepath.Join(zipOrDir, "target", "application-test"))
+			return ApplicationPackage{Path: path, TestPath: testPath}, nil
 		}
 		if requirePackaging {
-			return ApplicationPackage{}, errors.New("found pom.xml, but target/application.zip does not exist: run 'mvn package' first")
+			return ApplicationPackage{}, fmt.Errorf("found pom.xml, but %s does not exist: run 'mvn package' first", path)
 		}
 	}
+	// Application with Maven directory structure, but with no POM or no hard requirement on packaging
 	if path := filepath.Join(zipOrDir, "src", "main", "application"); util.PathExists(path) {
-		testPath := ""
-		if d := filepath.Join(zipOrDir, "src", "test", "application"); util.PathExists(d) {
-			testPath = d
-		}
+		testPath := existingPath(filepath.Join(zipOrDir, "src", "test", "application"))
 		return ApplicationPackage{Path: path, TestPath: testPath}, nil
 	}
+	// Application without Java components
 	if util.PathExists(filepath.Join(zipOrDir, "services.xml")) {
 		testPath := ""
 		if util.PathExists(filepath.Join(zipOrDir, "tests")) {
@@ -258,4 +253,11 @@ func FindApplicationPackage(zipOrDir string, requirePackaging bool) (Application
 		return ApplicationPackage{Path: zipOrDir, TestPath: testPath}, nil
 	}
 	return ApplicationPackage{}, fmt.Errorf("could not find an application package source in '%s'", zipOrDir)
+}
+
+func existingPath(path string) string {
+	if util.PathExists(path) {
+		return path
+	}
+	return ""
 }
