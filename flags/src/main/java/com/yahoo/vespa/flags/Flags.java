@@ -330,7 +330,7 @@ public class Flags {
             APPLICATION_ID
     );
     public static final UnboundBooleanFlag ENABLE_NESTED_MULTIVALUE_GROUPING = defineFeatureFlag(
-            "enable-nested-multivalue-grouping", false,
+            "enable-nested-multivalue-grouping", true,
             List.of("baldersheim"), "2023-06-29", "2023-12-31",
             "Should we enable proper nested multivalue grouping",
             "Takes effect at redeployment",
