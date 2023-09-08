@@ -15,6 +15,8 @@ import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLOUD_ACCOUNT;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
@@ -374,6 +376,13 @@ public class Flags {
             List.of("hmusum"), "2023-08-27", "2023-10-01",
             "Whether to write application data (active session id, last deployed session id etc. ) as json",
             "Takes effect immediately");
+
+    public static final UnboundIntFlag MIN_EXCLUSIVE_ADVERTISED_MEMORY_GB = defineIntFlag(
+            "min-exclusive-advertised-memory-gb", 4,
+            List.of("freva"), "2023-09-08", "2023-11-01",
+            "Minimum amount of advertised memory for exclusive nodes",
+            "Takes effect immediately",
+            APPLICATION_ID, CLUSTER_ID, CLUSTER_TYPE);
 
     public static final UnboundBooleanFlag ASSIGN_RANDOMIZED_ID = defineFeatureFlag(
             "assign-randomized-id", false,
