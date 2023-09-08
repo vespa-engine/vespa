@@ -19,8 +19,7 @@ public:
                               std::shared_ptr<api::BucketInfoReply> reply,
                               const DistributorNodeContext& node_ctx,
                               DistributorStripeOperationContext& op_ctx,
-                              CancelScope& cancel_scope,
-                              api::Timestamp revertTimestamp = 0);
+                              CancelScope& cancel_scope);
     ~PersistenceMessageTracker();
 
     void updateDB();
@@ -34,10 +33,6 @@ public:
     uint16_t receiveReply(MessageSender& sender, api::BucketInfoReply& reply);
     void updateFromReply(MessageSender& sender, api::BucketInfoReply& reply, uint16_t node);
     std::shared_ptr<api::BucketInfoReply>& getReply() { return _reply; }
-
-    using BucketNodePair = std::pair<document::Bucket, uint16_t>;
-
-    void revert(MessageSender& sender, const std::vector<BucketNodePair>& revertNodes);
 
     /**
        Sends a set of messages that are permissible for early return.
@@ -59,8 +54,6 @@ private:
     PersistenceOperationMetricSet&        _metric;
     std::shared_ptr<api::BucketInfoReply> _reply;
     DistributorStripeOperationContext&    _op_ctx;
-    api::Timestamp                        _revertTimestamp;
-    std::vector<BucketNodePair>           _revertNodes;
     mbus::Trace                           _trace;
     framework::MilliSecTimer              _requestTimer;
     CancelScope&                          _cancel_scope;
@@ -86,7 +79,6 @@ private:
     void addBucketInfoFromReply(uint16_t node, const api::BucketInfoReply& reply);
     void logSuccessfulReply(uint16_t node, const api::BucketInfoReply& reply) const;
     [[nodiscard]] bool hasSentReply() const noexcept { return !_reply; }
-    [[nodiscard]] bool shouldRevert() const;
     [[nodiscard]] bool has_majority_successful_replies() const noexcept;
     [[nodiscard]] bool has_minority_test_and_set_failure() const noexcept;
     void sendReply(MessageSender& sender);

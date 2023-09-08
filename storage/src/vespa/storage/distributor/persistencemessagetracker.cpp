@@ -18,15 +18,13 @@ PersistenceMessageTracker::PersistenceMessageTracker(
         std::shared_ptr<api::BucketInfoReply> reply,
         const DistributorNodeContext& node_ctx,
         DistributorStripeOperationContext& op_ctx,
-        CancelScope& cancel_scope,
-        api::Timestamp revertTimestamp)
+        CancelScope& cancel_scope)
     : MessageTracker(node_ctx),
       _remapBucketInfo(),
       _bucketInfo(),
       _metric(metric),
       _reply(std::move(reply)),
       _op_ctx(op_ctx),
-      _revertTimestamp(revertTimestamp),
       _trace(_reply->getTrace().getLevel()),
       _requestTimer(node_ctx.clock()),
       _cancel_scope(cancel_scope),
@@ -106,26 +104,6 @@ PersistenceMessageTracker::receiveReply(MessageSender& sender, api::BucketInfoRe
     }
 
     return node;
-}
-
-void
-PersistenceMessageTracker::revert(MessageSender& sender, const std::vector<BucketNodePair>& revertNodes)
-{
-    if (_revertTimestamp != 0) {
-        // Since we're reverting, all received bucket info is voided.
-        _bucketInfo.clear();
-
-        std::vector<api::Timestamp> reverts;
-        reverts.push_back(_revertTimestamp);
-
-        for (const auto & revertNode : revertNodes) {
-            auto toRevert = std::make_shared<api::RevertCommand>(revertNode.first, reverts);
-            toRevert->setPriority(_priority);
-            queueCommand(std::move(toRevert), revertNode.second);
-        }
-
-        flushQueue(sender);
-    }
 }
 
 void
@@ -213,13 +191,6 @@ PersistenceMessageTracker::logSuccessfulReply(uint16_t node, const api::BucketIn
     }
 }
 
-bool
-PersistenceMessageTracker::shouldRevert() const
-{
-    return _op_ctx.distributor_config().enable_revert()
-            &&  !_revertNodes.empty() && !_success && _reply;
-}
-
 bool PersistenceMessageTracker::has_majority_successful_replies() const noexcept {
     // FIXME this has questionable interaction with early client ACK since we only count
     // the number of observed replies rather than the number of total requests sent.
@@ -296,7 +267,6 @@ PersistenceMessageTracker::handlePersistenceReply(api::BucketInfoReply& reply, u
     }
     if (reply.getResult().success()) {
         logSuccessfulReply(node, reply);
-        _revertNodes.emplace_back(reply.getBucket(), node);
         ++_n_successful_persistence_replies;
     } else if (!hasSentReply()) {
         updateFailureResult(reply);
@@ -324,15 +294,10 @@ PersistenceMessageTracker::updateFromReply(MessageSender& sender, api::BucketInf
     }
 
     if (finished()) {
-        bool doRevert(shouldRevert());
-
         updateDB();
 
         if (!hasSentReply()) {
             sendReply(sender);
-        }
-        if (doRevert) {
-            revert(sender, _revertNodes);
         }
     } else if (canSendReplyEarly()) {
         LOG(debug, "Sending reply early because initial redundancy has been reached");

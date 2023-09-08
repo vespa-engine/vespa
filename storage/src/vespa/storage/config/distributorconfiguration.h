@@ -263,9 +263,6 @@ public:
         return _max_activation_inhibited_out_of_sync_groups;
     }
 
-    bool enable_revert() const noexcept {
-        return _enable_revert;
-    }
     [[nodiscard]] bool implicitly_clear_priority_on_schedule() const noexcept {
         return _implicitly_clear_priority_on_schedule;
     }
@@ -354,7 +351,6 @@ private:
     bool _use_weak_internal_read_consistency_for_client_gets;
     bool _enable_metadata_only_fetch_phase_for_inconsistent_updates;
     bool _prioritize_global_bucket_merges;
-    bool _enable_revert;
     bool _implicitly_clear_priority_on_schedule;
     bool _use_unordered_merge_chaining;
     bool _inhibit_default_merges_when_global_merges_pending;
