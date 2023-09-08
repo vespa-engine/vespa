@@ -5,6 +5,11 @@
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/2",
       "start": 1600000000000,
       "status": "running",
+      "dependent": {
+        "instance": "instance1",
+        "region": "us-central-1",
+        "revision": 4
+      },
       "versions": {
         "targetPlatform": "6.1.0",
         "targetApplication": {
@@ -63,6 +68,11 @@
       "start": 1600000000000,
       "end": 1600000000000,
       "status": "success",
+      "dependent": {
+        "instance": "instance1",
+        "region": "us-central-1",
+        "revision": 1
+      },
       "versions": {
         "targetPlatform": "6.1.0",
         "targetApplication": {

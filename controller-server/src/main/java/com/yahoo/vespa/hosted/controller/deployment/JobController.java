@@ -699,12 +699,12 @@ public class JobController {
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, Optional<String> reason) {
+    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, Reason reason) {
         start(id, type, versions, isRedeployment, JobProfile.of(type), reason);
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile, Optional<String> reason) {
+    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile, Reason reason) {
         ApplicationVersion revision = controller.applications().requireApplication(TenantAndApplicationId.from(id)).revisions().get(versions.targetRevision());
         if (revision.compileVersion()
                     .map(version -> controller.applications().versionCompatibility(id).refuse(versions.targetPlatform(), version))
@@ -718,8 +718,7 @@ public class JobController {
                 throw new IllegalArgumentException("Cannot start " + type + " for " + id + "; it is already running!");
 
             RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile,
-                                             new Reason(reason, Optional.empty(), Optional.empty())));
+            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile, reason));
             metric.jobStarted(newId.job());
         });
     }
@@ -777,7 +776,7 @@ public class JobController {
                   new Versions(targetPlatform, version.id(), lastRun.map(run -> run.versions().targetPlatform()), lastRun.map(run -> run.versions().targetRevision())),
                   false,
                   dryRun ? JobProfile.developmentDryRun : JobProfile.development,
-                  Optional.empty());
+                  Reason.empty());
         });
 
         locked(id, type, __ -> {

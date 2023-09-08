@@ -344,6 +344,10 @@ public class Run {
             throw new IllegalStateException("This run ended at " + end.get() + " -- it can't be further modified!");
     }
 
-    public record Reason(Optional<String> reason, Optional<JobId> dependent, Optional<Change> change) { }
+    public record Reason(Optional<String> reason, Optional<JobId> dependent, Optional<Change> change) {
+        private static final Reason empty = new Reason(Optional.empty(), Optional.empty(), Optional.empty());
+        public static Reason empty() { return empty; }
+        public static Reason because(String reason) { return new Reason(Optional.of(reason), Optional.empty(), Optional.empty()); }
+    }
 
 }

@@ -167,6 +167,11 @@
           "start": 14403000,
           "end": 14403000,
           "status": "success",
+          "dependent": {
+            "instance": "default",
+            "region": "us-central-1",
+            "revision": 3
+          },
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
@@ -225,6 +230,11 @@
           "start": 1000,
           "end": 1000,
           "status": "success",
+          "dependent": {
+            "instance": "default",
+            "region": "us-central-1",
+            "revision": 2
+          },
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
@@ -283,6 +293,11 @@
           "start": 0,
           "end": 0,
           "status": "success",
+          "dependent": {
+            "instance": "default",
+            "region": "us-central-1",
+            "revision": 1
+          },
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
@@ -376,6 +391,11 @@
           "start": 14503000,
           "end": 14503000,
           "status": "installationFailed",
+          "dependent": {
+            "instance": "default",
+            "region": "us-east-3",
+            "revision": 3
+          },
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
@@ -457,6 +477,11 @@
           "start": 14403000,
           "end": 14403000,
           "status": "installationFailed",
+          "dependent": {
+            "instance": "default",
+            "region": "us-east-3",
+            "revision": 3
+          },
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
@@ -538,6 +563,11 @@
           "start": 14403000,
           "end": 14403000,
           "status": "success",
+          "dependent": {
+            "instance": "default",
+            "region": "us-central-1",
+            "revision": 3
+          },
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
@@ -619,6 +649,11 @@
           "start": 1000,
           "end": 1000,
           "status": "success",
+          "dependent": {
+            "instance": "default",
+            "region": "us-central-1",
+            "revision": 2
+          },
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
@@ -700,6 +735,11 @@
           "start": 0,
           "end": 0,
           "status": "success",
+          "dependent": {
+            "instance": "default",
+            "region": "us-central-1",
+            "revision": 1
+          },
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {

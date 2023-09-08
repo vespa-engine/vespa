@@ -126,6 +126,13 @@ class JobControllerApiHandlerHelper {
         detailsObject.setBool("active", ! run.hasEnded());
         detailsObject.setString("status", nameOf(run.status()));
         run.reason().reason().ifPresent(reason -> detailsObject.setString("reason", reason));
+        run.reason().dependent().ifPresent(dependent -> {
+            Cursor dependentObject = detailsObject.setObject("dependent");
+            dependentObject.setString("instance", dependent.application().instance().value());
+            dependentObject.setString("region", dependent.type().zone().region().value());
+            run.reason().change().flatMap(Change::platform).ifPresent(platform -> dependentObject.setString("platform", platform.toFullString()));
+            run.reason().change().flatMap(Change::revision).ifPresent(revision -> dependentObject.setLong("revision", revision.number()));
+        });
         try {
             jobController.updateTestLog(runId);
             jobController.updateVespaLog(runId);
@@ -499,6 +506,13 @@ class JobControllerApiHandlerHelper {
             run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
             runObject.setString("status", nameOf(run.status()));
             run.reason().reason().ifPresent(reason -> runObject.setString("reason", reason));
+            run.reason().dependent().ifPresent(dependent -> {
+                Cursor dependentObject = runObject.setObject("dependent");
+                dependentObject.setString("instance", dependent.application().instance().value());
+                dependentObject.setString("region", dependent.type().zone().region().value());
+                run.reason().change().flatMap(Change::platform).ifPresent(platform -> dependentObject.setString("platform", platform.toFullString()));
+                run.reason().change().flatMap(Change::revision).ifPresent(revision -> dependentObject.setLong("revision", revision.number()));
+            });
             toSlime(runObject.setObject("versions"), run.versions(), application);
             Cursor runStepsArray = runObject.setArray("steps");
             run.steps().forEach((step, info) -> {

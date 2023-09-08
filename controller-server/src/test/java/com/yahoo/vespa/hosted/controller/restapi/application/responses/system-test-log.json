@@ -1,6 +1,11 @@
 {
   "active": false,
   "status": "success",
+  "dependent": {
+    "instance": "default",
+    "region": "us-central-1",
+    "revision": 1
+  },
   "log": {
     "deployTester": [
       {

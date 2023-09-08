@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.DelayCause;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.Readiness;
+import com.yahoo.vespa.hosted.controller.deployment.Run.Reason;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -185,23 +186,18 @@ public class DeploymentTrigger {
     /** Attempts to trigger the given job. */
     private boolean trigger(Job job) {
         try {
-            trigger(job, null);
+            log.log(Level.FINE, () -> "Triggering " + job);
+            applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()), application -> {
+                jobs.start(job.applicationId(), job.jobType, job.versions, false, job.reason);
+                applications().store(application.with(job.applicationId().instance(), instance ->
+                        instance.withJobPause(job.jobType, OptionalLong.empty())));
+            });
             return true;
         }
         catch (Exception e) {
             log.log(Level.WARNING, "Failed triggering " + job.jobType() + " for " + job.instanceId, e);
             return false;
         }
-    }
-
-    /** Attempts to trigger the given job. */
-    private void trigger(Job job, String reason) {
-        log.log(Level.FINE, () -> "Triggering " + job);
-        applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()), application -> {
-            jobs.start(job.applicationId(), job.jobType, job.versions, false, Optional.ofNullable(reason));
-            applications().store(application.with(job.applicationId().instance(), instance ->
-                    instance.withJobPause(job.jobType, OptionalLong.empty())));
-        });
     }
 
     /** Force triggering of a job for given instance, with same versions as last run. */
@@ -212,7 +208,8 @@ public class DeploymentTrigger {
         JobStatus jobStatus = jobs.jobStatus(new JobId(applicationId, jobType));
         Run last = jobStatus.lastTriggered()
                             .orElseThrow(() -> new IllegalArgumentException(job + " has never been triggered"));
-        trigger(deploymentJob(instance, last.versions(), last.id().type(), jobStatus.isNodeAllocationFailure(), clock.instant()), reason);
+        trigger(deploymentJob(instance, last.versions(), last.id().type(), jobStatus.isNodeAllocationFailure(), clock.instant(),
+                              new Reason(Optional.ofNullable(reason), last.reason().dependent(), last.reason().change())));
         return job;
     }
 
@@ -236,7 +233,7 @@ public class DeploymentTrigger {
         if ( ! upgradeRevision && change.revision().isPresent()) change = change.withoutApplication();
         if ( ! upgradePlatform && change.platform().isPresent()) change = change.withoutPlatform();
         Versions versions = Versions.from(change, application, status.deploymentFor(job), status.fallbackPlatform(change, job));
-        DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, new Readiness(controller.clock().instant()), instance.change());
+        DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, new Readiness(controller.clock().instant()), instance.change(), null);
         Map<JobId, List<DeploymentStatus.Job>> testJobs = status.testJobs(Map.of(job, List.of(toTrigger)));
 
         Map<JobId, List<DeploymentStatus.Job>> jobs = testJobs.isEmpty() || ! requireTests
@@ -245,13 +242,13 @@ public class DeploymentTrigger {
                                                                 .filter(entry -> controller.jobController().last(entry.getKey()).map(Run::hasEnded).orElse(true))
                                                                 .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        jobs.forEach((jobId, versionsList) -> {
+        jobs.forEach((jobId, jobList) -> {
             trigger(deploymentJob(application.require(jobId.application().instance()),
-                                  versionsList.get(0).versions(),
+                                  jobList.get(0).versions(),
                                   jobId.type(),
                                   status.jobs().get(jobId).get().isNodeAllocationFailure(),
-                                  clock.instant()),
-                    reason);
+                                  clock.instant(),
+                                  new Reason(Optional.of(reason), jobList.get(0).reason().dependent(), jobList.get(0).reason().change())));
         });
         return List.copyOf(jobs.keySet());
     }
@@ -262,7 +259,7 @@ public class DeploymentTrigger {
                                        last.versions().targetRevision(),
                                        Optional.of(last.versions().targetPlatform()),
                                        Optional.of(last.versions().targetRevision()));
-        jobs.start(job.application(), job.type(), target, true, Optional.of(reason));
+        jobs.start(job.application(), job.type(), target, true, Reason.because(reason));
         return List.of(job);
     }
 
@@ -383,7 +380,8 @@ public class DeploymentTrigger {
                                        job.versions(),
                                        job.type(),
                                        status.instanceJobs(jobId.application().instance()).get(jobId.type()).isNodeAllocationFailure(),
-                                       job.readiness().at()));
+                                       job.readiness().at(),
+                                       job.reason()));
             }
         });
         return Collections.unmodifiableList(jobs);
@@ -458,8 +456,8 @@ public class DeploymentTrigger {
 
     // ---------- Version and job helpers ----------
 
-    private Job deploymentJob(Instance instance, Versions versions, JobType jobType, boolean isNodeAllocationFailure, Instant availableSince) {
-        return new Job(instance, versions, jobType, availableSince, isNodeAllocationFailure, instance.change().revision().isPresent());
+    private Job deploymentJob(Instance instance, Versions versions, JobType jobType, boolean isNodeAllocationFailure, Instant availableSince, Reason reason) {
+        return new Job(instance, versions, jobType, availableSince, isNodeAllocationFailure, instance.change().revision().isPresent(), reason);
     }
 
     // ---------- Data containers ----------
@@ -473,15 +471,17 @@ public class DeploymentTrigger {
         private final Instant availableSince;
         private final boolean isRetry;
         private final boolean isApplicationUpgrade;
+        private final Run.Reason reason;
 
         private Job(Instance instance, Versions versions, JobType jobType, Instant availableSince,
-                    boolean isRetry, boolean isApplicationUpgrade) {
+                    boolean isRetry, boolean isApplicationUpgrade, Run.Reason reason) {
             this.instanceId = instance.id();
             this.jobType = jobType;
             this.versions = versions;
             this.availableSince = availableSince;
             this.isRetry = isRetry;
             this.isApplicationUpgrade = isApplicationUpgrade;
+            this.reason = reason;
         }
 
         ApplicationId applicationId() { return instanceId; }
@@ -489,6 +489,7 @@ public class DeploymentTrigger {
         Instant availableSince() { return availableSince; } // TODO jvenstad: This is 95% broken now. Change.at() can restore it.
         boolean isRetry() { return isRetry; }
         boolean applicationUpgrade() { return isApplicationUpgrade; }
+        Reason reason() { return reason; }
 
         @Override
         public String toString() {

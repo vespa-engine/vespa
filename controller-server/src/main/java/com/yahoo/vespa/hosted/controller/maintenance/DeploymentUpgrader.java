@@ -71,7 +71,7 @@ public class DeploymentUpgrader extends ControllerMaintainer {
 
                         log.log(Level.FINE, "Upgrading deployment of " + instance.id() + " in " + deployment.zone());
                         attempts.incrementAndGet();
-                        controller().jobController().start(instance.id(), JobType.deploymentTo(deployment.zone()), target, true, Optional.of("automated upgrade"));
+                        controller().jobController().start(instance.id(), JobType.deploymentTo(deployment.zone()), target, true, Run.Reason.because("automated upgrade"));
                     } catch (Exception e) {
                         failures.incrementAndGet();
                         log.log(Level.WARNING, "Failed upgrading " + deployment + " of " + instance +

@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.JobMetrics;
 import com.yahoo.vespa.hosted.controller.deployment.JobProfile;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.Run.Reason;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
@@ -423,7 +424,7 @@ public class JobRunnerTest {
     }
 
     private void start(JobController jobs, ApplicationId id, JobType type) {
-        jobs.start(id, type, versions, false, Optional.empty());
+        jobs.start(id, type, versions, false, Reason.empty());
     }
 
     public static ExecutorService inThreadExecutor() {
