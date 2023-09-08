@@ -47,6 +47,7 @@ BuildRequires: epel-release
 %endif
 %if 0%{?el8}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
+BuildRequires: vespa-toolset-12-meta >= 12.0.1
 BuildRequires: gcc-toolset-12-gcc-c++
 BuildRequires: gcc-toolset-12-binutils
 BuildRequires: gcc-toolset-12-libatomic-devel
@@ -60,6 +61,7 @@ BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el9}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
+BuildRequires: vespa-toolset-12-meta >= 12.0.1
 BuildRequires: gcc-toolset-12-gcc-c++
 BuildRequires: gcc-toolset-12-binutils
 BuildRequires: gcc-toolset-12-libatomic-devel
