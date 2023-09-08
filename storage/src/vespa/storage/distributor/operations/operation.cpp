@@ -13,7 +13,7 @@ namespace storage::distributor {
 
 Operation::Operation()
     : _startTime(),
-      _cancelled(false)
+      _cancel_scope()
 {
 }
 
@@ -47,7 +47,7 @@ Operation::copyMessageSettings(const api::StorageCommand& source, api::StorageCo
 }
 
 void Operation::cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) {
-    _cancelled = true;
+    _cancel_scope.merge(cancel_scope);
     on_cancel(sender, cancel_scope);
 }
 

@@ -9,6 +9,7 @@ namespace storage::framework { struct Clock; }
 
 namespace storage::distributor {
 
+class CancelScope;
 class Operation;
 
 /**
@@ -87,10 +88,19 @@ public:
     bool start(const std::shared_ptr<Operation>& operation, Priority priority) override;
 
     /**
-       If the given message exists, create a reply and pass it to the
-       appropriate callback.
+     * If the given message exists, remove it from the internal operation mapping.
+     *
+     * Returns the operation the message belonged to, if any.
      */
-    void erase(api::StorageMessage::Id msgId);
+    [[nodiscard]] std::shared_ptr<Operation> erase(api::StorageMessage::Id msgId);
+
+    /**
+     * Returns a strong ref to the pending operation with the given msg_id if it exists.
+     * Otherwise returns an empty shared_ptr.
+     */
+    [[nodiscard]] std::shared_ptr<Operation> find_by_id(api::StorageMessage::Id msg_id) const noexcept;
+
+    [[nodiscard]] bool try_cancel_by_id(api::StorageMessage::Id msg_id, const CancelScope& cancel_scope);
 
     [[nodiscard]] DistributorStripeMessageSender& sender() noexcept { return _sender; }
 

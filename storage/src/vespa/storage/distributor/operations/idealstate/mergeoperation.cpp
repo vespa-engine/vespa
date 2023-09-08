@@ -177,7 +177,7 @@ MergeOperation::sourceOnlyCopyChangedDuringMerge(
         const BucketDatabase::Entry& currentState) const
 {
     assert(currentState.valid());
-    for (const auto & mnode : _mnodes) {
+    for (const auto& mnode : _mnodes) {
         const BucketCopy* copyBefore(_infoBefore.getNode(mnode.index));
         if (!copyBefore) {
             continue;
@@ -205,7 +205,7 @@ MergeOperation::deleteSourceOnlyNodes(
 {
     assert(currentState.valid());
     std::vector<uint16_t> sourceOnlyNodes;
-    for (const auto & mnode : _mnodes) {
+    for (const auto& mnode : _mnodes) {
         const uint16_t nodeIndex = mnode.index;
         const BucketCopy* copy = currentState->getNode(nodeIndex);
         if (!copy) {
@@ -272,7 +272,14 @@ MergeOperation::onReceive(DistributorStripeMessageSender& sender, const std::sha
 
     api::ReturnCode result = reply.getResult();
     _ok = result.success();
-    if (_ok) {
+    // We avoid replica deletion entirely if _any_ aspect of the merge has been cancelled.
+    // It is, for instance, possible that a node that was previously considered source-only
+    // now is part of the #redundancy ideal copies because another node became unavailable.
+    // Leave it up to the maintenance state checkers to figure this out.
+    if (_cancel_scope.is_cancelled()) {
+        LOG(debug, "Merge operation for %s has been cancelled", getBucketId().toString().c_str());
+        _ok = false;
+    } else if (_ok) {
         BucketDatabase::Entry entry(_bucketSpace->getBucketDatabase().get(getBucketId()));
         if (!entry.valid()) {
             LOG(debug, "Bucket %s no longer exists after merge", getBucketId().toString().c_str());

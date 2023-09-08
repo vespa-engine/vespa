@@ -178,6 +178,8 @@ void CheckCondition::handle_internal_get_operation_reply(std::shared_ptr<api::St
         if (_bucket_space.has_pending_cluster_state()) {
             state_version_now = _bucket_space.get_pending_cluster_state().getVersion();
         }
+        // TODO disable these explicit (and possibly costly) checks when cancellation is enabled,
+        //  as cancellation shall cover a superset of the cases that can be detected here.
         if ((state_version_now != _cluster_state_version_at_creation_time)
             && (replica_set_changed_after_get_operation()
                 || distributor_no_longer_owns_bucket()))

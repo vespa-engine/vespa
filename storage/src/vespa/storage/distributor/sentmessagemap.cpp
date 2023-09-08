@@ -18,18 +18,30 @@ SentMessageMap::SentMessageMap()
 
 SentMessageMap::~SentMessageMap() = default;
 
+Operation*
+SentMessageMap::find_by_id_or_nullptr(api::StorageMessage::Id id) const noexcept
+{
+    auto iter = _map.find(id);
+    return ((iter != _map.end()) ? iter->second.get() : nullptr);
+}
+
+std::shared_ptr<Operation>
+SentMessageMap::find_by_id_or_empty(api::StorageMessage::Id id) const noexcept
+{
+    auto iter = _map.find(id);
+    return ((iter != _map.end()) ? iter->second : std::shared_ptr<Operation>());
+}
 
 std::shared_ptr<Operation>
 SentMessageMap::pop()
 {
   auto found = _map.begin();
-
   if (found != _map.end()) {
-      std::shared_ptr<Operation> retVal = found->second;
+      std::shared_ptr<Operation> op = std::move(found->second);
       _map.erase(found);
-      return retVal;
+      return op;
   } else {
-      return std::shared_ptr<Operation>();
+      return {};
   }
 }
 
@@ -37,17 +49,15 @@ std::shared_ptr<Operation>
 SentMessageMap::pop(api::StorageMessage::Id id)
 {
     auto found = _map.find(id);
-
     if (found != _map.end()) {
         LOG(spam, "Found Id %" PRIu64 " in callback map: %p", id, found->second.get());
 
-        std::shared_ptr<Operation> retVal = found->second;
+        std::shared_ptr<Operation> op = std::move(found->second);
         _map.erase(found);
-        return retVal;
+        return op;
     } else {
         LOG(spam, "Did not find Id %" PRIu64 " in callback map", id);
-
-        return std::shared_ptr<Operation>();
+        return {};
     }
 }
 
@@ -55,7 +65,6 @@ void
 SentMessageMap::insert(api::StorageMessage::Id id, const std::shared_ptr<Operation> & callback)
 {
     LOG(spam, "Inserting callback %p for message %" PRIu64 "", callback.get(), id);
-
     _map[id] = callback;
 }
 

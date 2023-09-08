@@ -18,6 +18,7 @@ namespace storage::distributor {
 class DistributorMetricSet;
 class NodeSupportedFeaturesRepo;
 class PendingMessageTracker;
+class Operation;
 
 /**
  * TODO STRIPE add class comment.
@@ -27,7 +28,7 @@ class DistributorStripeInterface : public DistributorStripeMessageSender
 public:
     virtual DistributorMetricSet& getMetrics() = 0;
     virtual void enableClusterStateBundle(const lib::ClusterStateBundle& state) = 0;
-    virtual const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const = 0;
+    [[nodiscard]] virtual const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const = 0;
     virtual void notifyDistributionChangeEnabled() = 0;
 
     /**
@@ -57,7 +58,9 @@ public:
     /**
      * Returns true if the node is currently initializing.
      */
-    virtual bool initializing() const = 0;
+    [[nodiscard]] virtual bool initializing() const = 0;
+
+    [[nodiscard]] virtual std::shared_ptr<Operation> maintenance_op_from_message_id(uint64_t msg_id) const noexcept = 0;
     virtual void handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>&) = 0;
     virtual const DistributorConfiguration& getConfig() const = 0;
     virtual ChainedMessageSender& getMessageSender() = 0;

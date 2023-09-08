@@ -7,7 +7,6 @@
 #include <vespa/storage/bucketdb/bucketcopy.h>
 #include <vespa/storage/distributor/messagetracker.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
-#include <vespa/storage/distributor/operations/cancel_scope.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vector>
 
@@ -23,7 +22,6 @@ public:
 
     void onStart(DistributorStripeMessageSender& sender) override;
     void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
-    void on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) override;
     const char* getName() const noexcept override { return "garbagecollection"; };
     Type getType() const noexcept override { return GARBAGE_COLLECTION; }
     bool shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const override;
@@ -56,7 +54,6 @@ private:
     RemoveCandidates              _remove_candidates;
     std::vector<SequencingHandle> _gc_write_locks;
     std::vector<BucketCopy>       _replica_info;
-    CancelScope                   _cancel_scope;
     uint32_t                      _max_documents_removed;
     bool                          _is_done;
 

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "bucket_ownership_calculator.h"
 #include "bucketlistmerger.h"
 #include "distributor_stripe_component.h"
 #include "distributormessagesender.h"
@@ -49,6 +50,7 @@ public:
     bool onMergeBucketReply(const std::shared_ptr<api::MergeBucketReply>& reply) override;
     bool onNotifyBucketChange(const std::shared_ptr<api::NotifyBucketChangeCommand>&) override;
     void resendDelayedMessages();
+    [[nodiscard]] bool cancel_message_by_id(uint64_t msg_id);
 
     vespalib::string reportXmlStatus(vespalib::xml::XmlOutputStream&, const framework::HttpUrlPath&) const;
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
@@ -75,7 +77,8 @@ public:
 private:
     class MergeReplyGuard {
     public:
-        MergeReplyGuard(DistributorStripeInterface& distributor_interface, const std::shared_ptr<api::MergeBucketReply>& reply) noexcept
+        MergeReplyGuard(DistributorStripeInterface& distributor_interface,
+                        const std::shared_ptr<api::MergeBucketReply>& reply) noexcept
             : _distributor_interface(distributor_interface), _reply(reply) {}
 
         ~MergeReplyGuard();
@@ -89,22 +92,23 @@ private:
     };
 
     struct BucketRequest {
-        BucketRequest()
-            : targetNode(0), bucket(), timestamp(0) {};
+        BucketRequest() noexcept : targetNode(0), bucket(), timestamp(0), cancelled(false) {}
 
         BucketRequest(uint16_t t, uint64_t currentTime, const document::Bucket& b,
-                      const std::shared_ptr<MergeReplyGuard>& guard)
+                      const std::shared_ptr<MergeReplyGuard>& guard) noexcept
             : targetNode(t),
               bucket(b),
               timestamp(currentTime),
-              _mergeReplyGuard(guard) {};
+              _mergeReplyGuard(guard),
+              cancelled(false)
+        {}
 
         void print_xml_tag(vespalib::xml::XmlOutputStream &xos, const vespalib::xml::XmlAttribute &timestampAttribute) const;
         uint16_t targetNode;
         document::Bucket bucket;
         uint64_t timestamp;
-
         std::shared_ptr<MergeReplyGuard> _mergeReplyGuard;
+        bool cancelled;
     };
 
     struct EnqueuedBucketRecheck {
@@ -148,7 +152,7 @@ private:
     static void convertBucketInfoToBucketList(const std::shared_ptr<api::RequestBucketInfoReply>& repl,
                                               uint16_t targetNode, BucketListMerger::BucketList& newList);
     void sendRequestBucketInfo(uint16_t node, const document::Bucket& bucket,
-                               const std::shared_ptr<MergeReplyGuard>& mergeReplystatic );
+                               const std::shared_ptr<MergeReplyGuard>& mergeReplyGuard);
     static void addBucketInfoForNode(const BucketDatabase::Entry& e, uint16_t node,
                                      BucketListMerger::BucketList& existing);
     void clearReadOnlyBucketRepoDatabases();
@@ -218,12 +222,10 @@ private:
         std::vector<BucketDatabase::Entry> _nonOwnedBuckets;
         size_t                             _removed_buckets;
         size_t                             _removed_documents;
-        uint16_t                           _localIndex;
         const lib::Distribution&           _distribution;
         const char*                        _upStates;
+        BucketOwnershipCalculator          _ownership_calc;
         bool                               _track_non_owned_entries;
-        mutable uint64_t                   _cachedDecisionSuperbucket;
-        mutable bool                       _cachedOwned;
     };
 
     using DistributionContexts = std::unordered_map<document::BucketSpace,

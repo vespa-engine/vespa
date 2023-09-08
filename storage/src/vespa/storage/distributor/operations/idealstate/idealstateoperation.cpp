@@ -28,6 +28,7 @@ IdealStateOperation::IdealStateOperation(const BucketAndNodes& bucketAndNodes)
     : _manager(nullptr),
       _bucketSpace(nullptr),
       _bucketAndNodes(bucketAndNodes),
+      _detailedReason(),
       _priority(255),
       _ok(true)
 {

@@ -72,7 +72,7 @@ DistributorStripeTestUtil::setup_stripe(int redundancy, int node_count, const li
     // explicitly (which is what happens in "real life"), that is what would
     // take place.
     // The inverse case of this can be explicitly accomplished by calling
-    // triggerDistributionChange().
+    // trigger_distribution_change().
     // This isn't pretty, folks, but it avoids breaking the world for now,
     // as many tests have implicit assumptions about this being the behavior.
     auto new_configs = BucketSpaceDistributionConfigs::from_default_distribution(std::move(distribution));
@@ -93,8 +93,29 @@ void
 DistributorStripeTestUtil::trigger_distribution_change(lib::Distribution::SP distr)
 {
     _node->getComponentRegister().setDistribution(distr);
-    auto new_config = BucketSpaceDistributionConfigs::from_default_distribution(distr);
+    auto new_config = BucketSpaceDistributionConfigs::from_default_distribution(std::move(distr));
     _stripe->update_distribution_config(new_config);
+}
+
+void
+DistributorStripeTestUtil::simulate_distribution_config_change(std::shared_ptr<lib::Distribution> new_config)
+{
+    trigger_distribution_change(std::move(new_config));
+    _stripe->notifyDistributionChangeEnabled();
+    for (auto& space : _stripe->getBucketSpaceRepo()) {
+        auto cur_state = current_cluster_state_bundle().getDerivedClusterState(space.first); // no change in state itself
+        _stripe->remove_superfluous_buckets(space.first, *cur_state, true);
+    }
+}
+
+std::shared_ptr<lib::Distribution>
+DistributorStripeTestUtil::make_default_distribution_config(uint16_t redundancy, uint16_t node_count)
+{
+    lib::Distribution::DistributionConfigBuilder config(lib::Distribution::getDefaultDistributionConfig(redundancy, node_count).get());
+    config.redundancy = redundancy;
+    config.initialRedundancy = redundancy;
+    config.ensurePrimaryPersisted = true;
+    return std::make_shared<lib::Distribution>(config);
 }
 
 std::shared_ptr<DistributorConfiguration>
@@ -413,6 +434,11 @@ DistributorStripeTestUtil::getConfig() {
 
 DistributorBucketSpace&
 DistributorStripeTestUtil::getDistributorBucketSpace() {
+    return getBucketSpaceRepo().get(makeBucketSpace());
+}
+
+const DistributorBucketSpace&
+DistributorStripeTestUtil::getDistributorBucketSpace() const {
     return getBucketSpaceRepo().get(makeBucketSpace());
 }
 

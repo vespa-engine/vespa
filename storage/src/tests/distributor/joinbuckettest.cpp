@@ -109,4 +109,32 @@ TEST_F(JoinOperationTest, send_sparse_joins_to_nodes_without_both_source_buckets
     ASSERT_NO_FATAL_FAILURE(checkSourceBucketsAndSendReply(op, 1, {{33, 1}, {33, 1}}));
 }
 
+TEST_F(JoinOperationTest, cancelled_node_does_not_update_bucket_db) {
+    auto cfg = make_config();
+    cfg->setJoinCount(100);
+    cfg->setJoinSize(1000);
+    configure_stripe(cfg);
+
+    addNodesToBucketDB(document::BucketId(33, 1), "0=250/50/300");
+    addNodesToBucketDB(document::BucketId(33, 0x100000001), "0=300/40/200");
+    enable_cluster_state("distributor:1 storage:1");
+
+    JoinOperation op(dummy_cluster_context,
+                     BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)), toVector<uint16_t>(0)),
+                     {document::BucketId(33, 1), document::BucketId(33, 0x100000001)});
+
+    op.setIdealStateManager(&getIdealStateManager());
+    op.start(_sender);
+
+    op.cancel(_sender, CancelScope::of_node_subset({0}));
+
+    checkSourceBucketsAndSendReply(op, 0, {{33, 1}, {33, 0x100000001}});
+
+    // DB is not touched, so source buckets remain unchanged and target buckets is not created
+    EXPECT_TRUE(getBucket(document::BucketId(33, 0x100000001)).valid());
+    EXPECT_TRUE(getBucket(document::BucketId(33, 1)).valid());
+    EXPECT_FALSE(getBucket(document::BucketId(32, 0)).valid());
+    EXPECT_FALSE(op.ok());
+}
+
 }

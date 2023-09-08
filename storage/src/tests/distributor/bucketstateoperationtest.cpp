@@ -201,4 +201,27 @@ TEST_F(BucketStateOperationTest, bucket_db_not_updated_on_failure) {
     EXPECT_FALSE(op.ok());
 }
 
+TEST_F(BucketStateOperationTest, cancelled_node_does_not_update_bucket_db) {
+    document::BucketId bid(16, 1);
+    insertBucketInfo(bid, 0, 0xabc, 10, 1100, true, false);
+
+    BucketAndNodes bucketAndNodes(makeDocumentBucket(bid), toVector<uint16_t>(0));
+    std::vector<uint16_t> active = {0};
+    SetBucketStateOperation op(dummy_cluster_context, bucketAndNodes, active);
+
+    op.setIdealStateManager(&getIdealStateManager());
+    op.start(_sender);
+    op.cancel(_sender, CancelScope::of_node_subset({0}));
+
+    ASSERT_EQ(_sender.commands().size(), 1);
+    std::shared_ptr<api::StorageCommand> msg  = _sender.command(0);
+    std::shared_ptr<api::StorageReply> reply(msg->makeReply());
+    op.receive(_sender, reply);
+
+    BucketDatabase::Entry entry = getBucket(bid);
+    ASSERT_TRUE(entry.valid());
+    EXPECT_FALSE(entry->getNodeRef(0).active()); // Should not be updated
+    EXPECT_FALSE(op.ok());
+}
+
 } // namespace storage::distributor

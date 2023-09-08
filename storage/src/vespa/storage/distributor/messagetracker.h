@@ -25,7 +25,7 @@ public:
         uint16_t _target;
     };
 
-    MessageTracker(const ClusterContext& cluster_context);
+    explicit MessageTracker(const ClusterContext& cluster_context);
     MessageTracker(MessageTracker&&) noexcept = default;
     MessageTracker& operator=(MessageTracker&&) noexcept = delete;
     MessageTracker(const MessageTracker &) = delete;

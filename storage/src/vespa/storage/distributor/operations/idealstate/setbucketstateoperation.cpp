@@ -69,13 +69,17 @@ void
 SetBucketStateOperation::onReceive(DistributorStripeMessageSender& sender,
                                    const std::shared_ptr<api::StorageReply>& reply)
 {
-    auto& rep = static_cast<api::SetBucketStateReply&>(*reply);
+    auto& rep = dynamic_cast<api::SetBucketStateReply&>(*reply);
 
     const uint16_t node = _tracker.handleReply(rep);
     LOG(debug, "Got %s from node %u", reply->toString(true).c_str(), node);
 
     bool deactivate = false;
-    if (reply->getResult().success()) {
+
+    if (_cancel_scope.node_is_cancelled(node)) {
+        LOG(debug, "SetBucketState for %s has been cancelled", rep.getBucketId().toString().c_str());
+        _ok = false;
+    } else if (reply->getResult().success()) {
         BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(rep.getBucketId());
 
         if (entry.valid()) {
