@@ -202,10 +202,7 @@ TEST_F(PutOperationTest, failed_CreateBucket_removes_replica_from_db_and_sends_R
               "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)",
               dumpBucket(operation_context().make_split_bit_constrained_bucket_id(doc->getId())));
 
-    // TODO remove revert concept; does not make sense with Proton (since it's not a multi-version store and
-    //  therefore does not have anything to revert back to) and is config-disabled by default for this provider.
-    ASSERT_EQ("RequestBucketInfoCommand(1 buckets, super bucket BucketId(0x4000000000008f09). ) => 1,"
-              "Revert(BucketId(0x4000000000008f09)) => 0",
+    ASSERT_EQ("RequestBucketInfoCommand(1 buckets, super bucket BucketId(0x4000000000008f09). ) => 1",
               _sender.getCommands(true, true, 4));
 }
 
@@ -428,80 +425,6 @@ TEST_F(PutOperationTest, multiple_copies_early_return_primary_required_not_done)
     sendReply(5);
 
     ASSERT_EQ(0, _sender.replies().size());
-}
-
-TEST_F(PutOperationTest, do_not_revert_on_failure_after_early_return) {
-    setup_stripe(Redundancy(3),NodeCount(4), "storage:4 distributor:1",
-                     ReturnAfter(2), RequirePrimaryWritten(false));
-
-    sendPut(createPut(createDummyDocument("test", "test")));
-
-    ASSERT_EQ("Create bucket => 3,Create bucket => 2,"
-              "Create bucket => 1,Put => 3,Put => 2,Put => 1",
-              _sender.getCommands(true));
-
-    for (uint32_t i = 0;  i < 3; i++) {
-        sendReply(i); // CreateBucket
-    }
-    for (uint32_t i = 0;  i < 2; i++) {
-        sendReply(3 + i); // Put
-    }
-
-    ASSERT_EQ("PutReply(id:test:testdoctype1::test, BucketId(0x0000000000000000), "
-              "timestamp 100) ReturnCode(NONE)",
-              _sender.getLastReply());
-
-    sendReply(5, api::ReturnCode::INTERNAL_FAILURE);
-    // Should not be any revert commands sent
-    ASSERT_EQ("Create bucket => 3,Create bucket => 2,"
-              "Create bucket => 1,Put => 3,Put => 2,Put => 1",
-              _sender.getCommands(true));
-}
-
-TEST_F(PutOperationTest, revert_successful_copies_when_one_fails) {
-    setup_stripe(3, 4, "storage:4 distributor:1");
-
-    createAndSendSampleDocument(TIMEOUT);
-
-    ASSERT_EQ("Put => 0,Put => 2,Put => 1", _sender.getCommands(true));
-
-    for (uint32_t i = 0;  i < 2; i++) {
-        sendReply(i);
-    }
-
-    sendReply(2, api::ReturnCode::INTERNAL_FAILURE);
-
-    ASSERT_EQ("PutReply(id:test:testdoctype1::, "
-              "BucketId(0x0000000000000000), timestamp 100) "
-              "ReturnCode(INTERNAL_FAILURE)",
-              _sender.getLastReply(true));
-
-    ASSERT_EQ("Revert => 0,Revert => 2", _sender.getCommands(true, false, 3));
-}
-
-TEST_F(PutOperationTest, no_revert_if_revert_disabled) {
-    close();
-    getDirConfig().getConfig("stor-distributormanager")
-                  .set("enable_revert", "false");
-    SetUp();
-    setup_stripe(3, 4, "storage:4 distributor:1");
-
-    createAndSendSampleDocument(TIMEOUT);
-
-    ASSERT_EQ("Put => 0,Put => 2,Put => 1", _sender.getCommands(true));
-
-    for (uint32_t i = 0;  i < 2; i++) {
-        sendReply(i);
-    }
-
-    sendReply(2, api::ReturnCode::INTERNAL_FAILURE);
-
-    ASSERT_EQ("PutReply(id:test:testdoctype1::, "
-              "BucketId(0x0000000000000000), timestamp 100) "
-              "ReturnCode(INTERNAL_FAILURE)",
-              _sender.getLastReply(true));
-
-    ASSERT_EQ("", _sender.getCommands(true, false, 3));
 }
 
 TEST_F(PutOperationTest, do_not_send_CreateBucket_if_already_pending) {

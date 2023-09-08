@@ -23,7 +23,7 @@ RemoveLocationOperation::RemoveLocationOperation(
         std::shared_ptr<api::RemoveLocationCommand> msg,
         PersistenceOperationMetricSet& metric)
     : Operation(),
-      _tracker(metric, std::make_shared<api::RemoveLocationReply>(*msg), node_ctx, op_ctx, _cancel_scope, 0),
+      _tracker(metric, std::make_shared<api::RemoveLocationReply>(*msg), node_ctx, op_ctx, _cancel_scope),
       _msg(std::move(msg)),
       _node_ctx(node_ctx),
       _parser(parser),
