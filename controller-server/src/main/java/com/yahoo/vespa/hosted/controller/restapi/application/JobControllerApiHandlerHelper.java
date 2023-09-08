@@ -6,7 +6,6 @@ import com.yahoo.config.application.api.DeploymentSpec.ChangeBlocker;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
@@ -31,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus.Readiness;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.Run.Reason;
 import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -398,18 +398,18 @@ class JobControllerApiHandlerHelper {
                 JobStatus jobStatus = status.jobs().get(job).get();
                 Cursor toRunArray = stepObject.setArray("toRun");
                 showDelayCause = readiness.cause() == DelayCause.paused;
-                for (DeploymentStatus.Job versions : jobsToRun.getOrDefault(job, List.of())) {
+                for (DeploymentStatus.Job jobToRun : jobsToRun.getOrDefault(job, List.of())) {
                     boolean running = jobStatus.lastTriggered()
                                                .map(run ->    jobStatus.isRunning()
-                                                           && versions.versions().targetsMatch(run.versions())
-                                                           && (job.type().isProduction() || versions.versions().sourcesMatchIfPresent(run.versions())))
+                                                           && jobToRun.versions().targetsMatch(run.versions())
+                                                           && (job.type().isProduction() || jobToRun.versions().sourcesMatchIfPresent(run.versions())))
                                                .orElse(false);
                     if (running)
                         continue; // Run will be contained in the "runs" array.
 
                     showDelayCause = true;
                     Cursor runObject = toRunArray.addObject();
-                    toSlime(runObject.setObject("versions"), versions.versions(), application);
+                    toSlime(runObject, jobToRun.versions(), jobToRun.reason(), application);
                 }
 
                 if ( ! jobStatus.runs().isEmpty())
@@ -417,6 +417,7 @@ class JobControllerApiHandlerHelper {
                                                                                     jobStatus.runs().lastEntry().getValue().id().job().type().zone()), // Urgh, must use a job with actual zone.
                                                                    status.application().deploymentSpec())
                               .ifPresent(cloudAccount -> stepObject.setObject("enclave").setString("cloudAccount", cloudAccount.value()));
+
 
                 toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), application, 10, baseUriForJob);
             }
@@ -497,6 +498,18 @@ class JobControllerApiHandlerHelper {
         return candidates;
     }
 
+    private static void toSlime(Cursor runObject, Versions versions, Reason reason, Application application) {
+        reason.reason().ifPresent(because -> runObject.setString("reason", because));
+        reason.dependent().ifPresent(dependent -> {
+            Cursor dependentObject = runObject.setObject("dependent");
+            dependentObject.setString("instance", dependent.application().instance().value());
+            dependentObject.setString("region", dependent.type().zone().region().value());
+            reason.change().flatMap(Change::platform).ifPresent(platform -> dependentObject.setString("platform", platform.toFullString()));
+            reason.change().flatMap(Change::revision).ifPresent(revision -> dependentObject.setLong("revision", revision.number()));
+        });
+        toSlime(runObject.setObject("versions"), versions, application);
+    }
+
     private static void toSlime(Cursor runsArray, Collection<Run> runs, Application application, int limit, URI baseUriForJob) {
         runs.stream().limit(limit).forEach(run -> {
             Cursor runObject = runsArray.addObject();
@@ -505,15 +518,7 @@ class JobControllerApiHandlerHelper {
             runObject.setLong("start", run.start().toEpochMilli());
             run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
             runObject.setString("status", nameOf(run.status()));
-            run.reason().reason().ifPresent(reason -> runObject.setString("reason", reason));
-            run.reason().dependent().ifPresent(dependent -> {
-                Cursor dependentObject = runObject.setObject("dependent");
-                dependentObject.setString("instance", dependent.application().instance().value());
-                dependentObject.setString("region", dependent.type().zone().region().value());
-                run.reason().change().flatMap(Change::platform).ifPresent(platform -> dependentObject.setString("platform", platform.toFullString()));
-                run.reason().change().flatMap(Change::revision).ifPresent(revision -> dependentObject.setLong("revision", revision.number()));
-            });
-            toSlime(runObject.setObject("versions"), run.versions(), application);
+            toSlime(runObject, run.versions(), run.reason(), application);
             Cursor runStepsArray = runObject.setArray("steps");
             run.steps().forEach((step, info) -> {
                 Cursor runStepObject = runStepsArray.addObject();

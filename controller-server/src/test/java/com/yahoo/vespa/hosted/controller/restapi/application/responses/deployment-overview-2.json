@@ -366,6 +366,11 @@
       "environment": "staging",
       "toRun": [
         {
+          "dependent": {
+            "instance": "default",
+            "region": "us-east-3",
+            "revision": 3
+          },
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
