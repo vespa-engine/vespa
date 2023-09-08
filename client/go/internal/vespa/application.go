@@ -17,49 +17,57 @@ type ApplicationPackage struct {
 	TestPath string
 }
 
-func (ap *ApplicationPackage) HasCertificate() bool {
-	return ap.hasFile(filepath.Join("security", "clients.pem"), "security/clients.pem")
+func (ap *ApplicationPackage) HasCertificate() bool { return ap.hasFile("security", "clients.pem") }
+
+func (ap *ApplicationPackage) HasDeploymentSpec() bool { return ap.hasFile("deployment.xml", "") }
+
+func (ap *ApplicationPackage) hasFile(pathSegment ...string) bool {
+	if !ap.IsZip() {
+		return util.PathExists(filepath.Join(append([]string{ap.Path}, pathSegment...)...))
+	}
+	zipName := filepath.Join(pathSegment...)
+	return ap.hasZipEntry(func(name string) bool { return zipName == name })
 }
 
-func (ap *ApplicationPackage) HasDeployment() bool { return ap.hasFile("deployment.xml", "") }
-
-func (ap *ApplicationPackage) hasFile(filename, zipName string) bool {
-	if zipName == "" {
-		zipName = filename
-	}
-	if ap.IsZip() {
-		r, err := zip.OpenReader(ap.Path)
-		if err != nil {
-			return false
-		}
-		defer r.Close()
-		for _, f := range r.File {
-			if f.Name == zipName {
-				return true
-			}
-		}
+func (ap *ApplicationPackage) hasZipEntry(matcher func(zipName string) bool) bool {
+	r, err := zip.OpenReader(ap.Path)
+	if err != nil {
 		return false
 	}
-	return util.PathExists(filepath.Join(ap.Path, filename))
+	defer r.Close()
+	for _, f := range r.File {
+		if matcher(f.Name) {
+			return true
+		}
+	}
+	return false
 }
 
 func (ap *ApplicationPackage) IsZip() bool { return isZip(ap.Path) }
 
 func (ap *ApplicationPackage) IsJava() bool {
 	if ap.IsZip() {
-		r, err := zip.OpenReader(ap.Path)
-		if err != nil {
-			return false
-		}
-		defer r.Close()
-		for _, f := range r.File {
-			if filepath.Ext(f.Name) == ".jar" {
-				return true
-			}
-		}
-		return false
+		return ap.hasZipEntry(func(name string) bool { return filepath.Ext(name) == ".jar" })
 	}
 	return util.PathExists(filepath.Join(ap.Path, "pom.xml"))
+}
+
+func (ap *ApplicationPackage) Validate() error {
+	if !ap.IsZip() {
+		return nil
+	}
+	invalidPath := ""
+	invalid := ap.hasZipEntry(func(name string) bool {
+		if !validPath(name) {
+			invalidPath = name
+			return true
+		}
+		return false
+	})
+	if invalid {
+		return fmt.Errorf("found invalid path inside zip: %s", invalidPath)
+	}
+	return nil
 }
 
 func isZip(filename string) bool { return filepath.Ext(filename) == ".zip" }
@@ -166,9 +174,6 @@ func (ap *ApplicationPackage) Unzip(test bool) (string, error) {
 	}
 	defer f.Close()
 	for _, f := range f.File {
-		if !validPath(f.Name) {
-			return "", fmt.Errorf("found invalid path inside zip: %s", f.Name)
-		}
 		dst := filepath.Join(tmp, f.Name)
 		if f.FileInfo().IsDir() {
 			if err := os.Mkdir(dst, f.FileInfo().Mode()); err != nil {
@@ -223,6 +228,17 @@ func copyFile(src *zip.File, dst string) error {
 // 3. src/main/application
 // 4. Given path, if it contains services.xml
 func FindApplicationPackage(zipOrDir string, requirePackaging bool) (ApplicationPackage, error) {
+	pkg, err := findApplicationPackage(zipOrDir, requirePackaging)
+	if err != nil {
+		return ApplicationPackage{}, err
+	}
+	if err := pkg.Validate(); err != nil {
+		return ApplicationPackage{}, err
+	}
+	return pkg, nil
+}
+
+func findApplicationPackage(zipOrDir string, requirePackaging bool) (ApplicationPackage, error) {
 	if isZip(zipOrDir) {
 		return ApplicationPackage{Path: zipOrDir}, nil
 	}

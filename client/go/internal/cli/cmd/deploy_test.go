@@ -133,7 +133,7 @@ func TestDeployApplicationDirectoryWithSource(t *testing.T) {
 }
 
 func TestDeployApplicationDirectoryWithPomAndTarget(t *testing.T) {
-	assertDeploy("testdata/applications/withTarget/target/application.zip",
+	assertDeploy("testdata/applications/withTarget/target/application",
 		[]string{"deploy", "--wait=0", "testdata/applications/withTarget"}, t)
 }
 
@@ -141,7 +141,7 @@ func TestDeployApplicationDirectoryWithPomAndEmptyTarget(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	assert.NotNil(t, cli.Run("deploy", "--wait=0", "testdata/applications/withEmptyTarget"))
 	assert.Equal(t,
-		"Error: found pom.xml, but target/application.zip does not exist: run 'mvn package' first\n",
+		"Error: found pom.xml, but testdata/applications/withEmptyTarget/target/application does not exist: run 'mvn package' first\n",
 		stderr.String())
 }
 
