@@ -69,9 +69,19 @@ private:
     uint8_t                               _priority;
     bool                                  _success;
 
-    // Returns true iff `bucket_and_replicas` have at least 1 usable entry after pruning
-    [[nodiscard]]static bool prune_cancelled_nodes_if_present(BucketInfoMap& bucket_and_replicas,
-                                                              const CancelScope& cancel_scope);
+    enum class PostPruningStatus {
+        ReplicasStillPresent,
+        NoReplicasPresent
+    };
+
+    constexpr static bool still_has_replicas(PostPruningStatus status) {
+        return status == PostPruningStatus::ReplicasStillPresent;
+    }
+
+    // Returns ReplicasStillPresent iff `bucket_and_replicas` has at least 1 usable entry after pruning,
+    // otherwise returns NoReplicasPresent
+    [[nodiscard]] static PostPruningStatus prune_cancelled_nodes_if_present(BucketInfoMap& bucket_and_replicas,
+                                                                            const CancelScope& cancel_scope);
     [[nodiscard]] bool canSendReplyEarly() const;
     void addBucketInfoFromReply(uint16_t node, const api::BucketInfoReply& reply);
     void logSuccessfulReply(uint16_t node, const api::BucketInfoReply& reply) const;

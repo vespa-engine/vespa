@@ -39,7 +39,7 @@ PersistenceMessageTracker::PersistenceMessageTracker(
 
 PersistenceMessageTracker::~PersistenceMessageTracker() = default;
 
-bool
+PersistenceMessageTracker::PostPruningStatus
 PersistenceMessageTracker::prune_cancelled_nodes_if_present(
         BucketInfoMap& bucket_and_replicas,
         const CancelScope& cancel_scope)
@@ -49,7 +49,8 @@ PersistenceMessageTracker::prune_cancelled_nodes_if_present(
         info.second = prune_cancelled_nodes(info.second, cancel_scope);
         any_replicas |= !info.second.empty();
     }
-    return any_replicas;
+    return (any_replicas ? PostPruningStatus ::ReplicasStillPresent
+                         : PostPruningStatus::NoReplicasPresent);
 }
 
 void
@@ -59,8 +60,8 @@ PersistenceMessageTracker::updateDB()
         if (_cancel_scope.fully_cancelled()) {
             return; // Fully cancelled ops cannot mutate the DB at all
         }
-        const bool any_infos    = prune_cancelled_nodes_if_present(_bucketInfo, _cancel_scope);
-        const bool any_remapped = prune_cancelled_nodes_if_present(_remapBucketInfo, _cancel_scope);
+        const bool any_infos    = still_has_replicas(prune_cancelled_nodes_if_present(_bucketInfo, _cancel_scope));
+        const bool any_remapped = still_has_replicas(prune_cancelled_nodes_if_present(_remapBucketInfo, _cancel_scope));
         if (!(any_infos || any_remapped)) {
             LOG(spam, "No usable bucket info left after pruning; returning without updating DB");
             return;
