@@ -311,6 +311,10 @@ public abstract class CompositeItem extends Item {
         return getItemCount() == 1 ? Optional.of(getItem(0)) : Optional.empty();
     }
 
+    public boolean acceptsItemsOfType(ItemType itemType) {
+        return true;
+    }
+
     /** Handles mutator calls correctly */
     private static class ListIteratorWrapper implements ListIterator<Item> {
 

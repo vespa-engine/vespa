@@ -86,6 +86,11 @@ public class EquivItem extends CompositeTaggableItem {
                          acceptsChildrenOfType(item.getItemType()));
     }
 
+    @Override
+    public boolean acceptsItemsOfType(ItemType itemType) {
+        return acceptsChildrenOfType(itemType);
+    }
+
     /** Returns true if this accepts child items of the given type */
     public static boolean acceptsChildrenOfType(ItemType itemType) {
         return itemType == ItemType.WORD ||

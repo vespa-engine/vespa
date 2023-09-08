@@ -15,12 +15,26 @@ public class OrPhraseTestCase extends RuleBaseAbstractTestCase {
     @Test
     void testReplacing1() {
         assertSemantics("OR title:\"software engineer\" (AND new york)", "software engineer new york");
-        assertSemantics("title:\"software engineer\"", "software engineer"); // Skip or when there is nothing else
+        assertSemantics("title:\"software engineer\"", "software engineer"); // Skip OR when there is nothing else
     }
 
     @Test
     void testReplacing2() {
-        assertSemantics("OR lotr \"lord of the rings\"", "lotr");
+        assertSemantics("OR \"lord of the rings\" lotr", "lotr");
+    }
+
+    @Test
+    void testReplacing2WithFollowingQuery() {
+        assertSemantics("AND (OR \"lord of the rings\" lotr) is a movie", "lotr is a movie");
+    }
+
+    @Test
+    void testReplacing2WithPrecedingQuery() {
+        assertSemantics("AND a movie is (OR \"lord of the rings\" lotr)", "a movie is lotr");
+    }
+    @Test
+    void testReplacing2WithSurroundingQuery() {
+        assertSemantics("AND a movie is (OR \"lord of the rings\" lotr) yes", "a movie is lotr yes");
     }
 
 }
