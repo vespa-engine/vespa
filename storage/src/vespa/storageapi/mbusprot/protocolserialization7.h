@@ -41,12 +41,6 @@ public:
     SCmd::UP onDecodeGetCommand(BBuf&) const override;
     SRep::UP onDecodeGetReply(const SCmd&, BBuf&) const override;
 
-    // Revert - TODO this is deprecated, no?
-    void onEncode(GBBuf&, const api::RevertCommand&) const override;
-    void onEncode(GBBuf&, const api::RevertReply&) const override;
-    SCmd::UP onDecodeRevertCommand(BBuf&) const override;
-    SRep::UP onDecodeRevertReply(const SCmd&, BBuf&) const override;
-
     // DeleteBucket
     void onEncode(GBBuf&, const api::DeleteBucketCommand&) const override;
     void onEncode(GBBuf&, const api::DeleteBucketReply&) const override;

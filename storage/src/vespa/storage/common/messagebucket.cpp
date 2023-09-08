@@ -25,8 +25,6 @@ getStorageMessageBucket(const api::StorageMessage& msg)
         return static_cast<const api::UpdateCommand&>(msg).getBucket();
     case api::MessageType::REMOVE_ID:
         return static_cast<const api::RemoveCommand&>(msg).getBucket();
-    case api::MessageType::REVERT_ID:
-        return static_cast<const api::RevertCommand&>(msg).getBucket();
     case api::MessageType::STATBUCKET_ID:
         return static_cast<const api::StatBucketCommand&>(msg).getBucket();
     case api::MessageType::REMOVELOCATION_ID:

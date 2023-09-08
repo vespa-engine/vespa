@@ -286,7 +286,6 @@ FileStorHandlerImpl::messageMayBeAborted(const api::StorageMessage& msg)
     switch (msg.getType().getId()) {
     case api::MessageType::PUT_ID:
     case api::MessageType::REMOVE_ID:
-    case api::MessageType::REVERT_ID:
     case api::MessageType::MERGEBUCKET_ID:
     case api::MessageType::GETBUCKETDIFF_ID:
     case api::MessageType::APPLYBUCKETDIFF_ID:
@@ -611,7 +610,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
         break;
     }
     case api::MessageType::STAT_ID:
-    case api::MessageType::REVERT_ID:
     case api::MessageType::REMOVELOCATION_ID:
     case api::MessageType::SETBUCKETSTATE_ID:
     {

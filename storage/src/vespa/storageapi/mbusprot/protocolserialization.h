@@ -25,8 +25,6 @@ class GetCommand;
 class GetReply;
 class RemoveCommand;
 class RemoveReply;
-class RevertCommand;
-class RevertReply;
 class DeleteBucketCommand;
 class DeleteBucketReply;
 class CreateBucketCommand;
@@ -85,8 +83,6 @@ protected:
     virtual void onEncode(GBBuf&, const api::GetReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::RemoveCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::RemoveReply&) const = 0;
-    virtual void onEncode(GBBuf&, const api::RevertCommand&) const = 0;
-    virtual void onEncode(GBBuf&, const api::RevertReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::DeleteBucketCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::DeleteBucketReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::CreateBucketCommand&) const = 0;
@@ -124,8 +120,6 @@ protected:
     virtual SRep::UP onDecodeGetReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeRemoveCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodeRemoveReply(const SCmd&, BBuf&) const = 0;
-    virtual SCmd::UP onDecodeRevertCommand(BBuf&) const = 0;
-    virtual SRep::UP onDecodeRevertReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeDeleteBucketCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodeDeleteBucketReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeCreateBucketCommand(BBuf&) const = 0;

@@ -17,8 +17,6 @@ IMPLEMENT_COMMAND(GetCommand, GetReply)
 IMPLEMENT_REPLY(GetReply)
 IMPLEMENT_COMMAND(RemoveCommand, RemoveReply)
 IMPLEMENT_REPLY(RemoveReply)
-IMPLEMENT_COMMAND(RevertCommand, RevertReply)
-IMPLEMENT_REPLY(RevertReply)
 
 TestAndSetCommand::TestAndSetCommand(const MessageType & messageType, const document::Bucket &bucket)
     : BucketInfoCommand(messageType, bucket)
@@ -303,49 +301,6 @@ RemoveReply::print(std::ostream& out, bool verbose, const std::string& indent) c
         out << ", not found";
     }
     out << ")";
-    if (verbose) {
-        out << " : ";
-        BucketInfoReply::print(out, verbose, indent);
-    }
-}
-
-RevertCommand::RevertCommand(const document::Bucket &bucket, const std::vector<Timestamp>& revertTokens)
-    : BucketInfoCommand(MessageType::REVERT, bucket),
-      _tokens(revertTokens)
-{
-}
-
-RevertCommand::~RevertCommand() = default;
-
-void
-RevertCommand::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
-    out << "Revert(" << getBucketId();
-    if (verbose) {
-        out << ",";
-        for (Timestamp token : _tokens) {
-            out << "\n" << indent << "  " << token;
-        }
-    }
-    out << ")";
-    if (verbose) {
-        out << " : ";
-        BucketInfoCommand::print(out, verbose, indent);
-    }
-}
-
-RevertReply::RevertReply(const RevertCommand& cmd)
-    : BucketInfoReply(cmd),
-      _tokens(cmd.getRevertTokens())
-{
-}
-
-RevertReply::~RevertReply() = default;
-
-void
-RevertReply::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
-    out << "RevertReply(" << getBucketId() << ")";
     if (verbose) {
         out << " : ";
         BucketInfoReply::print(out, verbose, indent);

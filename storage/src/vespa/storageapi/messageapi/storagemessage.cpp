@@ -44,8 +44,6 @@ const MessageType MessageType::UPDATE("Update", UPDATE_ID);
 const MessageType MessageType::UPDATE_REPLY("Update Reply", UPDATE_REPLY_ID, &MessageType::UPDATE);
 const MessageType MessageType::REMOVE("Remove", REMOVE_ID);
 const MessageType MessageType::REMOVE_REPLY("Remove Reply", REMOVE_REPLY_ID, &MessageType::REMOVE);
-const MessageType MessageType::REVERT("Revert", REVERT_ID);
-const MessageType MessageType::REVERT_REPLY("Revert Reply", REVERT_REPLY_ID, &MessageType::REVERT);
 const MessageType MessageType::VISITOR_CREATE("Visitor Create", VISITOR_CREATE_ID);
 const MessageType MessageType::VISITOR_CREATE_REPLY("Visitor Create Reply", VISITOR_CREATE_REPLY_ID, &MessageType::VISITOR_CREATE);
 const MessageType MessageType::VISITOR_DESTROY("Visitor Destroy", VISITOR_DESTROY_ID);

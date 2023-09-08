@@ -15,8 +15,7 @@ namespace {
     {
         return (id == api::MessageType::PUT_ID ||
                 id == api::MessageType::REMOVE_ID ||
-                id == api::MessageType::UPDATE_ID ||
-                id == api::MessageType::REVERT_ID);
+                id == api::MessageType::UPDATE_ID);
     }
 
     bool hasBucketInfo(api::MessageType::Id id)

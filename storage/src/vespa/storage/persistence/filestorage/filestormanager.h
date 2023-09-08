@@ -151,7 +151,6 @@ private:
     bool onUpdate(const std::shared_ptr<api::UpdateCommand>&) override;
     bool onGet(const std::shared_ptr<api::GetCommand>&) override;
     bool onRemove(const std::shared_ptr<api::RemoveCommand>&) override;
-    bool onRevert(const std::shared_ptr<api::RevertCommand>&) override;
     bool onStatBucket(const std::shared_ptr<api::StatBucketCommand>&) override;
 
     // Bucket operations

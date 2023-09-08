@@ -9,7 +9,7 @@ class StorageMessage {
 public:
     using UP = std::unique_ptr<StorageMessage>;
 
-    virtual ~StorageMessage() {}
+    virtual ~StorageMessage() = default;
 
     virtual api::StorageMessage::SP getInternalMessage() = 0;
     virtual api::StorageMessage::CSP getInternalMessage() const = 0;

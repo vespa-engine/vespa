@@ -24,7 +24,6 @@ public:
                          spi::PersistenceProvider&,
                          const document::BucketIdFactory&);
     MessageTrackerUP handleGet(api::GetCommand& cmd, MessageTrackerUP tracker) const;
-    MessageTrackerUP handleRevert(api::RevertCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleCreateIterator(CreateIteratorCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleGetIter(GetIterCommand& cmd, MessageTrackerUP tracker) const;
 private:
