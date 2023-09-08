@@ -627,9 +627,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addCloudTokenSupport(DeployState state, ApplicationContainerCluster cluster) {
         var server = cluster.getHttp().getHttpServer().get();
+        Set<String> tokenEndpoints = state.getEndpoints().stream()
+                .filter(endpoint -> endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token)
+                .map(ContainerEndpoint::names)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+
         boolean enableTokenSupport = state.isHosted() && state.zone().system().isPublic()
                 && state.featureFlags().enableDataplaneProxy()
-                && cluster.getClients().stream().anyMatch(c -> !c.tokens().isEmpty());
+                && cluster.getClients().stream().anyMatch(c -> !c.tokens().isEmpty())
+                && ! tokenEndpoints.isEmpty();
         if (!enableTokenSupport) return;
         var endpointCert = state.endpointCertificateSecrets().orElseThrow();
         int tokenPort = getTokenDataplanePort(state).orElseThrow();
@@ -641,7 +648,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 getMtlsDataplanePort(state),
                 tokenPort,
                 endpointCert.certificate(),
-                endpointCert.key());
+                endpointCert.key(),
+                tokenEndpoints);
         cluster.addComponent(dataplaneProxy);
 
         // Setup dedicated connector
