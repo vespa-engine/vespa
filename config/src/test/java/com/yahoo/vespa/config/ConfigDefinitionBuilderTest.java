@@ -77,6 +77,10 @@ public class ConfigDefinitionBuilderTest {
         assertThat(def.getFileDefs().size(), is(1));
         assertNotNull(def.getFileDefs().get("fileVal"));
 
+        assertThat(def.getPathDefs().size(), is(2));
+        assertNotNull(def.getPathDefs().get("pathVal"));
+        assertNotNull(def.getPathDefs().get("optionalPathVal"));
+
         // An array does not have to have any elements set
         assertThat(def.getArrayDefs().size(), is(10));
         assertNotNull(def.getArrayDefs().get("boolarr"));
