@@ -120,9 +120,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if (!requested.minResources().nodeResources().gpuResources().equals(requested.maxResources().nodeResources().gpuResources()))
             throw new IllegalArgumentException(requested + " is invalid: GPU capacity cannot have ranges");
 
-        if (!requested.minResources().nodeResources().gpuResources().isZero() && zone.system() == SystemName.main)
-            throw new IllegalArgumentException(requested + " is invalid: GPUs are not supported in " + zone);
-
         logInsufficientDiskResources(cluster, requested, logger);
     }
 
