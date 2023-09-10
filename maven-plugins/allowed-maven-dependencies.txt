@@ -19,7 +19,7 @@ javax.annotation:javax.annotation-api:1.2
 javax.inject:javax.inject:1
 org.apache-extras.beanshell:bsh:2.0b6
 org.apache.commons:commons-collections4:4.4
-org.apache.commons:commons-compress:1.23.0
+org.apache.commons:commons-compress:1.24.0
 org.apache.commons:commons-lang3:3.13.0
 org.apache.maven:maven-archiver:3.6.1
 org.apache.maven:maven-artifact:3.9.4
