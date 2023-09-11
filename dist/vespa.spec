@@ -553,6 +553,7 @@ fi
 %{_prefix}/man
 %{_prefix}/sbin
 %{_prefix}/share
+%exclude %{_prefix}/share/cmake
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/crash
 %dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db
@@ -760,7 +761,7 @@ fi
 %defattr(-,root,root,-)
 %dir %{_prefix}
 %{_prefix}/include
-%{_prefix}/share
+%{_prefix}/share/cmake
 
 %files ann-benchmark
 %if %{_defattr_is_vespa_vespa}
