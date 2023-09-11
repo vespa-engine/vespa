@@ -6,7 +6,6 @@ import com.yahoo.config.ModelReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.producer.AnyConfigProducer;
-import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
@@ -67,18 +66,19 @@ public class FileSender implements Serializable {
         // Inspect fields at this level
         sendEntries(builder, sentFiles, configDefinition.getFileDefs(), false);
         sendEntries(builder, sentFiles, configDefinition.getPathDefs(), false);
+        sendEntries(builder, sentFiles, configDefinition.getOptionalPathDefs(), false);
         sendEntries(builder, sentFiles, configDefinition.getModelDefs(), true);
 
         // Inspect arrays
         for (Map.Entry<String, ConfigDefinition.ArrayDef> entry : configDefinition.getArrayDefs().entrySet()) {
-            if ( ! isAnyFileType(entry.getValue().getTypeSpec().getType())) continue;
+            if (isNotAnyFileType(entry.getValue().getTypeSpec().getType())) continue;
             ConfigPayloadBuilder.Array array = builder.getArray(entry.getKey());
             sendFileEntries(array.getElements(), sentFiles, "model".equals(entry.getValue().getTypeSpec().getType()));
         }
 
         // Inspect maps
         for (Map.Entry<String, ConfigDefinition.LeafMapDef> entry : configDefinition.getLeafMapDefs().entrySet()) {
-            if ( ! isAnyFileType(entry.getValue().getTypeSpec().getType())) continue;
+            if (isNotAnyFileType(entry.getValue().getTypeSpec().getType())) continue;
             ConfigPayloadBuilder.MapBuilder map = builder.getMap(entry.getKey());
             sendFileEntries(map.getElements(), sentFiles, "model".equals(entry.getValue().getTypeSpec().getType()));
         }
@@ -101,21 +101,27 @@ public class FileSender implements Serializable {
         }
     }
 
-    private static boolean isAnyFileType(String type) {
-        return "file".equals(type) || "path".equals(type) || "model".equals(type);
+    private static boolean isNotAnyFileType(String type) {
+        return ! "file".equals(type) && ! "path".equals(type) && ! "model".equals(type);
     }
 
     private void sendEntries(ConfigPayloadBuilder builder,
                              Map<Path, FileReference> sentFiles,
                              Map<String, ?> entries,
                              boolean isModelType) {
-        for (String name : entries.keySet()) {
+        for (Map.Entry<String, ?> entry : entries.entrySet()) {
+            String name = entry.getKey();
             ConfigPayloadBuilder fileEntry = builder.getObject(name);
+            if (isEmptyOptionalPath(entry, fileEntry)) continue;
             if (fileEntry.getValue() == null)
                 throw new IllegalArgumentException("Unable to send file for field '" + name +
                                                    "': Invalid config value " + fileEntry.getValue());
             sendFileEntry(fileEntry, sentFiles, isModelType);
         }
+    }
+
+    private static boolean isEmptyOptionalPath(Map.Entry<String, ?> entry, ConfigPayloadBuilder fileEntry) {
+        return entry.getValue() instanceof ConfigDefinition.OptionalPathDef && fileEntry.getValue() == null;
     }
 
     private void sendFileEntries(Collection<ConfigPayloadBuilder> builders, Map<Path, FileReference> sentFiles, boolean isModelType) {

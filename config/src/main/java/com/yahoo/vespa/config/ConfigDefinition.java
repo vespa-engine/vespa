@@ -38,7 +38,7 @@ public class ConfigDefinition {
     private final Map<String, RefDef> referenceDefs = new LinkedHashMap<>();
     private final Map<String, FileDef> fileDefs = new LinkedHashMap<>();
     private final Map<String, PathDef> pathDefs = new LinkedHashMap<>();
-    private final Map<String, PathDef> optionalPathDefs = new LinkedHashMap<>();
+    private final Map<String, OptionalPathDef> optionalPathDefs = new LinkedHashMap<>();
     private final Map<String, UrlDef> urlDefs = new LinkedHashMap<>();
     private final Map<String, ModelDef> modelDefs = new LinkedHashMap<>();
     private final Map<String, StructDef> structDefs = new LinkedHashMap<>();
@@ -676,11 +676,11 @@ public class ConfigDefinition {
     }
 
     public void addOptionalPathDef(String refId, String defVal) {
-        pathDefs.put(refId, new PathDef(defVal));
+        optionalPathDefs.put(refId, new OptionalPathDef(defVal));
     }
 
     public void addOptionalPathDef(String refId) {
-        pathDefs.put(refId, new PathDef(null));
+        optionalPathDefs.put(refId, new OptionalPathDef(null));
     }
 
     public void addUrlDef(String url, String defVal) {
@@ -724,6 +724,8 @@ public class ConfigDefinition {
     }
 
     public Map<String, PathDef> getPathDefs() { return pathDefs; }
+
+    public Map<String, OptionalPathDef> getOptionalPathDefs() { return optionalPathDefs; }
 
     public Map<String, UrlDef> getUrlDefs() { return urlDefs; }
 
