@@ -139,7 +139,7 @@ class JettyCluster implements Cluster {
         connector.setExecutor(new QueuedThreadPool(threads));
         connector.setSslContextFactory(clientSslCtxFactory);
         connector.setIdleTimeout(IDLE_TIMEOUT);
-        connector.setConnectTimeout(Duration.ofSeconds(10));
+        connector.setConnectTimeout(Duration.ofSeconds(30));
         HTTP2Client h2Client = new HTTP2Client(connector);
         h2Client.setMaxConcurrentPushedStreams(b.maxStreamsPerConnection);
         // Set the HTTP/2 flow control windows very large to cause TCP congestion instead of HTTP/2 flow control congestion.
