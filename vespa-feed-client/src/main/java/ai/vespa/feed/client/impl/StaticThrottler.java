@@ -21,10 +21,8 @@ public class StaticThrottler implements Throttler {
     private final AtomicLong targetX10;
 
     public StaticThrottler(FeedClientBuilderImpl builder) {
-        minInflight = 4L * builder.connectionsPerEndpoint * builder.endpoints.size();
-        // Add 1 to buffer some extra requests
-        maxInflight = Math.min(builder.maxStreamsPerConnection + 1L, 512)
-                * (builder.connectionsPerEndpoint + 1L) * (long)builder.endpoints.size();
+        minInflight = 16L * builder.connectionsPerEndpoint * builder.endpoints.size();
+        maxInflight = 256 * minInflight; // 4096 max streams per connection on the server side.
         targetX10 = new AtomicLong(10 * maxInflight); // 10x the actual value to allow for smaller updates.
     }
 
