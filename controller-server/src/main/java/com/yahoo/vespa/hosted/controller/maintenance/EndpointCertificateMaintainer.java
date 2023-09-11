@@ -13,6 +13,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -69,6 +70,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     final BooleanFlag assignRandomizedId;
     private final StringFlag endpointCertificateAlgo;
     private final BooleanFlag useAlternateCertProvider;
+    private final IntFlag assignRandomizedIdRate;
 
     @Inject
     public EndpointCertificateMaintainer(Controller controller, Duration interval) {
@@ -82,6 +84,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         this.assignRandomizedId = Flags.ASSIGN_RANDOMIZED_ID.bindTo(controller.flagSource());
         this.useAlternateCertProvider = PermanentFlags.USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER.bindTo(controller.flagSource());
         this.endpointCertificateAlgo = PermanentFlags.ENDPOINT_CERTIFICATE_ALGORITHM.bindTo(controller.flagSource());
+        this.assignRandomizedIdRate = Flags.ASSIGNED_RANDOMIZED_ID_RATE.bindTo(controller.flagSource());
     }
 
     @Override
@@ -281,7 +284,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                 .filter(c -> c.instance().isPresent())
                 .filter(c -> c.certificate().randomizedId().isEmpty())
                 .filter(c -> assignRandomizedId.with(FetchVector.Dimension.APPLICATION_ID, c.application().instance(c.instance().get()).serializedForm()).value())
-                .limit(10)
+                .limit(assignRandomizedIdRate.value())
                 .forEach(c -> assignRandomizedId(c.application(), c.instance().get()));
     }
 

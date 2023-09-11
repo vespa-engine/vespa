@@ -391,6 +391,13 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID);
 
+    public static final UnboundIntFlag ASSIGNED_RANDOMIZED_ID_RATE = defineIntFlag(
+            "assign-randomized-id-rate", 5,
+            List.of("mortent"), "2023-09-11", "2024-02-01",
+            "Rate for requesting assigned ids for existing certificates. Rate is per maintainer cycle.",
+            "Takes effect immediately",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
