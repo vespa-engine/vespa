@@ -50,12 +50,6 @@ func testCert(t *testing.T, subcommand []string) {
 }
 
 func TestCertCompressedPackage(t *testing.T) {
-	t.Run("auth cert", func(t *testing.T) {
-		testCertCompressedPackage(t, []string{"auth", "cert"})
-	})
-}
-
-func testCertCompressedPackage(t *testing.T, subcommand []string) {
 	_, pkgDir := mock.ApplicationPackageDir(t, true, false)
 	zipFile := filepath.Join(pkgDir, "target", "application.zip")
 	err := os.MkdirAll(filepath.Dir(zipFile), 0755)
@@ -68,16 +62,14 @@ func testCertCompressedPackage(t *testing.T, subcommand []string) {
 	stdout.Reset()
 	stderr.Reset()
 
-	args := append(subcommand, pkgDir)
-	err = cli.Run(args...)
+	err = cli.Run("auth", "cert", zipFile)
 	assert.NotNil(t, err)
 	assert.Contains(t, stderr.String(), "Error: cannot add certificate to compressed application package")
 
 	err = os.Remove(zipFile)
 	assert.Nil(t, err)
 
-	args = append(subcommand, "-f", pkgDir)
-	err = cli.Run(args...)
+	err = cli.Run("auth", "cert", "-f", pkgDir)
 	assert.Nil(t, err)
 	assert.Contains(t, stdout.String(), "Success: Certificate written to")
 	assert.Contains(t, stdout.String(), "Success: Private key written to")

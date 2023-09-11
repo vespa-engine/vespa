@@ -147,7 +147,7 @@ $ vespa prod deploy`,
 			if err != nil {
 				return err
 			}
-			if !pkg.HasDeployment() {
+			if !pkg.HasDeploymentSpec() {
 				return errHint(fmt.Errorf("no deployment.xml found"), "Try creating one with vespa prod init")
 			}
 			if err := verifyTests(cli, pkg); err != nil {
