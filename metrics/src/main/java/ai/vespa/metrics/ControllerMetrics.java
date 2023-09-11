@@ -38,6 +38,7 @@ public enum ControllerMetrics implements VespaMetrics {
     ZMS_QUOTA_USAGE("zms.quota.usage", Unit.FRACTION, "ZMS Quota usage per resource type"),
     COREDUMP_PROCESSED("coredump.processed", Unit.FAILURE,"Controller: Core dumps processed"),
     AUTH0_EXCEPTIONS("auth0.exceptions", Unit.FAILURE, "Controller: Auth0 exceptions"),
+    AUTH0_REQUESTS("auth0.requests", Unit.REQUEST, "Controller: Auth0 requests"),
 
     // Metrics per API, metrics names generated in ControllerMaintainer/MetricsReporter
     OPERATION_APPLICATION("operation.application", Unit.REQUEST, "Controller: Requests for /application API"),
