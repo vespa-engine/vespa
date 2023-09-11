@@ -42,7 +42,7 @@ case $SHOULD_BUILD in
     ;;
   java)
     ./bootstrap.sh java
-    mvn -V $VESPA_MAVEN_EXTRA_OPTS install
+    ./mvnw -V $VESPA_MAVEN_EXTRA_OPTS install
     ;;
   go)
     make -C client/go install-all
@@ -50,7 +50,7 @@ case $SHOULD_BUILD in
   *)
     make -C client/go install-all
     ./bootstrap.sh java
-    time mvn -V $VESPA_MAVEN_EXTRA_OPTS install
+    time ./mvnw -V $VESPA_MAVEN_EXTRA_OPTS install
     build_cpp .
     make install
     ;;    
@@ -73,4 +73,3 @@ if [[ $SHOULD_BUILD == systemtest ]]; then
   sleep 3
   ruby $SYSTEM_TEST_DIR/tests/search/basicsearch/basic_search.rb || (/opt/vespa/bin/vespa-logfmt -N && false)
 fi
-
