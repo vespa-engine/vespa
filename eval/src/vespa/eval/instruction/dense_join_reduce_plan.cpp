@@ -82,7 +82,7 @@ DenseJoinReducePlan::DenseJoinReducePlan(const ValueType &lhs, const ValueType &
 DenseJoinReducePlan::~DenseJoinReducePlan() = default;
 
 bool
-DenseJoinReducePlan::distinct_result() const
+DenseJoinReducePlan::is_distinct() const
 {
     for (size_t stride: res_stride) {
         if (stride == 0) {
