@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +65,7 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge(context);
 
-        verify(containerOperations, times(4)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(containerOperations, times(4)).executeCommandInNetworkNamespace(eq(context), any(CommandLine.Options.class), any(), eq("-S"), eq("-t"), any());
         verify(containerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
         verify(containerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any());
         verifyNoMoreInteractions(containerOperations);
@@ -131,7 +132,7 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge(context);
 
-        verify(containerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(containerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), any(CommandLine.Options.class), any(), eq("-S"), eq("-t"), any());
         verify(containerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
         verify(containerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any());
         verifyNoMoreInteractions(containerOperations);
@@ -188,7 +189,7 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge(context);
 
-        verify(containerOperations, times(3)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(containerOperations, times(3)).executeCommandInNetworkNamespace(eq(context), any(CommandLine.Options.class), any(), eq("-S"), eq("-t"), any());
         verify(containerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
         verify(containerOperations, never()).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any()); //we don't have a ip4 address for the container so no redirect
         verifyNoMoreInteractions(containerOperations);
@@ -237,7 +238,7 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge(context);
 
-        verify(containerOperations, times(3)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(containerOperations, times(3)).executeCommandInNetworkNamespace(eq(context), any(CommandLine.Options.class), any(), eq("-S"), eq("-t"), any());
         verify(containerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
         verify(containerOperations, times(1)).executeCommandInNetworkNamespace(eq(context), eq("iptables"), eq("-F"), eq("-t"), eq("filter"));
         verifyNoMoreInteractions(containerOperations);
@@ -271,7 +272,7 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge(context);
 
-        verify(containerOperations, times(4)).executeCommandInNetworkNamespace(eq(context), any(), eq("-S"), eq("-t"), any());
+        verify(containerOperations, times(4)).executeCommandInNetworkNamespace(eq(context), any(CommandLine.Options.class), any(), eq("-S"), eq("-t"), any());
         verify(containerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), eq("iptables-restore"), any());
         verify(containerOperations, times(2)).executeCommandInNetworkNamespace(eq(context), eq("ip6tables-restore"), any());
         verifyNoMoreInteractions(containerOperations);
@@ -343,7 +344,7 @@ public class AclMaintainerTest {
 
     private void whenListRules(NodeAgentContext context, String table, IPVersion ipVersion, String output) {
         when(containerOperations.executeCommandInNetworkNamespace(
-                eq(context), eq(ipVersion.iptablesCmd()), eq("-S"), eq("-t"), eq(table)))
+                eq(context), any(CommandLine.Options.class), eq(ipVersion.iptablesCmd()), eq("-S"), eq("-t"), eq(table)))
                 .thenReturn(new CommandResult(null, 0, output));
     }
 

@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 
@@ -158,13 +159,11 @@ public class ContainerEngineMock implements ContainerEngine {
     }
 
     @Override
-    public CommandResult executeInNetworkNamespace(NodeAgentContext context, String... command) {
+    public CommandResult executeInNetworkNamespace(NodeAgentContext context, CommandLine.Options options, String... command) {
         if (terminal == null) {
             return new CommandResult(null, 0, "");
         }
-        return terminal.newCommandLine(context)
-                       .add(command)
-                       .executeSilently();
+        return terminal.newCommandLine(context).add(command).execute(options);
     }
 
     @Override

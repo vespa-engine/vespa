@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.routing;
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 
@@ -44,6 +45,11 @@ public class RoutingPolicyList extends AbstractFilteringList<RoutingPolicy, Rout
     /** Returns the subset of policies owned by given instance */
     public RoutingPolicyList instance(ApplicationId instance) {
         return matching(policy -> policy.id().owner().equals(instance));
+    }
+
+    /** Returns the subset of policies applying to given cluster */
+    public RoutingPolicyList cluster(ClusterSpec.Id cluster) {
+        return matching(policy -> policy.id().cluster().equals(cluster));
     }
 
     /** Returns the subset of policies applying to given deployment */

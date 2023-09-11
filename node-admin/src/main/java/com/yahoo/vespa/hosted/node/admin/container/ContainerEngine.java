@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.container.image.Image;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.time.Duration;
@@ -48,7 +49,11 @@ public interface ContainerEngine {
     CommandResult execute(NodeAgentContext context, UnixUser user, Duration timeout, String... command);
 
     /** Execute command inside the container's network namespace. Throws on non-zero exit code */
-    CommandResult executeInNetworkNamespace(NodeAgentContext context, String... command);
+    CommandResult executeInNetworkNamespace(NodeAgentContext context, CommandLine.Options options, String... command);
+
+    default CommandResult executeInNetworkNamespace(NodeAgentContext context, String... command) {
+        return executeInNetworkNamespace(context, new CommandLine.Options(), command);
+    }
 
     /** Download given image */
     void pullImage(TaskContext context, DockerImage image, RegistryCredentials registryCredentials);
