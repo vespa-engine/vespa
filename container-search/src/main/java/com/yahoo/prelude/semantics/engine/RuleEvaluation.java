@@ -270,8 +270,8 @@ public class RuleEvaluation {
      * @param index the index at which to insert this into the parent
      * @param termType the kind of item to index, this decides the resulting structure
      */
-    public void insertItems(List<Item> items, CompositeItem parent, int index, TermType termType) {
-        evaluation.insertItems(items, parent, index, termType);
+    public void insertItems(List<Item> items, CompositeItem parent, int index, TermType termType, boolean replacing) {
+        evaluation.insertItems(items, parent, index, termType, replacing);
     }
 
     /** Returns a read-only view of the items of this */

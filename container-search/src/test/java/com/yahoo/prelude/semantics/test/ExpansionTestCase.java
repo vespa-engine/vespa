@@ -24,10 +24,11 @@ public class ExpansionTestCase extends RuleBaseAbstractTestCase {
         assertSemantics("EQUIV testfield:e1 testfield:e2 testfield:e3", "testfield:foo");
     }
 
+    // No equiv: Not optimal, but not wrong either
     @Test
     void testEquivExpansion3() {
         assertSemantics("AND testfield:e1 testfield:e2 testfield:e3 testfield:e1 testfield:e2 testfield:e3",
-                "testfield:foo testfield:bar");
+                        "testfield:foo testfield:bar");
     }
 
 }

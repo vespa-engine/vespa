@@ -58,7 +58,7 @@ public abstract class TermProduction extends Production {
     }
 
     /**
-     * Inserts newItem at the position of this match
+     * Inserts newItems at the position of this match
      * TODO: Move to ruleevaluation
      */
     protected void insertMatch(RuleEvaluation e, Match matched, List<Item> newItems, int offset) {
@@ -73,7 +73,7 @@ public abstract class TermProduction extends Production {
             insertPosition = matched.getParent().getItemCount();
         }
 
-        e.insertItems(newItems, matched.getParent(), insertPosition, getTermType());
+        e.insertItems(newItems, matched.getParent(), insertPosition, getTermType(), replacing);
         if (e.getTraceLevel() >= 6)
             e.trace(6, "Inserted items '" + newItems + "' at position " + insertPosition + " producing " +
                        e.getEvaluation().getQuery().getModel().getQueryTree());

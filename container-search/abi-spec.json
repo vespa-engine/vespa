@@ -454,6 +454,7 @@
       "public boolean isLocked()",
       "public int getTermCount()",
       "public java.util.Optional extractSingleChild()",
+      "public boolean acceptsItemsOfType(com.yahoo.prelude.query.Item$ItemType)",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
@@ -509,6 +510,7 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "protected void adding(com.yahoo.prelude.query.Item)",
+      "public boolean acceptsItemsOfType(com.yahoo.prelude.query.Item$ItemType)",
       "public static boolean acceptsChildrenOfType(com.yahoo.prelude.query.Item$ItemType)"
     ],
     "fields" : [ ]
@@ -1109,6 +1111,7 @@
       "public void setExplicit(boolean)",
       "public boolean isExplicit()",
       "public void addItem(com.yahoo.prelude.query.Item)",
+      "public boolean acceptsItemsOfType(com.yahoo.prelude.query.Item$ItemType)",
       "public void addItem(int, com.yahoo.prelude.query.Item)",
       "public com.yahoo.prelude.query.Item setItem(int, com.yahoo.prelude.query.Item)",
       "public java.util.Optional extractSingleChild()",

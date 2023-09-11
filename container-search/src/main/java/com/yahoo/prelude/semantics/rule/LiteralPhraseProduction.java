@@ -50,16 +50,8 @@ public class LiteralPhraseProduction extends TermProduction {
         for (String term : terms)
             newPhrase.addItem(new WordItem(term));
 
-        if (replacing) {
-            Match matched = e.getNonreferencedMatch(0);
-            insertMatch(e, matched, List.of(newPhrase), offset);
-        }
-        else {
-            newPhrase.setWeight(getWeight());
-            if (e.getTraceLevel() >= 6)
-                e.trace(6, "Adding '" + newPhrase + "'");
-            e.addItems(List.of(newPhrase), getTermType());
-        }
+        Match matched = e.getNonreferencedMatch(0);
+        insertMatch(e, matched, List.of(newPhrase), offset);
     }
 
     public String toInnerTermString() {
