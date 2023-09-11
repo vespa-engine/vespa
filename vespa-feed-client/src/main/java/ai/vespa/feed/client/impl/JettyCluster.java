@@ -26,6 +26,7 @@ import org.eclipse.jetty.http2.client.http.ClientConnectionFactoryOverHTTP2;
 import org.eclipse.jetty.io.ClientConnectionFactory;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.util.HttpCookieStore;
+import org.eclipse.jetty.util.Jetty;
 import org.eclipse.jetty.util.Pool;
 import org.eclipse.jetty.util.Promise;
 import org.eclipse.jetty.util.SocketAddressResolver;
@@ -161,7 +162,7 @@ class JettyCluster implements Cluster {
         httpClient.setMaxRequestsQueuedPerDestination(Integer.MAX_VALUE);
         httpClient.setFollowRedirects(false);
         httpClient.setUserAgentField(
-                new HttpField(HttpHeader.USER_AGENT, String.format("vespa-feed-client/%s (Jetty)", Vespa.VERSION)));
+                new HttpField(HttpHeader.USER_AGENT, String.format("vespa-feed-client/%s (Jetty:%s)", Vespa.VERSION, Jetty.VERSION)));
         // Stop client from trying different IP address when TLS handshake fails
         httpClient.setSocketAddressResolver(new Ipv4PreferringResolver(httpClient, Duration.ofSeconds(10)));
         httpClient.setCookieStore(new HttpCookieStore.Empty());
