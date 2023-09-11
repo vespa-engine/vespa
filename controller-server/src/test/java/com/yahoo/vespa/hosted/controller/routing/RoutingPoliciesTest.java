@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record.Type;
@@ -1091,6 +1092,7 @@ public class RoutingPoliciesTest {
             assertEquals(2, generated.cluster(cluster1).size());
             assertEquals(1, generated.cluster(cluster1).authMethod(AuthMethod.token).size());
         }
+        Map<DeploymentId, Set<ContainerEndpoint>> containerEndpointsInProd = tester.containerEndpoints(Environment.prod);
 
         // Ordinary endpoints point to expected targets
         tester.assertTargets(context.instanceId(), EndpointId.of("foo"), cluster0, 0,
@@ -1109,6 +1111,7 @@ public class RoutingPoliciesTest {
         // Next deployment does not change generated names
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         assertEquals(expectedRecords, tester.recordNames());
+        assertEquals(containerEndpointsInProd, tester.containerEndpoints(Environment.prod));
     }
 
     private void addCertificateToPool(String id, UnassignedCertificate.State state, RoutingPoliciesTester tester) {
@@ -1198,6 +1201,12 @@ public class RoutingPoliciesTest {
             if (exclusiveRouting) {
                 tester.controllerTester().setRoutingMethod(zones, RoutingMethod.exclusive);
             }
+        }
+
+        public Map<DeploymentId, Set<ContainerEndpoint>> containerEndpoints(Environment environment) {
+            return tester.controllerTester().configServer().containerEndpoints().entrySet().stream()
+                         .filter(kv -> kv.getKey().zoneId().environment() == environment)
+                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
 
         public RoutingPolicies routingPolicies() {

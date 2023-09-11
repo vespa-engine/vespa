@@ -35,6 +35,8 @@ import com.yahoo.vespa.hosted.controller.routing.GeneratedEndpoints;
 import com.yahoo.vespa.hosted.controller.routing.PreparedEndpoints;
 import com.yahoo.vespa.hosted.controller.routing.RoutingId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicies;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyList;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext.ExclusiveDeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext.SharedDeploymentRoutingContext;
@@ -133,12 +135,20 @@ public class RoutingController {
         if (randomizedEndpointsEnabled(deployment.applicationId())) { // TODO(mpolden): Remove this guard once config-models < 8.220 are gone
             boolean includeTokenEndpoint = tokenEndpointEnabled(deployment.applicationId());
             Map<ClusterSpec.Id, List<GeneratedEndpoint>> generatedEndpointsByCluster = new HashMap<>();
+            RoutingPolicyList deploymentPolicies = policies().read(deployment);
             for (var container : services.containers()) {
                 ClusterSpec.Id clusterId = ClusterSpec.Id.from(container.id());
                 boolean tokenSupported = includeTokenEndpoint && container.authMethods().contains(BasicServicesXml.Container.AuthMethod.token);
-                List<GeneratedEndpoint> generatedForCluster = certificate.flatMap(EndpointCertificate::randomizedId)
-                                                                         .map(id -> generateEndpoints(id, deployment.applicationId(), tokenSupported))
-                                                                         .orElseGet(List::of);
+                // Use already existing generated endpoints, if any
+                List<GeneratedEndpoint> generatedForCluster = deploymentPolicies.cluster(clusterId)
+                                                                                .first()
+                                                                                .map(RoutingPolicy::generatedEndpoints)
+                                                                                .orElseGet(List::of);
+                if (generatedForCluster.isEmpty()) {
+                    generatedForCluster = certificate.flatMap(EndpointCertificate::randomizedId)
+                                                     .map(id -> generateEndpoints(id, deployment.applicationId(), tokenSupported))
+                                                     .orElseGet(List::of);
+                }
                 if (!generatedForCluster.isEmpty()) {
                     generatedEndpointsByCluster.put(clusterId, generatedForCluster);
                 }
