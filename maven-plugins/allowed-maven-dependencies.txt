@@ -19,7 +19,7 @@ javax.annotation:javax.annotation-api:1.2
 javax.inject:javax.inject:1
 org.apache-extras.beanshell:bsh:2.0b6
 org.apache.commons:commons-collections4:4.4
-org.apache.commons:commons-compress:1.23.0
+org.apache.commons:commons-compress:1.24.0
 org.apache.commons:commons-lang3:3.13.0
 org.apache.maven:maven-archiver:3.6.1
 org.apache.maven:maven-artifact:3.9.4
@@ -32,8 +32,8 @@ org.apache.maven:maven-repository-metadata:3.9.4
 org.apache.maven:maven-resolver-provider:3.9.4
 org.apache.maven:maven-settings:3.9.4
 org.apache.maven:maven-settings-builder:3.9.4
-org.apache.maven.enforcer:enforcer-api:3.4.0
-org.apache.maven.enforcer:enforcer-rules:3.4.0
+org.apache.maven.enforcer:enforcer-api:3.4.1
+org.apache.maven.enforcer:enforcer-rules:3.4.1
 org.apache.maven.plugin-tools:maven-plugin-annotations:3.9.0
 org.apache.maven.plugins:maven-shade-plugin:3.5.0
 org.apache.maven.resolver:maven-resolver-api:1.9.14

@@ -84,7 +84,7 @@
         <commons-io.vespa.version>2.13.0</commons-io.vespa.version>
         <commons-lang3.vespa.version>3.13.0</commons-lang3.vespa.version>
         <commons.math3.vespa.version>3.6.1</commons.math3.vespa.version>
-        <commons-compress.vespa.version>1.23.0</commons-compress.vespa.version>
+        <commons-compress.vespa.version>1.24.0</commons-compress.vespa.version>
         <curator.vespa.version>5.5.0</curator.vespa.version>
         <dropwizard.metrics.vespa.version>4.2.19</dropwizard.metrics.vespa.version>
         <eclipse-collections.vespa.version>11.1.0</eclipse-collections.vespa.version>
@@ -125,7 +125,7 @@
         <spifly.vespa.version>1.3.6</spifly.vespa.version>
         <snappy.vespa.version>1.1.10.3</snappy.vespa.version>
         <surefire.vespa.version>3.1.2</surefire.vespa.version>
-        <wiremock.vespa.version>3.0.3</wiremock.vespa.version>
+        <wiremock.vespa.version>3.0.4</wiremock.vespa.version>
         <xerces.vespa.version>2.12.2</xerces.vespa.version>
         <zero-allocation-hashing.vespa.version>0.16</zero-allocation-hashing.vespa.version>
         <zookeeper.client.vespa.version>3.8.0</zookeeper.client.vespa.version>
@@ -144,7 +144,7 @@
         <maven-core.vespa.version>3.9.4</maven-core.vespa.version>
         <maven-dependency-plugin.vespa.version>3.6.0</maven-dependency-plugin.vespa.version>
         <maven-deploy-plugin.vespa.version>3.1.1</maven-deploy-plugin.vespa.version>
-        <maven-enforcer-plugin.vespa.version>3.4.0</maven-enforcer-plugin.vespa.version>
+        <maven-enforcer-plugin.vespa.version>3.4.1</maven-enforcer-plugin.vespa.version>
         <maven-failsafe-plugin.vespa.version>3.1.2</maven-failsafe-plugin.vespa.version>
         <maven-install-plugin.vespa.version>3.1.1</maven-install-plugin.vespa.version>
         <maven-jar-plugin.vespa.version>3.3.0</maven-jar-plugin.vespa.version>
