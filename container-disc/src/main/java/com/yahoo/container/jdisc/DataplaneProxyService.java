@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  */
 public class DataplaneProxyService extends AbstractComponent {
 
-    private static Logger logger = Logger.getLogger(DataplaneProxyService.class.getName());
+    private static final Logger logger = Logger.getLogger(DataplaneProxyService.class.getName());
     private static final String PREFIX = "/opt/vespa";
 
     private final Path configTemplate;
