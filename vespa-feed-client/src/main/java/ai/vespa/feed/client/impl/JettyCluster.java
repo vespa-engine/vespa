@@ -26,7 +26,6 @@ import org.eclipse.jetty.http2.client.http.ClientConnectionFactoryOverHTTP2;
 import org.eclipse.jetty.io.ClientConnectionFactory;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.util.HttpCookieStore;
-import org.eclipse.jetty.util.Jetty;
 import org.eclipse.jetty.util.Pool;
 import org.eclipse.jetty.util.Promise;
 import org.eclipse.jetty.util.SocketAddressResolver;
@@ -140,9 +139,7 @@ class JettyCluster implements Cluster {
         connector.setExecutor(new QueuedThreadPool(threads));
         connector.setSslContextFactory(clientSslCtxFactory);
         connector.setIdleTimeout(IDLE_TIMEOUT);
-        boolean secureProxy = b.proxy != null && b.proxy.getScheme().equals("https");
-        // Increase connect timeout for secure HTTP/2 proxy
-        connector.setConnectTimeout(Duration.ofSeconds(secureProxy ? 120 : 30));
+        connector.setConnectTimeout(Duration.ofSeconds(10));
         HTTP2Client h2Client = new HTTP2Client(connector);
         h2Client.setMaxConcurrentPushedStreams(b.maxStreamsPerConnection);
         // Set the HTTP/2 flow control windows very large to cause TCP congestion instead of HTTP/2 flow control congestion.
@@ -158,15 +155,13 @@ class JettyCluster implements Cluster {
             MultiplexConnectionPool pool = new MultiplexConnectionPool(
                     dest, Pool.StrategyType.RANDOM, connectionsPerEndpoint, false, dest, Integer.MAX_VALUE);
             pool.preCreateConnections(connectionsPerEndpoint);
-            if (secureProxy) pool.setMaxDuration(Duration.ofMinutes(1).toMillis());
-            else pool.setMaximizeConnections(true);
             return pool;
         });
         HttpClient httpClient = new HttpClient(transport);
         httpClient.setMaxRequestsQueuedPerDestination(Integer.MAX_VALUE);
         httpClient.setFollowRedirects(false);
         httpClient.setUserAgentField(
-                new HttpField(HttpHeader.USER_AGENT, String.format("vespa-feed-client/%s (Jetty:%s)", Vespa.VERSION, Jetty.VERSION)));
+                new HttpField(HttpHeader.USER_AGENT, String.format("vespa-feed-client/%s (Jetty)", Vespa.VERSION)));
         // Stop client from trying different IP address when TLS handshake fails
         httpClient.setSocketAddressResolver(new Ipv4PreferringResolver(httpClient, Duration.ofSeconds(10)));
         httpClient.setCookieStore(new HttpCookieStore.Empty());
