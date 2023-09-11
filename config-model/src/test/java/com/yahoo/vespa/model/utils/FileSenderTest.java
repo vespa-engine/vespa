@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.utils;
 import com.yahoo.config.FileNode;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
+import com.yahoo.config.OptionalPathNode;
 import com.yahoo.config.UrlReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -39,7 +40,6 @@ public class FileSenderTest {
     private List<AbstractService> serviceList;
     private final MyFileRegistry fileRegistry = new MyFileRegistry();
     private ConfigDefinition def;
-    private TestService service;
 
     private static class MyFileRegistry implements FileRegistry {
         public Map<String, FileReference> pathToRef = new HashMap<>();
@@ -72,7 +72,7 @@ public class FileSenderTest {
     public void setup() {
         MockRoot root = new MockRoot();
         producer = new SimpleConfigProducer<>(root, "test");
-        service = new TestService(root, "service");
+        TestService service = new TestService(root, "service");
         serviceList = new ArrayList<>();
         serviceList.add(service);
         ConfigDefinitionKey key = new ConfigDefinitionKey("myname", "mynamespace");
@@ -246,6 +246,12 @@ public class FileSenderTest {
             fileRegistry.pathToRef.put("foo.txt", new FileNode("fooshash").value());
             fileSender().sendUserConfiguredFiles(producer);
         });
+    }
+
+    @Test
+    void require_that_empty_optional_paths_are_not_sent() {
+        def.addOptionalPathDef("optionalPathVal");
+        fileSender().sendUserConfiguredFiles(producer);
     }
 
 
