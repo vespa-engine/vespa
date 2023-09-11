@@ -144,6 +144,23 @@ public class CommandLine {
         return doExecute();
     }
 
+    public static class Options {
+        private boolean silent = false;
+
+        public Options() {}
+
+        /** Invoke {@link #executeSilently()} instead of {@link #execute()} (default). */
+        public Options setSilent(boolean silent) {
+            this.silent = silent;
+            return this;
+        }
+    }
+
+    /** Convenience method to bundle up a bunch of calls on this into an options object. */
+    public CommandResult execute(Options options) {
+        return options.silent ? executeSilently() : execute();
+    }
+
     /**
      * Record an already executed executeSilently() as having modified the system.
      * For instance with YUM it is not known until after a 'yum install' whether it
