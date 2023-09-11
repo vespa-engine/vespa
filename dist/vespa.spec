@@ -757,9 +757,7 @@ fi
 %{_prefix}/bin/vespa-tensor-instructions-benchmark
 
 %files devel
-%if %{_defattr_is_vespa_vespa}
 %defattr(-,root,root,-)
-%endif
 %dir %{_prefix}
 %{_prefix}/include
 %{_prefix}/share
