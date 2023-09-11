@@ -88,7 +88,7 @@ BuildRequires: libarchive
 %endif
 BuildRequires: llvm-devel
 BuildRequires: vespa-boost-devel >= 1.76.0-1
-BuildRequires: vespa-openssl-devel >= 1.1.1o-1
+BuildRequires: vespa-openssl-devel >= 3.1.2
 %define _use_vespa_openssl 1
 BuildRequires: vespa-gtest = 1.13.0
 %define _use_vespa_gtest 1
@@ -250,7 +250,7 @@ Requires: vespa-xxhash >= 0.8.1
 Requires: xxhash-libs >= 0.8.1
 %endif
 %if 0%{?el8}
-Requires: vespa-openssl >= 1.1.1o-1
+Requires: vespa-openssl >= 3.1.2
 %else
 Requires: openssl-libs
 %endif
@@ -281,7 +281,7 @@ Summary: Vespa - The open big data serving engine - C++ libraries
 Requires: %{name}-base-libs = %{version}-%{release}
 Requires: libicu
 %if 0%{?el8}
-Requires: vespa-openssl >= 1.1.1o-1
+Requires: vespa-openssl >= 3.1.2
 %else
 Requires: openssl-libs
 %endif
