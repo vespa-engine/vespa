@@ -42,7 +42,7 @@ License:        Commercial
 URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
-BuildRequires: vespa-build-dependencies = 1.0.0
+BuildRequires: vespa-build-dependencies = 1.0.1
 
 Requires: %{name}-base             = %{version}-%{release}
 Requires: %{name}-base-libs        = %{version}-%{release}
@@ -149,7 +149,7 @@ Requires: vespa-xxhash >= 0.8.1
 Requires: xxhash-libs >= 0.8.1
 %endif
 %if 0%{?el8}
-Requires: vespa-openssl >= 1.1.1o-1
+Requires: vespa-openssl >= 3.1.2
 %else
 Requires: openssl-libs
 %endif
@@ -180,7 +180,7 @@ Summary: Vespa - The open big data serving engine - C++ libraries
 Requires: %{name}-base-libs = %{version}-%{release}
 Requires: libicu
 %if 0%{?el8}
-Requires: vespa-openssl >= 1.1.1o-1
+Requires: vespa-openssl >= 3.1.2
 %else
 Requires: openssl-libs
 %endif
