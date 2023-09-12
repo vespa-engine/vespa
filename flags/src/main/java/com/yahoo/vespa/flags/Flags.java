@@ -314,7 +314,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag ENABLE_THE_ONE_THAT_SHOULD_NOT_BE_NAMED = defineFeatureFlag(
-            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-09-15",
+            "enable-the-one-that-should-not-be-named", false, List.of("hmusum"), "2023-05-08", "2023-10-01",
             "Whether to enable the one program that should not be named",
             "Takes effect at next host-admin tick");
 
@@ -354,7 +354,7 @@ public class Flags {
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
             List.of("hmusum"), "2023-07-19", "2023-10-01",
-            "Whether to read config server session data from sesion data blob or from individual paths",
+            "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
