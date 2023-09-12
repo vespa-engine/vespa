@@ -399,7 +399,7 @@ public class NodesV2ApiTest {
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'wireguardPubkey': Wireguard key must match '^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw480]=$', but got: 'not a wg key'\"}");
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-                        Utf8.toBytes("{\"wireguardPubkey\": \"lololololololololololololololololololololoo=\",\"wireguardKeyTimestamp\" : 789}"), Request.Method.PATCH),
+                        Utf8.toBytes("{\"wireguardPubkey\": \"lololololololololololololololololololololoo=\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-wg.json");

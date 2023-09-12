@@ -89,11 +89,6 @@ public class NodeAttributes {
         return this;
     }
 
-    public NodeAttributes withWireguardKeyTimestamp(Instant wireguardKeyTimestamp) {
-        this.wireguardKeyTimestamp = Optional.of(wireguardKeyTimestamp);
-        return this;
-    }
-
     public NodeAttributes withReports(Map<String, JsonNode> nodeReports) {
         this.reports = new TreeMap<>(nodeReports);
         return this;

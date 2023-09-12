@@ -146,8 +146,7 @@ public class RealNodeRepositoryTest {
                 new NodeAttributes()
                         .withRestartGeneration(1)
                         .withDockerImage(DockerImage.fromString(dockerImage))
-                        .withWireguardPubkey(wireguardKey)
-                        .withWireguardKeyTimestamp(wireguardKeyTimestamp));
+                        .withWireguardPubkey(wireguardKey));
 
         NodeSpec hostSpec = nodeRepositoryApi.getOptionalNode(hostname).orElseThrow();
         assertEquals(1, hostSpec.currentRestartGeneration().orElseThrow());
