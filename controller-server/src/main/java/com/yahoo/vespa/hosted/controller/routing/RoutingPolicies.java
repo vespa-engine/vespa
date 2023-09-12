@@ -422,6 +422,7 @@ public class RoutingPolicies {
         boolean skipBasedOnAuthMethod = switch (endpoint.authMethod()) {
             case token -> true;
             case mtls -> false;
+            case none -> true;
         };
         if (skipBasedOnAuthMethod) return;
         if (endpoint.routingMethod() != RoutingMethod.exclusive) return; // Not supported for this routing method

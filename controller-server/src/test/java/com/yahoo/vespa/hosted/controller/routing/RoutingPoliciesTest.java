@@ -341,32 +341,6 @@ public class RoutingPoliciesTest {
     }
 
     @Test
-    void zone_token_endpoints() {
-        var tester = new RoutingPoliciesTester();
-        tester.enableTokenEndpoint(true);
-
-        var context1 = tester.newDeploymentContext("tenant1", "app1", "default");
-
-        // Deploy application
-        ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
-                                                                           .region(zone2.region())
-                                                                           .container("c0", AuthMethod.mtls, AuthMethod.token)
-                                                                           .build();
-        tester.provisionLoadBalancers(1, context1.instanceId(), false, zone1, zone2);
-        context1.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
-
-        // Deployment creates records and policies for all clusters in all zones
-        List<String> expectedRecords = List.of(
-                "c0.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "c0.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "token-c0.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "token-c0.app1.tenant1.us-west-1.vespa.oath.cloud"
-        );
-        assertEquals(expectedRecords, tester.recordNames());
-        assertEquals(2, tester.policiesOf(context1.instanceId()).size());
-    }
-
-    @Test
     void zone_routing_policies_with_shared_routing() {
         var tester = new RoutingPoliciesTester(new DeploymentTester(), false);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
@@ -1074,9 +1048,7 @@ public class RoutingPoliciesTest {
                 "cbff1506.cafed00d.z.vespa-app.cloud",
                 "d151139b.cafed00d.z.vespa-app.cloud",
                 "foo.app1.tenant1.g.vespa-app.cloud",
-                "foo.cafed00d.g.vespa-app.cloud",
-                "token-c1.app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
-                "token-c1.app1.tenant1.aws-us-east-1c.z.vespa-app.cloud"
+                "foo.cafed00d.g.vespa-app.cloud"
         );
         assertEquals(expectedRecords, tester.recordNames());
         assertEquals(4, tester.policiesOf(context.instanceId()).size());

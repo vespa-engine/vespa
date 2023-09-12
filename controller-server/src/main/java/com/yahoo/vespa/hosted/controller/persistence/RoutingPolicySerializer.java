@@ -136,6 +136,7 @@ public class RoutingPolicySerializer {
         return switch (authMethod) {
             case token -> "token";
             case mtls -> "mtls";
+            case none -> "none";
         };
     }
 
@@ -143,6 +144,7 @@ public class RoutingPolicySerializer {
         return switch (field.asString()) {
             case "token" -> AuthMethod.token;
             case "mtls" -> AuthMethod.mtls;
+            case "none" -> AuthMethod.none;
             default -> throw new IllegalArgumentException("Unknown auth method '" + field.asString() + "'");
         };
     }

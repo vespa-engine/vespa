@@ -176,9 +176,7 @@ public class RoutingController {
 
     /** Returns the zone- and region-scoped endpoints of given deployment */
     public EndpointList endpointsOf(DeploymentId deployment, ClusterSpec.Id cluster, List<GeneratedEndpoint> generatedEndpoints) {
-        // TODO(mpolden): Support tokens only when generated endpoints are available
-        boolean tokenSupported = tokenEndpointEnabled(deployment.applicationId()) &&
-                                 (generatedEndpoints.isEmpty() || generatedEndpoints.stream().anyMatch(ge -> ge.authMethod() == AuthMethod.token));
+        boolean tokenSupported = tokenEndpointEnabled(deployment.applicationId()) && generatedEndpoints.stream().anyMatch(ge -> ge.authMethod() == AuthMethod.token);
         RoutingMethod routingMethod = controller.zoneRegistry().routingMethod(deployment.zoneId());
         boolean isProduction = deployment.zoneId().environment().isProduction();
         List<Endpoint> endpoints = new ArrayList<>();
@@ -187,9 +185,6 @@ public class RoutingController {
                                                         .on(Port.fromRoutingMethod(routingMethod))
                                                         .target(cluster, deployment);
         endpoints.add(zoneEndpoint.in(controller.system()));
-        if (tokenSupported) {
-            endpoints.add(zoneEndpoint.authMethod(AuthMethod.token).in(controller.system()));
-        }
         Endpoint.EndpointBuilder regionEndpoint = Endpoint.of(deployment.applicationId())
                                                           .routingMethod(routingMethod)
                                                           .on(Port.fromRoutingMethod(routingMethod))
@@ -203,11 +198,17 @@ public class RoutingController {
             boolean include = switch (generatedEndpoint.authMethod()) {
                 case token -> tokenSupported;
                 case mtls -> true;
+                case none -> false;
             };
             if (include) {
-                endpoints.add(zoneEndpoint.generatedFrom(generatedEndpoint).in(controller.system()));
-                if (isProduction) {
-                    endpoints.add(regionEndpoint.generatedFrom(generatedEndpoint).in(controller.system()));
+                endpoints.add(zoneEndpoint.generatedFrom(generatedEndpoint)
+                                          .authMethod(generatedEndpoint.authMethod())
+                                          .in(controller.system()));
+                // Only a single region endpoint is needed, not one per auth method
+                if (isProduction && generatedEndpoint.authMethod() == AuthMethod.mtls) {
+                    endpoints.add(regionEndpoint.generatedFrom(generatedEndpoint)
+                                                .authMethod(AuthMethod.none)
+                                                .in(controller.system()));
                 }
             }
         }
@@ -241,7 +242,7 @@ public class RoutingController {
                                                        .routingMethod(method);
             endpoints.add(builder.in(controller.system()));
             for (var ge : generatedEndpoints.cluster(cluster)) {
-                endpoints.add(builder.generatedFrom(ge).in(controller.system()));
+                endpoints.add(builder.generatedFrom(ge).authMethod(ge.authMethod()).in(controller.system()));
             }
         }
         return EndpointList.copyOf(endpoints);
@@ -261,7 +262,7 @@ public class RoutingController {
         List<Endpoint> endpoints = new ArrayList<>();
         endpoints.add(builder.in(controller.system()));
         for (var ge : generatedEndpoints.cluster(cluster)) {
-            endpoints.add(builder.generatedFrom(ge).in(controller.system()));
+            endpoints.add(builder.generatedFrom(ge).authMethod(ge.authMethod()).in(controller.system()));
         }
         return EndpointList.copyOf(endpoints);
     }
@@ -437,7 +438,11 @@ public class RoutingController {
             return List.of();
         }
         return Arrays.stream(AuthMethod.values())
-                     .filter(method -> method != AuthMethod.token || token)
+                     .filter(method -> switch (method) {
+                         case token -> token;
+                         case mtls -> true;
+                         case none -> false;
+                     })
                      .map(method -> new GeneratedEndpoint(GeneratedEndpoint.createPart(controller.random(true)),
                                                           applicationPart,
                                                           method))
