@@ -40,6 +40,9 @@ struct UniversalDotProductParam {
             dense_plan.res_stride.pop_back();
         }
     }
+    bool forward() const { return sparse_plan.maybe_forward_lhs_index(); }
+    bool distinct() const { return sparse_plan.is_distinct() && dense_plan.is_distinct(); }
+    bool single() const { return vector_size == 1; }
 };
 
 template <typename OCT>
@@ -204,10 +207,31 @@ UniversalDotProduct::compile_self(const ValueBuilderFactory &, Stash &stash) con
     auto op = typify_invoke<6,MyTypify,SelectUniversalDotProduct>(lhs().result_type().cell_meta(),
                                                                   rhs().result_type().cell_meta(),
                                                                   result_type().cell_meta().is_scalar,
-                                                                  param.sparse_plan.maybe_forward_lhs_index(),
-                                                                  param.sparse_plan.is_distinct() && param.dense_plan.is_distinct(),
-                                                                  param.vector_size == 1);
+                                                                  param.forward(),
+                                                                  param.distinct(),
+                                                                  param.single());
     return InterpretedFunction::Instruction(op, wrap_param<UniversalDotProductParam>(param));
+}
+
+bool
+UniversalDotProduct::forward() const
+{
+    UniversalDotProductParam param(result_type(), lhs().result_type(), rhs().result_type());
+    return param.forward();
+}
+
+bool
+UniversalDotProduct::distinct() const
+{
+    UniversalDotProductParam param(result_type(), lhs().result_type(), rhs().result_type());
+    return param.distinct();
+}
+
+bool
+UniversalDotProduct::single() const
+{
+    UniversalDotProductParam param(result_type(), lhs().result_type(), rhs().result_type());
+    return param.single();
 }
 
 const TensorFunction &

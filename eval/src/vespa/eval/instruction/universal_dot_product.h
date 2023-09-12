@@ -19,6 +19,9 @@ public:
     UniversalDotProduct(const ValueType &res_type, const TensorFunction &lhs, const TensorFunction &rhs);
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
+    bool forward() const;
+    bool distinct() const;
+    bool single() const;
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash, bool force);
 };
 

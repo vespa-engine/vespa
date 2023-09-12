@@ -140,7 +140,7 @@ const TensorFunction &optimize_tensor_function(const ValueBuilderFactory &factor
     return optimize_tensor_function(factory, function, stash, OptimizeTensorFunctionOptions());
 }
 
-const TensorFunction &apply_tensor_function_optimizer(const TensorFunction &function, tensor_function_optimizer optimizer, Stash &stash, size_t *count) {
+const TensorFunction &apply_tensor_function_optimizer(const TensorFunction &function, tensor_function_optimizer optimizer, Stash &stash, tensor_function_listener listener) {
     Child root(function);
     run_optimize_pass(root, [&](const Child &child)
                             {
@@ -148,9 +148,7 @@ const TensorFunction &apply_tensor_function_optimizer(const TensorFunction &func
                                 const TensorFunction &child_after = optimizer(child_before, stash);
                                 if (std::addressof(child_after) != std::addressof(child_before)) {
                                     child.set(child_after);
-                                    if (count != nullptr) {
-                                        ++(*count);
-                                    }
+                                    listener(child_after);
                                 }
                             });
     return root.get();
