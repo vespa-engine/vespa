@@ -96,6 +96,12 @@ func zipDir(dir string, destination string) error {
 		if err != nil {
 			return err
 		}
+		if ignorePackageFile(filepath.Base(path)) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
 		if info.IsDir() {
 			return nil
 		}
@@ -121,6 +127,14 @@ func zipDir(dir string, destination string) error {
 		return nil
 	}
 	return filepath.Walk(dir, walker)
+}
+
+func ignorePackageFile(name string) bool {
+	switch name {
+	case ".DS_Store":
+		return true
+	}
+	return false
 }
 
 func (ap *ApplicationPackage) zipReader(test bool) (io.ReadCloser, error) {
