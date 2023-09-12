@@ -117,6 +117,24 @@
                 <version>${junit.vespa.tenant.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit.vespa.tenant.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-engine</artifactId>
+                <version>${junit.platform.vespa.tenant.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-commons</artifactId>
+                <version>${junit.platform.vespa.tenant.version}</version>
+            </dependency>
+
             <!-- Transitive dependency of junit4 -->
             <dependency>
                 <groupId>org.hamcrest</groupId>
