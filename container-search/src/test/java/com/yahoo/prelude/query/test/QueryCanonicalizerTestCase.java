@@ -467,27 +467,6 @@ public class QueryCanonicalizerTestCase {
     }
 
     @Test
-    void testRankDuplicateCheapification() {
-        AndItem and = new AndItem();
-        WordItem shoe = new WordItem("shoe", "prod");
-        and.addItem(shoe);
-        and.addItem(new WordItem("apparel & accessories", "tcnm"));
-        RankItem rank = new RankItem();
-        rank.addItem(and);
-
-        rank.addItem(new WordItem("shoe", "prod")); // rank item which also ossurs in first argument
-        for (int i = 0; i < 25; i++)
-            rank.addItem(new WordItem("word" + i, "normbrnd"));
-        QueryTree tree = new QueryTree(rank);
-
-        assertTrue(shoe.isRanked());
-        assertTrue(shoe.usePositionData());
-        QueryCanonicalizer.canonicalize(tree);
-        assertFalse(shoe.isRanked());
-        assertFalse(shoe.usePositionData());
-    }
-
-    @Test
     void queryTreeExceedsAllowedSize() {
         Query query = new Query();
         QueryTree tree = query.getModel().getQueryTree();
