@@ -558,6 +558,7 @@ public class Endpoint {
             this.cluster = cluster;
             this.scope = requireUnset(Scope.weighted);
             this.targets = List.of(new Target(new DeploymentId(application.instance(instance.get()), effectiveZone(zone))));
+            this.authMethod = AuthMethod.none;
             return this;
         }
 
@@ -594,18 +595,13 @@ public class Endpoint {
         /** Sets the generated ID to use when building this */
         public EndpointBuilder generatedFrom(GeneratedEndpoint generated) {
             this.generated = Optional.of(generated);
-            this.authMethod = generated.authMethod();
             return this;
         }
 
         /** Sets the system that owns this */
         public Endpoint in(SystemName system) {
-            if (system.isPublic() && routingMethod != RoutingMethod.exclusive) {
-                throw new IllegalArgumentException("Public system only supports routing method " + RoutingMethod.exclusive);
-            }
-            String prefix = authMethod == AuthMethod.token ? "token-" : "";
             String name = endpointOrClusterAsString(endpointId, Objects.requireNonNull(cluster, "cluster must be non-null"));
-            URI url = createUrl(prefix + name,
+            URI url = createUrl(name,
                                 Objects.requireNonNull(application, "application must be non-null"),
                                 Objects.requireNonNull(instance, "instance must be non-null"),
                                 Objects.requireNonNull(targets, "targets must be non-null"),
@@ -614,8 +610,20 @@ public class Endpoint {
                                 Objects.requireNonNull(port, "port must be non-null"),
                                 Objects.requireNonNull(generated)
             );
+            if (system.isPublic() && routingMethod != RoutingMethod.exclusive) {
+                throw illegal(url, "Public system only supports routing method " + RoutingMethod.exclusive + ", got " + routingMethod);
+            }
             if (routingMethod.isDirect() && !port.isDefault()) {
-                throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
+                throw illegal(url, "Routing method " + routingMethod + " can only use default port, got " + port);
+            }
+            if (authMethod == AuthMethod.token && generated.isEmpty()) {
+                throw illegal(url, authMethod + " is only supported for generated endpoints");
+            }
+            if (scope != Scope.weighted && generated.isPresent() && generated.get().authMethod() != authMethod) {
+                throw illegal(url, "Authentication method of " + scope + " endpoint does not match authentication method of generated endpoint: " + generated.get().authMethod());
+            }
+            if ((scope == Scope.weighted) != (authMethod == AuthMethod.none)) {
+                throw illegal(url, "Attempted to set unsupported authentication method " + authMethod + " on " + scope + " endpoint");
             }
             return new Endpoint(application,
                                 instance,
@@ -630,6 +638,10 @@ public class Endpoint {
                                 certificateName,
                                 authMethod,
                                 generated);
+        }
+
+        private static IllegalArgumentException illegal(URI url, String reason) {
+            return new IllegalArgumentException("Invalid endpoint: " + url + ": " + reason);
         }
 
         private Scope requireUnset(Scope scope) {

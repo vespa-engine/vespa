@@ -8,7 +8,13 @@ package com.yahoo.config.provision.zone;
  */
 public enum AuthMethod {
 
+    /** Clients can authenticate with a certificate (mutual TLS) */
     mtls,
+
+    /** Clients can authenticate with a secret token */
     token,
+
+    /** Clients cannot authenticate with the endpoint directly */
+    none;
 
 }
