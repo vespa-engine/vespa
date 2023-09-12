@@ -117,6 +117,24 @@
                 <version>${junit.vespa.tenant.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit.vespa.tenant.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-engine</artifactId>
+                <version>${junit.platform.vespa.tenant.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-commons</artifactId>
+                <version>${junit.platform.vespa.tenant.version}</version>
+            </dependency>
+
             <!-- Transitive dependency of junit4 -->
             <dependency>
                 <groupId>org.hamcrest</groupId>
@@ -251,13 +269,21 @@
                                 <configuration>
                                     <rules>
                                         <bannedDependencies>
-                                            <!-- Fail validation for apps with junit-jupiter-api in compile scope, or on wrong version. -->
                                             <excludes>
+                                                <!-- Fail validation for apps with junit-jupiter-api in compile scope, or on wrong version. -->
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:compile</exclude>
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:provided</exclude>
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:runtime</exclude>
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:(,${junit.vespa.tenant.version}):jar:*</exclude>
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:(${junit.vespa.tenant.version},):jar:*</exclude>
+
+                                                <!-- Fail validation of junit artifacts on wrong version. -->
+                                                <exclude>org.junit.jupiter:junit-jupiter-params:(,${junit.vespa.tenant.version}):jar:*</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-params:(${junit.vespa.tenant.version},):jar:*</exclude>
+                                                <exclude>org.junit.platform:junit-platform-engine:(,${junit.platform.vespa.tenant.version}):jar:*</exclude>
+                                                <exclude>org.junit.platform:junit-platform-engine:(${junit.platform.vespa.tenant.version},):jar:*</exclude>
+                                                <exclude>org.junit.platform:junit-platform-commons:(,${junit.platform.vespa.tenant.version}):jar:*</exclude>
+                                                <exclude>org.junit.platform:junit-platform-commons:(${junit.platform.vespa.tenant.version},):jar:*</exclude>
                                             </excludes>
                                         </bannedDependencies>
                                     </rules>
