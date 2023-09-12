@@ -38,7 +38,7 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
-import com.yahoo.vespa.model.utils.FileSender;
+import com.yahoo.vespa.model.filedistribution.UserConfiguredFiles;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -130,23 +130,26 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     protected void doPrepare(DeployState deployState) {
         super.doPrepare(deployState);
-        addAndSendApplicationBundles(deployState);
-        sendUserConfiguredFiles(deployState);
+        // Register bundles and files for file distribution
+        registerApplicationBundles(deployState);
+        registerUserConfiguredFiles(deployState);
         createEndpoints(deployState);
     }
 
-    private void addAndSendApplicationBundles(DeployState deployState) {
+    private void registerApplicationBundles(DeployState deployState) {
         for (ComponentInfo component : deployState.getApplicationPackage().getComponentsInfo(deployState.getVespaVersion())) {
             FileReference reference = deployState.getFileRegistry().addFile(component.getPathRelativeToAppDir());
             applicationBundles.add(reference);
         }
     }
 
-    private void sendUserConfiguredFiles(DeployState deployState) {
+    private void registerUserConfiguredFiles(DeployState deployState) {
+        if (containers.isEmpty()) return;
+
         // Files referenced from user configs to all components.
-        FileSender fileSender = new FileSender(containers, deployState.getFileRegistry(), deployState.getDeployLogger());
+        UserConfiguredFiles files = new UserConfiguredFiles(deployState.getFileRegistry(), deployState.getDeployLogger());
         for (Component<?, ?> component : getAllComponents()) {
-            fileSender.sendUserConfiguredFiles(component);
+            files.register(component);
         }
     }
 
@@ -156,8 +159,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
    }
 
     private void addMetricsHandler(String handlerClass, BindingPattern rootBinding, BindingPattern innerBinding) {
-        Handler handler = new Handler(
-                new ComponentModel(handlerClass, null, null, null));
+        Handler handler = new Handler(new ComponentModel(handlerClass, null, null, null));
         handler.addServerBindings(rootBinding, innerBinding);
         addComponent(handler);
     }
