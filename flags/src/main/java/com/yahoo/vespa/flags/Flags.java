@@ -398,6 +398,14 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID);
 
+    public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
+            "content-layer-metadata-feature-level", 0,
+            List.of("vekterli"), "2022-09-12", "2024-02-01",
+            "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
+            "cancellation and ephemeral content node sequence numbers for bucket replicas",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

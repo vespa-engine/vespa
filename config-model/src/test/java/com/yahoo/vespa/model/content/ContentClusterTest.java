@@ -1479,6 +1479,23 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(expectedGroupsAllowedDown, config.max_number_of_groups_allowed_to_be_down());
     }
 
+    private boolean resolveDistributorOperationCancellationConfig(Integer featureLevel) throws Exception {
+        var properties = new TestProperties();
+        if (featureLevel != null) {
+            properties.setContentLayerMetadataFeatureLevel(featureLevel);
+        }
+        var cfg = resolveStorDistributormanagerConfig(properties);
+        return cfg.enable_operation_cancellation();
+    }
+
+    @Test
+    void distributor_operation_cancelling_config_controlled_by_properties() throws Exception {
+        assertFalse(resolveDistributorOperationCancellationConfig(null)); // defaults to false
+        assertFalse(resolveDistributorOperationCancellationConfig(0));
+        assertTrue(resolveDistributorOperationCancellationConfig(1));
+        assertTrue(resolveDistributorOperationCancellationConfig(2));
+    }
+
     private String servicesWithGroups(int groupCount, double minGroupUpRatio) {
         String services = String.format("<?xml version='1.0' encoding='UTF-8' ?>" +
                 "<services version='1.0'>" +
