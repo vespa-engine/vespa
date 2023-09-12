@@ -6,14 +6,12 @@ import ai.vespa.feed.client.FeedClient;
 import ai.vespa.feed.client.FeedClient.CircuitBreaker;
 import ai.vespa.feed.client.FeedClient.RetryStrategy;
 import ai.vespa.feed.client.FeedException;
-import ai.vespa.feed.client.HttpResponse ;
+import ai.vespa.feed.client.HttpResponse;
 import ai.vespa.feed.client.OperationStats;
 
 import java.io.IOException;
-import java.nio.channels.CancelledKeyException;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -139,8 +137,10 @@ class HttpRequestStrategy implements RequestStrategy {
     private boolean retry(HttpRequest request, Throwable thrown, int attempt) {
         breaker.failure(thrown);
         if (   (thrown instanceof IOException)               // General IO problems.
-            || (thrown instanceof CancellationException)     // TLS session disconnect.
-            || (thrown instanceof CancelledKeyException)) {  // Selection cancelled.
+
+            //  Thrown by HTTP2Session.StreamsState.reserveSlot, likely on GOAWAY from server
+            || (thrown instanceof IllegalStateException && thrown.getMessage().equals("session closed"))
+        ) {
             log.log(FINER, thrown, () -> "Failed attempt " + attempt + " at " + request);
             return retry(request, attempt);
         }
