@@ -37,6 +37,17 @@ public class RankingExpressionWithTransformerTokensTestCase {
     }
 
     @Test
+    void testTokenInputIdsCustomPadTokens() throws Exception {
+        String expected = "tensor(d0[1],d1[13]):[1,11,12,2,13,14,15,2,16,17,2,0,0]";
+        String a = "tensor(d0[2]):[11,12]";
+        String b = "tensor(d0[3]):[13,14,15]";
+        String c = "tensor(d0[2]):[16,17]";
+        String expression = "customTokenInputIds(1, 2, 13, a, b, c)";
+        Tensor result = evaluateExpression(expression, a, b, c);
+        assertEquals(Tensor.from(expected), result);
+    }
+
+    @Test
     void testTokenTypeIds() throws Exception {
         String expected = "tensor(d0[1],d1[10]):[0,0,0,0,1,1,1,1,0,0]";
         String a = "tensor(d0[2]):[1,2]";
