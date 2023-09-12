@@ -25,7 +25,6 @@ import java.util.Set;
 
 import static ai.vespa.metrics.Suffix.average;
 import static ai.vespa.metrics.Suffix.count;
-import static ai.vespa.metrics.Suffix.last;
 import static ai.vespa.metrics.Suffix.max;
 import static ai.vespa.metrics.Suffix.min;
 import static ai.vespa.metrics.Suffix.ninety_five_percentile;
@@ -181,7 +180,7 @@ public class Vespa9VespaMetricSet {
 
         addMetric(metrics, ContainerMetrics.JDISC_SINGLETON_IS_ACTIVE.max());
 
-        addMetric(metrics, ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS, EnumSet.of(min, max, last)); // TODO: Vespa 9: Remove max, last
+        addMetric(metrics, ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS.min());
         addMetric(metrics, ContainerMetrics.CONTAINER_IAM_ROLE_EXPIRY_SECONDS.baseName());
 
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_PREMATURELY_CLOSED.rate());
@@ -226,7 +225,7 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ClusterControllerMetrics.INITIALIZING_COUNT.max());
         addMetric(metrics, ClusterControllerMetrics.MAINTENANCE_COUNT.max());
         addMetric(metrics, ClusterControllerMetrics.RETIRED_COUNT.max());
-        addMetric(metrics, ClusterControllerMetrics.UP_COUNT, EnumSet.of(max, last)); // TODO: Remove last
+        addMetric(metrics, ClusterControllerMetrics.UP_COUNT.max());
         addMetric(metrics, ClusterControllerMetrics.CLUSTER_STATE_CHANGE_COUNT.baseName());
         addMetric(metrics, ClusterControllerMetrics.BUSY_TICK_TIME_MS, EnumSet.of(max, sum, count));
         addMetric(metrics, ClusterControllerMetrics.IDLE_TICK_TIME_MS, EnumSet.of(max, sum, count));

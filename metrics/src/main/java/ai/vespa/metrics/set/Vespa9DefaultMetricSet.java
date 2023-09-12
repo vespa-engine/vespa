@@ -17,7 +17,6 @@ import java.util.List;
 
 import static ai.vespa.metrics.Suffix.average;
 import static ai.vespa.metrics.Suffix.count;
-import static ai.vespa.metrics.Suffix.last;
 import static ai.vespa.metrics.Suffix.max;
 import static ai.vespa.metrics.Suffix.min;
 import static ai.vespa.metrics.Suffix.ninety_five_percentile;
@@ -74,7 +73,7 @@ public class Vespa9DefaultMetricSet {
                 .metric(ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CHIFERS.rate())
                 .metric(ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_UNKNOWN.rate())
                 .metric(ContainerMetrics.JDISC_APPLICATION_FAILED_COMPONENT_GRAPHS.rate())
-                .metric(ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS, EnumSet.of(min, max, last)) // TODO: Vespa 9: Remove max, last
+                .metric(ContainerMetrics.ATHENZ_TENANT_CERT_EXPIRY_SECONDS.min())
                 .build();
     }
 
@@ -147,7 +146,7 @@ public class Vespa9DefaultMetricSet {
         return new MetricSet.Builder("default-cluster-controller")
                 .metric(ClusterControllerMetrics.DOWN_COUNT.max())
                 .metric(ClusterControllerMetrics.MAINTENANCE_COUNT.max())
-                .metric(ClusterControllerMetrics.UP_COUNT, EnumSet.of(max, last)) // TODO: Remove last
+                .metric(ClusterControllerMetrics.UP_COUNT.max())
                 .metric(ClusterControllerMetrics.IS_MASTER.max())
                 .metric(ClusterControllerMetrics.RESOURCE_USAGE_NODES_ABOVE_LIMIT.max())
                 .metric(ClusterControllerMetrics.RESOURCE_USAGE_MAX_MEMORY_UTILIZATION.max())
