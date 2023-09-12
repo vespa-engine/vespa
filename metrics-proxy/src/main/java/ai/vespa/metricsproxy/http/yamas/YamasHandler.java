@@ -67,9 +67,7 @@ public class YamasHandler extends HttpHandlerBase {
     private HttpResponse valuesResponse(String consumer, String query) {
         try {
             List<MetricsPacket> metrics = new ArrayList<>(consumer == null ? valuesFetcher.fetchAllMetrics() : valuesFetcher.fetch(consumer));
-            if (consumer == null || "Vespa".equalsIgnoreCase(consumer)) {
-                metrics.addAll(nodeMetricGatherer.gatherMetrics()); // TODO: Currently only add these metrics in this handler. Eventually should be included in all handlers
-            }
+            metrics.addAll(nodeMetricGatherer.gatherMetrics());
             return new YamasResponse(OK, metrics, useJsonl(query));
         } catch (JsonRenderingException e) {
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());
