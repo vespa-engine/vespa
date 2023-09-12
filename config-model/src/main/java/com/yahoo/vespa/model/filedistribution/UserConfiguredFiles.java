@@ -11,7 +11,6 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
-import com.yahoo.vespa.model.AbstractService;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -21,19 +20,16 @@ import java.util.Optional;
 import java.util.logging.Level;
 
 /**
- * Utility methods for registering file distribution of files/paths/urls/models defined by the user
- * to a collection of nodes.
+ * Utility methods for registering file distribution of files/paths/urls/models defined by the user.
  *
  * @author gjoranv
  */
 public class UserConfiguredFiles implements Serializable {
 
-    private final Collection<? extends AbstractService> services;
     private final FileRegistry fileRegistry;
     private final DeployLogger logger;
 
-    public UserConfiguredFiles(Collection<? extends AbstractService> services, FileRegistry fileRegistry, DeployLogger logger) {
-        this.services = services;
+    public UserConfiguredFiles(FileRegistry fileRegistry, DeployLogger logger) {
         this.fileRegistry = fileRegistry;
         this.logger = logger;
     }
@@ -42,8 +38,6 @@ public class UserConfiguredFiles implements Serializable {
      * Registers user configured files for a producer for file distribution.
      */
     public <PRODUCER extends AnyConfigProducer> void register(PRODUCER producer) {
-        if (services.isEmpty()) return;
-
         UserConfigRepo userConfigs = producer.getUserConfigs();
         Map<Path, FileReference> registeredFiles = new HashMap<>();
         for (ConfigDefinitionKey key : userConfigs.configsProduced()) {

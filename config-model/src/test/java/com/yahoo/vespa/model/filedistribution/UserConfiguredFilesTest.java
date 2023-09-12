@@ -7,20 +7,16 @@ import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
-import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
-import com.yahoo.vespa.model.AbstractService;
-import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +32,6 @@ public class UserConfiguredFilesTest {
 
     private SimpleConfigProducer<?> producer;
     private ConfigPayloadBuilder builder;
-    private List<AbstractService> serviceList;
     private final MyFileRegistry fileRegistry = new MyFileRegistry();
     private ConfigDefinition def;
 
@@ -64,16 +59,13 @@ public class UserConfiguredFilesTest {
     }
 
     private UserConfiguredFiles userConfiguredFiles() {
-        return new UserConfiguredFiles(serviceList, fileRegistry, new BaseDeployLogger());
+        return new UserConfiguredFiles(fileRegistry, new BaseDeployLogger());
     }
 
     @BeforeEach
     public void setup() {
         MockRoot root = new MockRoot();
         producer = new SimpleConfigProducer<>(root, "test");
-        TestService service = new TestService(root, "service");
-        serviceList = new ArrayList<>();
-        serviceList.add(service);
         ConfigDefinitionKey key = new ConfigDefinitionKey("myname", "mynamespace");
         def = new ConfigDefinition("myname", "mynamespace");
         builder = new ConfigPayloadBuilder(def);
@@ -253,17 +245,4 @@ public class UserConfiguredFilesTest {
         userConfiguredFiles().register(producer);
     }
 
-
-    private static class TestService extends AbstractService {
-        public TestService(TreeConfigProducer<?> parent, String name) {
-            super(parent, name);
-        }
-
-        @Override
-        public int getPortCount() {
-            return 0;
-        }
-
-        @Override public void allocatePorts(int start, PortAllocBridge from) { }
-    }
 }

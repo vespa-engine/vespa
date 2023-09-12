@@ -144,8 +144,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     }
 
     private void registerUserConfiguredFiles(DeployState deployState) {
+        if (containers.isEmpty()) return;
+
         // Files referenced from user configs to all components.
-        UserConfiguredFiles files = new UserConfiguredFiles(containers, deployState.getFileRegistry(), deployState.getDeployLogger());
+        UserConfiguredFiles files = new UserConfiguredFiles(deployState.getFileRegistry(), deployState.getDeployLogger());
         for (Component<?, ?> component : getAllComponents()) {
             files.register(component);
         }
