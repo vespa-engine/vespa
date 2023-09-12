@@ -26,6 +26,11 @@ public class NodeResources {
     private String storageType;
     @JsonProperty
     private String architecture;
+    @JsonProperty
+    private Double gpuCount;
+    @JsonProperty
+    private Double gpuMemoryGb;
+
 
     public Double getVcpu() {
         return vcpu;
@@ -83,11 +88,28 @@ public class NodeResources {
         this.architecture = architecture;
     }
 
+    public Double getGpuCount(){
+        return gpuCount;
+    }
+
+    public void setGpuCount(Double gpuCount) {
+        this.gpuCount = gpuCount;
+    }
+
+    public Double getGpuMemoryGb() {
+        return gpuMemoryGb;
+    }
+
+    public void setGpuMemoryGb(Double gpuMemoryGb) {
+        this.gpuMemoryGb = gpuMemoryGb;
+    }
+
     public com.yahoo.config.provision.NodeResources toNodeResources() {
         return new com.yahoo.config.provision.NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps,
                                                             toDiskSpeed(diskSpeed),
                                                             toStorageType(storageType),
-                                                            toArchitecture(architecture));
+                                                            toArchitecture(architecture),
+                                                            toGpu(gpuCount, gpuMemoryGb));
     }
 
     private com.yahoo.config.provision.NodeResources.DiskSpeed toDiskSpeed(String diskSpeed) {
@@ -117,6 +139,14 @@ public class NodeResources {
         }
     }
 
+    private com.yahoo.config.provision.NodeResources.GpuResources toGpu(Double gpuCount, Double gpuMemoryGb) {
+        // these are either both null or both have a value.  using OR to silence inspection.
+        // we also cast the double to an integer.  assuming this must be OK as we are going
+        // from NodeResources -> JSON -> NodeResources
+        if (gpuCount == null || gpuMemoryGb == null) return com.yahoo.config.provision.NodeResources.GpuResources.getDefault();
+        return new com.yahoo.config.provision.NodeResources.GpuResources(gpuCount.intValue(), gpuMemoryGb.intValue());
+    }
+
     @Override
     public String toString() {
         return "NodeResources{" +
@@ -127,6 +157,8 @@ public class NodeResources {
                 ", diskSpeed='" + diskSpeed + '\'' +
                 ", storageType='" + storageType + '\'' +
                 ", architecture='" + architecture + '\'' +
+                ", gpuCount='" + gpuCount + '\'' +
+                ", gpuMemoryGb='" + gpuMemoryGb + '\'' +
                 '}';
     }
 }
