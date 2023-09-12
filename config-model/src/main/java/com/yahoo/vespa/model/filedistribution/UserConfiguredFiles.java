@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.model.utils;
+package com.yahoo.vespa.model.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
@@ -21,82 +21,84 @@ import java.util.Optional;
 import java.util.logging.Level;
 
 /**
- * Utility methods for sending files to a collection of nodes.
+ * Utility methods for registering file distribution of files/paths/urls/models defined by the user
+ * to a collection of nodes.
  *
  * @author gjoranv
  */
-public class FileSender implements Serializable {
+public class UserConfiguredFiles implements Serializable {
 
     private final Collection<? extends AbstractService> services;
     private final FileRegistry fileRegistry;
     private final DeployLogger logger;
 
-    public FileSender(Collection<? extends AbstractService> services, FileRegistry fileRegistry, DeployLogger logger) {
+    public UserConfiguredFiles(Collection<? extends AbstractService> services, FileRegistry fileRegistry, DeployLogger logger) {
         this.services = services;
         this.fileRegistry = fileRegistry;
         this.logger = logger;
     }
 
     /**
-     * Sends all user configured files for a producer to all given services.
+     * Registers user configured files for a producer for file distribution.
      */
-    public <PRODUCER extends AnyConfigProducer> void sendUserConfiguredFiles(PRODUCER producer) {
+    public <PRODUCER extends AnyConfigProducer> void register(PRODUCER producer) {
         if (services.isEmpty()) return;
 
         UserConfigRepo userConfigs = producer.getUserConfigs();
-        Map<Path, FileReference> sentFiles = new HashMap<>();
+        Map<Path, FileReference> registeredFiles = new HashMap<>();
         for (ConfigDefinitionKey key : userConfigs.configsProduced()) {
             ConfigPayloadBuilder builder = userConfigs.get(key);
             try {
-                sendUserConfiguredFiles(builder, sentFiles, key);
+                register(builder, registeredFiles, key);
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Unable to send file specified in " + key, e);
             }
         }
     }
 
-    private void sendUserConfiguredFiles(ConfigPayloadBuilder builder, Map<Path, FileReference> sentFiles, ConfigDefinitionKey key) {
+    private void register(ConfigPayloadBuilder builder, Map<Path, FileReference> registeredFiles, ConfigDefinitionKey key) {
         ConfigDefinition configDefinition = builder.getConfigDefinition();
         if (configDefinition == null) {
-            // TODO: throw new IllegalArgumentException("Not able to find config definition for " + builder);
-            logger.logApplicationPackage(Level.FINE, "Not able to find config definition for " + key +
-                                                     ". Will not send files for this config");
+            // TODO: throw new IllegalArgumentException("Unable to find config definition for " + builder);
+            logger.logApplicationPackage(Level.FINE, "Unable to find config definition " + key +
+                                                     ". Will not register files for file distribution for this config");
             return;
         }
+
         // Inspect fields at this level
-        sendEntries(builder, sentFiles, configDefinition.getFileDefs(), false);
-        sendEntries(builder, sentFiles, configDefinition.getPathDefs(), false);
-        sendEntries(builder, sentFiles, configDefinition.getOptionalPathDefs(), false);
-        sendEntries(builder, sentFiles, configDefinition.getModelDefs(), true);
+        registerEntries(builder, registeredFiles, configDefinition.getFileDefs(), false);
+        registerEntries(builder, registeredFiles, configDefinition.getPathDefs(), false);
+        registerEntries(builder, registeredFiles, configDefinition.getOptionalPathDefs(), false);
+        registerEntries(builder, registeredFiles, configDefinition.getModelDefs(), true);
 
         // Inspect arrays
         for (Map.Entry<String, ConfigDefinition.ArrayDef> entry : configDefinition.getArrayDefs().entrySet()) {
             if (isNotAnyFileType(entry.getValue().getTypeSpec().getType())) continue;
             ConfigPayloadBuilder.Array array = builder.getArray(entry.getKey());
-            sendFileEntries(array.getElements(), sentFiles, "model".equals(entry.getValue().getTypeSpec().getType()));
+            registerFileEntries(array.getElements(), registeredFiles, "model".equals(entry.getValue().getTypeSpec().getType()));
         }
 
         // Inspect maps
         for (Map.Entry<String, ConfigDefinition.LeafMapDef> entry : configDefinition.getLeafMapDefs().entrySet()) {
             if (isNotAnyFileType(entry.getValue().getTypeSpec().getType())) continue;
             ConfigPayloadBuilder.MapBuilder map = builder.getMap(entry.getKey());
-            sendFileEntries(map.getElements(), sentFiles, "model".equals(entry.getValue().getTypeSpec().getType()));
+            registerFileEntries(map.getElements(), registeredFiles, "model".equals(entry.getValue().getTypeSpec().getType()));
         }
 
         // Inspect inner fields
         for (String name : configDefinition.getStructDefs().keySet()) {
-            sendUserConfiguredFiles(builder.getObject(name), sentFiles, key);
+            register(builder.getObject(name), registeredFiles, key);
         }
         for (String name : configDefinition.getInnerArrayDefs().keySet()) {
             ConfigPayloadBuilder.Array array = builder.getArray(name);
             for (ConfigPayloadBuilder element : array.getElements()) {
-                sendUserConfiguredFiles(element, sentFiles, key);
+                register(element, registeredFiles, key);
             }
         }
         for (String name : configDefinition.getStructMapDefs().keySet()) {
             ConfigPayloadBuilder.MapBuilder map = builder.getMap(name);
             for (ConfigPayloadBuilder element : map.getElements()) {
-                sendUserConfiguredFiles(element, sentFiles, key);
+                register(element, registeredFiles, key);
             }
         }
     }
@@ -105,10 +107,10 @@ public class FileSender implements Serializable {
         return ! "file".equals(type) && ! "path".equals(type) && ! "model".equals(type);
     }
 
-    private void sendEntries(ConfigPayloadBuilder builder,
-                             Map<Path, FileReference> sentFiles,
-                             Map<String, ?> entries,
-                             boolean isModelType) {
+    private void registerEntries(ConfigPayloadBuilder builder,
+                                 Map<Path, FileReference> registeredFiles,
+                                 Map<String, ?> entries,
+                                 boolean isModelType) {
         for (Map.Entry<String, ?> entry : entries.entrySet()) {
             String name = entry.getKey();
             ConfigPayloadBuilder fileEntry = builder.getObject(name);
@@ -116,7 +118,7 @@ public class FileSender implements Serializable {
             if (fileEntry.getValue() == null)
                 throw new IllegalArgumentException("Unable to send file for field '" + name +
                                                    "': Invalid config value " + fileEntry.getValue());
-            sendFileEntry(fileEntry, sentFiles, isModelType);
+            registerFileEntry(fileEntry, registeredFiles, isModelType);
         }
     }
 
@@ -124,13 +126,13 @@ public class FileSender implements Serializable {
         return entry.getValue() instanceof ConfigDefinition.OptionalPathDef && fileEntry.getValue() == null;
     }
 
-    private void sendFileEntries(Collection<ConfigPayloadBuilder> builders, Map<Path, FileReference> sentFiles, boolean isModelType) {
+    private void registerFileEntries(Collection<ConfigPayloadBuilder> builders, Map<Path, FileReference> registeredFiles, boolean isModelType) {
         for (ConfigPayloadBuilder builder : builders) {
-            sendFileEntry(builder, sentFiles, isModelType);
+            registerFileEntry(builder, registeredFiles, isModelType);
         }
     }
 
-    private void sendFileEntry(ConfigPayloadBuilder builder, Map<Path, FileReference> sentFiles, boolean isModelType) {
+    private void registerFileEntry(ConfigPayloadBuilder builder, Map<Path, FileReference> registeredFiles, boolean isModelType) {
         Path path;
         if (isModelType) {
             var modelReference = ModelReference.valueOf(builder.getValue());
@@ -141,10 +143,10 @@ public class FileSender implements Serializable {
             path = Path.fromString(builder.getValue());
         }
 
-        FileReference reference = sentFiles.get(path);
+        FileReference reference = registeredFiles.get(path);
         if (reference == null) {
             reference = fileRegistry.addFile(path.getRelative());
-            sentFiles.put(path, reference);
+            registeredFiles.put(path, reference);
         }
 
         if (isModelType) {
