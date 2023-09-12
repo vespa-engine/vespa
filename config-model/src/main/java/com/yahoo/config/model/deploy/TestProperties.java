@@ -86,6 +86,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
     private boolean enableDataplaneProxy;
+    private int contentLayerMetadataFeatureLevel = 0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -144,6 +145,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean enableGlobalPhase() { return true; } // Enable global-phase by default for unit tests only
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
     @Override public boolean enableDataplaneProxy() { return enableDataplaneProxy; }
+    @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -376,6 +378,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setEnableDataplaneProxy(boolean enable) {
         this.enableDataplaneProxy = enable;
+        return this;
+    }
+
+    public TestProperties setContentLayerMetadataFeatureLevel(int level) {
+        this.contentLayerMetadataFeatureLevel = level;
         return this;
     }
 

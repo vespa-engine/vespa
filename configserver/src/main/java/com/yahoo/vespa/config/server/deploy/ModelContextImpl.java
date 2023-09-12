@@ -201,6 +201,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableDataplaneProxy;
         private final boolean enableNestedMultivalueGrouping;
         private final boolean useReconfigurableDispatcher;
+        private final int contentLayerMetadataFeatureLevel;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -243,6 +244,7 @@ public class ModelContextImpl implements ModelContext {
             this.enableDataplaneProxy = flagValue(source, appId, version, Flags.ENABLE_DATAPLANE_PROXY);
             this.enableNestedMultivalueGrouping = flagValue(source, appId, version, Flags.ENABLE_NESTED_MULTIVALUE_GROUPING);
             this.useReconfigurableDispatcher = flagValue(source, appId, version, Flags.USE_RECONFIGURABLE_DISPATCHER);
+            this.contentLayerMetadataFeatureLevel = flagValue(source, appId, version, Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL);
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -293,6 +295,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enableDataplaneProxy() { return enableDataplaneProxy; }
         @Override public boolean enableNestedMultivalueGrouping() { return enableNestedMultivalueGrouping; }
         @Override public boolean useReconfigurableDispatcher() { return useReconfigurableDispatcher; }
+        @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
