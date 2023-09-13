@@ -21,6 +21,7 @@ import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster;
+import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
@@ -28,8 +29,10 @@ import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static ai.vespa.metrics.set.MetricSet.empty;
 
@@ -49,6 +52,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     private final Metrics metrics;
     private MetricsProxyContainerCluster metricsProxyCluster;
     private MetricSet additionalDefaultMetrics = empty();
+    private Set<MetricsConsumer> amendedMetricsConsumers = new HashSet<>();
 
     private final List<Slobrok> slobroks = new ArrayList<>();
     private Configserver defaultConfigserver;
@@ -118,6 +122,15 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
 
     public MetricSet getAdditionalDefaultMetrics() {
         return additionalDefaultMetrics;
+    }
+
+    public void setAmendedMetricsConsumers(Set<MetricsConsumer> amendedMetricsConsumers) {
+        if (amendedMetricsConsumers == null) return;
+        this.amendedMetricsConsumers = Set.copyOf(amendedMetricsConsumers);
+    }
+
+    public Set<MetricsConsumer> getAmendedMetricsConsumers() {
+        return amendedMetricsConsumers;
     }
 
     /** Returns a list of all config servers */
