@@ -30,11 +30,11 @@ public class WireguardResponse extends SlimeJsonResponse {
                 .nodeType(NodeType.config);
 
         for (Node cfg : configservers) {
-            if (cfg.wireguardPubKey().isEmpty()) return;
+            if (cfg.wireguardPubKey().isEmpty()) continue;
             List<String> ipAddresses = cfg.ipConfig().primary().stream()
                     .filter(WireguardResponse::isPublicIp)
                     .toList();
-            if (ipAddresses.isEmpty()) return;
+            if (ipAddresses.isEmpty()) continue;
 
             addConfigserver(cfgArray.addObject(), cfg.hostname(), cfg.wireguardPubKey().get(),
                             cfg.wireguardKeyTimestamp(), ipAddresses);
